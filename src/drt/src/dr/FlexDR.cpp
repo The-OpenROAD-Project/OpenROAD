@@ -30,12 +30,12 @@
 
 #include <dst/JobMessage.h>
 #include <omp.h>
-#include <stdio.h>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
 #include <chrono>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <numeric>
@@ -55,11 +55,11 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-using namespace fr;
+BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
+
+namespace drt {
 
 using utl::ThreadException;
-
-BOOST_CLASS_EXPORT(RoutingJobDescription)
 
 enum class SerializationType
 {
@@ -90,7 +90,7 @@ void deserializeWorker(FlexDRWorker* worker,
   ar >> *worker;
 }
 
-void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
 {
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
@@ -100,7 +100,7 @@ void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
   serializedStr = stream.str();
 }
 
-FlexDR::FlexDR(triton_route::TritonRoute* router,
+FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn)
@@ -118,9 +118,7 @@ FlexDR::FlexDR(triton_route::TritonRoute* router,
 {
 }
 
-FlexDR::~FlexDR()
-{
-}
+FlexDR::~FlexDR() = default;
 
 void FlexDR::setDebug(frDebugSettings* settings)
 {
@@ -205,7 +203,7 @@ void FlexDRWorker::writeUpdates(const std::string& file_name)
 int FlexDRWorker::main(frDesign* design)
 {
   ProfileTask profile("DRW:main");
-  using namespace std::chrono;
+  using std::chrono::high_resolution_clock;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
@@ -275,6 +273,8 @@ int FlexDRWorker::main(frDesign* design)
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
+  using std::chrono::duration;
+  using std::chrono::duration_cast;
   duration<double> time_span0 = duration_cast<duration<double>>(t1 - t0);
   duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
@@ -537,7 +537,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      router_->writeGlobals(globals_path_.c_str());
+      router_->writeGlobals(globals_path_);
     }
   }
   frTime t;
@@ -599,8 +599,9 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
       worker->setDebugSettings(router_->getDebugSettings());
-      if (dist_on_)
+      if (dist_on_) {
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
+      }
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
         //   std::cout << "@@@ debug: " << i << " " << j << std::endl;
@@ -652,20 +653,22 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             std::string serializedViaData;
             serializeViaData(via_data_, serializedViaData);
             router_->sendGlobalsUpdates(globals_path_, serializedViaData);
-          } else
+          } else {
             router_->sendDesignUpdates(globals_path_);
+          }
         }
         {
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
           ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {
+          for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
             try {
-              if (dist_on_)
+              if (dist_on_) {
                 workersInBatch[i]->distributedMain(getDesign());
-              else
+              } else {
                 workersInBatch[i]->main(getDesign());
+              }
 #pragma omp critical
               {
                 cnt++;
@@ -705,7 +708,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             {
               ProfileTask task("DIST: SERIALIZE+SEND");
 #pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < distWorkerBatches.size(); i++)
+              for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
                 sendWorkers(distWorkerBatches.at(i), workersInBatch);
             }
             logger_->report("    Received Batches:{}.", t);
@@ -714,7 +717,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             {
               ProfileTask task("DIST: DESERIALIZING_BATCH");
 #pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < workers.size(); i++) {
+              for (int i = 0; i < workers.size(); i++) {  // NOLINT
                 deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
                                   design_,
                                   workers.at(i).second);
@@ -727,11 +730,13 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       {
         ProfileTask profile("DR:end_batch");
         // single thread
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if (workersInBatch[i]->end(getDesign()))
+        for (auto& worker : workersInBatch) {
+          if (worker->end(getDesign())) {
             numWorkUnits_ += 1;
-          if (workersInBatch[i]->isCongested())
+          }
+          if (worker->isCongested()) {
             increaseClipsize_ = true;
+          }
         }
         workersInBatch.clear();
       }
@@ -779,11 +784,13 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
              {"Lef58CutSpacingTable", "CutSpcTbl"},
              {"Lef58EolKeepOut", "eolKeepOut"}};
       for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
-        if (!marker->getConstraint())
+        if (!marker->getConstraint()) {
           continue;
+        }
         auto type = marker->getConstraint()->getViolName();
-        if (relabel.find(type) != relabel.end())
+        if (relabel.find(type) != relabel.end()) {
           type = relabel.at(type);
+        }
         violations[type][marker->getLayerNum()]++;
         layers.insert(marker->getLayerNum());
       }
@@ -796,10 +803,11 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         line += fmt::format("{:>7}", lName);
       }
       logger_->report(line);
-      for (auto [type, typeViolations] : violations) {
+      for (auto& [type, typeViolations] : violations) {
         std::string typeName = type;
-        if (typeName.size() >= 15)
+        if (typeName.size() >= 15) {
           typeName = typeName.substr(0, 12) + "..";
+        }
         line = fmt::format("{:<15}", typeName);
         for (auto lNum : layers) {
           line += fmt::format("{:>7}", typeViolations[lNum]);
@@ -828,7 +836,7 @@ void FlexDR::end(bool done)
     logger_->info(DRT, 198, "Complete detail routing.");
   }
 
-  using ULL = unsigned long long;
+  using ULL = uint64_t;
   const auto size = getTech()->getLayers().size();
   std::vector<ULL> wlen(size, 0);
   std::vector<ULL> sCut(size, 0);
@@ -1054,28 +1062,28 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
 {
-  using namespace boost::polygon::operators;
   gtl::polygon_90_data<frCoord> poly;
   std::vector<gtl::point_data<frCoord>> points;
   for (const auto& point : rect.getPoints()) {
-    points.push_back({point.x(), point.y()});
+    points.emplace_back(point.x(), point.y());
   }
   poly.set(points.begin(), points.end());
+  using boost::polygon::operators::operator+=;
   polySet += poly;
 }
 
 void FlexDR::reportGuideCoverage()
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator&;
 
   const auto numLayers = getTech()->getLayers().size();
-  std::vector<unsigned long long> totalAreaByLayerNum(numLayers, 0);
-  std::vector<unsigned long long> totalCoveredAreaByLayerNum(numLayers, 0);
+  std::vector<uint64_t> totalAreaByLayerNum(numLayers, 0);
+  std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
   std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < nets.size(); i++) {
+  for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
     std::vector<gtl::polygon_90_set_data<frCoord>> routeSetByLayerNum(
         numLayers),
@@ -1108,19 +1116,21 @@ void FlexDR::reportGuideCoverage()
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
       if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
-          || lNum > TOP_ROUTING_LAYER)
+          || lNum > TOP_ROUTING_LAYER) {
         continue;
+      }
       float coveredPercentage = -1.0;
-      unsigned long long routingArea = 0;
-      unsigned long long coveredArea = 0;
+      uint64_t routingArea = 0;
+      uint64_t coveredArea = 0;
       if (!routeSetByLayerNum[lNum].empty()) {
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if (routingArea == 0.0)
+        if (routingArea == 0.0) {
           coveredPercentage = -1.0;
-        else
+        } else {
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
+        }
       }
 
 #pragma omp critical
@@ -1141,18 +1151,20 @@ void FlexDR::reportGuideCoverage()
     }
   }
   file << std::endl;
-  for (auto [net, coverage] : netsCoverage) {
+  for (const auto& [net, coverage] : netsCoverage) {
     file << net->getName() << ",";
-    for (auto coveredPercentage : coverage)
-      if (coveredPercentage < 0.0)
+    for (auto coveredPercentage : coverage) {
+      if (coveredPercentage < 0.0) {
         file << "NA,";
-      else
+      } else {
         file << fmt::format("{:.2f}%,", coveredPercentage);
+      }
+    }
     file << std::endl;
   }
   file << "Total,";
-  unsigned long long totalArea = 0;
-  unsigned long long totalCoveredArea = 0;
+  uint64_t totalArea = 0;
+  uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getLayerNum() <= TOP_ROUTING_LAYER) {
@@ -1169,9 +1181,9 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  if (totalArea == 0)
+  if (totalArea == 0) {
     file << "NA";
-  else {
+  } else {
     auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
     file << fmt::format("{:.2f}%,", totalCoveredPercentage);
   }
@@ -1189,8 +1201,9 @@ int FlexDR::main()
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
         clipSizeInc_ += 2;
-      } else
+      } else {
         clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
+      }
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
@@ -1215,8 +1228,9 @@ int FlexDR::main()
   }
 
   end(/* done */ true);
-  if (!GUIDE_REPORT_FILE.empty())
+  if (!GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
+  }
   if (VERBOSE > 0) {
     t.print(logger_);
     std::cout << std::endl;
@@ -1228,19 +1242,20 @@ void FlexDR::sendWorkers(
     const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
     std::vector<std::unique_ptr<FlexDRWorker>>& batch)
 {
-  if (remote_batch.empty())
+  if (remote_batch.empty()) {
     return;
+  }
   std::vector<std::pair<int, std::string>> workers;
   {
     ProfileTask task("DIST: SERIALIZE_BATCH");
     for (auto& [idx, worker] : remote_batch) {
       std::string workerStr;
       serializeWorker(worker, workerStr);
-      workers.push_back({idx, workerStr});
+      workers.emplace_back(idx, workerStr);
     }
   }
   std::string remote_ip = dist_ip_;
-  unsigned short remote_port = dist_port_;
+  uint16_t remote_port = dist_port_;
   if (router_->getCloudSize() > 1) {
     dst::JobMessage msg(dst::JobMessage::BALANCER),
         result(dst::JobMessage::NONE);
@@ -1370,3 +1385,5 @@ template void FlexDRWorker::serialize<frIArchive>(
 template void FlexDRWorker::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
+
+}  // namespace drt

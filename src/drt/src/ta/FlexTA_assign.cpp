@@ -30,7 +30,7 @@
 
 #include "ta/FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 frSquaredDistance FlexTAWorker::box2boxDistSquare(const Rect& box1,
                                                   const Rect& box2,
@@ -1237,4 +1237,4 @@ void FlexTAWorker::assign()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

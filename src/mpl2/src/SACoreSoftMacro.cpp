@@ -68,8 +68,6 @@ SACoreSoftMacro::SACoreSoftMacro(
     float init_prob,
     int max_num_step,
     int num_perturb_per_step,
-    int k,
-    int c,
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
@@ -88,8 +86,6 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         init_prob,
                                         max_num_step,
                                         num_perturb_per_step,
-                                        k,
-                                        c,
                                         seed,
                                         graphics,
                                         logger)
@@ -230,7 +226,7 @@ void SACoreSoftMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    resize();  // Flip one macro
+    resizeOneCluster();
   }
 
   // update the macro locations based on Sequence Pair
@@ -272,6 +268,8 @@ void SACoreSoftMacro::restore()
 
 void SACoreSoftMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
   std::vector<float> guidance_penalty_list;
@@ -690,10 +688,10 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 }
 
-void SACoreSoftMacro::resize()
+void SACoreSoftMacro::resizeOneCluster()
 {
   const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * macros_.size()));
+      std::floor(distribution_(generator_) * pos_seq_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
@@ -767,8 +765,8 @@ void SACoreSoftMacro::resize()
 
 void SACoreSoftMacro::shrink()
 {
-  for (auto& macro : macros_) {
-    macro.shrinkArea(shrink_factor_);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].shrinkArea(shrink_factor_);
   }
 }
 

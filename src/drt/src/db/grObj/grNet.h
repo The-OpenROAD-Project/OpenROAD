@@ -36,39 +36,11 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNet : public grBlockObject
 {
  public:
-  // constructor
-  grNet()
-      : grBlockObject(),
-        pins(),
-        extConnFigs(),
-        routeConnFigs(), /*bestRouteConnFigs(),*/
-        // fNetTerms(),
-        pinGCellNodePairs(),
-        gcell2PinNodes(),
-        pinGCellNodes(),
-        pinNodePairs(),
-        gr2FrPinNode(),
-        nodes(),
-        root(nullptr),
-        fNet(nullptr),
-        frRoot(nullptr),
-        modified(false),
-        numOverConGCells(0),
-        numPinsIn(0),
-        allowRipup(true),
-        pinBox(),
-        ripup(false),
-        numReroutes(0),
-        inQueue(false),
-        routed(false),
-        trivial(false)
-  {
-  }
   // getters
   const std::vector<std::unique_ptr<grPin>>& getPins() const { return pins; }
   std::vector<std::unique_ptr<grPin>>& getPins() { return pins; }
@@ -88,13 +60,6 @@ class grNet : public grBlockObject
   {
     return routeConnFigs;
   }
-  // const std::vector<std::unique_ptr<grConnFig> >& getBestRouteConnFigs()
-  // const {
-  //   return bestRouteConnFigs;
-  // }
-  // std::vector<std::unique_ptr<grConnFig> >& getBestRouteConnFigs() {
-  //   return bestRouteConnFigs;
-  // }
   const std::list<std::unique_ptr<grNode>>& getNodes() const { return nodes; }
   std::list<std::unique_ptr<grNode>>& getNodes() { return nodes; }
   grNode* getRoot() { return root; }
@@ -136,12 +101,6 @@ class grNet : public grBlockObject
   {
     return gr2FrPinNode;
   }
-  // const std::set<frBlockObject*>& getFrNetTerms() const {
-  //   return fNetTerms;
-  // }
-  // std::set<frBlockObject*>& getFrNetTerms() {
-  //   return fNetTerms;
-  // }
   bool isModified() const { return modified; }
   int getNumOverConGCells() const { return numOverConGCells; }
   int getNumPinsIn() const { return numPinsIn; }
@@ -200,9 +159,6 @@ class grNet : public grBlockObject
   {
     gr2FrPinNode = in;
   }
-  // void setFrNetTerms(const std::set<frBlockObject*> &in) {
-  //   fNetTerms = in;
-  // }
   void addNode(std::unique_ptr<grNode>& in)
   {
     in->addToNet(this);
@@ -265,20 +221,20 @@ class grNet : public grBlockObject
   std::map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
   // std::set<frBlockObject*>                 fNetTerms;
   std::list<std::unique_ptr<grNode>> nodes;
-  grNode* root;
-  frNet* fNet;
-  frNode* frRoot;  // subnet frRoot
+  grNode* root{nullptr};
+  frNet* fNet{nullptr};
+  frNode* frRoot{nullptr};  // subnet frRoot
 
-  bool modified;
-  int numOverConGCells;
-  int numPinsIn;
-  bool allowRipup;
+  bool modified{false};
+  int numOverConGCells{0};
+  int numPinsIn{0};
+  bool allowRipup{true};
   Rect pinBox;
-  bool ripup;
+  bool ripup{false};
 
-  int numReroutes;
-  bool inQueue;
-  bool routed;
-  bool trivial;
+  int numReroutes{0};
+  bool inQueue{false};
+  bool routed{false};
+  bool trivial{false};
 };
-}  // namespace fr
+}  // namespace drt

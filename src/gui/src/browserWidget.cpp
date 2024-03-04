@@ -460,15 +460,14 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
-  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
+  std::map<sta::dbSta::InstType, Leaf> leaf_types;
   for (auto* inst : insts) {
-    auto type = inst_descriptor_->getInstanceType(inst);
+    auto type = sta_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
-      leaf_parent.item
-          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+      leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    const bool create_row = type == DbInstDescriptor::BLOCK;
+    const bool create_row = type == sta::dbSta::InstType::BLOCK;
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 

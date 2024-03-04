@@ -29,7 +29,7 @@
 #include "frRTree.h"
 #include "ta/FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 struct FlexTAWorkerRegionQuery::Impl
 {
@@ -176,4 +176,4 @@ void FlexTAWorkerRegionQuery::queryViaCost(
                                        back_inserter(result));
 }
 
-}  // namespace fr
+}  // namespace drt

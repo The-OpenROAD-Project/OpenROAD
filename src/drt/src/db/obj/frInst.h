@@ -35,7 +35,7 @@
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBlock;
 class frMaster;
 class frInstTerm;
@@ -139,7 +139,7 @@ class frInst : public frRef
 
  private:
   frString name_;
-  fr::frMaster* master_;
+  frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   dbTransform xform_;
@@ -147,4 +147,4 @@ class frInst : public frRef
   bool toBeDeleted_;
 };
 
-}  // namespace fr
+}  // namespace drt

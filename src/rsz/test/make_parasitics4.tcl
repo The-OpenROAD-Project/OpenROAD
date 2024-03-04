@@ -9,6 +9,6 @@ read_def make_parasitics4.def
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-report_net -connections -verbose in1
-report_net -connections -verbose out1
+report_net in1
+report_net out1
 report_checks -unconstrained -from in1

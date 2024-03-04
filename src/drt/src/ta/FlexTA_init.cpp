@@ -28,7 +28,7 @@
 
 #include "ta/FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 void FlexTAWorker::initTracks()
 {
@@ -889,4 +889,4 @@ void FlexTAWorker::init()
   initCosts();
 }
 
-}  // namespace fr
+}  // namespace drt

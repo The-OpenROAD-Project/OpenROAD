@@ -35,13 +35,14 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTerm;
 
 class frPin : public frBlockObject
 {
  public:
-  virtual ~frPin() {}
+  frPin(const frPin& in) = delete;
+  frPin& operator=(const frPin&) = delete;
 
   // getters
   const std::vector<std::unique_ptr<frPinFig>>& getFigs() const
@@ -52,9 +53,8 @@ class frPin : public frBlockObject
   int getNumPinAccess() const { return aps_.size(); }
   bool hasPinAccess() const { return !aps_.empty(); }
   frPinAccess* getPinAccess(int idx) const { return aps_[idx].get(); }
-  void clearPinAccess() { aps_.clear(); }
+
   // setters
-  // cannot have setterm, must be available when creating
   void addPinFig(std::unique_ptr<frPinFig> in)
   {
     in->addToPin(this);
@@ -72,54 +72,13 @@ class frPin : public frBlockObject
     in->setPin(this);
     aps_[idx] = std::move(in);
   }
-  // others
-  virtual frBlockObjectEnum typeId() const = 0;
+  void clearPinAccess() { aps_.clear(); }
 
  protected:
-  // constructors
-  frPin() : frBlockObject(), pinFigs_() {}
-  frPin(const frPin& in) : frBlockObject()
-  {
-    for (auto& uPinFig : in.getFigs()) {
-      auto pinFig = uPinFig.get();
-      if (pinFig->typeId() == frcRect) {
-        std::unique_ptr<frPinFig> tmp
-            = std::make_unique<frRect>(*static_cast<frRect*>(pinFig));
-        addPinFig(std::move(tmp));
-      } else if (pinFig->typeId() == frcPolygon) {
-        std::unique_ptr<frPinFig> tmp
-            = std::make_unique<frPolygon>(*static_cast<frPolygon*>(pinFig));
-        addPinFig(std::move(tmp));
-      } else {
-        std::cout << "Unsupported pinFig in copy constructor" << std::endl;
-        exit(1);
-      }
-    }
-  }
-  frPin(const frPin& in, const dbTransform& xform) : frBlockObject()
-  {
-    for (auto& uPinFig : in.getFigs()) {
-      auto pinFig = uPinFig.get();
-      if (pinFig->typeId() == frcRect) {
-        std::unique_ptr<frPinFig> tmp
-            = std::make_unique<frRect>(*static_cast<frRect*>(pinFig));
-        tmp->move(xform);
-        addPinFig(std::move(tmp));
-      } else if (pinFig->typeId() == frcPolygon) {
-        std::unique_ptr<frPinFig> tmp
-            = std::make_unique<frPolygon>(*static_cast<frPolygon*>(pinFig));
-        tmp->move(xform);
-        addPinFig(std::move(tmp));
-      } else {
-        std::cout << "Unsupported pinFig in copy constructor" << std::endl;
-        exit(1);
-      }
-    }
-  }
+  frPin() = default;
 
-  std::vector<std::unique_ptr<frPinFig>> pinFigs_;  // optional, set later
-  std::vector<std::unique_ptr<frPinAccess>>
-      aps_;  // not copied in copy constructor
+  std::vector<std::unique_ptr<frPinFig>> pinFigs_;
+  std::vector<std::unique_ptr<frPinAccess>> aps_;
 };
 
-}  // namespace fr
+}  // namespace drt
