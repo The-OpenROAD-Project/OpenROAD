@@ -274,7 +274,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              slack,
              edge_cost_per_layer);
 
-  dirty_net_ids_.push_back(netID);
+  net_ids_.push_back(netID);
 
   return net;
 }
@@ -667,7 +667,7 @@ void FastRouteCore::initNetAuxVars()
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     odb::dbNet* db_net = nets_[netID]->getDbNet();
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
@@ -725,7 +725,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
   // Get routes before layer assignment
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
@@ -995,7 +995,7 @@ NetRouteMap FastRouteCore::run()
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree_) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       StTreeVisualization(sttrees_[netID], nets_[netID], false);
     }
   }
@@ -1244,7 +1244,7 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       StTreeVisualization(sttrees_[netID], nets_[netID], false);
     }
   }
@@ -1299,14 +1299,14 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       StTreeVisualization(sttrees_[netID], nets_[netID], true);
     }
   }
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
-  dirty_net_ids_.clear();
+  net_ids_.clear();
   return routes;
 }
 

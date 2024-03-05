@@ -64,7 +64,7 @@ void FastRouteCore::printEdge(int const netID, int const edgeID)
 
 void FastRouteCore::ConvertToFull3DType2()
 {
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
 
@@ -147,7 +147,7 @@ void FastRouteCore::netpinOrderInc()
 {
   tree_order_pv_.clear();
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     int xmin = BIG_INT;
     int totalLength = 0;
     const auto& treenodes = sttrees_[netID].nodes;
@@ -174,7 +174,7 @@ void FastRouteCore::fillVIA()
   int numVIAT1 = 0;
   int numVIAT2 = 0;
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     int num_terminals = sttrees_[netID].num_terminals;
     const auto& treenodes = sttrees_[netID].nodes;
@@ -393,7 +393,7 @@ int FastRouteCore::threeDVIA()
 {
   int numVIA = 0;
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     int num_edges = sttrees_[netID].num_edges();
 
@@ -840,7 +840,7 @@ void FastRouteCore::layerAssignmentV4()
 
   TreeEdge* treeedge;
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       treeedge = &(treeedges[edgeID]);
@@ -974,7 +974,7 @@ void FastRouteCore::layerAssignment()
   bool redundant;
   TreeEdge* treeedge;
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treenodes = sttrees_[netID].nodes;
 
     numpoints = 0;
@@ -1021,7 +1021,7 @@ void FastRouteCore::layerAssignment()
     }
   }
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
 
@@ -1101,7 +1101,7 @@ void FastRouteCore::checkRoute3D()
   int distance;
   bool gridFlag;
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
@@ -1215,13 +1215,13 @@ void FastRouteCore::StNetOrder()
 
   tree_order_cong_.clear();
 
-  tree_order_cong_.resize(dirty_net_ids_.size());
+  tree_order_cong_.resize(net_ids_.size());
 
   i = 0;
-  for (int j = 0; j < dirty_net_ids_.size(); j++) {
+  for (int j = 0; j < net_ids_.size(); j++) {
     // if the net is routed
 
-    int netID = dirty_net_ids_[j];
+    int netID = net_ids_[j];
 
     stree = &(sttrees_[netID]);
     tree_order_cong_[j].xmin = 0;
@@ -1256,11 +1256,11 @@ void FastRouteCore::StNetOrder()
 
   // Set the 70% (or less) of non critical nets that doesn't have overflow
   // with the lowest priority
-  for (int ord_elID = 0; ord_elID < dirty_net_ids_.size(); ord_elID++) {
-    auto order_element = tree_order_cong_[ord_elID];
+  for (int net_id : net_ids_) {
+    auto order_element = tree_order_cong_[net_id];
     if (nets_[order_element.treeIndex]->getSlack()
         == std::ceil(std::numeric_limits<float>::lowest())) {
-      if (order_element.xmin == 0 && (ord_elID >= (netCount() * 30 / 100))) {
+      if (order_element.xmin == 0 && (net_id >= (netCount() * 30 / 100))) {
         nets_[order_element.treeIndex]->setSlack(
             std::numeric_limits<float>::max());
       }
@@ -1291,7 +1291,7 @@ float FastRouteCore::CalculatePartialSlack()
       parasitics_builder_->estimateParasitcs(db_net, route);
     }
   }
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     float slack = parasitics_builder_->getNetSlack(db_net);
@@ -1309,7 +1309,7 @@ float FastRouteCore::CalculatePartialSlack()
 
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     if (nets_[netID]->getSlack() > slack_th) {
       nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }
@@ -1396,7 +1396,7 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
 
 void FastRouteCore::removeLoops()
 {
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
 
     const int edgeCost = nets_[netID]->getEdgeCost();
@@ -1822,7 +1822,7 @@ void FastRouteCore::copyRS(void)
   int i, j, edgeID, numEdges, numNodes;
 
   if (!sttrees_bk_.empty()) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       numEdges = sttrees_bk_[netID].num_edges();
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_bk_[netID].edges[edgeID].len > 0) {
@@ -1836,7 +1836,7 @@ void FastRouteCore::copyRS(void)
 
   sttrees_bk_.resize(netCount());
 
-  for (const int& netID : dirty_net_ids_) {
+  for (const int& netID : net_ids_) {
     numNodes = sttrees_[netID].num_nodes();
     numEdges = sttrees_[netID].num_edges();
 
@@ -1886,7 +1886,7 @@ void FastRouteCore::copyBR(void)
   int i, j, edgeID, numEdges, numNodes, min_y, min_x;
 
   if (!sttrees_bk_.empty()) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_[netID].edges[edgeID].len > 0) {
@@ -1896,7 +1896,7 @@ void FastRouteCore::copyBR(void)
       }
     }
 
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       numNodes = sttrees_bk_[netID].num_nodes();
       numEdges = sttrees_bk_[netID].num_edges();
 
@@ -1955,7 +1955,7 @@ void FastRouteCore::copyBR(void)
         v_edges_[i][j].usage = 0;
       }
     }
-    for (int netID = 0; netID < netCount(); netID++) {
+    for (int netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -1991,7 +1991,7 @@ void FastRouteCore::freeRR(void)
 {
   int edgeID, numEdges;
   if (!sttrees_bk_.empty()) {
-    for (const int& netID : dirty_net_ids_) {
+    for (const int& netID : net_ids_) {
       numEdges = sttrees_bk_[netID].num_edges();
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_bk_[netID].edges[edgeID].len > 0) {
