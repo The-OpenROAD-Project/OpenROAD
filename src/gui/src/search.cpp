@@ -265,12 +265,13 @@ void Search::updateShapes(odb::dbBlock* block)
     addSNet(net, snet_shapes, snet_net_via_shapes);
   }
   for (const auto& [layer, layer_shapes] : snet_shapes) {
-    data.snet_shapes_[layer].insert(layer_shapes.begin(), layer_shapes.end());
+    data.snet_shapes_[layer] = RtreeSNetShapes<odb::dbNet*>(
+        layer_shapes.begin(), layer_shapes.end());
   }
   snet_shapes.clear();
   for (const auto& [layer, layer_shapes] : snet_net_via_shapes) {
-    data.snet_via_shapes_[layer].insert(layer_shapes.begin(),
-                                        layer_shapes.end());
+    data.snet_via_shapes_[layer]
+        = RtreeSNetSBox<odb::dbNet*>(layer_shapes.begin(), layer_shapes.end());
   }
   snet_net_via_shapes.clear();
 
@@ -293,7 +294,8 @@ void Search::updateShapes(odb::dbBlock* block)
     }
   }
   for (const auto& [layer, layer_shapes] : net_shapes) {
-    data.box_shapes_[layer].insert(layer_shapes.begin(), layer_shapes.end());
+    data.box_shapes_[layer] = RtreeRoutingShapes<odb::dbNet*>(
+        layer_shapes.begin(), layer_shapes.end());
   }
 
   data.shapes_init_ = true;
@@ -316,7 +318,8 @@ void Search::updateFills(odb::dbBlock* block)
     fills[fill->getTechLayer()].emplace_back(convertRect(rect), fill);
   }
   for (const auto& [layer, layer_fill] : fills) {
-    data.fills_[layer].insert(layer_fill.begin(), layer_fill.end());
+    data.fills_[layer]
+        = RtreeBox<odb::dbFill*>(layer_fill.begin(), layer_fill.end());
   }
 
   data.fills_init_ = true;
@@ -342,7 +345,7 @@ void Search::updateInsts(odb::dbBlock* block)
       insts.emplace_back(box, inst);
     }
   }
-  data.insts_.insert(insts.begin(), insts.end());
+  data.insts_ = RtreeBox<odb::dbInst*>(insts.begin(), insts.end());
 
   data.insts_init_ = true;
 }
@@ -365,7 +368,8 @@ void Search::updateBlockages(odb::dbBlock* block)
     const Box box(ll, ur);
     blockages.emplace_back(box, blockage);
   }
-  data.blockages_.insert(blockages.begin(), blockages.end());
+  data.blockages_
+      = RtreeBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
 
   data.blockages_init_ = true;
 }
@@ -389,7 +393,8 @@ void Search::updateObstructions(odb::dbBlock* block)
     obstructions[bbox->getTechLayer()].emplace_back(box, obs);
   }
   for (const auto& [layer, layer_obs] : obstructions) {
-    data.obstructions_[layer].insert(layer_obs.begin(), layer_obs.end());
+    data.obstructions_[layer]
+        = RtreeBox<odb::dbObstruction*>(layer_obs.begin(), layer_obs.end());
   }
 
   data.obstructions_init_ = true;
@@ -410,7 +415,7 @@ void Search::updateRows(odb::dbBlock* block)
     const odb::Rect bbox = row->getBBox();
     rows.emplace_back(convertRect(bbox), row);
   }
-  data.rows_.insert(rows.begin(), rows.end());
+  data.rows_ = RtreeBox<odb::dbRow*>(rows.begin(), rows.end());
 
   data.rows_init_ = true;
 }
