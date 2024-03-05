@@ -367,7 +367,7 @@ proc clear {} {
 proc profile_cmd {filename args} {
   utl::info 99 "Profiling $args > $filename."
   profile -commands on
-  if {[catch "{*}$args"]} {
+  if {[catch "{*}$args"]} { ;# tclint-disable-line command-args
     global errorInfo
     puts $errorInfo
   }

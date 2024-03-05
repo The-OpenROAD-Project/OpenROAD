@@ -3,7 +3,7 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[WARNING STA-0053] Nangate45/Nangate45_typ.lib line 37, library NangateOpenCellLibrary already exists.
+[WARNING STA-1140] Nangate45/Nangate45_typ.lib line 37, library NangateOpenCellLibrary already exists.
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.

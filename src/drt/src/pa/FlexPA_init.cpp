@@ -34,7 +34,7 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-using namespace fr;
+namespace drt {
 
 void FlexPA::initViaRawPriority()
 {
@@ -63,7 +63,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS1 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer1Rect;
@@ -86,7 +86,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     const gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS2 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer2Rect;
@@ -158,3 +158,5 @@ void FlexPA::initTrackCoords()
     }
   }
 }
+
+}  // namespace drt

@@ -93,7 +93,6 @@ class RepairSetup : StaState
   void repairSetup(const Pin* end_pin);
   // For testing.
   void reportSwappablePins();
-
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin* drvr_pin);
@@ -122,7 +121,6 @@ class RepairSetup : StaState
                    Slack drvr_slack,
                    PathExpanded* expanded);
   void splitLoads(PathRef* drvr_path,
-
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);

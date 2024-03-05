@@ -40,6 +40,6 @@ Fanout     Cap    Slew   Delay    Time   Description
                                   0.75   slack (MET)
 
 
-[INFO RSZ-0058] Using max wire length 720um.
+[INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0039] Resized 2 instances.
 No differences found.

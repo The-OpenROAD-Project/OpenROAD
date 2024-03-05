@@ -33,12 +33,10 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBoundary : public frFig
 {
  public:
-  // constructors
-  frBoundary() : frFig() {}
   // getters
   const std::vector<Point>& getPoints() const { return points_; }
   frUInt4 getNumPoints() const { return points_.size(); }
@@ -53,7 +51,7 @@ class frBoundary : public frFig
     frCoord lly = 0;
     frCoord urx = 0;
     frCoord ury = 0;
-    if (points_.size()) {
+    if (!points_.empty()) {
       llx = points_.begin()->x();
       urx = points_.begin()->x();
       lly = points_.begin()->y();
@@ -78,4 +76,4 @@ class frBoundary : public frFig
  protected:
   std::vector<Point> points_;
 };
-}  // namespace fr
+}  // namespace drt

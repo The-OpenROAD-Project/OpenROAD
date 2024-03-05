@@ -548,7 +548,6 @@ static BufferedNetPtr makeBufferedNet(RoutePt& from,
                                       Logger* logger,
                                       dbNetwork* db_network,
                                       RoutePtSet& visited)
-
 {
   if (visited.find(to) != visited.end()) {
     debugPrint(logger, RSZ, "groute_bnet", 2, "Loop found in groute");

@@ -12,3 +12,9 @@ Instance r1
  Cell: DFF_X2
  Library: Nangate45
  Path cells: DFF_X2
+ Input pins:
+  D input in1
+  CK input clk1
+ Output pins:
+  Q output r1q
+  QN output (unconnected)

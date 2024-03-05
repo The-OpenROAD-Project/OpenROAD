@@ -7096,15 +7096,8 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint horizontal_usage = 0;
-    uint vertical_usage = 0;
-    uint up_usage = 0;
-    uint horizontal_capacity = 0;
-    uint vertical_capacity = 0;
-    uint up_capacity = 0;
-    uint horizontal_blockage = 0;
-    uint vertical_blockage = 0;
-    uint up_blockage = 0;
+    uint8_t usage = 0;
+    uint8_t capacity = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -7168,102 +7161,25 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  void setHorizontalCapacity(dbTechLayer* layer,
-                             uint x_idx,
-                             uint y_idx,
-                             uint capacity);
-
-  void setVerticalCapacity(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint capacity);
-
-  void setUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, uint capacity);
-
-  void setHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setHorizontalBlockage(dbTechLayer* layer,
-                             uint x_idx,
-                             uint y_idx,
-                             uint blockage);
-
-  void setVerticalBlockage(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint blockage);
-
-  void setUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+  uint8_t getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   void setCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
+                   uint8_t capacity);
 
-  void setUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint horizontal,
-                uint vertical,
-                uint up);
-
-  void setBlockage(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
-
-  void getCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
-
-  void getUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint& horizontal,
-                uint& vertical,
-                uint& up) const;
-
-  void getBlockage(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
+  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
 
   void resetCongestionMap();
 
   void resetGrid();
 
-  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
-                                                    = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getLayerCongestionMap(dbTechLayer* layer);
+
+  dbMatrix<dbGCellGrid::GCellData> getDirectionCongestionMap(
+      const dbTechLayerDir& direction);
   // User Code End dbGCellGrid
 };
 
@@ -9148,7 +9064,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
 
-  int getPrlEntry(std::string cutClass1, std::string cutClass2);
+  int getPrlEntry(const std::string& cutClass1, const std::string& cutClass2);
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint> row_map,

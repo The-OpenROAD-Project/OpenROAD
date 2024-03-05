@@ -39,7 +39,7 @@
 #include "frRegionQuery.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -103,8 +103,9 @@ class frDesign
 
   void addUpdate(const drUpdate& update)
   {
-    if (updates_.size() == 0)
+    if (updates_.empty()) {
       updates_.resize(MAX_THREADS * 2);
+    }
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);
   }
@@ -121,8 +122,6 @@ class frDesign
   void incrementVersion() { ++version_; }
   int getVersion() const { return version_; }
 
-  ~frDesign() {}
-
  private:
   std::unique_ptr<frBlock> topBlock_;
   std::map<frString, frMaster*> name2master_;
@@ -134,4 +133,4 @@ class frDesign
   std::vector<std::string> user_selected_vias_;
   int version_;
 };
-}  // namespace fr
+}  // namespace drt

@@ -265,7 +265,7 @@ proc detailed_route_debug { args } {
   set box_y1 -1
   set box_x2 -1
   set box_y2 -1
-  if [info exists keys(-box)] {
+  if {[info exists keys(-box)]} {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 118 "-box is a list of 4 coordinates."
@@ -304,7 +304,7 @@ proc pin_access { args } {
           -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
     flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
-  if [info exists keys(-db_process_node)] {
+  if {[info exists keys(-db_process_node)]} {
     set db_process_node $keys(-db_process_node)
   } else {
     set db_process_node ""
@@ -404,43 +404,43 @@ proc detailed_route_worker_debug { args } {
     keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost \
           -marker_decay -ripup_mode -follow_guide} \
     flags {}
-  if [info exists keys(-maze_end_iter)] {
+  if {[info exists keys(-maze_end_iter)]} {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
     set maze_end_iter -1
   }
 
-  if [info exists keys(-drc_cost)] {
+  if {[info exists keys(-drc_cost)]} {
     set drc_cost $keys(-drc_cost)
   } else {
     set drc_cost -1
   }
 
-  if [info exists keys(-marker_cost)] {
+  if {[info exists keys(-marker_cost)]} {
     set marker_cost $keys(-marker_cost)
   } else {
     set marker_cost -1
   }
 
-  if [info exists keys(-fixed_shape_cost)] {
+  if {[info exists keys(-fixed_shape_cost)]} {
     set fixed_shape_cost $keys(-fixed_shape_cost)
   } else {
     set fixed_shape_cost -1
   }
 
-  if [info exists keys(-marker_decay)] {
+  if {[info exists keys(-marker_decay)]} {
     set marker_decay $keys(-marker_decay)
   } else {
     set marker_decay -1
   }
 
-  if [info exists keys(-ripup_mode)] {
+  if {[info exists keys(-ripup_mode)]} {
     set ripup_mode $keys(-ripup_mode)
   } else {
     set ripup_mode -1
   }
 
-  if [info exists keys(-follow_guide)] {
+  if {[info exists keys(-follow_guide)]} {
     set follow_guide $keys(-follow_guide)
   } else {
     set follow_guide -1
@@ -480,7 +480,7 @@ proc check_drc { args } {
     flags {}
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
-  if [info exists keys(-box)] {
+  if {[info exists keys(-box)]} {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 612 "-box is a list of 4 coordinates."

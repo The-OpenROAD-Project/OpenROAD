@@ -77,6 +77,36 @@ class dbSta : public Sta, public ord::OpenRoadObserver
  public:
   ~dbSta() override;
 
+  enum InstType
+  {
+    BLOCK,
+    PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
+    PAD_SPACER,
+    PAD_AREAIO,
+    ENDCAP,
+    FILL,
+    TAPCELL,
+    BUMP,
+    COVER,
+    ANTENNA,
+    TIE,
+    LEF_OTHER,
+    STD_CELL,
+    STD_BUFINV,
+    STD_BUFINV_CLK_TREE,
+    STD_BUFINV_TIMING_REPAIR,
+    STD_CLOCK_GATE,
+    STD_LEVEL_SHIFT,
+    STD_SEQUENTIAL,
+    STD_PHYSICAL,
+    STD_COMBINATIONAL,
+    STD_OTHER
+  };
+
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
                 utl::Logger* logger);
@@ -112,6 +142,12 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   // Highlight path in the gui.
   void highlight(PathRef* path);
+
+  // Report Instances Type
+  std::map<InstType, int> countInstancesByType();
+  std::string getInstanceTypeText(InstType type);
+  InstType getInstanceType(odb::dbInst* inst);
+  void report_cell_usage();
 
   using Sta::netSlack;
   using Sta::replaceCell;

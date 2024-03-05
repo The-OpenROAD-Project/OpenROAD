@@ -10,16 +10,16 @@
 [INFO ODB-0131]     Created 22107 components and 115805 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 44214 connections.
 [INFO ODB-0133]     Created 21542 nets and 71591 connections.
-[WARNING STA-0164] asap7_data/asap7.lib line 13177, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13210, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13243, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13276, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13309, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13342, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 13375, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 14771, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 14804, timing group from output port.
-[WARNING STA-0164] asap7_data/asap7.lib line 14837, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13177, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13210, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13243, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13276, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13309, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13342, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13375, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14771, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14804, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14837, timing group from output port.
 [INFO PSM-0022] Using 0.700V for VDD
 [WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.

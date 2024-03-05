@@ -11,5 +11,6 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 
+# tclint-disable-next-line line-length
 catch {add_pdn_ring -grid "Core" -layers {metal5 metal6} -widths 2.001 -spacings 2.0 -core_offsets 2.0} err
 puts $err
