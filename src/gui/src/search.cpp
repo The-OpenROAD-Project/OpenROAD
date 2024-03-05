@@ -257,11 +257,9 @@ void Search::updateShapes(odb::dbBlock* block)
   data.snet_via_shapes_.clear();
   data.snet_shapes_.clear();
 
-  LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>> net_shapes;
   LayerMap<std::vector<SNetValue<odb::dbNet*>>> snet_shapes;
   LayerMap<std::vector<SNetSBoxValue<odb::dbNet*>>> snet_net_via_shapes;
   for (odb::dbNet* net : block->getNets()) {
-    addNet(net, net_shapes);
     addSNet(net, snet_shapes, snet_net_via_shapes);
   }
   for (const auto& [layer, layer_shapes] : snet_shapes) {
@@ -274,6 +272,11 @@ void Search::updateShapes(odb::dbBlock* block)
         = RtreeSNetSBox<odb::dbNet*>(layer_shapes.begin(), layer_shapes.end());
   }
   snet_net_via_shapes.clear();
+
+  LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>> net_shapes;
+  for (odb::dbNet* net : block->getNets()) {
+    addNet(net, net_shapes);
+  }
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
