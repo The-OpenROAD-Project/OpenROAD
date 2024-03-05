@@ -1357,8 +1357,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
   for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
-    const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex
-                               : net_ids_[nidRPC];
+    const int netID
+        = ordering ? tree_order_cong_[nidRPC].treeIndex : net_ids_[nidRPC];
 
     const int num_terminals = sttrees_[netID].num_terminals;
 
