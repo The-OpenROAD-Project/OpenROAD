@@ -87,7 +87,8 @@ public:
  void repairDesign(double max_wire_length,
                    double slew_margin,
                    double cap_margin,
-                   bool verbose);
+                   bool verbose,
+                   bool skip_resizing);
  void repairDesign(double max_wire_length,  // zero for none (meters)
                    double slew_margin,
                    double cap_margin,
@@ -96,7 +97,8 @@ public:
                    int& slew_violations,
                    int& cap_violations,
                    int& fanout_violations,
-                   int& length_violations);
+                   int& length_violations,
+                   bool skip_resizing);
  int insertedBufferCount() const { return inserted_buffer_count_; }
  void repairNet(Net* net,
                 double max_wire_length,
@@ -119,7 +121,8 @@ protected:
                  int &slew_violations,
                  int &cap_violations,
                  int &fanout_violations,
-                 int &length_violations);
+                 int &length_violations,
+                 bool skip_driver_resizing);
   bool checkLimits(const Pin *drvr_pin,
                    bool check_slew,
                    bool check_cap,

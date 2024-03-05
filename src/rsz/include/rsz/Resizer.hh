@@ -288,7 +288,8 @@ public:
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
                     double cap_margin, // 0.0-1.0
-                    bool verbose);
+                    bool verbose,
+                    bool skip_resizing);
   int repairDesignBufferCount() const;
   // for debugging
   void repairNet(Net *net,

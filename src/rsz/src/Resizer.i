@@ -463,11 +463,12 @@ void
 repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
-                  bool verbose)
+                  bool verbose,
+                  bool skip_resizing)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin, verbose);
+  resizer->repairDesign(max_length, slew_margin, cap_margin, verbose, skip_resizing);
 }
 
 int

@@ -1239,7 +1239,7 @@ Resizer::findResizeSlacks()
   int fanout_violations, length_violations;
   repair_design_->repairDesign(max_wire_length_, 0.0, 0.0, false,
                                repaired_net_count, slew_violations, cap_violations,
-                               fanout_violations, length_violations);
+                               fanout_violations, length_violations, false);
   findResizeSlacks1();
   journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_);
 }
@@ -2567,13 +2567,18 @@ void
 Resizer::repairDesign(double max_wire_length,
                       double slew_margin,
                       double cap_margin,
-                      bool verbose)
+                      bool verbose,
+                      bool skip_resizing)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
   }
-  repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin, verbose);
+  repair_design_->repairDesign(max_wire_length,
+                               slew_margin,
+                               cap_margin,
+                               verbose,
+                               skip_resizing);
 }
 
 int

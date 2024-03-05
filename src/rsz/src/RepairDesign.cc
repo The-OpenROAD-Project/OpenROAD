@@ -110,14 +110,15 @@ void
 RepairDesign::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
-                           bool verbose)
+                           bool verbose,
+                           bool skip_resizing)
 {
   init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length, slew_margin, cap_margin, verbose,
                repaired_net_count, slew_violations, cap_violations,
-               fanout_violations, length_violations);
+               fanout_violations, length_violations, skip_resizing);
 
   if (slew_violations > 0) {
     logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
@@ -150,7 +151,8 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            int &slew_violations,
                            int &cap_violations,
                            int &fanout_violations,
-                           int &length_violations)
+                           int &length_violations,
+                           bool skip_resizing)
 {
   init();
   slew_margin_ = slew_margin;
@@ -201,7 +203,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
         && !drvr->isConstant()) {
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
                 repaired_net_count, slew_violations, cap_violations,
-                fanout_violations, length_violations);
+                fanout_violations, length_violations, skip_resizing);
     }
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 0);
@@ -257,7 +259,7 @@ RepairDesign::repairClkNets(double max_wire_length)
           repairNet(net, clk_pin, drvr,
                     false, false, false, max_length, false,
                     repaired_net_count, slew_violations, cap_violations,
-                    fanout_violations, length_violations);
+                    fanout_violations, length_violations, false);
         }
       }
     }
@@ -310,7 +312,7 @@ RepairDesign::repairNet(Net *net,
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
     repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
               repaired_net_count, slew_violations, cap_violations,
-              fanout_violations, length_violations);
+              fanout_violations, length_violations, false);
   }
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -354,7 +356,8 @@ RepairDesign::repairNet(Net *net,
                         int &slew_violations,
                         int &cap_violations,
                         int &fanout_violations,
-                        int &length_violations)
+                        int &length_violations,
+                        bool skip_driver_resizing)
 {
   // Hands off special nets.
   if (!db_network_->isSpecial(net)) {
@@ -380,7 +383,7 @@ RepairDesign::repairNet(Net *net,
     }
 
     // Resize the driver to normalize slews before repairing limit violations.
-    if (resize_drvr) {
+    if (resize_drvr && !skip_driver_resizing) {
       resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
     }
     // For tristate nets all we can do is resize the driver.
@@ -1155,7 +1158,7 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
   repairNet(out_net, repeater_out_pin, repeater_out_vertex,
             check_slew, check_cap, false /* check_fanout */,
             max_length, resize_drvr, repaired_net_count, slew_violations,
-            cap_violations, fanout_violations, length_violations);
+            cap_violations, fanout_violations, length_violations, false);
   repeater_inputs.push_back(repeater_in_pin);
   repeater_loads.clear();
 }
