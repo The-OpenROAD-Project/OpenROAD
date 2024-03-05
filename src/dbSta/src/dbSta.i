@@ -19,6 +19,7 @@ using sta::Instance;
 %import "odb.i"
 %include "../../Exception.i"
 // OpenSTA swig files
+%include "tcl/StaTclTypes.i"
 %include "tcl/StaTcl.i"
 %include "tcl/NetworkEdit.i"
 %include "sdf/Sdf.i"
@@ -142,6 +143,14 @@ db_network_defined()
   odb::dbChip *chip = db->getChip();
   odb::dbBlock *block = chip->getBlock();
   db_network->readDefAfter(block);
+}
+
+void
+report_cell_usage_cmd()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->report_cell_usage();
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

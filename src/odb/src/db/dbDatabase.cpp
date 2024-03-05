@@ -615,6 +615,16 @@ dbDatabase* dbObject::getDb() const
   return (dbDatabase*) getImpl()->getDatabase();
 }
 
+utl::Logger* _dbDatabase::getLogger() const
+{
+  if (!_logger) {
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
+              << std::endl;
+    exit(1);
+  }
+  return _logger;
+}
+
 utl::Logger* _dbObject::getLogger() const
 {
   return getDatabase()->getLogger();

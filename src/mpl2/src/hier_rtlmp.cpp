@@ -446,7 +446,6 @@ void HierRTLMP::computeMetricsForModules(float core_area)
 
   // Check if placement is feasible in the core area when considering
   // the macro halos
-  float macro_with_halo_area = 0;
   int unfixed_macros = 0;
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
@@ -455,29 +454,27 @@ void HierRTLMP::computeMetricsForModules(float core_area)
           = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
       const auto height
           = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
-      macro_with_halo_area += width * height;
+      macro_with_halo_area_ += width * height;
       unfixed_macros += !inst->getPlacementStatus().isFixed();
     }
   }
-  reportLogicalHierarchyInformation(
-      macro_with_halo_area, core_area, util, core_util);
+  reportLogicalHierarchyInformation(core_area, util, core_util);
 
   if (unfixed_macros == 0) {
     logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
     return;
   }
 
-  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
+  if (macro_with_halo_area_ + metrics_->getStdCellArea() > core_area) {
     logger_->error(MPL,
                    16,
                    "The instance area with halos {} exceeds the core area {}",
-                   macro_with_halo_area + metrics_->getStdCellArea(),
+                   macro_with_halo_area_ + metrics_->getStdCellArea(),
                    core_area);
   }
 }
 
-void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                                  float core_area,
+void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
                                                   float util,
                                                   float core_util)
 {
@@ -497,7 +494,7 @@ void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
-      macro_with_halo_area,
+      macro_with_halo_area_,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       core_area,
       util,
@@ -2660,33 +2657,31 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
-      SACoreSoftMacro* sa = new SACoreSoftMacro(
-          width,
-          height,
-          macros,
-          1.0,     // area weight
-          1000.0,  // outline weight
-          0.0,     // wirelength weight
-          0.0,     // guidance weight
-          0.0,     // fence weight
-          0.0,     // boundary weight
-          0.0,     // macro blockage
-          0.0,     // notch weight
-          0.0,     // no notch size
-          0.0,     // no notch size
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          resize_prob_ / action_sum,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // This will be replaced by min_temperature later
-          c_,
-          random_seed_,
-          graphics_.get(),
-          logger_);
+      SACoreSoftMacro* sa
+          = new SACoreSoftMacro(width,
+                                height,
+                                macros,
+                                1.0,     // area weight
+                                1000.0,  // outline weight
+                                0.0,     // wirelength weight
+                                0.0,     // guidance weight
+                                0.0,     // fence weight
+                                0.0,     // boundary weight
+                                0.0,     // macro blockage
+                                0.0,     // notch weight
+                                0.0,     // no notch size
+                                0.0,     // no notch size
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                resize_prob_ / action_sum,
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_,
+                                graphics_.get(),
+                                logger_);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -2723,33 +2718,31 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width;
       const float height = outline_height * vary_factor_list[run_id++];
-      SACoreSoftMacro* sa = new SACoreSoftMacro(
-          width,
-          height,
-          macros,
-          1.0,     // area weight
-          1000.0,  // outline weight
-          0.0,     // wirelength weight
-          0.0,     // guidance weight
-          0.0,     // fence weight
-          0.0,     // boundary weight
-          0.0,     // macro blockage
-          0.0,     // notch weight
-          0.0,     // no notch size
-          0.0,     // no notch size
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          resize_prob_ / action_sum,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // later this will be replaced by min_temperature
-          c_,
-          random_seed_,
-          graphics_.get(),
-          logger_);
+      SACoreSoftMacro* sa
+          = new SACoreSoftMacro(width,
+                                height,
+                                macros,
+                                1.0,     // area weight
+                                1000.0,  // outline weight
+                                0.0,     // wirelength weight
+                                0.0,     // guidance weight
+                                0.0,     // fence weight
+                                0.0,     // boundary weight
+                                0.0,     // macro blockage
+                                0.0,     // notch weight
+                                0.0,     // no notch size
+                                0.0,     // no notch size
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                resize_prob_ / action_sum,
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_,
+                                graphics_.get(),
+                                logger_);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -2897,28 +2890,26 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
-      SACoreHardMacro* sa = new SACoreHardMacro(
-          width,
-          height,
-          macros,
-          1.0,     // area_weight
-          1000.0,  // outline weight
-          0.0,     // wirelength weight
-          0.0,     // guidance
-          0.0,     // fence weight
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          0.0,  // no flip
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // later this will be replaced by min_temperature
-          c_,
-          random_seed_ + run_id,
-          graphics_.get(),
-          logger_);
+      SACoreHardMacro* sa
+          = new SACoreHardMacro(width,
+                                height,
+                                macros,
+                                1.0,     // area_weight
+                                1000.0,  // outline weight
+                                0.0,     // wirelength weight
+                                0.0,     // guidance
+                                0.0,     // fence weight
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                0.0,  // no flip
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_ + run_id,
+                                graphics_.get(),
+                                logger_);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -2972,8 +2963,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                 init_prob_,
                                 max_num_step_,
                                 num_perturb_per_step,
-                                k_,
-                                c_,
                                 random_seed_ + run_id,
                                 graphics_.get(),
                                 logger_);
@@ -3150,7 +3139,11 @@ void HierRTLMP::setIOClustersBlockages()
   }
   max_width = num_hor_access > 0 ? max_width / num_hor_access : max_width;
   max_height = num_ver_access > 0 ? max_height / num_ver_access : max_height;
-  const float depth = std_cell_area / sum_length;
+  const float macro_dominance_factor
+      = macro_with_halo_area_
+        / (root_cluster_->getWidth() * root_cluster_->getHeight());
+  const float depth = (std_cell_area / sum_length)
+                      * std::pow((1 - macro_dominance_factor), 2);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3744,34 +3737,31 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
-      SACoreSoftMacro* sa = new SACoreSoftMacro(
-          outline.getWidth(),
-          outline.getHeight(),
-          shaped_macros,
-          area_weight_,
-          outline_weight_,
-          wirelength_weight_,
-          guidance_weight_,
-          fence_weight_,
-          boundary_weight_,
-          macro_blockage_weight_,
-          notch_weight_,
-          notch_h_th_,
-          notch_v_th_,
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          resize_prob_ / action_sum,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // we will not use FastSA (k_, c_ will be replaced by
-               // min_temperature later) [20221219]
-          c_,
-          random_seed_,
-          graphics_.get(),
-          logger_);
+      SACoreSoftMacro* sa
+          = new SACoreSoftMacro(outline.getWidth(),
+                                outline.getHeight(),
+                                shaped_macros,
+                                area_weight_,
+                                outline_weight_,
+                                wirelength_weight_,
+                                guidance_weight_,
+                                fence_weight_,
+                                boundary_weight_,
+                                macro_blockage_weight_,
+                                notch_weight_,
+                                notch_h_th_,
+                                notch_v_th_,
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                resize_prob_ / action_sum,
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_,
+                                graphics_.get(),
+                                logger_);
       sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -4000,34 +3990,31 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         // Note that all the probabilities are normalized to the summation
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
-        SACoreSoftMacro* sa = new SACoreSoftMacro(
-            outline.getWidth(),
-            outline.getHeight(),
-            shaped_macros,
-            area_weight_,
-            outline_weight_,
-            wirelength_weight_,
-            guidance_weight_,
-            fence_weight_,
-            boundary_weight_,
-            macro_blockage_weight_,
-            notch_weight_,
-            notch_h_th_,
-            notch_v_th_,
-            pos_swap_prob_ / action_sum,
-            neg_swap_prob_ / action_sum,
-            double_swap_prob_ / action_sum,
-            exchange_swap_prob_ / action_sum,
-            resize_prob_ / action_sum,
-            init_prob_,
-            max_num_step_,
-            num_perturb_per_step,
-            k_,  // we will not use FastSA (k_, c_ will be replaced by
-                 // min_temperature later) [20221219]
-            c_,
-            random_seed_,
-            graphics_.get(),
-            logger_);
+        SACoreSoftMacro* sa
+            = new SACoreSoftMacro(outline.getWidth(),
+                                  outline.getHeight(),
+                                  shaped_macros,
+                                  area_weight_,
+                                  outline_weight_,
+                                  wirelength_weight_,
+                                  guidance_weight_,
+                                  fence_weight_,
+                                  boundary_weight_,
+                                  macro_blockage_weight_,
+                                  notch_weight_,
+                                  notch_h_th_,
+                                  notch_v_th_,
+                                  pos_swap_prob_ / action_sum,
+                                  neg_swap_prob_ / action_sum,
+                                  double_swap_prob_ / action_sum,
+                                  exchange_swap_prob_ / action_sum,
+                                  resize_prob_ / action_sum,
+                                  init_prob_,
+                                  max_num_step_,
+                                  num_perturb_per_step,
+                                  random_seed_,
+                                  graphics_.get(),
+                                  logger_);
         sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
         sa->setFences(fences);
         sa->setGuides(guides);
@@ -4188,6 +4175,10 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   }
   nets.clear();
   nets = merged_nets;
+
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
 }
 
 // Multilevel macro placement without bus planning
@@ -4538,34 +4529,31 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
-      SACoreSoftMacro* sa = new SACoreSoftMacro(
-          outline.getWidth(),
-          outline.getHeight(),
-          shaped_macros,
-          area_weight_,
-          outline_weight_,
-          wirelength_weight_,
-          guidance_weight_,
-          fence_weight_,
-          boundary_weight_,
-          macro_blockage_weight_,
-          notch_weight_,
-          notch_h_th_,
-          notch_v_th_,
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          resize_prob_ / action_sum,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // we will not use FastSA (k_, c_ will be replaced by
-               // min_temperature later) [20221219]
-          c_,
-          random_seed_,
-          graphics_.get(),
-          logger_);
+      SACoreSoftMacro* sa
+          = new SACoreSoftMacro(outline.getWidth(),
+                                outline.getHeight(),
+                                shaped_macros,
+                                area_weight_,
+                                outline_weight_,
+                                wirelength_weight_,
+                                guidance_weight_,
+                                fence_weight_,
+                                boundary_weight_,
+                                macro_blockage_weight_,
+                                notch_weight_,
+                                notch_h_th_,
+                                notch_v_th_,
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                resize_prob_ / action_sum,
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_,
+                                graphics_.get(),
+                                logger_);
       sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -5025,34 +5013,31 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
-      SACoreSoftMacro* sa = new SACoreSoftMacro(
-          outline.getWidth(),
-          outline.getHeight(),
-          shaped_macros,
-          area_weight_,
-          outline_weight_,
-          wirelength_weight_,
-          guidance_weight_,
-          fence_weight_,
-          boundary_weight_,
-          macro_blockage_weight_,
-          notch_weight_,
-          notch_h_th_,
-          notch_v_th_,
-          pos_swap_prob_ / action_sum,
-          neg_swap_prob_ / action_sum,
-          double_swap_prob_ / action_sum,
-          exchange_swap_prob_ / action_sum,
-          resize_prob_ / action_sum,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          k_,  // we will not use FastSA (k_, c_ will be replaced by
-               // min_temperature later) [20221219]
-          c_,
-          random_seed_,
-          graphics_.get(),
-          logger_);
+      SACoreSoftMacro* sa
+          = new SACoreSoftMacro(outline.getWidth(),
+                                outline.getHeight(),
+                                shaped_macros,
+                                area_weight_,
+                                outline_weight_,
+                                wirelength_weight_,
+                                guidance_weight_,
+                                fence_weight_,
+                                boundary_weight_,
+                                macro_blockage_weight_,
+                                notch_weight_,
+                                notch_h_th_,
+                                notch_v_th_,
+                                pos_swap_prob_ / action_sum,
+                                neg_swap_prob_ / action_sum,
+                                double_swap_prob_ / action_sum,
+                                exchange_swap_prob_ / action_sum,
+                                resize_prob_ / action_sum,
+                                init_prob_,
+                                max_num_step_,
+                                num_perturb_per_step,
+                                random_seed_,
+                                graphics_.get(),
+                                logger_);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -5513,6 +5498,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   }    // end macro cluster
   // set global configuration
 
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
+
   // Use exchange more often when there are more instances of a common
   // master.
   const float exchange_swap_prob
@@ -5571,8 +5560,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 init_prob_,
                                 max_num_step_,
                                 num_perturb_per_step,
-                                k_,  // later will be updated to min_temperature
-                                c_,
                                 random_seed_ + run_id,
                                 graphics_.get(),
                                 logger_);
@@ -6473,6 +6460,11 @@ void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   graphics_ = std::move(graphics);
+}
+
+void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  graphics_->setShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

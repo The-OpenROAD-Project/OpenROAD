@@ -118,7 +118,7 @@ RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Sort failing endpoints by slack.
   const VertexSet *endpoints = sta_->endpoints();
-  VertexSeq violating_ends;
+  vector<pair<Vertex*, Slack> > violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
@@ -126,12 +126,13 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   for (Vertex *end : *endpoints) {
     const Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin) {
-      violating_ends.push_back(end);
+      violating_ends.emplace_back(end, end_slack);
     }
   }
-  sort(violating_ends, [=](Vertex *end1, Vertex *end2) {
-    return sta_->vertexSlack(end1, max_) < sta_->vertexSlack(end2, max_);
-  });
+  std::stable_sort(violating_ends.begin(), violating_ends.end(),
+		   [](const auto& end_slack1, const auto& end_slack2) {
+		     return end_slack1.second < end_slack2.second;
+		   });
   debugPrint(logger_, RSZ, "repair_setup", 1, "Violating endpoints {}/{} {}%",
              violating_ends.size(),
              endpoints->size(),
@@ -156,7 +157,8 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   if (verbose) {
     printProgress(print_iteration, false, false);
   }
-  for (Vertex *end : violating_ends) {
+  for (const auto& end_original_slack : violating_ends) {
+    Vertex* end = end_original_slack.first;
     resizer_->updateParasitics();
     sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);

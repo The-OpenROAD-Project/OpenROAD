@@ -1,8 +1,8 @@
 # test for error at non rectangular region
 source "helpers.tcl"
 
-read_lef sky130hd/sky130hd.tlef 
-read_lef sky130hd/sky130_fd_sc_hd_merged.lef 
+read_lef sky130hd/sky130hd.tlef
+read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 read_lef sky130_non_rect_region/HEADER.lef
 read_lef sky130_non_rect_region/SLC.lef
 

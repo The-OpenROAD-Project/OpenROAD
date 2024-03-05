@@ -32,24 +32,15 @@
 #include "db/taObj/taShape.h"
 #include "db/taObj/taVia.h"
 
-namespace fr {
+namespace drt {
 class frGuide;
 
 class taPin : public taBlockObject
 {
  public:
   // constructors
-  taPin()
-      : taBlockObject(),
-        guide_(nullptr),
-        pinFigs_(),
-        nextIrouteDir_(0),
-        hasPinCoord_(false),
-        pinCoord_(0),
-        cost_(0),
-        numAssigned_(0)
-  {
-  }
+  taPin() = default;
+
   // getters
   int getNextIrouteDir() const { return nextIrouteDir_; }
   bool hasPinCoord() const { return hasPinCoord_; }
@@ -82,19 +73,18 @@ class taPin : public taBlockObject
   {
     if (this->cost_ != b.cost_) {
       return this->getCost() > b.getCost();
-    } else {
-      return this->getId() < b.getId();
     }
+    return this->getId() < b.getId();
   }
 
  protected:
-  frGuide* guide_;
+  frGuide* guide_{nullptr};
   std::vector<std::unique_ptr<taPinFig>> pinFigs_;
-  int nextIrouteDir_;  // for nbr global guides
-  bool hasPinCoord_;
-  frCoord pinCoord_;  // for local guides and pin guides
-  frCost cost_;
-  int numAssigned_;
+  int nextIrouteDir_{0};  // for nbr global guides
+  bool hasPinCoord_{false};
+  frCoord pinCoord_{0};  // for local guides and pin guides
+  frCost cost_{0};
+  int numAssigned_{0};
 };
 
 struct taPinComp
@@ -104,4 +94,4 @@ struct taPinComp
     return *lhs < *rhs;
   }
 };
-}  // namespace fr
+}  // namespace drt

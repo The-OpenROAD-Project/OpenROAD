@@ -31,17 +31,8 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class gcBlockObject : public frBlockObject
 {
- public:
-  virtual ~gcBlockObject() {}
-  // getters
-  // setters
-  // others
- protected:
-  // constructors
-  gcBlockObject() : frBlockObject() {}
-  gcBlockObject(const gcBlockObject& in) : frBlockObject(in) {}
 };
-}  // namespace fr
+}  // namespace drt

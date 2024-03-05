@@ -133,7 +133,7 @@ void Replace::reset()
   gui_debug_initial_ = false;
 }
 
-void Replace::doIncrementalPlace()
+void Replace::doIncrementalPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -179,7 +179,7 @@ void Replace::doIncrementalPlace()
       pb->unlockAll();
     }
     // pbc_->unlockAll();
-    doNesterovPlace();
+    doNesterovPlace(threads);
     return;
   }
 
@@ -194,9 +194,9 @@ void Replace::doIncrementalPlace()
   doInitialPlace();
 
   int previous_max_iter = nesterovPlaceMaxIter_;
-  initNesterovPlace();
+  initNesterovPlace(threads);
   setNesterovPlaceMaxIter(300);
-  int iter = doNesterovPlace();
+  int iter = doNesterovPlace(threads);
   setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
@@ -207,7 +207,7 @@ void Replace::doIncrementalPlace()
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
-    doNesterovPlace(iter + 1);
+    doNesterovPlace(threads, iter + 1);
   }
 }
 
@@ -261,7 +261,7 @@ void Replace::runMBFF(int max_sz,
   pntset.Run(max_sz, alpha, beta);
 }
 
-bool Replace::initNesterovPlace()
+bool Replace::initNesterovPlace(int threads)
 {
   if (!pbc_) {
     PlacerBaseVars pbVars;
@@ -303,7 +303,7 @@ bool Replace::initNesterovPlace()
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
+    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, threads);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
@@ -363,9 +363,9 @@ bool Replace::initNesterovPlace()
   return true;
 }
 
-int Replace::doNesterovPlace(int start_iter)
+int Replace::doNesterovPlace(int threads, int start_iter)
 {
-  if (!initNesterovPlace()) {
+  if (!initNesterovPlace(threads)) {
     return 0;
   }
   if (timingDrivenMode_) {
@@ -431,10 +431,10 @@ void Replace::setUniformTargetDensityMode(bool mode)
   uniformTargetDensityMode_ = mode;
 }
 
-float Replace::getUniformTargetDensity()
+float Replace::getUniformTargetDensity(int threads)
 {
   // TODO: update to be compatible with multiple target densities
-  if (initNesterovPlace()) {
+  if (initNesterovPlace(threads)) {
     return nbVec_[0]->uniformTargetDensity();
   }
   return 1;
