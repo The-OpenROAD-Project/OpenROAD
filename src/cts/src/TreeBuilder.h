@@ -235,7 +235,7 @@ class TreeBuilder
         return "regular";
       case macroTree:
         return "macro";
-      default:
+      case registerTree:
         return "register";
     }
     return "unknown";
