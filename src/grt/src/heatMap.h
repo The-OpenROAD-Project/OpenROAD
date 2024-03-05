@@ -73,10 +73,10 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
 
   bool populateMapForLayer(odb::dbTechLayer* layer, odb::dbGCellGrid* grid);
   bool populateMapForDirection(Direction direction, odb::dbGCellGrid* grid);
-  double defineValue(const int capacity,
-                     const int usage,
-                     const double congestion,
-                     const bool show_data);
+  double defineValue(int capacity,
+                     int usage,
+                     double congestion,
+                     bool show_data);
   void setCongestionValues(const odb::dbGCellGrid::GCellData& hor_cong_data,
                            const odb::dbGCellGrid::GCellData& ver_cong_data,
                            int& capacity,
