@@ -270,10 +270,8 @@ add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
@@ -282,6 +280,8 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
+# mpl2 and par add_subdirectory() statements are conditionally added below
+# due to issues with or-tools in macOS systems
 
 ################################################################
 
@@ -353,6 +353,8 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_libraries(openroad mpl2 par)
   target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
   target_compile_definitions(openroad PRIVATE ENABLE_PAR)
+  add_subdirectory(mpl2)
+  add_subdirectory(par)
 else()
   message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
 endif()

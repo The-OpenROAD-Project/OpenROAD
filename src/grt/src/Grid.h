@@ -107,23 +107,14 @@ class Grid
     return vertical_edges_capacities_;
   };
 
-  void addHorizontalCapacity(int value, int layer)
+  void setHorizontalCapacity(int capacity, int layer)
   {
-    horizontal_edges_capacities_[layer] = value;
+    horizontal_edges_capacities_[layer] = capacity;
   }
-  void addVerticalCapacity(int value, int layer)
+  void setVerticalCapacity(int capacity, int layer)
   {
-    vertical_edges_capacities_[layer] = value;
+    vertical_edges_capacities_[layer] = capacity;
   }
-
-  void updateHorizontalEdgesCapacities(int layer, int reduction)
-  {
-    horizontal_edges_capacities_[layer] = reduction;
-  };
-  void updateVerticalEdgesCapacities(int layer, int reduction)
-  {
-    vertical_edges_capacities_[layer] = reduction;
-  };
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 

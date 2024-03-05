@@ -46,7 +46,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr::io {
+namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
                                        frCoord,       // upperWidth
@@ -179,7 +179,8 @@ class Parser
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       T* term,
-      frBlockObject* origTerm);
+      frBlockObject* origTerm,
+      const dbTransform& xform);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
@@ -297,4 +298,4 @@ class Writer
   std::vector<frViaDef*> viaDefs_;
 };
 
-}  // namespace fr::io
+}  // namespace drt::io

@@ -259,6 +259,8 @@ class Shape
   void addBPinToDb(const odb::Rect& rect) const;
 
   void updateIBTermConnections(std::set<odb::Rect>& terms);
+
+  bool hasDBConnectivity() const;
 };
 
 class FollowPinShape : public Shape

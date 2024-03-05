@@ -17,7 +17,7 @@ set_load 50 [get_net u6zn]
 set_load 50 [get_net u7zn]
 
 set_max_transition .15 [current_design]
-report_net -connections -verbose u1/ZN
+report_net u1/ZN
 report_check_types -max_slew -max_cap -max_fanout -violators
 
 repair_design

@@ -31,7 +31,7 @@
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
 
-using namespace fr;
+namespace drt {
 
 bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                              grNode* nextPinNode,
@@ -64,7 +64,7 @@ bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
   // push connected components to wavefront
   for (auto& idx : connComps) {
     if (isDst(idx.x(), idx.y(), idx.z())) {
-      path.push_back(FlexMazeIdx(idx.x(), idx.y(), idx.z()));
+      path.emplace_back(idx.x(), idx.y(), idx.z());
       return true;
     }
     getPoint(idx.x(), idx.y(), currPt);
@@ -91,10 +91,9 @@ bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
     if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;
-    } else {
-      // expand and update wavefront
-      expandWavefront(currGrid, dstMazeIdx1, dstMazeIdx2, centerPt);
     }
+    // expand and update wavefront
+    expandWavefront(currGrid, dstMazeIdx1, dstMazeIdx2, centerPt);
   }
   return false;
 }
@@ -156,10 +155,10 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
       std::cout << "Warning: unexpected direction in tracBackPath\n";
       break;
     }
-    root.push_back(FlexMazeIdx(currX, currY, currZ));
+    root.emplace_back(currX, currY, currZ);
     // push point to path
     if (currDir != prevDir) {
-      path.push_back(FlexMazeIdx(currX, currY, currZ));
+      path.emplace_back(currX, currY, currZ);
     }
     getPrevGrid(currX, currY, currZ, currDir);
     prevDir = currDir;
@@ -168,13 +167,13 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
   while (isSrc(currX, currY, currZ) == false) {
     // get last direction
     currDir = getPrevAstarNodeDir(currX, currY, currZ);
-    root.push_back(FlexMazeIdx(currX, currY, currZ));
+    root.emplace_back(currX, currY, currZ);
     if (currDir == frDirEnum::UNKNOWN) {
       std::cout << "Warning: unexpected direction in tracBackPath\n";
       break;
     }
     if (currDir != prevDir) {
-      path.push_back(FlexMazeIdx(currX, currY, currZ));
+      path.emplace_back(currX, currY, currZ);
     }
     getPrevGrid(currX, currY, currZ, currDir);
     prevDir = currDir;
@@ -182,7 +181,7 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
   // add final path to src, only add when path exists; no path exists (src =
   // dst)
   if (!path.empty()) {
-    path.push_back(FlexMazeIdx(currX, currY, currZ));
+    path.emplace_back(currX, currY, currZ);
   }
   for (auto& mi : path) {
     ccMazeIdx1.set(std::min(ccMazeIdx1.x(), mi.x()),
@@ -227,7 +226,6 @@ void FlexGRGridGraph::getPrevGrid(frMIdx& gridX,
       break;
     default:;
   }
-  return;
 }
 
 void FlexGRGridGraph::expandWavefront(FlexGRWavefrontGrid& currGrid,
@@ -273,9 +271,8 @@ bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid& currGrid,
       || getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN
       || currGrid.getLastDir() == dir) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
 void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
@@ -324,7 +321,6 @@ void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
     // add to wavefront
     wavefront_.push(nextWavefrontGrid);
   }
-  return;
 }
 
 void FlexGRGridGraph::getNextGrid(frMIdx& gridX,
@@ -353,7 +349,6 @@ void FlexGRGridGraph::getNextGrid(frMIdx& gridX,
       break;
     default:;
   }
-  return;
 }
 
 frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
@@ -434,3 +429,5 @@ FlexMazeIdx FlexGRGridGraph::getTailIdx(const FlexMazeIdx& currIdx,
   }
   return FlexMazeIdx(gridX, gridY, gridZ);
 }
+
+}  // namespace drt

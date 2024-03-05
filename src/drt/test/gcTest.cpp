@@ -45,7 +45,8 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
-using namespace fr;
+namespace drt {
+
 namespace bdata = boost::unit_test::data;
 
 // Fixture for GC tests
@@ -1344,3 +1345,5 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
 }
 
 BOOST_AUTO_TEST_SUITE_END();
+
+}  // namespace drt

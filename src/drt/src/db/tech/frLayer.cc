@@ -28,98 +28,103 @@
 
 #include "db/tech/frLayer.h"
 
-using namespace fr;
+namespace drt {
 
 void frLayer::printAllConstraints(utl::Logger* logger)
 {
-  for (auto& constraint : constraints) {
+  for (auto& constraint : constraints_) {
     constraint->report(logger);
   }
-  if (lef58CutSpacingTableSameNetMetalConstraint)
-    lef58CutSpacingTableSameNetMetalConstraint->report(logger);
-  if (lef58CutSpacingTableDiffNetConstraint)
-    lef58CutSpacingTableDiffNetConstraint->report(logger);
-  if (lef58SameNetInterCutSpacingTableConstraint)
-    lef58SameNetInterCutSpacingTableConstraint->report(logger);
-  if (lef58SameMetalInterCutSpacingTableConstraint)
-    lef58SameMetalInterCutSpacingTableConstraint->report(logger);
-  if (lef58DefaultInterCutSpacingTableConstraint)
-    lef58DefaultInterCutSpacingTableConstraint->report(logger);
-  for (auto& constraint : lef58SpacingEndOfLineConstraints) {
+  if (lef58CutSpacingTableSameNetMetalConstraint_) {
+    lef58CutSpacingTableSameNetMetalConstraint_->report(logger);
+  }
+  if (lef58CutSpacingTableDiffNetConstraint_) {
+    lef58CutSpacingTableDiffNetConstraint_->report(logger);
+  }
+  if (lef58SameNetInterCutSpacingTableConstraint_) {
+    lef58SameNetInterCutSpacingTableConstraint_->report(logger);
+  }
+  if (lef58SameMetalInterCutSpacingTableConstraint_) {
+    lef58SameMetalInterCutSpacingTableConstraint_->report(logger);
+  }
+  if (lef58DefaultInterCutSpacingTableConstraint_) {
+    lef58DefaultInterCutSpacingTableConstraint_->report(logger);
+  }
+  for (auto& constraint : lef58SpacingEndOfLineConstraints_) {
     constraint->report(logger);
   }
-  if (minSpc) {
-    minSpc->report(logger);
+  if (minSpc_) {
+    minSpc_->report(logger);
   }
-  if (spacingSamenet) {
-    spacingSamenet->report(logger);
+  if (spacingSamenet_) {
+    spacingSamenet_->report(logger);
   }
-  for (auto& constraint : eols) {
+  for (auto& constraint : eols_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : cutConstraints) {
+  for (auto& constraint : cutConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : cutSpacingSamenetConstraints) {
+  for (auto& constraint : cutSpacingSamenetConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : interLayerCutSpacingConstraints) {
+  for (auto& constraint : interLayerCutSpacingConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : interLayerCutSpacingSamenetConstraints) {
+  for (auto& constraint : interLayerCutSpacingSamenetConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : lef58CutSpacingConstraints) {
+  for (auto& constraint : lef58CutSpacingConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : lef58CutSpacingSamenetConstraints) {
+  for (auto& constraint : lef58CutSpacingSamenetConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : minEnclosedAreaConstraints) {
+  for (auto& constraint : minEnclosedAreaConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  if (areaConstraint) {
-    areaConstraint->report(logger);
+  if (areaConstraint_) {
+    areaConstraint_->report(logger);
   }
-  if (minStepConstraint) {
-    minStepConstraint->report(logger);
+  if (minStepConstraint_) {
+    minStepConstraint_->report(logger);
   }
-  for (auto& constraint : lef58MinStepConstraints) {
+  for (auto& constraint : lef58MinStepConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  if (minWidthConstraint) {
-    minWidthConstraint->report(logger);
+  if (minWidthConstraint_) {
+    minWidthConstraint_->report(logger);
   }
-  for (auto& constraint : minimumcutConstraints) {
+  for (auto& constraint : minimumcutConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  if (lef58RectOnlyConstraint) {
-    lef58RectOnlyConstraint->report(logger);
+  if (lef58RectOnlyConstraint_) {
+    lef58RectOnlyConstraint_->report(logger);
   }
-  if (lef58RightWayOnGridOnlyConstraint) {
-    lef58RightWayOnGridOnlyConstraint->report(logger);
+  if (lef58RightWayOnGridOnlyConstraint_) {
+    lef58RightWayOnGridOnlyConstraint_->report(logger);
   }
-  for (auto& constraint : lef58CornerSpacingConstraints) {
+  for (auto& constraint : lef58CornerSpacingConstraints_) {
     if (constraint) {
       constraint->report(logger);
     }
@@ -175,3 +180,5 @@ frCoord frLayer::getMinSpacingValue(frCoord width1,
   }
   return std::max(rangeSpc, minSpc);
 }
+
+}  // namespace drt
