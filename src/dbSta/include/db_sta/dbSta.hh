@@ -95,13 +95,13 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   Slack netSlack(const dbNet* net, const MinMax* min_max);
 
-  // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
   std::set<dbNet*> findClkNets();
+  std::set<Net*> findClkNetsH();
   std::set<dbNet*> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;

@@ -954,6 +954,7 @@ ObjectId dbNetwork::id(const Pin* pin) const
     return moditerm->getId();
   if (bterm)
     return bterm->getId();
+  return 0;
 }
 
 Instance* dbNetwork::instance(const Pin* pin) const
@@ -2109,6 +2110,58 @@ void dbNetwork::staToDb(const Cell* cell,
   }
 }
 
+
+//Find the db nets for a mod net
+
+class FindDbNets: public PinVisitor
+{
+public:
+  FindDbNets(const dbNetwork* network):network_(network){}
+  virtual void operator() (const Pin* pin);
+
+  std::set<dbNet*> db_nets_;
+  const dbNetwork* network_;
+};
+
+void
+FindDbNets::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModITerm* moditerm;
+  dbModBTerm* modbterm;
+  network_ -> staToDb(pin, iterm, bterm, moditerm, modbterm);
+  if (iterm){
+    dbNet* dnet = iterm->getNet();
+    if (dnet)
+      db_nets_.insert(dnet);
+  }
+  if (bterm){
+     dbNet* dnet = bterm->getNet();
+    if (dnet)
+      db_nets_.insert(dnet);
+  }
+}
+  
+dbNet*
+dbNetwork::findDbNetForModNet(dbModNet* mod_net) const{
+  FindDbNets dbv(this);
+  NetSet visited_nets(this);
+  visitConnectedPins(dbToSta(mod_net),dbv,visited_nets);
+  if (dbv.db_nets_.size() ==1){
+    //    printf("*Found db net %s for  mod net %s\n",
+    //	   name(dbToSta(*(dbv.db_nets_.begin()))),
+    //	   name(dbToSta(mod_net)));
+    return *(dbv.db_nets_.begin());
+  }
+  else{
+    printf("Expected only one db net for mod net %s\n",
+	   name(dbToSta(mod_net)));
+  }
+  return nullptr;
+}
+
+
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
   const ConcreteCell* ccell = cell;
@@ -2207,6 +2260,11 @@ void dbNetwork::staToDb(PortDirection* dir,
 }
 
 ////////////////////////////////////////////////////////////////
+Network* dbNetwork::dbToSta(dbNetwork* nwk) const
+{
+  return reinterpret_cast<Network*>(nwk);
+}
+
 
 Instance* dbNetwork::dbToSta(dbInst* inst) const
 {

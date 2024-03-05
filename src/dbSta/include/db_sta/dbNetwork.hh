@@ -119,6 +119,9 @@ class dbNetwork : public ConcreteNetwork
 
   LibertyCell* libertyCell(dbInst* inst);
 
+  // Given a mod net find the corresponding db net, if any.
+  dbNet* findDbNetForModNet(dbModNet* mod_net) const;
+
   // Use the this if you know you are dealing with a leaf instance
   dbInst* staToDb(const Instance* instance) const;
   // Use the this if you might have a hierarchical instance
@@ -154,6 +157,7 @@ class dbNetwork : public ConcreteNetwork
                dbSigType& sig_type,
                dbIoType& io_type) const;
 
+  Network* dbToSta(dbNetwork* dbnetwork) const;
   Pin* dbToSta(dbBTerm* bterm) const;
 
   Term* dbToStaTerm(dbBTerm* bterm) const;
@@ -302,6 +306,7 @@ class dbNetwork : public ConcreteNetwork
   void readDbNetlistAfter();
   void makeTopCell();
   void findConstantNets();
+
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
