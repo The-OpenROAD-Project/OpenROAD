@@ -263,7 +263,6 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
     net = new FrNet;
     nets_.push_back(net);
     netID = nets_.size() - 1;
-    net_ids_.push_back(netID);
     db_net_id_map_[db_net] = netID;
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
   }
@@ -275,6 +274,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              max_layer,
              slack,
              edge_cost_per_layer);
+  net_ids_.push_back(netID);
 
   return net;
 }
