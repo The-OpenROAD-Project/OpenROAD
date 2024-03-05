@@ -1218,10 +1218,12 @@ void FastRouteCore::StNetOrder()
   tree_order_cong_.resize(net_ids_.size());
 
   i = 0;
-  for (const int& netID : net_ids_) {
+  for (int j = 0; j < net_ids_.size(); j++) {
+    int netID = net_ids_[j];
+
     stree = &(sttrees_[netID]);
-    tree_order_cong_[netID].xmin = 0;
-    tree_order_cong_[netID].treeIndex = netID;
+    tree_order_cong_[j].xmin = 0;
+    tree_order_cong_[j].treeIndex = netID;
 
     for (ind = 0; ind < stree->num_edges(); ind++) {
       const auto& treeedges = stree->edges;
@@ -1234,13 +1236,13 @@ void FastRouteCore::StNetOrder()
           min_y = std::min(gridsY[i], gridsY[i + 1]);
           const int cap = getEdgeCapacity(
               nets_[netID], gridsX[i], min_y, EdgeDirection::Vertical);
-          tree_order_cong_[netID].xmin
+          tree_order_cong_[j].xmin
               += std::max(0, v_edges_[min_y][gridsX[i]].usage - cap);
         } else {  // a horizontal edge
           min_x = std::min(gridsX[i], gridsX[i + 1]);
           const int cap = getEdgeCapacity(
               nets_[netID], min_x, gridsY[i], EdgeDirection::Horizontal);
-          tree_order_cong_[netID].xmin
+          tree_order_cong_[j].xmin
               += std::max(0, h_edges_[gridsY[i]][min_x].usage - cap);
         }
       }
@@ -1252,11 +1254,11 @@ void FastRouteCore::StNetOrder()
 
   // Set the 70% (or less) of non critical nets that doesn't have overflow
   // with the lowest priority
-  for (int net_id : net_ids_) {
-    auto order_element = tree_order_cong_[net_id];
+  for (int ord_elID = 0; ord_elID < net_ids_.size(); ord_elID++) {
+    auto order_element = tree_order_cong_[ord_elID];
     if (nets_[order_element.treeIndex]->getSlack()
         == std::ceil(std::numeric_limits<float>::lowest())) {
-      if (order_element.xmin == 0 && (net_id >= (netCount() * 30 / 100))) {
+      if (order_element.xmin == 0 && (ord_elID >= (netCount() * 30 / 100))) {
         nets_[order_element.treeIndex]->setSlack(
             std::numeric_limits<float>::max());
       }
