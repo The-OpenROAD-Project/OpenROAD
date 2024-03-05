@@ -323,7 +323,7 @@ std::string dbSta::getInstanceTypeText(InstType type)
     case STD_PHYSICAL:
       return "Generic Physical";
     case STD_COMBINATIONAL:
-      return "Complex combinational cell";
+      return "Multi-Input combinational cell";
     case STD_OTHER:
       return "Other";
   }
