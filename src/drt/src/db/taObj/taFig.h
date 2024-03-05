@@ -33,7 +33,7 @@
 #include "db/infra/frBox.h"
 #include "db/taObj/taBlockObject.h"
 
-namespace fr {
+namespace drt {
 class taFig : public taBlockObject
 {
  public:
@@ -91,4 +91,4 @@ class taPinFig : public taConnFig
   frNet* net_ = nullptr;
 };
 
-}  // namespace fr
+}  // namespace drt

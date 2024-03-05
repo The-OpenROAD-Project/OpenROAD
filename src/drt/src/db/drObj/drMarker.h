@@ -30,7 +30,7 @@
 
 #include "db/drObj/drBlockObject.h"
 
-namespace fr {
+namespace drt {
 class frConstraint;
 class drNet;
 class drMazeMarker : public drBlockObject
@@ -91,4 +91,4 @@ class drMazeMarker : public drBlockObject
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

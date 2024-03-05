@@ -31,7 +31,7 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frGuide : public frConnFig
 {
@@ -102,4 +102,4 @@ class frGuide : public frConnFig
   frNet* net_{nullptr};
   int index_in_owner_{0};
 };
-}  // namespace fr
+}  // namespace drt

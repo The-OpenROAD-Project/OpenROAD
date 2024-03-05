@@ -31,7 +31,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 
 class drBlockObject : public frBlockObject
 {
@@ -45,4 +45,4 @@ class drBlockObject : public frBlockObject
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

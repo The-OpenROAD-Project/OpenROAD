@@ -34,7 +34,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frShape.h"
 
-namespace fr {
+namespace drt {
 class frViaDef;
 class frPinAccess;
 class frMTerm;
@@ -244,4 +244,4 @@ class frPinAccess : public frBlockObject
   void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

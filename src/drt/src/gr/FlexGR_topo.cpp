@@ -32,7 +32,7 @@
 #include "FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
-using namespace fr;
+namespace drt {
 
 // pinGCellNodes size always >= 2
 void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
@@ -390,9 +390,7 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
 
   // iterate over intvMaps to get overlaps
   for (auto& [coord, intvMap] : horzIntvMaps) {
-    for (auto it = intvMap.begin(); it != intvMap.end(); it++) {
-      auto intv = it->first;
-      auto idxs = it->second;
+    for (auto& [intv, idxs] : intvMap) {
       overlap += (intv.upper() - intv.lower()) * ((int) idxs.size() - 1);
     }
   }
@@ -522,8 +520,8 @@ void FlexGR::genSTTopology_build_tree(std::vector<frNode*>& pinNodes,
       }
     }
   }
-  for (int i = 0; i < (int) steinerNodes.size(); i++) {
-    if (steinerNodes[i]->getParent() == nullptr) {
+  for (auto node : steinerNodes) {
+    if (node->getParent() == nullptr) {
       std::cout << "Error: non-root steiner node does not have parent\n";
     }
   }
@@ -573,17 +571,17 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
   // horz first dimension is y coord, second dimension is x coord
   std::map<frCoord, std::set<frCoord>> horzPinHelper, vertPinHelper;
   // init
-  for (auto [loc, node] : pinGCell2Nodes) {
+  for (const auto& [loc, node] : pinGCell2Nodes) {
     horzPinHelper[loc.y()].insert(loc.x());
     vertPinHelper[loc.x()].insert(loc.y());
   }
 
   // trackIdx == y coord
   for (auto& [trackIdx, currIntvs] : horzIntvs) {
-    for (auto it = currIntvs.begin(); it != currIntvs.end(); it++) {
+    for (auto& intv : currIntvs) {
       std::set<frCoord> lineIdx;
-      auto beginIdx = it->lower();
-      auto endIdx = it->upper();
+      auto beginIdx = intv.lower();
+      auto endIdx = intv.upper();
       // split by vertSeg
       for (auto it2 = vertIntvs.lower_bound(beginIdx);
            it2 != vertIntvs.end() && it2->first <= endIdx;
@@ -622,10 +620,10 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
 
   // trackIdx == x coord
   for (auto& [trackIdx, currIntvs] : vertIntvs) {
-    for (auto it = currIntvs.begin(); it != currIntvs.end(); it++) {
+    for (auto& intv : currIntvs) {
       std::set<frCoord> lineIdx;
-      auto beginIdx = it->lower();
-      auto endIdx = it->upper();
+      auto beginIdx = intv.lower();
+      auto endIdx = intv.upper();
       // split by horzSeg
       for (auto it2 = horzIntvs.lower_bound(beginIdx);
            it2 != horzIntvs.end() && it2->first <= endIdx;
@@ -813,3 +811,5 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
     }
   }
 }
+
+}  // namespace drt

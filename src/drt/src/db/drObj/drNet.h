@@ -37,7 +37,7 @@
 #include "db/drObj/drVia.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class drNet : public drBlockObject
 {
@@ -206,4 +206,4 @@ class drNet : public drBlockObject
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

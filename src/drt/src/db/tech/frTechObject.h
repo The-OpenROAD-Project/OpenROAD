@@ -44,7 +44,7 @@
 namespace odb {
 class dbTechLayer;
 }
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -189,7 +189,7 @@ class frTechObject
 
   frViaDef* getVia(const frString& name) const { return name2via_.at(name); }
 
-  frViaRuleGenerate* getViaRule(frString name) const
+  frViaRuleGenerate* getViaRule(const frString& name) const
   {
     return name2viaRuleGenerate_.at(name);
   }
@@ -205,11 +205,12 @@ class frTechObject
     return nonDefaultRules_;
   }
 
-  frNonDefaultRule* getNondefaultRule(std::string name)
+  frNonDefaultRule* getNondefaultRule(const std::string& name)
   {
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getName() == name)
+      if (nd->getName() == name) {
         return nd.get();
+      }
     }
     return nullptr;
   }
@@ -218,8 +219,9 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getSpacing(z) > spc)
+      if (nd->getSpacing(z) > spc) {
         spc = nd->getSpacing(z);
+      }
     }
     return spc;
   }
@@ -228,8 +230,9 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getWidth(z) > spc)
+      if (nd->getWidth(z) > spc) {
         spc = nd->getWidth(z);
+      }
     }
     return spc;
   }
@@ -242,10 +245,11 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers_) {
       auto type = layer->getType();
-      if (type == dbTechLayerType::CUT)
+      if (type == dbTechLayerType::CUT) {
         logger->report("Cut layer {}.", layer->getName());
-      else if (type == dbTechLayerType::ROUTING)
+      } else if (type == dbTechLayerType::ROUTING) {
         logger->report("Routing layer {}.", layer->getName());
+      }
       layer->printAllConstraints(logger);
     }
   }
@@ -408,4 +412,4 @@ class frTechObject
 
   friend class FlexRP;
 };
-}  // namespace fr
+}  // namespace drt

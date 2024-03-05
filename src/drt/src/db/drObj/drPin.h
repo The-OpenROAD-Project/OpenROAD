@@ -34,7 +34,7 @@
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frTerm.h"
 
-namespace fr {
+namespace drt {
 
 class drNet;
 
@@ -82,4 +82,4 @@ class drPin : public drBlockObject
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

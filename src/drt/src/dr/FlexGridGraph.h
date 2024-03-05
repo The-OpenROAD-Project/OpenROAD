@@ -39,7 +39,8 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
+
 class FlexDRWorker;
 class FlexDRGraphics;
 class FlexGridGraph
@@ -598,14 +599,14 @@ class FlexGridGraph
           = addToByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void setFixedShapeCostPlanarVert(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  void setFixedShapeCostPlanarVert(frMIdx x, frMIdx y, frMIdx z, frUInt4 c)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
       node.fixedShapeCostPlanarVert = c;
     }
   }
-  void setFixedShapeCostPlanarHorz(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  void setFixedShapeCostPlanarHorz(frMIdx x, frMIdx y, frMIdx z, frUInt4 c)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
@@ -619,7 +620,7 @@ class FlexGridGraph
       node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
     }
   }
-  void setFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  void setFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, frUInt4 c)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
@@ -1225,4 +1226,5 @@ class FlexGridGraph
   friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
-}  // namespace fr
+
+}  // namespace drt

@@ -32,7 +32,7 @@
 #include "db/obj/frMPin.h"
 #include "db/obj/frTerm.h"
 
-namespace fr {
+namespace drt {
 class frMaster;
 
 class frMTerm : public frTerm
@@ -105,4 +105,4 @@ class frMTerm : public frTerm
   std::vector<std::unique_ptr<frMPin>> pins_;  // set later
 };
 
-}  // namespace fr
+}  // namespace drt

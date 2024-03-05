@@ -34,7 +34,7 @@
 #include "db/tech/frViaDef.h"
 #include "dr/FlexMazeTypes.h"
 
-namespace fr {
+namespace drt {
 
 class drNet;
 class frVia;
@@ -177,4 +177,4 @@ class drVia : public drRef
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

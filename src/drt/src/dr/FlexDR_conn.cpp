@@ -35,7 +35,7 @@
 #include "io/io.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 using utl::ThreadException;
 
@@ -1342,4 +1342,4 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(frDesign* design,
 {
 }
 
-}  // namespace fr
+}  // namespace drt

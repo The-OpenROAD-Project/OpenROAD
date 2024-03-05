@@ -32,7 +32,7 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-namespace fr {
+namespace drt {
 
 void frAccessPoint::addViaDef(frViaDef* in)
 {
@@ -106,4 +106,4 @@ template void frPinAccess::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

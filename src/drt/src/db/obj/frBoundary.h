@@ -33,7 +33,7 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBoundary : public frFig
 {
  public:
@@ -76,4 +76,4 @@ class frBoundary : public frFig
  protected:
   std::vector<Point> points_;
 };
-}  // namespace fr
+}  // namespace drt

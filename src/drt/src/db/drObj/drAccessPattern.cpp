@@ -29,7 +29,7 @@
 #include "db/drObj/drAccessPattern.h"
 
 #include "distributed/frArchive.h"
-namespace fr {
+namespace drt {
 
 bool drAccessPattern::hasValidAccess(const frDirEnum& dir)
 {
@@ -136,4 +136,4 @@ template void drAccessPattern::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt
