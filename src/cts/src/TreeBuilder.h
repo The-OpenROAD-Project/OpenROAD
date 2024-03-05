@@ -73,11 +73,11 @@ struct pointEqual
   }
 };
 
-enum TreeType
+enum class TreeType
 {
-  regularTree = 0,  // regular tree that drives both macros and registers
-  macroTree = 1,    // parent tree that drives only macro cells with ins delays
-  registerTree = 2  // child tree that drives only registers without ins delays
+  RegularTree = 0,  // regular tree that drives both macros and registers
+  MacroTree = 1,    // parent tree that drives only macro cells with ins delays
+  RegisterTree = 2  // child tree that drives only registers without ins delays
 };
 
 class TreeBuilder
@@ -231,11 +231,11 @@ class TreeBuilder
   std::string getTreeTypeAsString() const
   {
     switch (type_) {
-      case regularTree:
+      case TreeType::RegularTree:
         return "regular";
-      case macroTree:
+      case TreeType::MacroTree:
         return "macro";
-      case registerTree:
+      case TreeType::RegisterTree:
         return "register";
     }
     return "unknown";
@@ -272,7 +272,7 @@ class TreeBuilder
   // keep track of insertion delays at sink pins
   boost::unordered_map<Point<double>, double, pointHash, pointEqual>
       insertionDelays_;
-  TreeType type_ = regularTree;
+  TreeType type_ = TreeType::RegularTree;
   float aveArrival_ = 0.0;
   float topBufferDelay_ = 0.0;
   odb::dbInst* topBuffer_ = nullptr;

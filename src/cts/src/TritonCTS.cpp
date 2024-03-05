@@ -174,7 +174,7 @@ void TritonCTS::buildClockTrees()
       if (!builder->getParent()
           && !builder->getChildren().empty()
           // don't balance levels for macro cell tree
-          && builder->getTreeType() != macroTree) {
+          && builder->getTreeType() != TreeType::MacroTree) {
         LevelBalancer balancer(
             builder, options_, logger_, techChar_->getLengthUnit());
         balancer.run();
@@ -1005,7 +1005,7 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                       dynamic_cast<HTreeBuilder*>(parentBuilder),
                       "macros");
   if (firstBuilder) {
-    firstBuilder->setTreeType(macroTree);
+    firstBuilder->setTreeType(TreeType::MacroTree);
   }
 
   // create a new net 'secondNet' to drive register sinks
@@ -1021,7 +1021,7 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
       firstBuilder ? firstBuilder : dynamic_cast<HTreeBuilder*>(parentBuilder),
       "registers");
   if (secondBuilder) {
-    secondBuilder->setTreeType(registerTree);
+    secondBuilder->setTreeType(TreeType::RegisterTree);
   }
 
   return secondBuilder;
@@ -1912,7 +1912,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   }
 
   for (TreeBuilder* registerBuilder : *builders_) {
-    if (registerBuilder->getTreeType() == registerTree) {
+    if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
         computeAveSinkArrivals(registerBuilder);
@@ -1957,15 +1957,15 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
   });
   arrival = arrival / (float) clock.getNumSinks();
   builder->setAveSinkArrival(arrival);
-  debugPrint(
-      logger_,
-      CTS,
-      "insertion delay",
-      1,
-      "{} {}: average sink arrival is {:0.3e}",
-      (builder->getTreeType() == macroTree) ? "macro tree" : "register tree",
-      clock.getName(),
-      builder->getAveSinkArrival());
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             1,
+             "{} {}: average sink arrival is {:0.3e}",
+             (builder->getTreeType() == TreeType::MacroTree) ? "macro tree"
+                                                             : "register tree",
+             clock.getName(),
+             builder->getAveSinkArrival());
 }
 
 // Balance latencies between macro tree and register tree
@@ -2005,7 +2005,7 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
   // clang-format off
   debugPrint(logger_, CTS, "insertion delay", 1, "{} delay buffers are needed"
              " to adjust latencies at {} tree", numBuffers,
-             (builder->getTreeType() == macroTree)? "macro" : "register");
+             (builder->getTreeType() == TreeType::MacroTree)? "macro" : "register");
   // clang-format on
 
   // disconnect driver output
@@ -2049,7 +2049,7 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   std::string topBufferName;
-  if (builder->getTreeType() == registerTree) {
+  if (builder->getTreeType() == TreeType::RegisterTree) {
     topBufferName = "clkbuf_regs_0_" + clock.getSdcName();
   } else {
     topBufferName = "clkbuf_0_" + clock.getName();
@@ -2068,15 +2068,16 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
         outputPin, sta::RiseFall::rise(), sta::MinMax::max());
     float bufferDelay = outputArrival - inputArrival;
     builder->setTopBufferDelay(bufferDelay);
-    debugPrint(
-        logger_,
-        CTS,
-        "insertion delay",
-        1,
-        "top buffer delay for {} {} is {:0.3e}",
-        (builder->getTreeType() == macroTree) ? "macro tree" : "register tree",
-        topBuffer->getName(),
-        builder->getTopBufferDelay());
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               1,
+               "top buffer delay for {} {} is {:0.3e}",
+               (builder->getTreeType() == TreeType::MacroTree)
+                   ? "macro tree"
+                   : "register tree",
+               topBuffer->getName(),
+               builder->getTopBufferDelay());
   }
 }
 
