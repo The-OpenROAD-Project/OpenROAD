@@ -316,7 +316,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // snapshot info
   float snapshotA = 0;
   float snapshotWlCoefX = 0, snapshotWlCoefY = 0;
-  bool isDivergeTriedRevert = false;
 
   // backTracking variable.
   float curA = 1.0;
