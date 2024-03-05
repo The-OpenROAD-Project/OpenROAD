@@ -11,5 +11,5 @@ Cell usage report:
   Fill cells: 168
   Buffer/inverters: 232
   Sequential cells: 35
-  Complex combinational cells: 241
+  Multi-Input combinational cells: 241
   Total: 676
