@@ -7152,8 +7152,9 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(
-      dbTechLayer* layer,
+  dbMatrix<dbGCellGrid::GCellData> getLayerCongestionMap(dbTechLayer* layer);
+
+  dbMatrix<dbGCellGrid::GCellData> getDirectionCongestionMap(
       const dbTechLayerDir& direction);
   // User Code End dbGCellGrid
 };

@@ -520,37 +520,41 @@ void dbGCellGrid::resetGrid()
   _grid->flags_.y_grid_valid_ = true;
 }
 
-dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
-    dbTechLayer* layer,
-    const dbTechLayerDir& direction)
+dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getLayerCongestionMap(
+    dbTechLayer* layer)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   const auto& cmap = _grid->congestion_map_;
-  if (layer == nullptr) {
-    auto iter = cmap.begin();
-    if (iter == cmap.end()) {
-      return {};
-    }
-    const int num_rows = iter->second.numRows();
-    const int num_cols = iter->second.numCols();
-    dbMatrix<dbGCellGrid::GCellData> congestion(num_rows, num_cols);
-    for (auto& [lid, matrix] : cmap) {
-      dbTechLayer* tech_layer = _grid->getLayer(lid);
-      for (int row = 0; row < num_rows; ++row) {
-        for (int col = 0; col < num_cols; ++col) {
-          if (direction == tech_layer->getDirection()) {
-            congestion(row, col).usage += matrix(row, col).usage;
-            congestion(row, col).capacity += matrix(row, col).capacity;
-          }
-        }
-      }
-    }
-    return congestion;
-  }
   if (cmap.find(layer->getId()) != cmap.end()) {
     return cmap.at(layer->getId());
   }
   return {};
+}
+
+dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getDirectionCongestionMap(
+    const dbTechLayerDir& direction)
+{
+  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
+  const auto& cmap = _grid->congestion_map_;
+  auto iter = cmap.begin();
+  if (iter == cmap.end()) {
+    return {};
+  }
+  const int num_rows = iter->second.numRows();
+  const int num_cols = iter->second.numCols();
+  dbMatrix<dbGCellGrid::GCellData> congestion(num_rows, num_cols);
+  for (auto& [lid, matrix] : cmap) {
+    dbTechLayer* tech_layer = _grid->getLayer(lid);
+    if (direction == tech_layer->getDirection()) {
+      for (int row = 0; row < num_rows; ++row) {
+        for (int col = 0; col < num_cols; ++col) {
+          congestion(row, col).usage += matrix(row, col).usage;
+          congestion(row, col).capacity += matrix(row, col).capacity;
+        }
+      }
+    }
+  }
+  return congestion;
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb
