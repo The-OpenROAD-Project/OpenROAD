@@ -709,7 +709,6 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
-    bin.setInstPlacedArea(0);
     bin.setInstPlacedAreaUnscaled(0);
     bin.setFillerArea(0);
   }
@@ -732,7 +731,6 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
             const float scaledAvea = getOverlapDensityArea(bin, cell)
                                      * cell->densityScale()
                                      * bin.targetDensity();
-            bin.addInstPlacedArea(scaledAvea);
             bin.addInstPlacedAreaUnscaled(scaledAvea);
           }
         }
@@ -744,7 +742,6 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
             Bin& bin = bins_[y * binCntX_ + x];
             const float scaledArea
                 = getOverlapDensityArea(bin, cell) * cell->densityScale();
-            bin.addInstPlacedArea(scaledArea);
             bin.addInstPlacedAreaUnscaled(scaledArea);
           }
         }
@@ -768,6 +765,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
     reduction(+ : overflowArea_, overflowAreaUnscaled_)
   for (auto it = bins_.begin(); it < bins_.end(); ++it) {
     Bin& bin = *it;  // old-style loop for old OpenMP
+
+    // Copy unscaled to scaled
+    bin.setInstPlacedArea(bin.instPlacedAreaUnscaled());
 
     int64_t binArea = bin.binArea();
     const float scaledBinArea

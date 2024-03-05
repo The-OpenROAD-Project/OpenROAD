@@ -7,6 +7,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 508 components and 2514 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal2
 [INFO GRT-0022] Global adjustment: 0%
@@ -14,7 +15,6 @@
 [INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
 [INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: -0.0005
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
