@@ -2292,18 +2292,6 @@ bool NesterovBase::checkConvergence()
   return false;
 }
 
-bool NesterovBase::checkDivergence()
-{
-  if (false) {
-    divergeMsg_ = "RePlAce divergence detected. ";
-    divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-    divergeCode_ = 307;
-    isDiverged_ = true;
-  }
-
-  return isDiverged_;
-}
-
 bool NesterovBase::revertDivergence()
 {
   if (isConverged_) {

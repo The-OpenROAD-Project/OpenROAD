@@ -1,26 +1,63 @@
 {
-    "IFP::ord_version" : ""
-  , "IFP::instance_count" : "363"
-  , "RSZ::repair_design_buffer_count" : "0"
-  , "RSZ::max_slew_slack" : "38.38480220375221"
-  , "RSZ::max_fanout_slack" : "100.0"
-  , "RSZ::max_capacitance_slack" : "9.247201894102455"
-  , "RSZ::worst_slack_min" : "0.05458949419236768"
-  , "RSZ::worst_slack_max" : "-0.04705735934112258"
-  , "RSZ::tns_max" : "-0.6746677296682354"
-  , "RSZ::hold_buffer_count" : "0"
-  , "DPL::utilization" : "8.7"
-  , "DPL::design_area" : "556"
-  , "GRT::ANT::errors" : "0"
-  , "drt::wire length::total" : 5800
-  , "drt::vias::total" : 2401
-  , "DRT::drv" : "0"
-  , "DRT::worst_slack_min" : "0.05372399205346745"
-  , "DRT::worst_slack_max" : "-0.06167350138483673"
-  , "DRT::tns_max" : "-0.8102423405988921"
-  , "DRT::clock_skew" : "0.003904279787756438"
-  , "DRT::max_slew_slack" : "36.16262384735254"
-  , "DRT::max_fanout_slack" : "100.0"
-  , "DRT::max_capacitance_slack" : "5.728270756197659"
-  , "DRT::clock_period" : "0.485000"
+	"IFP::ord_version": "",
+	"IFP::instance_count": "363",
+	"floorplan__design__io": 54,
+	"design__io__hpwl": 3473891,
+	"design__instance__displacement__total": 278.377,
+	"design__instance__displacement__mean": 0.6035,
+	"design__instance__displacement__max": 3.5625,
+	"route__wirelength__estimated": 4564.51,
+	"RSZ::repair_design_buffer_count": "0",
+	"RSZ::max_slew_slack": "39.11124649471631",
+	"RSZ::max_fanout_slack": "100.0",
+	"RSZ::max_capacitance_slack": "76.33412440617452",
+	"design__instance__displacement__total": 10.436,
+	"design__instance__displacement__mean": 0.022,
+	"design__instance__displacement__max": 1.4,
+	"route__wirelength__estimated": 4737.89,
+	"design__instance__count__setup_buffer": 18,
+	"design__instance__count__hold_buffer": 0,
+	"RSZ::worst_slack_min": "0.05336361711892898",
+	"RSZ::worst_slack_max": "-0.04125105929157333",
+	"RSZ::tns_max": "-0.5996107113876356",
+	"RSZ::hold_buffer_count": "0",
+	"design__instance__displacement__total": 59.8735,
+	"design__instance__displacement__mean": 0.1235,
+	"design__instance__displacement__max": 2.9075,
+	"route__wirelength__estimated": 4797.74,
+	"DPL::utilization": "9.0",
+	"DPL::design_area": "579",
+	"route__net": 441,
+	"route__net__special": 2,
+	"antenna__violating__nets": 0,
+	"antenna__violating__pins": 0,
+	"GRT::ANT::errors": "0",
+	"design__violations": 0,
+	"route__net": 441,
+	"route__net__special": 2,
+	"route__drc_errors__iter:1": 103,
+	"route__wirelength__iter:1": 5759,
+	"route__drc_errors__iter:2": 3,
+	"route__wirelength__iter:2": 5719,
+	"route__drc_errors__iter:3": 0,
+	"route__wirelength__iter:3": 5719,
+	"route__drc_errors": 0,
+	"route__wirelength": 5719,
+	"route__vias": 2178,
+	"route__vias__singlecut": 2178,
+	"route__vias__multicut": 0,
+	"DRT::drv": "0",
+	"antenna__violating__nets": 0,
+	"antenna__violating__pins": 0,
+	"DRT::ANT::errors": "0",
+	"timing__drv__floating__nets": 0,
+	"timing__drv__floating__pins": 0,
+	"DRT::worst_slack_min": "0.051669558982764784",
+	"DRT::worst_slack_max": "-0.04613415335888549",
+	"DRT::tns_max": "-0.8139438797788302",
+	"DRT::clock_skew": "0.0014170991170507057",
+	"DRT::max_slew_slack": "39.730954231251374",
+	"DRT::max_fanout_slack": "100.0",
+	"DRT::max_capacitance_slack": "8.923458762163392",
+	"DRT::clock_period": "0.485000"
 }

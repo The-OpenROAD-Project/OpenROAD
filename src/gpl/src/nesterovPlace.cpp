@@ -438,51 +438,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    // diverge detection on
-    // large max_phi_cof value + large design
-    //
-    // 1) happen overflow < 20%
-    // 2) Hpwl is growing
-
-    int numDiverge = 0;
-    for (auto& nb : nbVec_) {
-      numDiverge += nb->checkDivergence();
-    }
-
-    if (numDiverge > 0) {
-      divergeMsg_ = "RePlAce divergence detected. ";
-      divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-      divergeCode_ = 307;
-      isDiverged_ = true;
-
-      // revert back to the original rb solutions
-      // one more opportunity
-      if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
-        // get back to the working rc size
-        rb_->revertGCellSizeToMinRc();
-
-        curA = snapshotA;
-        wireLengthCoefX_ = snapshotWlCoefX;
-        wireLengthCoefY_ = snapshotWlCoefY;
-
-        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-        for (auto& nb : nbVec_) {
-          nb->revertDivergence();
-        }
-
-        isDiverged_ = false;
-        divergeCode_ = 0;
-        divergeMsg_ = "";
-        isDivergeTriedRevert = true;
-        // turn off the RD forcely
-        isRoutabilityNeed_ = false;
-      } else {
-        // no way to revert
-        break;
-      }
-    }
-
     if (!isSnapshotSaved && npVars_.routabilityDrivenMode
         && 0.6 >= average_overflow_unscaled_) {
       snapshotWlCoefX = wireLengthCoefX_;
