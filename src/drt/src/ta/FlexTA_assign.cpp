@@ -715,6 +715,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
                                                      Rect& box,
                                                      frLayerNum lNum)
 {
+  auto layer = getDesign()->getTech()->getLayer(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>> result;
   int overlap = 0;
@@ -728,20 +729,43 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   }
   workerRegionQuery.queryCost(box, lNum, result);
 
+  auto getPartialBox = [this, lNum](Rect box, bool begin) {
+    auto layer = getTech()->getLayer(lNum);
+    Rect result;
+    frCoord addHorz = 0;
+    frCoord addVert = 0;
+    if (layer->isHorizontal()) {
+      addHorz = getDesign()->getTopBlock()->getGCellSizeHorizontal() / 2;
+    } else {
+      addVert = getDesign()->getTopBlock()->getGCellSizeVertical() / 2;
+    }
+    if (begin) {
+      result.reset(box.xMin(),
+                   box.yMin(),
+                   std::min(box.xMax(), box.xMin() + addHorz),
+                   std::min(box.yMax(), box.yMin() + addVert));
+    } else {
+      result.reset(std::max(box.xMin(), box.xMax() - addHorz),
+                   std::max(box.yMin(), box.yMax() - addVert),
+                   box.xMax(),
+                   box.yMax());
+    }
+    return result;
+  };
   std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>
       tmpResult;
-  Rect tmpBox = getDesign()->getTopBlock()->getGCellBox(
-      iroute->getGuide()->getBeginPoint());
-  tmpBox = box.intersect(tmpBox);
-  workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
-  result.insert(result.end(), tmpResult.begin(), tmpResult.end());
-  tmpResult.clear();
-  tmpBox = getDesign()->getTopBlock()->getGCellBox(
-      iroute->getGuide()->getEndPoint());
-  tmpBox = box.intersect(tmpBox);
-  workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
-  result.insert(result.end(), tmpResult.begin(), tmpResult.end());
-
+  if (layer->getType() == dbTechLayerType::CUT) {
+    workerRegionQuery.queryViaCost(box, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  } else {
+    Rect tmpBox = getPartialBox(box, true);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+    tmpResult.clear();
+    tmpBox = getPartialBox(box, false);
+    workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+    result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  }
   bool isCut = false;
 
   // save same net overlaps
