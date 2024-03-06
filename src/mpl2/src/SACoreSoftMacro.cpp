@@ -43,8 +43,8 @@ using utl::MPL;
 // Class SACoreSoftMacro
 // constructors
 SACoreSoftMacro::SACoreSoftMacro(
-    float outline_width,
-    float outline_height,  // boundary constraints
+    Cluster* root,
+    const Rect& outline,
     const std::vector<SoftMacro>& macros,
     // weight for different penalty
     float area_weight,
@@ -71,8 +71,7 @@ SACoreSoftMacro::SACoreSoftMacro(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<SoftMacro>(outline_width,
-                                        outline_height,
+    : SimulatedAnnealingCore<SoftMacro>(outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -88,7 +87,8 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         num_perturb_per_step,
                                         seed,
                                         graphics,
-                                        logger)
+                                        logger),
+      root_(root)
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;
@@ -129,7 +129,7 @@ float SACoreSoftMacro::getNotchPenalty() const
 
 float SACoreSoftMacro::getAreaPenalty() const
 {
-  const float outline_area = outline_width_ * outline_height_;
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
   return (width_ * height_) / outline_area;
 }
 
@@ -285,8 +285,8 @@ void SACoreSoftMacro::initialize()
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(width_ * height_ / outline_width_
-                                / outline_height_);
+    area_penalty_list.push_back(width_ * height_ / outline_.getWidth()
+                                / outline_.getHeight());
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);
@@ -366,33 +366,46 @@ void SACoreSoftMacro::initialize()
   }
 }
 
-// We only push hard macro clusters to boundaries
-// Note that we do not push MixedCluster into boundaries
+// Independently of the current parent's level, we always compute
+// the boundary penalty based on the boundaries of the root (core).
+// The macros we're trying to place i.e. the ones from the sequence pair,
+// have their lower left corner based on the parent's outline.
 void SACoreSoftMacro::calBoundaryPenalty()
 {
-  // Initialization
   boundary_penalty_ = 0.0;
+
   if (boundary_weight_ <= 0.0) {
     return;
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
+
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
   }
+
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (const auto& macro : macros_) {
-    if (macro.getNumMacro() > 0) {
-      const float lx = macro.getX();
-      const float ly = macro.getY();
-      const float ux = lx + macro.getWidth();
-      const float uy = ly + macro.getHeight();
-      const float x_dist = std::min(lx, std::abs(outline_width_ - ux));
-      const float y_dist = std::min(ly, std::abs(outline_height_ - uy));
-      boundary_penalty_ += std::min(x_dist, y_dist) * macro.getNumMacro();
+  float global_lx = 0.0f, global_ly = 0.0f;
+  float global_ux = 0.0f, global_uy = 0.0f;
+  float x_dist_from_root = 0.0f, y_dist_from_root = 0.0f;
+
+  for (const auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].getNumMacro() > 0) {
+      global_lx = macros_[macro_id].getX() + outline_.xMin() - root_->getX();
+      global_ly = macros_[macro_id].getY() + outline_.yMin() - root_->getY();
+      global_ux = global_lx + macros_[macro_id].getWidth();
+      global_uy = global_ly + macros_[macro_id].getHeight();
+
+      x_dist_from_root
+          = std::min(global_lx, std::abs(root_->getWidth() - global_ux));
+      y_dist_from_root
+          = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
+
+      boundary_penalty_ += std::min(x_dist_from_root, y_dist_from_root)
+                           * macros_[macro_id].getNumMacro();
     }
   }
   // normalization
@@ -453,7 +466,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
 // Align macro clusters to reduce notch
 void SACoreSoftMacro::alignMacroClusters()
 {
-  if (width_ > outline_width_ || height_ > outline_height_) {
+  if (width_ > outline_.getWidth() || height_ > outline_.getHeight()) {
     return;
   }
   // update threshold value
@@ -468,8 +481,8 @@ void SACoreSoftMacro::alignMacroClusters()
     }
   }
   const float ratio = 0.1;
-  adjust_h_th_ = std::min(adjust_h_th_, outline_height_ * ratio);
-  adjust_v_th_ = std::min(adjust_v_th_, outline_width_ * ratio);
+  adjust_h_th_ = std::min(adjust_h_th_, outline_.getHeight() * ratio);
+  adjust_v_th_ = std::min(adjust_v_th_, outline_.getWidth() * ratio);
 
   // Align macro clusters to boundaries
   for (auto& macro : macros_) {
@@ -481,14 +494,14 @@ void SACoreSoftMacro::alignMacroClusters()
       // align to left / right boundaries
       if (lx <= adjust_h_th_) {
         macro.setX(0.0);
-      } else if (outline_width_ - ux <= adjust_h_th_) {
-        macro.setX(outline_width_ - macro.getWidth());
+      } else if (outline_.getWidth() - ux <= adjust_h_th_) {
+        macro.setX(outline_.getWidth() - macro.getWidth());
       }
       // align to top / bottom boundaries
       if (ly <= adjust_v_th_) {
         macro.setY(0.0);
-      } else if (outline_height_ - uy <= adjust_v_th_) {
-        macro.setY(outline_height_ - macro.getHeight());
+      } else if (outline_.getHeight() - uy <= adjust_v_th_) {
+        macro.setY(outline_.getHeight() - macro.getHeight());
       }
     }
   }
@@ -504,9 +517,10 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   // If the floorplan cannot fit into the outline
   // We think the entire floorplan is a "huge" notch
-  if (width_ > outline_width_ * 1.001 || height_ > outline_height_ * 1.001) {
-    notch_penalty_ += outline_width_ * outline_height_
-                      / (outline_width_ * outline_height_);
+  if (width_ > outline_.getWidth() * 1.001
+      || height_ > outline_.getHeight() * 1.001) {
+    notch_penalty_ += outline_.getWidth() * outline_.getHeight()
+                      / (outline_.getWidth() * outline_.getHeight());
     return;
   }
 
@@ -533,8 +547,8 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   x_point.insert(0.0);
   y_point.insert(0.0);
-  x_point.insert(outline_width_);
-  y_point.insert(outline_height_);
+  x_point.insert(outline_.getWidth());
+  y_point.insert(outline_.getHeight());
   // create grid
   std::vector<float> x_grid(x_point.begin(), x_point.end());
   std::vector<float> y_grid(y_point.begin(), y_point.end());
@@ -682,7 +696,8 @@ void SACoreSoftMacro::calNotchPenalty()
   }
   macros_ = pre_macros_;
   // normalization
-  notch_penalty_ = notch_penalty_ / (outline_width_ * outline_height_);
+  notch_penalty_
+      = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
   if (graphics_) {
     graphics_->setNotchPenalty(notch_penalty_);
   }
@@ -704,7 +719,7 @@ void SACoreSoftMacro::resizeOneCluster()
   const float ux = lx + src_macro.getWidth();
   const float uy = ly + src_macro.getHeight();
   // if the macro is outside of the outline, we randomly resize the macro
-  if (ux >= outline_width_ || uy >= outline_height_) {
+  if (ux >= outline_.getWidth() || uy >= outline_.getHeight()) {
     src_macro.resizeRandomly(distribution_, generator_);
     return;
   }
@@ -717,7 +732,7 @@ void SACoreSoftMacro::resizeOneCluster()
   const float option = distribution_(generator_);
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
-    float e_x2 = outline_width_;
+    float e_x2 = outline_.getWidth();
     for (const auto& macro : macros_) {
       const float cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 > ux && cur_x2 < e_x2) {
@@ -739,7 +754,7 @@ void SACoreSoftMacro::resizeOneCluster()
     src_macro.setWidth(d_x2 - lx);
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
-    float a_y2 = outline_height_;
+    float a_y2 = outline_.getHeight();
     for (const auto& macro : macros_) {
       const float cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 > uy && cur_y2 < a_y2) {
@@ -798,14 +813,14 @@ void SACoreSoftMacro::printResults() const
              2,
              "width = {}, outline_width = {}",
              width_,
-             outline_width_);
+             outline_.getWidth());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
              2,
              "height = {}, outline_height = {}",
              height_,
-             outline_height_);
+             outline_.getHeight());
   debugPrint(
       logger_,
       MPL,
@@ -869,8 +884,8 @@ void SACoreSoftMacro::printResults() const
 void SACoreSoftMacro::fillDeadSpace()
 {
   // if the floorplan is invalid, do nothing
-  if (width_ > outline_width_ * (1.0 + 0.001)
-      || height_ > outline_height_ * (1.0 + 0.001)) {
+  if (width_ > outline_.getWidth() * (1.0 + 0.001)
+      || height_ > outline_.getHeight() * (1.0 + 0.001)) {
     return;
   }
 
@@ -889,8 +904,8 @@ void SACoreSoftMacro::fillDeadSpace()
   }
   x_point.insert(0.0);
   y_point.insert(0.0);
-  x_point.insert(outline_width_);
-  y_point.insert(outline_height_);
+  x_point.insert(outline_.getWidth());
+  y_point.insert(outline_.getHeight());
   // create grid
   std::vector<float> x_grid(x_point.begin(), x_point.end());
   std::vector<float> y_grid(y_point.begin(), y_point.end());
