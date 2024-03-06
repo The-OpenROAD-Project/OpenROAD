@@ -608,12 +608,26 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
     return;
   }
 
-  float offset_x = (outline_width_ - width_) / 2;
-  float offset_y = (outline_height_ - height_) / 2;
+  std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
+                                 (outline_.getHeight() - height_) / 2);
+  moveFloorplan(offset);
 
+  // revert centralization
+  if (calNormCost() > pre_cost) {
+    offset.first = -offset.first;
+    offset.second = -offset.second;
+
+    moveFloorplan(offset);
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::moveFloorplan(
+    const std::pair<float, float>& offset)
+{
   for (auto& id : pos_seq_) {
-    macros_[id].setX(macros_[id].getX() + offset_x);
-    macros_[id].setY(macros_[id].getY() + offset_y);
+    macros_[id].setX(macros_[id].getX() + offset.first);
+    macros_[id].setY(macros_[id].getY() + offset.second);
   }
 
   if (graphics_) {
@@ -621,20 +635,6 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
   }
 
   calPenalty();
-
-  // revert centralization
-  if (calNormCost() > pre_cost) {
-    for (auto& id : pos_seq_) {
-      macros_[id].setX(macros_[id].getX() - offset_x);
-      macros_[id].setY(macros_[id].getY() - offset_y);
-    }
-
-    if (graphics_) {
-      graphics_->saStep(macros_);
-    }
-
-    calPenalty();
-  }
 }
 
 template <class T>
