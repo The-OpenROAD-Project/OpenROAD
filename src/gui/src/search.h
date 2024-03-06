@@ -63,6 +63,9 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   class MinHeightPredicate;
 
  public:
+  template <typename T>
+  using LayerMap = std::map<odb::dbTechLayer*, T>;
+
   using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using Box = bg::model::box<Point>;
   using Polygon
@@ -233,13 +236,16 @@ class Search : public QObject, public odb::dbBlockCallBackObj
  private:
   struct BlockData;
 
-  void addSNet(odb::dbNet* net);
-  void addNet(odb::dbNet* net);
-  void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
-  void addInst(odb::dbInst* inst);
-  void addBlockage(odb::dbBlockage* blockage);
-  void addObstruction(odb::dbObstruction* obstruction);
-  void addRow(odb::dbRow* row);
+  void addSNet(odb::dbNet* net,
+               LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
+               LayerMap<std::vector<SNetSBoxValue<odb::dbNet*>>>& via_shapes);
+  void addNet(odb::dbNet* net,
+              LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>>& tree_shapes);
+  void addVia(odb::dbNet* net,
+              odb::dbShape* shape,
+              int x,
+              int y,
+              LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>>& tree_shapes);
 
   void updateShapes(odb::dbBlock* block);
   void updateFills(odb::dbBlock* block);
@@ -260,15 +266,15 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   struct BlockData
   {
     // The net is used for filter shapes by net type
-    std::map<odb::dbTechLayer*, RtreeRoutingShapes<odb::dbNet*>> box_shapes_;
+    LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes_;
     // Special net vias may be large multi-cut vias.  It is more efficient
     // to store the dbSBox (ie the via) than all the cuts.  This is
     // particularly true when you have parallel straps like m1 & m2 in asap7.
-    std::map<odb::dbTechLayer*, RtreeSNetSBox<odb::dbNet*>> snet_via_shapes_;
-    std::map<odb::dbTechLayer*, RtreeSNetShapes<odb::dbNet*>> snet_shapes_;
+    LayerMap<RtreeSNetSBox<odb::dbNet*>> snet_via_shapes_;
+    LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes_;
     std::atomic_bool shapes_init_{false};
     std::mutex shapes_init_mutex_;
-    std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;
+    LayerMap<RtreeBox<odb::dbFill*>> fills_;
     std::atomic_bool fills_init_{false};
     std::mutex fills_init_mutex_;
     RtreeBox<odb::dbInst*> insts_;
@@ -277,7 +283,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     RtreeBox<odb::dbBlockage*> blockages_;
     std::atomic_bool blockages_init_{false};
     std::mutex blockages_init_mutex_;
-    std::map<odb::dbTechLayer*, RtreeBox<odb::dbObstruction*>> obstructions_;
+    LayerMap<RtreeBox<odb::dbObstruction*>> obstructions_;
     std::atomic_bool obstructions_init_{false};
     std::mutex obstructions_init_mutex_;
     RtreeBox<odb::dbRow*> rows_;

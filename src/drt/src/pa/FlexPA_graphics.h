@@ -41,7 +41,7 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class frDesign;
 class frPin;
@@ -119,4 +119,4 @@ class FlexPAGraphics : public gui::Renderer
   std::vector<std::pair<Rect, frLayerNum>> shapes_;
 };
 
-}  // namespace fr
+}  // namespace drt
