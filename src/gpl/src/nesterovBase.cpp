@@ -2292,6 +2292,20 @@ bool NesterovBase::checkConvergence()
   return false;
 }
 
+bool NesterovBase::checkDivergence()
+{
+  if (sumOverflowUnscaled_ < 0.3f
+      && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
+      && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
+    divergeMsg_ = "RePlAce divergence detected. ";
+    divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
+    divergeCode_ = 307;
+    isDiverged_ = true;
+  }
+
+  return isDiverged_;
+}
+
 bool NesterovBase::revertDivergence()
 {
   if (isConverged_) {
