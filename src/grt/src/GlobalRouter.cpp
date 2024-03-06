@@ -2476,8 +2476,8 @@ void GlobalRouter::initGrid(int max_layer)
 
   int tile_size = grid_->getPitchesInTile() * track_spacing;
 
-  int x_grids = upper_rightX / tile_size;
-  int y_grids = upper_rightY / tile_size;
+  int x_grids = std::max(1, upper_rightX / tile_size);
+  int y_grids = std::max(1, upper_rightY / tile_size);
 
   bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
   bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
