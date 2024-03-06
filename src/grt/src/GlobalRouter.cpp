@@ -3406,7 +3406,10 @@ void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
                                uint8_t& blockage_h,
                                uint8_t& blockage_v)
 {
-  fastroute_->getBlockage(layer, x, y, blockage_h, blockage_v);
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+  if (layer->getRoutingLevel() <= max_layer) {
+    fastroute_->getBlockage(layer, x, y, blockage_h, blockage_v);
+  }
 }
 
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
