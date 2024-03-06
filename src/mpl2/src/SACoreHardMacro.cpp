@@ -43,8 +43,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(
-    float outline_width,
-    float outline_height,  // boundary constraints
+    const Rect& outline,
     const std::vector<HardMacro>& macros,
     // weight for different penalty
     float area_weight,
@@ -62,13 +61,10 @@ SACoreHardMacro::SACoreHardMacro(
     float init_prob,
     int max_num_step,
     int num_perturb_per_step,
-    int k,
-    int c,
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<HardMacro>(outline_width,
-                                        outline_height,
+    : SimulatedAnnealingCore<HardMacro>(outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -82,8 +78,6 @@ SACoreHardMacro::SACoreHardMacro(
                                         init_prob,
                                         max_num_step,
                                         num_perturb_per_step,
-                                        k,
-                                        c,
                                         seed,
                                         graphics,
                                         logger)
@@ -93,7 +87,7 @@ SACoreHardMacro::SACoreHardMacro(
 
 float SACoreHardMacro::getAreaPenalty() const
 {
-  const float outline_area = outline_width_ * outline_height_;
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
   return (width_ * height_) / outline_area;
 }
 
@@ -312,14 +306,14 @@ void SACoreHardMacro::printResults()
              2,
              "width = {}, outline_width = {}",
              width_,
-             outline_width_);
+             outline_.getWidth());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
              2,
              "height = {}, outline_height = {}",
              height_,
-             outline_height_);
+             outline_.getHeight());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",

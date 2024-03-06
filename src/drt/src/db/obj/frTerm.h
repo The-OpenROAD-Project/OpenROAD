@@ -34,23 +34,20 @@
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTerm : public frBlockObject
 {
  public:
-  virtual ~frTerm() {}
-
   // getters
   virtual bool hasNet() const = 0;
   virtual frNet* getNet() const = 0;
   const frString& getName() const { return name_; }
   // setters
-  void setType(dbSigType in) { type_ = in; }
+  void setType(const dbSigType& in) { type_ = in; }
   dbSigType getType() const { return type_; }
-  void setDirection(dbIoType in) { direction_ = in; }
+  void setDirection(const dbIoType& in) { direction_ = in; }
   dbIoType getDirection() const { return direction_; }
   // others
-  virtual frBlockObjectEnum typeId() const = 0;
   void setIndexInOwner(int value) { index_in_owner_ = value; }
   int getIndexInOwner() { return index_in_owner_; }
   virtual frAccessPoint* getAccessPoint(frCoord x,
@@ -68,23 +65,14 @@ class frTerm : public frBlockObject
 
  protected:
   // constructors
-  frTerm(const frString& name)
-      : frBlockObject(),
-        name_(name),
-        net_(nullptr),
-        type_(dbSigType::SIGNAL),
-        direction_(dbIoType::INPUT),
-        index_in_owner_(0),
-        bbox_()
-  {
-  }
+  frTerm(const frString& name) : name_(name) {}
 
-  frString name_;  // A, B, Z, VSS, VDD
-  frNet* net_;     // set later, term in instTerm does not have net
-  dbSigType type_;
-  dbIoType direction_;
-  int index_in_owner_;
+  frString name_;        // A, B, Z, VSS, VDD
+  frNet* net_{nullptr};  // set later, term in instTerm does not have net
+  dbSigType type_{dbSigType::SIGNAL};
+  dbIoType direction_{dbIoType::INPUT};
+  int index_in_owner_{0};
   Rect bbox_;
 };
 
-}  // namespace fr
+}  // namespace drt

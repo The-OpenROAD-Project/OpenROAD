@@ -1,4 +1,5 @@
-# Check that check_power_grid works with a disconnected macro, which is not logically connected to the power grid
+# Check that check_power_grid works with a disconnected macro,
+# which is not logically connected to the power grid
 source helpers.tcl
 
 read_lef Nangate45/Nangate45.lef

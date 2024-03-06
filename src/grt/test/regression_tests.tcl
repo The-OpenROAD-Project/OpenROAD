@@ -53,6 +53,7 @@ record_tests {
   report_wire_length6
   set_nets_to_route1
   silence
+  single_row
   top_level_term1
   top_level_term2
   top_level_term3

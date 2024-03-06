@@ -9,7 +9,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
 [INFO ODB-0133]     Created 348 nets and 1021 connections.
-[WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
@@ -58,6 +58,6 @@ met5              1640           146            8.90%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            13240          2202           16.63%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 25689 um
+[INFO GRT-0018] Total wirelength: 24451 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.

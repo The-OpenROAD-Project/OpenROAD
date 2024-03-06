@@ -61,46 +61,6 @@ pipeline {
             }
           }
         }
-        stage('Docker centos7 gcc') {
-          agent any;
-          stages{
-            stage('Pull centos7') {
-              steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/centos7-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
-              }
-            }
-            stage('Build docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
-                      'build clang': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
-                      'test clang': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-          }
-        }
         stage('Docker Ubuntu 20.04 gcc') {
           agent any;
           stages{
