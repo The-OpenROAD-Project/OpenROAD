@@ -42,8 +42,10 @@ sta::define_cmd_args "set_routing_alpha" { alpha \
 proc set_routing_alpha { args } {
   ord::parse_list_args "set_routing_alpha" args list {-net}
   sta::parse_key_args "set_routing_alpha" args \
-    keys {-net -min_fanout -min_hpwl} \
+    keys {-min_fanout -min_hpwl} \
     flags {-clock_nets}
+
+  sta::check_argc_eq1 "set_routing_alpha" $args
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
@@ -65,17 +67,15 @@ proc set_routing_alpha { args } {
     foreach net $nets {
       stt::set_net_alpha $net $alpha
     }
-  } elseif { [llength $args] == 1 } {
-    stt::set_routing_alpha_cmd $alpha
   } else {
-    utl::error STT 2 "set_routing_alpha: Wrong number of arguments."
+    stt::set_routing_alpha_cmd $alpha
   }
 }
 
 namespace eval stt {
 
 proc find_net {name} {
-  return [sta::sta_to_db_net $name]
+  return [sta::sta_to_db_net [get_nets $name]]
 }
 
 proc filter_clk_nets {cmd} {
