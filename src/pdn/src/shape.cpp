@@ -351,6 +351,23 @@ bool Shape::cut(const ShapeTree& obstructions,
   return true;
 }
 
+bool Shape::hasDBConnectivity() const
+{
+  if (hasTermConnections() || type_ == odb::dbWireShapeType::FOLLOWPIN) {
+    // if shape is connected to an instance or block pin allow it is valid
+    // if shape is a followpin assume it will be connected
+    return true;
+  }
+
+  for (const auto& via : vias_) {
+    if (!via->isFailed()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void Shape::writeToDb(odb::dbSWire* swire,
                       bool add_pins,
                       bool make_rect_as_pin) const
@@ -363,6 +380,13 @@ void Shape::writeToDb(odb::dbSWire* swire,
              getReportText(),
              add_pins,
              make_rect_as_pin);
+
+  if (!hasDBConnectivity()) {
+    getLogger()->warn(
+        utl::PDN, 200, "Removing floating shape: {}", getReportText());
+    return;
+  }
+
   odb::dbSBox::create(swire,
                       layer_,
                       rect_.xMin(),

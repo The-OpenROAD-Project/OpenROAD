@@ -132,6 +132,7 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebugShowBundledNets(bool show_bundled_nets);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -142,8 +143,7 @@ class HierRTLMP
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
   void computeMetricsForModules(float core_area);
-  void reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                         float core_area,
+  void reportLogicalHierarchyInformation(float core_area,
                                          float util,
                                          float core_util);
   void updateDataFlow();
@@ -402,6 +402,7 @@ class HierRTLMP
   float floorplan_ly_ = 0.0;
   float floorplan_ux_ = 0.0;
   float floorplan_uy_ = 0.0;
+  float macro_with_halo_area_ = 0.0;
 
   // dataflow parameters and store the dataflow
   int max_num_ff_dist_ = 5;  // maximum number of FF distances between

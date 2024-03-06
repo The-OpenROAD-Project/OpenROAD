@@ -35,7 +35,7 @@
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexTAGraphics;
 
 class FlexTA
@@ -225,8 +225,8 @@ class FlexTAWorker
                          int& nextIrouteDir,
                          frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
-                                 frCoord& maxBegin,
-                                 frCoord& minEnd,
+                                 frCoord& minBegin,
+                                 frCoord& maxEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
                                  int& nextIrouteDir,
@@ -316,4 +316,4 @@ class FlexTAWorker
   friend class FlexTA;
 };
 
-}  // namespace fr
+}  // namespace drt

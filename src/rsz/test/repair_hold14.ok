@@ -27,8 +27,8 @@ Path Type: min
    0.41   -0.59 v hold2/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
    0.43   -0.16 v hold1/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
    0.43    0.26 v hold3/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
-   0.00    0.27 v r1/D (sky130_fd_sc_hd__dfxbp_1)
-           0.27   data arrival time
+   0.00    0.26 v r1/D (sky130_fd_sc_hd__dfxbp_1)
+           0.26   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
@@ -38,7 +38,7 @@ Path Type: min
           -0.06   data required time
 ---------------------------------------------------------
           -0.06   data required time
-          -0.27   data arrival time
+          -0.26   data arrival time
 ---------------------------------------------------------
            0.33   slack (MET)
 

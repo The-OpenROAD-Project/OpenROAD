@@ -446,7 +446,6 @@ void HierRTLMP::computeMetricsForModules(float core_area)
 
   // Check if placement is feasible in the core area when considering
   // the macro halos
-  float macro_with_halo_area = 0;
   int unfixed_macros = 0;
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
@@ -455,29 +454,27 @@ void HierRTLMP::computeMetricsForModules(float core_area)
           = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
       const auto height
           = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
-      macro_with_halo_area += width * height;
+      macro_with_halo_area_ += width * height;
       unfixed_macros += !inst->getPlacementStatus().isFixed();
     }
   }
-  reportLogicalHierarchyInformation(
-      macro_with_halo_area, core_area, util, core_util);
+  reportLogicalHierarchyInformation(core_area, util, core_util);
 
   if (unfixed_macros == 0) {
     logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
     return;
   }
 
-  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
+  if (macro_with_halo_area_ + metrics_->getStdCellArea() > core_area) {
     logger_->error(MPL,
                    16,
                    "The instance area with halos {} exceeds the core area {}",
-                   macro_with_halo_area + metrics_->getStdCellArea(),
+                   macro_with_halo_area_ + metrics_->getStdCellArea(),
                    core_area);
   }
 }
 
-void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                                  float core_area,
+void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
                                                   float util,
                                                   float core_util)
 {
@@ -497,7 +494,7 @@ void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
-      macro_with_halo_area,
+      macro_with_halo_area_,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       core_area,
       util,
@@ -2634,10 +2631,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   // the probability of all actions should be summed to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
-  // get outline constraint
-  // Here we use the floorplan size as the outline constraint
-  const float outline_width = root_cluster_->getWidth();
-  const float outline_height = root_cluster_->getHeight();
+
+  const Rect outline(
+      0, 0, root_cluster_->getWidth(), root_cluster_->getHeight());
+
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
                                        : num_perturb_per_step_ / 10;
@@ -2658,11 +2655,14 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_height;
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth() * vary_factor_list[run_id++],
+                             outline.getHeight());
+
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(width,
-                                height,
+          = new SACoreSoftMacro(root_cluster_,
+                                new_outline,
                                 macros,
                                 1.0,     // area weight
                                 1000.0,  // outline weight
@@ -2703,7 +2703,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2719,11 +2719,14 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width;
-      const float height = outline_height * vary_factor_list[run_id++];
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth(),
+                             outline.getHeight() * vary_factor_list[run_id++]);
+
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(width,
-                                height,
+          = new SACoreSoftMacro(root_cluster_,
+                                new_outline,
                                 macros,
                                 1.0,     // area weight
                                 1000.0,  // outline weight
@@ -2764,7 +2767,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2855,10 +2858,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   // set the action probabilities
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_;
-  // get outline constraint
-  // In this stage, we use the floorplan size as the outline
-  const float outline_width = root_cluster_->getWidth();
-  const float outline_height = root_cluster_->getHeight();
+
+  const Rect outline(
+      0, 0, root_cluster_->getWidth(), root_cluster_->getHeight());
+
   // update macros
   std::vector<HardMacro> macros;
   macros.reserve(hard_macros.size());
@@ -2891,11 +2894,13 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_height;
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth() * vary_factor_list[run_id++],
+                             outline.getHeight());
+
       SACoreHardMacro* sa
-          = new SACoreHardMacro(width,
-                                height,
+          = new SACoreHardMacro(new_outline,
                                 macros,
                                 1.0,     // area_weight
                                 1000.0,  // outline weight
@@ -2931,7 +2936,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2947,11 +2952,13 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width;
-      const float height = outline_height * vary_factor_list[run_id++];
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth(),
+                             outline.getHeight() * vary_factor_list[run_id++]);
+
       SACoreHardMacro* sa
-          = new SACoreHardMacro(width,
-                                height,
+          = new SACoreHardMacro(new_outline,
                                 macros,
                                 1.0,     // area_weight
                                 1000.0,  // outline weight
@@ -2987,7 +2994,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -3142,7 +3149,11 @@ void HierRTLMP::setIOClustersBlockages()
   }
   max_width = num_hor_access > 0 ? max_width / num_hor_access : max_width;
   max_height = num_ver_access > 0 ? max_height / num_ver_access : max_height;
-  const float depth = std_cell_area / sum_length;
+  const float macro_dominance_factor
+      = macro_with_halo_area_
+        / (root_cluster_->getWidth() * root_cluster_->getHeight());
+  const float depth = (std_cell_area / sum_length)
+                      * std::pow((1 - macro_dominance_factor), 2);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3737,8 +3748,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline.getWidth(),
-                                outline.getHeight(),
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
@@ -3990,8 +4001,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
         SACoreSoftMacro* sa
-            = new SACoreSoftMacro(outline.getWidth(),
-                                  outline.getHeight(),
+            = new SACoreSoftMacro(root_cluster_,
+                                  outline,
                                   shaped_macros,
                                   area_weight_,
                                   outline_weight_,
@@ -4174,6 +4185,10 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   }
   nets.clear();
   nets = merged_nets;
+
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
 }
 
 // Multilevel macro placement without bus planning
@@ -4525,8 +4540,8 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline.getWidth(),
-                                outline.getHeight(),
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
@@ -5009,8 +5024,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline.getWidth(),
-                                outline.getHeight(),
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
@@ -5440,6 +5455,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::vector<BundledNet> nets
       = computeBundledNets(macro_clusters, cluster_id_macro_id_map);
 
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
+
   // Use exchange more often when there are more instances of a common
   // master.
   const float exchange_swap_prob
@@ -5474,8 +5493,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       }
 
       SACoreHardMacro* sa
-          = new SACoreHardMacro(outline.getWidth(),
-                                outline.getHeight(),
+          = new SACoreHardMacro(outline,
                                 macros,
                                 area_weight_,
                                 outline_weight_ * (run_id + 1) * 10,
@@ -5517,10 +5535,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     }
 
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);
-
-      if (sa->isValid(outline.getWidth(), outline.getHeight())
-          && sa->getNormCost() < best_cost) {
+      sa_containers.push_back(sa);  // add SA to containers
+      if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa;
       }
@@ -6491,6 +6507,11 @@ void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   graphics_ = std::move(graphics);
+}
+
+void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  graphics_->setShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

@@ -15,7 +15,7 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 input1/Z                                0.20    1.15   -0.95 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 853um.
+[INFO RSZ-0058] Using max wire length 828um.
 [INFO RSZ-0039] Resized 1 instances.
 max slew
 
