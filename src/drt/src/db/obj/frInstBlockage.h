@@ -34,7 +34,7 @@
 #include "db/obj/frBlockage.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frInst;
 class frInstBlockage : public frBlockObject
 {
@@ -60,4 +60,4 @@ class frInstBlockage : public frBlockObject
   frInst* inst_;
   frBlockage* blockage_;
 };
-}  // namespace fr
+}  // namespace drt

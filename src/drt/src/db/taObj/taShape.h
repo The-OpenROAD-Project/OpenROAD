@@ -31,7 +31,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class taPin;
 class frPathSeg;
@@ -65,25 +65,16 @@ class taShape : public taPinFig
    */
  protected:
   // constructors
-  taShape() : taPinFig() {}
+  taShape() = default;
 };
 
 class taPathSeg : public taShape
 {
  public:
   // constructors
-  taPathSeg()
-      : taShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr)
-  {
-  }
-  taPathSeg(const taPathSeg& in)
-      : begin_(in.begin_),
-        end_(in.end_),
-        layer_(in.layer_),
-        style_(in.style_),
-        owner_(in.owner_)
-  {
-  }
+  taPathSeg() = default;
+  taPathSeg(const taPathSeg& in) = delete;
+  taPathSeg& operator=(const taPathSeg&) = delete;
   taPathSeg(const frPathSeg& in);
   // getters
   std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
@@ -116,10 +107,7 @@ class taPathSeg : public taShape
    * addToPin
    * removeFromPin
    */
-  bool hasPin() const override
-  {
-    return (owner_) && (owner_->typeId() == tacPin);
-  }
+  bool hasPin() const override { return owner_ && owner_->typeId() == tacPin; }
 
   taPin* getPin() const override { return reinterpret_cast<taPin*>(owner_); }
 
@@ -168,12 +156,11 @@ class taPathSeg : public taShape
                   begin_.y() - width / 2,
                   end_.x() + endExt,
                   end_.y() + width / 2);
-    } else {
-      return Rect(begin_.x() - width / 2,
-                  begin_.y() - beginExt,
-                  end_.x() + width / 2,
-                  end_.y() + endExt);
     }
+    return Rect(begin_.x() - width / 2,
+                begin_.y() - beginExt,
+                end_.x() + width / 2,
+                end_.y() + endExt);
   }
   void move(const dbTransform& xform) override
   {
@@ -185,8 +172,9 @@ class taPathSeg : public taShape
  protected:
   Point begin_;  // begin always smaller than end, assumed
   Point end_;
-  frLayerNum layer_;
+  frLayerNum layer_{0};
   frSegStyle style_;
-  frBlockObject* owner_;
+  frBlockObject* owner_{nullptr};
 };
-}  // namespace fr
+
+}  // namespace drt

@@ -48,9 +48,9 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
-BOOST_CLASS_EXPORT(fr::PinAccessJobDescription)
+BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
-namespace fr {
+namespace drt {
 
 FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
@@ -256,4 +256,4 @@ template void FlexPinAccessPattern::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

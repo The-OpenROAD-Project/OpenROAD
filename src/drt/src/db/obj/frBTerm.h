@@ -32,30 +32,16 @@
 #include "db/obj/frBPin.h"
 #include "db/obj/frTerm.h"
 
-namespace fr {
+namespace drt {
 class frBlock;
 
 class frBTerm : public frTerm
 {
  public:
   // constructors
-  frBTerm(const frString& name) : frTerm(name), net_(nullptr) {}
-  frBTerm(const frBTerm& in) : frTerm(in)
-  {
-    for (auto& uPin : in.getPins()) {
-      auto pin = uPin.get();
-      auto tmp = std::make_unique<frBPin>(*pin);
-      addPin(std::move(tmp));
-    }
-  }
-  frBTerm(const frBTerm& in, const dbTransform& xform) : frTerm(in)
-  {
-    for (auto& uPin : in.getPins()) {
-      auto pin = uPin.get();
-      auto tmp = std::make_unique<frBPin>(*pin, xform);
-      addPin(std::move(tmp));
-    }
-  }
+  frBTerm(const frString& name) : frTerm(name) {}
+  frBTerm(const frBTerm& in) = delete;
+  frBTerm& operator=(const frBTerm&) = delete;
   // getters
   bool hasNet() const override { return (net_); }
   frNet* getNet() const override { return net_; }
@@ -68,10 +54,11 @@ class frBTerm : public frTerm
     for (auto& uFig : in->getFigs()) {
       auto pinFig = uFig.get();
       if (pinFig->typeId() == frcRect) {
-        if (bbox_.dx() == 0 && bbox_.dy() == 0)
+        if (bbox_.dx() == 0 && bbox_.dy() == 0) {
           bbox_ = static_cast<frRect*>(pinFig)->getBBox();
-        else
+        } else {
           bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
+        }
       }
     }
     in->setId(pins_.size());
@@ -120,8 +107,8 @@ class frBTerm : public frTerm
 
  protected:
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
-  frNet* net_;
-  bool isAboveTopLayer_ = false;
+  frNet* net_{nullptr};
+  bool isAboveTopLayer_{false};
 };
 
-}  // namespace fr
+}  // namespace drt

@@ -34,7 +34,7 @@
 
 #include "FlexPA.h"
 
-namespace fr {
+namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
@@ -377,4 +377,4 @@ bool FlexPAGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-}  // namespace fr
+}  // namespace drt
