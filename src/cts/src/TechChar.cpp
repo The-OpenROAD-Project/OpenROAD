@@ -601,8 +601,12 @@ void TechChar::initCharacterization()
       sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
 
       output->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
-      if (!maxSlewExist)
+      if (!maxSlewExist) {
+        input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      }
+      if (!maxSlewExist) {
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
+      }
       if (!maxSlewExist)
         logger_->error(
             CTS, 107, "No max slew found for cell {}.", bufMasterName);
