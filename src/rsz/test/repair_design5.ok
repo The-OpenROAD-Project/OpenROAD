@@ -11,7 +11,6 @@
 [INFO RSZ-0058] Using max wire length 527um.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
-[INFO RSZ-0039] Resized 3 instances.
 Instance drvr
  Cell: DFF_X1
  Library: Nangate45
@@ -23,11 +22,10 @@ Instance drvr
   Q output net0
   QN output (unconnected)
 [INFO RSZ-0058] Using max wire length 527um.
-[INFO RSZ-0039] Resized 1 instances.
 Instance drvr
- Cell: DFF_X2
+ Cell: DFF_X1
  Library: Nangate45
- Path cells: DFF_X2
+ Path cells: DFF_X1
  Input pins:
   D input (unconnected)
   CK input clk1

@@ -9,7 +9,7 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
-[INFO RSZ-0047] Found 1 long wires.
+[INFO RSZ-0047] Found 2 long wires.
 [INFO RSZ-0048] Inserted 3 buffers in 1 nets.
 CLOCK
 Driver    length delay

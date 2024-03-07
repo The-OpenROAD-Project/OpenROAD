@@ -10,8 +10,9 @@
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [INFO RSZ-0028] Inserted 1 output buffers.
 [INFO RSZ-0058] Using max wire length 693um.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0039] Resized 6 instances.
+[INFO RSZ-0034] Found 2 slew violations.
+[INFO RSZ-0036] Found 3 capacitance violations.
+[INFO RSZ-0039] Resized 2 instances.
 Net out
  Pin capacitance: 2000.00
  Wire capacitance: 0.50
