@@ -741,7 +741,7 @@ RepairDesign::repairNetWire(const BufferedNetPtr& bnet,
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                  units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
       split_length = min(max_length_, length/2);
-      if((length - split_length) >= max_length_) {
+      if((length - (split_length * (1.0 - length_margin))) >= max_length_) {
         split_length = max_length_;
       }
       split_wire = true;
