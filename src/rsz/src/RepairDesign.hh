@@ -48,6 +48,7 @@
 namespace rsz {
 
 class Resizer;
+enum class ParasiticsSrc;
 
 using std::vector;
 
@@ -251,6 +252,7 @@ protected:
   PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
+  ParasiticsSrc parasitics_src_;
 
   // Implicit arguments to repairNet bnet recursion.
   const Pin *drvr_pin_;

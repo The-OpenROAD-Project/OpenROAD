@@ -76,6 +76,7 @@ RepairDesign::RepairDesign(Resizer* resizer)
       pre_checks_(nullptr),
       resizer_(resizer),
       dbu_(0),
+      parasitics_src_(ParasiticsSrc::none),
       drvr_pin_(nullptr),
       max_cap_(0),
       max_length_(0),
@@ -100,6 +101,7 @@ RepairDesign::init()
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
+  parasitics_src_ = resizer_->getParasiticsSrc();
   copyState(sta_);
 }
 
@@ -379,6 +381,11 @@ RepairDesign::repairNet(Net *net,
       }
     }
 
+    // Resize the driver to normalize slews before repairing limit violations.
+    if (parasitics_src_ == ParasiticsSrc::placement
+        && resize_drvr) {
+      resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+    }
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
       BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
@@ -400,7 +407,8 @@ RepairDesign::repairNet(Net *net,
                                       length_violations);
         
         if (need_repair) {
-          if (resize_drvr) {
+          if (parasitics_src_ == ParasiticsSrc::global_routing
+              && resize_drvr) {
             resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
             wire_length = bnet->maxLoadWireLength();
             need_repair = needRepair(drvr_pin,
