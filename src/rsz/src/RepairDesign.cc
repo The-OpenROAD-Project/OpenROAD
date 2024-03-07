@@ -391,24 +391,19 @@ RepairDesign::repairNet(Net *net,
         graph_delay_calc_->findDelays(drvr);
 
         float max_cap = INF;
-        bool repair_slew = false;
-        bool repair_cap = false;
-        bool repair_wire = false;
-        if (check_cap) {
-          repair_cap = needRepairCap(drvr_pin, cap_violations, max_cap, corner);
-        }
         int wire_length = bnet->maxLoadWireLength();
-        if (max_length
-            && wire_length > max_length) {
-          length_violations++;
-          repair_wire = true;
-        }
-        if (check_slew) {
-          repair_slew = needRepairSlew(drvr_pin, slew_violations, max_cap, corner);
-        }
-        if (repair_slew
-            || repair_cap
-            || repair_wire) {
+        bool need_repair = needRepair(drvr_pin,
+                                      corner,
+                                      max_length,
+                                      wire_length,
+                                      check_cap,
+                                      check_slew,
+                                      max_cap,
+                                      slew_violations,
+                                      cap_violations,
+                                      length_violations);
+        
+        if (need_repair) {
           Point drvr_loc = db_network_->location(drvr->pin());
           debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
                      sdc_network_->pathName(drvr_pin),
@@ -507,6 +502,53 @@ RepairDesign::needRepairCap(const Pin *drvr_pin,
   }
 
   return false;
+}
+
+bool
+RepairDesign::needRepairWire(const int max_length,
+                             const int wire_length,
+                             int& length_violations)
+{
+  if (max_length
+      && wire_length > max_length) {
+    length_violations++;
+    return true;
+  }
+  return false;
+}
+
+bool
+RepairDesign::needRepair(const Pin *drvr_pin,
+                         const Corner *corner,
+                         const int max_length,
+                         const int wire_length,
+                         const bool check_cap,
+                         const bool check_slew,
+                         float& max_cap,
+                         int &slew_violations,
+                         int &cap_violations,
+                         int &length_violations)
+{
+  bool repair_cap = false;
+  bool repair_wire = false;
+  bool repair_slew = false;
+  if (check_cap) {
+    repair_cap = needRepairCap(drvr_pin,
+                               cap_violations,
+                               max_cap,
+                               corner);
+  }
+  repair_wire = needRepairWire(max_length,
+                               wire_length,
+                               length_violations);
+  if (check_slew) {
+    repair_slew = needRepairSlew(drvr_pin,
+                                 slew_violations,
+                                 max_cap,
+                                 corner);
+  }
+
+  return repair_cap || repair_wire || repair_slew;
 }
 
 bool
