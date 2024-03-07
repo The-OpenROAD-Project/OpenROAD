@@ -108,9 +108,21 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
 }
 
 proc save_image { args } {
-  set options [gui::parse_options $args]
+  ord::parse_list_args "save_image" args list {-display_option}
   sta::parse_key_args "save_image" args \
-    keys {-area -width -resolution -display_option} flags {}
+    keys {-area -width -resolution} flags {}
+
+  set options [gui::DisplayControlMap]
+  foreach opt $list(-display_option) {
+    if {[llength $opt] != 2} {
+      utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
+    }
+
+    set key [lindex $opt 0]
+    set val [lindex $opt 1]
+
+    $options set $key $val
+  }
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
@@ -165,10 +177,10 @@ sta::define_cmd_args "save_clocktree_image" {
 }
 
 proc save_clocktree_image { args } {
-  sta::parse_key_args "save_image" args \
+  sta::parse_key_args "save_clocktree_image" args \
     keys {-clock -width -height -corner} flags {}
 
-  sta::check_argc_eq1 "save_image" $args
+  sta::check_argc_eq1 "save_clocktree_image" $args
   set path [lindex $args 0]
 
   set width 0
@@ -329,31 +341,4 @@ proc focus_net { args } {
   } else {
     gui::focus_net $net
   }
-}
-
-namespace eval gui {
-proc parse_options { args_var } {
-  set options [gui::DisplayControlMap]
-  while { $args_var != {} } {
-    set arg [lindex $args_var 0]
-    if { $arg == "-display_option" } {
-      set opt [lindex $args_var 1]
-
-      if {[llength $opt] != 2} {
-        utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
-      }
-
-      set key [lindex $opt 0]
-      set val [lindex $opt 1]
-
-      $options set $key $val
-
-      set args_var [lrange $args_var 1 end]
-    } else {
-      set args_var [lrange $args_var 1 end]
-    }
-  }
-
-  return $options
-}
 }

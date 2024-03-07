@@ -86,57 +86,15 @@
       "name": "GCellData",
       "fields": [
         {
-          "name": "horizontal_usage",
-          "type": "uint",
-          "flags": [],
+          "name": "usage",
+          "type": "uint8_t",
+          "flags": ["no-serial"],
           "default": 0
         },
         {
-          "name": "vertical_usage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_usage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "horizontal_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "vertical_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "horizontal_blockage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "vertical_blockage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_blockage",
-          "type": "uint",
-          "flags": [],
+          "name": "capacity",
+          "type": "uint8_t",
+          "flags": ["no-serial"],
           "default": 0
         }
       ],
