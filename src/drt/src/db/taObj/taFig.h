@@ -33,20 +33,13 @@
 #include "db/infra/frBox.h"
 #include "db/taObj/taBlockObject.h"
 
-namespace fr {
+namespace drt {
 class taFig : public taBlockObject
 {
  public:
-  // getters
   virtual Rect getBBox() const = 0;
-  // setters
-  // others
   virtual void move(const dbTransform& xform) = 0;
   virtual bool overlaps(const Rect& box) const = 0;
-
- protected:
-  // constructors
-  taFig() : taBlockObject() {}
 };
 
 class frNet;
@@ -66,9 +59,6 @@ class taConnFig : public taFig
    * move
    * overlaps
    */
- protected:
-  // constructors
-  taConnFig() : taFig() {}
 };
 
 class taPin;
@@ -99,7 +89,6 @@ class taPinFig : public taConnFig
    */
  protected:
   frNet* net_ = nullptr;
-  taPinFig() : taConnFig() {}
 };
 
-}  // namespace fr
+}  // namespace drt

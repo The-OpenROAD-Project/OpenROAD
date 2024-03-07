@@ -8,6 +8,7 @@
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0131]     Created 3 components and 23 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 2 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: li1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
@@ -19,7 +20,6 @@
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 2

@@ -46,7 +46,7 @@ class AbstractMakeWireParasitics
  public:
   ~AbstractMakeWireParasitics() = default;
 
-  virtual void estimateParasitcs(odb::dbNet* net, GRoute& route) const = 0;
+  virtual void estimateParasitcs(odb::dbNet* net, GRoute& route) = 0;
 
   virtual void clearParasitics() = 0;
 

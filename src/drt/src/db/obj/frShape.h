@@ -31,7 +31,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frPin;
 class drPathSeg;
@@ -79,16 +79,14 @@ class frShape : public frPinFig
 
  protected:
   // constructors
-  frShape() : frPinFig(), owner_(nullptr), index_in_owner_(0) {}
-  frShape(frBlockObject* owner) : frPinFig(), owner_(owner), index_in_owner_(0)
-  {
-  }
+  frShape() = default;
+  frShape(frBlockObject* owner) : owner_(owner) {}
 
-  frBlockObject* owner_;  // general back pointer 0
-  int index_in_owner_;
+  frBlockObject* owner_{nullptr};  // general back pointer 0
+  int index_in_owner_{0};
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };
@@ -97,7 +95,7 @@ class frRect : public frShape
 {
  public:
   // constructors
-  frRect() : frShape(), box_(), layer_(0) {}
+  frRect() = default;
   frRect(const frRect& in) : frShape(in), box_(in.box_), layer_(in.layer_) {}
   frRect(int xl, int yl, int xh, int yh, frLayerNum lNum, frBlockObject* owner)
       : frShape(owner), box_(xl, yl, xh, yh), layer_(lNum)
@@ -202,7 +200,7 @@ class frRect : public frShape
 
  protected:
   Rect box_;
-  frLayerNum layer_;
+  frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -221,7 +219,7 @@ class frPatchWire : public frShape
 {
  public:
   // constructors
-  frPatchWire() : frShape(), offsetBox_(), origin_(), layer_(0) {}
+  frPatchWire() = default;
   frPatchWire(const frPatchWire& in)
       : frShape(in),
         offsetBox_(in.offsetBox_),
@@ -313,10 +311,9 @@ class frPatchWire : public frShape
   }
 
  protected:
-  // Rect          box_;
   Rect offsetBox_;
   Point origin_;
-  frLayerNum layer_;
+  frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -336,7 +333,7 @@ class frPolygon : public frShape
 {
  public:
   // constructors
-  frPolygon() : frShape(), points_(), layer_(0) {}
+  frPolygon() = default;
   frPolygon(const frPolygon& in)
       : frShape(in), points_(in.points_), layer_(in.layer_)
   {
@@ -405,7 +402,7 @@ class frPolygon : public frShape
     frCoord lly = 0;
     frCoord urx = 0;
     frCoord ury = 0;
-    if (points_.size()) {
+    if (!points_.empty()) {
       llx = points_.begin()->x();
       urx = points_.begin()->x();
       lly = points_.begin()->y();
@@ -438,7 +435,7 @@ class frPolygon : public frShape
 
  protected:
   std::vector<Point> points_;
-  frLayerNum layer_;
+  frLayerNum layer_{0};
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -457,10 +454,7 @@ class frPathSeg : public frShape
 {
  public:
   // constructors
-  frPathSeg()
-      : frShape(), begin_(), end_(), layer_(0), style_(), tapered_(false)
-  {
-  }
+  frPathSeg() = default;
   frPathSeg(const frPathSeg& in)
       : frShape(in),
         begin_(in.begin_),
@@ -486,17 +480,19 @@ class frPathSeg : public frShape
   frCoord low() const { return isVertical() ? begin_.y() : begin_.x(); }
   void setHigh(frCoord v)
   {
-    if (isVertical())
+    if (isVertical()) {
       end_.setY(v);
-    else
+    } else {
       end_.setX(v);
+    }
   }
   void setLow(frCoord v)
   {
-    if (isVertical())
+    if (isVertical()) {
       begin_.setY(v);
-    else
+    } else {
       begin_.setX(v);
+    }
   }
   bool isBeginTruncated()
   {
@@ -511,10 +507,11 @@ class frPathSeg : public frShape
   }
   void setPoints_safe(const Point& beginIn, const Point& endIn)
   {
-    if (endIn < beginIn)
+    if (endIn < beginIn) {
       setPoints(endIn, beginIn);
-    else
+    } else {
       setPoints(beginIn, endIn);
+    }
   }
   void setStyle(const frSegStyle& styleIn)
   {
@@ -522,11 +519,11 @@ class frPathSeg : public frShape
     style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
     style_.setWidth(styleIn.getWidth());
   }
-  void setBeginStyle(frEndStyle bs, frUInt4 ext = 0)
+  void setBeginStyle(const frEndStyle& bs, frUInt4 ext = 0)
   {
     style_.setBeginStyle(bs, ext);
   }
-  void setEndStyle(frEndStyle es, frUInt4 ext = 0)
+  void setEndStyle(const frEndStyle& es, frUInt4 ext = 0)
   {
     style_.setEndStyle(es, ext);
   }
@@ -599,12 +596,11 @@ class frPathSeg : public frShape
                   begin_.y() - width / 2,
                   end_.x() + endExt,
                   end_.y() + width / 2);
-    } else {
-      return Rect(begin_.x() - width / 2,
-                  begin_.y() - beginExt,
-                  end_.x() + width / 2,
-                  end_.y() + endExt);
     }
+    return Rect(begin_.x() - width / 2,
+                begin_.y() - beginExt,
+                end_.x() + width / 2,
+                end_.y() + endExt);
   }
   void move(const dbTransform& xform) override
   {
@@ -633,9 +629,9 @@ class frPathSeg : public frShape
  protected:
   Point begin_;  // begin always smaller than end, assumed
   Point end_;
-  frLayerNum layer_;
+  frLayerNum layer_{0};
   frSegStyle style_;
-  bool tapered_;
+  bool tapered_{false};
   frListIter<std::unique_ptr<frShape>> iter_;
 
   template <class Archive>
@@ -652,4 +648,4 @@ class frPathSeg : public frShape
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

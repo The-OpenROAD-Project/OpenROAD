@@ -54,7 +54,7 @@ ResidualError cudaSparseSolve(int iter,
 
   GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
   SP2.cusolverCal(instLocVecY);
-  error.y = SP1.error();
+  error.y = SP2.error();
   return error;
 }
 #endif
