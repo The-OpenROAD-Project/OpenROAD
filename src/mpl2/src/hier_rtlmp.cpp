@@ -1494,73 +1494,76 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
              "Finished merging clusters");
 }
 
-// Calculate Connections between clusters
 void HierRTLMP::calculateConnection()
 {
-  // Initialize the connections of all clusters
   for (auto& [cluster_id, cluster] : cluster_map_) {
     cluster->initConnection();
   }
 
-  // Traverse all nets through OpenDB
   for (odb::dbNet* net : block_->getNets()) {
-    // ignore all the power net
     if (net->getSigType().isSupply()) {
       continue;
     }
-    int driver_id = -1;         // cluster id of the driver instance
-    std::vector<int> loads_id;  // cluster id of sink instances
-    bool pad_flag = false;
-    // check the connected instances
+
+    int driver_id = -1;
+    std::vector<int> loads_id;
+    bool net_has_pad_or_cover = false;
+
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+
       if (liberty_cell == nullptr) {
         continue;
       }
+
       odb::dbMaster* master = inst->getMaster();
-      // check if the instance is a Pad, Cover or empty block (such as marker)
-      // We ignore nets connecting Pads, Covers, or markers
+
       if (master->isPad() || master->isCover()) {
-        pad_flag = true;
+        net_has_pad_or_cover = true;
         break;
       }
+
       const int cluster_id
           = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         driver_id = cluster_id;
       } else {
         loads_id.push_back(cluster_id);
       }
     }
-    if (pad_flag) {
-      continue;  // the nets with Pads should be ignored
+
+    if (net_has_pad_or_cover) {
+      continue;
     }
-    bool io_flag = false;
-    // check the connected IO pins
+
+    bool net_has_io_pin = false;
+
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int cluster_id
           = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
-      io_flag = true;
+      net_has_io_pin = true;
+
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_id;
       } else {
         loads_id.push_back(cluster_id);
       }
     }
-    // add the net to connections between clusters
+
     if (driver_id != -1 && !loads_id.empty()
         && loads_id.size() < large_net_threshold_) {
-      const float weight = io_flag == true ? virtual_weight_ : 1.0;
+      const float weight = net_has_io_pin ? virtual_weight_ : 1.0;
+
       for (const int load_id : loads_id) {
-        // we model the connections as undirected edges
-        if (load_id != driver_id) {
+        if (load_id != driver_id) { /* undirected connection */
           cluster_map_[driver_id]->addConnection(load_id, weight);
           cluster_map_[load_id]->addConnection(driver_id, weight);
         }
-      }  // end sinks
-    }    // end adding current net
-  }      // end net traversal
+      }
+    }
+  }
 }
 
 // Dataflow is used to improve quality of macro placement.
