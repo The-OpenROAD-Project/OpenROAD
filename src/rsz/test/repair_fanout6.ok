@@ -11,15 +11,16 @@
 [INFO ODB-0133]     Created 8003 nets and 24003 connections.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 508 buffers in 1 nets.
-worst slack -26.77
+[INFO RSZ-0039] Resized 509 instances.
+worst slack -8.65
 max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout1/X                                20     20      0 (MET)
 
-[INFO RSZ-0094] Found 8000 endpoints with setup violations.
-[INFO RSZ-0045] Inserted 18 buffers, 1 to split loads.
-[INFO RSZ-0041] Resized 642 instances.
+[INFO RSZ-0094] Found 6400 endpoints with setup violations.
+[INFO RSZ-0045] Inserted 17 buffers, 1 to split loads.
+[INFO RSZ-0041] Resized 67 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -3.40
+worst slack -3.10

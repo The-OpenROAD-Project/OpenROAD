@@ -9,22 +9,20 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO RSZ-0058] Using max wire length 1229um.
-[INFO RSZ-0034] Found 2 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 2 long wires.
+[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 1 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0039] Resized 2 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u1/Z                                    0.15    0.02    0.13 (MET)
+wire1/Z                                 0.15    0.01    0.14 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/Z                                   60.65   12.43   48.22 (MET)
+u3/Z                                   60.63    0.00   60.63 (MET)
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -35,17 +33,17 @@ Corner: slow
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   0.984    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-  12.304    0.109    0.141    0.141 ^ u1/Z (BUF_X1)
-            0.109    0.000    0.141 ^ u2/A (BUF_X16)
-  74.625    0.032    0.100    0.242 ^ u2/Z (BUF_X16)
-            0.124    0.099    0.341 ^ wire1/A (BUF_X16)
-  88.461    0.038    0.110    0.451 ^ wire1/Z (BUF_X16)
-            0.173    0.140    0.591 ^ u3/A (BUF_X1)
-   0.000    0.017    0.096    0.687 ^ u3/Z (BUF_X1)
-            0.017    0.000    0.687 ^ out1 (out)
-                              0.687   data arrival time
+   1.755    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X2)
+  12.306    0.060    0.088    0.088 ^ u1/Z (BUF_X2)
+            0.060    0.000    0.088 ^ u2/A (BUF_X16)
+  74.616    0.032    0.085    0.173 ^ u2/Z (BUF_X16)
+            0.124    0.099    0.272 ^ wire1/A (BUF_X16)
+  88.451    0.038    0.110    0.382 ^ wire1/Z (BUF_X16)
+            0.173    0.140    0.522 ^ u3/A (BUF_X1)
+   0.000    0.017    0.096    0.618 ^ u3/Z (BUF_X1)
+            0.017    0.000    0.618 ^ out1 (out)
+                              0.618   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

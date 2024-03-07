@@ -27,9 +27,8 @@ Pin                                    Limit     Cap   Slack
 u1/Z                                   60.65  149.17  -88.52 (VIOLATED)
 
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
-[INFO RSZ-0034] Found 2 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 2 long wires.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
 max slew

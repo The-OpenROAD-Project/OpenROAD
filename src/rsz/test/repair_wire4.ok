@@ -14,16 +14,14 @@ u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
-[INFO RSZ-0034] Found 2 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 2 long wires.
+[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
 wire1/Z manhtn 858.7 steiner 858.7 0.10
 wire2/Z manhtn 857.7 steiner 857.7 0.10
-u2/Z manhtn 651.7 steiner 651.7 0.06
-max_length3/Z manhtn 648.1 steiner 648.1 0.06
-u1/Z manhtn 1.1 steiner 1.1 0.00
+u2/Z manhtn 650.2 steiner 650.2 0.06
+max_length3/Z manhtn 648.4 steiner 648.4 0.06
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
+u1/Z manhtn 0.8 steiner 0.8 0.00

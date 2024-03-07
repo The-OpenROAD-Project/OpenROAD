@@ -56,18 +56,16 @@ u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
-[INFO RSZ-0034] Found 2 slew violations.
-[INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0037] Found 2 long wires.
+[INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
-wire2/Z manhtn 1496.9 steiner 1496.9 0.30
+wire2/Z manhtn 1497.0 steiner 1497.0 0.30
 wire1/Z manhtn 952.7 steiner 952.7 0.12
-u2/Z manhtn 544.9 steiner 544.9 0.04
-u1/Z manhtn 1.1 steiner 1.1 0.00
+u2/Z manhtn 544.8 steiner 544.8 0.04
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
+u1/Z manhtn 0.8 steiner 0.8 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -77,17 +75,17 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.024    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-  26.789    0.062    0.079    0.079 ^ u1/Z (BUF_X1)
-            0.062    0.000    0.079 ^ u2/A (BUF_X32)
-  53.368    0.008    0.027    0.107 ^ u2/Z (BUF_X32)
-            0.056    0.046    0.153 ^ wire2/A (BUF_X16)
- 125.939    0.010    0.032    0.185 ^ wire2/Z (BUF_X16)
-            0.267    0.218    0.403 ^ u3/A (BUF_X1)
-   0.000    0.012    0.024    0.427 ^ u3/Z (BUF_X1)
-            0.012    0.000    0.427 ^ out1 (out)
-                              0.427   data arrival time
+   3.451    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X4)
+  26.763    0.018    0.030    0.030 ^ u1/Z (BUF_X4)
+            0.018    0.000    0.030 ^ u2/A (BUF_X32)
+  53.360    0.006    0.022    0.052 ^ u2/Z (BUF_X32)
+            0.056    0.046    0.098 ^ wire2/A (BUF_X16)
+ 125.932    0.010    0.032    0.130 ^ wire2/Z (BUF_X16)
+            0.267    0.218    0.348 ^ u3/A (BUF_X1)
+   0.000    0.012    0.024    0.372 ^ u3/Z (BUF_X1)
+            0.012    0.000    0.372 ^ out1 (out)
+                              0.372   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
@@ -100,19 +98,19 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.024    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-  26.789    0.062    0.079    0.079 ^ u1/Z (BUF_X1)
-            0.062    0.000    0.079 ^ u2/A (BUF_X32)
-  53.368    0.008    0.027    0.107 ^ u2/Z (BUF_X32)
-            0.056    0.046    0.153 ^ wire2/A (BUF_X16)
- 125.939    0.010    0.032    0.185 ^ wire2/Z (BUF_X16)
-            0.322    0.264    0.449 ^ wire1/A (BUF_X16)
-  72.581    0.020    0.033    0.482 ^ wire1/Z (BUF_X16)
-            0.110    0.090    0.572 ^ u4/A (BUF_X1)
-   0.000    0.008    0.028    0.600 ^ u4/Z (BUF_X1)
-            0.008    0.000    0.600 ^ out2 (out)
-                              0.600   data arrival time
+   3.451    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X4)
+  26.763    0.018    0.030    0.030 ^ u1/Z (BUF_X4)
+            0.018    0.000    0.030 ^ u2/A (BUF_X32)
+  53.360    0.006    0.022    0.052 ^ u2/Z (BUF_X32)
+            0.056    0.046    0.098 ^ wire2/A (BUF_X16)
+ 125.932    0.010    0.032    0.130 ^ wire2/Z (BUF_X16)
+            0.322    0.264    0.394 ^ wire1/A (BUF_X16)
+  72.581    0.020    0.033    0.427 ^ wire1/Z (BUF_X16)
+            0.110    0.090    0.517 ^ u4/A (BUF_X1)
+   0.000    0.008    0.028    0.545 ^ u4/Z (BUF_X1)
+            0.008    0.000    0.545 ^ out2 (out)
+                              0.545   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
