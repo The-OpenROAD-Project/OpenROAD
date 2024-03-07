@@ -982,6 +982,7 @@ class NesterovBase
   void snapshot();
 
   bool checkConvergence();
+  bool checkDivergence();
   bool revertDivergence();
 
   void updatePrevGradient(float wlCoeffX, float wlCoeffY);
