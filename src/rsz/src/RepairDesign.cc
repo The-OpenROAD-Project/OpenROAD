@@ -402,18 +402,18 @@ RepairDesign::repairNet(Net *net,
         if (need_repair) {
           if (resize_drvr) {
             resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+            wire_length = bnet->maxLoadWireLength();
+            need_repair = needRepair(drvr_pin,
+                                    corner,
+                                    max_length,
+                                    wire_length, 
+                                    check_cap,
+                                    check_slew,
+                                    max_cap,
+                                    slew_violations,
+                                    cap_violations,
+                                    length_violations);
           }
-          wire_length = bnet->maxLoadWireLength();
-          need_repair = needRepair(drvr_pin,
-                                   corner,
-                                   max_length,
-                                   wire_length, 
-                                   check_cap,
-                                   check_slew,
-                                   max_cap,
-                                   slew_violations,
-                                   cap_violations,
-                                   length_violations);
           if (need_repair) {
             Point drvr_loc = db_network_->location(drvr->pin());
             debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
@@ -542,7 +542,6 @@ RepairDesign::needRepair(const Pin *drvr_pin,
                          int &length_violations)
 {
   bool repair_cap = false;
-  bool repair_wire = false;
   bool repair_slew = false;
   if (check_cap) {
     repair_cap = needRepairCap(drvr_pin,
@@ -550,7 +549,7 @@ RepairDesign::needRepair(const Pin *drvr_pin,
                                max_cap,
                                corner);
   }
-  repair_wire = needRepairWire(max_length,
+  bool repair_wire = needRepairWire(max_length,
                                wire_length,
                                length_violations);
   if (check_slew) {

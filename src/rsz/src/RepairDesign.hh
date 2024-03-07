@@ -128,8 +128,8 @@ protected:
                      int& cap_violations,
                      float& max_cap,
                      const Corner *corner);
-  bool needRepairWire(const int max_length,
-                      const int wire_length,
+  bool needRepairWire(int max_length,
+                      int wire_length,
                       int& length_violations);
   bool needRepair(const Pin *drvr_pin,
                   const Corner *corner,
