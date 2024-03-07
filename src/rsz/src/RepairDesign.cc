@@ -379,10 +379,6 @@ RepairDesign::repairNet(Net *net,
       }
     }
 
-    // Resize the driver to normalize slews before repairing limit violations.
-    if (resize_drvr) {
-      resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
-    }
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
       BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
@@ -404,17 +400,33 @@ RepairDesign::repairNet(Net *net,
                                       length_violations);
         
         if (need_repair) {
-          Point drvr_loc = db_network_->location(drvr->pin());
-          debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
-                     sdc_network_->pathName(drvr_pin),
-                     units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 1),
-                     units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
-                     units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
-          repairNet(bnet, drvr_pin, max_cap, max_length, corner);
-          repaired_net = true;
-
           if (resize_drvr) {
             resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+          }
+          wire_length = bnet->maxLoadWireLength();
+          need_repair = needRepair(drvr_pin,
+                                   corner,
+                                   max_length,
+                                   wire_length, 
+                                   check_cap,
+                                   check_slew,
+                                   max_cap,
+                                   slew_violations,
+                                   cap_violations,
+                                   length_violations);
+          if (need_repair) {
+            Point drvr_loc = db_network_->location(drvr->pin());
+            debugPrint(logger_, RSZ, "repair_net", 1, "driver {} ({} {}) l={}",
+                      sdc_network_->pathName(drvr_pin),
+                      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 1),
+                      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
+                      units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
+            repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+            repaired_net = true;
+
+            if (resize_drvr) {
+              resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
+            }
           }
         }
       }
