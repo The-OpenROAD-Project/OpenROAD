@@ -32,7 +32,7 @@
 
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 enum class frInterpolateType
 {
   frcSnapDown,
@@ -239,4 +239,4 @@ class fr2DLookupTbl
   frExtrapolateType extrapolateTypeColUpper_{frExtrapolateType::frcSnapDown};
 };
 
-}  // namespace fr
+}  // namespace drt

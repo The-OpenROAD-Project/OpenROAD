@@ -37,7 +37,7 @@
 namespace odb {
 class dbTechLayer;
 }
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -780,4 +780,4 @@ class frLayer
 
   friend class io::Parser;
 };
-}  // namespace fr
+}  // namespace drt

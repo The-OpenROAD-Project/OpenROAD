@@ -32,7 +32,7 @@
 #include "db/infra/frSegStyle.h"
 #include "dr/FlexMazeTypes.h"
 
-namespace fr {
+namespace drt {
 
 class drNet;
 class drPin;
@@ -334,4 +334,4 @@ class drPatchWire : public drShape
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

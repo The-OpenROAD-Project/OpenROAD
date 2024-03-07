@@ -39,7 +39,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
-namespace fr {
+namespace drt {
 
 namespace gtl = boost::polygon;
 
@@ -3551,4 +3551,4 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   }
 }
 
-}  // namespace fr
+}  // namespace drt

@@ -30,7 +30,7 @@
 
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBlockObject
 {
  public:
@@ -62,4 +62,4 @@ struct frBlockObjectComp
     return *lhs < *rhs;
   }
 };
-}  // namespace fr
+}  // namespace drt

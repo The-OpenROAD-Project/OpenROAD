@@ -33,7 +33,7 @@
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frBox.h"
 
-namespace fr {
+namespace drt {
 class drFig : public drBlockObject
 {
  public:
@@ -108,4 +108,4 @@ class drPinFig : public drConnFig
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

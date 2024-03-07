@@ -30,7 +30,7 @@
 
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            Logger* logger,
@@ -216,4 +216,4 @@ gcNet* FlexGCWorker::getNet(frNet* net)
   return impl_->getNet(net);
 }
 
-}  // namespace fr
+}  // namespace drt

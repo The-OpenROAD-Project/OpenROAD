@@ -28,7 +28,7 @@
 
 #include "dr/FlexDR.h"
 
-namespace fr {
+namespace drt {
 
 void FlexDRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
 {
@@ -633,4 +633,4 @@ bool FlexDRWorker::end(frDesign* design)
   return true;
 }
 
-}  // namespace fr
+}  // namespace drt

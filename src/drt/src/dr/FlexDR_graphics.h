@@ -38,7 +38,7 @@ class dbDatabase;
 class Point;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class FlexGridGraph;
 class FlexWavefrontGrid;
@@ -126,4 +126,4 @@ class FlexDRGraphics : public gui::Renderer
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
 
-}  // namespace fr
+}  // namespace drt

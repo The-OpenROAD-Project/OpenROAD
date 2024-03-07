@@ -36,7 +36,7 @@
 #include "FlexDR.h"
 #include "ord/OpenRoad.hh"
 
-namespace fr {
+namespace drt {
 
 // Descriptor for Grid Graph nodes and their edges
 class GridGraphDescriptor : public gui::Descriptor
@@ -298,7 +298,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (checkDisplayControl(routing_objs_visible_)) {
     if (drawWholeDesign_) {
       Rect box = design_->getTopBlock()->getDieBox();
-      fr::frRegionQuery::Objects<frBlockObject> figs;
+      frRegionQuery::Objects<frBlockObject> figs;
       design_->getRegionQuery()->queryDRObj(box, layerNum, figs);
       for (auto& fig : figs) {
         drawObj(fig.second, painter, layerNum);
@@ -806,4 +806,4 @@ void FlexDRGraphics::init()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

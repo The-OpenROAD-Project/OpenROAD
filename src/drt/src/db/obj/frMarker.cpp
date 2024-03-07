@@ -31,7 +31,7 @@
 #include "distributed/frArchive.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 
 template <class Archive>
 void frMarker::serialize(Archive& ar, const unsigned int version)
@@ -112,4 +112,4 @@ template void frMarker::serialize<frIArchive>(frIArchive& ar,
 template void frMarker::serialize<frOArchive>(frOArchive& ar,
                                               const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

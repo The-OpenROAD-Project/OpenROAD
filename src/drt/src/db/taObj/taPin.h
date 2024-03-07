@@ -32,7 +32,7 @@
 #include "db/taObj/taShape.h"
 #include "db/taObj/taVia.h"
 
-namespace fr {
+namespace drt {
 class frGuide;
 
 class taPin : public taBlockObject
@@ -73,9 +73,8 @@ class taPin : public taBlockObject
   {
     if (this->cost_ != b.cost_) {
       return this->getCost() > b.getCost();
-    } else {
-      return this->getId() < b.getId();
     }
+    return this->getId() < b.getId();
   }
 
  protected:
@@ -95,4 +94,4 @@ struct taPinComp
     return *lhs < *rhs;
   }
 };
-}  // namespace fr
+}  // namespace drt

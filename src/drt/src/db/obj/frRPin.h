@@ -33,7 +33,7 @@
 #include "frBaseTypes.h"
 // #include "db/obj/frAccess.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frAccessPoint;
 // serve the same purpose as drPin and grPin, but on fr level
@@ -64,4 +64,4 @@ class frRPin : public frBlockObject
   frAccessPoint* accessPoint{nullptr};  // pref AP for frBTerm and frInstTerm
   frNet* net{nullptr};
 };
-}  // namespace fr
+}  // namespace drt

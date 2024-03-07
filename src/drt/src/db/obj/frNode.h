@@ -35,7 +35,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNode;
 class frNode : public frBlockObject
@@ -142,4 +142,4 @@ class frNode : public frBlockObject
 
   friend class grNode;
 };
-}  // namespace fr
+}  // namespace drt
