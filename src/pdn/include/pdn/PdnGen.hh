@@ -208,6 +208,7 @@ class PdnGen
 
  private:
   void trimShapes();
+  void updateVias();
   void cleanupVias();
 
   void checkDesign(odb::dbBlock* block) const;

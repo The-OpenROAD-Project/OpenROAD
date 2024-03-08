@@ -14,7 +14,7 @@ _equivalenceDeps() {
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then (
+    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
         if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
             source /opt/rh/llvm-toolset-7.0/enable
         fi
