@@ -125,7 +125,7 @@ void dbScanPartition::setStart(dbBTerm* bterm)
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->start_ = dft->CreateScanPin(bterm);
+  scan_partition->start_ = dbScanPin::create(dft, bterm);
 }
 
 void dbScanPartition::setStart(dbITerm* iterm)
@@ -133,7 +133,7 @@ void dbScanPartition::setStart(dbITerm* iterm)
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->start_ = dft->CreateScanPin(iterm);
+  scan_partition->start_ = dbScanPin::create(dft, iterm);
 }
 
 void dbScanPartition::setStop(dbBTerm* bterm)
@@ -141,7 +141,7 @@ void dbScanPartition::setStop(dbBTerm* bterm)
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->stop_ = dft->CreateScanPin(bterm);
+  scan_partition->stop_ = dbScanPin::create(dft, bterm);
 }
 
 void dbScanPartition::setStop(dbITerm* iterm)
@@ -149,7 +149,7 @@ void dbScanPartition::setStop(dbITerm* iterm)
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->stop_ = dft->CreateScanPin(iterm);
+  scan_partition->stop_ = dbScanPin::create(dft, iterm);
 }
 
 std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStart() const
@@ -182,6 +182,12 @@ void dbScanPartition::setName(std::string_view name)
 {
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   scan_partition->name_ = name;
+}
+
+dbScanPartition* dbScanPartition::create(dbScanChain* chain)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) chain;
+  return (dbScanPartition*) (scan_chain->scan_partitions_->create());
 }
 
 // User Code End dbScanPartitionPublicMethods

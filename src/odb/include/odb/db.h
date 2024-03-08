@@ -7098,12 +7098,6 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
-
-  // User Code Begin dbDft
-  dbId<dbScanPin> CreateScanPin(dbBTerm* bterm);
-  dbId<dbScanPin> CreateScanPin(dbITerm* iterm);
-  dbScanChain* CreateScanChain();
-  // User Code End dbDft
 };
 
 class dbGCellGrid : public dbObject
@@ -7781,15 +7775,12 @@ class dbScanChain : public dbObject
   dbBTerm* getScanOut() const;
 
   void setScanEnable(dbBTerm* scan_enable);
-
   dbBTerm* getScanEnable() const;
 
   std::string_view getTestMode() const;
   void setTestMode(std::string_view test_mode);
 
-  dbScanPartition* createScanPartition();
-  dbScanInst* createScanInst(dbInst* inst);
-  dbScanInst* createScanInst(const std::vector<dbInst*>& insts);
+  static dbScanChain* create(dbDft* dft);
   // User Code End dbScanChain
 };
 
@@ -7815,7 +7806,6 @@ class dbScanInst : public dbObject
   ClockEdge getClockEdge() const;
 
   void setBits(uint bits);
-
   uint getBits() const;
 
   void setScanEnable(dbBTerm* scan_enable);
@@ -7823,10 +7813,13 @@ class dbScanInst : public dbObject
   std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
 
   void setAccessPins(const AccessPins& access_pins);
-
   AccessPins getAccessPins() const;
 
   std::vector<dbInst*> getInsts() const;
+
+  static dbScanInst* create(dbScanChain* scan_chain, dbInst* inst);
+  static dbScanInst* create(dbScanChain* scan_chain,
+                            const std::vector<dbInst*>& insts);
   // User Code End dbScanInst
 };
 
@@ -7849,6 +7842,8 @@ class dbScanPartition : public dbObject
   std::string_view getName() const;
 
   void setName(std::string_view name);
+
+  static dbScanPartition* create(dbScanChain* chain);
   // User Code End dbScanPartition
 };
 
@@ -7859,6 +7854,8 @@ class dbScanPin : public dbObject
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);
   void setPin(dbITerm* iterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
 };
 

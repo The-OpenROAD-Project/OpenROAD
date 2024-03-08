@@ -269,36 +269,10 @@ std::string_view dbScanChain::getTestMode() const
   return scan_chain->test_mode_;
 }
 
-dbScanPartition* dbScanChain::createScanPartition()
+dbScanChain* dbScanChain::create(dbDft* dft)
 {
-  _dbScanChain* scan_chain = (_dbScanChain*) this;
-  return (dbScanPartition*) (scan_chain->scan_partitions_->create());
-}
-
-dbScanInst* dbScanChain::createScanInst(dbInst* inst)
-{
-  _dbScanChain* scan_chain = (_dbScanChain*) this;
-  _dbInst* _inst = (_dbInst*) inst;
-
-  _dbScanInst* scan_inst = (_dbScanInst*) scan_chain->scan_insts_->create();
-  scan_inst->insts_.reserve(1);
-  scan_inst->insts_.push_back(_inst->getId());
-
-  return (dbScanInst*) scan_inst;
-}
-
-dbScanInst* dbScanChain::createScanInst(const std::vector<dbInst*>& insts)
-{
-  _dbScanChain* scan_chain = (_dbScanChain*) this;
-
-  _dbScanInst* scan_inst = (_dbScanInst*) scan_chain->scan_insts_->create();
-  scan_inst->insts_.reserve(insts.size());
-
-  for (const dbInst* inst : insts) {
-    scan_inst->insts_.push_back(inst->getId());
-  }
-
-  return (dbScanInst*) scan_inst;
+  _dbDft* obj = (_dbDft*) dft;
+  return (dbScanChain*) obj->scan_chains_->create();
 }
 
 // User Code End dbScanChainPublicMethods
