@@ -1088,8 +1088,8 @@ void HierRTLMP::updateInstancesAssociation(Cluster* cluster)
 // Unlike macros, std cells are always considered when when updating
 // the inst -> cluster map with the data from a module.
 void HierRTLMP::updateInstancesAssociation(odb::dbModule* module,
-                                int cluster_id,
-                                bool include_macro)
+                                           int cluster_id,
+                                           bool include_macro)
 {
   if (include_macro) {
     for (odb::dbInst* inst : module->getInsts()) {
@@ -2073,7 +2073,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
       || parent->getLeafStdCells().size() < max_num_inst_) {
     return;
   }
-  // set the instance property
+
   updateInstancesAssociation(parent);
   std::map<int, int> cluster_vertex_id_map;
   std::map<odb::dbInst*, int> inst_vertex_id_map;
@@ -2196,15 +2196,16 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
       cluster_part_1->addLeafStdCell(std_cells[i - num_fixed_vertices]);
     }
   }
-  // update the property of parent cluster
+
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
-  // update the property of cluster_part_1
+
   updateInstancesAssociation(cluster_part_1);
   setClusterMetrics(cluster_part_1);
   cluster_map_[cluster_id_++] = cluster_part_1;
   cluster_part_1->setParent(parent->getParent());
   parent->getParent()->addChild(cluster_part_1);
+
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
@@ -3260,7 +3261,6 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     return;
   }
 
-  // set the instance property
   for (auto& cluster : parent->getChildren()) {
     updateInstancesAssociation(cluster);
   }
@@ -4153,7 +4153,6 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   sa_containers.clear();
 
-  // done this branch and update the cluster_id property back
   updateInstancesAssociation(parent);
 }
 
@@ -4207,7 +4206,6 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     return;
   }
 
-  // set the instance property
   for (auto& cluster : parent->getChildren()) {
     updateInstancesAssociation(cluster);
   }
@@ -4685,7 +4683,6 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   sa_containers.clear();
 
-  // done this branch and update the cluster_id property back
   updateInstancesAssociation(parent);
 }
 
