@@ -575,7 +575,7 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
       std::string cluster_name = inst->getName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
-      setInstProperty(cluster);
+      updateInstancesAssociation(cluster);
       setClusterMetrics(cluster);
       cluster_map_[cluster_id_++] = cluster;
       // modify the physical hierarchy tree
@@ -1037,7 +1037,7 @@ void HierRTLMP::multilevelAutocluster(Cluster* parent)
     breakCluster(parent);   // Break the parent cluster into children clusters
     updateSubTree(parent);  // update the subtree to the physical hierarchy tree
     for (auto& child : parent->getChildren()) {
-      setInstProperty(child);
+      updateInstancesAssociation(child);
     }
     // print the basic information of the children cluster
     for (auto& child : parent->getChildren()) {
@@ -1053,11 +1053,11 @@ void HierRTLMP::multilevelAutocluster(Cluster* parent)
     multilevelAutocluster(parent);
   }
 
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
   level_--;
 }
 
-void HierRTLMP::setInstProperty(Cluster* cluster)
+void HierRTLMP::updateInstancesAssociation(Cluster* cluster)
 {
   int cluster_id = cluster->getId();
   ClusterType cluster_type = cluster->getClusterType();
@@ -1076,18 +1076,18 @@ void HierRTLMP::setInstProperty(Cluster* cluster)
   // Note: macro clusters have no module.
   if (cluster_type == StdCellCluster) {
     for (auto& module : cluster->getDbModules()) {
-      setInstProperty(module, cluster_id, false);
+      updateInstancesAssociation(module, cluster_id, false);
     }
   } else if (cluster_type == MixedCluster) {
     for (auto& module : cluster->getDbModules()) {
-      setInstProperty(module, cluster_id, true);
+      updateInstancesAssociation(module, cluster_id, true);
     }
   }
 }
 
 // Unlike macros, std cells are always considered when when updating
 // the inst -> cluster map with the data from a module.
-void HierRTLMP::setInstProperty(odb::dbModule* module,
+void HierRTLMP::updateInstancesAssociation(odb::dbModule* module,
                                 int cluster_id,
                                 bool include_macro)
 {
@@ -1107,7 +1107,7 @@ void HierRTLMP::setInstProperty(odb::dbModule* module,
     }
   }
   for (odb::dbModInst* inst : module->getChildren()) {
-    setInstProperty(inst->getMaster(), cluster_id, include_macro);
+    updateInstancesAssociation(inst->getMaster(), cluster_id, include_macro);
   }
 }
 
@@ -1172,7 +1172,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
             && cluster->getLeafMacros().empty()) {
           delete cluster;
         } else {
-          setInstProperty(cluster);
+          updateInstancesAssociation(cluster);
           setClusterMetrics(cluster);
           cluster_map_[cluster_id_++] = cluster;
           // modify the physical hierarchy tree
@@ -1198,7 +1198,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
           }
         }
         parent->clearDbModules();  // remove module from the parent cluster
-        setInstProperty(parent);
+        updateInstancesAssociation(parent);
       }
       return;
     }
@@ -1208,7 +1208,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
       std::string cluster_name = child->getMaster()->getHierarchicalName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->addDbModule(child->getMaster());
-      setInstProperty(cluster);
+      updateInstancesAssociation(cluster);
       setClusterMetrics(cluster);
       cluster_map_[cluster_id_++] = cluster;
       // modify the physical hierarchy tree
@@ -1240,7 +1240,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
         && cluster->getLeafMacros().empty()) {
       delete cluster;
     } else {
-      setInstProperty(cluster);
+      updateInstancesAssociation(cluster);
       setClusterMetrics(cluster);
       cluster_map_[cluster_id_++] = cluster;
       // modify the physical hierarchy tree
@@ -1254,7 +1254,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
       std::string cluster_name = module->getHierarchicalName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->addDbModule(module);
-      setInstProperty(cluster);
+      updateInstancesAssociation(cluster);
       setClusterMetrics(cluster);
       cluster_map_[cluster_id_++] = cluster;
       // modify the physical hierachy tree
@@ -1273,7 +1273,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
       for (auto& inst : parent->getLeafMacros()) {
         cluster->addLeafMacro(inst);
       }
-      setInstProperty(cluster);
+      updateInstancesAssociation(cluster);
       setClusterMetrics(cluster);
       cluster_map_[cluster_id_++] = cluster;
       // modify the physical hierachy tree
@@ -1307,7 +1307,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
 
   // Update the cluster_id
   // This is important to maintain the clustering results
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
 }
 
 // Merge small clusters with the same parent cluster
@@ -1383,7 +1383,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
             cluster_map_.erase(candidate_clusters[i]->getId());
             delete candidate_clusters[i];
           }
-          setInstProperty(cluster);
+          updateInstancesAssociation(cluster);
           setClusterMetrics(cluster);
           cluster_class[i] = cluster->getId();
         }
@@ -1410,7 +1410,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
                 cluster_map_.erase(candidate_clusters[j]->getId());
                 delete candidate_clusters[j];
               }
-              setInstProperty(candidate_clusters[i]);
+              updateInstancesAssociation(candidate_clusters[i]);
               setClusterMetrics(candidate_clusters[i]);
             }
           }
@@ -1440,7 +1440,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
                 cluster_map_.erase(candidate_clusters[j]->getId());
                 delete candidate_clusters[j];
               }
-              setInstProperty(candidate_clusters[i]);
+              updateInstancesAssociation(candidate_clusters[i]);
               setClusterMetrics(candidate_clusters[i]);
             }
           }
@@ -2074,7 +2074,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     return;
   }
   // set the instance property
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
   std::map<int, int> cluster_vertex_id_map;
   std::map<odb::dbInst*, int> inst_vertex_id_map;
   const int parent_cluster_id = parent->getId();
@@ -2197,10 +2197,10 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     }
   }
   // update the property of parent cluster
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
   setClusterMetrics(parent);
   // update the property of cluster_part_1
-  setInstProperty(cluster_part_1);
+  updateInstancesAssociation(cluster_part_1);
   setClusterMetrics(cluster_part_1);
   cluster_map_[cluster_id_++] = cluster_part_1;
   cluster_part_1->setParent(parent->getParent());
@@ -2223,7 +2223,7 @@ void HierRTLMP::fetchMixedLeaves(
   std::vector<Cluster*> sister_mixed_leaves;
 
   for (auto& child : parent->getChildren()) {
-    setInstProperty(child);
+    updateInstancesAssociation(child);
     if (child->getNumMacro() > 0) {
       if (child->getChildren().empty()) {
         sister_mixed_leaves.push_back(child);
@@ -2252,7 +2252,7 @@ void HierRTLMP::breakMixedLeaves(
         breakMixedLeaf(mixed_leaf);
       }
 
-      setInstProperty(parent);
+      updateInstancesAssociation(parent);
     }
   }
 }
@@ -2300,7 +2300,7 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
 
   // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
   // order of leaf clusters will not change the final macro grouping results.
-  setInstProperty(mixed_leaf);
+  updateInstancesAssociation(mixed_leaf);
 
   // Never use SetInstProperty in the following lines for the reason above!
   std::vector<int> virtual_conn_clusters;
@@ -2384,7 +2384,7 @@ void HierRTLMP::createOneClusterForEachMacro(
 
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
 
-    setInstProperty(single_macro_cluster);
+    updateInstancesAssociation(single_macro_cluster);
     setClusterMetrics(single_macro_cluster);
 
     cluster_map_[cluster_id_++] = single_macro_cluster;
@@ -3262,7 +3262,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   // set the instance property
   for (auto& cluster : parent->getChildren()) {
-    setInstProperty(cluster);
+    updateInstancesAssociation(cluster);
   }
   // Place children clusters
   // map children cluster to soft macro
@@ -3323,7 +3323,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    setInstProperty(cluster);  // we need this step to calculate nets
+    updateInstancesAssociation(cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -4154,7 +4154,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   sa_containers.clear();
 
   // done this branch and update the cluster_id property back
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
 }
 
 // Merge nets to reduce runtime
@@ -4209,7 +4209,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   // set the instance property
   for (auto& cluster : parent->getChildren()) {
-    setInstProperty(cluster);
+    updateInstancesAssociation(cluster);
   }
   // Place children clusters
   // map children cluster to soft macro
@@ -4270,7 +4270,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    setInstProperty(cluster);  // we need this step to calculate nets
+    updateInstancesAssociation(cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -4686,7 +4686,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   sa_containers.clear();
 
   // done this branch and update the cluster_id property back
-  setInstProperty(parent);
+  updateInstancesAssociation(parent);
 }
 
 // This function is used in cases with very high density, in which it may
@@ -4771,7 +4771,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    setInstProperty(cluster);  // we need this step to calculate nets
+    updateInstancesAssociation(cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -5455,7 +5455,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     std::string cluster_name = hard_macro->getName();
     Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
     macro_cluster->addLeafMacro(hard_macro->getInst());
-    setInstProperty(macro_cluster);
+    updateInstancesAssociation(macro_cluster);
     cluster_id_macro_id_map[cluster_id_] = macro_id;
     if (fences_.find(hard_macro->getName()) != fences_.end()) {
       fences[macro_id] = fences_[hard_macro->getName()];
@@ -5633,7 +5633,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   }
   // clean SA to avoid memory leakage
   sa_containers.clear();
-  setInstProperty(cluster);
+  updateInstancesAssociation(cluster);
 }
 
 // Align all the macros globally to reduce the waste of standard cell space

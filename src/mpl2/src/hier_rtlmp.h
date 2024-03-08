@@ -193,8 +193,8 @@ class HierRTLMP
   void resetSAParameters();
   void multilevelAutocluster(Cluster* parent);
   void printPhysicalHierarchyTree(Cluster* parent, int level);
-  void setInstProperty(Cluster* cluster);
-  void setInstProperty(odb::dbModule* module,
+  void updateInstancesAssociation(Cluster* cluster);
+  void updateInstancesAssociation(odb::dbModule* module,
                        int cluster_id,
                        bool include_macro);
   void breakCluster(Cluster* parent);
