@@ -7764,7 +7764,7 @@ class dbScanChain : public dbObject
   dbSet<dbScanInst> getScanInsts() const;
 
   // User Code Begin dbScanChain
-  std::string_view getName() const;
+  const std::string& getName() const;
 
   void setName(std::string_view name);
 
@@ -7777,7 +7777,7 @@ class dbScanChain : public dbObject
   void setScanEnable(dbBTerm* scan_enable);
   dbBTerm* getScanEnable() const;
 
-  std::string_view getTestMode() const;
+  const std::string& getTestMode() const;
   void setTestMode(std::string_view test_mode);
 
   static dbScanChain* create(dbDft* dft);
@@ -7800,7 +7800,7 @@ class dbScanInst : public dbObject
 
   // User Code Begin dbScanInst
   void setScanClock(std::string_view scan_clock);
-  std::string_view getScanClock() const;
+  const std::string& getScanClock() const;
 
   void setClockEdge(ClockEdge clock_edge);
   ClockEdge getClockEdge() const;
@@ -7839,7 +7839,7 @@ class dbScanPartition : public dbObject
 
   std::variant<dbBTerm*, dbITerm*> getStop() const;
 
-  std::string_view getName() const;
+  const std::string& getName() const;
 
   void setName(std::string_view name);
 

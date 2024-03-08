@@ -137,7 +137,7 @@ void dbScanInst::setScanClock(std::string_view scan_clock)
   scan_inst->scan_clock_ = scan_clock;
 }
 
-std::string_view dbScanInst::getScanClock() const
+const std::string& dbScanInst::getScanClock() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   return scan_inst->scan_clock_;

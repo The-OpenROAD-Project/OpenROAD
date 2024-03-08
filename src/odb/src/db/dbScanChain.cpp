@@ -194,7 +194,7 @@ dbSet<dbScanInst> dbScanChain::getScanInsts() const
 
 // User Code Begin dbScanChainPublicMethods
 
-std::string_view dbScanChain::getName() const
+const std::string& dbScanChain::getName() const
 {
   _dbScanChain* scan_chain = (_dbScanChain*) this;
   return scan_chain->name_;
@@ -263,7 +263,7 @@ void dbScanChain::setTestMode(std::string_view test_mode)
   scan_chain->test_mode_ = test_mode;
 }
 
-std::string_view dbScanChain::getTestMode() const
+const std::string& dbScanChain::getTestMode() const
 {
   _dbScanChain* scan_chain = (_dbScanChain*) this;
   return scan_chain->test_mode_;
