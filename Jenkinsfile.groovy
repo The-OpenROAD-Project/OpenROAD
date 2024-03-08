@@ -146,7 +146,7 @@ node {
       }
     } finally {
       catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-        sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "")
+        sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "", "OR")
       }
     }
 }
