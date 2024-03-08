@@ -172,7 +172,7 @@ std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStop() const
   return scan_pin->getPin();
 }
 
-std::string_view dbScanPartition::getName() const
+const std::string& dbScanPartition::getName() const
 {
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   return scan_partition->name_;
