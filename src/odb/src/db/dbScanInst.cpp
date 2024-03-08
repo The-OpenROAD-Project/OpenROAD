@@ -172,7 +172,7 @@ void dbScanInst::setScanEnable(dbBTerm* scan_enable)
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_inst->scan_enable_ = dft->CreateScanPin(scan_enable);
+  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
 
 void dbScanInst::setScanEnable(dbITerm* scan_enable)
@@ -180,7 +180,7 @@ void dbScanInst::setScanEnable(dbITerm* scan_enable)
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_inst->scan_enable_ = dft->CreateScanPin(scan_enable);
+  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
 
 std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
@@ -211,10 +211,11 @@ void dbScanInst::setAccessPins(const AccessPins& access_pins)
 
   std::visit(
       [&access_pins, scan_inst, dft](auto&& scan_in_pin) {
-        const dbId<dbScanPin> scan_in = dft->CreateScanPin(scan_in_pin);
+        const dbId<dbScanPin> scan_in = dbScanPin::create(dft, scan_in_pin);
         std::visit(
             [scan_inst, dft, &scan_in](auto&& scan_out_pin) {
-              const dbId<dbScanPin> scan_out = dft->CreateScanPin(scan_out_pin);
+              const dbId<dbScanPin> scan_out
+                  = dbScanPin::create(dft, scan_out_pin);
               scan_inst->access_pins_ = std::make_pair(scan_in, scan_out);
             },
             access_pins.scan_out);
@@ -256,6 +257,33 @@ std::vector<dbInst*> dbScanInst::getInsts() const
   }
 
   return insts;
+}
+
+dbScanInst* dbScanInst::create(dbScanChain* scan_chain, dbInst* inst)
+{
+  _dbScanChain* obj = (_dbScanChain*) scan_chain;
+  _dbInst* _inst = (_dbInst*) inst;
+
+  _dbScanInst* scan_inst = (_dbScanInst*) obj->scan_insts_->create();
+  scan_inst->insts_.reserve(1);
+  scan_inst->insts_.push_back(_inst->getId());
+
+  return (dbScanInst*) scan_inst;
+}
+
+dbScanInst* dbScanInst::create(dbScanChain* scan_chain,
+                               const std::vector<dbInst*>& insts)
+{
+  _dbScanChain* obj = (_dbScanChain*) scan_chain;
+
+  _dbScanInst* scan_inst = (_dbScanInst*) obj->scan_insts_->create();
+  scan_inst->insts_.reserve(insts.size());
+
+  for (const dbInst* inst : insts) {
+    scan_inst->insts_.push_back(inst->getId());
+  }
+
+  return (dbScanInst*) scan_inst;
 }
 
 // User Code End dbScanInstPublicMethods

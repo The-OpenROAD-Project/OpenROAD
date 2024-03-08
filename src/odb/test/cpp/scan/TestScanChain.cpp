@@ -119,9 +119,9 @@ TEST_F(TestScanChain, CreateScanChain)
   dbITerm* iterm = inst->findITerm("a");
   dbBTerm* bterm = block_->findBTerm("IN1");
 
-  dbScanChain* scan_chain = dft_->CreateScanChain();
+  dbScanChain* scan_chain = dbScanChain::create(dft_);
 
-  dbScanInst* scan_inst = scan_chain->createScanInst(inst);
+  dbScanInst* scan_inst = dbScanInst::create(scan_chain, inst);
   scan_inst->setBits(1234);
   scan_inst->setAccessPins({.scan_in = iterm, .scan_out = bterm});
 
@@ -141,10 +141,10 @@ TEST_F(TestScanChain, CreateScanChain)
 
 TEST_F(TestScanChain, CreateScanChainWithPartition)
 {
-  dbScanChain* scan_chain = dft_->CreateScanChain();
+  dbScanChain* scan_chain = dbScanChain::create(dft_);
 
   for (dbInst* inst : instances_) {
-    dbScanInst* scan_inst = scan_chain->createScanInst(inst);
+    dbScanInst* scan_inst = dbScanInst::create(scan_chain, inst);
     scan_inst->setBits(1);
     dbITerm* iterm = inst->findITerm("a");
     dbITerm* iterm2 = inst->findITerm("o");
@@ -162,8 +162,8 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   // Partition 1: [chain scan_in, i1 scan_out]
   // Partition 2: [i2 scan_in, chain scan out]
 
-  dbScanPartition* partition1 = scan_chain->createScanPartition();
-  dbScanPartition* partition2 = scan_chain->createScanPartition();
+  dbScanPartition* partition1 = dbScanPartition::create(scan_chain);
+  dbScanPartition* partition2 = dbScanPartition::create(scan_chain);
 
   dbBTerm* chain_scan_in = block_->findBTerm("IN1");
   dbBTerm* chain_scan_out = block_->findBTerm("IN3");

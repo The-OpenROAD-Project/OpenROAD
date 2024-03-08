@@ -167,29 +167,5 @@ dbSet<dbScanChain> dbDft::getScanChains() const
   return dbSet<dbScanChain>(obj, obj->scan_chains_);
 }
 
-// User Code Begin dbDftPublicMethods
-dbId<dbScanPin> dbDft::CreateScanPin(dbBTerm* bterm)
-{
-  _dbDft* obj = (_dbDft*) this;
-  _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
-  ((dbScanPin*) scan_pin)->setPin(bterm);
-  return scan_pin->getId();
-}
-
-dbId<dbScanPin> dbDft::CreateScanPin(dbITerm* iterm)
-{
-  _dbDft* obj = (_dbDft*) this;
-  _dbScanPin* scan_pin = (_dbScanPin*) obj->scan_pins_->create();
-  ((dbScanPin*) scan_pin)->setPin(iterm);
-  return scan_pin->getId();
-}
-
-dbScanChain* dbDft::CreateScanChain()
-{
-  _dbDft* obj = (_dbDft*) this;
-  return (dbScanChain*) obj->scan_chains_->create();
-}
-
-// User Code End dbDftPublicMethods
 }  // namespace odb
 // Generator Code End Cpp
