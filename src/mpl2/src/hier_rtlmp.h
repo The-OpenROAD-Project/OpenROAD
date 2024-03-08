@@ -40,7 +40,6 @@
 #include <memory>
 #include <set>
 #include <string>
-
 #include <vector>
 
 #include "Mpl2Observer.h"
@@ -83,8 +82,6 @@ class SoftMacro;
 // dataflow. Connection Signature is defined as the connection topology respect
 // to other clusters. Dataflow is defined based on sequential graph.
 // Timing-driven macro placement is based on uniform delay model.
-// We just odb::dbIntProperty::create() to cluster_id attribute for BTerms and
-// dbInsts.
 class HierRTLMP
 {
  public:
@@ -427,9 +424,9 @@ class HierRTLMP
   // minimum number of connections between two clusters
   // for them to be identified as connected
   int signature_net_threshold_ = 20;
-  int large_net_threshold_ = 100;    // ignore global nets when clustering
-  const int bus_net_threshold_ = 32; // only or bus planning
-  float congestion_weight_ = 0.5;    // for balance timing and congestion
+  int large_net_threshold_ = 100;     // ignore global nets when clustering
+  const int bus_net_threshold_ = 32;  // only or bus planning
+  float congestion_weight_ = 0.5;     // for balance timing and congestion
 
   const float macro_dominated_cluster_threshold_ = 0.01;
 
@@ -451,8 +448,8 @@ class HierRTLMP
   //                   modules
   Cluster* root_cluster_ = nullptr;      // cluster_id = 0 for root cluster
   std::map<int, Cluster*> cluster_map_;  // cluster_id, cluster
-  std::unordered_map<odb::dbInst*, int> inst_to_cluster_;  // inst, id
-  std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_; // io pin, id
+  std::unordered_map<odb::dbInst*, int> inst_to_cluster_;    // inst, id
+  std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_;  // io pin, id
 
   // All the bundled IOs are children of root_cluster_
   // Bundled IO (Pads)

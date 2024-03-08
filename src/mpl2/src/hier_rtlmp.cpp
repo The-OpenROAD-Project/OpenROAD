@@ -514,9 +514,9 @@ void HierRTLMP::initPhysicalHierarchy()
 
   cluster_map_[cluster_id_++] = root_cluster_;
 
-  // Assign cluster_id property of each instance
-  for (auto inst : block_->getInsts()) {
-    odb::dbIntProperty::create(inst, "cluster_id", cluster_id_);
+  // Associate all instances to root
+  for (odb::dbInst* inst : block_->getInsts()) {
+    inst_to_cluster_[inst] = cluster_id_;
   }
 }
 
@@ -937,8 +937,9 @@ void HierRTLMP::createIOClusters()
           "Floorplan has not been initialized? Pin location error for {}.",
           term->getName());
     } else {
-      odb::dbIntProperty::create(term, "cluster_id", cluster_id);
+      bterm_to_cluster_[term] = cluster_id;
     }
+
     cluster_io_map[cluster_id] = true;
   }
   // convert from dbu to micron
@@ -1056,25 +1057,23 @@ void HierRTLMP::multilevelAutocluster(Cluster* parent)
   level_--;
 }
 
-// update the cluster_id property of insts in the cluster
-// We have three types of clusters
-// Note that HardMacroCluster will not have any logical modules
 void HierRTLMP::setInstProperty(Cluster* cluster)
 {
   int cluster_id = cluster->getId();
   ClusterType cluster_type = cluster->getClusterType();
   if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafMacros()) {
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+      inst_to_cluster_[inst] = cluster_id;
     }
   }
 
   if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafStdCells()) {
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+      inst_to_cluster_[inst] = cluster_id;
     }
   }
 
+  // Note: macro clusters have no module.
   if (cluster_type == StdCellCluster) {
     for (auto& module : cluster->getDbModules()) {
       setInstProperty(module, cluster_id, false);
@@ -1086,27 +1085,25 @@ void HierRTLMP::setInstProperty(Cluster* cluster)
   }
 }
 
-// update the cluster_id property of insts in a logical module
-// In any case, we will consider std cells in the logical modules
-// If include_macro = true, we will consider the macros also.
-// Otherwise, not.
+// Unlike macros, std cells are always considered when when updating
+// the inst -> cluster map with the data from a module.
 void HierRTLMP::setInstProperty(odb::dbModule* module,
                                 int cluster_id,
                                 bool include_macro)
 {
   if (include_macro) {
     for (odb::dbInst* inst : module->getInsts()) {
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+      inst_to_cluster_[inst] = cluster_id;
     }
   } else {  // only consider standard cells
     for (odb::dbInst* inst : module->getInsts()) {
       odb::dbMaster* master = inst->getMaster();
-      // check if the instance is a Pad, Cover or empty block (such as marker)
-      // or macro
+
       if (master->isPad() || master->isCover() || master->isBlock()) {
         continue;
       }
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+
+      inst_to_cluster_[inst] = cluster_id;
     }
   }
   for (odb::dbModInst* inst : module->getChildren()) {
@@ -1524,8 +1521,7 @@ void HierRTLMP::calculateConnection()
         break;
       }
 
-      const int cluster_id
-          = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+      const int cluster_id = inst_to_cluster_.at(inst);
 
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         driver_id = cluster_id;
@@ -1541,8 +1537,7 @@ void HierRTLMP::calculateConnection()
     bool net_has_io_pin = false;
 
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int cluster_id
-          = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
+      const int cluster_id = bterm_to_cluster_.at(bterm);
       net_has_io_pin = true;
 
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
@@ -1933,63 +1928,66 @@ void HierRTLMP::dataFlowDFSMacroPin(
 void HierRTLMP::updateDataFlow()
 {
   // bterm, macros or ffs
-
   for (const auto& [bterm, insts] : io_ffs_conn_map_) {
-    if (!odb::dbIntProperty::find(bterm, "cluster_id")) {
+    if (bterm_to_cluster_.find(bterm) == bterm_to_cluster_.end()) {
       continue;
     }
-    const int driver_id
-        = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
+
+    const int driver_id = bterm_to_cluster_.at(bterm);
+
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = dataflow_weight_ / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
+
       for (auto& inst : insts[i]) {
-        const int cluster_id
-            = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+        const int cluster_id = inst_to_cluster_.at(inst);
         sink_clusters.insert(cluster_id);
       }
+
       for (auto& sink : sink_clusters) {
         cluster_map_[driver_id]->addConnection(sink, weight);
         cluster_map_[sink]->addConnection(driver_id, weight);
-      }  // add weight
-    }    // number of ffs
+      }
+    }
   }
 
   // macros to ffs
   for (const auto& [iterm, insts] : macro_ffs_conn_map_) {
-    const int driver_id
-        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")->getValue();
+    const int driver_id = inst_to_cluster_.at(iterm->getInst());
+
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = dataflow_weight_ / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
+
       for (auto& inst : insts[i]) {
-        const int cluster_id
-            = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+        const int cluster_id = inst_to_cluster_.at(inst);
         sink_clusters.insert(cluster_id);
       }
+
       for (auto& sink : sink_clusters) {
         cluster_map_[driver_id]->addConnection(sink, weight);
         cluster_map_[sink]->addConnection(driver_id, weight);
-      }  // add weight
-    }    // number of ffs
+      }
+    }
   }
 
   // macros to macros
   for (const auto& [iterm, insts] : macro_macro_conn_map_) {
-    const int driver_id
-        = odb::dbIntProperty::find(iterm->getInst(), "cluster_id")->getValue();
+    const int driver_id = inst_to_cluster_.at(iterm->getInst());
+
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = dataflow_weight_ / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
+
       for (auto& inst : insts[i]) {
-        const int cluster_id
-            = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+        const int cluster_id = inst_to_cluster_.at(inst);
         sink_clusters.insert(cluster_id);
       }
+
       for (auto& sink : sink_clusters) {
         cluster_map_[driver_id]->addConnection(sink, weight);
-      }  // add weight
-    }    // number of ffs
+      }
+    }
   }
 }
 
@@ -2128,8 +2126,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
         pad_flag = true;
         break;  // here CAN NOT be continue
       }
-      const int cluster_id
-          = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+      const int cluster_id = inst_to_cluster_.at(inst);
       int vertex_id = (cluster_id != parent_cluster_id)
                           ? cluster_vertex_id_map[cluster_id]
                           : inst_vertex_id_map[inst];
@@ -2145,8 +2142,8 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     }
     // check the connected IO pins
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int cluster_id
-          = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
+      const int cluster_id = bterm_to_cluster_.at(bterm);
+
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_vertex_id_map[cluster_id];
       } else {
