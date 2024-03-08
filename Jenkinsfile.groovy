@@ -45,8 +45,8 @@ node {
               tasks["Local centos7 gcc - ${currentSlug}"] = {
                 node {
                     checkout scm
-                    docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
-                      sh "git config --system --add safe.directory '*'"
+                    // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+                      // sh "git config --system --add safe.directory '*'"
                       try {
                         stage('Build centos7 gcc') {
                             sh './etc/Build.sh -no-warnings';
@@ -69,19 +69,19 @@ node {
                               archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
                           }
                       }
-                    }
+                    // }
                 }
               }
           }
           tasks["Local centos7 gcc without GUI"] = {
             node {
               checkout scm
-              docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+              // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
                 stage('Build centos7 gcc without GUI') {
-                  sh "git config --system --add safe.directory '*'"
+                  // sh "git config --system --add safe.directory '*'"
                   sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui'; 
                 }
-              }
+              // }
             }
           }
           tasks["C++ Unit Tests"] = {
@@ -108,7 +108,7 @@ node {
             }
           }
           Map matrix_axes = [
-            OS: ['ubuntu20.04', 'ubuntu22.04', 'centos7'],
+            OS: ['ubuntu20.04', 'ubuntu22.04'],
             COMPILER: ['gcc', 'clang'],
           ]
 
