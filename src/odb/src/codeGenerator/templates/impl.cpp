@@ -227,7 +227,8 @@ namespace odb {
   {% set comment_tag = "" %}
   {% include 'serializer_in.cpp' %}
 
-  {% for _struct in klass.structs %}{% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
+  {% for _struct in klass.structs %}
+  {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
   {% set sname = klass.name+'::'+_struct.name %}
   {% set sklass = _struct %}
   {% set comment_tag = _struct.name %}
