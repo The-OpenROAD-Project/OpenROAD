@@ -216,6 +216,7 @@ for klass in schema["classes"]:
                 and template_class_name not in std
                 and "no-template" not in field["flags"]
                 and klass["name"] != template_class_name[1:]
+                and klass["name"]+"::" != template_class_name[0:len(klass["name"])+2]
             ):
                 klass["classes"].append(template_class_name)
         ####
@@ -301,6 +302,13 @@ for klass in schema["classes"]:
                 "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
             },
         )
+
+    # Add required header files if they are not already expressed
+    for struct in klass["structs"]:
+        if "public" in struct and struct["public"]:
+            if "db.h" not in klass["h_includes"]:
+                klass["h_includes"].append("db.h")
+            break
 
     # Generating files
     for template_file in ["impl.h", "impl.cpp"]:
