@@ -160,11 +160,10 @@ for relation in schema["relations"]:
         logging.debug(f"Add hash field {inParentHashField['name']} to {relation['first']}")
         logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['second']}")
 
-
 for klass in schema["classes"]:
 
     # Adding functional name to fields and extracting field components
-    struct = {"name": f"{klass['name']}Flags", "fields": []}
+    struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
     klass["hasTables"] = False
     flag_num_bits = 0
     for field in klass["fields"]:
