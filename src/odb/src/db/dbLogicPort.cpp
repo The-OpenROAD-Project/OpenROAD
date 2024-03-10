@@ -153,7 +153,11 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
   lp->_name = strdup(name);
   ZALLOCATED(lp->_name);
 
-  lp->direction = direction;
+  if (direction.empty()) {
+    lp->direction = "in";
+  } else {
+    lp->direction = direction;
+  }
 
   _block->_logicport_hash.insert(lp);
   return (dbLogicPort*) lp;
