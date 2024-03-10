@@ -215,12 +215,12 @@ namespace odb {
   }
 
   {% for _struct in klass.structs %}
-  {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
-  {% set sname = klass.name+'::'+_struct.name %}
-  {% set sklass = _struct %}
-  {% set comment_tag = _struct.name %}
-  {% include 'serializer_in.cpp' %}
-  {% endif %}
+    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
+      {% set sname = klass.name+'::'+_struct.name %}
+      {% set sklass = _struct %}
+      {% set comment_tag = _struct.name %}
+      {% include 'serializer_in.cpp' %}
+    {% endif %}
   {% endfor %}
   {% set sklass = klass %}
   {% set sname = '_'+sklass.name %}
@@ -228,12 +228,12 @@ namespace odb {
   {% include 'serializer_in.cpp' %}
 
   {% for _struct in klass.structs %}
-  {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
-  {% set sname = klass.name+'::'+_struct.name %}
-  {% set sklass = _struct %}
-  {% set comment_tag = _struct.name %}
-  {% include 'serializer_out.cpp' %}
-  {% endif %}
+    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
+      {% set sname = klass.name+'::'+_struct.name %}
+      {% set sklass = _struct %}
+      {% set comment_tag = _struct.name %}
+      {% include 'serializer_out.cpp' %}
+    {% endif %}
   {% endfor %}
   {% set sklass = klass %}
   {% set sname = '_'+sklass.name %}
