@@ -33,13 +33,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include "db.h"
 #include "dbCore.h"
 #include "odb.h"
-
 // User Code Begin Includes
 #include <map>
 
-#include "db.h"
 #include "dbMatrix.h"
 #include "dbVector.h"
 // User Code End Includes
