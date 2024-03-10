@@ -4092,7 +4092,6 @@ void dbBlock::dumpDebug()
       printf("\t-> Db Bterm %u\n", id);
     }
   }
-
   printf("Block ports\n");
   // got through the ports and their owner
   printf("\t\tBTerm Ports +++\n");
@@ -4109,21 +4108,45 @@ void dbBlock::dumpDebug()
   }
   printf("\t\tBTerm Ports ---\n");
 
+  printf("The hierarchical world:\n");
+  
   if (block->_module_tbl) {
     printf("module table %d\n", block->_module_tbl->size());
     dbSet<dbModule> block_modules = getModules();
     printf("Content size %u modules\n", block_modules.size());
     for (auto mi : block_modules) {
       dbModule* cur_obj = mi;
-      printf("\tModule %s\n", ((dbModule*) cur_obj)->getName());
-      // got through the ports and their owner
+      if (cur_obj == getTopModule())
+	printf("Top Module\n");
+      printf("\tModule %s %s\n", (cur_obj == getTopModule()) ? "(Top Module)":"",
+	     ((dbModule*) cur_obj)->getName());
+
+      //in case of top level, care as the bterms double up as pins
+      if (cur_obj == getTopModule()){
+	for (auto bterm: getBTerms()){
+	  printf("Top B-term %s dbNet %s (%d) modNet %s (%d)\n",
+		 bterm -> getName().c_str(),
+		 bterm -> getNet() ? bterm -> getNet() -> getName().c_str():"",
+		 bterm -> getNet() ? bterm -> getNet() -> getId():-1,
+		 bterm -> getModNet() ? bterm -> getModNet() -> getName():"",
+		 bterm -> getModNet() ? bterm -> getModNet() -> getId():-1		 
+		 );
+	}
+      }
+      
+      // got through the module ports and their owner
       printf("\t\tModBTerm Ports +++\n");
       dbSet<dbModBTerm> module_ports = cur_obj->getModBTerms();
       for (dbSet<dbModBTerm>::iterator mod_bterm_iter = module_ports.begin();
            mod_bterm_iter != module_ports.end();
            mod_bterm_iter++) {
         dbModBTerm* module_port = *mod_bterm_iter;
-        printf("\t\tPort %s\n", module_port->getName());
+        printf("\t\tPort %s Net %s (%d)\n",
+	       module_port->getName(),
+	       module_port->getNet() ?
+	       ((_dbModNet*) module_port->getNet())->_name: "No-modnet",
+	       module_port->getNet() ? module_port -> getNet() -> getId(): -1
+	       );
         printf("\t\tPort parent %s\n\n", module_port->getParent()->getName());
       }
       printf("\t\tModBTermPorts ---\n");
@@ -4164,13 +4187,16 @@ void dbBlock::dumpDebug()
              ++iterm_itr) {
           dbITerm* iterm = *iterm_itr;
           dbMTerm* mterm = iterm->getMTerm();
-          printf("\t\t\t\t iterm: %s (%u) Net: %s Mod net : %s\n",
+          printf("\t\t\t\t iterm: %s (%u) Net: %s Mod net : %s (%d)\n",
                  mterm->getName().c_str(),
                  iterm->getId(),
                  iterm->getNet() ? iterm->getNet()->getName().c_str()
                                  : "unk-dbnet",
                  iterm->getModNet() ? iterm->getModNet()->getName()
-                                    : "unk-modnet");
+		 : "unk-modnet",
+	         iterm->getModNet() ? iterm->getModNet()->getId()
+		 : -1);
+	  
         }
       }
       printf("\t\tDb instances ---\n");
