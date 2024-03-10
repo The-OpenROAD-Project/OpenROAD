@@ -1,0 +1,63 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__xnor2_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__and2b_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand2b_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor2b_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__and2_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__and4_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__xor2_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor4_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__inv_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a31oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o311ai_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a311oi_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o21ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand2_4 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a21oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o21ai_0 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a31o_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a22oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a211oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a2bb2oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a221o_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a31oi_4 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand2_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o31a_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__maj3_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o31ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor2_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__or3_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a21o_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor3_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor4_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand4_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor3_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o221ai_2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o311ai_4 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a21oi_4 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__mux2i_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a221oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o21bai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o211ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a32o_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o2bb2ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a311o_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand3_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a311oi_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o311ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__and3_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o22ai_1 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__dfxtp_1 has no liberty cell.
+[INFO IFP-0001] Added 57 rows of 338 site unithd.
+[INFO TAP-0005] Inserted 324 tapcells.
+[INFO PDN-0001] Inserting grid: Core
+No differences found.
