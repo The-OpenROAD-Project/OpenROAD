@@ -61,11 +61,6 @@ map_power_switch {psw_aes_1 psw_aes_2} \
 -lib_cells {sky130_fd_sc_hd__and2_0 sky130_fd_sc_hd__and2_0} \
 -port_map {{vin1 A} {vin2 B} {vout X}}
 
-set_level_shifter ls_2 \
-  -update \
-  -domain "PD_AES_1" \
-  -threshold 2.1 \
-
 set_level_shifter ls_1 \
   -domain "PD_AES_1" \
   -elements {"Element1" "Element2"} \
@@ -84,8 +79,7 @@ set_level_shifter ls_1 \
   -internal_supply "VDD_internal" \
   -name_prefix "LS_" \
   -name_suffix "_01" \
-  -instance {"Instance1 Port1" "Instance2 Port2"} \
-  -use_equivalence FALSE \
+  -instance {"Instance1 Port1" "Instance2 Port2"}
 
 set_level_shifter ls_1 \
   -update \

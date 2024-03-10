@@ -14,28 +14,7 @@
 [INFO ODB-0222] Reading LEF file: sky130_power_switch/power_switch.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  sky130_power_switch/power_switch.lef
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__decap_4 has no liberty cell.
 [WARNING ORD-2011] LEF master sky130_fd_sc_hd__tapvpwrvgnd_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o311a_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand3b_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__or3_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o2111a_2 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__mux4_2 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__a221oi_4 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o211a_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__inv_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor3_2 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor3_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nor2_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__or2_2 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__or2b_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__nand2_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__or3b_2 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__o221ai_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__mux4_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__conb_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__dfrtn_1 has no liberty cell.
-[WARNING ORD-2011] LEF master sky130_fd_sc_hd__dfrtp_1 has no liberty cell.
 [WARNING ORD-2011] LEF master HEADER has no liberty cell.
 [WARNING ORD-2011] LEF master SLC has no liberty cell.
 [INFO IFP-0001] Added 60 rows of 355 site unithd.
