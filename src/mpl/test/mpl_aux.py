@@ -101,7 +101,7 @@ def is_pos_int(x):
     elif isinstance(x, int) and x > 0 :
         return True
     else:
-        utl.error(utl.GPL, 507, f"TypeError: {x} is not a postive integer")
+        utl.error(utl.GPL, 507, f"TypeError: {x} is not a positive integer")
     return False
 
         
@@ -111,5 +111,5 @@ def is_pos_float(x):
     elif isinstance(x, float) and x >= 0 :
         return True
     else:
-        utl.error(utl.MPL, 202, f"TypeError: {x} is not a postive float")
+        utl.error(utl.MPL, 202, f"TypeError: {x} is not a positive float")
     return False
