@@ -43,8 +43,6 @@ add_library(upf_lib
 target_include_directories(upf_lib
   PUBLIC
     ../include
-  PRIVATE
-    ./
 )
 
 target_link_libraries(upf_lib 
