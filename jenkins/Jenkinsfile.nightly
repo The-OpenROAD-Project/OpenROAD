@@ -1,91 +1,3 @@
-// pipeline {
-//   agent any;
-//   options {
-//     timeout(time: 9, unit: 'HOURS')
-//   }
-//   environment {
-//     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-//     EQUIVALENCE_CHECK = 1;
-//   }
-//   stages {
-//     stage("Build") {
-//       steps {
-//         sh "./etc/Build.sh -no-warnings";
-//         stash name: "build", includes: "build/**";
-//       }
-//     }
-
-//     stage('Test Matrix') {
-//       matrix {
-//         agent any;
-//         axes {
-//           axis {
-//             name 'ISPD_YEAR';
-//             values '18', '19';
-//           }
-//           axis {
-//             name 'TEST_TO_RUN';
-//             values '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'GPL';
-//           }
-//         }
-//         excludes {
-//           // run GPL test only once
-//           exclude {
-//             axis {
-//               name 'ISPD_YEAR';
-//               values '19';
-//             }
-//             axis {
-//               name 'TEST_TO_RUN';
-//               values 'GPL';
-//             }
-//           }
-//         }
-//         stages {
-//           stage('Run Tests') {
-//             steps {
-//               script {
-
-//                 if (env.TEST_TO_RUN != "GPL") {
-//                   stage("ISPD ${ISPD_YEAR} TEST ${TEST_TO_RUN}") {
-//                     unstash "build";
-//                     sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ISPD_YEAR}_test${TEST_TO_RUN}";
-//                   }
-//                 }
-
-//                 if (env.TEST_TO_RUN == "GPL") {
-//                   stage("GPL Tests") {
-//                     unstash "build";
-//                     sh "./src/gpl/test/regression-large";
-//                   }
-//                 }
-
-//               }
-//             }
-//           }
-//         }
-//         post {
-//           always {
-//             archiveArtifacts "**/*.tar.gz, **/*.log";
-//           }
-//         }
-
-//       }
-//     }
-//   }
-
-//   post {
-//     failure {
-//       script {
-//         emailext (
-//             to: "$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS",
-//             subject: '$DEFAULT_SUBJECT',
-//             body: '$DEFAULT_CONTENT',
-//             );
-//       }
-//     }
-//   }
-// }
 @Library('utils@main') _
 
 node {
@@ -96,11 +8,23 @@ node {
     checkout scm
   }
 
+  stage('Build and Push Docker Image') {
+    if (isDependencyInstallerChanged(env.BRANCH_NAME)) {
+      def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true)
+      commitHash = commitHash.replaceAll(/[^a-zA-Z0-9-]/, '')
+
+      DOCKER_IMAGE_TAG = pushCIImage(env.BRANCH_NAME, commitHash)
+    }
+  }
+
   try {
     timeout(time: 9, unit: 'HOURS') {
-      stage("Build") {
-        sh "./etc/Build.sh -no-warnings";
-        stash name: "build", includes: "build/**";
+      docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+        sh "git config --system --add safe.directory '*'"
+        stage("Build") {
+          sh "./etc/Build.sh -no-warnings";
+          stash name: "build", includes: "build/**";
+        }
       }
 
       stage('Test Matrix') {
@@ -118,8 +42,11 @@ node {
                     node {
                       checkout scm
                       try {
-                        unstash "build";
-                        sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                        docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+                          sh "git config --system --add safe.directory '*'"
+                          unstash "build";
+                          sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                        }
                       } finally {
                         archiveArtifacts "**/*.tar.gz, **/*.log";
                       }
@@ -132,36 +59,17 @@ node {
                     node {
                       checkout scm
                       try {
-                        unstash "build";
-                        sh "./src/gpl/test/regression-large";
+                        docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+                          sh "git config --system --add safe.directory '*'"
+                          unstash "build";
+                          sh "./src/gpl/test/regression-large";
+                        }
                       } finally {
                         archiveArtifacts "**/*.tar.gz, **/*.log";
                       }
                     }
                 }
               }
-              // tasks["ISPD${ispd_year}_TEST${test_to_run}"] = {
-              //     node {
-              //         checkout scm
-              //         try {
-              //           if (test_to_run != "GPL") {
-              //             stage("ISPD ${ispd_year} TEST ${test_to_run}") {
-              //               unstash "build";
-              //               sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
-              //             }
-              //           }
-
-              //           if (test_to_run == "GPL") {
-              //             stage("GPL Tests") {
-              //               unstash "build";
-              //               sh "./src/gpl/test/regression-large";
-              //             }
-              //           }
-              //         } finally {
-              //           archiveArtifacts "**/*.tar.gz, **/*.log";
-              //         }
-              //     }
-              // }
             }
           }
         }
@@ -169,16 +77,9 @@ node {
         parallel(tasks)
       }
     }
-
   } finally {
     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-      // def EMAIL_TO = emailDetails(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)
-      // emailext (
-      //       to: "$EMAIL_TO",
-      //       subject: '$DEFAULT_SUBJECT',
-      //       body: '$DEFAULT_CONTENT',
-      //       );
-      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "")
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "", "OR")
     }
   }
 }
