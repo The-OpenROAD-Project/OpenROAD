@@ -273,10 +273,25 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
   qreal target_pixels_per_dbu
       = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  const QSize new_size(ceil(fitted_bb.dx() * target_pixels_per_dbu),
-                       ceil(fitted_bb.dy() * target_pixels_per_dbu));
+  const int viewport_width
+      = std::ceil(scroller_->maximumViewportSize().width() / pixels_per_dbu_);
+  const int viewport_height
+      = std::ceil(scroller_->maximumViewportSize().height() / pixels_per_dbu_);
 
-  resize(new_size.expandedTo(scroller_->maximumViewportSize()));
+  // TO DO: handle the zoom out case
+
+  if (fitted_bb.dx() < viewport_width || fitted_bb.dy() < viewport_height) {
+    // resize based on the widget's current size so that we have no problems
+    // zooming in the direction of the mouse cursor.
+    const QSize new_size(
+        ceil(this->width() / pixels_per_dbu_ * target_pixels_per_dbu),
+        ceil(this->height() / pixels_per_dbu_ * target_pixels_per_dbu));
+    resize(new_size);
+  } else {
+    const QSize new_size(ceil(fitted_bb.dx() * target_pixels_per_dbu),
+                         ceil(fitted_bb.dy() * target_pixels_per_dbu));
+    resize(new_size.expandedTo(scroller_->maximumViewportSize()));
+  }
 }
 
 odb::Point LayoutViewer::getVisibleCenter()
