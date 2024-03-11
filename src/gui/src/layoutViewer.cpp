@@ -285,6 +285,10 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
   qreal target_pixels_per_dbu
       = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
+  if (target_pixels_per_dbu == maximum_pixels_per_dbu_) {
+    return;
+  }
+
   const QSize new_size(ceil(current_viewer.dx() * target_pixels_per_dbu),
                        ceil(current_viewer.dy() * target_pixels_per_dbu));
 
