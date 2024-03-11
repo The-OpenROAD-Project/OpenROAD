@@ -16,6 +16,8 @@ EOF
 _lcov() {
     ./test/regression
 
+    # sta has a private test suite; mpl is obsoleted by mpl2;
+    # drt's gr is not in use
     mkdir -p coverage-output
     lcov \
         --capture \
@@ -27,6 +29,10 @@ _lcov() {
         --exclude "*/.local/*" \
         --exclude "*build*" \
         --exclude "*/third-party/*" \
+        --exclude "*/sta/*" \
+        --exclude "*/mpl/*" \
+        --exclude "*/drt/src/gr/*" \
+        --exclude "*/drt/src/db/grObj/*" \
         --output-file ./coverage-output/main_coverage.info
 
     genhtml ./coverage-output/main_coverage.info \
