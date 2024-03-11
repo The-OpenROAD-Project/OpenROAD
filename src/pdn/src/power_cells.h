@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "pdn/PdnGen.hh"
 #include "shape.h"
 
 namespace odb {
@@ -111,23 +112,18 @@ class PowerCell
 class GridSwitchedPower
 {
  public:
-  enum NetworkType
-  {
-    STAR,
-    DAISY
-  };
-
   GridSwitchedPower(Grid* grid,
                     PowerCell* cell,
                     odb::dbNet* control,
-                    NetworkType network);
+                    PowerSwitchNetworkType network);
 
   void setGrid(Grid* grid) { grid_ = grid; }
 
   void report() const;
 
-  static std::string toString(NetworkType type);
-  static NetworkType fromString(const std::string& type, utl::Logger* logger);
+  static std::string toString(PowerSwitchNetworkType type);
+  static PowerSwitchNetworkType fromString(const std::string& type,
+                                           utl::Logger* logger);
 
   void build();
   void ripup();
@@ -138,7 +134,7 @@ class GridSwitchedPower
   Grid* grid_;
   PowerCell* cell_;
   odb::dbNet* control_;
-  NetworkType network_;
+  PowerSwitchNetworkType network_;
 
   // instances with additional information;
   struct InstanceInfo

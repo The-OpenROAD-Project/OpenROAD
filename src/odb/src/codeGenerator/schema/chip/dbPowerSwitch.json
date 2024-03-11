@@ -14,29 +14,28 @@
     },
     {
       "name":"_in_supply_port",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
+      "type":"dbVector<dbPowerSwitch::UPFIOSupplyPort>",
+      "flags":["no-set", "no-get", "no-serial"]
     },
     {
       "name":"_out_supply_port",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
+      "type":"dbPowerSwitch::UPFIOSupplyPort",
+      "flags":["no-set", "no-get", "no-serial"]
     },
     {
       "name":"_control_port",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
+      "type":"dbVector<dbPowerSwitch::UPFControlPort>",
+      "flags":["no-set", "no-get", "no-serial"]
+    },
+    {
+      "name":"_acknowledge_port",
+      "type":"dbVector<dbPowerSwitch::UPFAcknowledgePort>",
+      "flags":["no-set", "no-get", "no-serial"]
     },
     {
       "name":"_on_state",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
-    },
-    {
-      "name":"_control_net",
-      "type":"dbId<_dbNet>",
-      "flags":[],
-      "parent":"dbBlock"
+      "type":"dbVector<dbPowerSwitch::UPFOnState>",
+      "flags":["no-set", "no-get", "no-serial"]
     },
     {
       "name": "_lib_cell",
@@ -56,8 +55,74 @@
     {
       "name":"_power_domain",
       "type":"dbId<_dbPowerDomain>",
-      "flags":[],
+      "flags":["no-serial"],
       "parent":"dbBlock"
+    }
+  ],
+  "structs": [
+    {
+      "name": "UPFIOSupplyPort",
+      "fields": [
+        {
+          "name": "port_name",
+          "type": "std::string"
+        },
+        {
+          "name": "supply_net_name",
+          "type": "std::string"
+        }
+      ],
+      "public": true
+    },
+    {
+      "name": "UPFControlPort",
+      "fields": [
+        {
+          "name": "port_name",
+          "type": "std::string"
+        },
+        {
+          "name": "net_name",
+          "type": "std::string"
+        }
+      ],
+      "public": true
+    },
+    {
+      "name": "UPFAcknowledgePort",
+      "fields": [
+        {
+          "name": "port_name",
+          "type": "std::string"
+        },
+        {
+          "name": "net_name",
+          "type": "std::string"
+        },
+        {
+          "name": "boolean_expression",
+          "type": "std::string"
+        }
+      ],
+      "public": true
+    },
+    {
+      "name": "UPFOnState",
+      "fields": [
+        {
+          "name": "state_name",
+          "type": "std::string"
+        },
+        {
+          "name": "input_supply_port",
+          "type": "std::string"
+        },
+        {
+          "name": "boolean_expression",
+          "type": "std::string"
+        }
+      ],
+      "public": true
     }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h", "dbMaster.h", "dbMTerm.h", "utl/Logger.h"],
