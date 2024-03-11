@@ -29,6 +29,9 @@ set app_options "-no_init -no_splash -exit"
 set result_dir [file join $test_dir "results"]
 # Collective diffs.
 set diff_file [file join $result_dir "diffs"]
+if { [info exist ::env(DIFF_LOCATION)] } {
+  set diff_file "$::env(DIFF_LOCATION)"
+}
 # File containing list of failed tests.
 set failure_file [file join $result_dir "failures"]
 # Use the DIFF_OPTIONS envar to change the diff options

@@ -28,3 +28,24 @@ target_include_directories(TestDistributed
   ${DST_HOME}/src
   ${OPENROAD_HOME}/include
 )
+
+add_test(
+  NAME "dst.TestWorker"
+  COMMAND TestWorker
+)
+
+add_test(
+  NAME "dst.TestBalancer"
+  COMMAND TestBalancer
+)
+
+add_test(
+  NAME "dst.TestDistributed"
+  COMMAND TestDistributed
+)
+
+add_dependencies(build_and_test 
+  TestWorker
+  TestBalancer
+  TestDistributed
+)

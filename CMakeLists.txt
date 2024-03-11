@@ -142,7 +142,18 @@ configure_file(
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+# Integration Test Macro
+find_program (BASH_PROGRAM bash REQUIRED)
 
+function(or_integration_test tool_name test_name regression_binary)
+  add_test (
+    NAME ${tool_name}.${test_name} 
+    COMMAND ${BASH_PROGRAM} ${regression_binary} ${test_name}
+  )
+  set_property(TEST ${tool_name}.${test_name} PROPERTY ENVIRONMENT "DIFF_LOCATION=${CMAKE_CURRENT_LIST_DIR}/results/${test_name}.diff")
+  set_tests_properties(${tool_name}.${test_name}  PROPERTIES LABELS "IntegrationTest")
+endfunction()
+# End Integration Test Macro
 
 add_subdirectory(third-party)
 
