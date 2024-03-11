@@ -83,7 +83,7 @@ node {
               checkout scm
               docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
                 stage('C++ Unit Tests') {
-                  sh "git config --system --add safe.directory '*'"
+                  // sh "git config --system --add safe.directory '*'"
                   sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                   sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
                 }
@@ -95,7 +95,7 @@ node {
               checkout scm
               docker.image("openroad/ubuntu-cpp20").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
                 stage('Test C++20 Compile') {
-                  sh "git config --system --add safe.directory '*'"
+                  // sh "git config --system --add safe.directory '*'"
                   sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
                 }
               }
@@ -113,7 +113,7 @@ node {
                   checkout scm
                   docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
                     stage("Pull ${os}") {
-                      sh "git config --system --add safe.directory '*'"
+                      // sh "git config --system --add safe.directory '*'"
                       retry(3) {
                         try {
                           sh "docker pull openroad/${os}-dev"
