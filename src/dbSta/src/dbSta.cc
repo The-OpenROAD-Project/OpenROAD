@@ -354,7 +354,7 @@ std::string dbSta::getInstanceTypeText(InstType type)
     case STD_PHYSICAL:
       return "Generic Physical";
     case STD_COMBINATIONAL:
-      return "Complex combinational cell";
+      return "Multi-Input combinational cell";
     case STD_OTHER:
       return "Other";
   }
@@ -479,12 +479,14 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
 void dbSta::report_cell_usage()
 {
   std::map<InstType, int> instances_types = countInstancesByType();
+  int total_usage = db_->getChip()->getBlock()->getInsts().size();
 
   logger_->report("Cell usage report:");
   for (auto [type, count] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
     logger_->report("  {}s: {}", type_name, count);
   }
+  logger_->report("  Total: {}", total_usage);
 }
 
 
