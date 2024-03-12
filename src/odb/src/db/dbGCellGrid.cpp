@@ -181,6 +181,12 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
+{
+  stream << obj.usage;
+  stream << obj.capacity;
+  return stream;
+}
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 {
   uint32_t flags_bit_field;
@@ -226,13 +232,6 @@ dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
     obj.usage = vertical_usage + horizontal_usage + up_usage;
     obj.capacity = horizontal_capacity + vertical_capacity + up_capacity;
   }
-  return stream;
-}
-
-dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
-{
-  stream << obj.usage;
-  stream << obj.capacity;
   return stream;
 }
 

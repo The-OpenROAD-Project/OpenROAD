@@ -82,11 +82,11 @@ legalized HPWL         133357.9 u
 delta HPWL                    0 %
 
 Clock clk
-Latency      CRPR       Skew
-inst_7_12/clk ^
-   1.27
-inst_8_12/clk ^
-   1.14      0.00       0.13
+   1.27 source latency inst_7_12/clk ^
+  -1.14 target latency inst_8_12/clk ^
+   0.00 CRPR
+--------------
+   0.13 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)

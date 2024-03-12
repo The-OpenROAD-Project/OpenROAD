@@ -17,6 +17,7 @@ jobs:
           build_dir: './build'
           cmake_command: cmake . -B build
           config_file: '.clang-tidy'
+          exclude: "*/codeGenerator/templates/*"
           split_workflow: true
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
