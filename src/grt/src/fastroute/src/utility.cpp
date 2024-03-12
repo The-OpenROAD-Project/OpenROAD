@@ -1258,7 +1258,8 @@ void FastRouteCore::StNetOrder()
     auto order_element = tree_order_cong_[ord_elID];
     if (nets_[order_element.treeIndex]->getSlack()
         == std::ceil(std::numeric_limits<float>::lowest())) {
-      if (order_element.xmin == 0 && (ord_elID >= (netCount() * 30 / 100))) {
+      if (order_element.xmin == 0
+          && (ord_elID >= (net_ids_.size() * 30 / 100))) {
         nets_[order_element.treeIndex]->setSlack(
             std::numeric_limits<float>::max());
       }
