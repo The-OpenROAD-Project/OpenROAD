@@ -195,8 +195,8 @@ class HierRTLMP
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   void updateInstancesAssociation(Cluster* cluster);
   void updateInstancesAssociation(odb::dbModule* module,
-                       int cluster_id,
-                       bool include_macro);
+                                  int cluster_id,
+                                  bool include_macro);
   void breakCluster(Cluster* parent);
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
