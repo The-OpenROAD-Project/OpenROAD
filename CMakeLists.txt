@@ -149,8 +149,9 @@ function(or_integration_test tool_name test_name regression_binary)
   add_test (
     NAME ${tool_name}.${test_name} 
     COMMAND ${BASH_PROGRAM} ${regression_binary} ${test_name}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   )
-  set_property(TEST ${tool_name}.${test_name} PROPERTY ENVIRONMENT "DIFF_LOCATION=${CMAKE_CURRENT_LIST_DIR}/results/${test_name}.diff")
+  set_property(TEST ${tool_name}.${test_name} PROPERTY ENVIRONMENT "TEST_TYPE=compare_logfile;CTEST_TESTNAME=${test_name};DIFF_LOCATION=${CMAKE_CURRENT_LIST_DIR}/results/${test_name}.diff")
   set_tests_properties(${tool_name}.${test_name}  PROPERTIES LABELS "IntegrationTest")
 endfunction()
 # End Integration Test Macro

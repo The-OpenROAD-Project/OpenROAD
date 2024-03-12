@@ -72,6 +72,10 @@ proc record_flow_tests { tests } {
 
 proc record_tests1 { tests cmp_logfile } {
   global test_dir
+  if { [info exist ::env(CTEST_TESTNAME)]} {
+    set tests "$::env(CTEST_TESTNAME)"
+    set cmp_logfile "$::env(TEST_TYPE)"
+  }
   foreach test $tests {
     # Prune commented tests from the list.
     if { [string index $test 0] != "#" } {
