@@ -892,7 +892,6 @@ proc define_pdn_grid { args } {
 
   set power_cell "NULL"
   set power_control "NULL"
-  set power_control_network "STAR"
   if {[info exists keys(-power_switch_cell)]} {
     set power_cell [pdn::find_switched_power_cell $keys(-power_switch_cell)]
     if { $power_cell == "NULL" } {
@@ -907,10 +906,11 @@ proc define_pdn_grid { args } {
         utl::error PDN 1049 "Unable to find power control net: $keys(-power_control)"
       }
     }
+  }
 
-    if {[info exists keys(-power_control_network)]} {
-      set power_control_network $keys(-power_control_network)
-    }
+  set power_control_network "STAR"
+  if {[info exists keys(-power_control_network)]} {
+    set power_control_network $keys(-power_control_network)
   }
 
   foreach domain $domains {
