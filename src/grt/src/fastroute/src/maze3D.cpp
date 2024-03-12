@@ -200,14 +200,14 @@ void FastRouteCore::addNeighborPoints(const int netID,
           }
 
         }  // if MazeRoute
-      }    // if not a degraded edge (len>0)
+      }  // if not a degraded edge (len>0)
 
       // add the neighbor of cur node into heapQueue
       heapQueue[queuetail] = nbr;
       queuetail++;
 
     }  // loop i (neigbors for cur node)
-  }    // while heapQueue is not empty
+  }  // while heapQueue is not empty
 }
 
 void FastRouteCore::setupHeap3D(int netID,
@@ -333,7 +333,7 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
       gridsL_n1n2.push_back(n1l);
       cnt++;
     }
-  }     // if n1 is the first node of (n1, n2)
+  }  // if n1 is the first node of (n1, n2)
   else  // n2 is the first node of (n1, n2)
   {
     if (treeedges[edge_n1n2].route.routelen > 0) {
@@ -343,7 +343,7 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
         gridsL_n1n2.push_back(treeedges[edge_n1n2].route.gridsL[i]);
         cnt++;
       }
-    }     // MazeRoute
+    }  // MazeRoute
     else  // NoRoute
     {
       gridsX_n1n2.push_back(n1x);
@@ -1267,7 +1267,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
           // treenodes[n1].l = E1l;
           treenodes[n1].assigned = true;
-        }     // if E1 is on (n1, A1) or (n1, A2)
+        }  // if E1 is on (n1, A1) or (n1, A2)
         else  // E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
         {
           const int C1 = endpt1;
@@ -1344,7 +1344,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             }
           }
         }  // else E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
-      }    // n1 is not a pin and E1!=n1
+      }  // n1 is not a pin and E1!=n1
       else {
         newUpdateNodeLayers(treenodes, edge_n1n2, n1a, lastL);
       }
@@ -1423,7 +1423,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
           // update position for n2
           treenodes[n2].assigned = true;
-        }     // if E2 is on (n2, B1) or (n2, B2)
+        }  // if E2 is on (n2, B1) or (n2, B2)
         else  // E2 is not on (n2, B1) or (n2, B2), but on (d1_3D, d2_3D)
         {
           const int D1 = endpt1;
@@ -1499,8 +1499,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               break;
             }
           }
-        }     // else E2 is not on (n2, B1) or (n2, B2), but on (d1_3D,
-              // d2_3D)
+        }  // else E2 is not on (n2, B1) or (n2, B2), but on (d1_3D,
+           // d2_3D)
       } else  // n2 is not a pin and E2!=n2
       {
         newUpdateNodeLayers(treenodes, edge_n1n2, n2a, lastL);
