@@ -1,0 +1,102 @@
+[INFO ODB-0222] Reading LEF file: ./nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 134 library cells
+[INFO ODB-0226] Finished LEF file:  ./nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 61940 61600
+[INFO GPL-0006] NumInstances: 294
+[INFO GPL-0007] NumPlaceInstances: 294
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 364
+[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 61940 61600
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 61940 61600
+[INFO GPL-0016] CoreArea: 3815504000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 2279088000
+[INFO GPL-0019] Util(%): 59.73
+[INFO GPL-0020] StdInstsArea: 2279088000
+[INFO GPL-0021] MacroInstsArea: 0
+[InitialPlace]  Iter: 1 CG residual: 0.00000009 HPWL: 5668660
+[InitialPlace]  Iter: 2 CG residual: 0.00000004 HPWL: 5048725
+[InitialPlace]  Iter: 3 CG residual: 0.00000002 HPWL: 5034377
+[InitialPlace]  Iter: 4 CG residual: 0.00000007 HPWL: 5036666
+[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 5036282
+[INFO GPL-0031] FillerInit: NumGCells: 348
+[INFO GPL-0032] FillerInit: NumGNets: 364
+[INFO GPL-0033] FillerInit: NumGPins: 1122
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 7752000
+[INFO GPL-0025] IdealBinArea: 11074286
+[INFO GPL-0026] IdealBinCnt: 344
+[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0028] BinCnt: 16 16
+[INFO GPL-0029] BinSize: 3872 3850
+[INFO GPL-0030] NumBins: 256
+[NesterovSolve] Iter: 1 overflow: 0.848879 HPWL: 3762953
+[NesterovSolve] Iter: 10 overflow: 0.744196 HPWL: 4210889
+[NesterovSolve] Iter: 20 overflow: 0.746575 HPWL: 4195208
+[NesterovSolve] Iter: 30 overflow: 0.747974 HPWL: 4196038
+[NesterovSolve] Iter: 40 overflow: 0.747398 HPWL: 4196338
+[NesterovSolve] Iter: 50 overflow: 0.747127 HPWL: 4196171
+[NesterovSolve] Iter: 60 overflow: 0.747203 HPWL: 4196529
+[NesterovSolve] Iter: 70 overflow: 0.747227 HPWL: 4196776
+[NesterovSolve] Iter: 80 overflow: 0.747003 HPWL: 4197279
+[NesterovSolve] Iter: 90 overflow: 0.746712 HPWL: 4198128
+[NesterovSolve] Iter: 100 overflow: 0.746333 HPWL: 4199364
+[NesterovSolve] Iter: 110 overflow: 0.745728 HPWL: 4201449
+[NesterovSolve] Iter: 120 overflow: 0.744616 HPWL: 4204900
+[NesterovSolve] Iter: 130 overflow: 0.7429 HPWL: 4210262
+[NesterovSolve] Iter: 140 overflow: 0.740321 HPWL: 4218895
+[NesterovSolve] Iter: 150 overflow: 0.736505 HPWL: 4232308
+[NesterovSolve] Iter: 160 overflow: 0.730696 HPWL: 4253060
+[NesterovSolve] Iter: 170 overflow: 0.719478 HPWL: 4281699
+[NesterovSolve] Iter: 180 overflow: 0.702191 HPWL: 4321122
+[NesterovSolve] Iter: 190 overflow: 0.682515 HPWL: 4375212
+[NesterovSolve] Iter: 200 overflow: 0.660526 HPWL: 4447293
+[NesterovSolve] Iter: 210 overflow: 0.625081 HPWL: 4516566
+[NesterovSolve] Snapshot saved at iter = 216
+[NesterovSolve] Iter: 220 overflow: 0.585939 HPWL: 4589913
+[NesterovSolve] Iter: 230 overflow: 0.546568 HPWL: 4672006
+[NesterovSolve] Iter: 240 overflow: 0.493887 HPWL: 4711101
+[NesterovSolve] Iter: 250 overflow: 0.437678 HPWL: 4690432
+[NesterovSolve] Iter: 260 overflow: 0.377817 HPWL: 4685878
+[NesterovSolve] Iter: 270 overflow: 0.325786 HPWL: 4688054
+[NesterovSolve] Iter: 280 overflow: 0.302379 HPWL: 4738039
+[NesterovSolve] Iter: 290 overflow: 0.267482 HPWL: 4778698
+[NesterovSolve] Iter: 300 overflow: 0.232849 HPWL: 4810713
+[NesterovSolve] Iter: 310 overflow: 0.20158 HPWL: 4848299
+[INFO GPL-0075] Routability numCall: 1 inflationIterCnt: 1 bloatIterCnt: 0
+[INFO GPL-0036] TileLxLy: 0 0
+[INFO GPL-0037] TileSize: 4200 4200
+[INFO GPL-0038] TileCnt: 14 14
+[INFO GPL-0039] numRoutingLayers: 10
+[INFO GPL-0040] NumTiles: 196
+[INFO GPL-0063] TotalRouteOverflowH2: 0.0
+[INFO GPL-0064] TotalRouteOverflowV2: 0.0
+[INFO GPL-0065] OverflowTileCnt2: 0
+[INFO GPL-0066] 0.5%RC: 1.0
+[INFO GPL-0067] 1.0%RC: 1.0
+[INFO GPL-0068] 2.0%RC: 0.9438596524690327
+[INFO GPL-0069] 5.0%RC: 0.8036879542026114
+[INFO GPL-0070] 0.5rcK: 1.0
+[INFO GPL-0071] 1.0rcK: 1.0
+[INFO GPL-0072] 2.0rcK: 0.0
+[INFO GPL-0073] 5.0rcK: 0.0
+[INFO GPL-0074] FinalRC: 1.0
+[NesterovSolve] Iter: 320 overflow: 0.171298 HPWL: 4881515
+[NesterovSolve] Iter: 330 overflow: 0.142828 HPWL: 4916941
+[NesterovSolve] Iter: 340 overflow: 0.123412 HPWL: 4942028
+[NesterovSolve] Iter: 350 overflow: 0.10133 HPWL: 4964095
+[NesterovSolve] Finished with Overflow: 0.099533
+No differences found.
