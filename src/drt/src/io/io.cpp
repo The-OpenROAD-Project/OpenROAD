@@ -1499,6 +1499,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
     con->setNoAdjEol(rule->isNoAdjacentEol() ? rule->getEolWidth() : -1);
     con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
+    con->setExceptRectangle(rule->isExceptRectangle());
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
