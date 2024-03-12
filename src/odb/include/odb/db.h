@@ -7577,11 +7577,29 @@ class dbPowerDomain : public dbObject
 class dbPowerSwitch : public dbObject
 {
  public:
+  struct UPFIOSupplyPort
+  {
+    std::string port_name;
+    std::string supply_net_name;
+  };
+  struct UPFControlPort
+  {
+    std::string port_name;
+    std::string net_name;
+  };
+  struct UPFAcknowledgePort
+  {
+    std::string port_name;
+    std::string net_name;
+    std::string boolean_expression;
+  };
+  struct UPFOnState
+  {
+    std::string state_name;
+    std::string input_supply_port;
+    std::string boolean_expression;
+  };
   const char* getName() const;
-
-  void setControlNet(dbNet* control_net);
-
-  dbNet* getControlNet() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -7590,19 +7608,26 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
-  void addInSupplyPort(const std::string& in_port);
-  void addOutSupplyPort(const std::string& out_port);
-  void addControlPort(const std::string& control_port);
-  void addOnState(const std::string& on_state);
+  void addInSupplyPort(const std::string& in_port, const std::string& net);
+  void setOutSupplyPort(const std::string& out_port, const std::string& net);
+  void addControlPort(const std::string& control_port,
+                      const std::string& control_net);
+  void addAcknowledgePort(const std::string& port_name,
+                          const std::string& net_name,
+                          const std::string& boolean_expression);
+  void addOnState(const std::string& on_state,
+                  const std::string& port_name,
+                  const std::string& boolean_expression);
   void setLibCell(dbMaster* master);
   void addPortMap(const std::string& model_port,
                   const std::string& switch_port);
 
   void addPortMap(const std::string& model_port, dbMTerm* mterm);
-  std::vector<std::string> getControlPorts();
-  std::vector<std::string> getInputSupplyPorts();
-  std::vector<std::string> getOutputSupplyPorts();
-  std::vector<std::string> getOnStates();
+  std::vector<UPFControlPort> getControlPorts();
+  std::vector<UPFIOSupplyPort> getInputSupplyPorts();
+  UPFIOSupplyPort getOutputSupplyPort();
+  std::vector<UPFAcknowledgePort> getAcknowledgePorts();
+  std::vector<UPFOnState> getOnStates();
 
   // Returns library cell that was defined in the upf for this power switch
   dbMaster* getLibCell();

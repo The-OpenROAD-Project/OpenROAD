@@ -5,7 +5,8 @@
 # variable names such as $(false), unused variables, etc.
 set -ue -o pipefail
 
-cd "$(dirname $(readlink -f $0))/../flow"
+cd "$(dirname $(readlink -f $0))"
+cd ../../../flow
 
 testname=uart
 
