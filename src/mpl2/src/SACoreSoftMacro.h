@@ -50,8 +50,8 @@ class Graphics;
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
-  SACoreSoftMacro(Cluster* root,
-                  const Rect& outline,
+  SACoreSoftMacro(float outline_width,
+                  float outline_height,  // boundary constraints
                   const std::vector<SoftMacro>& macros,
                   // weight for different penalty
                   float area_weight,
@@ -121,8 +121,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calNotchPenalty();
   void calMacroBlockagePenalty();
   std::vector<Rect> blockages_;
-
-  Cluster* root_;
 
   // notch threshold
   float notch_h_th_;
