@@ -425,7 +425,7 @@ class HierRTLMP
   // for them to be identified as connected
   int signature_net_threshold_ = 20;
   int large_net_threshold_ = 100;     // ignore global nets when clustering
-  const int bus_net_threshold_ = 32;  // only or bus planning
+  const int bus_net_threshold_ = 32;  // only for bus planning
   float congestion_weight_ = 0.5;     // for balance timing and congestion
 
   const float macro_dominated_cluster_threshold_ = 0.01;
