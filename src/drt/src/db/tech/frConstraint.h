@@ -208,6 +208,8 @@ class frLef58MinStepConstraint : public frConstraint
   frCoord getMinAdjacentLength() const { return minAdjLength_; }
   bool hasEolWidth() const { return (eolWidth_ != -1); }
   frCoord getEolWidth() const { return eolWidth_; }
+  frCoord getNoAdjEol() const { return noAdjEol_; }
+  bool isExceptRectangle() const { return exceptRectangle_; }
 
   // setter
   void setMinStepLength(frCoord in) { minStepLength_ = in; }
@@ -220,6 +222,8 @@ class frLef58MinStepConstraint : public frConstraint
     return frConstraintTypeEnum::frcLef58MinStepConstraint;
   }
   void report(utl::Logger* logger) const override;
+  void setNoAdjEol(frCoord value) { noAdjEol_ = value; }
+  void setExceptRectangle(bool value) { exceptRectangle_ = value; }
 
  protected:
   frCoord minStepLength_{-1};
@@ -239,6 +243,8 @@ class frLef58MinStepConstraint : public frConstraint
   bool exceptSameCorners_{false};
   frCoord eolWidth_{-1};
   bool concaveCorners_{false};
+  frCoord noAdjEol_{-1};
+  bool exceptRectangle_{false};
 };
 
 // minStep

@@ -37,6 +37,7 @@ include("openroad")
 
 add_library(upf_lib
   upf.cpp
+  writer.cpp
 )
 
 target_include_directories(upf_lib
