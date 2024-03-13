@@ -1553,8 +1553,10 @@ void HierRTLMP::calculateConnection()
 
       for (const int load_cluster_id : load_clusters_ids) {
         if (load_cluster_id != driver_cluster_id) { /* undirected connection */
-          cluster_map_[driver_cluster_id]->addConnection(load_cluster_id, weight);
-          cluster_map_[load_cluster_id]->addConnection(driver_cluster_id, weight);
+          cluster_map_[driver_cluster_id]->addConnection(load_cluster_id,
+                                                         weight);
+          cluster_map_[load_cluster_id]->addConnection(driver_cluster_id,
+                                                       weight);
         }
       }
     }
