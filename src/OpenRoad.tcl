@@ -395,5 +395,34 @@ proc get_core_area { } {
   return $area
 }
 
+proc parse_list_args {cmd arg_var list_var lists_args} {
+  upvar 1 $arg_var args
+  upvar 1 $list_var list
+
+  foreach arg_opt $lists_args {
+    set remaining_args []
+
+    set list($arg_opt) []
+    for {set i 0} {$i < [llength $args]} {incr i} {
+      set arg [lindex $args $i]
+      if { [sta::is_keyword_arg $arg] } {
+        if { $arg == $arg_opt } {
+          incr i
+          if { [llength $args] == $i } {
+            utl::error ORD 560 "$cmd $arg_opt missing value."
+          }
+          lappend list($arg_opt) [lindex $args $i]
+        } else {
+          lappend remaining_args $arg
+        }
+      } else {
+        lappend remaining_args $arg
+      }
+    }
+
+    set args $remaining_args
+  }
+}
+
 # namespace ord
 }

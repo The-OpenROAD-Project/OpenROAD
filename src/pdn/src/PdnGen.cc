@@ -309,7 +309,14 @@ void PdnGen::setCoreDomain(odb::dbNet* power,
   core_domain_ = std::make_unique<VoltageDomain>(
       this, block, power, ground, secondary, logger_);
 
-  core_domain_->setSwitchedPower(switched_power);
+  if (importUPF(core_domain_.get())) {
+    if (switched_power) {
+      logger_->error(
+          utl::PDN, 210, "Cannot specify switched power net when using UPF.");
+    }
+  } else {
+    core_domain_->setSwitchedPower(switched_power);
+  }
 }
 
 void PdnGen::makeRegionVoltageDomain(
@@ -335,7 +342,16 @@ void PdnGen::makeRegionVoltageDomain(
   auto* block = db_->getChip()->getBlock();
   auto domain = std::make_unique<VoltageDomain>(
       this, name, block, power, ground, secondary_nets, region, logger_);
-  domain->setSwitchedPower(switched_power);
+
+  if (importUPF(domain.get())) {
+    if (switched_power) {
+      logger_->error(
+          utl::PDN, 199, "Cannot specify switched power net when using UPF.");
+    }
+  } else {
+    domain->setSwitchedPower(switched_power);
+  }
+
   domains_.push_back(std::move(domain));
 }
 
@@ -422,12 +438,29 @@ void PdnGen::makeCoreGrid(
   auto grid = std::make_unique<CoreGrid>(
       domain, name, starts_with == POWER, generate_obstructions);
   grid->setPinLayers(pin_layers);
-  if (powercell != nullptr) {
-    grid->setSwitchedPower(new GridSwitchedPower(
-        grid.get(),
-        powercell,
-        powercontrol,
-        GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+
+  PowerSwitchNetworkType control_network = PowerSwitchNetworkType::DAISY;
+  if (strlen(powercontrolnetwork) > 0) {
+    control_network
+        = GridSwitchedPower::fromString(powercontrolnetwork, logger_);
+  }
+  if (importUPF(grid.get(), control_network)) {
+    if (powercell != nullptr) {
+      logger_->error(
+          utl::PDN, 201, "Cannot specify power switch when UPF is available.");
+    }
+    if (powercontrol != nullptr) {
+      logger_->error(
+          utl::PDN, 202, "Cannot specify power control when UPF is available.");
+    }
+  } else {
+    if (powercell != nullptr) {
+      grid->setSwitchedPower(new GridSwitchedPower(
+          grid.get(),
+          powercell,
+          powercontrol,
+          GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
+    }
   }
   domain->addGrid(std::move(grid));
 }
@@ -900,6 +933,184 @@ void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
   ViaRepair repair(logger_, nets);
   repair.repair();
   repair.report();
+}
+
+bool PdnGen::importUPF(VoltageDomain* domain)
+{
+  auto* block = db_->getChip()->getBlock();
+
+  bool has_upf = false;
+  odb::dbPowerDomain* power_domain = nullptr;
+  for (auto* upf_domain : block->getPowerDomains()) {
+    has_upf = true;
+
+    if (domain == core_domain_.get()) {
+      if (upf_domain->isTop()) {
+        power_domain = upf_domain;
+        break;
+      }
+    } else {
+      odb::dbGroup* upf_group = upf_domain->getGroup();
+
+      if (upf_group != nullptr
+          && upf_group->getRegion() == domain->getRegion()) {
+        power_domain = upf_domain;
+        break;
+      }
+    }
+  }
+
+  if (power_domain != nullptr) {
+    const auto power_switches = power_domain->getPowerSwitches();
+    if (power_switches.size() > 1) {
+      logger_->error(
+          utl::PDN,
+          203,
+          "Unable to process power domain with more than 1 power switch");
+    }
+
+    for (auto* pswitch : power_switches) {
+      auto port_map = pswitch->getPortMap();
+      if (port_map.empty()) {
+        logger_->error(
+            utl::PDN,
+            204,
+            "Unable to process power switch, {}, without port mapping",
+            pswitch->getName());
+      }
+
+      odb::dbMaster* master = pswitch->getLibCell();
+      odb::dbMTerm* control = nullptr;
+      odb::dbMTerm* acknowledge = nullptr;
+      odb::dbMTerm* switched_power = nullptr;
+      odb::dbMTerm* alwayson_power = nullptr;
+      odb::dbMTerm* ground = nullptr;
+
+      const auto control_port = pswitch->getControlPorts();
+      const auto input_supply = pswitch->getInputSupplyPorts();
+      const auto output_supply = pswitch->getOutputSupplyPort();
+      const auto ack_port = pswitch->getAcknowledgePorts();
+
+      for (auto* mterm : master->getMTerms()) {
+        if (mterm->getSigType() == odb::dbSigType::GROUND) {
+          ground = mterm;
+        }
+      }
+
+      control = port_map[control_port[0].port_name];
+      alwayson_power = port_map[input_supply[0].port_name];
+      switched_power = port_map[output_supply.port_name];
+      acknowledge = port_map[ack_port[0].port_name];
+
+      if (control == nullptr) {
+        logger_->error(utl::PDN,
+                       205,
+                       "Unable to determine control port for: {}",
+                       master->getName());
+      }
+
+      if (alwayson_power == nullptr) {
+        logger_->error(utl::PDN,
+                       206,
+                       "Unable to determine always on power port for: {}",
+                       master->getName());
+      }
+
+      if (switched_power == nullptr) {
+        logger_->error(utl::PDN,
+                       207,
+                       "Unable to determine switched power port for: {}",
+                       master->getName());
+      }
+
+      if (ground == nullptr) {
+        logger_->error(utl::PDN,
+                       208,
+                       "Unable to determine ground port for: {}",
+                       master->getName());
+      }
+
+      auto* switched_net
+          = block->findNet(output_supply.supply_net_name.c_str());
+      if (switched_net == nullptr) {
+        logger_->error(utl::PDN, 238, "Unable to determine switched power net");
+      }
+      domain->setSwitchedPower(switched_net);
+
+      if (findSwitchedPowerCell(master->getName())) {
+        logger_->warn(utl::PDN,
+                      209,
+                      "Power switch for {} already exists",
+                      pswitch->getName());
+      } else {
+        makeSwitchedPowerCell(master,
+                              control,
+                              acknowledge,
+                              switched_power,
+                              alwayson_power,
+                              ground);
+      }
+    }
+  }
+
+  return has_upf;
+}
+
+bool PdnGen::importUPF(Grid* grid, PowerSwitchNetworkType type) const
+{
+  auto* block = db_->getChip()->getBlock();
+
+  auto* domain = grid->getDomain();
+
+  bool has_upf = false;
+  odb::dbPowerDomain* power_domain = nullptr;
+  for (auto* upf_domain : block->getPowerDomains()) {
+    has_upf = true;
+
+    if (domain == core_domain_.get()) {
+      if (upf_domain->isTop()) {
+        power_domain = upf_domain;
+        break;
+      }
+    } else {
+      odb::dbGroup* upf_group = upf_domain->getGroup();
+
+      if (upf_group != nullptr
+          && upf_group->getRegion() == domain->getRegion()) {
+        power_domain = upf_domain;
+        break;
+      }
+    }
+  }
+
+  if (power_domain != nullptr) {
+    auto power_switches = power_domain->getPowerSwitches();
+    if (!power_switches.empty()) {
+      auto pswitch = power_switches[0];
+
+      auto* pdn_switch
+          = findSwitchedPowerCell(pswitch->getLibCell()->getName());
+
+      const auto control_net = pswitch->getControlPorts()[0].net_name;
+      if (control_net.empty()) {
+        logger_->error(
+            utl::PDN,
+            236,
+            "Cannot handle undefined control net for power switch: {}",
+            pswitch->getName());
+      }
+      auto control = block->findNet(control_net.c_str());
+      if (control == nullptr) {
+        logger_->error(
+            utl::PDN, 237, "Unable to find control net: {}", control_net);
+      }
+
+      grid->setSwitchedPower(
+          new GridSwitchedPower(grid, pdn_switch, control, type));
+    }
+  }
+
+  return has_upf;
 }
 
 }  // namespace pdn

@@ -41,6 +41,7 @@
 
 namespace odb {
 class dbBlock;
+class dbDatabase;
 class dbMaster;
 class dbMTerm;
 class dbNet;
@@ -191,6 +192,14 @@ class Design
   psm::PDNSim* getPDNSim();
   pdn::PdnGen* getPdnGen();
   pad::ICeWall* getICeWall();
+
+  // This returns a database that is not the one associated with
+  // the rest of the application.  It is usable as a standalone
+  // db but should not passed to any other Design or Tech APIs.
+  //
+  // This is useful if you need a second database for specialized
+  // use cases and is not ordinarily required.
+  static odb::dbDatabase* createDetachedDb();
 
  private:
   sta::dbSta* getSta();
