@@ -1502,8 +1502,8 @@ void HierRTLMP::calculateConnection()
       continue;
     }
 
-    int driver_id = -1;
-    std::vector<int> loads_id;
+    int driver_cluster_id = -1;
+    std::vector<int> load_clusters_ids;
     bool net_has_pad_or_cover = false;
 
     for (odb::dbITerm* iterm : net->getITerms()) {
@@ -1524,9 +1524,9 @@ void HierRTLMP::calculateConnection()
       const int cluster_id = inst_to_cluster_.at(inst);
 
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        driver_id = cluster_id;
+        driver_cluster_id = cluster_id;
       } else {
-        loads_id.push_back(cluster_id);
+        load_clusters_ids.push_back(cluster_id);
       }
     }
 
@@ -1541,20 +1541,20 @@ void HierRTLMP::calculateConnection()
       net_has_io_pin = true;
 
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        driver_id = cluster_id;
+        driver_cluster_id = cluster_id;
       } else {
-        loads_id.push_back(cluster_id);
+        load_clusters_ids.push_back(cluster_id);
       }
     }
 
-    if (driver_id != -1 && !loads_id.empty()
-        && loads_id.size() < large_net_threshold_) {
+    if (driver_cluster_id != -1 && !load_clusters_ids.empty()
+        && load_clusters_ids.size() < large_net_threshold_) {
       const float weight = net_has_io_pin ? virtual_weight_ : 1.0;
 
-      for (const int load_id : loads_id) {
-        if (load_id != driver_id) { /* undirected connection */
-          cluster_map_[driver_id]->addConnection(load_id, weight);
-          cluster_map_[load_id]->addConnection(driver_id, weight);
+      for (const int load_cluster_id : load_clusters_ids) {
+        if (load_cluster_id != driver_cluster_id) { /* undirected connection */
+          cluster_map_[driver_cluster_id]->addConnection(load_cluster_id, weight);
+          cluster_map_[load_cluster_id]->addConnection(driver_cluster_id, weight);
         }
       }
     }
