@@ -57,6 +57,7 @@ class Logger;
 namespace odb {
 class dbDatabase;
 class dbTechLayerDir;
+class dbTechLayer;
 }  // namespace odb
 
 namespace stt {
@@ -153,6 +154,11 @@ class FastRouteCore
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
+  void getBlockage(odb::dbTechLayer* layer,
+                   int x,
+                   int y,
+                   uint8_t& blockage_h,
+                   uint8_t& blockage_v);
   void updateDbCongestion();
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);

@@ -82,9 +82,9 @@ legalized HPWL         133583.9 u
 delta HPWL                    0 %
 
 Clock clk
-Latency      CRPR       Skew
-inst_8_14/clk ^
-   1.24
-inst_10_14/clk ^
-   1.10      0.00       0.14
+   1.24 source latency inst_8_14/clk ^
+  -1.10 target latency inst_10_14/clk ^
+   0.00 CRPR
+--------------
+   0.14 setup skew
 

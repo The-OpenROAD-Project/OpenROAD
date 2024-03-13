@@ -213,64 +213,32 @@ namespace odb {
     //User Code Begin CopyConstructor
     //User Code End CopyConstructor
   }
-  
-  dbIStream& operator>>(dbIStream& stream, _{{klass.name}}& obj)
-  {
-    {% for field in klass.fields %}
-      {% if field.bitFields %}
-        {% if field.numBits == 32 %}
-          uint32_t {{field.name}}bit_field;
-        {% else %}
-          uint64_t {{field.name}}bit_field;
-        {% endif %}
-        stream >> {{field.name}}bit_field;
-        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
-        std::memcpy(&obj.{{field.name}}, &{{field.name}}bit_field, sizeof({{field.name}}bit_field));
-      {% else %}
-        {% if 'no-serial' not in field.flags %}
-          {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}})) {
-          {% endif %}
-          stream >> {% if field.table %}*{% endif %}obj.{{field.name}};
-          {% if 'schema' in field %}
-          }
-          {% endif %}
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-    //User Code Begin >>
-    //User Code End >>
-    return stream;
-  }
 
-  dbOStream& operator<<(dbOStream& stream, const _{{klass.name}}& obj)
-  {
-    {% for field in klass.fields %}
-      {% if field.bitFields %}
-        {% if field.numBits == 32 %}
-          uint32_t {{field.name}}bit_field;
-        {% else %}
-          uint64_t {{field.name}}bit_field;
-        {% endif %}
-        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
-        std::memcpy(&{{field.name}}bit_field, &obj.{{field.name}}, sizeof(obj.{{field.name}}));
-        stream << {{field.name}}bit_field;
-      {% else %}
-        {% if 'no-serial' not in field.flags %}
-          {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}})) {
-          {% endif %}
-          stream << {% if field.table %}*{% endif %}obj.{{field.name}};
-          {% if 'schema' in field %}
-          }
-          {% endif %}
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-    //User Code Begin <<
-    //User Code End <<
-    return stream;
-  }
+  {% for _struct in klass.structs %}
+    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
+      {% set sname = klass.name+'::'+_struct.name %}
+      {% set sklass = _struct %}
+      {% set comment_tag = _struct.name %}
+      {% include 'serializer_in.cpp' %}
+    {% endif %}
+  {% endfor %}
+  {% set sklass = klass %}
+  {% set sname = '_'+sklass.name %}
+  {% set comment_tag = "" %}
+  {% include 'serializer_in.cpp' %}
+
+  {% for _struct in klass.structs %}
+    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
+      {% set sname = klass.name+'::'+_struct.name %}
+      {% set sklass = _struct %}
+      {% set comment_tag = _struct.name %}
+      {% include 'serializer_out.cpp' %}
+    {% endif %}
+  {% endfor %}
+  {% set sklass = klass %}
+  {% set sname = '_'+sklass.name %}
+  {% set comment_tag = "" %}
+  {% include 'serializer_out.cpp' %}
 
   {% if klass.hasTables %}
   dbObjectTable* _{{klass.name}}::getObjectTable(dbObjectType type)

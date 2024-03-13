@@ -1682,9 +1682,8 @@ void GlobalRouter::updateDbCongestionFromGuides()
         const unsigned short blockageV = capV - v_edges_3D[k][y][x].cap;
         const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D[k][y][x].usage + blockageV;
-        db_gcell->setCapacity(layer, x, y, capH, capV, 0);
-        db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
-        db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+        db_gcell->setCapacity(layer, x, y, capH + capV);
+        db_gcell->setUsage(layer, x, y, usageH + usageV);
       }
     }
   }
@@ -2477,8 +2476,8 @@ void GlobalRouter::initGrid(int max_layer)
 
   int tile_size = grid_->getPitchesInTile() * track_spacing;
 
-  int x_grids = upper_rightX / tile_size;
-  int y_grids = upper_rightY / tile_size;
+  int x_grids = std::max(1, upper_rightX / tile_size);
+  int y_grids = std::max(1, upper_rightY / tile_size);
 
   bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
   bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
@@ -3401,6 +3400,18 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
   return nets_to_route_;
 }
 
+void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
+                               int x,
+                               int y,
+                               uint8_t& blockage_h,
+                               uint8_t& blockage_v)
+{
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+  if (layer->getRoutingLevel() <= max_layer) {
+    fastroute_->getBlockage(layer, x, y, blockage_h, blockage_v);
+  }
+}
+
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
     int max_routing_layer)
 {
@@ -3878,9 +3889,6 @@ void IncrementalGRoute::updateRoutes(bool save_guides)
 
 IncrementalGRoute::~IncrementalGRoute()
 {
-  // Updating DB congestion is slow and only used for gui so
-  // don't bother updating it.
-  // groute_->updateDbCongestion();
   db_cbk_.removeOwner();
 }
 
