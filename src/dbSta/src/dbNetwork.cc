@@ -583,9 +583,9 @@ ObjectId dbNetwork::id(const Pin* pin) const
   staToDb(pin, iterm, bterm);
 
   if (iterm != nullptr) {
-    return iterm->getId();
+    return iterm->getId() << 1;
   }
-  return bterm->getId() + bterm->getBlock()->getITerms().size();
+  return (bterm->getId() << 1) + 1;
 }
 
 Instance* dbNetwork::instance(const Pin* pin) const
