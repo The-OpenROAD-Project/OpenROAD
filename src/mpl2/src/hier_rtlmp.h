@@ -131,6 +131,7 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebugShowBundledNets(bool show_bundled_nets);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -141,8 +142,7 @@ class HierRTLMP
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
   void computeMetricsForModules(float core_area);
-  void reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                         float core_area,
+  void reportLogicalHierarchyInformation(float core_area,
                                          float util,
                                          float core_util);
   void updateDataFlow();
@@ -203,8 +203,30 @@ class HierRTLMP
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
-  void breakMixedLeafCluster(Cluster* root_cluster);
+
+  void fetchMixedLeaves(Cluster* parent,
+                        std::vector<std::vector<Cluster*>>& mixed_leaves);
+  void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
+
+  void breakMixedLeaf(Cluster* mixed_leaf);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
+  void createOneClusterForEachMacro(Cluster* parent,
+                                    const std::vector<HardMacro*>& hard_macros,
+                                    std::vector<Cluster*>& macro_clusters);
+  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                            std::vector<int>& size_class);
+  void classifyMacrosByConnSignature(
+      const std::vector<Cluster*>& macro_clusters,
+      std::vector<int>& signature_class);
+  void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
+                                const std::vector<int>& size_class,
+                                const std::vector<int>& signature_class,
+                                std::vector<int>& macro_class);
+  void addStdCellClusterToSubTree(Cluster* parent,
+                                  Cluster* mixed_leaf,
+                                  std::vector<int>& virtual_conn_clusters);
+  void replaceByStdCellCluster(Cluster* mixed_leaf,
+                               std::vector<int>& virtual_conn_clusters);
 
   // Coarse Shaping
   void runCoarseShaping();
@@ -344,10 +366,6 @@ class HierRTLMP
   float init_prob_ = 0.9;
   const int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  const int k_ = 5000000;
-  const int c_ = 1000.0;
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
@@ -367,6 +385,7 @@ class HierRTLMP
   float floorplan_ly_ = 0.0;
   float floorplan_ux_ = 0.0;
   float floorplan_uy_ = 0.0;
+  float macro_with_halo_area_ = 0.0;
 
   // dataflow parameters and store the dataflow
   int max_num_ff_dist_ = 5;  // maximum number of FF distances between

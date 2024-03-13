@@ -55,10 +55,9 @@ std::string TimingPathNode::getNodeName(bool include_master) const
   if (isPinITerm()) {
     odb::dbITerm* iterm = getPinAsITerm();
 
-    odb::dbInst* inst = iterm->getInst();
-
-    std::string name = inst->getName() + "/" + iterm->getMTerm()->getName();
+    std::string name = iterm->getName();
     if (include_master) {
+      odb::dbInst* inst = iterm->getInst();
       name += " (" + inst->getMaster()->getName() + ")";
     }
 
@@ -136,8 +135,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 {
   if (isPinITerm()) {
     auto* iterm = getPinAsITerm();
-    odb::dbTransform transform;
-    iterm->getInst()->getTransform(transform);
+    const odb::dbTransform transform = iterm->getInst()->getTransform();
 
     odb::Rect pin_rect;
     auto* mterm = iterm->getMTerm();
@@ -191,8 +189,8 @@ void TimingPath::populateNodeList(sta::Path* path,
                                   bool clock_expanded,
                                   TimingNodeList& list)
 {
-  float arrival_prev_stage = 0;
-  float arrival_cur_stage = 0;
+  float arrival_prev_stage = 0.0f;
+  float arrival_cur_stage = 0.0f;
 
   sta::PathExpanded expand(path, sta);
   auto* graph = sta->graph();
@@ -203,7 +201,6 @@ void TimingPath::populateNodeList(sta::Path* path,
     sta::Vertex* vertex = ref->vertex(sta);
     const auto pin = vertex->pin();
     const bool pin_is_clock = sta->isClock(pin);
-    const auto slew = ref->slew(sta);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
@@ -230,12 +227,8 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     float cap = 0.0;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
-      sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      sta::Parasitic* parasitic
-          = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(
-          pin, parasitic, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(pin, ref->transition(sta), dcalc_ap);
     }
 
     odb::dbITerm* term;
@@ -245,7 +238,13 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (term == nullptr) {
       pin_object = port;
     }
-    arrival_cur_stage = arrival;
+
+    float slew = 0.0f;
+
+    if (!sta->isIdealClock(pin)) {
+      arrival_cur_stage = arrival;
+      slew = ref->slew(sta);
+    }
 
     list.push_back(
         std::make_unique<TimingPathNode>(pin_object,
@@ -254,7 +253,7 @@ void TimingPath::populateNodeList(sta::Path* path,
                                          is_rising,
                                          !is_driver,
                                          true,
-                                         arrival + offset,
+                                         arrival_cur_stage + offset,
                                          arrival_cur_stage - arrival_prev_stage,
                                          slew,
                                          cap,

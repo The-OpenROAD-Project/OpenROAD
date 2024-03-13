@@ -217,9 +217,7 @@ bool Design::isInClock(odb::dbInst* inst)
 
 std::string Design::getITermName(odb::dbITerm* pin)
 {
-  auto MTerm_name = pin->getMTerm()->getName();
-  auto inst_name = pin->getInst()->getName();
-  return inst_name + "/" + MTerm_name;
+  return pin->getName();
 }
 
 bool Design::isInSupply(odb::dbITerm* pin)
@@ -289,7 +287,7 @@ cts::TritonCTS* Design::getTritonCts()
   return app->getTritonCts();
 }
 
-triton_route::TritonRoute* Design::getTritonRoute()
+drt::TritonRoute* Design::getTritonRoute()
 {
   auto app = OpenRoad::openRoad();
   return app->getTritonRoute();
@@ -347,6 +345,15 @@ pad::ICeWall* Design::getICeWall()
 {
   auto app = OpenRoad::openRoad();
   return app->getICeWall();
+}
+
+/* static */
+odb::dbDatabase* Design::createDetachedDb()
+{
+  auto app = OpenRoad::openRoad();
+  auto db = odb::dbDatabase::create();
+  db->setLogger(app->getLogger());
+  return db;
 }
 
 }  // namespace ord

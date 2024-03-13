@@ -115,7 +115,7 @@ namespace rcx {
 class Ext;
 }
 
-namespace triton_route {
+namespace drt {
 class TritonRoute;
 }
 
@@ -188,7 +188,7 @@ class OpenRoad
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
-  triton_route::TritonRoute* getTritonRoute() { return detailed_router_; }
+  drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getGlobalRouter() { return global_router_; }
@@ -252,6 +252,9 @@ class OpenRoad
   void addObserver(OpenRoadObserver* observer);
   void removeObserver(OpenRoadObserver* observer);
 
+  static const char* getVersion();
+  static const char* getGitDescribe();
+
  protected:
   ~OpenRoad();
 
@@ -276,7 +279,7 @@ class OpenRoad
   cts::TritonCTS* tritonCts_ = nullptr;
   tap::Tapcell* tapcell_ = nullptr;
   rcx::Ext* extractor_ = nullptr;
-  triton_route::TritonRoute* detailed_router_ = nullptr;
+  drt::TritonRoute* detailed_router_ = nullptr;
   ant::AntennaChecker* antenna_checker_ = nullptr;
   gpl::Replace* replace_ = nullptr;
   psm::PDNSim* pdnsim_ = nullptr;

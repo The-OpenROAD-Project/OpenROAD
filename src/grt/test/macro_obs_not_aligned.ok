@@ -6,6 +6,7 @@
 [INFO ODB-0128] Design: user_project_wrapper
 [INFO ODB-0131]     Created 3 components and 304 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 3 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
@@ -17,7 +18,6 @@
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
@@ -37,11 +37,11 @@ met5       Horizontal     431286        195760          54.61%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 3
+[INFO GRT-0197] Via related to pin nodes: 4
 [INFO GRT-0198] Via related Steiner nodes: 1
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 9
-[INFO GRT-0112] Final usage 3D: 358
+[INFO GRT-0111] Final number of vias: 10
+[INFO GRT-0112] Final usage 3D: 361
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

@@ -139,9 +139,6 @@ void FastRouteCore::clear()
   v_capacity_3D_.clear();
   h_capacity_3D_.clear();
 
-  layer_grid_.resize(boost::extents[0][0]);
-  via_link_.resize(boost::extents[0][0]);
-
   cost_hvh_.clear();
   cost_vhv_.clear();
   cost_h_.clear();
@@ -195,9 +192,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     last_col_v_capacity_3D_[i] = 0;
     last_row_h_capacity_3D_[i] = 0;
   }
-
-  layer_grid_.resize(boost::extents[num_layers_][MAXLEN]);
-  via_link_.resize(boost::extents[num_layers_][MAXLEN]);
 
   hv_.resize(boost::extents[y_range_][x_range_]);
   hyper_v_.resize(boost::extents[y_range_][x_range_]);
@@ -705,6 +699,18 @@ NetRouteMap FastRouteCore::getRoutes()
           lastY = yreal;
           lastL = gridsL[i];
           if (net_segs.find(segment) == net_segs.end()) {
+            if (segment.init_layer != segment.final_layer) {
+              GSegment invet_via = GSegment(segment.final_x,
+                                            segment.final_y,
+                                            segment.final_layer,
+                                            segment.init_x,
+                                            segment.init_y,
+                                            segment.init_layer);
+              if (net_segs.find(invet_via) != net_segs.end()) {
+                continue;
+              }
+            }
+
             net_segs.insert(segment);
             route.push_back(segment);
           }
@@ -806,6 +812,22 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   return routes;
 }
 
+void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
+                                int x,
+                                int y,
+                                uint8_t& blockage_h,
+                                uint8_t& blockage_v)
+{
+  int l = layer->getRoutingLevel() - 1;
+  if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1 && y_grid_ > 1) {
+    blockage_h = h_edges_3D_[l][y][x - 1].red;
+    blockage_v = v_edges_3D_[l][y - 1][x].red;
+  } else {
+    blockage_h = h_edges_3D_[l][y][x].red;
+    blockage_v = v_edges_3D_[l][y][x].red;
+  }
+}
+
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
@@ -824,44 +846,40 @@ void FastRouteCore::updateDbCongestion()
       continue;
     }
 
-    const unsigned short capH = h_capacity_3D_[k];
-    const unsigned short capV = v_capacity_3D_[k];
-    const unsigned short last_row_capH = last_row_h_capacity_3D_[k];
-    const unsigned short last_col_capV = last_col_v_capacity_3D_[k];
+    const uint8_t capH = h_capacity_3D_[k];
+    const uint8_t capV = v_capacity_3D_[k];
+    const uint8_t last_row_capH = last_row_h_capacity_3D_[k];
+    const uint8_t last_col_capV = last_col_v_capacity_3D_[k];
     bool is_horizontal
         = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
         if (is_horizontal) {
           if (!regular_y_ && y == y_grid_ - 1) {
-            db_gcell->setCapacity(layer, x, y, last_row_capH, capV, 0);
+            db_gcell->setCapacity(layer, x, y, last_row_capH);
           } else {
-            db_gcell->setCapacity(layer, x, y, capH, capV, 0);
+            db_gcell->setCapacity(layer, x, y, capH);
           }
         } else {
           if (!regular_x_ && x == x_grid_ - 1) {
-            db_gcell->setCapacity(layer, x, y, capH, last_col_capV, 0);
+            db_gcell->setCapacity(layer, x, y, last_col_capV);
           } else {
-            db_gcell->setCapacity(layer, x, y, capH, capV, 0);
+            db_gcell->setCapacity(layer, x, y, capV);
           }
         }
         if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
             && y_grid_ > 1) {
-          unsigned short blockageH = h_edges_3D_[k][y][x - 1].red;
-          unsigned short blockageV = v_edges_3D_[k][y - 1][x].red;
-          unsigned short usageH
-              = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
-          unsigned short usageV
-              = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
-          db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+          uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+          uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+          db_gcell->setUsage(layer, x, y, usageH + usageV);
         } else {
-          unsigned short blockageH = h_edges_3D_[k][y][x].red;
-          unsigned short blockageV = v_edges_3D_[k][y][x].red;
-          unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
-          unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
-          db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+          uint8_t blockageH = h_edges_3D_[k][y][x].red;
+          uint8_t blockageV = v_edges_3D_[k][y][x].red;
+          uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
+          uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
+          db_gcell->setUsage(layer, x, y, usageH + usageV);
         }
       }
     }
@@ -959,7 +977,7 @@ NetRouteMap FastRouteCore::run()
                "LV routing round {}, enlarge {}.",
                i,
                enlarge_);
-    routeLVAll(newTH, enlarge_, LOGIS_COF);
+    routeMonotonicAll(newTH, enlarge_, LOGIS_COF);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 

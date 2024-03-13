@@ -71,9 +71,16 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>
-    AntennaViolations;
-typedef std::map<RoutePt, std::vector<Pin*>> RoutePtPins;
+using AntennaViolations
+    = std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>;
+
+struct RoutePtPins
+{
+  std::vector<Pin*> pins;
+  bool connected;
+};
+
+using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
 
 class RepairAntennas
 {
@@ -128,17 +135,21 @@ class RepairAntennas
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*>& default_vias);
-  RoutePtPins findRoutePtPins(Net* net);
+  RoutePtPinsMap findRoutePtPins(Net* net);
   void addWireTerms(Net* net,
                     GRoute& route,
                     int grid_x,
                     int grid_y,
                     int layer,
                     odb::dbTechLayer* tech_layer,
-                    RoutePtPins& route_pt_pins,
+                    RoutePtPinsMap& route_pt_pins,
                     odb::dbWireEncoder& wire_encoder,
                     std::map<int, odb::dbTechVia*>& default_vias,
                     bool connect_to_segment);
+  void makeWire(odb::dbWireEncoder& wire_encoder,
+                odb::dbTechLayer* layer,
+                const odb::Point& start,
+                const odb::Point& end);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,

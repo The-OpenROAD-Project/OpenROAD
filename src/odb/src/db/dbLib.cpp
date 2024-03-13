@@ -220,6 +220,7 @@ _dbLib::~_dbLib()
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
 {
+  dbOStreamScope scope(stream, fmt::format("dbLib({})", lib._name));
   stream << lib._lef_units;
   stream << lib._dbu_per_micron;
   stream << lib._hier_delimeter;
@@ -230,9 +231,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
   stream << lib._master_hash;
   stream << lib._site_hash;
   stream << lib._tech;
-  stream << *lib._master_tbl;
-  stream << *lib._site_tbl;
-  stream << *lib._prop_tbl;
+  stream << NamedTable("master_tbl", lib._master_tbl);
+  stream << NamedTable("site_tbl", lib._site_tbl);
+  stream << NamedTable("prop_tbl", lib._prop_tbl);
   stream << *lib._name_cache;
   return stream;
 }

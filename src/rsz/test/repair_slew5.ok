@@ -44,7 +44,7 @@ x4/A                                    0.15    0.18   -0.03 (VIOLATED)
 x6/A                                    0.15    0.18   -0.03 (VIOLATED)
 x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 720um.
+[INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0039] Resized 7 instances.
 max slew
 

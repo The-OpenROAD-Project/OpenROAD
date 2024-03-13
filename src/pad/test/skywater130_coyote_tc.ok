@@ -71,7 +71,7 @@
 [INFO ODB-0222] Reading LEF file: skywater130_io_fd/lef/sky130io_fill.lef
 [INFO ODB-0225]     Created 2 library cells
 [INFO ODB-0226] Finished LEF file:  skywater130_io_fd/lef/sky130io_fill.lef
-[INFO IFP-0001] Added 1265 rows of 10416 site unit with height 1.
+[INFO IFP-0001] Added 1265 rows of 10416 site unit.
 [INFO PAD-0116] Creating terminal for clk_i on met5 at (306.345um, 52.985um) - (327.885um, 74.530um)
 [INFO PAD-0116] Creating terminal for fsb_node_data_i[0] on met5 at (52.985um, 3746.010um) - (74.530um, 3767.550um)
 [INFO PAD-0116] Creating terminal for fsb_node_data_i[1] on met5 at (52.985um, 3666.010um) - (74.530um, 3687.550um)

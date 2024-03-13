@@ -531,7 +531,8 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     props.push_back({"Module", gui->makeSelected(module)});
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
-  props.push_back({"Description", getInstanceTypeText(getInstanceType(inst))});
+  props.push_back(
+      {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
   props.push_back({"Source type", inst->getSourceType().getString()});
   props.push_back({"Dont Touch", inst->isDoNotTouch()});
@@ -730,169 +731,6 @@ bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
     objects.insert(makeSelected(inst));
   }
   return true;
-}
-
-std::string DbInstDescriptor::getInstanceTypeText(Type type) const
-{
-  switch (type) {
-    case BLOCK:
-      return "Macro";
-    case PAD:
-      return "Pad";
-    case PAD_INPUT:
-      return "Input pad";
-    case PAD_OUTPUT:
-      return "Output pad";
-    case PAD_INOUT:
-      return "Input/output pad";
-    case PAD_POWER:
-      return "Power pad";
-    case PAD_SPACER:
-      return "Pad spacer";
-    case PAD_AREAIO:
-      return "Area IO";
-    case ENDCAP:
-      return "Endcap";
-    case FILL:
-      return "Fill";
-    case TAPCELL:
-      return "Tapcell";
-    case BUMP:
-      return "Bump";
-    case COVER:
-      return "Cover";
-    case ANTENNA:
-      return "Antenna";
-    case TIE:
-      return "Tie";
-    case LEF_OTHER:
-      return "Other";
-    case STD_CELL:
-      return "Standard cell";
-    case STD_BUFINV:
-      return "Buffer/inverter";
-    case STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case STD_BUFINV_TIMING_REPAIR:
-      return "Buffer/inverter from timing repair";
-    case STD_CLOCK_GATE:
-      return "Clock gate";
-    case STD_LEVEL_SHIFT:
-      return "Level shifter";
-    case STD_SEQUENTIAL:
-      return "Sequential";
-    case STD_PHYSICAL:
-      return "Physical";
-    case STD_COMBINATIONAL:
-      return "Combinational";
-    case STD_OTHER:
-      return "Other";
-  }
-
-  return "Unknown";
-}
-
-DbInstDescriptor::Type DbInstDescriptor::getInstanceType(
-    odb::dbInst* inst) const
-{
-  odb::dbMaster* master = inst->getMaster();
-  const auto master_type = master->getType();
-  const auto source_type = inst->getSourceType();
-  if (master->isBlock()) {
-    return BLOCK;
-  }
-  if (master->isPad()) {
-    if (master_type == odb::dbMasterType::PAD_INPUT) {
-      return PAD_INPUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_OUTPUT) {
-      return PAD_OUTPUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_INOUT) {
-      return PAD_INOUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_POWER) {
-      return PAD_POWER;
-    }
-    if (master_type == odb::dbMasterType::PAD_SPACER) {
-      return PAD_SPACER;
-    }
-    if (master_type == odb::dbMasterType::PAD_AREAIO) {
-      return PAD_AREAIO;
-    }
-    return PAD;
-  }
-  if (master->isEndCap()) {
-    return ENDCAP;
-  }
-  if (master->isFiller()) {
-    return FILL;
-  }
-  if (master_type == odb::dbMasterType::CORE_WELLTAP) {
-    return TAPCELL;
-  }
-  if (master->isCover()) {
-    if (master_type == odb::dbMasterType::COVER_BUMP) {
-      return BUMP;
-    }
-    return COVER;
-  }
-  if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
-    return ANTENNA;
-  }
-  if (master_type == odb::dbMasterType::CORE_TIEHIGH
-      || master_type == odb::dbMasterType::CORE_TIELOW) {
-    return TIE;
-  }
-  if (source_type == odb::dbSourceType::DIST) {
-    return LEF_OTHER;
-  }
-
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(master);
-  if (cell == nullptr) {
-    return LEF_OTHER;
-  }
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (lib_cell == nullptr) {
-    if (master->isCore()) {
-      return STD_CELL;
-    }
-    // default to use overall instance setting if there is no liberty cell and
-    // it's not a core cell.
-    return STD_OTHER;
-  }
-
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    if (source_type == odb::dbSourceType::TIMING) {
-      for (auto* iterm : inst->getITerms()) {
-        // look through iterms and check for clock nets
-        auto* net = iterm->getNet();
-        if (net == nullptr) {
-          continue;
-        }
-        if (net->getSigType() == odb::dbSigType::CLOCK) {
-          return STD_BUFINV_CLK_TREE;
-        }
-      }
-      return STD_BUFINV_TIMING_REPAIR;
-    }
-    return STD_BUFINV;
-  }
-  if (lib_cell->isClockGate()) {
-    return STD_CLOCK_GATE;
-  }
-  if (lib_cell->isLevelShifter()) {
-    return STD_LEVEL_SHIFT;
-  }
-  if (lib_cell->hasSequentials()) {
-    return STD_SEQUENTIAL;
-  }
-  if (lib_cell->portCount() == 0) {
-    return STD_PHYSICAL;  // generic physical
-  }
-  // not anything else, so combinational
-  return STD_COMBINATIONAL;
 }
 
 //////////////////////////////////////////////////
@@ -1095,9 +933,9 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   bool has_box = false;
   bbox.mergeInit();
   if (wire) {
-    odb::Rect wire_box;
-    if (wire->getBBox(wire_box)) {
-      bbox.merge(wire_box);
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox.merge(opt_bbox.value());
       has_box = true;
     }
   }
@@ -1167,16 +1005,14 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   // find sources and sinks on this net
   for (auto* iterm : net->getITerms()) {
     if (iterm == sink) {
-      odb::dbTransform transform;
-      iterm->getInst()->getTransform(transform);
+      const odb::dbTransform transform = iterm->getInst()->getTransform();
       get_graph_iterm_targets(iterm->getMTerm(), transform, sinks);
       continue;
     }
 
     auto iotype = iterm->getIoType();
     if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
-      odb::dbTransform transform;
-      iterm->getInst()->getTransform(transform);
+      const odb::dbTransform transform = iterm->getInst()->getTransform();
       get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
     }
   }
@@ -1771,7 +1607,7 @@ DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
 std::string DbITermDescriptor::getName(std::any object) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
-  return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
+  return iterm->getName();
 }
 
 std::string DbITermDescriptor::getShortName(std::any object) const
@@ -1803,8 +1639,7 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
     return;
   }
 
-  odb::dbTransform inst_xfm;
-  iterm->getInst()->getTransform(inst_xfm);
+  const odb::dbTransform inst_xfm = iterm->getInst()->getTransform();
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
@@ -2035,8 +1870,7 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
       {"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
 
   if (via->hasParams()) {
-    odb::dbViaParams via_params;
-    via->getViaParams(via_params);
+    const odb::dbViaParams via_params = via->getViaParams();
 
     props.push_back(
         {"Cut Size",
@@ -4091,11 +3925,10 @@ Descriptor::Properties DbRowDescriptor::getProperties(std::any object) const
 
   Properties props({{"Block", gui->makeSelected(row->getBlock())},
                     {"Site", gui->makeSelected(row->getSite())}});
-  int x, y;
-  row->getOrigin(x, y);
+  odb::Point origin_pt = row->getOrigin();
   PropertyList origin;
-  origin.push_back({"X", Property::convert_dbu(x, true)});
-  origin.push_back({"Y", Property::convert_dbu(y, true)});
+  origin.push_back({"X", Property::convert_dbu(origin_pt.x(), true)});
+  origin.push_back({"Y", Property::convert_dbu(origin_pt.y(), true)});
   props.push_back({"Origin", origin});
 
   props.push_back({"Orientation", row->getOrient().getString()});

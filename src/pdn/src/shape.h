@@ -162,6 +162,7 @@ class Shape
   {
     iterm_connections_.erase(iterm);
   }
+  void clearITermConnections() { iterm_connections_.clear(); }
   const std::set<odb::Rect>& getItermConnections() const
   {
     return iterm_connections_;
@@ -258,6 +259,8 @@ class Shape
   void addBPinToDb(const odb::Rect& rect) const;
 
   void updateIBTermConnections(std::set<odb::Rect>& terms);
+
+  bool hasDBConnectivity() const;
 };
 
 class FollowPinShape : public Shape

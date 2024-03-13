@@ -56,9 +56,6 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
   if (_next_entry != rhs._next_entry) {
     return false;
   }
-  if (_control_net != rhs._control_net) {
-    return false;
-  }
   if (_lib_cell != rhs._lib_cell) {
     return false;
   }
@@ -84,7 +81,6 @@ void _dbPowerSwitch::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_control_net);
   DIFF_FIELD(_lib_cell);
   DIFF_FIELD(_lib);
   DIFF_FIELD(_power_domain);
@@ -96,7 +92,6 @@ void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_control_net);
   DIFF_OUT_FIELD(_lib_cell);
   DIFF_OUT_FIELD(_lib);
   DIFF_OUT_FIELD(_power_domain);
@@ -112,23 +107,75 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
 {
   _name = r._name;
   _next_entry = r._next_entry;
-  _control_net = r._control_net;
   _lib_cell = r._lib_cell;
   _lib = r._lib;
   _power_domain = r._power_domain;
 }
 
+dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
+{
+  stream >> obj.port_name;
+  stream >> obj.supply_net_name;
+  return stream;
+}
+dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFControlPort& obj)
+{
+  stream >> obj.port_name;
+  stream >> obj.net_name;
+  return stream;
+}
+dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFAcknowledgePort& obj)
+{
+  stream >> obj.port_name;
+  stream >> obj.net_name;
+  stream >> obj.boolean_expression;
+  return stream;
+}
+dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFOnState& obj)
+{
+  stream >> obj.state_name;
+  stream >> obj.input_supply_port;
+  stream >> obj.boolean_expression;
+  return stream;
+}
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
 {
   stream >> obj._name;
   stream >> obj._next_entry;
-  stream >> obj._in_supply_port;
-  stream >> obj._out_supply_port;
-  stream >> obj._control_port;
-  stream >> obj._on_state;
-  stream >> obj._control_net;
-  stream >> obj._power_domain;
   // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_update_db_power_switch)) {
+    stream >> obj._in_supply_port;
+    stream >> obj._out_supply_port;
+    stream >> obj._control_port;
+    stream >> obj._acknowledge_port;
+    stream >> obj._on_state;
+  } else {
+    dbVector<std::string> in_supply_port;
+    stream >> in_supply_port;
+    for (const auto& port : in_supply_port) {
+      obj._in_supply_port.emplace_back(
+          dbPowerSwitch::UPFIOSupplyPort{port, ""});
+    }
+    dbVector<std::string> out_supply_port;
+    stream >> out_supply_port;
+    if (!out_supply_port.empty()) {
+      obj._out_supply_port.port_name = out_supply_port[0];
+      obj._out_supply_port.supply_net_name = "";
+    }
+    dbVector<std::string> control_port;
+    stream >> control_port;
+    for (const auto& port : control_port) {
+      obj._control_port.emplace_back(dbPowerSwitch::UPFControlPort{port, ""});
+    }
+    dbVector<std::string> on_state;
+    stream >> on_state;
+    for (const auto& state : on_state) {
+      obj._on_state.emplace_back(dbPowerSwitch::UPFOnState{state, "", ""});
+    }
+    dbId<_dbNet> net;
+    stream >> net;  // unused
+  }
+  stream >> obj._power_domain;
   if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
     stream >> obj._lib_cell;
     stream >> obj._lib;
@@ -138,17 +185,46 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream,
+                      const dbPowerSwitch::UPFIOSupplyPort& obj)
+{
+  stream << obj.port_name;
+  stream << obj.supply_net_name;
+  return stream;
+}
+dbOStream& operator<<(dbOStream& stream,
+                      const dbPowerSwitch::UPFControlPort& obj)
+{
+  stream << obj.port_name;
+  stream << obj.net_name;
+  return stream;
+}
+dbOStream& operator<<(dbOStream& stream,
+                      const dbPowerSwitch::UPFAcknowledgePort& obj)
+{
+  stream << obj.port_name;
+  stream << obj.net_name;
+  stream << obj.boolean_expression;
+  return stream;
+}
+dbOStream& operator<<(dbOStream& stream, const dbPowerSwitch::UPFOnState& obj)
+{
+  stream << obj.state_name;
+  stream << obj.input_supply_port;
+  stream << obj.boolean_expression;
+  return stream;
+}
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
 {
   stream << obj._name;
   stream << obj._next_entry;
+  // User Code Begin <<
   stream << obj._in_supply_port;
   stream << obj._out_supply_port;
   stream << obj._control_port;
+  stream << obj._acknowledge_port;
   stream << obj._on_state;
-  stream << obj._control_net;
   stream << obj._power_domain;
-  // User Code Begin <<
   stream << obj._lib_cell;
   stream << obj._lib;
   stream << obj._port_map;
@@ -173,23 +249,6 @@ const char* dbPowerSwitch::getName() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_name;
-}
-
-void dbPowerSwitch::setControlNet(dbNet* control_net)
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-
-  obj->_control_net = control_net->getImpl()->getOID();
-}
-
-dbNet* dbPowerSwitch::getControlNet() const
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  if (obj->_control_net == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbNet*) par->_net_tbl->getPtr(obj->_control_net);
 }
 
 void dbPowerSwitch::setPowerDomain(dbPowerDomain* power_domain)
@@ -228,28 +287,44 @@ void dbPowerSwitch::destroy(dbPowerSwitch* ps)
   // TODO
 }
 
-void dbPowerSwitch::addInSupplyPort(const std::string& in_port)
+void dbPowerSwitch::addInSupplyPort(const std::string& in_port,
+                                    const std::string& net)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_in_supply_port.push_back(in_port);
+  obj->_in_supply_port.emplace_back(UPFIOSupplyPort{in_port, net});
 }
 
-void dbPowerSwitch::addOutSupplyPort(const std::string& out_port)
+void dbPowerSwitch::setOutSupplyPort(const std::string& out_port,
+                                     const std::string& net)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_out_supply_port.push_back(out_port);
+  obj->_out_supply_port.port_name = out_port;
+  obj->_out_supply_port.supply_net_name = net;
 }
 
-void dbPowerSwitch::addControlPort(const std::string& control_port)
+void dbPowerSwitch::addControlPort(const std::string& control_port,
+                                   const std::string& control_net)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_control_port.push_back(control_port);
+  obj->_control_port.emplace_back(UPFControlPort{control_port, control_net});
 }
 
-void dbPowerSwitch::addOnState(const std::string& on_state)
+void dbPowerSwitch::addAcknowledgePort(const std::string& port_name,
+                                       const std::string& net_name,
+                                       const std::string& boolean_expression)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_on_state.push_back(on_state);
+  obj->_acknowledge_port.emplace_back(
+      UPFAcknowledgePort{port_name, net_name, boolean_expression});
+}
+
+void dbPowerSwitch::addOnState(const std::string& on_state,
+                               const std::string& port_name,
+                               const std::string& boolean_expression)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_on_state.emplace_back(
+      UPFOnState{on_state, port_name, boolean_expression});
 }
 
 void dbPowerSwitch::setLibCell(dbMaster* master)
@@ -316,25 +391,32 @@ void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
   obj->_port_map[model_port] = mterm->getImpl()->getOID();
 }
 
-std::vector<std::string> dbPowerSwitch::getControlPorts()
+std::vector<dbPowerSwitch::UPFControlPort> dbPowerSwitch::getControlPorts()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_control_port;
 }
 
-std::vector<std::string> dbPowerSwitch::getInputSupplyPorts()
+std::vector<dbPowerSwitch::UPFIOSupplyPort> dbPowerSwitch::getInputSupplyPorts()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_in_supply_port;
 }
 
-std::vector<std::string> dbPowerSwitch::getOutputSupplyPorts()
+dbPowerSwitch::UPFIOSupplyPort dbPowerSwitch::getOutputSupplyPort()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return obj->_out_supply_port;
+  return UPFIOSupplyPort{obj->_out_supply_port};
 }
 
-std::vector<std::string> dbPowerSwitch::getOnStates()
+std::vector<dbPowerSwitch::UPFAcknowledgePort>
+dbPowerSwitch::getAcknowledgePorts()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_acknowledge_port;
+}
+
+std::vector<dbPowerSwitch::UPFOnState> dbPowerSwitch::getOnStates()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_on_state;

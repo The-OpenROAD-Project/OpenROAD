@@ -48,6 +48,8 @@
 #include <map>
 
 #include "DplObserver.h"
+#include "dpl/OptMirror.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -164,7 +166,8 @@ void Opendp::detailedPlacement(int max_displacement_x,
                     "the -disallow_one_site_gaps flag.");
     }
   }
-  hpwl_before_ = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
@@ -224,7 +227,8 @@ void Opendp::reportLegalizationStats() const
                   dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
                   dbuToMicrons(hpwl_before_));
-  double hpwl_legal = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
   int hpwl_delta
@@ -257,27 +261,13 @@ void Opendp::findDisplacementStats()
   }
 }
 
-// Note that this does NOT use cell/core coordinates.
-int64_t Opendp::hpwl() const
-{
-  int64_t hpwl_sum = 0;
-  for (dbNet* net : block_->getNets()) {
-    hpwl_sum += hpwl(net);
-  }
-  return hpwl_sum;
-}
-
-int64_t Opendp::hpwl(dbNet* net) const
-{
-  if (net->getSigType().isSupply()) {
-    return 0;
-  }
-
-  Rect bbox = net->getTermBBox();
-  return bbox.dx() + bbox.dy();
-}
-
 ////////////////////////////////////////////////////////////////
+
+void Opendp::optimizeMirroring()
+{
+  OptimizeMirroring opt(logger_, db_);
+  opt.run();
+}
 
 Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {

@@ -41,12 +41,12 @@
 #include "global.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 int FlexTAWorker::main_mt()
 {
   ProfileTask profile("TA:main_mt");
-  using namespace std::chrono;
+  using std::chrono::high_resolution_clock;
   auto t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
     std::stringstream ss;
@@ -83,6 +83,8 @@ int FlexTAWorker::main_mt()
   // end();
   auto t3 = high_resolution_clock::now();
 
+  using std::chrono::duration;
+  using std::chrono::duration_cast;
   auto time_span0 = duration_cast<duration<double>>(t1 - t0);
   auto time_span1 = duration_cast<duration<double>>(t2 - t1);
   auto time_span2 = duration_cast<duration<double>>(t3 - t2);
@@ -349,4 +351,4 @@ int FlexTA::main()
   return 0;
 }
 
-}  // namespace fr
+}  // namespace drt

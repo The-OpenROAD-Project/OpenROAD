@@ -8,7 +8,7 @@
 [INFO ODB-0222] Reading LEF file: array_tile.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  array_tile.lef
-[INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
+[INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -69,22 +69,22 @@
 [INFO CTS-0100]  Leaf buffers 96
 [INFO CTS-0101]  Average sink wire length 9250.04 um
 [INFO CTS-0102]  Path depth 18 - 19
-[INFO RSZ-0058] Using max wire length 707um.
-[INFO RSZ-0047] Found 32 long wires.
-[INFO RSZ-0048] Inserted 85 buffers in 32 nets.
+[INFO RSZ-0058] Using max wire length 693um.
+[INFO RSZ-0047] Found 33 long wires.
+[INFO RSZ-0048] Inserted 88 buffers in 33 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1631.7 u
-average displacement        0.6 u
-max displacement           39.5 u
-original HPWL          133005.4 u
-legalized HPWL         133245.7 u
+total displacement       1829.5 u
+average displacement        0.7 u
+max displacement           84.5 u
+original HPWL          133339.3 u
+legalized HPWL         133583.9 u
 delta HPWL                    0 %
 
 Clock clk
-Latency      CRPR       Skew
-inst_8_14/clk ^
-   1.24
-inst_10_14/clk ^
-   1.10      0.00       0.14
+   1.24 source latency inst_8_14/clk ^
+  -1.10 target latency inst_10_14/clk ^
+   0.00 CRPR
+--------------
+   0.14 setup skew
 

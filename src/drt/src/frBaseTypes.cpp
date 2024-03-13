@@ -29,7 +29,7 @@
 
 #include <iostream>
 
-namespace fr {
+namespace drt {
 
 std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type)
 {
@@ -291,8 +291,10 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcLef58AreaConstraint";
     case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
       return os << "frcLef58KeepOutZoneConstraint";
+    case frConstraintTypeEnum::frcSpacingRangeConstraint:
+      return os << "frcSpacingRangeConstraint";
   }
   return os << "Bad frConstraintTypeEnum";
 }
 
-}  // namespace fr
+}  // namespace drt

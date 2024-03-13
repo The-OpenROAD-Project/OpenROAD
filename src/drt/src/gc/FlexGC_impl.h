@@ -39,7 +39,7 @@ namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
 
-namespace fr {
+namespace drt {
 class FlexGCWorkerRegionQuery
 {
  public:
@@ -49,28 +49,28 @@ class FlexGCWorkerRegionQuery
   void addPolygonEdge(gcSegment* edge);
   void addMaxRectangle(gcRect* rect);
   void addSpcRectangle(gcRect* rect);
-  void removePolygonEdge(gcSegment* connFig);
-  void removeMaxRectangle(gcRect* connFig);
+  void removePolygonEdge(gcSegment* edge);
+  void removeMaxRectangle(gcRect* rect);
   void removeSpcRectangle(gcRect* rect);
   void queryPolygonEdge(
       const box_t& box,
-      const frLayerNum layerNum,
+      frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryPolygonEdge(
       const Rect& box,
-      const frLayerNum layerNum,
+      frLayerNum layerNum,
       std::vector<std::pair<segment_t, gcSegment*>>& result) const;
   void queryMaxRectangle(const box_t& box,
-                         const frLayerNum layerNum,
+                         frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
   void querySpcRectangle(const box_t& box,
-                         const frLayerNum layerNum,
+                         frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect>>& result) const;
   void queryMaxRectangle(const Rect& box,
-                         const frLayerNum layerNum,
+                         frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
   void queryMaxRectangle(const gtl::rectangle_data<frCoord>& box,
-                         const frLayerNum layerNum,
+                         frLayerNum layerNum,
                          std::vector<rq_box_value_t<gcRect*>>& result) const;
   void init(int numLayers);
   void addToRegionQuery(gcNet* net);
@@ -257,7 +257,8 @@ class FlexGCWorker::Impl
       const gtl::rectangle_data<frCoord>& markerRect);
   frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
                                              gcRect* rect2,
-                                             frCoord prl);
+                                             frCoord prl,
+                                             bool& isSpcRange);
   bool checkMetalSpacing_prl_hasPolyEdge(
       gcRect* rect1,
       gcRect* rect2,
@@ -329,10 +330,11 @@ class FlexGCWorker::Impl
       frLef58EolExtensionConstraint* constraint);
   void checkMetalEndOfLine_ext(gcSegment* edge,
                                frLef58EolExtensionConstraint* constraint);
-  void checkMetalEOLkeepout_helper(gcSegment* edge,
-                                   gcRect* rect,
-                                   gtl::rectangle_data<frCoord> queryRect,
-                                   frLef58EolKeepOutConstraint* constraint);
+  void checkMetalEOLkeepout_helper(
+      gcSegment* edge,
+      gcRect* rect,
+      const gtl::rectangle_data<frCoord>& queryRect,
+      frLef58EolKeepOutConstraint* constraint);
   void checkMetalEOLkeepout_main(gcSegment* edge,
                                  frLef58EolKeepOutConstraint* constraint);
   void getEolKeepOutExceptWithinRects(gcSegment* edge,
@@ -408,8 +410,8 @@ class FlexGCWorker::Impl
       const gtl::rectangle_data<frCoord>& viaRect1,
       const gtl::rectangle_data<frCoord>& viaRect2,
       const gtl::rectangle_data<frCoord>& markerRect,
-      std::string cutClass1,
-      std::string cutClass2,
+      const std::string& cutClass1,
+      const std::string& cutClass2,
       frCoord& prl,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
   bool checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1, gcRect* viaRect2);
@@ -420,9 +422,9 @@ class FlexGCWorker::Impl
   bool checkLef58CutSpacingTbl_helper(
       gcRect* viaRect1,
       gcRect* viaRect2,
-      frString cutClass1,
-      frString cutClass2,
-      const frDirEnum dir,
+      const frString& cutClass1,
+      const frString& cutClass2,
+      frDirEnum dir,
       frSquaredDistance distSquare,
       frSquaredDistance c2cSquare,
       bool prlValid,
@@ -456,7 +458,7 @@ class FlexGCWorker::Impl
   void checkLef58CutSpacing_main(gcRect* rect);
   void checkLef58CutSpacing_main(gcRect* rect,
                                  frLef58CutSpacingConstraint* con,
-                                 bool skipSameNet = false);
+                                 bool skipDiffNet = false);
   void checkLef58CutSpacing_spc_parallelOverlap(
       gcRect* rect1,
       gcRect* rect2,
@@ -494,16 +496,18 @@ class FlexGCWorker::Impl
   void checkMetalShape_lef58MinStep(gcPin* pin);
   void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,
                                                  frLef58MinStepConstraint* con);
+  void checkMetalShape_lef58MinStep_minAdjLength(gcPin* pin,
+                                                 frLef58MinStepConstraint* con);
   void checkMetalSpacingTableInfluence();
   void checkPinMetSpcTblInf(gcPin*);
   void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
   void checkOrthRectsMetSpcTblInf(const std::vector<gcRect*>& rects,
                                   const gtl::rectangle_data<frCoord>& queryRect,
-                                  const frCoord spacing,
-                                  const gtl::orientation_2d orient);
+                                  frCoord spacing,
+                                  const gtl::orientation_2d& orient);
   void checkRectMetSpcTblInf_queryBox(const gtl::rectangle_data<frCoord>& rect,
-                                      const frCoord dist,
-                                      const frDirEnum dir,
+                                      frCoord dist,
+                                      frDirEnum dir,
                                       box_t& box);
   void checkMinimumCut_marker(gcRect* wideRect,
                               gcRect* viaRect,
@@ -535,4 +539,4 @@ class FlexGCWorker::Impl
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
   bool isWrongDir(gcSegment* edge);
 };
-}  // namespace fr
+}  // namespace drt

@@ -8,7 +8,7 @@
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-[INFO IFP-0001] Added 142 rows of 11052 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
+[INFO IFP-0001] Added 142 rows of 11052 site FreePDK45_38x28_10R_NP_162NW_34O.
 Placement Analysis
 ---------------------------------
 total displacement          0.6 u
@@ -43,9 +43,11 @@ Driver    length delay
 u2/Z manhtn 1998.2 steiner 1998.2 0.00
 u3/Z manhtn 1.3 steiner 1.3 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
-[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0034] Found 2 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0037] Found 2 long wires.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
-[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0039] Resized 1 instances.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -54,10 +56,10 @@ Path Type: max
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
                    0.00    0.00 v input external delay
-   1.53    0.00    0.00    0.00 v in1 (in)
-           0.00    0.00    0.00 v u1/A (CLKBUF_X2)
-  11.20    0.02    0.04    0.04 v u1/Z (CLKBUF_X2)
-           0.02    0.00    0.04 v u2/A (BUF_X16)
+   1.16    0.00    0.00    0.00 v in1 (in)
+           0.00    0.00    0.00 v u1/A (BUF_X1)
+  11.19    0.01    0.04    0.04 v u1/Z (BUF_X1)
+           0.01    0.00    0.04 v u2/A (BUF_X16)
   41.87    0.01    0.03    0.06 v u2/Z (BUF_X16)
            0.04    0.03    0.09 v wire2/A (BUF_X8)
   63.11    0.01    0.04    0.14 v wire2/Z (BUF_X8)

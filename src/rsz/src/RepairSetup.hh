@@ -90,6 +90,8 @@ public:
                    bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -104,6 +106,7 @@ private:
                                  PathExpanded *expanded);
 
   void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                         sta::LibertyPortSet &inv_ports,
                          sta::FuncExpr::Operator &status);
   void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
   void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);

@@ -410,11 +410,10 @@ const char* dbMaster::getConstName()
   return master->_name;
 }
 
-void dbMaster::getOrigin(int& x, int& y)
+Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  x = master->_x;
-  y = master->_y;
+  return {master->_x, master->_y};
 }
 
 void dbMaster::setOrigin(int x, int y)

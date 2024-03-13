@@ -33,11 +33,11 @@
 namespace odb {
 class dbDatabase;
 }
-namespace ord {
+namespace utl {
 class Logger;
 }
 
-namespace fr {
+namespace drt {
 
 class FlexDRConnectivityChecker
 {
@@ -75,11 +75,10 @@ class FlexDRConnectivityChecker
                                frBlockObjectComp>& pin2epMap);
   void pin2epMap_helper(const frNet* net,
                         const Point& pt,
-                        const frLayerNum lNum,
+                        frLayerNum lNum,
                         std::map<frBlockObject*,
                                  std::set<std::pair<Point, frLayerNum>>,
-                                 frBlockObjectComp>& pin2epMap,
-                        const bool isWire);
+                                 frBlockObjectComp>& pin2epMap);
   void buildNodeMap(
       const frNet* net,
       const NetRouteObjs& netRouteObjs,
@@ -98,9 +97,9 @@ class FlexDRConnectivityChecker
       std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
   void nodeMap_routeObjSplit_helper(
       const Point& crossPt,
-      const frCoord trackCoord,
-      const frCoord splitCoord,
-      const frLayerNum lNum,
+      frCoord trackCoord,
+      frCoord splitCoord,
+      frLayerNum lNum,
       const std::vector<
           std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
           mergeHelper,
@@ -136,7 +135,7 @@ class FlexDRConnectivityChecker
                               const std::vector<int>& indices,
                               std::vector<int>& victims,
                               std::vector<Span>& newSegSpans,
-                              const bool isHorz);
+                              bool isHorz);
   void splitPathSegs(NetRouteObjs& netRouteObjs,
                      std::vector<std::pair<Span, int>>& segSpans);
   void splitPathSegs_commit(std::vector<int>& splitPoints,
@@ -152,23 +151,23 @@ class FlexDRConnectivityChecker
   void merge_commit(frNet* net,
                     std::vector<frConnFig*>& netRouteObjs,
                     const std::vector<int>& victims,
-                    const frCoord trackCoord,
+                    frCoord trackCoord,
                     const std::vector<Span>& newSegSpans,
-                    const bool isHorz);
+                    bool isHorz);
   bool astar(
       const frNet* net,
       std::vector<char>& adjVisited,
       std::vector<int>& adjPrevIdx,
       const std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
       const NetRouteObjs& netRouteObjs,
-      const int gCnt,
-      const int nCnt);
+      int nNetRouteObjs,
+      int nNetObjs);
   void finish(frNet* net,
               NetRouteObjs& netRouteObjs,
               const std::vector<frBlockObject*>& netPins,
               const std::vector<char>& adjVisited,
-              const int gCnt,
-              const int nCnt,
+              int gCnt,
+              int nCnt,
               std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
 
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
@@ -181,4 +180,4 @@ class FlexDRConnectivityChecker
   bool save_updates_;
 };
 
-}  // namespace fr
+}  // namespace drt

@@ -411,16 +411,20 @@ void dbVia::setViaParams(const dbViaParams& params)
   create_via_boxes(via, params);
 }
 
-void dbVia::getViaParams(dbViaParams& params)
+dbViaParams dbVia::getViaParams()
 {
+  dbViaParams params;
+
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_flags._has_params == 0)
+  if (via->_flags._has_params == 0) {
     params = dbViaParams();
-  else {
+  } else {
     params = via->_via_params;
     params._tech = (dbTech*) via->getTech();
   }
+
+  return params;
 }
 
 void dbVia::setDefault(bool val)
