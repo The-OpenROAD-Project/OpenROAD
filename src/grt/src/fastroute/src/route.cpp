@@ -395,7 +395,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
         }
 
       }  // else L-routing
-    }  // if non-degraded edge
+    }    // if non-degraded edge
     else
       sttrees_[netID].edges[i].route.type = RouteType::NoRoute;
   }  // loop i
@@ -1585,7 +1585,7 @@ void FastRouteCore::newrouteLInMaze(int netID)
         treeedge->route.xFirst = true;
       }
     }  // else L-routing
-  }  // loop i
+  }    // loop i
 }
 
 }  // namespace grt
