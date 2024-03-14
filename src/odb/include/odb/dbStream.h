@@ -261,7 +261,7 @@ class dbOStream
         *this << (uint32_t) v.index();
         *this << std::get<I>(v);
       }
-      return ((*this).operator<<<I + 1>(v));
+      return ((*this).operator<< <I + 1>(v));
     }
   }
 
