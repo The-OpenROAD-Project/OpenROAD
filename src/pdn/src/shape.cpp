@@ -208,7 +208,7 @@ void Shape::updateTermConnections()
 
 bool Shape::hasTermConnections() const
 {
-  return !bterm_connections_.empty() || !iterm_connections_.empty();
+  return hasITermConnections() || hasBTermConnections();
 }
 
 odb::Rect Shape::getMinimumRect() const
