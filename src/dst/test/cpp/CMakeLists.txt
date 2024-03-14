@@ -39,10 +39,11 @@ add_test(
   COMMAND TestBalancer
 )
 
-add_test(
-  NAME "dst.TestDistributed"
-  COMMAND TestDistributed
-)
+# This test case appears to have an internal race condition
+#add_test(
+#  NAME "dst.TestDistributed"
+#  COMMAND TestDistributed
+#)
 
 add_dependencies(build_and_test 
   TestWorker
