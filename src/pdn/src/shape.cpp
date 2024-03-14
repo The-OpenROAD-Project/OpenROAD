@@ -625,7 +625,8 @@ ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
     trees[layer] = ShapeTree(vals.begin(), vals.end());
   }
 
-  vec = ShapeVectorMap();
+  ShapeVectorMap empty;
+  vec.swap(empty);
 
   return trees;
 }
