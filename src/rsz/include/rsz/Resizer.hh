@@ -525,7 +525,7 @@ protected:
                                 ParasiticNode *node,
                                 SteinerTree *tree,
                                 SteinerPt pt,
-                                const ParasiticAnalysisPt *parasitics_ap);
+                                size_t &resistor_id);
 
   bool replaceCell(Instance *inst,
                    LibertyCell *replacement,

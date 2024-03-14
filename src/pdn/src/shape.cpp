@@ -208,7 +208,7 @@ void Shape::updateTermConnections()
 
 bool Shape::hasTermConnections() const
 {
-  return !bterm_connections_.empty() || !iterm_connections_.empty();
+  return hasITermConnections() || hasBTermConnections();
 }
 
 odb::Rect Shape::getMinimumRect() const
@@ -351,6 +351,23 @@ bool Shape::cut(const ShapeTree& obstructions,
   return true;
 }
 
+bool Shape::hasDBConnectivity() const
+{
+  if (hasTermConnections() || type_ == odb::dbWireShapeType::FOLLOWPIN) {
+    // if shape is connected to an instance or block pin allow it is valid
+    // if shape is a followpin assume it will be connected
+    return true;
+  }
+
+  for (const auto& via : vias_) {
+    if (!via->isFailed()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void Shape::writeToDb(odb::dbSWire* swire,
                       bool add_pins,
                       bool make_rect_as_pin) const
@@ -363,6 +380,13 @@ void Shape::writeToDb(odb::dbSWire* swire,
              getReportText(),
              add_pins,
              make_rect_as_pin);
+
+  if (!hasDBConnectivity()) {
+    getLogger()->warn(
+        utl::PDN, 200, "Removing floating shape: {}", getReportText());
+    return;
+  }
+
   odb::dbSBox::create(swire,
                       layer_,
                       rect_.xMin(),
@@ -375,8 +399,20 @@ void Shape::writeToDb(odb::dbSWire* swire,
     if (make_rect_as_pin) {
       addBPinToDb(rect_);
     }
+    const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
     for (const auto& bterm : bterm_connections_) {
-      addBPinToDb(bterm);
+      odb::Rect bterm_shape = bterm;
+      // Adjust width of shape when bterm is on the edge of the die area
+      if (bterm.xMin() == block_area.xMin()
+          || bterm.xMax() == block_area.xMax()) {
+        bterm_shape.set_ylo(rect_.yMin());
+        bterm_shape.set_yhi(rect_.yMax());
+      } else if (bterm.yMin() == block_area.yMin()
+                 || bterm.yMax() == block_area.yMax()) {
+        bterm_shape.set_xlo(rect_.xMin());
+        bterm_shape.set_xhi(rect_.xMax());
+      }
+      addBPinToDb(bterm_shape);
     }
   }
 }

@@ -32,7 +32,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class drNet;
 class drPatchWire;
 class FlexDRWorker;
@@ -97,4 +97,4 @@ struct MarkerId
            < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.src1, rhs.src2);
   }
 };
-}  // namespace fr
+}  // namespace drt

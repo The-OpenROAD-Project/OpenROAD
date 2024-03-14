@@ -29,7 +29,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 
 // Instances are grouped into equivalence classes based on master,
 // orientation, and track-offset.  From each equivalence class a
@@ -111,4 +111,4 @@ class UniqueInsts
       masterOT2Insts_;
 };
 
-}  // namespace fr
+}  // namespace drt

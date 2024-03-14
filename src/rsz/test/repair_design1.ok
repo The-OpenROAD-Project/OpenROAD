@@ -1,4 +1,4 @@
-[WARNING STA-0161] repair_design1.lib line 229, max_transition is 0.0.
+[WARNING STA-1241] repair_design1.lib line 229, max_transition is 0.0.
 [INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias

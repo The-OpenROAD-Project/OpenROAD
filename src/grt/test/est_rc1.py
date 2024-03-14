@@ -20,4 +20,4 @@ gr.globalRoute(True)
 
 # FIXME Update when we have Python versions of the following
 design.evalTclString("estimate_parasitics -global_routing")
-design.evalTclString("report_net -connections -verbose -digits 3 clk")
+design.evalTclString("report_net -digits 3 clk")

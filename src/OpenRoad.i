@@ -161,7 +161,7 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
-triton_route::TritonRoute *
+drt::TritonRoute *
 getTritonRoute()
 {
   OpenRoad *openroad = getOpenRoad();

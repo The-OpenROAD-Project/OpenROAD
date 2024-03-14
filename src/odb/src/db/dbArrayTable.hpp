@@ -292,13 +292,13 @@ void dbArrayTable<T>::destroy(T* t)
   ZASSERT(t->_oid & DB_ALLOC_BIT);
 
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
+  _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
   t->~T();  // call destructor
-  t->_oid &= ~DB_ALLOC_BIT;
+  o->_oid &= ~DB_ALLOC_BIT;
 
   // Add to freelist
-  _dbFreeObject* o = (_dbFreeObject*) t;
   pushQ(_free_list, o);
 }
 

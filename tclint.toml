@@ -1,3 +1,40 @@
+# hardcoded list of paths to exclude while we incrementally lint codebase
+# See issue #4347 for tracking
+ exclude = [
+    "src/sta/",
+    "test/",
+    "src/ant/test/",
+    "src/cts/test/",
+    "src/dbSta/test/",
+    "src/dft/test/",
+    "src/dpl/test/",
+    "src/dpo/test/",
+    "src/drt/test/",
+    "src/dst/test/",
+    "src/fin/test/",
+    "src/gpl/test/",
+    "src/grt/etc/scripts/",
+    "src/grt/test/",
+    "src/ifp/test/",
+    "src/mpl/test/",
+    "src/mpl2/test/",
+    "src/odb/",
+    "src/par/examples/",
+    "src/par/test/",
+    "src/ppl/test/",
+    "src/rcx/calibration/",
+    "src/rcx/example/",
+    "src/rcx/rule_scripts/",
+    "src/rcx/test/",
+    "src/rmp/test/",
+    "src/rsz/test/",
+    "src/stt/test/",
+    "src/tap/etc/scripts/",
+    "src/tap/test/",
+    "src/upf/test/",
+    "src/utl/test/"
+]
+
 [style]
 indent = 2
 line-length = 100

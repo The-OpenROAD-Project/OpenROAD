@@ -1,8 +1,8 @@
 # test for set_voltage_domain -region
 source "helpers.tcl"
 
-read_lef sky130hd/sky130hd.tlef 
-read_lef sky130hd/sky130_fd_sc_hd_merged.lef 
+read_lef sky130hd/sky130hd.tlef
+read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 read_lef sky130_temp_sensor/HEADER.lef
 read_lef sky130_temp_sensor/SLC.lef
 

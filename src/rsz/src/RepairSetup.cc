@@ -118,7 +118,7 @@ RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Sort failing endpoints by slack.
   const VertexSet *endpoints = sta_->endpoints();
-  VertexSeq violating_ends;
+  vector<pair<Vertex*, Slack> > violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
@@ -126,12 +126,13 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   for (Vertex *end : *endpoints) {
     const Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin) {
-      violating_ends.push_back(end);
+      violating_ends.emplace_back(end, end_slack);
     }
   }
-  sort(violating_ends, [=](Vertex *end1, Vertex *end2) {
-    return sta_->vertexSlack(end1, max_) < sta_->vertexSlack(end2, max_);
-  });
+  std::stable_sort(violating_ends.begin(), violating_ends.end(),
+		   [](const auto& end_slack1, const auto& end_slack2) {
+		     return end_slack1.second < end_slack2.second;
+		   });
   debugPrint(logger_, RSZ, "repair_setup", 1, "Violating endpoints {}/{} {}%",
              violating_ends.size(),
              endpoints->size(),
@@ -156,7 +157,8 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   if (verbose) {
     printProgress(print_iteration, false, false);
   }
-  for (Vertex *end : violating_ends) {
+  for (const auto& end_original_slack : violating_ends) {
+    Vertex* end = end_original_slack.first;
     resizer_->updateParasitics();
     sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);
@@ -500,6 +502,11 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
+        //Skip output to output paths
+        if (input_port->direction()->isOutput()) {
+          return false;
+        }
+
         // Check if we have already dealt with this instance
         // and prevent any further swaps.
         if (swap_pin_inst_set_.find(drvr) == swap_pin_inst_set_.end()) {
@@ -517,7 +524,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
           equiv_pin_map_.insert(input_port, ports);
         }
         ports = equiv_pin_map_[input_port];
-        if (ports.size() > 1) {
+        if (!ports.empty()) {
           resizer_->findSwapPinCandidate(
               input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
           if (!sta::LibertyPort::equiv(swap_port, input_port)) {
@@ -927,7 +934,7 @@ bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
                              const LibertyPort* port_a,
                              const LibertyPort* port_b)
 {
-  if (port_a->libertyCell() != cell || port_a->libertyCell() != cell) {
+  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
     return false;
   }
 
