@@ -84,10 +84,20 @@
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbModBTerm.h"
+#include "dbModITerm.h"
 #include "dbModInst.h"
+#include "dbModNet.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
+#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
+#include "dbModuleModInstModITermItr.h"
+#include "dbModuleModNetBTermItr.h"
+#include "dbModuleModNetITermItr.h"
+#include "dbModuleModNetItr.h"
+#include "dbModuleModNetModBTermItr.h"
+#include "dbModuleModNetModITermItr.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbNetTrack.h"
@@ -190,6 +200,15 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _modinst_tbl = new dbTable<_dbModInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModInstObj);
+
+  _modbterm_tbl = new dbTable<_dbModBTerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModBTermObj);
+
+  _moditerm_tbl = new dbTable<_dbModITerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModITermObj);
+
+  _modnet_tbl = new dbTable<_dbModNet>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
@@ -318,6 +337,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
+  _modbterm_hash.setTable(_modbterm_tbl);
+  _moditerm_hash.setTable(_moditerm_tbl);
+  _modnet_hash.setTable(_modnet_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -350,6 +372,17 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_inst_itr = new dbModuleInstItr(_inst_tbl);
 
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
+
+  _module_modinstmoditerm_itr = new dbModuleModInstModITermItr(_moditerm_tbl);
+
+  _module_modbterm_itr = new dbModuleModBTermItr(_modbterm_tbl);
+
+  _module_modnet_itr = new dbModuleModNetItr(_modnet_tbl);
+
+  _module_modnet_modbterm_itr = new dbModuleModNetModBTermItr(_modbterm_tbl);
+  _module_modnet_moditerm_itr = new dbModuleModNetModITermItr(_moditerm_tbl);
+  _module_modnet_iterm_itr = new dbModuleModNetITermItr(_iterm_tbl);
+  _module_modnet_bterm_itr = new dbModuleModNetBTermItr(_bterm_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
 
@@ -898,6 +931,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+  stream << block._modbterm_hash;
+  stream << block._moditerm_hash;
+  stream << block._modnet_hash;
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -912,40 +948,46 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
-  stream << NamedTable("bterm_tbl", block._bterm_tbl);
-  stream << NamedTable("iterm_tbl", block._iterm_tbl);
-  stream << NamedTable("net_tbl", block._net_tbl);
-  stream << NamedTable("inst_hdr_tbl", block._inst_hdr_tbl);
-  stream << NamedTable("inst_tbl", block._inst_tbl);
-  stream << NamedTable("module_tbl", block._module_tbl);
-  stream << NamedTable("modinst_tbl", block._modinst_tbl);
-  stream << NamedTable("powerdomain_tbl", block._powerdomain_tbl);
-  stream << NamedTable("logicport_tbl", block._logicport_tbl);
-  stream << NamedTable("powerswitch_tbl", block._powerswitch_tbl);
-  stream << NamedTable("isolation_tbl", block._isolation_tbl);
-  stream << NamedTable("levelshifter_tbl", block._levelshifter_tbl);
-  stream << NamedTable("group_tbl", block._group_tbl);
-  stream << NamedTable("ap_tbl", block.ap_tbl_);
-  stream << NamedTable("global_connect_tbl", block.global_connect_tbl_);
-  stream << NamedTable("guide_tbl", block._guide_tbl);
-  stream << NamedTable("net_tracks_tbl", block._net_tracks_tbl);
-  stream << NamedTable("box_tbl", block._box_tbl);
-  stream << NamedTable("via_tbl", block._via_tbl);
-  stream << NamedTable("gcell_grid_tbl", block._gcell_grid_tbl);
-  stream << NamedTable("track_grid_tbl", block._track_grid_tbl);
-  stream << NamedTable("obstruction_tbl", block._obstruction_tbl);
-  stream << NamedTable("blockage_tbl", block._blockage_tbl);
-  stream << NamedTable("wire_tbl", block._wire_tbl);
-  stream << NamedTable("swire_tbl", block._swire_tbl);
-  stream << NamedTable("sbox_tbl", block._sbox_tbl);
-  stream << NamedTable("row_tbl", block._row_tbl);
-  stream << NamedTable("fill_tbl", block._fill_tbl);
-  stream << NamedTable("region_tbl", block._region_tbl);
-  stream << NamedTable("hier_tbl", block._hier_tbl);
-  stream << NamedTable("bpin_tbl", block._bpin_tbl);
-  stream << NamedTable("non_default_rule_tbl", block._non_default_rule_tbl);
-  stream << NamedTable("layer_rule_tbl", block._layer_rule_tbl);
-  stream << NamedTable("prop_tbl", block._prop_tbl);
+
+  stream << *block._bterm_tbl;
+  stream << *block._iterm_tbl;
+  stream << *block._net_tbl;
+  stream << *block._inst_hdr_tbl;
+  stream << *block._inst_tbl;
+  stream << *block._module_tbl;
+  stream << *block._modinst_tbl;
+  stream << *block._modbterm_tbl;
+  stream << *block._moditerm_tbl;
+  stream << *block._modnet_tbl;
+
+  stream << *block._powerdomain_tbl;
+  stream << *block._logicport_tbl;
+  stream << *block._powerswitch_tbl;
+  stream << *block._isolation_tbl;
+  stream << *block._levelshifter_tbl;
+  stream << *block._group_tbl;
+  stream << *block.ap_tbl_;
+  stream << *block.global_connect_tbl_;
+  stream << *block._guide_tbl;
+  stream << *block._net_tracks_tbl;
+  stream << *block._box_tbl;
+  stream << *block._via_tbl;
+  stream << *block._gcell_grid_tbl;
+  stream << *block._track_grid_tbl;
+  stream << *block._obstruction_tbl;
+  stream << *block._blockage_tbl;
+  stream << *block._wire_tbl;
+  stream << *block._swire_tbl;
+  stream << *block._sbox_tbl;
+  stream << *block._row_tbl;
+  stream << *block._fill_tbl;
+  stream << *block._region_tbl;
+  stream << *block._hier_tbl;
+  stream << *block._bpin_tbl;
+  stream << *block._non_default_rule_tbl;
+  stream << *block._layer_rule_tbl;
+  stream << *block._prop_tbl;
+
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
@@ -1002,6 +1044,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  stream >> block._modbterm_hash;
+  stream >> block._moditerm_hash;
+  stream >> block._modnet_hash;
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
@@ -1033,6 +1078,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
+  stream >> *block._modbterm_tbl;
+  stream >> *block._moditerm_tbl;
+  stream >> *block._modnet_tbl;
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
@@ -1753,6 +1801,18 @@ dbSet<dbModInst> dbBlock::getModInsts()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbModInst>(block, block->_modinst_tbl);
+}
+
+dbSet<dbModBTerm> dbBlock::getModBTerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
+}
+
+dbSet<dbModNet> dbBlock::getModNets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModNet>(block, block->_modnet_tbl);
 }
 
 dbSet<dbPowerDomain> dbBlock::getPowerDomains()
@@ -3997,6 +4057,180 @@ dbTech* dbBlock::getTech()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbTech*) block->getTech();
+}
+
+void dbBlock::getChildModules(std::vector<dbModule*>& child_modules)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  std::vector<odb::_dbModule*> contents;
+  block->_module_tbl->getObjects(contents);
+  for (auto dbm : contents) {
+    child_modules.push_back((dbModule*) dbm);
+  }
+}
+
+void dbBlock::dumpDebug()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  printf("Debug: Data base tables for block at %p:\n", block);
+
+  printf("Db nets (The Flat world)\n");
+  for (auto dbnet : getNets()) {
+    printf("dbnet %s (id %u)\n", dbnet->getName().c_str(), dbnet->getId());
+    dbNetITermItr dbnetiter(block->_iterm_tbl);
+    dbObject* parent = (dbObject*) dbnet;
+    uint id;
+    for (id = dbnetiter.begin(parent); id != dbnetiter.end(parent);
+         id = dbnetiter.next(id)) {
+      dbITerm* db_iterm = (dbITerm*) (block->_iterm_tbl->getPtr(id));
+      printf("\t-> Db Iterm %u (%s)\n", id, db_iterm->getName().c_str());
+    }
+    dbNetBTermItr dbnetbter(block->_bterm_tbl);
+    for (id = dbnetbter.begin(parent); id != dbnetbter.end(parent);
+         id = dbnetbter.next(id)) {
+      printf("\t-> Db Bterm %u\n", id);
+    }
+  }
+  printf("Block ports\n");
+  // got through the ports and their owner
+  printf("\t\tBTerm Ports +++\n");
+  dbSet<dbBTerm> block_bterms = getBTerms();
+  for (auto bt : block_bterms) {
+    printf("\t\tBterm (%u) %s Net %s (%u)  Mod Net %s (%u) \n",
+           bt->getId(),
+           bt->getName().c_str(),
+           bt->getNet() ? bt->getNet()->getName().c_str() : "",
+           bt->getNet() ? bt->getNet()->getId() : 0,
+
+           bt->getModNet() ? bt->getModNet()->getName() : "",
+           bt->getModNet() ? bt->getModNet()->getId() : 0);
+  }
+  printf("\t\tBTerm Ports ---\n");
+
+  printf("The hierarchical world:\n");
+
+  if (block->_module_tbl) {
+    printf("module table %d\n", block->_module_tbl->size());
+    dbSet<dbModule> block_modules = getModules();
+    printf("Content size %u modules\n", block_modules.size());
+    for (auto mi : block_modules) {
+      dbModule* cur_obj = mi;
+      if (cur_obj == getTopModule())
+        printf("Top Module\n");
+      printf("\tModule %s %s\n",
+             (cur_obj == getTopModule()) ? "(Top Module)" : "",
+             ((dbModule*) cur_obj)->getName());
+
+      // in case of top level, care as the bterms double up as pins
+      if (cur_obj == getTopModule()) {
+        for (auto bterm : getBTerms()) {
+          printf("Top B-term %s dbNet %s (%d) modNet %s (%d)\n",
+                 bterm->getName().c_str(),
+                 bterm->getNet() ? bterm->getNet()->getName().c_str() : "",
+                 bterm->getNet() ? bterm->getNet()->getId() : -1,
+                 bterm->getModNet() ? bterm->getModNet()->getName() : "",
+                 bterm->getModNet() ? bterm->getModNet()->getId() : -1);
+        }
+      }
+
+      // got through the module ports and their owner
+      printf("\t\tModBTerm Ports +++\n");
+      dbSet<dbModBTerm> module_ports = cur_obj->getModBTerms();
+      for (dbSet<dbModBTerm>::iterator mod_bterm_iter = module_ports.begin();
+           mod_bterm_iter != module_ports.end();
+           mod_bterm_iter++) {
+        dbModBTerm* module_port = *mod_bterm_iter;
+        printf("\t\tPort %s Net %s (%d)\n",
+               module_port->getName(),
+               module_port->getNet()
+                   ? ((_dbModNet*) module_port->getNet())->_name
+                   : "No-modnet",
+               module_port->getNet() ? module_port->getNet()->getId() : -1);
+        printf("\t\tPort parent %s\n\n", module_port->getParent()->getName());
+      }
+      printf("\t\tModBTermPorts ---\n");
+
+      printf("\t\tModule instances +++\n");
+      dbSet<dbModInst> module_instances = mi->getModInsts();
+      for (dbSet<dbModInst>::iterator mod_inst_iter = module_instances.begin();
+           mod_inst_iter != module_instances.end();
+           mod_inst_iter++) {
+        dbModInst* module_inst = *mod_inst_iter;
+        printf("\t\tMod inst %s ", module_inst->getName());
+        dbModule* master = module_inst->getMaster();
+        printf("\t\tMaster %s\n\n", module_inst->getMaster()->getName());
+        _dbBlock* owner = (_dbBlock*) (master->getOwner());
+        _dbBlock* current_block = (_dbBlock*) this;
+        if (owner != current_block)
+          printf("\t\t\tMaster owner in wrong block\n");
+
+        printf("\t\tConnections\n");
+        for (dbModITerm* miterm_pin : module_inst->getModITerms()) {
+          printf("\t\t\tModIterm : %s (%u) Mod Net %s (%u) \n",
+                 miterm_pin->getName(),
+                 miterm_pin->getId(),
+                 miterm_pin->getNet()
+                     ? ((_dbModNet*) miterm_pin->getNet())->_name
+                     : "No-net",
+                 miterm_pin->getNet() ? miterm_pin->getNet()->getId() : 0);
+        }
+      }
+      printf("\t\tModule instances ---\n");
+      printf("\t\tDb instances +++\n");
+      for (dbInst* db_inst : cur_obj->getInsts()) {
+        printf("\t\tdb inst %s\n", db_inst->getName().c_str());
+        printf("\t\tdb iterms:\n");
+        dbSet<dbITerm> iterms = db_inst->getITerms();
+        dbSet<dbITerm>::iterator iterm_itr;
+        for (iterm_itr = iterms.begin(); iterm_itr != iterms.end();
+             ++iterm_itr) {
+          dbITerm* iterm = *iterm_itr;
+          dbMTerm* mterm = iterm->getMTerm();
+          printf(
+              "\t\t\t\t iterm: %s (%u) Net: %s Mod net : %s (%d)\n",
+              mterm->getName().c_str(),
+              iterm->getId(),
+              iterm->getNet() ? iterm->getNet()->getName().c_str()
+                              : "unk-dbnet",
+              iterm->getModNet() ? iterm->getModNet()->getName() : "unk-modnet",
+              iterm->getModNet() ? iterm->getModNet()->getId() : -1);
+        }
+      }
+      printf("\t\tDb instances ---\n");
+
+      printf("\tModule nets (modnets) +++ \n");
+      printf("\t# mod nets %u in %s (%p)\n",
+             cur_obj->getModNets().size(),
+             cur_obj->getName(),
+             cur_obj);
+      dbSet<dbModNet> mod_nets = cur_obj->getModNets();
+      for (dbSet<dbModNet>::iterator mod_net_iter = mod_nets.begin();
+           mod_net_iter != mod_nets.end();
+           mod_net_iter++) {
+        dbModNet* mod_net = *mod_net_iter;
+        printf("\t\tNet: %s (%u)\n", mod_net->getName(), mod_net->getId());
+        printf("\t\tConnections -> modIterms/modbterms/bterms/iterms:\n");
+        printf("\t\t -> %u moditerms\n", mod_net->getModITerms().size());
+        for (dbModITerm* modi_term : mod_net->getModITerms()) {
+          printf("\t\t\t%s\n", modi_term->getName());
+        }
+        printf("\t\t -> %u modbterms\n", mod_net->getModBTerms().size());
+        for (dbModBTerm* modb_term : mod_net->getModBTerms()) {
+          printf("\t\t\t%s\n", modb_term->getName());
+        }
+        printf("\t\t -> %u iterms\n", mod_net->getITerms().size());
+        for (dbITerm* db_iterm : mod_net->getITerms()) {
+          printf("\t\t\t%s\n", db_iterm->getName().c_str());
+        }
+        printf("\t\t -> %u bterms\n", mod_net->getBTerms().size());
+        for (dbBTerm* db_bterm : mod_net->getBTerms()) {
+          printf("\t\t\t%s\n", db_bterm->getName().c_str());
+        }
+      }
+    }
+  } else
+    printf("Empty module table\n");
 }
 
 }  // namespace odb

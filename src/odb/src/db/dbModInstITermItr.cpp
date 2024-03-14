@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,60 +30,76 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
-#pragma once
+// Generator Code Begin Cpp
+#include "dbModInstITermItr.h"
 
-#include "dbCore.h"
-#include "dbSet.h"
-#include "dbVector.h"
-#include "odb.h"
-// User Code Begin Includes
-#include "dbHashTable.h"
-// User Code End Includes
+#include "dbModITerm.h"
+#include "dbTable.h"
 
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbInst;
-class _dbModInst;
-class _dbModNet;
-class _dbModBTerm;
 
-class _dbModule : public _dbObject
+////////////////////////////////////////////////////////////////////
+//
+// dbModInstITermItr - Methods
+//
+////////////////////////////////////////////////////////////////////
+
+bool dbModInstITermItr::reversible()
 {
- public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
+  return true;
+}
 
-  ~_dbModule();
+bool dbModInstITermItr::orderReversed()
+{
+  return true;
+}
 
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
+void dbModInstITermItr::reverse(dbObject* parent)
+{
+}
 
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
+uint dbModInstITermItr::sequential()
+{
+  return 0;
+}
 
-  // User Code End Methods
+uint dbModInstITermItr::size(dbObject* parent)
+{
+  uint id;
+  uint cnt = 0;
 
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  for (id = dbModInstITermItr::begin(parent);
+       id != dbModInstITermItr::end(parent);
+       id = dbModInstITermItr::next(id))
+    ++cnt;
 
-  // User Code Begin Fields
-  void* _sta_cell;
-  // User Code End Fields
-};
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+  return cnt;
+}
+
+uint dbModInstITermItr::begin(dbObject* parent)
+{
+  // User Code Begin begin
+  _dbModInst* modinst = (_dbModInst*) parent;
+  return modinst->_moditerms;
+  // User Code End begin
+}
+
+uint dbModInstITermItr::end(dbObject* /* unused: parent */)
+{
+  return 0;
+}
+
+uint dbModInstITermItr::next(uint id, ...)
+{
+  // User Code Begin next
+  _dbModInstITerm* iterm = _moditerm_tbl->getPtr(id);
+  return iterm->_next_entry;
+  // User Code End next
+}
+
+dbObject* dbModInstITermItr::getObject(uint id, ...)
+{
+  return _moditerm_tbl->getPtr(id);
+}
 }  // namespace odb
-   // Generator Code End Header
+   // Generator Code End Cpp

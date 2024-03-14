@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,56 +34,45 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbSet.h"
-#include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-#include "dbHashTable.h"
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbInst;
-class _dbModInst;
+class _dbModule;
 class _dbModNet;
-class _dbModBTerm;
 
-class _dbModule : public _dbObject
+class _dbModBTerm : public _dbObject
 {
  public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
+  _dbModBTerm(_dbDatabase*, const _dbModBTerm& r);
+  _dbModBTerm(_dbDatabase*);
 
-  ~_dbModule();
+  ~_dbModBTerm();
 
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
+  bool operator==(const _dbModBTerm& rhs) const;
+  bool operator!=(const _dbModBTerm& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbModBTerm& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbModBTerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
-
-  // User Code End Methods
 
   char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  uint _flags;
+  dbId<_dbModule> _parent;
+  dbId<_dbModNet> _net;
+  dbId<_dbModBTerm> _next_net_modbterm;
+  dbId<_dbModBTerm> _prev_net_modbterm;
+  dbId<_dbModBTerm> _next_entry;
 
   // User Code Begin Fields
-  void* _sta_cell;
+  void* _sta_port;
   // User Code End Fields
 };
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj);
 }  // namespace odb
    // Generator Code End Header

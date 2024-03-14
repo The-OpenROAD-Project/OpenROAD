@@ -38,11 +38,14 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbModITerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
 #include "dbGroup.h"
+#include "dbModInst.h"
+#include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -70,6 +73,9 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   if (_group != rhs._group) {
     return false;
   }
+  if (_moditerms != rhs._moditerms) {
+    return false;
+  }
 
   return true;
 }
@@ -95,6 +101,7 @@ void _dbModInst::differences(dbDiff& diff,
   DIFF_FIELD(_master);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_group);
+  DIFF_FIELD(_moditerms);
   DIFF_END
 }
 
@@ -108,6 +115,7 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_master);
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_group);
+  DIFF_OUT_FIELD(_moditerms);
 
   DIFF_END
 }
@@ -133,6 +141,7 @@ _dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
   _master = r._master;
   _group_next = r._group_next;
   _group = r._group;
+  _moditerms = r._moditerms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
@@ -144,6 +153,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
+  stream >> obj._moditerms;
   return stream;
 }
 
@@ -156,6 +166,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._master;
   stream << obj._group_next;
   stream << obj._group;
+  stream << obj._moditerms;
   return stream;
 }
 
@@ -171,6 +182,12 @@ _dbModInst::~_dbModInst()
 // dbModInst - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+const char* dbModInst::getName() const
+{
+  _dbModInst* obj = (_dbModInst*) this;
+  return obj->_name;
+}
 
 dbModule* dbModInst::getParent() const
 {
@@ -207,21 +224,27 @@ dbModInst* dbModInst::create(dbModule* parentModule,
                              dbModule* masterModule,
                              const char* name)
 {
-  _dbModule* parent = (_dbModule*) parentModule;
-  _dbBlock* block = (_dbBlock*) parent->getOwner();
-  std::string h_name = std::string(parent->_name) + '/' + std::string(name);
-  if (block->_modinst_hash.hasMember(h_name.c_str()))
-    return nullptr;
+  _dbModule* module = (_dbModule*) parentModule;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModule* master = (_dbModule*) masterModule;
+
   if (master->_mod_inst != 0)
     return nullptr;
+
+  dbModInst* ret = nullptr;
+  ret = ((dbModule*) module)->findModInst(name);
+  if (ret) {
+    return nullptr;
+  }
+
   _dbModInst* modinst = block->_modinst_tbl->create();
-  modinst->_name = strdup(h_name.c_str());
+  modinst->_name = strdup(name);
   ZALLOCATED(modinst->_name);
   modinst->_master = master->getOID();
-  modinst->_parent = parent->getOID();
-  modinst->_module_next = parent->_modinsts;
-  parent->_modinsts = modinst->getOID();
+  modinst->_parent = module->getOID();
+  // push to head of list in block
+  modinst->_module_next = module->_modinsts;
+  module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
   block->_modinst_hash.insert(modinst);
   return (dbModInst*) modinst;
@@ -268,31 +291,43 @@ dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
   return next;
 }
 
+dbSet<dbModITerm> dbModInst::getModITerms()
+{
+  _dbModInst* _mod_inst = (_dbModInst*) this;
+  _dbBlock* _block = (_dbBlock*) _mod_inst->getOwner();
+  return dbSet<dbModITerm>(_mod_inst, _block->_module_modinstmoditerm_itr);
+}
+
 dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModInst*) block->_modinst_tbl->getPtr(dbid_);
 }
 
-std::string dbModInst::getName() const
-{
-  _dbModInst* obj = (_dbModInst*) this;
-  std::string h_name = std::string(obj->_name);
-  size_t idx = h_name.find_last_of('/');
-  return h_name.substr(idx + 1);
-}
-
 std::string dbModInst::getHierarchicalName() const
 {
   _dbModInst* _obj = (_dbModInst*) this;
   dbBlock* block = (dbBlock*) _obj->getOwner();
-  std::string inst_name = getName();
+  std::string inst_name = std::string(getName());
   dbModule* parent = getParent();
   if (parent == block->getTopModule())
     return inst_name;
   else
     return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
+
+bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
+{
+  dbSet<dbModITerm> moditerms = getModITerms();
+  for (dbModITerm* mod_iterm : moditerms) {
+    if (!strcmp(mod_iterm->getName(), name)) {
+      ret = mod_iterm;
+      return true;
+    }
+  }
+  return false;
+}
+
 // User Code End dbModInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp
