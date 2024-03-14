@@ -666,15 +666,11 @@ void SRoute::createSrouteWires(
     auto domains = getDomains();
 
     // collect the the SWires from the block
-    ShapeTreeMap obstructions;
-    ShapeTreeMap net_shapes;
-    Shape::populateMapFromDb(net, net_shapes);
-    for (const auto& [layer, net_obs_layer] : net_shapes) {
-      auto& obs_layer = obstructions[layer];
-      for (const auto& [box, shape] : net_obs_layer) {
-        obs_layer.insert({shape->getObstructionBox(), shape});
-      }
-    }
+    ShapeVectorMap obstructions_vec;
+    Shape::populateMapFromDb(net, obstructions_vec);
+    const ShapeTreeMap obstructions
+        = Shape::convertVectorToTree(obstructions_vec);
+    obstructions_vec.clear();
 
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {

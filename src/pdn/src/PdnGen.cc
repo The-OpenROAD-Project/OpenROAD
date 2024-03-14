@@ -109,21 +109,33 @@ void PdnGen::buildGrids(bool trim)
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
-  ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
+  ShapeVectorMap block_obs_vec;
+  Grid::makeInitialObstructions(block, block_obs_vec, insts_in_grids, logger_);
   for (auto* grid : grids) {
-    grid->getGridLevelObstructions(block_obs);
+    grid->getGridLevelObstructions(block_obs_vec);
   }
-  ShapeTreeMap all_shapes;
+  ShapeVectorMap all_shapes_vec;
 
   // get special shapes
-  Grid::makeInitialShapes(block, all_shapes, logger_);
-  for (const auto& [layer, layer_shapes] : all_shapes) {
-    auto& layer_obs = block_obs[layer];
+  Grid::makeInitialShapes(block, all_shapes_vec, logger_);
+  for (const auto& [layer, layer_shapes] : all_shapes_vec) {
+    auto& layer_obs = block_obs_vec[layer];
     for (const auto& [box, shape] : layer_shapes) {
-      layer_obs.insert({shape->getObstructionBox(), shape});
+      layer_obs.emplace_back(shape->getObstructionBox(), shape);
     }
   }
+
+  ShapeTreeMap block_obs;
+  for (const auto& [layer, shapes] : block_obs_vec) {
+    block_obs[layer] = ShapeTree(shapes.begin(), shapes.end());
+  }
+  block_obs_vec.clear();
+
+  ShapeTreeMap all_shapes;
+  for (const auto& [layer, shapes] : all_shapes_vec) {
+    all_shapes[layer] = ShapeTree(shapes.begin(), shapes.end());
+  }
+  all_shapes_vec.clear();
 
   for (auto* grid : grids) {
     debugPrint(
@@ -754,17 +766,12 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   // collect all the SWires from the block
   auto* block = db_->getChip()->getBlock();
-  ShapeTreeMap obstructions;
+  ShapeVectorMap net_shapes_vec;
   for (auto* net : block->getNets()) {
-    ShapeTreeMap net_shapes;
-    Shape::populateMapFromDb(net, net_shapes);
-    for (const auto& [layer, net_obs_layer] : net_shapes) {
-      auto& obs_layer = obstructions[layer];
-      for (const auto& [box, shape] : net_obs_layer) {
-        obs_layer.insert({shape->getObstructionBox(), shape});
-      }
-    }
+    Shape::populateMapFromDb(net, net_shapes_vec);
   }
+  const ShapeTreeMap obstructions(net_shapes_vec.begin(), net_shapes_vec.end());
+  net_shapes_vec.clear();
 
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
@@ -812,8 +819,11 @@ void PdnGen::ripUp(odb::dbNet* net)
     return;
   }
 
-  ShapeTreeMap net_shapes;
-  Shape::populateMapFromDb(net, net_shapes);
+  ShapeVectorMap net_shapes_vec;
+  Shape::populateMapFromDb(net, net_shapes_vec);
+  ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
+  net_shapes_vec.clear();
+
   // remove bterms that connect to swires
   std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {

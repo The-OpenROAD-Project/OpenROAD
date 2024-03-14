@@ -169,7 +169,7 @@ class Grid
 
   // returns the obstructions the other grids should be aware of,
   // such as the outline of an instance or layers in use
-  virtual void getGridLevelObstructions(ShapeTreeMap& obstructions) const;
+  virtual void getGridLevelObstructions(ShapeVectorMap& obstructions) const;
   void getObstructions(ShapeTreeMap& obstructions) const;
 
   void resetShapes();
@@ -180,11 +180,11 @@ class Grid
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
   static void makeInitialObstructions(odb::dbBlock* block,
-                                      ShapeTreeMap& obs,
+                                      ShapeVectorMap& obs,
                                       const std::set<odb::dbInst*>& skip_insts,
                                       utl::Logger* logger);
   static void makeInitialShapes(odb::dbBlock* block,
-                                ShapeTreeMap& shapes,
+                                ShapeVectorMap& shapes,
                                 utl::Logger* logger);
 
   virtual bool isReplaceable() const { return false; }
@@ -246,7 +246,7 @@ class CoreGrid : public Grid
   void setupDirectConnect(
       const std::vector<odb::dbTechLayer*>& connect_pad_layers);
 
-  void getGridLevelObstructions(ShapeTreeMap& obstructions) const override;
+  void getGridLevelObstructions(ShapeVectorMap& obstructions) const override;
 
  protected:
   void cleanupShapes() override;
@@ -280,16 +280,17 @@ class InstanceGrid : public Grid
   odb::Rect getDomainBoundary() const override;
   odb::Rect getGridBoundary() const override;
 
-  void getGridLevelObstructions(ShapeTreeMap& obstructions) const override;
+  void getGridLevelObstructions(ShapeVectorMap& obstructions) const override;
 
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
   bool isReplaceable() const override { return replaceable_; }
 
   virtual bool isValid() const;
 
-  static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst,
-                                              const Halo& halo = {0, 0, 0, 0});
-  static ShapeTreeMap getInstancePins(odb::dbInst* inst);
+  static ShapeVectorMap getInstanceObstructions(odb::dbInst* inst,
+                                                const Halo& halo
+                                                = {0, 0, 0, 0});
+  static ShapeVectorMap getInstancePins(odb::dbInst* inst);
 
  protected:
   // find all intersections that also overlap with the power/ground pins based
