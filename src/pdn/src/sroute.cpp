@@ -670,7 +670,6 @@ void SRoute::createSrouteWires(
     Shape::populateMapFromDb(net, obstructions_vec);
     const ShapeTreeMap obstructions
         = Shape::convertVectorToTree(obstructions_vec);
-    obstructions_vec.clear();
 
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {

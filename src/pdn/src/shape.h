@@ -235,8 +235,8 @@ class Shape
     allow_non_preferred_change_ = true;
   }
 
-  static ShapeTreeMap convertVectorToTree(const ShapeVectorMap& vec);
-  static ViaTree convertVectorToTree(const std::vector<ViaValue>& vec);
+  static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
+  static ViaTree convertVectorToTree(std::vector<ViaValue>& vec);
 
  protected:
   bool cut(const ShapeTree& obstructions,

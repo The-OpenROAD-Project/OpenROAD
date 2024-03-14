@@ -822,7 +822,6 @@ void PdnGen::ripUp(odb::dbNet* net)
   ShapeVectorMap net_shapes_vec;
   Shape::populateMapFromDb(net, net_shapes_vec);
   ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
-  net_shapes_vec.clear();
 
   // remove bterms that connect to swires
   std::set<odb::dbBTerm*> terms;

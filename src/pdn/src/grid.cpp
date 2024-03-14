@@ -1562,8 +1562,8 @@ bool BumpGrid::isRouted() const
 {
   odb::dbNet* net = *getNets(startsWithPower()).begin();
 
-  const auto pins = Shape::convertVectorToTree(
-      InstanceGrid::getInstancePins(getInstance()));
+  auto inst_pins = InstanceGrid::getInstancePins(getInstance());
+  const auto pins = Shape::convertVectorToTree(inst_pins);
 
   for (auto* swire : net->getSWires()) {
     for (auto* sbox : swire->getWires()) {

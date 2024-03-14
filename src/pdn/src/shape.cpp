@@ -617,7 +617,7 @@ Shape* Shape::extendTo(
   return new_shape.release();
 }
 
-ShapeTreeMap Shape::convertVectorToTree(const ShapeVectorMap& vec)
+ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
 {
   ShapeTreeMap trees;
 
@@ -625,12 +625,17 @@ ShapeTreeMap Shape::convertVectorToTree(const ShapeVectorMap& vec)
     trees[layer] = ShapeTree(vals.begin(), vals.end());
   }
 
+  vec = ShapeVectorMap();
+
   return trees;
 }
 
-ViaTree Shape::convertVectorToTree(const std::vector<ViaValue>& vec)
+ViaTree Shape::convertVectorToTree(std::vector<ViaValue>& vec)
 {
   ViaTree tree(vec.begin(), vec.end());
+
+  vec = std::vector<ViaValue>();
+
   return tree;
 }
 
