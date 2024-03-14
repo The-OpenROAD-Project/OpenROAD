@@ -192,7 +192,7 @@ class dbOStream
       return *this;
     } else {
       *this << std::get<I>(tup);
-      return ((*this).operator << <I + 1>(tup));
+      return ((*this).operator<< <I + 1>(tup));
     }
   }
 
