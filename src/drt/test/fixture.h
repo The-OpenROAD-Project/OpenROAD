@@ -89,7 +89,7 @@ class Fixture
 
   void makeMinStepConstraint(frLayerNum layer_num);
 
-  void makeMinStep58Constraint(frLayerNum layer_num);
+  frLef58MinStepConstraint* makeMinStep58Constraint(frLayerNum layer_num);
 
   void makeRectOnlyConstraint(frLayerNum layer_num);
 

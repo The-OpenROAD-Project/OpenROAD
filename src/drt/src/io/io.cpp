@@ -778,7 +778,16 @@ void io::Parser::setNets(odb::dbBlock* block)
           }
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
-
+          auto layer = tech_->name2layer_[layerName];
+          auto styleWidth = width;
+          if (!(styleWidth)) {
+            if ((layer->isHorizontal() && beginY != endY)
+                || (!layer->isHorizontal() && beginX != endX)) {
+              styleWidth = layer->getWrongDirWidth();
+            } else {
+              styleWidth = layer->getWidth();
+            }
+          }
           width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
           auto defaultBeginExt = width / 2;
           auto defaultEndExt = width / 2;
@@ -804,7 +813,7 @@ void io::Parser::setNets(odb::dbBlock* block)
           frEndStyle tmpEndStyle(tmpEndEnum);
 
           frSegStyle tmpSegStyle;
-          tmpSegStyle.setWidth(width);
+          tmpSegStyle.setWidth(styleWidth);
           tmpSegStyle.setBeginStyle(
               tmpBeginStyle,
               tmpBeginEnum == frcExtendEndStyle ? defaultBeginExt : beginExt);
@@ -1476,12 +1485,21 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
+    if (rule->getMaxEdges() > 1) {
+      logger_->warn(DRT,
+                    335,
+                    "LEF58_MINSTEP MAXEDGES {}  is not supported",
+                    rule->getMaxEdges());
+      continue;
+    }
     auto con = std::make_unique<frLef58MinStepConstraint>();
     con->setMinStepLength(rule->getMinStepLength());
     con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
     con->setMinAdjacentLength(
         rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
+    con->setNoAdjEol(rule->isNoAdjacentEol() ? rule->getEolWidth() : -1);
     con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
+    con->setExceptRectangle(rule->isExceptRectangle());
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
