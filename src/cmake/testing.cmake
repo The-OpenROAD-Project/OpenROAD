@@ -5,7 +5,7 @@ function(or_integration_test tool_name test_name regression_binary)
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   )
 
-  set(CONCAT ENV
+  string(CONCAT ENV
       "TEST_TYPE=compare_logfile;"
       "CTEST_TESTNAME=${test_name};"
       "DIFF_LOCATION=${CMAKE_CURRENT_LIST_DIR}/results/${test_name}.diff"
