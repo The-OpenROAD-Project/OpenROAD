@@ -183,6 +183,8 @@ class Shape
   // connected
   virtual void updateTermConnections();
   bool hasTermConnections() const;
+  bool hasITermConnections() const { return !iterm_connections_.empty(); }
+  bool hasBTermConnections() const { return !bterm_connections_.empty(); };
 
   // returns the smallest shape possible when attempting to trim
   virtual odb::Rect getMinimumRect() const;

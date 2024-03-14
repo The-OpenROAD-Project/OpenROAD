@@ -104,6 +104,10 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
+  power_switch_upf_error
+  power_switch_upf_star
+  power_switch_upf_daisy
+  power_switch_upf_regions
 
   repair_vias
 
