@@ -456,7 +456,7 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 }
 
-void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
+void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
 {
   for (auto* swire : net->getSWires()) {
     for (auto* box : swire->getWires()) {
@@ -476,7 +476,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
         shape->setShapeType(Shape::OBS);
       }
       shape->generateObstruction();
-      map[layer].insert({shape->getRectBox(), shape});
+      map[layer].emplace_back(shape->getRectBox(), shape);
     }
   }
 }
@@ -627,6 +627,29 @@ Shape* Shape::extendTo(
   }
 
   return new_shape.release();
+}
+
+ShapeTreeMap Shape::convertVectorToTree(ShapeVectorMap& vec)
+{
+  ShapeTreeMap trees;
+
+  for (auto& [layer, vals] : vec) {
+    trees[layer] = ShapeTree(vals.begin(), vals.end());
+  }
+
+  ShapeVectorMap empty;
+  vec.swap(empty);
+
+  return trees;
+}
+
+ViaTree Shape::convertVectorToTree(std::vector<ViaValue>& vec)
+{
+  ViaTree tree(vec.begin(), vec.end());
+
+  vec = std::vector<ViaValue>();
+
+  return tree;
 }
 
 /////////
