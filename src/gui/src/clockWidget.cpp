@@ -1495,6 +1495,7 @@ void ClockWidget::saveImage(const std::string& clock_name,
       if (height_px.has_value()) {
         view_size.setHeight(height_px.value());
       }
+      print_view.scale(1, 1);  // mysteriously necessary sometimes
       print_view.resize(view_size);
       // Ensure the new view is sized correctly by Qt by processing the event
       // so fit will work
