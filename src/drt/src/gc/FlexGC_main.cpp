@@ -32,7 +32,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 using polygon_t = bg::model::polygon<point_t>;
 using mpolygon_t = bg::model::multi_polygon<polygon_t>;
@@ -1624,6 +1624,95 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
   }
 }
 
+inline void joinSegmentCoords(gcSegment* seg,
+                              frCoord& llx,
+                              frCoord& lly,
+                              frCoord& urx,
+                              frCoord& ury)
+{
+  llx = std::min(llx, seg->low().x());
+  lly = std::min(lly, seg->low().y());
+  urx = std::max(urx, seg->low().x());
+  ury = std::max(ury, seg->low().y());
+
+  llx = std::min(llx, seg->high().x());
+  lly = std::min(lly, seg->high().y());
+  urx = std::max(urx, seg->high().x());
+  ury = std::max(ury, seg->high().y());
+}
+
+void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_minAdjLength(
+    gcPin* pin,
+    frLef58MinStepConstraint* con)
+{
+  auto poly = pin->getPolygon();
+  auto layerNum = poly->getLayerNum();
+  auto net = poly->getNet();
+  if (poly->size() == 4 && con->isExceptRectangle()) {
+    return;
+  }
+
+  std::vector<gcSegment*> startEdges;
+  auto minStepLength = con->getMinStepLength();
+  for (auto& edges : pin->getPolygonEdges()) {
+    // get the first edge that is >= minstep length
+    for (auto& e : edges) {
+      if (gtl::length(*e) < minStepLength) {
+        startEdges.push_back(e.get());
+      }
+    }
+  }
+  for (auto startEdge : startEdges) {
+    bool violating = false;
+    auto nextEdge = startEdge->getNextEdge();
+    auto prevEdge = startEdge->getPrevEdge();
+    if (gtl::length(*(nextEdge)) < con->getMinAdjacentLength()
+        || gtl::length(*(prevEdge)) < con->getMinAdjacentLength()) {
+      violating = true;
+    }
+    if (con->getNoAdjEol() > -1) {
+      if (nextEdge->getLowCorner()->getType() == frCornerTypeEnum::CONVEX
+          && nextEdge->getHighCorner()->getType() == frCornerTypeEnum::CONVEX
+          && gtl::length(*(nextEdge)) < con->getNoAdjEol()) {
+        violating = true;
+      }
+      if (prevEdge->getLowCorner()->getType() == frCornerTypeEnum::CONVEX
+          && prevEdge->getHighCorner()->getType() == frCornerTypeEnum::CONVEX
+          && gtl::length(*(prevEdge)) < con->getNoAdjEol()) {
+        violating = true;
+      }
+    }
+    // skip if all edges are fixed
+    if (startEdge->isFixed() && nextEdge->isFixed() && prevEdge->isFixed()) {
+      continue;
+    }
+    if (!violating) {
+      continue;
+    }
+
+    // real violation
+    frCoord llx = startEdge->low().x();
+    frCoord lly = startEdge->low().y();
+    frCoord urx = startEdge->low().x();
+    frCoord ury = startEdge->low().y();
+
+    joinSegmentCoords(startEdge, llx, lly, urx, ury);
+    joinSegmentCoords(nextEdge, llx, lly, urx, ury);
+    joinSegmentCoords(prevEdge, llx, lly, urx, ury);
+
+    auto marker = std::make_unique<frMarker>();
+    Rect box(llx, lly, urx, ury);
+    marker->setBBox(box);
+    marker->setLayerNum(layerNum);
+    marker->setConstraint(con);
+    marker->addSrc(net->getOwner());
+    marker->addVictim(net->getOwner(), std::make_tuple(layerNum, box, false));
+    marker->addAggressor(net->getOwner(),
+                         std::make_tuple(layerNum, box, false));
+    addMarker(std::move(marker));
+  }
+}
+
 // currently only support nobetweeneol
 void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
 {
@@ -1632,10 +1721,12 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep(gcPin* pin)
   // auto net = poly->getNet();
 
   for (auto con : getTech()->getLayer(layerNum)->getLef58MinStepConstraints()) {
-    if (!con->hasEolWidth()) {
-      continue;
+    if (con->hasEolWidth()) {
+      checkMetalShape_lef58MinStep_noBetweenEol(pin, con);
     }
-    checkMetalShape_lef58MinStep_noBetweenEol(pin, con);
+    if (con->hasMinAdjacentLength()) {
+      checkMetalShape_lef58MinStep_minAdjLength(pin, con);
+    }
   }
 }
 
@@ -3938,4 +4029,4 @@ int FlexGCWorker::Impl::main()
   return 0;
 }
 
-}  // namespace fr
+}  // namespace drt

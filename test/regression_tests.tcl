@@ -6,6 +6,7 @@ record_tests {
   timing_api_3
   upf_test
   upf_aes
+  two_designs
 }
 
 define_test_group "non_flow" {
@@ -32,6 +33,3 @@ record_flow_tests {
   jpeg_sky130hs
   jpeg_sky130hd
 }
-
-# sidelined because drt blows chow
-

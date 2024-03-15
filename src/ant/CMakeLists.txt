@@ -30,3 +30,4 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 add_subdirectory(src)
+add_subdirectory(test)

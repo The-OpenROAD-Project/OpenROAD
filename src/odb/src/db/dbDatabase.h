@@ -69,7 +69,13 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 78;  // Current revision number
+const uint db_schema_minor = 80;  // Current revision number
+
+// Revision where dbPowerSwitch changed from strings to structs
+const uint db_schema_update_db_power_switch = 80;
+
+// Revision where dbGCellGrid::GCellData moved to uint8_t
+const uint db_schema_smaler_gcelldata = 79;
 
 // Revision where _dbBox / flags.mask was added
 const uint db_schema_dbbox_mask = 78;

@@ -30,7 +30,7 @@
 
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class FlexMazeIdx
 {
  public:
@@ -96,4 +96,4 @@ class FlexMazeIdx
   }
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

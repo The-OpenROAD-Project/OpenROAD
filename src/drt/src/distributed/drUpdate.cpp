@@ -31,7 +31,8 @@
 #include "db/obj/frNet.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace fr;
+
+namespace drt {
 
 void drUpdate::setPathSeg(const frPathSeg& seg)
 {
@@ -128,10 +129,12 @@ void drUpdate::serialize(Archive& ar, const unsigned int version)
     tmp = topConnected_;
     (ar) & tmp;
   }
-  if (obj_type_ == frcVia)
+  if (obj_type_ == frcVia) {
     serializeViaDef(ar, viaDef_);
-  if (obj_type_ == frcMarker)
+  }
+  if (obj_type_ == frcMarker) {
     (ar) & marker_;
+  }
 }
 
 template void drUpdate::serialize<frIArchive>(frIArchive& ar,
@@ -139,3 +142,5 @@ template void drUpdate::serialize<frIArchive>(frIArchive& ar,
 
 template void drUpdate::serialize<frOArchive>(frOArchive& ar,
                                               const unsigned int file_version);
+
+}  // namespace drt

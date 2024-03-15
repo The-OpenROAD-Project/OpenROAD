@@ -39,7 +39,7 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class frDesign;
 class frNet;
@@ -79,4 +79,4 @@ class FlexTAGraphics : public gui::Renderer
   frNet* net_;
 };
 
-}  // namespace fr
+}  // namespace drt

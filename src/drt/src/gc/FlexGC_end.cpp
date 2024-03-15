@@ -30,10 +30,10 @@
 
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 void FlexGCWorker::Impl::end()
 {
 }
 
-}  // namespace fr
+}  // namespace drt

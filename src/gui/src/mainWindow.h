@@ -337,6 +337,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
+  static constexpr const char* window_title_ = "OpenROAD";
 };
 
 }  // namespace gui

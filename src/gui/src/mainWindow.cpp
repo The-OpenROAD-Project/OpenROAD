@@ -391,7 +391,7 @@ MainWindow::MainWindow(QWidget* parent)
   // load resources and set window icon and title
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
-  setWindowTitle("OpenROAD");
+  setWindowTitle(window_title_);
 
   Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
@@ -420,6 +420,11 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
 void MainWindow::setBlock(odb::dbBlock* block)
 {
+  if (block != nullptr) {
+    const std::string title
+        = fmt::format("{} - {}", window_title_, block->getName());
+    setWindowTitle(QString::fromStdString(title));
+  }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
   }

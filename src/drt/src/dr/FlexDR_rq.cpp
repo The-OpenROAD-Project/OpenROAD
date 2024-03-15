@@ -29,7 +29,7 @@
 #include "dr/FlexDR.h"
 #include "frRTree.h"
 
-namespace fr {
+namespace drt {
 
 // I believe it is safe not to sort the query results here despite the
 // use of the serializer.  Most of the use of the query is in init()
@@ -262,4 +262,4 @@ bool FlexDRWorkerRegionQuery::isEmpty() const
   return impl_->shapes_.empty();
 }
 
-}  // namespace fr
+}  // namespace drt

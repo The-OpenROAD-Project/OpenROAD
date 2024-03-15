@@ -39,23 +39,14 @@ proc read_upf { args } {
     keys {-file} flags {}
 
   source $keys(-file)
-
 }
 
-## check if a chip/block has been created and exits with error if not
-proc check_block_exists { } {
-  set db [ord::get_db]
-  set chip [$db getChip]
+sta::define_cmd_args "write_upf" {file}
+proc write_upf { args } {
+  upf::check_block_exists
+  sta::check_argc_eq1 "write_upf" $args
 
-  if { "$chip" eq "NULL" } {
-    utl::error UPF 33 "No Chip exists"
-  }
-
-  set block [$chip getBlock]
-
-  if { "$block" eq "NULL" } {
-    utl::error UPF 34 "No block exists"
-  }
+  upf::write_upf_cmd [lindex $args 0]
 }
 
 # Creates a power domain
@@ -66,7 +57,7 @@ proc check_block_exists { } {
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "create_power_domain" args \
     keys {-elements} flags {}
@@ -94,7 +85,7 @@ proc create_power_domain { args } {
 # - port_name: port name
 sta::define_cmd_args "create_logic_port" { [-direction direction] port_name }
 proc create_logic_port { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "create_logic_port" args \
     keys {-direction} flags {}
@@ -130,56 +121,47 @@ sta::define_cmd_args "create_power_switch" { \
     name
 }
 proc create_power_switch { args } {
-  check_block_exists
+  upf::check_block_exists
 
+  ord::parse_list_args "create_power_switch" args \
+    list {-input_supply_port -control_port -ack_port -on_state}
   sta::parse_key_args "create_power_switch" args \
-    keys {-domain -output_supply_port -input_supply_port -control_port -on_state} flags {}
+    keys {-domain -output_supply_port} flags {}
 
   sta::check_argc_eq1 "create_power_switch" $args
 
   set name [lindex $args 0]
   set domain ""
-  set output_supply_port {}
-  set input_supply_port {}
-  set control_port {}
-  set on_state {}
 
   if { [info exists keys(-domain)] } {
     set domain $keys(-domain)
   }
 
-  if { [info exists keys(-output_supply_port)] } {
-    set output_supply_port $keys(-output_supply_port)
-  }
-
-  if { [info exists keys(-input_supply_port)] } {
-    set input_supply_port $keys(-input_supply_port)
-  }
-
-  if { [info exists keys(-control_port)] } {
-    set control_port $keys(-control_port)
-  }
-
-  if { [info exists keys(-on_state)] } {
-    set on_state $keys(-on_state)
-  }
-
   upf::create_power_switch_cmd $name $domain
 
-  foreach {input} $input_supply_port {
-    upf::update_power_switch_input_cmd $name $input
+  if { [info exists keys(-output_supply_port)] } {
+    lassign [upf::process_list_arg $keys(-output_supply_port) 2] port_name supply_net_name
+    upf::update_power_switch_output_cmd $name $port_name $supply_net_name
   }
 
-  foreach {output} $output_supply_port {
-    upf::update_power_switch_output_cmd $name $output
+  foreach input_port_arg $list(-input_supply_port) {
+    lassign [upf::process_list_arg $input_port_arg 2] port_name supply_net_name
+    upf::update_power_switch_input_cmd $name $port_name $supply_net_name
   }
 
-  foreach {control} $control_port {
-    upf::update_power_switch_control_cmd $name $control
+  foreach control_port_arg $list(-control_port) {
+    lassign [upf::process_list_arg $control_port_arg 2] port_name net_name
+    upf::update_power_switch_control_cmd $name $port_name $net_name
   }
 
-  foreach {on} $on_state {
-    upf::update_power_switch_on_cmd $name $on
+  foreach ack_port_arg $list(-ack_port) {
+    lassign [upf::process_list_arg $ack_port_arg 3] port_name net_name boolean_expression
+    upf::update_power_switch_ack_cmd $name $port_name $net_name $boolean_expression
+  }
+
+  foreach on_state_arg $list(-on_state) {
+    lassign [upf::process_list_arg $on_state_arg 3] state_name input_supply_port boolean_expression
+    upf::update_power_switch_on_cmd $name $state_name $input_supply_port $boolean_expression
   }
 }
 
@@ -207,7 +189,7 @@ sta::define_cmd_args "set_isolation" { \
     name
 }
 proc set_isolation { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "set_isolation" args \
     keys {-domain -applies_to -clamp_value -isolation_signal
@@ -272,7 +254,7 @@ sta::define_cmd_args "use_interface_cell" { \
     [-lib_cells lib_cells]
 }
 proc use_interface_cell { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "use_interface_cell" args \
     keys {-domain -strategy -lib_cells} flags {}
@@ -311,7 +293,7 @@ proc use_interface_cell { args } {
 sta::define_cmd_args "set_domain_area" {domain_name -area {llx lly urx ury}}
 
 proc set_domain_area { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "set_domain_area" args keys {-area} flags {}
   set domain_name [lindex $args 0]
@@ -355,7 +337,7 @@ sta::define_cmd_args "map_power_switch" { \
 }
 
 proc map_power_switch { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "map_power_switch" args \
     keys {switch_name_list -lib_cells -port_map} flags {}
@@ -417,7 +399,7 @@ sta::define_cmd_args "set_level_shifter" { \
 
 # Procedure to set or update a level shifter
 proc set_level_shifter { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "set_level_shifter" args \
     keys {-domain -elements -exclude_elements -source -sink \
@@ -553,7 +535,8 @@ proc set_level_shifter { args } {
     upf::exclude_level_shifter_element_cmd $name $exclude_element
   }
 
-  foreach {instance_name port_name} $instance {
+  foreach inst_port $instance {
+    lassign $inst_port instance_name port_name
     upf::handle_level_shifter_instance_cmd $name $instance_name $port_name
   }
 }
@@ -568,7 +551,7 @@ sta::define_cmd_args "set_domain_voltage" { \
 }
 
 proc set_domain_voltage { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "set_domain_voltage" args \
     keys {-domain -voltage} flags {}
@@ -602,7 +585,7 @@ sta::define_cmd_args "set_level_shifter_cell" { \
 }
 
 proc set_level_shifter_cell { args } {
-  check_block_exists
+  upf::check_block_exists
 
   sta::parse_key_args "set_level_shifter_cell" args \
     keys {-level_shifter -cell_name -input_port -output_port} flags {}
@@ -631,4 +614,30 @@ proc set_level_shifter_cell { args } {
   }
 
   upf::set_level_shifter_cell_cmd $level_shifter $cell_name $input_port $output_port
+}
+
+namespace eval upf {
+proc process_list_arg { args max_len } {
+  while { [llength $args] < $max_len } {
+    lappend args ""
+  }
+  return $args
+}
+
+## check if a chip/block has been created and exits with error if not
+proc check_block_exists { } {
+  set db [ord::get_db]
+  set chip [$db getChip]
+
+  if { "$chip" eq "NULL" } {
+    utl::error UPF 33 "No Chip exists"
+  }
+
+  set block [$chip getBlock]
+
+  if { "$block" eq "NULL" } {
+    utl::error UPF 34 "No block exists"
+  }
+}
+
 }

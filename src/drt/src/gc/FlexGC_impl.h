@@ -39,7 +39,7 @@ namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
 
-namespace fr {
+namespace drt {
 class FlexGCWorkerRegionQuery
 {
  public:
@@ -496,6 +496,8 @@ class FlexGCWorker::Impl
   void checkMetalShape_lef58MinStep(gcPin* pin);
   void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,
                                                  frLef58MinStepConstraint* con);
+  void checkMetalShape_lef58MinStep_minAdjLength(gcPin* pin,
+                                                 frLef58MinStepConstraint* con);
   void checkMetalSpacingTableInfluence();
   void checkPinMetSpcTblInf(gcPin*);
   void checkRectMetSpcTblInf(gcRect*, frSpacingTableInfluenceConstraint*);
@@ -537,4 +539,4 @@ class FlexGCWorker::Impl
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
   bool isWrongDir(gcSegment* edge);
 };
-}  // namespace fr
+}  // namespace drt
