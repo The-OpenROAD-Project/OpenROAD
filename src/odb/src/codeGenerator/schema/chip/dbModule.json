@@ -1,35 +1,51 @@
 {
-  "name":"dbModule",
-  "type":"dbObject",
-  "fields":[
-    {
-      "name":"_name",
-      "type":"char *",
-      "flags":["no-set"]
-    },
-    {
-      "name":"_next_entry",
-      "type":"dbId<_dbModule>",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name":"_insts",
-      "type":"dbId<_dbInst>",
-      "flags":["no-set","no-get"],
-      "parent":"dbBlock"
-    },
-    {
-      "name":"_modinsts",
-      "type":"dbId<_dbModInst>",
-      "flags":["no-set","no-get"],
-      "parent":"dbBlock"
-    },
-    {
-      "name":"_mod_inst",
-      "type":"dbId<_dbModInst>",
-      "flags":["no-set"],
-      "parent":"dbBlock"
-    }
-  ],
-  "cpp_includes":["dbBlock.h","dbHashTable.hpp"]
+    "name":"dbModule",
+    "type":"dbObject",
+    "fields":[
+	{
+	    "name":"_name",
+	    "type":"char *",
+	    "flags":["no-set"]
+	},
+	{
+	    "name":"_next_entry",
+	    "type":"dbId<_dbModule>",
+	    "flags":["no-set","no-get"]
+	},
+	{
+	    "name":"_insts",
+	    "type":"dbId<_dbInst>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_mod_inst",
+	    "type":"dbId<_dbModInst>",
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_modinsts",
+	    "type":"dbId<_dbModInst>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_modnets",
+	    "type":"dbId<_dbModNet>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_modbterms",
+	    "type":"dbId<_dbModBTerm>",
+	    "flags":["no-set","no-get"]	    
+	}
+    ],
+    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h"],
+    "h_includes": [
+	"dbVector.h",
+	"dbSet.h"
+    ]
 }
+
+

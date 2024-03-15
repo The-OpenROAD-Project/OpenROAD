@@ -1,0 +1,49 @@
+      {
+	  "name":"dbModNet",
+          "type":"dbObject",
+	  "fields":[
+           {
+          "name":"_name",
+          "type":"char *",
+          "flags":["no-set","no-get"]
+           },
+          {
+	  "name":"_parent",
+          "type":"dbId<_dbModule>",
+          "flags":["no-set"],
+          "parent":"dbBlock" 
+          },
+          {
+          "name":"_next_entry",
+          "type":"dbId<_dbModNet>",
+          "flags":["no-set","no-get"]
+          },
+	  {
+	      "name": "_moditerms",
+	      "type": "dbId<_dbModITerm>",
+	      "flags":["no-set","no-get"]
+	  },
+	  {
+	      "name": "_modbterms",
+	      "type": "dbId<_dbModBTerm>",
+	      "flags":["no-set","no-get"]
+	  },
+	  {
+	      "name": "_iterms",
+	      "type": "dbId<_dbITerm>",
+	      "flags":["no-set","no-get"]
+	  },
+	  {
+	      "name": "_bterms",
+	      "type": "dbId<_dbBTerm>",
+	      "flags":["no-set","no-get"]
+	  }
+	      
+	  ],
+	  "constructors":[],
+	  "cpp_includes":["dbBlock.h","dbVector.h","dbModule.h","dbModInst.h","dbITerm.h", "dbModITerm.h","dbModBTerm.h","dbHashTable.hpp"],
+	  "h_includes": [
+              "dbVector.h"
+	  ]
+
+      }
