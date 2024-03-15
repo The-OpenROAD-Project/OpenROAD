@@ -359,7 +359,7 @@ void TritonCTS::writeDataToDb()
 {
   std::set<odb::dbNet*> clkLeafNets;
   for (TreeBuilder* builder : *builders_) {
-    writeClockNetsToDb(builder->getClock(), clkLeafNets);
+    writeClockNetsToDb(builder, clkLeafNets);
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
     }
@@ -1010,8 +1010,9 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
 
   // create a new net 'secondNet' to drive register sinks
   odb::dbNet* secondNet;
-  Clock clockNet2
-      = forkRegisterClockNetwork(clockNet, registerSinks, firstNet, secondNet);
+  std::string topBufferName;
+  Clock clockNet2 = forkRegisterClockNetwork(
+      clockNet, registerSinks, firstNet, secondNet, topBufferName);
 
   // add register sinks to secondNet
   HTreeBuilder* secondBuilder = addClockSinks(
@@ -1022,6 +1023,8 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
       "registers");
   if (secondBuilder) {
     secondBuilder->setTreeType(TreeType::RegisterTree);
+    secondBuilder->setTopBufferName(topBufferName);
+    secondBuilder->setTopInputNet(firstNet);
   }
 
   return secondBuilder;
@@ -1050,7 +1053,8 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
-      if (hasInsertionDelay(inst, mterm)) {
+      // Treat clock gaters like macro sink
+      if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
@@ -1098,7 +1102,8 @@ Clock TritonCTS::forkRegisterClockNetwork(
     Clock& clockNet,
     const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
     odb::dbNet*& firstNet,
-    odb::dbNet*& secondNet)
+    odb::dbNet*& secondNet,
+    std::string& topBufferName)
 {
   // create a new clock net to drive register sinks
   std::string newClockName = clockNet.getName() + "_" + "regs";
@@ -1116,8 +1121,10 @@ Clock TritonCTS::forkRegisterClockNetwork(
 
   // create a new clock buffer
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  std::string cellName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
+  topBufferName = "clkbuf_regs_" + std::to_string(regTreeRootBufIndex_++) + "_"
+                  + clockNet.getSdcName();
+  odb::dbInst* clockBuf
+      = odb::dbInst::create(block_, master, topBufferName.c_str());
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -1162,19 +1169,22 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
-void TritonCTS::writeClockNetsToDb(Clock& clockNet,
+void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
+  Clock& clockNet = builder->getClock();
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
   disconnectAllSinksFromNet(topClockNet);
 
   // re-connect top buffer that separates macros from registers
-  std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getName();
-  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
-  if (topRegBuffer) {
-    odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
-    topRegBufferInputPin->connect(topClockNet);
+  if (builder->getTreeType() == TreeType::RegisterTree) {
+    odb::dbInst* topRegBuffer
+        = block_->findInst(builder->getTopBufferName().c_str());
+    if (topRegBuffer) {
+      odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
+      topRegBufferInputPin->connect(builder->getTopInputNet());
+    }
   }
 
   createClockBuffers(clockNet);
@@ -2032,7 +2042,6 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
         = builder->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
     odb::dbInst* buffer
         = insertDelayBuffer(driver,
-                            i,
                             builder->getClock().getSdcName(),
                             legalBufferLoc.getX() * scalingFactor,
                             legalBufferLoc.getY() * scalingFactor);
@@ -2050,7 +2059,7 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
   Clock clock = builder->getClock();
   std::string topBufferName;
   if (builder->getTreeType() == TreeType::RegisterTree) {
-    topBufferName = "clkbuf_regs_0_" + clock.getSdcName();
+    topBufferName = builder->getTopBufferName();
   } else {
     topBufferName = "clkbuf_0_" + clock.getName();
   }
@@ -2084,20 +2093,19 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 // Create a new delay buffer and connect output pin of driver to input pin of
 // new buffer. Output pin of new buffer will be connected later.
 odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
-                                          int index,
                                           const std::string& clockName,
                                           int locX,
                                           int locY)
 {
   // creat a new input net
   std::string newNetName
-      = "delaynet_" + std::to_string(index) + "_" + clockName;
+      = "delaynet_" + std::to_string(delayBufIndex_) + "_" + clockName;
   odb::dbNet* newNet = odb::dbNet::create(block_, newNetName.c_str());
   newNet->setSigType(odb::dbSigType::CLOCK);
 
   // create a new delay buffer
   std::string newBufName
-      = "delaybuf_" + std::to_string(index) + "_" + clockName;
+      = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
   newBuf->setSourceType(odb::dbSourceType::TIMING);

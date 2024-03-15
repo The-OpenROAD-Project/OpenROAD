@@ -4,90 +4,45 @@ BUSBITCHARS "[]" ;
 DESIGN multi_sink ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 200000 200000 ) ;
-COMPONENTS 383 ;
+COMPONENTS 338 ;
     - CELL/CKGATE BUF_X1 + PLACED ( 100000 100000 ) N ;
     - clkbuf_0_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 103228 140117 ) N ;
-    - clkbuf_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 103228 51229 ) N ;
+    - clkbuf_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 100250 101225 ) N ;
+    - clkbuf_0_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 103228 51229 ) N ;
+    - clkbuf_1_0__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 100250 87225 ) N ;
     - clkbuf_4_0__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 35318 119627 ) N ;
-    - clkbuf_4_0__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 37046 24385 ) N ;
+    - clkbuf_4_0__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 37181 26644 ) N ;
     - clkbuf_4_10__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 169474 113337 ) N ;
-    - clkbuf_4_10__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 169474 24449 ) N ;
+    - clkbuf_4_10__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 169474 24449 ) N ;
     - clkbuf_4_11__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 176988 120851 ) N ;
-    - clkbuf_4_11__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 176988 31963 ) N ;
+    - clkbuf_4_11__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 176988 31963 ) N ;
     - clkbuf_4_12__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 136180 148710 ) N ;
-    - clkbuf_4_12__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 135454 59367 ) N ;
+    - clkbuf_4_12__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 135454 59367 ) N ;
     - clkbuf_4_13__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 138264 161152 ) N ;
-    - clkbuf_4_13__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 137599 71599 ) N ;
+    - clkbuf_4_13__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 137599 71599 ) N ;
     - clkbuf_4_14__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 175261 148092 ) N ;
-    - clkbuf_4_14__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 175738 59340 ) N ;
+    - clkbuf_4_14__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 175738 59340 ) N ;
     - clkbuf_4_15__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 173171 159411 ) N ;
-    - clkbuf_4_15__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 173942 71102 ) N ;
+    - clkbuf_4_15__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 173942 71102 ) N ;
     - clkbuf_4_1__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 31476 129670 ) N ;
-    - clkbuf_4_1__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 30387 31043 ) N ;
+    - clkbuf_4_1__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 28978 35266 ) N ;
     - clkbuf_4_2__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 68717 119605 ) N ;
-    - clkbuf_4_2__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 64508 26508 ) N ;
+    - clkbuf_4_2__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 66913 28914 ) N ;
     - clkbuf_4_3__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 71061 131581 ) N ;
-    - clkbuf_4_3__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 71219 35368 ) N ;
+    - clkbuf_4_3__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 69122 41782 ) N ;
     - clkbuf_4_4__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 31714 150934 ) N ;
-    - clkbuf_4_4__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 31830 61223 ) N ;
+    - clkbuf_4_4__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 30369 61835 ) N ;
     - clkbuf_4_5__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 33478 164353 ) N ;
-    - clkbuf_4_5__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 33728 74610 ) N ;
+    - clkbuf_4_5__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 31247 76899 ) N ;
     - clkbuf_4_6__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 70729 156126 ) N ;
-    - clkbuf_4_6__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 68707 60992 ) N ;
+    - clkbuf_4_6__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 68700 66662 ) N ;
     - clkbuf_4_7__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 64318 165027 ) N ;
-    - clkbuf_4_7__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 66599 73858 ) N ;
+    - clkbuf_4_7__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 64650 75806 ) N ;
     - clkbuf_4_8__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 141948 115396 ) N ;
-    - clkbuf_4_8__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 141948 26508 ) N ;
+    - clkbuf_4_8__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 141948 26508 ) N ;
     - clkbuf_4_9__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 135237 124256 ) N ;
-    - clkbuf_4_9__f_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 135237 35368 ) N ;
-    - clkbuf_level_0_1_1027_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 133484 35513 ) N ;
-    - clkbuf_level_0_1_10_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 36329 22762 ) N ;
-    - clkbuf_level_0_1_1130_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 170571 22017 ) N ;
-    - clkbuf_level_0_1_1233_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 179381 31532 ) N ;
-    - clkbuf_level_0_1_1336_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 134033 58567 ) N ;
-    - clkbuf_level_0_1_1439_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 136203 73072 ) N ;
-    - clkbuf_level_0_1_1542_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 177253 58502 ) N ;
-    - clkbuf_level_0_1_1645_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 175553 72615 ) N ;
-    - clkbuf_level_0_1_23_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 27455 30225 ) N ;
-    - clkbuf_level_0_1_36_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 66780 23660 ) N ;
-    - clkbuf_level_0_1_49_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 72971 35513 ) N ;
-    - clkbuf_level_0_1_512_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 30235 60113 ) N ;
-    - clkbuf_level_0_1_615_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 31658 77098 ) N ;
-    - clkbuf_level_0_1_718_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 70393 59940 ) N ;
-    - clkbuf_level_0_1_821_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 68117 75839 ) N ;
-    - clkbuf_level_0_1_924_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 139675 23660 ) N ;
-    - clkbuf_level_1_1_1028_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 131732 35659 ) N ;
-    - clkbuf_level_1_1_1131_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 171668 19585 ) N ;
-    - clkbuf_level_1_1_11_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 35613 21140 ) N ;
-    - clkbuf_level_1_1_1234_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 181774 31102 ) N ;
-    - clkbuf_level_1_1_1337_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 132612 57767 ) N ;
-    - clkbuf_level_1_1_1440_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 134807 74545 ) N ;
-    - clkbuf_level_1_1_1543_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 178768 57665 ) N ;
-    - clkbuf_level_1_1_1646_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 177165 74128 ) N ;
-    - clkbuf_level_1_1_24_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 24524 29407 ) N ;
-    - clkbuf_level_1_1_37_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 69053 20813 ) N ;
-    - clkbuf_level_1_1_410_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 74723 35659 ) N ;
-    - clkbuf_level_1_1_513_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 28640 59003 ) N ;
-    - clkbuf_level_1_1_616_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 29589 79586 ) N ;
-    - clkbuf_level_1_1_719_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 72079 58888 ) N ;
-    - clkbuf_level_1_1_822_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 69636 77821 ) N ;
-    - clkbuf_level_1_1_925_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 137402 20813 ) N ;
-    - clkbuf_level_2_1_1029_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 129980 35805 ) N ;
-    - clkbuf_level_2_1_1132_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 172765 17153 ) N ;
-    - clkbuf_level_2_1_1235_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 184167 30671 ) N ;
-    - clkbuf_level_2_1_12_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 34897 19518 ) N ;
-    - clkbuf_level_2_1_1338_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 131192 56967 ) N ;
-    - clkbuf_level_2_1_1441_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 133411 76018 ) N ;
-    - clkbuf_level_2_1_1544_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 180283 56828 ) N ;
-    - clkbuf_level_2_1_1647_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 178776 75641 ) N ;
-    - clkbuf_level_2_1_25_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 21592 28590 ) N ;
-    - clkbuf_level_2_1_38_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 71326 17965 ) N ;
-    - clkbuf_level_2_1_411_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 76476 35805 ) N ;
-    - clkbuf_level_2_1_514_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 27046 57894 ) N ;
-    - clkbuf_level_2_1_617_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 27520 82074 ) N ;
-    - clkbuf_level_2_1_720_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 73765 57836 ) N ;
-    - clkbuf_level_2_1_823_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 71154 79802 ) N ;
-    - clkbuf_level_2_1_926_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 135130 17965 ) N ;
+    - clkbuf_4_9__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 135237 35368 ) N ;
+    - clkbuf_regs_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 99481 48451 ) N ;
     - ff0 DFF_X1 + PLACED ( 5555 5555 ) N ;
     - ff1 DFF_X1 + PLACED ( 16666 5555 ) N ;
     - ff10 DFF_X1 + PLACED ( 116665 5555 ) N ;
@@ -395,125 +350,80 @@ PINS 1 ;
         + LAYER metal6 ( -140 -140 ) ( 140 140 )
         + FIXED ( 100000 199860 ) N ;
 END PINS
-NETS 84 ;
+NETS 39 ;
     - CELL/clk2 ( clkbuf_0_CELL\/clk2 A ) ( CELL/CKGATE Z ) + USE CLOCK ;
-    - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK ;
+    - clk ( PIN clk ) ( clkbuf_regs_0_clk A ) ( clkbuf_0_clk A ) + USE CLOCK ;
+    - clk_regs ( clkbuf_0_clk_regs A ) ( clkbuf_regs_0_clk Z ) + USE CLOCK ;
     - clknet_0_CELL\/clk2 ( clkbuf_4_15__f_CELL\/clk2 A ) ( clkbuf_4_14__f_CELL\/clk2 A ) ( clkbuf_4_13__f_CELL\/clk2 A ) ( clkbuf_4_12__f_CELL\/clk2 A ) ( clkbuf_4_11__f_CELL\/clk2 A ) ( clkbuf_4_10__f_CELL\/clk2 A ) ( clkbuf_4_9__f_CELL\/clk2 A )
       ( clkbuf_4_8__f_CELL\/clk2 A ) ( clkbuf_4_7__f_CELL\/clk2 A ) ( clkbuf_4_6__f_CELL\/clk2 A ) ( clkbuf_4_5__f_CELL\/clk2 A ) ( clkbuf_4_4__f_CELL\/clk2 A ) ( clkbuf_4_3__f_CELL\/clk2 A ) ( clkbuf_4_2__f_CELL\/clk2 A ) ( clkbuf_4_1__f_CELL\/clk2 A )
       ( clkbuf_4_0__f_CELL\/clk2 A ) ( clkbuf_0_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_0_clk ( clkbuf_4_15__f_clk A ) ( clkbuf_4_14__f_clk A ) ( clkbuf_4_13__f_clk A ) ( clkbuf_4_12__f_clk A ) ( clkbuf_4_11__f_clk A ) ( clkbuf_4_10__f_clk A ) ( clkbuf_4_9__f_clk A )
-      ( clkbuf_4_8__f_clk A ) ( clkbuf_4_7__f_clk A ) ( clkbuf_4_6__f_clk A ) ( clkbuf_4_5__f_clk A ) ( clkbuf_4_4__f_clk A ) ( clkbuf_4_3__f_clk A ) ( clkbuf_4_2__f_clk A ) ( clkbuf_4_1__f_clk A )
-      ( clkbuf_4_0__f_clk A ) ( clkbuf_0_clk Z ) + USE CLOCK ;
+    - clknet_0_clk ( clkbuf_0_clk Z ) ( clkbuf_1_0__f_clk A ) + USE CLOCK ;
+    - clknet_0_clk_regs ( clkbuf_4_15__f_clk_regs A ) ( clkbuf_4_14__f_clk_regs A ) ( clkbuf_4_13__f_clk_regs A ) ( clkbuf_4_12__f_clk_regs A ) ( clkbuf_4_11__f_clk_regs A ) ( clkbuf_4_10__f_clk_regs A ) ( clkbuf_4_9__f_clk_regs A )
+      ( clkbuf_4_8__f_clk_regs A ) ( clkbuf_4_7__f_clk_regs A ) ( clkbuf_4_6__f_clk_regs A ) ( clkbuf_4_5__f_clk_regs A ) ( clkbuf_4_4__f_clk_regs A ) ( clkbuf_4_3__f_clk_regs A ) ( clkbuf_4_2__f_clk_regs A ) ( clkbuf_4_1__f_clk_regs A )
+      ( clkbuf_4_0__f_clk_regs A ) ( clkbuf_0_clk_regs Z ) + USE CLOCK ;
+    - clknet_1_0__leaf_clk ( CELL/CKGATE A ) ( clkbuf_1_0__f_clk Z ) + USE CLOCK ;
     - clknet_4_0__leaf_CELL\/clk2 ( ff162 CK ) ( ff163 CK ) ( ff164 CK ) ( ff165 CK ) ( ff180 CK ) ( ff181 CK ) ( ff182 CK )
       ( ff183 CK ) ( ff184 CK ) ( clkbuf_4_0__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_0__leaf_clk ( clkbuf_level_0_1_10_clk A ) ( clkbuf_4_0__f_clk Z ) + USE CLOCK ;
+    - clknet_4_0__leaf_clk_regs ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK ) ( ff18 CK ) ( ff19 CK ) ( ff20 CK )
+      ( ff21 CK ) ( ff39 CK ) ( ff40 CK ) ( clkbuf_4_0__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_10__leaf_CELL\/clk2 ( ff158 CK ) ( ff159 CK ) ( ff160 CK ) ( ff176 CK ) ( ff177 CK ) ( ff178 CK ) ( ff194 CK )
       ( clkbuf_4_10__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_10__leaf_clk ( clkbuf_level_0_1_1130_clk A ) ( clkbuf_4_10__f_clk Z ) + USE CLOCK ;
+    - clknet_4_10__leaf_clk_regs ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff32 CK ) ( ff33 CK ) ( ff34 CK ) ( ff50 CK )
+      ( clkbuf_4_10__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_11__leaf_CELL\/clk2 ( ff161 CK ) ( ff179 CK ) ( ff195 CK ) ( ff196 CK ) ( ff197 CK ) ( ff212 CK ) ( ff213 CK )
       ( ff214 CK ) ( ff215 CK ) ( clkbuf_4_11__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_11__leaf_clk ( clkbuf_level_0_1_1233_clk A ) ( clkbuf_4_11__f_clk Z ) + USE CLOCK ;
+    - clknet_4_11__leaf_clk_regs ( ff17 CK ) ( ff35 CK ) ( ff51 CK ) ( ff52 CK ) ( ff53 CK ) ( ff68 CK ) ( ff69 CK )
+      ( ff70 CK ) ( ff71 CK ) ( clkbuf_4_11__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_12__leaf_CELL\/clk2 ( ff225 CK ) ( ff226 CK ) ( ff227 CK ) ( ff228 CK ) ( ff229 CK ) ( ff243 CK ) ( ff244 CK )
       ( ff245 CK ) ( ff246 CK ) ( ff247 CK ) ( clkbuf_4_12__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_12__leaf_clk ( clkbuf_level_0_1_1336_clk A ) ( clkbuf_4_12__f_clk Z ) + USE CLOCK ;
+    - clknet_4_12__leaf_clk_regs ( ff81 CK ) ( ff82 CK ) ( ff83 CK ) ( ff84 CK ) ( ff85 CK ) ( ff99 CK ) ( ff100 CK )
+      ( ff101 CK ) ( ff103 CK ) ( clkbuf_4_12__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_13__leaf_CELL\/clk2 ( ff261 CK ) ( ff262 CK ) ( ff263 CK ) ( ff264 CK ) ( ff265 CK ) ( ff279 CK ) ( ff280 CK )
       ( ff281 CK ) ( ff282 CK ) ( ff283 CK ) ( ff297 CK ) ( ff298 CK ) ( ff299 CK ) ( clkbuf_4_13__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_13__leaf_clk ( clkbuf_level_0_1_1439_clk A ) ( clkbuf_4_13__f_clk Z ) + USE CLOCK ;
+    - clknet_4_13__leaf_clk_regs ( ff102 CK ) ( ff117 CK ) ( ff118 CK ) ( ff119 CK ) ( ff120 CK ) ( ff121 CK ) ( ff135 CK )
+      ( ff136 CK ) ( ff137 CK ) ( ff138 CK ) ( ff139 CK ) ( clkbuf_4_13__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_14__leaf_CELL\/clk2 ( ff230 CK ) ( ff231 CK ) ( ff232 CK ) ( ff233 CK ) ( ff248 CK ) ( ff250 CK ) ( ff251 CK )
       ( clkbuf_4_14__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_14__leaf_clk ( clkbuf_level_0_1_1542_clk A ) ( clkbuf_4_14__f_clk Z ) + USE CLOCK ;
+    - clknet_4_14__leaf_clk_regs ( ff86 CK ) ( ff87 CK ) ( ff88 CK ) ( ff89 CK ) ( ff104 CK ) ( ff106 CK ) ( ff107 CK )
+      ( clkbuf_4_14__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_15__leaf_CELL\/clk2 ( ff249 CK ) ( ff266 CK ) ( ff267 CK ) ( ff268 CK ) ( ff269 CK ) ( ff284 CK ) ( ff285 CK )
       ( ff286 CK ) ( ff287 CK ) ( clkbuf_4_15__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_15__leaf_clk ( clkbuf_level_0_1_1645_clk A ) ( clkbuf_4_15__f_clk Z ) + USE CLOCK ;
+    - clknet_4_15__leaf_clk_regs ( ff105 CK ) ( ff122 CK ) ( ff123 CK ) ( ff124 CK ) ( ff125 CK ) ( ff140 CK ) ( ff141 CK )
+      ( ff142 CK ) ( ff143 CK ) ( clkbuf_4_15__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_1__leaf_CELL\/clk2 ( ff198 CK ) ( ff199 CK ) ( ff200 CK ) ( ff201 CK ) ( ff202 CK ) ( ff216 CK ) ( clkbuf_4_1__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_1__leaf_clk ( clkbuf_level_0_1_23_clk A ) ( clkbuf_4_1__f_clk Z ) + USE CLOCK ;
+    - clknet_4_1__leaf_clk_regs ( ff36 CK ) ( ff37 CK ) ( ff38 CK ) ( ff54 CK ) ( ff55 CK ) ( ff56 CK ) ( ff57 CK )
+      ( clkbuf_4_1__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_2__leaf_CELL\/clk2 ( ff150 CK ) ( ff151 CK ) ( ff152 CK ) ( ff166 CK ) ( ff167 CK ) ( ff168 CK ) ( ff169 CK )
       ( ff170 CK ) ( ff185 CK ) ( ff186 CK ) ( ff187 CK ) ( ff188 CK ) ( clkbuf_4_2__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_2__leaf_clk ( clkbuf_level_0_1_36_clk A ) ( clkbuf_4_2__f_clk Z ) + USE CLOCK ;
+    - clknet_4_2__leaf_clk_regs ( ff4 CK ) ( ff5 CK ) ( ff6 CK ) ( ff7 CK ) ( ff8 CK ) ( ff22 CK ) ( ff23 CK )
+      ( ff24 CK ) ( ff25 CK ) ( ff26 CK ) ( ff41 CK ) ( ff42 CK ) ( ff43 CK ) ( ff44 CK ) ( clkbuf_4_2__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_3__leaf_CELL\/clk2 ( ff203 CK ) ( ff204 CK ) ( ff205 CK ) ( ff206 CK ) ( ff220 CK ) ( ff221 CK ) ( ff222 CK )
       ( ff223 CK ) ( ff224 CK ) ( clkbuf_4_3__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_3__leaf_clk ( clkbuf_level_0_1_49_clk A ) ( clkbuf_4_3__f_clk Z ) + USE CLOCK ;
+    - clknet_4_3__leaf_clk_regs ( ff58 CK ) ( ff59 CK ) ( ff60 CK ) ( ff61 CK ) ( ff62 CK ) ( ff76 CK ) ( ff77 CK )
+      ( ff78 CK ) ( ff79 CK ) ( ff80 CK ) ( clkbuf_4_3__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_4__leaf_CELL\/clk2 ( ff217 CK ) ( ff218 CK ) ( ff219 CK ) ( ff234 CK ) ( ff235 CK ) ( ff236 CK ) ( ff237 CK )
       ( ff254 CK ) ( clkbuf_4_4__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_4__leaf_clk ( clkbuf_level_0_1_512_clk A ) ( clkbuf_4_4__f_clk Z ) + USE CLOCK ;
+    - clknet_4_4__leaf_clk_regs ( ff72 CK ) ( ff73 CK ) ( ff74 CK ) ( ff75 CK ) ( ff90 CK ) ( ff91 CK ) ( ff92 CK )
+      ( ff93 CK ) ( clkbuf_4_4__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_5__leaf_CELL\/clk2 ( ff252 CK ) ( ff253 CK ) ( ff255 CK ) ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK )
       ( ff288 CK ) ( ff289 CK ) ( ff290 CK ) ( ff291 CK ) ( clkbuf_4_5__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_5__leaf_clk ( clkbuf_level_0_1_615_clk A ) ( clkbuf_4_5__f_clk Z ) + USE CLOCK ;
+    - clknet_4_5__leaf_clk_regs ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff126 CK ) ( ff127 CK ) ( ff128 CK )
+      ( ff129 CK ) ( ff144 CK ) ( ff145 CK ) ( ff146 CK ) ( ff147 CK ) ( clkbuf_4_5__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_6__leaf_CELL\/clk2 ( ff238 CK ) ( ff239 CK ) ( ff240 CK ) ( ff241 CK ) ( ff242 CK ) ( ff257 CK ) ( ff259 CK )
       ( ff260 CK ) ( clkbuf_4_6__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_6__leaf_clk ( clkbuf_level_0_1_718_clk A ) ( clkbuf_4_6__f_clk Z ) + USE CLOCK ;
+    - clknet_4_6__leaf_clk_regs ( ff94 CK ) ( ff95 CK ) ( ff96 CK ) ( ff97 CK ) ( ff98 CK ) ( ff113 CK ) ( ff114 CK )
+      ( clkbuf_4_6__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_7__leaf_CELL\/clk2 ( ff256 CK ) ( ff258 CK ) ( ff274 CK ) ( ff275 CK ) ( ff276 CK ) ( ff277 CK ) ( ff278 CK )
       ( ff292 CK ) ( ff293 CK ) ( ff294 CK ) ( ff295 CK ) ( ff296 CK ) ( clkbuf_4_7__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_7__leaf_clk ( CELL/CKGATE A ) ( clkbuf_level_0_1_821_clk A ) ( clkbuf_4_7__f_clk Z ) + USE CLOCK ;
+    - clknet_4_7__leaf_clk_regs ( ff112 CK ) ( ff115 CK ) ( ff116 CK ) ( ff130 CK ) ( ff131 CK ) ( ff132 CK ) ( ff133 CK )
+      ( ff134 CK ) ( ff148 CK ) ( ff149 CK ) ( clkbuf_4_7__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_8__leaf_CELL\/clk2 ( ff153 CK ) ( ff154 CK ) ( ff155 CK ) ( ff156 CK ) ( ff157 CK ) ( ff171 CK ) ( ff172 CK )
       ( ff173 CK ) ( ff174 CK ) ( ff175 CK ) ( ff191 CK ) ( ff193 CK ) ( clkbuf_4_8__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_8__leaf_clk ( clkbuf_level_0_1_924_clk A ) ( clkbuf_4_8__f_clk Z ) + USE CLOCK ;
+    - clknet_4_8__leaf_clk_regs ( ff9 CK ) ( ff10 CK ) ( ff11 CK ) ( ff12 CK ) ( ff13 CK ) ( ff27 CK ) ( ff28 CK )
+      ( ff29 CK ) ( ff30 CK ) ( ff31 CK ) ( ff47 CK ) ( ff49 CK ) ( clkbuf_4_8__f_clk_regs Z ) + USE CLOCK ;
     - clknet_4_9__leaf_CELL\/clk2 ( ff189 CK ) ( ff190 CK ) ( ff192 CK ) ( ff207 CK ) ( ff208 CK ) ( ff209 CK ) ( ff210 CK )
       ( ff211 CK ) ( clkbuf_4_9__f_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_4_9__leaf_clk ( clkbuf_level_0_1_1027_clk A ) ( clkbuf_4_9__f_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1027_clk ( clkbuf_level_1_1_1028_clk A ) ( clkbuf_level_0_1_1027_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_10_clk ( clkbuf_level_1_1_11_clk A ) ( clkbuf_level_0_1_10_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1130_clk ( clkbuf_level_1_1_1131_clk A ) ( clkbuf_level_0_1_1130_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1233_clk ( clkbuf_level_1_1_1234_clk A ) ( clkbuf_level_0_1_1233_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1336_clk ( clkbuf_level_1_1_1337_clk A ) ( clkbuf_level_0_1_1336_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1439_clk ( clkbuf_level_1_1_1440_clk A ) ( clkbuf_level_0_1_1439_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1542_clk ( clkbuf_level_1_1_1543_clk A ) ( clkbuf_level_0_1_1542_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_1645_clk ( clkbuf_level_1_1_1646_clk A ) ( clkbuf_level_0_1_1645_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_23_clk ( clkbuf_level_1_1_24_clk A ) ( clkbuf_level_0_1_23_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_36_clk ( clkbuf_level_1_1_37_clk A ) ( clkbuf_level_0_1_36_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_49_clk ( clkbuf_level_1_1_410_clk A ) ( clkbuf_level_0_1_49_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_512_clk ( clkbuf_level_1_1_513_clk A ) ( clkbuf_level_0_1_512_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_615_clk ( clkbuf_level_1_1_616_clk A ) ( clkbuf_level_0_1_615_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_718_clk ( clkbuf_level_1_1_719_clk A ) ( clkbuf_level_0_1_718_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_821_clk ( clkbuf_level_1_1_822_clk A ) ( clkbuf_level_0_1_821_clk Z ) + USE CLOCK ;
-    - clknet_level_0_1_924_clk ( clkbuf_level_1_1_925_clk A ) ( clkbuf_level_0_1_924_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1028_clk ( clkbuf_level_2_1_1029_clk A ) ( clkbuf_level_1_1_1028_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1131_clk ( clkbuf_level_2_1_1132_clk A ) ( clkbuf_level_1_1_1131_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_11_clk ( clkbuf_level_2_1_12_clk A ) ( clkbuf_level_1_1_11_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1234_clk ( clkbuf_level_2_1_1235_clk A ) ( clkbuf_level_1_1_1234_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1337_clk ( clkbuf_level_2_1_1338_clk A ) ( clkbuf_level_1_1_1337_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1440_clk ( clkbuf_level_2_1_1441_clk A ) ( clkbuf_level_1_1_1440_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1543_clk ( clkbuf_level_2_1_1544_clk A ) ( clkbuf_level_1_1_1543_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_1646_clk ( clkbuf_level_2_1_1647_clk A ) ( clkbuf_level_1_1_1646_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_24_clk ( clkbuf_level_2_1_25_clk A ) ( clkbuf_level_1_1_24_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_37_clk ( clkbuf_level_2_1_38_clk A ) ( clkbuf_level_1_1_37_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_410_clk ( clkbuf_level_2_1_411_clk A ) ( clkbuf_level_1_1_410_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_513_clk ( clkbuf_level_2_1_514_clk A ) ( clkbuf_level_1_1_513_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_616_clk ( clkbuf_level_2_1_617_clk A ) ( clkbuf_level_1_1_616_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_719_clk ( clkbuf_level_2_1_720_clk A ) ( clkbuf_level_1_1_719_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_822_clk ( clkbuf_level_2_1_823_clk A ) ( clkbuf_level_1_1_822_clk Z ) + USE CLOCK ;
-    - clknet_level_1_1_925_clk ( clkbuf_level_2_1_926_clk A ) ( clkbuf_level_1_1_925_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1029_clk ( ff45 CK ) ( ff46 CK ) ( ff48 CK ) ( ff63 CK ) ( ff64 CK ) ( ff65 CK ) ( ff66 CK )
-      ( ff67 CK ) ( clkbuf_level_2_1_1029_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1132_clk ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff32 CK ) ( ff33 CK ) ( ff34 CK ) ( ff50 CK )
-      ( clkbuf_level_2_1_1132_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1235_clk ( ff17 CK ) ( ff35 CK ) ( ff51 CK ) ( ff52 CK ) ( ff53 CK ) ( ff68 CK ) ( ff69 CK )
-      ( ff70 CK ) ( ff71 CK ) ( clkbuf_level_2_1_1235_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_12_clk ( ff0 CK ) ( ff2 CK ) ( ff3 CK ) ( ff20 CK ) ( ff21 CK ) ( ff39 CK ) ( ff57 CK )
-      ( clkbuf_level_2_1_12_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1338_clk ( ff81 CK ) ( ff82 CK ) ( ff83 CK ) ( ff84 CK ) ( ff85 CK ) ( ff99 CK ) ( ff100 CK )
-      ( ff101 CK ) ( ff103 CK ) ( clkbuf_level_2_1_1338_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1441_clk ( ff102 CK ) ( ff117 CK ) ( ff118 CK ) ( ff119 CK ) ( ff120 CK ) ( ff121 CK ) ( ff135 CK )
-      ( ff136 CK ) ( ff137 CK ) ( ff138 CK ) ( ff139 CK ) ( clkbuf_level_2_1_1441_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1544_clk ( ff86 CK ) ( ff87 CK ) ( ff88 CK ) ( ff89 CK ) ( ff104 CK ) ( ff106 CK ) ( ff107 CK )
-      ( clkbuf_level_2_1_1544_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_1647_clk ( ff105 CK ) ( ff122 CK ) ( ff123 CK ) ( ff124 CK ) ( ff125 CK ) ( ff140 CK ) ( ff141 CK )
-      ( ff142 CK ) ( ff143 CK ) ( clkbuf_level_2_1_1647_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_25_clk ( ff1 CK ) ( ff18 CK ) ( ff19 CK ) ( ff36 CK ) ( ff37 CK ) ( ff38 CK ) ( ff54 CK )
-      ( ff55 CK ) ( ff56 CK ) ( clkbuf_level_2_1_25_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_38_clk ( ff4 CK ) ( ff5 CK ) ( ff6 CK ) ( ff7 CK ) ( ff8 CK ) ( ff22 CK ) ( ff23 CK )
-      ( ff24 CK ) ( ff25 CK ) ( ff26 CK ) ( ff40 CK ) ( ff42 CK ) ( clkbuf_level_2_1_38_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_411_clk ( ff41 CK ) ( ff43 CK ) ( ff44 CK ) ( ff58 CK ) ( ff59 CK ) ( ff60 CK ) ( ff61 CK )
-      ( ff62 CK ) ( clkbuf_level_2_1_411_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_514_clk ( ff72 CK ) ( ff73 CK ) ( ff74 CK ) ( ff75 CK ) ( ff90 CK ) ( ff91 CK ) ( ff92 CK )
-      ( ff93 CK ) ( clkbuf_level_2_1_514_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_617_clk ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff126 CK ) ( ff127 CK ) ( ff128 CK )
-      ( ff129 CK ) ( ff144 CK ) ( ff145 CK ) ( ff146 CK ) ( ff147 CK ) ( clkbuf_level_2_1_617_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_720_clk ( ff76 CK ) ( ff77 CK ) ( ff78 CK ) ( ff79 CK ) ( ff80 CK ) ( ff94 CK ) ( ff95 CK )
-      ( ff96 CK ) ( ff97 CK ) ( ff98 CK ) ( clkbuf_level_2_1_720_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_823_clk ( ff112 CK ) ( ff113 CK ) ( ff114 CK ) ( ff115 CK ) ( ff116 CK ) ( ff130 CK ) ( ff131 CK )
-      ( ff132 CK ) ( ff133 CK ) ( ff134 CK ) ( ff148 CK ) ( ff149 CK ) ( clkbuf_level_2_1_823_clk Z ) + USE CLOCK ;
-    - clknet_level_2_1_926_clk ( ff9 CK ) ( ff10 CK ) ( ff11 CK ) ( ff12 CK ) ( ff13 CK ) ( ff27 CK ) ( ff28 CK )
-      ( ff29 CK ) ( ff30 CK ) ( ff31 CK ) ( ff47 CK ) ( ff49 CK ) ( clkbuf_level_2_1_926_clk Z ) + USE CLOCK ;
+    - clknet_4_9__leaf_clk_regs ( ff45 CK ) ( ff46 CK ) ( ff48 CK ) ( ff63 CK ) ( ff64 CK ) ( ff65 CK ) ( ff66 CK )
+      ( ff67 CK ) ( clkbuf_4_9__f_clk_regs Z ) + USE CLOCK ;
 END NETS
 END DESIGN

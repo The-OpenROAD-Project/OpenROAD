@@ -24,7 +24,8 @@ cts_aux.clock_tree_synthesis(design,
                              sink_clustering_max_diameter=60.0,
                              balance_levels=True,
                              num_static_layers=1,
-                             obstruction_aware=True
+                             obstruction_aware=True,
+                             insertion_delay=True
                             )
 
 def_file = helpers.make_result_file("balance_levels.def")
