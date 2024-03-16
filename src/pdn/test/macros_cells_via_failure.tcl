@@ -49,7 +49,8 @@ add_pdn_stripe -grid {CORE_macro_grid_2} -layer {metal6} -width {0.93} -pitch {4
 add_pdn_connect -grid {CORE_macro_grid_2} -layers {metal4 metal6}
 add_pdn_connect -grid {CORE_macro_grid_2} -layers {metal6 metal7}
 
-pdngen -failed_via_report test.rpt
+set rpt_file [make_result_file macros_cells_via_failure_test.rpt]
+pdngen -failed_via_report $rpt_file
 
 set def_file [make_result_file macros_cells_via_failure.def]
 write_def $def_file

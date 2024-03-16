@@ -686,7 +686,7 @@ void io::Parser::checkFig(frPinFig* uFig,
         foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
       } else {
         foundTracks |= !vertTracks.empty();
-        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+        foundCenterTracks |= vertTracks.find(box.xCenter()) != vertTracks.end();
       }
     }
     if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
@@ -773,7 +773,7 @@ void io::Parser::checkPins()
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
                     422,
-                    "No routing tracks pass through the center of Term {}",
+                    "No routing tracks pass through the center of Term {}.",
                     bTerm->getName());
     }
   }

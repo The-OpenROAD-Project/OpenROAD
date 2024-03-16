@@ -71,3 +71,5 @@ target_link_libraries(pad
 messages(
   TARGET pad
 )
+
+add_subdirectory(test)
