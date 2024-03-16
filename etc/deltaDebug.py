@@ -18,6 +18,7 @@
 # where the script manipulates base.odb between steps to reduce its size.
 ################################
 
+from openroad import Design, Tech
 import odb
 import os
 import sys
@@ -30,6 +31,7 @@ import time
 from math import ceil
 import errno
 import enum
+# import helpers
 
 persistence_range = [1, 2, 3, 4, 5, 6]
 cut_multiple = range(1, 128)
@@ -203,7 +205,7 @@ class deltaDebugger:
     # and calls the step function, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
-        self.base_db = odb.dbDatabase.create()
+        self.base_db = Design.createDetachedDb()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         # Cut the block with the given step index.
@@ -218,11 +220,6 @@ class deltaDebugger:
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.base_def_file)
-
-        # Destroy the DB in memory to avoid being out-of-memory when
-        # the step code is running
-        if (self.base_db is not None):
-            self.base_db.destroy(self.base_db)
 
         # Perform step, and check the error code
         start_time = time.time()
