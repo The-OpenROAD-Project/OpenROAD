@@ -130,7 +130,8 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(TreeBuilder* builder, std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNetsToDb(TreeBuilder* builder,
+                          std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
@@ -210,6 +211,9 @@ class TritonCTS
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
   void computeAveSinkArrivals(TreeBuilder* builder);
+  void computeSinkArrivalRecur(odb::dbITerm* iterm,
+                               float& sumArrivals,
+                               unsigned& numSinks);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,

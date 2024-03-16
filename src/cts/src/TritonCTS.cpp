@@ -1921,7 +1921,10 @@ void TritonCTS::balanceMacroRegisterLatencies()
     return;
   }
 
-  for (TreeBuilder* registerBuilder : *builders_) {
+  // Visit builders from bottom up such that latencies are adjusted near bottom
+  // trees first
+  for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
+    TreeBuilder* registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
@@ -1937,36 +1940,14 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   // compute average input arrival at all sinks
-  float arrival = 0.0;
-  float ins_delay = 0.0;
+  float sumArrivals = 0.0;
+  unsigned numSinks = 0;
   clock.forEachSink([&](const ClockInst& sink) {
     odb::dbITerm* iterm = sink.getDbInputPin();
-    odb::dbInst* inst = iterm->getInst();
-    sta::Pin* pin = network_->dbToSta(iterm);
-    // ignore arrival fall (no inverters in current clock tree)
-    arrival
-        += openSta_->pinArrival(pin, sta::RiseFall::rise(), sta::MinMax::max());
-    // add insertion delay
-    ins_delay = 0.0;
-    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
-    odb::dbMTerm* mterm = iterm->getMTerm();
-    if (libCell && mterm) {
-      sta::LibertyPort* libPort
-          = libCell->findLibertyPort(mterm->getConstName());
-      if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
-        if (insDelays.hasValue()) {
-          ins_delay
-              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-                / 2.0;
-        }
-      }
-    }
-    arrival += ins_delay;
+    computeSinkArrivalRecur(iterm, sumArrivals, numSinks);
   });
-  arrival = arrival / (float) clock.getNumSinks();
-  builder->setAveSinkArrival(arrival);
+  float aveArrival = sumArrivals / (float) numSinks;
+  builder->setAveSinkArrival(aveArrival);
   debugPrint(logger_,
              CTS,
              "insertion delay",
@@ -1976,6 +1957,65 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
                                                              : "register tree",
              clock.getName(),
              builder->getAveSinkArrival());
+}
+
+void TritonCTS::computeSinkArrivalRecur(odb::dbITerm* iterm,
+                                        float& sumArrivals,
+                                        unsigned& numSinks)
+{
+  if (iterm) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst) {
+      if (isSink(iterm)) {
+        // either register or macro input pin
+        sta::Pin* pin = network_->dbToSta(iterm);
+        if (pin) {
+          // ignore arrival fall (no inverters in current clock tree)
+          float arrival = openSta_->pinArrival(
+              pin, sta::RiseFall::rise(), sta::MinMax::max());
+          // add insertion delay
+          float insDelay = 0.0;
+          sta::LibertyCell* libCell
+              = network_->libertyCell(network_->dbToSta(inst));
+          odb::dbMTerm* mterm = iterm->getMTerm();
+          if (libCell && mterm) {
+            sta::LibertyPort* libPort
+                = libCell->findLibertyPort(mterm->getConstName());
+            if (libPort) {
+              sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+              if (insDelays.hasValue()) {
+                insDelay = (insDelays.value(sta::RiseFall::rise(),
+                                            sta::MinMax::max())
+                            + insDelays.value(sta::RiseFall::fall(),
+                                              sta::MinMax::max()))
+                           / 2.0;
+              }
+            }
+          }
+          sumArrivals += (arrival + insDelay);
+          numSinks++;
+        }
+        return;
+      } else {
+        // not a sink, but a clock gater
+        odb::dbITerm* outTerm = inst->getFirstOutput();
+        if (outTerm) {
+          odb::dbNet* outNet = outTerm->getNet();
+          if (outNet) {
+            odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
+            odb::dbSet<odb::dbITerm>::iterator iter;
+            for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
+              odb::dbITerm* inTerm = *iter;
+              if (inTerm->getIoType() == odb::dbIoType::INPUT) {
+                computeSinkArrivalRecur(inTerm, sumArrivals, numSinks);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return;
 }
 
 // Balance latencies between macro tree and register tree

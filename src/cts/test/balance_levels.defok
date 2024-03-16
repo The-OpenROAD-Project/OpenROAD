@@ -353,11 +353,11 @@ END PINS
 NETS 39 ;
     - CELL/clk2 ( clkbuf_0_CELL\/clk2 A ) ( CELL/CKGATE Z ) + USE CLOCK ;
     - clk ( PIN clk ) ( clkbuf_regs_0_clk A ) ( clkbuf_0_clk A ) + USE CLOCK ;
-    - clk_regs ( clkbuf_0_clk_regs A ) ( clkbuf_regs_0_clk Z ) + USE CLOCK ;
+    - clk_regs ( clkbuf_regs_0_clk Z ) ( clkbuf_0_clk_regs A ) + USE CLOCK ;
     - clknet_0_CELL\/clk2 ( clkbuf_4_15__f_CELL\/clk2 A ) ( clkbuf_4_14__f_CELL\/clk2 A ) ( clkbuf_4_13__f_CELL\/clk2 A ) ( clkbuf_4_12__f_CELL\/clk2 A ) ( clkbuf_4_11__f_CELL\/clk2 A ) ( clkbuf_4_10__f_CELL\/clk2 A ) ( clkbuf_4_9__f_CELL\/clk2 A )
       ( clkbuf_4_8__f_CELL\/clk2 A ) ( clkbuf_4_7__f_CELL\/clk2 A ) ( clkbuf_4_6__f_CELL\/clk2 A ) ( clkbuf_4_5__f_CELL\/clk2 A ) ( clkbuf_4_4__f_CELL\/clk2 A ) ( clkbuf_4_3__f_CELL\/clk2 A ) ( clkbuf_4_2__f_CELL\/clk2 A ) ( clkbuf_4_1__f_CELL\/clk2 A )
       ( clkbuf_4_0__f_CELL\/clk2 A ) ( clkbuf_0_CELL\/clk2 Z ) + USE CLOCK ;
-    - clknet_0_clk ( clkbuf_0_clk Z ) ( clkbuf_1_0__f_clk A ) + USE CLOCK ;
+    - clknet_0_clk ( clkbuf_1_0__f_clk A ) ( clkbuf_0_clk Z ) + USE CLOCK ;
     - clknet_0_clk_regs ( clkbuf_4_15__f_clk_regs A ) ( clkbuf_4_14__f_clk_regs A ) ( clkbuf_4_13__f_clk_regs A ) ( clkbuf_4_12__f_clk_regs A ) ( clkbuf_4_11__f_clk_regs A ) ( clkbuf_4_10__f_clk_regs A ) ( clkbuf_4_9__f_clk_regs A )
       ( clkbuf_4_8__f_clk_regs A ) ( clkbuf_4_7__f_clk_regs A ) ( clkbuf_4_6__f_clk_regs A ) ( clkbuf_4_5__f_clk_regs A ) ( clkbuf_4_4__f_clk_regs A ) ( clkbuf_4_3__f_clk_regs A ) ( clkbuf_4_2__f_clk_regs A ) ( clkbuf_4_1__f_clk_regs A )
       ( clkbuf_4_0__f_clk_regs A ) ( clkbuf_0_clk_regs Z ) + USE CLOCK ;
