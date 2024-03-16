@@ -31,7 +31,6 @@ import time
 from math import ceil
 import errno
 import enum
-# import helpers
 
 persistence_range = [1, 2, 3, 4, 5, 6]
 cut_multiple = range(1, 128)
