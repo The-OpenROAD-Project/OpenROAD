@@ -2294,7 +2294,7 @@ bool NesterovBase::checkConvergence()
 
 bool NesterovBase::checkDivergence()
 {
-  if (sumOverflowUnscaled_ < npVars_->routabilityCheckOverflow
+  if (sumOverflowUnscaled_ < 0.2f
       && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
     divergeMsg_ = "RePlAce divergence detected. ";
