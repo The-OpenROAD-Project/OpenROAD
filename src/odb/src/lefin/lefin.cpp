@@ -2230,7 +2230,7 @@ bool lefin::readLef(const char* lef_file)
   if (_master_cnt)
     _logger->info(utl::ODB, 225, "    Created {} library cells", _master_cnt);
 
-  _logger->info(utl::ODB, 226, "Finished LEF file:  {}", lef_file);
+  _logger->debug(utl::ODB, "Finished LEF file:  {}", lef_file);
 
   return r;
 }
