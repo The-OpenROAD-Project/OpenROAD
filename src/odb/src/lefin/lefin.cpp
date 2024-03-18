@@ -2145,8 +2145,16 @@ void lefin::lineNumber(int lineNo)
 
 bool lefin::readLef(const char* lef_file)
 {
-  _logger->info(utl::ODB, 222, "Reading LEF file: {}", lef_file);
+  try {
+    return readLefInner(lef_file);
+  } catch (...) {
+    _logger->info(utl::ODB, 222, "While reading LEF file: {}", lef_file);
+    throw;
+  }
+}
 
+bool lefin::readLefInner(const char* lef_file)
+{
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
     auto layer = _tech->findLayer(name.c_str());
@@ -2222,15 +2230,29 @@ bool lefin::readLef(const char* lef_file)
   }
   _incomplete_props.clear();
   if (_layer_cnt)
-    _logger->info(
-        utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "    Created {} technology layers",
+               _layer_cnt);
 
   if (_via_cnt)
-    _logger->info(utl::ODB, 224, "    Created {} technology vias", _via_cnt);
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "    Created {} technology vias",
+               _via_cnt);
   if (_master_cnt)
-    _logger->info(utl::ODB, 225, "    Created {} library cells", _master_cnt);
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "    Created {} library cells",
+               _master_cnt);
 
-  _logger->info(utl::ODB, 226, "Finished LEF file:  {}", lef_file);
+  debugPrint(_logger, utl::ODB, "lefin", 1, "Finished LEF file:  {}", lef_file);
 
   return r;
 }
