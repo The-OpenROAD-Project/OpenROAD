@@ -7,7 +7,7 @@ record_tests {
   simple01-ref
   simple01-skip-io
   simple01-rd
-  simple02-rd  
+  simple02-rd
   simple02
   simple03
   simple04
