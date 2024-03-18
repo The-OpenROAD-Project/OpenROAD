@@ -491,7 +491,7 @@ void Connect::makeVia(odb::dbSWire* wire,
 
       ViaGenerator::Constraint lower_constraint{false, false, true};
       if (lower->getLayer() == l0) {
-        if (!lower->isModifiable() || lower->hasTermConnections()) {
+        if (!lower->isModifiable() || lower->hasITermConnections()) {
           // lower is not modifiable to all sides must fit
           skip_caching = true;
           lower_constraint.must_fit_x = true;
@@ -504,7 +504,7 @@ void Connect::makeVia(odb::dbSWire* wire,
       }
       ViaGenerator::Constraint upper_constraint{false, false, true};
       if (upper->getLayer() == l1) {
-        if (!upper->isModifiable() || upper->hasTermConnections()) {
+        if (!upper->isModifiable() || upper->hasITermConnections()) {
           // upper is not modifiable to all sides must fit
           skip_caching = true;
           upper_constraint.must_fit_x = true;

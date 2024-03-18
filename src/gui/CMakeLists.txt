@@ -115,3 +115,5 @@ target_include_directories(gui
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
 )
+
+add_subdirectory(test)

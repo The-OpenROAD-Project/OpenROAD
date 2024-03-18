@@ -74,32 +74,26 @@ void PDNRenderer::update()
   vias_.clear();
   repair_.clear();
 
+  ShapeVectorMap shapes;
+  ShapeVectorMap obs;
+  std::vector<ViaValue> vias;
   for (const auto& domain : pdn_->getDomains()) {
     for (auto* net : domain->getBlock()->getNets()) {
-      ShapeTreeMap net_shapes;
-      Shape::populateMapFromDb(net, net_shapes);
-      for (const auto& [layer, net_obs_layer] : net_shapes) {
-        auto& obs_layer = grid_obstructions_[layer];
-        for (const auto& [box, shape] : net_obs_layer) {
-          obs_layer.insert({shape->getObstructionBox(), shape});
-        }
-      }
+      Shape::populateMapFromDb(net, obs);
     }
 
     for (const auto& grid : domain->getGrids()) {
-      grid->getGridLevelObstructions(grid_obstructions_);
+      grid->getGridLevelObstructions(obs);
 
-      for (const auto& [layer, shapes] : grid->getShapes()) {
-        auto& save_shapes = shapes_[layer];
-        for (const auto& shape : shapes) {
-          save_shapes.insert(shape);
-        }
+      for (const auto& [layer, grid_shapes] : grid->getShapes()) {
+        shapes[layer].insert(
+            shapes[layer].end(), grid_shapes.begin(), grid_shapes.end());
       }
 
-      std::vector<ViaPtr> vias;
-      grid->getVias(vias);
-      for (const auto& via : vias) {
-        vias_.insert({via->getBox(), via});
+      std::vector<ViaPtr> grid_vias;
+      grid->getVias(grid_vias);
+      for (auto& via : grid_vias) {
+        vias.emplace_back(via->getBox(), via);
       }
 
       for (const auto& repair :
@@ -124,6 +118,11 @@ void PDNRenderer::update()
       }
     }
   }
+
+  shapes_ = Shape::convertVectorToTree(shapes);
+  grid_obstructions_ = Shape::convertVectorToTree(obs);
+  shapes_ = Shape::convertVectorToTree(shapes);
+  vias_ = Shape::convertVectorToTree(vias);
 
   redraw();
 }
