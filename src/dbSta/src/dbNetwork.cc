@@ -1469,9 +1469,12 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
     }
     default: {
       logger_->warn(
-      ORD, 2008, "unknown master term type: sig_type is {} and io_type is {}, "
-      "assuming port is input.",
-      sig_type.getString(), io_type.getString());
+          ORD,
+          2008,
+          "unknown master term type: sig_type is {} and io_type is {}, "
+          "assuming port is input.",
+          sig_type.getString(),
+          io_type.getString());
       return PortDirection::input();
     }
   }
