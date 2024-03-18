@@ -882,6 +882,9 @@ RepairDesign::repairNetWire(const BufferedNetPtr& bnet,
         split_length = min(split_length, max_length_);
       } else {
         split_length = min(max_length_, length/2);
+        if(length - (split_length) * (1.0 - length_margin) >= max_length_) {
+          split_length = max_length_;
+        }
       }
 
       split_wire = true;
