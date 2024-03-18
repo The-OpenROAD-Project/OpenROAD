@@ -131,3 +131,5 @@ if(ENABLE_TESTS)
     utl
   )
 endif()
+
+add_subdirectory(test)
