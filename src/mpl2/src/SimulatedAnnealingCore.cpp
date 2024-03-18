@@ -596,9 +596,50 @@ void SimulatedAnnealingCore<T>::fastSA()
   // update the final results
   packFloorplan();
   calPenalty();
+
+  if (centralization_on_) {
+    attemptCentralization(pre_cost);
+  }
+
   if (graphics_) {
     graphics_->endSA();
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
+{
+  if (outline_penalty_ > 0) {
+    return;
+  }
+
+  std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
+                                 (outline_.getHeight() - height_) / 2);
+  moveFloorplan(offset);
+
+  // revert centralization
+  if (calNormCost() > pre_cost) {
+    offset.first = -offset.first;
+    offset.second = -offset.second;
+
+    moveFloorplan(offset);
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::moveFloorplan(
+    const std::pair<float, float>& offset)
+{
+  for (auto& id : pos_seq_) {
+    macros_[id].setX(macros_[id].getX() + offset.first);
+    macros_[id].setY(macros_[id].getY() + offset.second);
+  }
+
+  if (graphics_) {
+    graphics_->saStep(macros_);
+  }
+
+  calPenalty();
 }
 
 template <class T>
