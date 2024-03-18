@@ -489,10 +489,11 @@ BOOST_AUTO_TEST_CASE(min_step)
 
 // Check for a lef58 style min step violation.  The checker is very
 // limited and just supports NOBETWEENEOL style.
-BOOST_AUTO_TEST_CASE(min_step58)
+BOOST_AUTO_TEST_CASE(min_step58_nobetweeneol)
 {
   // Setup
-  makeMinStep58Constraint(2);
+  auto con = makeMinStep58Constraint(2);
+  con->setEolWidth(200);
 
   frNet* n1 = makeNet("n1");
 
@@ -508,6 +509,36 @@ BOOST_AUTO_TEST_CASE(min_step58)
              2,
              frConstraintTypeEnum::frcLef58MinStepConstraint,
              Rect(200, 50, 300, 70));
+}
+
+// Check for a lef58 style min step violation.  The checker is very
+// limited and just supports NOBETWEENEOL style.
+BOOST_AUTO_TEST_CASE(min_step58_minadjlength)
+{
+  // Setup
+  auto con = makeMinStep58Constraint(2);
+  con->setMinAdjacentLength(100);
+  con->setNoAdjEol(200);
+  con->setMaxEdges(1);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 0}, {500, 0});
+  makePathseg(n1, 2, {200, -30}, {200, 70});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 2);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58MinStepConstraint,
+             Rect(150, 50, 500, 70));
+  testMarker(markers[1].get(),
+             2,
+             frConstraintTypeEnum::frcLef58MinStepConstraint,
+             Rect(0, 50, 250, 70));
 }
 
 // Check for a lef58 rect only violation.  The markers are

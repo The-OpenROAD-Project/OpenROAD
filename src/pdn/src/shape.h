@@ -77,6 +77,7 @@ using ViaValue = std::pair<Box, ViaPtr>;
 using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
 using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
 using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapeValue>>;
 
 class Grid;
 class GridComponent;
@@ -183,6 +184,8 @@ class Shape
   // connected
   virtual void updateTermConnections();
   bool hasTermConnections() const;
+  bool hasITermConnections() const { return !iterm_connections_.empty(); }
+  bool hasBTermConnections() const { return !bterm_connections_.empty(); };
 
   // returns the smallest shape possible when attempting to trim
   virtual odb::Rect getMinimumRect() const;
@@ -221,7 +224,7 @@ class Shape
                  bool add_pins,
                  bool make_rect_as_pin) const;
   // copy existing shapes into the map
-  static void populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map);
+  static void populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map);
 
   static Box rectToBox(const odb::Rect& rect);
 
@@ -233,6 +236,9 @@ class Shape
   {
     allow_non_preferred_change_ = true;
   }
+
+  static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
+  static ViaTree convertVectorToTree(std::vector<ViaValue>& vec);
 
  protected:
   bool cut(const ShapeTree& obstructions,

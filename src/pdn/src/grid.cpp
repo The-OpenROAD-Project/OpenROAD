@@ -363,18 +363,17 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
 
 ShapeTreeMap Grid::getShapes() const
 {
-  ShapeTreeMap shapes;
+  ShapeVectorMap shapes;
 
   for (auto* component : getGridComponents()) {
     for (const auto& [layer, component_shapes] : component->getShapes()) {
-      auto& layer_shapes = shapes[layer];
-      for (const auto& shape : component_shapes) {
-        layer_shapes.insert(shape);
-      }
+      shapes[layer].insert(shapes[layer].end(),
+                           component_shapes.begin(),
+                           component_shapes.end());
     }
   }
 
-  return shapes;
+  return Shape::convertVectorToTree(shapes);
 }
 
 odb::Rect Grid::getDomainArea() const
@@ -903,7 +902,7 @@ void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
   }
 }
 
-void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
+void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -934,7 +933,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
                "Adding obstruction on layer {} covering {}",
                layer->getName(),
                Shape::getRectText(core, getBlock()->getDbUnitsPerMicron()));
-    obstructions[layer].insert({obs->getObstructionBox(), obs});
+    obstructions[layer].emplace_back(obs->getObstructionBox(), obs);
   }
 
   for (const auto& ring : rings_) {
@@ -957,13 +956,13 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
           "Adding obstruction on layer {} covering {}",
           layer->getName(),
           Shape::getRectText(ring_rect, getBlock()->getDbUnitsPerMicron()));
-      obstructions[layer].insert({obs->getObstructionBox(), obs});
+      obstructions[layer].emplace_back(obs->getObstructionBox(), obs);
     }
   }
 }
 
 void Grid::makeInitialObstructions(odb::dbBlock* block,
-                                   ShapeTreeMap& obs,
+                                   ShapeVectorMap& obs,
                                    const std::set<odb::dbInst*>& skip_insts,
                                    utl::Logger* logger)
 {
@@ -983,13 +982,13 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
         auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
-        obs[shape->getLayer()].insert({shape->getObstructionBox(), shape});
+        obs[shape->getLayer()].emplace_back(shape->getObstructionBox(), shape);
       }
     } else {
       auto shape = std::make_shared<Shape>(
           box->getTechLayer(), obs_rect, Shape::BLOCK_OBS);
 
-      obs[shape->getLayer()].insert({shape->getObstructionBox(), shape});
+      obs[shape->getLayer()].emplace_back(shape->getObstructionBox(), shape);
     }
   }
 
@@ -1030,14 +1029,14 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
     for (const auto& [layer, shapes] :
          InstanceGrid::getInstanceObstructions(inst)) {
-      obs[layer].insert(shapes.begin(), shapes.end());
+      obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - end");
 }
 
 void Grid::makeInitialShapes(odb::dbBlock* block,
-                             ShapeTreeMap& shapes,
+                             ShapeVectorMap& shapes,
                              utl::Logger* logger)
 {
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - start");
@@ -1185,7 +1184,7 @@ void CoreGrid::setupDirectConnect(
   }
 }
 
-void CoreGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
+void CoreGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 {
   if (getDomain()->hasRegion()) {
     // core grids only have grid level obstructions if they have a region
@@ -1345,11 +1344,11 @@ odb::Rect InstanceGrid::getGridBoundary() const
   return getDomainBoundary();
 }
 
-ShapeTreeMap InstanceGrid::getInstanceObstructions(
+ShapeVectorMap InstanceGrid::getInstanceObstructions(
     odb::dbInst* inst,
     const InstanceGrid::Halo& halo)
 {
-  ShapeTreeMap obs;
+  ShapeVectorMap obs;
 
   const odb::dbTransform transform = inst->getTransform();
 
@@ -1368,7 +1367,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    obs[layer].insert({shape->getObstructionBox(), shape});
+    obs[layer].emplace_back(shape->getObstructionBox(), shape);
   }
 
   // generate obstructions based on pins
@@ -1383,16 +1382,16 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
       pin_shape->setRect(applyHalo(
           pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
       pin_shape->setObstruction(pin_shape->getRect());
-      obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
+      obs[layer].emplace_back(pin_shape->getObstructionBox(), pin_shape);
     }
   }
 
   return obs;
 }
 
-void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
+void InstanceGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 {
-  ShapeTreeMap local_obs;
+  ShapeVectorMap local_obs;
   Grid::getGridLevelObstructions(local_obs);
 
   const odb::Rect inst_box = getGridArea();
@@ -1400,24 +1399,25 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
     auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
-    local_obs[layer].insert({obs->getObstructionBox(), obs});
+    local_obs[layer].emplace_back(obs->getObstructionBox(), obs);
   }
 
   // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
     for (const auto& [box, shape] : shapes) {
       auto obs = std::make_shared<GridObsShape>(layer, shape->getRect(), this);
-      local_obs[layer].insert({box, obs});
+      local_obs[layer].emplace_back(box, obs);
     }
   }
 
   // merge local and global obs
   for (const auto& [layer, obs] : local_obs) {
-    obstructions[layer].insert(obs.begin(), obs.end());
+    obstructions[layer].insert(
+        obstructions[layer].end(), obs.begin(), obs.end());
   }
 }
 
-ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
+ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
 {
   // add instance pins
   std::vector<ShapePtr> pins;
@@ -1454,9 +1454,9 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
     }
   }
 
-  ShapeTreeMap shapes;
+  ShapeVectorMap shapes;
   for (auto& pin : pins) {
-    shapes[pin->getLayer()].insert({pin->getRectBox(), pin});
+    shapes[pin->getLayer()].emplace_back(pin->getRectBox(), pin);
   }
 
   return shapes;
@@ -1562,7 +1562,8 @@ bool BumpGrid::isRouted() const
 {
   odb::dbNet* net = *getNets(startsWithPower()).begin();
 
-  const auto pins = InstanceGrid::getInstancePins(getInstance());
+  auto inst_pins = InstanceGrid::getInstancePins(getInstance());
+  const auto pins = Shape::convertVectorToTree(inst_pins);
 
   for (auto* swire : net->getSWires()) {
     for (auto* sbox : swire->getWires()) {
@@ -1660,15 +1661,20 @@ ExistingGrid::ExistingGrid(
 
 void ExistingGrid::populate()
 {
-  Grid::makeInitialShapes(domain_->getBlock(), shapes_, getLogger());
+  ShapeVectorMap shapes;
+  Grid::makeInitialShapes(domain_->getBlock(), shapes, getLogger());
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {
-      for (const auto& [layer, shapes] : InstanceGrid::getInstancePins(inst)) {
-        shapes_[layer].insert(shapes.begin(), shapes.end());
+      for (const auto& [layer, inst_shapes] :
+           InstanceGrid::getInstancePins(inst)) {
+        shapes[layer].insert(
+            shapes[layer].end(), inst_shapes.begin(), inst_shapes.end());
       }
     }
   }
+
+  shapes_ = Shape::convertVectorToTree(shapes);
 }
 
 void ExistingGrid::addRing(std::unique_ptr<Rings> ring)
