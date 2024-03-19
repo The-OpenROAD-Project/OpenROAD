@@ -106,6 +106,7 @@ enum dbObjectType
   dbPowerSwitchObj,
   dbScanChainObj,
   dbScanInstObj,
+  dbScanListObj,
   dbScanPartitionObj,
   dbScanPinObj,
   dbTechLayerObj,

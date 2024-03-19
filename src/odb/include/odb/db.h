@@ -147,6 +147,7 @@ class dbPowerDomain;
 class dbPowerSwitch;
 class dbScanChain;
 class dbScanInst;
+class dbScanList;
 class dbScanPartition;
 class dbScanPin;
 class dbTechLayer;
@@ -7761,7 +7762,7 @@ class dbScanChain : public dbObject
  public:
   dbSet<dbScanPartition> getScanPartitions() const;
 
-  dbSet<dbScanInst> getScanInsts() const;
+  dbSet<dbScanList> getScanLists() const;
 
   // User Code Begin dbScanChain
   const std::string& getName() const;
@@ -7769,16 +7770,23 @@ class dbScanChain : public dbObject
   void setName(std::string_view name);
 
   void setScanIn(dbBTerm* scan_in);
-  dbBTerm* getScanIn() const;
+  void setScanIn(dbITerm* scan_in);
+  std::variant<dbBTerm*, dbITerm*> getScanIn() const;
 
   void setScanOut(dbBTerm* scan_out);
-  dbBTerm* getScanOut() const;
+  void setScanOut(dbITerm* scan_out);
+  std::variant<dbBTerm*, dbITerm*> getScanOut() const;
 
   void setScanEnable(dbBTerm* scan_enable);
-  dbBTerm* getScanEnable() const;
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
 
-  const std::string& getTestMode() const;
-  void setTestMode(std::string_view test_mode);
+  void setTestMode(dbBTerm* test_mode);
+  void setTestMode(dbITerm* test_mode);
+  std::variant<dbBTerm*, dbITerm*> getTestMode() const;
+
+  void setTestModeName(const std::string& test_mode_name);
+  const std::string& getTestModeName() const;
 
   static dbScanChain* create(dbDft* dft);
   // User Code End dbScanChain
@@ -7815,12 +7823,21 @@ class dbScanInst : public dbObject
   void setAccessPins(const AccessPins& access_pins);
   AccessPins getAccessPins() const;
 
-  std::vector<dbInst*> getInsts() const;
+  dbInst* getInst() const;
 
-  static dbScanInst* create(dbScanChain* scan_chain, dbInst* inst);
-  static dbScanInst* create(dbScanChain* scan_chain,
-                            const std::vector<dbInst*>& insts);
+  static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
   // User Code End dbScanInst
+};
+
+class dbScanList : public dbObject
+{
+ public:
+  dbSet<dbScanInst> getScanInsts() const;
+
+  // User Code Begin dbScanList
+  dbScanInst* add(dbInst* inst);
+  static dbScanList* create(dbScanChain* scan_chain);
+  // User Code End dbScanList
 };
 
 class dbScanPartition : public dbObject

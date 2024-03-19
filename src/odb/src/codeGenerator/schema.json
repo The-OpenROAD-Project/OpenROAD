@@ -268,6 +268,12 @@
     },
     {
       "first": "dbScanChain",
+      "second": "dbScanList",
+      "type": "1_n",
+      "tbl_name": "scan_lists_"
+    },
+    {
+      "first": "dbScanList",
       "second": "dbScanInst",
       "type": "1_n",
       "tbl_name": "scan_insts_"

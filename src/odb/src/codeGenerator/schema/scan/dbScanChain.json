@@ -9,21 +9,26 @@
     },
     {
       "name": "scan_in_",
-      "type": "dbId<dbBTerm>",
+      "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "scan_out_",
-      "type": "dbId<dbBTerm>",
+      "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "scan_enable_",
-      "type": "dbId<dbBTerm>",
+      "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "test_mode_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "test_mode_name_",
       "type": "std::string",
       "flags": ["private"]
     }

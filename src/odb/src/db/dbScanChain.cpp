@@ -39,6 +39,7 @@
 #include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbScanInst.h"
+#include "dbScanList.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbSet.h"
@@ -64,10 +65,13 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
   if (test_mode_ != rhs.test_mode_) {
     return false;
   }
+  if (test_mode_name_ != rhs.test_mode_name_) {
+    return false;
+  }
   if (*scan_partitions_ != *rhs.scan_partitions_) {
     return false;
   }
-  if (*scan_insts_ != *rhs.scan_insts_) {
+  if (*scan_lists_ != *rhs.scan_lists_) {
     return false;
   }
 
@@ -89,8 +93,9 @@ void _dbScanChain::differences(dbDiff& diff,
   DIFF_FIELD(scan_out_);
   DIFF_FIELD(scan_enable_);
   DIFF_FIELD(test_mode_);
+  DIFF_FIELD(test_mode_name_);
   DIFF_TABLE(scan_partitions_);
-  DIFF_TABLE(scan_insts_);
+  DIFF_TABLE(scan_lists_);
   DIFF_END
 }
 
@@ -102,8 +107,9 @@ void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(scan_out_);
   DIFF_OUT_FIELD(scan_enable_);
   DIFF_OUT_FIELD(test_mode_);
+  DIFF_OUT_FIELD(test_mode_name_);
   DIFF_OUT_TABLE(scan_partitions_);
-  DIFF_OUT_TABLE(scan_insts_);
+  DIFF_OUT_TABLE(scan_lists_);
 
   DIFF_END
 }
@@ -115,8 +121,8 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbScanChain::getObjectTable,
       dbScanPartitionObj);
-  scan_insts_ = new dbTable<_dbScanInst>(
-      db, this, (GetObjTbl_t) &_dbScanChain::getObjectTable, dbScanInstObj);
+  scan_lists_ = new dbTable<_dbScanList>(
+      db, this, (GetObjTbl_t) &_dbScanChain::getObjectTable, dbScanListObj);
 }
 
 _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
@@ -126,9 +132,10 @@ _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
   scan_out_ = r.scan_out_;
   scan_enable_ = r.scan_enable_;
   test_mode_ = r.test_mode_;
+  test_mode_name_ = r.test_mode_name_;
   scan_partitions_
       = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
-  scan_insts_ = new dbTable<_dbScanInst>(db, this, *r.scan_insts_);
+  scan_lists_ = new dbTable<_dbScanList>(db, this, *r.scan_lists_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
@@ -138,8 +145,9 @@ dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
   stream >> obj.scan_out_;
   stream >> obj.scan_enable_;
   stream >> obj.test_mode_;
+  stream >> obj.test_mode_name_;
   stream >> *obj.scan_partitions_;
-  stream >> *obj.scan_insts_;
+  stream >> *obj.scan_lists_;
   return stream;
 }
 
@@ -150,8 +158,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
   stream << obj.scan_out_;
   stream << obj.scan_enable_;
   stream << obj.test_mode_;
+  stream << obj.test_mode_name_;
   stream << *obj.scan_partitions_;
-  stream << *obj.scan_insts_;
+  stream << *obj.scan_lists_;
   return stream;
 }
 
@@ -160,8 +169,8 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
   switch (type) {
     case dbScanPartitionObj:
       return scan_partitions_;
-    case dbScanInstObj:
-      return scan_insts_;
+    case dbScanListObj:
+      return scan_lists_;
     default:
       break;
   }
@@ -171,7 +180,7 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
 _dbScanChain::~_dbScanChain()
 {
   delete scan_partitions_;
-  delete scan_insts_;
+  delete scan_lists_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -186,10 +195,10 @@ dbSet<dbScanPartition> dbScanChain::getScanPartitions() const
   return dbSet<dbScanPartition>(obj, obj->scan_partitions_);
 }
 
-dbSet<dbScanInst> dbScanChain::getScanInsts() const
+dbSet<dbScanList> dbScanChain::getScanLists() const
 {
   _dbScanChain* obj = (_dbScanChain*) this;
-  return dbSet<dbScanInst>(obj, obj->scan_insts_);
+  return dbSet<dbScanList>(obj, obj->scan_lists_);
 }
 
 // User Code Begin dbScanChainPublicMethods
@@ -206,67 +215,108 @@ void dbScanChain::setName(std::string_view name)
   scan_chain->name_ = name;
 }
 
-dbBTerm* _dbScanChain::getPin(_dbScanChain* scan_chain,
-                              dbId<dbBTerm> _dbScanChain::*field)
+std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
+    dbId<dbScanPin> scan_pin_id)
 {
-  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
-  _dbBlock* block = (_dbBlock*) dft->getOwner();
-
-  return (dbBTerm*) block->_bterm_tbl->getPtr(
-      (dbId<_dbBTerm>) (scan_chain->*field));
+  _dbDft* dft = (_dbDft*) getOwner();
+  return ((dbScanPin*) dft->scan_pins_->getPtr((dbId<_dbScanPin>) scan_pin_id))
+      ->getPin();
 }
 
-void _dbScanChain::setPin(_dbScanChain* scan_chain,
-                          dbId<dbBTerm> _dbScanChain::*field,
-                          dbBTerm* pin)
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin)
 {
-  _dbBTerm* bterm = (_dbBTerm*) pin;
-  scan_chain->*field = bterm->getId();
+  dbDft* dft = (dbDft*) getOwner();
+  this->*field = dbScanPin::create(dft, pin);
+}
+
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin)
+{
+  dbDft* dft = (dbDft*) getOwner();
+  this->*field = dbScanPin::create(dft, pin);
 }
 
 void dbScanChain::setScanIn(dbBTerm* scan_in)
 {
-  _dbScanChain::setPin((_dbScanChain*) this, &_dbScanChain::scan_in_, scan_in);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_in_, scan_in);
 }
 
-dbBTerm* dbScanChain::getScanIn() const
+void dbScanChain::setScanIn(dbITerm* scan_in)
 {
-  return _dbScanChain::getPin((_dbScanChain*) this, &_dbScanChain::scan_in_);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_in_, scan_in);
+}
+
+std::variant<dbBTerm*, dbITerm*> dbScanChain::getScanIn() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return obj->getPin(obj->scan_in_);
 }
 
 void dbScanChain::setScanOut(dbBTerm* scan_out)
 {
-  _dbScanChain::setPin(
-      (_dbScanChain*) this, &_dbScanChain::scan_out_, scan_out);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_out_, scan_out);
 }
 
-dbBTerm* dbScanChain::getScanOut() const
+void dbScanChain::setScanOut(dbITerm* scan_out)
 {
-  return _dbScanChain::getPin((_dbScanChain*) this, &_dbScanChain::scan_out_);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_out_, scan_out);
+}
+
+std::variant<dbBTerm*, dbITerm*> dbScanChain::getScanOut() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return obj->getPin(obj->scan_out_);
 }
 
 void dbScanChain::setScanEnable(dbBTerm* scan_enable)
 {
-  _dbScanChain::setPin(
-      (_dbScanChain*) this, &_dbScanChain::scan_enable_, scan_enable);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_enable_, scan_enable);
 }
 
-dbBTerm* dbScanChain::getScanEnable() const
+void dbScanChain::setScanEnable(dbITerm* scan_enable)
 {
-  return _dbScanChain::getPin((_dbScanChain*) this,
-                              &_dbScanChain::scan_enable_);
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::scan_enable_, scan_enable);
 }
 
-void dbScanChain::setTestMode(std::string_view test_mode)
+std::variant<dbBTerm*, dbITerm*> dbScanChain::getScanEnable() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return obj->getPin(obj->scan_enable_);
+}
+
+void dbScanChain::setTestMode(dbBTerm* test_mode)
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::test_mode_, test_mode);
+}
+
+void dbScanChain::setTestMode(dbITerm* test_mode)
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  obj->setPin(&_dbScanChain::test_mode_, test_mode);
+}
+
+std::variant<dbBTerm*, dbITerm*> dbScanChain::getTestMode() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return obj->getPin(obj->test_mode_);
+}
+
+void dbScanChain::setTestModeName(const std::string& test_mode_name)
 {
   _dbScanChain* scan_chain = (_dbScanChain*) this;
-  scan_chain->test_mode_ = test_mode;
+  scan_chain->test_mode_name_ = test_mode_name;
 }
 
-const std::string& dbScanChain::getTestMode() const
+const std::string& dbScanChain::getTestModeName() const
 {
   _dbScanChain* scan_chain = (_dbScanChain*) this;
-  return scan_chain->test_mode_;
+  return scan_chain->test_mode_name_;
 }
 
 dbScanChain* dbScanChain::create(dbDft* dft)
