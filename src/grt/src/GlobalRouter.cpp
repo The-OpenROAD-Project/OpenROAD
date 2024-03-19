@@ -188,6 +188,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                                     int max_routing_layer)
 {
   fastroute_->initEdges();
+  findTransitionLayers();
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
@@ -920,6 +921,30 @@ void GlobalRouter::computeTrackConsumption(
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
 
       track_consumption = std::max(track_consumption, consumption);
+    }
+  }
+}
+
+std::vector<int> GlobalRouter::findTransitionLayers()
+{
+  odb::dbTech* tech = db_->getTech();
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+  std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
+  std::vector<int> transition_layers;
+  for (const auto [layer, via] : default_vias) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    int via_width;
+    for (const auto box : default_vias[layer]->getBoxes()) {
+      if (box->getTechLayer()->getRoutingLevel() == layer) {
+        via_width = vertical ? box->getWidth() : box->getLength();
+        break;
+      }
+    }
+
+    int track_pitch = grid_->getTrackPitches()[layer - 1];
+    if ((static_cast<double>(via_width) / track_pitch) > 0.5) {
+      transition_layers.push_back(layer);
     }
   }
 }
