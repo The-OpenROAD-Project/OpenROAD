@@ -3029,9 +3029,9 @@ void GlobalRouter::computeObstructionsAdjustments()
   std::map<int, std::vector<odb::Rect>> layer_obs_map;
 
   findLayerExtensions(layer_extensions);
-  int obstructions_cnt = findObstructions(die_area, layer_obs_map);
+  int obstructions_cnt = findObstructions(die_area);
   obstructions_cnt += findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
-  findNetsObstructions(die_area, layer_obs_map);
+  findNetsObstructions(die_area);
 
   std::vector<int> transition_layers = findTransitionLayers();
 
@@ -3088,7 +3088,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
   }
 }
 
-int GlobalRouter::findObstructions(odb::Rect& die_area, std::map<int, std::vector<odb::Rect>>& layer_obs_map)
+int GlobalRouter::findObstructions(odb::Rect& die_area)
 {
   int obstructions_cnt = 0;
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
@@ -3106,7 +3106,6 @@ int GlobalRouter::findObstructions(odb::Rect& die_area, std::map<int, std::vecto
           logger_->warn(GRT, 37, "Found blockage outside die area.");
       }
       odb::dbTechLayer* tech_layer = obstruction_box->getTechLayer();
-      layer_obs_map[tech_layer->getRoutingLevel()].push_back(obstruction_rect);
       applyObstructionAdjustment(obstruction_rect,
                                  tech_layer);
       obstructions_cnt++;
@@ -3263,7 +3262,6 @@ int GlobalRouter::findInstancesObstructions(
                             inst->getConstName());
           }
           odb::dbTechLayer* tech_layer = box->getTechLayer();
-          layer_obs_map[tech_layer->getRoutingLevel()].push_back(obstruction_rect);
           applyObstructionAdjustment(obstruction_rect, tech_layer);
           obstructions_cnt++;
         }
@@ -3303,7 +3301,6 @@ int GlobalRouter::findInstancesObstructions(
               pin_out_of_die_count++;
             }
             odb::dbTechLayer* tech_layer = box->getTechLayer();
-            layer_obs_map[tech_layer->getRoutingLevel()].push_back(pin_box);
             applyObstructionAdjustment(pin_box, tech_layer);
           }
         }
@@ -3322,7 +3319,7 @@ int GlobalRouter::findInstancesObstructions(
   return obstructions_cnt;
 }
 
-void GlobalRouter::findNetsObstructions(odb::Rect& die_area, std::map<int, std::vector<odb::Rect>>& layer_obs_map)
+void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
 {
   odb::dbSet<odb::dbNet> nets = block_->getNets();
 
@@ -3359,7 +3356,6 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area, std::map<int, std::
                                 db_net->getConstName());
               }
               odb::dbTechLayer* tech_layer = s->getTechLayer();
-              layer_obs_map[tech_layer->getRoutingLevel()].push_back(obstruction_rect);
               applyObstructionAdjustment(obstruction_rect, tech_layer);
             }
           }
@@ -3393,7 +3389,6 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area, std::map<int, std::
                                 db_net->getConstName());
               }
               odb::dbTechLayer* tech_layer = pshape.shape.getTechLayer();
-              layer_obs_map[tech_layer->getRoutingLevel()].push_back(obstruction_rect);
               applyObstructionAdjustment(obstruction_rect,
                                          tech_layer);
             }
