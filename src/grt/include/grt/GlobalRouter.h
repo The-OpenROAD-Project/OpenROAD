@@ -290,6 +290,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
   std::vector<int> findTransitionLayers();
+  void adjustTransitionLayers(const std::vector<int>& transition_layers, std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,

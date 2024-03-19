@@ -933,7 +933,6 @@ std::vector<int> GlobalRouter::findTransitionLayers()
   for (const auto [layer, via] : default_vias) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
     bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-    int layer_width = tech_layer->getWidth();
     int via_width;
     for (const auto box : default_vias[layer]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == layer) {
@@ -942,12 +941,54 @@ std::vector<int> GlobalRouter::findTransitionLayers()
       }
     }
 
-    if (via_width  > layer_width) {
+    int track_pitch = grid_->getTrackPitches()[layer - 1];
+    if ((static_cast<double>(via_width) / track_pitch) > 0.8) {
       transition_layers.push_back(layer);
     }
   }
 
   return transition_layers;
+}
+
+void GlobalRouter::adjustTransitionLayers(const std::vector<int>& transition_layers,
+                                          std::map<int, std::vector<odb::Rect>>& layer_obs_map)
+{
+  odb::dbTech* tech = db_->getTech();
+  for (int layer : transition_layers) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    for (const auto& obs : layer_obs_map[layer - 1]) {
+      odb::Rect first_tile_bds, last_tile_bds;
+      odb::Point first_tile, last_tile;
+      grid_->getBlockedTiles(obs, first_tile_bds, last_tile_bds, first_tile, last_tile);
+      if (first_tile.x() != last_tile.x() || first_tile.y() != last_tile.y()) {
+        if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+          for (int y = first_tile.y(); y < last_tile.y(); y++) {
+            for (int x = first_tile.x(); x < last_tile.x(); x++) {
+              int edge_cap
+                  = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+              int new_cap
+                  = std::floor(static_cast<float>(edge_cap) * (0.5));
+              new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+              fastroute_->addAdjustment(
+                  x, y, x + 1, y, layer, new_cap, true);
+            }
+          }
+        } else {
+          for (int x = first_tile.x(); x < last_tile.x(); x++) {
+            for (int y = first_tile.y(); y < last_tile.y(); y++) {
+              int edge_cap
+                  = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
+              int new_cap
+                  = std::floor(static_cast<float>(edge_cap) * (0.5));
+              new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+              fastroute_->addAdjustment(
+                  x, y, x, y + 1, layer, new_cap, true);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 void GlobalRouter::computeGridAdjustments(int min_routing_layer,
@@ -3034,6 +3075,7 @@ void GlobalRouter::computeObstructionsAdjustments()
   findNetsObstructions(die_area);
 
   std::vector<int> transition_layers = findTransitionLayers();
+  adjustTransitionLayers(transition_layers, layer_obs_map);
 
   if (verbose_)
     logger_->info(GRT, 4, "Blockages: {}", obstructions_cnt);
