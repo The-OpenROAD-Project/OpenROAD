@@ -4794,6 +4794,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
+  const int macros_to_place = static_cast<int>(macros.size());
+
   for (Cluster* io_cluster : io_clusters) {
     soft_macro_id_map[io_cluster->getName()] = macros.size();
 
@@ -5037,6 +5039,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
                                 random_seed_,
                                 graphics_.get(),
                                 logger_);
+      sa->setNumberOfMacrosToPlace(macros_to_place);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
