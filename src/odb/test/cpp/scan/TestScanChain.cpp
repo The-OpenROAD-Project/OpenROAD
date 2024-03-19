@@ -121,7 +121,9 @@ TEST_F(TestScanChain, CreateScanChain)
 
   dbScanChain* scan_chain = dbScanChain::create(dft_);
 
-  dbScanInst* scan_inst = dbScanInst::create(scan_chain, inst);
+  dbScanList* scan_list = dbScanList::create(scan_chain);
+
+  dbScanInst* scan_inst = scan_list->add(inst);
   scan_inst->setBits(1234);
   scan_inst->setAccessPins({.scan_in = iterm, .scan_out = bterm});
 
@@ -135,16 +137,21 @@ TEST_F(TestScanChain, CreateScanChain)
 
   dbScanChain* scan_chain2 = *scan_chains2.begin();
 
-  odb::dbSet<dbScanInst> scan_insts2 = scan_chain2->getScanInsts();
+  odb::dbSet<dbScanList> scan_lists2 = scan_chain2->getScanLists();
+  EXPECT_THAT(scan_lists2.size(), 1);
+
+  odb::dbSet<dbScanInst> scan_insts2 = scan_lists2.begin()->getScanInsts();
   EXPECT_THAT(scan_insts2.size(), 1);
 }
 
 TEST_F(TestScanChain, CreateScanChainWithPartition)
 {
   dbScanChain* scan_chain = dbScanChain::create(dft_);
+  dbScanList* scan_list = dbScanList::create(scan_chain);
+
 
   for (dbInst* inst : instances_) {
-    dbScanInst* scan_inst = dbScanInst::create(scan_chain, inst);
+    dbScanInst* scan_inst = scan_list->add(inst);
     scan_inst->setBits(1);
     dbITerm* iterm = inst->findITerm("a");
     dbITerm* iterm2 = inst->findITerm("o");
@@ -203,6 +210,58 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
 
   EXPECT_THAT(GetName(partition22->getStart()), "a");
   EXPECT_THAT(GetName(partition22->getStop()), "IN3");
+
+  // check the created instances
+  dbSet<dbScanList> scan_lists2 = scan_chains2.begin()->getScanLists();
+  dbSet<dbScanInst> scan_insts2 = scan_lists2.begin()->getScanInsts();
+
+  int i = 0;
+  for (dbScanInst* scan_inst: scan_insts2) {
+    const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
+    EXPECT_THAT(GetName(access_pins.scan_in), "a");
+    EXPECT_THAT(GetName(access_pins.scan_out), "o");
+    EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
+    ++i;
+  }
+}
+
+
+TEST_F(TestScanChain, CreateScanChainWithMultipleScanLists)
+{
+  dbScanChain* scan_chain = dbScanChain::create(dft_);
+  dbScanList* scan_list1 = dbScanList::create(scan_chain);
+  dbScanList* scan_list2 = dbScanList::create(scan_chain);
+
+  scan_list1->add(instances_[0]);
+  scan_list2->add(instances_[1]);
+  scan_list2->add(instances_[2]);
+
+  dbDatabase* db2 = writeReadDb();
+
+  dbBlock* block2 = db2->getChip()->getBlock();
+  dbDft* dft2 = block2->getDft();
+
+  dbSet<dbScanChain> scan_chains2 = dft2->getScanChains();
+  EXPECT_THAT(scan_chains2.size(), 1);
+  // check the created instances
+  dbSet<dbScanList> scan_lists2 = scan_chains2.begin()->getScanLists();
+  EXPECT_THAT(scan_lists2.size(), 2);
+
+  int i = 0;
+  for (dbScanList* scan_list: scan_lists2) {
+    for (dbScanInst* scan_inst: scan_list->getScanInsts()) {
+      EXPECT_THAT(scan_inst->getInst()->getName(), instances_[i]->getName());
+      ++i;
+    }
+  }
+
+  auto it = scan_lists2.begin();
+  dbScanList* scan_list21 = *it;
+  ++it;
+  dbScanList* scan_list22 = *it;
+
+  EXPECT_THAT(scan_list21->getScanInsts().size(), 1);
+  EXPECT_THAT(scan_list22->getScanInsts().size(), 2);
 }
 
 }  // namespace

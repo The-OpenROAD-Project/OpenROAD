@@ -104,6 +104,7 @@ add_library(db
     dbPowerSwitch.cpp
     dbScanChain.cpp
     dbScanInst.cpp
+    dbScanList.cpp
     dbScanPartition.cpp
     dbScanPin.cpp
     dbTechLayer.cpp

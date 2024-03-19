@@ -66,7 +66,7 @@ class _dbScanInst : public _dbObject
   uint bits_;
   std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;
   dbId<dbScanPin> scan_enable_;
-  dbVector<dbId<dbInst>> insts_;
+  dbId<dbInst> inst_;
   std::string scan_clock_;
   uint clock_edge_;
 };

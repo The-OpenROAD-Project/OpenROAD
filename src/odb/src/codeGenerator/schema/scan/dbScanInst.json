@@ -18,8 +18,8 @@
       "flags": ["private"]
     },
     {
-      "name": "insts_",
-      "type": "dbVector<dbId<dbInst>>",
+      "name": "inst_",
+      "type": "dbId<dbInst>",
       "flags": ["private"]
     },
     {
@@ -68,6 +68,7 @@
   "cpp_includes": [
     "dbScanPin.h",
     "dbDft.h",
-    "dbScanChain.h"
+    "dbScanChain.h",
+    "dbScanList.h"
   ]
 }

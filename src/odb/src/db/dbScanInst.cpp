@@ -38,6 +38,7 @@
 #include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
+#include "dbScanList.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -50,6 +51,9 @@ bool _dbScanInst::operator==(const _dbScanInst& rhs) const
     return false;
   }
   if (scan_enable_ != rhs.scan_enable_) {
+    return false;
+  }
+  if (inst_ != rhs.inst_) {
     return false;
   }
   if (scan_clock_ != rhs.scan_clock_) {
@@ -74,6 +78,7 @@ void _dbScanInst::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(bits_);
   DIFF_FIELD(scan_enable_);
+  DIFF_FIELD(inst_);
   DIFF_FIELD(scan_clock_);
   DIFF_FIELD(clock_edge_);
   DIFF_END
@@ -84,6 +89,7 @@ void _dbScanInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(bits_);
   DIFF_OUT_FIELD(scan_enable_);
+  DIFF_OUT_FIELD(inst_);
   DIFF_OUT_FIELD(scan_clock_);
   DIFF_OUT_FIELD(clock_edge_);
 
@@ -98,6 +104,7 @@ _dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)
 {
   bits_ = r.bits_;
   scan_enable_ = r.scan_enable_;
+  inst_ = r.inst_;
   scan_clock_ = r.scan_clock_;
   clock_edge_ = r.clock_edge_;
 }
@@ -107,7 +114,7 @@ dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
   stream >> obj.bits_;
   stream >> obj.access_pins_;
   stream >> obj.scan_enable_;
-  stream >> obj.insts_;
+  stream >> obj.inst_;
   stream >> obj.scan_clock_;
   stream >> obj.clock_edge_;
   return stream;
@@ -118,7 +125,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
   stream << obj.bits_;
   stream << obj.access_pins_;
   stream << obj.scan_enable_;
-  stream << obj.insts_;
+  stream << obj.inst_;
   stream << obj.scan_clock_;
   stream << obj.clock_edge_;
   return stream;
@@ -178,7 +185,8 @@ void dbScanInst::setScanEnable(dbBTerm* scan_enable)
 void dbScanInst::setScanEnable(dbITerm* scan_enable)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
   scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
@@ -186,7 +194,8 @@ void dbScanInst::setScanEnable(dbITerm* scan_enable)
 std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   const dbScanPin* scan_enable = (dbScanPin*) dft->scan_pins_->getPtr(
       (dbId<_dbScanPin>) scan_inst->scan_enable_);
@@ -206,7 +215,8 @@ std::string_view getName(odb::dbITerm* iterm)
 void dbScanInst::setAccessPins(const AccessPins& access_pins)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
 
   std::visit(
@@ -227,7 +237,8 @@ dbScanInst::AccessPins dbScanInst::getAccessPins() const
 {
   AccessPins access_pins;
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
 
   const auto& [scan_in_id, scan_out_id] = scan_inst->access_pins_;
@@ -243,45 +254,22 @@ dbScanInst::AccessPins dbScanInst::getAccessPins() const
   return access_pins;
 }
 
-std::vector<dbInst*> dbScanInst::getInsts() const
+dbInst* dbScanInst::getInst() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_inst->getOwner();
+  _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   _dbBlock* block = (_dbBlock*) dft->getOwner();
 
-  std::vector<dbInst*> insts;
-
-  for (const dbId<dbInst>& id : scan_inst->insts_) {
-    insts.push_back((dbInst*) block->_inst_tbl->getPtr((dbId<_dbInst>) id));
-  }
-
-  return insts;
+  return (dbInst*) block->_inst_tbl->getPtr((dbId<_dbInst>) scan_inst->inst_);
 }
 
-dbScanInst* dbScanInst::create(dbScanChain* scan_chain, dbInst* inst)
+dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)
 {
-  _dbScanChain* obj = (_dbScanChain*) scan_chain;
-  _dbInst* _inst = (_dbInst*) inst;
-
+  _dbScanList* obj = (_dbScanList*) scan_list;
   _dbScanInst* scan_inst = (_dbScanInst*) obj->scan_insts_->create();
-  scan_inst->insts_.reserve(1);
-  scan_inst->insts_.push_back(_inst->getId());
-
-  return (dbScanInst*) scan_inst;
-}
-
-dbScanInst* dbScanInst::create(dbScanChain* scan_chain,
-                               const std::vector<dbInst*>& insts)
-{
-  _dbScanChain* obj = (_dbScanChain*) scan_chain;
-
-  _dbScanInst* scan_inst = (_dbScanInst*) obj->scan_insts_->create();
-  scan_inst->insts_.reserve(insts.size());
-
-  for (const dbInst* inst : insts) {
-    scan_inst->insts_.push_back(inst->getId());
-  }
+  scan_inst->inst_ = ((_dbInst*)inst)->getId();
 
   return (dbScanInst*) scan_inst;
 }
