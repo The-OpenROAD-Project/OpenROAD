@@ -22,6 +22,7 @@
 [WARNING GRT-0038] Found blockage outside die area in instance buffer.
 [WARNING GRT-0038] Found blockage outside die area in instance buffer.
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 11
 
 [INFO GRT-0053] Routing resources analysis:
