@@ -381,7 +381,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<Net*> findNets();
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
-  int findObstructions(odb::Rect& die_area);
+  int findObstructions(odb::Rect& die_area, std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   bool layerIsBlocked(int layer,
                       const std::unordered_map<int, std::vector<odb::Rect>>&
                           macro_obs_per_layer,
@@ -391,8 +391,9 @@ class GlobalRouter : public ant::GlobalRouteSource
       int bottom_layer,
       int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
-                                const std::vector<int>& layer_extensions);
-  void findNetsObstructions(odb::Rect& die_area);
+                                const std::vector<int>& layer_extensions,
+                                std::map<int, std::vector<odb::Rect>>& layer_obs_map);
+  void findNetsObstructions(odb::Rect& die_area, std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   int computeMaxRoutingLayer();
   std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
