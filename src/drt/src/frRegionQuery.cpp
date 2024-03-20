@@ -731,12 +731,12 @@ void frRegionQuery::Impl::init()
     }
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->info(DRT, 18, "  Complete {} insts.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->info(DRT, 19, "  Complete {} insts.", cnt);
         }
       }
@@ -819,12 +819,12 @@ void frRegionQuery::Impl::initOrigGuide(
       addOrigGuide(net, rect, allShapes);
       cnt++;
       if (VERBOSE > 0) {
-        if (cnt < 100000) {
-          if (cnt % 10000 == 0) {
+        if (cnt < 1000000) {
+          if (cnt % 100000 == 0) {
             logger_->info(DRT, 26, "  Complete {} origin guides.", cnt);
           }
         } else {
-          if (cnt % 100000 == 0) {
+          if (cnt % 1000000 == 0) {
             logger_->info(DRT, 27, "  Complete {} origin guides.", cnt);
           }
         }
@@ -863,12 +863,12 @@ void frRegionQuery::Impl::initGuide()
     }
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->info(DRT, 29, "  Complete {} nets (guide).", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->info(DRT, 30, "  Complete {} nets (guide).", cnt);
         }
       }
