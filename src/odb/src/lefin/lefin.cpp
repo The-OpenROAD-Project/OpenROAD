@@ -37,6 +37,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <list>
 #include <string>
 #include <vector>
@@ -2229,31 +2230,15 @@ bool lefin::readLefInner(const char* lef_file)
     }
   }
   _incomplete_props.clear();
-  if (_layer_cnt)
-    debugPrint(_logger,
-               utl::ODB,
-               "lefin",
-               1,
-               "    Created {} technology layers",
-               _layer_cnt);
 
-  if (_via_cnt)
-    debugPrint(_logger,
-               utl::ODB,
-               "lefin",
-               1,
-               "    Created {} technology vias",
-               _via_cnt);
-  if (_master_cnt)
-    debugPrint(_logger,
-               utl::ODB,
-               "lefin",
-               1,
-               "    Created {} library cells",
-               _master_cnt);
-
-  debugPrint(_logger, utl::ODB, "lefin", 1, "Finished LEF file:  {}", lef_file);
-
+  std::filesystem::path p(lef_file);
+  _logger->info(utl::ODB,
+                227,
+                "LEF file: {}, created {} layers, {} vias, {} library cells",
+                p.filename().string(),
+                _layer_cnt,
+                _via_cnt,
+                _master_cnt);
   return r;
 }
 
