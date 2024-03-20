@@ -1994,12 +1994,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           = std::make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
       auto rptr = uCon.get();
       tech_->addUConstraint(std::move(uCon));
-      if (tmpLayer->hasSpacingSamenet()) {
-        logger_->warn(DRT,
-                      138,
-                      "New SPACING SAMENET overrides old"
-                      "SPACING SAMENET rule.");
-      }
       tmpLayer->setSpacingSamenet(
           static_cast<frSpacingSamenetConstraint*>(rptr));
     } else {
@@ -2011,12 +2005,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
               fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
       tech_->addUConstraint(std::move(uCon));
-      if (tmpLayer->getMinSpacing()) {
-        logger_->warn(DRT,
-                      144,
-                      "New SPACING SAMENET overrides old"
-                      "SPACING SAMENET rule.");
-      }
       tmpLayer->setMinSpacing(rptr);
     }
   }
@@ -2069,12 +2057,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
             fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
     auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
-    if (tmpLayer->getMinSpacing()) {
-      logger_->warn(
-          DRT,
-          145,
-          "New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.");
-    }
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -2101,10 +2083,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     rptr->setLayer(tmpLayer);
     tech_->addUConstraint(std::move(uCon));
-    if (tmpLayer->getMinSpacing()) {
-      logger_->warn(
-          DRT, 146, "New SPACINGTABLE TWOWIDTHS overrides old SPACING rule.");
-    }
     tmpLayer->setMinSpacing(rptr);
   }
 
