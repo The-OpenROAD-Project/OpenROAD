@@ -2347,42 +2347,6 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_getMaxSpcVal(
   return maxSpcVal;
 }
 
-frCoord FlexGCWorker::Impl::checkCutSpacing_spc_getReqSpcVal(
-    gcRect* ptr1,
-    gcRect* ptr2,
-    frCutSpacingConstraint* con)
-{
-  frCoord maxSpcVal = 0;
-  if (con) {
-    maxSpcVal = con->getCutSpacing();
-    if (con->isAdjacentCuts()) {
-      auto ptr1LayerNum = ptr1->getLayerNum();
-      auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
-      if (ptr1->getNet()->isBlockage()) {
-        frCoord width1 = ptr1->width();
-        if (ptr1->getNet()->getDesignRuleWidth() != -1) {
-          width1 = ptr1->getNet()->getDesignRuleWidth();
-        }
-        if (width1 > int(ptr1Layer->getWidth())) {
-          maxSpcVal = con->getCutWithin();
-        }
-      }
-      auto ptr2LayerNum = ptr2->getLayerNum();
-      auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
-      if (ptr2->getNet()->isBlockage()) {
-        frCoord width2 = ptr2->width();
-        if (ptr2->getNet()->getDesignRuleWidth() != -1) {
-          width2 = ptr2->getNet()->getDesignRuleWidth();
-        }
-        if (width2 > int(ptr2Layer->getWidth())) {
-          maxSpcVal = con->getCutWithin();
-        }
-      }
-    }
-  }
-  return maxSpcVal;
-}
-
 void FlexGCWorker::Impl::checkCutSpacing_short(
     gcRect* rect1,
     gcRect* rect2,
@@ -2505,8 +2469,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   }
 
   // no violation if spacing satisfied
-  frSquaredDistance reqSpcValSquare
-      = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare = con->getCutSpacing();
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;
@@ -2574,8 +2537,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   }
 
   // no violation if spacing satisfied
-  frSquaredDistance reqSpcValSquare
-      = checkCutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare = con->getCutSpacing();
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;
@@ -2675,8 +2637,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   }
 
   // no violation if spacing satisfied
-  frSquaredDistance reqSpcValSquare
-      = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare = con->getCutSpacing();
   reqSpcValSquare *= reqSpcValSquare;
 
   frSquaredDistance distSquare = 0;
@@ -2864,42 +2825,6 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
   return false;
 }
 
-frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
-    gcRect* ptr1,
-    gcRect* ptr2,
-    frLef58CutSpacingConstraint* con)
-{
-  frCoord maxSpcVal = 0;
-  if (con) {
-    maxSpcVal = con->getCutSpacing();
-    if (con->hasAdjacentCuts()) {
-      auto ptr1LayerNum = ptr1->getLayerNum();
-      auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
-      if (ptr1->getNet()->isBlockage()) {
-        frCoord width1 = ptr1->width();
-        if (ptr1->getNet()->getDesignRuleWidth() != -1) {
-          width1 = ptr1->getNet()->getDesignRuleWidth();
-        }
-        if (width1 > int(ptr1Layer->getWidth())) {
-          maxSpcVal = con->getCutWithin();
-        }
-      }
-      auto ptr2LayerNum = ptr2->getLayerNum();
-      auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
-      if (ptr2->getNet()->isBlockage()) {
-        frCoord width2 = ptr2->width();
-        if (ptr2->getNet()->getDesignRuleWidth() != -1) {
-          width2 = ptr2->getNet()->getDesignRuleWidth();
-        }
-        if (width2 > int(ptr2Layer->getWidth())) {
-          maxSpcVal = con->getCutWithin();
-        }
-      }
-    }
-  }
-  return maxSpcVal;
-}
-
 // only works for GF14 syntax (i.e., TWOCUTS), not full rule support
 void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
     gcRect* rect1,
@@ -2994,8 +2919,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
     ;
   }
 
-  frSquaredDistance reqSpcValSquare
-      = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  frSquaredDistance reqSpcValSquare = con->getCutSpacing();
   reqSpcValSquare *= reqSpcValSquare;
 
   gtl::point_data<frCoord> center1, center2;

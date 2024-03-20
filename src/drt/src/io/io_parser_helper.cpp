@@ -329,21 +329,6 @@ void io::Parser::initCutLayerWidth()
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
-        if (viaDef->getNumCut() == 1) {
-          if (cutRect->width() != cutRect->length()) {
-            logger_->warn(DRT,
-                          240,
-                          "CUT layer {} does not have square single-cut via, "
-                          "cut layer width may be set incorrectly.",
-                          layer->getName());
-          }
-        } else {
-          logger_->warn(DRT,
-                        241,
-                        "CUT layer {} does not have single-cut via, cut layer "
-                        "width may be set incorrectly.",
-                        layer->getName());
-        }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
@@ -354,21 +339,10 @@ void io::Parser::initCutLayerWidth()
       }
     } else {
       auto viaDef = layer->getDefaultViaDef();
-      int cutLayerWidth = layer->getWidth();
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
           logger_->error(DRT, 243, "Non-rectangular shape in via definition.");
-        }
-        auto cutRect = static_cast<frRect*>(cutFig);
-        int viaWidth = cutRect->width();
-        if (cutLayerWidth < viaWidth) {
-          logger_->warn(
-              DRT,
-              244,
-              "CUT layer {} has smaller width defined in LEF compared "
-              "to default via.",
-              layer->getName());
         }
       }
     }
