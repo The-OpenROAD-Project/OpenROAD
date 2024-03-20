@@ -965,6 +965,7 @@ void GlobalRouter::adjustTransitionLayers(
   odb::dbTech* tech = db_->getTech();
   for (int layer : transition_layers) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    std::set<std::pair<int, int>> tiles_to_reduce;
     for (const auto& obs : layer_obs_map[layer - 1]) {
       odb::Rect first_tile_bds, last_tile_bds;
       odb::Point first_tile, last_tile;
@@ -974,23 +975,36 @@ void GlobalRouter::adjustTransitionLayers(
         if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
           for (int y = first_tile.y(); y < last_tile.y(); y++) {
             for (int x = first_tile.x(); x < last_tile.x(); x++) {
-              int edge_cap = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
-              int new_cap = std::floor(static_cast<float>(edge_cap) * (0.5));
-              new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-              fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
+              tiles_to_reduce.emplace(std::make_pair(x, y));
             }
           }
         } else {
           for (int x = first_tile.x(); x < last_tile.x(); x++) {
             for (int y = first_tile.y(); y < last_tile.y(); y++) {
-              int edge_cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
-              int new_cap = std::floor(static_cast<float>(edge_cap) * (0.5));
-              new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-              fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
+              tiles_to_reduce.emplace(std::make_pair(x, y));
             }
           }
         }
       }
+    }
+    adjustTileSet(tiles_to_reduce, tech_layer);
+  }
+}
+
+void GlobalRouter::adjustTileSet(const std::set<std::pair<int, int>>& tiles_to_reduce, odb::dbTechLayer* tech_layer)
+{
+  const int layer = tech_layer->getRoutingLevel();
+  for (const auto& [x, y] : tiles_to_reduce) {
+    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      const float edge_cap = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+      int new_cap = std::floor(edge_cap * 0.5);
+      new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+      fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
+    } else {
+      const float edge_cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
+      int new_cap = std::floor(edge_cap * 0.5);
+      new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+      fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
     }
   }
 }
