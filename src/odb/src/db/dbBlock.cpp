@@ -620,9 +620,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
 _dbBlock::~_dbBlock()
 {
-  if (_name) {
+  if (_name)
     free((void*) _name);
-  }
+
   delete _bterm_tbl;
   delete _iterm_tbl;
   delete _net_tbl;
@@ -693,12 +693,11 @@ _dbBlock::~_dbBlock()
     _cbitr = _callbacks.begin();
     (*_cbitr)->removeOwner();
   }
-  if (_journal) {
+  if (_journal)
     delete _journal;
-  }
-  if (_journal_pending) {
+
+  if (_journal_pending)
     delete _journal_pending;
-  }
 }
 
 void dbBlock::clear()
@@ -4060,16 +4059,6 @@ dbTech* dbBlock::getTech()
   return (dbTech*) block->getTech();
 }
 
-void dbBlock::getChildModules(std::vector<dbModule*>& child_modules)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  std::vector<odb::_dbModule*> contents;
-  block->_module_tbl->getObjects(contents);
-  for (auto dbm : contents) {
-    child_modules.push_back((dbModule*) dbm);
-  }
-}
-
 void dbBlock::dumpDebug()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -4144,10 +4133,12 @@ void dbBlock::dumpDebug()
         dbModBTerm* module_port = *mod_bterm_iter;
         printf("\t\tPort %s Net %s (%d)\n",
                module_port->getName(),
-               module_port->getNet()
+               ((_dbModNet*) module_port->getNet())
                    ? ((_dbModNet*) module_port->getNet())->_name
                    : "No-modnet",
-               module_port->getNet() ? module_port->getNet()->getId() : -1);
+               ((_dbModNet*) module_port->getNet())
+                   ? ((_dbModNet*) module_port->getNet())->getId()
+                   : -1);
         printf("\t\tPort parent %s\n\n", module_port->getParent()->getName());
       }
       printf("\t\tModBTermPorts ---\n");

@@ -24,7 +24,8 @@
       "parentObject": "dbModBTerm",
       "tableName": "modbterm_tbl",
       "reversible": "true",
-      "orderReversed": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
       "sequential": 0,
 	"includes": ["dbModBTerm.h", "dbModule.h"]
     },

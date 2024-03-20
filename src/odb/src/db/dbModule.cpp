@@ -206,40 +206,18 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
-std::string dbModule::getHierarchicalName(std::string& separator)
-{
-  std::string ret = hierarchicalNameR(separator);
-  // strip out the top module name
-  size_t first_ix = ret.find_first_of('/');
-  if (first_ix != std::string::npos)
-    ret = ret.substr(first_ix + 1);
-  return ret;
-}
-
-std::string dbModule::hierarchicalNameR(std::string& separator)
-{
-  dbBlock* block = getOwner();
-  if (this == block->getTopModule()) {
-    return (std::string(getName()));
-  }
-  dbModInst* local_inst = getModInst();
-  std::string local_name = local_inst->getName();
-  dbModule* parent = local_inst->getParent();
-  return parent->hierarchicalNameR(separator) + separator + local_name;
-}
-
-unsigned dbModule::getModInstCount()
+int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (dbSet<dbModInst>(module, block->_module_modinst_itr)).size();
+  return (int) ((dbSet<dbModInst>(module, block->_module_modinst_itr)).size());
 }
 
-unsigned dbModule::getDbInstCount()
+int dbModule::getDbInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbInst>(module, block->_module_inst_itr).size();
+  return (int) (dbSet<dbInst>(module, block->_module_inst_itr).size());
 }
 
 void dbModule::addInst(dbInst* inst)
@@ -474,18 +452,6 @@ dbModBTerm* dbModule::findModBTerm(const char* name)
     }
   }
   return nullptr;
-}
-
-bool dbModule::findPortIx(const char* port_name, unsigned& ix)
-{
-  std::string port_name_str(port_name);
-  ix = 0;
-  for (dbModBTerm* mod_bterm : getModBTerms()) {
-    if (!strcmp(mod_bterm->getName(), port_name))
-      return true;
-    ix++;
-  }
-  return false;
 }
 
 std::string dbModule::getHierarchicalName() const

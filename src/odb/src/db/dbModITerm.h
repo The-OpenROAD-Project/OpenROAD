@@ -61,7 +61,6 @@ class _dbModITerm : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
-  uint _flags;
   dbId<_dbModInst> _parent;
   dbId<_dbModNet> _net;
   dbId<_dbModITerm> _next_net_moditerm;

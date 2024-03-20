@@ -191,71 +191,7 @@ dbModNet* dbModBTerm::getNet() const
   return (dbModNet*) par->_modnet_tbl->getPtr(obj->_net);
 }
 
-void dbModBTerm::setNextNetModbterm(dbModBTerm* next_net_modbterm)
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-
-  obj->_next_net_modbterm = next_net_modbterm->getImpl()->getOID();
-}
-
-dbModBTerm* dbModBTerm::getNextNetModbterm() const
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_next_net_modbterm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_next_net_modbterm);
-}
-
-void dbModBTerm::setPrevNetModbterm(dbModBTerm* prev_net_modbterm)
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-
-  obj->_prev_net_modbterm = prev_net_modbterm->getImpl()->getOID();
-}
-
-dbModBTerm* dbModBTerm::getPrevNetModbterm() const
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_prev_net_modbterm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_prev_net_modbterm);
-}
-
-void dbModBTerm::setNextEntry(dbModBTerm* next_entry)
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-
-  obj->_next_entry = next_entry->getImpl()->getOID();
-}
-
-dbModBTerm* dbModBTerm::getNextEntry() const
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_next_entry == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_next_entry);
-}
-
 // User Code Begin dbModBTermPublicMethods
-
-void dbModBTerm::setFlags(uint flags)
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-
-  obj->_flags = flags;
-}
-
-uint dbModBTerm::getFlags() const
-{
-  _dbModBTerm* obj = (_dbModBTerm*) this;
-  return obj->_flags;
-}
 
 struct dbModBTermFlags_str
 {
@@ -270,33 +206,37 @@ typedef union dbModBTermFlags
   uint uint_val;
 } dbModBTermFlagsU;
 
-void dbModBTerm::setSigType(dbSigType& type)
+void dbModBTerm::setSigType(dbSigType type)
 {
+  _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
+  cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._sigtype = type.getValue();
-  setFlags(cur_flags.uint_val);
+  _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
 dbSigType dbModBTerm::getSigType()
 {
+  _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
+  cur_flags.uint_val = _dbmodbterm->_flags;
   return dbSigType(cur_flags.flags._sigtype);
 }
 
 void dbModBTerm::setIoType(dbIoType type)
 {
+  _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
+  cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._iotype = type.getValue();
-  setFlags(cur_flags.uint_val);
+  _dbmodbterm->_flags = cur_flags.uint_val;
 }
 
 dbIoType dbModBTerm::getIoType()
 {
+  _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
+  cur_flags.uint_val = _dbmodbterm->_flags;
   return dbIoType(cur_flags.flags._iotype);
 }
 
@@ -313,11 +253,9 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   std::string str_name(name);
   _dbModBTerm* modbterm = block->_modbterm_tbl->create();
   // defaults
-  ((dbModBTerm*) modbterm)->setFlags(0U);
-  dbIoType io_typ = dbIoType::INPUT;
-  ((dbModBTerm*) modbterm)->setIoType(io_typ);
-  dbSigType sig_typ = dbSigType::SIGNAL;
-  ((dbModBTerm*) modbterm)->setSigType(sig_typ);
+  modbterm->_flags = 0U;
+  ((dbModBTerm*) modbterm)->setIoType(dbIoType::INPUT);
+  ((dbModBTerm*) modbterm)->setSigType(dbSigType::SIGNAL);
   modbterm->_net = 0;
   modbterm->_next_net_modbterm = 0;
   modbterm->_prev_net_modbterm = 0;
@@ -331,12 +269,6 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   return (dbModBTerm*) modbterm;
 }
 
-char* dbModBTerm::getName()
-{
-  _dbModBTerm* _bterm = (_dbModBTerm*) this;
-  return _bterm->_name;
-}
-
 void dbModBTerm::connect(dbModNet* net)
 {
   _dbModule* _module = (_dbModule*) (net->getParent());
@@ -344,9 +276,8 @@ void dbModBTerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   // already connected
-  if (_modbterm->_net == net->getId()) {
+  if (_modbterm->_net == net->getId())
     return;
-  }
   _modbterm->_net = net->getId();
   // append to net mod bterms. Do this by pushing onto head of list.
   if (_modnet->_modbterms != 0) {
@@ -360,6 +291,8 @@ void dbModBTerm::connect(dbModNet* net)
   }
   _modbterm->_prev_net_modbterm = 0;  // previous of head always zero
   _modnet->_modbterms = getId();      // set new head
+  //  printf("Mod net now connected to %d modbterms\n",
+  //	 net -> getModBTerms().size());
 
   return;
 }

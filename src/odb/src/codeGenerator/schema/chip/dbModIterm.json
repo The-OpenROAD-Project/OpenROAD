@@ -5,13 +5,8 @@
         {
             "name":"_name",
             "type":"char *",
-            "flags":["no-set","no-get"]
+            "flags":["no-set"]
         },
-	{
-	    "name":"_flags",
-	    "type":"uint",
-	    "flags":["no-set","no-get"]
-	},
         {
 	    "name":"_parent",
             "type":"dbId<_dbModInst>",
@@ -26,16 +21,19 @@
         {
 	    "name":"_next_net_moditerm",
             "type":"dbId<_dbModITerm>",
+	    "flags":["private"],	    
             "parent":"dbBlock" 
         },
 	{
 	    "name":"_prev_net_moditerm",
             "type":"dbId<_dbModITerm>",
+	    "flags":["private"],	    	    
             "parent":"dbBlock" 
         },
 	{
 	    "name":"_next_entry",
             "type":"dbId<_dbModITerm>",
+	    "flags":["private"],	    	    	    
             "parent":"dbBlock"
 	}
 	

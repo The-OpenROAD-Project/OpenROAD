@@ -50,9 +50,6 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
   if (_name != rhs._name) {
     return false;
   }
-  if (_flags != rhs._flags) {
-    return false;
-  }
   if (_parent != rhs._parent) {
     return false;
   }
@@ -83,7 +80,6 @@ void _dbModITerm::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(_name);
-  DIFF_FIELD(_flags);
   DIFF_FIELD(_parent);
   DIFF_FIELD(_net);
   DIFF_FIELD(_next_net_moditerm);
@@ -96,7 +92,6 @@ void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags);
   DIFF_OUT_FIELD(_parent);
   DIFF_OUT_FIELD(_net);
   DIFF_OUT_FIELD(_next_net_moditerm);
@@ -113,7 +108,6 @@ _dbModITerm::_dbModITerm(_dbDatabase* db)
 _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
 {
   _name = r._name;
-  _flags = r._flags;
   _parent = r._parent;
   _net = r._net;
   _next_net_moditerm = r._next_net_moditerm;
@@ -124,7 +118,6 @@ _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
   stream >> obj._name;
-  stream >> obj._flags;
   stream >> obj._parent;
   stream >> obj._net;
   stream >> obj._next_net_moditerm;
@@ -136,7 +129,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
   stream << obj._name;
-  stream << obj._flags;
   stream << obj._parent;
   stream << obj._net;
   stream << obj._next_net_moditerm;
@@ -157,6 +149,12 @@ _dbModITerm::~_dbModITerm()
 // dbModITerm - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+const char* dbModITerm::getName() const
+{
+  _dbModITerm* obj = (_dbModITerm*) this;
+  return obj->_name;
+}
 
 dbModInst* dbModITerm::getParent() const
 {
@@ -185,113 +183,7 @@ dbModNet* dbModITerm::getNet() const
   return (dbModNet*) par->_modnet_tbl->getPtr(obj->_net);
 }
 
-void dbModITerm::setNextNetModiterm(dbModITerm* next_net_moditerm)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_next_net_moditerm = next_net_moditerm->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getNextNetModiterm() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_next_net_moditerm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_next_net_moditerm);
-}
-
-void dbModITerm::setPrevNetModiterm(dbModITerm* prev_net_moditerm)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_prev_net_moditerm = prev_net_moditerm->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getPrevNetModiterm() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_prev_net_moditerm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_prev_net_moditerm);
-}
-
-void dbModITerm::setNextEntry(dbModITerm* next_entry)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_next_entry = next_entry->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getNextEntry() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_next_entry == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_next_entry);
-}
-
 // User Code Begin dbModITermPublicMethods
-void dbModITerm::setFlags(uint flags)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_flags = flags;
-}
-
-uint dbModITerm::getFlags() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  return obj->_flags;
-}
-
-struct dbModITermFlags_str
-{
-  dbIoType::Value _iotype : 4;
-  dbSigType::Value _sigtype : 4;
-  uint _spare_bits : 24;
-};
-
-typedef union dbModITermFlags
-{
-  struct dbModITermFlags_str flags;
-  uint uint_val;
-} dbModITermFlagsU;
-
-void dbModITerm::setSigType(dbSigType& type)
-{
-  dbModITermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
-  cur_flags.flags._sigtype = type.getValue();
-  setFlags(cur_flags.uint_val);
-}
-
-dbSigType dbModITerm::getSigType()
-{
-  dbModITermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
-  return dbSigType(cur_flags.flags._sigtype);
-}
-
-void dbModITerm::setIoType(dbIoType& type)
-{
-  dbModITermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
-  cur_flags.flags._iotype = type.getValue();
-  setFlags(cur_flags.uint_val);
-}
-
-dbIoType dbModITerm::getIoType()
-{
-  dbModITermFlagsU cur_flags;
-  cur_flags.uint_val = getFlags();
-  return dbIoType(cur_flags.flags._iotype);
-}
 
 dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
 {
@@ -303,11 +195,6 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   moditerm->_next_net_moditerm = 0;
   moditerm->_prev_net_moditerm = 0;
 
-  ((dbModITerm*) moditerm)->setFlags(0U);
-  dbIoType io_typ = dbIoType::INPUT;
-  ((dbModITerm*) moditerm)->setIoType(io_typ);
-  dbSigType sig_typ = dbSigType::SIGNAL;
-  ((dbModITerm*) moditerm)->setSigType(sig_typ);
   moditerm->_name = strdup(name);
   ZALLOCATED(moditerm->_name);
 
@@ -324,9 +211,8 @@ bool dbModITerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
   // already connected.
-  if (_moditerm->_net == _modnet->getId()) {
+  if (_moditerm->_net == _modnet->getId())
     return true;
-  }
   _moditerm->_net = _modnet->getId();
   // append to net moditerms
   if (_modnet->_moditerms != 0) {
@@ -341,12 +227,6 @@ bool dbModITerm::connect(dbModNet* net)
   _moditerm->_prev_net_moditerm = 0;
   _modnet->_moditerms = getId();
   return true;
-}
-
-char* dbModITerm::getName()
-{
-  _dbModITerm* _iterm = (_dbModITerm*) this;
-  return _iterm->_name;
 }
 
 // User Code End dbModITermPublicMethods

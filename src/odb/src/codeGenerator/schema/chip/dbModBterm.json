@@ -10,7 +10,7 @@
 	{
 	    "name":"_flags",
 	    "type":"uint",
-	    "flags":["no-set","no-get"]
+	    "flags":["private"]
 	},
         {
 	    "name":"_parent",
@@ -26,16 +26,19 @@
         {
 	    "name":"_next_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
+	    "flags":["private"],
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_prev_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
+	    "flags":["private"],	    
 	    "parent":"dbBlock"
         },
 	{
 	    "name":"_next_entry",
             "type":"dbId<_dbModBTerm>",
+	    "flags":["private"],
             "parent":"dbBlock"
 	}
     ],

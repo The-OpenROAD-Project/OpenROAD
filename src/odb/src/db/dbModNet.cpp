@@ -197,6 +197,14 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->_next_entry = parent->_modnets;
   parent->_modnets = modnet->getOID();
+  //  printf("Creating modnet %s (%u) in %s (%p)\n",
+  //	 modnet -> _name,
+  //	 modnet -> getOID(),
+  //	 ((dbModule*)parent) -> getName(),
+  //	 ((dbModule*)parent)
+  //	 );
+  //  dbSet<dbModNet> modnets = ((dbModule*)parent) -> getModNets();
+  //  printf("# modnets %u\n",modnets.size());
   return (dbModNet*) modnet;
 }
 
@@ -226,18 +234,6 @@ dbSet<dbITerm> dbModNet::getITerms()
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
   return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
-}
-
-dbModBTerm* dbModNet::connectedToModBTerm()
-{
-  const char* net_name = getName();
-  dbSet<dbModBTerm> modbterms = getModBTerms();
-  for (dbModBTerm* mbterm : modbterms) {
-    const char* mbterm_name = mbterm->getName();
-    if (!strcmp(mbterm_name, net_name))
-      return mbterm;
-  }
-  return nullptr;
 }
 
 // User Code End dbModNetPublicMethods
