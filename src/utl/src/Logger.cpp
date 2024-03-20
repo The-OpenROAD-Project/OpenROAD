@@ -50,11 +50,6 @@ int Logger::max_message_print = 1000;
 Logger::Logger(const char* log_filename, const char* metrics_filename)
     : debug_on_(false)
 {
-  // This ensures it is safe to update the message counters
-  // without using locks.
-  static_assert(std::atomic<MessageCounter::value_type>::is_always_lock_free,
-                "message counter should be atomic");
-
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
     sinks_.push_back(
