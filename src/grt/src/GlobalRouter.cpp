@@ -924,12 +924,12 @@ void GlobalRouter::computeTrackConsumption(
   }
 }
 
-std::vector<int> GlobalRouter::findTransitionLayers()
+std::vector<LayerId> GlobalRouter::findTransitionLayers()
 {
   odb::dbTech* tech = db_->getTech();
   const int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
   std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
-  std::vector<int> transition_layers;
+  std::vector<LayerId> transition_layers;
   for (const auto [layer, via] : default_vias) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
     const bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
@@ -959,31 +959,24 @@ std::vector<int> GlobalRouter::findTransitionLayers()
 // this way, the detailed router will have more room to fix violations near
 // the fat vias.
 void GlobalRouter::adjustTransitionLayers(
-    const std::vector<int>& transition_layers,
+    const std::vector<LayerId>& transition_layers,
     std::map<int, std::vector<odb::Rect>>& layer_obs_map)
 {
   odb::dbTech* tech = db_->getTech();
-  for (int layer : transition_layers) {
+  for (LayerId layer : transition_layers) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-    std::set<std::pair<int, int>> tiles_to_reduce;
+    TileSet tiles_to_reduce;
     for (const auto& obs : layer_obs_map[layer - 1]) {
       odb::Rect first_tile_bds, last_tile_bds;
       odb::Point first_tile, last_tile;
       grid_->getBlockedTiles(
           obs, first_tile_bds, last_tile_bds, first_tile, last_tile);
-      if (first_tile.x() != last_tile.x() || first_tile.y() != last_tile.y()) {
-        if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          for (int y = first_tile.y(); y < last_tile.y(); y++) {
-            for (int x = first_tile.x(); x < last_tile.x(); x++) {
-              tiles_to_reduce.emplace(std::make_pair(x, y));
-            }
-          }
-        } else {
-          for (int x = first_tile.x(); x < last_tile.x(); x++) {
-            for (int y = first_tile.y(); y < last_tile.y(); y++) {
-              tiles_to_reduce.emplace(std::make_pair(x, y));
-            }
-          }
+      if (first_tile.x() == last_tile.x() && first_tile.y() == last_tile.y()) {
+        continue;
+      }
+      for (int y = first_tile.y(); y < last_tile.y(); y++) {
+        for (int x = first_tile.x(); x < last_tile.x(); x++) {
+          tiles_to_reduce.emplace(std::make_pair(x, y));
         }
       }
     }
@@ -991,21 +984,21 @@ void GlobalRouter::adjustTransitionLayers(
   }
 }
 
-void GlobalRouter::adjustTileSet(const std::set<std::pair<int, int>>& tiles_to_reduce, odb::dbTechLayer* tech_layer)
+void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce, odb::dbTechLayer* tech_layer)
 {
   const int layer = tech_layer->getRoutingLevel();
   for (const auto& [x, y] : tiles_to_reduce) {
+    int end_x = x;
+    int end_y = y;
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      const float edge_cap = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
-      int new_cap = std::floor(edge_cap * 0.5);
-      new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-      fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
+      end_x = x + 1;
     } else {
-      const float edge_cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
+      end_y = y + 1;
+    }
+      const float edge_cap = fastroute_->getEdgeCapacity(x, y, end_x, end_y, layer);
       int new_cap = std::floor(edge_cap * 0.5);
       new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-      fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
-    }
+      fastroute_->addAdjustment(x, y, end_x, end_y, layer, new_cap, true);
   }
 }
 
@@ -3093,7 +3086,7 @@ void GlobalRouter::computeObstructionsAdjustments()
       += findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
   findNetsObstructions(die_area);
 
-  std::vector<int> transition_layers = findTransitionLayers();
+  std::vector<LayerId> transition_layers = findTransitionLayers();
   adjustTransitionLayers(transition_layers, layer_obs_map);
 
   if (verbose_)

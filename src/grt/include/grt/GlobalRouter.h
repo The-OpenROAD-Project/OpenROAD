@@ -135,6 +135,8 @@ struct PinGridLocation
 };
 
 typedef std::vector<std::pair<int, odb::Rect>> Guides;
+using LayerId = int;
+using TileSet = std::set<std::pair<int, int>>;
 
 class GlobalRouter : public ant::GlobalRouteSource
 {
@@ -289,11 +291,11 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
-  std::vector<int> findTransitionLayers();
+  std::vector<LayerId> findTransitionLayers();
   void adjustTransitionLayers(
-      const std::vector<int>& transition_layers,
+      const std::vector<LayerId>& transition_layers,
       std::map<int, std::vector<odb::Rect>>& layer_obs_map);
-  void adjustTileSet(const std::set<std::pair<int, int>>& tiles_to_reduce, odb::dbTechLayer* tech_layer);
+  void adjustTileSet(const TileSet& tiles_to_reduce, odb::dbTechLayer* tech_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
