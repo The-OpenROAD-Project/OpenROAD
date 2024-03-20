@@ -932,7 +932,8 @@ std::vector<LayerId> GlobalRouter::findTransitionLayers()
   std::vector<LayerId> transition_layers;
   for (const auto [layer, via] : default_vias) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-    const bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    const bool vertical
+        = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     int via_width = 0;
     for (const auto box : default_vias[layer]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == layer) {
@@ -945,14 +946,13 @@ std::vector<LayerId> GlobalRouter::findTransitionLayers()
     // threshold to define what is a transition layer based on the width of the
     // fat via. using 0.8 to consider transition layers for wide vias
     const float fat_via_threshold = 0.8;
-    if (via_width / track_pitch> fat_via_threshold) {
+    if (via_width / track_pitch > fat_via_threshold) {
       transition_layers.push_back(layer);
     }
   }
 
   return transition_layers;
 }
-
 
 // reduce the capacity of transition layers in 50% to have less wires in
 // regions where a fat via is necessary.
@@ -984,7 +984,8 @@ void GlobalRouter::adjustTransitionLayers(
   }
 }
 
-void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce, odb::dbTechLayer* tech_layer)
+void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce,
+                                 odb::dbTechLayer* tech_layer)
 {
   const int layer = tech_layer->getRoutingLevel();
   for (const auto& [x, y] : tiles_to_reduce) {
@@ -995,10 +996,11 @@ void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce, odb::dbTechLaye
     } else {
       end_y = y + 1;
     }
-      const float edge_cap = fastroute_->getEdgeCapacity(x, y, end_x, end_y, layer);
-      int new_cap = std::floor(edge_cap * 0.5);
-      new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-      fastroute_->addAdjustment(x, y, end_x, end_y, layer, new_cap, true);
+    const float edge_cap
+        = fastroute_->getEdgeCapacity(x, y, end_x, end_y, layer);
+    int new_cap = std::floor(edge_cap * 0.5);
+    new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+    fastroute_->addAdjustment(x, y, end_x, end_y, layer, new_cap, true);
   }
 }
 
