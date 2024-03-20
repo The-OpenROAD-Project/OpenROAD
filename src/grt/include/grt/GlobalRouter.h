@@ -290,7 +290,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
   std::vector<int> findTransitionLayers();
-  void adjustTransitionLayers(const std::vector<int>& transition_layers, std::map<int, std::vector<odb::Rect>>& layer_obs_map);
+  void adjustTransitionLayers(
+      const std::vector<int>& transition_layers,
+      std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -391,9 +393,10 @@ class GlobalRouter : public ant::GlobalRouteSource
       std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
       int bottom_layer,
       int top_layer);
-  int findInstancesObstructions(odb::Rect& die_area,
-                                const std::vector<int>& layer_extensions,
-                                std::map<int, std::vector<odb::Rect>>& layer_obs_map);
+  int findInstancesObstructions(
+      odb::Rect& die_area,
+      const std::vector<int>& layer_extensions,
+      std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void findNetsObstructions(odb::Rect& die_area);
   int computeMaxRoutingLayer();
   std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);

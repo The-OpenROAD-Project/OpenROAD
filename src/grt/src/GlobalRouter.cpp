@@ -950,8 +950,9 @@ std::vector<int> GlobalRouter::findTransitionLayers()
   return transition_layers;
 }
 
-void GlobalRouter::adjustTransitionLayers(const std::vector<int>& transition_layers,
-                                          std::map<int, std::vector<odb::Rect>>& layer_obs_map)
+void GlobalRouter::adjustTransitionLayers(
+    const std::vector<int>& transition_layers,
+    std::map<int, std::vector<odb::Rect>>& layer_obs_map)
 {
   odb::dbTech* tech = db_->getTech();
   for (int layer : transition_layers) {
@@ -959,30 +960,25 @@ void GlobalRouter::adjustTransitionLayers(const std::vector<int>& transition_lay
     for (const auto& obs : layer_obs_map[layer - 1]) {
       odb::Rect first_tile_bds, last_tile_bds;
       odb::Point first_tile, last_tile;
-      grid_->getBlockedTiles(obs, first_tile_bds, last_tile_bds, first_tile, last_tile);
+      grid_->getBlockedTiles(
+          obs, first_tile_bds, last_tile_bds, first_tile, last_tile);
       if (first_tile.x() != last_tile.x() || first_tile.y() != last_tile.y()) {
         if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
           for (int y = first_tile.y(); y < last_tile.y(); y++) {
             for (int x = first_tile.x(); x < last_tile.x(); x++) {
-              int edge_cap
-                  = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
-              int new_cap
-                  = std::floor(static_cast<float>(edge_cap) * (0.5));
+              int edge_cap = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+              int new_cap = std::floor(static_cast<float>(edge_cap) * (0.5));
               new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-              fastroute_->addAdjustment(
-                  x, y, x + 1, y, layer, new_cap, true);
+              fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
             }
           }
         } else {
           for (int x = first_tile.x(); x < last_tile.x(); x++) {
             for (int y = first_tile.y(); y < last_tile.y(); y++) {
-              int edge_cap
-                  = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
-              int new_cap
-                  = std::floor(static_cast<float>(edge_cap) * (0.5));
+              int edge_cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
+              int new_cap = std::floor(static_cast<float>(edge_cap) * (0.5));
               new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-              fastroute_->addAdjustment(
-                  x, y, x, y + 1, layer, new_cap, true);
+              fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
             }
           }
         }
@@ -3071,7 +3067,8 @@ void GlobalRouter::computeObstructionsAdjustments()
 
   findLayerExtensions(layer_extensions);
   int obstructions_cnt = findObstructions(die_area);
-  obstructions_cnt += findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
+  obstructions_cnt
+      += findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
   findNetsObstructions(die_area);
 
   std::vector<int> transition_layers = findTransitionLayers();
@@ -3148,8 +3145,7 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
           logger_->warn(GRT, 37, "Found blockage outside die area.");
       }
       odb::dbTechLayer* tech_layer = obstruction_box->getTechLayer();
-      applyObstructionAdjustment(obstruction_rect,
-                                 tech_layer);
+      applyObstructionAdjustment(obstruction_rect, tech_layer);
       obstructions_cnt++;
     }
   }
@@ -3431,8 +3427,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                                 db_net->getConstName());
               }
               odb::dbTechLayer* tech_layer = pshape.shape.getTechLayer();
-              applyObstructionAdjustment(obstruction_rect,
-                                         tech_layer);
+              applyObstructionAdjustment(obstruction_rect, tech_layer);
             }
           }
         }
