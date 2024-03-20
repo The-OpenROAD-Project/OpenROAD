@@ -71,7 +71,9 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   metrics_policies_ = MetricsPolicy::makeDefaultPolicies();
 
   for (auto& counters : message_counters_) {
-    counters.fill(0);
+    for (auto& counter : counters) {
+      counter = 0;
+    }
   }
 }
 
@@ -193,6 +195,9 @@ void Logger::flushMetrics()
 
 void Logger::finalizeMetrics()
 {
+  log_metric("flow__warnings__count", std::to_string(warning_count_));
+  log_metric("flow__errors__count", std::to_string(error_count_));
+
   for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);
   }

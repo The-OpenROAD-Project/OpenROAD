@@ -36,16 +36,15 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstdlib>
 #include <iomanip>
-#include <limits>
 #include <map>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #include "Metrics.h"
@@ -152,6 +151,7 @@ class Logger
                    const std::string& message,
                    const Args&... args)
   {
+    warning_count_++;
     log(tool, spdlog::level::level_enum::warn, id, message, args...);
   }
 
@@ -161,6 +161,7 @@ class Logger
                                               const std::string& message,
                                               const Args&... args)
   {
+    error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
     char tool_id[32];
     sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
@@ -305,10 +306,12 @@ class Logger
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
-  using MessageCounter = std::array<short, max_message_id + 1>;
+  using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;
+  std::atomic_int warning_count_;
+  std::atomic_int error_count_;
   static constexpr const char* level_names[]
       = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "OFF"};
   static constexpr const char* pattern_ = "%v";
