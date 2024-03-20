@@ -927,12 +927,12 @@ void GlobalRouter::computeTrackConsumption(
 std::vector<int> GlobalRouter::findTransitionLayers()
 {
   odb::dbTech* tech = db_->getTech();
-  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+  const int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
   std::map<int, odb::dbTechVia*> default_vias = getDefaultVias(max_layer);
   std::vector<int> transition_layers;
   for (const auto [layer, via] : default_vias) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-    bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    const bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     int via_width = 0;
     for (const auto box : default_vias[layer]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == layer) {
@@ -941,8 +941,11 @@ std::vector<int> GlobalRouter::findTransitionLayers()
       }
     }
 
-    int track_pitch = grid_->getTrackPitches()[layer - 1];
-    if ((static_cast<double>(via_width) / track_pitch) > 0.8) {
+    const double track_pitch = grid_->getTrackPitches()[layer - 1];
+    // threshold to define what is a transition layer based on the width of the
+    // fat via. using 0.8 to consider transition layers for wide vias
+    const float fat_via_threshold = 0.8;
+    if (via_width / track_pitch> fat_via_threshold) {
       transition_layers.push_back(layer);
     }
   }
@@ -950,6 +953,11 @@ std::vector<int> GlobalRouter::findTransitionLayers()
   return transition_layers;
 }
 
+
+// reduce the capacity of transition layers in 50% to have less wires in
+// regions where a fat via is necessary.
+// this way, the detailed router will have more room to fix violations near
+// the fat vias.
 void GlobalRouter::adjustTransitionLayers(
     const std::vector<int>& transition_layers,
     std::map<int, std::vector<odb::Rect>>& layer_obs_map)
