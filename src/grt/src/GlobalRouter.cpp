@@ -933,7 +933,7 @@ std::vector<int> GlobalRouter::findTransitionLayers()
   for (const auto [layer, via] : default_vias) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
     bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-    int via_width;
+    int via_width = 0;
     for (const auto box : default_vias[layer]->getBoxes()) {
       if (box->getTechLayer()->getRoutingLevel() == layer) {
         via_width = vertical ? box->getWidth() : box->getLength();
