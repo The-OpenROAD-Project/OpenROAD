@@ -36,6 +36,9 @@
 #include "dbCore.h"
 #include "odb.h"
 
+// User Code Begin Includes
+// User Code End Includes
+
 namespace odb {
 class dbIStream;
 class dbOStream;
@@ -44,10 +47,18 @@ class _dbDatabase;
 class _dbScanInst;
 template <class T>
 class dbTable;
+// User Code Begin Classes
+// User Code End Classes
+
+// User Code Begin Structs
+// User Code End Structs
 
 class _dbScanList : public _dbObject
 {
  public:
+  // User Code Begin Enums
+  // User Code End Enums
+
   _dbScanList(_dbDatabase*, const _dbScanList& r);
   _dbScanList(_dbDatabase*);
 
@@ -61,10 +72,17 @@ class _dbScanList : public _dbObject
                    const _dbScanList& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
+  // User Code End Methods
 
   dbTable<_dbScanInst>* scan_insts_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj);
+// User Code Begin General
+// User Code End General
 }  // namespace odb
 // Generator Code End Header
