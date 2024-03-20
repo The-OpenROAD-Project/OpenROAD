@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO RSZ-0058] Using max wire length 822um.
 [INFO RSZ-0037] Found 118 long wires.
 [INFO RSZ-0038] Inserted 158 buffers in 118 nets.

@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: Nangate45_tech.lef, created 22 layers, 27 vias, 0 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
 [WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
 [WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
 [WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
@@ -19,13 +19,13 @@
 [WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
 [WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
 [INFO ODB-0394] Duplicate site FreePDK45_38x28_10R_NP_162NW_34O in Nangate45 already seen in Nangate45_tech
-[INFO ODB-0227] LEF file: Nangate45.lef, created 0 layers, 0 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 135 library cells
 read lef file ./Nangate45/fakeram45_512x64.lef
-[INFO ODB-0227] LEF file: fakeram45_512x64.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/fakeram45_512x64.lef, created 1 library cells
 read lef file ./Nangate45/fakeram45_64x7.lef
-[INFO ODB-0227] LEF file: fakeram45_64x7.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/fakeram45_64x7.lef, created 1 library cells
 read lef file ./Nangate45/fakeram45_64x96.lef
-[INFO ODB-0227] LEF file: fakeram45_64x96.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: ./Nangate45/fakeram45_64x96.lef, created 1 library cells
 read_lib file ./Nangate45/fakeram45_512x64.lib
 read_lib file ./Nangate45/fakeram45_64x7.lib
 read_lib file ./Nangate45/fakeram45_64x96.lib

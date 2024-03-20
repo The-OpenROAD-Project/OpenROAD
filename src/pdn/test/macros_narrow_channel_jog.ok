@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: fakeram45_64x32.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_macros/fakeram45_64x32.lef, created 1 library cells
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0130]     Created 269 pins.
 [INFO ODB-0131]     Created 630 components and 1680 component-terminals.

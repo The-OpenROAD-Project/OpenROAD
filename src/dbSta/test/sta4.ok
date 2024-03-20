@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 0 vias, 6 library cells
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 6 library cells
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 5 components and 24 component-terminals.

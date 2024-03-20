@@ -1,6 +1,6 @@
-[INFO ODB-0227] LEF file: asap7_tech_1x_201209.lef, created 24 layers, 9 vias, 0 library cells
-[INFO ODB-0227] LEF file: asap7sc7p5t_28_R_1x_220121a.lef, created 0 layers, 0 vias, 212 library cells
-[INFO ODB-0227] LEF file: fakeram7_256x32.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: asap7_data/fakeram7_256x32.lef, created 1 library cells
 [INFO ODB-0128] Design: riscv_top
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 12161 components and 58747 component-terminals.

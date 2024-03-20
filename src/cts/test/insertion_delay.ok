@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 279 components and 1673 component-terminals.

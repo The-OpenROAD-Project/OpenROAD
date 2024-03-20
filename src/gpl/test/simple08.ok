@@ -2,7 +2,7 @@
 The LEF parser will ignore this statement.
 To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file ./sky130hd.lef at line 794.
 
-[INFO ODB-0227] LEF file: sky130hd.lef, created 13 layers, 25 vias, 441 library cells
+[INFO ODB-0227] LEF file: ./sky130hd.lef, created 13 layers, 25 vias, 441 library cells
 [INFO ODB-0128] Design: inverter
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.

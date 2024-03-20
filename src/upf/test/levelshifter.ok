@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: sky130_fd_sc_hd.tlef, created 13 layers, 25 vias, 0 library cells
-[INFO ODB-0227] LEF file: sky130_fd_sc_hd_merged.lef, created 0 layers, 0 vias, 437 library cells
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [WARNING UPF-0032] Couldn't find level shifter ls_2 to update
 [WARNING UPF-0057] -use_equivalence is deprecated in UPF and not supported in OpenROAD
 PowerDomain: PD_AES_1

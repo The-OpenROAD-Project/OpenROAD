@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
 [INFO PAR-0004] Partitioning netlist.
 Netlist Partitioning Parameters

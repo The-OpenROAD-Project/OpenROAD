@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: bus1.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: bus1.lef, created 1 library cells
 Instance bus1
  Cell: bus4
  Library: bus1

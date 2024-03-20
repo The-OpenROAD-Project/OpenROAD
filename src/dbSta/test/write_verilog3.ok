@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 0 vias, 0 library cells
-[INFO ODB-0227] LEF file: bus1.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers
+[INFO ODB-0227] LEF file: bus1.lef, created 1 library cells
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 9 pins.
 [INFO ODB-0131]     Created 1 components and 11 component-terminals.

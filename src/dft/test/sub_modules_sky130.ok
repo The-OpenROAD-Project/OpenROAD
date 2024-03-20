@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: sky130hd.tlef, created 13 layers, 25 vias, 0 library cells
-[INFO ODB-0227] LEF file: sky130_fd_sc_hd_merged.lef, created 0 layers, 0 vias, 437 library cells
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 ***************************
 Preview DFT Report
 Number of chains: 1

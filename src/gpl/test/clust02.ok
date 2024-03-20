@@ -1,10 +1,10 @@
-[INFO ODB-0227] LEF file: asap7_tech_1x_201209.lef, created 24 layers, 9 vias, 0 library cells
-[INFO ODB-0227] LEF file: asap7sc7p5t_28_L_1x_220121a.lef, created 0 layers, 0 vias, 212 library cells
-[INFO ODB-0227] LEF file: asap7sc7p5t_DFFHQNV2X.lef, created 0 layers, 0 vias, 9 library cells
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef, created 9 library cells
 [INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNV4X already seen in asap7sc7p5t_DFFHQNV2X
-[INFO ODB-0227] LEF file: asap7sc7p5t_DFFHQNV4X.lef, created 0 layers, 0 vias, 9 library cells
+[INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
 [INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNH2V2X already seen in asap7sc7p5t_DFFHQNV2X
-[INFO ODB-0227] LEF file: asap7sc7p5t_DFFHQNH2V2X.lef, created 0 layers, 0 vias, 9 library cells
+[INFO ODB-0227] LEF file: ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef, created 9 library cells
 [INFO ODB-0128] Design: tray_test
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 20000 components and 100000 component-terminals.

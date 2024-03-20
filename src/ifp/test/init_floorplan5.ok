@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-2011] LEF master DFF_X1 has no liberty cell.
 [WARNING ORD-2011] LEF master BUF_X1 has no liberty cell.
 [WARNING ORD-2011] LEF master AND2_X1 has no liberty cell.

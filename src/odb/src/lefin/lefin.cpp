@@ -37,8 +37,8 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <filesystem>
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -2231,14 +2231,39 @@ bool lefin::readLefInner(const char* lef_file)
   }
   _incomplete_props.clear();
 
-  std::filesystem::path p(lef_file);
-  _logger->info(utl::ODB,
-                227,
-                "LEF file: {}, created {} layers, {} vias, {} library cells",
-                p.filename().string(),
-                _layer_cnt,
-                _via_cnt,
-                _master_cnt);
+  std::string p = lef_file;
+  std::vector<std::string> parts;
+
+  if (_layer_cnt > 0) {
+    std::ostringstream ss;
+    ss << _layer_cnt << " layers";
+    parts.push_back(ss.str());
+  }
+
+  if (_via_cnt > 0) {
+    std::ostringstream ss;
+    ss << _via_cnt << " vias";
+    parts.push_back(ss.str());
+  }
+
+  if (_master_cnt > 0) {
+    std::ostringstream ss;
+    ss << _master_cnt << " library cells";
+    parts.push_back(ss.str());
+  }
+
+  std::string message = "LEF file: " + p;
+  if (!parts.empty()) {
+    message += ", created ";
+    for (size_t i = 0; i < parts.size(); ++i) {
+      message += parts[i];
+      if (i != parts.size() - 1) {
+        message += ", ";
+      }
+    }
+  }
+
+  _logger->info(utl::ODB, 227, message);
   return r;
 }
 

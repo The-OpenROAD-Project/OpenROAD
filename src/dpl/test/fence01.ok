@@ -1,4 +1,4 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.

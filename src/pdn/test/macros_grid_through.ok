@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: sky130hd.tlef, created 13 layers, 25 vias, 0 library cells
-[INFO ODB-0227] LEF file: pll.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130_pll/pll.lef, created 1 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0131]     Created 1 components and 2 component-terminals.
 [INFO PDN-0001] Inserting grid: Core

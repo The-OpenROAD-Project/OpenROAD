@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: report_wire_length6.lef1, created 24 layers, 9 vias, 0 library cells
-[INFO ODB-0227] LEF file: report_wire_length6.lef2, created 0 layers, 0 vias, 212 library cells
+[INFO ODB-0227] LEF file: report_wire_length6.lef1, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: report_wire_length6.lef2, created 212 library cells
 [INFO ODB-0127] Reading DEF file: report_wire_length6.def
 [INFO ODB-0128] Design: multiply_add_64x64
 [INFO ODB-0130]     Created 1 pins.

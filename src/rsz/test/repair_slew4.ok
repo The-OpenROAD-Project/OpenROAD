@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: repair_slew4.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: repair_slew4.lef, created 1 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 5 components and 20 component-terminals.

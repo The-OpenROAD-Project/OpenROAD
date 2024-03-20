@@ -1,7 +1,7 @@
-[INFO ODB-0227] LEF file: Nangate45_tech.lef, created 22 layers, 27 vias, 0 library cells
-[INFO ODB-0227] LEF file: endcaps.lef, created 0 layers, 0 vias, 13 library cells
-[INFO ODB-0227] LEF file: Nangate45_stdcell.lef, created 0 layers, 0 vias, 135 library cells
-[INFO ODB-0227] LEF file: fakeram45_64x7.lef, created 0 layers, 0 vias, 1 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45_data/endcaps.lef, created 13 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 5 components and 160 component-terminals.

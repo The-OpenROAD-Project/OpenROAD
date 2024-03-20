@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: sky130hd.tlef, created 13 layers, 25 vias, 0 library cells
-[INFO ODB-0227] LEF file: sky130hd_std_cell.lef, created 0 layers, 0 vias, 437 library cells
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 1001 components and 5004 component-terminals.
