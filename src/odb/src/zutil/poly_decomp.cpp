@@ -31,40 +31,27 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <list>
 #include <vector>
 
-#include "geom.h"
+#include "geom_boost.h"
+
+namespace gtl = boost::polygon;
 
 namespace odb {
 
 void decompose_polygon(const std::vector<Point>& points,
                        std::vector<Rect>& rects)
 {
-  namespace gtl = boost::polygon;
-
-  std::vector<gtl::point_data<int>> boost_points;
-  boost_points.reserve(points.size());
-  for (const auto& point : points) {
-    boost_points.emplace_back(point.x(), point.y());
-  }
+  using boost::polygon::operators::operator+=;
 
   gtl::polygon_90_data<int> polygon;
-  polygon.set(boost_points.begin(), boost_points.end());
+  polygon.set(points.begin(), points.end());
 
   gtl::polygon_90_set_data<int> polygon_set;
-  {
-    using boost::polygon::operators::operator+=;
-    polygon_set += polygon;
-  }
+  polygon_set += polygon;
 
-  std::vector<gtl::rectangle_data<int>> boost_rects;
-  polygon_set.get_rectangles(boost_rects);
-
-  for (const auto& rect : boost_rects) {
-    rects.emplace_back(xl(rect), yl(rect), xh(rect), yh(rect));
-  }
+  polygon_set.get_rectangles(rects);
 }
 
 // See "Orientation of a simple polygon" in
