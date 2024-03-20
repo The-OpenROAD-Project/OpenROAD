@@ -1,7 +1,4 @@
-[INFO ODB-0222] Reading LEF file: liberty1.lef
-[INFO ODB-0223]     Created 2 technology layers
-[INFO ODB-0225]     Created 6 library cells
-[INFO ODB-0226] Finished LEF file:  liberty1.lef
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 0 vias, 6 library cells
 [INFO ODB-0128] Design: reg1
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 5 components and 24 component-terminals.

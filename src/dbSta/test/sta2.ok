@@ -1,7 +1,4 @@
-[INFO ODB-0222] Reading LEF file: example1.lef
-[INFO ODB-0223]     Created 2 technology layers
-[INFO ODB-0225]     Created 6 library cells
-[INFO ODB-0226] Finished LEF file:  example1.lef
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 0 vias, 6 library cells
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

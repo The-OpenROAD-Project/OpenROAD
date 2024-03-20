@@ -1,10 +1,5 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs.tlef, created 13 layers, 25 vias, 0 library cells
+[INFO ODB-0227] LEF file: sky130hs_std_cell.lef, created 0 layers, 0 vias, 390 library cells
 [INFO ODB-0128] Design: reg1
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 3 components and 22 component-terminals.

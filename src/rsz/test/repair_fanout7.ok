@@ -1,10 +1,6 @@
 ./results/repair_fanout7-tcl.def NAND2_X4 150 drvr DFF_X1 CK Q 
 load DFF_X1 CK D 300000 metal3 1000
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 152 pins.
 [INFO ODB-0131]     Created 153 components and 917 component-terminals.

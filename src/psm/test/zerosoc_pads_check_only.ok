@@ -1,19 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
-[INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
-[INFO ODB-0222] Reading LEF file: sky130hd_data/ram/sky130_sram_2kbyte_1rw1r_32x512_8.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd_data/ram/sky130_sram_2kbyte_1rw1r_32x512_8.lef
-[INFO ODB-0222] Reading LEF file: sky130hd_data/io/sky130_dummy_io.lef
+[INFO ODB-0227] LEF file: sky130hd.tlef, created 13 layers, 25 vias, 0 library cells
+[INFO ODB-0227] LEF file: sky130_fd_sc_hd_merged.lef, created 0 layers, 0 vias, 437 library cells
+[INFO ODB-0227] LEF file: sky130_sram_2kbyte_1rw1r_32x512_8.lef, created 0 layers, 0 vias, 1 library cells
 [WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
 The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sky130_dummy_io.lef at line 2.
 
-[INFO ODB-0225]     Created 32 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd_data/io/sky130_dummy_io.lef
+[INFO ODB-0227] LEF file: sky130_dummy_io.lef, created 0 layers, 0 vias, 32 library cells
 [INFO ODB-0128] Design: asic_top
 [INFO ODB-0130]     Created 40 pins.
 [INFO ODB-0131]     Created 44647 components and 163994 component-terminals.
