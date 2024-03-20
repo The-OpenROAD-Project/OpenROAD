@@ -135,7 +135,7 @@ dbScanInst* dbScanList::add(dbInst* inst)
 dbScanList* dbScanList::create(dbScanChain* scan_chain)
 {
   _dbScanChain* obj = (_dbScanChain*) scan_chain;
-  return (dbScanList*)obj->scan_lists_->create();
+  return (dbScanList*) obj->scan_lists_->create();
 }
 // User Code End dbScanListPublicMethods
 }  // namespace odb
