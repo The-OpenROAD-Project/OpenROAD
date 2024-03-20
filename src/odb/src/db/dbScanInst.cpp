@@ -109,12 +109,6 @@ _dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)
   clock_edge_ = r.clock_edge_;
 }
 
-dbIStream& operator>>(dbIStream& stream, dbScanInst::AccessPins& obj)
-{
-  stream >> obj.scan_in;
-  stream >> obj.scan_out;
-  return stream;
-}
 dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
 {
   stream >> obj.bits_;
@@ -126,12 +120,6 @@ dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const dbScanInst::AccessPins& obj)
-{
-  stream << obj.scan_in;
-  stream << obj.scan_out;
-  return stream;
-}
 dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
 {
   stream << obj.bits_;

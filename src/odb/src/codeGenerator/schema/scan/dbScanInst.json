@@ -57,6 +57,10 @@
         "name": "scan_out",
         "type": "std::variant<dbBTerm*, dbITerm*>"
       }
+    ],
+    "flags": [
+      "no-serializer-in",
+      "no-serializer-out"
     ]
     }
   ],
