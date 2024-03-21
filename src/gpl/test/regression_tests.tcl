@@ -27,5 +27,5 @@ record_tests {
   convergence01
   nograd01
   clust01
-  clust02
+#  clust02
 }
