@@ -316,16 +316,15 @@ std::string dbModInst::getHierarchicalName() const
     return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
-bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
+dbModITerm* dbModInst::findModITerm(const char* name)
 {
   dbSet<dbModITerm> moditerms = getModITerms();
   for (dbModITerm* mod_iterm : moditerms) {
     if (!strcmp(mod_iterm->getName(), name)) {
-      ret = mod_iterm;
-      return true;
+      return mod_iterm;
     }
   }
-  return false;
+  return nullptr;
 }
 
 // User Code End dbModInstPublicMethods

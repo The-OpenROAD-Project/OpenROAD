@@ -34,7 +34,6 @@
 #include "dbModuleModBTermItr.h"
 
 #include "dbModBTerm.h"
-#include "dbModBTerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
 

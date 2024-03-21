@@ -7511,6 +7511,13 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
+
+  std::string getHierarchicalName() const;
+
+  dbModITerm* findModITerm(const char* name);
+
+  dbSet<dbModITerm> getModITerms();
+
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
                            const char* name);
@@ -7520,12 +7527,6 @@ class dbModInst : public dbObject
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
-
-  std::string getHierarchicalName() const;
-
-  bool findModITerm(const char* name, dbModITerm*& ret);
-
-  dbSet<dbModITerm> getModITerms();
 
   // User Code End dbModInst
 };
@@ -7598,17 +7599,17 @@ class dbModule : public dbObject
 
   std::vector<dbInst*> getLeafInsts();
 
-  static dbModule* create(dbBlock* block, const char* name);
-
-  static void destroy(dbModule* module);
-
-  static dbModule* getModule(dbBlock* block_, uint dbid_);
-
   int getModInstCount();
   int getDbInstCount();
 
   void staSetCell(void* cell);
   void* getStaCell();
+
+  static dbModule* create(dbBlock* block, const char* name);
+
+  static void destroy(dbModule* module);
+
+  static dbModule* getModule(dbBlock* block_, uint dbid_);
 
  private:
   // User Code End dbModule
