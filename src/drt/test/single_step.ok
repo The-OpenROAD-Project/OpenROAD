@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: testcase/ispd18_sample/ispd18_sample.input.lef
-[INFO ODB-0223]     Created 18 technology layers
-[INFO ODB-0224]     Created 22 technology vias
-[INFO ODB-0225]     Created 16 library cells
-[INFO ODB-0226] Finished LEF file:  testcase/ispd18_sample/ispd18_sample.input.lef
+[INFO ODB-0227] LEF file: testcase/ispd18_sample/ispd18_sample.input.lef, created 18 layers, 22 vias, 16 library cells
 [INFO ODB-0128] Design: ispd18_sample
 [INFO ODB-0131]     Created 22 components and 146 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 22 connections.
