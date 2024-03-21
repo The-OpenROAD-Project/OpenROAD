@@ -1,0 +1,136 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, Precision Innovations Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+// This header adapts odb's Point and Rect to work with Boost Polygon.
+// It is a separate header so clients uninterested can just include geom.h.
+
+#pragma once
+
+#include <boost/polygon/polygon.hpp>
+
+#include "odb/geom.h"
+
+// Make odb's Point work with boost polgyon
+
+template <>
+struct boost::polygon::geometry_concept<odb::Point>
+{
+  using type = point_concept;
+};
+
+template <>
+struct boost::polygon::point_traits<odb::Point>
+{
+  using coordinate_type = int;
+
+  static int get(const odb::Point& point, const orientation_2d& orient)
+  {
+    if (orient == HORIZONTAL) {
+      return point.getX();
+    }
+    return point.getY();
+  }
+};
+
+template <>
+struct boost::polygon::point_mutable_traits<odb::Point>
+{
+  using coordinate_type = int;
+
+  static void set(odb::Point& point,
+                  const orientation_2d& orient,
+                  const int value)
+  {
+    if (orient == HORIZONTAL) {
+      point.setX(value);
+    } else {
+      point.setY(value);
+    }
+  }
+
+  static odb::Point construct(int x_value, int y_value)
+  {
+    return odb::Point(x_value, y_value);
+  }
+};
+
+// Make odb's Rect work with boost polgyon
+
+template <>
+struct boost::polygon::geometry_concept<odb::Rect>
+{
+  using type = rectangle_concept;
+};
+
+template <>
+struct boost::polygon::rectangle_traits<odb::Rect>
+{
+  using coordinate_type = int;
+  using interval_type = interval_data<int>;
+
+  static inline interval_type get(const odb::Rect& rectangle,
+                                  const orientation_2d& orient)
+  {
+    if (orient == HORIZONTAL) {
+      return {rectangle.xMin(), rectangle.xMax()};
+    }
+    return {rectangle.yMin(), rectangle.yMax()};
+  }
+};
+
+template <>
+struct boost::polygon::rectangle_mutable_traits<odb::Rect>
+{
+  template <typename T2>
+  static inline void set(odb::Rect& rectangle,
+                         const orientation_2d& orient,
+                         const T2& interval)
+  {
+    if (orient == HORIZONTAL) {
+      rectangle.set_xlo(low(interval));
+      rectangle.set_xhi(high(interval));
+    } else {
+      rectangle.set_ylo(low(interval));
+      rectangle.set_yhi(high(interval));
+    }
+  }
+
+  template <typename T2, typename T3>
+  static inline odb::Rect construct(const T2& interval_horizontal,
+                                    const T3& interval_vertical)
+  {
+    return odb::Rect(low(interval_horizontal),
+                     low(interval_vertical),
+                     high(interval_horizontal),
+                     high(interval_vertical));
+  }
+};
