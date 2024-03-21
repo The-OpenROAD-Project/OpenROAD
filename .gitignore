@@ -37,3 +37,4 @@ debug/
 
 coverage-output
 .metals/
+src/rmp/test/abc.history
