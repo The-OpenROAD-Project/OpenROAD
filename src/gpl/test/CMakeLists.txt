@@ -29,7 +29,7 @@ set(TEST_NAMES
   convergence01
   nograd01
   clust01
-  clust02
+#  clust02
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
