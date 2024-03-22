@@ -1944,10 +1944,10 @@ void FastRouteCore::copyBR(void)
       }
     }
 
-    for (const auto& [i, j] : h_used_ggrid_) {}
+    for (const auto& [i, j] : h_used_ggrid_) {
       h_edges_[i][j].usage = 0;
     }
-    for (const auto& [i, j] : v_used_ggrid_)
+    for (const auto& [i, j] : v_used_ggrid_) {
       v_edges_[i][j].usage = 0;
     }
 
