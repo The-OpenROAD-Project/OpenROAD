@@ -80,6 +80,8 @@ class TestScanChain : public testing::Test
     }
   }
 
+  // Writes a temporal DB and then tries to read the contents back to check if
+  // the serialization is working as expected
   dbDatabase* writeReadDb()
   {
     writeDb();
