@@ -459,11 +459,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         }
 
         Cluster* cluster = macros_[macro_id].getCluster();
-
-        float macro_dominance = 1;
-        if (cluster->getClusterType() == MixedCluster) {
-          macro_dominance = cluster->getMacroArea() / cluster->getArea();
-        }
+        float macro_dominance = cluster->getMacroArea() / cluster->getArea();
 
         macro_blockage_penalty_ += overlap_width * overlap_height
                                    * macros_[macro_id].getNumMacro()
