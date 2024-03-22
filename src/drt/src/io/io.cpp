@@ -1199,7 +1199,6 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setTracks(block);
   setInsts(block);
   setObstructions(block);
-  setVias(block);
   setBTerms(block);
   setAccessPoints(db);
   setNets(block);
@@ -2743,6 +2742,9 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
+  if (db->getChip() && db->getChip()->getBlock()) {
+    setVias(db->getChip()->getBlock());
+  }
   setMasters(db);
   setNDRs(db);
   initDefaultVias();
