@@ -1944,16 +1944,13 @@ void FastRouteCore::copyBR(void)
       }
     }
 
-    for (i = 0; i < y_grid_; i++) {
-      for (j = 0; j < x_grid_ - 1; j++) {
-        h_edges_[i][j].usage = 0;
-      }
+    for (const auto& [i, j] : h_used_ggrid_) {}
+      h_edges_[i][j].usage = 0;
     }
-    for (i = 0; i < y_grid_ - 1; i++) {
-      for (j = 0; j < x_grid_; j++) {
-        v_edges_[i][j].usage = 0;
-      }
+    for (const auto& [i, j] : v_used_ggrid_)
+      v_edges_[i][j].usage = 0;
     }
+
     for (int netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();
