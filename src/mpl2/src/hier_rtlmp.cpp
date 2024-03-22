@@ -3044,52 +3044,52 @@ void HierRTLMP::setIOClustersBlockages()
 {
   debugPrint(logger_,
              MPL,
-             "hierarchical_macro_placement",
+             "coarse_shaping",
              1,
              "Creating the pin blockage for root cluster");
-  floorplan_lx_ = root_cluster_->getX();
-  floorplan_ly_ = root_cluster_->getY();
-  floorplan_ux_ = floorplan_lx_ + root_cluster_->getWidth();
-  floorplan_uy_ = floorplan_ly_ + root_cluster_->getHeight();
-  // if the design has IO pads, we do not create pin blockage
+
   if (!io_pad_map_.empty()) {
     return;
   }
-  // Get the initial tilings
+
+  const float root_lx = root_cluster_->getX();
+  const float root_ly = root_cluster_->getY();
+  const float root_ux = root_cluster_->getX() + root_cluster_->getWidth();
+  const float root_uy = root_cluster_->getY() + root_cluster_->getHeight();
+
   const std::vector<std::pair<float, float>> tilings
       = root_cluster_->getMacroTilings();
-  // When the program enter stage, the tilings cannot be empty
   const float ar = root_cluster_->getHeight() / root_cluster_->getWidth();
   float max_height = std::sqrt(tilings[0].first * tilings[0].second * ar);
   float max_width = max_height / ar;
-  // convert to the limit to the depth of pin access
-  max_width = ((floorplan_ux_ - floorplan_lx_) - max_width);
-  max_height = ((floorplan_uy_ - floorplan_ly_) - max_height);
-  // the area of standard-cell clusters
+  max_width = ((root_ux - root_lx) - max_width);
+  max_height = ((root_uy - root_ly) - max_height);
+
   float std_cell_area = 0.0;
   for (auto& cluster : root_cluster_->getChildren()) {
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_area += cluster->getArea();
     }
   }
-  // Then we check the range of IO spans
+
+  // Check the range of IO spans. Note that we consider the pins that
+  // are in between boundaries of the core and the die.
   std::map<PinAccess, std::pair<float, float>> pin_ranges;
   pin_ranges[L] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
   pin_ranges[T] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
   pin_ranges[R] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
   pin_ranges[B] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
+
   int floorplan_lx = micronToDbu(floorplan_lx_, dbu_);
-  // int floorplan_ly = micronToDbu(floorplan_ly_, dbu_);
   int floorplan_ux = micronToDbu(floorplan_ux_, dbu_);
   int floorplan_uy = micronToDbu(floorplan_uy_, dbu_);
+
   for (auto term : block_->getBTerms()) {
     int lx = std::numeric_limits<int>::max();
     int ly = std::numeric_limits<int>::max();
     int ux = 0;
     int uy = 0;
-    // If the design with IO pads, these block terms
-    // will not have block pins.
-    // Otherwise, the design will have IO pins.
+
     for (const auto pin : term->getBPins()) {
       for (const auto box : pin->getBoxes()) {
         lx = std::min(lx, box->xMin());
@@ -3098,7 +3098,7 @@ void HierRTLMP::setIOClustersBlockages()
         uy = std::max(uy, box->yMax());
       }
     }
-    // remove power pins
+
     if (term->getSigType().isSupply()) {
       continue;
     }
@@ -3126,6 +3126,7 @@ void HierRTLMP::setIOClustersBlockages()
           = std::max(pin_ranges[B].second, dbuToMicron(ux, dbu_));
     }
   }
+
   // calculate the depth based on area
   float sum_length = 0.0;
   int num_hor_access = 0;
@@ -3147,20 +3148,17 @@ void HierRTLMP::setIOClustersBlockages()
         / (root_cluster_->getWidth() * root_cluster_->getHeight());
   const float depth = (std_cell_area / sum_length)
                       * std::pow((1 - macro_dominance_factor), 2);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Pin access for root cluster");
-  // add the blockages into the macro_blockages_
+
+  // Note that the range can be larger than the respective core dimension.
+  // As SA only sees what is inside its current outline, this is not a problem.
   if (pin_ranges[L].second > pin_ranges[L].first) {
-    macro_blockages_.emplace_back(floorplan_lx_,
+    macro_blockages_.emplace_back(root_ux,
                                   pin_ranges[L].first,
-                                  floorplan_lx_ + std::min(max_width, depth),
+                                  root_ux + std::min(max_width, depth),
                                   pin_ranges[L].second);
     debugPrint(logger_,
                MPL,
-               "hierarchical_macro_placement",
+               "coarse_shaping",
                1,
                "Pin access for L : length : {}, depth :  {}",
                pin_ranges[L].second - pin_ranges[L].first,
@@ -3168,25 +3166,25 @@ void HierRTLMP::setIOClustersBlockages()
   }
   if (pin_ranges[T].second > pin_ranges[T].first) {
     macro_blockages_.emplace_back(pin_ranges[T].first,
-                                  floorplan_uy_ - std::min(max_height, depth),
+                                  root_uy - std::min(max_height, depth),
                                   pin_ranges[T].second,
-                                  floorplan_uy_);
+                                  root_uy);
     debugPrint(logger_,
                MPL,
-               "hierarchical_macro_placement",
+               "coarse_shaping",
                1,
                "Pin access for T : length : {}, depth : {}",
                pin_ranges[T].second - pin_ranges[T].first,
                std::min(max_height, depth));
   }
   if (pin_ranges[R].second > pin_ranges[R].first) {
-    macro_blockages_.emplace_back(floorplan_ux_ - std::min(max_width, depth),
+    macro_blockages_.emplace_back(root_ux - std::min(max_width, depth),
                                   pin_ranges[R].first,
-                                  floorplan_ux_,
+                                  root_ux,
                                   pin_ranges[R].second);
     debugPrint(logger_,
                MPL,
-               "hierarchical_macro_placement",
+               "coarse_shaping",
                1,
                "Pin access for R : length : {}, depth : {}",
                pin_ranges[R].second - pin_ranges[R].first,
@@ -3194,12 +3192,12 @@ void HierRTLMP::setIOClustersBlockages()
   }
   if (pin_ranges[B].second > pin_ranges[B].first) {
     macro_blockages_.emplace_back(pin_ranges[B].first,
-                                  floorplan_ly_,
+                                  root_ly,
                                   pin_ranges[B].second,
-                                  floorplan_ly_ + std::min(max_height, depth));
+                                  root_ly + std::min(max_height, depth));
     debugPrint(logger_,
                MPL,
-               "hierarchical_macro_placement",
+               "coarse_shaping",
                1,
                "Pin access for B : length : {}, depth : {}",
                pin_ranges[B].second - pin_ranges[B].first,

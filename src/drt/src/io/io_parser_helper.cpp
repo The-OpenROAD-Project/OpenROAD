@@ -835,12 +835,12 @@ void io::Parser::postProcessGuide()
     genGuides(net, rects);
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       }
