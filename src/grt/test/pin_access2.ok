@@ -43,6 +43,7 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 35
 
 [INFO GRT-0053] Routing resources analysis:
