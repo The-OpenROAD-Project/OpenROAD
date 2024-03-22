@@ -216,7 +216,7 @@ void dbScanChain::setName(std::string_view name)
 }
 
 std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
-    dbId<dbScanPin> scan_pin_id)
+    const dbId<dbScanPin>& scan_pin_id)
 {
   _dbDft* dft = (_dbDft*) getOwner();
   return ((dbScanPin*) dft->scan_pins_->getPtr((dbId<_dbScanPin>) scan_pin_id))

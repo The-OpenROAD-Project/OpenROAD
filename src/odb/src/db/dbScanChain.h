@@ -67,7 +67,7 @@ class _dbScanChain : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   // User Code Begin Methods
-  std::variant<dbBTerm*, dbITerm*> getPin(dbId<dbScanPin> scan_pin_id);
+  std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
   void setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin);
   void setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin);
   // User Code End Methods
