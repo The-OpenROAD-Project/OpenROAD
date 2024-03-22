@@ -197,14 +197,6 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->_next_entry = parent->_modnets;
   parent->_modnets = modnet->getOID();
-  //  printf("Creating modnet %s (%u) in %s (%p)\n",
-  //	 modnet -> _name,
-  //	 modnet -> getOID(),
-  //	 ((dbModule*)parent) -> getName(),
-  //	 ((dbModule*)parent)
-  //	 );
-  //  dbSet<dbModNet> modnets = ((dbModule*)parent) -> getModNets();
-  //  printf("# modnets %u\n",modnets.size());
   return (dbModNet*) modnet;
 }
 

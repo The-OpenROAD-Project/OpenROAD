@@ -88,8 +88,9 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0)
+  if (strcmp(_name, rhs._name) >= 0) {
     return false;
+  }
   // User Code End <
   return true;
 }
@@ -126,7 +127,7 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = 0;
+  _name = nullptr;
   _insts = 0;
   _modinsts = 0;
   _mod_inst = 0;
@@ -272,8 +273,9 @@ void _dbModule::removeInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   uint id = _inst->getOID();
 
-  if (_inst->_module != getOID())
+  if (_inst->_module != getOID()) {
     return;
+  }
 
   if (_inst->_flags._dont_touch) {
     _inst->getLogger()->error(
@@ -325,8 +327,9 @@ dbSet<dbModNet> dbModule::getModNets()
 dbModNet* dbModule::getModNet(const char* net_name)
 {
   for (auto mnet : getModNets()) {
-    if (!strcmp(net_name, mnet->getName()))
+    if (!strcmp(net_name, mnet->getName())) {
       return mnet;
+    }
   }
   return nullptr;
 }
@@ -355,8 +358,9 @@ dbSet<dbInst> dbModule::getInsts()
 dbModule* dbModule::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_module_hash.hasMember(name))
+  if (_block->_module_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbModule* module = _block->_module_tbl->create();
   module->_name = strdup(name);
   ZALLOCATED(module->_name);
@@ -406,8 +410,9 @@ dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
 dbModInst* dbModule::findModInst(const char* name)
 {
   for (dbModInst* mod_inst : getModInsts()) {
-    if (!strcmp(mod_inst->getName(), name))
+    if (!strcmp(mod_inst->getName(), name)) {
       return mod_inst;
+    }
   }
   return nullptr;
 }
@@ -415,8 +420,9 @@ dbModInst* dbModule::findModInst(const char* name)
 dbInst* dbModule::findDbInst(const char* name)
 {
   for (dbInst* inst : getInsts()) {
-    if (!strcmp(inst->getName().c_str(), name))
+    if (!strcmp(inst->getName().c_str(), name)) {
       return inst;
+    }
   }
   return nullptr;
 }
@@ -442,9 +448,10 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   std::string bterm_name(name);
-  size_t last_idx = bterm_name.find_last_of("/");
-  if (last_idx != std::string::npos)
+  size_t last_idx = bterm_name.find_last_of('/');
+  if (last_idx != std::string::npos) {
     bterm_name = bterm_name.substr(last_idx + 1);
+  }
 
   for (dbModBTerm* mod_bterm : getModBTerms()) {
     if (!strcmp(mod_bterm->getName(), bterm_name.c_str())) {
@@ -459,9 +466,8 @@ std::string dbModule::getHierarchicalName() const
   dbModInst* inst = getModInst();
   if (inst) {
     return inst->getHierarchicalName();
-  } else {
-    return "<top>";
   }
+  return "<top>";
 }
 
 void* dbModule::getStaCell()

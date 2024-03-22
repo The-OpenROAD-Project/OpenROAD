@@ -83,8 +83,9 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
 bool _dbModInst::operator<(const _dbModInst& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0)
+  if (strcmp(_name, rhs._name) >= 0) {
     return false;
+  }
   // User Code End <
   return true;
 }
@@ -123,7 +124,7 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = 0;
+  _name = nullptr;
   _parent = 0;
   _module_next = 0;
   _master = 0;
@@ -228,8 +229,9 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModule* master = (_dbModule*) masterModule;
 
-  if (master->_mod_inst != 0)
+  if (master->_mod_inst != 0) {
     return nullptr;
+  }
 
   dbModInst* ret = nullptr;
   ret = ((dbModule*) module)->findModInst(name);
@@ -260,6 +262,14 @@ void dbModInst::destroy(dbModInst* modinst)
   master->_mod_inst = dbId<_dbModInst>();  // clear
   dbModule::destroy((dbModule*) master);
 
+  // remove the moditerm connections
+  for (auto moditerm : modinst->getModITerms()) {
+    moditerm->disconnect();
+  }
+  // remove the moditerms (side effect, disconnects them from net).
+  for (auto moditerm : modinst->getModITerms()) {
+    block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
+  }
   // unlink from parent start
   uint id = _modinst->getOID();
   _dbModInst* prev = nullptr;
@@ -267,22 +277,25 @@ void dbModInst::destroy(dbModInst* modinst)
   while (cur) {
     _dbModInst* c = block->_modinst_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         module->_modinsts = _modinst->_module_next;
-      else
+      } else {
         prev->_module_next = _modinst->_module_next;
+      }
       break;
     }
     prev = c;
     cur = c->_module_next;
   }
   // unlink from parent end
-  if (_modinst->_group)
+  if (_modinst->_group) {
     modinst->getGroup()->removeModInst(modinst);
+  }
   dbProperty::destroyProperties(_modinst);
   block->_modinst_hash.remove(_modinst);
   block->_modinst_tbl->destroy(_modinst);
 }
+
 dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
 {
   dbModInst* modinst = *itr;
@@ -310,10 +323,10 @@ std::string dbModInst::getHierarchicalName() const
   dbBlock* block = (dbBlock*) _obj->getOwner();
   std::string inst_name = std::string(getName());
   dbModule* parent = getParent();
-  if (parent == block->getTopModule())
+  if (parent == block->getTopModule()) {
     return inst_name;
-  else
-    return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
+  }
+  return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
 dbModITerm* dbModInst::findModITerm(const char* name)

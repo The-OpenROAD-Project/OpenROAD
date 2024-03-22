@@ -205,14 +205,15 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   return (dbModITerm*) moditerm;
 }
 
-bool dbModITerm::connect(dbModNet* net)
+void dbModITerm::connect(dbModNet* net)
 {
   _dbModITerm* _moditerm = (_dbModITerm*) this;
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
   // already connected.
-  if (_moditerm->_net == _modnet->getId())
-    return true;
+  if (_moditerm->_net == _modnet->getId()) {
+    return;
+  }
   _moditerm->_net = _modnet->getId();
   // append to net moditerms
   if (_modnet->_moditerms != 0) {
@@ -226,7 +227,29 @@ bool dbModITerm::connect(dbModNet* net)
   // set up new head
   _moditerm->_prev_net_moditerm = 0;
   _modnet->_moditerms = getId();
-  return true;
+}
+
+void dbModITerm::disconnect()
+{
+  _dbModITerm* _moditerm = (_dbModITerm*) this;
+  _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
+  if (_moditerm->_net == 0) {
+    return;
+  }
+  _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_net);
+  _moditerm->_net = 0;
+  _dbModITerm* next_moditerm
+      = _block->_moditerm_tbl->getPtr(_moditerm->_next_net_moditerm);
+  _dbModITerm* prior_moditerm
+      = _block->_moditerm_tbl->getPtr(_moditerm->_prev_net_moditerm);
+  if (prior_moditerm) {
+    prior_moditerm->_next_net_moditerm = _moditerm->_next_net_moditerm;
+  } else {
+    _modnet->_moditerms = _moditerm->_next_net_moditerm;
+  }
+  if (next_moditerm) {
+    next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
+  }
 }
 
 // User Code End dbModITermPublicMethods

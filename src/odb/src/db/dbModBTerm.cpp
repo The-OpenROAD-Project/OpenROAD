@@ -206,7 +206,7 @@ typedef union dbModBTermFlags
   uint uint_val;
 } dbModBTermFlagsU;
 
-void dbModBTerm::setSigType(dbSigType type)
+void dbModBTerm::setSigType(const dbSigType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
@@ -223,7 +223,7 @@ dbSigType dbModBTerm::getSigType()
   return dbSigType(cur_flags.flags._sigtype);
 }
 
-void dbModBTerm::setIoType(dbIoType type)
+void dbModBTerm::setIoType(const dbIoType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
   dbModBTermFlagsU cur_flags;
@@ -276,8 +276,9 @@ void dbModBTerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   // already connected
-  if (_modbterm->_net == net->getId())
+  if (_modbterm->_net == net->getId()) {
     return;
+  }
   _modbterm->_net = net->getId();
   // append to net mod bterms. Do this by pushing onto head of list.
   if (_modnet->_modbterms != 0) {
@@ -291,10 +292,6 @@ void dbModBTerm::connect(dbModNet* net)
   }
   _modbterm->_prev_net_modbterm = 0;  // previous of head always zero
   _modnet->_modbterms = getId();      // set new head
-  //  printf("Mod net now connected to %d modbterms\n",
-  //	 net -> getModBTerms().size());
-
-  return;
 }
 
 void dbModBTerm::disconnect()
@@ -302,8 +299,9 @@ void dbModBTerm::disconnect()
   _dbModule* module = (_dbModule*) getParent();
   _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  if (_modbterm->_net == 0)
+  if (_modbterm->_net == 0) {
     return;
+  }
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_net);
 
   if (_modbterm->_prev_net_modbterm == 0) {
@@ -321,10 +319,9 @@ void dbModBTerm::disconnect()
         = block->_modbterm_tbl->getPtr(_modbterm->_next_net_modbterm);
     next_modbterm->_prev_net_modbterm = _modbterm->_prev_net_modbterm;
   }
-
   //
   // zero out this element for garbage collection
-  // Not we can never rely on sequential order of modbterms for offsets.
+  // Note we can never rely on sequential order of modbterms for offsets.
   //
   _modbterm->_next_net_modbterm = 0;
   _modbterm->_prev_net_modbterm = 0;

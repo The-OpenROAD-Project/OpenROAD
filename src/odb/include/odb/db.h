@@ -7485,9 +7485,9 @@ class dbModBTerm : public dbObject
 
   // User Code Begin dbModBTerm
 
-  void setSigType(dbSigType type);
+  void setSigType(const dbSigType& type);
   dbSigType getSigType();
-  void setIoType(dbIoType type);
+  void setIoType(const dbIoType& type);
   dbIoType getIoType();
   void connect(dbModNet* net);
   void disconnect();
@@ -7543,8 +7543,8 @@ class dbModITerm : public dbObject
   dbModNet* getNet() const;
 
   // User Code Begin dbModITerm
-  bool connect(dbModNet* modnet);
-
+  void connect(dbModNet* modnet);
+  void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
 
   // User Code End dbModITerm
@@ -7561,8 +7561,8 @@ class dbModNet : public dbObject
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
 
-  dbModNet* create(dbModule* parentModule, const char* name);
   const char* getName() const;
+  static dbModNet* create(dbModule* parentModule, const char* name);
   // User Code End dbModNet
 };
 
