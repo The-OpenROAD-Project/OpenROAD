@@ -414,8 +414,13 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 }
 
-// Penalty for overlapping between clusters with macros and
-// macro blockages.
+// Penalty for overlapping between clusters with macros and macro blockages.
+// There may be situations in which we cannot guarantee that there will be
+// no overlap, so we consider:
+// 1) Number of macros to prioritize clusters with more macros.
+// 2) The macro area percentage over the cluster's total area so that
+//    mixed clusters with large std cell area have less penalty.
+
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
@@ -453,11 +458,16 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
           continue;
         }
 
-        // As there can be situations in which we cannot guarantee that there
-        // will be no overlap, we consider the number of macros in the cluster
-        // to prioritize clusters with more macros.
-        macro_blockage_penalty_
-            += overlap_width * overlap_height * macros_[macro_id].getNumMacro();
+        Cluster* cluster = macros_[macro_id].getCluster();
+
+        float macro_dominance = 1;
+        if (cluster->getClusterType() == MixedCluster) {
+          macro_dominance = cluster->getMacroArea() / cluster->getArea();
+        }
+
+        macro_blockage_penalty_ += overlap_width * overlap_height
+                                   * macros_[macro_id].getNumMacro()
+                                   * macro_dominance;
       }
     }
   }
