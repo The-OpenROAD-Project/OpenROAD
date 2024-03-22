@@ -2,7 +2,7 @@
   "IFP::instance_count" : "18835.2"
  ,"DPL::design_area" : "203088.0"
  ,"DPL::utilization" : "33.48"
- ,"RSZ::repair_design_buffer_count" : "444"
+ ,"RSZ::repair_design_buffer_count" : "430"
  ,"RSZ::max_slew_slack" : "0"
  ,"RSZ::max_capacitance_slack" : "0"
  ,"RSZ::max_fanout_slack" : "0"
