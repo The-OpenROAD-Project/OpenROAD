@@ -67,4 +67,4 @@ class _dbScanList : public _dbObject
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj);
 }  // namespace odb
-// Generator Code End Header
+   // Generator Code End Header
