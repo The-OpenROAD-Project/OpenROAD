@@ -396,6 +396,10 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
+  for (auto modbterm : module->getModBTerms()) {
+    block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
+  }
+
   dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);

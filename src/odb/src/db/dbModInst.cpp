@@ -266,7 +266,7 @@ void dbModInst::destroy(dbModInst* modinst)
   for (auto moditerm : modinst->getModITerms()) {
     moditerm->disconnect();
   }
-  // remove the moditerms (side effect, disconnects them from net).
+  // remove the moditerms
   for (auto moditerm : modinst->getModITerms()) {
     block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
   }
