@@ -104,6 +104,8 @@ class HeatMapDataSource
   const std::string& getName() const { return name_; }
   const std::string& getShortName() const { return short_name_; }
 
+  utl::Logger* getLogger() const { return logger_; }
+
   void dumpToFile(const std::string& file);
 
   // setup
