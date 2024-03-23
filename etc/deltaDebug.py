@@ -124,6 +124,8 @@ class deltaDebugger:
 
         # A variable to hold the base_db
         self.base_db = None
+        self.db_inst = None
+        self.db_nets = None
 
         # Debugging level
         # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
@@ -139,10 +141,6 @@ class deltaDebugger:
 
         # Rename the base db file to a temp name to keep it from overwriting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
-
-        # Create DB with logger
-        self.base_db = Design.createDetachedDb()
-        self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         if self.timeout is None:
             # timeout used to measure the time the original input takes
@@ -193,11 +191,6 @@ class deltaDebugger:
                 if err is None or self.get_cuts() == 0:
                     break
 
-        # Destroy the DB in memory to avoid being out-of-memory when
-        # the step code is running
-        if (self.base_db is not None):
-            self.base_db.destroy(self.base_db)
-
         # Change deltaDebug resultant base_db file name to a representative name
         if os.path.exists(self.temp_base_db_file):
             os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
@@ -214,8 +207,8 @@ class deltaDebugger:
     # and calls the step function, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
-        # self.base_db = Design.createDetachedDb()
-        # self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
+        self.base_db = Design.createDetachedDb()
+        self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         # Cut the block with the given step index.
         # if cut index of -1 is provided it means
@@ -229,6 +222,14 @@ class deltaDebugger:
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.base_def_file)
+
+        self.db_nets = self.base_db.getChip().getBlock().getNets()
+        self.db_inst = self.base_db.getChip().getBlock().getInsts()
+
+        # Destroy the DB in memory to avoid being out-of-memory when
+        # the step code is running
+        if (self.base_db is not None):
+            self.base_db.destroy(self.base_db)
 
         # Perform step, and check the error code
         start_time = time.time()
@@ -328,10 +329,10 @@ class deltaDebugger:
             iterm.getInst().setDoNotTouch(False)
 
     def get_insts(self):
-        return self.base_db.getChip().getBlock().getInsts()
+        return self.db_inst
 
     def get_nets(self):
-        return self.base_db.getChip().getBlock().getNets()
+        return self.db_nets
 
     def get_elms(self):
         if self.cut_level == cutLevel.Insts:
