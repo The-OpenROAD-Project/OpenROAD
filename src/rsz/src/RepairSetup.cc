@@ -34,6 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+
+#include <sstream>
+
 #include "rsz/Resizer.hh"
 
 #include "sta/Corner.hh"
@@ -115,7 +118,7 @@ RepairSetup::repairSetup(const float setup_slack_margin,
 
   // Sort failing endpoints by slack.
   const VertexSet *endpoints = sta_->endpoints();
-  VertexSeq violating_ends;
+  vector<pair<Vertex*, Slack> > violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
@@ -123,12 +126,13 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   for (Vertex *end : *endpoints) {
     const Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin) {
-      violating_ends.push_back(end);
+      violating_ends.emplace_back(end, end_slack);
     }
   }
-  sort(violating_ends, [=](Vertex *end1, Vertex *end2) {
-    return sta_->vertexSlack(end1, max_) < sta_->vertexSlack(end2, max_);
-  });
+  std::stable_sort(violating_ends.begin(), violating_ends.end(),
+		   [](const auto& end_slack1, const auto& end_slack2) {
+		     return end_slack1.second < end_slack2.second;
+		   });
   debugPrint(logger_, RSZ, "repair_setup", 1, "Violating endpoints {}/{} {}%",
              violating_ends.size(),
              endpoints->size(),
@@ -153,7 +157,8 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   if (verbose) {
     printProgress(print_iteration, false, false);
   }
-  for (Vertex *end : violating_ends) {
+  for (const auto& end_original_slack : violating_ends) {
+    Vertex* end = end_original_slack.first;
     resizer_->updateParasitics();
     sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);
@@ -497,6 +502,11 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
+        //Skip output to output paths
+        if (input_port->direction()->isOutput()) {
+          return false;
+        }
+
         // Results for > 2 input gates are unpredictable. Only swap pins for
         // 2 input gates for now.
         int input_port_count = 0;
@@ -508,7 +518,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
             }
         }
         if (input_port_count > 2) {
-            return false;
+          return false;
         }
 
         // Check if we have already dealt with this instance
@@ -521,13 +531,14 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         }
 
         // Find the equivalent pins for a cell (simple implementation for now)
-        // stash them
-        if (equiv_pin_map_.find(cell) == equiv_pin_map_.end()) {
-            equivCellPins(cell, ports);
-            equiv_pin_map_.insert(cell, ports);
+        // stash them. Ports are unique to a cell so we can just cache by port
+        // and that should apply to all instances of that cell with this input_port.
+        if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
+          equivCellPins(cell, input_port, ports);
+          equiv_pin_map_.insert(input_port, ports);
         }
-        ports = equiv_pin_map_[cell];
-        if (ports.size() > 1) {
+        ports = equiv_pin_map_[input_port];
+        if (!ports.empty()) {
             resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                            dcalc_ap, &swap_port);
             if (!sta::LibertyPort::equiv(swap_port, input_port)) {
@@ -806,13 +817,16 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
-    Vertex *fanout_vertex = edge->to(graph_);
-    const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
-    const Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
-               network_->pathName(fanout_vertex->pin()),
-               delayAsString(slack_margin, sta_, 3));
-    fanout_slacks.emplace_back(fanout_vertex, slack_margin);
+    // Watch out for problematic asap7 output->output timing arcs.
+    if (edge->isWire()) {
+      Vertex *fanout_vertex = edge->to(graph_);
+      const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
+      const Slack slack_margin = fanout_slack - drvr_slack;
+      debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
+                 network_->pathName(fanout_vertex->pin()),
+                 delayAsString(slack_margin, sta_, 3));
+      fanout_slacks.emplace_back(fanout_vertex, slack_margin);
+    }
   }
 
   sort(fanout_slacks.begin(), fanout_slacks.end(),
@@ -853,9 +867,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     Vertex *load_vertex = fanout_slack.first;
     Pin *load_pin = load_vertex->pin();
     // Leave ports connected to original net so verilog port names are preserved.
-    if (!(network_->isTopLevelPort(load_pin)
-          // Avoid output->output timing arcs (e.g. asap7).
-          || load_vertex->isDriver(network_))) {
+    if (!network_->isTopLevelPort(load_pin)) {
       LibertyPort *load_port = network_->libertyPort(load_pin);
       Instance *load = network_->instance(load_pin);
 
@@ -881,92 +893,208 @@ RepairSetup::fanout(Vertex *vertex)
   return fanout;
 }
 
-void
-RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
-                               sta::LibertyPortSet &ports,
-                               sta::FuncExpr::Operator &status)
+bool RepairSetup::simulateExpr(
+    sta::FuncExpr* expr,
+    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+    size_t table_index)
 {
-    using Operator = sta::FuncExpr::Operator ;
-    const Operator curr_op = expr->op();
+  using Operator = sta::FuncExpr::Operator;
+  const Operator curr_op = expr->op();
 
-    if (curr_op == Operator::op_not) {
-        getEquivPortList2(expr->left(), ports, status);
-    }
-    else if (status == Operator::op_zero &&
-             (curr_op == Operator::op_and ||
-              curr_op == Operator::op_or ||
-              curr_op == Operator::op_xor)) {
-        // Start parsing the equivalent pins (if it is simple or/and/xor)
-        status = curr_op;
-        getEquivPortList2(expr->left(), ports, status);
-        if (status == Operator::op_port) {
-          return;
-        }
-        getEquivPortList2(expr->right(), ports, status);
-        if (status == Operator::op_port) {
-          return;
-        }
-        status = Operator::op_one;
-    }
-    else if (status == curr_op) {
-        // handle > 2 input scenarios (up to any arbitrary number)
-        getEquivPortList2(expr->left(), ports, status);
-        if (status == Operator::op_port) {
-            return;
-        }
-        getEquivPortList2(expr->right(), ports, status);
-        if (status == Operator::op_port) {
-            return;
-        }
-    }
-    else if (curr_op == Operator::op_port && expr->port() != nullptr) {
-        ports.insert(expr->port());
-    }
-    else {
-        status = Operator::op_port; // moved to some other operator.
-        ports.clear();
-    }
+  switch (curr_op) {
+    case Operator::op_not:
+      return !simulateExpr(expr->left(), port_stimulus, table_index);
+    case Operator::op_and:
+      return simulateExpr(expr->left(), port_stimulus, table_index)
+             && simulateExpr(expr->right(), port_stimulus, table_index);
+    case Operator::op_or:
+      return simulateExpr(expr->left(), port_stimulus, table_index)
+             || simulateExpr(expr->right(), port_stimulus, table_index);
+    case Operator::op_xor:
+      return simulateExpr(expr->left(), port_stimulus, table_index)
+             ^ simulateExpr(expr->right(), port_stimulus, table_index);
+    case Operator::op_one:
+      return true;
+    case Operator::op_zero:
+      return false;
+    case Operator::op_port:
+      return port_stimulus[expr->port()][table_index];
+  }
+
+  logger_->error(RSZ, 91, "unrecognized expr op from OpenSTA");
 }
 
-void
-RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
+std::vector<bool> RepairSetup::simulateExpr(
+    sta::FuncExpr* expr,
+    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus)
 {
-    sta::FuncExpr::Operator status = sta::FuncExpr::op_zero;
-    ports.clear();
-    getEquivPortList2(expr, ports, status);
-    if (status == sta::FuncExpr::op_port) {
-        ports.clear();
+  size_t table_length = 0x1 << port_stimulus.size();
+  std::vector<bool> result;
+  result.resize(table_length);
+  for (size_t i = 0; i < table_length; i++) {
+    result[i] = simulateExpr(expr, port_stimulus, i);
+  }
+
+  return result;
+}
+
+bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
+                             const LibertyCell* cell,
+                             const LibertyPort* port_a,
+                             const LibertyPort* port_b)
+{
+  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
+    return false;
+  }
+
+  sta::LibertyCellPortIterator port_iter(cell);
+  sta::UnorderedMap<const LibertyPort*, std::vector<bool>> port_stimulus;
+  size_t input_port_count = 0;
+  while (port_iter.hasNext()) {
+    LibertyPort* port = port_iter.next();
+    if (port->direction()->isInput()) {
+      ++input_port_count;
+      port_stimulus[port] = {};
     }
+  }
+
+  if (input_port_count > 16) {
+    // Not worth manually simulating all these values.
+    // Probably need to do SAT solving or something else instead.
+    return false;
+  }
+
+  // Generate stimulus for the ports
+  size_t var_index = 0;
+  for (auto& it : port_stimulus) {
+    size_t truth_table_length = 0x1 << input_port_count;
+    std::vector<bool>& variable_stimulus = it.second;
+    variable_stimulus.resize(truth_table_length, false);
+    for (int i = 0; i < truth_table_length; i++) {
+      variable_stimulus[i] = static_cast<bool>((i >> var_index) & 0x1);
+    }
+    var_index++;
+  }
+  
+  std::vector<bool> result_no_swap = simulateExpr(expr, port_stimulus);
+
+  // Swap pins
+  std::swap(port_stimulus.at(port_a), port_stimulus.at(port_b));
+
+  std::vector<bool> result_with_swap = simulateExpr(expr, port_stimulus);
+
+  // Check if truth tables are equivalent post swap. If they are then pins
+  // are equivalent.
+  for (size_t i = 0; i < result_no_swap.size(); i++) {
+    if (result_no_swap[i] != result_with_swap[i]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // Lets just look at the first list for now.
 // We may want to cache this information somwhere (by building it up for the whole
 // library).
 // Or just generate it when the cell is being created (depending on agreement).
-void
-RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
+void RepairSetup::equivCellPins(const LibertyCell* cell,
+                                LibertyPort* input_port,
+                                sta::LibertyPortSet& ports)
 {
+    if (cell->hasSequentials() || cell->isIsolationCell()) {
+        ports.clear();
+        return;
+    }
     sta::LibertyCellPortIterator port_iter(cell);
-    unsigned outputs = 0;
+    int outputs = 0;
+    int inputs = 0;
 
-    // count number of output ports. Skip ports with > 1 output for now.
+    // count number of output ports.
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
         if (port->direction()->isOutput()) {
-            ++outputs;
+          ++outputs;
+        } else {
+          ++inputs;
         }
     }
 
-    if (outputs == 1) {
-        sta::LibertyCellPortIterator port_iter2(cell);
-        while (port_iter2.hasNext()) {
-            LibertyPort *port = port_iter2.next();
-            sta::FuncExpr *expr = port->function();
-            if (expr != nullptr) {
-                getEquivPortList(expr, ports);
-            }
+    if (outputs >= 1 && inputs >= 2) {
+      sta::LibertyCellPortIterator port_iter2(cell);
+      while (port_iter2.hasNext()) {
+        LibertyPort* candidate_port = port_iter2.next();
+        if (!candidate_port->direction()->isInput()) {
+          continue;
         }
+
+        sta::LibertyCellPortIterator output_port_iter(cell);
+        std::optional<bool> is_equivalent;
+        // Loop through all the output ports and make sure they are equivalent
+        // under swaps of candidate_port and input_port. For multi-ouput gates
+        // like full adders.
+        while (output_port_iter.hasNext()) {
+          LibertyPort* output_candidate_port = output_port_iter.next();
+          sta::FuncExpr* output_expr = output_candidate_port->function();
+          if (!output_candidate_port->direction()->isOutput()) {
+            continue;
+          }
+
+          if (output_expr == nullptr) {
+            continue;
+          }
+
+          if (input_port == candidate_port) {
+            continue;
+          }
+
+          bool is_equivalent_result
+              = isPortEqiv(output_expr, cell, input_port, candidate_port);
+
+          if (!is_equivalent.has_value()) {
+            is_equivalent = is_equivalent_result;
+            continue;
+          }
+
+          is_equivalent = is_equivalent.value() && is_equivalent_result;
+        }
+        
+        // candidate_port is equivalent to input_port under all output ports
+        // of this cell.
+        if (is_equivalent.has_value() && is_equivalent.value()) {
+          ports.insert(candidate_port);
+        }
+      }
     }
+}
+
+void
+RepairSetup::reportSwappablePins()
+{
+  init();
+  std::unique_ptr<sta::LibertyLibraryIterator> iter(
+    db_network_->libertyLibraryIterator());
+  while (iter->hasNext()) {
+    sta::LibertyLibrary* library = iter->next();
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      sta::LibertyCellPortIterator port_iter(cell);
+      while (port_iter.hasNext()) {
+        LibertyPort* port = port_iter.next();
+        if (!port->direction()->isInput()) {
+          continue;
+        }
+        sta::LibertyPortSet ports;
+        equivCellPins(cell, port, ports);
+        std::ostringstream ostr;
+        for (auto port : ports) {
+          ostr << ' ' << port->name();
+        }
+        logger_->report("{}/{} ->{}", cell->name(), port->name(), ostr.str());
+      }
+    }
+  }
 }
 
 void

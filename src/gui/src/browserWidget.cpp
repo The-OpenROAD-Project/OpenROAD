@@ -53,6 +53,65 @@ Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
+const int BrowserWidget::sort_role = Qt::UserRole + 2;
+
+struct BrowserWidget::ModuleStats
+{
+  int64_t area = 0;
+  int macros = 0;
+  int insts = 0;
+  int modules = 0;
+
+  int hier_macros = 0;
+  int hier_insts = 0;
+  int hier_modules = 0;
+
+  void incrementInstances()
+  {
+    insts++;
+    hier_insts++;
+  }
+
+  void resetInstances() { hier_insts = 0; }
+
+  void incrementMacros()
+  {
+    macros++;
+    hier_macros++;
+  }
+
+  void resetMacros() { hier_macros = 0; }
+
+  void incrementModules()
+  {
+    modules++;
+    hier_modules++;
+  }
+
+  void resetModules() { hier_modules = 0; }
+
+  ModuleStats& operator+=(const ModuleStats& other)
+  {
+    area += other.area;
+    macros += other.macros;
+    insts += other.insts;
+    modules += other.modules;
+
+    hier_macros += other.hier_macros;
+    hier_insts += other.hier_insts;
+    hier_modules += other.hier_modules;
+
+    return *this;
+  }
+
+  friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
+  {
+    lhs += other;
+
+    return lhs;
+  }
+};
+
 ///////
 
 BrowserWidget::BrowserWidget(
@@ -84,8 +143,16 @@ BrowserWidget::BrowserWidget(
 
   display_controls_warning_->setStyleSheet("color: red;");
 
-  model_->setHorizontalHeaderLabels(
-      {"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
+  model_->setHorizontalHeaderLabels({"Instance",
+                                     "Master",
+                                     "Instances",
+                                     "Macros",
+                                     "Modules",
+                                     "Area",
+                                     "Local Instances",
+                                     "Local Macros",
+                                     "Local Modules"});
+  model_->setSortRole(sort_role);
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -343,11 +410,12 @@ void BrowserWidget::updateModel()
 
     insts.push_back(inst);
   }
-  addInstanceItems(insts, "Physical only", root, true);
+  addInstanceItems(insts, "Physical only", root);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
   model_modified_ = false;
   setUpdatesEnabled(true);
+  view_->setSortingEnabled(true);
 }
 
 void BrowserWidget::clearModel()
@@ -370,7 +438,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
   for (auto* inst : module->getInsts()) {
     insts.push_back(inst);
   }
-  stats += addInstanceItems(insts, "Leaf instances", parent, false);
+  stats += addInstanceItems(insts, "Leaf instances", parent);
 
   return stats;
 }
@@ -378,8 +446,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     const std::vector<odb::dbInst*>& insts,
     const std::string& title,
-    QStandardItem* parent,
-    bool check_instance_limits)
+    QStandardItem* parent)
 {
   auto make_leaf_item = [](const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
@@ -393,16 +460,14 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
-  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
+  std::map<sta::dbSta::InstType, Leaf> leaf_types;
   for (auto* inst : insts) {
-    auto type = inst_descriptor_->getInstanceType(inst);
+    auto type = sta_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
-      leaf_parent.item
-          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+      leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    const bool create_row = !check_instance_limits
-                            || leaf_parent.stats.insts < max_visible_leafs_;
+    const bool create_row = type == sta::dbSta::InstType::BLOCK;
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 
@@ -443,6 +508,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
     item->setEditable(false);
     item->setSelectable(true);
     item->setData(QVariant::fromValue(inst));
+    item->setData(inst->getConstName(), sort_role);
 
     makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
   }
@@ -465,6 +531,7 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module,
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
+  item->setData(item_name, sort_role);
 
   item->setCheckable(true);
   auto& settings = modulesettings_.at(module);
@@ -493,8 +560,6 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
-  QLocale locale(QLocale::English);  // for number formatting
-
   double scale_to_um
       = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
@@ -506,42 +571,51 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
   }
 
   QString text
-      = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+      = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
   auto makeDataItem
-      = [item](const QString& text, bool right_align = true) -> QStandardItem* {
+      = [item](const QString& text,
+               std::optional<int64_t> sort_value) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
     data_item->setEditable(false);
-    if (right_align) {
-      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
-    }
     data_item->setData(QVariant::fromValue(item));
+    if (sort_value) {
+      data_item->setData(qint64(sort_value.value()), sort_role);
+      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+    } else {
+      data_item->setData(text, sort_role);
+    }
     return data_item;
   };
 
-  auto makeHierText
-      = [&locale](int current, int total, bool is_leaf) -> QString {
-    if (!is_leaf) {
-      return locale.toString(current) + "/" + locale.toString(total);
-    }
-    return locale.toString(total);
-  };
+  QStandardItem* master_item = makeDataItem(QString::fromStdString(master), {});
 
-  QStandardItem* master_item
-      = makeDataItem(QString::fromStdString(master), false);
+  QStandardItem* area = makeDataItem(text, stats.area);
 
-  QStandardItem* area = makeDataItem(text);
-
+  QStandardItem* local_insts
+      = makeDataItem(QString::number(stats.hier_insts), stats.hier_insts);
   QStandardItem* insts
-      = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
+      = makeDataItem(QString::number(stats.insts), stats.insts);
 
+  QStandardItem* local_macros
+      = makeDataItem(QString::number(stats.hier_macros), stats.hier_macros);
   QStandardItem* macros
-      = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
+      = makeDataItem(QString::number(stats.macros), stats.macros);
 
   QStandardItem* modules
-      = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
+      = makeDataItem(QString::number(stats.hier_modules), stats.hier_modules);
+  QStandardItem* local_modules
+      = makeDataItem(QString::number(stats.modules), stats.modules);
 
-  parent->appendRow({item, master_item, insts, macros, modules, area});
+  parent->appendRow({item,
+                     master_item,
+                     insts,
+                     macros,
+                     modules,
+                     area,
+                     local_insts,
+                     local_macros,
+                     local_modules});
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)

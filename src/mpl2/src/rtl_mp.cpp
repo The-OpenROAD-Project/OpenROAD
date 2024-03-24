@@ -119,7 +119,7 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
-  hier_rtlmp_->hierRTLMacroPlacer();
+  hier_rtlmp_->run();
 
   return true;
 }
@@ -200,14 +200,14 @@ void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
-void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
-{
-  hier_rtlmp_->writeMacroPlacement(file_name);
-}
-
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);
+}
+
+void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

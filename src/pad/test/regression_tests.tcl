@@ -3,7 +3,9 @@ record_tests {
   bump_array_remove
   bump_array_remove_single
 
+  make_corner_sites
   make_io_sites
+  non_top_layer
   place_pad
   place_pad_outsideofrow
   place_bondpad

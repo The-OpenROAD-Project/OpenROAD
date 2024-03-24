@@ -1266,7 +1266,7 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
-  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger, db_);
+  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger);
   rudy_heat_map_->registerHeatMap();
 }
 
@@ -1491,6 +1491,10 @@ std::string Descriptor::Property::toString(const std::any& value)
     text += convert_dbu(v->yMin(), false) + "), (";
     text += convert_dbu(v->xMax(), false) + ",";
     text += convert_dbu(v->yMax(), false) + ")";
+    return text;
+  } else if (auto v = std::any_cast<odb::Point>(&value)) {
+    std::string text = fmt::format(
+        "({},{})", convert_dbu(v->x(), false), convert_dbu(v->y(), false));
     return text;
   }
 

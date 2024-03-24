@@ -411,10 +411,11 @@ void dbTechVia::setViaParams(const dbViaParams& params)
   create_via_boxes(via, params);
 }
 
-void dbTechVia::getViaParams(dbViaParams& params)
+dbViaParams dbTechVia::getViaParams()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
+  dbViaParams params;
   if (via->_flags._has_params == 0) {
     params = dbViaParams();
   } else {
@@ -422,6 +423,7 @@ void dbTechVia::getViaParams(dbViaParams& params)
     _dbTech* tech = (_dbTech*) via->getOwner();
     params._tech = (dbTech*) tech;
   }
+  return params;
 }
 
 dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)

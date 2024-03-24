@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: hi_fanout
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 250 components and 2000 component-terminals.
@@ -15,7 +11,7 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 input1/Z                                0.20    1.15   -0.95 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 853um.
+[INFO RSZ-0058] Using max wire length 828um.
 [INFO RSZ-0039] Resized 1 instances.
 max slew
 

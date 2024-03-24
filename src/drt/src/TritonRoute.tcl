@@ -68,7 +68,8 @@ proc detailed_route { args } {
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
-    flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr -save_guide_updates}
+    flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
+           -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -76,8 +77,8 @@ proc detailed_route { args } {
   set no_pin_access [expr [info exists flags(-no_pin_access)]]
   # single_step_dr is not a user option but is intended for algorithm
   # development.  It is not listed in the help string intentionally.
-  set single_step_dr  [expr [info exists flags(-single_step_dr)]]
-  set save_guide_updates  [expr [info exists flags(-save_guide_updates)]]
+  set single_step_dr [expr [info exists flags(-single_step_dr)]]
+  set save_guide_updates [expr [info exists flags(-save_guide_updates)]]
 
   if { [info exists keys(-repair_pdn_vias)] } {
     set repair_pdn_vias $keys(-repair_pdn_vias)
@@ -223,8 +224,9 @@ sta::define_cmd_args "detailed_route_debug" {
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net -iter -pin -dump_dir -box} \
-      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks}
+    keys {-net -iter -pin -dump_dir -box} \
+    flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta \
+           -write_net_tracks -dump_last_worker}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -263,7 +265,7 @@ proc detailed_route_debug { args } {
   set box_y1 -1
   set box_x2 -1
   set box_y2 -1
-  if [info exists keys(-box)] {
+  if {[info exists keys(-box)]} {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 118 "-box is a list of 4 coordinates."
@@ -280,7 +282,8 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $box_x1 $box_y1 $box_x2 $box_y2 $iter $pa_markers $pa_edge $pa_commit $dump_dir $ta $write_net_tracks $dump_last_worker
+    $box_x1 $box_y1 $box_x2 $box_y2 $iter $pa_markers $pa_edge $pa_commit \
+    $dump_dir $ta $write_net_tracks $dump_last_worker
 }
 
 sta::define_cmd_args "pin_access" {
@@ -297,11 +300,11 @@ sta::define_cmd_args "pin_access" {
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
-      keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
-            -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
-      flags {-distributed}
+    keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
+          -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
+    flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
-  if [info exists keys(-db_process_node)] {
+  if {[info exists keys(-db_process_node)]} {
     set db_process_node $keys(-db_process_node)
   } else {
     set db_process_node ""
@@ -351,7 +354,8 @@ proc pin_access { args } {
     }
     drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
-  drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
+  drt::pin_access_cmd $db_process_node $bottom_routing_layer \
+    $top_routing_layer $verbose $min_access_points
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {
@@ -362,8 +366,8 @@ sta::define_cmd_args "detailed_route_run_worker" {
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
-      keys {-dump_dir -worker_dir -drc_rpt} \
-      flags {}
+    keys {-dump_dir -worker_dir -drc_rpt} \
+    flags {}
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)
@@ -382,7 +386,7 @@ proc detailed_route_run_worker { args } {
   } else {
     set drc_rpt ""
   }
-  drt::run_worker_cmd  $dump_dir $worker_dir $drc_rpt
+  drt::run_worker_cmd $dump_dir $worker_dir $drc_rpt
 }
 
 sta::define_cmd_args "detailed_route_worker_debug" {
@@ -397,50 +401,52 @@ sta::define_cmd_args "detailed_route_worker_debug" {
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
-      keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost -marker_decay -ripup_mode -follow_guide} \
-      flags {}
-  if [info exists keys(-maze_end_iter)] {
+    keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost \
+          -marker_decay -ripup_mode -follow_guide} \
+    flags {}
+  if {[info exists keys(-maze_end_iter)]} {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
     set maze_end_iter -1
   }
 
-  if [info exists keys(-drc_cost)] {
+  if {[info exists keys(-drc_cost)]} {
     set drc_cost $keys(-drc_cost)
   } else {
     set drc_cost -1
   }
 
-  if [info exists keys(-marker_cost)] {
+  if {[info exists keys(-marker_cost)]} {
     set marker_cost $keys(-marker_cost)
   } else {
     set marker_cost -1
   }
 
-  if [info exists keys(-fixed_shape_cost)] {
+  if {[info exists keys(-fixed_shape_cost)]} {
     set fixed_shape_cost $keys(-fixed_shape_cost)
   } else {
     set fixed_shape_cost -1
   }
 
-  if [info exists keys(-marker_decay)] {
+  if {[info exists keys(-marker_decay)]} {
     set marker_decay $keys(-marker_decay)
   } else {
     set marker_decay -1
   }
 
-  if [info exists keys(-ripup_mode)] {
+  if {[info exists keys(-ripup_mode)]} {
     set ripup_mode $keys(-ripup_mode)
   } else {
     set ripup_mode -1
   }
 
-  if [info exists keys(-follow_guide)] {
+  if {[info exists keys(-follow_guide)]} {
     set follow_guide $keys(-follow_guide)
   } else {
     set follow_guide -1
   }
-  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost $fixed_shape_cost $marker_decay $ripup_mode $follow_guide
+  drt::set_worker_debug_params $maze_end_iter $drc_cost $marker_cost \
+    $fixed_shape_cost $marker_decay $ripup_mode $follow_guide
 }
 
 proc detailed_route_set_default_via { args } {
@@ -470,18 +476,18 @@ sta::define_cmd_args "check_drc" {
 }
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
-      keys { -box -output_file } \
-      flags {}
+    keys { -box -output_file } \
+    flags {}
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
-  if [info exists keys(-box)] {
+  if {[info exists keys(-box)]} {
     set box $keys(-box)
     if { [llength $box] != 4 } {
       utl::error DRT 612 "-box is a list of 4 coordinates."
-    }    
+    }
   }
   lassign $box x1 y1 x2 y2
-   if { [info exists keys(-output_file)] } {
+  if { [info exists keys(-output_file)] } {
     set output_file $keys(-output_file)
   } else {
     utl::error DRT 613 "-output_file is required for check_drc command"

@@ -46,6 +46,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <numeric>  // accumulate
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -245,25 +246,6 @@ class GridInfo
   const dbSite::RowPattern sites_;
 };
 
-// For optimize mirroring.
-class NetBox
-{
- public:
-  NetBox() = default;
-  NetBox(dbNet* net, Rect box, bool ignore);
-  int64_t hpwl();
-  void saveBox();
-  void restoreBox();
-
-  dbNet* net_ = nullptr;
-  Rect box_;
-  Rect box_saved_;
-  bool ignore_ = false;
-};
-
-using NetBoxMap = unordered_map<dbNet*, NetBox>;
-using NetBoxes = vector<NetBox*>;
-
 ////////////////////////////////////////////////////////////////
 
 // Return value for grid searches.
@@ -287,8 +269,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  Point pointOffMacro(const Cell& cell);
-  void convertDbToCell(dbInst* db_inst, Cell& cell);
   void legalCellPos(dbInst* db_inst);
   void initMacrosAndGrid();
 
@@ -301,6 +281,7 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
+
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
@@ -312,10 +293,7 @@ class Opendp
   // Find instance/master/global padding value for an instance.
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
-  // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
@@ -329,11 +307,14 @@ class Opendp
                        const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
-  int64_t hpwl() const;
-  int64_t hpwl(dbNet* net) const;
-  void findDisplacementStats();
   void optimizeMirroring();
 
+ private:
+  friend class OpendpTest_IsPlaced_Test;
+  friend class Graphics;
+  void findDisplacementStats();
+  Point pointOffMacro(const Cell& cell);
+  void convertDbToCell(dbInst* db_inst, Cell& cell);
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
@@ -341,9 +322,10 @@ class Opendp
   int getSiteWidth() const { return site_width_; }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
-
- private:
-  friend class OpendpTest_IsPlaced_Test;
+  // Return error count.
+  void processViolationsPtree(boost::property_tree::ptree& entry,
+                              const std::vector<Cell*>& failures,
+                              const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -499,11 +481,11 @@ class Opendp
   int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
+  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
   int gridNearestWidth(const Cell* cell, int site_width) const;
-  int gridHeight(const Cell* cell, int row_height) const;
   int gridHeight(const Cell* cell) const;
   GridInfo getGridInfo(const Cell* cell) const;
   int gridX(int x, int site_width) const;
@@ -548,16 +530,6 @@ class Opendp
                            int col,
                            int row_height,
                            GridInfo grid_info);
-
-  // Optimizing mirroring
-  void findNetBoxes();
-  vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
-  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
-  // Sum of ITerm hpwl's.
-  int64_t hpwl(dbInst* inst);
-  void updateNetBoxes(dbInst* inst);
-  void saveNetBoxes(dbInst* inst);
-  void restoreNetBoxes(dbInst* inst);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -611,9 +583,6 @@ class Opendp
   int64_t displacement_sum_ = 0;
   int64_t displacement_max_ = 0;
 
-  // Optimiize mirroring.
-  NetBoxMap net_box_map_;
-
   std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
@@ -621,9 +590,6 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
-  // Net bounding box siaz on nets with more instance terminals
-  // than this are ignored.
-  static constexpr int mirror_max_iterm_count_ = 100;
 };
 
 int divRound(int dividend, int divisor);

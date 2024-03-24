@@ -67,6 +67,7 @@ set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
   Design.cc
+  Timing.cc
   Tech.cc
   OpenRoad.cc
   Main.cc
@@ -165,7 +166,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 3.0 REQUIRED)
+find_package(SWIG 4.0 REQUIRED)
 if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
   message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
 endif()
@@ -191,6 +192,9 @@ add_compile_options(
   -Wno-sign-compare
   -Wp,-D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
+  # Needed for floating point stability in FFT (fft_test will check this).
+  # See also https://kristerw.github.io/2021/11/09/fp-contract/
+  -ffp-contract=off
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
   $<$<BOOL:${ASAN}>:-fsanitize=address>
@@ -266,10 +270,8 @@ add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
@@ -278,6 +280,8 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
+# mpl2 and par add_subdirectory() statements are conditionally added below
+# due to issues with or-tools in macOS systems
 
 ################################################################
 
@@ -349,6 +353,8 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_libraries(openroad mpl2 par)
   target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
   target_compile_definitions(openroad PRIVATE ENABLE_PAR)
+  add_subdirectory(mpl2)
+  add_subdirectory(par)
 else()
   message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
 endif()

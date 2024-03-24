@@ -46,7 +46,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr::io {
+namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
                                        frCoord,       // upperWidth
@@ -69,6 +69,7 @@ class Parser
   bool readGuide();
   void postProcess();
   void postProcessGuide();
+  frLayerNum getTopPinLayer();
   void initDefaultVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }
@@ -132,7 +133,7 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
-  void initDefaultVias_GF14(const std::string& in);
+  void initDefaultVias_GF14(const std::string& node);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
@@ -148,12 +149,12 @@ class Parser
                                       frInst* inst,
                                       dbTransform& shiftXform,
                                       std::vector<frRect>& rects);
-  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& guides);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,
                               const Point3D& p,
                               Point3D& result);
-  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
   void checkPinForGuideEnclosure(frBlockObject* pin,
                                  frNet* net,
                                  std::vector<frRect>& guides);
@@ -178,7 +179,8 @@ class Parser
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       T* term,
-      frBlockObject* origTerm);
+      frBlockObject* origTerm,
+      const dbTransform& xform);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
@@ -296,4 +298,4 @@ class Writer
   std::vector<frViaDef*> viaDefs_;
 };
 
-}  // namespace fr::io
+}  // namespace drt::io

@@ -77,7 +77,7 @@ TechChar::TechChar(CtsOptions* options,
 
 void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 {
-  logger_->info(CTS, 84, "Compiling LUT.");
+  debugPrint(logger_, CTS, "tech char", 1, "Compiling LUT.");
   initLengthUnits();
 
   minSegmentLength_ = toInternalLengthUnit(minSegmentLength_);
@@ -132,22 +132,22 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
     }
   }
 
-  if (noSlewDegradationCount > 0) {
+  if (logger_->debugCheck(utl::CTS, "tech char", 1)
+      && noSlewDegradationCount > 0) {
     logger_->warn(CTS,
                   43,
                   "{} wires are pure wire and no slew degradation.\n"
                   "TritonCTS forced slew degradation on these wires.",
                   noSlewDegradationCount);
+    logger_->info(
+        CTS, 46, "    Number of wire segments: {}.", wireSegments_.size());
+    logger_->info(CTS,
+                  47,
+                  "    Number of keys in characterization LUT: {}.",
+                  keyToWireSegments_.size());
+
+    logger_->info(CTS, 48, "    Actual min input cap: {}.", actualMinInputCap_);
   }
-
-  logger_->info(
-      CTS, 46, "    Number of wire segments: {}.", wireSegments_.size());
-  logger_->info(CTS,
-                47,
-                "    Number of keys in characterization LUT: {}.",
-                keyToWireSegments_.size());
-
-  logger_->info(CTS, 48, "    Actual min input cap: {}.", actualMinInputCap_);
 }
 
 void TechChar::initLengthUnits()
@@ -157,16 +157,19 @@ void TechChar::initLengthUnits()
 
 inline void TechChar::reportCharacterizationBounds() const
 {
-  logger_->report(
-      "Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew");
+  if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
+    logger_->report(
+        "Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. "
+        "slew");
 
-  logger_->report("{:<12}{:<12}{:<12}{:<12}{:<12}{:<12}",
-                  minSegmentLength_,
-                  maxSegmentLength_,
-                  minCapacitance_,
-                  maxCapacitance_,
-                  minSlew_,
-                  maxSlew_);
+    logger_->report("{:<12}{:<12}{:<12}{:<12}{:<12}{:<12}",
+                    minSegmentLength_,
+                    maxSegmentLength_,
+                    minCapacitance_,
+                    maxCapacitance_,
+                    minSlew_,
+                    maxSlew_);
+  }
 }
 
 inline void TechChar::checkCharacterizationBounds() const
@@ -380,7 +383,9 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
     return;
   }
 
-  logger_->warn(CTS, 45, "Creating fake entries in the LUT.");
+  if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
+    logger_->warn(CTS, 45, "Creating fake entries in the LUT.");
+  }
   for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
     for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
       forEachWireSegment(
@@ -596,8 +601,12 @@ void TechChar::initCharacterization()
       sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
 
       output->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
-      if (!maxSlewExist)
+      if (!maxSlewExist) {
+        input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      }
+      if (!maxSlewExist) {
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
+      }
       if (!maxSlewExist)
         logger_->error(
             CTS, 107, "No max slew found for cell {}.", bufMasterName);
@@ -650,9 +659,9 @@ void TechChar::initCharacterization()
     }
   } else {
     reduceOrExpand(axisSlews, slewSteps);
-    slewsToTest_ = axisSlews;
+    slewsToTest_ = std::move(axisSlews);
     reduceOrExpand(axisLoads, loadSteps);
-    loadsToTest_ = axisLoads;
+    loadsToTest_ = std::move(axisLoads);
   }
 
   if (loadsToTest_.empty() || slewsToTest_.empty()) {
@@ -1502,7 +1511,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
           topologyResult.push_back(topologyS);
         }
       }
-      convertedResult.topology = topologyResult;
+      convertedResult.topology = std::move(topologyResult);
       // Send the results to a vector. This will be used to create the
       // wiresegments for CTS.
       convertedSolutions.push_back(convertedResult);
@@ -1641,14 +1650,17 @@ void TechChar::create()
             } else {
               std::vector<ResultData> resultGroup;
               resultGroup.push_back(results);
-              solutionMap_[solutionKey] = resultGroup;
+              solutionMap_[solutionKey] = std::move(resultGroup);
             }
             topologiesCreated++;
-            if (topologiesCreated % 50000 == 0) {
-              logger_->info(CTS,
-                            38,
-                            "Number of created patterns = {}.",
-                            topologiesCreated);
+            if (logger_->debugCheck(utl::CTS, "tech char", 1)
+                && topologiesCreated % 50000 == 0) {
+              debugPrint(logger_,
+                         CTS,
+                         "tech char",
+                         1,
+                         "Number of created patterns = {}.",
+                         topologiesCreated);
             }
           }  // for each slew
         }    // for each load
@@ -1662,7 +1674,10 @@ void TechChar::create()
     }
     openStaChar_.reset(nullptr);
   }
-  logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
+  if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
+    logger_->info(
+        CTS, 39, "Number of created patterns = {}.", topologiesCreated);
+  }
   // Post-processing of the results.
   const std::vector<ResultData> convertedSolutions
       = characterizationPostProcess();

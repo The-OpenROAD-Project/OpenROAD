@@ -64,9 +64,7 @@ class _dbScanPin : public _dbObject
                    const _dbScanPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  // User Code Begin Fields
   std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj);

@@ -509,6 +509,7 @@ class GPin
 class Bin
 {
  public:
+  Bin() = default;
   Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity);
 
   int x() const { return x_; };
@@ -670,6 +671,7 @@ class BinGrid
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+  void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
 
@@ -719,6 +721,7 @@ class BinGrid
   int64_t overflowArea_ = 0;
   int64_t overflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
+  int num_threads_ = 1;
 };
 
 inline std::vector<Bin>& BinGrid::bins()
@@ -777,7 +780,8 @@ class NesterovBaseCommon
  public:
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
-                     utl::Logger* log);
+                     utl::Logger* log,
+                     int num_threads);
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -823,6 +827,9 @@ class NesterovBaseCommon
 
   void updateDbGCells();
 
+  // Number of threads of execution
+  size_t getNumThreads() { return num_threads_; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -839,6 +846,8 @@ class NesterovBaseCommon
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
+
+  int num_threads_;
 };
 
 // Stores instances belonging to a specific power domain

@@ -1,0 +1,84 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+Instance: _1_ - 
+Instance: _2_ - 
+Instance: _3_ - 
+ -> _0_ -> _4_
+Instance: _4_ - 
+Instance: d1/_0_ - 
+ -> d1_out3 -> _1_
+Instance: d1/_1_ - 
+ -> d1_out1 -> d2/_2_
+ -> d1_out1 -> d2/_0_
+Instance: d1/_2_ - 
+ -> d1_out2 -> d3/_2_
+ -> d1_out2 -> d3/_0_
+Instance: d2/_0_ - 
+ -> d2_out3 -> _1_
+Instance: d2/_1_ - 
+ -> d2_out1 -> d3/_1_
+ -> d2_out1 -> d3/_0_
+Instance: d2/_2_ - 
+ -> d2_out2 -> d4/_2_
+ -> d2_out2 -> d4/_0_
+Instance: d3/_0_ - 
+ -> d3_out3 -> _3_
+Instance: d3/_1_ - 
+ -> d3_out1 -> d4/_1_
+ -> d3_out1 -> d4/_0_
+Instance: d3/_2_ - 
+ -> d3_out2 -> _2_
+Instance: d4/_0_ - 
+ -> d4_out3 -> _2_
+Instance: d4/_1_ - 
+ -> d4_out1 -> _4_
+Instance: d4/_2_ - 
+ -> d4_out2 -> _3_
+[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
+[INFO IFP-0001] Added 110 rows of 651 site unithd.
+Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
+Instance: _2_ - () : sky130_fd_sc_hd__xnor2_1 
+Instance: _3_ - () : sky130_fd_sc_hd__xnor2_1 
+ -> _0_ -> _4_ 
+Instance: _4_ - () : sky130_fd_sc_hd__and2_1 
+Instance: d1/_0_ - (PD_D1) : sky130_fd_sc_hd__and2_1 
+ -> d1_out3 -> _1_ 
+Instance: d1/_1_ - (PD_D1) : sky130_fd_sc_hd__buf_4 
+ -> d1_out1 -> d1/_1__X_d2/_0__A_level_shifter 
+ -> d1_out1 -> d1/_1__X_d2/_2__A_level_shifter 
+Instance: d1/_2_ - (PD_D1) : sky130_fd_sc_hd__buf_4 
+ -> d1_out2 -> d1/_2__X_d3/_0__A_level_shifter 
+ -> d1_out2 -> d1/_2__X_d3/_2__A_level_shifter 
+Instance: d2/_0_ - (PD_D2) : sky130_fd_sc_hd__and2_1 
+ -> d2_out3 -> _1_ 
+Instance: d2/_1_ - (PD_D2) : sky130_fd_sc_hd__buf_4 
+ -> d2_out1 -> d3/_1_ 
+ -> d2_out1 -> d3/_0_ 
+Instance: d2/_2_ - (PD_D2) : sky130_fd_sc_hd__buf_4 
+ -> d2_out2 -> d4/_2_ 
+ -> d2_out2 -> d4/_0_ 
+Instance: d3/_0_ - (PD_D3) : sky130_fd_sc_hd__and2_1 
+ -> d3_out3 -> _3_ 
+Instance: d3/_1_ - (PD_D3) : sky130_fd_sc_hd__buf_4 
+ -> d3_out1 -> d4/_0__B_d3/_1__X_level_shifter 
+ -> d3_out1 -> d4/_1__A_d3/_1__X_level_shifter 
+Instance: d3/_2_ - (PD_D3) : sky130_fd_sc_hd__buf_4 
+ -> d3_out2 -> _2_ 
+Instance: d4/_0_ - (PD_D4) : sky130_fd_sc_hd__and2_1 
+ -> d4_out3 -> _2_ 
+Instance: d4/_1_ - (PD_D4) : sky130_fd_sc_hd__buf_4 
+ -> d4_out1 -> _4_ 
+Instance: d4/_2_ - (PD_D4) : sky130_fd_sc_hd__buf_4 
+ -> d4_out2 -> _3_ 
+Instance: d1/_2__X_d3/_2__A_level_shifter - (PD_D1) : sky130_fd_sc_hd__and2_0 
+ -> d1/_2__X_d3/_2__A_level_shifter_out_net -> d3/_2_ 
+Instance: d1/_2__X_d3/_0__A_level_shifter - (PD_D1) : sky130_fd_sc_hd__and2_0 
+ -> d1/_2__X_d3/_0__A_level_shifter_out_net -> d3/_0_ 
+Instance: d1/_1__X_d2/_2__A_level_shifter - (PD_D1) : sky130_fd_sc_hd__and2_0 
+ -> d1/_1__X_d2/_2__A_level_shifter_out_net -> d2/_2_ 
+Instance: d1/_1__X_d2/_0__A_level_shifter - (PD_D1) : sky130_fd_sc_hd__and2_0 
+ -> d1/_1__X_d2/_0__A_level_shifter_out_net -> d2/_0_ 
+Instance: d4/_1__A_d3/_1__X_level_shifter - (PD_D4) : sky130_fd_sc_hd__and2_0 
+ -> d4/_1__A_d3/_1__X_level_shifter_out_net -> d4/_1_ 
+Instance: d4/_0__B_d3/_1__X_level_shifter - (PD_D4) : sky130_fd_sc_hd__and2_0 
+ -> d4/_0__B_d3/_1__X_level_shifter_out_net -> d4/_0_ 

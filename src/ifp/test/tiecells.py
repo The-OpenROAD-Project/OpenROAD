@@ -13,7 +13,8 @@ design.link("top")
 
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(helpers.make_rect(design, 0, 0, 1000, 1000),
-                        helpers.make_rect(design, 100, 100, 900, 900))
+                        helpers.make_rect(design, 100, 100, 900, 900),
+                        floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O"))
 
                          
 ifp_helpers.insert_tiecells(floorplan, "LOGIC0_X1/Z", "TIE_ZERO_")

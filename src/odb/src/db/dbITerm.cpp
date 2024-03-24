@@ -270,6 +270,11 @@ dbBTerm* dbITerm::getBTerm()
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
+std::string dbITerm::getName(const char separator) const
+{
+  return getInst()->getName() + separator + getMTerm()->getName();
+}
+
 dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
@@ -362,11 +367,16 @@ void dbITerm::connect(dbNet* net_)
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
+  _dbInst* inst = iterm->getInst();
+  if (!net_) {
+    inst->getLogger()->error(
+        utl::ODB, 440, "Attempt to connect iterm {} to a null net", getName());
+  }
+
   // Do Nothing if already connected
   if (iterm->_net == net->getOID())
     return;
 
-  _dbInst* inst = iterm->getInst();
   if (inst->_flags._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
@@ -550,8 +560,7 @@ Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
   Rect bbox = term->getBBox();
-  odb::dbTransform inst_xfm;
-  getInst()->getTransform(inst_xfm);
+  const odb::dbTransform inst_xfm = getInst()->getTransform();
   inst_xfm.apply(bbox);
   return bbox;
 }
@@ -562,13 +571,8 @@ bool dbITerm::getAvgXY(int* x, int* y)
   int nn = 0;
   double xx = 0.0;
   double yy = 0.0;
-  int px;
-  int py;
   dbInst* inst = getInst();
-  inst->getOrigin(px, py);
-  Point origin = Point(px, py);
-  dbOrientType orient = inst->getOrient();
-  dbTransform transform(orient, origin);
+  const dbTransform transform = inst->getTransform();
 
   dbSet<dbMPin> mpins = mterm->getMPins();
   dbSet<dbMPin>::iterator mpin_itr;
@@ -656,8 +660,7 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 
 std::vector<Rect> dbITerm::getGeometries() const
 {
-  dbTransform transform;
-  getInst()->getTransform(transform);
+  const dbTransform transform = getInst()->getTransform();
 
   std::vector<Rect> geometries;
   for (dbMPin* mpin : getMTerm()->getMPins()) {

@@ -874,6 +874,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
 
+  dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
   stream << block._hier_delimeter;
@@ -911,47 +912,47 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
-  stream << *block._bterm_tbl;
-  stream << *block._iterm_tbl;
-  stream << *block._net_tbl;
-  stream << *block._inst_hdr_tbl;
-  stream << *block._inst_tbl;
-  stream << *block._module_tbl;
-  stream << *block._modinst_tbl;
-  stream << *block._powerdomain_tbl;
-  stream << *block._logicport_tbl;
-  stream << *block._powerswitch_tbl;
-  stream << *block._isolation_tbl;
-  stream << *block._levelshifter_tbl;
-  stream << *block._group_tbl;
-  stream << *block.ap_tbl_;
-  stream << *block.global_connect_tbl_;
-  stream << *block._guide_tbl;
-  stream << *block._net_tracks_tbl;
-  stream << *block._box_tbl;
-  stream << *block._via_tbl;
-  stream << *block._gcell_grid_tbl;
-  stream << *block._track_grid_tbl;
-  stream << *block._obstruction_tbl;
-  stream << *block._blockage_tbl;
-  stream << *block._wire_tbl;
-  stream << *block._swire_tbl;
-  stream << *block._sbox_tbl;
-  stream << *block._row_tbl;
-  stream << *block._fill_tbl;
-  stream << *block._region_tbl;
-  stream << *block._hier_tbl;
-  stream << *block._bpin_tbl;
-  stream << *block._non_default_rule_tbl;
-  stream << *block._layer_rule_tbl;
-  stream << *block._prop_tbl;
+  stream << NamedTable("bterm_tbl", block._bterm_tbl);
+  stream << NamedTable("iterm_tbl", block._iterm_tbl);
+  stream << NamedTable("net_tbl", block._net_tbl);
+  stream << NamedTable("inst_hdr_tbl", block._inst_hdr_tbl);
+  stream << NamedTable("inst_tbl", block._inst_tbl);
+  stream << NamedTable("module_tbl", block._module_tbl);
+  stream << NamedTable("modinst_tbl", block._modinst_tbl);
+  stream << NamedTable("powerdomain_tbl", block._powerdomain_tbl);
+  stream << NamedTable("logicport_tbl", block._logicport_tbl);
+  stream << NamedTable("powerswitch_tbl", block._powerswitch_tbl);
+  stream << NamedTable("isolation_tbl", block._isolation_tbl);
+  stream << NamedTable("levelshifter_tbl", block._levelshifter_tbl);
+  stream << NamedTable("group_tbl", block._group_tbl);
+  stream << NamedTable("ap_tbl", block.ap_tbl_);
+  stream << NamedTable("global_connect_tbl", block.global_connect_tbl_);
+  stream << NamedTable("guide_tbl", block._guide_tbl);
+  stream << NamedTable("net_tracks_tbl", block._net_tracks_tbl);
+  stream << NamedTable("box_tbl", block._box_tbl);
+  stream << NamedTable("via_tbl", block._via_tbl);
+  stream << NamedTable("gcell_grid_tbl", block._gcell_grid_tbl);
+  stream << NamedTable("track_grid_tbl", block._track_grid_tbl);
+  stream << NamedTable("obstruction_tbl", block._obstruction_tbl);
+  stream << NamedTable("blockage_tbl", block._blockage_tbl);
+  stream << NamedTable("wire_tbl", block._wire_tbl);
+  stream << NamedTable("swire_tbl", block._swire_tbl);
+  stream << NamedTable("sbox_tbl", block._sbox_tbl);
+  stream << NamedTable("row_tbl", block._row_tbl);
+  stream << NamedTable("fill_tbl", block._fill_tbl);
+  stream << NamedTable("region_tbl", block._region_tbl);
+  stream << NamedTable("hier_tbl", block._hier_tbl);
+  stream << NamedTable("bpin_tbl", block._bpin_tbl);
+  stream << NamedTable("non_default_rule_tbl", block._non_default_rule_tbl);
+  stream << NamedTable("layer_rule_tbl", block._layer_rule_tbl);
+  stream << NamedTable("prop_tbl", block._prop_tbl);
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
   stream << *block._cc_val_tbl;
-  stream << *block._cap_node_tbl;  // DKF - 2/21/05
-  stream << *block._r_seg_tbl;     // DKF - 2/21/05
-  stream << *block._cc_seg_tbl;
+  stream << NamedTable("cap_node_tbl", block._cap_node_tbl);
+  stream << NamedTable("r_seg_tbl", block._r_seg_tbl);
+  stream << NamedTable("cc_seg_tbl", block._cc_seg_tbl);
   stream << *block._extControl;
 
   //---------------------------------------------------------- stream out
@@ -1636,13 +1637,11 @@ void dbBlock::ComputeBBox()
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);
-  dbSet<dbWire>::iterator witr;
 
-  for (witr = wires.begin(); witr != wires.end(); ++witr) {
-    dbWire* wire = *witr;
-    Rect r;
-    if (wire->getBBox(r)) {
-      bbox->_shape._rect.merge(r);
+  for (dbWire* wire : wires) {
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox->_shape._rect.merge(opt_bbox.value());
     }
   }
 

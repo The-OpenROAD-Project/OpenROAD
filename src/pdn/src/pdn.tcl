@@ -40,7 +40,7 @@ proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
     keys {-failed_via_report} flags {-skip_trim -dont_add_pins -reset -ripup -report_only -verbose}
 
-  sta::check_argc_eq0  "pdngen" $args
+  sta::check_argc_eq0 "pdngen" $args
 
   pdn::depricated flags -verbose
 
@@ -139,7 +139,7 @@ proc set_voltage_domain {args} {
       }
     }
   }
-  
+
   set switched_power "NULL"
   if {[info exists keys(-switched_power)]} {
     set switched_power_net_name $keys(-switched_power)
@@ -149,8 +149,10 @@ proc set_voltage_domain {args} {
       $switched_power setSpecial
       $switched_power setSigType POWER
     } else {
-      if {[$switched_power getSigType] != "POWER"} {
-        utl::error PDN 199 "Net $switched_power_net_name already exists in the design, but is of signal type [$switched_power getSigType]."
+      set signal_type [$switched_power getSigType]
+      if {$signal_type != "POWER"} {
+        utl::error PDN 199 "Net $switched_power_net_name already exists in the design,\
+          but is of signal type ${signal_type}."
       }
     }
   }
@@ -185,7 +187,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
 proc define_pdn_grid {args} {
   set is_macro 0
   set is_existing 0
-    foreach arg $args {
+  foreach arg $args {
     if {$arg == "-macro"} {
       set is_macro 1
     } elseif {$arg == "-existing"} {
@@ -210,7 +212,7 @@ sta::define_cmd_args "define_power_switch_cell" {-name <name> \
 
 proc define_power_switch_cell {args} {
   sta::parse_key_args "define_power_switch_cell" args \
-    keys {-name -control -acknowledge -power_switchable -power -ground} 
+    keys {-name -control -acknowledge -power_switchable -power -ground}
 
   sta::check_argc_eq0 "define_power_switch_cell" $args
 
@@ -253,13 +255,14 @@ proc define_power_switch_cell {args} {
   } else {
     set ground [pdn::get_mterm $master $keys(-ground)]
   }
-  
-  pdn::make_switched_power_cell $master \
-                                $control \
-                                $acknowledge \
-                                $power_switchable \
-                                $power \
-                                $ground
+
+  pdn::make_switched_power_cell \
+    $master \
+    $control \
+    $acknowledge \
+    $power_switchable \
+    $power \
+    $ground
 }
 
 sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
@@ -351,7 +354,8 @@ proc add_pdn_stripe {args} {
 
   set extend "Core"
   if {[info exists flags(-extend_to_core_ring)] && [info exists flags(-extend_to_boundary)]} {
-    utl::error PDN 1010 "Options -extend_to_core_ring and -extend_to_boundary are mutually exclusive."
+    utl::error PDN 1010 "Options -extend_to_core_ring and\
+      -extend_to_boundary are mutually exclusive."
   } elseif {[info exists flags(-extend_to_core_ring)]} {
     set extend "Rings"
   } elseif {[info exists flags(-extend_to_boundary)]} {
@@ -368,18 +372,19 @@ proc add_pdn_stripe {args} {
   if {[info exists flags(-followpins)]} {
     pdn::make_followpin $grid $layer $width $extend
   } else {
-    pdn::make_strap $grid \
-                    $layer \
-                    $width \
-                    $spacing \
-                    $pitch \
-                    $offset \
-                    $number_of_straps \
-                    [info exists flags(-snap_to_grid)] \
-                    $use_grid_power_order \
-                    $start_with_power \
-                    $extend \
-                    $nets
+    pdn::make_strap \
+      $grid \
+      $layer \
+      $width \
+      $spacing \
+      $pitch \
+      $offset \
+      $number_of_straps \
+      [info exists flags(-snap_to_grid)] \
+      $use_grid_power_order \
+      $start_with_power \
+      $extend \
+      $nets
   }
 }
 
@@ -398,7 +403,8 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets -starts_with} \
+    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers \
+      -power_pads -ground_pads -nets -starts_with} \
     flags {-add_connect -extend_to_boundary -connect_to_pads}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
@@ -416,8 +422,10 @@ proc add_pdn_ring {args} {
     utl::error PDN 1011 "The -layers argument is required."
   }
 
-  if {[llength $keys(-layers)] != 2} {
-    utl::error PDN 1012 "Expecting a list of 2 elements for -layers option of add_pdn_ring command, found [llength $keys(-layers)]."
+  set layers_len [llength $keys(-layers)]
+  if {$layers_len != 2} {
+    utl::error PDN 1012 "Expecting a list of 2 elements for -layers option of add_pdn_ring\
+      command, found ${layers_len}."
   }
 
   if {![info exists keys(-widths)]} {
@@ -510,20 +518,21 @@ proc add_pdn_ring {args} {
     }
   }
 
-  pdn::make_ring $grid \
-                 $l0 \
-                 [lindex $widths 0] \
-                 [lindex $spacings 0] \
-                 $l1 \
-                 [lindex $widths 1] \
-                 [lindex $spacings 1] \
-                 $use_grid_power_order \
-                 $start_with_power \
-                 {*}$core_offsets \
-                 {*}$pad_offsets \
-                 [info exists flags(-extend_to_boundary)] \
-                 $connect_to_pad_layers \
-                 $nets
+  pdn::make_ring \
+    $grid \
+    $l0 \
+    [lindex $widths 0] \
+    [lindex $spacings 0] \
+    $l1 \
+    [lindex $widths 1] \
+    [lindex $spacings 1] \
+    $use_grid_power_order \
+    $start_with_power \
+    {*}$core_offsets \
+    {*}$pad_offsets \
+    [info exists flags(-extend_to_boundary)] \
+    $connect_to_pad_layers \
+    $nets
 
   if {[info exists flags(-add_connect)]} {
     add_pdn_connect -grid $grid -layers $keys(-layers)
@@ -543,7 +552,8 @@ sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
 
 proc add_pdn_connect {args} {
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts -dont_use_vias} \
+    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts \
+      -dont_use_vias} \
     flags {}
 
   sta::check_argc_eq0 "add_pdn_connect" $args
@@ -621,18 +631,19 @@ proc add_pdn_connect {args} {
     set dont_use $keys(-dont_use_vias)
   }
 
-  pdn::make_connect $grid \
-                    $l0 \
-                    $l1 \
-                    {*}$cut_pitch \
-                    $fixed_generate_vias \
-                    $fixed_tech_vias \
-                    $max_rows \
-                    $max_columns \
-                    $ongrid \
-                    $split_cuts_layers \
-                    $split_cuts_pitches \
-                    $dont_use
+  pdn::make_connect \
+    $grid \
+    $l0 \
+    $l1 \
+    {*}$cut_pitch \
+    $fixed_generate_vias \
+    $fixed_tech_vias \
+    $max_rows \
+    $max_columns \
+    $ongrid \
+    $split_cuts_layers \
+    $split_cuts_pitches \
+    $dont_use
 }
 
 sta::define_cmd_args "add_sroute_connect" {[-net net] \
@@ -650,7 +661,8 @@ sta::define_cmd_args "add_sroute_connect" {[-net net] \
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -layers -cut_pitch -fixed_vias -max_rows -max_columns -metalwidths -metalspaces -ongrid -insts} \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -max_rows -max_columns -metalwidths \
+      -metalspaces -ongrid -insts} \
     flags {}
 
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
@@ -726,24 +738,25 @@ proc add_sroute_connect {args} {
     }
   }
 
-  pdn::createSrouteWires $net \
-                         $outerNet \
-                         $l0 \
-                         $l1 \
-                         $cut_pitch_x \
-                         $cut_pitch_y \
-                         $fixed_generate_vias \
-                         $fixed_tech_vias \
-                         $max_rows \
-                         $max_columns \
-                         $ongrid \
-                         $metalwidths \
-                         $metalspaces \
-                         $insts
+  pdn::createSrouteWires \
+    $net \
+    $outerNet \
+    $l0 \
+    $l1 \
+    $cut_pitch_x \
+    $cut_pitch_y \
+    $fixed_generate_vias \
+    $fixed_tech_vias \
+    $max_rows \
+    $max_columns \
+    $ongrid \
+    $metalwidths \
+    $metalspaces \
+    $insts
 }
 
-sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
-                                         -all
+sta::define_cmd_args "repair_pdn_vias" {[-net net_name] \
+                                        -all
 }
 proc repair_pdn_vias { args } {
   sta::parse_key_args "repair_pdn_vias" args \
@@ -780,7 +793,7 @@ proc repair_pdn_vias { args } {
 }
 
 # conversion utility
-sta::define_hidden_cmd_args  "convert_pdn_config" { config_file }
+sta::define_hidden_cmd_args "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {
   sta::parse_key_args "convert_pdn_config" args \
     keys {} \
@@ -794,698 +807,717 @@ proc convert_pdn_config { args } {
 }
 
 namespace eval pdn {
-
-  proc name_cmp { obj1 obj2 } {
-    set name1 [$obj1 getName]
-    set name2 [$obj2 getName]
-    if { $name1 < $name2 } {
-      return -1
-    } elseif { $name1 == $name2 } {
-      return 0
-    } else {
-      return 1
-    }
-  }
-
-  proc check_design_state { args } {
-    if {[ord::get_db_block] == "NULL"} {
-      utl::error PDN 1022 "Design must be loaded before calling $args."
-    }
-  }
-
-  proc modify_voltage_domain_name { name } {
-    if {$name == "CORE"} {
-      return "Core"
-    }
-    return $name
-  }
-
-  proc get_layer { name } {
-    set layer [[ord::get_db_tech] findLayer $name]
-    if {$layer == "NULL"} {
-      utl::error PDN 1023 "Unable to find $name layer."
-    } else {
-      return $layer
-    }
-  }
-
-  proc depricated { args_var key {use "."}} {
-    upvar 1 $args_var args
-    if {[info exists args($key)]} {
-      utl::warn PDN 1024 "$key has been deprecated$use"
-      return $args($key)
-    }
-    return {}
-  }
-
-  proc define_pdn_grid { args } {
-    sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell -power_control -power_control_network} \
-      flags {}
-
-    sta::check_argc_eq0 "define_pdn_grid" $args
-    pdn::check_design_state "define_pdn_grid"
-
-    if {[info exists keys(-voltage_domains)]} {
-      set domains [pdn::get_voltage_domains $keys(-voltage_domains)]
-    } else {
-      set domains [pdn::find_domain "Core"]
-    }
-
-    if {![info exists keys(-name)]} {
-      utl::error PDN 1025 "-name is required"
-    }
-
-    if {[has_grid $keys(-name)]} {
-      utl::error PDN 1043 "Grid named \"$keys(-name)\" already defined."
-    }
-
-    set start_with_power 0
-    if {[info exists keys(-starts_with)]} {
-      set start_with_power [pdn::get_starts_with $keys(-starts_with)]
-    }
-
-    set pin_layers {}
-    if {[info exists keys(-pins)]} {
-      foreach pin $keys(-pins) {
-        lappend pin_layers [pdn::get_layer $pin]
-      }
-    }
-    
-    set obstructions {}
-    if {[info exists keys(-obstructions)]} {
-      set obstructions [get_obstructions $keys(-obstructions)]
-    }
-    
-    set power_cell "NULL"
-    set power_control "NULL"
-    set power_control_network "STAR"
-    if {[info exists keys(-power_switch_cell)]} {
-      set power_cell [pdn::find_switched_power_cell $keys(-power_switch_cell)]
-      if { $power_cell == "NULL" } {
-        utl::error PDN 1048 "Switched power cell $keys(-power_switch_cell) is not defined."
-      }
-      
-      if {![info exists keys(-power_control)]} {
-        utl::error PDN 1045 "-power_control must be specified with -power_switch_cell"
-      } else {
-        set power_control [[ord::get_db_block] findNet $keys(-power_control)]
-        if { $power_control == "NULL" } {
-          utl::error PDN 1049 "Unable to find power control net: $keys(-power_control)"
-        }
-      }
-      
-      if {[info exists keys(-power_control_network)]} {
-        set power_control_network $keys(-power_control_network)
-      }
-    }
-
-    foreach domain $domains {
-      pdn::make_core_grid $domain \
-                          $keys(-name) \
-                          $start_with_power \
-                          $pin_layers \
-                          $obstructions \
-                          $power_cell \
-                          $power_control \
-                          $power_control_network
-    }
-  }
-
-  proc define_pdn_grid_existing { args } {
-    sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -obstructions} \
-      flags {-existing}
-
-    sta::check_argc_eq0 "define_pdn_grid" $args
-    pdn::check_design_state "define_pdn_grid"
-
-    set name "existing_grid"
-    if {[info exists keys(-name)]} {
-       set name $keys(-name)
-    }
-
-    set obstructions {}
-    if {[info exists keys(-obstructions)]} {
-      set obstructions [get_obstructions $keys(-obstructions)]
-    }
-
-    pdn::make_existing_grid $name $obstructions
-  }
-
-  proc define_pdn_grid_macro { args } {
-    sta::parse_key_args "define_pdn_grid" args \
-      keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
-      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
-
-    sta::check_argc_eq0 "define_pdn_grid" $args
-    pdn::check_design_state "define_pdn_grid"
-
-    set pg_pins_to_boundary 1
-    pdn::depricated keys -pin_direction
-    if {[info exists flags(-grid_over_pg_pins)] && [info exists flags(-grid_over_boundary)]} {
-      utl::error PDN 1026 "Options -grid_over_pg_pins and -grid_over_boundary are mutually exclusive."
-    } elseif {[info exists flags(-grid_over_pg_pins)]} {
-      set pg_pins_to_boundary 0
-    }
-
-    set exclusive_keys 0
-    if {[info exists keys(-instances)]} {
-      incr exclusive_keys
-    }
-    if {[info exists keys(-cells)]} {
-      incr exclusive_keys
-    }
-    if {[info exists flags(-default)]} {
-      incr exclusive_keys
-    }
-    if {$exclusive_keys > 1} {
-      utl::error PDN 1027 "Options -instances, -cells, and -default are mutually exclusive."
-    } elseif {![info exists keys(-instances)] && ![info exists keys(-cells)] && ![info exists flags(-default)]} {
-      utl::error PDN 1028 "Either -instances, -cells, or -default must be specified."
-    }
-    set default_grid [info exists flags(-default)]
-    if {$default_grid} {
-      # set default pattern to .*
-      set keys(-cells) ".*"
-    }
-
-    if {![info exists keys(-name)]} {
-       utl::error PDN 1029 "-name is required"
-    }
-    if {[has_grid $keys(-name)]} {
-      utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
-    }
-
-    set start_with_power 0
-    if {[info exists keys(-starts_with)]} {
-      set start_with_power [pdn::get_starts_with $keys(-starts_with)]
-    }
-
-    set halo "0 0 0 0"
-    if {[info exists keys(-halo)]} {
-      set halo [pdn::get_one_to_four "-halo" $keys(-halo)]
-    }
-    set halo [list \
-     [ord::microns_to_dbu [lindex $halo 0]] \
-     [ord::microns_to_dbu [lindex $halo 1]] \
-     [ord::microns_to_dbu [lindex $halo 2]] \
-     [ord::microns_to_dbu [lindex $halo 3]]]
-
-    if {[info exists keys(-voltage_domains)]} {
-      set domains [pdn::get_voltage_domains $keys(-voltage_domains)]
-    } else {
-      set domains [pdn::find_domain "Core"]
-    }
-
-    set obstructions {}
-    if {[info exists keys(-obstructions)]} {
-      set obstructions [get_obstructions $keys(-obstructions)]
-    }
-
-    set orients {}
-    if {[info exists keys(-orient)]} {
-      set orients [pdn::get_orientations $keys(-orient)]
-    }
-
-    set is_bump [info exists flags(-bump)]
-
-    if {[info exists keys(-instances)]} {
-      set insts {}
-      foreach inst_pattern $keys(-instances) {
-        set sub_insts [get_insts $inst_pattern]
-        if {[llength $sub_insts] == 0} {
-          utl::error PDN 1030 "Unable to find instance: $inst_pattern"
-        }
-        foreach inst $sub_insts {
-          lappend insts $inst
-        }
-      }
-
-      set insts [lsort -unique -command name_cmp $insts]
-      foreach inst $insts {
-        # must match orientation, if provided
-        if {[match_orientation $orients [$inst getOrient]] != 0} {
-          foreach domain $domains {
-            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
-          }
-        }
-      }
-    } else {
-      set cells {}
-      foreach cell_pattern $keys(-cells) {
-        foreach cell [get_masters $cell_pattern] {
-          # only add blocks
-          if {![$cell isBlock]} {
-            continue;
-          }
-          lappend cells $cell
-        }
-      }
-
-      set cells [lsort -unique -command name_cmp $cells]
-      foreach cell $cells {
-        foreach inst [[ord::get_db_block] getInsts] {
-          # inst must match cells
-          if {[$inst getMaster] == $cell} {
-            # must match orientation, if provided
-            if {[match_orientation $orients [$inst getOrient]] != 0} {
-              foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  proc get_voltage_domains { names } {
-    set domains {}
-    foreach name $names {
-      set domain [pdn::find_domain [modify_voltage_domain_name $name]]
-
-      if {$domain == "NULL"} {
-        utl::error PDN 1032 "Unable to find $name domain."
-      }
-      lappend domains $domain
-    }
-    return $domains
-  }
-
-  proc match_orientation { orients orient } {
-    if {[llength $orients] == 0} {
-      return 1
-    }
-
-    if {[lsearch -exact $orients $orient] != -1} {
-      return 1
-    }
-
+proc name_cmp { obj1 obj2 } {
+  set name1 [$obj1 getName]
+  set name2 [$obj2 getName]
+  if { $name1 < $name2 } {
+    return -1
+  } elseif { $name1 == $name2 } {
     return 0
+  } else {
+    return 1
+  }
+}
+
+proc check_design_state { args } {
+  if {[ord::get_db_block] == "NULL"} {
+    utl::error PDN 1022 "Design must be loaded before calling $args."
+  }
+}
+
+proc modify_voltage_domain_name { name } {
+  if {$name == "CORE"} {
+    return "Core"
+  }
+  return $name
+}
+
+proc get_layer { name } {
+  set layer [[ord::get_db_tech] findLayer $name]
+  if {$layer == "NULL"} {
+    utl::error PDN 1023 "Unable to find $name layer."
+  } else {
+    return $layer
+  }
+}
+
+proc depricated { args_var key {use "."}} {
+  upvar 1 $args_var args
+  if {[info exists args($key)]} {
+    utl::warn PDN 1024 "$key has been deprecated$use"
+    return $args($key)
+  }
+  return {}
+}
+
+proc define_pdn_grid { args } {
+  sta::parse_key_args "define_pdn_grid" args \
+    keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
+      -power_control -power_control_network} \
+    flags {}
+
+  sta::check_argc_eq0 "define_pdn_grid" $args
+  pdn::check_design_state "define_pdn_grid"
+
+  if {[info exists keys(-voltage_domains)]} {
+    set domains [pdn::get_voltage_domains $keys(-voltage_domains)]
+  } else {
+    set domains [pdn::find_domain "Core"]
   }
 
-  proc get_insts { pattern } {
+  if {![info exists keys(-name)]} {
+    utl::error PDN 1025 "-name is required"
+  }
+
+  if {[has_grid $keys(-name)]} {
+    utl::error PDN 1043 "Grid named \"$keys(-name)\" already defined."
+  }
+
+  set start_with_power 0
+  if {[info exists keys(-starts_with)]} {
+    set start_with_power [pdn::get_starts_with $keys(-starts_with)]
+  }
+
+  set pin_layers {}
+  if {[info exists keys(-pins)]} {
+    foreach pin $keys(-pins) {
+      lappend pin_layers [pdn::get_layer $pin]
+    }
+  }
+
+  set obstructions {}
+  if {[info exists keys(-obstructions)]} {
+    set obstructions [get_obstructions $keys(-obstructions)]
+  }
+
+  set power_cell "NULL"
+  set power_control "NULL"
+  if {[info exists keys(-power_switch_cell)]} {
+    set power_cell [pdn::find_switched_power_cell $keys(-power_switch_cell)]
+    if { $power_cell == "NULL" } {
+      utl::error PDN 1048 "Switched power cell $keys(-power_switch_cell) is not defined."
+    }
+
+    if {![info exists keys(-power_control)]} {
+      utl::error PDN 1045 "-power_control must be specified with -power_switch_cell"
+    } else {
+      set power_control [[ord::get_db_block] findNet $keys(-power_control)]
+      if { $power_control == "NULL" } {
+        utl::error PDN 1049 "Unable to find power control net: $keys(-power_control)"
+      }
+    }
+  }
+
+  set power_control_network "STAR"
+  if {[info exists keys(-power_control_network)]} {
+    set power_control_network $keys(-power_control_network)
+  }
+
+  foreach domain $domains {
+    pdn::make_core_grid \
+      $domain \
+      $keys(-name) \
+      $start_with_power \
+      $pin_layers \
+      $obstructions \
+      $power_cell \
+      $power_control \
+      $power_control_network
+  }
+}
+
+proc define_pdn_grid_existing { args } {
+  sta::parse_key_args "define_pdn_grid" args \
+    keys {-name -obstructions} \
+    flags {-existing}
+
+  sta::check_argc_eq0 "define_pdn_grid" $args
+  pdn::check_design_state "define_pdn_grid"
+
+  set name "existing_grid"
+  if {[info exists keys(-name)]} {
+    set name $keys(-name)
+  }
+
+  set obstructions {}
+  if {[info exists keys(-obstructions)]} {
+    set obstructions [get_obstructions $keys(-obstructions)]
+  }
+
+  pdn::make_existing_grid $name $obstructions
+}
+
+proc define_pdn_grid_macro { args } {
+  sta::parse_key_args "define_pdn_grid" args \
+    keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with \
+      -obstructions} \
+    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
+
+  sta::check_argc_eq0 "define_pdn_grid" $args
+  pdn::check_design_state "define_pdn_grid"
+
+  set pg_pins_to_boundary 1
+  pdn::depricated keys -pin_direction
+  if {[info exists flags(-grid_over_pg_pins)] && [info exists flags(-grid_over_boundary)]} {
+    utl::error PDN 1026 "Options -grid_over_pg_pins and -grid_over_boundary are mutually exclusive."
+  } elseif {[info exists flags(-grid_over_pg_pins)]} {
+    set pg_pins_to_boundary 0
+  }
+
+  set exclusive_keys 0
+  if {[info exists keys(-instances)]} {
+    incr exclusive_keys
+  }
+  if {[info exists keys(-cells)]} {
+    incr exclusive_keys
+  }
+  if {[info exists flags(-default)]} {
+    incr exclusive_keys
+  }
+  if {$exclusive_keys > 1} {
+    utl::error PDN 1027 "Options -instances, -cells, and -default are mutually exclusive."
+  } elseif {![info exists keys(-instances)] &&
+            ![info exists keys(-cells)] &&
+            ![info exists flags(-default)]} {
+    utl::error PDN 1028 "Either -instances, -cells, or -default must be specified."
+  }
+  set default_grid [info exists flags(-default)]
+  if {$default_grid} {
+    # set default pattern to .*
+    set keys(-cells) ".*"
+  }
+
+  if {![info exists keys(-name)]} {
+    utl::error PDN 1029 "-name is required"
+  }
+  if {[has_grid $keys(-name)]} {
+    utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+  }
+
+  set start_with_power 0
+  if {[info exists keys(-starts_with)]} {
+    set start_with_power [pdn::get_starts_with $keys(-starts_with)]
+  }
+
+  set halo "0 0 0 0"
+  if {[info exists keys(-halo)]} {
+    set halo [pdn::get_one_to_four "-halo" $keys(-halo)]
+  }
+  set halo [list \
+    [ord::microns_to_dbu [lindex $halo 0]] \
+    [ord::microns_to_dbu [lindex $halo 1]] \
+    [ord::microns_to_dbu [lindex $halo 2]] \
+    [ord::microns_to_dbu [lindex $halo 3]]]
+
+  if {[info exists keys(-voltage_domains)]} {
+    set domains [pdn::get_voltage_domains $keys(-voltage_domains)]
+  } else {
+    set domains [pdn::find_domain "Core"]
+  }
+
+  set obstructions {}
+  if {[info exists keys(-obstructions)]} {
+    set obstructions [get_obstructions $keys(-obstructions)]
+  }
+
+  set orients {}
+  if {[info exists keys(-orient)]} {
+    set orients [pdn::get_orientations $keys(-orient)]
+  }
+
+  set is_bump [info exists flags(-bump)]
+
+  if {[info exists keys(-instances)]} {
     set insts {}
-    foreach inst [[ord::get_db_block] getInsts] {
-      if {[regexp $pattern [$inst getName]] != 0} {
+    foreach inst_pattern $keys(-instances) {
+      set sub_insts [get_insts $inst_pattern]
+      if {[llength $sub_insts] == 0} {
+        utl::error PDN 1030 "Unable to find instance: $inst_pattern"
+      }
+      foreach inst $sub_insts {
         lappend insts $inst
       }
     }
-    return $insts
-  }
 
-  proc get_masters { pattern } {
-    set masters {}
-    foreach lib [[ord::get_db] getLibs] {
-      foreach master [$lib getMasters] {
-        if {[regexp $pattern [$master getName]] != 0} {
-          lappend masters $master
+    set insts [lsort -unique -command name_cmp $insts]
+    foreach inst $insts {
+      # must match orientation, if provided
+      if {[match_orientation $orients [$inst getOrient]] != 0} {
+        foreach domain $domains {
+          pdn::make_instance_grid \
+            $domain \
+            $keys(-name) \
+            $start_with_power \
+            $inst \
+            {*}$halo \
+            $pg_pins_to_boundary \
+            $default_grid \
+            $obstructions \
+            $is_bump
         }
       }
     }
-    return $masters
-  }
-
-  proc get_one_to_two { arg value } {
-    if {[llength $value] == 1} {
-      return [list $value $value]
-    } elseif {[llength $value] == 2} {
-      return $value
-    } else {
-      utl::error PDN 1033 "Argument $arg must consist of 1 or 2 entries."
-    }
-    return $list_val
-  }
-
-  proc get_one_to_four { arg value } {
-    if {[llength $value] == 1} {
-      return [list $value $value $value $value]
-    } elseif {[llength $value] == 2} {
-      return [list {*}$value {*}$value]
-    } elseif {[llength $value] == 4} {
-      return $value
-    } else {
-      utl::error PDN 1034 "Argument $arg must consist of 1, 2 or 4 entries."
-    }
-    return $list_val
-  }
-
-  proc get_obstructions { obstruction } {
-    set layers {}
-    foreach l $obstruction {
-      lappend layers [pdn::get_layer $l]
-    }
-    return $layers
-  }
-
-  proc get_starts_with { value } {
-    if {$value == "POWER"} {
-      return 1
-    } elseif {$value == "GROUND"} {
-      return 0
-    } else {
-      utl::error PDN 1035 "Unknown -starts_with option: $value"
-    }
-  }
-  
-  proc get_mterm { master term } {
-    set mterm [$master findMTerm $term]
-    if { $mterm == "NULL" } {
-      utl::error PDN 1047 "Unable to find $term on $master"
-    }
-    return $mterm
-  }
-
-  proc get_orientations {orientations} {
-    set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}
-    set lef_orientations {N R0 FN MY S R180 FS MX E R270 FE MYR90 W R90 FW MXR90}
-
-    set checked_orientations {}
-    foreach orient $orientations {
-      if {[lsearch -exact $valid_orientations $orient] > -1} {
-        lappend checked_orientations $orient
-      } elseif {[dict exists $lef_orientations $orient]} {
-        lappend checked_orientations [dict get $lef_orientations $orient]
-      } else {
-        utl::error PDN 1036 "Invalid orientation $orient specified, must be one of [join $valid_orientations {, }]."
-      }
-    }
-    return $checked_orientations
-  }
-
-  proc convert_header { title } {
-    puts "####################################"
-    puts "# $title"
-    puts "####################################"
-  }
-
-  # helper function to convert config file to tcl commands
-  proc convert_config { config } {
-    # reset PDNGEN, copies of initial values from pdngen tcl
-    set pdngen::global_connections {}
-    set pdngen::voltage_domains {
-      CORE {
-        primary_power VDD primary_ground VSS
-      }
-    }
-    set pdngen::power_nets {}
-    set pdngen::ground_nets {}
-    set pdngen::design_data {}
-
-    # Source configuration
-    pdngen::source_config $config
-
-    generate_global_connect_commands
-
-    convert_header "voltage domains"
-    # build voltage domains
-    dict for {name spec} $pdngen::voltage_domains {
-      set command "set_voltage_domain -name \{$name\}"
-      append command " -power \{[dict get $spec primary_power]\}"
-      append command " -ground \{[dict get $spec primary_ground]\}"
-      if {[dict exists $spec secondary_power]} {
-        append command " -secondary_power \{[dict get $spec secondary_power]\}"
-      }
-      puts "$command"
-
-      dict for {grid_name grid_spec} $spec {
-        generate_grid_commands $name $grid_spec
-      }
-    }
-
-    if {[dict exists $pdngen::design_data grid]} {
-      if {[dict exists $pdngen::design_data grid stdcell]} {
-        convert_header "standard cell grid"
-        dict for {name spec} [dict get $pdngen::design_data grid stdcell] {
-          set command [generate_grid_command $spec]
-
-          puts "$command"
-
-          generate_grid_commands $name $spec
+  } else {
+    set cells {}
+    foreach cell_pattern $keys(-cells) {
+      foreach cell [get_masters $cell_pattern] {
+        # only add blocks
+        if {![$cell isBlock]} {
+          continue;
         }
+        lappend cells $cell
       }
+    }
 
-      if {[dict exists $pdngen::design_data grid macro]} {
-        convert_header "macro grids"
-
-        set inst_grids {}
-        set cell_grids {}
-        set catch_all {}
-
-        dict for {name spec} [dict get $pdngen::design_data grid macro] {
-          if {[dict exists $spec instances]} {
-            lappend inst_grids $name $spec
-          } elseif {[dict exists $spec macro]} {
-            lappend cell_grids $name $spec
-          } else {
-            lappend catch_all $name $spec
-          }
-        }
-
-        # order matters, so ensure instances are assigned first, then cells, and then catch all
-        set grids [list \
-         {*}$inst_grids \
-         {*}$cell_grids \
-         {*}$catch_all]
-
-        foreach {name spec} $grids {
-          convert_header "grid for: $name"
-          set command [generate_grid_command $spec]
-          append command " -macro"
-          if {[dict exists $spec orient]} {
-            append command " -orient \{[dict get $spec orient]\}"
-          }
-          if {[dict exists $spec halo]} {
-            set halo {}
-            foreach h [dict get $spec halo] {
-              lappend halo [ord::dbu_to_micron $h]
+    set cells [lsort -unique -command name_cmp $cells]
+    foreach cell $cells {
+      foreach inst [[ord::get_db_block] getInsts] {
+        # inst must match cells
+        if {[$inst getMaster] == $cell} {
+          # must match orientation, if provided
+          if {[match_orientation $orients [$inst getOrient]] != 0} {
+            foreach domain $domains {
+              pdn::make_instance_grid \
+                $domain $keys(-name) \
+                $start_with_power \
+                $inst \
+                {*}$halo \
+                $pg_pins_to_boundary \
+                $default_grid \
+                $obstructions \
+                $is_bump
             }
-            append command " -halo \{$halo\}"
           }
-          if {[dict exists $spec instances]} {
-            append command " -instances \{[dict get $spec instances]\}"
-          } elseif {[dict exists $spec macro]} {
-            append command " -cells \{[dict get $spec macro]\}"
-          } else {
-            append command " -default"
+        }
+      }
+    }
+  }
+}
+
+proc get_voltage_domains { names } {
+  set domains {}
+  foreach name $names {
+    set domain [pdn::find_domain [modify_voltage_domain_name $name]]
+
+    if {$domain == "NULL"} {
+      utl::error PDN 1032 "Unable to find $name domain."
+    }
+    lappend domains $domain
+  }
+  return $domains
+}
+
+proc match_orientation { orients orient } {
+  if {[llength $orients] == 0} {
+    return 1
+  }
+
+  if {[lsearch -exact $orients $orient] != -1} {
+    return 1
+  }
+
+  return 0
+}
+
+proc get_insts { pattern } {
+  set insts {}
+  foreach inst [[ord::get_db_block] getInsts] {
+    if {[regexp $pattern [$inst getName]] != 0} {
+      lappend insts $inst
+    }
+  }
+  return $insts
+}
+
+proc get_masters { pattern } {
+  set masters {}
+  foreach lib [[ord::get_db] getLibs] {
+    foreach master [$lib getMasters] {
+      if {[regexp $pattern [$master getName]] != 0} {
+        lappend masters $master
+      }
+    }
+  }
+  return $masters
+}
+
+proc get_one_to_two { arg value } {
+  if {[llength $value] == 1} {
+    return [list $value $value]
+  } elseif {[llength $value] == 2} {
+    return $value
+  } else {
+    utl::error PDN 1033 "Argument $arg must consist of 1 or 2 entries."
+  }
+  return $list_val
+}
+
+proc get_one_to_four { arg value } {
+  if {[llength $value] == 1} {
+    return [list $value $value $value $value]
+  } elseif {[llength $value] == 2} {
+    return [list {*}$value {*}$value]
+  } elseif {[llength $value] == 4} {
+    return $value
+  } else {
+    utl::error PDN 1034 "Argument $arg must consist of 1, 2 or 4 entries."
+  }
+  return $list_val
+}
+
+proc get_obstructions { obstruction } {
+  set layers {}
+  foreach l $obstruction {
+    lappend layers [pdn::get_layer $l]
+  }
+  return $layers
+}
+
+proc get_starts_with { value } {
+  if {$value == "POWER"} {
+    return 1
+  } elseif {$value == "GROUND"} {
+    return 0
+  } else {
+    utl::error PDN 1035 "Unknown -starts_with option: $value"
+  }
+}
+
+proc get_mterm { master term } {
+  set mterm [$master findMTerm $term]
+  if { $mterm == "NULL" } {
+    utl::error PDN 1047 "Unable to find $term on $master"
+  }
+  return $mterm
+}
+
+proc get_orientations {orientations} {
+  set valid_orientations {R0 R90 R180 R270 MX MY MXR90 MYR90}
+  set lef_orientations {N R0 FN MY S R180 FS MX E R270 FE MYR90 W R90 FW MXR90}
+
+  set checked_orientations {}
+  foreach orient $orientations {
+    if {[lsearch -exact $valid_orientations $orient] > -1} {
+      lappend checked_orientations $orient
+    } elseif {[dict exists $lef_orientations $orient]} {
+      lappend checked_orientations [dict get $lef_orientations $orient]
+    } else {
+      set valid_orients [join $valid_orientations {, }]
+      utl::error PDN 1036 "Invalid orientation $orient specified, must be one of ${valid_orients}."
+    }
+  }
+  return $checked_orientations
+}
+
+proc convert_header { title } {
+  puts "####################################"
+  puts "# $title"
+  puts "####################################"
+}
+
+# helper function to convert config file to tcl commands
+proc convert_config { config } {
+  # reset PDNGEN, copies of initial values from pdngen tcl
+  set pdngen::global_connections {}
+  set pdngen::voltage_domains {
+    CORE {
+      primary_power VDD primary_ground VSS
+    }
+  }
+  set pdngen::power_nets {}
+  set pdngen::ground_nets {}
+  set pdngen::design_data {}
+
+  # Source configuration
+  pdngen::source_config $config
+
+  generate_global_connect_commands
+
+  convert_header "voltage domains"
+  # build voltage domains
+  dict for {name spec} $pdngen::voltage_domains {
+    set command "set_voltage_domain -name \{$name\}"
+    append command " -power \{[dict get $spec primary_power]\}"
+    append command " -ground \{[dict get $spec primary_ground]\}"
+    if {[dict exists $spec secondary_power]} {
+      append command " -secondary_power \{[dict get $spec secondary_power]\}"
+    }
+    puts "$command"
+
+    dict for {grid_name grid_spec} $spec {
+      generate_grid_commands $name $grid_spec
+    }
+  }
+
+  if {[dict exists $pdngen::design_data grid]} {
+    if {[dict exists $pdngen::design_data grid stdcell]} {
+      convert_header "standard cell grid"
+      dict for {name spec} [dict get $pdngen::design_data grid stdcell] {
+        set command [generate_grid_command $spec]
+
+        puts "$command"
+
+        generate_grid_commands $name $spec
+      }
+    }
+
+    if {[dict exists $pdngen::design_data grid macro]} {
+      convert_header "macro grids"
+
+      set inst_grids {}
+      set cell_grids {}
+      set catch_all {}
+
+      dict for {name spec} [dict get $pdngen::design_data grid macro] {
+        if {[dict exists $spec instances]} {
+          lappend inst_grids $name $spec
+        } elseif {[dict exists $spec macro]} {
+          lappend cell_grids $name $spec
+        } else {
+          lappend catch_all $name $spec
+        }
+      }
+
+      # order matters, so ensure instances are assigned first, then cells, and then catch all
+      set grids [list \
+        {*}$inst_grids \
+        {*}$cell_grids \
+        {*}$catch_all]
+
+      foreach {name spec} $grids {
+        convert_header "grid for: $name"
+        set command [generate_grid_command $spec]
+        append command " -macro"
+        if {[dict exists $spec orient]} {
+          append command " -orient \{[dict get $spec orient]\}"
+        }
+        if {[dict exists $spec halo]} {
+          set halo {}
+          foreach h [dict get $spec halo] {
+            lappend halo [ord::dbu_to_micron $h]
           }
-          if {[dict exists $spec grid_over_pg_pins]} {
-            if {[dict get $spec grid_over_pg_pins] == 1} {
-              append command " -grid_over_pg_pins"
-            } else {
-              append command " -grid_over_boundary"
-            }
+          append command " -halo \{$halo\}"
+        }
+        if {[dict exists $spec instances]} {
+          append command " -instances \{[dict get $spec instances]\}"
+        } elseif {[dict exists $spec macro]} {
+          append command " -cells \{[dict get $spec macro]\}"
+        } else {
+          append command " -default"
+        }
+        if {[dict exists $spec grid_over_pg_pins]} {
+          if {[dict get $spec grid_over_pg_pins] == 1} {
+            append command " -grid_over_pg_pins"
           } else {
             append command " -grid_over_boundary"
           }
-
-          puts "$command"
-
-          generate_grid_commands $name $spec
+        } else {
+          append command " -grid_over_boundary"
         }
-      }
-    }
-  }
 
-  proc generate_global_connect_commands { } {
-    convert_header "global connections"
-    # build global connections
-    set global_conns $pdngen::default_global_connections
-    dict for {net conn} $pdngen::global_connections {
-      foreach con $conn {
-        if {$con ni [dict get $global_conns $net]} {
-          dict lappend global_conns $net $con
-        }
-      }
-    }
-
-    dict for {net net_conn} $global_conns {
-      set extra_append ""
-      if {[lsearch -exact [pdngen::get_pdn_power_nets] $net] != -1} {
-        set extra_append " -power"
-      } elseif {[lsearch -exact [pdngen::get_pdn_ground_nets] $net] != -1} {
-        set extra_append " -ground"
-      }
-      foreach conn $net_conn {
-        set command "add_global_connection -defer_connection -net \{$net\}"
-        if {[dict exists $conn inst_name]} {
-          append command " -inst_pattern \{[dict get $conn inst_name]\}"
-        }
-        if {[dict exists $conn pin_name]} {
-          append command " -pin_pattern \{[dict get $conn pin_name]\}"
-        }
-        append command $extra_append
-        set extra_append ""
-        puts $command
-      }
-    }
-
-    if {[llength $global_conns] > 0} {
-      puts "global_connect"
-    }
-  }
-
-  proc generate_grid_command { spec } {
-    set command "define_pdn_grid"
-    append command " -name \{[dict get $spec name]\}"
-    append command " -voltage_domains \{[dict get $spec voltage_domains]\}"
-    if {[dict exists $spec starts_with]} {
-      append command " -starts_with \{[dict get $spec starts_with]\}"
-    }
-    if {[dict exists $spec obstructions]} {
-      append command " -obstructions \{[dict get $spec obstructions]\}"
-    }
-    return $command
-  }
-
-  proc generate_grid_commands { grid_name spec } {
-    if {[dict exists $spec rails]} {
-      dict for {layer rail} [dict get $spec rails] {
-        set command [generate_strap_commands $grid_name $layer $rail]
-        append command " -followpins"
         puts "$command"
+
+        generate_grid_commands $name $spec
       }
     }
-    if {[dict exists $spec core_ring]} {
-      set layers {}
-      set widths {}
-      set spacings {}
-      set core_offsets {}
-      set pad_offsets {}
-      set connect_to_pad 0
-      dict for {layer ring} [dict get $spec core_ring] {
-        lappend layers $layer
-        lappend widths [dict get $ring width]
-        lappend spacings [dict get $ring spacing]
-        if {[dict exists $ring core_offset]} {
-          lappend core_offsets [dict get $ring core_offset]
+  }
+}
+
+proc generate_global_connect_commands { } {
+  convert_header "global connections"
+  # build global connections
+  set global_conns $pdngen::default_global_connections
+  dict for {net conn} $pdngen::global_connections {
+    foreach con $conn {
+      if {$con ni [dict get $global_conns $net]} {
+        dict lappend global_conns $net $con
+      }
+    }
+  }
+
+  dict for {net net_conn} $global_conns {
+    set extra_append ""
+    if {[lsearch -exact [pdngen::get_pdn_power_nets] $net] != -1} {
+      set extra_append " -power"
+    } elseif {[lsearch -exact [pdngen::get_pdn_ground_nets] $net] != -1} {
+      set extra_append " -ground"
+    }
+    foreach conn $net_conn {
+      set command "add_global_connection -defer_connection -net \{$net\}"
+      if {[dict exists $conn inst_name]} {
+        append command " -inst_pattern \{[dict get $conn inst_name]\}"
+      }
+      if {[dict exists $conn pin_name]} {
+        append command " -pin_pattern \{[dict get $conn pin_name]\}"
+      }
+      append command $extra_append
+      set extra_append ""
+      puts $command
+    }
+  }
+
+  if {[llength $global_conns] > 0} {
+    puts "global_connect"
+  }
+}
+
+proc generate_grid_command { spec } {
+  set command "define_pdn_grid"
+  append command " -name \{[dict get $spec name]\}"
+  append command " -voltage_domains \{[dict get $spec voltage_domains]\}"
+  if {[dict exists $spec starts_with]} {
+    append command " -starts_with \{[dict get $spec starts_with]\}"
+  }
+  if {[dict exists $spec obstructions]} {
+    append command " -obstructions \{[dict get $spec obstructions]\}"
+  }
+  return $command
+}
+
+proc generate_grid_commands { grid_name spec } {
+  if {[dict exists $spec rails]} {
+    dict for {layer rail} [dict get $spec rails] {
+      set command [generate_strap_commands $grid_name $layer $rail]
+      append command " -followpins"
+      puts "$command"
+    }
+  }
+  if {[dict exists $spec core_ring]} {
+    set layers {}
+    set widths {}
+    set spacings {}
+    set core_offsets {}
+    set pad_offsets {}
+    set connect_to_pad 0
+    dict for {layer ring} [dict get $spec core_ring] {
+      lappend layers $layer
+      lappend widths [dict get $ring width]
+      lappend spacings [dict get $ring spacing]
+      if {[dict exists $ring core_offset]} {
+        lappend core_offsets [dict get $ring core_offset]
+      }
+      if {[dict exists $ring pad_offset]} {
+        lappend pad_offsets [dict get $ring pad_offset]
+      }
+    }
+
+    if {[dict exists $spec pwr_pads] || [dict exists $spec gnd_pads]} {
+      set connect_to_pad 1
+    }
+
+    set command "add_pdn_ring -grid \{$grid_name\}"
+
+    append command " -layers \{$layers\}"
+    append command " -widths \{$widths\}"
+    append command " -spacings \{$spacings\}"
+    if {[llength $pad_offsets] > 0} {
+      append command " -pad_offsets \{$pad_offsets\}"
+    } else {
+      append command " -core_offsets \{$core_offsets\}"
+    }
+    if {$connect_to_pad} {
+      append command " -connect_to_pads"
+    }
+    append command " -starts_with POWER"
+
+    puts "$command"
+  }
+  if {[dict exists $spec straps]} {
+    dict for {layer strap} [dict get $spec straps] {
+      set command [generate_strap_commands $grid_name $layer $strap]
+      puts "$command"
+    }
+  }
+  if {[dict exists $spec connect]} {
+    foreach connect [dict get $spec connect] {
+      set command "add_pdn_connect -grid \{$grid_name\}"
+      set l0 [regsub "(.*)(_PIN_(hor|ver))" [lindex $connect 0] "\\1"]
+      set l1 [regsub "(.*)(_PIN_(hor|ver))" [lindex $connect 1] "\\1"]
+      append command " -layers \{$l0 $l1\}"
+
+      for {set c 2} {$c < [llength $connect]} {incr c} {
+        if {[lindex $connect $c] == "fixed_vias"} {
+          incr c
+          append command " -fixed_vias \{[lindex $connect $c]\}"
         }
-        if {[dict exists $ring pad_offset]} {
-          lappend pad_offsets [dict get $ring pad_offset]
+        if {[lindex $connect $c] == "cut_pitch"} {
+          incr c
+          append command " -cut_pitch \{[lindex $connect $c]\}"
+        }
+        if {[lindex $connect $c] == "constraints"} {
+          incr c
+          set constraints [lindex $connect $c]
+          if {[dict exists $constraints max_rows]} {
+            append command " -max_rows \{[dict get $constraints max_rows]\}"
+          }
+          if {[dict exists $constraints max_columns]} {
+            append command " -max_columns \{[dict get $constraints max_columns]\}"
+          }
+          if {[dict exists $constraints ongrid]} {
+            append command " -ongrid \{[dict get $constraints ongrid]\}"
+          }
+          if {[dict exists $constraints split_cuts]} {
+            append command " -split_cuts \{[dict get $constraints split_cuts]\}"
+          }
         }
       }
-
-      if {[dict exists $spec pwr_pads] || [dict exists $spec gnd_pads]} {
-        set connect_to_pad 1
-      }
-
-      set command "add_pdn_ring -grid \{$grid_name\}"
-
-      append command " -layers \{$layers\}"
-      append command " -widths \{$widths\}"
-      append command " -spacings \{$spacings\}"
-      if {[llength $pad_offsets] > 0} {
-        append command " -pad_offsets \{$pad_offsets\}"
-      } else {
-        append command " -core_offsets \{$core_offsets\}"
-      }
-      if {$connect_to_pad} {
-        append command " -connect_to_pads"
-      }
-      append command " -starts_with POWER"
 
       puts "$command"
     }
-    if {[dict exists $spec straps]} {
-      dict for {layer strap} [dict get $spec straps] {
-        set command [generate_strap_commands $grid_name $layer $strap]
-        puts "$command"
-      }
-    }
-    if {[dict exists $spec connect]} {
-      foreach connect [dict get $spec connect] {
-        set command "add_pdn_connect -grid \{$grid_name\}"
-        set l0 [regsub "(.*)(_PIN_(hor|ver))" [lindex $connect 0] "\\1"]
-        set l1 [regsub "(.*)(_PIN_(hor|ver))" [lindex $connect 1] "\\1"]
-        append command " -layers \{$l0 $l1\}"
-
-        for {set c 2} {$c < [llength $connect]} {incr c} {
-          if {[lindex $connect $c] == "fixed_vias"} {
-            incr c
-            append command " -fixed_vias \{[lindex $connect $c]\}"
-          }
-          if {[lindex $connect $c] == "cut_pitch"} {
-            incr c
-            append command " -cut_pitch \{[lindex $connect $c]\}"
-          }
-          if {[lindex $connect $c] == "constraints"} {
-            incr c
-            set constraints [lindex $connect $c]
-            if {[dict exists $constraints max_rows]} {
-              append command " -max_rows \{[dict get $constraints max_rows]\}"
-            }
-            if {[dict exists $constraints max_columns]} {
-              append command " -max_columns \{[dict get $constraints max_columns]\}"
-            }
-            if {[dict exists $constraints ongrid]} {
-              append command " -ongrid \{[dict get $constraints ongrid]\}"
-            }
-            if {[dict exists $constraints split_cuts]} {
-              append command " -split_cuts \{[dict get $constraints split_cuts]\}"
-            }
-          }
-        }
-
-        puts "$command"
-      }
-    }
   }
+}
 
-  proc generate_strap_commands { grid_name layer strap } {
-    set command "add_pdn_stripe -grid \{$grid_name\}"
-    append command " -layer \{$layer\}"
-    if {[dict exists $strap width]} {
-      append command " -width \{[dict get $strap width]\}"
-    }
-    if {[dict exists $strap spacing]} {
-      append command " -spacing \{[dict get $strap spacing]\}"
-    }
-    if {[dict exists $strap pitch]} {
-      append command " -pitch \{[dict get $strap pitch]\}"
-    }
-    if {[dict exists $strap offset]} {
-      append command " -offset \{[dict get $strap offset]\}"
-    }
-    if {[dict exists $strap extend_to_core_ring]} {
-      append command " -extend_to_core_rings"
-    }
-    if {[dict exists $strap starts_with]} {
-      append command " -starts_with \{[dict get $strap starts_with]\}"
-    }
-    return $command
+proc generate_strap_commands { grid_name layer strap } {
+  set command "add_pdn_stripe -grid \{$grid_name\}"
+  append command " -layer \{$layer\}"
+  if {[dict exists $strap width]} {
+    append command " -width \{[dict get $strap width]\}"
   }
-
-  # namespace pdn
+  if {[dict exists $strap spacing]} {
+    append command " -spacing \{[dict get $strap spacing]\}"
+  }
+  if {[dict exists $strap pitch]} {
+    append command " -pitch \{[dict get $strap pitch]\}"
+  }
+  if {[dict exists $strap offset]} {
+    append command " -offset \{[dict get $strap offset]\}"
+  }
+  if {[dict exists $strap extend_to_core_ring]} {
+    append command " -extend_to_core_rings"
+  }
+  if {[dict exists $strap starts_with]} {
+    append command " -starts_with \{[dict get $strap starts_with]\}"
+  }
+  return $command
+}
+# namespace pdn
 }
 
 namespace eval pdngen {
-
-  proc source_config { config } {
-    if {![file exists $config]} {
-      utl::error PDN 1040 "File $config does not exist."
-    }
-    if {[file size $config] == 0} {
-      utl::error PDN 1041 "File $config is empty."
-    }
-    source $config
+proc source_config { config } {
+  if {![file exists $config]} {
+    utl::error PDN 1040 "File $config does not exist."
   }
-
-  proc get_pdn_power_nets {} {
-    if {[info vars ::power_nets] == ""} {
-      return "VDD"
-    } else {
-      return $::power_nets
-    }
+  if {[file size $config] == 0} {
+    utl::error PDN 1041 "File $config is empty."
   }
+  source $config
+}
 
-  proc get_pdn_ground_nets {} {
-    if {[info vars ::ground_nets] == ""} {
-      return "VSS"
-    } else {
-      return $::ground_nets
-    }
+proc get_pdn_power_nets {} {
+  if {[info vars ::power_nets] == ""} {
+    return "VDD"
+  } else {
+    return $::power_nets
   }
+}
 
-  # namespace pdngen
+proc get_pdn_ground_nets {} {
+  if {[info vars ::ground_nets] == ""} {
+    return "VSS"
+  } else {
+    return $::ground_nets
+  }
+}
+# namespace pdngen
 }

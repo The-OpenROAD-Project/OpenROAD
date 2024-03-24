@@ -1,11 +1,6 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_stdcell.lef
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
-[INFO IFP-0001] Added 2 rows of 17 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO IFP-0001] Added 2 rows of 17 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO DRT-0167] List of default vias:
   Layer via1
     default via: via1_7
@@ -79,7 +74,6 @@
 [INFO RCX-0439] Coupling Cap extraction top ...
 [INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
 [INFO RCX-0043] 3 wires to be extracted
-[INFO RCX-0442] 33% completion -- 1 wires have been extracted
 [INFO RCX-0442] 100% completion -- 3 wires have been extracted
 [INFO RCX-0045] Extract -1 nets, 2 rsegs, 2 caps, 0 ccs
 [INFO RCX-0015] Finished extracting top.

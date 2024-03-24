@@ -101,9 +101,8 @@ void Opendp::initGridLayersMap()
     if (site->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    int row_base_x, row_base_y;
-    db_row->getOrigin(row_base_x, row_base_y);
-    min_row_y_coordinate = min(min_row_y_coordinate, row_base_y);
+    odb::Point row_base = db_row->getOrigin();
+    min_row_y_coordinate = min(min_row_y_coordinate, row_base.y());
 
     if (site_to_grid_key_.find(site) != site_to_grid_key_.end()) {
       continue;
@@ -162,10 +161,9 @@ void Opendp::initGridLayersMap()
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    int row_base_x, row_base_y;
-    db_row->getOrigin(row_base_x, row_base_y);
+    const odb::Point row_base = db_row->getOrigin();
     dbSite* working_site = db_row->getSite();
-    if (row_base_y == min_row_y_coordinate) {
+    if (row_base.y() == min_row_y_coordinate) {
       if (working_site->hasRowPattern()) {
         for (const auto& [child_site, orient] : working_site->getRowPattern()) {
           if (_hybrid_parent[child_site] != working_site) {
@@ -329,12 +327,11 @@ void Opendp::initGrid()
     auto entry = grid_info_map_.at(gmk);
     int current_row_count = entry.getRowCount();
     int current_row_grid_index = entry.getGridIndex();
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
+    const odb::Point orig = db_row->getOrigin();
 
-    const int x_start = (orig_x - core_.xMin()) / db_row_site->getWidth();
+    const int x_start = (orig.x() - core_.xMin()) / db_row_site->getWidth();
     const int x_end = x_start + current_row_site_count;
-    const int y_row = gridY(orig_y - core_.yMin(), entry.getSites()).first;
+    const int y_row = gridY(orig.y() - core_.yMin(), entry.getSites()).first;
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(current_row_grid_index, x, y_row);
       if (pixel == nullptr) {
@@ -420,9 +417,7 @@ void Opendp::visitCellPixels(
       have_obstructions = true;
 
       Rect rect = obs->getBox();
-      dbTransform transform;
-      inst->getTransform(transform);
-      transform.apply(rect);
+      inst->getTransform().apply(rect);
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
       int y_start = gridY(rect.yMin() - core_.yMin(), &cell);
@@ -505,9 +500,7 @@ void Opendp::visitCellBoundaryPixels(
       have_obstructions = true;
 
       Rect rect = obs->getBox();
-      dbTransform transform;
-      inst->getTransform(transform);
-      transform.apply(rect);
+      inst->getTransform().apply(rect);
 
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);

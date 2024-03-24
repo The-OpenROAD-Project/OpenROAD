@@ -422,20 +422,44 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Rows / sites
   makeParentItem(site_group_, "Rows", root, Qt::Unchecked, true);
 
-  // Rows
-  makeParentItem(io_pins_, "Pins", root, Qt::Checked);
-  pin_markers_font_ = QApplication::font();  // use default font
-  setNameItemDoubleClickAction(io_pins_, [this]() {
-    pin_markers_font_ = QFontDialog::getFont(
-        nullptr, pin_markers_font_, this, "Pin marker font");
-  });
-
   // Track patterns group
   auto tracks = makeParentItem(tracks_group_, "Tracks", root, Qt::Unchecked);
 
   makeLeafItem(tracks_.pref, "Pref", tracks, Qt::Unchecked);
   makeLeafItem(tracks_.non_pref, "Non Pref", tracks, Qt::Unchecked);
   toggleParent(tracks_group_);
+
+  // Shape type group
+  auto shape_types
+      = makeParentItem(shape_type_group_, "Shape Types", root, Qt::Checked);
+  auto shape_types_routing = makeParentItem(
+      shape_types_.routing_group, "Routing", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.routing.segments,
+               "Segments",
+               shape_types_routing,
+               Qt::Checked);
+  makeLeafItem(
+      shape_types_.routing.vias, "Vias", shape_types_routing, Qt::Checked);
+  auto shape_types_srouting = makeParentItem(shape_types_.special_routing_group,
+                                             "Special Routing",
+                                             shape_types,
+                                             Qt::Checked);
+  makeLeafItem(shape_types_.special_routing.segments,
+               "Segments",
+               shape_types_srouting,
+               Qt::Checked);
+  makeLeafItem(shape_types_.special_routing.vias,
+               "Vias",
+               shape_types_srouting,
+               Qt::Checked);
+  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  pin_markers_font_ = QApplication::font();  // use default font
+  setNameItemDoubleClickAction(shape_types_.pins, [this]() {
+    pin_markers_font_ = QFontDialog::getFont(
+        nullptr, pin_markers_font_, this, "Pin marker font");
+  });
+  makeLeafItem(shape_types_.fill, "Fills", shape_types, Qt::Unchecked);
+  toggleParent(shape_type_group_);
 
   // Misc group
   auto misc = makeParentItem(misc_group_, "Misc", root, Qt::Unchecked, true);
@@ -477,7 +501,6 @@ DisplayControls::DisplayControls(QWidget* parent)
   region_color_ = QColor(0x70, 0x70, 0x70, 0x70);  // semi-transparent mid-gray
   region_pattern_ = Qt::SolidPattern;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
-  makeLeafItem(misc_.fills, "Fills", misc, Qt::Unchecked);
   makeLeafItem(misc_.access_points, "Access points", misc, Qt::Unchecked);
   makeLeafItem(
       misc_.regions, "Regions", misc, Qt::Checked, true, region_color_);
@@ -655,9 +678,9 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, nets_group_);
   readSettingsForRow(settings, instance_group_);
   readSettingsForRow(settings, blockage_group_);
-  readSettingsForRow(settings, io_pins_);
   readSettingsForRow(settings, rulers_);
   readSettingsForRow(settings, tracks_group_);
+  readSettingsForRow(settings, shape_type_group_);
   readSettingsForRow(settings, misc_group_);
 
   readSettingsForRow(settings, site_group_, false);
@@ -729,9 +752,9 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, nets_group_);
   writeSettingsForRow(settings, instance_group_);
   writeSettingsForRow(settings, blockage_group_);
-  writeSettingsForRow(settings, io_pins_);
   writeSettingsForRow(settings, rulers_);
   writeSettingsForRow(settings, tracks_group_);
+  writeSettingsForRow(settings, shape_type_group_);
   writeSettingsForRow(settings, misc_group_);
   writeSettingsForRow(settings, site_group_, false);
 
@@ -1432,58 +1455,58 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 const DisplayControls::ModelRow* DisplayControls::getInstRow(
     odb::dbInst* inst) const
 {
-  switch (inst_descriptor_->getInstanceType(inst)) {
-    case DbInstDescriptor::BLOCK:
+  switch (sta_->getInstanceType(inst)) {
+    case sta::dbSta::InstType::BLOCK:
       return &instances_.blocks;
-    case DbInstDescriptor::PAD:
+    case sta::dbSta::InstType::PAD:
       return &pad_instances_.other;
-    case DbInstDescriptor::PAD_INPUT:
+    case sta::dbSta::InstType::PAD_INPUT:
       return &pad_instances_.input;
-    case DbInstDescriptor::PAD_OUTPUT:
+    case sta::dbSta::InstType::PAD_OUTPUT:
       return &pad_instances_.output;
-    case DbInstDescriptor::PAD_INOUT:
+    case sta::dbSta::InstType::PAD_INOUT:
       return &pad_instances_.inout;
-    case DbInstDescriptor::PAD_POWER:
+    case sta::dbSta::InstType::PAD_POWER:
       return &pad_instances_.power;
-    case DbInstDescriptor::PAD_SPACER:
+    case sta::dbSta::InstType::PAD_SPACER:
       return &pad_instances_.spacer;
-    case DbInstDescriptor::PAD_AREAIO:
+    case sta::dbSta::InstType::PAD_AREAIO:
       return &pad_instances_.areaio;
-    case DbInstDescriptor::ENDCAP:
+    case sta::dbSta::InstType::ENDCAP:
       return &physical_instances_.endcap;
-    case DbInstDescriptor::FILL:
+    case sta::dbSta::InstType::FILL:
       return &physical_instances_.fill;
-    case DbInstDescriptor::TAPCELL:
+    case sta::dbSta::InstType::TAPCELL:
       return &physical_instances_.tap;
-    case DbInstDescriptor::BUMP:
+    case sta::dbSta::InstType::BUMP:
       return &physical_instances_.bump;
-    case DbInstDescriptor::COVER:
+    case sta::dbSta::InstType::COVER:
       return &physical_instances_.cover;
-    case DbInstDescriptor::ANTENNA:
+    case sta::dbSta::InstType::ANTENNA:
       return &physical_instances_.antenna;
-    case DbInstDescriptor::TIE:
+    case sta::dbSta::InstType::TIE:
       return &physical_instances_.tie;
-    case DbInstDescriptor::LEF_OTHER:
+    case sta::dbSta::InstType::LEF_OTHER:
       return &physical_instances_.other;
-    case DbInstDescriptor::STD_CELL:
+    case sta::dbSta::InstType::STD_CELL:
       return &instances_.stdcells;
-    case DbInstDescriptor::STD_BUFINV:
+    case sta::dbSta::InstType::STD_BUFINV:
       return &bufinv_instances_.other;
-    case DbInstDescriptor::STD_BUFINV_CLK_TREE:
+    case sta::dbSta::InstType::STD_BUFINV_CLK_TREE:
       return &clock_tree_instances_.bufinv;
-    case DbInstDescriptor::STD_BUFINV_TIMING_REPAIR:
+    case sta::dbSta::InstType::STD_BUFINV_TIMING_REPAIR:
       return &bufinv_instances_.timing;
-    case DbInstDescriptor::STD_CLOCK_GATE:
+    case sta::dbSta::InstType::STD_CLOCK_GATE:
       return &clock_tree_instances_.clock_gates;
-    case DbInstDescriptor::STD_LEVEL_SHIFT:
+    case sta::dbSta::InstType::STD_LEVEL_SHIFT:
       return &stdcell_instances_.level_shiters;
-    case DbInstDescriptor::STD_SEQUENTIAL:
+    case sta::dbSta::InstType::STD_SEQUENTIAL:
       return &stdcell_instances_.sequential;
-    case DbInstDescriptor::STD_PHYSICAL:
+    case sta::dbSta::InstType::STD_PHYSICAL:
       return &instances_.physical;
-    case DbInstDescriptor::STD_COMBINATIONAL:
+    case sta::dbSta::InstType::STD_COMBINATIONAL:
       return &stdcell_instances_.combinational;
-    case DbInstDescriptor::STD_OTHER:
+    case sta::dbSta::InstType::STD_OTHER:
       return &instance_group_;
   }
 
@@ -1545,11 +1568,6 @@ bool DisplayControls::areInstancePinNamesVisible()
 bool DisplayControls::areInstanceBlockagesVisible()
 {
   return isModelRowVisible(&instance_shapes_.blockages);
-}
-
-bool DisplayControls::areFillsVisible()
-{
-  return isModelRowVisible(&misc_.fills);
 }
 
 bool DisplayControls::areRulersVisible()
@@ -1647,16 +1665,6 @@ bool DisplayControls::isScaleBarVisible() const
   return isModelRowVisible(&misc_.scale_bar);
 }
 
-bool DisplayControls::areIOPinsVisible() const
-{
-  return isModelRowVisible(&io_pins_);
-}
-
-QFont DisplayControls::pinMarkersFont()
-{
-  return pin_markers_font_;
-}
-
 bool DisplayControls::areAccessPointsVisible() const
 {
   return isModelRowVisible(&misc_.access_points);
@@ -1680,6 +1688,41 @@ bool DisplayControls::isModuleView() const
 bool DisplayControls::isGCellGridVisible() const
 {
   return isModelRowVisible(&misc_.gcell_grid);
+}
+
+bool DisplayControls::areIOPinsVisible() const
+{
+  return isModelRowVisible(&shape_types_.pins);
+}
+
+bool DisplayControls::areRoutingSegmentsVisible() const
+{
+  return isModelRowVisible(&shape_types_.routing.segments);
+}
+
+bool DisplayControls::areRoutingViasVisible() const
+{
+  return isModelRowVisible(&shape_types_.routing.vias);
+}
+
+bool DisplayControls::areSpecialRoutingSegmentsVisible() const
+{
+  return isModelRowVisible(&shape_types_.special_routing.segments);
+}
+
+bool DisplayControls::areSpecialRoutingViasVisible() const
+{
+  return isModelRowVisible(&shape_types_.special_routing.vias);
+}
+
+bool DisplayControls::areFillsVisible() const
+{
+  return isModelRowVisible(&shape_types_.fill);
+}
+
+QFont DisplayControls::pinMarkersFont() const
+{
+  return pin_markers_font_;
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)

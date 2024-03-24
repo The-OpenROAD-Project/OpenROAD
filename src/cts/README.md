@@ -52,6 +52,9 @@ clock_tree_synthesis
     [-num_static_layers]
     [-sink_clustering_buffer]
     [-use_dummy_load]
+    [-insertion_delay]
+    [-sink_buffer_max_cap_derate derate_value]
+    [-delay_buffer_derate derate_value]
 ```
 
 #### Options
@@ -75,8 +78,10 @@ clock_tree_synthesis
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 | `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
 | `-apply_ndr` | Applies 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`. |
-| `-insertion_delay` | Considers insertion delays in macro timing models to improve clustering. The default value is `False`. |
+| `-no_insertion_delay` | Don't consider insertion delays in macro timing models in balancing latencies between macro cells and registers. This option prevents construction of separate clock trees for macro cells and registers.  The default value is `False`. |
 | `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
+| `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
+| `-delay_buffer_derate` | This option is used with -insertion_delay option that balances latencies between macro cells and registers by inserting delay buffers.  The default values is `1.0`, meaning all needed delay buffers are inserted.  Value of 0.5 means only half of necessary delay buffers are inserted.  Value of 0.0 means no insertion of delay buffers. |
 
 ### Report CTS
 

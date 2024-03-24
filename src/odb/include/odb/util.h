@@ -51,6 +51,9 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
+class dbInst;
+class dbMaster;
+class dbNet;
 using uint = unsigned int;
 
 // Simple list
@@ -353,7 +356,7 @@ class AthHash
     return m_listOfPrimes[i];
   }
 
-  unsigned int hashFunction(char* key, unsigned int, unsigned int prime)
+  unsigned int hashFunction(const char* key, unsigned int, unsigned int prime)
   {
     unsigned int hash = 0;
     int c;
@@ -364,21 +367,9 @@ class AthHash
     return hash % prime;
   }
 
-#if 0
-        // original "broken" hash function
-	unsigned int hashFunction(char *key, unsigned int len,
-unsigned int prime)
-	{
-		unsigned int hash, i;
-		for (hash=len, i=0; i<len; ++i)
-			hash = (hash<<4)^(hash>>28)^key[i];
-		return (hash % prime);
-	}
-#endif
-
   struct t_elem
   {
-    char* key;
+    const char* key;
     T data;
   };
   int _allocKeyFlag;
@@ -403,14 +394,14 @@ unsigned int prime)
       typename AthList<t_elem>::iterator iter = m_data[i].start();
       while (!iter.end()) {
         if (_allocKeyFlag > 0)
-          free(iter.getVal().key);
+          free((void*) iter.getVal().key);
         iter.next();
       }
     }
     delete[] m_data;
   }
 
-  void add(char* key, T data)
+  void add(const char* key, T data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     t_elem new_t_elem;
@@ -424,7 +415,7 @@ unsigned int prime)
 
   // Get a stored value. Returns success of failure depending
   // if the value actually is stored or not
-  bool get(char* key, T& data)
+  bool get(const char* key, T& data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     typename AthList<t_elem>::iterator iter = m_data[hash_val].start();
@@ -497,6 +488,7 @@ class RUDYCalculator
     void setRect(int lx, int ly, int ux, int uy);
     void addRUDY(float rudy);
     float getRUDY() const { return rudy_; }
+    void clearRUDY() { rudy_ = 0.0; }
 
    private:
     odb::Rect rect_;
@@ -533,12 +525,21 @@ class RUDYCalculator
    * */
   void makeGrid();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+  void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
+  void processIntersectionGenericObstruction(odb::Rect obstruction_rect,
+                                             int tile_width,
+                                             int tile_height,
+                                             int nets_per_tile);
+  void processIntersectionSignalNet(odb::Rect net_rect,
+                                    int tile_width,
+                                    int tile_height);
 
   dbBlock* block_;
   odb::Rect gridBlock_;
   int tileCntX_ = 40;
   int tileCntY_ = 40;
   int wireWidth_ = 100;
+  const int pitches_in_tile_ = 15;
 
   std::vector<std::vector<Tile>> grid_;
 };
@@ -551,5 +552,21 @@ void cutRows(dbBlock* block,
              int halo_x,
              int halo_y,
              utl::Logger* logger);
+
+// Generates a string with the macro placement in mpl2 input format for
+// individual macro placement
+std::string generateMacroPlacementString(dbBlock* block);
+
+class WireLengthEvaluator
+{
+ public:
+  WireLengthEvaluator(dbBlock* block) : block_(block) {}
+  int64_t hpwl() const;
+
+ private:
+  int64_t hpwl(dbNet* net) const;
+
+  dbBlock* block_;
+};
 
 }  // namespace odb

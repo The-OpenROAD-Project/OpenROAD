@@ -30,3 +30,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 add_subdirectory(src)
+add_subdirectory(test)

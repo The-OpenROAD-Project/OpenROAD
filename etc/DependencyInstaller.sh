@@ -10,11 +10,11 @@ _versionCompare() {
 
 _equivalenceDeps() {
     yosysVersion=yosys-0.33
-    eqyVersion=0cc2ff0
+    eqyVersion=8327ac7
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then (
+    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
         if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
             source /opt/rh/llvm-toolset-7.0/enable
         fi
@@ -126,7 +126,8 @@ _installCommonDev() {
     if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
-        wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
+        wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
+        # wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
@@ -268,6 +269,7 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
@@ -275,10 +277,12 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     else
         apt-get install -y \
             libpython3.8 \
+            libqt5charts5-dev \
             qt5-default
     fi
 

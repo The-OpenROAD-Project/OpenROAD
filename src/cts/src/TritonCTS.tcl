@@ -85,27 +85,32 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
-					     [-apply_ndr] \
+                                             [-apply_ndr] \
                                              [-insertion_delay] \
+                                             [-no_insertion_delay] \
                                              [-sink_buffer_max_cap_derate] \
-                                             [-use_dummy_load]
+                                             [-use_dummy_load] \
+                                             [-delay_buffer_derate] \
                                             }
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
-          -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
-          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
-          -sink_buffer_max_cap_derate}\
-      flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-	     -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load}
+    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
+          -num_static_layers -sink_clustering_buffer \
+          -distance_between_buffers -branching_point_buffers_distance \
+          -clustering_exponent \
+          -clustering_unbalance_ratio -sink_clustering_max_diameter \
+          -sink_clustering_levels -tree_buf \
+          -sink_buffer_max_cap_derate -delay_buffer_derate} \
+    flags {-post_cts_disable -sink_clustering_enable -balance_levels \
+           -obstruction_aware -apply_ndr -insertion_delay -no_insertion_delay -use_dummy_load}
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   if { [info exists flags(-post_cts_disable)] } {
     utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
-  
+
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
 
   if { [info exists keys(-sink_clustering_size)] } {
@@ -197,14 +202,26 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer_max_cap_derate $derate
   }
 
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if {[expr {$buffer_derate < 0.0 }]} {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
+
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
 
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
 
-  cts::set_insertion_delay [info exists flags(-insertion_delay)]
-    
+  if { [info exists flags(-no_insertion_delay)] } {
+    cts::set_insertion_delay false
+  } else {
+    cts::set_insertion_delay true
+  }
+
   cts::set_dummy_load [info exists flags(-use_dummy_load)]
-    
+
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."
   }

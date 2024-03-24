@@ -71,6 +71,7 @@ class _dbTechMinCutRule;
 class _dbTechMinEncRule;
 class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
+class dbTrackGrid;
 // User Code End Classes
 
 struct dbTechLayerFlags

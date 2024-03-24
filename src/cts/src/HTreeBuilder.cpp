@@ -263,7 +263,7 @@ void HTreeBuilder::preSinkClustering(
     }
     clusterCount++;
   }
-  topLevelSinksClustered_ = newSinkLocations;
+  topLevelSinksClustered_ = std::move(newSinkLocations);
   if (clusterCount) {
     treeBufLevels_++;
   }
@@ -1691,9 +1691,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
-#ifndef NDEBUG
-  const double targetDist = computeDist(branchPt2, rootLocation);
-#endif
 
   std::vector<std::pair<float, float>> means;
   means.emplace_back(branchPt1.getX(), branchPt1.getY());
@@ -1744,10 +1741,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
                sinks.size(),
                movedSinks);
   }
-
-  assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
-         && std::abs(computeDist(branchPt2, rootLocation) - targetDist)
-                < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()

@@ -34,7 +34,7 @@
 
 #include "dr/FlexDR.h"
 
-using namespace fr;
+namespace drt {
 
 void FlexGridGraph::initGrids(
     const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
@@ -77,14 +77,14 @@ void FlexGridGraph::initGrids(
   srcs_.clear();
   dsts_.clear();
 
-  prevDirs_.resize(capacity * 3, 0);
-  srcs_.resize(capacity, 0);
-  dsts_.resize(capacity, 0);
+  prevDirs_.resize(capacity * 3, false);
+  srcs_.resize(capacity, false);
+  dsts_.resize(capacity, false);
   guides_.clear();
   if (followGuide) {
-    guides_.resize(capacity, 0);
+    guides_.resize(capacity, false);
   } else {
-    guides_.resize(capacity, 1);
+    guides_.resize(capacity, true);
   }
 }
 
@@ -94,9 +94,13 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 const Rect& dieBox)
 {
   frLayerNum lNum = getLayerNum(z) + 1;
-  if (lNum > getTech()->getTopLayerNum())
+  if (lNum > getTech()->getTopLayerNum()) {
     return false;
+  }
   frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  if (!via) {
+    return true;
+  }
   Rect viaBox(via->getLayer1ShapeBox());
   viaBox.merge(via->getLayer2ShapeBox());
   viaBox.moveDelta(xCoords_[x], yCoords_[y]);
@@ -147,9 +151,10 @@ bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
 
 bool FlexGridGraph::isWorkerBorder(frMIdx v, bool isVert)
 {
-  if (isVert)
+  if (isVert) {
     return xCoords_[v] == drWorker_->getRouteBox().xMin()
            || xCoords_[v] == drWorker_->getRouteBox().xMax();
+  }
   return yCoords_[v] == drWorker_->getRouteBox().yMin()
          || yCoords_[v] == drWorker_->getRouteBox().yMax();
 }
@@ -163,13 +168,15 @@ bool FlexGridGraph::hasAlignedUpDefTrack(
        lNum += 2) {
     auto it = xSubMap.find(lNum);
     if (it != xSubMap.end()) {  // has x track in lNum
-      if (it->second)           // has track pattern, i.e., the track is default
+      if (it->second) {         // has track pattern, i.e., the track is default
         return true;
+      }
     }
     it = ySubMap.find(lNum);
     if (it != ySubMap.end()) {  // has y track in lNum
-      if (it->second)           // has track pattern, i.e., the track is default
+      if (it->second) {         // has track pattern, i.e., the track is default
         return true;
+      }
     }
   }
   return false;
@@ -299,8 +306,9 @@ void FlexGridGraph::initEdges(
       int inc = up ? 1 : -1;
       frMIdx startZ = getMazeZIdx(apPt.z());
       frLayerNum nextLNum = getLayerNum(startZ) + 2 * inc;
-      if (!up)
+      if (!up) {
         startZ--;
+      }
       frMIdx xIdx = getMazeXIdx(apPt.x());
       frMIdx yIdx = getMazeYIdx(apPt.y());
       // create the edges
@@ -314,14 +322,16 @@ void FlexGridGraph::initEdges(
         if (!restrictedRouting || nextLayer->isVertical()) {
           auto& xSubMap = xMap[apPt.x()];
           auto xTrack = xSubMap.find(nextLNum);
-          if (xTrack != xSubMap.end() && xTrack->second != nullptr)
+          if (xTrack != xSubMap.end() && xTrack->second != nullptr) {
             break;
+          }
         }
         if (!restrictedRouting || nextLayer->isHorizontal()) {
           auto& ySubMap = yMap[apPt.y()];
           auto yTrack = ySubMap.find(nextLNum);
-          if (yTrack != ySubMap.end() && yTrack->second != nullptr)
+          if (yTrack != ySubMap.end() && yTrack->second != nullptr) {
             break;
+          }
         }
         // didn't find default track, then create tracks if possible
         if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
@@ -380,9 +390,11 @@ void FlexGridGraph::init(
 // get all tracks intersecting with the Maze bbox, left/bottom are inclusive
 void FlexGridGraph::initTracks(
     const frDesign* design,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-    std::map<frLayerNum, dbTechLayerDir>& zMap,
+    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
+        horLoc2TrackPatterns,
+    std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
+        vertLoc2TrackPatterns,
+    std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
     const Rect& bbox)
 {
   for (auto& layer : getTech()->getLayers()) {
@@ -418,14 +430,14 @@ void FlexGridGraph::initTracks(
           frCoord trackLoc
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
           if (tp->isHorizontal()) {
-            xMap[trackLoc][currLayerNum] = tp.get();
+            horLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
           } else {
-            yMap[trackLoc][currLayerNum] = tp.get();
+            vertLoc2TrackPatterns[trackLoc][currLayerNum] = tp.get();
           }
         }
       }
     }
-    zMap[currLayerNum] = currPrefRouteDir;
+    layerNum2PreRouteDir[currLayerNum] = currPrefRouteDir;
   }
 }
 
@@ -438,17 +450,17 @@ void FlexGridGraph::resetStatus()
 
 void FlexGridGraph::resetSrc()
 {
-  srcs_.assign(srcs_.size(), 0);
+  srcs_.assign(srcs_.size(), false);
 }
 
 void FlexGridGraph::resetDst()
 {
-  dsts_.assign(dsts_.size(), 0);
+  dsts_.assign(dsts_.size(), false);
 }
 
 void FlexGridGraph::resetPrevNodeDir()
 {
-  prevDirs_.assign(prevDirs_.size(), 0);
+  prevDirs_.assign(prevDirs_.size(), false);
 }
 
 // print the grid graph with edge and vertex for debug purpose
@@ -468,10 +480,9 @@ void FlexGridGraph::print() const
     if (xDim == 0 || yDim == 0 || zDim == 0) {
       std::cout << "Error: dimension == 0\n";
       return;
-    } else {
-      std::cout << "extBBox (xDim, yDim, zDim) = (" << xDim << ", " << yDim
-                << ", " << zDim << ")\n";
     }
+    std::cout << "extBBox (xDim, yDim, zDim) = (" << xDim << ", " << yDim
+              << ", " << zDim << ")\n";
 
     Point p;
     for (frMIdx xIdx = 0; xIdx < xDim; ++xIdx) {
@@ -517,3 +528,5 @@ void FlexGridGraph::print() const
     std::cout << "Error: Fail to open maze log\n";
   }
 }
+
+}  // namespace drt
