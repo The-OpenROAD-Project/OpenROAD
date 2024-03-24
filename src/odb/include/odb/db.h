@@ -7072,15 +7072,8 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint horizontal_usage = 0;
-    uint vertical_usage = 0;
-    uint up_usage = 0;
-    uint horizontal_capacity = 0;
-    uint vertical_capacity = 0;
-    uint up_capacity = 0;
-    uint horizontal_blockage = 0;
-    uint vertical_blockage = 0;
-    uint up_blockage = 0;
+    uint8_t usage = 0;
+    uint8_t capacity = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -7144,102 +7137,25 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  void setHorizontalCapacity(dbTechLayer* layer,
-                             uint x_idx,
-                             uint y_idx,
-                             uint capacity);
-
-  void setVerticalCapacity(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint capacity);
-
-  void setUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, uint capacity);
-
-  void setHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
-
-  void setHorizontalBlockage(dbTechLayer* layer,
-                             uint x_idx,
-                             uint y_idx,
-                             uint blockage);
-
-  void setVerticalBlockage(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint blockage);
-
-  void setUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+  uint8_t getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   void setCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
+                   uint8_t capacity);
 
-  void setUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint horizontal,
-                uint vertical,
-                uint up);
-
-  void setBlockage(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
-
-  void getCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
-
-  void getUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint& horizontal,
-                uint& vertical,
-                uint& up) const;
-
-  void getBlockage(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
+  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
 
   void resetCongestionMap();
 
   void resetGrid();
 
-  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
-                                                    = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getLayerCongestionMap(dbTechLayer* layer);
+
+  dbMatrix<dbGCellGrid::GCellData> getDirectionCongestionMap(
+      const dbTechLayerDir& direction);
   // User Code End dbGCellGrid
 };
 
@@ -7661,11 +7577,29 @@ class dbPowerDomain : public dbObject
 class dbPowerSwitch : public dbObject
 {
  public:
+  struct UPFIOSupplyPort
+  {
+    std::string port_name;
+    std::string supply_net_name;
+  };
+  struct UPFControlPort
+  {
+    std::string port_name;
+    std::string net_name;
+  };
+  struct UPFAcknowledgePort
+  {
+    std::string port_name;
+    std::string net_name;
+    std::string boolean_expression;
+  };
+  struct UPFOnState
+  {
+    std::string state_name;
+    std::string input_supply_port;
+    std::string boolean_expression;
+  };
   const char* getName() const;
-
-  void setControlNet(dbNet* control_net);
-
-  dbNet* getControlNet() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -7674,19 +7608,26 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
-  void addInSupplyPort(const std::string& in_port);
-  void addOutSupplyPort(const std::string& out_port);
-  void addControlPort(const std::string& control_port);
-  void addOnState(const std::string& on_state);
+  void addInSupplyPort(const std::string& in_port, const std::string& net);
+  void setOutSupplyPort(const std::string& out_port, const std::string& net);
+  void addControlPort(const std::string& control_port,
+                      const std::string& control_net);
+  void addAcknowledgePort(const std::string& port_name,
+                          const std::string& net_name,
+                          const std::string& boolean_expression);
+  void addOnState(const std::string& on_state,
+                  const std::string& port_name,
+                  const std::string& boolean_expression);
   void setLibCell(dbMaster* master);
   void addPortMap(const std::string& model_port,
                   const std::string& switch_port);
 
   void addPortMap(const std::string& model_port, dbMTerm* mterm);
-  std::vector<std::string> getControlPorts();
-  std::vector<std::string> getInputSupplyPorts();
-  std::vector<std::string> getOutputSupplyPorts();
-  std::vector<std::string> getOnStates();
+  std::vector<UPFControlPort> getControlPorts();
+  std::vector<UPFIOSupplyPort> getInputSupplyPorts();
+  UPFIOSupplyPort getOutputSupplyPort();
+  std::vector<UPFAcknowledgePort> getAcknowledgePorts();
+  std::vector<UPFOnState> getOnStates();
 
   // Returns library cell that was defined in the upf for this power switch
   dbMaster* getLibCell();
@@ -8994,7 +8935,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
 
-  int getPrlEntry(std::string cutClass1, std::string cutClass2);
+  int getPrlEntry(const std::string& cutClass1, const std::string& cutClass2);
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint> row_map,

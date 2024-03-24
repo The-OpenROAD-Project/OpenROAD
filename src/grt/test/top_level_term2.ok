@@ -1,14 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 1 components and 6 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 1 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met4
 [INFO GRT-0022] Global adjustment: 50%
@@ -19,11 +15,11 @@
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.6150
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2147483647
 [INFO GRT-0002] Maximum degree: 1
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 0
 
 [INFO GRT-0053] Routing resources analysis:

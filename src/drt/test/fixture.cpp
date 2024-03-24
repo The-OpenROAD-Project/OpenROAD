@@ -32,7 +32,7 @@
 
 #include "odb/db.h"
 
-using namespace fr;
+namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
@@ -276,18 +276,18 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
+frLef58MinStepConstraint* Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
   con->setMinStepLength(50);
   con->setMaxEdges(1);
-  con->setEolWidth(200);
-
+  auto rptr = con.get();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
@@ -463,8 +463,8 @@ frSpacingRangeConstraint* Fixture::makeSpacingRangeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord par_space,
-    fr::frCoord par_within,
+    drt::frCoord par_space,
+    drt::frCoord par_within,
     bool two_edges)
 {
   auto parallelEdge
@@ -478,7 +478,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord min_max_length,
+    drt::frCoord min_max_length,
     bool max,
     bool two_sides)
 {
@@ -714,3 +714,5 @@ void Fixture::makeLef58WrongDirSpcConstraint(
   layer->addLef58SpacingWrongDirConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
+
+}  // namespace drt

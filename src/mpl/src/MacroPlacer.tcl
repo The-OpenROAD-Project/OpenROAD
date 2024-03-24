@@ -77,7 +77,8 @@ proc macro_placement { args } {
   if { [info exists keys(-fence_region)] } {
     set fence_region $keys(-fence_region)
     if { [llength $fence_region] != 4 } {
-      utl::error "MPL" 94 "-fence_region receives a list with 4 values, [llength $fence_region] given."
+      utl::error "MPL" 94 "-fence_region receives a list with 4 values,\
+        [llength $fence_region] given."
     }
     lassign $fence_region lx ly ux uy
 
@@ -123,8 +124,8 @@ sta::define_cmd_args "macro_placement_debug" {
 # This seg faults if the gui is not present -cherry
 proc macro_placement_debug { args } {
   sta::parse_key_args "macro_placement_debug" args \
-      keys {} \
-      flags {-partitions}
+    keys {} \
+    flags {-partitions}
 
   set partitions [info exists flags(-partitions)]
 

@@ -46,6 +46,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <numeric>  // accumulate
 #include <set>
 #include <string>
 #include <unordered_map>

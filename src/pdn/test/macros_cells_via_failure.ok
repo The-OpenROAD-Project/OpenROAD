@@ -1,0 +1,17 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_macros/fakeram45_32x64.lef, created 1 library cells
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 497 components and 1394 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 994 connections.
+[INFO ODB-0133]     Created 269 nets and 0 connections.
+[INFO PDN-0001] Inserting grid: grid
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dcache.data.data_arrays_0.data_arrays_0_ext.mem
+[INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
+[WARNING PDN-0110] No via inserted between metal4 and metal7 at (186.3350, 116.1000) - (186.8150, 116.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal5 and metal6 at (42.6950, 163.4400) - (43.6250, 163.9050) on VSS
+[WARNING PDN-0110] No via inserted between metal5 and metal6 at (52.6950, 163.4400) - (53.6250, 163.9050) on VSS
+[WARNING PDN-0110] No via inserted between metal5 and metal6 at (62.6950, 163.4400) - (63.6250, 163.9050) on VSS
+[WARNING PDN-0110] No via inserted between metal5 and metal6 at (72.6950, 163.4400) - (73.6250, 163.9050) on VSS
+[WARNING PDN-0200] Removing floating shape: VSS (42.6950, 163.4400) - (73.6250, 163.9050) on metal5
+No differences found.

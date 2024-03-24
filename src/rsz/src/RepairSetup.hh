@@ -34,7 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <boost/functional/hash.hpp>
 #include <unordered_set>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
@@ -90,6 +92,8 @@ public:
                    bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -102,11 +106,20 @@ private:
                   bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
-
-  void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
-                         sta::FuncExpr::Operator &status);
-  void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
-  void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
+  bool simulateExpr(
+      sta::FuncExpr* expr,
+      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+      size_t table_index);
+  std::vector<bool> simulateExpr(
+      sta::FuncExpr* expr,
+      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
+  bool isPortEqiv(sta::FuncExpr* expr,
+                  const LibertyCell* cell,
+                  const LibertyPort* port_a,
+                  const LibertyPort* port_b);
+  void equivCellPins(const LibertyCell* cell,
+                     LibertyPort* input_port,
+                     sta::LibertyPortSet& ports);
   bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
@@ -165,7 +178,7 @@ private:
   const MinMax *min_;
   const MinMax *max_;
 
-  sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
+  sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
