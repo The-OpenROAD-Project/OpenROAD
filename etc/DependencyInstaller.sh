@@ -298,13 +298,14 @@ _installRHELCleanUp() {
 _installRHELPackages() {
     yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
+        yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-24.el9.noarch.rpm
+        yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-release-9.0-24.el9.noarch.rpm
         rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
+
     yum -y install tzdata
     yum -y install redhat-rpm-config rpm-build
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
     yum -y install \
         autoconf \
         automake \
@@ -317,9 +318,6 @@ _installRHELPackages() {
         glibc-devel \
         libtool \
         libffi-devel \
-        llvm7.0 \
-        llvm7.0-devel \
-        llvm7.0-libs \
         make \
         pcre-devel \
         pcre2-devel \
@@ -331,9 +329,6 @@ _installRHELPackages() {
         python3-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        readline \
-        readline-devel \
-        tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
         tcl-thread-devel \
@@ -342,9 +337,85 @@ _installRHELPackages() {
         zlib-devel
 
     yum install -y \
-        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+        https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm
 }
+
+# _installRHELPackages() {
+#     yum -y update
+#     if [[ $1 == 9* ]]; then
+#         if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
+#             yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-24.el9.noarch.rpm
+#             yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-release-9.0-24.el9.noarch.rpm
+#             rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+
+#             yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
+
+#             yum -y install \
+#                 llvm13 \
+#                 llvm13-devel \
+#                 llvm13-libs
+
+#             yum install -y \
+#                 https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm \
+#                 https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
+#                 https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm
+#         fi
+#     else
+#         if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
+#             yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
+#             yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
+#             rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+
+#             yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+#             yum -y install \
+#                 llvm7.0 \
+#                 llvm7.0-devel \
+#                 llvm7.0-libs \
+#                 tcl-devel
+
+#             yum install -y \
+#                 http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
+#                 https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+#         fi
+#     fi
+
+#     yum -y install tzdata
+#     yum -y install redhat-rpm-config rpm-build
+#     yum -y install \
+#         autoconf \
+#         automake \
+#         clang \
+#         clang-devel \
+#         gcc \
+#         gcc-c++ \
+#         gdb \
+#         git \
+#         glibc-devel \
+#         libtool \
+#         libffi-devel \
+#         make \
+#         pcre-devel \
+#         pcre2-devel \
+#         pkgconf \
+#         pkgconf-m4 \
+#         pkgconf-pkg-config \
+#         python3 \
+#         python3-devel \
+#         python3-pip \
+#         qt5-qtbase-devel \
+#         qt5-qtimageformats \
+#         # readline \
+#         # readline-devel \
+#         tcl-tclreadline \
+#         tcl-tclreadline-devel \
+#         tcl-thread-devel \
+#         tcllib \
+#         wget \
+#         zlib-devel
+# }
 
 _installCentosCleanUp() {
     yum clean -y all

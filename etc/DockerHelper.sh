@@ -20,7 +20,7 @@ usage: $0 [CMD] [OPTIONS]
   OPTIONS:
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
                                   only if the target is 'builder'.
-  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, centos7, rhel, opensuse, debian10 and debian11.
+  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, centos7, rhel8, rhel9, opensuse, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -67,8 +67,11 @@ _setup() {
         "debian11")
             osBaseImage="debian:bullseye"
             ;;
-        "rhel")
+        "rhel8")
             osBaseImage="redhat/ubi8"
+            ;;
+        "rhel9")
+            osBaseImage="redhat/ubi9"
             ;;
         *)
             echo "Target OS ${os} not supported" >&2
