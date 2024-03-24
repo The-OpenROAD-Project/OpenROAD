@@ -5,6 +5,8 @@ from unittest.mock import patch, MagicMock
 
 odb = MagicMock()
 sys.modules['odb'] = odb
+openroad = MagicMock()
+sys.modules['openroad'] = openroad
 import deltaDebug
 
 default_args = argparse.Namespace(persistence=4,
