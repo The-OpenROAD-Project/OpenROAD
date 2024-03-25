@@ -18,7 +18,7 @@
 # where the script manipulates base.odb between steps to reduce its size.
 ################################
 
-from openroad import Design, Tech
+from openroad import Design
 import odb
 import os
 import sys
