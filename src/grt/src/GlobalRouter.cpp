@@ -3018,7 +3018,7 @@ void GlobalRouter::makeBtermPins(Net* net,
     for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
       int last_layer = -1;
       if (!bterm_pin->getPlacementStatus().isPlaced()) {
-        logger_->error(GRT, 10, "Pin {} is not placed.", pin_name);
+        logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
       }
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
