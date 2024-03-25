@@ -126,10 +126,10 @@ proc set_layer_rc {args} {
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
                                       [-layers layers]\
-                                      [-h_resistance res]\
-                                      [-h_capacitance cap]\
-                                      [-v_resistance res]\
-                                      [-v_capacitance cap]\
+                                      [-h_resistance h_res]\
+                                      [-h_capacitance h_cap]\
+                                      [-v_resistance v_res]\
+                                      [-v_capacitance v_cap]\
                                       [-corner corner]}
 
 proc set_wire_rc { args } {
@@ -214,26 +214,26 @@ proc set_wire_rc { args } {
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-h_resistance)] } {
-      set res $keys(-h_resistance)
-      sta::check_positive_float "-h_resistance" $res
-      set h_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+      set h_res $keys(-h_resistance)
+      sta::check_positive_float "-h_resistance" $h_res
+      set h_wire_res [expr [sta::resistance_ui_sta $h_res] / [sta::distance_ui_sta 1.0]]
     }
 
     if { [info exists keys(-h_capacitance)] } {
-      set cap $keys(-h_capacitance)
-      sta::check_positive_float "-h_capacitance" $cap
-      set h_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+      set h_cap $keys(-h_capacitance)
+      sta::check_positive_float "-h_capacitance" $h_cap
+      set h_wire_cap [expr [sta::capacitance_ui_sta $h_cap] / [sta::distance_ui_sta 1.0]]
     }
     if { [info exists keys(-v_resistance)] } {
-      set res $keys(-v_resistance)
-      sta::check_positive_float "-v_resistance" $res
-      set v_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+      set v_res $keys(-v_resistance)
+      sta::check_positive_float "-v_resistance" $v_res
+      set v_wire_res [expr [sta::resistance_ui_sta $v_res] / [sta::distance_ui_sta 1.0]]
     }
 
     if { [info exists keys(-v_capacitance)] } {
-      set cap $keys(-v_capacitance)
-      sta::check_positive_float "-v_capacitance" $cap
-      set v_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+      set v_cap $keys(-v_capacitance)
+      sta::check_positive_float "-v_capacitance" $v_cap
+      set v_wire_cap [expr [sta::capacitance_ui_sta $v_cap] / [sta::distance_ui_sta 1.0]]
     }
   }
 
