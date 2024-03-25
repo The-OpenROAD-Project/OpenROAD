@@ -400,6 +400,10 @@ void dbModule::destroy(dbModule* module)
     block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
   }
 
+  for (auto modnet : module->getModNets()) {
+    block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  }
+
   dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);

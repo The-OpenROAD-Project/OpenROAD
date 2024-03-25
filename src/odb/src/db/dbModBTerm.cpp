@@ -38,6 +38,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbModITerm.h"
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbTable.h"
@@ -53,10 +54,13 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   if (_flags != rhs._flags) {
     return false;
   }
+  if (_parentPin != rhs._parentPin) {
+    return false;
+  }
   if (_parent != rhs._parent) {
     return false;
   }
-  if (_net != rhs._net) {
+  if (_modNet != rhs._modNet) {
     return false;
   }
   if (_next_net_modbterm != rhs._next_net_modbterm) {
@@ -84,8 +88,9 @@ void _dbModBTerm::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_name);
   DIFF_FIELD(_flags);
+  DIFF_FIELD(_parentPin);
   DIFF_FIELD(_parent);
-  DIFF_FIELD(_net);
+  DIFF_FIELD(_modNet);
   DIFF_FIELD(_next_net_modbterm);
   DIFF_FIELD(_prev_net_modbterm);
   DIFF_FIELD(_next_entry);
@@ -97,8 +102,9 @@ void _dbModBTerm::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_flags);
+  DIFF_OUT_FIELD(_parentPin);
   DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_net);
+  DIFF_OUT_FIELD(_modNet);
   DIFF_OUT_FIELD(_next_net_modbterm);
   DIFF_OUT_FIELD(_prev_net_modbterm);
   DIFF_OUT_FIELD(_next_entry);
@@ -114,8 +120,9 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
 {
   _name = r._name;
   _flags = r._flags;
+  _parentPin = r._parentPin;
   _parent = r._parent;
-  _net = r._net;
+  _modNet = r._modNet;
   _next_net_modbterm = r._next_net_modbterm;
   _prev_net_modbterm = r._prev_net_modbterm;
   _next_entry = r._next_entry;
@@ -125,8 +132,9 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
   stream >> obj._name;
   stream >> obj._flags;
+  stream >> obj._parentPin;
   stream >> obj._parent;
-  stream >> obj._net;
+  stream >> obj._modNet;
   stream >> obj._next_net_modbterm;
   stream >> obj._prev_net_modbterm;
   stream >> obj._next_entry;
@@ -137,8 +145,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
   stream << obj._name;
   stream << obj._flags;
+  stream << obj._parentPin;
   stream << obj._parent;
-  stream << obj._net;
+  stream << obj._modNet;
   stream << obj._next_net_modbterm;
   stream << obj._prev_net_modbterm;
   stream << obj._next_entry;
@@ -174,24 +183,40 @@ dbModule* dbModBTerm::getParent() const
   return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
 }
 
-void dbModBTerm::setNet(dbModNet* net)
+// User Code Begin dbModBTermPublicMethods
+
+void dbModBTerm::setModNet(dbModNet* modNet)
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
 
-  obj->_net = net->getImpl()->getOID();
+  obj->_modNet = modNet->getImpl()->getOID();
 }
 
-dbModNet* dbModBTerm::getNet() const
+dbModNet* dbModBTerm::getModNet() const
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
-  if (obj->_net == 0) {
+  if (obj->_modNet == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModNet*) par->_modnet_tbl->getPtr(obj->_net);
+  return (dbModNet*) par->_modnet_tbl->getPtr(obj->_modNet);
 }
 
-// User Code Begin dbModBTermPublicMethods
+void dbModBTerm::setParentPin(dbModITerm* parent_pin)
+{
+  _dbModBTerm* obj = (_dbModBTerm*) this;
+  obj->_parentPin = parent_pin->getImpl()->getOID();
+}
+
+dbModITerm* dbModBTerm::getParentPin() const
+{
+  _dbModBTerm* obj = (_dbModBTerm*) this;
+  if (obj->_parentPin == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_parentPin);
+}
 
 struct dbModBTermFlags_str
 {
@@ -256,7 +281,7 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->_flags = 0U;
   ((dbModBTerm*) modbterm)->setIoType(dbIoType::INPUT);
   ((dbModBTerm*) modbterm)->setSigType(dbSigType::SIGNAL);
-  modbterm->_net = 0;
+  modbterm->_modNet = 0;
   modbterm->_next_net_modbterm = 0;
   modbterm->_prev_net_modbterm = 0;
 
@@ -276,10 +301,10 @@ void dbModBTerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   // already connected
-  if (_modbterm->_net == net->getId()) {
+  if (_modbterm->_modNet == net->getId()) {
     return;
   }
-  _modbterm->_net = net->getId();
+  _modbterm->_modNet = net->getId();
   // append to net mod bterms. Do this by pushing onto head of list.
   if (_modnet->_modbterms != 0) {
     _dbModBTerm* head = _block->_modbterm_tbl->getPtr(_modnet->_modbterms);
@@ -299,10 +324,10 @@ void dbModBTerm::disconnect()
   _dbModule* module = (_dbModule*) getParent();
   _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  if (_modbterm->_net == 0) {
+  if (_modbterm->_modNet == 0) {
     return;
   }
-  _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_net);
+  _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modNet);
 
   if (_modbterm->_prev_net_modbterm == 0) {
     // degenerate case, head element, need to update net starting point

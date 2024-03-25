@@ -38,6 +38,7 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbModBTerm.h"
 #include "dbModInst.h"
 #include "dbModNet.h"
 #include "dbTable.h"
@@ -53,7 +54,10 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
   if (_parent != rhs._parent) {
     return false;
   }
-  if (_net != rhs._net) {
+  if (_childPort != rhs._childPort) {
+    return false;
+  }
+  if (_modNet != rhs._modNet) {
     return false;
   }
   if (_next_net_moditerm != rhs._next_net_moditerm) {
@@ -81,7 +85,8 @@ void _dbModITerm::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_name);
   DIFF_FIELD(_parent);
-  DIFF_FIELD(_net);
+  DIFF_FIELD(_childPort);
+  DIFF_FIELD(_modNet);
   DIFF_FIELD(_next_net_moditerm);
   DIFF_FIELD(_prev_net_moditerm);
   DIFF_FIELD(_next_entry);
@@ -93,7 +98,8 @@ void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_net);
+  DIFF_OUT_FIELD(_childPort);
+  DIFF_OUT_FIELD(_modNet);
   DIFF_OUT_FIELD(_next_net_moditerm);
   DIFF_OUT_FIELD(_prev_net_moditerm);
   DIFF_OUT_FIELD(_next_entry);
@@ -109,7 +115,8 @@ _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
 {
   _name = r._name;
   _parent = r._parent;
-  _net = r._net;
+  _childPort = r._childPort;
+  _modNet = r._modNet;
   _next_net_moditerm = r._next_net_moditerm;
   _prev_net_moditerm = r._prev_net_moditerm;
   _next_entry = r._next_entry;
@@ -119,7 +126,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
   stream >> obj._name;
   stream >> obj._parent;
-  stream >> obj._net;
+  stream >> obj._childPort;
+  stream >> obj._modNet;
   stream >> obj._next_net_moditerm;
   stream >> obj._prev_net_moditerm;
   stream >> obj._next_entry;
@@ -130,7 +138,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
   stream << obj._name;
   stream << obj._parent;
-  stream << obj._net;
+  stream << obj._childPort;
+  stream << obj._modNet;
   stream << obj._next_net_moditerm;
   stream << obj._prev_net_moditerm;
   stream << obj._next_entry;
@@ -166,24 +175,40 @@ dbModInst* dbModITerm::getParent() const
   return (dbModInst*) par->_modinst_tbl->getPtr(obj->_parent);
 }
 
-void dbModITerm::setNet(dbModNet* net)
+// User Code Begin dbModITermPublicMethods
+
+void dbModITerm::setModNet(dbModNet* modNet)
 {
   _dbModITerm* obj = (_dbModITerm*) this;
 
-  obj->_net = net->getImpl()->getOID();
+  obj->_modNet = modNet->getImpl()->getOID();
 }
 
-dbModNet* dbModITerm::getNet() const
+dbModNet* dbModITerm::getModNet() const
 {
   _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_net == 0) {
+  if (obj->_modNet == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModNet*) par->_modnet_tbl->getPtr(obj->_net);
+  return (dbModNet*) par->_modnet_tbl->getPtr(obj->_modNet);
 }
 
-// User Code Begin dbModITermPublicMethods
+void dbModITerm::setChildPort(dbModBTerm* child_port)
+{
+  _dbModITerm* obj = (_dbModITerm*) this;
+  obj->_childPort = child_port->getImpl()->getOID();
+}
+
+dbModBTerm* dbModITerm::getChildPort() const
+{
+  _dbModITerm* obj = (_dbModITerm*) this;
+  if (obj->_childPort == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_childPort);
+}
 
 dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
 {
@@ -191,7 +216,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModITerm* moditerm = block->_moditerm_tbl->create();
   // defaults
-  moditerm->_net = 0;
+  moditerm->_modNet = 0;
   moditerm->_next_net_moditerm = 0;
   moditerm->_prev_net_moditerm = 0;
 
@@ -211,10 +236,10 @@ void dbModITerm::connect(dbModNet* net)
   _dbModNet* _modnet = (_dbModNet*) net;
   _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
   // already connected.
-  if (_moditerm->_net == _modnet->getId()) {
+  if (_moditerm->_modNet == _modnet->getId()) {
     return;
   }
-  _moditerm->_net = _modnet->getId();
+  _moditerm->_modNet = _modnet->getId();
   // append to net moditerms
   if (_modnet->_moditerms != 0) {
     _dbModITerm* head = _block->_moditerm_tbl->getPtr(_modnet->_moditerms);
@@ -233,11 +258,11 @@ void dbModITerm::disconnect()
 {
   _dbModITerm* _moditerm = (_dbModITerm*) this;
   _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
-  if (_moditerm->_net == 0) {
+  if (_moditerm->_modNet == 0) {
     return;
   }
-  _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_net);
-  _moditerm->_net = 0;
+  _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_modNet);
+  _moditerm->_modNet = 0;
   _dbModITerm* next_moditerm
       = _block->_moditerm_tbl->getPtr(_moditerm->_next_net_moditerm);
   _dbModITerm* prior_moditerm

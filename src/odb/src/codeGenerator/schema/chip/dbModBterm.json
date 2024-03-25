@@ -13,14 +13,21 @@
 	    "flags":["private"]
 	},
         {
+	    "name":"_parentPin",
+	    "type":"dbId<_dbModITerm>",
+	    "parent":"dbBlock",
+	    "flags":["private"]	    	    	    	    
+        },
+        {
 	    "name":"_parent",
 	    "type":"dbId<_dbModule>",
 	    "flags":["no-set"],
 	    "parent":"dbBlock"
         },
         {
-	    "name":"_net",
+	    "name":"_modNet",
 	    "type":"dbId<_dbModNet>",
+	    "flags":["private"],	    	    	    	    	    
 	    "parent":"dbBlock"
         },
         {
@@ -43,5 +50,5 @@
 	}
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModule.h","dbModNet.h","dbHashTable.hpp"]
+    "cpp_includes":["dbBlock.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h"]
 }

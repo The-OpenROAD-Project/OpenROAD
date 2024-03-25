@@ -13,9 +13,16 @@
             "flags":["no-set"],
             "parent":"dbBlock" 
         },
+	{
+	    "name":"_childPort",
+	    "type":"dbId<_dbModBTerm>",
+	    "parent":"dbBlock",
+	    "flags":["private"]	    	    	    
+        },
         {
-	    "name":"_net",
+	    "name":"_modNet",
             "type":"dbId<_dbModNet>",
+	    "flags":["private"],
             "parent":"dbBlock" 
         },
         {
@@ -39,5 +46,5 @@
 	
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp"]
+    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h"]
 }

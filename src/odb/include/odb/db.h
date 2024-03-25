@@ -866,7 +866,7 @@ class dbBlock : public dbObject
   /// Get block chip name.
   ///
   std::string getName();
-  void dumpDebug();
+
   ///
   /// Get the block chip name.
   ///
@@ -7479,12 +7479,11 @@ class dbModBTerm : public dbObject
 
   dbModule* getParent() const;
 
-  void setNet(dbModNet* net);
-
-  dbModNet* getNet() const;
-
   // User Code Begin dbModBTerm
-
+  void setParentPin(dbModITerm* parent_pin);
+  dbModITerm* getParentPin() const;
+  void setModNet(dbModNet* modNet);
+  dbModNet* getModNet() const;
   void setSigType(const dbSigType& type);
   dbSigType getSigType();
   void setIoType(const dbIoType& type);
@@ -7538,11 +7537,11 @@ class dbModITerm : public dbObject
 
   dbModInst* getParent() const;
 
-  void setNet(dbModNet* net);
-
-  dbModNet* getNet() const;
-
   // User Code Begin dbModITerm
+  void setModNet(dbModNet* modNet);
+  dbModNet* getModNet() const;
+  void setChildPort(dbModBTerm* child_port);
+  dbModBTerm* getChildPort() const;
   void connect(dbModNet* modnet);
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
@@ -7611,7 +7610,6 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
- private:
   // User Code End dbModule
 };
 

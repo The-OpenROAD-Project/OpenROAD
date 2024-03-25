@@ -42,6 +42,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbModInst;
+class _dbModBTerm;
 class _dbModNet;
 
 class _dbModITerm : public _dbObject
@@ -62,7 +63,8 @@ class _dbModITerm : public _dbObject
 
   char* _name;
   dbId<_dbModInst> _parent;
-  dbId<_dbModNet> _net;
+  dbId<_dbModBTerm> _childPort;
+  dbId<_dbModNet> _modNet;
   dbId<_dbModITerm> _next_net_moditerm;
   dbId<_dbModITerm> _prev_net_moditerm;
   dbId<_dbModITerm> _next_entry;

@@ -254,17 +254,21 @@ void _dbBTerm::out(dbDiff& diff, char side, const char* field) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
+  dbBlock* block = (dbBlock*) (bterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream << *bit_field;
   stream << bterm._ext_id;
   stream << bterm._name;
   stream << bterm._next_entry;
   stream << bterm._net;
-  stream << bterm._mnet;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
-  stream << bterm._next_modnet_bterm;
-  stream << bterm._prev_modnet_bterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << bterm._mnet;
+    stream << bterm._next_modnet_bterm;
+    stream << bterm._prev_modnet_bterm;
+  }
   stream << bterm._parent_block;
   stream << bterm._parent_iterm;
   stream << bterm._bpins;
@@ -275,17 +279,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
+  dbBlock* block = (dbBlock*) (bterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream >> *bit_field;
   stream >> bterm._ext_id;
   stream >> bterm._name;
   stream >> bterm._next_entry;
   stream >> bterm._net;
-  stream >> bterm._mnet;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;
-  stream >> bterm._next_modnet_bterm;
-  stream >> bterm._prev_modnet_bterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> bterm._mnet;
+    stream >> bterm._next_modnet_bterm;
+    stream >> bterm._prev_modnet_bterm;
+  }
   stream >> bterm._parent_block;
   stream >> bterm._parent_iterm;
   stream >> bterm._bpins;

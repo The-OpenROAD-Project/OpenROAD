@@ -56,7 +56,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "utl/Logger.h"
-
 namespace odb {
 
 template class dbTable<_dbITerm>;
