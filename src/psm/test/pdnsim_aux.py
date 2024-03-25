@@ -33,7 +33,7 @@
 ##
 ############################################################################
 from openroad import Timing
-from openroad import utl
+import utl
 
 
 def analyze_power_grid(design, *,
