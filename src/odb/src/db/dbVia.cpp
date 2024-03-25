@@ -443,8 +443,11 @@ dbVia* dbVia::create(dbBlock* block_, const char* name_)
 {
   if (block_->findVia(name_))
     return nullptr;
-
   _dbBlock* block = (_dbBlock*) block_;
+  if (block_->getTech() && block_->getTech()->findVia(name_)) {
+    block->getLogger()->error(
+        utl::ODB, 441, "Duplicate via definition for {}", name_);
+  }
   _dbVia* via = block->_via_tbl->create();
   via->_name = strdup(name_);
   ZALLOCATED(via->_name);

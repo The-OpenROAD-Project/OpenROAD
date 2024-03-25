@@ -321,7 +321,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
-      tech_->addVia(std::move(viaDef));
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 337, "Duplicated via definition for {}", via->getName());
+      }
     } else {
       std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
@@ -365,7 +368,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (via->isDefault()) {
         viaDef->setDefault(true);
       }
-      tech_->addVia(std::move(viaDef));
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 338, "Duplicated via definition for {}", via->getName());
+      }
     }
   }
 }
@@ -2696,7 +2702,10 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       viaDef->setCutClass(cutClass);
       viaDef->setCutClassIdx(cutClassIdx);
     }
-    tech_->addVia(std::move(viaDef));
+    if (!tech_->addVia(std::move(viaDef))) {
+      logger_->error(
+          utl::DRT, 339, "Duplicated via definition for {}", via->getName());
+    }
   }
 }
 

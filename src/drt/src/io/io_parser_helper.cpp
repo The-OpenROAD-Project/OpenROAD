@@ -209,7 +209,10 @@ void io::Parser::initDefaultVias()
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
         tech_->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
-        tech_->addVia(std::move(viaDef));
+        if (!tech_->addVia(std::move(viaDef))) {
+          logger_->error(
+              utl::DRT, 9009, "Duplicated via definition for {}", viaDefName);
+        }
       }
     }
   }
