@@ -123,6 +123,8 @@ RepairHold::repairHold(const double setup_margin,
   sort(ends1, sta::VertexIdLess(graph_));
 
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
+  // Prevent it from being too small on trivial designs
+  max_buffer_count = std::max(max_buffer_count, 100);
   resizer_->incrementalParasiticsBegin();
   repairHold(ends1, buffer_cell, setup_margin, hold_margin,
              allow_setup_violations, max_buffer_count, max_passes,
