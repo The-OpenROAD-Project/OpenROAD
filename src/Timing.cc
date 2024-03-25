@@ -265,11 +265,11 @@ sta::Corner* Timing::cmdCorner()
   return getSta()->cmdCorner();
 }
 
-sta::Corner* Timing::findCorner(const char* corner)
+sta::Corner* Timing::findCorner(const char* name)
 {
-  for (auto* sta_corner : getCorners()) {
-    if (strcmp(sta_corner->name(), corner) == 0) {
-      return sta_corner;
+  for (auto* corner : getCorners()) {
+    if (strcmp(corner->name(), name) == 0) {
+      return corner;
     }
   }
 

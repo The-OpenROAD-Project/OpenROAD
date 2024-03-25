@@ -96,7 +96,7 @@ std::vector<std::unique_ptr<Connection>> Shape::connectNodes(
   return shape_connections;
 }
 
-std::string Shape::describe(const double dbu) const
+std::string Shape::describe(double dbu) const
 {
   return fmt::format("{}: ({:.4f}, {:.4f}) -- ({:.4f}, {:.4f})",
                      id_,
@@ -165,7 +165,7 @@ IRNetwork::NodeTree Shape::getNodeTree(const Node::NodeSet& nodes) const
 
     values.emplace_back(IRNetwork::Point(pt.x(), pt.y()), node);
   }
-  const IRNetwork::NodeTree tree(values.begin(), values.end());
+  IRNetwork::NodeTree tree(values.begin(), values.end());
 
   return tree;
 }
@@ -245,14 +245,14 @@ Shape::NodeDataTree Shape::createNodeDataValue(
     node_values.emplace_back(IRNetwork::Point(pt.getX(), pt.getY()),
                              node_data.get());
   }
-  const NodeDataTree tree(node_values.begin(), node_values.end());
+  NodeDataTree tree(node_values.begin(), node_values.end());
 
   return tree;
 }
 
 std::map<Node*, std::set<Node*>> Shape::mergeNodes(
     const Node::NodeSet& nodes,
-    const int radius,
+    int radius,
     const NodeDataTree& tree,
     std::set<Node*>& remove,
     const std::function<void(Node*, Node*)>& copy_func) const

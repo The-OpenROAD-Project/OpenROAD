@@ -42,7 +42,6 @@
 #include "utl/timer.h"
 
 namespace psm {
-using namespace boost::polygon::operators;
 
 IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
     : net_(net), logger_(logger), floorplanning_(floorplanning)
@@ -179,6 +178,8 @@ IRNetwork::Polygon90 IRNetwork::rectToPolygon(const odb::Rect& rect) const
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 {
+  using namespace boost::polygon::operators;
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from SWire: {}");
 
@@ -214,6 +215,8 @@ IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
 {
+  using namespace boost::polygon::operators;
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
@@ -276,6 +279,8 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 {
+  using namespace boost::polygon::operators;
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from BTerms: {}");
 
@@ -318,6 +323,7 @@ void IRNetwork::processPolygonToRectangles(
     std::vector<std::unique_ptr<Node>>& new_nodes,
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
+  using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
 
   auto get_layer_orientation
@@ -418,13 +424,15 @@ IRNetwork::TerminalTree IRNetwork::getTerminalTree(
                       Point(pin_shape.xMax(), pin_shape.yMax()));
     tree_values.emplace_back(pin_box, node);
   }
-  const TerminalTree terminal_nodes(tree_values.begin(), tree_values.end());
+  TerminalTree terminal_nodes(tree_values.begin(), tree_values.end());
 
   return terminal_nodes;
 }
 
 void IRNetwork::generateRoutingLayerShapesAndNodes()
 {
+  using namespace boost::polygon::operators;
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes: {}");
 
@@ -597,7 +605,7 @@ IRNetwork::ShapeTree IRNetwork::getShapeTree(odb::dbTechLayer* layer) const
                         Point(rect.xMax(), rect.yMax()));
     tree_values.emplace_back(shape_box, shape.get());
   }
-  const ShapeTree tree(tree_values.begin(), tree_values.end());
+  ShapeTree tree(tree_values.begin(), tree_values.end());
   return tree;
 }
 
@@ -609,7 +617,7 @@ IRNetwork::NodeTree IRNetwork::getNodeTree(odb::dbTechLayer* layer) const
     const odb::Point& pt = node->getPoint();
     tree_values.emplace_back(Point(pt.x(), pt.y()), node.get());
   }
-  const NodeTree tree(tree_values.begin(), tree_values.end());
+  NodeTree tree(tree_values.begin(), tree_values.end());
   return tree;
 }
 
@@ -812,8 +820,9 @@ int IRNetwork::getEffectiveNumberOfCuts(const odb::dbShape& shape) const
     if (via.dx() == width
         && ((valid_length && via.dy() == length) || !valid_length)) {
       return cut_class->getNumCuts();
-    } else if (via.dy() == width
-               && ((valid_length && via.dx() == length) || !valid_length)) {
+    }
+    if (via.dy() == width
+        && ((valid_length && via.dx() == length) || !valid_length)) {
       return cut_class->getNumCuts();
     }
   }
@@ -1177,7 +1186,7 @@ void IRNetwork::dumpNodes(const std::map<Node*, std::size_t>& node_map,
   }
 
   for (const auto& [idx, node] : nodeidx_map) {
-    report << std::to_string(idx) << ": " << node->describe() << std::endl;
+    report << std::to_string(idx) << ": " << node->describe("") << std::endl;
   }
 }
 

@@ -85,7 +85,7 @@ class Node
   odb::dbTechLayer* getLayer() const { return layer_; };
 
   void print(utl::Logger* logger, const std::string& prefix = "") const;
-  virtual std::string describe(const std::string& prefix = "") const;
+  virtual std::string describe(const std::string& prefix) const;
 
   std::string getName() const;
   std::string getTypeName() const;
@@ -136,7 +136,7 @@ class ITermNode : public TerminalNode
 
   odb::dbITerm* getITerm() const { return iterm_; }
 
-  std::string describe(const std::string& prefix = "") const override;
+  std::string describe(const std::string& prefix) const override;
 
  protected:
   NodeType getType() const override { return NodeType::ITerm; }

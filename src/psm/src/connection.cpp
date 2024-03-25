@@ -143,8 +143,8 @@ std::tuple<int, int, int, int, int, int> Connection::compareTuple() const
 
 std::string Connection::describeWithNodes() const
 {
-  const std::string node0 = node0_ ? node0_->describe() : "*no node0*";
-  const std::string node1 = node1_ ? node1_->describe() : "*no node0*";
+  const std::string node0 = node0_ ? node0_->describe("") : "*no node0*";
+  const std::string node1 = node1_ ? node1_->describe("") : "*no node1*";
   return fmt::format("{}: {} -> {}", describe(), node0, node1);
 }
 

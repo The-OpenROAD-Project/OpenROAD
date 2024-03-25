@@ -176,7 +176,7 @@ bool IRSolver::checkOpen()
   // grab any node to start, choose one on the highest metal layer
   Node* start = network_->getTopLayerNodes().begin()->get();
   debugPrint(
-      logger_, utl::PSM, "check", 1, "Starting at: {}", start->describe());
+      logger_, utl::PSM, "check", 1, "Starting at: {}", start->describe(""));
   queue.push(start);
 
   std::size_t visited = 0;
@@ -591,6 +591,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
   }
 
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  src_nodes.reserve(source_nodes.size());
   for (auto& [pt, nodes] : source_nodes) {
     // ensure nodes are unique
     src_nodes.push_back(std::move(nodes[0]));
@@ -1531,6 +1532,7 @@ bool IRSolver::belongsTo(Connection* connection) const
 std::vector<sta::Corner*> IRSolver::getCorners() const
 {
   std::vector<sta::Corner*> corners;
+  corners.reserve(voltages_.size());
 
   for (const auto& [corner, nodes] : voltages_) {
     corners.push_back(corner);

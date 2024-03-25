@@ -69,7 +69,7 @@ class Shape
 
   odb::dbTechLayer* getLayer() const;
 
-  std::string describe(const double dbus) const;
+  std::string describe(double dbus) const;
 
   void setID(std::size_t id) { id_ = id; }
   std::size_t getID() const { return id_; }
@@ -95,7 +95,7 @@ class Shape
       Node::NodeSet& shape_shared_nodes) const;
   std::map<Node*, std::set<Node*>> mergeNodes(
       const Node::NodeSet& nodes,
-      const int radius,
+      int radius,
       const NodeDataTree& tree,
       std::set<Node*>& remove,
       const std::function<void(Node*, Node*)>& copy_func) const;
