@@ -360,7 +360,10 @@ RepairHold::repairHoldPass(VertexSeq &hold_failures,
   for (Vertex *end_vertex : hold_failures) {
     resizer_->updateParasitics();
     repairEndHold(end_vertex, buffer_cell, setup_margin, hold_margin,
-                  allow_setup_violations, max_buffer_count);
+                  allow_setup_violations);
+    if (inserted_buffer_count_ > max_buffer_count) {
+      break;
+    }
   }
 }
 
@@ -369,8 +372,7 @@ RepairHold::repairEndHold(Vertex *end_vertex,
                           LibertyCell *buffer_cell,
                           const double setup_margin,
                           const double hold_margin,
-                          const bool allow_setup_violations,
-                          const int max_buffer_count)
+                          const bool allow_setup_violations)
 {
   PathRef end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
   if (!end_path.isNull()) {
