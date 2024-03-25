@@ -329,6 +329,8 @@ _installRHELPackages() {
         python3-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
+        readline \
+        readline-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
         tcl-thread-devel \
