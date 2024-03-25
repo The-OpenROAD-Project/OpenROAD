@@ -153,7 +153,7 @@ struct ParasiticsResistence
   double v_res;
 };
 
-struct ParasiticsCapacity
+struct ParasiticsCapacitance
 {
   double h_cap;
   double v_cap;
@@ -202,10 +202,18 @@ public:
                     double &res,
                     double &cap) const;
   double wireSignalResistance(const Corner *corner) const;
+  double wireSignalHResistance(const Corner *corner) const;
+  double wireSignalVResistance(const Corner *corner) const;
   double wireClkResistance(const Corner *corner) const;
+  double wireClkHResistance(const Corner *corner) const;
+  double wireClkVResistance(const Corner *corner) const;
   // farads/meter
   double wireSignalCapacitance(const Corner *corner) const;
+  double wireSignalHCapacitance(const Corner *corner) const;
+  double wireSignalVCapacitance(const Corner *corner) const;
   double wireClkCapacitance(const Corner *corner) const;
+  double wireClkHCapacitance(const Corner *corner) const;
+  double wireClkVCapacitance(const Corner *corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
@@ -623,10 +631,10 @@ protected:
   vector<vector<double>> layer_cap_; // Farads/meter
   // Signal wire RC indexed by corner->index
   vector<ParasiticsResistence> wire_signal_res_;  // ohms/metre
-  vector<ParasiticsCapacity> wire_signal_cap_;  // Farads/meter
+  vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
   // Clock wire RC.
   vector<ParasiticsResistence> wire_clk_res_;     // ohms/metre
-  vector<ParasiticsCapacity> wire_clk_cap_;     // Farads/meter
+  vector<ParasiticsCapacitance> wire_clk_cap_;     // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 

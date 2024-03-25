@@ -346,7 +346,10 @@ BufferedNet::wireRC(const Corner *corner,
     resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   }
   if (layer_ == BufferedNet::null_layer) {
-    resizer->wireSignalRC(corner, res, cap);
+    int dx = std::abs(location_.x() - ref_->location().x())/length();
+    int dy = std::abs(location_.y() - ref_->location().y())/length();
+    res = dx * resizer->wireSignalHResistance(corner) + dy * resizer->wireSignalVResistance(corner);
+    cap = dx * resizer->wireSignalHCapacitance(corner) + dy * resizer->wireSignalVCapacitance(corner);
   } else {
     odb::dbTech* tech = resizer->db_->getTech();
     resizer->layerRC(tech->findRoutingLayer(layer_), corner, res, cap);
