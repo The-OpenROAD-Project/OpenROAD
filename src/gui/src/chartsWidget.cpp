@@ -365,23 +365,20 @@ void ChartsWidget::setXAxisConfig(int all_bars_count)
   const QString start_title = "Slack [";
   const QString time_scale_abreviation
       = sta_->units()->timeUnit()->scaleAbbreviation();
-  QString time_suffix = sta_->units()->timeUnit()->suffix();
-
+  const QString time_suffix = sta_->units()->timeUnit()->suffix();
   const QString end_title = "]";
   const QString axis_x_title
       = start_title + time_scale_abreviation + time_suffix + end_title;
-
   axis_x_->setTitleText(axis_x_title);
 
   const QString format = "%." + QString::number(precision_count_) + "f";
-
   axis_x_->setLabelFormat(format);
 
   const int pos_bars_count = all_bars_count - neg_count_offset_;
   const float min = -(static_cast<float>(neg_count_offset_)) * bucket_interval_;
   const float max = static_cast<float>(pos_bars_count) * bucket_interval_;
+  axis_x_->setRange(min, max);
 
-  axis_x_->setRange(min + x_axis_adjust_, max);
   axis_x_->setTickCount(all_bars_count + 1);
   axis_x_->setGridLineVisible(false);
   axis_x_->setVisible(true);

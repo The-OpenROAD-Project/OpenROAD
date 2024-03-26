@@ -121,8 +121,6 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
-  float x_axis_adjust_ = 1E-8;
-
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
   int precision_count_ = 0;      // Used to configure the x labels.
