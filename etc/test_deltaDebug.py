@@ -31,17 +31,20 @@ def mock_get_nets(mock_self):
 
 
 def mock_perform_step(mock_self, cut_index=-1):
+    before_cuts = mock_self.get_cuts()
+
     if cut_index == -1:
-        return mock_self.error_string
+        return mock_self.error_string, before_cuts
     mock_self.cut_block(index=cut_index)
 
+    after_cuts = mock_self.get_cuts()
     if mock_self.check_error(mock_self.insts, mock_self.nets):
         print(f"Error Code found: {mock_self.error_string}")
-        return mock_self.error_string
+        return mock_self.error_string, after_cuts
 
     mock_self.insts = list(mock_self.insts_saved)
     mock_self.nets = list(mock_self.nets_saved)
-    return None
+    return None, before_cuts
 
 
 def mock_cut_elements(mock_self, start, end):
