@@ -4,9 +4,9 @@
 [INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 39670 connections.
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0502] Using bump pattern with x-pitch 45.0000um, y-pitch 45.0000um, and size 25.0000um with an reduction factor of 2x.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 45.0000um, y-pitch 45.0000um, and size 25.0000um with an reduction factor of 2x.
 ########## IR report #################
 Corner           : default
 Supply voltage   : 1.10e+00 V
@@ -16,8 +16,8 @@ Average IR drop  : 3.42e-03 V
 Worstcase IR drop: 1.37e-02 V
 Percentage drop  : 1.25 %
 ######################################
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0502] Using bump pattern with x-pitch 65.0000um, y-pitch 65.0000um, and size 25.0000um with an reduction factor of 4x.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 65.0000um, y-pitch 65.0000um, and size 25.0000um with an reduction factor of 4x.
 ########## IR report #################
 Corner           : default
 Supply voltage   : 1.10e+00 V
@@ -27,8 +27,8 @@ Average IR drop  : 6.63e-03 V
 Worstcase IR drop: 2.02e-02 V
 Percentage drop  : 1.83 %
 ######################################
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0501] Using strap pattern on metal8 with pitch 4.0000um and offset 2.0000um.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0072] Using strap pattern on metal8 with pitch 4.0000um and offset 2.0000um.
 ########## IR report #################
 Corner           : default
 Supply voltage   : 1.10e+00 V
@@ -38,8 +38,8 @@ Average IR drop  : 1.28e-03 V
 Worstcase IR drop: 7.08e-03 V
 Percentage drop  : 0.64 %
 ######################################
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0501] Using strap pattern on metal8 with pitch 12.0000um and offset 6.0000um.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0072] Using strap pattern on metal8 with pitch 12.0000um and offset 6.0000um.
 ########## IR report #################
 Corner           : default
 Supply voltage   : 1.10e+00 V

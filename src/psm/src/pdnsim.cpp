@@ -133,10 +133,10 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
 
   if (check) {
     logger_->info(
-        utl::PSM, 400, "All shapes on net {} are connected.", net->getName());
+        utl::PSM, 40, "All shapes on net {} are connected.", net->getName());
   } else {
     logger_->error(
-        utl::PSM, 690, "Check connectivity failed on {}.", net->getName());
+        utl::PSM, 69, "Check connectivity failed on {}.", net->getName());
   }
   return check;
 }

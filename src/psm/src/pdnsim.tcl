@@ -44,7 +44,7 @@ proc check_power_grid { args } {
     keys {-net -error_file} flags {-floorplanning}
 
   if { ![info exists keys(-net)] } {
-    utl::error PSM 570 "Argument -net not specified."
+    utl::error PSM 57 "Argument -net not specified."
   }
 
   set error_file ""
@@ -74,7 +74,7 @@ proc analyze_power_grid { args } {
       -source_type} \
     flags {-enable_em}
   if { ![info exists keys(-net)] } {
-    utl::error PSM 571 "Argument -net not specified."
+    utl::error PSM 58 "Argument -net not specified."
   }
 
   set error_file ""
@@ -102,7 +102,7 @@ proc analyze_power_grid { args } {
   if { [info exists keys(-em_file)]} {
     set em_file $keys(-em_file)
     if { !$enable_em } {
-      utl::error PSM 550 "EM file cannot be specified without enabling em analysis."
+      utl::error PSM 55 "EM file cannot be specified without enabling em analysis."
     }
   }
 
@@ -131,7 +131,7 @@ proc write_pg_spice { args } {
   sta::check_argc_eq1 "write_pg_spice" $args
 
   if { ![info exists keys(-net)] } {
-    utl::error PSM 572 "Argument -net not specified."
+    utl::error PSM 59 "Argument -net not specified."
   }
 
   set voltage_source_file ""

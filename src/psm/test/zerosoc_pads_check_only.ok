@@ -10,4 +10,4 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sk
 [INFO ODB-0131]     Created 44595 components and 163942 component-terminals.
 [INFO ODB-0132]     Created 48 special nets and 113998 connections.
 [INFO ODB-0133]     Created 13655 nets and 49143 connections.
-[INFO PSM-0400] All shapes on net vdd are connected.
+[INFO PSM-0040] All shapes on net vdd are connected.

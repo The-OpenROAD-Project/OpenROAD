@@ -15,8 +15,8 @@
 [WARNING STA-1212] asap7_data/asap7.lib line 14771, timing group from output port.
 [WARNING STA-1212] asap7_data/asap7.lib line 14804, timing group from output port.
 [WARNING STA-1212] asap7_data/asap7.lib line 14837, timing group from output port.
-[INFO PSM-0400] All shapes on net VDD are connected.
-[INFO PSM-0502] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
 Corner           : default
 Supply voltage   : 7.00e-01 V

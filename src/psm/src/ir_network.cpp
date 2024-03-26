@@ -47,7 +47,7 @@ IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
     : net_(net), logger_(logger), floorplanning_(floorplanning)
 {
   if (!net_->getSigType().isSupply()) {
-    logger_->error(utl::PSM, 503, "{} is not a supply net.", net_->getName());
+    logger_->error(utl::PSM, 87, "{} is not a supply net.", net_->getName());
   }
   initMinimumNodePitch();
   construct();
@@ -178,7 +178,7 @@ IRNetwork::Polygon90 IRNetwork::rectToPolygon(const odb::Rect& rect) const
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
 
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from SWire: {}");
@@ -215,7 +215,7 @@ IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
 
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
@@ -279,7 +279,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
 
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from BTerms: {}");
@@ -323,7 +323,7 @@ void IRNetwork::processPolygonToRectangles(
     std::vector<std::unique_ptr<Node>>& new_nodes,
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
   using Rectangle = boost::polygon::rectangle_data<int>;
 
   auto get_layer_orientation
@@ -431,7 +431,7 @@ IRNetwork::TerminalTree IRNetwork::getTerminalTree(
 
 void IRNetwork::generateRoutingLayerShapesAndNodes()
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
 
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes: {}");

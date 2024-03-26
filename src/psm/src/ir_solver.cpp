@@ -260,7 +260,7 @@ void IRSolver::reportUnconnectedNodes() const
 
   for (auto* node : results.unconnected_nodes_) {
     logger_->warn(utl::PSM,
-                  380,
+                  38,
                   "Unconnected node on net {} at location ({:4.3f}um, "
                   "{:4.3f}um), layer: {}.",
                   net_->getName(),
@@ -271,7 +271,7 @@ void IRSolver::reportUnconnectedNodes() const
 
   for (const auto& node : results.unconnected_iterms_) {
     logger_->warn(utl::PSM,
-                  390,
+                  39,
                   "Unconnected instance {} at location ({:4.3f}um, "
                   "{:4.3f}um).",
                   node->getITerm()->getName(),
@@ -410,7 +410,7 @@ IRSolver::Voltage IRSolver::generateSourceNodes(
   }
 
   if (sources.empty()) {
-    logger_->error(utl::PSM, 300, "Unable to map source nodes into power grid");
+    logger_->error(utl::PSM, 70, "Unable to map source nodes into power grid");
   }
 
   return src_voltage;
@@ -438,7 +438,7 @@ IRSolver::generateSourceNodesGenericFull() const
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
 
   logger_->info(utl::PSM,
-                500,
+                71,
                 "Using all nodes on {} as sources.",
                 network_->getTopLayer()->getName());
   for (const auto& root_node : network_->getTopLayerNodes()) {
@@ -465,7 +465,7 @@ IRSolver::generateSourceNodesGenericStraps() const
   const double dbus = getBlock()->getDbUnitsPerMicron();
   logger_->info(
       utl::PSM,
-      501,
+      72,
       "Using strap pattern on {} with pitch {:.4f}um and offset {:.4f}um.",
       connect_layer->getName(),
       pitch / dbus,
@@ -515,7 +515,7 @@ IRSolver::generateSourceNodesGenericBumps() const
   const int size = generated_source_settings_.bump_size * dbus;
 
   logger_->info(utl::PSM,
-                502,
+                73,
                 "Using bump pattern with x-pitch {:.4f}um, y-pitch {:.4f}um, "
                 "and size {:.4f}um with an reduction factor of {}x.",
                 dx / dbus,
@@ -624,11 +624,11 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
 
   std::ifstream vsrc(source_file);
   if (!vsrc) {
-    logger_->error(utl::PSM, 890, "Unable to open {}.", source_file);
+    logger_->error(utl::PSM, 89, "Unable to open {}.", source_file);
   }
 
   logger_->info(
-      utl::PSM, 150, "Reading location of sources from: {}.", source_file);
+      utl::PSM, 15, "Reading location of sources from: {}.", source_file);
 
   std::vector<Record> source_info;
 
@@ -647,7 +647,7 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
     for (int i = 0; i < 4; ++i) {
       if (line_stream.eof()) {
         logger_->error(
-            utl::PSM, 750, "Expected four values on line: \"{}\"", line);
+            utl::PSM, 75, "Expected four values on line: \"{}\"", line);
       }
       std::getline(line_stream, value, ',');
       if (i == 0) {
@@ -670,7 +670,7 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
   const Voltage src_voltage = source_info.begin()->voltage;
   for (const auto& info : source_info) {
     if (src_voltage != info.voltage) {
-      logger_->error(utl::PSM, 751, "Source voltage cannot be different");
+      logger_->error(utl::PSM, 80, "Source voltage cannot be different");
     }
   }
 
@@ -698,8 +698,7 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
-    logger_->error(
-        utl::PSM, 505, "Unable to determine voltage for power nets.");
+    logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
   }
   for (const auto& [inst, power] : getInstancePower(corner)) {
     const Current current = power / power_voltage;
@@ -924,7 +923,7 @@ void IRSolver::solve(sta::Corner* corner,
     }
     logger_->error(
         utl::PSM,
-        101,
+        10,
         "LU factorization of the G Matrix failed. SparseLU solver message: {}.",
         eigen_solver.lastErrorMessage());
   }
@@ -938,7 +937,7 @@ void IRSolver::solve(sta::Corner* corner,
       dumpMatrix(G, "G");
       dumpVector(J, "J");
     }
-    logger_->error(utl::PSM, 120, "Solving V = inv(G)*J failed.");
+    logger_->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
   }
   debugPrint(logger_,
              utl::PSM,
@@ -1097,7 +1096,7 @@ IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Corner* corner) const
   }
 
   logger_->error(utl::PSM,
-                 791,
+                 79,
                  "Cannot determine the supply voltage for {}.",
                  net_->getName());
 
@@ -1260,7 +1259,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
   std::ofstream report(error_file);
   if (!report) {
     logger_->error(
-        utl::PSM, 920, "Unable to open {} to write error file", error_file);
+        utl::PSM, 92, "Unable to open {} to write error file", error_file);
   }
 
   const auto results = getConnectivityResults();
@@ -1312,7 +1311,7 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
   std::ofstream report(voltage_file);
   if (!report) {
     logger_->error(utl::PSM,
-                   900,
+                   90,
                    "Unable to open {} to write instance voltage file",
                    voltage_file);
   }
@@ -1353,8 +1352,7 @@ void IRSolver::writeEMFile(const std::string& em_file,
 
   std::ofstream report(em_file);
   if (!report) {
-    logger_->error(
-        utl::PSM, 901, "Unable to open {} to write EM file", em_file);
+    logger_->error(utl::PSM, 91, "Unable to open {} to write EM file", em_file);
   }
 
   report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
@@ -1397,7 +1395,7 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   std::ofstream spice(spice_file);
   if (!spice.is_open()) {
     logger_->error(
-        utl::PSM, 410, "Could not open {} to write spice file", spice_file);
+        utl::PSM, 41, "Could not open {} to write spice file", spice_file);
   }
 
   const auto res_map = getResistanceMap(corner);

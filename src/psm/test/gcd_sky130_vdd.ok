@@ -5,4 +5,4 @@
 [INFO ODB-0131]     Created 1143 components and 3273 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2286 connections.
 [INFO ODB-0133]     Created 306 nets and 987 connections.
-[INFO PSM-0400] All shapes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
