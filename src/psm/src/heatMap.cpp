@@ -119,7 +119,7 @@ bool IRDropDataSource::populateMap()
 
   // track min/max here to make it constant across all layers
   double min = std::numeric_limits<double>::max();
-  double max = std::numeric_limits<double>::min();
+  double max = std::numeric_limits<double>::lowest();
   for (const auto& [layer, drop_map] : ir_drops) {
     for (const auto& [point, drop] : drop_map) {
       min = std::min(min, drop);

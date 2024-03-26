@@ -454,8 +454,8 @@ proc repair_timing { args } {
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)
     sta::check_percent "-max_buffer_percent" $max_buffer_percent
-    set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
+  set max_buffer_percent [expr $max_buffer_percent / 100.0]
 
   set repair_tns_end_percent 0.0
   if { [info exists keys(-repair_tns)] } {

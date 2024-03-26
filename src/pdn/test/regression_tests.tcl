@@ -112,4 +112,6 @@ record_tests {
   repair_vias
 
   sroute_test
+
+  bpin_removal
 }

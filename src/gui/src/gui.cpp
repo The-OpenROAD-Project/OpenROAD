@@ -1492,6 +1492,10 @@ std::string Descriptor::Property::toString(const std::any& value)
     text += convert_dbu(v->xMax(), false) + ",";
     text += convert_dbu(v->yMax(), false) + ")";
     return text;
+  } else if (auto v = std::any_cast<odb::Point>(&value)) {
+    std::string text = fmt::format(
+        "({},{})", convert_dbu(v->x(), false), convert_dbu(v->y(), false));
+    return text;
   }
 
   return "<unknown>";
