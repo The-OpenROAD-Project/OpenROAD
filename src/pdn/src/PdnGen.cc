@@ -773,6 +773,19 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   const ShapeTreeMap obstructions(net_shapes_vec.begin(), net_shapes_vec.end());
   net_shapes_vec.clear();
 
+  // Remove existing non-fixed bpins
+  for (auto& [net, swire] : net_map) {
+    for (auto* bterm : net->getBTerms()) {
+      auto bpins = bterm->getBPins();
+      std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
+      for (auto* bpin : pins) {
+        if (!bpin->getPlacementStatus().isFixed()) {
+          odb::dbBPin::destroy(bpin);
+        }
+      }
+    }
+  }
+
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
       grid->writeToDb(net_map, add_pins, obstructions);

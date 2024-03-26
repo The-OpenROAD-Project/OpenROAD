@@ -2944,6 +2944,9 @@ void GlobalRouter::makeItermPins(Net* net,
     const bool connected_to_macro = master->isBlock();
 
     odb::dbInst* inst = iterm->getInst();
+    if (!inst->isPlaced()) {
+      logger_->error(GRT, 10, "Instance {} is not placed.", inst->getName());
+    }
     const odb::dbTransform transform = inst->getTransform();
 
     odb::Point pin_pos;
@@ -3014,6 +3017,9 @@ void GlobalRouter::makeBtermPins(Net* net,
 
     for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
       int last_layer = -1;
+      if (!bterm_pin->getPlacementStatus().isPlaced()) {
+        logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
+      }
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
         odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
