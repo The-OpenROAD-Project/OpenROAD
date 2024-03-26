@@ -242,9 +242,7 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
-  float exact_interval = (*max_slack - *min_slack) / number_of_buckets_;
-  int bucket_interval = computeSnapBucketInterval(exact_interval);
-  setBucketInterval(bucket_interval);
+  setBucketInterval(*max_slack, *min_slack);
 
   float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
         negative_upper = 0.0f;
@@ -255,8 +253,8 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
     pos_slack_count = 0;
     neg_slack_count = 0;
 
-    positive_lower = bucket_interval * bucket_index;
-    positive_upper = bucket_interval * (bucket_index + 1);
+    positive_lower = bucket_interval_ * bucket_index;
+    positive_upper = bucket_interval_ * (bucket_index + 1);
     negative_lower = -positive_upper;
     negative_upper = -positive_lower;
 
@@ -290,6 +288,62 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   } while (*min_slack < negative_upper || *max_slack >= positive_upper);
 }
 
+void ChartsWidget::setBucketInterval(const float max_slack,
+                                     const float min_slack)
+{
+  const float exact_interval
+      = (max_slack - min_slack) / default_number_of_buckets_;
+
+  int snap_interval = computeSnapBucketInterval(exact_interval);
+
+  // We compute a new number of buckets based on the snap interval.
+  const int new_number_of_buckets
+      = computeNumberofBuckets(snap_interval, max_slack, min_slack);
+  const int minimum_number_of_buckets = 8;
+
+  if (new_number_of_buckets < minimum_number_of_buckets) {
+    const float minimum_interval
+        = (max_slack - min_slack) / minimum_number_of_buckets;
+
+    float decimal_snap_interval
+        = computeSnapBucketDecimalInterval(minimum_interval);
+
+    setBucketInterval(decimal_snap_interval);
+  } else {
+    setBucketInterval(snap_interval);
+  }
+}
+
+int ChartsWidget::computeNumberofBuckets(const int bucket_interval,
+                                         const float max_slack,
+                                         const float min_slack)
+{
+  int bucket_count = 1;
+  float current_value = min_slack;
+
+  while (current_value < max_slack) {
+    current_value += bucket_interval;
+    ++bucket_count;
+  }
+
+  return bucket_count;
+}
+
+float ChartsWidget::computeSnapBucketDecimalInterval(float minimum_interval)
+{
+  float integer_part = minimum_interval;
+  int power_count = 0;
+
+  while (static_cast<int>(integer_part) == 0) {
+    integer_part *= 10;
+    ++power_count;
+  }
+
+  setDecimalPrecision(power_count);
+
+  return std::ceil(integer_part) / std::pow(10, power_count);
+}
+
 int ChartsWidget::computeSnapBucketInterval(float exact_interval)
 {
   if (exact_interval < 10) {
@@ -306,16 +360,6 @@ int ChartsWidget::computeSnapBucketInterval(float exact_interval)
   return snap_interval;
 }
 
-void ChartsWidget::setNegativeCountOffset(int neg_count_offset)
-{
-  neg_count_offset_ = neg_count_offset;
-}
-
-void ChartsWidget::setBucketInterval(float bucket_interval)
-{
-  bucket_interval_ = bucket_interval;
-}
-
 void ChartsWidget::setXAxisConfig(int all_bars_count)
 {
   const QString start_title = "Slack [";
@@ -329,13 +373,17 @@ void ChartsWidget::setXAxisConfig(int all_bars_count)
 
   axis_x_->setTitleText(axis_x_title);
 
-  const int pos_bars_count = all_bars_count - neg_count_offset_;
+  const QString format = "%." + QString::number(precision_count_) + "f";
 
-  axis_x_->setRange((-neg_count_offset_ * bucket_interval_),
-                    pos_bars_count * bucket_interval_);
+  axis_x_->setLabelFormat(format);
+
+  const int pos_bars_count = all_bars_count - neg_count_offset_;
+  const float min = -(static_cast<float>(neg_count_offset_)) * bucket_interval_;
+  const float max = static_cast<float>(pos_bars_count) * bucket_interval_;
+
+  axis_x_->setRange(min + x_axis_adjust_, max);
   axis_x_->setTickCount(all_bars_count + 1);
   axis_x_->setGridLineVisible(false);
-  axis_x_->setLabelFormat("%d");
   axis_x_->setVisible(true);
 }
 
@@ -397,9 +445,5 @@ int ChartsWidget::computeFirstDigit(int value, int digits)
   return static_cast<int>(value / std::pow(10, digits - 1));
 }
 
-void ChartsWidget::setLogger(utl::Logger* logger)
-{
-  logger_ = logger;
-}
 #endif
 }  // namespace gui
