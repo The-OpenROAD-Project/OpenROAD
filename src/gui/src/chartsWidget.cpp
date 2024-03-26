@@ -129,8 +129,8 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
     QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
     time_unit.append(sta_->units()->timeUnit()->suffix());
 
-    const int lower = (bar_index - neg_count_offset_) * bucket_interval_;
-    const int upper = lower + bucket_interval_;
+    const float lower = (bar_index - neg_count_offset_) * bucket_interval_;
+    const float upper = lower + bucket_interval_;
 
     QString time_info
         = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + time_unit;
