@@ -179,6 +179,10 @@ class IRNetwork
       bool single_via,
       std::vector<std::unique_ptr<Node>>& new_nodes,
       std::vector<std::unique_ptr<Connection>>& new_connections);
+  LayerMap<Polygon90Set> generatePolygonsFromBox(
+      odb::dbBox* box,
+      const odb::dbTransform& transform) const;
+
   TerminalTree getTerminalTree(
       const std::vector<TerminalNode*>& terminals) const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;

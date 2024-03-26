@@ -175,6 +175,45 @@ IRNetwork::Polygon90 IRNetwork::rectToPolygon(const odb::Rect& rect) const
   return poly;
 }
 
+IRNetwork::LayerMap<IRNetwork::Polygon90Set> IRNetwork::generatePolygonsFromBox(
+    odb::dbBox* box,
+    const odb::dbTransform& transform) const
+{
+  using boost::polygon::operators::operator+=;
+
+  LayerMap<Polygon90Set> shapes_by_layer;
+
+  if (box->isVia()) {
+    // handle as via
+    std::vector<odb::dbShape> via_shapes;
+    box->getViaBoxes(via_shapes);
+
+    for (const auto& shape : via_shapes) {
+      auto* layer = shape.getTechLayer();
+      if (layer->getRoutingLevel() == 0) {
+        // via box
+      } else {
+        // enclosure box
+        Polygon90Set& shapes = shapes_by_layer[layer];
+
+        odb::Rect rect = shape.getBox();
+        transform.apply(rect);
+
+        shapes += rectToPolygon(rect);
+      }
+    }
+  } else {
+    // handle as shape
+    auto* layer = box->getTechLayer();
+
+    odb::Rect rect = box->getBox();
+    transform.apply(rect);
+    shapes_by_layer[layer] += rectToPolygon(rect);
+  }
+
+  return shapes_by_layer;
+}
+
 IRNetwork::LayerMap<IRNetwork::Polygon90Set>
 IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
 {
@@ -186,26 +225,9 @@ IRNetwork::generatePolygonsFromSWire(odb::dbSWire* wire)
   LayerMap<Polygon90Set> shapes_by_layer;
 
   for (odb::dbSBox* box : wire->getWires()) {
-    if (box->isVia()) {
-      // handle as via
-      std::vector<odb::dbShape> via_shapes;
-      box->getViaBoxes(via_shapes);
-
-      for (const auto& shape : via_shapes) {
-        auto* layer = shape.getTechLayer();
-        if (layer->getRoutingLevel() == 0) {
-          // via box
-        } else {
-          // enclosure box
-          Polygon90Set& shapes = shapes_by_layer[layer];
-          shapes += rectToPolygon(shape.getBox());
-        }
-      }
-    } else {
-      // handle as shape
-      auto* layer = box->getTechLayer();
-
-      shapes_by_layer[layer] += rectToPolygon(box->getBox());
+    for (const auto& [layer, polygon] :
+         generatePolygonsFromBox(box, odb::dbTransform())) {
+      shapes_by_layer[layer] += polygon;
     }
   }
 
@@ -238,16 +260,18 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         = std::make_unique<ITermNode>(iterm, odb::Point(x, y), base_layer);
 
     bool has_routing_term = false;
-    bool added = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
-        if (logger_->debugCheck(utl::PSM, "single_iterm", 1) && added) {
+        for (const auto& [layer, shapes] :
+             generatePolygonsFromBox(geom, transform)) {
+          shapes_by_layer[layer] += shapes;
+        }
+
+        if (geom->isVia()) {
           continue;
         }
+
         auto* layer = geom->getTechLayer();
-        if (layer->getRoutingLevel() == 0) {
-          continue;
-        }
 
         has_routing_term = true;
 
@@ -255,7 +279,6 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         transform.apply(pin_shape);
 
         shapes_by_layer[layer] += rectToPolygon(pin_shape);
-        added = true;
 
         // create iterm nodes
         auto center = std::make_unique<TerminalNode>(pin_shape, layer);
@@ -289,14 +312,17 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
   for (auto* bterm : net_->getBTerms()) {
     for (auto* bpin : bterm->getBPins()) {
       for (auto* geom : bpin->getBoxes()) {
-        auto* layer = geom->getTechLayer();
-        if (layer->getRoutingLevel() == 0) {
+        for (const auto& [layer, shapes] :
+             generatePolygonsFromBox(geom, odb::dbTransform())) {
+          shapes_by_layer[layer] += shapes;
+        }
+
+        if (geom->isVia()) {
           continue;
         }
 
+        auto* layer = geom->getTechLayer();
         const odb::Rect pin_shape = geom->getBox();
-        shapes_by_layer[layer] += rectToPolygon(pin_shape);
-
         const odb::Point center(pin_shape.xCenter(), pin_shape.yCenter());
 
         // create bpin nodes
