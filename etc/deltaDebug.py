@@ -18,6 +18,7 @@
 # where the script manipulates base.odb between steps to reduce its size.
 ################################
 
+from openroad import Design
 import odb
 import os
 import sys
@@ -123,6 +124,8 @@ class deltaDebugger:
 
         # A variable to hold the base_db
         self.base_db = None
+        self.db_inst = None
+        self.db_nets = None
 
         # Debugging level
         # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
@@ -161,6 +164,7 @@ class deltaDebugger:
                 while self.n <= (2**self.persistence):
                     error_in_range = None
                     j = 0
+
                     while j < self.get_cuts():
                         current_err = self.perform_step(cut_index=j)
                         self.step_count += 1
@@ -203,7 +207,7 @@ class deltaDebugger:
     # and calls the step function, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
-        self.base_db = odb.dbDatabase.create()
+        self.base_db = Design.createDetachedDb()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         # Cut the block with the given step index.
@@ -218,6 +222,9 @@ class deltaDebugger:
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.base_def_file)
+
+        self.db_nets = self.base_db.getChip().getBlock().getNets()
+        self.db_inst = self.base_db.getChip().getBlock().getInsts()
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
@@ -322,10 +329,10 @@ class deltaDebugger:
             iterm.getInst().setDoNotTouch(False)
 
     def get_insts(self):
-        return self.base_db.getChip().getBlock().getInsts()
+        return self.db_inst
 
     def get_nets(self):
-        return self.base_db.getChip().getBlock().getNets()
+        return self.db_nets
 
     def get_elms(self):
         if self.cut_level == cutLevel.Insts:
