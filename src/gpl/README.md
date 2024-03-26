@@ -116,7 +116,7 @@ global_placement
 
 ### Debug Mode
 
-The `gpl::global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
+The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
 
 ```tcl
 global_placement_debug
@@ -137,7 +137,7 @@ global_placement_debug
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
 
-Example: `gpl::global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
+Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
 
 ### Useful developer functions
