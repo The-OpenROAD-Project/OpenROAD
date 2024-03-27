@@ -113,8 +113,7 @@ private:
                      LibertyCell *buffer_cell,
                      double setup_margin,
                      double hold_margin,
-                     bool allow_setup_violations,
-                     int max_buffer_count);
+                     bool allow_setup_violations);
   void makeHoldDelay(Vertex *drvr,
                      PinSeq &load_pins,
                      bool loads_have_out_port,
