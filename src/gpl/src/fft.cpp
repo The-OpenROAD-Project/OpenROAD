@@ -33,6 +33,8 @@
 
 #include "fft.h"
 
+#include <pocketfft_hdronly.h>
+
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
@@ -49,13 +51,15 @@ FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
       binSizeY_(binSizeY)
 {
   binDensity_ = new float*[binCntX_];
+  binDensity_[0] = new float[binCntX_ * binCntY_];
   electroPhi_ = new float*[binCntX_];
+  electroPhi_[0] = new float[binCntX_ * binCntY_];
   electroForceX_ = new float*[binCntX_];
   electroForceY_ = new float*[binCntX_];
 
   for (int i = 0; i < binCntX_; i++) {
-    binDensity_[i] = new float[binCntY_];
-    electroPhi_[i] = new float[binCntY_];
+    binDensity_[i] = &binDensity_[0][i * binCntY_];
+    electroPhi_[i] = &electroPhi_[0][i * binCntY_];
     electroForceX_[i] = new float[binCntY_];
     electroForceY_[i] = new float[binCntY_];
 
@@ -92,11 +96,10 @@ FFT::~FFT()
 {
   using std::vector;
   for (int i = 0; i < binCntX_; i++) {
-    delete[] binDensity_[i];
-    delete[] electroPhi_[i];
     delete[] electroForceX_[i];
     delete[] electroForceY_[i];
   }
+  delete[] binDensity_[0];
   delete[] binDensity_;
   delete[] electroPhi_;
   delete[] electroForceX_;
@@ -128,13 +131,22 @@ float FFT::getElectroPhi(int x, int y) const
 
 void FFT::doFFT()
 {
-  ddct2d(binCntX_,
-         binCntY_,
-         -1,
-         binDensity_,
-         nullptr,
-         (int*) &workArea_[0],
-         (float*) &csTable_[0]);
+  const ptrdiff_t stride_x = sizeof(float) * binCntY_;
+  const ptrdiff_t stride_y = sizeof(float);
+
+  const pocketfft::shape_t shape = {(size_t) binCntX_, (size_t) binCntY_};
+  const pocketfft::shape_t axes = {0, 1};
+  const pocketfft::stride_t stride = {stride_x, stride_y};
+
+  pocketfft::dct<float>(shape,
+                        stride,
+                        stride,
+                        axes,
+                        2,
+                        binDensity_[0],
+                        binDensity_[0],
+                        0.25f,
+                        false);
 
   for (int i = 0; i < binCntX_; i++) {
     binDensity_[i][0] *= 0.5;
@@ -185,14 +197,26 @@ void FFT::doFFT()
       electroForceY_[i][j] = electroY;
     }
   }
+
   // Inverse DCT
-  ddct2d(binCntX_,
-         binCntY_,
-         1,
-         electroPhi_,
-         nullptr,
-         (int*) &workArea_[0],
-         (float*) &csTable_[0]);
+  for (int i = 0; i < binCntX_; i++) {
+    electroPhi_[i][0] *= 2.0f;
+  }
+
+  for (int i = 0; i < binCntY_; i++) {
+    electroPhi_[0][i] *= 2.0f;
+  }
+
+  pocketfft::dct<float>(shape,
+                        stride,
+                        stride,
+                        axes,
+                        3,
+                        electroPhi_[0],
+                        electroPhi_[0],
+                        0.25f,
+                        false);
+
   ddsct2d(binCntX_,
           binCntY_,
           1,
