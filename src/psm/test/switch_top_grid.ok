@@ -8,6 +8,7 @@
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.07e+00 V
@@ -19,6 +20,7 @@ Percentage drop  : 2.28 %
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0071] Using all nodes on metal7 as sources.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.09e+00 V
@@ -30,6 +32,7 @@ Percentage drop  : 0.64 %
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0072] Using strap pattern on metal8 with pitch 8.0000um and offset 4.0000um.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.09e+00 V

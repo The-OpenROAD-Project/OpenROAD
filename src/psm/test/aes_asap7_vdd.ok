@@ -18,6 +18,7 @@
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 7.00e-01 V
 Worstcase voltage: 7.00e-01 V

@@ -7,6 +7,7 @@
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_aes_vdd.loc.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.06e+00 V

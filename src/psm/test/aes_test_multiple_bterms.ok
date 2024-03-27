@@ -6,6 +6,7 @@
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
 [INFO PSM-0040] All shapes on net VDD are connected.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.10e+00 V
@@ -16,6 +17,7 @@ Percentage drop  : 0.23 %
 ######################################
 [INFO PSM-0040] All shapes on net VSS are connected.
 ########## IR report #################
+Net              : VSS
 Corner           : default
 Supply voltage   : 0.00e+00 V
 Worstcase voltage: 4.25e-03 V

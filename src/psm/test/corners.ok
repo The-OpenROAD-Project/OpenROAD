@@ -7,6 +7,7 @@
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 ########## IR report #################
+Net              : VDD
 Corner           : min
 Supply voltage   : 9.50e-01 V
 Worstcase voltage: 9.12e-01 V
@@ -18,6 +19,7 @@ Percentage drop  : 4.02 %
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 ########## IR report #################
+Net              : VDD
 Corner           : max
 Supply voltage   : 9.50e-01 V
 Worstcase voltage: 9.30e-01 V

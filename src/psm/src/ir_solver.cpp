@@ -1216,6 +1216,7 @@ void IRSolver::report(sta::Corner* corner) const
   const auto results = getSolution(corner);
 
   logger_->report("########## IR report #################");
+  logger_->report("Net              : {}", net_->getName());
   logger_->report("Corner           : {}", corner->name());
   logger_->report("Supply voltage   : {:3.2e} V", results.net_voltage);
   logger_->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
@@ -1238,6 +1239,7 @@ void IRSolver::reportEM(sta::Corner* corner) const
   const auto results = getEMSolution(corner);
 
   logger_->report("########## EM analysis ###############");
+  logger_->report("Net                : {}", net_->getName());
   logger_->report("Corner             : {}", corner->name());
   logger_->report("Maximum current    : {:3.2e} A", results.max_current);
   logger_->report("Average current    : {:3.2e} A", results.avg_current);

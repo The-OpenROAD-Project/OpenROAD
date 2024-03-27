@@ -7,6 +7,7 @@
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 ########## IR report #################
+Net              : VDD
 Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.10e+00 V
@@ -16,6 +17,7 @@ Worstcase IR drop: 4.55e-04 V
 Percentage drop  : 0.04 %
 ######################################
 ########## EM analysis ###############
+Net                : VDD
 Corner             : default
 Maximum current    : 7.39e-05 A
 Average current    : 1.09e-06 A

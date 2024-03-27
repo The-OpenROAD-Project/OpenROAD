@@ -12,6 +12,7 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sk
 [INFO ODB-0133]     Created 13655 nets and 49143 connections.
 [INFO PSM-0040] All shapes on net vdd are connected.
 ########## IR report #################
+Net              : vdd
 Corner           : default
 Supply voltage   : 1.80e+00 V
 Worstcase voltage: 1.80e+00 V

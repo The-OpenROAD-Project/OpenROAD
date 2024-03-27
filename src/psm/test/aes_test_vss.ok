@@ -7,6 +7,7 @@
 [INFO PSM-0040] All shapes on net VSS are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_aes_vss.loc.
 ########## IR report #################
+Net              : VSS
 Corner           : default
 Supply voltage   : 0.00e+00 V
 Worstcase voltage: 7.26e-02 V
