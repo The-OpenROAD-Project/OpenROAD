@@ -12,9 +12,11 @@ entries:
   - file: contrib/GitGuide
     title: Git Quickstart
 
-- file: main/src/README
+- file: main/README2
   title: OpenROAD User Guide
   entries:
+  - file: main/src/README
+    title: OpenROAD APIs
   - file: main/src/odb/README
     title: Database
     entries:

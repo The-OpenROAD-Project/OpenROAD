@@ -33,7 +33,8 @@ extensions = [
     'sphinx_external_toc',
     'sphinx_copybutton',
     'myst_parser',
-    'sphinxcontrib.mermaid'
+    'sphinxcontrib.mermaid',
+    'sphinx_tabs.tabs'
 ]
 
 myst_enable_extensions = [
@@ -159,9 +160,16 @@ def setup(app):
 
     if not os.path.exists('./main'):
         os.symlink('..', './main')
+
+    # also symlink readme
+    import shutil
+    if not os.path.exists('./main/README2.md'):
+        shutil.copy('main/README.md', 'main/README2.md')
+
     # these prefix swaps will be reverted and is needed for sphinx compilation.
-    swap_prefix('../README.md', '(docs/', '(../')
-    swap_prefix('../README.md', '```mermaid', '```{mermaid}\n:align: center\n')
+    for filename in ["../README.md", "../README2.md"]:
+        swap_prefix(filename, '(docs/', '(../')
+        swap_prefix(filename, '```mermaid', '```{mermaid}\n:align: center\n')
 
     # for populating OR Messages page.
     command = "python getMessages.py"
