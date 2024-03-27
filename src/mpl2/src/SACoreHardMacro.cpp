@@ -43,8 +43,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(
-    float outline_width,
-    float outline_height,  // boundary constraints
+    const Rect& outline,
     const std::vector<HardMacro>& macros,
     // weight for different penalty
     float area_weight,
@@ -65,8 +64,7 @@ SACoreHardMacro::SACoreHardMacro(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : SimulatedAnnealingCore<HardMacro>(outline_width,
-                                        outline_height,
+    : SimulatedAnnealingCore<HardMacro>(outline,
                                         macros,
                                         area_weight,
                                         outline_weight,
@@ -89,7 +87,7 @@ SACoreHardMacro::SACoreHardMacro(
 
 float SACoreHardMacro::getAreaPenalty() const
 {
-  const float outline_area = outline_width_ * outline_height_;
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
   return (width_ * height_) / outline_area;
 }
 
@@ -308,14 +306,14 @@ void SACoreHardMacro::printResults()
              2,
              "width = {}, outline_width = {}",
              width_,
-             outline_width_);
+             outline_.getWidth());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
              2,
              "height = {}, outline_height = {}",
              height_,
-             outline_height_);
+             outline_.getHeight());
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
