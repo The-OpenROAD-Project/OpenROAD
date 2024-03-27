@@ -213,13 +213,17 @@ class HierRTLMP
                                     std::vector<Cluster*>& macro_clusters);
   void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
                             std::vector<int>& size_class);
+  void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
+                                 std::vector<int>& interconn_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
                                 const std::vector<int>& size_class,
                                 const std::vector<int>& signature_class,
+                                std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
+  void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
   void addStdCellClusterToSubTree(Cluster* parent,
                                   Cluster* mixed_leaf,
                                   std::vector<int>& virtual_conn_clusters);
@@ -231,6 +235,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
   void setPlacementBlockages();
 
@@ -264,6 +269,9 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void hardMacroClusterMacroPlacement(Cluster* cluster);
+  void setArrayTilingSequencePair(Cluster* cluster,
+                                  int macros_to_place,
+                                  SequencePair& initial_seq_pair);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);

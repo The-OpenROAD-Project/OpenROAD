@@ -102,6 +102,10 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 template <class T>
 void SimulatedAnnealingCore<T>::initSequencePair()
 {
+  if (has_initial_sequence_pair_) {
+    return;
+  }
+
   const int sequence_pair_size
       = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
 
@@ -134,6 +138,21 @@ template <class T>
 void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 {
   guides_ = guides;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::setInitialSequencePair(
+    const SequencePair& sequence_pair)
+{
+  if (sequence_pair.pos_sequence.empty()
+      || sequence_pair.neg_sequence.empty()) {
+    return;
+  }
+
+  pos_seq_ = sequence_pair.pos_sequence;
+  neg_seq_ = sequence_pair.neg_sequence;
+
+  has_initial_sequence_pair_ = true;
 }
 
 template <class T>
