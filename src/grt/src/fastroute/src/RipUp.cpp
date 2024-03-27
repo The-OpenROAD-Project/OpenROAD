@@ -357,7 +357,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   const int n2a = treeedge->n2a;
 
   int bl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : BIG_INT;
-  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 0;
+  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 1;
   int hid = BIG_INT;
   int bid = BIG_INT;
 
@@ -395,7 +395,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   treenodes[n1a].hID = hid;
 
   bl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : BIG_INT;
-  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 0;
+  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 1;
   hid = bid = BIG_INT;
 
   for (int i = 0; i < treenodes[n2a].conCNT; i++) {
@@ -439,12 +439,12 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
-        v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
+        v_edges_3D_[gridsL[i] - 1][ymin][gridsX[i]].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
-        h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
+        h_edges_3D_[gridsL[i] - 1][gridsY[i]][xmin].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else {
         logger_->error(
@@ -481,13 +481,13 @@ void FastRouteCore::releaseNetResources(const int netID)
         else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           edge = &v_edges_[ymin][gridsX[i]];
-          edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
+          edge_3D = &v_edges_3D_[gridsL[i] - 1][ymin][gridsX[i]];
           edge->usage -= edgeCost;
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           edge = &h_edges_[gridsY[i]][xmin];
-          edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
+          edge_3D = &h_edges_3D_[gridsL[i] - 1][gridsY[i]][xmin];
           edge->usage -= edgeCost;
           edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }

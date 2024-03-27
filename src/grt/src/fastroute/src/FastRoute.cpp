@@ -239,7 +239,7 @@ void FastRouteCore::setTileSize(int size)
 void FastRouteCore::addLayerDirection(int layer_idx,
                                       const odb::dbTechLayerDir& direction)
 {
-  layer_directions_[layer_idx] = direction;
+  layer_directions_[layer_idx - 1] = direction;
 }
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
@@ -612,9 +612,9 @@ int FastRouteCore::getEdgeCapacity(FrNet* net,
   // get 2D edge capacity respecting layer restrictions
   for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
     if (direction == EdgeDirection::Horizontal) {
-      cap += h_edges_3D_[l][y1][x1].cap;
+      cap += h_edges_3D_[l - 1][y1][x1].cap;
     } else {
-      cap += v_edges_3D_[l][y1][x1].cap;
+      cap += v_edges_3D_[l - 1][y1][x1].cap;
     }
   }
 
@@ -690,7 +690,7 @@ NetRouteMap FastRouteCore::getRoutes()
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
           GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+              = GSegment(lastX, lastY, lastL, xreal, yreal, gridsL[i]);
 
           lastX = xreal;
           lastY = yreal;
@@ -749,7 +749,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
         // defines the layer used for horizontal edges are still 2D
         int layer_v = 0;
 
-        if (layer_directions_[nets_[netID]->getMinLayer()]
+        if (layer_directions_[nets_[netID]->getMinLayer() - 1]
             == odb::dbTechLayerDir::VERTICAL) {
           layer_h = nets_[netID]->getMinLayer() + 1;
           layer_v = nets_[netID]->getMinLayer();
@@ -767,29 +767,25 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
           if (lastX == xreal) {
             // if change direction add a via to change the layer
             if (lastL == layer_h) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_v);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_v;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           } else {
             // if change direction add a via to change the layer
             if (lastL == layer_v) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_h);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_h;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           }
           lastX = xreal;
           lastY = yreal;
