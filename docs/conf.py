@@ -58,8 +58,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = ['.md']
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -140,12 +139,6 @@ html_theme_options = {
    ],
 }
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
-
-
 def swap_prefix(file, old, new):
     with open(file, 'r') as f:
         lines = f.read()
@@ -155,8 +148,6 @@ def swap_prefix(file, old, new):
 
 
 def setup(app):
-    import os
-
     if not os.path.exists('./main'):
         os.symlink('..', './main')
     # these prefix swaps will be reverted and is needed for sphinx compilation.
@@ -165,4 +156,9 @@ def setup(app):
 
     # for populating OR Messages page.
     command = "python getMessages.py"
+    _ = os.popen(command).read()
+
+    if not os.path.exists('../_readthedocs/html/doxygen_output'): 
+        os.makedirs('../_readthedocs/html/doxygen_output', exist_ok = True)
+    command = "cd .. ; doxygen"
     _ = os.popen(command).read()
