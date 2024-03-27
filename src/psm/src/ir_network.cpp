@@ -278,8 +278,6 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         odb::Rect pin_shape = geom->getBox();
         transform.apply(pin_shape);
 
-        shapes_by_layer[layer] += rectToPolygon(pin_shape);
-
         // create iterm nodes
         auto center = std::make_unique<TerminalNode>(pin_shape, layer);
         terminals.push_back(center.get());
@@ -353,19 +351,16 @@ void IRNetwork::processPolygonToRectangles(
   using Rectangle = boost::polygon::rectangle_data<int>;
 
   auto get_layer_orientation
-      = [](odb::dbTechLayer* layer) -> boost::polygon::orientation_2d {
+      = [](odb::dbTechLayer* layer) -> boost::polygon::orientation_2d_enum {
     switch (layer->getDirection()) {
       case odb::dbTechLayerDir::NONE:
       case odb::dbTechLayerDir::HORIZONTAL:
-        return boost::polygon::orientation_2d(
-            boost::polygon::orientation_2d_enum::VERTICAL);
+        return boost::polygon::orientation_2d_enum::VERTICAL;
         break;
       case odb::dbTechLayerDir::VERTICAL:
-        return boost::polygon::orientation_2d(
-            boost::polygon::orientation_2d_enum::HORIZONTAL);
+        return boost::polygon::orientation_2d_enum::HORIZONTAL;
     }
-    return boost::polygon::orientation_2d(
-        boost::polygon::orientation_2d_enum::VERTICAL);
+    return boost::polygon::orientation_2d_enum::VERTICAL;
   };
 
   Polygon90Set shape_poly_set;

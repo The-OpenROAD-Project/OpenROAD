@@ -48,9 +48,7 @@ void Connection::ensureNodeOrder()
     std::swap(node0_, node1_);
 
     return;
-  }
-
-  if (node1_ == nullptr) {
+  } else if (node1_ == nullptr) {
     std::swap(node0_, node1_);
 
     return;

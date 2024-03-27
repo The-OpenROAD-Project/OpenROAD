@@ -47,6 +47,8 @@ class Logger;
 class Timer
 {
  public:
+  virtual ~Timer() = default;
+
   double elapsed() const;  // in seconds
   void reset();
 

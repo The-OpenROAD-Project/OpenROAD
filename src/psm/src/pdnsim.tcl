@@ -63,14 +63,14 @@ sta::define_cmd_args "analyze_power_grid" {
   [-error_file error_file]
   [-voltage_file voltage_file]
   [-enable_em]
-  [-em_file em_file]
+  [-em_outfile em_file]
   [-vsrc voltage_source_file]
   [-source_type FULL|BUMPS|STRAPS]
 }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-net -corner -voltage_file -error_file -em_file -vsrc \
+    keys {-net -corner -voltage_file -error_file -em_outfile -vsrc \
       -source_type} \
     flags {-enable_em}
   if { ![info exists keys(-net)] } {
@@ -99,8 +99,8 @@ proc analyze_power_grid { args } {
 
   set enable_em [info exists flags(-enable_em)]
   set em_file ""
-  if { [info exists keys(-em_file)]} {
-    set em_file $keys(-em_file)
+  if { [info exists keys(-em_outfile)]} {
+    set em_file $keys(-em_outfile)
     if { !$enable_em } {
       utl::error PSM 55 "EM file cannot be specified without enabling em analysis."
     }

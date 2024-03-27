@@ -110,7 +110,7 @@ std::string Node::getName() const
 std::string Node::getTypeName() const
 {
   switch (getType()) {
-    case NodeType::None:
+    case NodeType::Node:
       return "Node";
     case NodeType::Source:
       return "Source Node";

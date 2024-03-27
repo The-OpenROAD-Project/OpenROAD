@@ -59,7 +59,7 @@ class Node
  public:
   enum class NodeType
   {
-    None,
+    Node,
     Source,
     ITerm,
     BPin
@@ -91,12 +91,13 @@ class Node
   std::string getTypeName() const;
 
  protected:
-  virtual NodeType getType() const { return NodeType::None; }
-  double getDBUs() const;
+  virtual NodeType getType() const { return NodeType::Node; }
 
   virtual int getTypeCompareInfo() const { return 0; };
 
  private:
+  double getDBUs() const;
+
   odb::Point pt_;
   odb::dbTechLayer* layer_;
 };
