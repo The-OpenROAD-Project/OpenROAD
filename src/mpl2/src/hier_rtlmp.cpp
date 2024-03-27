@@ -3061,7 +3061,7 @@ void HierRTLMP::setIOClustersBlockages()
                                   root.xMax(),
                                   io_spans[R].second);
   }
-  
+
   if (io_spans[B].second > io_spans[B].first) {
     macro_blockages_.emplace_back(io_spans[B].first,
                                   root.yMin(),
