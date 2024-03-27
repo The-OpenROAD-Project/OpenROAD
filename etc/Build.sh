@@ -43,6 +43,7 @@ OPTIONS:
   -coverage                                     Enable cmake coverage options
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
+  -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
                                                   compile. Default: \`nproc\` on linux
                                                   or \`sysctl -n hw.logicalcpu\` on macOS
@@ -71,6 +72,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -no-gui)
             cmakeOptions+=" -DBUILD_GUI=OFF"
+            ;;
+        -build-man)
+            cmakeOptions+=" -DBUILD_MAN=ON"
             ;;
         -compiler=*)
             compiler="${1#*=}"

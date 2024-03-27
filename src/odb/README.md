@@ -1,9 +1,9 @@
 # OpenDB
 
-OpenDB is a design database to support tools for physical chip design. It
-was originally developed by Athena Design Systems. Nefelus, Inc. acquired
-the rights to the code and open-sourced it with BSD-3 license in 2019 to support the DARPA
-OpenROAD project.
+The OpenDB (`odb`) module in OpenROAD is a design database to support tools for physical
+chip design. It was originally developed by Athena Design Systems.
+Nefelus, Inc. acquired the rights to the code and open-sourced it with BSD-3 license
+in 2019 to support the DARPA OpenROAD project.
 
 The structure of OpenDB is based on the text file formats LEF
 (library) and DEF (design) formats version 5.6.  OpenDB supports a
@@ -14,6 +14,12 @@ OpenDB is written in C++ 98 with standard library style iterators.
 The classes are designed to be fast enough to base an application on without
 having to copy them into application-specific structures.
 
+## Commands
+
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
 
 ## Directory structure
 
@@ -32,24 +38,7 @@ We are still working on documenting the APIs.  We have over 1,800 objects
 and functions that we are still documenting (for both TCL and Python).
 **Contributions are very welcome in this effort**. Find starting points below.
 
-### TCL
-
-After building successfully, run OpenDB Tcl shell using
-`../../build/src/odb/src/swig/tcl/odbtcl`. An example usage:
-
-```
-set db [dbDatabase_create]
-set lef_parser [new_lefin $db true]
-set tech [lefin_createTech $lef_parser ./src/odb/test/data/gscl45nm.lef]
-```
-
-You can find examples on using the API from Tcl under `test/tcl/` directory.
-
-The full set of the Tcl commands exposed can be found under
-`./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
-
-
-### Python
+## Python
 
 After building successfully, run `openroad -python` to enable the Python
 interpreter. You can find examples on using the API from Python under
@@ -64,7 +53,7 @@ print(', '.join(dir(openroad)))
 print(', '.join(dir(odb)))
 ```
 
-### C++
+## C++
 
 All public database classes are defined in `db.h`. These class definitions
 provide all functions for examining and modifying the database objects. The
@@ -89,15 +78,327 @@ database to have exactly the same layout across save/restores.
 
 The database distance units are **nanometers** and use the type `uint`.
 
+### Create Physical Cluster
+
+Description TBC.
+
+```tcl
+create_physical_cluster cluster_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `cluster_name` | Name of cluster. |
+
+
+### Create Child Physical Clusters
+
+Description TBC.
+
+```tcl
+create_child_physical_clusters 
+    [-top_module]
+or 
+create_child_physical_clusters 
+    [-modinst path] 
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `top_module` | TBC. |
+| `-modinst` | TBC. |
+
+### Set NDR Layer Rule
+
+Description TBC.
+
+```tcl
+set_ndr_layer_rule  
+    tech
+    ndr
+    layerName
+    input
+    isSpacing
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `tech` | TBC. |
+| `ndr` | TBC. |
+| `values` | TBC. |
+| `isSpacing` | TBC. |
+
+### Set NDR Rules
+
+Description TBC.
+
+```tcl
+set_ndr_rules
+    tech
+    ndr
+    values
+    isSpacing
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `tech` | TBC. |
+| `ndr` | TBC. |
+| `layerName` | TBC. |
+| `input` | TBC. |
+
+### Create NDR
+
+Description TBC.
+
+```tcl
+create_ndr
+    -name name
+    [-spacing val]
+    [-width val]
+    [-via val]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-name` | TBC. |
+| `-spacing` | TBC. |
+| `-width` | TBC. |
+| `-via` | TBC. |
+
+### Create Voltage Domain
+
+Description TBC.
+
+```tcl
+create_voltage_domain
+    domain_name
+    -area {llx lly urx ury}
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-domain_name` | TBC. |
+| `-area` | TBC. |
+
+### Delete Physical Cluster
+
+Description TBC.
+
+```tcl
+delete_physical_cluster cluster_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `cluster_name` | TBC. |
+
+### Delete Voltage Domain
+
+Description TBC.
+
+```tcl
+delete_voltage_domain domain_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `domain_name` | TBC. |
+
+### Assign Power Net
+
+Description TBC.
+
+```tcl
+assign_power_net 
+    -domain domain_name
+    -net snet_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-domain_name` | TBC. |
+| `-net` | TBC. |
+
+### Assign Ground Net
+
+Description TBC.
+
+```tcl
+assign_ground_net
+    -domain domain_name
+    -net snet_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-domain_name` | TBC. |
+| `-net` | TBC. |
+
+### Add to Physical Cluster
+
+Description TBC.
+
+```tcl
+add_to_physical_cluster
+    [-modinst path]
+    cluster_name
+or 
+add_to_physical_cluster
+    [-inst inst_name]
+    cluster_name
+or
+add_to_physical_cluster
+    [-physical_cluster cluster_name]
+    cluster_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-modinst` | TBC. |
+| `-inst` | TBC. |
+| `-physical_cluster` | TBC. |
+| `cluster_name` | TBC. |
+
+### Remove From Physical Cluster
+
+Description TBC.
+
+```tcl
+remove_from_physical_cluster
+    [-parent_module module_name]
+    [-modinst modinst_name]
+    cluster_name
+or
+remove_from_physical_cluster
+    [-inst inst_name]
+    cluster_name
+or
+remove_from_physical_cluster
+    [-physical_cluster cluster_name]
+    cluster_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-parent_module` | TBC. |
+| `-modinst` | TBC. |
+| `-inst` | TBC. |
+| `-physical_cluster` | TBC. |
+| `-cluster_name` | TBC. |
+
+### Report Physical Clusters
+
+Description TBC.
+
+```tcl
+report_physical_clusters
+```
+
+### Report Voltage Domains
+
+Description TBC.
+
+```tcl
+report_voltage_domains
+```
+
+### Report Group
+
+Description TBC.
+
+```tcl
+report_group group
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `group` | TBC. |
+
+### Write Guides
+
+This command writes global routing guides, which can be used as input 
+for global routing.
+
+Example: `write_guides route.guide`.
+
+```tcl
+write_guides file_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `file_name` | Guide file name. |
+
+### Write Macro Placement
+
+This command writes macro placement.
+
+```tcl
+write_macro_placement file_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `file_name` | Macro placement file name. |
+
+
+
+
 ## Example scripts
+
+After building successfully, run OpenDB Tcl shell using
+`../../build/src/odb/src/swig/tcl/odbtcl`. An example usage:
+
+```
+set db [dbDatabase_create]
+set lef_parser [new_lefin $db true]
+set tech [lefin_createTech $lef_parser ./src/odb/test/data/gscl45nm.lef]
+```
+
+You can find examples on using the API from Tcl under `test/tcl/` directory.
+
+The full set of the Tcl commands exposed can be found under
+`./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
 
 ## Regression tests
 
-There are a set of regression tests in /test.
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-```
-./test/regression-tcl.sh
-./test/regression-py.sh
+Simply run the following script: 
+
+```shell
+./test/regression
 ```
 
 ## Database Internals
@@ -160,7 +461,7 @@ DRC on the whole chip).
 ## FAQs
 
 Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+fastroute+in%3Atitle)
+[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+odb+in%3Atitle)
 about this tool.
 
 

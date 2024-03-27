@@ -40,6 +40,7 @@ find_package(Boost 1.78 REQUIRED)
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
+         SCRIPTS   src/Utl.tcl
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
 )
 
@@ -109,6 +110,12 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
+  PRIVATE
+    OpenSTA
+)
+
+messages(
+  TARGET utl
 )
 
 ############################################################

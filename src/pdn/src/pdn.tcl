@@ -33,7 +33,8 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-reset] \
                                [-ripup] \
                                [-report_only] \
-                               [-failed_via_report file]
+                               [-failed_via_report file] \
+                               [-verbose]
 }
 
 proc pdngen { args } {
@@ -89,7 +90,7 @@ sta::define_cmd_args "set_voltage_domain" {-name domain_name \
 
 proc set_voltage_domain {args} {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power -switched_power}
+    keys {-name -region -power -ground -secondary_power -switched_power} flags {}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -182,7 +183,8 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-obstructions <list_of_layers>] \
                                         [-power_switch_cell <name>] \
                                         [-power_control <signal_name>] \
-                                        [-power_control_network (STAR|DAISY)]}
+                                        [-power_control_network (STAR|DAISY)]
+};#checker off
 
 proc define_pdn_grid {args} {
   set is_macro 0
@@ -212,7 +214,7 @@ sta::define_cmd_args "define_power_switch_cell" {-name <name> \
 
 proc define_power_switch_cell {args} {
   sta::parse_key_args "define_power_switch_cell" args \
-    keys {-name -control -acknowledge -power_switchable -power -ground}
+    keys {-name -control -acknowledge -power_switchable -power -ground} flags {}
 
   sta::check_argc_eq0 "define_power_switch_cell" $args
 
@@ -273,7 +275,7 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-pitch pitch_value] \
                                        [-spacing spacing_value] \
                                        [-offset offset_value] \
-                                       [-starts_width (POWER|GROUND)]
+                                       [-starts_with (POWER|GROUND)]
                                        [-extend_to_boundary] \
                                        [-snap_to_grid] \
                                        [-number_of_straps count] \
@@ -394,6 +396,8 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      -spacings (spacing_value|list_of_spacing_values) \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
+                                     [-ground_pads list_of_gnd_pads] \
+                                     [-power_pads list_of_pwr_pads] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads] \
@@ -854,7 +858,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network} \
-    flags {}
+    flags {};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -929,7 +933,7 @@ proc define_pdn_grid { args } {
 proc define_pdn_grid_existing { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -obstructions} \
-    flags {-existing}
+    flags {-existing};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -951,7 +955,7 @@ proc define_pdn_grid_macro { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with \
       -obstructions} \
-    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
+    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"

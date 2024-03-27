@@ -16,6 +16,9 @@ command. Use `set_wire_rc` command to set the clock routing layer.
 
 ### Configure CTS Characterization
 
+Configure key CTS characterization parameters, for example maximum slew and capacitance,
+as well as the number of steps they will be divided for characterization.
+
 ```tcl
 configure_cts_characterization 
     [-max_slew max_slew]
@@ -35,22 +38,29 @@ configure_cts_characterization
 
 ### Clock Tree Synthesis
 
+Perform clock tree synthesis.
+
 ```tcl
 clock_tree_synthesis 
-    -buf_list <list_of_buffers>
-    [-root_buf root_buf]
     [-wire_unit wire_unit]
+    [-buf_list <list_of_buffers>]
+    [-root_buf root_buf]
     [-clk_nets <list_of_clk_nets>]
+    [-tree_buf <buf>]
     [-distance_between_buffers]
     [-branching_point_buffers_distance]
     [-clustering_exponent]
     [-clustering_unbalance_ratio]
-    [-sink_clustering_enable]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-sink_clustering_enable]
     [-balance_levels]
+    [-sink_clustering_levels levels]
     [-num_static_layers]
     [-sink_clustering_buffer]
+    [-obstruction_aware]
+    [-apply_ndr]
+    [-insertion_delay]
     [-use_dummy_load]
     [-insertion_delay]
     [-sink_buffer_max_cap_derate derate_value]
@@ -85,9 +95,7 @@ clock_tree_synthesis
 
 ### Report CTS
 
-Another command available from `cts` is `report_cts`. It is used to
-extract metrics after a successful `clock_tree_synthesis` run. These are:
- 
+This command is used to extract the following metrics after a successful `clock_tree_synthesis` run. 
 - Number of Clock Roots
 - Number of Buffers Inserted
 - Number of Clock Subnets
@@ -104,7 +112,7 @@ report_cts
 | ----- | ----- |
 | `-out_file` | The file to save `cts` reports. If this parameter is omitted, the report is streamed to `stdout` and not saved. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonCTS.cpp) or the [swig file](./src/TritonCTS.i).
 
@@ -114,7 +122,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 ## Example scripts
 
-```tcl
+```
 clock_tree_synthesis -root_buf "BUF_X4" \
                      -buf_list "BUF_X4" \
                      -wire_unit 20

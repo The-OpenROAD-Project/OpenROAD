@@ -1,0 +1,34 @@
+name: Docs Tester
+
+on:
+  push:
+
+jobs:
+  docs-test-job:
+    name: 'Test docs for Tcl syntax and README'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install required package
+      run: |
+        sudo apt-get update && sudo apt-get install -y pandoc
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'  
+
+    - name: Preprocess files
+      run: |
+        cd docs && make preprocess -j${nproc}
+    - name: Run Tcl syntax parser
+      run: |
+        python3 docs/src/test/man_tcl_params.py
+    - name: Run readme parser
+      run : |
+        cd docs && make clean
+        python3 src/test/readme_check.py

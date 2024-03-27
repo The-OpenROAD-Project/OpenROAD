@@ -53,6 +53,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-incnrcap_nwin_master incnrcap_nwin_master]\
                                 [-incnrcap_nwout_master incnrcap_nwout_master]\
                                 [-tbtie_cpp tbtie_cpp]\
+                                [-endcap_cpp endcap_cpp]\
                                 [-no_cell_at_top_bottom]\
 }
 
@@ -228,7 +229,7 @@ sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\
 
 # This will remove the tap cells and endcaps to tapcell can be rerun with new parameters
 proc tapcell_ripup { args } {
-  sta::parse_key_args "tapcell" args \
+  sta::parse_key_args "tapcell_ripup" args \
     keys {-tap_prefix -endcap_prefix} \
     flags {}
 
@@ -357,11 +358,11 @@ sta::define_cmd_args "place_tapcells" {
 
 proc place_tapcells {args } {
 
-  sta::parse_key_args "place_boundary_cells" args \
+  sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
     flags {}
 
-  sta::check_argc_eq0 "place_boundary_cells" $args
+  sta::check_argc_eq0 "place_tapcells" $args
 
   set dist -1
   if { [info exists keys(-distance)] } {
