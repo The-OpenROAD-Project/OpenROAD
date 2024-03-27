@@ -66,7 +66,7 @@ class DebugScopedTimer : public Timer
                    const std::string& group,
                    int level,
                    const std::string& msg);
-  ~DebugScopedTimer();
+  ~DebugScopedTimer() override;
 
  private:
   utl::Logger* logger_;
