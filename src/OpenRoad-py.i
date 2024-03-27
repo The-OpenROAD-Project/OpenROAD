@@ -55,6 +55,15 @@ openroad_version();
 const char *
 openroad_git_describe();
 
+const bool
+openroad_gpu_compiled();
+
+const bool 
+openroad_python_compiled();
+
+const bool
+openroad_gui_compiled();
+
 odb::dbDatabase *
 get_db();
 
