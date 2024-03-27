@@ -137,6 +137,8 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+  using IOSpans = std::map<PinAccess, std::pair<float, float>>;
+
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
   void computeMetricsForModules(float core_area);
@@ -232,6 +234,8 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   void setIOClustersBlockages();
+  IOSpans computeIOSpans();
+  float computeIOBlockagesDepth(const IOSpans& io_spans);
   void setPlacementBlockages();
 
   // Fine Shaping

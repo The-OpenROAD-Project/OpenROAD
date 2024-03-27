@@ -3038,53 +3038,96 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
 }
 
-// Create pin blockage for Bundled IOs
-// Each pin blockage is a macro only blockage
 void HierRTLMP::setIOClustersBlockages()
 {
-  debugPrint(logger_,
-             MPL,
-             "coarse_shaping",
-             1,
-             "Creating the pin blockage for root cluster");
-
   if (!io_pad_map_.empty()) {
     return;
   }
 
-  const float root_lx = root_cluster_->getX();
-  const float root_ly = root_cluster_->getY();
-  const float root_ux = root_cluster_->getX() + root_cluster_->getWidth();
-  const float root_uy = root_cluster_->getY() + root_cluster_->getHeight();
+  IOSpans io_spans = computeIOSpans();
+  const float depth = computeIOBlockagesDepth(io_spans);
 
-  const std::vector<std::pair<float, float>> tilings
-      = root_cluster_->getMacroTilings();
-  const float ar = root_cluster_->getHeight() / root_cluster_->getWidth();
-  float max_height = std::sqrt(tilings[0].first * tilings[0].second * ar);
-  float max_width = max_height / ar;
-  max_width = ((root_ux - root_lx) - max_width);
-  max_height = ((root_uy - root_ly) - max_height);
+  const Rect root(root_cluster_->getX(),
+                  root_cluster_->getY(),
+                  root_cluster_->getX() + root_cluster_->getWidth(),
+                  root_cluster_->getY() + root_cluster_->getHeight());
 
-  float std_cell_area = 0.0;
-  for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->getClusterType() == StdCellCluster) {
-      std_cell_area += cluster->getArea();
-    }
+  // Note that the range can be larger than the respective core dimension.
+  // As SA only sees what is inside its current outline, this is not a problem.
+  if (io_spans[L].second > io_spans[L].first) {
+    macro_blockages_.emplace_back(root.xMin(),
+                                  io_spans[L].first,
+                                  root.xMin() + depth,
+                                  io_spans[L].second);
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Pin access for L : length : {}, depth :  {}",
+               io_spans[L].second - io_spans[L].first,
+               depth);
   }
+  if (io_spans[T].second > io_spans[T].first) {
+    macro_blockages_.emplace_back(io_spans[T].first,
+                                  root.yMax() - depth,
+                                  io_spans[T].second,
+                                  root.yMax());
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Pin access for T : length : {}, depth : {}",
+               io_spans[T].second - io_spans[T].first,
+               depth);
+  }
+  if (io_spans[R].second > io_spans[R].first) {
+    macro_blockages_.emplace_back(root.xMax() - depth,
+                                  io_spans[R].first,
+                                  root.xMax(),
+                                  io_spans[R].second);
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Pin access for R : length : {}, depth : {}",
+               io_spans[R].second - io_spans[R].first,
+               depth);
+  }
+  if (io_spans[B].second > io_spans[B].first) {
+    macro_blockages_.emplace_back(io_spans[B].first,
+                                  root.yMin(),
+                                  io_spans[B].second,
+                                  root.yMin() + depth);
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Pin access for B : length : {}, depth : {}",
+               io_spans[B].second - io_spans[B].first,
+               depth);
+  }
+}
 
-  // Check the range of IO spans. Note that we consider the pins that
-  // are in between boundaries of the core and the die.
-  std::map<PinAccess, std::pair<float, float>> pin_ranges;
-  pin_ranges[L] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
-  pin_ranges[T] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
-  pin_ranges[R] = std::pair<float, float>(floorplan_uy_, floorplan_ly_);
-  pin_ranges[B] = std::pair<float, float>(floorplan_ux_, floorplan_lx_);
+// Determine the range of IOs in each boundary of the die.
+HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
+{
+  IOSpans io_spans;
 
-  int floorplan_lx = micronToDbu(floorplan_lx_, dbu_);
-  int floorplan_ux = micronToDbu(floorplan_ux_, dbu_);
-  int floorplan_uy = micronToDbu(floorplan_uy_, dbu_);
+  odb::Rect die = block_->getDieArea();
+
+  // Initialize spans based on the dimensions of the die area.
+  io_spans[L] = std::pair<float, float>(dbuToMicron(die.yMax(), dbu_),
+                                        dbuToMicron(die.yMin(), dbu_));
+  io_spans[T] = std::pair<float, float>(dbuToMicron(die.xMax(), dbu_),
+                                        dbuToMicron(die.xMin(), dbu_));
+  io_spans[R] = io_spans[L];
+  io_spans[B] = io_spans[T];
 
   for (auto term : block_->getBTerms()) {
+    if (term->getSigType().isSupply()) {
+      continue;
+    }
+
     int lx = std::numeric_limits<int>::max();
     int ly = std::numeric_limits<int>::max();
     int ux = 0;
@@ -3099,41 +3142,38 @@ void HierRTLMP::setIOClustersBlockages()
       }
     }
 
-    if (term->getSigType().isSupply()) {
-      continue;
-    }
-
-    // modify the pin ranges
-    if (lx <= floorplan_lx) {
-      pin_ranges[L].first
-          = std::min(pin_ranges[L].first, dbuToMicron(ly, dbu_));
-      pin_ranges[L].second
-          = std::max(pin_ranges[L].second, dbuToMicron(uy, dbu_));
-    } else if (uy >= floorplan_uy) {
-      pin_ranges[T].first
-          = std::min(pin_ranges[T].first, dbuToMicron(lx, dbu_));
-      pin_ranges[T].second
-          = std::max(pin_ranges[T].second, dbuToMicron(ux, dbu_));
-    } else if (ux >= floorplan_ux) {
-      pin_ranges[R].first
-          = std::min(pin_ranges[R].first, dbuToMicron(ly, dbu_));
-      pin_ranges[R].second
-          = std::max(pin_ranges[R].second, dbuToMicron(uy, dbu_));
+    // Modify ranges based on the position of the IO pins.
+    if (lx <= die.xMin()) {
+      io_spans[L].first = std::min(io_spans[L].first, dbuToMicron(ly, dbu_));
+      io_spans[L].second = std::max(io_spans[L].second, dbuToMicron(uy, dbu_));
+    } else if (uy >= die.yMax()) {
+      io_spans[T].first = std::min(io_spans[T].first, dbuToMicron(lx, dbu_));
+      io_spans[T].second = std::max(io_spans[T].second, dbuToMicron(ux, dbu_));
+    } else if (ux >= die.xMax()) {
+      io_spans[R].first = std::min(io_spans[R].first, dbuToMicron(ly, dbu_));
+      io_spans[R].second = std::max(io_spans[R].second, dbuToMicron(uy, dbu_));
     } else {
-      pin_ranges[B].first
-          = std::min(pin_ranges[B].first, dbuToMicron(lx, dbu_));
-      pin_ranges[B].second
-          = std::max(pin_ranges[B].second, dbuToMicron(ux, dbu_));
+      io_spans[B].first = std::min(io_spans[B].first, dbuToMicron(lx, dbu_));
+      io_spans[B].second = std::max(io_spans[B].second, dbuToMicron(ux, dbu_));
     }
   }
 
-  // calculate the depth based on area
+  return io_spans;
+}
+
+// The depth of IO clusters' blockages is generated based on:
+// 1) How many vertical or horizontal boundaries have signal IO pins.
+// 2) The total length of the io spans in all used boundaries.
+float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
+{
   float sum_length = 0.0;
   int num_hor_access = 0;
   int num_ver_access = 0;
-  for (auto& [pin_access, length] : pin_ranges) {
+
+  for (auto& [pin_access, length] : io_spans) {
     if (length.second > length.first) {
       sum_length += std::abs(length.second - length.first);
+
       if (pin_access == R || pin_access == L) {
         num_hor_access++;
       } else {
@@ -3141,68 +3181,21 @@ void HierRTLMP::setIOClustersBlockages()
       }
     }
   }
-  max_width = num_hor_access > 0 ? max_width / num_hor_access : max_width;
-  max_height = num_ver_access > 0 ? max_height / num_ver_access : max_height;
+
+  float std_cell_area = 0.0;
+  for (auto& cluster : root_cluster_->getChildren()) {
+    if (cluster->getClusterType() == StdCellCluster) {
+      std_cell_area += cluster->getArea();
+    }
+  }
+
   const float macro_dominance_factor
       = macro_with_halo_area_
         / (root_cluster_->getWidth() * root_cluster_->getHeight());
   const float depth = (std_cell_area / sum_length)
                       * std::pow((1 - macro_dominance_factor), 2);
 
-  // Note that the range can be larger than the respective core dimension.
-  // As SA only sees what is inside its current outline, this is not a problem.
-  if (pin_ranges[L].second > pin_ranges[L].first) {
-    macro_blockages_.emplace_back(root_ux,
-                                  pin_ranges[L].first,
-                                  root_ux + std::min(max_width, depth),
-                                  pin_ranges[L].second);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for L : length : {}, depth :  {}",
-               pin_ranges[L].second - pin_ranges[L].first,
-               std::min(max_width, depth));
-  }
-  if (pin_ranges[T].second > pin_ranges[T].first) {
-    macro_blockages_.emplace_back(pin_ranges[T].first,
-                                  root_uy - std::min(max_height, depth),
-                                  pin_ranges[T].second,
-                                  root_uy);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for T : length : {}, depth : {}",
-               pin_ranges[T].second - pin_ranges[T].first,
-               std::min(max_height, depth));
-  }
-  if (pin_ranges[R].second > pin_ranges[R].first) {
-    macro_blockages_.emplace_back(root_ux - std::min(max_width, depth),
-                                  pin_ranges[R].first,
-                                  root_ux,
-                                  pin_ranges[R].second);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for R : length : {}, depth : {}",
-               pin_ranges[R].second - pin_ranges[R].first,
-               std::min(max_width, depth));
-  }
-  if (pin_ranges[B].second > pin_ranges[B].first) {
-    macro_blockages_.emplace_back(pin_ranges[B].first,
-                                  root_ly,
-                                  pin_ranges[B].second,
-                                  root_ly + std::min(max_height, depth));
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for B : length : {}, depth : {}",
-               pin_ranges[B].second - pin_ranges[B].first,
-               std::min(max_height, depth));
-  }
+  return depth;
 }
 
 void HierRTLMP::setPlacementBlockages()
