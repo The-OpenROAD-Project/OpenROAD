@@ -68,7 +68,7 @@ _setup() {
             osBaseImage="debian:bullseye"
             ;;
         "rhel")
-            osBaseImage="redhat/ubi8"
+            osBaseImage="redhat/ubi9"
             ;;
         *)
             echo "Target OS ${os} not supported" >&2
