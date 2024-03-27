@@ -1519,4 +1519,11 @@ void ClockWidget::currentClockChanged(int index)
   }
 }
 
+void ClockWidget::fit()
+{
+  for (const auto& view : views_) {
+    view->fit();
+  }
+}
+
 }  // namespace gui

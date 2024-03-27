@@ -515,6 +515,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate(sta::Corner* corner = nullptr);
+  void fit();
 
  private slots:
   void currentClockChanged(int index);
