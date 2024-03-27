@@ -130,7 +130,8 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(Clock& clockNet, std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNetsToDb(TreeBuilder* builder,
+                          std::set<odb::dbNet*>& clkLeafNets);
   void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
@@ -166,7 +167,8 @@ class TritonCTS
       Clock& clockNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
       odb::dbNet*& firstNet,
-      odb::dbNet*& secondNet);
+      odb::dbNet*& secondNet,
+      std::string& topBufferName);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
@@ -209,10 +211,12 @@ class TritonCTS
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
   void computeAveSinkArrivals(TreeBuilder* builder);
+  void computeSinkArrivalRecur(odb::dbITerm* iterm,
+                               float& sumArrivals,
+                               unsigned& numSinks);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
-                                 int index,
                                  const std::string& clockName,
                                  int locX,
                                  int locY);
@@ -240,6 +244,11 @@ class TritonCTS
   // root buffer and sink bufer candidates
   std::vector<std::string> rootBuffers_;
   std::vector<std::string> sinkBuffers_;
+
+  // register tree root buffer indices
+  unsigned regTreeRootBufIndex_ = 0;
+  // index for delay buffer added for latency adjustment
+  unsigned delayBufIndex_ = 0;
 };
 
 }  // namespace cts
