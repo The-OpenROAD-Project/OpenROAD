@@ -38,6 +38,7 @@
 #include "connection.h"
 #include "node.h"
 #include "odb/dbShape.h"
+#include "odb/geom_boost.h"
 #include "shape.h"
 #include "utl/timer.h"
 
@@ -348,7 +349,6 @@ void IRNetwork::processPolygonToRectangles(
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
   using boost::polygon::operators::operator+=;
-  using Rectangle = boost::polygon::rectangle_data<int>;
 
   auto get_layer_orientation
       = [](odb::dbTechLayer* layer) -> boost::polygon::orientation_2d_enum {
@@ -366,29 +366,22 @@ void IRNetwork::processPolygonToRectangles(
   Polygon90Set shape_poly_set;
   shape_poly_set += polygon;
 
-  std::vector<Rectangle> rect_shapes;
-  shape_poly_set.get_rectangles(rect_shapes, get_layer_orientation(layer));
-
-  std::set<odb::Rect> search_rect_shapes;
-  for (const auto& poly_rect : rect_shapes) {
-    search_rect_shapes.emplace(
-        xl(poly_rect), yl(poly_rect), xh(poly_rect), yh(poly_rect));
-  }
-
+  std::vector<odb::Rect> search_rect_shapes;
+  shape_poly_set.get_rectangles(search_rect_shapes,
+                                get_layer_orientation(layer));
   using EdgeValue = std::pair<Point, Node*>;
   using EdgeTree
       = boost::geometry::index::rtree<EdgeValue,
                                       boost::geometry::index::quadratic<16>>;
 
   EdgeTree poly_edge_nodes;
-  std::set<odb::Rect>::iterator search_start = search_rect_shapes.begin();
+  auto search_start = search_rect_shapes.begin();
   for (const auto& rect : search_rect_shapes) {
     // remove current rect from search
     std::advance(search_start, 1);
 
     std::set<odb::Point> nodes;
-    for (std::set<odb::Rect>::iterator search = search_start;
-         search != search_rect_shapes.end();
+    for (auto search = search_start; search != search_rect_shapes.end();
          search++) {
       if (search->intersects(rect)) {
         const odb::Rect intersect = search->intersect(rect);
