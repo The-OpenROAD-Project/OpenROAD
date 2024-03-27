@@ -3059,52 +3059,27 @@ void HierRTLMP::setIOClustersBlockages()
                                   io_spans[L].first,
                                   root.xMin() + depth,
                                   io_spans[L].second);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for L : length : {}, depth :  {}",
-               io_spans[L].second - io_spans[L].first,
-               depth);
   }
+
   if (io_spans[T].second > io_spans[T].first) {
     macro_blockages_.emplace_back(io_spans[T].first,
                                   root.yMax() - depth,
                                   io_spans[T].second,
                                   root.yMax());
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for T : length : {}, depth : {}",
-               io_spans[T].second - io_spans[T].first,
-               depth);
   }
+
   if (io_spans[R].second > io_spans[R].first) {
     macro_blockages_.emplace_back(root.xMax() - depth,
                                   io_spans[R].first,
                                   root.xMax(),
                                   io_spans[R].second);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for R : length : {}, depth : {}",
-               io_spans[R].second - io_spans[R].first,
-               depth);
   }
+  
   if (io_spans[B].second > io_spans[B].first) {
     macro_blockages_.emplace_back(io_spans[B].first,
                                   root.yMin(),
                                   io_spans[B].second,
                                   root.yMin() + depth);
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Pin access for B : length : {}, depth : {}",
-               io_spans[B].second - io_spans[B].first,
-               depth);
   }
 }
 
