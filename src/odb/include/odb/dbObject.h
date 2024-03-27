@@ -87,6 +87,7 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbDftObj,
   dbGCellGridObj,
   dbGlobalConnectObj,
   dbGroupObj,
@@ -102,6 +103,7 @@ enum dbObjectType
   dbPowerSwitchObj,
   dbScanChainObj,
   dbScanInstObj,
+  dbScanListObj,
   dbScanPartitionObj,
   dbScanPinObj,
   dbTechLayerObj,

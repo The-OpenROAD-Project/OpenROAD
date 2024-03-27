@@ -1,0 +1,7 @@
+{
+  "name": "dbScanList",
+  "type": "dbObject",
+  "cpp_includes": [
+    "dbScanChain.h"
+  ]
+}

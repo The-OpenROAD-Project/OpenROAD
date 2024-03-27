@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
 class dbGroup;
@@ -143,6 +144,7 @@ class dbPowerDomain;
 class dbPowerSwitch;
 class dbScanChain;
 class dbScanInst;
+class dbScanList;
 class dbScanPartition;
 class dbScanPin;
 class dbTechLayer;
@@ -1359,6 +1361,11 @@ class dbBlock : public dbObject
   /// Get the extraction control settings
   ///
   dbExtControl* getExtControl();
+
+  ///
+  /// Get the dbDft object for persistent dft structs
+  ///
+  dbDft* getDft() const;
 
   ///
   /// Get the extraction corner names
@@ -7067,6 +7074,16 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbDft : public dbObject
+{
+ public:
+  void setScanInserted(bool scan_inserted);
+
+  bool isScanInserted() const;
+
+  dbSet<dbScanChain> getScanChains() const;
+};
+
 class dbGCellGrid : public dbObject
 {
  public:
@@ -7642,22 +7659,110 @@ class dbPowerSwitch : public dbObject
 class dbScanChain : public dbObject
 {
  public:
+  dbSet<dbScanPartition> getScanPartitions() const;
+
+  dbSet<dbScanList> getScanLists() const;
+
+  // User Code Begin dbScanChain
+  const std::string& getName() const;
+
+  void setName(std::string_view name);
+
+  void setScanIn(dbBTerm* scan_in);
+  void setScanIn(dbITerm* scan_in);
+  std::variant<dbBTerm*, dbITerm*> getScanIn() const;
+
+  void setScanOut(dbBTerm* scan_out);
+  void setScanOut(dbITerm* scan_out);
+  std::variant<dbBTerm*, dbITerm*> getScanOut() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
+
+  void setTestMode(dbBTerm* test_mode);
+  void setTestMode(dbITerm* test_mode);
+  std::variant<dbBTerm*, dbITerm*> getTestMode() const;
+
+  void setTestModeName(const std::string& test_mode_name);
+  const std::string& getTestModeName() const;
+
+  static dbScanChain* create(dbDft* dft);
+  // User Code End dbScanChain
 };
 
 class dbScanInst : public dbObject
 {
  public:
-  enum class SCAN_INST_TYPE
+  struct AccessPins
   {
-    OneBit,
-    ShiftRegister,
-    BlackBox
+    std::variant<dbBTerm*, dbITerm*> scan_in;
+    std::variant<dbBTerm*, dbITerm*> scan_out;
   };
+  enum class ClockEdge
+  {
+    Rising,
+    Falling
+  };
+
+  // User Code Begin dbScanInst
+  void setScanClock(std::string_view scan_clock);
+  const std::string& getScanClock() const;
+
+  void setClockEdge(ClockEdge clock_edge);
+  ClockEdge getClockEdge() const;
+
+  // The number of bits that are in this scan inst from the scan in to the scan
+  // out. For simple flops this is just 1.
+  void setBits(uint bits);
+  uint getBits() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
+
+  void setAccessPins(const AccessPins& access_pins);
+  AccessPins getAccessPins() const;
+
+  dbInst* getInst() const;
+
+  static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
+  // User Code End dbScanInst
+};
+
+class dbScanList : public dbObject
+{
+ public:
+  dbSet<dbScanInst> getScanInsts() const;
+
+  // User Code Begin dbScanList
+  dbScanInst* add(dbInst* inst);
+  static dbScanList* create(dbScanChain* scan_chain);
+  // User Code End dbScanList
 };
 
 class dbScanPartition : public dbObject
 {
  public:
+  // User Code Begin dbScanPartition
+  void setStart(dbBTerm* bterm);
+
+  void setStart(dbITerm* iterm);
+
+  void setStop(dbBTerm* bterm);
+
+  void setStop(dbITerm* iterm);
+
+  std::variant<dbBTerm*, dbITerm*> getStart() const;
+
+  std::variant<dbBTerm*, dbITerm*> getStop() const;
+
+  const std::string& getName() const;
+
+  void setName(std::string_view name);
+
+  static dbScanPartition* create(dbScanChain* chain);
+  // User Code End dbScanPartition
 };
 
 class dbScanPin : public dbObject
@@ -7667,6 +7772,8 @@ class dbScanPin : public dbObject
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);
   void setPin(dbITerm* iterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
 };
 

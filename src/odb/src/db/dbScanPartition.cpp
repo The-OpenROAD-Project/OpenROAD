@@ -35,7 +35,9 @@
 
 #include "db.h"
 #include "dbDatabase.h"
+#include "dbDft.h"
 #include "dbDiff.hpp"
+#include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -116,5 +118,78 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+// User Code Begin dbScanPartitionPublicMethods
+
+void dbScanPartition::setStart(dbBTerm* bterm)
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_partition->start_ = dbScanPin::create(dft, bterm);
+}
+
+void dbScanPartition::setStart(dbITerm* iterm)
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_partition->start_ = dbScanPin::create(dft, iterm);
+}
+
+void dbScanPartition::setStop(dbBTerm* bterm)
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_partition->stop_ = dbScanPin::create(dft, bterm);
+}
+
+void dbScanPartition::setStop(dbITerm* iterm)
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  dbDft* dft = (dbDft*) scan_chain->getOwner();
+  scan_partition->stop_ = dbScanPin::create(dft, iterm);
+}
+
+std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStart() const
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
+  dbScanPin* scan_pin = (dbScanPin*) dft->scan_pins_->getPtr(
+      (dbId<_dbScanPin>) scan_partition->start_);
+  return scan_pin->getPin();
+}
+
+std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStop() const
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
+  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
+  dbScanPin* scan_pin = (dbScanPin*) dft->scan_pins_->getPtr(
+      (dbId<_dbScanPin>) scan_partition->stop_);
+  return scan_pin->getPin();
+}
+
+const std::string& dbScanPartition::getName() const
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  return scan_partition->name_;
+}
+
+void dbScanPartition::setName(std::string_view name)
+{
+  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
+  scan_partition->name_ = name;
+}
+
+dbScanPartition* dbScanPartition::create(dbScanChain* chain)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) chain;
+  return (dbScanPartition*) (scan_chain->scan_partitions_->create());
+}
+
+// User Code End dbScanPartitionPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
