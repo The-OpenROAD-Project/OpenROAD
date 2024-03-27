@@ -124,25 +124,37 @@ _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
-  stream >> obj._name;
-  stream >> obj._parent;
-  stream >> obj._childPort;
-  stream >> obj._modNet;
-  stream >> obj._next_net_moditerm;
-  stream >> obj._prev_net_moditerm;
-  stream >> obj._next_entry;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._name;
+    stream >> obj._parent;
+    stream >> obj._childPort;
+    stream >> obj._modNet;
+    stream >> obj._next_net_moditerm;
+    stream >> obj._prev_net_moditerm;
+    stream >> obj._next_entry;
+  }
+  // User Code End <
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
-  stream << obj._name;
-  stream << obj._parent;
-  stream << obj._childPort;
-  stream << obj._modNet;
-  stream << obj._next_net_moditerm;
-  stream << obj._prev_net_moditerm;
-  stream << obj._next_entry;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._name;
+    stream << obj._parent;
+    stream << obj._childPort;
+    stream << obj._modNet;
+    stream << obj._next_net_moditerm;
+    stream << obj._prev_net_moditerm;
+    stream << obj._next_entry;
+  }
+  // User Code End <
   return stream;
 }
 

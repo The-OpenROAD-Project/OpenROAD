@@ -130,27 +130,39 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
-  stream >> obj._name;
-  stream >> obj._flags;
-  stream >> obj._parentPin;
-  stream >> obj._parent;
-  stream >> obj._modNet;
-  stream >> obj._next_net_modbterm;
-  stream >> obj._prev_net_modbterm;
-  stream >> obj._next_entry;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._name;
+    stream >> obj._flags;
+    stream >> obj._parentPin;
+    stream >> obj._parent;
+    stream >> obj._modNet;
+    stream >> obj._next_net_modbterm;
+    stream >> obj._prev_net_modbterm;
+    stream >> obj._next_entry;
+  }
+  // User Code End <
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
-  stream << obj._name;
-  stream << obj._flags;
-  stream << obj._parentPin;
-  stream << obj._parent;
-  stream << obj._modNet;
-  stream << obj._next_net_modbterm;
-  stream << obj._prev_net_modbterm;
-  stream << obj._next_entry;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._name;
+    stream << obj._flags;
+    stream << obj._parentPin;
+    stream << obj._parent;
+    stream << obj._modNet;
+    stream << obj._next_net_modbterm;
+    stream << obj._prev_net_modbterm;
+    stream << obj._next_entry;
+  }
+  // User Code End <
   return stream;
 }
 

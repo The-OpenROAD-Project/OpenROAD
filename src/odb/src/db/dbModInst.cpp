@@ -127,6 +127,7 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   _name = nullptr;
   _parent = 0;
   _module_next = 0;
+  _moditerms = 0;
   _master = 0;
   _group = 0;
   _group_next = 0;
@@ -154,7 +155,11 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
-  stream >> obj._moditerms;
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._moditerms;
+  }
   return stream;
 }
 
@@ -167,7 +172,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._master;
   stream << obj._group_next;
   stream << obj._group;
-  stream << obj._moditerms;
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._moditerms;
+  }
   return stream;
 }
 

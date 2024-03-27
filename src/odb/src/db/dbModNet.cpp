@@ -133,25 +133,37 @@ _dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 {
-  stream >> obj._name;
-  stream >> obj._parent;
-  stream >> obj._next_entry;
-  stream >> obj._moditerms;
-  stream >> obj._modbterms;
-  stream >> obj._iterms;
-  stream >> obj._bterms;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._name;
+    stream >> obj._parent;
+    stream >> obj._next_entry;
+    stream >> obj._moditerms;
+    stream >> obj._modbterms;
+    stream >> obj._iterms;
+    stream >> obj._bterms;
+  }
+  // User Code End <
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
 {
-  stream << obj._name;
-  stream << obj._parent;
-  stream << obj._next_entry;
-  stream << obj._moditerms;
-  stream << obj._modbterms;
-  stream << obj._iterms;
-  stream << obj._bterms;
+  // User Code Begin <
+  dbBlock* block = (dbBlock*) (obj.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._name;
+    stream << obj._parent;
+    stream << obj._next_entry;
+    stream << obj._moditerms;
+    stream << obj._modbterms;
+    stream << obj._iterms;
+    stream << obj._bterms;
+  }
+  // User Code End <
   return stream;
 }
 

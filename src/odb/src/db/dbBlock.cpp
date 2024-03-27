@@ -906,7 +906,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
        ++cbitr)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
-
+  _dbDatabase* db = block.getImpl()->getDatabase();
   dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
@@ -931,9 +931,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
-  stream << block._modbterm_hash;
-  stream << block._moditerm_hash;
-  stream << block._modnet_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << block._modbterm_hash;
+    stream << block._moditerm_hash;
+    stream << block._modnet_hash;
+  }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -956,10 +958,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._inst_tbl;
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
-  stream << *block._modbterm_tbl;
-  stream << *block._moditerm_tbl;
-  stream << *block._modnet_tbl;
-
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << *block._modbterm_tbl;
+    stream << *block._moditerm_tbl;
+    stream << *block._modnet_tbl;
+  }
   stream << *block._powerdomain_tbl;
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
@@ -1044,9 +1047,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
-  stream >> block._modbterm_hash;
-  stream >> block._moditerm_hash;
-  stream >> block._modnet_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> block._modbterm_hash;
+    stream >> block._moditerm_hash;
+    stream >> block._modnet_hash;
+  }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
@@ -1078,9 +1083,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
-  stream >> *block._modbterm_tbl;
-  stream >> *block._moditerm_tbl;
-  stream >> *block._modnet_tbl;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> *block._modbterm_tbl;
+    stream >> *block._moditerm_tbl;
+    stream >> *block._modnet_tbl;
+  }
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
