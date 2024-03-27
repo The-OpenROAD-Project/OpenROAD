@@ -382,11 +382,6 @@ class HierRTLMP
   float resize_prob_ = 0.4;
 
   // design-related variables
-  // core area (in float)
-  float floorplan_lx_ = 0.0;
-  float floorplan_ly_ = 0.0;
-  float floorplan_ux_ = 0.0;
-  float floorplan_uy_ = 0.0;
   float macro_with_halo_area_ = 0.0;
 
   // dataflow parameters and store the dataflow

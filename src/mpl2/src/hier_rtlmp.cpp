@@ -407,13 +407,9 @@ void HierRTLMP::initMacroPlacer()
     manufacturing_grid_ = 1;
   }
 
-  odb::Rect die_box = block_->getDieArea();
-  floorplan_lx_ = dbuToMicron(die_box.xMin(), dbu_);
-  floorplan_ly_ = dbuToMicron(die_box.yMin(), dbu_);
-  floorplan_ux_ = dbuToMicron(die_box.xMax(), dbu_);
-  floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
-
+  odb::Rect die = block_->getDieArea();
   odb::Rect core_box = block_->getCoreArea();
+
   float core_lx = dbuToMicron(core_box.xMin(), dbu_);
   float core_ly = dbuToMicron(core_box.yMin(), dbu_);
   float core_ux = dbuToMicron(core_box.xMax(), dbu_);
@@ -421,10 +417,10 @@ void HierRTLMP::initMacroPlacer()
 
   logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      floorplan_lx_,
-      floorplan_ly_,
-      floorplan_ux_,
-      floorplan_uy_,
+      dbuToMicron(die.xMin(), dbu_),
+      dbuToMicron(die.yMin(), dbu_),
+      dbuToMicron(die.xMax(), dbu_),
+      dbuToMicron(die.yMax(), dbu_),
       core_lx,
       core_ly,
       core_ux,
@@ -806,11 +802,7 @@ void HierRTLMP::createIOClusters()
              1,
              "Creating bundledIO clusters...");
 
-  // convert from micron to dbu
-  floorplan_lx_ = micronToDbu(floorplan_lx_, dbu_);
-  floorplan_ly_ = micronToDbu(floorplan_ly_, dbu_);
-  floorplan_ux_ = micronToDbu(floorplan_ux_, dbu_);
-  floorplan_uy_ = micronToDbu(floorplan_uy_, dbu_);
+  const odb::Rect die = block_->getDieArea();
 
   // Get the floorplan information and get the range of bundled IO regions
   odb::Rect die_box = block_->getCoreArea();
@@ -818,8 +810,8 @@ void HierRTLMP::createIOClusters()
   int core_ly = die_box.yMin();
   int core_ux = die_box.xMax();
   int core_uy = die_box.yMax();
-  const int x_base = (floorplan_ux_ - floorplan_lx_) / num_bundled_IOs_;
-  const int y_base = (floorplan_uy_ - floorplan_ly_) / num_bundled_IOs_;
+  const int x_base = (die.xMax() - die.xMin()) / num_bundled_IOs_;
+  const int y_base = (die.yMax() - die.yMin()) / num_bundled_IOs_;
   int cluster_id_base = cluster_id_;
 
   // Map all the BTerms / Pads to Bundled IOs (cluster)
@@ -843,20 +835,20 @@ void HierRTLMP::createIOClusters()
       int width = 0;
       int height = 0;
       if (i == 0) {  // Left boundary
-        x = floorplan_lx_;
-        y = floorplan_ly_ + y_base * j;
+        x = die.xMin();
+        y = die.yMin() + y_base * j;
         height = y_base;
       } else if (i == 1) {  // Top boundary
-        x = floorplan_lx_ + x_base * j;
-        y = floorplan_uy_;
+        x = die.xMin() + x_base * j;
+        y = die.yMax();
         width = x_base;
       } else if (i == 2) {  // Right boundary
-        x = floorplan_ux_;
-        y = floorplan_uy_ - y_base * (j + 1);
+        x = die.xMax();
+        y = die.yMax() - y_base * (j + 1);
         height = y_base;
       } else {  // Bottom boundary
-        x = floorplan_ux_ - x_base * (j + 1);
-        y = floorplan_ly_;
+        x = die.xMax() - x_base * (j + 1);
+        y = die.yMin();
         width = x_base;
       }
 
@@ -897,36 +889,36 @@ void HierRTLMP::createIOClusters()
       ux = io_pad_map_[term]->getBBox()->xMax();
       uy = io_pad_map_[term]->getBBox()->yMax();
       if (lx <= core_lx) {
-        lx = floorplan_lx_;
+        lx = die.xMin();
       }
       if (ly <= core_ly) {
-        ly = floorplan_ly_;
+        ly = die.yMin();
       }
       if (ux >= core_ux) {
-        ux = floorplan_ux_;
+        ux = die.xMax();
       }
       if (uy >= core_uy) {
-        uy = floorplan_uy_;
+        uy = die.yMax();
       }
     }
     // calculate cluster id based on the location of IO Pins / Pads
     int cluster_id = -1;
-    if (lx <= floorplan_lx_) {
+    if (lx <= die.xMin()) {
       // The IO is on the left boundary
       cluster_id = cluster_id_base
-                   + std::floor(((ly + uy) / 2.0 - floorplan_ly_) / y_base);
-    } else if (uy >= floorplan_uy_) {
+                   + std::floor(((ly + uy) / 2.0 - die.yMin()) / y_base);
+    } else if (uy >= die.yMax()) {
       // The IO is on the top boundary
       cluster_id = cluster_id_base + num_bundled_IOs_
-                   + std::floor(((lx + ux) / 2.0 - floorplan_lx_) / x_base);
-    } else if (ux >= floorplan_ux_) {
+                   + std::floor(((lx + ux) / 2.0 - die.xMin()) / x_base);
+    } else if (ux >= die.xMax()) {
       // The IO is on the right boundary
       cluster_id = cluster_id_base + num_bundled_IOs_ * 2
-                   + std::floor((floorplan_uy_ - (ly + uy) / 2.0) / y_base);
-    } else if (ly <= floorplan_ly_) {
+                   + std::floor((die.yMax() - (ly + uy) / 2.0) / y_base);
+    } else if (ly <= die.yMin()) {
       // The IO is on the bottom boundary
       cluster_id = cluster_id_base + num_bundled_IOs_ * 3
-                   + std::floor((floorplan_ux_ - (lx + ux) / 2.0) / x_base);
+                   + std::floor((die.xMax() - (lx + ux) / 2.0) / x_base);
     }
 
     // Check if the IO pins / Pads exist
@@ -942,11 +934,6 @@ void HierRTLMP::createIOClusters()
 
     cluster_io_map[cluster_id] = true;
   }
-  // convert from dbu to micron
-  floorplan_lx_ = dbuToMicron(floorplan_lx_, dbu_);
-  floorplan_ly_ = dbuToMicron(floorplan_ly_, dbu_);
-  floorplan_ux_ = dbuToMicron(floorplan_ux_, dbu_);
-  floorplan_uy_ = dbuToMicron(floorplan_uy_, dbu_);
 
   // delete the IO clusters that do not have any pins assigned to them
   for (auto& [cluster_id, flag] : cluster_io_map) {
