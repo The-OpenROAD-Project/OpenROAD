@@ -1949,17 +1949,11 @@ void FastRouteCore::copyBR(void)
         h_edges_[i][j].usage = 0;
       }
     }
-    // for (const auto& [i, j] : h_used_ggrid_) {
-    //   h_edges_[i][j].usage = 0;
-    // }
     for (i = 0; i < y_grid_ - 1; i++) {
       for (j = 0; j < x_grid_; j++) {
         v_edges_[i][j].usage = 0;
       }
     }
-    // for (const auto& [i, j] : v_used_ggrid_) {
-    //   v_edges_[i][j].usage = 0;
-    // }
 
     for (int netID = 0; netID < netCount(); netID++) {
       numEdges = sttrees_[netID].num_edges();
