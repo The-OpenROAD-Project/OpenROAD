@@ -44,17 +44,7 @@ Connection::Connection(Node* node0, Node* node1) : node0_(node0), node1_(node1)
 
 void Connection::ensureNodeOrder()
 {
-  if (node0_ == nullptr) {
-    std::swap(node0_, node1_);
-
-    return;
-  } else if (node1_ == nullptr) {
-    std::swap(node0_, node1_);
-
-    return;
-  }
-
-  if (!node0_->compare(node1_)) {
+  if (node0_ && !node0_->compare(node1_)) {
     std::swap(node0_, node1_);
   }
 }
