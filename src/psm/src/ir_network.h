@@ -59,14 +59,24 @@ class IRNetwork
       = boost::geometry::model::d2::point_xy<int,
                                              boost::geometry::cs::cartesian>;
   using Box = boost::geometry::model::box<Point>;
-  using TerminalValue = std::pair<Box, TerminalNode*>;
+
+  template <typename T>
+  struct RectIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const T* t) const { return t->getShape(); }
+  };
+
   using TerminalTree
-      = boost::geometry::index::rtree<TerminalValue,
-                                      boost::geometry::index::quadratic<16>>;
-  using ShapeValue = std::pair<Box, Shape*>;
+      = boost::geometry::index::rtree<TerminalNode*,
+                                      boost::geometry::index::quadratic<16>,
+                                      RectIndexableGetter<TerminalNode>>;
+
   using ShapeTree
-      = boost::geometry::index::rtree<ShapeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Shape*,
+                                      boost::geometry::index::quadratic<16>,
+                                      RectIndexableGetter<Shape>>;
+
   using NodeValue = std::pair<Point, Node*>;
   using NodeTree
       = boost::geometry::index::rtree<NodeValue,

@@ -411,11 +411,11 @@ void IRNetwork::processPolygonToRectangles(
     for (auto itr = terminals.qbegin(
              boost::geometry::index::intersects(rect_box)
              && boost::geometry::index::satisfies([layer](const auto& other) {
-                  return layer == other.second->getLayer();
+                  return layer == other->getLayer();
                 }));
          itr != terminals.qend();
          itr++) {
-      auto* node = itr->second;
+      auto* node = *itr;
       if (rect.overlaps(node->getPoint())) {
         shape_terms.insert(node);
       }
@@ -431,16 +431,7 @@ IRNetwork::TerminalTree IRNetwork::getTerminalTree(
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Construct terminal node rtree: {}");
 
-  std::vector<TerminalValue> tree_values;
-  for (auto* node : terminals) {
-    const odb::Rect& pin_shape = node->getShape();
-    const Box pin_box(Point(pin_shape.xMin(), pin_shape.yMin()),
-                      Point(pin_shape.xMax(), pin_shape.yMax()));
-    tree_values.emplace_back(pin_box, node);
-  }
-  TerminalTree terminal_nodes(tree_values.begin(), tree_values.end());
-
-  return terminal_nodes;
+  return TerminalTree(terminals.begin(), terminals.end());
 }
 
 void IRNetwork::generateRoutingLayerShapesAndNodes()
@@ -612,12 +603,9 @@ void IRNetwork::generateCutNodesForSBox(
 IRNetwork::ShapeTree IRNetwork::getShapeTree(odb::dbTechLayer* layer) const
 {
   // generate Rtree of shapes to associate with vias
-  std::vector<ShapeValue> tree_values;
+  std::vector<Shape*> tree_values;
   for (const auto& shape : shapes_.at(layer)) {
-    const odb::Rect& rect = shape->getShape();
-    const Box shape_box(Point(rect.xMin(), rect.yMin()),
-                        Point(rect.xMax(), rect.yMax()));
-    tree_values.emplace_back(shape_box, shape.get());
+    tree_values.emplace_back(shape.get());
   }
   ShapeTree tree(tree_values.begin(), tree_values.end());
   return tree;
