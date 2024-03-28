@@ -514,8 +514,8 @@ DbVia::ViaLayerShape DbGenerateVia::generate(
 {
   const std::string via_name = getViaName();
   auto* via = block->findVia(via_name.c_str());
-
-  if (via == nullptr) {
+  auto* tech_via = block->getTech()->findVia(via_name.c_str());
+  if (via == nullptr && tech_via == nullptr) {
     const int cut_width = cut_rect_.dx();
     const int cut_height = cut_rect_.dy();
     via = odb::dbVia::create(block, via_name.c_str());
@@ -546,7 +546,13 @@ DbVia::ViaLayerShape DbGenerateVia::generate(
   }
 
   incrementCount();
-  return getLayerShapes(odb::dbSBox::create(wire, via, x, y, type));
+  odb::dbSBox* sbox = nullptr;
+  if (via) {
+    sbox = odb::dbSBox::create(wire, via, x, y, type);
+  } else {
+    sbox = odb::dbSBox::create(wire, tech_via, x, y, type);
+  }
+  return getLayerShapes(sbox);
 }
 
 //////////////
