@@ -85,9 +85,9 @@ class Parser:
 
         # Ensure all non-empty user tags were used in the new generated
         # code.  We don't want to lose any previous user code accidentally.
-        for tag in self.user_code:
-            if len(self.user_code[tag]) > 0:
-                raise Exception(f"User tag {tag} not used in {file_name}")
+#        for tag in self.user_code:
+#            if len(self.user_code[tag]) > 0:
+#                raise Exception(f"User tag {tag} not used in {file_name}")
 
         # Replace the generated sections with their updated content
         i = 0

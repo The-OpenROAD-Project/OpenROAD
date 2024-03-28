@@ -44,7 +44,7 @@
 	{
       	    "name":"_moditerms",
 	    "type":"dbId<_dbModITerm >",
-	    "flags":["no-get","no-set"],	    
+	    "flags":["no-get","no-set","no-serial"],	    
 	    "parent":"dbBlock"
 	}
     ],

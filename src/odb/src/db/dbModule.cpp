@@ -88,9 +88,8 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(_name, rhs._name) >= 0)
     return false;
-  }
   // User Code End <
   return true;
 }
@@ -152,14 +151,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._insts;
   stream >> obj._mod_inst;
   stream >> obj._modinsts;
-  // User Code Begin <
+  // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._modnets;
     stream >> obj._modbterms;
   }
-  // User Code End <
+  // User Code End >>
   return stream;
 }
 
@@ -170,14 +169,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._insts;
   stream << obj._mod_inst;
   stream << obj._modinsts;
-  // User Code Begin <
+  // User Code Begin <<
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
     stream << obj._modnets;
     stream << obj._modbterms;
   }
-  // User Code End <
+  // User Code End <<
   return stream;
 }
 

@@ -32,13 +32,13 @@
 	{
 	    "name":"_modnets",
 	    "type":"dbId<_dbModNet>",
-	    "flags":["no-set","no-get"],
+	    "flags":["no-set","no-get","no-serial"],
 	    "parent":"dbBlock"
 	},
 	{
 	    "name":"_modbterms",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["no-set","no-get"]	    
+	    "flags":["no-set","no-get","no-serial"]	    
 	}
     ],
     "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h"],

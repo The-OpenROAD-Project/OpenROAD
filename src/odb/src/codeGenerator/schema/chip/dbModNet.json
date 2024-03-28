@@ -5,38 +5,38 @@
            {
           "name":"_name",
           "type":"char *",
-          "flags":["no-set","no-get"]
+               "flags":["no-set","no-get","no-serial"]
            },
           {
 	  "name":"_parent",
           "type":"dbId<_dbModule>",
-          "flags":["no-set"],
+          "flags":["no-set","no-serial"],
           "parent":"dbBlock" 
           },
           {
           "name":"_next_entry",
           "type":"dbId<_dbModNet>",
-          "flags":["no-set","no-get"]
+          "flags":["no-set","no-get","no-serial"]
           },
 	  {
 	      "name": "_moditerms",
 	      "type": "dbId<_dbModITerm>",
-	      "flags":["no-set","no-get"]
+	      "flags":["no-set","no-get","no-serial"]
 	  },
 	  {
 	      "name": "_modbterms",
 	      "type": "dbId<_dbModBTerm>",
-	      "flags":["no-set","no-get"]
+	      "flags":["no-set","no-get","no-serial"]
 	  },
 	  {
 	      "name": "_iterms",
 	      "type": "dbId<_dbITerm>",
-	      "flags":["no-set","no-get"]
+	      "flags":["no-set","no-get","no-serial"]
 	  },
 	  {
 	      "name": "_bterms",
 	      "type": "dbId<_dbBTerm>",
-	      "flags":["no-set","no-get"]
+	      "flags":["no-set","no-get","no-serial"]
 	  }
 	      
 	  ],

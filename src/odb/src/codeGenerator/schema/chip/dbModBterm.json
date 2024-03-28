@@ -5,47 +5,47 @@
         {
             "name":"_name",
             "type":"char *",
-            "flags":["no-set"]
+            "flags":["no-set","no-serial"]	    
         },
 	{
 	    "name":"_flags",
 	    "type":"uint",
-	    "flags":["private"]
+	    "flags":["private","no-serial"]
 	},
         {
 	    "name":"_parentPin",
 	    "type":"dbId<_dbModITerm>",
 	    "parent":"dbBlock",
-	    "flags":["private"]	    	    	    	    
+	    "flags":["private","no-serial"]	    	    	    	    
         },
         {
 	    "name":"_parent",
 	    "type":"dbId<_dbModule>",
-	    "flags":["no-set"],
+	    "flags":["no-set","no-serial"],
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_modNet",
 	    "type":"dbId<_dbModNet>",
-	    "flags":["private"],	    	    	    	    	    
+	    "flags":["private","no-serial"],	    	    	    	    	    
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_next_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["private"],
+	    "flags":["private","no-serial"],
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_prev_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["private"],	    
+	    "flags":["private","no-serial"],	    
 	    "parent":"dbBlock"
         },
 	{
 	    "name":"_next_entry",
             "type":"dbId<_dbModBTerm>",
-	    "flags":["private"],
+	    "flags":["private","no-serial"],
             "parent":"dbBlock"
 	}
     ],

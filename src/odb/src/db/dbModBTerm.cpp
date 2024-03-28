@@ -130,7 +130,7 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
-  // User Code Begin <
+  // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
@@ -143,13 +143,13 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
     stream >> obj._prev_net_modbterm;
     stream >> obj._next_entry;
   }
-  // User Code End <
+  // User Code End >>
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
-  // User Code Begin <
+  // User Code Begin <<
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   if (db->isSchema(db_schema_update_hierarchy)) {
@@ -162,7 +162,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
     stream << obj._prev_net_modbterm;
     stream << obj._next_entry;
   }
-  // User Code End <
+  // User Code End <<
   return stream;
 }
 

@@ -5,42 +5,42 @@
         {
             "name":"_name",
             "type":"char *",
-            "flags":["no-set"]
+            "flags":["no-set","no-serial"]
         },
         {
 	    "name":"_parent",
             "type":"dbId<_dbModInst>",
-            "flags":["no-set"],
+            "flags":["no-set","no-serial"],
             "parent":"dbBlock" 
         },
 	{
 	    "name":"_childPort",
 	    "type":"dbId<_dbModBTerm>",
 	    "parent":"dbBlock",
-	    "flags":["private"]	    	    	    
+	    "flags":["private","no-serial"]	    	    	    
         },
         {
 	    "name":"_modNet",
             "type":"dbId<_dbModNet>",
-	    "flags":["private"],
+	    "flags":["private","no-serial"],
             "parent":"dbBlock" 
         },
         {
 	    "name":"_next_net_moditerm",
             "type":"dbId<_dbModITerm>",
-	    "flags":["private"],	    
+	    "flags":["private","no-serial"],	    
             "parent":"dbBlock" 
         },
 	{
 	    "name":"_prev_net_moditerm",
             "type":"dbId<_dbModITerm>",
-	    "flags":["private"],	    	    
+	    "flags":["private","no-serial"],	    	    
             "parent":"dbBlock" 
         },
 	{
 	    "name":"_next_entry",
             "type":"dbId<_dbModITerm>",
-	    "flags":["private"],	    	    	    
+	    "flags":["private","no-serial"],	    	    	    
             "parent":"dbBlock"
 	}
 	
