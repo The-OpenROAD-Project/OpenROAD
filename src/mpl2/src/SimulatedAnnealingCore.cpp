@@ -531,71 +531,119 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::initSequencePair()
+{
+  std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
+  std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
+  std::iota(pre_pos_seq_.begin(), pre_pos_seq_.end(), 0);
+  std::iota(pre_neg_seq_.begin(), pre_neg_seq_.end(), 0);
+}
+
+// Here, the main idea for each step is:
+// 1) Make perturbations to change the sequence pair;
+// 2) Use the changed sequence pair to update the macros'
+//    positions on the floorplan;
+// 3) Use new macros' positions to compute new penalties;
+// 4) Use new penalties to compute new normalized cost.
+template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
   if (graphics_) {
     graphics_->startSA();
   }
 
-  // record the previous status
+  initSequencePair();
+
+  std::vector<int> best_positive_sequence;
+  std::vector<int> best_negative_sequence;
+
   float cost = calNormCost();
+  float lowest_cost = std::numeric_limits<float>::max();
   float pre_cost = cost;
   float delta_cost = 0.0;
-  int step = 1;
   float temperature = init_temperature_;
+
+  const int max_num_restart = 2;
   const float min_t = 1e-10;
   const float t_factor
       = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
-  notch_weight_ = 0.0;  // notch pealty is too expensive, we try to avoid
-                        // calculating notch penalty at very beginning
-  // const for restart
+
+  // Used to ensure notch penalty is used only in the latter steps
+  // as it is too expensive
+  notch_weight_ = 0.0;
+
   int num_restart = 1;
-  const int max_num_restart = 2;
-  // SA process
+  int step = 1;
+
   while (step <= max_num_step_) {
+    if (graphics_) {
+      graphics_->setStep(step);
+    }
+
     for (int i = 0; i < num_perturb_per_step_; i++) {
+      if (graphics_) {
+        graphics_->setPerturbation(i);
+      }
       perturb();
       cost = calNormCost();
+
+      // Make sure we don't waste a good result generated
+      // when temperature is too high
+      if (lowest_cost > cost && isValid()) {
+        lowest_cost = cost;
+        best_negative_sequence = neg_seq_;
+        best_positive_sequence = pos_seq_;
+      }
+
       delta_cost = cost - pre_cost;
-      const float num = distribution_(generator_);
-      const float prob
+      const float random = distribution_(generator_);
+      const float acceptance_probability
           = (delta_cost > 0.0) ? std::exp((-1) * delta_cost / temperature) : 1;
-      if (num < prob) {
+      if (random < acceptance_probability) {
         pre_cost = cost;
       } else {
         restore();
       }
     }
-    // temperature *= 0.985;
+
     temperature *= t_factor;
+    step++;
+
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-    // increase step
-    step++;
-    // check if restart condition
+
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
       shrink();
+
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
+
       num_restart++;
       step = 1;
       num_perturb_per_step_ *= 2;
       temperature = init_temperature_;
-    }  // end if
-    // only consider the last step to optimize notch weight
+    }
+
+    // Avoid considering notch during initial steps
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
+
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
     }
-  }  // end while
-  // update the final results
+  }
+
+  if (lowest_cost < calNormCost()) {
+    pos_seq_ = best_positive_sequence;
+    neg_seq_ = best_negative_sequence;
+  }
   packFloorplan();
   calPenalty();
+
   if (graphics_) {
     graphics_->endSA();
   }

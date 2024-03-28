@@ -73,6 +73,8 @@ class Mpl2Observer
   virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setOutline(const odb::Rect& outline) {}
 
+  virtual void setStep(int step) {}
+  virtual void setPerturbation(int perturbation) {}
   virtual void setAreaPenalty(float area) {}
   virtual void setOutlinePenalty(float outline_penalty) {}
   virtual void setWirelength(float wirelength) {}
