@@ -163,12 +163,12 @@ proc set_wire_rc { args } {
       incr v_layers
       set layer [[ord::get_db_tech] findLayer $layers]
       if { $layer == "NULL" } {
-        utl::error RSZ 14 "layer $layer_name not found."
+        utl::error RSZ 14 "layer $layer not found."
       }
 
       if { $corner == "NULL" } {
-        lassign [rsz::dblayer_wire_rc $layers] total_h_wire_res total_h_wire_cap
-        lassign [rsz::dblayer_wire_rc $layers] total_v_wire_res total_v_wire_cap
+        lassign [rsz::dblayer_wire_rc $layer] total_h_wire_res total_h_wire_cap
+        lassign [rsz::dblayer_wire_rc $layer] total_v_wire_res total_v_wire_cap
       } else {
         set total_h_wire_res [rsz::layer_resistance $layer $corner]
         set total_v_wire_res [rsz::layer_resistance $layer $corner]
