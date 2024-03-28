@@ -147,25 +147,14 @@ std::vector<std::unique_ptr<Node>> Shape::createFillerNodes(
 
 Node::NodeSet Shape::getNodes(const IRNetwork::NodeTree& layer_nodes) const
 {
-  Node::NodeSet nodes;
-  for (auto itr
-       = layer_nodes.qbegin(boost::geometry::index::intersects(shape_));
-       itr != layer_nodes.qend();
-       itr++) {
-    nodes.insert(*itr);
-  }
-  return nodes;
+  return Node::NodeSet(
+      layer_nodes.qbegin(boost::geometry::index::intersects(shape_)),
+      layer_nodes.qend());
 }
 
 IRNetwork::NodeTree Shape::getNodeTree(const Node::NodeSet& nodes) const
 {
-  std::vector<Node*> values;
-  for (auto* node : nodes) {
-    values.emplace_back(node);
-  }
-  IRNetwork::NodeTree tree(values.begin(), values.end());
-
-  return tree;
+  return IRNetwork::NodeTree(nodes.begin(), nodes.end());
 }
 
 std::set<Node*> Shape::cleanupNodes(
@@ -237,15 +226,12 @@ Shape::NodeDataTree Shape::createNodeDataValue(
     container.push_back(std::move(data));
   }
 
-  std::vector<NodeDataValue> node_values;
+  std::vector<NodeData*> node_values;
   for (const auto& node_data : container) {
-    const auto& pt = node_data->node->getPoint();
-    node_values.emplace_back(IRNetwork::Point(pt.getX(), pt.getY()),
-                             node_data.get());
+    node_values.emplace_back(node_data.get());
   }
-  NodeDataTree tree(node_values.begin(), node_values.end());
 
-  return tree;
+  return NodeDataTree(node_values.begin(), node_values.end());
 }
 
 std::map<Node*, std::set<Node*>> Shape::mergeNodes(
@@ -265,20 +251,16 @@ std::map<Node*, std::set<Node*>> Shape::mergeNodes(
                                pt.getY() - radius,
                                pt.getX() + radius,
                                pt.getY() + radius);
-    const IRNetwork::Box box(
-        IRNetwork::Point(check_rect.xMin(), check_rect.yMin()),
-        IRNetwork::Point(check_rect.xMax(), check_rect.yMax()));
-
     std::set<Node*> merge;
     for (auto itr = tree.qbegin(
-             boost::geometry::index::intersects(box)
+             boost::geometry::index::intersects(check_rect)
              && boost::geometry::index::satisfies(
-                 [](const auto& val) { return !val.second->used; })
+                 [](const auto& val) { return !val->used; })
              && boost::geometry::index::satisfies(
-                 [&](const auto& val) { return val.second->node != node; }));
+                 [&](const auto& val) { return val->node != node; }));
          itr != tree.qend();
          itr++) {
-      auto* data = itr->second;
+      auto* data = *itr;
       merge.insert(data->node);
       data->used = true;
     }

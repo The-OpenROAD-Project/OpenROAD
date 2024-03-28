@@ -79,11 +79,12 @@ class Shape
   {
     Node* node = nullptr;
     bool used = false;
+    odb::Point getPoint() const { return node->getPoint(); }
   };
-  using NodeDataValue = std::pair<IRNetwork::Point, NodeData*>;
   using NodeDataTree
-      = boost::geometry::index::rtree<NodeDataValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<NodeData*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<NodeData>>;
 
   Node::NodeSet getNodes(const IRNetwork::NodeTree& layer_nodes) const;
   IRNetwork::NodeTree getNodeTree(const Node::NodeSet& nodes) const;

@@ -46,6 +46,20 @@
 
 namespace psm {
 
+template <typename T>
+struct RectIndexableGetter
+{
+  using result_type = odb::Rect;
+  odb::Rect operator()(const T* t) const { return t->getShape(); }
+};
+
+template <typename T>
+struct PointIndexableGetter
+{
+  using result_type = odb::Point;
+  odb::Point operator()(const T* t) const { return t->getPoint(); }
+};
+
 class IRNetwork
 {
  public:
@@ -60,13 +74,6 @@ class IRNetwork
                                              boost::geometry::cs::cartesian>;
   using Box = boost::geometry::model::box<Point>;
 
-  template <typename T>
-  struct RectIndexableGetter
-  {
-    using result_type = odb::Rect;
-    odb::Rect operator()(const T* t) const { return t->getShape(); }
-  };
-
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
                                       boost::geometry::index::quadratic<16>,
@@ -77,12 +84,6 @@ class IRNetwork
                                       boost::geometry::index::quadratic<16>,
                                       RectIndexableGetter<Shape>>;
 
-  template <typename T>
-  struct PointIndexableGetter
-  {
-    using result_type = odb::Point;
-    odb::Point operator()(const T* t) const { return t->getPoint(); }
-  };
   using NodeTree
       = boost::geometry::index::rtree<Node*,
                                       boost::geometry::index::quadratic<16>,
