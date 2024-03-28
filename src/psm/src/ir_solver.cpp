@@ -52,6 +52,14 @@
 
 namespace psm {
 
+struct ODBCompare
+{
+  bool operator()(odb::dbObject* lhs, odb::dbObject* rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+
 IRSolver::IRSolver(
     odb::dbNet* net,
     bool floorplanning,
@@ -575,7 +583,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     if (!found) {
       // Since the shape didn't intersect anything, we need to pick the nearest
       // node
-      const Point pt(shape.xCenter(), shape.yCenter());
+      const odb::Point pt(shape.xCenter(), shape.yCenter());
       std::vector<Node*> returned_nodes;
       top_nodes.query(boost::geometry::index::nearest(pt, 1),
                       std::back_inserter(returned_nodes));

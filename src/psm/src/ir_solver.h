@@ -66,28 +66,6 @@ class IRSolver
   using Current = double;
   using Power = float;
 
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
-  using TerminalTree
-      = boost::geometry::index::rtree<TerminalNode*,
-                                      boost::geometry::index::quadratic<16>,
-                                      RectIndexableGetter<TerminalNode>>;
-  using ShapeTree
-      = boost::geometry::index::rtree<Shape*,
-                                      boost::geometry::index::quadratic<16>,
-                                      RectIndexableGetter<Shape>>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-
-  struct ODBCompare
-  {
-    bool operator()(odb::dbObject* lhs, odb::dbObject* rhs) const
-    {
-      return lhs->getId() < rhs->getId();
-    }
-  };
-
   struct Results
   {
     Voltage net_voltage = 0.0;
@@ -168,11 +146,6 @@ class IRSolver
   IRNetwork* getNetwork() const { return network_.get(); }
 
  private:
-  template <typename T>
-  using NodePtrMap = std::map<Node*, std::set<T*>>;
-  template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
-
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
 
