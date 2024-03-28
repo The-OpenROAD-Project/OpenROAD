@@ -419,6 +419,7 @@ class HardMacro
                            const bool& is_vertical_direction);
   float getDirectionPinWidth(odb::dbBox* box,
                              const bool& is_vertical_direction);
+  float computeMTermOffset(float pin_to_origin, float pitch);
 
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 

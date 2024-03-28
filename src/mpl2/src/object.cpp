@@ -960,22 +960,38 @@ odb::Point HardMacro::computeSnapOrigin(const Rect& macro_box,
   float offset_y = 0.0;
   float pin_width_x = 0.0;
   float pin_width_y = 0.0;
+  float pin_to_origin_x = 0.0;
+  float pin_to_origin_y = 0.0;
+
+  std::set<odb::dbTechLayer*> snap_layers;
 
   // get the offset and pitch of related routing layers
   odb::dbMaster* master = inst_->getMaster();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        for (odb::dbBox* box : mpin->getGeometry()) {
-          odb::dbTechLayer* layer = box->getTechLayer();
+    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
 
-          if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-            computeDirectionSpacingParameters(
-                block, layer, box, offset_y, pitch_y, pin_width_y, false);
-          } else {
-            computeDirectionSpacingParameters(
-                block, layer, box, offset_x, pitch_x, pin_width_x, true);
-          }
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+
+        if (snap_layers.find(layer) != snap_layers.end()) {
+          continue;
+        }
+
+        snap_layers.insert(layer);
+
+        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+          computeDirectionSpacingParameters(
+              block, layer, box, offset_y, pitch_y, pin_width_y, false);
+
+          pin_to_origin_y = dbuToMicron(mpin->getBBox().yMin(), dbu_);
+        } else {
+          computeDirectionSpacingParameters(
+              block, layer, box, offset_x, pitch_x, pin_width_x, true);
+
+          pin_to_origin_x = dbuToMicron(mpin->getBBox().xMin(), dbu_);
         }
       }
     }
@@ -984,8 +1000,10 @@ odb::Point HardMacro::computeSnapOrigin(const Rect& macro_box,
   // Defaults for R0
   float origin_x = macro_box.xMin();
   float origin_y = macro_box.yMin();
-  float pin_offset_x = pin_width_x / 2;
-  float pin_offset_y = pin_width_y / 2;
+  float pin_offset_x
+      = pin_width_x / 2 + computeMTermOffset(pin_to_origin_x, pitch_x);
+  float pin_offset_y
+      = pin_width_y / 2 + computeMTermOffset(pin_to_origin_y, pitch_y);
 
   if (orientation == odb::dbOrientType::MX) {
     origin_y = macro_box.yMax();
@@ -1104,6 +1122,19 @@ void HardMacro::getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
   } else {
     track_grid->getGridY(coordinate_grid);
   }
+}
+
+// Offset between the terminal and the adjacent line of the track-grid.
+float HardMacro::computeMTermOffset(const float pin_to_origin,
+                                    const float pitch)
+{
+  float distance_from_origin = 0.0f;
+
+  while (distance_from_origin <= pin_to_origin) {
+    distance_from_origin += pitch;
+  }
+
+  return pin_to_origin - (distance_from_origin - pitch);
 }
 
 ///////////////////////////////////////////////////////////////////////
