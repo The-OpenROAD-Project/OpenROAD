@@ -47,11 +47,7 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
                                       "IRDrop",
                                       "IRDrop"),
       psm_(psm),
-      sta_(sta),
-      tech_(nullptr),
-      layer_(nullptr),
-      net_(nullptr),
-      corner_(nullptr)
+      sta_(sta)
 {
   addMultipleChoiceSetting(
       "Net",

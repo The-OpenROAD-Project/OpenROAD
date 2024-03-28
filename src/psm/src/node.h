@@ -106,7 +106,6 @@ class SourceNode : public Node
 {
  public:
   SourceNode(Node* node);
-  ~SourceNode() = default;
 
   Node* getSource() const { return source_; }
 
@@ -121,7 +120,6 @@ class TerminalNode : public Node
 {
  public:
   TerminalNode(const odb::Rect& shape, odb::dbTechLayer* layer);
-  ~TerminalNode() = default;
 
   const odb::Rect& getShape() const { return shape_; }
 
@@ -133,7 +131,6 @@ class ITermNode : public TerminalNode
 {
  public:
   ITermNode(odb::dbITerm* iterm, const odb::Point& pt, odb::dbTechLayer* layer);
-  ~ITermNode() = default;
 
   odb::dbITerm* getITerm() const { return iterm_; }
 
@@ -152,7 +149,6 @@ class BPinNode : public TerminalNode
 {
  public:
   BPinNode(odb::dbBPin* pin, const odb::Rect& shape, odb::dbTechLayer* layer);
-  ~BPinNode() = default;
 
   const odb::dbBPin* getBPin() const { return pin_; }
 

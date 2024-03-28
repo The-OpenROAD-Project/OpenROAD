@@ -73,10 +73,10 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
 
   psm::PDNSim* psm_;
   sta::Sta* sta_;
-  odb::dbTech* tech_;
-  odb::dbTechLayer* layer_;
-  odb::dbNet* net_;
-  sta::Corner* corner_;
+  odb::dbTech* tech_ = nullptr;
+  odb::dbTechLayer* layer_ = nullptr;
+  odb::dbNet* net_ = nullptr;
+  sta::Corner* corner_ = nullptr;
 };
 
 }  // namespace psm

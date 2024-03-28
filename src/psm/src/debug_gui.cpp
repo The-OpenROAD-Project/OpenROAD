@@ -107,7 +107,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(std::any object) const
 
   gui::Descriptor::PropertyList net_voltages;
   for (auto* corner : corners) {
-    net_voltages.push_back({corner->name(), solver->getNetVoltage(corner)});
+    net_voltages.emplace_back(corner->name(), solver->getNetVoltage(corner));
   }
   if (!net_voltages.empty()) {
     props.push_back({"Net voltage", net_voltages});
@@ -120,9 +120,9 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(std::any object) const
     }
     const auto volt = solver->getVoltage(corner, node);
     if (volt) {
-      voltages.push_back({corner->name(), volt.value()});
+      voltages.emplace_back(corner->name(), volt.value());
     } else {
-      voltages.push_back({corner->name(), "N/A"});
+      voltages.emplace_back(corner->name(), "N/A");
     }
   }
   if (!voltages.empty()) {
@@ -199,7 +199,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
   gui::Descriptor::PropertyList resistances;
   for (auto* corner : corners) {
     const auto res_map = solver->getResistanceMap(corner);
-    resistances.push_back({corner->name(), conn->getResistance(res_map)});
+    resistances.emplace_back(corner->name(), conn->getResistance(res_map));
   }
   if (!resistances.empty()) {
     props.push_back({"Resistances", resistances});
@@ -215,7 +215,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
 
     if (volt0 && volt1) {
       const auto delta_v = std::abs(volt0.value() - volt1.value());
-      currents.push_back({corner->name(), delta_v * cond});
+      currents.emplace_back(corner->name(), delta_v * cond);
     }
   }
   if (!currents.empty()) {

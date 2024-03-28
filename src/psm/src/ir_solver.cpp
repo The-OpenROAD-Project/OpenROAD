@@ -51,7 +51,6 @@
 #include "utl/timer.h"
 
 namespace psm {
-using namespace boost::polygon::operators;
 
 IRSolver::IRSolver(
     odb::dbNet* net,
@@ -798,8 +797,7 @@ void IRSolver::buildCondMatrixAndVoltages(
   }
   G.setFromTriplets(cond_values.begin(), cond_values.end());
   if (!is_ground) {
-    for (std::size_t i = 0; i < J.size(); i++) {
-      auto& j = J[i];
+    for (auto& j : J) {
       j = -j;
     }
   }
@@ -1293,8 +1291,8 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
     const double pt_x = pt.getX() / dbus;
     const double pt_y = pt.getY() / dbus;
 
-    report << "violation type: Unconnected node" << std::endl;
-    report << "  srcs: net:" << net_->getName() << std::endl;
+    report << "violation type: Unconnected node\n";
+    report << "  srcs: net:" << net_->getName() << '\n';
     report << fmt::format(
         "    bbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer {}",
         pt_x - bbox_size,
@@ -1302,7 +1300,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
         pt_x + bbox_size,
         pt_y + bbox_size,
         node->getLayer()->getName())
-           << std::endl;
+           << '\n';
   }
 
   std::set<odb::dbInst*, ODBCompare> insts;
@@ -1311,15 +1309,15 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
   }
   for (auto* inst : insts) {
     const odb::Rect inst_rect = inst->getBBox()->getBox();
-    report << "violation type: Unconnected instance" << std::endl;
-    report << "  srcs: inst:" << inst->getName() << std::endl;
+    report << "violation type: Unconnected instance\n";
+    report << "  srcs: inst:" << inst->getName() << '\n';
     report << fmt::format(
         "    bbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer -",
         inst_rect.xMin() / dbus,
         inst_rect.yMin() / dbus,
         inst_rect.xMax() / dbus,
         inst_rect.yMax() / dbus)
-           << std::endl;
+           << '\n';
   }
 }
 
@@ -1338,8 +1336,7 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
                    voltage_file);
   }
 
-  report << "Instance,Terminal,Layer,X location,Y location,Voltage"
-         << std::endl;
+  report << "Instance,Terminal,Layer,X location,Y location,Voltage\n";
 
   const auto& voltages = voltages_.at(corner);
 
@@ -1361,7 +1358,7 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
     report << layer->getName() << ",";
     report << x_loc << ",";
     report << y_loc << ",";
-    report << voltage << std::endl;
+    report << voltage << '\n';
   }
 }
 
@@ -1378,8 +1375,7 @@ void IRSolver::writeEMFile(const std::string& em_file,
   }
 
   report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
-            "location,Node1 Y location,Current"
-         << std::endl;
+            "location,Node1 Y location,Current\n";
 
   // scale and round to fA
   const int64_t scale_current = 1e15;
@@ -1405,7 +1401,7 @@ void IRSolver::writeEMFile(const std::string& em_file,
     report << fmt::format("{:.4f}", node1_pt.getY() / dbus) << ",";
     report << fmt::format("{:.3e}",
                           static_cast<Current>(current) / scale_current)
-           << std::endl;
+           << '\n';
   }
 }
 
@@ -1423,11 +1419,10 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   const auto res_map = getResistanceMap(corner);
 
   spice << "* Netlist for " << net_->getName() << " on " << corner->name()
-        << std::endl;
-  spice << std::endl;
+        << "\n\n";
 
   // Add resistive network
-  spice << "* Resistive network" << std::endl;
+  spice << "* Resistive network\n";
   std::size_t res_num = 0;
   for (const auto& conn : network_->getConnections()) {
     const std::string res_name = fmt::format("R{}", res_num++);
@@ -1436,12 +1431,12 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
         = fmt::format("{:.6e}", conn->getResistance(res_map));
 
     spice << res_name << " " << conn->getNode0()->getName() << " "
-          << conn->getNode1()->getName() << " R=" << resistance << std::endl;
+          << conn->getNode1()->getName() << " R=" << resistance << '\n';
   }
 
   // Add current sinks
-  spice << std::endl;
-  spice << "* Sinks" << std::endl;
+  spice << '\n';
+  spice << "* Sinks" << '\n';
   const auto& currents = currents_.at(corner);
   std::size_t current_number = 0;
   for (const auto& node : network_->getITermNodes()) {
@@ -1450,18 +1445,18 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
       continue;
     }
 
-    spice << "* Sink for " << node->getITerm()->getName() << std::endl;
+    spice << "* Sink for " << node->getITerm()->getName() << '\n';
 
     const std::string current_name = fmt::format("I{}", current_number++);
     const std::string node_current = fmt::format("{:.6e}", current);
 
     spice << current_name << " " << node->getName() << " 0 DC " << node_current
-          << std::endl;
+          << '\n';
   }
 
   // Add sources
-  spice << std::endl;
-  spice << "* Sources" << std::endl;
+  spice << '\n';
+  spice << "* Sources\n";
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
   const Voltage src_voltage = generateSourceNodes(
       source_type, voltage_source_file, corner, src_nodes);
@@ -1473,16 +1468,15 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
     const std::string node_voltage = fmt::format("{:.6f}", src_voltage);
 
     spice << volt_name << " " << node->getName() << " 0 DC " << node_voltage
-          << std::endl;
+          << '\n';
   }
 
-  spice << std::endl;
-  spice << "* Footer" << std::endl;
-  spice << ".OPTION NUMDGT=6" << std::endl;
-  spice << ".OP" << std::endl;
-  spice << ".SAVE TYPE=IC FILE=compare.ic" << std::endl;
-  spice << ".END" << std::endl;
-  spice << std::endl;
+  spice << '\n';
+  spice << "* Footer\n";
+  spice << ".OPTION NUMDGT=6\n";
+  spice << ".OP\n";
+  spice << ".SAVE TYPE=IC FILE=compare.ic\n";
+  spice << ".END\n\n";
 }
 
 std::map<Connection*, IRSolver::Current> IRSolver::generateCurrentMap(
@@ -1513,7 +1507,7 @@ void IRSolver::dumpVector(const Eigen::VectorXd& vector,
     return;
   }
   for (std::size_t i = 0; i < vector.size(); i++) {
-    report << fmt::format("{}[{}] = {:.6e}", name, i, vector[i]) << std::endl;
+    report << fmt::format("{}[{}] = {:.6e}", name, i, vector[i]) << '\n';
   }
 }
 
@@ -1534,7 +1528,7 @@ void IRSolver::dumpMatrix(
          ++it) {
       report << fmt::format(
           "{}[{}, {}] = {:.6e}", name, it.col(), it.row(), it.value())
-             << std::endl;
+             << '\n';
     }
   }
 }

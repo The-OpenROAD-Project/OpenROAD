@@ -227,6 +227,7 @@ Shape::NodeDataTree Shape::createNodeDataValue(
   }
 
   std::vector<NodeData*> node_values;
+  node_values.reserve(container.size());
   for (const auto& node_data : container) {
     node_values.emplace_back(node_data.get());
   }

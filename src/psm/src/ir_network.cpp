@@ -352,7 +352,7 @@ void IRNetwork::processPolygonToRectangles(
 
   auto get_layer_orientation
       = [](odb::dbTechLayer* layer) -> boost::polygon::orientation_2d_enum {
-    switch (layer->getDirection()) {
+    switch (layer->getDirection().getValue()) {
       case odb::dbTechLayerDir::NONE:
       case odb::dbTechLayerDir::HORIZONTAL:
         return boost::polygon::orientation_2d_enum::VERTICAL;
@@ -1184,7 +1184,7 @@ void IRNetwork::dumpNodes(const std::map<Node*, std::size_t>& node_map,
   }
 
   for (const auto& [idx, node] : nodeidx_map) {
-    report << std::to_string(idx) << ": " << node->describe("") << std::endl;
+    report << std::to_string(idx) << ": " << node->describe("") << '\n';
   }
 }
 

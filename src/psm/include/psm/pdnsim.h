@@ -88,7 +88,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
 
   PDNSim();
-  ~PDNSim();
+  ~PDNSim() override;
 
   void init(utl::Logger* logger,
             odb::dbDatabase* db,
