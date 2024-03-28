@@ -22,6 +22,7 @@ record_tests {
   invalid_routing_layer
   invalid_pin_placement
   macro_obs_not_aligned
+  modeling_instance_obs
   multiple_calls
   ndr_1w_3s
   ndr_2w_3s
@@ -60,6 +61,6 @@ record_tests {
   tracks1
   tracks2
   tracks3
+  unplaced_inst
   upper_layer_net
-  modeling_instance_obs
 }
