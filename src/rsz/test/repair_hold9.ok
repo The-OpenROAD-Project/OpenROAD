@@ -7,7 +7,7 @@
 Design area 670 u^2 10% utilization.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
-[INFO RSZ-0032] Inserted 163 hold buffers.
+[INFO RSZ-0032] Inserted 103 hold buffers.
 [ERROR RSZ-0060] Max buffer count reached.
 RSZ-0060
-Design area 800 u^2 13% utilization.
+Design area 752 u^2 12% utilization.
