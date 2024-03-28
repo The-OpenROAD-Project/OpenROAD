@@ -4,17 +4,15 @@
 [INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 39670 connections.
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
-[INFO PSM-0001] Reading voltage source file: Vsrc_aes_vss.loc.
-[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_aes_vss.loc.
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[WARNING PSM-0030] VSRC location at (544.000um, 12.000um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (544.070um, 33.115um).
-[WARNING PSM-0030] VSRC location at (208.000um, 348.000um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (208.070um, 353.115um).
-[INFO PSM-0031] Number of PDN nodes on net VSS = 26606.
-[INFO PSM-0064] Number of voltage sources = 2.
-[INFO PSM-0040] All PDN stripes on net VSS are connected.
+[INFO PSM-0040] All shapes on net VSS are connected.
+[INFO PSM-0015] Reading location of sources from: Vsrc_aes_vss.loc.
 ########## IR report #################
-Corner: default
-Worstcase voltage: 8.57e-02 V
-Average IR drop  : 5.30e-02 V
-Worstcase IR drop: 8.57e-02 V
+Net              : VSS
+Corner           : default
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 7.26e-02 V
+Average voltage  : 5.09e-02 V
+Average IR drop  : 5.09e-02 V
+Worstcase IR drop: 7.26e-02 V
+Percentage drop  : 6.60 %
 ######################################

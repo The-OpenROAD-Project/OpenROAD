@@ -5,16 +5,11 @@ an open-source static IR analyzer.
 
 Features:
 
--   Report worst IR drop.
--   Report worst current density over all nodes and wire segments in the
-    power distribution network, given a placed and PDN-synthesized design.
--   Check for floating PDN stripes on the power and ground nets.
--   Spice netlist writer for power distribution network wire segments.
-
-| | |
-| - | - |
-| ![Image 1](doc/current_map.jpg) | ![Image 2](doc/IR_map.jpg) |
-<p style="text-align: center;">(Left): Current Map, (Right): IR drop map</p>
+- Report worst IR drop.
+- Report worst current density over all nodes and wire segments in the
+  power distribution network, given a placed and PDN-synthesized design.
+- Check for floating PDN stripes on the power and ground nets.
+- Spice netlist writer for power distribution network wire segments.
 
 ## Commands
 
@@ -27,38 +22,36 @@ Features:
 
 ```tcl
 analyze_power_grid
-    [-vsrc vsrc_file]
-    [-outfile out_file]
-    [-error_file err_file]
-    [-enable_em]
-    [-em_outfile em_out_file]
-    [-net net_name]
-    [-dx bump_pitch_x]
-    [-dy bump_pitch_y]
-    [-node_density val_node_density]
-    [-node_density_factor val_node_density_factor]
+    -net net_name
     [-corner corner]
+    [-error_file error_file]
+    [-voltage_file voltage_file]
+    [-enable_em]
+    [-em_file em_file]
+    [-vsrc voltage_source_file]
+    [-source_type FULL|BUMPS|STRAPS]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-dx`,`-dy` | These arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc. |
 | `-net` | Name of the net to analyze, power or ground net name. |
-| `-enable_em` | Report current per power grid segment. |
-| `-outfile` | Write per-instance voltage into the file. |
-| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
-| `-voltage` | Sets the voltage on a specific net. If this option is not set, the Liberty file's voltage value is obtained from operating conditions. |
-| `-node_density` | Node density (in microns) on the standard cell rails. It cannot be used together with `-node_density_factor`. |
-| `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std cell rails. It cannot be used together with `-node_density`. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-corner` | Corner to use for analysis. | 
+| `-error_file` | File to write power grid error to. |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
+| `-enable_em` | Report current per power grid segment. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
+| `-voltage_file` | Write per-instance voltage into the file. |
+| `-source_type` | Indicate the type of voltage source grid to model. FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. | 
 
 ### Check Power Grid
 
 ```tcl
-check_power_grid -net net_name
+check_power_grid
+    -net net_name
+    [-floorplanning]
+    [-error_file error_file]
 ```
 
 #### Options
@@ -66,35 +59,37 @@ check_power_grid -net net_name
 | Switch Name | Description |
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
+| `-error_file` | File to write power grid error to. |
 
 ### Write Spice Power Grid
 
 ```tcl
 write_pg_spice
+    -net net_name
     [-vsrc vsrc_file]
-    [-outfile out_file]
-    [-net net_name]
-    [-dx bump_pitch_x]
-    [-dy bump_pitch_y]
     [-corner corner]
+    [-source_type FULL|BUMPS|STRAPS]
+    spice_file
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
-| `-dx`,`-dy` | Set the bump pitch to decide the voltage source location in the absence of a `vsrc` file. The default bump pitch is 140um if neither these arguments nor a `vsrc` file are given. |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
-| `-outfile` | Write per-instance voltage written into the file. |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
 | `-corner` | Corner to use for analysis. | 
+| `-source_type` | Indicate the type of voltage source grid to model. FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. | 
+| `spice_file` | File to write spice netlist to. | 
 
 ### Set PDNSim Net voltage
 
 ```tcl
 set_pdnsim_net_voltage
-    [-net net_name]
-    [-voltage volt]
+    -net net_name
+    -voltage volt
+    [-corner corner]
 ```
 
 #### Options
@@ -103,6 +98,27 @@ set_pdnsim_net_voltage
 | ----- | ----- |
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
+| `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+
+### Set PDNSim Power Source Settings
+
+```tcl
+set_pdnsim_source_settings
+    [-bump_dx pitch]
+    [-bump_dy pitch]
+    [-bump_size size]
+    [-bump_interval interval]
+    [-strap_track_pitch pitch]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bump_dx`,`-bump_dy` | Set the bump pitch to decide the voltage source location. The default bump pitch is 140um. |
+| `-bump_size` | Set the bump size. The default bump size is 70um. |
+| `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
+| `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
 
 ### Useful Developer Commands
 
@@ -110,7 +126,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 | Command Name | Description |
 | ----- | ----- |
-| `find_net` | Get a reference to net name. | 
+| `find_net` | Get a reference to net name. |
 
 ## Example scripts
 

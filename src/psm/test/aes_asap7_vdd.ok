@@ -15,19 +15,15 @@
 [WARNING STA-1212] asap7_data/asap7.lib line 14771, timing group from output port.
 [WARNING STA-1212] asap7_data/asap7.lib line 14804, timing group from output port.
 [WARNING STA-1212] asap7_data/asap7.lib line 14837, timing group from output port.
-[INFO PSM-0022] Using 0.700V for VDD
-[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
-[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 74.736 or core height of 74.520. Changing bump location to the center of the die at (39.420, 39.420).
-[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VDD = 37386.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
-Corner: default
+Net              : VDD
+Corner           : default
+Supply voltage   : 7.00e-01 V
 Worstcase voltage: 7.00e-01 V
-Average IR drop  : 1.22e-05 V
-Worstcase IR drop: 1.44e-05 V
+Average voltage  : 7.00e-01 V
+Average IR drop  : 3.10e-06 V
+Worstcase IR drop: 7.81e-06 V
+Percentage drop  : 0.00 %
 ######################################

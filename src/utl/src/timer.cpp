@@ -35,8 +35,6 @@
 
 #include "utl/timer.h"
 
-#include "utl/Logger.h"
-
 namespace utl {
 
 void Timer::reset()
@@ -53,6 +51,27 @@ std::ostream& operator<<(std::ostream& os, const Timer& t)
 {
   os << t.elapsed() << " sec";
   return os;
+}
+
+//////////////////////////
+
+DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
+                                   ToolId tool,
+                                   const std::string& group,
+                                   int level,
+                                   const std::string& msg)
+    : Timer(),
+      logger_(logger),
+      msg_(msg),
+      tool_(tool),
+      group_(group),
+      level_(level)
+{
+}
+
+DebugScopedTimer::~DebugScopedTimer()
+{
+  debugPrint(logger_, tool_, group_.c_str(), level_, msg_, *this);
 }
 
 }  // namespace utl

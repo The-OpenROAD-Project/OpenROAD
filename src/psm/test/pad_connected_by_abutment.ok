@@ -6,14 +6,15 @@
 [INFO ODB-0131]     Created 64 components and 281 component-terminals.
 [INFO ODB-0132]     Created 11 special nets and 249 connections.
 [INFO ODB-0133]     Created 11 nets and 27 connections.
-[INFO PSM-0022] Using 1.200V for VDD
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VDD = 3463.
-[INFO PSM-0064] Number of voltage sources = 255.
-[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
-Corner: default
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.20e+00 V
 Worstcase voltage: 1.20e+00 V
-Average IR drop  : 1.41e-09 V
-Worstcase IR drop: 1.06e-06 V
+Average voltage  : 1.20e+00 V
+Average IR drop  : 0.00e+00 V
+Worstcase IR drop: 1.07e-06 V
+Percentage drop  : 0.00 %
 ######################################
