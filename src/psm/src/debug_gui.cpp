@@ -290,44 +290,35 @@ void DebugGui::populate()
   reset();
 
   for (const auto& [layer, layer_shapes] : network_->getShapes()) {
-    std::vector<ShapeValue> values;
+    std::vector<Shape*> values;
     for (const auto& shape : layer_shapes) {
-      const odb::Rect& rect = shape->getShape();
-      const Box box(Point(rect.xMin(), rect.yMin()),
-                    Point(rect.xMax(), rect.yMax()));
-      values.emplace_back(box, shape.get());
+      values.emplace_back(shape.get());
     }
 
     shapes_[layer] = ShapeTree(values.begin(), values.end());
   }
 
   for (const auto& [layer, layer_nodes] : network_->getNodes()) {
-    std::vector<NodeValue> values;
+    std::vector<Node*> values;
     for (const auto& node : layer_nodes) {
-      const odb::Point& pt = node->getPoint();
-      const Point point(pt.x(), pt.y());
-      values.emplace_back(point, node.get());
+      values.emplace_back(node.get());
     }
 
     nodes_[layer] = NodeTree(values.begin(), values.end());
   }
 
-  std::map<odb::dbTechLayer*, std::vector<ITermNodeValue>> iterms;
+  std::map<odb::dbTechLayer*, std::vector<ITermNode*>> iterms;
   for (const auto& node : network_->getITermNodes()) {
-    const odb::Point& pt = node->getPoint();
-    const Point point(pt.x(), pt.y());
-    iterms[node->getLayer()].emplace_back(point, node.get());
+    iterms[node->getLayer()].emplace_back(node.get());
   }
   for (const auto& [layer, layer_nodes] : iterms) {
     iterm_nodes_[layer] = ITermNodeTree(layer_nodes.begin(), layer_nodes.end());
   }
   iterms.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<BPinNodeValue>> bpins;
+  std::map<odb::dbTechLayer*, std::vector<BPinNode*>> bpins;
   for (const auto& node : network_->getBPinNodes()) {
-    const odb::Point& pt = node->getPoint();
-    const Point point(pt.x(), pt.y());
-    bpins[node->getLayer()].emplace_back(point, node.get());
+    bpins[node->getLayer()].emplace_back(node.get());
   }
   for (const auto& [layer, layer_nodes] : bpins) {
     bpin_nodes_[layer] = BPinNodeTree(layer_nodes.begin(), layer_nodes.end());
@@ -423,17 +414,15 @@ void DebugGui::drawSource(const Node* node, gui::Painter& painter) const
 void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   const odb::Rect& rect = painter.getBounds();
-  const Box paint_box(Point(rect.xMin(), rect.yMin()),
-                      Point(rect.xMax(), rect.yMax()));
 
   if (checkDisplayControl(shapes_text_)) {
     painter.setPen(shape_color_, /* cosmetic */ true);
 
     for (auto shape_itr
-         = shapes_[layer].qbegin(boost::geometry::index::intersects(paint_box));
+         = shapes_[layer].qbegin(boost::geometry::index::intersects(rect));
          shape_itr != shapes_[layer].qend();
          shape_itr++) {
-      drawShape(shape_itr->second, painter);
+      drawShape(*shape_itr, painter);
     }
   }
 
@@ -441,38 +430,38 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(node_color_, /* cosmetic */ true, node_pen_width_);
 
     for (auto node_itr
-         = nodes_[layer].qbegin(boost::geometry::index::intersects(paint_box));
+         = nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
          node_itr != nodes_[layer].qend();
          node_itr++) {
-      drawNode(node_itr->second, painter, node_color_);
+      drawNode(*node_itr, painter, node_color_);
     }
   }
 
   if (checkDisplayControl(iterm_nodes_text_)) {
     painter.setPen(iterm_node_color_, /* cosmetic */ true, node_pen_width_);
 
-    for (auto node_itr = iterm_nodes_[layer].qbegin(
-             boost::geometry::index::intersects(paint_box));
+    for (auto node_itr
+         = iterm_nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
          node_itr != iterm_nodes_[layer].qend();
          node_itr++) {
-      drawNode(node_itr->second, painter, iterm_node_color_);
+      drawNode(*node_itr, painter, iterm_node_color_);
     }
   }
 
   if (checkDisplayControl(bpin_nodes_text_)) {
     painter.setPen(bpin_node_color_, /* cosmetic */ true, node_pen_width_);
 
-    for (auto node_itr = bpin_nodes_[layer].qbegin(
-             boost::geometry::index::intersects(paint_box));
+    for (auto node_itr
+         = bpin_nodes_[layer].qbegin(boost::geometry::index::intersects(rect));
          node_itr != bpin_nodes_[layer].qend();
          node_itr++) {
-      drawNode(node_itr->second, painter, bpin_node_color_);
+      drawNode(*node_itr, painter, bpin_node_color_);
     }
   }
 
   if (checkDisplayControl(connectivity_text_)) {
-    for (auto conn_itr = connections_[layer].qbegin(
-             boost::geometry::index::intersects(paint_box));
+    for (auto conn_itr
+         = connections_[layer].qbegin(boost::geometry::index::intersects(rect));
          conn_itr != connections_[layer].qend();
          conn_itr++) {
       drawConnection(conn_itr->second, painter);
@@ -482,11 +471,11 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   if (checkDisplayControl(source_text_)) {
     painter.setPen(src_node_color_, /* cosmetic */ true, node_pen_width_);
 
-    for (auto node_itr = sources_[layer].qbegin(
-             boost::geometry::index::intersects(paint_box));
+    for (auto node_itr
+         = sources_[layer].qbegin(boost::geometry::index::intersects(rect));
          node_itr != sources_[layer].qend();
          node_itr++) {
-      drawSource(node_itr->second, painter);
+      drawSource(*node_itr, painter);
     }
   }
 }
@@ -502,49 +491,46 @@ gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
     }
     found_select_ = false;
   } else {
-    const Box search_box(Point(region.xMin(), region.yMin()),
-                         Point(region.xMax(), region.yMax()));
-
     gui::SelectionSet selection;
 
     if (checkDisplayControl(shapes_text_)) {
-      for (auto shape_itr = shapes_[layer].qbegin(
-               boost::geometry::index::intersects(search_box));
+      for (auto shape_itr
+           = shapes_[layer].qbegin(boost::geometry::index::intersects(region));
            shape_itr != shapes_[layer].qend();
            shape_itr++) {
-        selected_shapes_.insert(shape_itr->second);
+        selected_shapes_.insert(*shape_itr);
       }
     }
     if (checkDisplayControl(nodes_text_)) {
-      for (auto node_itr = nodes_[layer].qbegin(
-               boost::geometry::index::intersects(search_box));
+      for (auto node_itr
+           = nodes_[layer].qbegin(boost::geometry::index::intersects(region));
            node_itr != nodes_[layer].qend();
            node_itr++) {
-        selected_nodes_.insert(node_itr->second);
-        selection.insert(gui::Gui::get()->makeSelected(node_itr->second));
+        selected_nodes_.insert(*node_itr);
+        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(iterm_nodes_text_)) {
       for (auto node_itr = iterm_nodes_[layer].qbegin(
-               boost::geometry::index::intersects(search_box));
+               boost::geometry::index::intersects(region));
            node_itr != iterm_nodes_[layer].qend();
            node_itr++) {
-        selected_nodes_.insert(node_itr->second);
-        selection.insert(gui::Gui::get()->makeSelected(node_itr->second));
+        selected_nodes_.insert(*node_itr);
+        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(bpin_nodes_text_)) {
       for (auto node_itr = bpin_nodes_[layer].qbegin(
-               boost::geometry::index::intersects(search_box));
+               boost::geometry::index::intersects(region));
            node_itr != bpin_nodes_[layer].qend();
            node_itr++) {
-        selected_nodes_.insert(node_itr->second);
-        selection.insert(gui::Gui::get()->makeSelected(node_itr->second));
+        selected_nodes_.insert(*node_itr);
+        selection.insert(gui::Gui::get()->makeSelected(*node_itr));
       }
     }
     if (checkDisplayControl(connectivity_text_)) {
       for (auto conn_itr = connections_[layer].qbegin(
-               boost::geometry::index::intersects(search_box));
+               boost::geometry::index::intersects(region));
            conn_itr != connections_[layer].qend();
            conn_itr++) {
         selected_connections_.insert(conn_itr->second);
@@ -582,11 +568,9 @@ void DebugGui::setSources(
 {
   sources_.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<NodeValue>> srcs;
+  std::map<odb::dbTechLayer*, std::vector<Node*>> srcs;
   for (const auto& node : sources) {
-    const odb::Point& pt = node->getPoint();
-    const Point point(pt.x(), pt.y());
-    srcs[node->getLayer()].emplace_back(point, node->getSource());
+    srcs[node->getLayer()].emplace_back(node->getSource());
   }
 
   for (const auto& [layer, values] : srcs) {

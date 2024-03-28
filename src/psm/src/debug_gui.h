@@ -34,6 +34,7 @@
 #include <set>
 
 #include "gui/gui.h"
+#include "ir_network.h"
 #include "odb/geom_boost.h"
 
 namespace psm {
@@ -126,28 +127,27 @@ class DebugGui : public gui::Renderer
   using Point
       = boost::geometry::model::d2::point_xy<int,
                                              boost::geometry::cs::cartesian>;
-  using Box = boost::geometry::model::box<Point>;
   using Line = boost::geometry::model::segment<Point>;
-  using ShapeValue = std::pair<Box, Shape*>;
   using ConnectionValue = std::pair<Line, Connection*>;
-  using NodeValue = std::pair<Point, Node*>;
-  using ITermNodeValue = std::pair<Point, ITermNode*>;
-  using BPinNodeValue = std::pair<Point, BPinNode*>;
   using ShapeTree
-      = boost::geometry::index::rtree<ShapeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Shape*,
+                                      boost::geometry::index::quadratic<16>,
+                                      RectIndexableGetter<Shape>>;
   using ConnectionTree
       = boost::geometry::index::rtree<ConnectionValue,
                                       boost::geometry::index::quadratic<16>>;
   using NodeTree
-      = boost::geometry::index::rtree<NodeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Node*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<Node>>;
   using ITermNodeTree
-      = boost::geometry::index::rtree<ITermNodeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<ITermNode*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<ITermNode>>;
   using BPinNodeTree
-      = boost::geometry::index::rtree<BPinNodeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<BPinNode*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<BPinNode>>;
 
   bool isSelected(const Node* node) const;
   bool isSelected(const Shape* shape) const;

@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "debug_gui.h"
+#include "ir_network.h"
 #include "node.h"
 #include "odb/db.h"
 #include "psm/pdnsim.h"
@@ -69,14 +70,14 @@ class IRSolver
       = boost::geometry::model::d2::point_xy<int,
                                              boost::geometry::cs::cartesian>;
   using Box = boost::geometry::model::box<Point>;
-  using TerminalValue = std::pair<Box, TerminalNode*>;
   using TerminalTree
-      = boost::geometry::index::rtree<TerminalValue,
-                                      boost::geometry::index::quadratic<16>>;
-  using ShapeValue = std::pair<Box, Shape*>;
+      = boost::geometry::index::rtree<TerminalNode*,
+                                      boost::geometry::index::quadratic<16>,
+                                      RectIndexableGetter<TerminalNode>>;
   using ShapeTree
-      = boost::geometry::index::rtree<ShapeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Shape*,
+                                      boost::geometry::index::quadratic<16>,
+                                      RectIndexableGetter<Shape>>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 

@@ -252,12 +252,12 @@ std::map<Node*, std::set<Node*>> Shape::mergeNodes(
                                pt.getX() + radius,
                                pt.getY() + radius);
     std::set<Node*> merge;
-    for (auto itr = tree.qbegin(
-             boost::geometry::index::intersects(check_rect)
-             && boost::geometry::index::satisfies(
-                 [](const auto& val) { return !val->used; })
-             && boost::geometry::index::satisfies(
-                 [&](const auto& val) { return val->node != node; }));
+    for (auto itr
+         = tree.qbegin(boost::geometry::index::intersects(check_rect)
+                       && boost::geometry::index::satisfies(
+                           [](const auto& val) { return !val->used; })
+                       && boost::geometry::index::satisfies(
+                           [&](const auto& val) { return val->node != node; }));
          itr != tree.qend();
          itr++) {
       auto* data = *itr;

@@ -369,10 +369,11 @@ void IRNetwork::processPolygonToRectangles(
   std::vector<odb::Rect> search_rect_shapes;
   shape_poly_set.get_rectangles(search_rect_shapes,
                                 get_layer_orientation(layer));
-  using EdgeValue = std::pair<Point, Node*>;
+
   using EdgeTree
-      = boost::geometry::index::rtree<EdgeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Node*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<Node>>;
 
   EdgeTree poly_edge_nodes;
   auto search_start = search_rect_shapes.begin();
@@ -391,17 +392,13 @@ void IRNetwork::processPolygonToRectangles(
 
     auto shape = std::make_unique<Shape>(rect, layer);
 
-    // check old edges
-    const Box rect_box(Point(rect.xMin(), rect.yMin()),
-                       Point(rect.xMax(), rect.yMax()));
-
     // Create starter nodes
     nodes.emplace(rect.xCenter(), rect.yCenter());
     for (const auto& pt : nodes) {
       auto node = std::make_unique<Node>(pt, layer);
 
       // add edge to tree
-      poly_edge_nodes.insert({Point(pt.getX(), pt.getY()), node.get()});
+      poly_edge_nodes.insert(node.get());
 
       new_nodes.push_back(std::move(node));
     }
@@ -409,7 +406,7 @@ void IRNetwork::processPolygonToRectangles(
     // check terminals
     auto& shape_terms = terminal_connections[shape.get()];
     for (auto itr = terminals.qbegin(
-             boost::geometry::index::intersects(rect_box)
+             boost::geometry::index::intersects(rect)
              && boost::geometry::index::satisfies([layer](const auto& other) {
                   return layer == other->getLayer();
                 }));
