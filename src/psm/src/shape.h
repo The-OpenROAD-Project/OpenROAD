@@ -104,7 +104,7 @@ class Shape
   odb::Rect shape_;
   odb::dbTechLayer* layer_;
 
-  std::size_t id_;
+  std::size_t id_ = 0;
 };
 
 }  // namespace psm
