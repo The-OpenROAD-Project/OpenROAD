@@ -39,7 +39,7 @@
 #include <vector>
 
 #include "ir_network.h"
-#include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace odb {
 class dbTechLayer;

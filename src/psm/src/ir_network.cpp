@@ -614,10 +614,9 @@ IRNetwork::ShapeTree IRNetwork::getShapeTree(odb::dbTechLayer* layer) const
 IRNetwork::NodeTree IRNetwork::getNodeTree(odb::dbTechLayer* layer) const
 {
   // generate Rtree of shapes to associate with vias
-  std::vector<NodeValue> tree_values;
+  std::vector<Node*> tree_values;
   for (const auto& node : nodes_.at(layer)) {
-    const odb::Point& pt = node->getPoint();
-    tree_values.emplace_back(Point(pt.x(), pt.y()), node.get());
+    tree_values.emplace_back(node.get());
   }
   NodeTree tree(tree_values.begin(), tree_values.end());
   return tree;
@@ -1264,7 +1263,7 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
       for (auto itr = node_tree.qbegin(boost::geometry::index::intersects(box));
            itr != node_tree.qend();
            itr++) {
-        pin_nodes.insert(itr->second);
+        pin_nodes.insert(*itr);
       }
     }
   }

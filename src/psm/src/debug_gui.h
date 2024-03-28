@@ -34,7 +34,7 @@
 #include <set>
 
 #include "gui/gui.h"
-#include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace psm {
 class Node;

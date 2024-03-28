@@ -77,10 +77,16 @@ class IRNetwork
                                       boost::geometry::index::quadratic<16>,
                                       RectIndexableGetter<Shape>>;
 
-  using NodeValue = std::pair<Point, Node*>;
+  template <typename T>
+  struct PointIndexableGetter
+  {
+    using result_type = odb::Point;
+    odb::Point operator()(const T* t) const { return t->getPoint(); }
+  };
   using NodeTree
-      = boost::geometry::index::rtree<NodeValue,
-                                      boost::geometry::index::quadratic<16>>;
+      = boost::geometry::index::rtree<Node*,
+                                      boost::geometry::index::quadratic<16>,
+                                      PointIndexableGetter<Node>>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 

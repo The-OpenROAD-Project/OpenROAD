@@ -36,6 +36,7 @@
 #include <boost/polygon/polygon.hpp>
 
 #include "node.h"
+#include "odb/geom_boost.h"
 
 namespace psm {
 
@@ -63,16 +64,16 @@ std::vector<std::unique_ptr<Connection>> Shape::connectNodes(
     const auto& pt = node->getPoint();
     const IRNetwork::Point point(pt.x(), pt.y());
 
-    std::vector<IRNetwork::NodeValue> ordered_neighbors;
+    std::vector<Node*> ordered_neighbors;
 
     used.insert(node);
 
     tree.query(boost::geometry::index::satisfies([&](const auto value) {
-                 return used.find(value.second) == used.end();
+                 return used.find(value) == used.end();
                }) && boost::geometry::index::nearest(point, 1),
                std::back_inserter(ordered_neighbors));
 
-    for (const auto& [other_pt, other] : ordered_neighbors) {
+    for (Node* other : ordered_neighbors) {
       const int len_x
           = std::abs(other->getPoint().getX() - node->getPoint().getX());
       const int len_y
@@ -147,23 +148,20 @@ std::vector<std::unique_ptr<Node>> Shape::createFillerNodes(
 Node::NodeSet Shape::getNodes(const IRNetwork::NodeTree& layer_nodes) const
 {
   Node::NodeSet nodes;
-  const IRNetwork::Box box(IRNetwork::Point(shape_.xMin(), shape_.yMin()),
-                           IRNetwork::Point(shape_.xMax(), shape_.yMax()));
-  for (auto itr = layer_nodes.qbegin(boost::geometry::index::intersects(box));
+  for (auto itr
+       = layer_nodes.qbegin(boost::geometry::index::intersects(shape_));
        itr != layer_nodes.qend();
        itr++) {
-    nodes.insert(itr->second);
+    nodes.insert(*itr);
   }
   return nodes;
 }
 
 IRNetwork::NodeTree Shape::getNodeTree(const Node::NodeSet& nodes) const
 {
-  std::vector<IRNetwork::NodeValue> values;
+  std::vector<Node*> values;
   for (auto* node : nodes) {
-    const auto& pt = node->getPoint();
-
-    values.emplace_back(IRNetwork::Point(pt.x(), pt.y()), node);
+    values.emplace_back(node);
   }
   IRNetwork::NodeTree tree(values.begin(), values.end());
 

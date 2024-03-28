@@ -567,11 +567,11 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
         shape.xMax() / dbus,
         shape.yMax() / dbus);
     bool found = false;
-    for (auto itr = top_nodes.qbegin(boost::geometry::index::intersects(box));
+    for (auto itr = top_nodes.qbegin(boost::geometry::index::intersects(shape));
          itr != top_nodes.qend();
          itr++) {
-      source_nodes[itr->second->getPoint()].push_back(
-          std::make_unique<SourceNode>(itr->second));
+      source_nodes[(*itr)->getPoint()].push_back(
+          std::make_unique<SourceNode>(*itr));
       found = true;
     }
 
@@ -579,11 +579,11 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
       // Since the shape didn't intersect anything, we need to pick the nearest
       // node
       const Point pt(shape.xCenter(), shape.yCenter());
-      std::vector<IRNetwork::NodeValue> returned_nodes;
+      std::vector<Node*> returned_nodes;
       top_nodes.query(boost::geometry::index::nearest(pt, 1),
                       std::back_inserter(returned_nodes));
 
-      for (const auto& [node_pt, node] : returned_nodes) {
+      for (Node* node : returned_nodes) {
         source_nodes[node->getPoint()].push_back(
             std::make_unique<SourceNode>(node));
       }
