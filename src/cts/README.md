@@ -83,7 +83,7 @@ clock_tree_synthesis
 | `-no_insertion_delay` | Don't consider insertion delays in macro timing models in balancing latencies between macro cells and registers. This option prevents construction of separate clock trees for macro cells and registers.  The default value is `False`. |
 | `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
-| `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default values is `1.0`, meaning all needed delay buffers are inserted.  Value of 0.5 means only half of necessary delay buffers are inserted.  Value of 0.0 means no insertion of delay buffers. This option is a no op if -no_insertion_delay is used. |
+| `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. This option is ignored if used with -no_insertion_delay. |
 
 ### Report CTS
 
