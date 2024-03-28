@@ -421,7 +421,7 @@ const char* dbNetwork::name(const Instance* instance) const
   if (db_inst) {
     return tmpStringCopy(db_inst->getConstName());
   }
-  return tmpStringCopy(mod_inst->getName().c_str());
+  return tmpStringCopy(mod_inst->getName());
 }
 
 Cell* dbNetwork::cell(const Instance* instance) const

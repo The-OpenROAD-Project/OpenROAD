@@ -46,6 +46,7 @@
 #include "map"
 #include "odb.h"
 #include "tuple"
+#include "vector"
 
 namespace odb {
 
@@ -219,6 +220,17 @@ class dbOStream
     return *this;
   }
 
+  template <class T1>
+  dbOStream& operator<<(const std::vector<T1>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto val : m) {
+      *this << val;
+    }
+    return *this;
+  }
+
   template <class T, std::size_t SIZE>
   dbOStream& operator<<(const std::array<T, SIZE>& a)
   {
@@ -254,7 +266,6 @@ class dbOStream
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
-
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
 
   Position pos() const { return _f.tellp(); }
@@ -420,6 +431,21 @@ class dbIStream
     }
     return *this;
   }
+
+  template <class T1>
+  dbIStream& operator>>(std::vector<T1>& m)
+  {
+    uint sz;
+    *this >> sz;
+    m.reserve(sz);
+    for (uint i = 0; i < sz; i++) {
+      T1 val;
+      *this >> val;
+      m.push_back(val);
+    }
+    return *this;
+  }
+
   template <class T, std::size_t SIZE>
   dbIStream& operator>>(std::array<T, SIZE>& a)
   {

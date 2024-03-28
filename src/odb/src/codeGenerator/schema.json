@@ -17,7 +17,71 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbModule.h"]
+	"includes": ["dbModInst.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModBTermItr",
+      "parentObject": "dbModBTerm",
+      "tableName": "modbterm_tbl",
+      "reversible": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
+      "sequential": 0,
+	"includes": ["dbModBTerm.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModInstModITermItr",
+      "parentObject": "dbModITerm",
+      "tableName": "moditerm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModITerm.h", "dbModule.h", "dbModInst.h"]
+    },
+    {
+      "name": "dbModuleModNetItr",
+      "parentObject": "dbModNet",
+      "tableName": "modnet_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetModITermItr",
+      "parentObject": "dbModITerm",
+      "tableName": "moditerm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetModBTermItr",
+      "parentObject": "dbModBTerm",
+      "tableName": "modbterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetBTermItr",
+      "parentObject": "dbBTerm",
+      "tableName": "bterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetITermItr",
+      "parentObject": "dbITerm",
+      "tableName": "iterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h", "dbModule.h"]
     },
     {
       "name": "dbGroupModInstItr",
