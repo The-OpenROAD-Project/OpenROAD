@@ -130,9 +130,10 @@ std::vector<std::unique_ptr<Node>> Shape::createFillerNodes(
   const IRNetwork::NodeTree tree = getNodeTree(getNodes(layer_nodes));
 
   while (shape_.overlaps(start)) {
-    const IRNetwork::Box box(
-        IRNetwork::Point(start.x() - radius, start.y() - radius),
-        IRNetwork::Point(start.x() + radius, start.y() + radius));
+    const odb::Rect box(start.x() - radius,
+                        start.y() - radius,
+                        start.x() + radius,
+                        start.y() + radius);
 
     if (tree.qbegin(boost::geometry::index::intersects(box)) == tree.qend()) {
       new_nodes.push_back(std::make_unique<Node>(start, layer_));

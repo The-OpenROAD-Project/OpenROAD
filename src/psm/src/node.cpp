@@ -48,17 +48,17 @@ bool Node::compare(const Node* other) const
     return true;
   }
 
-  int lhs_x = pt_.getX();
-  int lhs_y = pt_.getY();
-  int lhs_l = layer_->getNumber();
-  NodeType lhs_t = getType();
-  int lhs_s = getTypeCompareInfo();
+  const int lhs_x = pt_.getX();
+  const int lhs_y = pt_.getY();
+  const int lhs_l = layer_->getNumber();
+  const NodeType lhs_t = getType();
+  const int lhs_s = getTypeCompareInfo();
 
-  int rhs_x = other->pt_.getX();
-  int rhs_y = other->pt_.getY();
-  int rhs_l = other->layer_->getNumber();
-  NodeType rhs_t = other->getType();
-  int rhs_s = other->getTypeCompareInfo();
+  const int rhs_x = other->pt_.getX();
+  const int rhs_y = other->pt_.getY();
+  const int rhs_l = other->layer_->getNumber();
+  const NodeType rhs_t = other->getType();
+  const int rhs_s = other->getTypeCompareInfo();
 
   return std::tie(lhs_l, lhs_x, lhs_y, lhs_t, lhs_s)
          < std::tie(rhs_l, rhs_x, rhs_y, rhs_t, rhs_s);
@@ -73,12 +73,12 @@ std::string Node::describe(const std::string& prefix) const
 {
   const double dbus = getDBUs();
 
-  std::string desc = fmt::format("{}{}: ({:.4f}, {:.4f}) on {}",
-                                 prefix,
-                                 getTypeName(),
-                                 pt_.getX() / dbus,
-                                 pt_.getY() / dbus,
-                                 layer_->getName());
+  const std::string desc = fmt::format("{}{}: ({:.4f}, {:.4f}) on {}",
+                                       prefix,
+                                       getTypeName(),
+                                       pt_.getX() / dbus,
+                                       pt_.getY() / dbus,
+                                       layer_->getName());
 
   return desc;
 }
@@ -97,11 +97,7 @@ std::string Node::getName() const
 {
   std::string type = getTypeName();
 
-  auto space = type.find(' ');
-  while (space != std::string::npos) {
-    type.erase(space, 1);
-    space = type.find(' ');
-  }
+  type.erase(remove(type.begin(), type.end(), ' '), type.end());
 
   return fmt::format(
       "{}_{}_{}_{}", type, layer_->getName(), pt_.getX(), pt_.getY());

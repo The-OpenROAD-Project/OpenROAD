@@ -553,8 +553,6 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
 
   const auto top_nodes = network_->getTopLayerNodeTree();
   for (const auto& shape : shapes) {
-    const IRNetwork::Box box(IRNetwork::Point(shape.xMin(), shape.yMin()),
-                             IRNetwork::Point(shape.xMax(), shape.yMax()));
     debugPrint(
         logger_,
         utl::PSM,

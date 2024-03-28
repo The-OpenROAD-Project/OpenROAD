@@ -1255,9 +1255,8 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
     const auto node_tree = getNodeTree(layer);
 
     for (const auto& shape : shapes) {
-      const Box box(Point(shape.xMin(), shape.yMin()),
-                    Point(shape.xMax(), shape.yMax()));
-      for (auto itr = node_tree.qbegin(boost::geometry::index::intersects(box));
+      for (auto itr
+           = node_tree.qbegin(boost::geometry::index::intersects(shape));
            itr != node_tree.qend();
            itr++) {
         pin_nodes.insert(*itr);

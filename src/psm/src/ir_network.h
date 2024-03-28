@@ -72,7 +72,6 @@ class IRNetwork
   using Point
       = boost::geometry::model::d2::point_xy<int,
                                              boost::geometry::cs::cartesian>;
-  using Box = boost::geometry::model::box<Point>;
 
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
