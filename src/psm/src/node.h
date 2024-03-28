@@ -76,7 +76,7 @@ class Node
   using NodeSet = std::set<Node*, Compare>;
 
   Node(const odb::Point& pt, odb::dbTechLayer* layer);
-  ~Node() = default;
+  virtual ~Node() = default;
 
   bool compare(const Node* other) const;
   bool compare(const std::unique_ptr<Node>& other) const;

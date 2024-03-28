@@ -67,7 +67,7 @@ class Connection
   };
 
   Connection(Node* node0, Node* node1);
-  ~Connection() = default;
+  virtual ~Connection() = default;
 
   void ensureNodeOrder();
 
