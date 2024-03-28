@@ -954,6 +954,7 @@ void IRSolver::solve(sta::Corner* corner,
   for (const auto& [node, node_idx] : real_node_index) {
     voltages[node] = V[node_idx];
   }
+  solution_voltages_[corner] = src_voltage;
 }
 
 std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
@@ -1059,6 +1060,17 @@ std::pair<bool, IRSolver::Voltage> IRSolver::getUserVoltage(
   return {false, 0.0};
 }
 
+std::pair<bool, IRSolver::Voltage> IRSolver::getSolutionVoltage(
+    sta::Corner* corner) const
+{
+  auto find_corner = solution_voltages_.find(corner);
+  if (find_corner != solution_voltages_.end()) {
+    return {true, find_corner->second};
+  }
+
+  return {false, 0.0};
+}
+
 odb::dbNet* IRSolver::getPowerNet() const
 {
   if (net_->getSigType() == odb::dbSigType::POWER) {
@@ -1077,6 +1089,14 @@ odb::dbNet* IRSolver::getPowerNet() const
 IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Corner* corner) const
 {
   odb::dbNet* net = getPowerNet();
+
+  if (net == net_) {
+    const auto& [has_solution_voltage, solution_voltage]
+        = getSolutionVoltage(corner);
+    if (has_solution_voltage) {
+      return solution_voltage;
+    }
+  }
 
   if (net != nullptr) {
     const auto& [has_user, user_voltage] = getUserVoltage(corner, net);
@@ -1130,7 +1150,7 @@ IRSolver::Results IRSolver::getSolution(sta::Corner* corner) const
     return results;
   }
 
-  results.net_voltage = getNetVoltage(corner);
+  results.net_voltage = solution_voltages_.at(corner);
 
   const bool is_ground = results.net_voltage == 0.0;
   auto worst_calc = [is_ground](Voltage& worst, Voltage check) {

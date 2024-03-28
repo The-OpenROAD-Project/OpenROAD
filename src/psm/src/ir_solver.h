@@ -159,6 +159,7 @@ class IRSolver
   std::pair<bool, Voltage> getPVTVoltage(sta::Corner* corner) const;
   std::pair<bool, Voltage> getUserVoltage(sta::Corner* corner,
                                           odb::dbNet* net) const;
+  std::pair<bool, Voltage> getSolutionVoltage(sta::Corner* corner) const;
 
   odb::dbNet* getPowerNet() const;
 
@@ -255,6 +256,7 @@ class IRSolver
   std::unique_ptr<DebugGui> gui_;
 
   const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages_;
+  std::map<sta::Corner*, Voltage> solution_voltages_;
 
   const PDNSim::GeneratedSourceSettings& generated_source_settings_;
 
