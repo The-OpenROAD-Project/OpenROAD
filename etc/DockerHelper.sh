@@ -31,8 +31,11 @@ usage: $0 [CMD] [OPTIONS]
                                   Default = \$(nproc)
   -sha                          Use git commit sha as the tag image. Default is
                                   'latest'.
+  -ci                           Install CI tools in image
   -h -help                      Show this message and exits
   -local                        Installs with prefix /home/openroad-deps
+  -username                     Docker Username
+  -password                     Docker Password
 
 EOF
     exit "${1:-1}"
@@ -40,6 +43,7 @@ EOF
 
 _setup() {
     commitSha="$(git rev-parse HEAD)"
+    commitSha="$(echo "$commitSha" | tr -cd 'a-zA-Z0-9-')"
     case "${compiler}" in
         "gcc" | "clang" )
             ;;
@@ -102,6 +106,9 @@ _setup() {
             if [[ "${equivalenceDeps}" == "yes" ]]; then
                 buildArgs="${buildArgs} -eqy"
             fi
+            if [[ "$CI" == "yes" ]]; then
+                buildArgs="${buildArgs} -ci"
+            fi
             if [[ "${buildArgs}" != "" ]]; then
                 buildArgs="--build-arg INSTALLER_ARGS='${buildArgs}'"
             fi
@@ -141,51 +148,24 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
+    echo ${buildArgs}
+    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}" --progress plain
 }
 
 _push() {
     case "${target}" in
         "dev" )
-            read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$  ]]; then
-                mkdir -p build
-
-                OS_LIST="centos7 ubuntu20.04 ubuntu22.04"
-                # create image with sha and latest tag for all os
-                for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh create -target=dev \
-                        2>&1 | tee build/create-${os}-latest.log &
-                done
-                wait
-
-                for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh create -target=dev -sha \
-                        2>&1 | tee build/create-${os}-${commitSha}.log &
-                done
-                wait
-
-                # test image with sha and latest tag for all os and compiler
-                for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh test -target=builder -sha \
-                        2>&1 | tee build/test-${os}-gcc-latest.log &
-                done
-                wait
-
-                for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh test -target=builder -sha -compiler=clang \
-                        2>&1 | tee build/test-${os}-clang-latest.log &
-                done
-                wait
-
-                for os in ${OS_LIST}; do
-                    echo [DRY-RUN] docker push openroad/${os}-dev:latest
-                    echo [DRY-RUN] docker push openroad/${os}-dev:${commitSha}
-                done
-
+            mkdir -p build
+            
+            docker login --username ${username} --password ${password}
+            if [[ "${useCommitSha}" == "yes" ]]; then
+                ./etc/DockerHelper.sh create -os=${os} -ci -target=dev -sha \
+                    2>&1 | tee build/create-${os}-${commitSha}.log
+                docker push openroad/${os}-dev:${commitSha}
             else
-                echo "Will not push."
+                ./etc/DockerHelper.sh create -os=${os} -ci -target=dev \
+                    2>&1 | tee build/create-${os}-${tag}.log
+                docker push openroad/${os}-dev:${tag}
             fi
             ;;
         *)
@@ -194,6 +174,57 @@ _push() {
             ;;
     esac
 }
+
+# _push() {
+#     case "${target}" in
+#         "dev" )
+#             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
+#             echo
+#             if [[ $REPLY =~ ^[Yy]$  ]]; then
+#                 mkdir -p build
+
+#                 OS_LIST="centos7 ubuntu20.04 ubuntu22.04"
+#                 # create image with sha and latest tag for all os
+#                 for os in ${OS_LIST}; do
+#                     ./etc/DockerHelper.sh create -target=dev \
+#                         2>&1 | tee build/create-${os}-latest.log &
+#                 done
+#                 wait
+
+#                 for os in ${OS_LIST}; do
+#                     ./etc/DockerHelper.sh create -target=dev -sha \
+#                         2>&1 | tee build/create-${os}-${commitSha}.log &
+#                 done
+#                 wait
+
+#                 # test image with sha and latest tag for all os and compiler
+#                 for os in ${OS_LIST}; do
+#                     ./etc/DockerHelper.sh test -target=builder -sha \
+#                         2>&1 | tee build/test-${os}-gcc-latest.log &
+#                 done
+#                 wait
+
+#                 for os in ${OS_LIST}; do
+#                     ./etc/DockerHelper.sh test -target=builder -sha -compiler=clang \
+#                         2>&1 | tee build/test-${os}-clang-latest.log &
+#                 done
+#                 wait
+
+#                 for os in ${OS_LIST}; do
+#                     echo [DRY-RUN] docker push openroad/${os}-dev:latest
+#                     echo [DRY-RUN] docker push openroad/${os}-dev:${commitSha}
+#                 done
+
+#             else
+#                 echo "Will not push."
+#             fi
+#             ;;
+#         *)
+#             echo "Target ${target} is not valid candidate for push to DockerHub." >&2
+#             _help
+#             ;;
+#     esac
+# }
 
 #
 # MAIN
@@ -221,6 +252,7 @@ compiler="gcc"
 useCommitSha="no"
 isLocal="no"
 equivalenceDeps="yes"
+CI="no"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -254,8 +286,17 @@ while [ "$#" -gt 0 ]; do
         -sha )
             useCommitSha=yes
             ;;
+        -ci )
+            CI="yes"
+            ;;
         -local )
             isLocal=yes
+            ;;
+        -username=* )
+            username="${1#*=}"
+            ;;
+        -password=* )
+            password="${1#*=}"
             ;;
         -no_eqy )
             equivalenceDeps=no
