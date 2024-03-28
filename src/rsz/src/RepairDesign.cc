@@ -818,6 +818,16 @@ RepairDesign::repairNetWire(const BufferedNetPtr& bnet,
     //                     split_length
     // from-------repeater-------------to/ref
     int split_length = std::numeric_limits<int>::max();
+    if (max_length_ > 0 && wire_length > max_length_) {
+      debugPrint(logger_, RSZ, "repair_net", 3,
+                 "{:{}s}max wire length violation {} > {}",
+                 "", level,
+                 units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
+                 units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
+      split_length = min(max_length_, length/2);
+
+      split_wire = true;
+    }
     if (wire_cap > 0.0
         && load_cap > max_cap_) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}max cap violation {} > {}",
@@ -871,23 +881,6 @@ RepairDesign::repairNetWire(const BufferedNetPtr& bnet,
         split_wire = false;
         resize = true;
       }
-    }
-    if (max_length_ > 0 && wire_length > max_length_) {
-      debugPrint(logger_, RSZ, "repair_net", 3,
-                 "{:{}s}max wire length violation {} > {}",
-                 "", level,
-                 units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
-                 units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
-      if(split_wire) {
-        split_length = min(split_length, max_length_);
-      } else {
-        split_length = min(max_length_, length/2);
-        if(length - (split_length) * (1.0 - length_margin) >= max_length_) {
-          split_length = max_length_;
-        }
-      }
-
-      split_wire = true;
     }
 
     if (split_wire) {
