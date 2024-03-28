@@ -157,7 +157,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
       cnt++;
     }
   }
-  if (cnt >= 2) {
+  if (cnt >= 3) {
     return;
   }
 
