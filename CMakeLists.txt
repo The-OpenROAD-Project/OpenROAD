@@ -153,3 +153,27 @@ if(ENABLE_TESTS)
 endif()
 
 add_subdirectory(src)
+
+
+####################################################################
+
+# Build man pages (Optional)
+
+# Use the processor_count command to get the number of cores
+include(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+message("Number of processor cores: ${PROCESSOR_COUNT}")
+
+option(BUILD_MAN "Enable building man pages" OFF)
+if(BUILD_MAN)
+  add_custom_target(
+    man_page ALL
+    COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
+    WORKING_DIRECTORY ${OPENROAD_HOME}/docs
+  )
+  
+  # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
+  set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+
+endif()
