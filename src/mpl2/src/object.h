@@ -133,6 +133,16 @@ enum ClusterType
   MixedCluster
 };
 
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct SnapParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int pin_to_origin = 0;
+};
+
 // Metrics class for logical modules and clusters
 class Metrics
 {
@@ -430,14 +440,6 @@ class HardMacro
   void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
 
  private:
-  struct SnapParameters
-  {
-    int offset = 0;
-    int pitch = 0;
-    int pin_width = 0;
-    int pin_to_origin = 0;
-  };
-
   SnapParameters computeSnapParameters(odb::dbBlock* block,
                                        odb::dbTechLayer* layer,
                                        odb::dbBox* box,

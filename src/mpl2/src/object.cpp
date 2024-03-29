@@ -1030,8 +1030,7 @@ odb::Point HardMacro::computeSnapOrigin(const odb::Rect& macro_box,
   return snap_origin;
 }
 
-// Compute for each pin: layer offset, pitch and pin width
-HardMacro::SnapParameters HardMacro::computeSnapParameters(
+SnapParameters HardMacro::computeSnapParameters(
     odb::dbBlock* block,
     odb::dbTechLayer* layer,
     odb::dbBox* box,
