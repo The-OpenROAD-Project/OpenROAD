@@ -63,8 +63,8 @@ class _dbModITerm : public _dbObject
 
   char* _name;
   dbId<_dbModInst> _parent;
-  dbId<_dbModBTerm> _childPort;
-  dbId<_dbModNet> _modNet;
+  dbId<_dbModBTerm> _child_modbterm;
+  dbId<_dbModNet> _mod_net;
   dbId<_dbModITerm> _next_net_moditerm;
   dbId<_dbModITerm> _prev_net_moditerm;
   dbId<_dbModITerm> _next_entry;

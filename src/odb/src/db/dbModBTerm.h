@@ -63,9 +63,9 @@ class _dbModBTerm : public _dbObject
 
   char* _name;
   uint _flags;
-  dbId<_dbModITerm> _parentPin;
+  dbId<_dbModITerm> _parent_moditerm;
   dbId<_dbModule> _parent;
-  dbId<_dbModNet> _modNet;
+  dbId<_dbModNet> _modnet;
   dbId<_dbModBTerm> _next_net_modbterm;
   dbId<_dbModBTerm> _prev_net_modbterm;
   dbId<_dbModBTerm> _next_entry;

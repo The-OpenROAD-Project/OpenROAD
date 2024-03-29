@@ -7480,8 +7480,8 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
-  void setParentPin(dbModITerm* parent_pin);
-  dbModITerm* getParentPin() const;
+  void setParentModITerm(dbModITerm* parent_pin);
+  dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setSigType(const dbSigType& type);
@@ -7540,8 +7540,8 @@ class dbModITerm : public dbObject
   // User Code Begin dbModITerm
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
-  void setChildPort(dbModBTerm* child_port);
-  dbModBTerm* getChildPort() const;
+  void setChildModBTerm(dbModBTerm* child_port);
+  dbModBTerm* getChildModBTerm() const;
   void connect(dbModNet* modnet);
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);

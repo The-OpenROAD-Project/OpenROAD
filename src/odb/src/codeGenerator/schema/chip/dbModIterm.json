@@ -14,13 +14,13 @@
             "parent":"dbBlock" 
         },
 	{
-	    "name":"_childPort",
+	    "name":"_child_modbterm",
 	    "type":"dbId<_dbModBTerm>",
 	    "parent":"dbBlock",
 	    "flags":["private","no-serial"]	    	    	    
         },
         {
-	    "name":"_modNet",
+	    "name":"_mod_net",
             "type":"dbId<_dbModNet>",
 	    "flags":["private","no-serial"],
             "parent":"dbBlock" 
