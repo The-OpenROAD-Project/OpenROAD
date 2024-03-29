@@ -1030,11 +1030,10 @@ odb::Point HardMacro::computeSnapOrigin(const odb::Rect& macro_box,
   return snap_origin;
 }
 
-SnapParameters HardMacro::computeSnapParameters(
-    odb::dbBlock* block,
-    odb::dbTechLayer* layer,
-    odb::dbBox* box,
-    bool is_vertical_direction)
+SnapParameters HardMacro::computeSnapParameters(odb::dbBlock* block,
+                                                odb::dbTechLayer* layer,
+                                                odb::dbBox* box,
+                                                bool is_vertical_direction)
 {
   SnapParameters params;
 
