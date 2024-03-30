@@ -173,57 +173,6 @@ _push() {
     esac
 }
 
-# _push() {
-#     case "${target}" in
-#         "dev" )
-#             read -p "Will push docker image ${imagePath} to DockerHub [y/N]" -n 1 -r
-#             echo
-#             if [[ $REPLY =~ ^[Yy]$  ]]; then
-#                 mkdir -p build
-
-#                 OS_LIST="centos7 ubuntu20.04 ubuntu22.04"
-#                 # create image with sha and latest tag for all os
-#                 for os in ${OS_LIST}; do
-#                     ./etc/DockerHelper.sh create -target=dev \
-#                         2>&1 | tee build/create-${os}-latest.log &
-#                 done
-#                 wait
-
-#                 for os in ${OS_LIST}; do
-#                     ./etc/DockerHelper.sh create -target=dev -sha \
-#                         2>&1 | tee build/create-${os}-${commitSha}.log &
-#                 done
-#                 wait
-
-#                 # test image with sha and latest tag for all os and compiler
-#                 for os in ${OS_LIST}; do
-#                     ./etc/DockerHelper.sh test -target=builder -sha \
-#                         2>&1 | tee build/test-${os}-gcc-latest.log &
-#                 done
-#                 wait
-
-#                 for os in ${OS_LIST}; do
-#                     ./etc/DockerHelper.sh test -target=builder -sha -compiler=clang \
-#                         2>&1 | tee build/test-${os}-clang-latest.log &
-#                 done
-#                 wait
-
-#                 for os in ${OS_LIST}; do
-#                     echo [DRY-RUN] docker push openroad/${os}-dev:latest
-#                     echo [DRY-RUN] docker push openroad/${os}-dev:${commitSha}
-#                 done
-
-#             else
-#                 echo "Will not push."
-#             fi
-#             ;;
-#         *)
-#             echo "Target ${target} is not valid candidate for push to DockerHub." >&2
-#             _help
-#             ;;
-#     esac
-# }
-
 #
 # MAIN
 #

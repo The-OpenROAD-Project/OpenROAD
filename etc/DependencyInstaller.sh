@@ -712,6 +712,9 @@ esac
 
 case "${os}" in
     "CentOS Linux" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installCentosPackages
@@ -748,6 +751,9 @@ EOF
         fi
         ;;
     "Red Hat Enterprise Linux")
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installRHELPackages
@@ -759,6 +765,9 @@ EOF
         fi
         ;;
     "Darwin" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         _installDarwin
         _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
@@ -769,6 +778,9 @@ To install or run openroad, update your path with:
 EOF
         ;;
     "openSUSE Leap" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installOpenSusePackages
@@ -786,6 +798,9 @@ EOF
         ;;
     "Debian GNU/Linux" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installDebianPackages "${version}"
