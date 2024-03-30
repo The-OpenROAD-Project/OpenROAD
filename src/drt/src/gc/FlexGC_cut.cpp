@@ -30,7 +30,7 @@
 #include "gc/FlexGC_impl.h"
 #include "odb/db.h"
 
-namespace fr {
+namespace drt {
 using LOOKUP_STRATEGY = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;
 
 inline frSquaredDistance getC2CDistSquare(
@@ -679,4 +679,4 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

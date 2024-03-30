@@ -36,6 +36,10 @@
 sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adj }
 
 proc set_global_routing_layer_adjustment { args } {
+  sta::parse_key_args "set_global_routing_layer_adjustment" args \
+    keys {} \
+    flags {}
+
   if {[llength $args] == 2} {
     lassign $args layer adj
 
@@ -70,7 +74,7 @@ sta::define_cmd_args "set_global_routing_region_adjustment" { region \
 
 proc set_global_routing_region_adjustment { args } {
   sta::parse_key_args "set_global_routing_region_adjustment" args \
-    keys {-layer -adjustment}
+    keys {-layer -adjustment} flags {}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 47 "Missing dbTech."
@@ -117,13 +121,13 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_layers" { [-signal layers] \
-                                            [-clock layers] \
-}
+sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
+                                            [-clock min-max] \
+};# checker off
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock}
+    keys {-signal -clock} flags {};# checker off
 
   sta::check_argc_eq0 "set_routing_layers" $args
 
@@ -139,6 +143,9 @@ proc set_routing_layers { args } {
 sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
+  sta::parse_key_args "set_macro_extension" args \
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args extension
     sta::check_positive_integer "macro_extension" $extension
@@ -151,6 +158,9 @@ proc set_macro_extension { args } {
 sta::define_cmd_args "set_pin_offset" { offset }
 
 proc set_pin_offset { args } {
+  sta::parse_key_args "set_pin_offset" args \
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args offset
     sta::check_positive_integer "pin_offset" $offset
@@ -167,7 +177,7 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-    keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+    keys { -seed -capacities_perturbation_percentage -perturbation_amount } flags {}
 
   sta::check_argc_eq0 "set_global_routing_random" $args
 
@@ -201,6 +211,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
+                                  [-allow_overflow] \
+                                  [-overflow_iterations iterations] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental]
@@ -289,13 +301,13 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { [diode_cell] \
+sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-    keys {-iterations -ratio_margin}
+    keys {-iterations -ratio_margin} flags {}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
@@ -368,6 +380,9 @@ proc set_nets_to_route { args } {
 sta::define_cmd_args "read_guides" { file_name }
 
 proc read_guides { args } {
+  sta::parse_key_args "read_guides" args \
+    keys {} \
+    flags {}
   set file_name $args
   grt::read_guides $file_name
 }

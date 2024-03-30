@@ -117,10 +117,10 @@ bool PowerCell::appliesToRow(odb::dbRow* row) const
 GridSwitchedPower::GridSwitchedPower(Grid* grid,
                                      PowerCell* cell,
                                      odb::dbNet* control,
-                                     NetworkType network)
+                                     PowerSwitchNetworkType network)
     : grid_(grid), cell_(cell), control_(control), network_(network)
 {
-  if (network_ == DAISY && !cell->hasAcknowledge()) {
+  if (network_ == PowerSwitchNetworkType::DAISY && !cell->hasAcknowledge()) {
     grid->getLogger()->error(
         utl::PDN,
         198,
@@ -129,7 +129,7 @@ GridSwitchedPower::GridSwitchedPower(Grid* grid,
   }
 }
 
-std::string GridSwitchedPower::toString(NetworkType type)
+std::string GridSwitchedPower::toString(PowerSwitchNetworkType type)
 {
   switch (type) {
     case STAR:
@@ -140,9 +140,8 @@ std::string GridSwitchedPower::toString(NetworkType type)
   return "unknown";
 }
 
-GridSwitchedPower::NetworkType GridSwitchedPower::fromString(
-    const std::string& type,
-    utl::Logger* logger)
+PowerSwitchNetworkType GridSwitchedPower::fromString(const std::string& type,
+                                                     utl::Logger* logger)
 {
   if (type == "STAR") {
     return STAR;
@@ -159,7 +158,8 @@ void GridSwitchedPower::report() const
 {
   auto* logger = grid_->getLogger();
   logger->report("Switched power cell: {}", cell_->getName());
-  logger->report("  Control net: {}", control_->getName());
+  std::string control_net = control_ ? control_->getName() : "undefined";
+  logger->report("  Control net: {}", control_net);
   logger->report("  Network type: {}", toString(network_));
 }
 

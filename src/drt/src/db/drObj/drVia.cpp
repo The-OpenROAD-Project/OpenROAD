@@ -32,7 +32,7 @@
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
 
-namespace fr {
+namespace drt {
 
 drVia::drVia(const frVia& in)
     : origin_(in.getOrigin()),
@@ -140,4 +140,4 @@ template void drVia::serialize<frIArchive>(frIArchive& ar,
 template void drVia::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

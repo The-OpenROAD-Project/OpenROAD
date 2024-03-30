@@ -29,7 +29,7 @@ add_subdirectory(src/zutil)
 add_subdirectory(src/cdl)
 
 if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
+  add_subdirectory(test)
 endif()
 
 add_library(odb INTERFACE)

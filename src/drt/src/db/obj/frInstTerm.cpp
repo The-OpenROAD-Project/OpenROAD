@@ -30,7 +30,7 @@
 
 #include "db/obj/frInst.h"
 
-namespace fr {
+namespace drt {
 
 frString frInstTerm::getName() const
 {
@@ -80,4 +80,4 @@ Rect frInstTerm::getBBox(bool updatedTransform)
   return bbox;
 }
 
-}  // namespace fr
+}  // namespace drt

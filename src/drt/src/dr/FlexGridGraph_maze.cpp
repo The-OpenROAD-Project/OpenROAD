@@ -30,7 +30,7 @@
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 
-namespace fr {
+namespace drt {
 
 int debugMazeIter = std::numeric_limits<int>::max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
@@ -188,8 +188,8 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
                               0)
                      * 1;
   frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
-                          getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
+      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
+                          getZHeight(gridZ) - getZHeight(dstMazeIdx2.z())),
                  0)
         * 1;
 
@@ -927,4 +927,4 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
   return false;
 }
 
-}  // namespace fr
+}  // namespace drt

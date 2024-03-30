@@ -39,7 +39,7 @@
 #include "global.h"
 #include "io/io.h"
 
-namespace fr {
+namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
@@ -686,7 +686,7 @@ void io::Parser::checkFig(frPinFig* uFig,
         foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
       } else {
         foundTracks |= !vertTracks.empty();
-        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+        foundCenterTracks |= vertTracks.find(box.xCenter()) != vertTracks.end();
       }
     }
     if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
@@ -773,7 +773,7 @@ void io::Parser::checkPins()
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
                     422,
-                    "No routing tracks pass through the center of Term {}",
+                    "No routing tracks pass through the center of Term {}.",
                     bTerm->getName());
     }
   }
@@ -861,12 +861,12 @@ void io::Parser::postProcessGuide()
     genGuides(net, rects);
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       }
@@ -1239,4 +1239,4 @@ void io::Parser::saveGuidesUpdates()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

@@ -29,7 +29,7 @@
 #include "FlexRP.h"
 #include "frProfileTask.h"
 
-namespace fr {
+namespace drt {
 
 void FlexRP::init()
 {
@@ -55,4 +55,4 @@ void FlexRP::init()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

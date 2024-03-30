@@ -30,7 +30,7 @@
 
 #include "distributed/frArchive.h"
 
-namespace fr {
+namespace drt {
 
 std::pair<FlexMazeIdx, FlexMazeIdx> drPin::getAPBbox()
 {
@@ -68,4 +68,4 @@ template void drPin::serialize<frIArchive>(frIArchive& ar,
 template void drPin::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

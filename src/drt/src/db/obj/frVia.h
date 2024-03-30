@@ -34,7 +34,7 @@
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class drVia;
 class frVia : public frRef
@@ -244,4 +244,4 @@ class frVia : public frRef
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

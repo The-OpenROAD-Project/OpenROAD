@@ -41,7 +41,7 @@
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -428,4 +428,4 @@ class frBlock : public frBlockObject
   friend class io::Parser;
 };
 
-}  // namespace fr
+}  // namespace drt

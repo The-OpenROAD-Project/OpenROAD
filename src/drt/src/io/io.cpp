@@ -43,7 +43,7 @@
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 
-namespace fr {
+namespace drt {
 
 io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
     : db_(dbIn),
@@ -778,7 +778,16 @@ void io::Parser::setNets(odb::dbBlock* block)
           }
           tmpP->addToNet(netIn);
           tmpP->setLayerNum(layerNum);
-
+          auto layer = tech_->name2layer_[layerName];
+          auto styleWidth = width;
+          if (!(styleWidth)) {
+            if ((layer->isHorizontal() && beginY != endY)
+                || (!layer->isHorizontal() && beginX != endX)) {
+              styleWidth = layer->getWrongDirWidth();
+            } else {
+              styleWidth = layer->getWidth();
+            }
+          }
           width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
           auto defaultBeginExt = width / 2;
           auto defaultEndExt = width / 2;
@@ -804,7 +813,7 @@ void io::Parser::setNets(odb::dbBlock* block)
           frEndStyle tmpEndStyle(tmpEndEnum);
 
           frSegStyle tmpSegStyle;
-          tmpSegStyle.setWidth(width);
+          tmpSegStyle.setWidth(styleWidth);
           tmpSegStyle.setBeginStyle(
               tmpBeginStyle,
               tmpBeginEnum == frcExtendEndStyle ? defaultBeginExt : beginExt);
@@ -1476,12 +1485,21 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
+    if (rule->getMaxEdges() > 1) {
+      logger_->warn(DRT,
+                    335,
+                    "LEF58_MINSTEP MAXEDGES {}  is not supported",
+                    rule->getMaxEdges());
+      continue;
+    }
     auto con = std::make_unique<frLef58MinStepConstraint>();
     con->setMinStepLength(rule->getMinStepLength());
     con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
     con->setMinAdjacentLength(
         rule->isMinAdjLength1Valid() ? rule->getMinAdjLength1() : -1);
+    con->setNoAdjEol(rule->isNoAdjacentEol() ? rule->getEolWidth() : -1);
     con->setEolWidth(rule->isNoBetweenEol() ? rule->getEolWidth() : -1);
+    con->setExceptRectangle(rule->isExceptRectangle());
     tmpLayer->addLef58MinStepConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
@@ -1976,12 +1994,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           = std::make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
       auto rptr = uCon.get();
       tech_->addUConstraint(std::move(uCon));
-      if (tmpLayer->hasSpacingSamenet()) {
-        logger_->warn(DRT,
-                      138,
-                      "New SPACING SAMENET overrides old"
-                      "SPACING SAMENET rule.");
-      }
       tmpLayer->setSpacingSamenet(
           static_cast<frSpacingSamenetConstraint*>(rptr));
     } else {
@@ -1993,12 +2005,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
               fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
       tech_->addUConstraint(std::move(uCon));
-      if (tmpLayer->getMinSpacing()) {
-        logger_->warn(DRT,
-                      144,
-                      "New SPACING SAMENET overrides old"
-                      "SPACING SAMENET rule.");
-      }
       tmpLayer->setMinSpacing(rptr);
     }
   }
@@ -2051,12 +2057,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
             fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
     auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
-    if (tmpLayer->getMinSpacing()) {
-      logger_->warn(
-          DRT,
-          145,
-          "New SPACINGTABLE PARALLELRUNLENGTH overrides old SPACING rule.");
-    }
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -2083,10 +2083,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     rptr->setLayer(tmpLayer);
     tech_->addUConstraint(std::move(uCon));
-    if (tmpLayer->getMinSpacing()) {
-      logger_->warn(
-          DRT, 146, "New SPACINGTABLE TWOWIDTHS overrides old SPACING rule.");
-    }
     tmpLayer->setMinSpacing(rptr);
   }
 
@@ -2292,6 +2288,16 @@ void io::Parser::setMasters(odb::dbDatabase* db)
   const frLayerNum numLayers = tech_->getLayers().size();
   std::vector<RTree<frMPin*>> pin_shapes;
   pin_shapes.resize(numLayers);
+  auto addPinFig
+      = [&pin_shapes](const Rect& box, frLayerNum lNum, frMPin* pinIn) {
+          std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
+          pinFig->setBBox(box);
+          pinFig->addToPin(pinIn);
+          pinFig->setLayerNum(lNum);
+          std::unique_ptr<frPinFig> uptr(std::move(pinFig));
+          pinIn->addPinFig(std::move(uptr));
+          pin_shapes[lNum].insert(std::make_pair(box, pinIn));
+        };
 
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
@@ -2325,54 +2331,61 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
 
-        bool warned = false;
         int i = 0;
         for (auto mpin : _term->getMPins()) {
           auto pinIn = std::make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
-            frLayerNum layerNum = -1;
             auto layer = box->getTechLayer();
             if (!layer) {
-              if (!warned) {
+              if (tech_->name2via_.find(box->getTechVia()->getName())
+                  == tech_->name2via_.end()) {
                 logger_->warn(DRT,
-                              323,
-                              "Via(s) in pin {} of {} will be ignored",
-                              _term->getName(),
-                              master->getName());
-                warned = true;
-              }
-              continue;
-            }
-            std::string layer_name = layer->getName();
-            if (tech_->name2layer_.find(layer_name)
-                == tech_->name2layer_.end()) {
-              auto type = box->getTechLayer()->getType();
-              if (type == odb::dbTechLayerType::ROUTING
-                  || type == odb::dbTechLayerType::CUT) {
-                logger_->warn(DRT,
-                              122,
-                              "Layer {} is skipped for {}/{}.",
-                              layer_name,
-                              tmpMaster->getName(),
+                              193,
+                              "Skipping unsupported via {} in macro pin {}/{}.",
+                              box->getTechVia()->getName(),
+                              master->getName(),
                               _term->getName());
               }
-              continue;
-            }
-            layerNum = tech_->name2layer_.at(layer_name)->getLayerNum();
+              int x, y;
+              box->getViaXY(x, y);
+              auto viaDef = tech_->name2via_[box->getTechVia()->getName()];
+              auto tmpP = std::make_unique<frVia>(viaDef);
+              tmpP->setOrigin({x, y});
+              // layer1 rect
+              addPinFig(
+                  tmpP->getLayer1BBox(), viaDef->getLayer1Num(), pinIn.get());
+              // layer2 rect
+              addPinFig(
+                  tmpP->getLayer2BBox(), viaDef->getLayer2Num(), pinIn.get());
+              // cut rect
+              addPinFig(
+                  tmpP->getCutBBox(), viaDef->getCutLayerNum(), pinIn.get());
+            } else {
+              std::string layer_name = layer->getName();
+              if (tech_->name2layer_.find(layer_name)
+                  == tech_->name2layer_.end()) {
+                auto type = box->getTechLayer()->getType();
+                if (type == odb::dbTechLayerType::ROUTING
+                    || type == odb::dbTechLayerType::CUT) {
+                  logger_->warn(DRT,
+                                122,
+                                "Layer {} is skipped for {}/{}.",
+                                layer_name,
+                                tmpMaster->getName(),
+                                _term->getName());
+                }
+                continue;
+              }
+              frLayerNum layerNum
+                  = tech_->name2layer_.at(layer_name)->getLayerNum();
 
-            frCoord xl = box->xMin();
-            frCoord yl = box->yMin();
-            frCoord xh = box->xMax();
-            frCoord yh = box->yMax();
-            std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-            pinFig->setBBox(Rect(xl, yl, xh, yh));
-            pinFig->addToPin(pinIn.get());
-            pinFig->setLayerNum(layerNum);
-            std::unique_ptr<frPinFig> uptr(std::move(pinFig));
-            pinIn->addPinFig(std::move(uptr));
-            pin_shapes[layerNum].insert(
-                std::make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
+              frCoord xl = box->xMin();
+              frCoord yl = box->yMin();
+              frCoord xh = box->xMax();
+              frCoord yh = box->yMax();
+              addPinFig(Rect(xl, yl, xh, yh), layerNum, pinIn.get());
+            }
           }
           term->addPin(std::move(pinIn));
         }
@@ -3538,4 +3551,4 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access, bool snapshot)
   }
 }
 
-}  // namespace fr
+}  // namespace drt

@@ -71,6 +71,12 @@ enum StartsWith
   GROUND
 };
 
+enum PowerSwitchNetworkType
+{
+  STAR,
+  DAISY
+};
+
 class VoltageDomain;
 class Grid;
 class PowerCell;
@@ -208,6 +214,7 @@ class PdnGen
 
  private:
   void trimShapes();
+  void updateVias();
   void cleanupVias();
 
   void checkDesign(odb::dbBlock* block) const;
@@ -219,6 +226,9 @@ class PdnGen
   void ensureCoreDomain();
 
   void updateRenderer() const;
+
+  bool importUPF(VoltageDomain* domain);
+  bool importUPF(Grid* grid, PowerSwitchNetworkType type) const;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

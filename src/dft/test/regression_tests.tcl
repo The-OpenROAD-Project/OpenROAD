@@ -4,4 +4,6 @@ record_tests {
   sub_modules_sky130
   scan_architect_no_mix_sky130
   scan_architect_clock_mix_sky130
+  dft_man_tcl_check
+  dft_readme_msgs_check
 }

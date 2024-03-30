@@ -37,7 +37,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr {
+namespace drt {
 
 class FlexDRConnectivityChecker
 {
@@ -180,4 +180,4 @@ class FlexDRConnectivityChecker
   bool save_updates_;
 };
 
-}  // namespace fr
+}  // namespace drt

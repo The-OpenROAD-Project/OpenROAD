@@ -30,7 +30,7 @@
 
 #include "frBlock.h"
 #include "frMaster.h"
-namespace fr {
+namespace drt {
 
 Rect frInst::getBBox() const
 {
@@ -116,4 +116,4 @@ frInstTerm* frInst::getInstTerm(const std::string& name)
   return nullptr;
 }
 
-}  // namespace fr
+}  // namespace drt

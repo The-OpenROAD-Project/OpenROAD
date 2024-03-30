@@ -31,7 +31,7 @@
 #include <boost/io/ios_state.hpp>
 #include <iomanip>
 
-namespace fr {
+namespace drt {
 
 void frTime::print(Logger* logger)
 {
@@ -80,4 +80,4 @@ std::ostream& operator<<(std::ostream& os, const frTime& t)
   return os;
 }
 
-}  // end namespace fr
+}  // end namespace drt

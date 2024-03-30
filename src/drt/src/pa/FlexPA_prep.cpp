@@ -45,7 +45,7 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 using utl::ThreadException;
 
@@ -157,7 +157,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
       cnt++;
     }
   }
-  if (cnt >= 2) {
+  if (cnt >= 3) {
     return;
   }
 
@@ -1570,12 +1570,12 @@ void FlexPA::prepPoint()
         {
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 1000) {
-              if (cnt % 100 == 0) {
+            if (cnt < 10000) {
+              if (cnt % 1000 == 0) {
                 logger_->info(DRT, 76, "  Complete {} pins.", cnt);
               }
             } else {
-              if (cnt % 1000 == 0) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 77, "  Complete {} pins.", cnt);
               }
             }
@@ -1669,12 +1669,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           }
           cnt += batch.size();
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 110, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 111, "  Complete {} groups.", cnt);
               }
             }
@@ -1715,12 +1715,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           rowIdx++;
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 82, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 83, "  Complete {} groups.", cnt);
               }
             }
@@ -2944,4 +2944,4 @@ int FlexPA::getFlatEdgeIdx(const int prevIdx1,
   return ((prevIdx1 + 1) * idx2Dim + prevIdx2) * idx2Dim + currIdx2;
 }
 
-}  // namespace fr
+}  // namespace drt

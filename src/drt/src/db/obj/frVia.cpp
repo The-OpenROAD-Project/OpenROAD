@@ -32,7 +32,7 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-namespace fr {
+namespace drt {
 
 frVia::frVia(const drVia& in)
 {
@@ -75,4 +75,4 @@ template void frVia::serialize<frIArchive>(frIArchive& ar,
 template void frVia::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt
