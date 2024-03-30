@@ -7,8 +7,8 @@ jobs:
   docs-test-job:
     name: 'Test docs for Tcl syntax and README'
     runs-on: ubuntu-latest
-      container:
-        image: openroad/ubuntu-cpp20
+    container:
+      image: openroad/ubuntu-cpp20
 
     steps:
     - name: Checkout repository
