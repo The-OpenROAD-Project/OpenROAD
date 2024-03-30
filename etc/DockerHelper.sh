@@ -42,8 +42,7 @@ EOF
 }
 
 _setup() {
-    commitSha="$(git rev-parse HEAD)"
-    commitSha="$(echo "$commitSha" | tr -cd 'a-zA-Z0-9-')"
+    commitSha="$(git rev-parse HEAD | tr -cd 'a-zA-Z0-9-')"
     case "${compiler}" in
         "gcc" | "clang" )
             ;;
@@ -148,7 +147,6 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    echo ${buildArgs}
     eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}" --progress plain
 }
 
