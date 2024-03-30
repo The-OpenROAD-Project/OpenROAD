@@ -31,7 +31,6 @@ jobs:
         make preprocess -j${nproc}
     - name: Run Tcl syntax parser
       run: |
-        cd ../
         python3 docs/src/test/man_tcl_params.py
     - name: Run readme parser
       run : |
