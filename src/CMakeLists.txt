@@ -357,8 +357,6 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   add_subdirectory(par)
 else()
   message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
-  target_compile_definitions(openroad PRIVATE ENABLE_MPL2=0)
-  target_compile_definitions(openroad PRIVATE ENABLE_PAR=0)
 endif()
 
 # tclReadline

@@ -165,6 +165,7 @@ if(NOT OPENROAD_GPU_COMPILED)
     ${OPENROAD_HOME}/include/ord/CompileOptions.hh.cmake
     ${OPENROAD_HOME}/include/ord/CompileOptions.hh
   )
+endif()
 
 ####################################################################
 
