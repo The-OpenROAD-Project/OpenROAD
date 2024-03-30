@@ -18,8 +18,8 @@ jobs:
 
     - name: Install required package
       run: |
-        sudo apt-get update
-        sudo apt-get install -y pandoc
+        apt-get update 
+        apt-get install -y pandoc
 
     - name: Build OpenROAD
       run: |
