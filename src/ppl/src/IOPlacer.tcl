@@ -43,7 +43,7 @@ sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-    keys {-layer -x_step -y_step -region -size -pin_keepout}
+    keys {-layer -x_step -y_step -region -size -pin_keepout} flags {}
 
   sta::check_argc_eq0 "define_pin_shape_pattern" $args
 
@@ -249,7 +249,10 @@ proc set_io_pin_constraint { args } {
 
 }
 
+sta::define_cmd_args "clear_io_pin_constraints" {}
+
 proc clear_io_pin_constraints {} {
+  sta::parse_key_args "clear_io_pin_constraints" args keys {} flags {}
   ppl::clear_constraints
 }
 
@@ -259,7 +262,7 @@ sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
 
 proc set_pin_length { args } {
   sta::parse_key_args "set_pin_length" args \
-    keys {-hor_length -ver_length}
+    keys {-hor_length -ver_length} flags {}
 
   sta::check_argc_eq0 "set_pin_length" $args
 
@@ -278,7 +281,7 @@ sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
 
 proc set_pin_length_extension { args } {
   sta::parse_key_args "set_pin_length_extension" args \
-    keys {-hor_extension -ver_extension}
+    keys {-hor_extension -ver_extension} flags {}
 
   sta::check_argc_eq0 "set_pin_length_extension" $args
 
@@ -297,7 +300,7 @@ sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
 
 proc set_pin_thick_multiplier { args } {
   sta::parse_key_args "set_pin_thick_multiplier" args \
-    keys {-hor_multiplier -ver_multiplier}
+    keys {-hor_multiplier -ver_multiplier} flags {}
 
   sta::check_argc_eq0 "set_pin_thick_multiplier" $args
 
@@ -318,7 +321,7 @@ sta::define_cmd_args "set_simulated_annealing" {[-temperature temperature]\
 
 proc set_simulated_annealing { args } {
   sta::parse_key_args "set_simulated_annealing" args \
-    keys {-temperature -max_iterations -perturb_per_iter -alpha}
+    keys {-temperature -max_iterations -perturb_per_iter -alpha} flags {}
 
   set temperature 0
   if {[info exists keys(-temperature)]} {
@@ -349,7 +352,7 @@ proc set_simulated_annealing { args } {
 
 sta::define_cmd_args "simulated_annealing_debug" {
   [-iters_between_paintings iters]
-  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
+  [-no_pause_mode no_pause_mode]
 }
 
 proc simulated_annealing_debug { args } {
@@ -370,7 +373,8 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
                                   [-pin_size pin_size]\
-                                  [-force_to_die_boundary]
+                                  [-force_to_die_boundary]\
+                                  [-placed_status]
 }
 
 proc place_pin { args } {
@@ -431,6 +435,8 @@ proc place_pin { args } {
 sta::define_cmd_args "write_pin_placement" { file_name }
 
 proc write_pin_placement { args } {
+  sta::parse_key_args "write_pin_placement" args \
+    keys {} flags {}
   set file_name $args
   ppl::write_pin_placement $file_name
 }

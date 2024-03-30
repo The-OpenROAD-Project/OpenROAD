@@ -27,6 +27,8 @@ read_upf
 
 ### Create Power Domain
 
+This command creates power domain for a group of modules.
+
 ```tcl
 create_power_domain
     [-elements elements]
@@ -42,6 +44,9 @@ create_power_domain
 
 ### Create Logic Port
 
+This command creates logic port. Direction must be specified from:
+`in`, `out`, `inout`.
+
 ```tcl
 create_logic_port
     [-direction direction]
@@ -56,6 +61,8 @@ create_logic_port
 | `port_name` | Port name. |
 
 ### Create Power Switch
+
+This command creates power switch.
 
 ```tcl
 create_power_switch
@@ -78,7 +85,9 @@ create_power_switch
 | `-on_state` | One of {`state_name`, `input_supply_port`, `boolean_expression`}. |
 | `name` | Power switch name. |
 
-### Create or Update Isolation Strategy
+### Create or Update Isolation Strategy 
+
+This command creates or update isolation strategy.
 
 ```tcl 
 set_isolation
@@ -107,6 +116,8 @@ set_isolation
 
 ### Set Interface cell
 
+This command sets the interface cell.
+
 ```tcl 
 use_interface_cell
     [-domain domain]
@@ -124,6 +135,8 @@ use_interface_cell
 
 ### Set Domain Area
 
+This command sets the power domain area.
+
 ```tcl
 set_domain_area
     domain_name
@@ -140,6 +153,8 @@ set_domain_area
 
 ### Map existing power switch
 
+This command maps existing power switch.
+
 ```tcl 
 map_power_switch
     [-switch_name_list switch_name_list]
@@ -155,11 +170,107 @@ map_power_switch
 | `-lib_cells` | A list of library cells that could be mapped to the power switch |
 | `-port_map` | A map that associates model ports defined by create_power_switch to logical ports |
 
+### Set Level Shifter
+
+This command sets level shifter.
+Options coming soon.
+
+```tcl
+set_level_shifter
+    [-domain domain] \
+    [-elements elements] \
+    [-exclude_elements exclude_elements] \
+    [-source source] \
+    [-sink sink] \
+    [-use_functional_equivalence use_functional_equivalence] \
+    [-applies_to applies_to] \
+    [-applies_to_boundary applies_to_boundary] \
+    [-rule rule] \
+    [-threshold threshold] \
+    [-no_shift] \
+    [-force_shift] \
+    [-location location] \
+    [-input_supply input_supply] \
+    [-output_supply output_supply] \
+    [-internal_supply internal_supply] \
+    [-name_prefix name_prefix] \
+    [-name_suffix name_suffix] \
+    [-instance instance] \
+    [-update] \
+    [-use_equivalence use_equivalence] \
+    name 
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-domain` | |
+| `-elements` | |
+| `-exclude_elements` | |
+| `-source` | |
+| `-sink` | |
+| `-use_functional_equivalence` | |
+| `-applies_to` | |
+| `-applies_to_boundary` | |
+| `-rule` | |
+| `-threshold` | |
+| `-no_shift` | |
+| `-force_shift` | |
+| `-location` | |
+| `-input_supply` | |
+| `-output_supply` | |
+| `-internal_supply` | |
+| `-name_prefix` | |
+| `-name_suffix` | |
+| `-instance` | |
+| `-update` | |
+| `-use_equivalence` | |
+| `name` | |
+
+### Set Domain Voltage
+
+This command sets the voltage of a power domain.
+
+```tcl
+set_domain_voltage
+    [-domain domain] \
+    [-voltage voltage] 
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-domain` | Power domain name. |
+| `-voltage` | Power domain voltage. The allowed values are `float`, default value is `0.0`. |
+
+### Set Level Shifter Cell
+
+This command sets the library cell used for level shifter.
+
+```tcl
+set_level_shifter_cell
+    [-level_shifter level_shifter] \
+    [-cell_name cell_name] \
+    [-input_port input_port] \
+    [-output_port output_port] 
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-level_shifter` | KIV. |
+| `-cell_name` | KIV. |
+| `-input_port` | KIV. |
+| `-output_port` | KIV. |
+
 ## Example scripts
 
 Example script demonstrating how to run `upf` related commands can be found here:
 
-```tcl
+```
 ./test/upf_test.tcl
 ```
 
