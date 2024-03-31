@@ -21,9 +21,9 @@ jobs:
         apt-get update 
         apt-get install -y pandoc
 
-    - name: Build OpenROAD
+    - name: Build messages
       run: |
-        ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'
+        python3 docs/src/test/build_messages.py
 
     - name: Preprocess files
       run: |
