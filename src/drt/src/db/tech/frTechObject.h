@@ -88,15 +88,19 @@ class frTechObject
     layer2Name2CutClass_.emplace_back();
     layerCutClass_.emplace_back();
   }
-  bool addVia(std::unique_ptr<frViaDef> in)
+  frViaDef* addVia(std::unique_ptr<frViaDef> in)
   {
     in->setId(vias_.size());
     if (name2via_.find(in->getName()) != name2via_.end()) {
-      return false;
+      if (*(name2via_[in->getName()]) == *in.get()) {
+        return name2via_[in->getName()];
+      }
+      return nullptr;
     }
+    frViaDef* rptr = in.get();
     name2via_[in->getName()] = in.get();
     vias_.push_back(std::move(in));
-    return true;
+    return rptr;
   }
   void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in)
   {

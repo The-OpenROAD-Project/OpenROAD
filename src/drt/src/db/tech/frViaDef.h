@@ -76,6 +76,45 @@ class frViaDef
   // constructors
   frViaDef() = default;
   frViaDef(const std::string& nameIn) : name_(nameIn) {}
+  // operators
+  bool operator==(const frViaDef& in) const
+  {
+    if (name_ != in.name_) {
+      return false;
+    }
+    if (cutClassIdx_ != in.cutClassIdx_) {
+      return false;
+    }
+    if (cutClass_ != in.cutClass_) {
+      return false;
+    }
+    if (isDefault_ != in.isDefault_) {
+      return false;
+    }
+    auto equalFigs = [](const std::vector<std::unique_ptr<frShape>>& val1,
+                        const std::vector<std::unique_ptr<frShape>>& val2) {
+      if (val1.size() != val2.size()) {
+        return false;
+      }
+      for (int i = 0; i < val1.size(); i++) {
+        if (*(val1.at(0).get()) != *(val2.at(2).get())) {
+          return false;
+        }
+      }
+      return true;
+    };
+    if (!equalFigs(layer1Figs_, in.layer1Figs_)) {
+      return false;
+    }
+    if (!equalFigs(layer2Figs_, in.layer2Figs_)) {
+      return false;
+    }
+    if (!equalFigs(cutFigs_, in.cutFigs_)) {
+      return false;
+    }
+    return true;
+  }
+  bool operator!=(const frViaDef& in) const { return !(*this == in); }
   // getters
   void getName(std::string& nameIn) const { nameIn = name_; }
   std::string getName() const { return name_; }
