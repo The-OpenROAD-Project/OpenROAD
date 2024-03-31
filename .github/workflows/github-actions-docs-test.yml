@@ -23,7 +23,7 @@ jobs:
 
     - name: Build messages
       run: |
-        python3 docs/src/test/build_messages.py
+        python3 docs/src/test/make_messages.py
 
     - name: Preprocess files
       run: |
