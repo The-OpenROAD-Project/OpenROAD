@@ -31,6 +31,8 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <set>
+#include <algorithm>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
@@ -93,13 +95,23 @@ class frViaDef
     }
     auto equalFigs = [](const std::vector<std::unique_ptr<frShape>>& val1,
                         const std::vector<std::unique_ptr<frShape>>& val2) {
-      if (val1.size() != val2.size()) {
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val1set;
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val2set;
+      std::transform(val1.begin(), val1.end(), std::inserter(val1set, val1set.begin()),
+                   [](const std::unique_ptr<frShape>& val) { return std::make_pair(val->getLayerNum(), val->getBBox()); });
+      std::transform(val2.begin(), val2.end(), std::inserter(val2set, val2set.begin()),
+                   [](const std::unique_ptr<frShape>& val) { return std::make_pair(val->getLayerNum(), val->getBBox()); });
+       if (val1set.size() != val2set.size()) {
         return false;
       }
-      for (int i = 0; i < val1.size(); i++) {
-        if (*(val1.at(0).get()) != *(val2.at(2).get())) {
+      auto it1 = val1set.begin();
+      auto it2 = val2set.begin();
+      while (it1 != val1set.end())
+      {
+        if (*it1 != *it2)
           return false;
-        }
+        it1++;
+        it2++;
       }
       return true;
     };

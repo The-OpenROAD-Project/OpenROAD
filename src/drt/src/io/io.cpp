@@ -318,8 +318,25 @@ void io::Parser::setVias(odb::dbBlock* block)
       auto viaDef = std::make_unique<frViaDef>(via->getName());
       viaDef->addLayer1Fig(std::move(uBotFig));
       viaDef->addLayer2Fig(std::move(uTopFig));
+      auto cutLayer = tech_->getLayer(cutLayerNum);
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
+      }
+      int cutClassIdx = -1;
+      frLef58CutClass* cutClass = nullptr;
+      for (auto& cutFig : viaDef->getCutFigs()) {
+        Rect box = cutFig->getBBox();
+        auto width = box.minDXDY();
+        auto length = box.maxDXDY();
+        cutClassIdx = cutLayer->getCutClassIdx(width, length);
+        if (cutClassIdx != -1) {
+          cutClass = cutLayer->getCutClass(cutClassIdx);
+          break;
+        }
+      }
+      if (cutClass) {
+        viaDef->setCutClass(cutClass);
+        viaDef->setCutClassIdx(cutClassIdx);
       }
       if (!tech_->addVia(std::move(viaDef))) {
         logger_->error(

@@ -45,11 +45,6 @@ class frShape : public frPinFig
   // getters
   virtual frLayerNum getLayerNum() const = 0;
   // others
-  bool operator==(const frShape& in) const
-  {
-    return getLayerNum() == in.getLayerNum() && getBBox() == in.getBBox();
-  }
-  bool operator!=(const frShape& in) const { return !(*this == in); }
   /* from frPinFig
    * hasPin
    * getPin
