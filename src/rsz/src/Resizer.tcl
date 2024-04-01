@@ -198,6 +198,13 @@ proc set_wire_rc { args } {
         incr v_layers
       }
     }
+    if { $h_layers == 0 } {
+      utl::error RSZ 16 "No horizontal layer specified."
+    }
+    if { $v_layers == 0 }  {
+      utl::error RSZ 17 "No vertical layer specified."
+    }
+
     set h_wire_res [expr $total_h_wire_res / $h_layers]
     set h_wire_cap [expr $total_h_wire_cap / $h_layers]
     set v_wire_res [expr $total_v_wire_res / $v_layers]
