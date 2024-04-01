@@ -159,15 +159,19 @@ odb::dbWire* RepairAntennas::makeNetWire(
           if (bottom_layer >= grouter_->getMinRoutingLayer()) {
             if (bottom_layer == prev_conn_layer) {
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
-              wire_encoder.addPoint(x1, y1);
-              wire_encoder.addTechVia(default_vias[bottom_layer]);
               prev_conn_layer = std::max(l1, l2);
             } else if (top_layer == prev_conn_layer) {
               wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
-              wire_encoder.addPoint(x1, y1);
-              wire_encoder.addTechVia(default_vias[bottom_layer]);
               prev_conn_layer = std::min(l1, l2);
+            } else if (prev_conn_layer == -1) {
+              // if a via is the first object added to the wire_encoder, create
+              // a new path using the bottom layer and do not update the
+              // prev_conn_layer. this way, this process is repeated until the
+              // first wire is added and properly update the prev_conn_layer
+              wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
             }
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addTechVia(default_vias[bottom_layer]);
             addWireTerms(net,
                          route,
                          x1,
