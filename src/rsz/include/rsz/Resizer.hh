@@ -147,7 +147,7 @@ using TgtSlews = array<Slew, RiseFall::index_count>;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
-struct ParasiticsResistence
+struct ParasiticsResistance
 {
   double h_res;
   double v_res;
@@ -630,10 +630,10 @@ protected:
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
   // Signal wire RC indexed by corner->index
-  vector<ParasiticsResistence> wire_signal_res_;  // ohms/metre
+  vector<ParasiticsResistance> wire_signal_res_;  // ohms/metre
   vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
   // Clock wire RC.
-  vector<ParasiticsResistence> wire_clk_res_;     // ohms/metre
+  vector<ParasiticsResistance> wire_clk_res_;     // ohms/metre
   vector<ParasiticsCapacitance> wire_clk_cap_;     // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;

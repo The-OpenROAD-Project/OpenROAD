@@ -190,8 +190,8 @@ Resizer::wireSignalRC(const Corner *corner,
   if (wire_signal_res_.empty()) {
     res = 0.0;
   } else {
-    auto resistence = wire_signal_res_[corner->index()];
-    res = (resistence.h_res + resistence.v_res)/2;
+    auto resistance = wire_signal_res_[corner->index()];
+    res = (resistance.h_res + resistance.v_res)/2;
   }
   if (wire_signal_cap_.empty()) {
     cap = 0.0;
