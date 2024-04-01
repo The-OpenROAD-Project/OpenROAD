@@ -66,8 +66,11 @@ class ChartsWidget : public QDockWidget
   void setSTA(sta::dbSta* sta)
   {
     sta_ = sta;
-  };
-  void setLogger(utl::Logger* logger);
+  }
+  void setLogger(utl::Logger* logger)
+  {
+    logger_ = logger;
+  }
 
  private slots:
   void changeMode();
@@ -75,20 +78,39 @@ class ChartsWidget : public QDockWidget
 
  private:
   void setSlackMode();
-  void clearChart();
+
+  void setBucketInterval(float max_slack, float min_slack);
+  void setBucketInterval(float bucket_interval)
+  {
+    bucket_interval_ = bucket_interval;
+  }
+  void setNegativeCountOffset(int neg_count_offset)
+  {
+    neg_count_offset_ = neg_count_offset;
+  }
+  void setDecimalPrecision(int precision_count)
+  {
+    precision_count_ = precision_count;
+  }
+
   void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
   void populateBuckets(const std::vector<float>& all_slack,
                        std::deque<int>& neg_buckets,
                        std::deque<int>& pos_buckets);
   int computeSnapBucketInterval(float exact_interval);
-  void setBucketInterval(float bucket_interval);
-  void setNegativeCountOffset(int neg_count_offset);
+  float computeSnapBucketDecimalInterval(float minimum_interval);
+  int computeNumberofBuckets(int bucket_interval,
+                             float max_slack,
+                             float min_slack);
+
   void setXAxisConfig(int all_bars_count);
   void setYAxisConfig();
   int computeMaxYSnap();
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
   int computeYInterval();
+
+  void clearChart();
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
@@ -99,8 +121,9 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
-  const int number_of_buckets_ = 15;
+  const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
+  int precision_count_ = 0;      // Used to configure the x labels.
 
   float bucket_interval_ = 0;
   int neg_count_offset_ = 0;

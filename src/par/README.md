@@ -193,7 +193,9 @@ the end of each PM/FM/HER pass.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Partition Netlist
+### Partition Hypergraph Netlist 
+
+This command performs hypergraph netlist partitioning.
 
 ```tcl
 triton_part_hypergraph
@@ -201,6 +203,7 @@ triton_part_hypergraph
     -num_parts num_parts  
     -balance_constraint balance_constraint 
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-seed seed] 
     [-vertex_dimension vertex_dimension] 
     [-hyperedge_dimension hyperedge_dimension] 
@@ -239,6 +242,7 @@ triton_part_hypergraph
 | `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
 | `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
 | `-seed` | Random seed. The default value is `0`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
 | `-vertex_dimension` | Number of vertices in the hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-hyperedge_dimension` | Number of hyperedges in hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
@@ -272,6 +276,8 @@ triton_part_hypergraph
 
 ### Evaluate Hypergraph Partition
 
+This command evaluates hypergraph partition.
+
 ```tcl
 evaluate_hypergraph_solution
   -num_parts num_parts
@@ -279,6 +285,7 @@ evaluate_hypergraph_solution
   -hypergraph_file hypergraph_file
   -solution_file solution_file
   [-base_balance base_balance]
+  [-scale_factor scale_factor]
   [-vertex_dimension vertex_dimension]
   [-hyperedge_dimension hyperedge_dimension]
   [-fixed_file fixed_file]
@@ -298,6 +305,7 @@ evaluate_hypergraph_solution
 | `-hypergraph_file` | Path to hypergraph file. |
 | `-solution_file` | Path to solution file. |
 | `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
 | `-fixed_file` | Path to fixed vertices constraint file. |
 | `-group_file` | Path to `stay together` attributes file. |
 | `-e_wt_factors` | Hyperedge weight factor. |
@@ -306,11 +314,14 @@ evaluate_hypergraph_solution
 
 ### Partition Netlist 
 
+This command partitions the design netlist. Note that design must be loaded in memory.
+
 ```tcl
 triton_part_design
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-seed seed]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
@@ -360,6 +371,7 @@ triton_part_design
 | `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
 | `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
 | `-seed` | Random seed. The default value is `1`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
 | `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
 | `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT`. |
@@ -401,13 +413,16 @@ triton_part_design
 | `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
 
-### Evaluation Netlist Partition
+### Evaluate Netlist Partition
+
+This command evaluates partition design solution.
 
 ```tcl
 evaluate_part_design_solution
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
     [-fence_flag fence_flag]
@@ -438,6 +453,7 @@ evaluate_part_design_solution
 | `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
 | `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
+| `-scale_factor` | KIV. The default value is `{1.0}`, and the allowed values are floats that sum up to `1.0`. |
 | `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
 | `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-fence_flag ` | Consider fences in the partitioning. The default value is `false`, and the allowed values are booleans. |
@@ -462,10 +478,13 @@ evaluate_part_design_solution
 
 ### Write Partition to Verilog
 
+This command writes the partition result to verilog.
+
 ```tcl
 write_partition_verilog
     [-port_prefix prefix]
     [-module_suffix suffix]
+    [-partitioning_id part_id]
     [file]
 ```
 
@@ -479,24 +498,31 @@ write_partition_verilog
 
 ### Read the Partition file
 
+This command reads the partition file into design.
+
 ```tcl
 read_partitioning
     -read_file name
     [-instance_map_file file_path]
+```
 
+| Switch Name | Description |
+| ----- | ----- |
+| `-read_file` | Read partitioning file (usually with the extension `.part`). The file format must match the same format as the output of `write_partition_verilog`. |
+| `-instance_map_file` | Instance mapping file. |
 
 ## Example Scripts
 
-### How to partition a hypergraph in the way you would using hMETIS (min-cut partitioning)
+## How to partition a hypergraph in the way you would using hMETIS (min-cut partitioning)
 
-```tcl
+```
 triton_part_hypergraph -hypergraph_file des90.hgr -num_parts 5 -balance_constraint 2 -seed 2
 ```
 You can also check the provided example [here](./examples/min-cut-partitioning/run_openroad.tcl).
 
-### How to perform the embedding-aware partitioning
+## How to perform the embedding-aware partitioning
 
-```tcl
+```
 set num_parts 2
 set balance_constraint 2
 set seed 0
@@ -516,9 +542,9 @@ triton_part_hypergraph  -hypergraph_file $hypergraph_file -num_parts $num_parts 
 You can find the provided example [here](./examples/embedding-aware-partitioning/run_placement_aware_flow.tcl).
 
 
-### How to partition a netlist
+## How to partition a netlist
 
-```tcl
+```
 # set technology information
 set ALL_LEFS “list_of_lefs”
 set ALL_LIBS “list_of_libs”
@@ -549,7 +575,7 @@ set timing_guardband true
 set part_design_solution_file "${design}_part_design.hgr.part.${num_parts}"
 
 ##############################################################################################
-### TritonPart with slack progagation
+## TritonPart with slack progagation
 ##############################################################################################
 puts "Start TritonPart with slack propagation"
 # call triton_part to partition the netlist
