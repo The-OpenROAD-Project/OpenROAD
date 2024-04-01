@@ -3,8 +3,8 @@
 source "helpers.tcl"
 
 read_lef "./Nangate45/Nangate45_tech.lef"
-read_lef "./Nangate45/fake_macros.lef"
-read_liberty "./Nangate45/fake_macros.lib"
+read_lef "./testcases/macro_only.lef"
+read_liberty "./testcases/macro_only.lib"
 
 read_verilog "./testcases/macro_only.v"
 link_design "macro_only"
