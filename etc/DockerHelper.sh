@@ -20,7 +20,7 @@ usage: $0 [CMD] [OPTIONS]
   OPTIONS:
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
                                   only if the target is 'builder'.
-  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20.04, ubuntu22.04, rhel, opensuse, debian10 and debian11.
+  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, centos7, rhel, opensuse, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -215,7 +215,7 @@ if [[ -z $(command -v "${_rule}") ]]; then
 fi
 
 # default values, can be overwritten by cmdline args
-os="centos7"
+os="ubuntu22.04"
 target="dev"
 compiler="gcc"
 useCommitSha="no"

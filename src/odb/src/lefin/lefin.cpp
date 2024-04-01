@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -2145,8 +2146,16 @@ void lefin::lineNumber(int lineNo)
 
 bool lefin::readLef(const char* lef_file)
 {
-  _logger->info(utl::ODB, 222, "Reading LEF file: {}", lef_file);
+  try {
+    return readLefInner(lef_file);
+  } catch (...) {
+    _logger->info(utl::ODB, 222, "While reading LEF file: {}", lef_file);
+    throw;
+  }
+}
 
+bool lefin::readLefInner(const char* lef_file)
+{
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
     auto layer = _tech->findLayer(name.c_str());
@@ -2221,17 +2230,40 @@ bool lefin::readLef(const char* lef_file)
     }
   }
   _incomplete_props.clear();
-  if (_layer_cnt)
-    _logger->info(
-        utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
 
-  if (_via_cnt)
-    _logger->info(utl::ODB, 224, "    Created {} technology vias", _via_cnt);
-  if (_master_cnt)
-    _logger->info(utl::ODB, 225, "    Created {} library cells", _master_cnt);
+  std::string p = lef_file;
+  std::vector<std::string> parts;
 
-  _logger->info(utl::ODB, 226, "Finished LEF file:  {}", lef_file);
+  if (_layer_cnt > 0) {
+    std::ostringstream ss;
+    ss << _layer_cnt << " layers";
+    parts.push_back(ss.str());
+  }
 
+  if (_via_cnt > 0) {
+    std::ostringstream ss;
+    ss << _via_cnt << " vias";
+    parts.push_back(ss.str());
+  }
+
+  if (_master_cnt > 0) {
+    std::ostringstream ss;
+    ss << _master_cnt << " library cells";
+    parts.push_back(ss.str());
+  }
+
+  std::string message = "LEF file: " + p;
+  if (!parts.empty()) {
+    message += ", created ";
+    for (size_t i = 0; i < parts.size(); ++i) {
+      message += parts[i];
+      if (i != parts.size() - 1) {
+        message += ", ";
+      }
+    }
+  }
+
+  _logger->info(utl::ODB, 227, message);
   return r;
 }
 

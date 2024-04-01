@@ -742,7 +742,7 @@ int defrData::sublex(YYSTYPE* pYylval)
     }
 
     if (orient_is_keyword) {
-      int result;
+      int result = K_N;
       uc_array(deftoken, uc_token);
 
       if (defGetKeyword(uc_token, &result)) {

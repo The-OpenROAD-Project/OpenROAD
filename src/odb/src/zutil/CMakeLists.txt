@@ -6,8 +6,9 @@ add_library(zutil
 
 target_link_libraries(zutil
   PUBLIC
-        db
-        utl_lib
+    db
+    utl_lib
+    Boost::boost
 )
 
 target_include_directories(zutil
