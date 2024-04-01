@@ -182,6 +182,13 @@
       "type":"1_n",
       "tbl_name":"wrongdir_spacing_rules_tbl_",
       "schema":"db_schema_wrongdir_spacing"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerTwoWiresForbiddenSpcRule",
+      "type":"1_n",
+      "tbl_name":"two_wires_forbidden_spc_rules_tbl_",
+      "schema":"db_schema_lef58_two_wires_forbidden_spacing"
     }
   ]
 }

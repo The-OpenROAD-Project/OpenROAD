@@ -125,6 +125,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerMinStepRule",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerTwoWiresForbiddenSpcRule",
                                  "dbTechLayerWidthTableRule",
                                  "dbTechLayerWrongDirSpacingRule",
                                  // Generator Code End ObjectNames
