@@ -163,9 +163,10 @@ odb::dbWire* RepairAntennas::makeNetWire(
             } else if (top_layer == prev_conn_layer) {
               wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
               prev_conn_layer = std::min(l1, l2);
-            } else if (prev_conn_layer == -1) {
-              // if a via is the first object added to the wire_encoder, create
-              // a new path using the bottom layer and do not update the
+            } else {
+              // if a via is the first object added to the wire_encoder, or the
+              // via starts a new path and is not connected to previous wires
+              // create a new path using the bottom layer and do not update the
               // prev_conn_layer. this way, this process is repeated until the
               // first wire is added and properly update the prev_conn_layer
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
@@ -183,8 +184,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          default_vias,
                          false);
             wire_segments.insert(seg);
-          } else if (prev_conn_layer == -1) {
-            prev_conn_layer = std::max(l1, l2);
           }
         } else {
           // Add wire
