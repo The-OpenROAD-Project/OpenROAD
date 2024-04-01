@@ -234,7 +234,7 @@ proc set_wire_rc { args } {
       set h_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
       set v_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
     }
-    
+
     if { [info exists keys(-h_resistance)] } {
       set h_res $keys(-h_resistance)
       sta::check_positive_float "-h_resistance" $h_res
