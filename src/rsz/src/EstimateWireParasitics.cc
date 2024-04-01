@@ -597,8 +597,8 @@ Resizer::totalLoad(SteinerTree *tree) const
   auto top_loc = tree->location(top_pt);
   auto drvr_loc = tree->location(drvr_pt);
   int length = tree->distance(drvr_pt, top_pt);
-  double dx = std::abs(top_loc.x() - drvr_loc.x()) / length;
-  double dy = std::abs(top_loc.y() - drvr_loc.y()) / length;
+  double dx = dbuToMeters(std::abs(top_loc.x() - drvr_loc.x())) / dbuToMeters(length);
+  double dy = dbuToMeters(std::abs(top_loc.y() - drvr_loc.y())) / dbuToMeters(length);
 
   float load = 0.0, max_load = 0.0;
 
