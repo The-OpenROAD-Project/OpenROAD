@@ -139,6 +139,7 @@ proc filler_placement { args } {
 sta::define_cmd_args "remove_fillers" {}
 
 proc remove_fillers { args } {
+  sta::parse_key_args "remove_fillers" args keys {} flags {}
   sta::check_argc_eq0 "remove_fillers" $args
   dpl::remove_fillers_cmd
 }
@@ -163,6 +164,7 @@ proc check_placement { args } {
 sta::define_cmd_args "optimize_mirroring" {}
 
 proc optimize_mirroring { args } {
+  sta::parse_key_args "optimize_mirroring" args keys {} flags {}
   sta::check_argc_eq0 "optimize_mirroring" $args
   dpl::optimize_mirroring_cmd
 }
