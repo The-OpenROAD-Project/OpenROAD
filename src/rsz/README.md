@@ -36,7 +36,7 @@ or
 set_wire_rc 
     [-clock] 
     [-signal]
-    [-layer layers_name]
+    [-layer layer_name]
 
 or 
 set_wire_rc
