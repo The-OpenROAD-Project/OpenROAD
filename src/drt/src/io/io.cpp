@@ -1524,6 +1524,11 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58AreaConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerTwoWiresForbiddenSpcRules()) {
+    auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(rule);
+    tmpLayer->addTwoWiresForbiddenSpacingConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,

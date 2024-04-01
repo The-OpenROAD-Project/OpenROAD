@@ -230,6 +230,7 @@ class FlexGCWorker::Impl
   void myBloat(const gtl::rectangle_data<frCoord>& rect,
                frCoord val,
                box_t& box);
+  bool hasRoute(gcRect* rect, gtl::rectangle_data<frCoord> markerRect);
   void checkMetalSpacing_main(gcRect* rect,
                               bool checkNDRs = true,
                               bool isSpcRect = false);
@@ -273,6 +274,9 @@ class FlexGCWorker::Impl
                              frCoord distY,
                              bool checkNDRs = true,
                              bool checkPolyEdge = true);
+  void checkTwoWiresForbiddenSpc_main(
+      gcRect* rect,
+      frLef58TwoWiresForbiddenSpcConstraint* con);
   box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
                                             frCoord& maxSpcValX,
                                             frCoord& maxSpcValY);
