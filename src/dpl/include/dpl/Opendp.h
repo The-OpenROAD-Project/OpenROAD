@@ -386,22 +386,12 @@ class Opendp
   int getHybridSiteIndex(dbSite* site);
   int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
-  Point legalPt(const Cell* cell,
-                const Point& pt,
-                int row_height = -1,
-                int site_width = -1) const;
+  Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
   Point legalGridPt(const Cell* cell,
                     const Point& pt,
-                    int row_height = -1,
-                    int site_width = -1) const;
-  Point legalPt(const Cell* cell,
-                bool padded,
-                int row_height = -1,
-                int site_width = -1) const;
-  Point legalGridPt(const Cell* cell,
-                    bool padded,
-                    int row_height = -1,
-                    int site_width = -1) const;
+                    int row_height = -1) const;
+  Point legalPt(const Cell* cell, bool padded, int row_height = -1) const;
+  Point legalGridPt(const Cell* cell, bool padded, int row_height = -1) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
@@ -475,42 +465,34 @@ class Opendp
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
 
-  int getSiteWidth(const Cell* cell) const;
   int getRowCount(const Cell* cell) const;
   int getRowCount(int row_height) const;
-  int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
   int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  int gridNearestWidth(const Cell* cell, int site_width) const;
   int gridHeight(const Cell* cell) const;
   GridInfo getGridInfo(const Cell* cell) const;
-  int gridX(int x, int site_width) const;
+  int gridX(int x) const;
   int gridX(const Cell* cell) const;
-  int gridX(const Cell* cell, int site_width) const;
   int gridPaddedX(const Cell* cell) const;
-  int gridPaddedX(const Cell* cell, int site_width) const;
   int gridY(int y, const Cell* cell) const;
   int gridY(const Cell* cell) const;
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
-  int gridPaddedEndX(const Cell* cell, int site_width) const;
-  int gridEndX(int x, int site_width) const;
+  int gridEndX(int x) const;
   int gridEndX(const Cell* cell) const;
-  int gridEndX(const Cell* cell, int site_width) const;
   int gridEndY(int y, const Cell* cell) const;
   int gridEndY(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const;
+  void setGridPaddedLoc(Cell* cell, int x, int y) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
-  int paddedWidth(const Cell* cell, int site_width) const;
   int paddedWidth(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
   int padLeft(const Cell* cell) const;

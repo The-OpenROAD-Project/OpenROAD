@@ -28,4 +28,7 @@ record_tests {
 
   skywater130_caravel
   skywater130_coyote_tc
+
+  pad_man_tcl_check
+  pad_readme_msgs_check
 }
