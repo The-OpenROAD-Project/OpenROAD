@@ -92,7 +92,7 @@ class frTechObject
   {
     in->setId(vias_.size());
     if (name2via_.find(in->getName()) != name2via_.end()) {
-      if (*(name2via_[in->getName()]) == *in.get()) {
+      if (*(name2via_[in->getName()]) == *in) {
         return name2via_[in->getName()];
       }
       return nullptr;

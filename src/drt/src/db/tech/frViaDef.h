@@ -117,8 +117,9 @@ class frViaDef
       auto it1 = val1set.begin();
       auto it2 = val2set.begin();
       while (it1 != val1set.end()) {
-        if (*it1 != *it2)
+        if (*it1 != *it2) {
           return false;
+        }
         it1++;
         it2++;
       }
