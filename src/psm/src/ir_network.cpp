@@ -246,12 +246,14 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   auto* base_layer = getTech()->findRoutingLayer(1);
 
   LayerMap<Polygon90Set> shapes_by_layer;
+  bool floorplan_asseted_ = false;
   for (auto* iterm : net_->getITerms()) {
     auto* inst = iterm->getInst();
     if (!inst->isPlaced()) {
       continue;
     }
     if (floorplanning_ && !inst->getPlacementStatus().isFixed()) {
+      floorplan_asseted_ = true;
       continue;
     }
     const auto transform = inst->getTransform();
@@ -293,6 +295,11 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
     if (has_routing_term) {
       iterm_nodes_.push_back(std::move(base_node));
     }
+  }
+
+  if (floorplanning_ && !floorplan_asseted_) {
+    // Since floorplanning did not impact solution, mark this okay for analysis
+    floorplanning_ = false;
   }
 
   return shapes_by_layer;
