@@ -73,14 +73,12 @@ std::string Node::describe(const std::string& prefix) const
 {
   const double dbus = getDBUs();
 
-  const std::string desc = fmt::format("{}{}: ({:.4f}, {:.4f}) on {}",
-                                       prefix,
-                                       getTypeName(),
-                                       pt_.getX() / dbus,
-                                       pt_.getY() / dbus,
-                                       layer_->getName());
-
-  return desc;
+  return fmt::format("{}{}: ({:.4f}, {:.4f}) on {}",
+                     prefix,
+                     getTypeName(),
+                     pt_.getX() / dbus,
+                     pt_.getY() / dbus,
+                     layer_->getName());
 }
 
 double Node::getDBUs() const
