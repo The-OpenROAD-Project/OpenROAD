@@ -260,7 +260,7 @@ sta::define_cmd_args "place_macro" {-macro_name macro_name \
 
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
-    keys {-macro_name -location -orientation}
+    keys {-macro_name -location -orientation} flags {}
 
   if {[info exists keys(-macro_name)]} {
     set macro_name $keys(-macro_name)
@@ -311,7 +311,7 @@ proc parse_macro_name {cmd macro_name} {
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
-    flags {-coarse -fine -show_bundled_nets}
+    flags {-coarse -fine -show_bundled_nets};# checker off
 
   set coarse [info exists flags(-coarse)]
   set fine [info exists flags(-fine)]

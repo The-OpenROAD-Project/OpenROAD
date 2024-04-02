@@ -20,6 +20,8 @@ Features:
 
 ### Analyze Power Grid
 
+This command analyzes power grid.
+
 ```tcl
 analyze_power_grid
     -net net_name
@@ -47,6 +49,8 @@ analyze_power_grid
 
 ### Check Power Grid
 
+This command checks power grid.
+
 ```tcl
 check_power_grid
     -net net_name
@@ -60,9 +64,11 @@ check_power_grid
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
-| `-error_file` | File to write power grid error to. |
+| `-error_file` | File to write power grid errors to. |
 
 ### Write Spice Power Grid
+
+This command writes the `spice` file for power grid.
 
 ```tcl
 write_pg_spice
@@ -84,6 +90,8 @@ write_pg_spice
 | `spice_file` | File to write spice netlist to. | 
 
 ### Set PDNSim Net voltage
+
+This command sets PDNSim net voltage.
 
 ```tcl
 set_pdnsim_net_voltage
@@ -120,7 +128,7 @@ set_pdnsim_source_settings
 | `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
 | `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/pdnsim.cpp) or the [swig file](./src/pdnsim.i).
 
@@ -132,7 +140,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 Example scripts demonstrating how to run PDNSim on a sample design on `aes` as follows:
 
-```tcl
+```
 ./test/aes_test_vdd.tcl
 ./test/aes_test_vss.tcl
 ```
