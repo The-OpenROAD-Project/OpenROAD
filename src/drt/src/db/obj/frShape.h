@@ -45,6 +45,7 @@ class frShape : public frPinFig
   // getters
   virtual frLayerNum getLayerNum() const = 0;
   // others
+
   /* from frPinFig
    * hasPin
    * getPin

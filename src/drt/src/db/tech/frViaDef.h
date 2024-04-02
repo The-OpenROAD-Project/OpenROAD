@@ -28,11 +28,11 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
-#include <vector>
 #include <set>
-#include <algorithm>
+#include <vector>
 
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
@@ -97,17 +97,26 @@ class frViaDef
                         const std::vector<std::unique_ptr<frShape>>& val2) {
       std::multiset<std::pair<frLayerNum, odb::Rect>> val1set;
       std::multiset<std::pair<frLayerNum, odb::Rect>> val2set;
-      std::transform(val1.begin(), val1.end(), std::inserter(val1set, val1set.begin()),
-                   [](const std::unique_ptr<frShape>& val) { return std::make_pair(val->getLayerNum(), val->getBBox()); });
-      std::transform(val2.begin(), val2.end(), std::inserter(val2set, val2set.begin()),
-                   [](const std::unique_ptr<frShape>& val) { return std::make_pair(val->getLayerNum(), val->getBBox()); });
-       if (val1set.size() != val2set.size()) {
+      std::transform(val1.begin(),
+                     val1.end(),
+                     std::inserter(val1set, val1set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      std::transform(val2.begin(),
+                     val2.end(),
+                     std::inserter(val2set, val2set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      if (val1set.size() != val2set.size()) {
         return false;
       }
       auto it1 = val1set.begin();
       auto it2 = val2set.begin();
-      while (it1 != val1set.end())
-      {
+      while (it1 != val1set.end()) {
         if (*it1 != *it2)
           return false;
         it1++;
