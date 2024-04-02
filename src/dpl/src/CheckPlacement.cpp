@@ -330,9 +330,8 @@ bool Opendp::isPlaced(const Cell* cell)
 bool Opendp::checkInRows(const Cell& cell) const
 {
   auto grid_info = getRowInfo(&cell);
-  int site_width = getSiteWidth(&cell);
-  int x_ll = gridX(&cell, site_width);
-  int x_ur = gridEndX(&cell, site_width);
+  int x_ll = gridX(&cell);
+  int x_ur = gridEndX(&cell);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
   debugPrint(logger_,

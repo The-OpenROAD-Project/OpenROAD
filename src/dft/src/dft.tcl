@@ -29,6 +29,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+sta::define_cmd_args "preview_dft" { [-verbose]}
+
 proc preview_dft { args } {
   sta::parse_key_args "preview_dft" args \
     keys {} \
@@ -41,10 +43,16 @@ proc preview_dft { args } {
   dft::preview_dft $verbose
 }
 
-proc insert_dft {} {
+sta::define_cmd_args "insert_dft" { }
+proc insert_dft { args } {
+  sta::parse_key_args "insert_dft" args \
+    keys {} flags {}
   dft::insert_dft
 }
 
+
+sta::define_cmd_args "set_dft_config" { [-max_length max_length] \
+                                        [-clock_mixing clock_mixing]}
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
     keys {-max_length -clock_mixing} \
@@ -65,6 +73,8 @@ proc set_dft_config { args } {
   }
 }
 
+sta::define_cmd_args "report_dft_config" { }
 proc report_dft_config {} {
+  sta::parse_key_args "report_dft_config" args keys {} flags {}
   dft::report_dft_config
 }

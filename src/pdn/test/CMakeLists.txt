@@ -92,6 +92,7 @@ set(TEST_NAMES
     power_switch_cut_rows
     repair_vias
     sroute_test
+    bpin_removal
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
