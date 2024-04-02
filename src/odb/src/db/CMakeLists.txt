@@ -96,7 +96,10 @@ add_library(db
     dbLevelShifter.cpp
     dbLogicPort.cpp
     dbMetalWidthViaMap.cpp
+    dbModBTerm.cpp
     dbModInst.cpp
+    dbModITerm.cpp
+    dbModNet.cpp
     dbModule.cpp
     dbNetTrack.cpp
     dbPowerDomain.cpp
@@ -130,7 +133,14 @@ add_library(db
     dbGroupModInstItr.cpp
     dbGuideItr.cpp
     dbModuleInstItr.cpp
+    dbModuleModBTermItr.cpp
     dbModuleModInstItr.cpp
+    dbModuleModInstModITermItr.cpp
+    dbModuleModNetBTermItr.cpp
+    dbModuleModNetITermItr.cpp
+    dbModuleModNetItr.cpp
+    dbModuleModNetModBTermItr.cpp
+    dbModuleModNetModITermItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     # Generator Code End cpp

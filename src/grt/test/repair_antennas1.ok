@@ -61,13 +61,6 @@ Net: req_msg[31]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: resp_msg[14]
-  Pin: _658_/A (sky130_fd_sc_hs__nand2_1)
-    Layer: met2
-      Partial area ratio:  506.30
-      Required ratio:  400.00 (Side area) (VIOLATED)
-
-
 Net: resp_rdy
   Pin: _343_/A2 (sky130_fd_sc_hs__a21oi_1)
     Layer: met3
@@ -75,10 +68,10 @@ Net: resp_rdy
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-[INFO ANT-0002] Found 10 net violations.
-[INFO ANT-0001] Found 10 pin violations.
-[INFO GRT-0012] Found 10 antenna violations.
-[INFO GRT-0015] Inserted 10 diodes.
+[INFO ANT-0002] Found 9 net violations.
+[INFO ANT-0001] Found 9 pin violations.
+[INFO GRT-0012] Found 9 antenna violations.
+[INFO GRT-0015] Inserted 9 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
 No differences found.

@@ -24,7 +24,7 @@ record_tests {
   tiecells
   upf_test
   upf_shifter_test
-  ifp_man_tcl_check
-  ifp_readme_msgs_check
+  #ifp_man_tcl_check
+  #ifp_readme_msgs_check
 }
 

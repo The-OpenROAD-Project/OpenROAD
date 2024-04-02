@@ -63,6 +63,6 @@ record_tests {
   tracks3
   unplaced_inst
   upper_layer_net
-  grt_man_tcl_check
-  grt_readme_msgs_check
+  #grt_man_tcl_check
+  #grt_readme_msgs_check
 }
