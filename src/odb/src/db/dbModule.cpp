@@ -151,14 +151,12 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._insts;
   stream >> obj._mod_inst;
   stream >> obj._modinsts;
-  // User Code Begin >>
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._modnets;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._modbterms;
   }
-  // User Code End >>
   return stream;
 }
 
@@ -169,14 +167,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._insts;
   stream << obj._mod_inst;
   stream << obj._modinsts;
-  // User Code Begin <<
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._modnets;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._modbterms;
   }
-  // User Code End <<
   return stream;
 }
 

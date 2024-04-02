@@ -130,39 +130,59 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
-  // User Code Begin >>
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._name;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._flags;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._parent_moditerm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._parent;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._modnet;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._next_net_modbterm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._prev_net_modbterm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._next_entry;
   }
-  // User Code End >>
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
 {
-  // User Code Begin <<
-  dbBlock* block = (dbBlock*) (obj.getOwner());
-  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._name;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._flags;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._parent_moditerm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._parent;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._modnet;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._next_net_modbterm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._prev_net_modbterm;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._next_entry;
   }
-  // User Code End <<
   return stream;
 }
 

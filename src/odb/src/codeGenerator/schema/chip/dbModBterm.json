@@ -5,47 +5,55 @@
         {
             "name":"_name",
             "type":"char *",
-            "flags":["no-set","no-serial"]	    
+            "flags":["no-set"],
+	    "schema":"db_schema_update_hierarchy"
         },
 	{
 	    "name":"_flags",
 	    "type":"uint",
-	    "flags":["private","no-serial"]
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy"	    
 	},
         {
 	    "name":"_parent_moditerm",
 	    "type":"dbId<_dbModITerm>",
 	    "parent":"dbBlock",
-	    "flags":["private","no-serial"]	    	    	    	    
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy"	    
         },
         {
 	    "name":"_parent",
 	    "type":"dbId<_dbModule>",
-	    "flags":["no-set","no-serial"],
+	    "flags":["no-set"],
+	    "schema":"db_schema_update_hierarchy",	    	    
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_modnet",
 	    "type":"dbId<_dbModNet>",
-	    "flags":["private","no-serial"],	    	    	    	    	    
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_next_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["private","no-serial"],
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    
 	    "parent":"dbBlock"
         },
         {
 	    "name":"_prev_net_modbterm",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["private","no-serial"],	    
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    	    
 	    "parent":"dbBlock"
         },
 	{
 	    "name":"_next_entry",
             "type":"dbId<_dbModBTerm>",
-	    "flags":["private","no-serial"],
+	    "flags":["private"],
+	    "schema":"db_schema_update_hierarchy",	    	    	    	    	    
             "parent":"dbBlock"
 	}
     ],
