@@ -211,7 +211,7 @@ void io::Parser::initDefaultVias()
         auto vdfPtr = tech_->addVia(std::move(viaDef));
         if (vdfPtr == nullptr) {
           logger_->error(
-              utl::DRT, 9009, "Duplicated via definition for {}", viaDefName);
+              utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
         }
         tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
       }
