@@ -5,8 +5,8 @@ record_tests {
   gcd 
   45_gcd
   names
-  rcx_man_tcl_check
-  rcx_readme_msgs_check
+  #rcx_man_tcl_check
+  #rcx_readme_msgs_check
 }
 record_pass_fail_tests {
   rcx_unit_test

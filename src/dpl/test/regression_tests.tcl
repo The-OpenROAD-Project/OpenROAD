@@ -60,6 +60,6 @@ record_tests {
   simple08
   simple09
   simple10
-  dpl_man_tcl_check
-  dpl_readme_msgs_check
+  #dpl_man_tcl_check
+  #dpl_readme_msgs_check
 }

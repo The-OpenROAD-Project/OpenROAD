@@ -119,6 +119,7 @@ def man2_translate(doc, path):
                 manpage.args = args_dict
 
             manpage.write_roff_file(path)
+    print("Man2 successfully compiled.")
 
 def man3(path=DEST_DIR3):
     for doc in docs3:
@@ -129,7 +130,6 @@ def man3(path=DEST_DIR3):
         man3_translate(doc, path)
 
 def man3_translate(doc, path):
-    _info, _warn, _error = 0, 0, 0
     with open(doc) as f:
         for line in f:
             parts = line.split()
@@ -142,11 +142,7 @@ def man3_translate(doc, path):
             manpage.desc = f"Type: {level}\n\n{message}"
             manpage.write_roff_file(path)
 
-            # tabulate counts
-            if level == 'INFO': _info += 1
-            elif level == 'WARN': _warn += 1
-            elif level == 'ERROR': _error += 1
-        print(f"Info: {_info}, Warn: {_warn}, Error: {_error}")
+    print("Man3 successfully compiled.")
 
 if __name__ == "__main__":
     man2()
