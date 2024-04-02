@@ -9732,6 +9732,7 @@ class dbTechLayerTwoWiresForbiddenSpcRule : public dbObject
   void setMaxExactSpanLength(bool max_exact_span_length);
 
   bool isMaxExactSpanLength() const;
+
   // User Code Begin dbTechLayerTwoWiresForbiddenSpcRule
   static dbTechLayerTwoWiresForbiddenSpcRule* create(dbTechLayer* layer);
 

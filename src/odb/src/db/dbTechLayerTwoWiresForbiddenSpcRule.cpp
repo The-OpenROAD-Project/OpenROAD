@@ -42,8 +42,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>;
 
@@ -72,16 +70,12 @@ bool _dbTechLayerTwoWiresForbiddenSpcRule::operator==(
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerTwoWiresForbiddenSpcRule::operator<(
     const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -98,8 +92,6 @@ void _dbTechLayerTwoWiresForbiddenSpcRule::differences(
   DIFF_FIELD(min_span_length_);
   DIFF_FIELD(max_span_length_);
   DIFF_FIELD(prl_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -116,8 +108,6 @@ void _dbTechLayerTwoWiresForbiddenSpcRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(max_span_length_);
   DIFF_OUT_FIELD(prl_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -130,8 +120,6 @@ _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
   min_span_length_ = 0;
   max_span_length_ = 0;
   prl_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
@@ -146,8 +134,6 @@ _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
   min_span_length_ = r.min_span_length_;
   max_span_length_ = r.max_span_length_;
   prl_ = r.prl_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream,
@@ -162,8 +148,6 @@ dbIStream& operator>>(dbIStream& stream,
   stream >> obj.min_span_length_;
   stream >> obj.max_span_length_;
   stream >> obj.prl_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -179,13 +163,8 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.min_span_length_;
   stream << obj.max_span_length_;
   stream << obj.prl_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

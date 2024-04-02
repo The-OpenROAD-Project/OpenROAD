@@ -36,16 +36,11 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
 {
@@ -53,15 +48,10 @@ struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
   bool max_exact_span_length_ : 1;
   uint spare_bits_ : 30;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerTwoWiresForbiddenSpcRule(
       _dbDatabase*,
       const _dbTechLayerTwoWiresForbiddenSpcRule& r);
@@ -79,8 +69,6 @@ class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
                    const char* field,
                    const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerTwoWiresForbiddenSpcRuleFlags flags_;
   int min_spacing_;
@@ -88,15 +76,10 @@ class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
   int min_span_length_;
   int max_span_length_;
   int prl_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerTwoWiresForbiddenSpcRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerTwoWiresForbiddenSpcRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header
