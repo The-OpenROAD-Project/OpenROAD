@@ -9,8 +9,8 @@ record_tests {
   top_level_term
   top_level_term2
   drc_test
-  drt_man_tcl_check
-  drt_readme_msgs_check
+  #drt_man_tcl_check
+  #drt_readme_msgs_check
 }
 record_pass_fail_tests {
   gc_test

@@ -25,6 +25,20 @@ read_upf
 | ----- | ----- |
 | `-file` | Path to `.upf` file. |
 
+### Write UPF
+
+Writes the UPF file.
+
+```tcl
+write_upf file_name
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `file_name` | Filename argument. |
+
 ### Create Power Domain
 
 This command creates power domain for a group of modules.
