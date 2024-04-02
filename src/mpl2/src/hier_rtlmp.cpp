@@ -222,7 +222,7 @@ void HierRTLMP::setDefaultThresholds()
              "Setting default threholds...");
 
   std::string snap_layer_name;
-  // calculate the pitch_x and pitch_y based on the pins of macros
+
   for (auto& macro : hard_macro_map_) {
     odb::dbMaster* master = macro.first->getMaster();
     for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -231,15 +231,12 @@ void HierRTLMP::setDefaultThresholds()
           for (odb::dbBox* box : mpin->getGeometry()) {
             odb::dbTechLayer* layer = box->getTechLayer();
             snap_layer_name = layer->getName();
-            pitch_x_
-                = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
-            pitch_y_
-                = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
           }
         }
       }
     }
-    break;  // we just need to calculate pitch_x and pitch_y once
+
+    break;
   }
 
   // update weight
@@ -383,7 +380,7 @@ void HierRTLMP::run()
   generateTemporaryStdCellsPlacement(root_cluster_);
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
-    hard_macro->updateDb(pitch_x_, pitch_y_, block_);
+    hard_macro->updateDb(block_);
   }
 
   correctAllMacrosOrientation();
@@ -6376,15 +6373,11 @@ void HierRTLMP::correctAllMacrosOrientation()
   adjustRealMacroOrientation(false);
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
-    const Rect inst_box(dbuToMicron(inst->getBBox()->xMin(), dbu_),
-                        dbuToMicron(inst->getBBox()->yMin(), dbu_),
-                        dbuToMicron(inst->getBBox()->xMax(), dbu_),
-                        dbuToMicron(inst->getBBox()->yMax(), dbu_));
+    const odb::Rect bbox = inst->getBBox()->getBox();
+    const odb::dbOrientType orientation = inst->getOrient();
 
-    const odb::dbOrientType inst_orientation = inst->getOrient();
-
-    const odb::Point snap_origin = hard_macro->computeSnapOrigin(
-        inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
+    const odb::Point snap_origin
+        = hard_macro->computeSnapOrigin(bbox, orientation, block_);
 
     inst->setOrigin(snap_origin.x(), snap_origin.y());
     inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
