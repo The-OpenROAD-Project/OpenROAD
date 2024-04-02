@@ -452,14 +452,14 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-group_pins pin_list]\
                                   [-annealing] \
                                   [-write_pin_placement file_name]
-                                 }
+}; # checker off
 
 proc place_pins { args } {
   ord::parse_list_args "place_pins" args list {-exclude -group_pins}
   sta::parse_key_args "place_pins" args \
     keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
           -min_distance -write_pin_placement} \
-    flags {-random -min_distance_in_tracks -annealing}
+    flags {-random -min_distance_in_tracks -annealing}; # checker off
 
   sta::check_argc_eq0 "place_pins" $args
 

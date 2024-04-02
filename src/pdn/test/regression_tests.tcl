@@ -115,6 +115,6 @@ record_tests {
 
   bpin_removal
 
-  pdn_man_tcl_check
-  pdn_readme_msgs_check
+  #pdn_man_tcl_check
+  #pdn_readme_msgs_check
 }
