@@ -61,10 +61,11 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreMove inst i1");
   BOOST_TEST(cb->events[1] == "PostMove inst i1");
+  cb->clearEvents();
   i1->findITerm("a")->connect(n1);
-  BOOST_TEST(cb->events.size() == 4);
-  BOOST_TEST(cb->events[2] == "PreConnect iterm to net n1");
-  BOOST_TEST(cb->events[3] == "PostConnect iterm to net n1");
+  BOOST_TEST(cb->events.size() == 2);
+  BOOST_TEST(cb->events[0] == "PreConnect iterm to net n1");
+  BOOST_TEST(cb->events[1] == "PostConnect iterm to net n1");
   cb->clearEvents();
   i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 0);
