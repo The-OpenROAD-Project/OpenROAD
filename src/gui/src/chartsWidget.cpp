@@ -44,6 +44,8 @@
 #include <cmath>
 #include <vector>
 
+#include "sta/Clock.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
@@ -126,14 +128,13 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
         = QString("Number of Endpoints: %1\n")
               .arg(static_cast<QBarSet*>(sender())->at(bar_index));
 
-    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
-    time_unit.append(sta_->units()->timeUnit()->suffix());
+    QString scaled_suffix = sta_->units()->timeUnit()->scaledSuffix();
 
     const float lower = (bar_index - neg_count_offset_) * bucket_interval_;
     const float upper = lower + bucket_interval_;
 
     QString time_info
-        = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + time_unit;
+        = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + scaled_suffix;
 
     const QString tool_tip = number_of_pins + time_info;
 
@@ -157,10 +158,9 @@ void ChartsWidget::clearChart()
 
 void ChartsWidget::setSlackMode()
 {
-  std::vector<float> all_slack;
-  getSlackForAllEndpoints(all_slack);
+  SlackHistogramData data = fetchSlackHistogramData();
 
-  if (all_slack.size() == 0) {
+  if (data.end_points_slack.size() == 0) {
     logger_->warn(utl::GUI,
                   97,
                   "All pins are unconstrained. Cannot plot histogram. Check if "
@@ -169,7 +169,7 @@ void ChartsWidget::setSlackMode()
   }
 
   std::deque<int> neg_buckets, pos_buckets;
-  populateBuckets(all_slack, pos_buckets, neg_buckets);
+  populateBuckets(data.end_points_slack, pos_buckets, neg_buckets);
   setNegativeCountOffset(static_cast<int>(neg_buckets.size()));
 
   QBarSet* neg_set = new QBarSet("");
@@ -197,7 +197,7 @@ void ChartsWidget::setSlackMode()
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
-  setXAxisConfig(pos_set->count());
+  setXAxisConfig(pos_set->count(), data.clocks);
   setYAxisConfig();
   series->attachAxis(axis_y_);
 
@@ -208,8 +208,10 @@ void ChartsWidget::setSlackMode()
   chart_->setTitle("Endpoint Slack");
 }
 
-void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
+SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
 {
+  SlackHistogramData data;
+
   STAGuiInterface sta_gui(sta_);
 
   auto time_units = sta_->units()->timeUnit();
@@ -219,10 +221,11 @@ void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
   for (const auto& pin : end_points) {
     double pin_slack = 0;
     pin_slack = sta_gui.getPinSlack(pin);
-    if (pin_slack != sta::INF)
-      all_slack.push_back(time_units->staToUser(pin_slack));
-    else
+    if (pin_slack != sta::INF) {
+      data.end_points_slack.push_back(time_units->staToUser(pin_slack));
+    } else {
       unconstrained_count++;
+    }
   }
 
   if (unconstrained_count != 0 && unconstrained_count != end_points.size()) {
@@ -231,6 +234,12 @@ void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
     unconstrained_number.setNum(unconstrained_count);
     label_->setText(label_message + unconstrained_number);
   }
+
+  for (std::unique_ptr<gui::ClockTree>& clk_tree : sta_gui.getClockTrees()) {
+    data.clocks.insert(clk_tree.get()->getClock());
+  }
+
+  return data;
 }
 
 // We define the slack interval as being inclusive in its lower
@@ -360,15 +369,10 @@ int ChartsWidget::computeSnapBucketInterval(float exact_interval)
   return snap_interval;
 }
 
-void ChartsWidget::setXAxisConfig(int all_bars_count)
+void ChartsWidget::setXAxisConfig(int all_bars_count,
+                                  const std::set<sta::Clock*>& clocks)
 {
-  const QString start_title = "Slack [";
-  const QString time_scale_abreviation
-      = sta_->units()->timeUnit()->scaleAbbreviation();
-  const QString time_suffix = sta_->units()->timeUnit()->suffix();
-  const QString end_title = "]";
-  const QString axis_x_title
-      = start_title + time_scale_abreviation + time_suffix + end_title;
+  QString axis_x_title = createXAxisTitle(clocks);
   axis_x_->setTitleText(axis_x_title);
 
   const QString format = "%." + QString::number(precision_count_) + "f";
@@ -382,6 +386,61 @@ void ChartsWidget::setXAxisConfig(int all_bars_count)
   axis_x_->setTickCount(all_bars_count + 1);
   axis_x_->setGridLineVisible(false);
   axis_x_->setVisible(true);
+}
+
+QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
+{
+  const QString start_title = "<center> Slack [";
+
+  sta::Unit* time_units = sta_->units()->timeUnit();
+
+  const QString scaled_suffix = time_units->scaledSuffix();
+  const QString end_title = "], Clocks: ";
+
+  QString axis_x_title = start_title + scaled_suffix + end_title;
+
+  for (sta::Clock* clock : clocks) {
+    // First get period and frequency from sta
+    float period = time_units->staToUser(clock->period());
+    float frequency = 1 / period;
+    float inverted_scale = 1 / time_units->scale();
+    std::string frequency_scale = getFrequencyScale(inverted_scale);
+
+    // Then adjust display values as needed
+    if (period < 1) {
+      period = trim(period, 3 /*decimal digits*/);
+    }
+
+    if (frequency < 0.01) {
+      frequency *= 1000;
+      inverted_scale /= 1000;
+      frequency_scale = getFrequencyScale(inverted_scale);
+    }
+
+    axis_x_title += QString::fromStdString(
+        fmt::format("<br> {} {} ({} {}Hz)",
+                    clock->name(),
+                    period,
+                    trim(frequency, 3 /*decimal digits*/),
+                    frequency_scale));
+  }
+
+  return axis_x_title;
+}
+
+std::string ChartsWidget::getFrequencyScale(float period_scale)
+{
+  if (sta::fuzzyEqual(period_scale, 1E+12)) {
+    return "T";
+  } else if (sta::fuzzyEqual(period_scale, 1E+9)) {
+    return "G";
+  } else if (sta::fuzzyEqual(period_scale, 1E+6)) {
+    return "M";
+  } else if (sta::fuzzyEqual(period_scale, 1E+3)) {
+    return "K";
+  } else {
+    return "";
+  }
 }
 
 void ChartsWidget::setYAxisConfig()
@@ -440,6 +499,13 @@ int ChartsWidget::computeNumberOfDigits(int value)
 int ChartsWidget::computeFirstDigit(int value, int digits)
 {
   return static_cast<int>(value / std::pow(10, digits - 1));
+}
+
+float ChartsWidget::trim(float value, int digits)
+{
+  float decimal_places = std::pow(10, digits);
+
+  return std::round(value * decimal_places) / decimal_places;
 }
 
 #endif
