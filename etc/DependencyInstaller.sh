@@ -14,7 +14,7 @@ _equivalenceDeps() {
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then (
+    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
         if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
             source /opt/rh/llvm-toolset-7.0/enable
         fi
@@ -263,6 +263,7 @@ _installUbuntuPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libffi-dev \
         libgomp1 \
@@ -271,6 +272,7 @@ _installUbuntuPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl \
@@ -314,6 +316,9 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
+    arch=amd64
+    version=3.1.11.1
+
     yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
@@ -362,6 +367,10 @@ _installRHELPackages() {
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+
+    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
+    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
 _installCentosCleanUp() {
@@ -386,11 +395,13 @@ _installCentosPackages() {
     yum install -y \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
+        groff \
         libffi-devel \
         libgomp \
         libstdc++ \
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python-devel \
@@ -433,6 +444,7 @@ _installOpenSusePackages() {
         gcc \
         gcc11-c++ \
         git \
+        groff \
         gzip \
         lcov \
         libffi-devel \
@@ -444,6 +456,7 @@ _installOpenSusePackages() {
         libqt5-qtstyleplugins \
         libstdc++6-devel-gcc8 \
         llvm \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python3-devel \
@@ -496,7 +509,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex groff libomp pandoc pyqt5 python swig tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -532,6 +545,7 @@ _installDebianPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libgomp1 \
         libomp-dev \
@@ -539,6 +553,7 @@ _installDebianPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl-dev \

@@ -91,7 +91,7 @@ void Fixture::setupTech(frTechObject* tech)
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
-  addLayer(tech, "m1", dbTechLayerType::ROUTING);
+  addLayer(tech, "m1", dbTechLayerType::ROUTING, dbTechLayerDir::HORIZONTAL);
 }
 
 frMaster* Fixture::makeMacro(const char* name,
@@ -276,18 +276,18 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
+frLef58MinStepConstraint* Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
   con->setMinStepLength(50);
   con->setMaxEdges(1);
-  con->setEolWidth(200);
-
+  auto rptr = con.get();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
@@ -542,6 +542,16 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
       layer->setLef58DiffNetCutSpcTblConstraint(con.get());
     }
   }
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58TwoWiresForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule)
+{
+  auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addTwoWiresForbiddenSpacingConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
 

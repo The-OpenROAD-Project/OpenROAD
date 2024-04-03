@@ -95,7 +95,10 @@ enum dbObjectType
   dbLevelShifterObj,
   dbLogicPortObj,
   dbMetalWidthViaMapObj,
+  dbModBTermObj,
   dbModInstObj,
+  dbModITermObj,
+  dbModNetObj,
   dbModuleObj,
   dbNetTrackObj,
   dbPowerDomainObj,
@@ -121,6 +124,7 @@ enum dbObjectType
   dbTechLayerMinStepRuleObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerTwoWiresForbiddenSpcRuleObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType

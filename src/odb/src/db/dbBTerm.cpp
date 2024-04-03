@@ -51,6 +51,7 @@
 #include "dbJournal.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbModNet.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
@@ -209,6 +210,8 @@ void _dbBTerm::differences(dbDiff& diff,
 
   DIFF_FIELD_NO_DEEP(_next_bterm);
   DIFF_FIELD_NO_DEEP(_prev_bterm);
+  DIFF_FIELD_NO_DEEP(_next_modnet_bterm);
+  DIFF_FIELD_NO_DEEP(_prev_modnet_bterm);
   DIFF_FIELD_NO_DEEP(_parent_block);
   DIFF_FIELD_NO_DEEP(_parent_iterm);
   DIFF_FIELD_NO_DEEP(_bpins);
@@ -239,6 +242,8 @@ void _dbBTerm::out(dbDiff& diff, char side, const char* field) const
 
   DIFF_OUT_FIELD_NO_DEEP(_next_bterm);
   DIFF_OUT_FIELD_NO_DEEP(_prev_bterm);
+  DIFF_OUT_FIELD_NO_DEEP(_next_modnet_bterm);
+  DIFF_OUT_FIELD_NO_DEEP(_prev_modnet_bterm);
   DIFF_OUT_FIELD_NO_DEEP(_parent_block);
   DIFF_OUT_FIELD_NO_DEEP(_parent_iterm);
   DIFF_OUT_FIELD_NO_DEEP(_bpins);
@@ -249,6 +254,8 @@ void _dbBTerm::out(dbDiff& diff, char side, const char* field) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
+  dbBlock* block = (dbBlock*) (bterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream << *bit_field;
   stream << bterm._ext_id;
@@ -257,6 +264,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._net;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << bterm._mnet;
+    stream << bterm._next_modnet_bterm;
+    stream << bterm._prev_modnet_bterm;
+  }
   stream << bterm._parent_block;
   stream << bterm._parent_iterm;
   stream << bterm._bpins;
@@ -267,6 +279,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
+  dbBlock* block = (dbBlock*) (bterm.getOwner());
+  _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
   uint* bit_field = (uint*) &bterm._flags;
   stream >> *bit_field;
   stream >> bterm._ext_id;
@@ -275,6 +289,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._net;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> bterm._mnet;
+    stream >> bterm._next_modnet_bterm;
+    stream >> bterm._prev_modnet_bterm;
+  }
   stream >> bterm._parent_block;
   stream >> bterm._parent_iterm;
   stream >> bterm._bpins;
@@ -426,6 +445,32 @@ dbNet* dbBTerm::getNet()
     return (dbNet*) net;
   }
   return nullptr;
+}
+
+dbModNet* dbBTerm::getModNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet) {
+    _dbBlock* block = (_dbBlock*) getBlock();
+    _dbModNet* net = block->_modnet_tbl->getPtr(bterm->_mnet);
+    return (dbModNet*) net;
+  }
+  return nullptr;
+}
+
+void dbBTerm::connect(dbModNet* mod_net)
+{
+  dbModule* parent_module = mod_net->getParent();
+  _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
+  _dbModNet* _mod_net = (_dbModNet*) mod_net;
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet == _mod_net->getId())
+    return;
+
+  if (bterm->_mnet) {
+    bterm->disconnectModNet(bterm, block);
+  }
+  bterm->connectModNet(_mod_net, block);
 }
 
 void dbBTerm::connect(dbNet* net_)
@@ -713,6 +758,20 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   return (dbBTerm*) bterm;
 }
 
+void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
+{
+  _mnet = mod_net->getOID();
+  if (mod_net->_bterms != 0) {
+    _dbBTerm* head = block->_bterm_tbl->getPtr(mod_net->_bterms);
+    _next_modnet_bterm = mod_net->_bterms;
+    head->_prev_modnet_bterm = getOID();
+  } else {
+    _next_modnet_bterm = 0;
+  }
+  _prev_modnet_bterm = 0;
+  mod_net->_bterms = getOID();
+}
+
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 {
   for (auto callback : block->_callbacks) {
@@ -810,6 +869,29 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
   for (auto callback : block->_callbacks) {
     callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
   }
+}
+
+void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
+{
+  _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
+  uint id = bterm->getOID();
+  if (mod_net->_bterms == id) {
+    mod_net->_bterms = bterm->_next_modnet_bterm;
+    if (mod_net->_bterms != 0) {
+      _dbBTerm* t = block->_bterm_tbl->getPtr(mod_net->_bterms);
+      t->_prev_modnet_bterm = 0;
+    }
+  } else {
+    if (bterm->_next_modnet_bterm != 0) {
+      _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_modnet_bterm);
+      next->_prev_modnet_bterm = bterm->_prev_modnet_bterm;
+    }
+    if (bterm->_prev_modnet_bterm != 0) {
+      _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_modnet_bterm);
+      prev->_next_modnet_bterm = bterm->_next_modnet_bterm;
+    }
+  }
+  _mnet = 0;
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)

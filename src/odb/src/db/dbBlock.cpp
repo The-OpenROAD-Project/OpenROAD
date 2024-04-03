@@ -84,10 +84,20 @@
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbModBTerm.h"
+#include "dbModITerm.h"
 #include "dbModInst.h"
+#include "dbModNet.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
+#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
+#include "dbModuleModInstModITermItr.h"
+#include "dbModuleModNetBTermItr.h"
+#include "dbModuleModNetITermItr.h"
+#include "dbModuleModNetItr.h"
+#include "dbModuleModNetModBTermItr.h"
+#include "dbModuleModNetModITermItr.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbNetTrack.h"
@@ -190,6 +200,15 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _modinst_tbl = new dbTable<_dbModInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModInstObj);
+
+  _modbterm_tbl = new dbTable<_dbModBTerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModBTermObj);
+
+  _moditerm_tbl = new dbTable<_dbModITerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModITermObj);
+
+  _modnet_tbl = new dbTable<_dbModNet>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
@@ -318,6 +337,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
+  _modbterm_hash.setTable(_modbterm_tbl);
+  _moditerm_hash.setTable(_moditerm_tbl);
+  _modnet_hash.setTable(_modnet_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -350,6 +372,17 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_inst_itr = new dbModuleInstItr(_inst_tbl);
 
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
+
+  _module_modinstmoditerm_itr = new dbModuleModInstModITermItr(_moditerm_tbl);
+
+  _module_modbterm_itr = new dbModuleModBTermItr(_modbterm_tbl);
+
+  _module_modnet_itr = new dbModuleModNetItr(_modnet_tbl);
+
+  _module_modnet_modbterm_itr = new dbModuleModNetModBTermItr(_modbterm_tbl);
+  _module_modnet_moditerm_itr = new dbModuleModNetModITermItr(_moditerm_tbl);
+  _module_modnet_iterm_itr = new dbModuleModNetITermItr(_iterm_tbl);
+  _module_modnet_bterm_itr = new dbModuleModNetBTermItr(_bterm_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
 
@@ -873,7 +906,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
        ++cbitr)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
-
+  _dbDatabase* db = block.getImpl()->getDatabase();
   dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
@@ -898,6 +931,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << block._modbterm_hash;
+    stream << block._moditerm_hash;
+    stream << block._modnet_hash;
+  }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -912,40 +950,47 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
-  stream << NamedTable("bterm_tbl", block._bterm_tbl);
-  stream << NamedTable("iterm_tbl", block._iterm_tbl);
-  stream << NamedTable("net_tbl", block._net_tbl);
-  stream << NamedTable("inst_hdr_tbl", block._inst_hdr_tbl);
-  stream << NamedTable("inst_tbl", block._inst_tbl);
-  stream << NamedTable("module_tbl", block._module_tbl);
-  stream << NamedTable("modinst_tbl", block._modinst_tbl);
-  stream << NamedTable("powerdomain_tbl", block._powerdomain_tbl);
-  stream << NamedTable("logicport_tbl", block._logicport_tbl);
-  stream << NamedTable("powerswitch_tbl", block._powerswitch_tbl);
-  stream << NamedTable("isolation_tbl", block._isolation_tbl);
-  stream << NamedTable("levelshifter_tbl", block._levelshifter_tbl);
-  stream << NamedTable("group_tbl", block._group_tbl);
-  stream << NamedTable("ap_tbl", block.ap_tbl_);
-  stream << NamedTable("global_connect_tbl", block.global_connect_tbl_);
-  stream << NamedTable("guide_tbl", block._guide_tbl);
-  stream << NamedTable("net_tracks_tbl", block._net_tracks_tbl);
-  stream << NamedTable("box_tbl", block._box_tbl);
-  stream << NamedTable("via_tbl", block._via_tbl);
-  stream << NamedTable("gcell_grid_tbl", block._gcell_grid_tbl);
-  stream << NamedTable("track_grid_tbl", block._track_grid_tbl);
-  stream << NamedTable("obstruction_tbl", block._obstruction_tbl);
-  stream << NamedTable("blockage_tbl", block._blockage_tbl);
-  stream << NamedTable("wire_tbl", block._wire_tbl);
-  stream << NamedTable("swire_tbl", block._swire_tbl);
-  stream << NamedTable("sbox_tbl", block._sbox_tbl);
-  stream << NamedTable("row_tbl", block._row_tbl);
-  stream << NamedTable("fill_tbl", block._fill_tbl);
-  stream << NamedTable("region_tbl", block._region_tbl);
-  stream << NamedTable("hier_tbl", block._hier_tbl);
-  stream << NamedTable("bpin_tbl", block._bpin_tbl);
-  stream << NamedTable("non_default_rule_tbl", block._non_default_rule_tbl);
-  stream << NamedTable("layer_rule_tbl", block._layer_rule_tbl);
-  stream << NamedTable("prop_tbl", block._prop_tbl);
+
+  stream << *block._bterm_tbl;
+  stream << *block._iterm_tbl;
+  stream << *block._net_tbl;
+  stream << *block._inst_hdr_tbl;
+  stream << *block._inst_tbl;
+  stream << *block._module_tbl;
+  stream << *block._modinst_tbl;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << *block._modbterm_tbl;
+    stream << *block._moditerm_tbl;
+    stream << *block._modnet_tbl;
+  }
+  stream << *block._powerdomain_tbl;
+  stream << *block._logicport_tbl;
+  stream << *block._powerswitch_tbl;
+  stream << *block._isolation_tbl;
+  stream << *block._levelshifter_tbl;
+  stream << *block._group_tbl;
+  stream << *block.ap_tbl_;
+  stream << *block.global_connect_tbl_;
+  stream << *block._guide_tbl;
+  stream << *block._net_tracks_tbl;
+  stream << *block._box_tbl;
+  stream << *block._via_tbl;
+  stream << *block._gcell_grid_tbl;
+  stream << *block._track_grid_tbl;
+  stream << *block._obstruction_tbl;
+  stream << *block._blockage_tbl;
+  stream << *block._wire_tbl;
+  stream << *block._swire_tbl;
+  stream << *block._sbox_tbl;
+  stream << *block._row_tbl;
+  stream << *block._fill_tbl;
+  stream << *block._region_tbl;
+  stream << *block._hier_tbl;
+  stream << *block._bpin_tbl;
+  stream << *block._non_default_rule_tbl;
+  stream << *block._layer_rule_tbl;
+  stream << *block._prop_tbl;
+
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
@@ -1002,6 +1047,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> block._modbterm_hash;
+    stream >> block._moditerm_hash;
+    stream >> block._modnet_hash;
+  }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
@@ -1033,6 +1083,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> *block._modbterm_tbl;
+    stream >> *block._moditerm_tbl;
+    stream >> *block._modnet_tbl;
+  }
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
@@ -1753,6 +1808,18 @@ dbSet<dbModInst> dbBlock::getModInsts()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbModInst>(block, block->_modinst_tbl);
+}
+
+dbSet<dbModBTerm> dbBlock::getModBTerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
+}
+
+dbSet<dbModNet> dbBlock::getModNets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModNet>(block, block->_modnet_tbl);
 }
 
 dbSet<dbPowerDomain> dbBlock::getPowerDomains()

@@ -247,6 +247,22 @@ class lefTechLayerForbiddenSpacingRuleParser
                            odb::dbTechLayerForbiddenSpacingRule* rule);
 };
 
+class lefTechLayerTwoWiresForbiddenSpcRuleParser
+{
+ public:
+  lefTechLayerTwoWiresForbiddenSpcRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerTwoWiresForbiddenSpcRule* rule,
+              void (odb::dbTechLayerTwoWiresForbiddenSpcRule::*func)(int));
+  void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
+                           odb::dbTechLayerTwoWiresForbiddenSpcRule* rule);
+};
+
 class ArraySpacingParser
 {
  public:

@@ -347,4 +347,13 @@ pad::ICeWall* Design::getICeWall()
   return app->getICeWall();
 }
 
+/* static */
+odb::dbDatabase* Design::createDetachedDb()
+{
+  auto app = OpenRoad::openRoad();
+  auto db = odb::dbDatabase::create();
+  db->setLogger(app->getLogger());
+  return db;
+}
+
 }  // namespace ord

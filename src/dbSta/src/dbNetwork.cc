@@ -421,7 +421,7 @@ const char* dbNetwork::name(const Instance* instance) const
   if (db_inst) {
     return tmpStringCopy(db_inst->getConstName());
   }
-  return tmpStringCopy(mod_inst->getName().c_str());
+  return tmpStringCopy(mod_inst->getName());
 }
 
 Cell* dbNetwork::cell(const Instance* instance) const
@@ -582,10 +582,10 @@ ObjectId dbNetwork::id(const Pin* pin) const
   dbBTerm* bterm;
   staToDb(pin, iterm, bterm);
 
-  if (iterm) {
-    return iterm->getId() + iterm->getBlock()->getBTerms().size();
+  if (iterm != nullptr) {
+    return iterm->getId() << 1;
   }
-  return bterm->getId();
+  return (bterm->getId() << 1) + 1;
 }
 
 Instance* dbNetwork::instance(const Pin* pin) const

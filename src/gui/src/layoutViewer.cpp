@@ -264,19 +264,35 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
     return;
   }
 
-  const Rect fitted_bb = getPaddedRect(getBounds());
+  bool scroll_bars_visible = scroller_->horizontalScrollBar()->isVisible()
+                             || scroller_->verticalScrollBar()->isVisible();
+  bool zoomed_out = pixels_per_dbu_ /*old*/ > pixels_per_dbu /*new*/;
+
+  if (!scroll_bars_visible && zoomed_out) {
+    return;
+  }
+
+  const Rect current_viewer(0,
+                            0,
+                            this->size().width() / pixels_per_dbu_,
+                            this->size().height() / pixels_per_dbu_);
+
   // ensure max size is not exceeded
   qreal maximum_pixels_per_dbu_
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
-                              fitted_bb);
+                              current_viewer);
   qreal target_pixels_per_dbu
       = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  const QSize new_size(ceil(fitted_bb.dx() * target_pixels_per_dbu),
-                       ceil(fitted_bb.dy() * target_pixels_per_dbu));
+  if (target_pixels_per_dbu == maximum_pixels_per_dbu_) {
+    return;
+  }
 
-  resize(new_size.expandedTo(scroller_->maximumViewportSize()));
+  const QSize new_size(ceil(current_viewer.dx() * target_pixels_per_dbu),
+                       ceil(current_viewer.dy() * target_pixels_per_dbu));
+
+  resize(new_size);
 }
 
 odb::Point LayoutViewer::getVisibleCenter()
@@ -1319,7 +1335,8 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
     dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
+    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT
+        && type != dbTechLayerType::IMPLANT) {
       continue;
     }
     boxes[layer].obs.emplace_back(box_to_qrect(box));
@@ -1860,6 +1877,7 @@ void LayoutViewer::fullRepaint()
     QRect rect = scroller_->viewport()->geometry();
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
+    setLoadingState();
     viewer_thread_.render(rect, selected_, highlighted_, rulers_);
   }
 }

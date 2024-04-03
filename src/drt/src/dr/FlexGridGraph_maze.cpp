@@ -188,8 +188,8 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
                               0)
                      * 1;
   frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
-                          getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
+      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
+                          getZHeight(gridZ) - getZHeight(dstMazeIdx2.z())),
                  0)
         * 1;
 

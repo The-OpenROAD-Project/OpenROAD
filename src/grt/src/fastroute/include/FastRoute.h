@@ -489,7 +489,6 @@ class FastRouteCore
                          bool horizontal,
                          int& best_cost,
                          multi_array<int, 2>& layer_grid);
-  bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
@@ -628,6 +627,7 @@ class FastRouteCore
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
+  std::vector<int> net_ids_;
 };
 
 }  // namespace grt

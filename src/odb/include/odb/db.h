@@ -136,7 +136,10 @@ class dbIsolation;
 class dbLevelShifter;
 class dbLogicPort;
 class dbMetalWidthViaMap;
+class dbModBTerm;
 class dbModInst;
+class dbModITerm;
+class dbModNet;
 class dbModule;
 class dbNetTrack;
 class dbPowerDomain;
@@ -162,6 +165,7 @@ class dbTechLayerMinCutRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerTwoWiresForbiddenSpcRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
@@ -946,6 +950,8 @@ class dbBlock : public dbObject
   /// Get the modinsts of this block.
   ///
   dbSet<dbModInst> getModInsts();
+  dbSet<dbModNet> getModNets();
+  dbSet<dbModBTerm> getModBTerms();
 
   ///
   /// Get the Power Domains of this block.
@@ -1715,9 +1721,15 @@ class dbBTerm : public dbObject
   ///
   void setSpecial();
 
+  ///
   /// Get the net of this block-terminal.
   ///
   dbNet* getNet();
+
+  ///
+  /// Get the mod net of this block-terminal.
+  dbModNet* getModNet();
+  ///
 
   /// Disconnect the block-terminal from it's net.
   ///
@@ -1726,6 +1738,7 @@ class dbBTerm : public dbObject
   /// Connect the block-terminal to net.
   ///
   void connect(dbNet* net);
+  void connect(dbModNet* mod_net);
 
   ///
   /// Get the block of this block-terminal.
@@ -3227,24 +3240,22 @@ class dbInst : public dbObject
   /// If false, it will be added to the top module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
-  ///
+  /// If dbmodule is non null the dbInst is added to that module.
+
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
-                        bool physical_only = false);
+                        bool physical_only = false,
+                        dbModule* parent_module = nullptr);
 
-  ///
-  /// Create a new instance within the specified region.
-  /// If physicalOnly is true the instance can't bee added to a dbModule.
-  /// If false, it will be added to the top module.
-  /// Returns nullptr if an instance with this name already exists.
-  /// Returns nullptr if the master is not FROZEN.
-  ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
                         dbRegion* region,
-                        bool physical_only = false);
+                        bool physical_only = false,
+                        dbModule* parent_module = nullptr
+
+  );
 
   ///
   /// Create a new instance of child_block in top_block.
@@ -3297,6 +3308,8 @@ class dbITerm : public dbObject
   /// to a net.
   ///
   dbNet* getNet();
+
+  dbModNet* getModNet();
 
   ///
   /// Get the master-terminal that this instance-terminal is representing.
@@ -3448,6 +3461,10 @@ class dbITerm : public dbObject
   /// Connect this iterm to this net.
   ///
   void connect(dbNet* net);
+
+  // connect this iterm to a dbmodNet
+
+  void connect(dbModNet* net);
 
   ///
   /// Disconnect this iterm from the net it is connected to.
@@ -7456,9 +7473,37 @@ class dbMetalWidthViaMap : public dbObject
   // User Code End dbMetalWidthViaMap
 };
 
+class dbModBTerm : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  dbModule* getParent() const;
+
+  // User Code Begin dbModBTerm
+  void setParentModITerm(dbModITerm* parent_pin);
+  dbModITerm* getParentModITerm() const;
+  void setModNet(dbModNet* modNet);
+  dbModNet* getModNet() const;
+  void setSigType(const dbSigType& type);
+  dbSigType getSigType();
+  void setIoType(const dbIoType& type);
+  dbIoType getIoType();
+  void connect(dbModNet* net);
+  void disconnect();
+  void staSetPort(void* p);
+  void* staPort();
+
+  static dbModBTerm* create(dbModule* parentModule, const char* name);
+
+  // User Code End dbModBTerm
+};
+
 class dbModInst : public dbObject
 {
  public:
+  const char* getName() const;
+
   dbModule* getParent() const;
 
   dbModule* getMaster() const;
@@ -7466,6 +7511,13 @@ class dbModInst : public dbObject
   dbGroup* getGroup() const;
 
   // User Code Begin dbModInst
+
+  std::string getHierarchicalName() const;
+
+  dbModITerm* findModITerm(const char* name);
+
+  dbSet<dbModITerm> getModITerms();
+
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
                            const char* name);
@@ -7476,10 +7528,42 @@ class dbModInst : public dbObject
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
-  std::string getName() const;
-
-  std::string getHierarchicalName() const;
   // User Code End dbModInst
+};
+
+class dbModITerm : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  dbModInst* getParent() const;
+
+  // User Code Begin dbModITerm
+  void setModNet(dbModNet* modNet);
+  dbModNet* getModNet() const;
+  void setChildModBTerm(dbModBTerm* child_port);
+  dbModBTerm* getChildModBTerm() const;
+  void connect(dbModNet* modnet);
+  void disconnect();
+  static dbModITerm* create(dbModInst* parentInstance, const char* name);
+
+  // User Code End dbModITerm
+};
+
+class dbModNet : public dbObject
+{
+ public:
+  dbModule* getParent() const;
+
+  // User Code Begin dbModNet
+  dbSet<dbModITerm> getModITerms();
+  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbITerm> getITerms();
+  dbSet<dbBTerm> getBTerms();
+
+  const char* getName() const;
+  static dbModNet* create(dbModule* parentModule, const char* name);
+  // User Code End dbModNet
 };
 
 class dbModule : public dbObject
@@ -7487,21 +7571,39 @@ class dbModule : public dbObject
  public:
   const char* getName() const;
 
+  void setModInst(dbModInst* mod_inst);
+
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
+  std::string getHierarchicalName() const;
+
+  // Get a mod net by name
+  dbModNet* getModNet(const char* net_name);
 
   // Adding an inst to a new module will remove it from its previous
   // module.
   void addInst(dbInst* inst);
 
-  dbSet<dbInst> getInsts();
+  dbBlock* getOwner();
 
   dbSet<dbModInst> getChildren();
+  dbSet<dbModInst> getModInsts();
+  dbSet<dbModNet> getModNets();
+  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);
+  dbInst* findDbInst(const char* name);
+  dbModBTerm* findModBTerm(const char* name);
 
   std::vector<dbInst*> getLeafInsts();
+
+  int getModInstCount();
+  int getDbInstCount();
+
+  void staSetCell(void* cell);
+  void* getStaCell();
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -7509,7 +7611,6 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
-  std::string getHierarchicalName() const;
   // User Code End dbModule
 };
 
@@ -7577,11 +7678,29 @@ class dbPowerDomain : public dbObject
 class dbPowerSwitch : public dbObject
 {
  public:
+  struct UPFIOSupplyPort
+  {
+    std::string port_name;
+    std::string supply_net_name;
+  };
+  struct UPFControlPort
+  {
+    std::string port_name;
+    std::string net_name;
+  };
+  struct UPFAcknowledgePort
+  {
+    std::string port_name;
+    std::string net_name;
+    std::string boolean_expression;
+  };
+  struct UPFOnState
+  {
+    std::string state_name;
+    std::string input_supply_port;
+    std::string boolean_expression;
+  };
   const char* getName() const;
-
-  void setControlNet(dbNet* control_net);
-
-  dbNet* getControlNet() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -7590,19 +7709,26 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
-  void addInSupplyPort(const std::string& in_port);
-  void addOutSupplyPort(const std::string& out_port);
-  void addControlPort(const std::string& control_port);
-  void addOnState(const std::string& on_state);
+  void addInSupplyPort(const std::string& in_port, const std::string& net);
+  void setOutSupplyPort(const std::string& out_port, const std::string& net);
+  void addControlPort(const std::string& control_port,
+                      const std::string& control_net);
+  void addAcknowledgePort(const std::string& port_name,
+                          const std::string& net_name,
+                          const std::string& boolean_expression);
+  void addOnState(const std::string& on_state,
+                  const std::string& port_name,
+                  const std::string& boolean_expression);
   void setLibCell(dbMaster* master);
   void addPortMap(const std::string& model_port,
                   const std::string& switch_port);
 
   void addPortMap(const std::string& model_port, dbMTerm* mterm);
-  std::vector<std::string> getControlPorts();
-  std::vector<std::string> getInputSupplyPorts();
-  std::vector<std::string> getOutputSupplyPorts();
-  std::vector<std::string> getOnStates();
+  std::vector<UPFControlPort> getControlPorts();
+  std::vector<UPFIOSupplyPort> getInputSupplyPorts();
+  UPFIOSupplyPort getOutputSupplyPort();
+  std::vector<UPFAcknowledgePort> getAcknowledgePorts();
+  std::vector<UPFOnState> getOnStates();
 
   // Returns library cell that was defined in the upf for this power switch
   dbMaster* getLibCell();
@@ -7718,6 +7844,9 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerWrongDirSpacingRule> getTechLayerWrongDirSpacingRules()
       const;
+
+  dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
+  getTechLayerTwoWiresForbiddenSpcRules() const;
 
   void setRectOnly(bool rect_only);
 
@@ -9671,6 +9800,44 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   std::pair<int, int> getExceptWithin(int width) const;
 
   // User Code End dbTechLayerSpacingTablePrlRule
+};
+
+class dbTechLayerTwoWiresForbiddenSpcRule : public dbObject
+{
+ public:
+  void setMinSpacing(int min_spacing);
+
+  int getMinSpacing() const;
+
+  void setMaxSpacing(int max_spacing);
+
+  int getMaxSpacing() const;
+
+  void setMinSpanLength(int min_span_length);
+
+  int getMinSpanLength() const;
+
+  void setMaxSpanLength(int max_span_length);
+
+  int getMaxSpanLength() const;
+
+  void setPrl(int prl);
+
+  int getPrl() const;
+
+  void setMinExactSpanLength(bool min_exact_span_length);
+
+  bool isMinExactSpanLength() const;
+
+  void setMaxExactSpanLength(bool max_exact_span_length);
+
+  bool isMaxExactSpanLength() const;
+
+  // User Code Begin dbTechLayerTwoWiresForbiddenSpcRule
+  static dbTechLayerTwoWiresForbiddenSpcRule* create(dbTechLayer* layer);
+
+  static void destroy(dbTechLayerTwoWiresForbiddenSpcRule* rule);
+  // User Code End dbTechLayerTwoWiresForbiddenSpcRule
 };
 
 class dbTechLayerWidthTableRule : public dbObject
