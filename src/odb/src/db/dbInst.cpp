@@ -471,7 +471,7 @@ void dbInst::setOrigin(int x, int y)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   int prev_x = inst->_x;
   int prev_y = inst->_y;
-  if (prev_x == x && prev_y == y)
+  if (block->_flags._valid_bbox && prev_x == x && prev_y == y)
     return;
   if (getPlacementStatus().isFixed()) {
     inst->getLogger()->error(utl::ODB,
