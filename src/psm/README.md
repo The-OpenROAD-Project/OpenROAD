@@ -11,6 +11,8 @@ Features:
 - Check for floating PDN stripes on the power and ground nets.
 - Spice netlist writer for power distribution network wire segments.
 
+![picorv32](doc/picorv32.png)
+
 ## Commands
 
 ```{note}
