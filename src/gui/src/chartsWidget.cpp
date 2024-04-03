@@ -390,7 +390,7 @@ void ChartsWidget::setXAxisConfig(int all_bars_count,
 
 QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
 {
-  const QString start_title = "<center> Slack [";
+  const QString start_title = "<center>Slack [";
 
   sta::Unit* time_units = sta_->units()->timeUnit();
 
@@ -399,6 +399,8 @@ QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
 
   QString axis_x_title = start_title + scaled_suffix + end_title;
 
+  int clock_count = 1;
+
   for (sta::Clock* clock : clocks) {
     // First get period and frequency from sta
     float period = time_units->staToUser(clock->period());
@@ -406,7 +408,7 @@ QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
     float inverted_scale = 1 / time_units->scale();
     std::string frequency_scale = getFrequencyScale(inverted_scale);
 
-    // Then adjust display values as needed
+    // Adjust display values as needed
     if (period < 1) {
       period = trim(period, 3 /*decimal digits*/);
     }
@@ -417,12 +419,23 @@ QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
       frequency_scale = getFrequencyScale(inverted_scale);
     }
 
+    // Adjust strings: one clock in the first row and two per row afterwards
+    if (clock->name() != (*(clocks.begin()))->name()) {
+      axis_x_title += ", ";
+
+      if (clock_count % 2 == 0) {
+        axis_x_title += "<br>";
+      }
+    }
+
     axis_x_title += QString::fromStdString(
-        fmt::format("<br> {} {} ({} {}Hz)",
+        fmt::format(" {} {} ({} {}Hz)",
                     clock->name(),
                     period,
                     trim(frequency, 3 /*decimal digits*/),
                     frequency_scale));
+
+    ++clock_count;
   }
 
   return axis_x_title;
@@ -439,7 +452,7 @@ std::string ChartsWidget::getFrequencyScale(float period_scale)
   } else if (sta::fuzzyEqual(period_scale, 1E+3)) {
     return "K";
   } else {
-    return "";
+    return "?";
   }
 }
 
