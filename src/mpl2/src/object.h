@@ -47,6 +47,7 @@
 #include "odb/dbTypes.h"
 
 namespace odb {
+class Rect;
 class Point;
 class dbInst;
 class dbModule;
@@ -130,6 +131,16 @@ enum ClusterType
   StdCellCluster,
   HardMacroCluster,
   MixedCluster
+};
+
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct SnapParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int pin_to_origin = 0;
 };
 
 // Metrics class for logical modules and clusters
@@ -394,31 +405,11 @@ class HardMacro
   odb::dbInst* getInst() const;
   const std::string getName() const;
   const std::string getMasterName() const;
-  // update the location and orientation of the macro inst in OpenDB
-  // The macro should be snaped to placement grids
-  void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
-  odb::Point computeSnapOrigin(const Rect& macro_box,
-                               const odb::dbOrientType& orientation,
-                               float& pitch_x,
-                               float& pitch_y,
-                               odb::dbBlock* block);
 
-  void computeDirectionSpacingParameters(odb::dbBlock* block,
-                                         odb::dbTechLayer* layer,
-                                         odb::dbBox* box,
-                                         float& offset,
-                                         float& pitch,
-                                         float& pin_width,
-                                         const bool& is_vertical_direction);
-  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
-                             std::vector<int>& coordinate_grid,
-                             const bool& is_vertical_direction);
-  float getDirectionPitch(odb::dbTechLayer* layer,
-                          const bool& is_vertical_direction);
-  float getDirectionOffset(odb::dbTechLayer* layer,
-                           const bool& is_vertical_direction);
-  float getDirectionPinWidth(odb::dbBox* box,
-                             const bool& is_vertical_direction);
+  void updateDb(odb::dbBlock* block);
+  odb::Point computeSnapOrigin(const odb::Rect& macro_box,
+                               const odb::dbOrientType& orientation,
+                               odb::dbBlock* block);
 
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
@@ -449,6 +440,18 @@ class HardMacro
   void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
 
  private:
+  SnapParameters computeSnapParameters(odb::dbBlock* block,
+                                       odb::dbTechLayer* layer,
+                                       odb::dbBox* box,
+                                       bool is_vertical_direction);
+  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
+                             std::vector<int>& coordinate_grid,
+                             bool is_vertical_direction);
+  int getDirectionPitch(odb::dbTechLayer* layer, bool is_vertical_direction);
+  int getDirectionOffset(odb::dbTechLayer* layer, bool is_vertical_direction);
+  int getDirectionPinWidth(odb::dbBox* box, bool is_vertical_direction);
+  int getPinToOriginDistance(odb::dbBox* box, bool is_vertical_direction);
+
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading

@@ -1309,16 +1309,18 @@ uint dbInst::getPinAccessIdx() const
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* target_module)
 {
-  return create(block_, master_, name_, nullptr, physical_only);
+  return create(block_, master_, name_, nullptr, physical_only, target_module);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
                        dbRegion* region,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* parent_module)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
@@ -1381,7 +1383,14 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
-    block_->getTopModule()->addInst((dbInst*) inst);
+    // old code
+    //    block_->getTopModule()->addInst((dbInst*) inst);
+    // now we insert into scope of module...
+    // might screw things up..
+    if (parent_module)
+      parent_module->addInst((dbInst*) inst);
+    else
+      block_->getTopModule()->addInst((dbInst*) inst);
   }
 
   if (region) {
