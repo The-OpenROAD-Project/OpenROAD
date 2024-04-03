@@ -230,6 +230,7 @@ class FlexGCWorker::Impl
   void myBloat(const gtl::rectangle_data<frCoord>& rect,
                frCoord val,
                box_t& box);
+  bool hasRoute(gcRect* rect, gtl::rectangle_data<frCoord> markerRect);
   void checkMetalSpacing_main(gcRect* rect,
                               bool checkNDRs = true,
                               bool isSpcRect = false);
@@ -273,6 +274,9 @@ class FlexGCWorker::Impl
                              frCoord distY,
                              bool checkNDRs = true,
                              bool checkPolyEdge = true);
+  void checkTwoWiresForbiddenSpc_main(
+      gcRect* rect,
+      frLef58TwoWiresForbiddenSpcConstraint* con);
   box_t checkMetalCornerSpacing_getQueryBox(gcCorner* corner,
                                             frCoord& maxSpcValX,
                                             frCoord& maxSpcValY);
@@ -450,9 +454,6 @@ class FlexGCWorker::Impl
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect,
       frCutSpacingConstraint* con);
-  frCoord checkCutSpacing_spc_getReqSpcVal(gcRect* ptr1,
-                                           gcRect* ptr2,
-                                           frCutSpacingConstraint* con);
 
   // LEF58
   void checkLef58CutSpacing_main(gcRect* rect);
@@ -484,10 +485,6 @@ class FlexGCWorker::Impl
                                            frLef58CutSpacingConstraint* con);
   bool checkLef58CutSpacing_spc_hasTwoCuts_helper(
       gcRect* rect,
-      frLef58CutSpacingConstraint* con);
-  frCoord checkLef58CutSpacing_spc_getReqSpcVal(
-      gcRect* ptr1,
-      gcRect* ptr2,
       frLef58CutSpacingConstraint* con);
   // LEF58_KEEPOUTZONE
   void checKeepOutZone_main(gcRect* rect, frLef58KeepOutZoneConstraint* con);

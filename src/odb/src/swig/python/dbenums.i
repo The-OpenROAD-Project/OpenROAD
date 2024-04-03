@@ -1370,6 +1370,8 @@
 		obj = PyString_FromString("PHYSICAL_CLUSTER");
 	} else if ($1.getValue() == odb::dbGroupType::VOLTAGE_DOMAIN) {
 		obj = PyString_FromString("VOLTAGE_DOMAIN");
+	} else if ($1.getValue() == odb::dbGroupType::POWER_DOMAIN) {
+		obj = PyString_FromString("POWER_DOMAIN");
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown group type");
         }
@@ -1381,6 +1383,8 @@
                $1 = odb::dbGroupType::PHYSICAL_CLUSTER;
 	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
                $1 = odb::dbGroupType::VOLTAGE_DOMAIN;
+	} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
+               $1 = odb::dbGroupType::POWER_DOMAIN;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown group type");
         }
@@ -1392,6 +1396,8 @@
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
 		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
 			found = true;
 		}
 	}
