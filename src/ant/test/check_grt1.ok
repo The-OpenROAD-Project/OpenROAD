@@ -1,10 +1,5 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
@@ -66,13 +61,6 @@ Net: req_msg[31]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: resp_msg[14]
-  Pin: _658_/A (sky130_fd_sc_hs__nand2_1)
-    Layer: met2
-      Partial area ratio:  506.29
-      Required ratio:  400.00 (Side area) (VIOLATED)
-
-
 Net: resp_rdy
   Pin: _343_/A2 (sky130_fd_sc_hs__a21oi_1)
     Layer: met3
@@ -80,5 +68,5 @@ Net: resp_rdy
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-[INFO ANT-0002] Found 10 net violations.
-[INFO ANT-0001] Found 10 pin violations.
+[INFO ANT-0002] Found 9 net violations.
+[INFO ANT-0001] Found 9 pin violations.

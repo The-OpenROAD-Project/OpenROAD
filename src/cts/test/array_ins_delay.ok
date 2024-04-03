@@ -1,13 +1,6 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_stdcell.lef
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
-[INFO ODB-0222] Reading LEF file: array_tile.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  array_tile.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
 [INFO CTS-0050] Root buffer is BUF_X4.
@@ -133,11 +126,13 @@ legalized HPWL         186297.4 u
 delta HPWL                    0 %
 
 Clock clk
-Latency      CRPR       Skew
-inst_7_9/clk ^
-   1.30
-inst_8_9/clk ^
-   1.13      0.00       0.17
+   1.30 source latency inst_7_9/clk ^
+   0.00 source clock tree delay
+  -1.13 target latency inst_8_9/clk ^
+  -0.00 target clock tree delay
+   0.00 CRPR
+--------------
+   0.17 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)

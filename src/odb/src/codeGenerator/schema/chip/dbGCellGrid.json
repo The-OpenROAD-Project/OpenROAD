@@ -88,17 +88,20 @@
         {
           "name": "usage",
           "type": "uint8_t",
-          "flags": ["no-serial"],
+          "flags": [],
           "default": 0
         },
         {
           "name": "capacity",
           "type": "uint8_t",
-          "flags": ["no-serial"],
+          "flags": [],
           "default": 0
         }
       ],
-      "public": true
+      "public": true,
+      "flags": [
+        "no-serializer-in"
+      ]
     }
   ],
   "cpp_includes": [

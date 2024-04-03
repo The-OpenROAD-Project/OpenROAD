@@ -69,7 +69,12 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 79;  // Current revision number
+const uint db_schema_minor = 81;  // Current revision number
+
+// Revision where hierarchy schema with modnets, modbterms, moditerms introduced
+const uint db_schema_update_hierarchy = 81;
+// Revision where dbPowerSwitch changed from strings to structs
+const uint db_schema_update_db_power_switch = 80;
 
 // Revision where dbGCellGrid::GCellData moved to uint8_t
 const uint db_schema_smaler_gcelldata = 79;

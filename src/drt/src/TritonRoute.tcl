@@ -45,7 +45,7 @@ sta::define_cmd_args "detailed_route" {
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-or_seed seed]
-    [-or_k_ k]
+    [-or_k k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
@@ -59,6 +59,7 @@ sta::define_cmd_args "detailed_route" {
     [-min_access_points count]
     [-save_guide_updates]
     [-repair_pdn_vias layer]
+    [-single_step_dr]
 }
 
 proc detailed_route { args } {
@@ -362,12 +363,12 @@ sta::define_cmd_args "detailed_route_run_worker" {
     [-dump_dir dir]
     [-worker_dir dir]
     [-drc_rpt drc]
-}
+};# checker off
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
     keys {-dump_dir -worker_dir -drc_rpt} \
-    flags {}
+    flags {};# checker off
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)
@@ -397,13 +398,13 @@ sta::define_cmd_args "detailed_route_worker_debug" {
     [-marker_decay m_decay]
     [-ripup_mode mode]
     [-follow_guide f_guide]
-}
+};# checker off
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
     keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost \
           -marker_decay -ripup_mode -follow_guide} \
-    flags {}
+    flags {};# checker off
   if {[info exists keys(-maze_end_iter)]} {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
@@ -473,11 +474,11 @@ proc step_dr { args } {
 sta::define_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
-}
+};# checker off
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
     keys { -box -output_file } \
-    flags {}
+    flags {};# checker off
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
   if {[info exists keys(-box)]} {

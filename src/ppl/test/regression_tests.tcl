@@ -111,4 +111,6 @@ record_tests {
   write_pin_placement2
   write_pin_placement3
   write_pin_placement4
+  #ppl_man_tcl_check
+  #ppl_readme_msgs_check
 }

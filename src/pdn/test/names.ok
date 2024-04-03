@@ -1,25 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130hvl/sky130_fd_sc_hvl.tlef
-[INFO ODB-0223]     Created 15 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hvl/sky130_fd_sc_hvl.tlef
-[INFO ODB-0222] Reading LEF file: sky130hvl/sky130_fd_sc_hvl_merged.lef
-[INFO ODB-0225]     Created 69 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hvl/sky130_fd_sc_hvl_merged.lef
-[INFO ODB-0222] Reading LEF file: sky130_secondary_nets/capacitor_test_nf.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_secondary_nets/capacitor_test_nf.lef
-[INFO ODB-0222] Reading LEF file: sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef
-[INFO ODB-0222] Reading LEF file: sky130_secondary_nets/PMOS.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_secondary_nets/PMOS.lef
-[INFO ODB-0222] Reading LEF file: sky130_secondary_nets/PT_UNIT_CELL.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_secondary_nets/PT_UNIT_CELL.lef
-[INFO ODB-0222] Reading LEF file: sky130_secondary_nets/vref_gen_nmos_with_trim.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_secondary_nets/vref_gen_nmos_with_trim.lef
+[INFO ODB-0227] LEF file: sky130hvl/sky130_fd_sc_hvl.tlef, created 15 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hvl/sky130_fd_sc_hvl_merged.lef, created 69 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/capacitor_test_nf.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/PMOS.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/PT_UNIT_CELL.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_secondary_nets/vref_gen_nmos_with_trim.lef, created 1 library cells
 [INFO ODB-0128] Design: ldoInst
 [INFO ODB-0130]     Created 34 pins.
 [INFO ODB-0131]     Created 454 components and 2681 component-terminals.

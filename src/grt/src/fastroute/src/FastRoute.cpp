@@ -163,6 +163,7 @@ void FastRouteCore::clearNets()
     delete net;
   }
   nets_.clear();
+  net_ids_.clear();
   seglist_.clear();
   db_net_id_map_.clear();
 }
@@ -273,6 +274,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              max_layer,
              slack,
              edge_cost_per_layer);
+  net_ids_.push_back(netID);
 
   return net;
 }
@@ -665,12 +667,7 @@ void FastRouteCore::initNetAuxVars()
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
-
-    nets_[netID]->setIsRouted(true);
+  for (const int& netID : net_ids_) {
     odb::dbNet* db_net = nets_[netID]->getDbNet();
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
@@ -728,11 +725,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
   // Get routes before layer assignment
 
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
-
+  for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
@@ -1014,8 +1007,8 @@ NetRouteMap FastRouteCore::run()
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1265,8 +1258,8 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1322,8 +1315,8 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
+    for (const int& netID : net_ids_) {
+      if (nets_[netID]->getDbNet() == debug_->net_) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1331,6 +1324,7 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
+  net_ids_.clear();
   return routes;
 }
 
@@ -1553,7 +1547,6 @@ void FrNet::reset(odb::dbNet* db_net,
                   std::vector<int>* edge_cost_per_layer)
 {
   db_net_ = db_net;
-  is_routed_ = false;
   is_critical_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
