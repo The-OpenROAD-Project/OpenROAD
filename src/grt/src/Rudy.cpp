@@ -66,6 +66,12 @@ void Rudy::makeGrid(const int tile_size)
   const int grid_lx = grid_block_.xMin();
   const int grid_ly = grid_block_.yMin();
 
+  odb::Point upper_die_bounds(grid_block_.xMax(), grid_block_.yMax());
+  odb::Point upper_grid_bounds(tile_cnt_x_ * tile_size,
+                               tile_cnt_y_ * tile_size);
+  int x_extra = upper_die_bounds.x() - upper_grid_bounds.x();
+  int y_extra = upper_die_bounds.y() - upper_grid_bounds.y();
+
   grid_.resize(tile_cnt_x_);
   int cur_x = grid_lx;
   for (int x = 0; x < grid_.size(); x++) {
@@ -73,7 +79,9 @@ void Rudy::makeGrid(const int tile_size)
     int cur_y = grid_ly;
     for (int y = 0; y < grid_[x].size(); y++) {
       Tile& grid = grid_[x][y];
-      grid.setRect(cur_x, cur_y, cur_x + tile_size, cur_y + tile_size);
+      int x_ext = x == grid_.size() - 1 ? x_extra : 0;
+      int y_ext = y == grid_[x].size() - 1 ? y_extra : 0;
+      grid.setRect(cur_x, cur_y, cur_x + tile_size + x_ext, cur_y + tile_size + y_ext);
       cur_y += tile_size;
     }
     cur_x += tile_size;
