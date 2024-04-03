@@ -49,9 +49,9 @@ class Rudy
    public:
     odb::Rect getRect() const { return rect_; }
     void setRect(int lx, int ly, int ux, int uy);
-    void addRUDY(float rudy);
-    float getRUDY() const { return rudy_; }
-    void clearRUDY() { rudy_ = 0.0; }
+    void addRudy(float rudy);
+    float getRudy() const { return rudy_; }
+    void clearRudy() { rudy_ = 0.0; }
 
    private:
     odb::Rect rect_;
@@ -64,20 +64,20 @@ class Rudy
    * \pre we need to call this function after `setGridConfig` and
    * `setWireWidth`.
    * */
-  void calculateRUDY();
+  void calculateRudy();
 
   /**
    * Set the grid area and grid numbers.
    * Default value will be the die area of block and (40, 40), respectively.
    * */
-  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+  void setGridConfig(odb::Rect block, int tile_cnt_x, int tile_cnt_y);
 
   /**
-   * Set the wire length for calculate RUDY.
+   * Set the wire length for calculate Rudy.
    * If the layer which name is metal1 and it has getWidth value, then this
    * function will not applied, but it will apply that information.
    * */
-  void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
+  void setWireWidth(int wire_width) { wire_width_ = wire_width; }
 
   const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
   std::pair<int, int> getGridSize() const;
@@ -98,10 +98,10 @@ class Rudy
                                     int tile_height);
 
   odb::dbBlock* block_;
-  odb::Rect gridBlock_;
-  int tileCntX_ = 40;
-  int tileCntY_ = 40;
-  int wireWidth_ = 100;
+  odb::Rect grid_block_;
+  int tile_cnt_x_ = 40;
+  int tile_cnt_y_ = 40;
+  int wire_width_ = 100;
   const int pitches_in_tile_ = 15;
 
   std::vector<std::vector<Tile>> grid_;
