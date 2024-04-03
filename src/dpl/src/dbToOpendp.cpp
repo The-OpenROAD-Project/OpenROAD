@@ -121,25 +121,38 @@ void Opendp::examineRows()
   std::vector<dbRow*> rows;
   auto block_rows = block_->getRows();
   rows.reserve(block_rows.size());
+
+  has_hybrid_rows_ = false;
+  bool has_non_hybrid_rows = false;
+
   for (auto* row : block_rows) {
-    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+    dbSite* site = row->getSite();
+    if (site->getClass() == odb::dbSiteClass::PAD) {
       continue;
+    }
+    if (site->isHybrid()) {
+      has_hybrid_rows_ = true;
+    } else {
+      has_non_hybrid_rows = true;
     }
     rows.push_back(row);
   }
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
+  if (has_hybrid_rows_ && has_non_hybrid_rows) {
+    logger_->error(
+        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
+  }
 
   int min_row_height_ = std::numeric_limits<int>::max();
   int min_site_width_ = std::numeric_limits<int>::max();
-
   for (dbRow* db_row : rows) {
     dbSite* site = db_row->getSite();
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
     min_site_width_
         = std::min(min_site_width_, static_cast<int>(site->getWidth()));
+    min_row_height_
+        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
   }
   row_height_ = min_row_height_;
   site_width_ = min_site_width_;

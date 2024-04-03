@@ -67,7 +67,6 @@
 #include "gui/gui.h"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
-#include "ord/Version.hh"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
@@ -248,7 +247,9 @@ int main(int argc, char* argv[])
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_DESCRIBE);
+    printf("%s %s\n",
+           ord::OpenRoad::getVersion(),
+           ord::OpenRoad::getGitDescribe());
     return 0;
   }
 
@@ -467,8 +468,8 @@ int ord::tclAppInit(Tcl_Interp* interp)
 
 static void showUsage(const char* prog, const char* init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] ", prog);
-  printf("[-threads count|max] [-log file_name] [-metrics file_name] ");
+  printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
+  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
   printf("cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
@@ -491,8 +492,9 @@ static void showUsage(const char* prog, const char* init_filename)
 static void showSplash()
 {
   utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  string sha = OPENROAD_GIT_DESCRIBE;
-  logger->report("OpenROAD {} {}", OPENROAD_VERSION, sha.c_str());
+  logger->report("OpenROAD {} {}",
+                 ord::OpenRoad::getVersion(),
+                 ord::OpenRoad::getGitDescribe());
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");

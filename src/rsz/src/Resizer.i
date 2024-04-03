@@ -343,6 +343,14 @@ remove_buffers_cmd()
 }
 
 void
+balance_row_usage_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->balanceRowUsage();
+}
+
+void
 set_max_utilization(double max_utilization)
 {
   ensureLinked();
@@ -516,6 +524,14 @@ repair_setup_pin_cmd(Pin *end_pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(end_pin);
+}
+
+void
+report_swappable_pins_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportSwappablePins();
 }
 
 void

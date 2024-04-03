@@ -124,7 +124,7 @@ proc set_layer_rc {args} {
   }
 }
 
-sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
+sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layer layer_name]\
                                       [-resistance res]\
                                       [-capacitance cap]\
@@ -155,12 +155,6 @@ proc set_wire_rc { args } {
     } else {
       set wire_res [rsz::layer_resistance $layer $corner]
       set wire_cap [rsz::layer_capacitance $layer $corner]
-    }
-
-    # Unfortunately this does not work very well with technologies like sky130
-    # that use inappropriate kohm/pf units.
-    if { 0 } {
-      utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 6] [sta::unit_scale_abbreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 6] [sta::unit_scale_abbreviation capacitance][sta::unit_suffix capacitance]/um."
     }
   } else {
     ord::ensure_units_initialized
@@ -241,12 +235,14 @@ proc estimate_parasitics { args } {
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
+  sta::parse_key_args "set_dont_use" args keys {} flags {}
   set_dont_use_cmd "set_dont_use" $args 1
 }
 
 sta::define_cmd_args "unset_dont_use" {lib_cells}
 
 proc unset_dont_use { args } {
+  sta::parse_key_args "unset_dont_use" args keys {} flags {}
   set_dont_use_cmd "unset_dont_use" $args 0
 }
 
@@ -260,12 +256,14 @@ proc set_dont_use_cmd { cmd cmd_args dont_use } {
 sta::define_cmd_args "set_dont_touch" {nets_instances}
 
 proc set_dont_touch { args } {
+  sta::parse_key_args "set_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "set_dont_touch" $args 1
 }
 
 sta::define_cmd_args "unset_dont_touch" {nets_instances}
 
 proc unset_dont_touch { args } {
+  sta::parse_key_args "unset_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "unset_dont_touch" $args 0
 }
 
@@ -281,7 +279,8 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                       [-max_utilization util]}
+                                       [-max_utilization util]\
+                                       [-buffer_cell buf_cell]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
@@ -308,8 +307,17 @@ proc buffer_ports { args } {
 sta::define_cmd_args "remove_buffers" {}
 
 proc remove_buffers { args } {
+  sta::parse_key_args "remove_buffers" args keys {} flags {}
   sta::check_argc_eq0 "remove_buffers" $args
   rsz::remove_buffers_cmd
+}
+
+sta::define_cmd_args "balance_row_usage" {}
+
+proc balance_row_usage { args } {
+  sta::parse_key_args "balance_row_usage" args keys {} flags {}
+  sta::check_argc_eq0 "balance_row_usage" $args
+  rsz::balance_row_usage_cmd
 }
 
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
@@ -354,11 +362,15 @@ proc repair_clock_nets { args } {
 sta::define_cmd_args "repair_clock_inverters" {}
 
 proc repair_clock_inverters { args } {
+  sta::parse_key_args "repair_clock_inverters" args keys {} flags {}
   sta::check_argc_eq0 "repair_clock_inverters" $args
   rsz::repair_clk_inverters_cmd
 }
 
-sta::define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
+sta::define_cmd_args "repair_tie_fanout" {lib_port\
+                                         [-separation dist]\
+                                         [-max_fanout fanout]\
+                                         [-verbose]}
 
 proc repair_tie_fanout { args } {
   sta::parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
@@ -389,13 +401,17 @@ proc repair_tie_fanout { args } {
 
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power percent_of_paths_with_slack]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                        [-recover_power percent_of_paths_with_slack]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
+                                        [-slack_margin slack_margin]\
+                                        [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-skip_pin_swap]\
-                                        [-skip_gate_cloning)]\
+                                        [-skip_gate_cloning]\
                                         [-repair_tns tns_end_percent]\
+                                        [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-verbose]}
@@ -438,8 +454,8 @@ proc repair_timing { args } {
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)
     sta::check_percent "-max_buffer_percent" $max_buffer_percent
-    set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
+  set max_buffer_percent [expr $max_buffer_percent / 100.0]
 
   set repair_tns_end_percent 0.0
   if { [info exists keys(-repair_tns)] } {
@@ -469,15 +485,15 @@ proc repair_timing { args } {
   if { $recover_power_percent >= 0 } {
     rsz::recover_power $recover_power_percent
   } else {
-      if { $setup } {
-    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-      $verbose \
-      $skip_pin_swap $skip_gate_cloning
+    if { $setup } {
+      rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+        $verbose \
+        $skip_pin_swap $skip_gate_cloning
     }
-      if { $hold } {
-    rsz::repair_hold $setup_margin $hold_margin \
-      $allow_setup_violations $max_buffer_percent $max_passes \
-      $verbose	  
+    if { $hold } {
+      rsz::repair_hold $setup_margin $hold_margin \
+        $allow_setup_violations $max_buffer_percent $max_passes \
+        $verbose
     }
   }
 }
@@ -486,16 +502,17 @@ proc repair_timing { args } {
 
 sta::define_cmd_args "report_design_area" {}
 
-proc report_design_area {} {
+proc report_design_area { args } {
+  sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose]}
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]};# checker off
 
-proc report_floating_nets { args } {
-  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
+sta::proc_redirect report_floating_nets {
+  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
 
   set verbose [info exists flags(-verbose)]
   set floating_nets [rsz::find_floating_nets]
@@ -523,12 +540,12 @@ proc report_floating_nets { args } {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count}
+sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]};# checker off
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
 
-  sta::parse_key_args "report_long_wires" args keys {-digits} flags {}
+  sta::parse_key_args "report_long_wires" args keys {-digits} flags {};# checker off
 
   set digits $sta_report_default_digits
   if { [info exists keys(-digits)] } {
@@ -546,6 +563,10 @@ namespace eval rsz {
 proc repair_setup_pin { end_pin } {
   check_parasitics
   repair_setup_pin_cmd $end_pin
+}
+
+proc report_swappable_pins { } {
+  report_swappable_pins_cmd
 }
 
 proc check_parasitics { } {
@@ -605,7 +626,8 @@ proc check_corner_wire_caps {} {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero.\
+        Use the set_wire_rc command to set wire resistance and capacitance."
       set have_rc 0
     }
   }
@@ -617,11 +639,13 @@ proc check_max_wire_length { max_wire_length } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
-        utl::warn RSZ 65 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
+        set wire_length_fmt [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]]
+        utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
       set max_wire_length $min_delay_max_wire_length
-      utl::info RSZ 58 "Using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]um."
+      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
+      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
     }
   }
   return $max_wire_length

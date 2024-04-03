@@ -32,8 +32,7 @@
 
 #include "gr/FlexGR.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 void FlexGRGridGraph::init()
 {
@@ -48,7 +47,7 @@ void FlexGRGridGraph::init()
 
 void FlexGRGridGraph::initCoords()
 {
-  map<frLayerNum, dbTechLayerDir> zMap;
+  std::map<frLayerNum, dbTechLayerDir> zMap;
   Point gcellIdxLL = getGRWorker()->getRouteGCellIdxLL();
   Point gcellIdxUR = getGRWorker()->getRouteGCellIdxUR();
   // xCoords
@@ -94,9 +93,9 @@ void FlexGRGridGraph::initGrids()
   prevDirs_.clear();
   srcs_.clear();
   dsts_.clear();
-  prevDirs_.resize(xDim * yDim * zDim * 3, 0);
-  srcs_.resize(xDim * yDim * zDim, 0);
-  dsts_.resize(xDim * yDim * zDim, 0);
+  prevDirs_.resize(xDim * yDim * zDim * 3, false);
+  srcs_.resize(xDim * yDim * zDim, false);
+  dsts_.resize(xDim * yDim * zDim, false);
 }
 
 void FlexGRGridGraph::initEdges()
@@ -135,15 +134,17 @@ void FlexGRGridGraph::resetStatus()
 
 void FlexGRGridGraph::resetSrc()
 {
-  srcs_.assign(srcs_.size(), 0);
+  srcs_.assign(srcs_.size(), false);
 }
 
 void FlexGRGridGraph::resetDst()
 {
-  dsts_.assign(dsts_.size(), 0);
+  dsts_.assign(dsts_.size(), false);
 }
 
 void FlexGRGridGraph::resetPrevNodeDir()
 {
-  prevDirs_.assign(prevDirs_.size(), 0);
+  prevDirs_.assign(prevDirs_.size(), false);
 }
+
+}  // namespace drt

@@ -32,16 +32,77 @@
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 drVia::drVia(const frVia& in)
-    : viaDef_(in.getViaDef()), owner_(nullptr), beginMazeIdx_(), endMazeIdx_()
+    : origin_(in.getOrigin()),
+      viaDef_(in.getViaDef()),
+      tapered_(in.isTapered()),
+      bottomConnected_(in.isBottomConnected()),
+      topConnected_(in.isTopConnected())
 {
-  origin_ = in.getOrigin();
-  setTapered(in.isTapered());
-  setBottomConnected(in.isBottomConnected());
-  setTopConnected(in.isTopConnected());
+}
+
+Rect drVia::getBBox() const
+{
+  auto& layer1Figs = viaDef_->getLayer1Figs();
+  auto& layer2Figs = viaDef_->getLayer2Figs();
+  auto& cutFigs = viaDef_->getCutFigs();
+  bool isFirst = true;
+  frCoord xl = 0;
+  frCoord yl = 0;
+  frCoord xh = 0;
+  frCoord yh = 0;
+  for (auto& fig : layer1Figs) {
+    Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  for (auto& fig : layer2Figs) {
+    Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  for (auto& fig : cutFigs) {
+    Rect box = fig->getBBox();
+    if (isFirst) {
+      xl = box.xMin();
+      yl = box.yMin();
+      xh = box.xMax();
+      yh = box.yMax();
+      isFirst = false;
+    } else {
+      xl = std::min(xl, box.xMin());
+      yl = std::min(yl, box.yMin());
+      xh = std::max(xh, box.xMax());
+      yh = std::max(yh, box.yMax());
+    }
+  }
+  Rect box(xl, yl, xh, yh);
+  dbTransform xform;
+  xform.setOffset(origin_);
+  xform.apply(box);
+  return box;
 }
 
 template <class Archive>
@@ -78,3 +139,5 @@ template void drVia::serialize<frIArchive>(frIArchive& ar,
 
 template void drVia::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
+
+}  // namespace drt

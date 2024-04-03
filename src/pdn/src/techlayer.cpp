@@ -198,6 +198,15 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
   return rules;
 }
 
+int TechLayer::getMinIncrementStep() const
+{
+  if (layer_->getTech()->hasManufacturingGrid()) {
+    const int grid = layer_->getTech()->getManufacturingGrid();
+    return grid;
+  }
+  return 1;
+}
+
 odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
 {
   if (!layer_->hasArea()) {
@@ -220,20 +229,22 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
   if (width * height < area) {
     if (layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       const int required_width = std::ceil(area / height);
-      const int added_width = (required_width - width) / 2;
+      const double added_width = required_width - width;
+      const int adjust_min = std::ceil(added_width / 2.0);
       const int new_x0
-          = snapToManufacturingGrid(rect.xMin() - added_width, false);
+          = snapToManufacturingGrid(rect.xMin() - adjust_min, false);
       const int new_x1
-          = snapToManufacturingGrid(rect.xMax() + added_width, true);
+          = snapToManufacturingGrid(rect.xMax() + adjust_min, true);
       new_rect.set_xlo(new_x0);
       new_rect.set_xhi(new_x1);
     } else {
       const int required_height = std::ceil(area / width);
-      const int added_height = (required_height - height) / 2;
+      const double added_height = required_height - height;
+      const int adjust_min = std::ceil(added_height / 2.0);
       const int new_y0
-          = snapToManufacturingGrid(rect.yMin() - added_height, false);
+          = snapToManufacturingGrid(rect.yMin() - adjust_min, false);
       const int new_y1
-          = snapToManufacturingGrid(rect.yMax() + added_height, true);
+          = snapToManufacturingGrid(rect.yMax() + adjust_min, true);
       new_rect.set_ylo(new_y0);
       new_rect.set_yhi(new_y1);
     }

@@ -36,21 +36,18 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
 
-namespace fr {
+namespace drt {
 class frNet;
-using namespace std;
 class gcNet : public gcBlockObject
 {
  public:
   // constructors
-  gcNet(int numLayers)
-      : gcBlockObject(),
-        fixedPolygons_(numLayers),
+  gcNet(const int numLayers)
+      : fixedPolygons_(numLayers),
         routePolygons_(numLayers),
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        owner_(nullptr),
         taperedRects(numLayers),
         nonTaperedRects(numLayers)
   {
@@ -60,7 +57,7 @@ class gcNet : public gcBlockObject
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     if (isFixed) {
       fixedPolygons_[layerNum] += rect;
     } else {
@@ -117,9 +114,8 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedPolygons_;
-    } else {
-      return routePolygons_;
     }
+    return routePolygons_;
   }
   const gtl::polygon_90_set_data<frCoord>& getPolygons(frLayerNum layerNum,
                                                        bool isFixed
@@ -127,18 +123,16 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedPolygons_[layerNum];
-    } else {
-      return routePolygons_[layerNum];
     }
+    return routePolygons_[layerNum];
   }
   const std::vector<std::vector<gtl::rectangle_data<frCoord>>>& getRectangles(
       bool isFixed = false) const
   {
     if (isFixed) {
       return fixedRectangles_;
-    } else {
-      return routeRectangles_;
     }
+    return routeRectangles_;
   }
   const std::vector<gtl::rectangle_data<frCoord>>& getRectangles(
       frLayerNum layerNum,
@@ -146,9 +140,8 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedRectangles_[layerNum];
-    } else {
-      return routeRectangles_[layerNum];
     }
+    return routeRectangles_[layerNum];
   }
   const std::vector<std::vector<std::unique_ptr<gcPin>>>& getPins() const
   {
@@ -202,12 +195,15 @@ class gcNet : public gcBlockObject
   {
     taperedRects[zIdx].push_back(bx);
   }
-  const vector<Rect>& getTaperedRects(int z) const { return taperedRects[z]; }
+  const std::vector<Rect>& getTaperedRects(int z) const
+  {
+    return taperedRects[z];
+  }
   void addNonTaperedRect(const Rect& bx, int zIdx)
   {
     nonTaperedRects[zIdx].push_back(bx);
   }
-  const vector<Rect>& getNonTaperedRects(int z) const
+  const std::vector<Rect>& getNonTaperedRects(int z) const
   {
     return nonTaperedRects[z];
   }
@@ -216,14 +212,14 @@ class gcNet : public gcBlockObject
                          gcPin* pin,
                          gcNet* net)
   {
-    unique_ptr<gcRect> sp = make_unique<gcRect>();
+    std::unique_ptr<gcRect> sp = std::make_unique<gcRect>();
     sp->setLayerNum(lNum);
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
     specialSpacingRects.push_back(std::move(sp));
   }
-  const vector<unique_ptr<gcRect>>& getSpecialSpcRects() const
+  const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
   {
     return specialSpacingRects;
   }
@@ -264,13 +260,13 @@ class gcNet : public gcBlockObject
   std::vector<std::vector<gtl::rectangle_data<frCoord>>>
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
-  frBlockObject* owner_;
-  vector<vector<Rect>> taperedRects;     //(only routing layer)
-  vector<vector<Rect>> nonTaperedRects;  //(only routing layer)
+  frBlockObject* owner_{nullptr};
+  std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
+  std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  vector<unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
 
   void init();
 };
-}  // namespace fr
+}  // namespace drt

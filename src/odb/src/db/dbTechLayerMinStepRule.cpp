@@ -70,6 +70,15 @@ bool _dbTechLayerMinStepRule::operator==(
   if (flags_.except_same_corners_ != rhs.flags_.except_same_corners_) {
     return false;
   }
+  if (flags_.concave_corner_ != rhs.flags_.concave_corner_) {
+    return false;
+  }
+  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_) {
+    return false;
+  }
+  if (flags_.no_adjacent_eol_ != rhs.flags_.no_adjacent_eol_) {
+    return false;
+  }
   if (min_step_length_ != rhs.min_step_length_) {
     return false;
   }
@@ -111,6 +120,9 @@ void _dbTechLayerMinStepRule::differences(
   DIFF_FIELD(flags_.convex_corner_);
   DIFF_FIELD(flags_.min_between_length_valid_);
   DIFF_FIELD(flags_.except_same_corners_);
+  DIFF_FIELD(flags_.concave_corner_);
+  DIFF_FIELD(flags_.except_rectangle_);
+  DIFF_FIELD(flags_.no_adjacent_eol_);
   DIFF_FIELD(min_step_length_);
   DIFF_FIELD(max_edges_);
   DIFF_FIELD(min_adj_length1_);
@@ -132,6 +144,9 @@ void _dbTechLayerMinStepRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(flags_.convex_corner_);
   DIFF_OUT_FIELD(flags_.min_between_length_valid_);
   DIFF_OUT_FIELD(flags_.except_same_corners_);
+  DIFF_OUT_FIELD(flags_.concave_corner_);
+  DIFF_OUT_FIELD(flags_.except_rectangle_);
+  DIFF_OUT_FIELD(flags_.no_adjacent_eol_);
   DIFF_OUT_FIELD(min_step_length_);
   DIFF_OUT_FIELD(max_edges_);
   DIFF_OUT_FIELD(min_adj_length1_);
@@ -164,6 +179,9 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
   flags_.convex_corner_ = r.flags_.convex_corner_;
   flags_.min_between_length_valid_ = r.flags_.min_between_length_valid_;
   flags_.except_same_corners_ = r.flags_.except_same_corners_;
+  flags_.concave_corner_ = r.flags_.concave_corner_;
+  flags_.except_rectangle_ = r.flags_.except_rectangle_;
+  flags_.no_adjacent_eol_ = r.flags_.no_adjacent_eol_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   min_step_length_ = r.min_step_length_;
   max_edges_ = r.max_edges_;
@@ -201,10 +219,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj.eol_width_;
   stream << obj.min_between_length_;
   return stream;
-}
-
-_dbTechLayerMinStepRule::~_dbTechLayerMinStepRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -390,6 +404,48 @@ bool dbTechLayerMinStepRule::isExceptSameCorners() const
   return obj->flags_.except_same_corners_;
 }
 
+void dbTechLayerMinStepRule::setConcaveCorner(bool concave_corner)
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  obj->flags_.concave_corner_ = concave_corner;
+}
+
+bool dbTechLayerMinStepRule::isConcaveCorner() const
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  return obj->flags_.concave_corner_;
+}
+
+void dbTechLayerMinStepRule::setExceptRectangle(bool except_rectangle)
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  obj->flags_.except_rectangle_ = except_rectangle;
+}
+
+bool dbTechLayerMinStepRule::isExceptRectangle() const
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  return obj->flags_.except_rectangle_;
+}
+
+void dbTechLayerMinStepRule::setNoAdjacentEol(bool no_adjacent_eol)
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  obj->flags_.no_adjacent_eol_ = no_adjacent_eol;
+}
+
+bool dbTechLayerMinStepRule::isNoAdjacentEol() const
+{
+  _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
+
+  return obj->flags_.no_adjacent_eol_;
+}
+
 // User Code Begin dbTechLayerMinStepRulePublicMethods
 dbTechLayerMinStepRule* dbTechLayerMinStepRule::create(dbTechLayer* _layer)
 {
@@ -413,4 +469,4 @@ void dbTechLayerMinStepRule::destroy(dbTechLayerMinStepRule* rule)
 }
 // User Code End dbTechLayerMinStepRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

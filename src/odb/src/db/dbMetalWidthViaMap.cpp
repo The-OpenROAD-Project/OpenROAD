@@ -159,10 +159,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   return stream;
 }
 
-_dbMetalWidthViaMap::~_dbMetalWidthViaMap()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbMetalWidthViaMap - Methods

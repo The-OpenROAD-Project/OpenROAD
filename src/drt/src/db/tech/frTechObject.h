@@ -44,7 +44,7 @@
 namespace odb {
 class dbTechLayer;
 }
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -52,45 +52,26 @@ class Parser;
 class frTechObject
 {
  public:
-  // constructors
-  frTechObject() : dbUnit(0), manufacturingGrid(0) {}
   // getters
-  frUInt4 getDBUPerUU() const { return dbUnit; }
-  frUInt4 getManufacturingGrid() const { return manufacturingGrid; }
-  frLayer* getLayer(const frString& name) const
-  {
-    if (name2layer.find(name) == name2layer.end()) {
-      // std::cout <<"Error: cannot find layer" <<std::endl;
-      // exit(1);
-      return nullptr;
-    } else {
-      return name2layer.at(name);
-    }
-  }
-  frLayer* getLayer(frLayerNum in) const
-  {
-    if ((int) in < 0 || in >= (int) layers.size()) {
-      std::cout << "Error: cannot find layer" << std::endl;
-      exit(1);
-    } else {
-      return layers.at(in).get();
-    }
-  }
+  frUInt4 getDBUPerUU() const { return dbUnit_; }
+  frUInt4 getManufacturingGrid() const { return manufacturingGrid_; }
+  frLayer* getLayer(const frString& name) const { return name2layer_.at(name); }
+  frLayer* getLayer(frLayerNum in) const { return layers_.at(in).get(); }
   frLayerNum getBottomLayerNum() const { return 0; }
-  frLayerNum getTopLayerNum() const
-  {
-    return (frLayerNum) ((int) layers.size() - 1);
-  }
+  frLayerNum getTopLayerNum() const { return layers_.size() - 1; }
   const std::vector<std::unique_ptr<frLayer>>& getLayers() const
   {
-    return layers;
+    return layers_;
   }
 
-  const std::vector<std::unique_ptr<frViaDef>>& getVias() const { return vias; }
+  const std::vector<std::unique_ptr<frViaDef>>& getVias() const
+  {
+    return vias_;
+  }
   const std::vector<std::unique_ptr<frViaRuleGenerate>>& getViaRuleGenerates()
       const
   {
-    return viaRuleGenerates;
+    return viaRuleGenerates_;
   }
   bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
   {
@@ -98,51 +79,52 @@ class frTechObject
   }
 
   // setters
-  void setDBUPerUU(frUInt4 uIn) { dbUnit = uIn; }
-  void setManufacturingGrid(frUInt4 in) { manufacturingGrid = in; }
+  void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
+  void setManufacturingGrid(frUInt4 in) { manufacturingGrid_ = in; }
   void addLayer(std::unique_ptr<frLayer> in)
   {
-    name2layer[in->getName()] = in.get();
-    layers.push_back(std::move(in));
-    layer2Name2CutClass.push_back(std::map<std::string, frLef58CutClass*>());
-    layerCutClass.push_back(std::vector<std::unique_ptr<frLef58CutClass>>());
+    name2layer_[in->getName()] = in.get();
+    layers_.push_back(std::move(in));
+    layer2Name2CutClass_.emplace_back();
+    layerCutClass_.emplace_back();
   }
   void addVia(std::unique_ptr<frViaDef> in)
   {
-    in->setId(vias.size());
-    if (name2via.find(in->getName()) != name2via.end()) {
+    in->setId(vias_.size());
+    if (name2via_.find(in->getName()) != name2via_.end()) {
       std::cout << "Error: duplicated via definition for " << in->getName()
                 << "\n";
     }
-    name2via[in->getName()] = in.get();
-    vias.push_back(std::move(in));
+    name2via_[in->getName()] = in.get();
+    vias_.push_back(std::move(in));
   }
   void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in)
   {
     auto rptr = in.get();
-    layer2Name2CutClass[lNum][in->getName()] = rptr;
-    layerCutClass[lNum].push_back(std::move(in));
-    layers[lNum]->addCutClass(rptr);
+    layer2Name2CutClass_[lNum][in->getName()] = rptr;
+    layerCutClass_[lNum].push_back(std::move(in));
+    layers_[lNum]->addCutClass(rptr);
   }
   void addViaRuleGenerate(std::unique_ptr<frViaRuleGenerate> in)
   {
-    name2viaRuleGenerate[in->getName()] = in.get();
-    viaRuleGenerates.push_back(std::move(in));
+    name2viaRuleGenerate_[in->getName()] = in.get();
+    viaRuleGenerates_.push_back(std::move(in));
   }
   void addUConstraint(std::unique_ptr<frConstraint> in)
   {
-    in->setId(uConstraints.size());
+    in->setId(uConstraints_.size());
     auto type = in->typeId();
     if (type == frConstraintTypeEnum::frcMinStepConstraint
         || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
       hasCornerSpacingConstraint_ = true;
     }
-    uConstraints.push_back(std::move(in));
+    uConstraints_.push_back(std::move(in));
   }
   frConstraint* getConstraint(int idx)
   {
-    if (idx < uConstraints.size())
-      return uConstraints[idx].get();
+    if (idx < uConstraints_.size()) {
+      return uConstraints_[idx].get();
+    }
     return nullptr;
   }
   void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
@@ -159,9 +141,21 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
-    return isIncluded((ndr ? ndr->via2ViaForbiddenLen
-                           : via2ViaForbiddenLen)[tableLayerIdx][tableEntryIdx],
-                      len);
+    return isIncluded(
+        (ndr ? ndr->via2ViaForbiddenLen_
+             : via2ViaForbiddenLen_)[tableLayerIdx][tableEntryIdx],
+        len);
+  }
+
+  // PRL table related
+  bool isVia2ViaPRL(int tableLayerIdx,
+                    bool isPrevDown,
+                    bool isCurrDown,
+                    bool isCurrDirX,
+                    frCoord len)
+  {
+    int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
+    return len <= via2ViaPrlLen_[tableLayerIdx][tableEntryIdx];
   }
 
   bool isViaForbiddenTurnLen(int tableLayerIdx,
@@ -171,9 +165,10 @@ class frTechObject
                              frNonDefaultRule* ndr = nullptr)
   {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-    return isIncluded((ndr ? ndr->viaForbiddenTurnLen
-                           : viaForbiddenTurnLen)[tableLayerIdx][tableEntryIdx],
-                      len);
+    return isIncluded(
+        (ndr ? ndr->viaForbiddenTurnLen_
+             : viaForbiddenTurnLen_)[tableLayerIdx][tableEntryIdx],
+        len);
   }
 
   bool isLine2LineForbiddenLen(int tableLayerIdx,
@@ -182,38 +177,40 @@ class frTechObject
                                frCoord len)
   {
     int tableEntryIdx = getTableEntryIdx(!isZShape, !isCurrDirX);
-    return isIncluded(line2LineForbiddenLen[tableLayerIdx][tableEntryIdx], len);
+    return isIncluded(line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx],
+                      len);
   }
 
   bool isViaForbiddenThrough(int tableLayerIdx, bool isDown, bool isCurrDirX)
   {
     int tableEntryIdx = getTableEntryIdx(!isDown, !isCurrDirX);
-    return viaForbiddenThrough[tableLayerIdx][tableEntryIdx];
+    return viaForbiddenThrough_[tableLayerIdx][tableEntryIdx];
   }
 
-  frViaDef* getVia(frString name) const { return name2via.at(name); }
+  frViaDef* getVia(const frString& name) const { return name2via_.at(name); }
 
-  frViaRuleGenerate* getViaRule(frString name) const
+  frViaRuleGenerate* getViaRule(const frString& name) const
   {
-    return name2viaRuleGenerate.at(name);
+    return name2viaRuleGenerate_.at(name);
   }
 
   void addNDR(std::unique_ptr<frNonDefaultRule> n)
   {
-    nonDefaultRules.push_back(std::move(n));
+    nonDefaultRules_.push_back(std::move(n));
   }
 
   const std::vector<std::unique_ptr<frNonDefaultRule>>& getNondefaultRules()
       const
   {
-    return nonDefaultRules;
+    return nonDefaultRules_;
   }
 
-  frNonDefaultRule* getNondefaultRule(string name)
+  frNonDefaultRule* getNondefaultRule(const std::string& name)
   {
-    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
-      if (nd->getName() == name)
+    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
+      if (nd->getName() == name) {
         return nd.get();
+      }
     }
     return nullptr;
   }
@@ -221,9 +218,10 @@ class frTechObject
   frCoord getMaxNondefaultSpacing(int z)
   {
     frCoord spc = 0;
-    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
-      if (nd->getSpacing(z) > spc)
+    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
+      if (nd->getSpacing(z) > spc) {
         spc = nd->getSpacing(z);
+      }
     }
     return spc;
   }
@@ -231,25 +229,27 @@ class frTechObject
   frCoord getMaxNondefaultWidth(int z)
   {
     frCoord spc = 0;
-    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
-      if (nd->getWidth(z) > spc)
+    for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
+      if (nd->getWidth(z) > spc) {
         spc = nd->getWidth(z);
+      }
     }
     return spc;
   }
 
-  bool hasNondefaultRules() { return !nonDefaultRules.empty(); }
+  bool hasNondefaultRules() { return !nonDefaultRules_.empty(); }
 
   // debug
   void printAllConstraints(utl::Logger* logger)
   {
     logger->report("Reporting layer properties.");
-    for (auto& layer : layers) {
+    for (auto& layer : layers_) {
       auto type = layer->getType();
-      if (type == dbTechLayerType::CUT)
+      if (type == dbTechLayerType::CUT) {
         logger->report("Cut layer {}.", layer->getName());
-      else if (type == dbTechLayerType::ROUTING)
+      } else if (type == dbTechLayerType::ROUTING) {
         logger->report("Routing layer {}.", layer->getName());
+      }
       layer->printAllConstraints(logger);
     }
   }
@@ -257,7 +257,7 @@ class frTechObject
   void printDefaultVias(Logger* logger)
   {
     logger->info(DRT, 167, "List of default vias:");
-    for (auto& layer : layers) {
+    for (auto& layer : layers_) {
       if (layer->getType() == dbTechLayerType::CUT
           && layer->getLayerNum() >= BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
@@ -290,81 +290,6 @@ class frTechObject
   }
 
  private:
-  frUInt4 dbUnit;
-  frUInt4 manufacturingGrid;
-
-  std::map<frString, frLayer*> name2layer;
-  std::vector<std::unique_ptr<frLayer>> layers;
-
-  std::map<frString, frViaDef*> name2via;
-  std::vector<std::unique_ptr<frViaDef>> vias;
-
-  std::vector<std::map<frString, frLef58CutClass*>> layer2Name2CutClass;
-  std::vector<std::vector<std::unique_ptr<frLef58CutClass>>> layerCutClass;
-
-  std::map<frString, frViaRuleGenerate*> name2viaRuleGenerate;
-  std::vector<std::unique_ptr<frViaRuleGenerate>> viaRuleGenerates;
-
-  std::vector<std::unique_ptr<frConstraint>> uConstraints;
-  std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules;
-
-  template <typename T>
-  using ByLayer = std::vector<T>;
-
-  // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][1], prev via is down, curr via is down, forbidden y
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][2], prev via is down, curr via is up,   forbidden x
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][3], prev via is down, curr via is up,   forbidden y
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][4], prev via is up,   curr via is down, forbidden x
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][5], prev via is up,   curr via is down, forbidden y
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][6], prev via is up,   curr via is up,   forbidden x
-  // dist range (for non-shape-based rule)
-  // via2ViaForbiddenLen[z][7], prev via is up,   curr via is up,   forbidden y
-  // dist range (for non-shape-based rule)
-  ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
-
-  // viaForbiddenTurnLen[z][0], last via is down, forbidden x dist range before
-  // turn
-  // viaForbiddenTurnLen[z][1], last via is down, forbidden y dist range before
-  // turn
-  // viaForbiddenTurnLen[z][2], last via is up,   forbidden x dist range before
-  // turn
-  // viaForbiddenTurnLen[z][3], last via is up,   forbidden y dist range before
-  // turn
-  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenTurnLen;
-
-  // viaForbiddenPlanarLen[z][0], last via is down, forbidden x dist range
-  // viaForbiddenPlanarLen[z][1], last via is down, forbidden y dist range
-  // viaForbiddenPlanarLen[z][2], last via is up,   forbidden x dist range
-  // viaForbiddenPlanarLen[z][3], last via is up,   forbidden y dist range
-  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenPlanarLen;
-
-  // line2LineForbiddenForbiddenLen[z][0], z shape, forbidden x dist range
-  // line2LineForbiddenForbiddenLen[z][1], z shape, forbidden y dist range
-  // line2LineForbiddenForbiddenLen[z][2], u shape, forbidden x dist range
-  // line2LineForbiddenForbiddenLen[z][3], u shape, forbidden y dist range
-  ByLayer<std::array<ForbiddenRanges, 4>> line2LineForbiddenLen;
-
-  // viaForbiddenPlanarThrough[z][0], forbidden planar through along x direction
-  // for down via
-  // viaForbiddenPlanarThrough[z][1], forbidden planar through along y direction
-  // for down via
-  // viaForbiddenPlanarThrough[z][2], forbidden planar through along x direction
-  // for up via
-  // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
-  // for up via
-  ByLayer<std::array<bool, 4>> viaForbiddenThrough;
-  bool hasVia2viaMinStep_ = false;
-  bool hasCornerSpacingConstraint_ = false;
-  // unidirectional layers
-  std::set<odb::dbTechLayer*> unidirectional_layers_;
-
   // forbidden length table related utilities
   int getTableEntryIdx(bool in1, bool in2)
   {
@@ -408,6 +333,83 @@ class frTechObject
     return included;
   }
 
+  frUInt4 dbUnit_{0};
+  frUInt4 manufacturingGrid_{0};
+
+  std::map<frString, frLayer*> name2layer_;
+  std::vector<std::unique_ptr<frLayer>> layers_;
+
+  std::map<frString, frViaDef*> name2via_;
+  std::vector<std::unique_ptr<frViaDef>> vias_;
+
+  std::vector<std::map<frString, frLef58CutClass*>> layer2Name2CutClass_;
+  std::vector<std::vector<std::unique_ptr<frLef58CutClass>>> layerCutClass_;
+
+  std::map<frString, frViaRuleGenerate*> name2viaRuleGenerate_;
+  std::vector<std::unique_ptr<frViaRuleGenerate>> viaRuleGenerates_;
+
+  std::vector<std::unique_ptr<frConstraint>> uConstraints_;
+  std::vector<std::unique_ptr<frNonDefaultRule>> nonDefaultRules_;
+
+  template <typename T>
+  using ByLayer = std::vector<T>;
+
+  // via2ViaForbiddenLen[z][0], prev via is down, curr via is down, forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][1], prev via is down, curr via is down, forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][2], prev via is down, curr via is up,   forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][3], prev via is down, curr via is up,   forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][4], prev via is up,   curr via is down, forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][5], prev via is up,   curr via is down, forbidden y
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][6], prev via is up,   curr via is up,   forbidden x
+  // dist range (for non-shape-based rule)
+  // via2ViaForbiddenLen[z][7], prev via is up,   curr via is up,   forbidden y
+  // dist range (for non-shape-based rule)
+  ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen_;
+
+  ByLayer<std::array<frCoord, 8>> via2ViaPrlLen_;
+
+  // viaForbiddenTurnLen[z][0], last via is down, forbidden x dist range before
+  // turn
+  // viaForbiddenTurnLen[z][1], last via is down, forbidden y dist range before
+  // turn
+  // viaForbiddenTurnLen[z][2], last via is up,   forbidden x dist range before
+  // turn
+  // viaForbiddenTurnLen[z][3], last via is up,   forbidden y dist range before
+  // turn
+  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenTurnLen_;
+
+  // viaForbiddenPlanarLen[z][0], last via is down, forbidden x dist range
+  // viaForbiddenPlanarLen[z][1], last via is down, forbidden y dist range
+  // viaForbiddenPlanarLen[z][2], last via is up,   forbidden x dist range
+  // viaForbiddenPlanarLen[z][3], last via is up,   forbidden y dist range
+  ByLayer<std::array<ForbiddenRanges, 4>> viaForbiddenPlanarLen_;
+
+  // line2LineForbiddenForbiddenLen[z][0], z shape, forbidden x dist range
+  // line2LineForbiddenForbiddenLen[z][1], z shape, forbidden y dist range
+  // line2LineForbiddenForbiddenLen[z][2], u shape, forbidden x dist range
+  // line2LineForbiddenForbiddenLen[z][3], u shape, forbidden y dist range
+  ByLayer<std::array<ForbiddenRanges, 4>> line2LineForbiddenLen_;
+
+  // viaForbiddenPlanarThrough[z][0], forbidden planar through along x direction
+  // for down via
+  // viaForbiddenPlanarThrough[z][1], forbidden planar through along y direction
+  // for down via
+  // viaForbiddenPlanarThrough[z][2], forbidden planar through along x direction
+  // for up via
+  // viaForbiddenPlanarThrough[z][3], forbidden planar through along y direction
+  // for up via
+  ByLayer<std::array<bool, 4>> viaForbiddenThrough_;
+  bool hasVia2viaMinStep_ = false;
+  bool hasCornerSpacingConstraint_ = false;
+  // unidirectional layers
+  std::set<odb::dbTechLayer*> unidirectional_layers_;
+
   friend class FlexRP;
 };
-}  // namespace fr
+}  // namespace drt

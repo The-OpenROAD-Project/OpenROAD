@@ -63,7 +63,6 @@ target_sources(gpl
     src/fft.cpp
     src/fftsg.cpp
     src/fftsg2d.cpp
-    src/point.cpp
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
@@ -195,4 +194,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
       grt
   )
 
+endif()
+
+if(ENABLE_TESTS)
+  add_subdirectory(test)
 endif()

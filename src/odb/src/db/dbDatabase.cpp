@@ -152,6 +152,11 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
     case dbPropertyObj:
       return _prop_tbl;
     default:
+      getLogger()->critical(
+          utl::ODB,
+          438,
+          "Internal inconsistency: no table found for type {}",
+          type);
       break;
   }
 
@@ -260,6 +265,7 @@ _dbDatabase::~_dbDatabase()
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
 {
+  dbOStreamScope scope(stream, "dbDatabase");
   stream << db._magic1;
   stream << db._magic2;
   stream << db._schema_major;
@@ -269,7 +275,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << *db._tech_tbl;
   stream << *db._lib_tbl;
   stream << *db._chip_tbl;
-  stream << *db._prop_tbl;
+  stream << NamedTable("prop_tbl", db._prop_tbl);
   stream << *db._name_cache;
   return stream;
 }
@@ -607,6 +613,16 @@ dbDatabase* dbDatabase::getDatabase(uint dbid)
 dbDatabase* dbObject::getDb() const
 {
   return (dbDatabase*) getImpl()->getDatabase();
+}
+
+utl::Logger* _dbDatabase::getLogger() const
+{
+  if (!_logger) {
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
+              << std::endl;
+    exit(1);
+  }
+  return _logger;
 }
 
 utl::Logger* _dbObject::getLogger() const

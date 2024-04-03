@@ -49,8 +49,7 @@ namespace mpl2 {
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
-  SACoreHardMacro(float outline_width,
-                  float outline_height,  // boundary constraints
+  SACoreHardMacro(const Rect& outline,
                   const std::vector<HardMacro>& macros,
                   // weight for different penalty
                   float area_weight,
@@ -69,8 +68,6 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   float init_prob,
                   int max_num_step,
                   int num_perturb_per_step,
-                  int k,
-                  int c,
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
@@ -90,7 +87,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void perturb() override;
   void restore() override;
   // actions used
-  void flipMacro();  // flip hard macros
+  void flipAllMacros();
 
   float flip_prob_ = 0.0;
 };

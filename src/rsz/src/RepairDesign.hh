@@ -48,6 +48,7 @@
 namespace rsz {
 
 class Resizer;
+enum class ParasiticsSrc;
 
 using std::vector;
 
@@ -120,6 +121,27 @@ protected:
                  int &cap_violations,
                  int &fanout_violations,
                  int &length_violations);
+  bool needRepairSlew(const Pin *drvr_pin,
+                      int& slew_violations,
+                      float& max_cap,
+                      const Corner *corner);
+  bool needRepairCap(const Pin *drvr_pin,
+                     int& cap_violations,
+                     float& max_cap,
+                     const Corner *corner);
+  bool needRepairWire(int max_length,
+                      int wire_length,
+                      int& length_violations);
+  bool needRepair(const Pin *drvr_pin,
+                  const Corner *corner,
+                  int max_length,
+                  int wire_length,
+                  bool check_cap,
+                  bool check_slew,
+                  float& max_cap,
+                  int &slew_violations,
+                  int &cap_violations,
+                  int &length_violations);
   bool checkLimits(const Pin *drvr_pin,
                    bool check_slew,
                    bool check_cap,
@@ -230,6 +252,7 @@ protected:
   PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
+  ParasiticsSrc parasitics_src_;
 
   // Implicit arguments to repairNet bnet recursion.
   const Pin *drvr_pin_;

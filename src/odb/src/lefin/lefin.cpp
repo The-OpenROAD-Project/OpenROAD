@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -51,7 +52,6 @@
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 using LefDefParser::lefrSetRelaxMode;
@@ -110,6 +110,23 @@ void lefin::init()
 
 lefin::~lefin()
 {
+}
+
+dbSite* lefin::findSite(const char* name)
+{
+  dbSite* site = _lib->findSite(name);
+
+  if (site == nullptr) {
+    // look in the other libs
+    for (dbLib* lib : _db->getLibs()) {
+      site = lib->findSite(name);
+      if (site) {
+        break;
+      }
+    }
+  }
+
+  return site;
 }
 
 void lefin::createLibrary()
@@ -645,10 +662,16 @@ void lefin::layer(lefiLayer* layer)
     bool valid = true;
     bool supported = true;
     if (type.getValue() == dbTechLayerType::ROUTING) {
-      if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
-        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
-               || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
+      if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
+        if (std::string(layer->propValue(iii)).find("WRONGDIRECTION")
+            != std::string::npos) {
+          lefTechLayerWrongDirSpacingParser::parse(
+              layer->propValue(iii), l, this);
+        } else {
+          lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+        }
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
+                 || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
@@ -1222,38 +1245,17 @@ void lefin::macro(lefiMacro* macro)
   }
 
   if (macro->hasSiteName()) {
-    dbSite* site = _lib->findSite(macro->siteName());
+    dbSite* site = findSite(macro->siteName());
 
     if (site == nullptr) {
-      // look in the other libs
-      for (dbLib* lib : _db->getLibs()) {
-        site = lib->findSite(macro->siteName());
-        if (site) {
-          // replicating site in the master's lib
-          auto temp = odb::dbSite::create(_lib, site->getName().c_str());
-          temp->setWidth(site->getWidth());
-          temp->setHeight(site->getHeight());
-          if (site->getSymmetryX())
-            temp->setSymmetryX();
-          if (site->getSymmetryY())
-            temp->setSymmetryY();
-          if (site->getSymmetryR90())
-            temp->setSymmetryR90();
-          temp->setClass(site->getClass());
-          site = temp;
-          break;
-        }
-      }
-    }
-
-    if (site == nullptr)
       _logger->warn(utl::ODB,
                     186,
                     "macro {} references unknown site {}",
                     macro->name(),
                     macro->siteName());
-    else
+    } else {
       _master->setSite(site);
+    }
   }
 
   if (macro->hasXSymmetry())
@@ -1672,6 +1674,18 @@ void lefin::site(lefiSite* lefsite)
   if (site)
     return;
 
+  for (dbLib* lib : _db->getLibs()) {
+    if ((site = lib->findSite(lefsite->name()))) {
+      _logger->info(utl::ODB,
+                    394,
+                    "Duplicate site {} in {} already seen in {}",
+                    lefsite->name(),
+                    _lib->getName(),
+                    lib->getName());
+      return;
+    }
+  }
+
   site = dbSite::create(_lib, lefsite->name());
 
   if (lefsite->hasSize()) {
@@ -1690,6 +1704,24 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasClass())
     site->setClass(dbSiteClass(lefsite->siteClass()));
+
+  if (lefsite->hasRowPattern()) {
+    auto row_pattern = lefsite->getRowPatterns();
+    std::vector<dbSite::OrientedSite> converted_row_pattern;
+    converted_row_pattern.reserve(row_pattern.size());
+    for (auto& row : row_pattern) {
+      dbOrientType orient(row.second.c_str());
+      auto child_site = findSite(row.first.c_str());
+      if (!child_site) {
+        ++_errors;
+        _logger->warn(
+            utl::ODB, 208, "Row pattern site {} can't be found", row.first);
+        continue;
+      }
+      converted_row_pattern.push_back({child_site, orient});
+    }
+    site->setRowPattern(converted_row_pattern);
+  }
 }
 
 void lefin::spacingBegin(void* /* unused: ptr */)
@@ -1813,12 +1845,17 @@ void lefin::version(double num)
 
 void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
 {
-  if (!_create_tech)
+  if (!_create_tech && !via->hasViaRule()) {
     return;
+  }
 
   if (_tech->findVia(via->name())) {
-    _logger->warn(
-        utl::ODB, 208, "VIA: duplicate VIA ({}) ignored...", via->name());
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "VIA: duplicate VIA ({}) ignored...",
+               via->name());
     return;
   }
 
@@ -2109,8 +2146,16 @@ void lefin::lineNumber(int lineNo)
 
 bool lefin::readLef(const char* lef_file)
 {
-  _logger->info(utl::ODB, 222, "Reading LEF file: {}", lef_file);
+  try {
+    return readLefInner(lef_file);
+  } catch (...) {
+    _logger->info(utl::ODB, 222, "While reading LEF file: {}", lef_file);
+    throw;
+  }
+}
 
+bool lefin::readLefInner(const char* lef_file)
+{
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
     auto layer = _tech->findLayer(name.c_str());
@@ -2185,17 +2230,40 @@ bool lefin::readLef(const char* lef_file)
     }
   }
   _incomplete_props.clear();
-  if (_layer_cnt)
-    _logger->info(
-        utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
 
-  if (_via_cnt)
-    _logger->info(utl::ODB, 224, "    Created {} technology vias", _via_cnt);
-  if (_master_cnt)
-    _logger->info(utl::ODB, 225, "    Created {} library cells", _master_cnt);
+  std::string p = lef_file;
+  std::vector<std::string> parts;
 
-  _logger->info(utl::ODB, 226, "Finished LEF file:  {}", lef_file);
+  if (_layer_cnt > 0) {
+    std::ostringstream ss;
+    ss << _layer_cnt << " layers";
+    parts.push_back(ss.str());
+  }
 
+  if (_via_cnt > 0) {
+    std::ostringstream ss;
+    ss << _via_cnt << " vias";
+    parts.push_back(ss.str());
+  }
+
+  if (_master_cnt > 0) {
+    std::ostringstream ss;
+    ss << _master_cnt << " library cells";
+    parts.push_back(ss.str());
+  }
+
+  std::string message = "LEF file: " + p;
+  if (!parts.empty()) {
+    message += ", created ";
+    for (size_t i = 0; i < parts.size(); ++i) {
+      message += parts[i];
+      if (i != parts.size() - 1) {
+        message += ", ";
+      }
+    }
+  }
+
+  _logger->info(utl::ODB, 227, message);
   return r;
 }
 

@@ -37,7 +37,7 @@
 extern size_t getPeakRSS();
 extern size_t getCurrentRSS();
 
-namespace fr {
+namespace drt {
 class frTime
 {
  public:
@@ -58,4 +58,4 @@ class frTime
 };
 
 std::ostream& operator<<(std::ostream& os, const frTime& t);
-}  // namespace fr
+}  // namespace drt

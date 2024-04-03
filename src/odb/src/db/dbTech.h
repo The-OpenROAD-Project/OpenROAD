@@ -83,7 +83,7 @@ class _dbTech : public _dbObject
 {
  private:
   double _version;
-  char _version_buf[35];  // Tmp for outputting string
+
  public:
   // PERSISTANT-MEMBERS
   std::string _name;
@@ -122,7 +122,7 @@ class _dbTech : public _dbObject
   dbPropertyItr* _prop_itr;
 
   double _getLefVersion() const;
-  const char* _getLefVersionStr() const;
+  std::string _getLefVersionStr() const;
   void _setLefVersion(double inver);
 
   _dbTech(_dbDatabase* db);

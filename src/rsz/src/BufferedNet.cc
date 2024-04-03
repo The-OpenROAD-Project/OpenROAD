@@ -421,7 +421,7 @@ makeBufferedNetFromTree(const SteinerTree *tree,
                                             tree->location(to),
                                             bnet, bnet1, resizer);
           } else {
-            bnet = bnet1;
+            bnet = std::move(bnet1);
           }
         }
       }
@@ -441,7 +441,7 @@ makeBufferedNetFromTree(const SteinerTree *tree,
                                           tree->location(to),
                                           bnet, bnet1, resizer);
         } else {
-          bnet = bnet1;
+          bnet = std::move(bnet1);
         }
       }
     }
@@ -535,6 +535,8 @@ routePtLocEq(const RoutePt& p1,
     && p1.y() == p2.y();
 }
 
+using RoutePtSet = std::unordered_set<RoutePt, RoutePtHash, RoutePtEqual>;
+
 static BufferedNetPtr
 makeBufferedNet(RoutePt &from,
                 RoutePt &to,
@@ -544,8 +546,14 @@ makeBufferedNet(RoutePt &from,
                 const Corner *corner,
                 const Resizer *resizer,
                 Logger *logger,
-                dbNetwork *db_network)
+                dbNetwork *db_network,
+                RoutePtSet& visited)
 {
+  if (visited.find(to) != visited.end()) {
+    debugPrint(logger, RSZ, "groute_bnet", 2, "Loop found in groute");
+    return nullptr;
+  }
+  visited.insert(to);
   Point to_pt(to.x(), to.y());
   const PinSeq &pins = loc_pin_map[to_pt];
   Point from_pt(from.x(), from.y());
@@ -561,7 +569,7 @@ makeBufferedNet(RoutePt &from,
         bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                         to_pt, bnet, load_bnet, resizer);
       } else {
-        bnet = load_bnet;
+        bnet = std::move(load_bnet);
       }
     }
   }
@@ -570,13 +578,13 @@ makeBufferedNet(RoutePt &from,
       BufferedNetPtr bnet1 = makeBufferedNet(to, adj, adjacents,
                                              loc_pin_map, level + 1,
                                              corner, resizer, logger,
-                                             db_network);
+                                             db_network, visited);
       if (bnet1) {
         if (bnet) {
           bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                           to_pt, bnet, bnet1, resizer);
         } else {
-          bnet = bnet1;
+          bnet = std::move(bnet1);
         }
       }
     }
@@ -652,9 +660,11 @@ Resizer::makeBufferedNetGroute(const Pin *drvr_pin,
     }
     if (found_drvr_route_pt) {
       RoutePt null_route_pt(0, 0, 0);
+      RoutePtSet visited;
       return rsz::makeBufferedNet(null_route_pt, drvr_route_pt,
                                   adjacents, loc_pin_map, 0,
-                                  corner, this, logger_, db_network_);
+                                  corner, this, logger_, db_network_,
+                                  visited);
     }
     
     logger_->warn(RSZ, 73, "driver pin {} not found in global routes",

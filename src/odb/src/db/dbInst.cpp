@@ -459,11 +459,10 @@ bool dbInst::rename(const char* name)
   return true;
 }
 
-void dbInst::getOrigin(int& x, int& y)
+Point dbInst::getOrigin()
 {
   _dbInst* inst = (_dbInst*) this;
-  x = inst->_x;
-  y = inst->_y;
+  return {inst->_x, inst->_y};
 }
 
 void dbInst::setOrigin(int x, int y)
@@ -632,11 +631,10 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
   }
 }
 
-void dbInst::getTransform(dbTransform& t)
+dbTransform dbInst::getTransform()
 {
   _dbInst* inst = (_dbInst*) this;
-  t = dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
-  return;
+  return dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
 }
 
 void dbInst::setTransform(dbTransform& t)
@@ -655,8 +653,7 @@ static void getParentTransform(dbInst* inst, dbTransform& t)
     t = dbTransform();
   else {
     getParentTransform(parent, t);
-    dbTransform x;
-    parent->getTransform(x);
+    dbTransform x = parent->getTransform();
     x.concat(t);
     t = x;
   }
@@ -665,8 +662,7 @@ static void getParentTransform(dbInst* inst, dbTransform& t)
 void dbInst::getHierTransform(dbTransform& t)
 {
   getParentTransform(this, t);
-  dbTransform x;
-  getTransform(x);
+  dbTransform x = getTransform();
   x.concat(t);
   t = x;
   return;
@@ -1313,16 +1309,18 @@ uint dbInst::getPinAccessIdx() const
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* target_module)
 {
-  return create(block_, master_, name_, nullptr, physical_only);
+  return create(block_, master_, name_, nullptr, physical_only, target_module);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
                        dbRegion* region,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* parent_module)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
@@ -1385,7 +1383,14 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
-    block_->getTopModule()->addInst((dbInst*) inst);
+    // old code
+    //    block_->getTopModule()->addInst((dbInst*) inst);
+    // now we insert into scope of module...
+    // might screw things up..
+    if (parent_module)
+      parent_module->addInst((dbInst*) inst);
+    else
+      block_->getTopModule()->addInst((dbInst*) inst);
   }
 
   if (region) {

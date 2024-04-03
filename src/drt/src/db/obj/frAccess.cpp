@@ -31,8 +31,8 @@
 #include "db/tech/frViaDef.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace std;
-using namespace fr;
+
+namespace drt {
 
 void frAccessPoint::addViaDef(frViaDef* in)
 {
@@ -58,7 +58,7 @@ void frAccessPoint::serialize(Archive& ar, const unsigned int version)
     int outSz = 0;
     (ar) & outSz;
     for (int i = 0; i < outSz; i++) {
-      viaDefs_.push_back({});
+      viaDefs_.emplace_back();
       int inSz = 0;
       (ar) & inSz;
       while (inSz--) {
@@ -70,7 +70,7 @@ void frAccessPoint::serialize(Archive& ar, const unsigned int version)
   } else {
     int sz = viaDefs_.size();
     (ar) & sz;
-    for (auto col : viaDefs_) {
+    for (const auto& col : viaDefs_) {
       sz = col.size();
       (ar) & sz;
       for (auto vd : col) {
@@ -105,3 +105,5 @@ template void frPinAccess::serialize<frIArchive>(
 template void frPinAccess::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
+
+}  // namespace drt

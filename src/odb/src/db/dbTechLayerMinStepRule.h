@@ -51,7 +51,10 @@ struct dbTechLayerMinStepRuleFlags
   bool convex_corner_ : 1;
   bool min_between_length_valid_ : 1;
   bool except_same_corners_ : 1;
-  uint spare_bits_ : 25;
+  bool concave_corner_ : 1;
+  bool except_rectangle_ : 1;
+  bool no_adjacent_eol_ : 1;
+  uint spare_bits_ : 22;
 };
 
 class _dbTechLayerMinStepRule : public _dbObject
@@ -59,7 +62,8 @@ class _dbTechLayerMinStepRule : public _dbObject
  public:
   _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
   _dbTechLayerMinStepRule(_dbDatabase*);
-  ~_dbTechLayerMinStepRule();
+
+  ~_dbTechLayerMinStepRule() = default;
 
   bool operator==(const _dbTechLayerMinStepRule& rhs) const;
   bool operator!=(const _dbTechLayerMinStepRule& rhs) const

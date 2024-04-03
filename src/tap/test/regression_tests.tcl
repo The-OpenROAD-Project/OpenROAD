@@ -1,4 +1,5 @@
 record_tests {
+  disallow_one_site_gaps
   gcd_fakeram
   gcd_nangate45
   gcd_sky130
@@ -19,4 +20,6 @@ record_tests {
   gcd_sky130_separate
   jpeg_gf180
   aes_gf180
+  #tap_man_tcl_check
+  #tap_readme_msgs_check
 }

@@ -39,33 +39,34 @@ proc make_io_bump_array {args} {
   sta::parse_key_args "make_io_bump_array" args \
     keys {-bump -origin -rows -columns -pitch -prefix} \
     flags {}
-  
+
   sta::check_argc_eq0 "make_io_bump_array" $args
 
   pad::assert_required make_io_bump_array -bump
-  set master  [pad::find_master $keys(-bump)]
+  set master [pad::find_master $keys(-bump)]
   pad::assert_required make_io_bump_array -origin
-  set origin  $keys(-origin)
+  set origin $keys(-origin)
   pad::assert_required make_io_bump_array -rows
-  set rows    $keys(-rows)
+  set rows $keys(-rows)
   pad::assert_required make_io_bump_array -columns
   set columns $keys(-columns)
   pad::assert_required make_io_bump_array -pitch
-  set pitch   $keys(-pitch)
+  set pitch $keys(-pitch)
 
   set cmd_args []
   if {[info exists keys(-prefix)]} {
     lappend cmd_args $keys(-prefix)
   }
 
-  pad::make_bump_array $master \
-                       [ord::microns_to_dbu [lindex $origin 0]] \
-                       [ord::microns_to_dbu [lindex $origin 1]] \
-                       $rows \
-                       $columns \
-                       [ord::microns_to_dbu [lindex $pitch 0]] \
-                       [ord::microns_to_dbu [lindex $pitch 1]] \
-                       {*}$cmd_args
+  pad::make_bump_array \
+    $master \
+    [ord::microns_to_dbu [lindex $origin 0]] \
+    [ord::microns_to_dbu [lindex $origin 1]] \
+    $rows \
+    $columns \
+    [ord::microns_to_dbu [lindex $pitch 0]] \
+    [ord::microns_to_dbu [lindex $pitch 1]] \
+    {*}$cmd_args
 }
 
 sta::define_cmd_args "remove_io_bump_array" {-bump master}
@@ -74,7 +75,7 @@ proc remove_io_bump_array {args} {
   sta::parse_key_args "remove_io_bump_array" args \
     keys {-bump} \
     flags {}
-  
+
   sta::check_argc_eq0 "remove_io_bump_array" $args
 
   pad::assert_required remove_io_bump_array -bump
@@ -88,7 +89,7 @@ proc remove_io_bump {args} {
   sta::parse_key_args "remove_io_bump" args \
     keys {} \
     flags {}
-  
+
   sta::check_argc_eq1 "remove_io_bump" $args
 
   pad::remove_bump [pad::find_instance [lindex $args 0]]
@@ -103,7 +104,7 @@ proc assign_io_bump {args} {
   sta::parse_key_args "assign_io_bump" args \
     keys {-net -terminal} \
     flags {-dont_route}
-  
+
   sta::check_argc_eq1 "assign_io_bump" $args
 
   set terminal NULL
@@ -137,12 +138,14 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_horizontal rotation] \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
-                                      [-ring_index index]}
+                                      [-ring_index index]
+};# checker off
 
 proc make_io_sites {args} {
   sta::parse_key_args "make_io_sites" args \
-    keys {-horizontal_site -vertical_site -corner_site -offset -rotation -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
-    flags {}
+    keys {-horizontal_site -vertical_site -corner_site -offset -rotation \
+      -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
+    flags {}; # checker off
 
   sta::check_argc_eq0 "make_io_sites" $args
   set index -1
@@ -173,17 +176,18 @@ proc make_io_sites {args} {
   pad::assert_required make_io_sites -corner_site
   pad::assert_required make_io_sites -offset
   set offset [ord::microns_to_dbu $keys(-offset)]
-  pad::make_io_row [pad::find_site $keys(-horizontal_site)] \
-                   [pad::find_site $keys(-vertical_site)] \
-                   [pad::find_site $keys(-corner_site)] \
-                   $offset \
-                   $offset \
-                   $offset \
-                   $offset \
-                   $rotation_hor \
-                   $rotation_ver \
-                   $rotation_cor \
-                   $index
+  pad::make_io_row \
+    [pad::find_site $keys(-horizontal_site)] \
+    [pad::find_site $keys(-vertical_site)] \
+    [pad::find_site $keys(-corner_site)] \
+    $offset \
+    $offset \
+    $offset \
+    $offset \
+    $rotation_hor \
+    $rotation_ver \
+    $rotation_cor \
+    $index
 }
 
 sta::define_cmd_args "remove_io_rows" {}
@@ -203,8 +207,7 @@ sta::define_cmd_args "place_corners" {[-ring_index index] \
 
 proc place_corners {args} {
   sta::parse_key_args "place_corners" args \
-    keys {} \
-    flags {}
+    keys {-ring_index} flags {}
 
   sta::check_argc_eq1 "place_corners" $args
 
@@ -239,11 +242,12 @@ proc place_pad {args} {
   set offset [ord::microns_to_dbu $keys(-location)]
 
   pad::assert_required place_pad -row
-  pad::place_pad $master \
-                 $name \
-                 [pad::get_row $keys(-row)] \
-                 $offset \
-                 [info exists flags(-mirror)]
+  pad::place_pad \
+    $master \
+    $name \
+    [pad::get_row $keys(-row)] \
+    $offset \
+    [info exists flags(-mirror)]
 }
 
 sta::define_cmd_args "place_io_fill" {-row row_name \
@@ -268,9 +272,10 @@ proc place_io_fill {args} {
   }
 
   pad::assert_required place_io_fill -row
-  pad::place_filler $masters \
-                    [pad::get_row $keys(-row)] \
-                    $overlap_masters
+  pad::place_filler \
+    $masters \
+    [pad::get_row $keys(-row)] \
+    $overlap_masters
 }
 
 sta::define_cmd_args "connect_by_abutment" {}
@@ -318,31 +323,33 @@ proc place_bondpad {args} {
   set offset_x [ord::microns_to_dbu $offset_x]
   set offset_y [ord::microns_to_dbu $offset_y]
 
-  pad::place_bondpads $master \
-                      $insts \
-                      $rotation \
-                      $offset_x \
-                      $offset_y
+  pad::place_bondpads \
+    $master \
+    $insts \
+    $rotation \
+    $offset_x \
+    $offset_y
 }
 
-sta::define_cmd_args "place_io_terminals" {inst_terms}
+sta::define_cmd_args "place_io_terminals" {inst_terms
+                                        [-allow_non_top_layer]}
 
 proc place_io_terminals {args} {
-  sta::parse_key_args "place_bondpad" args \
+  sta::parse_key_args "place_io_terminals" args \
     keys {} \
-    flags {}
+    flags {-allow_non_top_layer}
 
   set iterms []
   foreach pin [get_pins {*}$args] {
     lappend iterms [ sta::sta_to_db_pin $pin]
   }
 
-  pad::place_terminals $iterms
+  pad::place_terminals $iterms [info exists flags(-allow_non_top_layer)]
 }
 
-sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
-                                                 -width width \
-                                                 -height height}
+sta::define_cmd_args "make_fake_io_site" {-name name \
+                                          -width width \
+                                          -height height}
 
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \
@@ -354,9 +361,10 @@ proc make_fake_io_site {args} {
   pad::assert_required make_fake_io_site -name
   pad::assert_required make_fake_io_site -width
   pad::assert_required make_fake_io_site -height
-  pad::make_fake_site $keys(-name) \
-                      [ord::microns_to_dbu $keys(-width)] \
-                      [ord::microns_to_dbu $keys(-height)]
+  pad::make_fake_site \
+    $keys(-name) \
+    [ord::microns_to_dbu $keys(-width)] \
+    [ord::microns_to_dbu $keys(-height)]
 }
 
 #####
@@ -426,137 +434,137 @@ proc rdl_route {args} {
 }
 
 namespace eval pad {
-  proc find_site {name} {
-    set site "NULL"
+proc find_site {name} {
+  set site "NULL"
 
-    foreach lib [[ord::get_db] getLibs] {
-      set site [$lib findSite $name]
-      if {$site != "NULL"} {
-        return $site
-      }
-    }
-
-    if { $site == "NULL" } {
-      utl::error PAD 100 "Unable to find site: $name"
-    }
-    return $site
-  }
-
-  proc find_master {name} {
-    set master [[ord::get_db] findMaster $name]
-    if { $master == "NULL" } {
-      utl::error PAD 101 "Unable to find master: $name"
-    }
-    return $master
-  }
-
-  proc find_instance {name} {
-    set inst [[ord::get_db_block] findInst $name]
-    if { $inst == "NULL" } {
-      utl::error PAD 102 "Unable to find instance: $name"
-    }
-    return $inst
-  }
-
-  proc find_net {name} {
-    set net [[ord::get_db_block] findNet $name]
-    if { $net == "NULL" } {
-      utl::error PAD 103 "Unable to find net: $name"
-    }
-    return $net
-  }
-
-  proc assert_required { cmd arg } {
-    upvar keys keys
-    if {![info exists keys($arg)]} {
-      utl::error PAD 104 "$arg is required for $cmd"
+  foreach lib [[ord::get_db] getLibs] {
+    set site [$lib findSite $name]
+    if {$site != "NULL"} {
+      return $site
     }
   }
 
-  proc connect_iterm { inst_name iterm_name net_name } {
-    set block [ord::get_db_block]
-    set inst [$block findInst $inst_name]
-    if { $inst == "NULL" } {
-      utl::error PAD 109 "Unable to find instance: $inst_name"
-    }
-
-    set iterm [$inst findITerm $iterm_name]
-    if { $iterm == "NULL" } {
-      utl::error PAD 110 "Unable to find iterm: $iterm_name of $inst_name"
-    }
-
-    set net [$block findNet $net_name]
-    if { $net == "NULL" } {
-      utl::error PAD 111 "Unable to find net: $net_name"
-    }
-
-    $iterm connect $net
+  if { $site == "NULL" } {
+    utl::error PAD 100 "Unable to find site: $name"
+  }
+  return $site
 }
 
-  proc convert_tcl {} {
-    set cmds []
-    set cmds_assign []
+proc find_master {name} {
+  set master [[ord::get_db] findMaster $name]
+  if { $master == "NULL" } {
+    utl::error PAD 101 "Unable to find master: $name"
+  }
+  return $master
+}
 
-    set rows 0
-    if {[dict exists $ICeWall::library bump array_size rows]} {
-      set rows [dict get $ICeWall::library bump array_size rows]
+proc find_instance {name} {
+  set inst [[ord::get_db_block] findInst $name]
+  if { $inst == "NULL" } {
+    utl::error PAD 102 "Unable to find instance: $name"
+  }
+  return $inst
+}
+
+proc find_net {name} {
+  set net [[ord::get_db_block] findNet $name]
+  if { $net == "NULL" } {
+    utl::error PAD 103 "Unable to find net: $name"
+  }
+  return $net
+}
+
+proc assert_required { cmd arg } {
+  upvar keys keys
+  if {![info exists keys($arg)]} {
+    utl::error PAD 104 "$arg is required for $cmd"
+  }
+}
+
+proc connect_iterm { inst_name iterm_name net_name } {
+  set block [ord::get_db_block]
+  set inst [$block findInst $inst_name]
+  if { $inst == "NULL" } {
+    utl::error PAD 109 "Unable to find instance: $inst_name"
+  }
+
+  set iterm [$inst findITerm $iterm_name]
+  if { $iterm == "NULL" } {
+    utl::error PAD 110 "Unable to find iterm: $iterm_name of $inst_name"
+  }
+
+  set net [$block findNet $net_name]
+  if { $net == "NULL" } {
+    utl::error PAD 111 "Unable to find net: $net_name"
+  }
+
+  $iterm connect $net
+}
+
+proc convert_tcl {} {
+  set cmds []
+  set cmds_assign []
+
+  set rows 0
+  if {[dict exists $ICeWall::library bump array_size rows]} {
+    set rows [dict get $ICeWall::library bump array_size rows]
+  }
+
+  foreach cell "[dict keys [dict get $ICeWall::footprint padcell]]" {
+    set param [dict get $ICeWall::footprint padcell $cell]
+
+    set origin [dict get $param cell scaled_origin]
+    set side [dict get $param side]
+    if {$side == "top"} {
+      set side "IO_NORTH"
+      set location [ord::dbu_to_microns [lindex $origin 1]]
+    } elseif {$side == "left"} {
+      set side "IO_WEST"
+      set location [ord::dbu_to_microns [lindex $origin 3]]
+    } elseif {$side == "bottom"} {
+      set side "IO_SOUTH"
+      set location [ord::dbu_to_microns [lindex $origin 1]]
+    } elseif {$side == "right"} {
+      set side "IO_EAST"
+      set location [ord::dbu_to_microns [lindex $origin 3]]
     }
 
-    foreach cell "[dict keys [dict get $ICeWall::footprint padcell]]" {
-      set param [dict get $ICeWall::footprint padcell $cell]
+    set inst [dict get $param inst]
+    set inst_name [$inst getName]
+    set master [[$inst getMaster] getName]
 
-      set origin [dict get $param cell scaled_origin]
-      set side [dict get $param side]
-      if {$side == "top"} {
-        set side "IO_NORTH"
-        set location [ord::dbu_to_microns [lindex $origin 1]]
-      } elseif {$side == "left"} {
-        set side "IO_WEST"
-        set location [ord::dbu_to_microns [lindex $origin 3]]
-      } elseif {$side == "bottom"} {
-        set side "IO_SOUTH"
-        set location [ord::dbu_to_microns [lindex $origin 1]]
-      } elseif {$side == "right"} {
-        set side "IO_EAST"
-        set location [ord::dbu_to_microns [lindex $origin 3]]
-      }
+    lappend cmds "place_pad -master $master -row $side -location $location {$inst_name}"
 
-      set inst [dict get $param inst]
-      set inst_name [$inst getName]
-      set master [[$inst getMaster] getName]
+    set icewall_type [dict get $param type]
+    set icewall_cell [dict get $ICeWall::library types $icewall_type]
+    if {![dict exists $ICeWall::library cells $icewall_cell pad_pin_name]} {
+      continue
+    }
+    set pad_term [dict get $ICeWall::library cells $icewall_cell pad_pin_name]
 
-      lappend cmds "place_pad -master $master -row $side -location $location {$inst_name}"
+    set iterm [$inst findITerm $pad_term]
+    if {$iterm != "NULL"} {
+      set net [$iterm getNet]
+      if {$net != "NULL"} {
+        lappend cmds "pad::connect_iterm {$inst_name} [[$iterm getMTerm] getName] [$net getName]"
 
-      set icewall_type [dict get $param type]
-      set icewall_cell [dict get $ICeWall::library types $icewall_type]
-      if {![dict exists $ICeWall::library cells $icewall_cell pad_pin_name]} {
-        continue
-      }
-      set pad_term [dict get $ICeWall::library cells $icewall_cell pad_pin_name]
-
-      set iterm [$inst findITerm $pad_term]
-      if {$iterm != "NULL"} {
-        set net [$iterm getNet]
-        if {$net != "NULL"} {
-          lappend cmds "pad::connect_iterm {$inst_name} [[$iterm getMTerm] getName] [$net getName]"
-
-          if {[dict exists $param bump]} {
-            set bump [dict get $param bump]
-            set row [expr $rows - [dict get $bump row]]
-            set col [expr [dict get $bump col] - 1]
-            lappend cmds_assign "assign_io_bump -net {[$net getName]} BUMP_${col}_${row}"
-          }
+        if {[dict exists $param bump]} {
+          set bump [dict get $param bump]
+          set row [expr $rows - [dict get $bump row]]
+          set col [expr [dict get $bump col] - 1]
+          lappend cmds_assign "assign_io_bump -net {[$net getName]} BUMP_${col}_${row}"
         }
       }
     }
-
-    puts "######## Place Pads ########"
-    foreach c $cmds {
-      puts $c
-    }
-    puts "######## Assign Bumps ########"
-    foreach c $cmds_assign {
-      puts $c
-    }
   }
+
+  puts "######## Place Pads ########"
+  foreach c $cmds {
+    puts $c
+  }
+  puts "######## Assign Bumps ########"
+  foreach c $cmds_assign {
+    puts $c
+  }
+}
 }

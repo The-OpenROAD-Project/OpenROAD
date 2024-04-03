@@ -74,6 +74,7 @@ class TechLayer
   bool checkIfManufacturingGrid(int value,
                                 utl::Logger* logger,
                                 const std::string& type) const;
+  int getMinIncrementStep() const;
 
   double dbuToMicron(int value) const;
 

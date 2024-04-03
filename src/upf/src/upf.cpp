@@ -39,14 +39,15 @@
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "writer.h"
 
 namespace upf {
 
 bool create_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
-                         const char* name)
+                         const std::string& name)
 {
-  if (odb::dbPowerDomain::create(block, name) == nullptr) {
+  if (odb::dbPowerDomain::create(block, name.c_str()) == nullptr) {
     logger->warn(utl::UPF, 1, "Creation of '%s' power domain failed", name);
     return false;
   }
@@ -56,12 +57,12 @@ bool create_power_domain(utl::Logger* logger,
 
 bool update_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
-                         const char* name,
-                         const char* elements)
+                         const std::string& name,
+                         const std::string& elements)
 {
-  odb::dbPowerDomain* pd = block->findPowerDomain(name);
+  odb::dbPowerDomain* pd = block->findPowerDomain(name.c_str());
   if (pd != nullptr) {
-    pd->addElement(std::string(elements));
+    pd->addElement(elements);
   } else {
     logger->warn(
         utl::UPF,
@@ -76,11 +77,10 @@ bool update_power_domain(utl::Logger* logger,
 
 bool create_logic_port(utl::Logger* logger,
                        odb::dbBlock* block,
-                       const char* name,
-                       const char* direction)
+                       const std::string& name,
+                       const std::string& direction)
 {
-  if (odb::dbLogicPort::create(block, name, std::string(direction))
-      == nullptr) {
+  if (odb::dbLogicPort::create(block, name.c_str(), direction) == nullptr) {
     logger->warn(utl::UPF, 3, "Creation of '%s' logic port failed", name);
     return false;
   }
@@ -89,10 +89,10 @@ bool create_logic_port(utl::Logger* logger,
 
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
-                         const char* name,
-                         const char* power_domain)
+                         const std::string& name,
+                         const std::string& power_domain)
 {
-  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain.c_str());
   if (pd == nullptr) {
     logger->warn(
         utl::UPF,
@@ -103,7 +103,7 @@ bool create_power_switch(utl::Logger* logger,
     return false;
   }
 
-  odb::dbPowerSwitch* ps = odb::dbPowerSwitch::create(block, name);
+  odb::dbPowerSwitch* ps = odb::dbPowerSwitch::create(block, name.c_str());
   if (ps == nullptr) {
     logger->warn(utl::UPF, 5, "Creation of '%s' power switch failed", name);
     return false;
@@ -116,10 +116,11 @@ bool create_power_switch(utl::Logger* logger,
 
 bool update_power_switch_control(utl::Logger* logger,
                                  odb::dbBlock* block,
-                                 const char* name,
-                                 const char* control_port)
+                                 const std::string& name,
+                                 const std::string& control_port,
+                                 const std::string& control_net)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(
         utl::UPF,
@@ -130,16 +131,40 @@ bool update_power_switch_control(utl::Logger* logger,
     return false;
   }
 
-  ps->addControlPort(std::string(control_port));
+  ps->addControlPort(control_port, control_net);
+  return true;
+}
+
+bool update_power_switch_acknowledge(utl::Logger* logger,
+                                     odb::dbBlock* block,
+                                     const std::string& name,
+                                     const std::string& port,
+                                     const std::string& net,
+                                     const std::string& boolean)
+{
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
+  if (ps == nullptr) {
+    logger->warn(utl::UPF,
+                 61,
+                 "Couldn't retrieve power switch '%s' while adding acknowledge "
+                 "port '%s'",
+                 name,
+                 port);
+    return false;
+  }
+
+  ps->addAcknowledgePort(port, net, boolean);
   return true;
 }
 
 bool update_power_switch_on(utl::Logger* logger,
                             odb::dbBlock* block,
-                            const char* name,
-                            const char* on_state)
+                            const std::string& name,
+                            const std::string& on_state,
+                            const std::string& port_name,
+                            const std::string& boolean)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(
         utl::UPF,
@@ -149,16 +174,17 @@ bool update_power_switch_on(utl::Logger* logger,
         on_state);
     return false;
   }
-  ps->addOnState(on_state);
+  ps->addOnState(on_state, port_name, boolean);
   return true;
 }
 
 bool update_power_switch_input(utl::Logger* logger,
                                odb::dbBlock* block,
-                               const char* name,
-                               const char* in_port)
+                               const std::string& name,
+                               const std::string& in_port,
+                               const std::string& net)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(
         utl::UPF,
@@ -168,16 +194,17 @@ bool update_power_switch_input(utl::Logger* logger,
         in_port);
     return false;
   }
-  ps->addInSupplyPort(in_port);
+  ps->addInSupplyPort(in_port, net);
   return true;
 }
 
 bool update_power_switch_output(utl::Logger* logger,
                                 odb::dbBlock* block,
-                                const char* name,
-                                const char* out_port)
+                                const std::string& name,
+                                const std::string& out_port,
+                                const std::string& net)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(
         utl::UPF,
@@ -187,16 +214,16 @@ bool update_power_switch_output(utl::Logger* logger,
         out_port);
     return false;
   }
-  ps->addOutSupplyPort(out_port);
+  ps->setOutSupplyPort(out_port, net);
   return true;
 }
 
 bool update_power_switch_cell(utl::Logger* logger,
                               odb::dbBlock* block,
-                              const char* name,
+                              const std::string& name,
                               odb::dbMaster* cell)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(utl::UPF,
                  10,
@@ -211,11 +238,11 @@ bool update_power_switch_cell(utl::Logger* logger,
 
 bool update_power_switch_port_map(utl::Logger* logger,
                                   odb::dbBlock* block,
-                                  const char* name,
-                                  const char* model_port,
-                                  const char* switch_port)
+                                  const std::string& name,
+                                  const std::string& model_port,
+                                  const std::string& switch_port)
 {
-  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
     logger->warn(
         utl::UPF,
@@ -230,16 +257,16 @@ bool update_power_switch_port_map(utl::Logger* logger,
 
 bool set_isolation(utl::Logger* logger,
                    odb::dbBlock* block,
-                   const char* name,
-                   const char* power_domain,
+                   const std::string& name,
+                   const std::string& power_domain,
                    bool update,
-                   const char* applies_to,
-                   const char* clamp_value,
-                   const char* signal,
-                   const char* sense,
-                   const char* location)
+                   const std::string& applies_to,
+                   const std::string& clamp_value,
+                   const std::string& signal,
+                   const std::string& sense,
+                   const std::string& location)
 {
-  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain.c_str());
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  12,
@@ -250,7 +277,7 @@ bool set_isolation(utl::Logger* logger,
     return false;
   }
 
-  odb::dbIsolation* iso = block->findIsolation(name);
+  odb::dbIsolation* iso = block->findIsolation(name.c_str());
   if (iso == nullptr && update) {
     logger->warn(
         utl::UPF, 13, "Couldn't update a non existing isolation %s", name);
@@ -258,7 +285,7 @@ bool set_isolation(utl::Logger* logger,
   }
 
   if (iso == nullptr) {
-    iso = odb::dbIsolation::create(block, name);
+    iso = odb::dbIsolation::create(block, name.c_str());
   }
 
   if (!update) {
@@ -266,23 +293,23 @@ bool set_isolation(utl::Logger* logger,
     pd->addIsolation(iso);
   }
 
-  if (strlen(applies_to) > 0) {
+  if (!applies_to.empty()) {
     iso->setAppliesTo(applies_to);
   }
 
-  if (strlen(clamp_value) > 0) {
+  if (!clamp_value.empty()) {
     iso->setClampValue(clamp_value);
   }
 
-  if (strlen(signal) > 0) {
+  if (!signal.empty()) {
     iso->setIsolationSignal(signal);
   }
 
-  if (strlen(sense) > 0) {
+  if (!sense.empty()) {
     iso->setIsolationSense(sense);
   }
 
-  if (strlen(location) > 0) {
+  if (!location.empty()) {
     iso->setLocation(location);
   }
 
@@ -291,11 +318,11 @@ bool set_isolation(utl::Logger* logger,
 
 bool use_interface_cell(utl::Logger* logger,
                         odb::dbBlock* block,
-                        const char* power_domain,
-                        const char* strategy,
-                        const char* cell)
+                        const std::string& power_domain,
+                        const std::string& strategy,
+                        const std::string& cell)
 {
-  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
+  odb::dbPowerDomain* pd = block->findPowerDomain(power_domain.c_str());
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  14,
@@ -306,7 +333,7 @@ bool use_interface_cell(utl::Logger* logger,
     return false;
   }
 
-  odb::dbIsolation* iso = block->findIsolation(strategy);
+  odb::dbIsolation* iso = block->findIsolation(strategy.c_str());
   if (iso == nullptr) {
     logger->warn(utl::UPF, 15, "Couldn't find isolation %s", strategy);
     return false;
@@ -320,13 +347,13 @@ bool use_interface_cell(utl::Logger* logger,
 
 bool set_domain_area(utl::Logger* logger,
                      odb::dbBlock* block,
-                     char* domain,
+                     const std::string& domain,
                      float x1,
                      float y1,
                      float x2,
                      float y2)
 {
-  odb::dbPowerDomain* pd = block->findPowerDomain(domain);
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
   if (pd == nullptr) {
     logger->warn(utl::UPF,
                  16,
@@ -352,7 +379,7 @@ static odb::dbPowerDomain* match_module_to_domain(
     std::string name = path.first;
     if (current_path.find(name) == 0 && name.length() > longest_prefix_length) {
       longest_prefix_length = name.length();
-      longest_prefix = name;
+      longest_prefix = std::move(name);
     }
   }
 
@@ -701,7 +728,12 @@ static bool insert_isolation_cell(odb::dbBlock* block,
   std::string inst_name = inst->getName() + "_" + input_net->getName() + "_"
                           + output_net->getName() + "_isolation";
 
-  auto isolation_inst
+  auto isolation_inst = block->findInst(inst_name.c_str());
+  if (isolation_inst) {
+    return true;
+  }
+
+  isolation_inst
       = odb::dbInst::create(block, smallest_iso_m, inst_name.c_str());
 
   if (target_group) {
@@ -757,6 +789,7 @@ static bool isolate_port(utl::Logger* logger,
                          odb::dbBlock* block,
                          odb::dbInst* inst,
                          odb::dbITerm* iterm,
+                         odb::dbITerm* target_iterm,
                          odb::dbPowerDomain* pd,
                          odb::dbIsolation* iso,
                          odb::dbMTerm* enable_term,
@@ -770,32 +803,12 @@ static bool isolate_port(utl::Logger* logger,
                          odb::dbMTerm* output_m)
 {
   auto net = iterm->getNet();
-
   if (!net) {
-    return true;
+    logger->warn(
+        utl::UPF, 71, "Isolation {} has no net connected", iso->getName());
+
+    return false;
   }
-
-  auto connectedIterms = net->getITerms();
-
-  if (connectedIterms.size() < 2) {
-    return true;
-  }
-
-  // Find ITERMS that belong to instances outside of this power domain
-  std::vector<odb::dbITerm*> external_iterms;
-  for (auto&& connectedIterm : connectedIterms) {
-    auto connectedInst = connectedIterm->getInst();
-
-    if (!connectedInst->getGroup()
-        || connectedInst->getGroup() != pd->getGroup()) {
-      external_iterms.push_back(connectedIterm);
-    }
-  }
-
-  if (external_iterms.empty()) {
-    return true;
-  }
-
   auto control_net = block->findNet(iso->getIsolationSignal().c_str());
   if (!control_net) {
     logger->warn(utl::UPF,
@@ -806,33 +819,35 @@ static bool isolate_port(utl::Logger* logger,
 
     return false;
   }
-
   if (iso->getLocation() == "fanout") {
-    for (auto&& external_iterm : external_iterms) {
-      odb::dbGroup* target_group = external_iterm->getInst()->getGroup();
-      std::string net_out_name
-          = net->getName() + "_" + external_iterm->getMTerm()->getName() + "_o";
-      auto net_out = odb::dbNet::create(block, net_out_name.c_str());
+    odb::dbGroup* target_group = target_iterm->getInst()->getGroup();
+    std::string net_out_name
+        = net->getName() + "_" + target_iterm->getMTerm()->getName() + "_o";
+    auto net_out = block->findNet(net_out_name.c_str());
 
-      insert_isolation_cell(block,
-                            inst,
-                            net,
-                            control_net,
-                            net_out,
-                            enable_term,
-                            data_term,
-                            output_term,
-                            smallest_iso_m,
-                            invert_output,
-                            invert_control,
-                            inverter_m,
-                            input_m,
-                            output_m,
-                            target_group);
-
-      external_iterm->disconnect();
-      external_iterm->connect(net_out);
+    if (!net_out) {
+      net_out = odb::dbNet::create(block, net_out_name.c_str());
     }
+
+    insert_isolation_cell(block,
+                          inst,
+                          net,
+                          control_net,
+                          net_out,
+                          enable_term,
+                          data_term,
+                          output_term,
+                          smallest_iso_m,
+                          invert_output,
+                          invert_control,
+                          inverter_m,
+                          input_m,
+                          output_m,
+                          target_group);
+
+    target_iterm->disconnect();
+    target_iterm->connect(net_out);
+
   } else {
     odb::dbGroup* target_group = nullptr;
 
@@ -856,7 +871,11 @@ static bool isolate_port(utl::Logger* logger,
     }
 
     std::string net_out_name = net->getName() + "_o";
-    auto net_out = odb::dbNet::create(block, net_out_name.c_str());
+    auto net_out = block->findNet(net_out_name.c_str());
+
+    if (!net_out) {
+      net_out = odb::dbNet::create(block, net_out_name.c_str());
+    }
 
     insert_isolation_cell(block,
                           inst,
@@ -874,10 +893,339 @@ static bool isolate_port(utl::Logger* logger,
                           output_m,
                           target_group);
 
-    for (auto&& external_iterm : external_iterms) {
-      external_iterm->disconnect();
-      external_iterm->connect(net_out);
+    target_iterm->disconnect();
+    target_iterm->connect(net_out);
+  }
+
+  return true;
+}
+
+// Returns all connected iterms that are not in the same power domain
+static std::vector<std::pair<odb::dbITerm*, odb::dbPowerDomain*>>
+get_connected_terms(odb::dbBlock* block, odb::dbITerm* iterm)
+{
+  std::vector<std::pair<odb::dbITerm*, odb::dbPowerDomain*>> external_iterms;
+  auto net = iterm->getNet();
+
+  if (!net) {
+    return external_iterms;
+  }
+
+  auto connectedIterms = net->getITerms();
+
+  if (connectedIterms.size() < 2) {
+    return external_iterms;
+  }
+
+  for (auto&& connectedIterm : connectedIterms) {
+    if (connectedIterm == iterm) {
+      continue;
     }
+
+    auto connectedInst = connectedIterm->getInst();
+    // TODO: if connectedInst is isolation cell or level shifting cell
+    // then ignore it
+
+    if (connectedInst->getGroup() != iterm->getInst()->getGroup()) {
+      odb::dbPowerDomain* connectedDomain = nullptr;
+      if (connectedInst->getGroup()) {
+        connectedDomain
+            = block->findPowerDomain(connectedInst->getGroup()->getName());
+      }
+      external_iterms.emplace_back(connectedIterm, connectedDomain);
+    }
+  }
+
+  return external_iterms;
+}
+
+static bool isolate_connection(odb::dbITerm* src_term,
+                               odb::dbITerm* target_term,
+                               odb::dbPowerDomain* domain,
+                               odb::dbBlock* block,
+                               utl::Logger* logger,
+                               sta::dbNetwork* network)
+{
+  odb::dbInst* src_inst = src_term->getInst();
+
+  // find the smallest possible inverter in advance
+  odb::dbMaster* inverter_m = nullptr;
+  odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
+  bool inverter_found
+      = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
+
+  auto isos = domain->getIsolations();
+
+  if (isos.empty()) {
+    return false;
+  }
+
+  if (isos.size() > 1) {
+    logger->warn(
+        utl::UPF,
+        30,
+        "Multiple isolation strategies defined for the same power domain %s.",
+        domain->getName());
+  }
+
+  odb::dbIsolation* iso = isos[0];
+
+  odb::dbMTerm* enable_term = nullptr;
+  odb::dbMTerm* data_term = nullptr;
+  odb::dbMTerm* output_term = nullptr;
+  odb::dbMaster* smallest_iso_m = nullptr;
+  bool invert_output, invert_control;
+
+  if (!find_smallest_isolation(network,
+                               logger,
+                               iso,
+                               smallest_iso_m,
+                               enable_term,
+                               data_term,
+                               output_term,
+                               invert_output,
+                               invert_control)) {
+    return false;
+  }
+
+  if ((invert_output || invert_control) && !inverter_found) {
+    logger->warn(utl::UPF, 31, "can't find any inverters");
+    return false;
+  }
+
+  return isolate_port(logger,
+                      block,
+                      src_inst,
+                      src_term,
+                      target_term,
+                      domain,
+                      iso,
+                      enable_term,
+                      data_term,
+                      output_term,
+                      smallest_iso_m,
+                      invert_output,
+                      invert_control,
+                      inverter_m,
+                      input_m,
+                      output_m);
+}
+
+static odb::dbLevelShifter* find_shift_strategy(odb::dbBlock* block,
+                                                odb::dbPowerDomain* domain,
+                                                odb::dbITerm* iterm)
+{
+  odb::dbInst* inst = iterm->getInst();
+  odb::dbLevelShifter* found_strategy = nullptr;
+  bool no_shift = false;
+  auto shifters = domain->getLevelShifters();
+
+  for (auto&& shifter : shifters) {
+    auto els = shifter->getElements();
+    bool found = els.empty();
+    bool excluded = false;
+    auto excluded_els = shifter->getExcludeElements();
+
+    // look for the instance name in the elements list
+    for (auto&& el : els) {
+      if (el == inst->getName() || el == ".") {
+        found = true;
+        break;
+      }
+    }
+
+    // look for the instance name in the excluded elements list
+    for (auto&& el : excluded_els) {
+      if (el == inst->getName() || el == ".") {
+        excluded = true;
+        break;
+      }
+    }
+
+    // if instance is not in the excluded list and is in the elements list
+    // and force shift is true, then we have to shift
+    if (shifter->isForceShift() && (found && !excluded)) {
+      return shifter;
+    }
+
+    // if instance is found in a strategy and no_shift is true, then we cannot
+    // shift we wait until in the end, in the case a strategy with force shift
+    // appears
+    if (found && shifter->isNoShift()) {
+      no_shift = true;
+    }
+
+    // if stategy.no_shift is false and no_shift is false and instance is found
+    // then we have found a strategy, but we delay until in the end
+    if ((found && !excluded) && !shifter->isNoShift() && !no_shift) {
+      found_strategy = shifter;
+    }
+  }
+
+  return (no_shift) ? nullptr : found_strategy;
+}
+
+static bool validate_shifting_strategy(odb::dbBlock* block,
+                                       utl::Logger* logger,
+                                       odb::dbLevelShifter* strategy,
+                                       odb::dbITerm* src_term,
+                                       odb::dbPowerDomain* src_domain,
+                                       odb::dbITerm* target_term,
+                                       odb::dbPowerDomain* target_domain)
+{
+  float src_voltage = src_domain->getVoltage();
+  float target_voltage = target_domain->getVoltage();
+
+  // In this case there's missing information about one of the domain's voltage
+  if (src_voltage == 0 || target_voltage == 0) {
+    logger->warn(utl::UPF,
+                 53,
+                 "Missing voltage information for one of the domains {} {}",
+                 src_domain->getName(),
+                 target_domain->getName());
+    return false;
+  }
+  bool low_to_high = (src_voltage < target_voltage);
+  bool high_to_low = (src_voltage > target_voltage);
+
+  // in case of input port, we have to invert the low_to_high and high_to_low
+  if (src_term->getIoType() == odb::dbIoType::INPUT) {
+    low_to_high = !low_to_high;
+    high_to_low = !high_to_low;
+  }
+
+  float difference = std::abs(src_voltage - target_voltage);
+
+  if (low_to_high && strategy->getRule() != "low_to_high"
+      && strategy->getRule() != "both") {
+    return false;
+  }
+
+  if (high_to_low && strategy->getRule() != "high_to_low"
+      && strategy->getRule() != "both") {
+    return false;
+  }
+
+  if (difference < strategy->getThreshold()) {
+    return false;
+  }
+
+  if (src_term->getIoType() == odb::dbIoType::INPUT
+      && strategy->getAppliesTo() != "inputs"
+      && strategy->getAppliesTo() != "both") {
+    return false;
+  }
+
+  if (src_term->getIoType() == odb::dbIoType::OUTPUT
+      && strategy->getAppliesTo() != "outputs"
+      && strategy->getAppliesTo() != "both") {
+    return false;
+  }
+
+  return true;
+}
+
+static bool insert_level_shifter(utl::Logger* logger,
+                                 odb::dbBlock* block,
+                                 odb::dbInst* inst,
+                                 odb::dbITerm* iterm,
+                                 odb::dbITerm* target_iterm,
+                                 odb::dbPowerDomain* pd,
+                                 odb::dbPowerDomain* target_domain,
+                                 odb::dbLevelShifter* shift)
+{
+  auto net = iterm->getNet();
+
+  // find dbMaster and create dbInst from shift.cell_name
+  odb::dbMaster* shifter_master
+      = block->getDataBase()->findMaster(shift->getCellName().c_str());
+  if (!shifter_master) {
+    logger->warn(utl::UPF,
+                 54,
+                 "Can't find master {} for level shifter {}",
+                 shift->getCellName(),
+                 shift->getName());
+    return false;
+  }
+
+  // create dbInst
+  std::string inst_name = iterm->getName('_') + "_" + target_iterm->getName('_')
+                          + "_level_shifter";
+
+  odb::dbInst* shifter_inst
+      = odb::dbInst::create(block, shifter_master, inst_name.c_str());
+  odb::dbITerm* input_term
+      = shifter_inst->findITerm(shift->getCellInput().c_str());
+  odb::dbITerm* output_term
+      = shifter_inst->findITerm(shift->getCellOutput().c_str());
+
+  if (!input_term || !output_term) {
+    logger->warn(utl::UPF,
+                 55,
+                 "Can't find input or output term for level shifter {} based "
+                 "on strategy specified input {} output {}",
+                 shift->getName(),
+                 shift->getCellInput(),
+                 shift->getCellOutput());
+    return false;
+  }
+
+  odb::dbGroup* target_group = nullptr;
+
+  if (shift->getLocation() == "parent") {
+    auto ppd = pd->getParent();
+    // if the parent domain is the top
+    // domain, don't add to any group
+    if (ppd && ppd->getGroup()) {
+      target_group = ppd->getGroup();
+    }
+  } else if (shift->getLocation() == "self") {
+    target_group = pd->getGroup();
+  } else if (shift->getLocation() == "fanout") {
+    target_group = target_domain->getGroup();
+  } else {
+    logger->warn(utl::UPF,
+                 35,
+                 "Level Shifting strategy %s has location %s, but only "
+                 "self|parent|fanout"
+                 "supported, defaulting to self.",
+                 shift->getName(),
+                 shift->getLocation());
+    target_group = pd->getGroup();
+  }
+
+  // add the level shifter to the target group
+  target_group->addInst(shifter_inst);
+
+  std::string net_out_name = inst_name + "_out_net";
+  auto net_out = block->findNet(net_out_name.c_str());
+
+  if (!net_out) {
+    net_out = odb::dbNet::create(block, net_out_name.c_str());
+  }
+
+  input_term->connect(net);
+  output_term->connect(net_out);
+  if (iterm->getIoType() == odb::dbIoType::INPUT) {
+    // if the terminal in question is of type input
+    // we take disconnect the iterm
+    // and connect it to the output of the level shifter
+    iterm->disconnect();
+    iterm->connect(net_out);
+  } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+    // if the terminal in question is of type output
+    // we take disconnect the target iterm
+    // and connect it to the output of the level shifter
+    target_iterm->disconnect();
+    target_iterm->connect(net_out);
+  } else {
+    logger->warn(
+        utl::UPF,
+        56,
+        "Level Shifting strategy %s has unknown io type, but only input|output"
+        "supported.",
+        shift->getName());
+    return false;
   }
 
   return true;
@@ -917,104 +1265,315 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
   // Associate each instance with its power domain group
   add_insts_to_group(block, top_domain, path_to_domain);
 
-  // find the smallest possible inverter in advance
-  odb::dbMaster* inverter_m = nullptr;
-  odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
-  bool inverter_found
-      = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
-
-  // PowerDomains have a hierarchy and when the isolation's
-  // location is parent, it should be placed in the parent's power domain
-  // For each domain, determine for each net, if there's an input to another
-  // domain, create two nets that split 'data' into 'data_i' + 'data_o' 'data_i'
-  // goes into the isolation cell from the original cell 'data_o' got outside of
-  // the isolation cell into the end cell then connect isolation signal to the
-  // enable (or reversed depending on iso sense + cell type) place the isolation
-  // cell into either first or second domain?? (Not sure exactly)
+  // get all cell names for level shifter
+  // TODO: should be replaced later by querying lib to find if inst is level
+  // shifter
+  std::unordered_map<std::string, bool> level_shifter_cells;
+  auto shifters = block->getLevelShifters();
+  for (auto&& shifter : shifters) {
+    level_shifter_cells[shifter->getCellName()] = true;
+  }
 
   for (auto&& domain : pds) {
     if (domain == top_domain) {
       continue;
     }
 
-    // For now we're only using the first isolation
-    // TODO: determine what needs to be done in case of multiple strategies
-    // for same domain
-    auto isos = domain->getIsolations();
-
-    if (isos.empty()) {
-      continue;
-    }
-
-    if (isos.size() > 1) {
-      logger->warn(
-          utl::UPF,
-          30,
-          "Multiple isolation strategies defined for the same power domain %s.",
-          domain->getName());
-    }
-
-    odb::dbIsolation* iso = isos[0];
-
-    odb::dbMTerm* enable_term = nullptr;
-    odb::dbMTerm* data_term = nullptr;
-    odb::dbMTerm* output_term = nullptr;
-    odb::dbMaster* smallest_iso_m = nullptr;
-    bool invert_output, invert_control;
-
-    if (!find_smallest_isolation(network,
-                                 logger,
-                                 iso,
-                                 smallest_iso_m,
-                                 enable_term,
-                                 data_term,
-                                 output_term,
-                                 invert_output,
-                                 invert_control)) {
-      continue;
-    }
-
-    if ((invert_output || invert_control) && !inverter_found) {
-      logger->warn(utl::UPF, 31, "can't find any inverters");
-      continue;
-    }
-
-    // Iterate through all pd's instances and determine if any signal needs
-    // isolation If one is found, create dbInst from the isolation cell +
-    // connect control signal of isolation to dbInst
-    // connect previous net to data input
-    // connect output from dbInst to
-
     odb::dbGroup* curr_group = domain->getGroup();
     auto insts = curr_group->getInsts();
 
     for (auto&& inst : insts) {
+      if (level_shifter_cells[inst->getMaster()->getName()]) {
+        continue;
+      }
       auto iterms = inst->getITerms();
       for (auto&& iterm : iterms) {
-        if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
-          continue;
-        }
+        // get all connected iterms as well
+        auto connected_iterms = get_connected_terms(block, iterm);
+        for (auto&& connected_iterm : connected_iterms) {
+          odb::dbITerm* target_iterm = connected_iterm.first;
+          odb::dbPowerDomain* target_domain = connected_iterm.second;
 
-        isolate_port(logger,
-                     block,
-                     inst,
-                     iterm,
-                     domain,
-                     iso,
-                     enable_term,
-                     data_term,
-                     output_term,
-                     smallest_iso_m,
-                     invert_output,
-                     invert_control,
-                     inverter_m,
-                     input_m,
-                     output_m);
+          // if target instance is a level shifter then skip
+          if (level_shifter_cells
+                  [target_iterm->getInst()->getMaster()->getName()]) {
+            continue;
+          }
+
+          // if iterm is output and both domains have same voltage then isolate
+          if (iterm->getIoType() == odb::dbIoType::OUTPUT
+              && (!target_domain
+                  || domain->getVoltage() == target_domain->getVoltage())) {
+            isolate_connection(
+                iterm, target_iterm, domain, block, logger, network);
+            continue;
+          }
+
+          odb::dbLevelShifter* strategy
+              = find_shift_strategy(block, domain, iterm);
+
+          if (!strategy) {
+            continue;
+          }
+
+          // check if strategy could be insterted between the two ports
+          bool should_shift = validate_shifting_strategy(block,
+                                                         logger,
+                                                         strategy,
+                                                         iterm,
+                                                         domain,
+                                                         target_iterm,
+                                                         target_domain);
+
+          if (!should_shift) {
+            continue;
+          }
+
+          // insert level shifter between the two ports
+          insert_level_shifter(logger,
+                               block,
+                               inst,
+                               iterm,
+                               target_iterm,
+                               domain,
+                               target_domain,
+                               strategy);
+        }
       }
     }
   }
 
   return true;
+}
+
+bool create_or_update_level_shifter(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    const std::string& name,
+    const std::string& domain,
+    const std::string& source,
+    const std::string& sink,
+    const std::string& use_functional_equivalence,
+    const std::string& applies_to,
+    const std::string& applies_to_boundary,
+    const std::string& rule,
+    const std::string& threshold,
+    const std::string& no_shift,
+    const std::string& force_shift,
+    const std::string& location,
+    const std::string& input_supply,
+    const std::string& output_supply,
+    const std::string& internal_supply,
+    const std::string& name_prefix,
+    const std::string& name_suffix,
+    bool update)
+{
+  odb::dbLevelShifter* ls = nullptr;
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
+
+  if (update) {
+    ls = block->findLevelShifter(name.c_str());
+    if (ls == nullptr) {
+      logger->warn(
+          utl::UPF, 32, "Couldn't find level shifter {} to update", name);
+      return false;
+    }
+  }
+
+  if (ls == nullptr) {
+    if (pd == nullptr) {
+      logger->warn(utl::UPF,
+                   38,
+                   "Couldn't find power domain {} for level shifter {}",
+                   domain,
+                   name);
+      return false;
+    }
+    ls = odb::dbLevelShifter::create(block, name.c_str(), pd);
+    if (ls == nullptr) {
+      logger->warn(utl::UPF, 44, "Couldn't create level shifter {}", name);
+      return false;
+    }
+  }
+
+  if (!source.empty()) {
+    ls->setSource(source);
+  }
+
+  if (!sink.empty()) {
+    ls->setSink(sink);
+  }
+
+  if (!applies_to.empty()) {
+    ls->setAppliesTo(applies_to);
+  }
+
+  if (!applies_to_boundary.empty()) {
+    ls->setAppliesToBoundary(applies_to_boundary);
+  }
+
+  if (!rule.empty()) {
+    ls->setRule(rule);
+  }
+
+  if (!location.empty()) {
+    ls->setLocation(location);
+  }
+
+  if (!input_supply.empty()) {
+    ls->setInputSupply(input_supply);
+  }
+
+  if (!output_supply.empty()) {
+    ls->setOutputSupply(output_supply);
+  }
+
+  if (!internal_supply.empty()) {
+    ls->setInternalSupply(internal_supply);
+  }
+
+  if (!name_prefix.empty()) {
+    ls->setNamePrefix(name_prefix);
+  }
+
+  if (!name_suffix.empty()) {
+    ls->setNameSuffix(name_suffix);
+  }
+
+  if (!threshold.empty()) {
+    ls->setThreshold(std::stof(threshold));
+  }
+
+  if (!no_shift.empty()) {
+    ls->setNoShift(std::stoi(no_shift));
+  }
+
+  if (!force_shift.empty()) {
+    ls->setForceShift(std::stoi(force_shift));
+  }
+
+  std::string upper_case_func_eqv = use_functional_equivalence;
+  for (auto& c : upper_case_func_eqv) {
+    c = toupper(c);
+  }
+  ls->setUseFunctionalEquivalence(upper_case_func_eqv == "TRUE" ? true : false);
+
+  return true;
+}
+
+bool add_level_shifter_element(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               const std::string& level_shifter_name,
+                               const std::string& element)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name.c_str());
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 39,
+                 "Couldn't find level shifter {} to add element {}",
+                 level_shifter_name,
+                 element);
+    return false;
+  }
+
+  std::string _element(element);
+  ls->addElement(_element);
+
+  return true;
+}
+
+bool exclude_level_shifter_element(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const std::string& level_shifter_name,
+                                   const std::string& exclude_element)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name.c_str());
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 41,
+                 "Couldn't find level shifter {} to exclude element {}",
+                 level_shifter_name,
+                 exclude_element);
+    return false;
+  }
+
+  ls->addExcludeElement(exclude_element);
+
+  return true;
+}
+
+bool handle_level_shifter_instance(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const std::string& level_shifter_name,
+                                   const std::string& instance_name,
+                                   const std::string& port_name)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name.c_str());
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 42,
+                 "Couldn't find level shifter {} to add instance {}",
+                 level_shifter_name,
+                 instance_name);
+    return false;
+  }
+
+  ls->addInstance(instance_name, port_name);
+
+  return true;
+}
+
+bool set_domain_voltage(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& domain,
+                        float voltage)
+{
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
+  if (pd == nullptr) {
+    logger->warn(utl::UPF,
+                 59,
+                 "Couldn't find power domain {} to set voltage {}",
+                 domain,
+                 voltage);
+    return false;
+  }
+
+  pd->setVoltage(voltage);
+
+  return true;
+}
+
+bool set_level_shifter_cell(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const std::string& shifter,
+                            const std::string& cell,
+                            const std::string& input,
+                            const std::string& ouput)
+
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(shifter.c_str());
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 60,
+                 "Couldn't find level shifter {} to set cell {}",
+                 shifter,
+                 cell);
+    return false;
+  }
+
+  ls->setCellName(cell);
+  ls->setCellInput(input);
+  ls->setCellOutput(ouput);
+
+  return true;
+}
+
+void write_upf(utl::Logger* logger,
+               odb::dbBlock* block,
+               const std::string& file)
+{
+  upf::UPFWriter writer(block, logger);
+  writer.write(file);
 }
 
 }  // namespace upf

@@ -46,10 +46,12 @@ Ext::Ext() : _ext(std::make_unique<extMain>())
 
 void Ext::init(odb::dbDatabase* db,
                Logger* logger,
-               std::function<void()> rcx_init)
+               const char* spef_version,
+               const std::function<void()>& rcx_init)
 {
   _db = db;
   logger_ = logger;
+  spef_version_ = spef_version;
   _ext->init(db, logger);
 
   // Define swig TCL commands.
@@ -58,8 +60,9 @@ void Ext::init(odb::dbDatabase* db,
 
 void Ext::setLogger(Logger* logger)
 {
-  if (!logger_)
+  if (!logger_) {
     logger_ = logger;
+  }
 }
 
 void Ext::write_rules(const std::string& name,
@@ -172,7 +175,7 @@ void Ext::bench_verilog(const std::string& file)
     logger_->error(RCX, 147, "bench_verilog: file is not defined!");
   }
   FILE* fp = fopen(filename, "w");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     logger_->error(RCX, 378, "Can't open file {}", filename);
   }
   _ext->benchVerilog(fp);
@@ -183,7 +186,7 @@ void Ext::define_process_corner(int ext_model_index, const std::string& name)
   _ext->setBlockFromChip();
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
-  if (cornerName != NULL) {
+  if (cornerName != nullptr) {
     logger_->info(RCX, 29, "Defined extraction corner {}", cornerName);
   }
 }
@@ -203,7 +206,7 @@ void Ext::define_derived_corner(const std::string& name,
   char* cornerName = _ext->addRCCornerScaled(
       name.c_str(), model, res_factor, cc_factor, gndc_factor);
 
-  if (cornerName != NULL) {
+  if (cornerName != nullptr) {
     logger_->info(RCX, 31, "Defined Derived extraction corner {}", cornerName);
   }
 }
@@ -222,11 +225,12 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
 {
   index = _ext->getDbCornerIndex(name.c_str());
 
-  if (index < 0)
+  if (index < 0) {
     logger_->warn(RCX, 148, "Extraction corner {} not found!", name.c_str());
+  }
 }
 
-void Ext::extract(ExtractOptions opts)
+void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip();
   odb::dbBlock* block = _ext->getBlock();
@@ -235,17 +239,17 @@ void Ext::extract(ExtractOptions opts)
 
   odb::orderWires(logger_, block);
 
-  _ext->set_debug_nets(opts.debug_net);
-  _ext->_lef_res = opts.lef_res;
+  _ext->set_debug_nets(options.debug_net);
+  _ext->_lef_res = options.lef_res;
 
-  _ext->makeBlockRCsegs(opts.net,
-                        opts.cc_up,
-                        opts.cc_model,
-                        opts.max_res,
-                        !opts.no_merge_via_res,
-                        opts.coupling_threshold,
-                        opts.context_depth,
-                        opts.ext_model_file);
+  _ext->makeBlockRCsegs(options.net,
+                        options.cc_up,
+                        options.cc_model,
+                        options.max_res,
+                        !options.no_merge_via_res,
+                        options.coupling_threshold,
+                        options.context_depth,
+                        options.ext_model_file);
 
   logger_->info(
       RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
@@ -265,43 +269,50 @@ void Ext::write_spef_nets(odb::dbObject* block,
   _ext->write_spef_nets(flatten, parallel);
 }
 
-void Ext::write_spef(const SpefOptions& opts)
+void Ext::write_spef(const SpefOptions& options)
 {
   _ext->setBlockFromChip();
-  if (opts.end) {
+  if (options.end) {
     _ext->writeSPEF(true);
     return;
   }
-  const char* name = opts.ext_corner_name;
+  const char* name = options.ext_corner_name;
 
-  uint netId = opts.net_id;
+  uint netId = options.net_id;
   if (netId > 0) {
-    _ext->writeSPEF(netId, opts.single_pi, opts.debug, opts.corner, name);
+    _ext->writeSPEF(netId,
+                    options.single_pi,
+                    options.debug,
+                    options.corner,
+                    name,
+                    spef_version_);
     return;
   }
-  if (!opts.init)
+  if (!options.init) {
     logger_->info(RCX, 16, "Writing SPEF ...");
-  _ext->writeSPEF((char*) opts.file,
-                  (char*) opts.nets,
-                  opts.no_name_map,
-                  (char*) opts.N,
-                  opts.term_junction_xy,
-                  opts.cap_units,
-                  opts.res_units,
-                  opts.gz,
-                  opts.stop_after_map,
-                  opts.w_clock,
-                  opts.w_conn,
-                  opts.w_cap,
-                  opts.w_cc_cap,
-                  opts.w_res,
-                  opts.no_c_num,
+  }
+  _ext->writeSPEF((char*) options.file,
+                  (char*) options.nets,
+                  options.no_name_map,
+                  (char*) options.N,
+                  options.term_junction_xy,
+                  options.cap_units,
+                  options.res_units,
+                  options.gz,
+                  options.stop_after_map,
+                  options.w_clock,
+                  options.w_conn,
+                  options.w_cap,
+                  options.w_cc_cap,
+                  options.w_res,
+                  options.no_c_num,
                   false,
-                  opts.single_pi,
-                  opts.no_backslash,
-                  opts.corner,
+                  options.single_pi,
+                  options.no_backslash,
+                  options.corner,
                   name,
-                  opts.parallel);
+                  spef_version_,
+                  options.parallel);
 
   logger_->info(RCX, 17, "Finished writing SPEF ...");
 }
@@ -339,9 +350,9 @@ void Ext::read_spef(ReadSpefOpts& opt)
                  opt.corner,
                  0.0,
                  0.0,
-                 NULL,
-                 NULL,
-                 NULL,
+                 nullptr,
+                 nullptr,
+                 nullptr,
                  opt.db_corner_name,
                  opt.calibrate_base_corner,
                  opt.spef_corner,
@@ -354,8 +365,9 @@ void Ext::read_spef(ReadSpefOpts& opt)
                  false /*calibrate*/,
                  opt.app_print_limit);
 
-  for (int ii = 1; ii < parser.getWordCnt(); ii++)
+  for (int ii = 1; ii < parser.getWordCnt(); ii++) {
     _ext->readSPEFincr(parser.get(ii));
+  }
 }
 
 void Ext::diff_spef(const DiffOptions& opt)
@@ -375,7 +387,7 @@ void Ext::diff_spef(const DiffOptions& opt)
                  (char*) opt.net,
                  false /*force*/,
                  opt.r_conn,
-                 NULL /*N*/,
+                 nullptr /*N*/,
                  opt.r_cap,
                  opt.r_cc_cap,
                  opt.r_res,
@@ -384,7 +396,7 @@ void Ext::diff_spef(const DiffOptions& opt)
                  1.0 /*length_unit*/,
                  opt.m_map,
                  false /*noCapNumCollapse*/,
-                 NULL /*capNodeMapFile*/,
+                 nullptr /*capNodeMapFile*/,
                  opt.log,
                  opt.ext_corner,
                  opt.low_guard,
@@ -393,7 +405,7 @@ void Ext::diff_spef(const DiffOptions& opt)
                  (char*) opt.net_subword,
                  (char*) opt.rc_stats_file,
                  (char*) opt.db_corner_name,
-                 NULL,
+                 nullptr,
                  opt.spef_corner,
                  0 /*fix_loop*/,
                  false /*keepLoadedCorner*/,
@@ -413,12 +425,12 @@ void Ext::calibrate(const std::string& spef_file,
                     float upper_limit,
                     float lower_limit)
 {
-  if (spef_file.empty())
+  if (spef_file.empty()) {
     logger_->error(RCX,
                    381,
                    "Filename for calibration is not defined. Define the "
                    "filename using -spef_file");
-
+  }
   logger_->info(RCX, 21, "calibrate on spef file  {}", spef_file.c_str());
   Ath__parser parser(logger_);
   parser.mkWords((char*) spef_file.c_str());

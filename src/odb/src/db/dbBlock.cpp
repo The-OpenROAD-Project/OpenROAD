@@ -82,11 +82,22 @@
 #include "dbIntHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbModBTerm.h"
+#include "dbModITerm.h"
 #include "dbModInst.h"
+#include "dbModNet.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
+#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
+#include "dbModuleModInstModITermItr.h"
+#include "dbModuleModNetBTermItr.h"
+#include "dbModuleModNetITermItr.h"
+#include "dbModuleModNetItr.h"
+#include "dbModuleModNetModBTermItr.h"
+#include "dbModuleModNetModITermItr.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbNetTrack.h"
@@ -190,6 +201,15 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _modinst_tbl = new dbTable<_dbModInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModInstObj);
 
+  _modbterm_tbl = new dbTable<_dbModBTerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModBTermObj);
+
+  _moditerm_tbl = new dbTable<_dbModITerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModITermObj);
+
+  _modnet_tbl = new dbTable<_dbModNet>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
+
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
 
@@ -201,6 +221,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _isolation_tbl = new dbTable<_dbIsolation>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbIsolationObj);
+
+  _levelshifter_tbl = new dbTable<_dbLevelShifter>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLevelShifterObj);
 
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
@@ -314,10 +337,14 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
+  _modbterm_hash.setTable(_modbterm_tbl);
+  _moditerm_hash.setTable(_moditerm_tbl);
+  _modnet_hash.setTable(_modnet_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -345,6 +372,17 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _module_inst_itr = new dbModuleInstItr(_inst_tbl);
 
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
+
+  _module_modinstmoditerm_itr = new dbModuleModInstModITermItr(_moditerm_tbl);
+
+  _module_modbterm_itr = new dbModuleModBTermItr(_modbterm_tbl);
+
+  _module_modnet_itr = new dbModuleModNetItr(_modnet_tbl);
+
+  _module_modnet_modbterm_itr = new dbModuleModNetModBTermItr(_modbterm_tbl);
+  _module_modnet_moditerm_itr = new dbModuleModNetModITermItr(_moditerm_tbl);
+  _module_modnet_iterm_itr = new dbModuleModNetITermItr(_iterm_tbl);
+  _module_modnet_bterm_itr = new dbModuleModNetBTermItr(_bterm_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
 
@@ -402,6 +440,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _logicport_hash(block._logicport_hash),
       _powerswitch_hash(block._powerswitch_hash),
       _isolation_hash(block._isolation_hash),
+      _levelshifter_hash(block._levelshifter_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
       _bterm_hash(block._bterm_hash),
@@ -440,6 +479,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
   _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
+
+  _levelshifter_tbl
+      = new dbTable<_dbLevelShifter>(db, this, *block._levelshifter_tbl);
 
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
@@ -516,6 +558,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -591,6 +634,7 @@ _dbBlock::~_dbBlock()
   delete _logicport_tbl;
   delete _powerswitch_tbl;
   delete _isolation_tbl;
+  delete _levelshifter_tbl;
   delete _group_tbl;
   delete ap_tbl_;
   delete global_connect_tbl_;
@@ -762,6 +806,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbIsolationObj:
       return _isolation_tbl;
 
+    case dbLevelShifterObj:
+      return _levelshifter_tbl;
+
     case dbGroupObj:
       return _group_tbl;
 
@@ -859,7 +906,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
        ++cbitr)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
-
+  _dbDatabase* db = block.getImpl()->getDatabase();
+  dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
   stream << block._hier_delimeter;
@@ -883,10 +931,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << block._modbterm_hash;
+    stream << block._moditerm_hash;
+    stream << block._modnet_hash;
+  }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
+  stream << block._levelshifter_hash;
   stream << block._group_hash;
   stream << block._inst_hdr_hash;
   stream << block._bterm_hash;
@@ -896,6 +950,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
+
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
@@ -903,10 +958,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._inst_tbl;
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream << *block._modbterm_tbl;
+    stream << *block._moditerm_tbl;
+    stream << *block._modnet_tbl;
+  }
   stream << *block._powerdomain_tbl;
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
   stream << *block._isolation_tbl;
+  stream << *block._levelshifter_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
   stream << *block.global_connect_tbl_;
@@ -929,13 +990,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._non_default_rule_tbl;
   stream << *block._layer_rule_tbl;
   stream << *block._prop_tbl;
+
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
   stream << *block._cc_val_tbl;
-  stream << *block._cap_node_tbl;  // DKF - 2/21/05
-  stream << *block._r_seg_tbl;     // DKF - 2/21/05
-  stream << *block._cc_seg_tbl;
+  stream << NamedTable("cap_node_tbl", block._cap_node_tbl);
+  stream << NamedTable("r_seg_tbl", block._r_seg_tbl);
+  stream << NamedTable("cc_seg_tbl", block._cc_seg_tbl);
   stream << *block._extControl;
 
   //---------------------------------------------------------- stream out
@@ -985,10 +1047,18 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> block._modbterm_hash;
+    stream >> block._moditerm_hash;
+    stream >> block._modnet_hash;
+  }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> block._levelshifter_hash;
+  }
   stream >> block._group_hash;
   stream >> block._inst_hdr_hash;
   stream >> block._bterm_hash;
@@ -1013,10 +1083,18 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
+  if (db->isSchema(db_schema_update_hierarchy)) {
+    stream >> *block._modbterm_tbl;
+    stream >> *block._moditerm_tbl;
+    stream >> *block._modnet_tbl;
+  }
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> *block._levelshifter_tbl;
+  }
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
   if (db->isSchema(db_schema_add_global_connect)) {
@@ -1184,6 +1262,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_isolation_hash != rhs._isolation_hash)
     return false;
 
+  if (_levelshifter_hash != rhs._levelshifter_hash) {
+    return false;
+  }
+
   if (_group_hash != rhs._group_hash)
     return false;
 
@@ -1243,6 +1325,12 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
+
+  if (*_levelshifter_tbl != *rhs._levelshifter_tbl) {
+    {
+      return false;
+    }
+  }
 
   if (*_group_tbl != *rhs._group_tbl)
     return false;
@@ -1366,6 +1454,7 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_logicport_hash);
     DIFF_HASH_TABLE(_powerswitch_hash);
     DIFF_HASH_TABLE(_isolation_hash);
+    DIFF_HASH_TABLE(_levelshifter_hash);
     DIFF_HASH_TABLE(_group_hash);
     DIFF_HASH_TABLE(_inst_hdr_hash);
     DIFF_HASH_TABLE(_bterm_hash);
@@ -1388,6 +1477,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_logicport_tbl);
   DIFF_TABLE(_powerswitch_tbl);
   DIFF_TABLE(_isolation_tbl);
+  DIFF_TABLE(_levelshifter_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
   DIFF_TABLE(global_connect_tbl_);
@@ -1460,6 +1550,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_logicport_hash);
     DIFF_OUT_HASH_TABLE(_powerswitch_hash);
     DIFF_OUT_HASH_TABLE(_isolation_hash);
+    DIFF_OUT_HASH_TABLE(_levelshifter_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
     DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
     DIFF_OUT_HASH_TABLE(_bterm_hash);
@@ -1482,6 +1573,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_logicport_tbl);
   DIFF_OUT_TABLE(_powerswitch_tbl);
   DIFF_OUT_TABLE(_isolation_tbl);
+  DIFF_OUT_TABLE(_levelshifter_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE(global_connect_tbl_);
@@ -1600,13 +1692,11 @@ void dbBlock::ComputeBBox()
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);
-  dbSet<dbWire>::iterator witr;
 
-  for (witr = wires.begin(); witr != wires.end(); ++witr) {
-    dbWire* wire = *witr;
-    Rect r;
-    if (wire->getBBox(r)) {
-      bbox->_shape._rect.merge(r);
+  for (dbWire* wire : wires) {
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox->_shape._rect.merge(opt_bbox.value());
     }
   }
 
@@ -1720,6 +1810,18 @@ dbSet<dbModInst> dbBlock::getModInsts()
   return dbSet<dbModInst>(block, block->_modinst_tbl);
 }
 
+dbSet<dbModBTerm> dbBlock::getModBTerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
+}
+
+dbSet<dbModNet> dbBlock::getModNets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModNet>(block, block->_modnet_tbl);
+}
+
 dbSet<dbPowerDomain> dbBlock::getPowerDomains()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1742,6 +1844,12 @@ dbSet<dbIsolation> dbBlock::getIsolations()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbIsolation>(block, block->_isolation_tbl);
+}
+
+dbSet<dbLevelShifter> dbBlock::getLevelShifters()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLevelShifter>(block, block->_levelshifter_tbl);
 }
 
 dbSet<dbGroup> dbBlock::getGroups()
@@ -1815,6 +1923,12 @@ dbIsolation* dbBlock::findIsolation(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbIsolation*) block->_isolation_hash.find(name);
+}
+
+dbLevelShifter* dbBlock::findLevelShifter(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLevelShifter*) block->_levelshifter_hash.find(name);
 }
 
 dbModInst* dbBlock::findModInst(const char* path)

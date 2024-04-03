@@ -67,43 +67,61 @@ SinkClustering::SinkClustering(const CtsOptions* options,
 
 void SinkClustering::normalizePoints(float maxDiameter)
 {
-  double xMax = -std::numeric_limits<double>::infinity();
-  double xMin = std::numeric_limits<double>::infinity();
-  double yMax = -std::numeric_limits<double>::infinity();
-  double yMin = std::numeric_limits<double>::infinity();
-  for (const Point<double>& p : points_) {
-    xMax = std::max(p.getX(), xMax);
-    yMax = std::max(p.getY(), yMax);
-    xMin = std::min(p.getX(), xMin);
-    yMin = std::min(p.getY(), yMin);
-  }
+  if (firstRun_) {
+    double xMax = -std::numeric_limits<double>::infinity();
+    double xMin = std::numeric_limits<double>::infinity();
+    double yMax = -std::numeric_limits<double>::infinity();
+    double yMin = std::numeric_limits<double>::infinity();
+    for (const Point<double>& p : points_) {
+      xMax = std::max(p.getX(), xMax);
+      yMax = std::max(p.getY(), yMax);
+      xMin = std::min(p.getX(), xMin);
+      yMin = std::min(p.getY(), yMin);
+    }
 
-  const double xSpan = xMax - xMin;
-  const double ySpan = yMax - yMin;
-  for (Point<double>& p : points_) {
-    const double x = p.getX();
-    const double xNorm = (x - xMin) / xSpan;
-    const double y = p.getY();
-    const double yNorm = (y - yMin) / ySpan;
-    p = Point<double>(xNorm, yNorm);
+    const double xSpan = xMax - xMin;
+    const double ySpan = yMax - yMin;
+    xSpan_ = xSpan;
+    ySpan_ = ySpan;
+    for (Point<double>& p : points_) {
+      const double x = p.getX();
+      const double xNorm = (x - xMin) / xSpan;
+      const double y = p.getY();
+      const double yNorm = (y - yMin) / ySpan;
+      p = Point<double>(xNorm, yNorm);
+    }
   }
-  maxInternalDiameter_ = maxDiameter / std::min(xSpan, ySpan);
+  maxInternalDiameter_ = maxDiameter / std::min(xSpan_, ySpan_);
   capPerUnit_
-      = techChar_->getCapPerDBU() * scaleFactor_ * std::min(xSpan, ySpan);
+      = techChar_->getCapPerDBU() * scaleFactor_ * std::min(xSpan_, ySpan_);
+
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "normalizePoints: "
+             "maxInternalDiameter_:{} xSpan:{} ySpan:{}",
+             maxInternalDiameter_, xSpan_, ySpan_);
+  // clang-format on
 }
 
 void SinkClustering::computeAllThetas()
 {
-  for (unsigned idx = 0; idx < points_.size(); ++idx) {
-    const Point<double>& p = points_[idx];
-    const double theta = computeTheta(p.getX(), p.getY());
-    thetaIndexVector_.emplace_back(theta, idx);
+  if (firstRun_) {
+    for (unsigned idx = 0; idx < points_.size(); ++idx) {
+      const Point<double>& p = points_[idx];
+      const double theta = computeTheta(p.getX(), p.getY());
+      thetaIndexVector_.emplace_back(theta, idx);
+    }
+    // clang-format off
+    debugPrint(logger_, CTS, "clustering", 1, "SinkClustering::computeAllThetas:"
+               " thetaIndexVector_ has {} elems", thetaIndexVector_.size());
+    // clang-format on
   }
 }
 
 void SinkClustering::sortPoints()
 {
-  std::sort(thetaIndexVector_.begin(), thetaIndexVector_.end());
+  if (firstRun_) {
+    std::sort(thetaIndexVector_.begin(), thetaIndexVector_.end());
+  }
 }
 
 /* static */
@@ -161,25 +179,38 @@ unsigned SinkClustering::numVertex(const unsigned x, const unsigned y) const
 
 void SinkClustering::run(const unsigned groupSize,
                          const float maxDiameter,
-                         const int scaleFactor)
+                         const int scaleFactor,
+                         unsigned& bestSize,
+                         float& bestDiameter)
 {
   scaleFactor_ = scaleFactor;
 
-  const auto original_points = points_;
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "SinkClustering::run points_ "
+             "has {} elems", points_.size());
+  // clang-format on
+  if (firstRun_) {
+    const auto& original_points = points_;
+    if (CtsObserver* observer = options_->getObserver()) {
+      observer->initializeWithPoints(this, original_points);
+    }
+  }
   normalizePoints(maxDiameter);
   computeAllThetas();
   sortPoints();
-  findBestMatching(groupSize);
+  bool bestSolutionFound = findBestMatching(groupSize);
   if (logger_->debugCheck(CTS, "Stree", 1)) {
     writePlotFile(groupSize);
   }
 
-  if (CtsObserver* observer = options_->getObserver()) {
-    observer->initializeWithPoints(this, original_points);
+  firstRun_ = false;
+  if (bestSolutionFound) {
+    bestSize = groupSize;
+    bestDiameter = maxDiameter;
   }
 }
 
-void SinkClustering::findBestMatching(const unsigned groupSize)
+bool SinkClustering::findBestMatching(const unsigned groupSize)
 {
   // Counts how many clusters are in each solution.
   vector<unsigned> clusters(groupSize, 0);
@@ -351,19 +382,50 @@ void SinkClustering::findBestMatching(const unsigned groupSize)
   }
 
   unsigned bestSolution = 0;
-  double bestSolutionCost = costs[0];
+  bool bestSolutionFound = false;
 
   // Find the solution with minimum cost.
   for (unsigned j = 1; j < groupSize; ++j) {
-    if (costs[j] < bestSolutionCost) {
+    if (logger_->debugCheck(CTS, "clustering", 1)) {
+      // clang-format off
+      logger_->report("Solution from group has {:0.3f} cost and {}"
+                      " clustered sinks", j, costs[j], solutions[j].size());
+      // clang-format on
+    }
+    if (costs[j] < bestSolutionCost_) {
       bestSolution = j;
-      bestSolutionCost = costs[j];
+      bestSolutionCost_ = costs[j];
+      bestSolutionFound = true;
     }
   }
-  debugPrint(
-      logger_, CTS, "Stree", 2, "Best solution cost = {:.3}", bestSolutionCost);
+  debugPrint(logger_,
+             CTS,
+             "Stree",
+             2,
+             "Best solution cost = {:.3}",
+             bestSolutionCost_);
   // Save the solution for the Tree Builder.
-  bestSolution_ = solutions[bestSolution];
+  if (bestSolutionFound) {
+    bestSolution_ = solutions[bestSolution];
+    // clang-format off
+    debugPrint(logger_, CTS, "clustering", 1, "Best solution from group "
+               "{} has cost of {:0.3f} and size of {}", bestSolution,
+               bestSolutionCost_, bestSolution_.size());
+    // clang-format on
+  }
+  if (logger_->debugCheck(CTS, "clustering", 2)) {
+    size_t solnIndex = 0;
+    for (const std::vector<unsigned>& soln : bestSolution_) {
+      std::cout << "Solution " << solnIndex << "[" << soln.size() << "]: ";
+      for (const unsigned i : soln) {
+        std::cout << i << " ";
+      }
+      std::cout << std::endl;
+      ++solnIndex;
+    }
+  }
+
+  return bestSolutionFound;
 }
 
 bool SinkClustering::isLimitExceeded(const unsigned size,

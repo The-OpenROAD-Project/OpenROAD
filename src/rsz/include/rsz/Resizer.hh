@@ -219,6 +219,9 @@ public:
   void bufferInputs();
   void bufferOutputs();
 
+  // Balance the usage of hybrid rows
+  void balanceRowUsage();
+
   // Resize drvr_pin instance to target slew.
   void resizeDrvrToTargetSlew(const Pin *drvr_pin);
   // Accessor for debugging.
@@ -235,6 +238,8 @@ public:
                    bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -359,9 +364,11 @@ protected:
   bool hasTristateOrDontTouchDriver(const Net *net);
   bool isTristateDriver(const Pin *pin);
   void makeEquivCells();
+  void checkLibertyForAllCorners();
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
+  void balanceBin(const vector<odb::dbInst*>& bin);
 
   //==============================
   // APIs for gate cloning
@@ -515,14 +522,14 @@ protected:
                                 ParasiticNode *node,
                                 SteinerTree *tree,
                                 SteinerPt pt,
-                                const ParasiticAnalysisPt *parasitics_ap);
+                                size_t &resistor_id);
 
   bool replaceCell(Instance *inst,
                    LibertyCell *replacement,
                    bool journal);
 
   void findResizeSlacks1();
-  void removeBuffer(Instance *buffer);
+  bool removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,

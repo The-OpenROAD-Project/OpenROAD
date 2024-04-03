@@ -36,7 +36,7 @@
 namespace boost::serialization {
 class access;
 }
-namespace fr {
+namespace drt {
 
 class PinAccessJobDescription : public dst::JobDescription
 {
@@ -48,7 +48,6 @@ class PinAccessJobDescription : public dst::JobDescription
     INIT_PA,
     INST_ROWS
   };
-  PinAccessJobDescription() : type_(UPDATE_PA) {}
   void setPath(const std::string& path) { path_ = path; }
   void setType(JobType in) { type_ = in; }
   JobType getType() const { return type_; }
@@ -56,7 +55,8 @@ class PinAccessJobDescription : public dst::JobDescription
 
  private:
   std::string path_;
-  JobType type_;
+  JobType type_{UPDATE_PA};
+
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -66,4 +66,5 @@ class PinAccessJobDescription : public dst::JobDescription
   }
   friend class boost::serialization::access;
 };
-}  // namespace fr
+
+}  // namespace drt

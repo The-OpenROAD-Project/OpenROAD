@@ -32,7 +32,7 @@
 
 #include "odb/db.h"
 
-using namespace fr;
+namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
@@ -100,10 +100,10 @@ frMaster* Fixture::makeMacro(const char* name,
                              frCoord sizeX,
                              frCoord sizeY)
 {
-  auto block = make_unique<frMaster>(name);
-  vector<frBoundary> bounds;
+  auto block = std::make_unique<frMaster>(name);
+  std::vector<frBoundary> bounds;
   frBoundary bound;
-  vector<Point> points;
+  std::vector<Point> points;
   points.push_back(Point(originX, originY));
   points.push_back(Point(sizeX, originY));
   points.push_back(Point(sizeX, sizeY));
@@ -127,17 +127,17 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
                                   frCoord designRuleWidth)
 {
   int id = master->getBlockages().size();
-  auto blkIn = make_unique<frBlockage>();
+  auto blkIn = std::make_unique<frBlockage>();
   blkIn->setId(id);
   blkIn->setDesignRuleWidth(designRuleWidth);
-  auto pinIn = make_unique<frBPin>();
+  auto pinIn = std::make_unique<frBPin>();
   pinIn->setId(0);
   // pinFig
-  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
   pinFig->setBBox(Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
-  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  std::unique_ptr<frPinFig> uptr(std::move(pinFig));
   pinIn->addPinFig(std::move(uptr));
   blkIn->setPin(std::move(pinIn));
   auto blk = blkIn.get();
@@ -154,7 +154,7 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
                               frLayerNum lNum)
 {
   int id = master->getTerms().size();
-  unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(name);
+  std::unique_ptr<frMTerm> uTerm = std::make_unique<frMTerm>(name);
   auto term = uTerm.get();
   term->setId(id);
   master->addTerm(std::move(uTerm));
@@ -162,13 +162,13 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   term->setType(termType);
   dbIoType termDirection = dbIoType::INPUT;
   term->setDirection(termDirection);
-  auto pinIn = make_unique<frMPin>();
+  auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
-  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
   pinFig->setBBox(Rect(xl, yl, xh, yh));
   pinFig->addToPin(pinIn.get());
   pinFig->setLayerNum(lNum);
-  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  std::unique_ptr<frPinFig> uptr(std::move(pinFig));
   pinIn->addPinFig(std::move(uptr));
   term->addPin(std::move(pinIn));
   return term;
@@ -179,14 +179,15 @@ frInst* Fixture::makeInst(const char* name,
                           frCoord x,
                           frCoord y)
 {
-  auto uInst = make_unique<frInst>(name, master);
+  auto uInst = std::make_unique<frInst>(name, master);
   auto tmpInst = uInst.get();
   tmpInst->setId(numInsts++);
   tmpInst->setOrigin(Point(x, y));
   tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();
-    unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
+    std::unique_ptr<frInstTerm> instTerm
+        = std::make_unique<frInstTerm>(tmpInst, term);
     instTerm->setId(numTerms++);
     int pinCnt = term->getPins().size();
     instTerm->setAPSize(pinCnt);
@@ -194,8 +195,8 @@ frInst* Fixture::makeInst(const char* name,
   }
   for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
     auto blk = uBlk.get();
-    unique_ptr<frInstBlockage> instBlk
-        = make_unique<frInstBlockage>(tmpInst, blk);
+    std::unique_ptr<frInstBlockage> instBlk
+        = std::make_unique<frInstBlockage>(tmpInst, blk);
     instBlk->setId(numBlockages);
     numBlockages++;
     tmpInst->addInstBlockage(std::move(instBlk));
@@ -275,18 +276,18 @@ void Fixture::makeMinStepConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
-void Fixture::makeMinStep58Constraint(frLayerNum layer_num)
+frLef58MinStepConstraint* Fixture::makeMinStep58Constraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frLef58MinStepConstraint>();
 
   con->setMinStepLength(50);
   con->setMaxEdges(1);
-  con->setEolWidth(200);
-
+  auto rptr = con.get();
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   layer->addLef58MinStepConstraint(con.get());
   tech->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeRectOnlyConstraint(frLayerNum layer_num)
@@ -344,8 +345,8 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
   frLayer* layer = tech->getLayer(layer_num);
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
       "WIDTH", widthTbl, valTbl);
-  unique_ptr<frConstraint> uCon
-      = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+  std::unique_ptr<frConstraint> uCon
+      = std::make_unique<frSpacingTableInfluenceConstraint>(tbl);
   auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
   tech->addUConstraint(std::move(uCon));
   layer->setSpacingTableInfluence(rptr);
@@ -362,8 +363,8 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   fr1DLookupTbl<frCoord, frCoord> tbl("WIDTH", eol, ext, false);
-  unique_ptr<frLef58EolExtensionConstraint> uCon
-      = make_unique<frLef58EolExtensionConstraint>(tbl);
+  std::unique_ptr<frLef58EolExtensionConstraint> uCon
+      = std::make_unique<frLef58EolExtensionConstraint>(tbl);
   uCon->setMinSpacing(spacing);
   uCon->setParallelOnly(parallelOnly);
   auto rptr = uCon.get();
@@ -384,8 +385,8 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   for (size_t i = 0; i < widthTbl.size(); i++) {
     rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
   }
-  unique_ptr<frConstraint> uCon
-      = make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
+  std::unique_ptr<frConstraint> uCon
+      = std::make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
   auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
   rptr->setLayer(layer);
   tech->addUConstraint(std::move(uCon));
@@ -441,11 +442,29 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   return con;
 }
 
+frSpacingRangeConstraint* Fixture::makeSpacingRangeConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    frCoord minWidth,
+    frCoord maxWidth)
+{
+  auto uCon = std::make_unique<frSpacingRangeConstraint>();
+  auto con = uCon.get();
+  con->setMinSpacing(spacing);
+  con->setMinWidth(minWidth);
+  con->setMaxWidth(maxWidth);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->addSpacingRangeConstraint(con);
+  tech->addUConstraint(std::move(uCon));
+  return con;
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord par_space,
-    fr::frCoord par_within,
+    drt::frCoord par_space,
+    drt::frCoord par_within,
     bool two_edges)
 {
   auto parallelEdge
@@ -459,7 +478,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord min_max_length,
+    drt::frCoord min_max_length,
     bool max,
     bool two_sides)
 {
@@ -494,7 +513,7 @@ void Fixture::makeCutClass(frLayerNum layer_num,
                            frCoord width,
                            frCoord height)
 {
-  auto cutClass = make_unique<frLef58CutClass>();
+  auto cutClass = std::make_unique<frLef58CutClass>();
   cutClass->setName(name);
   cutClass->setViaWidth(width);
   cutClass->setViaLength(height);
@@ -504,7 +523,7 @@ void Fixture::makeCutClass(frLayerNum layer_num,
 void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
                                  odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
-  auto con = make_unique<frLef58CutSpacingTableConstraint>(dbRule);
+  auto con = std::make_unique<frLef58CutSpacingTableConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   if (dbRule->isLayerValid()) {
     if (dbRule->isSameMetal()) {
@@ -529,7 +548,7 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
 void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
                                    odb::dbMetalWidthViaMap* dbRule)
 {
-  auto con = make_unique<frMetalWidthViaConstraint>(dbRule);
+  auto con = std::make_unique<frMetalWidthViaConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   layer->addMetalWidthViaConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
@@ -538,7 +557,7 @@ void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
 void Fixture::makeKeepOutZoneRule(frLayerNum layer_num,
                                   odb::dbTechLayerKeepOutZoneRule* dbRule)
 {
-  auto con = make_unique<frLef58KeepOutZoneConstraint>(dbRule);
+  auto con = std::make_unique<frLef58KeepOutZoneConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   layer->addKeepOutZoneConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
@@ -551,7 +570,7 @@ Fixture::makeLef58CutSpacingConstraint_parallelOverlap(frLayerNum layer_num,
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
 
-  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto uCon = std::make_unique<frLef58CutSpacingConstraint>();
   auto con = uCon.get();
   con->setCutSpacing(spacing);
   con->setParallelOverlap(true);
@@ -576,7 +595,7 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
   rule->setWithin(within);
   rule->setCenterToCenter(true);
 
-  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto uCon = std::make_unique<frLef58CutSpacingConstraint>();
   auto con = uCon.get();
   con->setCutClassIdx(0);
   con->setCutSpacing(rule->getCutSpacing());
@@ -594,7 +613,7 @@ void Fixture::makeMinimumCut(frLayerNum layerNum,
                              frCoord distance,
                              frMinimumcutConnectionEnum connection)
 {
-  auto con = make_unique<frMinimumcutConstraint>();
+  auto con = std::make_unique<frMinimumcutConstraint>();
   auto layer = design->getTech()->getLayer(layerNum);
   auto rptr = con.get();
   con->setWidth(width);
@@ -620,7 +639,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
   auto tech = design->getTech();
   auto via_p = std::make_unique<frViaDef>(name);
   for (frLayerNum l = layer_num - 1; l <= layer_num + 1; l++) {
-    unique_ptr<frRect> pinFig = make_unique<frRect>();
+    std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
     pinFig->setBBox(Rect(ll, ur));
     pinFig->setLayerNum(l);
     switch (l - layer_num) {
@@ -643,7 +662,7 @@ frViaDef* Fixture::makeViaDef(const char* name,
 
 frVia* Fixture::makeVia(frViaDef* viaDef, frNet* net, const Point& origin)
 {
-  auto via_p = make_unique<frVia>(viaDef);
+  auto via_p = std::make_unique<frVia>(viaDef);
   via_p->setOrigin(origin);
   via_p->addToNet(net);
   frVia* via = via_p.get();
@@ -685,3 +704,15 @@ void Fixture::initRegionQuery()
   query->init();
   query->initDRObj();
 }
+
+void Fixture::makeLef58WrongDirSpcConstraint(
+    frLayerNum layer_num,
+    odb::dbTechLayerWrongDirSpacingRule* dbRule)
+{
+  auto con = std::make_unique<frLef58SpacingWrongDirConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addLef58SpacingWrongDirConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+}  // namespace drt

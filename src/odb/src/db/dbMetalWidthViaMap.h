@@ -53,7 +53,8 @@ class _dbMetalWidthViaMap : public _dbObject
  public:
   _dbMetalWidthViaMap(_dbDatabase*, const _dbMetalWidthViaMap& r);
   _dbMetalWidthViaMap(_dbDatabase*);
-  ~_dbMetalWidthViaMap();
+
+  ~_dbMetalWidthViaMap() = default;
 
   bool operator==(const _dbMetalWidthViaMap& rhs) const;
   bool operator!=(const _dbMetalWidthViaMap& rhs) const

@@ -46,6 +46,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <numeric>  // accumulate
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -112,6 +113,31 @@ struct Master
   bool is_multi_row = false;
 };
 
+struct GridMapKey
+{
+  int grid_index;
+  bool operator<(const GridMapKey& other) const
+  {
+    return grid_index < other.grid_index;
+  }
+  bool operator==(const GridMapKey& other) const
+  {
+    return grid_index == other.grid_index;
+  }
+};
+
+class HybridSiteInfo
+{
+ public:
+  HybridSiteInfo(int index, dbSite* site) : index_(index), site_(site) {}
+  int getIndex() const { return index_; }
+  const dbSite* getSite() const { return site_; }
+
+ private:
+  const int index_;
+  const dbSite* site_;
+};
+
 struct Cell
 {
   const char* name() const;
@@ -119,13 +145,35 @@ struct Cell
   int64_t area() const;
 
   dbInst* db_inst_ = nullptr;
-  int x_ = 0, y_ = 0;  // lower left wrt core DBU
+  int x_ = 0;  // lower left wrt core DBU
+  int y_ = 0;
   dbOrientType orient_;
-  int width_ = 0, height_ = 0;  // DBU
+  int width_ = 0;  // DBU
+  int height_ = 0;
   bool is_placed_ = false;
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
+
+  bool isHybrid() const
+  {
+    dbSite* site = getSite();
+    return site ? site->isHybrid() : false;
+  }
+
+  bool isHybridParent() const
+  {
+    dbSite* site = getSite();
+    return site ? site->hasRowPattern() : false;
+  }
+
+  dbSite* getSite() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()) {
+      return nullptr;
+    }
+    return db_inst_->getMaster()->getSite();
+  }
 };
 
 struct Group
@@ -145,33 +193,58 @@ struct Pixel
   dbOrientType orient_;
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
+  dbSite* site;      // site that this pixel is
 };
 
-struct GridInfo
-{
-  int row_count;
-  int site_count;
-  int grid_index;
-};
-
-// For optimize mirroring.
-class NetBox
+class GridInfo
 {
  public:
-  NetBox() = default;
-  NetBox(dbNet* net, Rect box, bool ignore);
-  int64_t hpwl();
-  void saveBox();
-  void restoreBox();
+  GridInfo(const int row_count,
+           const int site_count,
+           const int grid_index,
+           const dbSite::RowPattern& sites)
+      : row_count_(row_count),
+        site_count_(site_count),
+        grid_index_(grid_index),
+        sites_(sites)
+  {
+  }
 
-  dbNet* net_ = nullptr;
-  Rect box_;
-  Rect box_saved_;
-  bool ignore_ = false;
+  int getRowCount() const { return row_count_; }
+
+  int getSiteCount() const { return site_count_; }
+
+  int getGridIndex() const { return grid_index_; }
+
+  int getOffset() const { return offset_; }
+
+  void setOffset(int offset) { offset_ = offset; }
+
+  const dbSite::RowPattern& getSites() const { return sites_; }
+
+  bool isHybrid() const
+  {
+    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
+  }
+  int getSitesTotalHeight() const
+  {
+    return std::accumulate(sites_.begin(),
+                           sites_.end(),
+                           0,
+                           [](int sum, const dbSite::OrientedSite& entry) {
+                             return sum + entry.site->getHeight();
+                           });
+  }
+
+ private:
+  const int row_count_;
+  const int site_count_;
+  const int grid_index_;
+  int offset_ = 0;
+  // will have one site only for non-hybrid and hybrid parent cells.
+  // For hybrid children, this will have all the sites
+  const dbSite::RowPattern sites_;
 };
-
-using NetBoxMap = unordered_map<dbNet*, NetBox>;
-using NetBoxes = vector<NetBox*>;
 
 ////////////////////////////////////////////////////////////////
 
@@ -196,8 +269,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  Point pointOffMacro(const Cell& cell);
-  void convertDbToCell(dbInst* db_inst, Cell& cell);
   void legalCellPos(dbInst* db_inst);
   void initMacrosAndGrid();
 
@@ -210,6 +281,7 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
+
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
@@ -221,13 +293,10 @@ class Opendp
   // Find instance/master/global padding value for an instance.
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
-  // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
-                      string report_file_name = "");
+                      const string& report_file_name = "");
   void writeJsonReport(const string& filename,
                        const vector<Cell*>& placed_failures,
                        const vector<Cell*>& in_rows_failures,
@@ -238,20 +307,25 @@ class Opendp
                        const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
-  int64_t hpwl() const;
-  int64_t hpwl(dbNet* net) const;
-  void findDisplacementStats();
   void optimizeMirroring();
-
-  const vector<Cell>& getCells() const { return cells_; }
-  Rect getCore() const { return core_; }
-  int getRowHeight() const { return row_height_; }
-  int getSiteWidth() const { return site_width_; }
-  int getRowCount() const { return row_count_; }
-  int getRowSiteCount() const { return row_site_count_; }
 
  private:
   friend class OpendpTest_IsPlaced_Test;
+  friend class Graphics;
+  void findDisplacementStats();
+  Point pointOffMacro(const Cell& cell);
+  void convertDbToCell(dbInst* db_inst, Cell& cell);
+  const vector<Cell>& getCells() const { return cells_; }
+  Rect getCore() const { return core_; }
+  int getRowHeight() const { return row_height_; }
+  int getRowHeight(const Cell* cell) const;
+  int getSiteWidth() const { return site_width_; }
+  int getRowCount() const { return row_count_; }
+  int getRowSiteCount() const { return row_site_count_; }
+  // Return error count.
+  void processViolationsPtree(boost::property_tree::ptree& entry,
+                              const std::vector<Cell*>& failures,
+                              const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -265,6 +339,8 @@ class Opendp
   bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
+  GridMapKey getGridMapKey(const Cell* cell) const;
+  GridMapKey getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -307,23 +383,15 @@ class Opendp
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
+  int getHybridSiteIndex(dbSite* site);
+  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
-  Point legalPt(const Cell* cell,
-                const Point& pt,
-                int row_height = -1,
-                int site_width = -1) const;
+  Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
   Point legalGridPt(const Cell* cell,
                     const Point& pt,
-                    int row_height = -1,
-                    int site_width = -1) const;
-  Point legalPt(const Cell* cell,
-                bool padded,
-                int row_height = -1,
-                int site_width = -1) const;
-  Point legalGridPt(const Cell* cell,
-                    bool padded,
-                    int row_height = -1,
-                    int site_width = -1) const;
+                    int row_height = -1) const;
+  Point legalPt(const Cell* cell, bool padded, int row_height = -1) const;
+  Point legalGridPt(const Cell* cell, bool padded, int row_height = -1) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
@@ -358,9 +426,10 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
-  int map_coordinates(int original_coordinate,
-                      int original_step,
-                      int target_step) const;
+  int map_ycoordinates(int source_grid_coordinate,
+                       const GridMapKey& source_grid_key,
+                       const GridMapKey& target_grid_key,
+                       const bool start) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -395,47 +464,35 @@ class Opendp
   void deleteGrid();
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
-  int getRowHeight(const Cell* cell) const;
-  int getSiteWidth(const Cell* cell) const;
+
   int getRowCount(const Cell* cell) const;
   int getRowCount(int row_height) const;
-  int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
+  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  int gridNearestWidth(const Cell* cell, int site_width) const;
-  int gridHeight(const Cell* cell, int row_height) const;
   int gridHeight(const Cell* cell) const;
   GridInfo getGridInfo(const Cell* cell) const;
-  int gridX(int x, int site_width) const;
+  int gridX(int x) const;
   int gridX(const Cell* cell) const;
-  int gridX(const Cell* cell, int site_width) const;
   int gridPaddedX(const Cell* cell) const;
-  int gridPaddedX(const Cell* cell, int site_width) const;
-  int gridY(int y, int row_height) const;
+  int gridY(int y, const Cell* cell) const;
   int gridY(const Cell* cell) const;
-  int gridY(const Cell* cell, int row_height) const;
+  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
+  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
-  int gridPaddedEndX(const Cell* cell, int site_width) const;
-  int gridEndX(int x, int site_width) const;
+  int gridEndX(int x) const;
   int gridEndX(const Cell* cell) const;
-  int gridEndX(const Cell* cell, int site_width) const;
-  int gridEndY(int y, int row_height) const;
+  int gridEndY(int y, const Cell* cell) const;
   int gridEndY(const Cell* cell) const;
-  int gridEndY(const Cell* cell, int row_height) const;
-  void setGridPaddedLoc(Cell* cell,
-                        int x,
-                        int y,
-                        int site_width,
-                        int row_height) const;
+  void setGridPaddedLoc(Cell* cell, int x, int y) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
-  int paddedWidth(const Cell* cell, int site_width) const;
   int paddedWidth(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
   int padLeft(const Cell* cell) const;
@@ -456,16 +513,6 @@ class Opendp
                            int row_height,
                            GridInfo grid_info);
 
-  // Optimizing mirroring
-  void findNetBoxes();
-  vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
-  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
-  // Sum of ITerm hpwl's.
-  int64_t hpwl(dbInst* inst);
-  void updateNetBoxes(dbInst* inst);
-  void saveNetBoxes(dbInst* inst);
-  void restoreNetBoxes(dbInst* inst);
-
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
@@ -478,9 +525,16 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<int, GridInfo> grid_info_map_;
+  map<GridMapKey, GridInfo> grid_info_map_;
+  // This map is used to map each unqie site to a grid. The key is always
+  // unique, but the value is not unique in the case of hybrid sites
+  // (alternating rows)
+  map<const dbSite*, GridMapKey> site_to_grid_key_;
+  GridMapKey smallest_non_hybrid_grid_key_;
   std::vector<GridInfo*> grid_info_vector_;
+  std::unordered_map<dbSite*, dbSite*> _hybrid_parent;
   map<dbInst*, Cell*> db_inst_map_;
+  bool has_hybrid_rows_ = false;
 
   Rect core_;
   int row_height_ = 0;  // dbu
@@ -511,9 +565,6 @@ class Opendp
   int64_t displacement_sum_ = 0;
   int64_t displacement_max_ = 0;
 
-  // Optimiize mirroring.
-  NetBoxMap net_box_map_;
-
   std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
@@ -521,9 +572,6 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
-  // Net bounding box siaz on nets with more instance terminals
-  // than this are ignored.
-  static constexpr int mirror_max_iterm_count_ = 100;
 };
 
 int divRound(int dividend, int divisor);

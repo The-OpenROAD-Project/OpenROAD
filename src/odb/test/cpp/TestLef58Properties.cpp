@@ -8,11 +8,12 @@
 #include "db.h"
 #include "defin.h"
 #include "defout.h"
+#include "env.h"
 #include "lefin.h"
 #include "lefout.h"
 #include "utl/Logger.h"
-using namespace odb;
-using namespace std;
+
+namespace odb {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -24,13 +25,12 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("/data/gscl45nm.lef");
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  path = testTmpPath("/data/lef58class_gscl45nm.lef");
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
@@ -49,13 +49,12 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("/data/gscl45nm.lef");
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  path = std::string(std::getenv("BASE_DIR"))
-         + "/results/TestLef58PropertiesDbRW";
+  path = testTmpPath("/results/TestLef58PropertiesDbRW");
+
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
                    | std::ios::eofbit);
@@ -96,6 +95,17 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(rule->isTwoEdgesValid() == 1);
   BOOST_TEST(rule->isToConcaveCornerValid() == 0);
 
+  auto wrongDir_rules = layer->getTechLayerWrongDirSpacingRules();
+  BOOST_TEST(wrongDir_rules.size() == 1);
+  odb::dbTechLayerWrongDirSpacingRule* wrongDir_rule
+      = (odb::dbTechLayerWrongDirSpacingRule*) *wrongDir_rules.begin();
+  BOOST_TEST(wrongDir_rule->getWrongdirSpace() == 0.12 * distFactor);
+  BOOST_TEST(wrongDir_rule->isNoneolValid() == 1);
+  BOOST_TEST(wrongDir_rule->getNoneolWidth() == 0.15 * distFactor);
+  BOOST_TEST(wrongDir_rule->getPrlLength() == -0.05 * distFactor);
+  BOOST_TEST(wrongDir_rule->isLengthValid() == 1);
+  BOOST_TEST(wrongDir_rule->getLength() == 0.2 * distFactor);
+
   auto minStepRules = layer->getTechLayerMinStepRules();
   BOOST_TEST(minStepRules.size() == 4);
   auto itr = minStepRules.begin();
@@ -129,8 +139,8 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(corner_rule->isExceptEol());
   BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
-  vector<pair<int, int>> spacing;
-  vector<int> corner_width;
+  std::vector<std::pair<int, int>> spacing;
+  std::vector<int> corner_width;
   corner_rule->getSpacingTable(spacing);
   corner_rule->getWidthTable(corner_width);
   BOOST_TEST(spacing.size() == 1);
@@ -146,10 +156,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(spacing_tbl_rule->isSameMask() == false);
   BOOST_TEST(spacing_tbl_rule->isExceeptEol() == true);
   BOOST_TEST(spacing_tbl_rule->getEolWidth() == 0.090 * distFactor);
-  vector<int> width;
-  vector<int> length;
-  vector<vector<int>> spacing_tbl;
-  map<unsigned int, pair<int, int>> within;
+  std::vector<int> width;
+  std::vector<int> length;
+  std::vector<std::vector<int>> spacing_tbl;
+  std::map<unsigned int, std::pair<int, int>> within;
   spacing_tbl_rule->getTable(width, length, spacing_tbl, within);
   BOOST_TEST(width.size() == 2);
   BOOST_TEST(length.size() == 2);
@@ -343,7 +353,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   layer = dbTech->findLayer("metal2");
   // Check LEF57_MINSTEP
   auto minStepRules_57 = layer->getTechLayerMinStepRules();
-  BOOST_TEST(minStepRules_57.size() == 4);
+  BOOST_TEST(minStepRules_57.size() == 7);
   auto itr_57 = minStepRules_57.begin();
   odb::dbTechLayerMinStepRule* step_rule_57
       = (odb::dbTechLayerMinStepRule*) *itr_57;
@@ -472,3 +482,5 @@ BOOST_AUTO_TEST_CASE(test_default)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace odb

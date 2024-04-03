@@ -30,8 +30,8 @@
 #include "gc/FlexGC_impl.h"
 #include "odb/db.h"
 
-using namespace fr;
-typedef odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY LOOKUP_STRATEGY;
+namespace drt {
+using LOOKUP_STRATEGY = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;
 
 inline frSquaredDistance getC2CDistSquare(
     const gtl::rectangle_data<frCoord>& rect1,
@@ -47,8 +47,8 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
     const gtl::rectangle_data<frCoord>& viaRect1,
     const gtl::rectangle_data<frCoord>& viaRect2,
     const gtl::rectangle_data<frCoord>& markerRect,
-    std::string cutClass1,
-    std::string cutClass2,
+    const std::string& cutClass1,
+    const std::string& cutClass2,
     frCoord& prl,
     odb::dbTechLayerCutSpacingTableDefRule* dbRule)
 {
@@ -70,15 +70,15 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_prlValid(
   if (prlX > reqPrl || prlY > reqPrl) {
     prl = std::max(prlX, prlY);
     return true;
-  } else
-    return false;
+  }
+  return false;
 }
 
 bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
     gcRect* viaRect1,
     gcRect* viaRect2,
-    frString class1,
-    frString class2,
+    const frString& class1,
+    const frString& class2,
     const frDirEnum dir,
     frSquaredDistance distSquare,
     frSquaredDistance c2cSquare,
@@ -110,25 +110,25 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
     reqSpcSqr *= reqSpcSqr;
     if (c2cSquare < reqSpcSqr) {
       return true;
-    } else {
-      reqSpcSqr
-          = dbRule->getSpacing(class1,
-                               isSide1,
-                               class2,
-                               isSide2,
-                               odb::dbTechLayerCutSpacingTableDefRule::MIN);
-      reqSpcSqr *= reqSpcSqr;
-      if (distSquare < reqSpcSqr)
-        return true;
+    }
+    reqSpcSqr = dbRule->getSpacing(class1,
+                                   isSide1,
+                                   class2,
+                                   isSide2,
+                                   odb::dbTechLayerCutSpacingTableDefRule::MIN);
+    reqSpcSqr *= reqSpcSqr;
+    if (distSquare < reqSpcSqr) {
+      return true;
     }
     return false;
   }
   if (class1 == class2 && !dbRule->isLayerValid()) {
     bool exactlyAligned = false;
-    if (dir == frDirEnum::N || dir == frDirEnum::S)
+    if (dir == frDirEnum::N || dir == frDirEnum::S) {
       exactlyAligned = (prl == deltaH1) && !dbRule->isHorizontal();
-    else
+    } else {
       exactlyAligned = (prl == deltaV1) && !dbRule->isVertical();
+    }
 
     auto exAlSpc = dbRule->getExactAlignedSpacing(class1);
     if (exactlyAligned && exAlSpc != -1) {
@@ -157,12 +157,13 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
     }
     box_t qb(point_t(gtl::xl(edgeRect2), gtl::yl(edgeRect2)),
              point_t(gtl::xh(edgeRect2), gtl::yh(edgeRect2)));
-    vector<pair<segment_t, gcSegment*>> results;
+    std::vector<std::pair<segment_t, gcSegment*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryPolygonEdge(
         qb, viaRect2->getLayerNum() + 1, results);
-    if (results.size() == 0)
+    if (results.empty()) {
       spcIdx = LOOKUP_STRATEGY::FIRST;
+    }
   }
 
   frCoord reqSpc = dbRule->getSpacing(class1, isSide1, class2, isSide2, spcIdx);
@@ -175,8 +176,9 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
                    == dbRule->getSpacing(
                        class1, isSide1, class2, isSide2, LOOKUP_STRATEGY::MAX));
   if (useCenter) {
-    if (c2cSquare < reqSpcSqr)
+    if (c2cSquare < reqSpcSqr) {
       return true;
+    }
   } else if (distSquare < reqSpcSqr) {
     return true;
   }
@@ -188,14 +190,16 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1,
 {
   box_t qb(point_t(gtl::xl(*viaRect1), gtl::yl(*viaRect1)),
            point_t(gtl::xh(*viaRect1), gtl::yh(*viaRect1)));
-  vector<rq_box_value_t<gcRect*>> results;
+  std::vector<rq_box_value_t<gcRect*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(qb, viaRect1->getLayerNum() - 1, results);
   for (const auto& res : results) {
     auto metalRect = res.second;
-    if (gtl::intersects(*metalRect, *viaRect1, false))
-      if (gtl::intersects(*metalRect, *viaRect2, false))
+    if (gtl::intersects(*metalRect, *viaRect1, false)) {
+      if (gtl::intersects(*metalRect, *viaRect2, false)) {
         return true;
+      }
+    }
   }
   return false;
 }
@@ -203,8 +207,9 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_sameMetal(gcRect* viaRect1,
 bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_stacked(gcRect* viaRect1,
                                                          gcRect* viaRect2)
 {
-  if (*viaRect1 == *viaRect2)
+  if (*viaRect1 == *viaRect2) {
     return true;
+  }
   return gtl::contains(*viaRect1, *viaRect2)
          || gtl::contains(*viaRect2, *viaRect1);
 }
@@ -222,16 +227,20 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   bool viol = false;
   if (dbRule->isLayerValid()) {
     if (dbRule->isSameNet()) {
-      if (viaRect1->getNet() != viaRect2->getNet())
+      if (viaRect1->getNet() != viaRect2->getNet()) {
         return;
+      }
       if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()
-          && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+          && checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)) {
         return;
+      }
     } else if (dbRule->isSameMetal()) {
-      if (viaRect1->getNet() != viaRect2->getNet())
+      if (viaRect1->getNet() != viaRect2->getNet()) {
         return;
-      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+      }
+      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)) {
         return;
+      }
     } else {
       if (viaRect1->getNet() == viaRect2->getNet()) {
         return;
@@ -239,20 +248,25 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     }
   } else {
     if (dbRule->isSameNet()) {
-      if (viaRect1->getNet() != viaRect2->getNet())
+      if (viaRect1->getNet() != viaRect2->getNet()) {
         return;
+      }
     } else if (dbRule->isSameMetal()) {
-      if (viaRect1->getNet() != viaRect2->getNet())
+      if (viaRect1->getNet() != viaRect2->getNet()) {
         return;
-      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2))
+      }
+      if (!checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)) {
         return;
+      }
     } else {
       if (viaRect1->getNet() == viaRect2->getNet()) {
-        if (layer1->hasLef58SameNetCutSpcTblConstraint())
+        if (layer1->hasLef58SameNetCutSpcTblConstraint()) {
           return;
-        else if (checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)
-                 && layer1->hasLef58SameMetalCutSpcTblConstraint())
+        }
+        if (checkLef58CutSpacingTbl_sameMetal(viaRect1, viaRect2)
+            && layer1->hasLef58SameMetalCutSpcTblConstraint()) {
           return;
+        }
       }
     }
   }
@@ -260,26 +274,30 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
       = layer1->getCutClassIdx(viaRect1->width(), viaRect1->length());
   auto cutClassIdx2
       = layer2->getCutClassIdx(viaRect2->width(), viaRect2->length());
-  frString class1 = "";
-  frString class2 = "";
-  if (cutClassIdx1 != -1)
+  frString class1;
+  frString class2;
+  if (cutClassIdx1 != -1) {
     class1 = layer1->getCutClass(cutClassIdx1)->getName();
-  if (cutClassIdx2 != -1)
+  }
+  if (cutClassIdx2 != -1) {
     class2 = layer2->getCutClass(cutClassIdx2)->getName();
+  }
 
   gtl::rectangle_data<frCoord> markerRect(*viaRect1);
   gtl::generalized_intersect(markerRect, *viaRect2);
   frSquaredDistance distSquare
       = gtl::square_euclidean_distance(*viaRect1, *viaRect2);
   if (distSquare == 0) {
-    if (dbRule->getMaxSpacing(class1, class2) == 0)
+    if (dbRule->getMaxSpacing(class1, class2) == 0) {
       return;
-    if (!dbRule->isLayerValid())
+    }
+    if (!dbRule->isLayerValid()) {
       checkCutSpacing_short(viaRect1, viaRect2, markerRect);
-    else if (dbRule->isNoStack())
+    } else if (dbRule->isNoStack()) {
       viol = true;
-    else
+    } else {
       viol = !checkLef58CutSpacingTbl_stacked(viaRect1, viaRect2);
+    }
   }
   frSquaredDistance c2cSquare = getC2CDistSquare(*viaRect1, *viaRect2);
 
@@ -323,7 +341,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     // violation
     auto net1 = viaRect1->getNet();
     auto net2 = viaRect2->getNet();
-    auto marker = make_unique<frMarker>();
+    auto marker = std::make_unique<frMarker>();
     Rect box(gtl::xl(markerRect),
              gtl::yl(markerRect),
              gtl::xh(markerRect),
@@ -339,7 +357,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 
     marker->addVictim(
         net1->getOwner(),
-        make_tuple(layerNum1, Rect(llx, lly, urx, ury), viaRect1->isFixed()));
+        std::make_tuple(
+            layerNum1, Rect(llx, lly, urx, ury), viaRect1->isFixed()));
     marker->addSrc(net2->getOwner());
     llx = gtl::xl(*viaRect2);
     lly = gtl::yl(*viaRect2);
@@ -347,16 +366,29 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     ury = gtl::xh(*viaRect2);
     marker->addAggressor(
         net2->getOwner(),
-        make_tuple(layerNum2, Rect(llx, lly, urx, ury), viaRect2->isFixed()));
+        std::make_tuple(
+            layerNum2, Rect(llx, lly, urx, ury), viaRect2->isFixed()));
     addMarker(std::move(marker));
   }
 }
 
+inline bool isSupplyVia(gcRect* rect)
+{
+  return rect->isFixed() && rect->hasNet() && rect->getNet()->getFrNet()
+         && rect->getNet()->getFrNet()->getType().isSupply();
+}
+
 inline bool isSkipVia(gcRect* rect)
 {
-  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
-         && rect->hasNet() && rect->getNet()->getFrNet()
-         && rect->getNet()->getFrNet()->getType().isSupply();
+  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER_NUM && isSupplyVia(rect);
+}
+
+inline bool isFixedVia(gcRect* rect)
+{
+  if (rect->getLayerNum() == REPAIR_PDN_LAYER_NUM && isSupplyVia(rect)) {
+    return false;
+  }
+  return rect->isFixed();
 }
 
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
@@ -368,29 +400,34 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   auto width = viaRect->width();
   auto length = viaRect->length();
   auto cutClassIdx = layer1->getCutClassIdx(width, length);
-  frString cutClass = "";
-  if (cutClassIdx != -1)
+  frString cutClass;
+  if (cutClassIdx != -1) {
     cutClass = layer1->getCutClass(cutClassIdx)->getName();
+  }
 
   auto dbRule = con->getODBRule();
-  if (isSkipVia(viaRect))
+  if (isSkipVia(viaRect)) {
     return;
+  }
 
   bool isUpperVia = true;
   frLayerNum queryLayerNum;
   if (dbRule->isLayerValid()) {
-    if (dbRule->getSecondLayer()->getName() == layer1->getName())
+    if (dbRule->getSecondLayer()->getName() == layer1->getName()) {
       isUpperVia = false;
-    if (isUpperVia)
+    }
+    if (isUpperVia) {
       queryLayerNum = getTech()
                           ->getLayer(dbRule->getSecondLayer()->getName())
                           ->getLayerNum();
-    else
+    } else {
       queryLayerNum = getTech()
                           ->getLayer(dbRule->getTechLayer()->getName())
                           ->getLayerNum();
-  } else
+    }
+  } else {
     queryLayerNum = layerNum1;
+  }
   frCoord maxSpc;
 
   if (width == length) {
@@ -402,35 +439,41 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
 
   box_t queryBox;
   myBloat(*viaRect, maxSpc, queryBox);
-  vector<rq_box_value_t<gcRect*>> results;
+  std::vector<rq_box_value_t<gcRect*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(queryBox, queryLayerNum, results);
   for (auto& [box, ptr] : results) {
-    if (ptr->isFixed() && viaRect->isFixed())
+    if (isFixedVia(ptr) && isFixedVia(viaRect)) {
       continue;
-    if (ptr->getPin() == viaRect->getPin())
+    }
+    if (ptr->getPin() == viaRect->getPin()) {
       continue;
-    if (isSkipVia(ptr))
+    }
+    if (isSkipVia(ptr)) {
       continue;
-    if (isUpperVia)
+    }
+    if (isUpperVia) {
       checkLef58CutSpacingTbl_main(viaRect, ptr, con);
-    else
+    } else {
       checkLef58CutSpacingTbl_main(ptr, viaRect, con);
+    }
   }
 }
 void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                                               frLef58KeepOutZoneConstraint* con)
 {
   auto layer = getTech()->getLayer(rect->getLayerNum());
-  if (isSkipVia(rect))
+  if (isSkipVia(rect)) {
     return;
+  }
   auto dbRule = con->getODBRule();
   Rect viaBox(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
   Rect sideQueryBox(viaBox), endQueryBox(viaBox);
   auto viaCutClass = layer->getCutClass(rect->width(), rect->length());
   if (viaCutClass == nullptr
-      || viaCutClass->getName() != dbRule->getFirstCutClass())
+      || viaCutClass->getName() != dbRule->getFirstCutClass()) {
     return;
+  }
 
   if (viaBox.dx() > viaBox.dy()) {
     sideQueryBox = sideQueryBox.bloat(dbRule->getSideForwardExtension(),
@@ -454,59 +497,68 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
     // skip non-rectangular vias
     return;
   }
-  vector<rq_box_value_t<gcRect*>> allResults;
+  std::vector<rq_box_value_t<gcRect*>> allResults;
   auto& workerRegionQuery = getWorkerRegionQuery();
   {
-    vector<rq_box_value_t<gcRect*>> results;
+    std::vector<rq_box_value_t<gcRect*>> results;
     workerRegionQuery.queryMaxRectangle(
         sideQueryBox, layer->getLayerNum(), results);
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   {
-    vector<rq_box_value_t<gcRect*>> results;
+    std::vector<rq_box_value_t<gcRect*>> results;
     workerRegionQuery.queryMaxRectangle(
         endQueryBox, layer->getLayerNum(), results);
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   for (auto& [box, ptr] : allResults) {
-    if (ptr->isFixed() && rect->isFixed())
+    if (isFixedVia(ptr) && isFixedVia(rect)) {
       continue;
-    if (ptr->getPin() == rect->getPin())
+    }
+    if (ptr->getPin() == rect->getPin()) {
       continue;
-    if (isSkipVia(ptr))
+    }
+    if (isSkipVia(ptr)) {
       continue;
+    }
     auto via2CutClass = layer->getCutClass(ptr->width(), ptr->length());
     if (!dbRule->getSecondCutClass().empty()
         && (via2CutClass == nullptr
-            || dbRule->getSecondCutClass() != via2CutClass->getName()))
+            || dbRule->getSecondCutClass() != via2CutClass->getName())) {
       continue;
+    }
     odb::Rect ptrBox(
         gtl::xl(*ptr), gtl::yl(*ptr), gtl::xh(*ptr), gtl::yh(*ptr));
-    if (!sideQueryBox.overlaps(ptrBox) && !endQueryBox.overlaps(ptrBox))
+    if (!sideQueryBox.overlaps(ptrBox) && !endQueryBox.overlaps(ptrBox)) {
       continue;
+    }
     gtl::rectangle_data<frCoord> markerRect(*rect);
     gtl::generalized_intersect(markerRect, *ptr);
     Rect markerBox(gtl::xl(markerRect),
                    gtl::yl(markerRect),
                    gtl::xh(markerRect),
                    gtl::yh(markerRect));
-    auto marker = make_unique<frMarker>();
+    auto marker = std::make_unique<frMarker>();
     marker->setBBox(markerBox);
     marker->setLayerNum(layer->getLayerNum());
     marker->setConstraint(con);
     marker->addSrc(ptr->getNet()->getOwner());
     marker->addAggressor(
         ptr->getNet()->getOwner(),
-        make_tuple(layer->getLayerNum(), ptrBox, ptr->isFixed()));
+        std::make_tuple(layer->getLayerNum(), ptrBox, ptr->isFixed()));
     marker->addSrc(rect->getNet()->getOwner());
-    marker->addVictim(rect->getNet()->getOwner(),
-                      make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
+    marker->addVictim(
+        rect->getNet()->getOwner(),
+        std::make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
     addMarker(std::move(marker));
   }
 }
 
 void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
 {
+  if (rect->getLayerNum() > TOP_ROUTING_LAYER) {
+    return;
+  }
   for (auto con : getTech()
                       ->getLayer(rect->getLayerNum())
                       ->getMetalWidthViaConstraints()) {
@@ -514,27 +566,30 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     auto required_viadef = getTech()->getVia(rule->getViaName());
     frVia required_via(required_viadef);
     if (rect->width() == required_via.getCutBBox().minDXDY()
-        && rect->length() == required_via.getCutBBox().maxDXDY())
+        && rect->length() == required_via.getCutBBox().maxDXDY()) {
       continue;
+    }
     auto checkEnclosure =
         [this](gcRect* rect, odb::dbMetalWidthViaMap* rule, bool above) {
-          vector<rq_box_value_t<gcRect*>> results;
+          std::vector<rq_box_value_t<gcRect*>> results;
 
           auto& workerRegionQuery = getWorkerRegionQuery();
           workerRegionQuery.queryMaxRectangle(
               *rect, rect->getLayerNum() + ((above) ? 1 : -1), results);
           gcRect* chosen_rect = nullptr;
           for (auto& [box, obj] : results) {
-            if (!gtl::contains(*obj, *rect))
+            if (!gtl::contains(*obj, *rect)) {
               continue;
+            }
             auto above_width = box.minDXDY();
             if (above_width >= ((above) ? rule->getAboveLayerWidthLow()
                                         : rule->getBelowLayerWidthLow())
                 && above_width <= ((above) ? rule->getAboveLayerWidthHigh()
                                            : rule->getBelowLayerWidthHigh())) {
               chosen_rect = obj;
-              if (!obj->isFixed())
+              if (!obj->isFixed()) {
                 break;
+              }
             }
           }
           return chosen_rect;
@@ -542,20 +597,23 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
 
     // check above Metal Layer Width
     gcRect* above_rect = checkEnclosure(rect, rule, true);
-    if (above_rect == nullptr)
+    if (above_rect == nullptr) {
       continue;
+    }
 
     // check below Metal Layer Width
     gcRect* below_rect = checkEnclosure(rect, rule, true);
-    if (below_rect == nullptr)
+    if (below_rect == nullptr) {
       continue;
-    if (below_rect->isFixed() && above_rect->isFixed() && rect->isFixed())
+    }
+    if (below_rect->isFixed() && above_rect->isFixed() && rect->isFixed()) {
       continue;
+    }
     Rect markerBox(
         gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
     auto net1 = above_rect->getNet();
     auto net2 = below_rect->getNet();
-    auto marker = make_unique<frMarker>();
+    auto marker = std::make_unique<frMarker>();
     marker->setBBox(markerBox);
     marker->setLayerNum(rect->getLayerNum());
     marker->setConstraint(con);
@@ -565,23 +623,23 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     frCoord urx = gtl::xh(*above_rect);
     frCoord ury = gtl::xh(*above_rect);
     marker->addAggressor(net1->getOwner(),
-                         make_tuple(above_rect->getLayerNum(),
-                                    Rect(llx, lly, urx, ury),
-                                    above_rect->isFixed()));
+                         std::make_tuple(above_rect->getLayerNum(),
+                                         Rect(llx, lly, urx, ury),
+                                         above_rect->isFixed()));
     marker->addSrc(net2->getOwner());
     llx = gtl::xl(*below_rect);
     lly = gtl::yl(*below_rect);
     urx = gtl::xh(*below_rect);
     ury = gtl::xh(*below_rect);
     marker->addAggressor(net2->getOwner(),
-                         make_tuple(below_rect->getLayerNum(),
-                                    Rect(llx, lly, urx, ury),
-                                    below_rect->isFixed()));
+                         std::make_tuple(below_rect->getLayerNum(),
+                                         Rect(llx, lly, urx, ury),
+                                         below_rect->isFixed()));
 
     marker->addSrc(rect->getNet()->getOwner());
     marker->addVictim(
         rect->getNet()->getOwner(),
-        make_tuple(rect->getLayerNum(), markerBox, rect->isFixed()));
+        std::make_tuple(rect->getLayerNum(), markerBox, rect->isFixed()));
     addMarker(std::move(marker));
     return;
   }
@@ -632,3 +690,5 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
     }
   }
 }
+
+}  // namespace drt

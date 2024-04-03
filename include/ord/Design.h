@@ -41,10 +41,12 @@
 
 namespace odb {
 class dbBlock;
+class dbDatabase;
 class dbMaster;
 class dbMTerm;
 class dbNet;
 class dbInst;
+class dbITerm;
 }  // namespace odb
 
 namespace ifp {
@@ -87,7 +89,7 @@ namespace cts {
 class TritonCTS;
 }
 
-namespace triton_route {
+namespace drt {
 class TritonRoute;
 }
 
@@ -129,8 +131,6 @@ class ICeWall;
 
 namespace sta {
 class dbSta;
-class Corner;
-class MinMax;
 class LibertyCell;
 }  // namespace sta
 
@@ -164,22 +164,13 @@ class Design
 
   Tech* getTech();
 
-  // Timing related methods
-  std::vector<sta::Corner*> getCorners();
-  enum MinMax
-  {
-    Min,
-    Max
-  };
-  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
-  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+  bool isInSupply(odb::dbITerm* pin);
+  std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
-  float staticPower(odb::dbInst* inst, sta::Corner* corner);
-  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   // Services
   ifp::InitFloorplan* getFloorplan();
@@ -191,7 +182,7 @@ class Design
   ppl::IOPlacer* getIOPlacer();
   tap::Tapcell* getTapcell();
   cts::TritonCTS* getTritonCts();
-  triton_route::TritonRoute* getTritonRoute();
+  drt::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
   fin::Finale* getFinale();
   par::PartitionMgr* getPartitionMgr();
@@ -202,9 +193,16 @@ class Design
   pdn::PdnGen* getPdnGen();
   pad::ICeWall* getICeWall();
 
+  // This returns a database that is not the one associated with
+  // the rest of the application.  It is usable as a standalone
+  // db but should not passed to any other Design or Tech APIs.
+  //
+  // This is useful if you need a second database for specialized
+  // use cases and is not ordinarily required.
+  static odb::dbDatabase* createDetachedDb();
+
  private:
   sta::dbSta* getSta();
-  sta::MinMax* getMinMax(MinMax type);
   sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
 
   Tech* tech_;

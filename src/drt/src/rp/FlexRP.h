@@ -32,7 +32,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexRP
 {
  public:
@@ -141,6 +141,11 @@ class FlexRP
                                        bool isCurrDirX,
                                        ForbiddenRanges& forbiddenRanges,
                                        frNonDefaultRule* ndr = nullptr);
+  void prep_via2viaPRL(frLayerNum lNum,
+                       frViaDef* viaDef1,
+                       frViaDef* viaDef2,
+                       bool isCurrDirX,
+                       frCoord& prl);
   void prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum& lNum,
                                             frViaDef* viaDef1,
                                             frViaDef* viaDef2,
@@ -161,4 +166,4 @@ class FlexRP
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 };
-}  // namespace fr
+}  // namespace drt

@@ -36,16 +36,15 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstdlib>
 #include <iomanip>
-#include <limits>
 #include <map>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #include "Metrics.h"
@@ -110,6 +109,7 @@ class Logger
   // Use nullptr if messages or metrics are not logged to a file.
   Logger(const char* filename = nullptr,
          const char* metrics_filename = nullptr);
+  Logger(const Logger& logger) = delete;
   ~Logger();
   static ToolId findToolId(const char* tool_name);
 
@@ -152,6 +152,7 @@ class Logger
                    const std::string& message,
                    const Args&... args)
   {
+    warning_count_++;
     log(tool, spdlog::level::level_enum::warn, id, message, args...);
   }
 
@@ -161,6 +162,7 @@ class Logger
                                               const std::string& message,
                                               const Args&... args)
   {
+    error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
     char tool_id[32];
     sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
@@ -276,7 +278,7 @@ class Logger
       key = metric;
     else
       key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
-    metrics_entries_.push_back({key, value});
+    metrics_entries_.push_back({std::move(key), value});
   }
 
   void flushMetrics();
@@ -305,10 +307,12 @@ class Logger
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
-  using MessageCounter = std::array<short, max_message_id + 1>;
+  using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
   std::array<MessageCounter, ToolId::SIZE> message_counters_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_;
+  std::atomic_int warning_count_;
+  std::atomic_int error_count_;
   static constexpr const char* level_names[]
       = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "OFF"};
   static constexpr const char* pattern_ = "%v";
@@ -327,3 +331,41 @@ class Logger
 #undef GENERATE_STRING
 
 }  // namespace utl
+
+// Define stream_as for fmt > v10
+#if !SWIG && FMT_VERSION >= 100000
+
+namespace utl {
+
+struct test_ostream
+{
+ public:
+  template <class T>
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
+
+  template <class>
+  static auto test(...) -> std::false_type;
+};
+
+template <class T,
+          class = std::enable_if_t<decltype(test_ostream::test<T>(0))::value>>
+auto format_as(const T& t)
+{
+  return fmt::streamed(t);
+}
+
+}  // namespace utl
+
+#else
+namespace utl {
+
+// Uncallable class
+template <class T>
+class format_as
+{
+};
+
+}  // namespace utl
+#endif

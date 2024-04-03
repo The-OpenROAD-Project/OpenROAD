@@ -13,6 +13,7 @@ record_tests {
   aes_asap7_vdd
   check_power_grid
   check_power_grid_disconnected
+  check_power_grid_ok_disconnected
   check_power_grid_macros
   check_power_grid_disconnected_macro
   corners
@@ -21,4 +22,7 @@ record_tests {
   zerosoc_pads
   zerosoc_pads_check_only
   zerosoc_pads_check_only_disconnected
+  pad_connected_by_abutment
+  #psm_man_tcl_check
+  #psm_readme_msgs_check
 }

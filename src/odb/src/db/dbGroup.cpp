@@ -573,4 +573,4 @@ dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
 
 // User Code End dbGroupPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

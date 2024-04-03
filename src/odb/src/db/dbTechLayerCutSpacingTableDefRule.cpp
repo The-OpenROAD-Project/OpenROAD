@@ -315,10 +315,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerCutSpacingTableDefRule::~_dbTechLayerCutSpacingTableDefRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableDefRule - Methods
@@ -957,8 +953,8 @@ bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(
   return false;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
-                                                   std::string cutClass2)
+int dbTechLayerCutSpacingTableDefRule::getPrlEntry(const std::string& cutClass1,
+                                                   const std::string& cutClass2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -1063,4 +1059,4 @@ void dbTechLayerCutSpacingTableDefRule::destroy(
 
 // User Code End dbTechLayerCutSpacingTableDefRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

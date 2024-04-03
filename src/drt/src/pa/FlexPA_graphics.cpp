@@ -34,7 +34,7 @@
 
 #include "FlexPA.h"
 
-namespace fr {
+namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
@@ -82,8 +82,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
       inst_ = nullptr;
     } else {
       inst_ = design->getTopBlock()->getInst(inst_name);
-      if (!inst_)
+      if (!inst_) {
         logger_->warn(DRT, 5000, "INST NOT FOUND!");
+      }
     }
   }
 
@@ -157,14 +158,14 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
     painter.setPen(color, /* cosmetic */ true);
 
-    Point pt = ap.getPoint();
+    const Point& pt = ap.getPoint();
     painter.drawX(pt.x(), pt.y(), 50);
   }
 }
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
 
@@ -190,7 +191,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* instClass)
 {
   pin_ = nullptr;
 
@@ -242,7 +243,7 @@ void FlexPAGraphics::setAPs(
 
   // We make a copy of the aps
   for (auto& ap : aps) {
-    aps_.emplace_back(*ap.get());
+    aps_.emplace_back(*ap);
   }
   status("add " + std::to_string(aps.size()) + " ( " + to_string(lower_type)
          + " / " + to_string(upper_type) + " ) "
@@ -322,7 +323,7 @@ void FlexPAGraphics::setPlanarAP(
 }
 
 void FlexPAGraphics::setObjsAndMakers(
-    const vector<pair<frConnFig*, frBlockObject*>>& objs,
+    const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
     const std::vector<std::unique_ptr<frMarker>>& markers,
     const FlexPA::PatternType type)
 {
@@ -376,4 +377,4 @@ bool FlexPAGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-}  // namespace fr
+}  // namespace drt

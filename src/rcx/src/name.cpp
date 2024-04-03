@@ -37,11 +37,11 @@ namespace rcx {
 class NameTable::NameBucket
 {
  public:
-  void set(char* name, uint tag);
+  void set(const char* name, uint tag);
   void deallocWord();
 
  private:
-  char* _name;
+  const char* _name;
   uint _tag;
 
   friend class NameTable;
@@ -57,11 +57,12 @@ static void Ath__hashError(const char* msg, int exitFlag)
   }
 }
 
-void NameTable::NameBucket::set(char* name, uint tag)
+void NameTable::NameBucket::set(const char* name, uint tag)
 {
   int len = strlen(name);
-  _name = new char[len + 1];
-  strcpy(_name, name);
+  char* name_copy = new char[len + 1];
+  strcpy(name_copy, name);
+  _name = name_copy;
   _tag = tag;
 }
 void NameTable::NameBucket::deallocWord()
@@ -87,7 +88,7 @@ NameTable::NameTable(uint n, char* zero)
   addNewName(zero, 0);
 }
 
-uint NameTable::addName(char* name, uint dataId)
+uint NameTable::addName(const char* name, uint dataId)
 {
   uint poolIndex = 0;
   NameBucket* b = _bucketPool->alloc(nullptr, &poolIndex);
@@ -101,7 +102,7 @@ uint NameTable::addName(char* name, uint dataId)
 // ---------------------------------------------------------
 // Hash Functions
 // ---------------------------------------------------------
-uint NameTable::addNewName(char* name, uint dataId)
+uint NameTable::addNewName(const char* name, uint dataId)
 {
   int n;
   if (_hashTable->get(name, n)) {
@@ -112,7 +113,7 @@ uint NameTable::addNewName(char* name, uint dataId)
   return addName(name, dataId);
 }
 
-char* NameTable::getName(uint poolId)
+const char* NameTable::getName(uint poolId)
 {
   return _bucketPool->get(poolId)->_name;
 }
@@ -122,7 +123,10 @@ uint NameTable::getDataId(int poolId)
   return _bucketPool->get(poolId)->_tag;
 }
 
-uint NameTable::getDataId(char* name, uint ignoreFlag, uint exitFlag, int* nn)
+uint NameTable::getDataId(const char* name,
+                          uint ignoreFlag,
+                          uint exitFlag,
+                          int* nn)
 {
   int n;
   if (_hashTable->get(name, n)) {

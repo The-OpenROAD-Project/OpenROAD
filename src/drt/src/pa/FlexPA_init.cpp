@@ -34,8 +34,7 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 void FlexPA::initViaRawPriority()
 {
@@ -64,7 +63,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS1 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer1Rect;
@@ -87,7 +86,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     const gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS2 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer2Rect;
@@ -140,7 +139,7 @@ void FlexPA::initTrackCoords()
   }
 
   // half coords
-  vector<vector<frCoord>> halfTrackCoords(numLayers);
+  std::vector<std::vector<frCoord>> halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
 
@@ -159,3 +158,5 @@ void FlexPA::initTrackCoords()
     }
   }
 }
+
+}  // namespace drt

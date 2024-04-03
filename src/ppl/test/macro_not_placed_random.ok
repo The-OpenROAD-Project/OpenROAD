@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: blocked_region.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 253 components and 1357 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 155 connections.
+[INFO PPL-0070] Pin clk placed at (40.02um, 0.40um).
+[INFO PPL-0070] Pin resp_rdy placed at (1.25um, 15.30um).
+Found 1 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0007] Random pin placement.

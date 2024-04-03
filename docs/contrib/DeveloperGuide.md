@@ -134,6 +134,13 @@ examples. Use swig to define internal functions to C++ functionality.
 Tcl files can be included by encoding them in CMake into a string that
 is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
 
+:::{Note}
+Please refer to the top-level Tcl formatting [guide](TclFormat.md).
+Our top-level Tcl files, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages.
+:::
+
 ## Errors
 
 Tools should report errors to the user using the `ord::error` function
@@ -196,7 +203,13 @@ The patch file "AddTool.patch" illustrates how to add a tool to
 OpenROAD. Use the following commands to add a sample tool:
 
 ``` shell
-patch -p < docs/misc/AddTool.patch
+# first, update existing config files
+patch -p1 < docs/misc/AddTool.patch
+
+# next, create the additional source files of the tool using this command
+patch -p1 < docs/misc/AddToolFiles.patch
+
+# finally, create the regression tests as follows
 cd src/tool/test
 ln -s ../../../test/regression.tcl regression.tcl
 ```
@@ -228,11 +241,18 @@ toolize [-key1 key1] [-flag1] positional_argument1
 Tool commands should be documented in the top-level OpenROAD `README.md`
 file. Detailed documentation should be the `tool/README.md` file.
 
+:::{Note}
+Please refer to the README formatting [guide](ReadmeFormat.md).
+Our top-level READMEs, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages. 
+:::
+
 ## Tool Flow Namespace
 
 Tool namespaces are usually three-lettered lowercase letters. 
 
-- Verilog to DB ([dbSTA](../main/src/dbSta/README.md))
+- Verilog to DB (dbSTA)
 - OpenDB: Open Database ([odb](../main/src/odb/README.md))
 - TritonPart: constraints-driven paritioner ([par](../main/src/par/README.md))
 - Floorplan Initialization ([ifp](../main/src/ifp/README.md))
@@ -250,11 +270,11 @@ Tool namespaces are usually three-lettered lowercase letters.
 - Antenna check and diode insertion ([ant](../main/src/ant/README.md))
 - TritonRoute Detailed routing ([drt](../main/src/drt/README.md))
 - Metal fill insertion ([fin](../main/src/fin/README.md))
-- Design for Test ([dst](../main/src/dst/README.md))
+- Design for Test ([dft](../main/src/dft/README.md))
 - OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
-- OpenSTA timing/power report ([sta](../main/src/sta/README.md))
+- OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md)
 - Graphical User Interface ([gui](../main/src/gui/README.md))
-- Static IR analyser ([psm](../main/src/psm/README.md))
+- Static IR analyzer ([psm](../main/src/psm/README.md))
 
 ## Tool Checklist
 
@@ -285,6 +305,7 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
+1. Ensure the top-level README and Tcl format are compliant. 
 
 ## Code Linting and Formatting
 OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
