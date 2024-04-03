@@ -32,6 +32,7 @@
 
 #include "Rudy.h"
 
+#include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
@@ -46,19 +47,11 @@ Rudy::Rudy(odb::dbBlock* block) : block_(block)
   // TODO: Match the wire width with the paper definition
   wire_width_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
-  odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
-  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-  if (track_grid == nullptr) {
-    return;
-  }
-  int track_spacing, track_init, num_tracks;
-  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
-  int upper_rightX = grid_block_.xMax();
-  int upper_rightY = grid_block_.yMax();
-  int tile_size = pitches_in_tile_ * track_spacing;
-  int x_grids = upper_rightX / tile_size;
-  int y_grids = upper_rightY / tile_size;
+  int x_grids, y_grids;
+  grouter_->getGridSize(x_grids, y_grids);
+  const int tile_size = grouter_->getGridTileSize();
   setGridConfig(grid_block_, x_grids, y_grids);
+  makeGrid(tile_size);
 }
 
 void Rudy::setGridConfig(odb::Rect block, int tile_cnt_x, int tile_cnt_y)
@@ -66,28 +59,24 @@ void Rudy::setGridConfig(odb::Rect block, int tile_cnt_x, int tile_cnt_y)
   grid_block_ = block;
   tile_cnt_x_ = tile_cnt_x;
   tile_cnt_y_ = tile_cnt_y;
-  makeGrid();
 }
 
-void Rudy::makeGrid()
+void Rudy::makeGrid(const int tile_size)
 {
-  const int block_width = grid_block_.dx();
-  const int block_height = grid_block_.dy();
   const int grid_lx = grid_block_.xMin();
   const int grid_ly = grid_block_.yMin();
-  const int tile_width = block_width / tile_cnt_x_;
-  const int tile_height = block_height / tile_cnt_y_;
 
   grid_.resize(tile_cnt_x_);
   int cur_x = grid_lx;
-  for (auto& grid_column : grid_) {
-    grid_column.resize(tile_cnt_y_);
+  for (int x = 0; x < grid_.size(); x++) {
+    grid_[x].resize(tile_cnt_y_);
     int cur_y = grid_ly;
-    for (auto& grid : grid_column) {
-      grid.setRect(cur_x, cur_y, cur_x + tile_width, cur_y + tile_height);
-      cur_y += tile_height;
+    for (int y = 0; y < grid_[x].size(); y++) {
+      Tile& grid = grid_[x][y];
+      grid.setRect(cur_x, cur_y, cur_x + tile_size, cur_y + tile_size);
+      cur_y += tile_size;
     }
-    cur_x += tile_width;
+    cur_x += tile_size;
   }
 }
 

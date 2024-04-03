@@ -882,6 +882,17 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
                   : max_routing_layer_;
 }
 
+void GlobalRouter::getGridSize(int& x_grids, int& y_grids)
+{
+  x_grids = grid_->getXGrids();
+  y_grids = grid_->getYGrids();
+}
+
+int GlobalRouter::getGridTileSize()
+{
+  return grid_->getTileSize();
+}
+
 void GlobalRouter::computeTrackConsumption(
     const Net* net,
     int& track_consumption,

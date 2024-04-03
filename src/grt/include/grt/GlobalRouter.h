@@ -267,6 +267,8 @@ class GlobalRouter : public ant::GlobalRouteSource
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
+  void getGridSize(int& x_grids, int& y_grids);
+  int getGridTileSize();
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();

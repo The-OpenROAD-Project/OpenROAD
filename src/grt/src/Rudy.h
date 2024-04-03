@@ -41,6 +41,8 @@
 
 namespace grt {
 
+class GlobalRouter;
+
 class Rudy
 {
  public:
@@ -86,7 +88,7 @@ class Rudy
   /**
    * \pre This function should be called after `setGridConfig`
    * */
-  void makeGrid();
+  void makeGrid(const int tile_size);
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
   void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
   void processIntersectionGenericObstruction(odb::Rect obstruction_rect,
@@ -99,11 +101,10 @@ class Rudy
 
   odb::dbBlock* block_;
   odb::Rect grid_block_;
+  GlobalRouter* grouter_;
   int tile_cnt_x_ = 40;
   int tile_cnt_y_ = 40;
   int wire_width_ = 100;
-  const int pitches_in_tile_ = 15;
-
   std::vector<std::vector<Tile>> grid_;
 };
 
