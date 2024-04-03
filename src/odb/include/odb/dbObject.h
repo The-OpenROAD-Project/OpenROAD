@@ -124,6 +124,7 @@ enum dbObjectType
   dbTechLayerMinStepRuleObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerTwoWiresForbiddenSpcRuleObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType
