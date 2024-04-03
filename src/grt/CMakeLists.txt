@@ -51,6 +51,7 @@ add_library(grt_lib
     src/Pin.cpp
     src/MakeWireParasitics.cpp
     src/RepairAntennas.cpp
+    src/Rudy.cpp
     src/GlobalRouter.cpp
 )
 
