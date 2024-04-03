@@ -220,7 +220,6 @@ proc clock_tree_synthesis { args } {
     cts::set_insertion_delay true
   }
 
-  cts::set_dummy_load [info exists flags(-use_dummy_load)]
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."
