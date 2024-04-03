@@ -450,9 +450,6 @@ class FlexGCWorker::Impl
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect,
       frCutSpacingConstraint* con);
-  frCoord checkCutSpacing_spc_getReqSpcVal(gcRect* ptr1,
-                                           gcRect* ptr2,
-                                           frCutSpacingConstraint* con);
 
   // LEF58
   void checkLef58CutSpacing_main(gcRect* rect);
@@ -484,10 +481,6 @@ class FlexGCWorker::Impl
                                            frLef58CutSpacingConstraint* con);
   bool checkLef58CutSpacing_spc_hasTwoCuts_helper(
       gcRect* rect,
-      frLef58CutSpacingConstraint* con);
-  frCoord checkLef58CutSpacing_spc_getReqSpcVal(
-      gcRect* ptr1,
-      gcRect* ptr2,
       frLef58CutSpacingConstraint* con);
   // LEF58_KEEPOUTZONE
   void checKeepOutZone_main(gcRect* rect, frLef58KeepOutZoneConstraint* con);
