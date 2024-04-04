@@ -1337,6 +1337,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       sta_(nullptr),
       stagui_(nullptr),
       update_button_(new QPushButton("Update", this)),
+      fit_button_(new QPushButton("Fit", this)),
       corner_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
 {
@@ -1347,6 +1348,7 @@ ClockWidget::ClockWidget(QWidget* parent)
   QHBoxLayout* button_layout = new QHBoxLayout;
   button_layout->addWidget(corner_box_);
   button_layout->addWidget(update_button_);
+  button_layout->addWidget(fit_button_);
 
   corner_box_->setToolTip("Timing corner");
 
@@ -1358,7 +1360,10 @@ ClockWidget::ClockWidget(QWidget* parent)
   setWidget(container);
 
   connect(update_button_, &QPushButton::clicked, [=] { populate(); });
+  connect(fit_button_, &QPushButton::clicked, this, &ClockWidget::fit);
+  
   update_button_->setEnabled(false);
+  fit_button_->setEnabled(false);
 
   connect(clocks_tab_,
           &QTabWidget::currentChanged,
@@ -1393,6 +1398,7 @@ void ClockWidget::setLogger(utl::Logger* logger)
 void ClockWidget::setBlock(odb::dbBlock* block)
 {
   update_button_->setEnabled(block != nullptr);
+  fit_button_->setEnabled(block != nullptr);
   block_ = block;
 }
 
@@ -1521,8 +1527,8 @@ void ClockWidget::currentClockChanged(int index)
 
 void ClockWidget::fit()
 {
-  for (const auto& view : views_) {
-    view->fit();
+  if (views_.size() > 0 && clocks_tab_->currentIndex() < views_.size()) {
+    views_[clocks_tab_->currentIndex()]->fit();
   }
 }
 

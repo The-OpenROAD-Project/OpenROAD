@@ -588,7 +588,6 @@ void MainWindow::createActions()
   connect(exit_, &QAction::triggered, this, &MainWindow::exit);
   connect(this, &MainWindow::exit, viewers_, &LayoutTabs::exit);
   connect(fit_, &QAction::triggered, viewers_, &LayoutTabs::fit);
-  connect(fit_, &QAction::triggered, clock_viewer_, &ClockWidget::fit);
   connect(zoom_in_,
           &QAction::triggered,
           viewers_,
