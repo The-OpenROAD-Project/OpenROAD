@@ -89,6 +89,7 @@ class Rudy
    * \pre This function should be called after `setGridConfig`
    * */
   void makeGrid(const int tile_size);
+  void getResourceReductions();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
   void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
   void processIntersectionGenericObstruction(odb::Rect obstruction_rect,

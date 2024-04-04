@@ -33,6 +33,7 @@
 #include "Rudy.h"
 
 #include "grt/GlobalRouter.h"
+#include "grt/GRoute.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
@@ -88,6 +89,24 @@ void Rudy::makeGrid(const int tile_size)
   }
 }
 
+void Rudy::getResourceReductions()
+{
+  int min_layer, max_layer;
+  grouter_->getMinMaxLayer(min_layer, max_layer);
+  grouter_->initFastRoute(min_layer, max_layer);
+  CapUsageData cap_usage_data;
+  grouter_->getCapacityUsageData(cap_usage_data);
+  for (int x = 0; x < grid_.size(); x++) {
+    for (int y = 0; y < grid_[x].size(); y++) {
+      Tile& tile = getEditableTile(x, y);
+      uint8_t tile_cap = cap_usage_data[x][y].first;
+      float tile_usage = cap_usage_data[x][y].second;
+      float cap_usage_data = tile_usage/tile_cap;
+      tile.addRudy(cap_usage_data);
+    }
+  }
+}
+
 void Rudy::calculateRudy()
 {
   // Clear previous computation
@@ -97,6 +116,8 @@ void Rudy::calculateRudy()
     }
   }
 
+  getResourceReductions();
+
   // refer: https://ieeexplore.ieee.org/document/4211973
   const int tile_width = grid_block_.dx() / tile_cnt_x_;
   const int tile_height = grid_block_.dy() / tile_cnt_y_;
@@ -105,24 +126,6 @@ void Rudy::calculateRudy()
     if (!net->getSigType().isSupply()) {
       const auto net_rect = net->getTermBBox();
       processIntersectionSignalNet(net_rect, tile_width, tile_height);
-    } else {
-      for (odb::dbSWire* swire : net->getSWires()) {
-        for (odb::dbSBox* s : swire->getWires()) {
-          if (s->isVia()) {
-            continue;
-          }
-          odb::Rect wire_rect = s->getBox();
-          processIntersectionGenericObstruction(
-              wire_rect, tile_width, tile_height, 1);
-        }
-      }
-    }
-  }
-
-  for (odb::dbInst* instance : block_->getInsts()) {
-    odb::dbMaster* master = instance->getMaster();
-    if (master->isBlock()) {
-      processMacroObstruction(master, instance);
     }
   }
 }
