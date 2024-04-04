@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "odb.h"
 
 namespace odb {
@@ -60,6 +62,10 @@ class dbOrientType
     MX,    /** mirror about the "X" axis */
     MXR90  /** mirror about the "X" axis and rotate 90 degrees */
   };
+
+  static const Value DEFAULT = R0;
+
+  static std::optional<Value> fromString(const char* orient);
 
   ///
   /// Create a dbOrientType instance with an explicit orientation.
@@ -506,6 +512,10 @@ class dbTechLayerType
     NONE         /** */
   };
 
+  static const Value DEFAULT = ROUTING;
+
+  static std::optional<Value> fromString(const char* value);
+
   ///
   /// Create a dbTechLayerType instance with an explicit placement status.
   /// The explicit status must be a string of one of the
@@ -519,9 +529,9 @@ class dbTechLayerType
   dbTechLayerType(Value value) { _value = value; }
 
   ///
-  /// Create a dbTechLayerType instance with value = "none".
+  /// Create a dbTechLayerType instance with value = "routing".
   ///
-  dbTechLayerType() { _value = ROUTING; }
+  dbTechLayerType() { _value = DEFAULT; }
 
   ///
   /// Copy constructor.
@@ -787,6 +797,11 @@ class dbPolygonOwner
   ///
   /// Create a dbPolygonOwner instance with an explicit value.
   ///
+  dbPolygonOwner(const char* value);
+
+  ///
+  /// Create a dbPolygonOwner instance with an explicit value.
+  ///
   dbPolygonOwner(Value value);
 
   ///
@@ -797,7 +812,7 @@ class dbPolygonOwner
   ///
   /// Copy constructor.
   ///
-  dbPolygonOwner(const dbBoxOwner& value);
+  dbPolygonOwner(const dbPolygonOwner& value);
 
   ///
   /// Returns the owner-value.
@@ -1015,6 +1030,7 @@ class dbOnOffType
   dbOnOffType(int innum);
   dbOnOffType(bool insw);
   dbOnOffType(Value inval);
+  dbOnOffType(const dbOnOffType& value);
   dbOnOffType();
 
   ///
@@ -1051,6 +1067,7 @@ class dbClMeasureType
   ///
   dbClMeasureType(const char* instr);
   dbClMeasureType(Value inval) { _value = inval; }
+  dbClMeasureType(const dbClMeasureType& value) { _value = value; }
   dbClMeasureType() { _value = EUCLIDEAN; }
 
   ///
@@ -1086,7 +1103,9 @@ class dbJournalEntryType
   ///
   /// Construction may take a type value, or default ("NONE")
   ///
+  dbJournalEntryType(const char* instr);
   dbJournalEntryType(Value inval) { _value = inval; }
+  dbJournalEntryType(const dbJournalEntryType& value) { _value = value; }
   dbJournalEntryType() { _value = NONE; }
 
   ///
@@ -1124,7 +1143,9 @@ class dbDirection
   ///
   /// Construction may take a type value, or default ("NONE")
   ///
+  dbDirection(const char* instr);
   dbDirection(Value inval) { _value = inval; }
+  dbDirection(const dbDirection& value) { _value = value; }
   dbDirection() { _value = NONE; }
 
   ///
@@ -1158,7 +1179,9 @@ class dbRegionType
   ///
   /// Construction may take a type value, or default ("INCLUSIVE")
   ///
+  dbRegionType(const char* instr);
   dbRegionType(Value inval) { _value = inval; }
+  dbRegionType(const dbRegionType& value) { _value = value; }
   dbRegionType() { _value = INCLUSIVE; }
   Value getValue() const { return _value; }
   const char* getString() const;
@@ -1189,6 +1212,7 @@ class dbSourceType
   ///
   dbSourceType(const char* value);
   dbSourceType(Value inval) { _value = inval; }
+  dbSourceType(const dbSourceType& value) { _value = value; }
   dbSourceType() { _value = NONE; }
   Value getValue() const { return _value; }
   const char* getString() const;
@@ -1299,7 +1323,7 @@ class dbAccessType
   ///
   /// Copy constructor.
   ///
-  dbAccessType(const dbAccessType& orient) = default;
+  dbAccessType(const dbAccessType& value) = default;
 
   ///
   /// Returns the type
