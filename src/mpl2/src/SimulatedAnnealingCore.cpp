@@ -48,8 +48,7 @@ using std::string;
 // Class SimulatedAnnealingCore
 template <class T>
 SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
-    float outline_width,
-    float outline_height,          // boundary constraints
+    const Rect& outline,           // boundary constraints
     const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
     // weight for different penalty
     float area_weight,
@@ -69,11 +68,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : graphics_(graphics)
+    : outline_(outline), graphics_(graphics)
 {
-  outline_width_ = outline_width;
-  outline_height_ = outline_height;
-
   area_weight_ = area_weight;
   outline_weight_ = outline_weight;
   wirelength_weight_ = wirelength_weight;
@@ -139,16 +135,15 @@ void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
-  return (width_ <= std::ceil(outline_width_))
-         && (height_ <= std::ceil(outline_height_));
+  return (width_ <= std::ceil(outline_.getWidth()))
+         && (height_ <= std::ceil(outline_.getHeight()));
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::isValid(float outline_width,
-                                        float outline_height) const
+bool SimulatedAnnealingCore<T>::isValid(const Rect& outline) const
 {
-  return (width_ <= std::ceil(outline_width))
-         && (height_ <= std::ceil(outline_height));
+  return (width_ <= std::ceil(outline.getWidth()))
+         && (height_ <= std::ceil(outline.getHeight()));
 }
 
 template <class T>
@@ -227,9 +222,9 @@ void SimulatedAnnealingCore<T>::getMacros(std::vector<T>& macros) const
 template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
-  const float max_width = std::max(outline_width_, width_);
-  const float max_height = std::max(outline_height_, height_);
-  const float outline_area = outline_width_ * outline_height_;
+  const float max_width = std::max(outline_.getWidth(), width_);
+  const float max_height = std::max(outline_.getHeight(), height_);
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
   outline_penalty_ = max_width * max_height - outline_area;
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
@@ -266,8 +261,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
   }
 
   // normalization
-  wirelength_
-      = wirelength_ / tot_net_weight / (outline_height_ + outline_width_);
+  wirelength_ = wirelength_ / tot_net_weight
+                / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
     graphics_->setWirelength(wirelength_);
@@ -307,8 +302,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     // calculate x and y direction independently
     float width = x_dist <= max_x_dist ? 0.0 : (x_dist - max_x_dist);
     float height = y_dist <= max_y_dist ? 0.0 : (y_dist - max_y_dist);
-    width = width / outline_width_;
-    height = height / outline_height_;
+    width = width / outline_.getWidth();
+    height = height / outline_.getHeight();
     fence_penalty_ += width * width + height * height;
   }
   // normalization
@@ -355,9 +350,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  for (auto& macro : macros_) {
-    macro.setX(0.0);
-    macro.setY(0.0);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].setX(0.0);
+    macros_[macro_id].setY(0.0);
   }
 
   // Each index corresponds to a macro id whose pair is:

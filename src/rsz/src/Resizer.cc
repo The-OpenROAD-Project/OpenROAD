@@ -2242,7 +2242,8 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
           continue;
         }
 
-        if (!sta::LibertyPort::equiv(input_port, port) &&
+        if (port->direction()->isInput() &&
+            !sta::LibertyPort::equiv(input_port, port) &&
             !sta::LibertyPort::equiv(drvr_port, port) &&
             port_delays[port] < base_delay) {
             *swap_port = port;

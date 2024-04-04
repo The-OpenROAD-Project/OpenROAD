@@ -151,6 +151,9 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void makeLef58TwoWiresForbiddenSpc(
+      frLayerNum layer_num,
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule);
 
   void makeMinimumCut(frLayerNum layerNum,
                       frCoord width,
