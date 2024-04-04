@@ -893,6 +893,12 @@ int GlobalRouter::getGridTileSize()
   return grid_->getTileSize();
 }
 
+void GlobalRouter::getCapacityUsageData(
+      CapUsageData& cap_usage_data)
+{
+  fastroute_->getCapacityUsageData(cap_usage_data);
+}
+
 void GlobalRouter::computeTrackConsumption(
     const Net* net,
     int& track_consumption,

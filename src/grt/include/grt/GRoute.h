@@ -116,6 +116,8 @@ struct CongestionInformation
   std::set<odb::dbNet*, cmpById> sources;
 };
 
+using CapUsageData = std::vector<std::vector<std::pair<uint8_t, uint8_t>>>;
+
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;

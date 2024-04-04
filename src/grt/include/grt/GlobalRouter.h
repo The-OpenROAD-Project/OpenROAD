@@ -269,6 +269,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
+  void getMinMaxLayer(int& min_layer, int& max_layer);
+  void getCapacityUsageData(
+      CapUsageData& cap_usage_data);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -413,7 +416,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGridAndNets();
   void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
-  void getMinMaxLayer(int& min_layer, int& max_layer);
   void checkOverflow();
 
   utl::Logger* logger_;

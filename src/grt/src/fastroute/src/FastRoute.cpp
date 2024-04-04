@@ -879,6 +879,58 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
+void FastRouteCore::getCapacityUsageData(CapUsageData& cap_usage_data)
+{
+  cap_usage_data.resize(x_grid_);
+  for (int x = 0; x < x_grid_; x++) {
+    cap_usage_data[x].resize(y_grid_);
+    for (int y = 0; y < y_grid_; y++) {
+      cap_usage_data[x][y].first = 0;
+      cap_usage_data[x][y].second = 0;
+    }
+  }
+
+  for (int k = 0; k < num_layers_; k++) {
+    const uint8_t capH = h_capacity_3D_[k];
+    const uint8_t capV = v_capacity_3D_[k];
+    const uint8_t last_row_capH = last_row_h_capacity_3D_[k];
+    const uint8_t last_col_capV = last_col_v_capacity_3D_[k];
+    bool is_horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    for (int x = 0; x < x_grid_; x++) {
+      for (int y = 0; y < y_grid_; y++) {
+        if (is_horizontal) {
+          if (!regular_y_ && y == y_grid_ - 1) {
+            cap_usage_data[x][y].first += last_row_capH;
+          } else {
+            cap_usage_data[x][y].first += capH;
+          }
+        } else {
+          if (!regular_x_ && x == x_grid_ - 1) {
+            cap_usage_data[x][y].first += last_col_capV;
+          } else {
+            cap_usage_data[x][y].first += capV;
+          }
+        }
+        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
+            && y_grid_ > 1) {
+          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+          uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+          uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+          cap_usage_data[x][y].second = usageH + usageV;
+        } else {
+          uint8_t blockageH = h_edges_3D_[k][y][x].red;
+          uint8_t blockageV = v_edges_3D_[k][y][x].red;
+          uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
+          uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
+          cap_usage_data[x][y].second = usageH + usageV;
+        }
+      }
+    }
+  }
+}
+
 NetRouteMap FastRouteCore::run()
 {
   if (netCount() == 0) {
