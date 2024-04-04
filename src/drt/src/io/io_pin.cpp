@@ -28,7 +28,7 @@
 
 #include "io.h"
 
-namespace fr {
+namespace drt {
 
 void io::Parser::instAnalysis()
 {
@@ -113,12 +113,12 @@ void io::Parser::instAnalysis()
     trackOffsetMap_[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  Complete {} instances.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  Complete {} instances.", cnt);
         }
       }
@@ -137,4 +137,4 @@ void io::Parser::instAnalysis()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

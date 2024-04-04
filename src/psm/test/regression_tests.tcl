@@ -23,4 +23,6 @@ record_tests {
   zerosoc_pads_check_only
   zerosoc_pads_check_only_disconnected
   pad_connected_by_abutment
+  #psm_man_tcl_check
+  #psm_readme_msgs_check
 }

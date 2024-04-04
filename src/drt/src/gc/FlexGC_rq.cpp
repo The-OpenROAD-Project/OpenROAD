@@ -31,7 +31,7 @@
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 struct FlexGCWorkerRegionQuery::Impl
 {
@@ -272,4 +272,4 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
   }
 }
 
-}  // namespace fr
+}  // namespace drt

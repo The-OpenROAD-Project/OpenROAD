@@ -49,8 +49,7 @@ namespace mpl2 {
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
-  SACoreHardMacro(float outline_width,
-                  float outline_height,  // boundary constraints
+  SACoreHardMacro(const Rect& outline,
                   const std::vector<HardMacro>& macros,
                   // weight for different penalty
                   float area_weight,

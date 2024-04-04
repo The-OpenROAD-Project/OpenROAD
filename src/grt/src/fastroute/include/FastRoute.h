@@ -57,6 +57,7 @@ class Logger;
 namespace odb {
 class dbDatabase;
 class dbTechLayerDir;
+class dbTechLayer;
 }  // namespace odb
 
 namespace stt {
@@ -153,6 +154,11 @@ class FastRouteCore
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
+  void getBlockage(odb::dbTechLayer* layer,
+                   int x,
+                   int y,
+                   uint8_t& blockage_h,
+                   uint8_t& blockage_v);
   void updateDbCongestion();
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);
@@ -483,7 +489,6 @@ class FastRouteCore
                          bool horizontal,
                          int& best_cost,
                          multi_array<int, 2>& layer_grid);
-  bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
@@ -622,6 +627,7 @@ class FastRouteCore
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
+  std::vector<int> net_ids_;
 };
 
 }  // namespace grt

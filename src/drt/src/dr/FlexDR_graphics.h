@@ -38,7 +38,7 @@ class dbDatabase;
 class Point;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class FlexGridGraph;
 class FlexWavefrontGrid;
@@ -76,9 +76,8 @@ class FlexDRGraphics : public gui::Renderer
   void status(const std::string& message);
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
   const char* getDisplayControlGroupName() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
@@ -127,4 +126,4 @@ class FlexDRGraphics : public gui::Renderer
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };
 
-}  // namespace fr
+}  // namespace drt

@@ -28,7 +28,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
     const gtl::rectangle_data<frCoord>& rect,
@@ -255,4 +255,4 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

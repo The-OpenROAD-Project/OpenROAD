@@ -39,7 +39,7 @@
 #include "global.h"
 #include "io/io.h"
 
-namespace fr {
+namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
@@ -81,7 +81,7 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
   for (auto& userDefinedVia : design_->getUserSelectedVias()) {
-    if (tech_->name2via.find(userDefinedVia) == tech_->name2via.end()) {
+    if (tech_->name2via_.find(userDefinedVia) == tech_->name2via_.end()) {
       logger_->error(
           DRT, 608, "Could not find user defined via {}", userDefinedVia);
     }
@@ -208,8 +208,12 @@ void io::Parser::initDefaultVias()
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
-        tech_->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
-        tech_->addVia(std::move(viaDef));
+        auto vdfPtr = tech_->addVia(std::move(viaDef));
+        if (vdfPtr == nullptr) {
+          logger_->error(
+              utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
+        }
+        tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
       }
     }
   }
@@ -329,21 +333,6 @@ void io::Parser::initCutLayerWidth()
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
-        if (viaDef->getNumCut() == 1) {
-          if (cutRect->width() != cutRect->length()) {
-            logger_->warn(DRT,
-                          240,
-                          "CUT layer {} does not have square single-cut via, "
-                          "cut layer width may be set incorrectly.",
-                          layer->getName());
-          }
-        } else {
-          logger_->warn(DRT,
-                        241,
-                        "CUT layer {} does not have single-cut via, cut layer "
-                        "width may be set incorrectly.",
-                        layer->getName());
-        }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
@@ -354,21 +343,10 @@ void io::Parser::initCutLayerWidth()
       }
     } else {
       auto viaDef = layer->getDefaultViaDef();
-      int cutLayerWidth = layer->getWidth();
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
           logger_->error(DRT, 243, "Non-rectangular shape in via definition.");
-        }
-        auto cutRect = static_cast<frRect*>(cutFig);
-        int viaWidth = cutRect->width();
-        if (cutLayerWidth < viaWidth) {
-          logger_->warn(
-              DRT,
-              244,
-              "CUT layer {} has smaller width defined in LEF compared "
-              "to default via.",
-              layer->getName());
         }
       }
     }
@@ -686,7 +664,7 @@ void io::Parser::checkFig(frPinFig* uFig,
         foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
       } else {
         foundTracks |= !vertTracks.empty();
-        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+        foundCenterTracks |= vertTracks.find(box.xCenter()) != vertTracks.end();
       }
     }
     if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
@@ -773,7 +751,7 @@ void io::Parser::checkPins()
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
                     422,
-                    "No routing tracks pass through the center of Term {}",
+                    "No routing tracks pass through the center of Term {}.",
                     bTerm->getName());
     }
   }
@@ -861,12 +839,12 @@ void io::Parser::postProcessGuide()
     genGuides(net, rects);
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       }
@@ -1239,4 +1217,4 @@ void io::Parser::saveGuidesUpdates()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

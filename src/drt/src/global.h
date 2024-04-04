@@ -37,6 +37,13 @@
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
 
+namespace odb {
+class Point;
+class Rect;
+}  // namespace odb
+
+namespace drt {
+
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
@@ -69,10 +76,10 @@ extern bool SAVE_GUIDE_UPDATES;
 // extern int TEST;
 extern std::string VIAINPIN_BOTTOMLAYER_NAME;
 extern std::string VIAINPIN_TOPLAYER_NAME;
-extern fr::frLayerNum VIAINPIN_BOTTOMLAYERNUM;
-extern fr::frLayerNum VIAINPIN_TOPLAYERNUM;
+extern frLayerNum VIAINPIN_BOTTOMLAYERNUM;
+extern frLayerNum VIAINPIN_TOPLAYERNUM;
 
-extern fr::frLayerNum VIA_ACCESS_LAYERNUM;
+extern frLayerNum VIA_ACCESS_LAYERNUM;
 
 extern int MINNUMACCESSPOINT_MACROCELLPIN;
 extern int MINNUMACCESSPOINT_STDCELLPIN;
@@ -90,20 +97,20 @@ extern int TAPERBOX_RADIUS;
 extern int NDR_NETS_ABS_PRIORITY;
 extern int CLOCK_NETS_ABS_PRIORITY;
 
-extern fr::frUInt4 TAVIACOST;
-extern fr::frUInt4 TAPINCOST;
-extern fr::frUInt4 TAALIGNCOST;
-extern fr::frUInt4 TADRCCOST;
+extern frUInt4 TAVIACOST;
+extern frUInt4 TAPINCOST;
+extern frUInt4 TAALIGNCOST;
+extern frUInt4 TADRCCOST;
 extern float TASHAPEBLOATWIDTH;
 
-extern fr::frUInt4 VIACOST;
+extern frUInt4 VIACOST;
 
-extern fr::frUInt4 GRIDCOST;
-extern fr::frUInt4 ROUTESHAPECOST;
-extern fr::frUInt4 MARKERCOST;
-extern fr::frUInt4 MARKERBLOATWIDTH;
-extern fr::frUInt4 BLOCKCOST;
-extern fr::frUInt4 GUIDECOST;
+extern frUInt4 GRIDCOST;
+extern frUInt4 ROUTESHAPECOST;
+extern frUInt4 MARKERCOST;
+extern frUInt4 MARKERBLOATWIDTH;
+extern frUInt4 BLOCKCOST;
+extern frUInt4 GUIDECOST;
 extern float SHAPEBLOATWIDTH;
 extern int MISALIGNMENTCOST;
 
@@ -112,7 +119,8 @@ extern int HISTCOST;
 extern int CONGCOST;
 
 extern std::string REPAIR_PDN_LAYER_NAME;
-extern fr::frLayerNum GC_IGNORE_PDN_LAYER;
+extern frLayerNum REPAIR_PDN_LAYER_NUM;
+extern frLayerNum GC_IGNORE_PDN_LAYER_NUM;
 
 #define DIRBITSIZE 3
 #define WAVEFRONTBUFFERSIZE 2
@@ -126,12 +134,6 @@ extern fr::frLayerNum GC_IGNORE_PDN_LAYER;
 #define GRWAVEFRONTBUFFERHIGHMASK \
   (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
 
-namespace odb {
-class Point;
-class Rect;
-}  // namespace odb
-
-namespace fr {
 frCoord getGCELLGRIDX();
 frCoord getGCELLGRIDY();
 frCoord getGCELLOFFSETX();
@@ -160,23 +162,23 @@ class frBlockObject;
 
 // These need to be in the fr namespace to support argument-dependent
 // lookup
-std::ostream& operator<<(std::ostream& os, const fr::frViaDef& viaDefIn);
-std::ostream& operator<<(std::ostream& os, const fr::frBlock& blockIn);
-std::ostream& operator<<(std::ostream& os, const fr::frInst& instIn);
-std::ostream& operator<<(std::ostream& os, const fr::frInstTerm& instTermIn);
-std::ostream& operator<<(std::ostream& os, const fr::frBTerm& termIn);
-std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
-std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
+std::ostream& operator<<(std::ostream& os, const frViaDef& viaDefIn);
+std::ostream& operator<<(std::ostream& os, const frBlock& blockIn);
+std::ostream& operator<<(std::ostream& os, const frInst& instIn);
+std::ostream& operator<<(std::ostream& os, const frInstTerm& instTermIn);
+std::ostream& operator<<(std::ostream& os, const frBTerm& termIn);
+std::ostream& operator<<(std::ostream& os, const frRect& pinFig);
+std::ostream& operator<<(std::ostream& os, const frPolygon& pinFig);
+std::ostream& operator<<(std::ostream& os, const drConnFig& fig);
 std::ostream& operator<<(std::ostream& os, const frShape& fig);
 std::ostream& operator<<(std::ostream& os, const frConnFig& fig);
-std::ostream& operator<<(std::ostream& os, const frPathSeg& fig);
+std::ostream& operator<<(std::ostream& os, const frPathSeg& p);
 std::ostream& operator<<(std::ostream& os, const frGuide& p);
 std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
-std::ostream& operator<<(std::ostream& os, const frNet& fig);
+std::ostream& operator<<(std::ostream& os, const frNet& n);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
 std::ostream& operator<<(std::ostream& os, const frMarker& m);
 
 using utl::format_as;
 
-}  // namespace fr
+}  // namespace drt

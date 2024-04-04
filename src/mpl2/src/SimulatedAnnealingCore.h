@@ -59,8 +59,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(
-      float outline_width,
-      float outline_height,          // boundary constraints
+      const Rect& outline,           // boundary constraints
       const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
       // weight for different penalty
       float area_weight,
@@ -92,7 +91,7 @@ class SimulatedAnnealingCore
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(float outline_width, float outline_height) const;
+  bool isValid(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -142,8 +141,7 @@ class SimulatedAnnealingCore
   // private member variables
   /////////////////////////////////////////////
   // boundary constraints
-  float outline_width_ = 0.0;
-  float outline_height_ = 0.0;
+  Rect outline_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;

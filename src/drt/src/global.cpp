@@ -38,7 +38,7 @@
 #include "db/obj/frMaster.h"
 #include "frDesign.h"
 
-using namespace fr;
+namespace drt {
 
 std::string OUT_MAZE_FILE;
 std::string DRC_RPT_FILE;
@@ -50,7 +50,7 @@ std::string GUIDE_REPORT_FILE;
 int OR_SEED = -1;
 double OR_K = 0;
 
-std::string DBPROCESSNODE = "";
+std::string DBPROCESSNODE;
 int MAX_THREADS = 1;
 int BATCHSIZE = 1024;
 int BATCHSIZETA = 8;
@@ -113,8 +113,8 @@ int MISALIGNMENTCOST = 8;
 int CONGCOST = 8;
 int HISTCOST = 32;
 std::string REPAIR_PDN_LAYER_NAME;
-frLayerNum GC_IGNORE_PDN_LAYER = -1;
-namespace fr {
+frLayerNum REPAIR_PDN_LAYER_NUM = -1;
+frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 
 std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
 {
@@ -244,7 +244,7 @@ std::ostream& operator<<(std::ostream& os, const frInst& instIn)
 {
   Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
-  frString tmpName = instIn.getName();
+  const frString& tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
      << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << std::endl;
@@ -494,4 +494,4 @@ std::ostream& operator<<(std::ostream& os, const frMarker& m)
   }
 }
 
-}  // end namespace fr
+}  // end namespace drt
