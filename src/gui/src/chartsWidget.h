@@ -57,7 +57,7 @@ namespace gui {
 struct SlackHistogramData
 {
   std::vector<float> end_points_slack;
-  std::set<sta::Clock*> clocks;  // Needed to display period to user
+  std::set<sta::Clock*> clocks;
 };
 
 #endif
@@ -118,8 +118,6 @@ class ChartsWidget : public QDockWidget
   void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
   void setYAxisConfig();
   QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
-  std::string getFrequencyScale(float period_scale);
-  float trim(float value, int digits);
   int computeMaxYSnap();
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);

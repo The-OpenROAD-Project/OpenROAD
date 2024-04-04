@@ -45,7 +45,6 @@
 #include <vector>
 
 #include "sta/Clock.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
@@ -402,58 +401,33 @@ QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
   int clock_count = 1;
 
   for (sta::Clock* clock : clocks) {
-    // First get period and frequency from sta
     float period = time_units->staToUser(clock->period());
-    float frequency = 1 / period;
-    float inverted_scale = 1 / time_units->scale();
-    std::string frequency_scale = getFrequencyScale(inverted_scale);
 
-    // Adjust display values as needed
     if (period < 1) {
-      period = trim(period, 3 /*decimal digits*/);
+      const float decimal_digits = 3;
+      const float places = std::pow(10, decimal_digits);
+
+      period = std::round(period * places) / places;
     }
 
-    if (frequency < 0.01) {
-      frequency *= 1000;
-      inverted_scale /= 1000;
-      frequency_scale = getFrequencyScale(inverted_scale);
-    }
-
-    // Adjust strings: one clock in the first row and two per row afterwards
+    // Adjust strings: two clocks in the first row and three per row afterwards
     if (clock->name() != (*(clocks.begin()))->name()) {
       axis_x_title += ", ";
 
-      if (clock_count % 2 == 0) {
+      if (clock_count % 3 == 0) {
         axis_x_title += "<br>";
       }
     }
 
     axis_x_title += QString::fromStdString(
-        fmt::format(" {} {} ({} {}Hz)",
+        fmt::format(" {} {}",
                     clock->name(),
-                    period,
-                    trim(frequency, 3 /*decimal digits*/),
-                    frequency_scale));
+                    period));
 
     ++clock_count;
   }
 
   return axis_x_title;
-}
-
-std::string ChartsWidget::getFrequencyScale(float period_scale)
-{
-  if (sta::fuzzyEqual(period_scale, 1E+12)) {
-    return "T";
-  } else if (sta::fuzzyEqual(period_scale, 1E+9)) {
-    return "G";
-  } else if (sta::fuzzyEqual(period_scale, 1E+6)) {
-    return "M";
-  } else if (sta::fuzzyEqual(period_scale, 1E+3)) {
-    return "K";
-  } else {
-    return "?";
-  }
 }
 
 void ChartsWidget::setYAxisConfig()
@@ -512,13 +486,6 @@ int ChartsWidget::computeNumberOfDigits(int value)
 int ChartsWidget::computeFirstDigit(int value, int digits)
 {
   return static_cast<int>(value / std::pow(10, digits - 1));
-}
-
-float ChartsWidget::trim(float value, int digits)
-{
-  float decimal_places = std::pow(10, digits);
-
-  return std::round(value * decimal_places) / decimal_places;
 }
 
 #endif
