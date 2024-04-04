@@ -270,8 +270,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
   void getMinMaxLayer(int& min_layer, int& max_layer);
-  void getCapacityUsageData(
-      CapUsageData& cap_usage_data);
+  void getCapacityReductionData(
+      CapacityReductionData& cap_red_data);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();

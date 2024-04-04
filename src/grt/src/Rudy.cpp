@@ -94,15 +94,15 @@ void Rudy::getResourceReductions()
   int min_layer, max_layer;
   grouter_->getMinMaxLayer(min_layer, max_layer);
   grouter_->initFastRoute(min_layer, max_layer);
-  CapUsageData cap_usage_data;
-  grouter_->getCapacityUsageData(cap_usage_data);
+  CapacityReductionData cap_red_data;
+  grouter_->getCapacityReductionData(cap_red_data);
   for (int x = 0; x < grid_.size(); x++) {
     for (int y = 0; y < grid_[x].size(); y++) {
       Tile& tile = getEditableTile(x, y);
-      uint8_t tile_cap = cap_usage_data[x][y].first;
-      float tile_usage = cap_usage_data[x][y].second;
-      float cap_usage_data = tile_usage/tile_cap;
-      tile.addRudy(cap_usage_data);
+      uint8_t tile_cap = cap_red_data[x][y].first;
+      float tile_usage = cap_red_data[x][y].second;
+      float cap_red_data = tile_usage/tile_cap;
+      tile.addRudy(cap_red_data);
     }
   }
 }

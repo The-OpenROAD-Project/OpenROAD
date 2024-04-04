@@ -160,7 +160,7 @@ class FastRouteCore
                    uint8_t& blockage_h,
                    uint8_t& blockage_v);
   void updateDbCongestion();
-  void getCapacityUsageData(CapUsageData& cap_usage_data);
+  void getCapacityReductionData(CapacityReductionData& cap_red_data);
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);
   void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,
