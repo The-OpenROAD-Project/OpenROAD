@@ -419,10 +419,8 @@ QString ChartsWidget::createXAxisTitle(const std::set<sta::Clock*>& clocks)
       }
     }
 
-    axis_x_title += QString::fromStdString(
-        fmt::format(" {} {}",
-                    clock->name(),
-                    period));
+    axis_x_title
+        += QString::fromStdString(fmt::format(" {} {}", clock->name(), period));
 
     ++clock_count;
   }
