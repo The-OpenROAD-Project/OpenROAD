@@ -1636,6 +1636,9 @@ dbSiteClass::dbSiteClass(const char* value)
 
   else if (strcasecmp(value, "CORE") == 0)
     _value = CORE;
+
+  else
+    _value = NONE;
 }
 
 dbSiteClass::dbSiteClass(Value value)
