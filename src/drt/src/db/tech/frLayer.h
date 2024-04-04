@@ -635,6 +635,23 @@ class frLayer
     return !spacingRangeConstraints_.empty();
   }
 
+  void addTwoWiresForbiddenSpacingConstraint(
+      frLef58TwoWiresForbiddenSpcConstraint* in)
+  {
+    twForbiddenSpcConstraints_.push_back(in);
+  }
+
+  const std::vector<frLef58TwoWiresForbiddenSpcConstraint*>&
+  getTwoWiresForbiddenSpacingConstraints() const
+  {
+    return twForbiddenSpcConstraints_;
+  }
+
+  bool hasTwoWiresForbiddenSpacingConstraints() const
+  {
+    return !twForbiddenSpcConstraints_.empty();
+  }
+
   void setLef58SameNetInterCutSpcTblConstraint(
       frLef58CutSpacingTableConstraint* con)
   {
@@ -776,6 +793,8 @@ class frLayer
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints_;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints_;
   std::vector<frSpacingRangeConstraint*> spacingRangeConstraints_;
+  std::vector<frLef58TwoWiresForbiddenSpcConstraint*>
+      twForbiddenSpcConstraints_;
   drEolSpacingConstraint drEolCon_;
 
   friend class io::Parser;

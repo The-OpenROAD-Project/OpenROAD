@@ -3159,9 +3159,9 @@ void HierRTLMP::setIOClustersBlockages()
   // Note that the range can be larger than the respective core dimension.
   // As SA only sees what is inside its current outline, this is not a problem.
   if (pin_ranges[L].second > pin_ranges[L].first) {
-    macro_blockages_.emplace_back(root_ux,
+    macro_blockages_.emplace_back(root_lx,
                                   pin_ranges[L].first,
-                                  root_ux + std::min(max_width, depth),
+                                  root_lx + std::min(max_width, depth),
                                   pin_ranges[L].second);
     debugPrint(logger_,
                MPL,

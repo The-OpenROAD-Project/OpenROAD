@@ -110,7 +110,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_bloat_iter` | Set bloat iteration threshold for routability mode. The default value is `1`, and the allowed values are integers `[1, MAX_INT]`.|
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
-| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.25`, and the allowed values are floats. |
+| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.0`, and the allowed values are floats. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_rc_coefficients` | Set routability RC coefficients. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
@@ -145,18 +145,40 @@ cluster_flops
 | `-num_paths` | KIV, default value is 0, type `int`. |
 
 
+### Debug Mode
+
+The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
+
+```tcl
+global_placement_debug
+    [-pause] 
+    [-update]
+    [-inst]
+    [-draw_bins]
+    [-initial]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Useful for closely monitoring the progression of the placement algorithm. Allowed values are integers, default is 10. |
+| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is 10.  |
+| `-inst` | Targets a specific instance name for debugging focus. Allowed value is a string, the default behavior focuses on no specific instance. |
+| `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
+| `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
+
+Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
+This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
 
 ```
-# debugging global placement 
-global_placement_debug -pause -update -inst -draw_bins -initial
-
 # adds padding and gets global placement uniform target density
 get_global_placement_uniform_density -pad_left -pad_right 
 ```
-
 Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
 
 ```shell

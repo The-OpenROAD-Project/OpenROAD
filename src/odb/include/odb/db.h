@@ -165,6 +165,7 @@ class dbTechLayerMinCutRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
+class dbTechLayerTwoWiresForbiddenSpcRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
@@ -7844,6 +7845,9 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerWrongDirSpacingRule> getTechLayerWrongDirSpacingRules()
       const;
 
+  dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
+  getTechLayerTwoWiresForbiddenSpcRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -9796,6 +9800,44 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   std::pair<int, int> getExceptWithin(int width) const;
 
   // User Code End dbTechLayerSpacingTablePrlRule
+};
+
+class dbTechLayerTwoWiresForbiddenSpcRule : public dbObject
+{
+ public:
+  void setMinSpacing(int min_spacing);
+
+  int getMinSpacing() const;
+
+  void setMaxSpacing(int max_spacing);
+
+  int getMaxSpacing() const;
+
+  void setMinSpanLength(int min_span_length);
+
+  int getMinSpanLength() const;
+
+  void setMaxSpanLength(int max_span_length);
+
+  int getMaxSpanLength() const;
+
+  void setPrl(int prl);
+
+  int getPrl() const;
+
+  void setMinExactSpanLength(bool min_exact_span_length);
+
+  bool isMinExactSpanLength() const;
+
+  void setMaxExactSpanLength(bool max_exact_span_length);
+
+  bool isMaxExactSpanLength() const;
+
+  // User Code Begin dbTechLayerTwoWiresForbiddenSpcRule
+  static dbTechLayerTwoWiresForbiddenSpcRule* create(dbTechLayer* layer);
+
+  static void destroy(dbTechLayerTwoWiresForbiddenSpcRule* rule);
+  // User Code End dbTechLayerTwoWiresForbiddenSpcRule
 };
 
 class dbTechLayerWidthTableRule : public dbObject
