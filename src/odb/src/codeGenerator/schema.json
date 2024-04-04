@@ -253,7 +253,8 @@
       "type":"1_n",
       "tbl_name":"two_wires_forbidden_spc_rules_tbl_",
       "schema":"db_schema_lef58_two_wires_forbidden_spacing"
-    }
+    },
+    {
       "first": "dbDft",
       "second": "dbScanPin",
       "type": "1_n",
@@ -267,7 +268,7 @@
       "tbl_name": "scan_partitions_"
     },
     {
-      "first": "dbScanChain",
+      "first": "dbScanPartition",
       "second": "dbScanList",
       "type": "1_n",
       "tbl_name": "scan_lists_"

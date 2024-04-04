@@ -39,7 +39,6 @@
 #include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbScanInst.h"
-#include "dbScanList.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbSet.h"
@@ -71,9 +70,6 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
   if (*scan_partitions_ != *rhs.scan_partitions_) {
     return false;
   }
-  if (*scan_lists_ != *rhs.scan_lists_) {
-    return false;
-  }
 
   return true;
 }
@@ -95,7 +91,6 @@ void _dbScanChain::differences(dbDiff& diff,
   DIFF_FIELD(test_mode_);
   DIFF_FIELD(test_mode_name_);
   DIFF_TABLE(scan_partitions_);
-  DIFF_TABLE(scan_lists_);
   DIFF_END
 }
 
@@ -109,7 +104,6 @@ void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(test_mode_);
   DIFF_OUT_FIELD(test_mode_name_);
   DIFF_OUT_TABLE(scan_partitions_);
-  DIFF_OUT_TABLE(scan_lists_);
 
   DIFF_END
 }
@@ -121,8 +115,6 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbScanChain::getObjectTable,
       dbScanPartitionObj);
-  scan_lists_ = new dbTable<_dbScanList>(
-      db, this, (GetObjTbl_t) &_dbScanChain::getObjectTable, dbScanListObj);
 }
 
 _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
@@ -135,7 +127,6 @@ _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
   test_mode_name_ = r.test_mode_name_;
   scan_partitions_
       = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
-  scan_lists_ = new dbTable<_dbScanList>(db, this, *r.scan_lists_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
@@ -147,7 +138,6 @@ dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
   stream >> obj.test_mode_;
   stream >> obj.test_mode_name_;
   stream >> *obj.scan_partitions_;
-  stream >> *obj.scan_lists_;
   return stream;
 }
 
@@ -160,7 +150,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
   stream << obj.test_mode_;
   stream << obj.test_mode_name_;
   stream << *obj.scan_partitions_;
-  stream << *obj.scan_lists_;
   return stream;
 }
 
@@ -169,8 +158,6 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
   switch (type) {
     case dbScanPartitionObj:
       return scan_partitions_;
-    case dbScanListObj:
-      return scan_lists_;
     default:
       break;
   }
@@ -180,7 +167,6 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
 _dbScanChain::~_dbScanChain()
 {
   delete scan_partitions_;
-  delete scan_lists_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -193,12 +179,6 @@ dbSet<dbScanPartition> dbScanChain::getScanPartitions() const
 {
   _dbScanChain* obj = (_dbScanChain*) this;
   return dbSet<dbScanPartition>(obj, obj->scan_partitions_);
-}
-
-dbSet<dbScanList> dbScanChain::getScanLists() const
-{
-  _dbScanChain* obj = (_dbScanChain*) this;
-  return dbSet<dbScanList>(obj, obj->scan_lists_);
 }
 
 // User Code Begin dbScanChainPublicMethods

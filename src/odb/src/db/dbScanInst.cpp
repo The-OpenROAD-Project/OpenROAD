@@ -39,6 +39,7 @@
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanList.h"
+#include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -186,7 +187,8 @@ void dbScanInst::setScanEnable(dbITerm* scan_enable)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
   scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
 }
@@ -195,7 +197,8 @@ std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   const dbScanPin* scan_enable = (dbScanPin*) dft->scan_pins_->getPtr(
       (dbId<_dbScanPin>) scan_inst->scan_enable_);
@@ -216,7 +219,8 @@ void dbScanInst::setAccessPins(const AccessPins& access_pins)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   dbDft* dft = (dbDft*) scan_chain->getOwner();
 
   std::visit(
@@ -238,7 +242,8 @@ dbScanInst::AccessPins dbScanInst::getAccessPins() const
   AccessPins access_pins;
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
 
   const auto& [scan_in_id, scan_out_id] = scan_inst->access_pins_;
@@ -258,7 +263,8 @@ dbInst* dbScanInst::getInst() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbScanList* scan_list = (_dbScanList*) scan_inst->getOwner();
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_list->getOwner();
+  _dbScanPartition* scan_partition = (_dbScanPartition*) scan_list->getOwner();
+  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   _dbBlock* block = (_dbBlock*) dft->getOwner();
 

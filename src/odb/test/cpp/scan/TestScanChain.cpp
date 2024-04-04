@@ -41,8 +41,8 @@
 namespace odb {
 namespace {
 
-constexpr std::string_view kPartition1 = "CHAIN_1_FALLING_1";
-constexpr std::string_view kPartition2 = "CHAIN_1_RISING_1";
+constexpr char kPartition1[] = "CHAIN_1_FALLING_1";
+constexpr char kPartition2[] = "CHAIN_1_RISING_1";
 
 template <class>
 inline constexpr bool always_false_v = false;
@@ -123,7 +123,9 @@ TEST_F(TestScanChain, CreateScanChain)
 
   dbScanChain* scan_chain = dbScanChain::create(dft_);
 
-  dbScanList* scan_list = dbScanList::create(scan_chain);
+  dbScanPartition* scan_partition = dbScanPartition::create(scan_chain);
+  scan_partition->setName(kPartition1);
+  dbScanList* scan_list = dbScanList::create(scan_partition);
 
   dbScanInst* scan_inst = scan_list->add(inst);
   scan_inst->setBits(1234);
@@ -139,7 +141,12 @@ TEST_F(TestScanChain, CreateScanChain)
 
   dbScanChain* scan_chain2 = *scan_chains2.begin();
 
-  odb::dbSet<dbScanList> scan_lists2 = scan_chain2->getScanLists();
+  odb::dbSet<dbScanPartition> scan_partition2
+      = scan_chain2->getScanPartitions();
+  EXPECT_THAT(scan_partition2.size(), 1);
+  EXPECT_THAT(scan_partition2.begin()->getName(), kPartition1);
+
+  odb::dbSet<dbScanList> scan_lists2 = scan_partition2.begin()->getScanLists();
   EXPECT_THAT(scan_lists2.size(), 1);
 
   odb::dbSet<dbScanInst> scan_insts2 = scan_lists2.begin()->getScanInsts();
@@ -149,9 +156,18 @@ TEST_F(TestScanChain, CreateScanChain)
 TEST_F(TestScanChain, CreateScanChainWithPartition)
 {
   dbScanChain* scan_chain = dbScanChain::create(dft_);
-  dbScanList* scan_list = dbScanList::create(scan_chain);
 
-  for (dbInst* inst : instances_) {
+  std::vector<dbInst*> instances_partition1 = {instances_[0], instances_[1]};
+  std::vector<dbInst*> instances_partition2 = {instances_[2]};
+
+  dbScanPartition* partition1 = dbScanPartition::create(scan_chain);
+  dbScanPartition* partition2 = dbScanPartition::create(scan_chain);
+
+  partition1->setName(kPartition1);
+  partition2->setName(kPartition2);
+
+  for (dbInst* inst : instances_partition1) {
+    dbScanList* scan_list = dbScanList::create(partition1);
     dbScanInst* scan_inst = scan_list->add(inst);
     scan_inst->setBits(1);
     dbITerm* iterm = inst->findITerm("a");
@@ -159,30 +175,19 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
     scan_inst->setAccessPins({.scan_in = iterm, .scan_out = iterm2});
   }
 
-  // 2 partitions, one for the first instance and a second one for the second
-  // instance. The partition 1 start at a bterm (chain scan in) and ends in the
-  // scan out of the first instance.
+  for (dbInst* inst : instances_partition2) {
+    dbScanList* scan_list = dbScanList::create(partition2);
+    dbScanInst* scan_inst = scan_list->add(inst);
+    scan_inst->setBits(1);
+    dbITerm* iterm = inst->findITerm("a");
+    dbITerm* iterm2 = inst->findITerm("o");
+    scan_inst->setAccessPins({.scan_in = iterm, .scan_out = iterm2});
+  }
+
+  // 2 partitions, one for the first two instances and one for the last one
   //
-  // The second partition starts at the scan in of the second instance and ends
-  // in the bterm scan out of the chain. The second partition contains 2
-  // elements.
-  //
-  // Partition 1: [chain scan_in, i1 scan_out]
-  // Partition 2: [i2 scan_in, chain scan out]
-
-  dbScanPartition* partition1 = dbScanPartition::create(scan_chain);
-  dbScanPartition* partition2 = dbScanPartition::create(scan_chain);
-
-  dbBTerm* chain_scan_in = block_->findBTerm("IN1");
-  dbBTerm* chain_scan_out = block_->findBTerm("IN3");
-
-  partition1->setStart(chain_scan_in);
-  partition1->setStop(instances_[0]->findITerm("o"));
-  partition1->setName(kPartition1);
-
-  partition2->setStart(instances_[1]->findITerm("a"));
-  partition2->setStop(chain_scan_out);
-  partition2->setName(kPartition2);
+  // Partition 1: [i1, i2]
+  // Partition 2: [i3]
 
   //*****************************
   dbDatabase* db2 = writeReadDb();
@@ -206,62 +211,31 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   EXPECT_THAT(partition12->getName(), kPartition1);
   EXPECT_THAT(partition22->getName(), kPartition2);
 
-  EXPECT_THAT(GetName(partition12->getStart()), "IN1");
-  EXPECT_THAT(GetName(partition12->getStop()), "o");
-
-  EXPECT_THAT(GetName(partition22->getStart()), "a");
-  EXPECT_THAT(GetName(partition22->getStop()), "IN3");
-
   // check the created instances
-  dbSet<dbScanList> scan_lists2 = scan_chains2.begin()->getScanLists();
-  dbSet<dbScanInst> scan_insts2 = scan_lists2.begin()->getScanInsts();
+
+  dbSet<dbScanList> scan_lists12 = partition12->getScanLists();
+  dbSet<dbScanList> scan_lists22 = partition22->getScanLists();
 
   int i = 0;
-  for (dbScanInst* scan_inst : scan_insts2) {
-    const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
-    EXPECT_THAT(GetName(access_pins.scan_in), "a");
-    EXPECT_THAT(GetName(access_pins.scan_out), "o");
-    EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
-    ++i;
-  }
-}
-
-TEST_F(TestScanChain, CreateScanChainWithMultipleScanLists)
-{
-  dbScanChain* scan_chain = dbScanChain::create(dft_);
-  dbScanList* scan_list1 = dbScanList::create(scan_chain);
-  dbScanList* scan_list2 = dbScanList::create(scan_chain);
-
-  scan_list1->add(instances_[0]);
-  scan_list2->add(instances_[1]);
-  scan_list2->add(instances_[2]);
-
-  dbDatabase* db2 = writeReadDb();
-
-  dbBlock* block2 = db2->getChip()->getBlock();
-  dbDft* dft2 = block2->getDft();
-
-  dbSet<dbScanChain> scan_chains2 = dft2->getScanChains();
-  EXPECT_THAT(scan_chains2.size(), 1);
-  // check the created instances
-  dbSet<dbScanList> scan_lists2 = scan_chains2.begin()->getScanLists();
-  EXPECT_THAT(scan_lists2.size(), 2);
-
-  int i = 0;
-  for (dbScanList* scan_list : scan_lists2) {
+  for (dbScanList* scan_list : scan_lists12) {
     for (dbScanInst* scan_inst : scan_list->getScanInsts()) {
-      EXPECT_THAT(scan_inst->getInst()->getName(), instances_[i]->getName());
+      const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
+      EXPECT_THAT(GetName(access_pins.scan_in), "a");
+      EXPECT_THAT(GetName(access_pins.scan_out), "o");
+      EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
       ++i;
     }
   }
 
-  auto it = scan_lists2.begin();
-  dbScanList* scan_list21 = *it;
-  ++it;
-  dbScanList* scan_list22 = *it;
-
-  EXPECT_THAT(scan_list21->getScanInsts().size(), 1);
-  EXPECT_THAT(scan_list22->getScanInsts().size(), 2);
+  for (dbScanList* scan_list : scan_lists22) {
+    for (dbScanInst* scan_inst : scan_list->getScanInsts()) {
+      const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
+      EXPECT_THAT(GetName(access_pins.scan_in), "a");
+      EXPECT_THAT(GetName(access_pins.scan_out), "o");
+      EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
+      ++i;
+    }
+  }
 }
 
 }  // namespace

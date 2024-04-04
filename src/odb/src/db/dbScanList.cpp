@@ -38,6 +38,7 @@
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanInst.h"
+#include "dbScanPartition.h"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -132,9 +133,9 @@ dbScanInst* dbScanList::add(dbInst* inst)
   return dbScanInst::create(this, inst);
 }
 
-dbScanList* dbScanList::create(dbScanChain* scan_chain)
+dbScanList* dbScanList::create(dbScanPartition* scan_partition)
 {
-  _dbScanChain* obj = (_dbScanChain*) scan_chain;
+  _dbScanPartition* obj = (_dbScanPartition*) scan_partition;
   return (dbScanList*) obj->scan_lists_->create();
 }
 // User Code End dbScanListPublicMethods

@@ -47,7 +47,6 @@ class dbScanPartition;
 class _dbScanPartition;
 template <class T>
 class dbTable;
-class _dbScanList;
 class dbScanPin;
 
 class _dbScanChain : public _dbObject
@@ -80,8 +79,6 @@ class _dbScanChain : public _dbObject
   std::string test_mode_name_;
 
   dbTable<_dbScanPartition>* scan_partitions_;
-
-  dbTable<_dbScanList>* scan_lists_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj);

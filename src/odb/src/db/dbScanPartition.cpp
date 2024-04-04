@@ -38,7 +38,9 @@
 #include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
+#include "dbScanList.h"
 #include "dbScanPin.h"
+#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 namespace odb {
@@ -46,13 +48,10 @@ template class dbTable<_dbScanPartition>;
 
 bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
 {
-  if (start_ != rhs.start_) {
-    return false;
-  }
-  if (stop_ != rhs.stop_) {
-    return false;
-  }
   if (name_ != rhs.name_) {
+    return false;
+  }
+  if (*scan_lists_ != *rhs.scan_lists_) {
     return false;
   }
 
@@ -69,47 +68,60 @@ void _dbScanPartition::differences(dbDiff& diff,
                                    const _dbScanPartition& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(start_);
-  DIFF_FIELD(stop_);
   DIFF_FIELD(name_);
+  DIFF_TABLE(scan_lists_);
   DIFF_END
 }
 
 void _dbScanPartition::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(start_);
-  DIFF_OUT_FIELD(stop_);
   DIFF_OUT_FIELD(name_);
+  DIFF_OUT_TABLE(scan_lists_);
 
   DIFF_END
 }
 
 _dbScanPartition::_dbScanPartition(_dbDatabase* db)
 {
+  scan_lists_ = new dbTable<_dbScanList>(
+      db, this, (GetObjTbl_t) &_dbScanPartition::getObjectTable, dbScanListObj);
 }
 
 _dbScanPartition::_dbScanPartition(_dbDatabase* db, const _dbScanPartition& r)
 {
-  start_ = r.start_;
-  stop_ = r.stop_;
   name_ = r.name_;
+  scan_lists_ = new dbTable<_dbScanList>(db, this, *r.scan_lists_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj)
 {
-  stream >> obj.start_;
-  stream >> obj.stop_;
   stream >> obj.name_;
+  stream >> *obj.scan_lists_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
 {
-  stream << obj.start_;
-  stream << obj.stop_;
   stream << obj.name_;
+  stream << *obj.scan_lists_;
   return stream;
+}
+
+dbObjectTable* _dbScanPartition::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbScanListObj:
+      return scan_lists_;
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
+}
+
+_dbScanPartition::~_dbScanPartition()
+{
+  delete scan_lists_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -118,59 +130,13 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+dbSet<dbScanList> dbScanPartition::getScanLists() const
+{
+  _dbScanPartition* obj = (_dbScanPartition*) this;
+  return dbSet<dbScanList>(obj, obj->scan_lists_);
+}
+
 // User Code Begin dbScanPartitionPublicMethods
-
-void dbScanPartition::setStart(dbBTerm* bterm)
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->start_ = dbScanPin::create(dft, bterm);
-}
-
-void dbScanPartition::setStart(dbITerm* iterm)
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->start_ = dbScanPin::create(dft, iterm);
-}
-
-void dbScanPartition::setStop(dbBTerm* bterm)
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->stop_ = dbScanPin::create(dft, bterm);
-}
-
-void dbScanPartition::setStop(dbITerm* iterm)
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  dbDft* dft = (dbDft*) scan_chain->getOwner();
-  scan_partition->stop_ = dbScanPin::create(dft, iterm);
-}
-
-std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStart() const
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
-  dbScanPin* scan_pin = (dbScanPin*) dft->scan_pins_->getPtr(
-      (dbId<_dbScanPin>) scan_partition->start_);
-  return scan_pin->getPin();
-}
-
-std::variant<dbBTerm*, dbITerm*> dbScanPartition::getStop() const
-{
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
-  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
-  dbScanPin* scan_pin = (dbScanPin*) dft->scan_pins_->getPtr(
-      (dbId<_dbScanPin>) scan_partition->stop_);
-  return scan_pin->getPin();
-}
 
 const std::string& dbScanPartition::getName() const
 {
@@ -178,7 +144,7 @@ const std::string& dbScanPartition::getName() const
   return scan_partition->name_;
 }
 
-void dbScanPartition::setName(std::string_view name)
+void dbScanPartition::setName(const std::string& name)
 {
   _dbScanPartition* scan_partition = (_dbScanPartition*) this;
   scan_partition->name_ = name;
