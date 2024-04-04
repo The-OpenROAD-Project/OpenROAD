@@ -355,8 +355,6 @@ proc cluster_flops { args } {
   gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
 }
 
-
-namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
     keys {-pause -update -inst} \
@@ -385,6 +383,7 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial $inst
 }
 
+namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \

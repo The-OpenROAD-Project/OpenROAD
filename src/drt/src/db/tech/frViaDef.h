@@ -28,8 +28,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "db/obj/frShape.h"
@@ -76,6 +78,65 @@ class frViaDef
   // constructors
   frViaDef() = default;
   frViaDef(const std::string& nameIn) : name_(nameIn) {}
+  // operators
+  bool operator==(const frViaDef& in) const
+  {
+    if (name_ != in.name_) {
+      return false;
+    }
+    if (cutClassIdx_ != in.cutClassIdx_) {
+      return false;
+    }
+    if (cutClass_ != in.cutClass_) {
+      return false;
+    }
+    if (isDefault_ != in.isDefault_) {
+      return false;
+    }
+    auto equalFigs = [](const std::vector<std::unique_ptr<frShape>>& val1,
+                        const std::vector<std::unique_ptr<frShape>>& val2) {
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val1set;
+      std::multiset<std::pair<frLayerNum, odb::Rect>> val2set;
+      std::transform(val1.begin(),
+                     val1.end(),
+                     std::inserter(val1set, val1set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      std::transform(val2.begin(),
+                     val2.end(),
+                     std::inserter(val2set, val2set.begin()),
+                     [](const std::unique_ptr<frShape>& val) {
+                       return std::make_pair(val->getLayerNum(),
+                                             val->getBBox());
+                     });
+      if (val1set.size() != val2set.size()) {
+        return false;
+      }
+      auto it1 = val1set.begin();
+      auto it2 = val2set.begin();
+      while (it1 != val1set.end()) {
+        if (*it1 != *it2) {
+          return false;
+        }
+        it1++;
+        it2++;
+      }
+      return true;
+    };
+    if (!equalFigs(layer1Figs_, in.layer1Figs_)) {
+      return false;
+    }
+    if (!equalFigs(layer2Figs_, in.layer2Figs_)) {
+      return false;
+    }
+    if (!equalFigs(cutFigs_, in.cutFigs_)) {
+      return false;
+    }
+    return true;
+  }
+  bool operator!=(const frViaDef& in) const { return !(*this == in); }
   // getters
   void getName(std::string& nameIn) const { nameIn = name_; }
   std::string getName() const { return name_; }

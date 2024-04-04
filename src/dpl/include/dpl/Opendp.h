@@ -82,6 +82,7 @@ using odb::dbNet;
 using odb::dbOrientType;
 using odb::dbRow;
 using odb::dbSite;
+using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
@@ -310,6 +311,7 @@ class Opendp
   void optimizeMirroring();
 
  private:
+  using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
@@ -499,11 +501,14 @@ class Opendp
   int padRight(const Cell* cell) const;
   int disp(const Cell* cell) const;
   // Place fillers
+  MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
   void setGridCells();
-  dbMasterSeq& gapFillers(int gap, dbMasterSeq* filler_masters);
+  dbMasterSeq& gapFillers(dbTechLayer* implant,
+                          int gap,
+                          const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(int row,
                        const char* prefix,
-                       dbMasterSeq* filler_masters,
+                       const MasterByImplant& filler_masters,
                        int row_height,
                        GridInfo grid_info);
   bool isFiller(odb::dbInst* db_inst);
@@ -553,8 +558,8 @@ class Opendp
   RtreeBox regions_rtree;
 
   // Filler placement.
-  // gap (in sites) -> seq of masters
-  GapFillers gap_fillers_;
+  // gap (in sites) -> seq of masters by implant
+  map<dbTechLayer*, GapFillers> gap_fillers_;
   int filler_count_ = 0;
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
