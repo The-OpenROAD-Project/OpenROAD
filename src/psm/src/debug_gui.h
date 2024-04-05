@@ -122,6 +122,8 @@ class DebugGui : public gui::Renderer
   }
 
   void setSources(const std::vector<std::unique_ptr<SourceNode>>& sources);
+  void setSourceShapes(odb::dbTechLayer* layer,
+                       const std::set<odb::Rect>& shapes);
 
  private:
   using Point
@@ -148,6 +150,9 @@ class DebugGui : public gui::Renderer
       = boost::geometry::index::rtree<BPinNode*,
                                       boost::geometry::index::quadratic<16>,
                                       PointIndexableGetter<BPinNode>>;
+  using RectTree
+      = boost::geometry::index::rtree<odb::Rect,
+                                      boost::geometry::index::quadratic<16>>;
 
   bool isSelected(const Node* node) const;
   bool isSelected(const Shape* shape) const;
@@ -158,6 +163,7 @@ class DebugGui : public gui::Renderer
                 gui::Painter& painter,
                 const gui::Painter::Color& color) const;
   void drawSource(const Node* node, gui::Painter& painter) const;
+  void drawSource(const odb::Rect& rect, gui::Painter& painter) const;
   void drawConnection(const Connection* connection,
                       gui::Painter& painter) const;
 
@@ -180,6 +186,7 @@ class DebugGui : public gui::Renderer
   std::map<odb::dbTechLayer*, ConnectionTree> connections_;
 
   std::map<odb::dbTechLayer*, NodeTree> sources_;
+  std::map<odb::dbTechLayer*, RectTree> source_shapes_;
 
   std::set<const Shape*> selected_shapes_;
   std::set<const Node*> selected_nodes_;
@@ -191,7 +198,8 @@ class DebugGui : public gui::Renderer
   static constexpr const char* iterm_nodes_text_ = "ITerm nodes";
   static constexpr const char* bpin_nodes_text_ = "BPin nodes";
   static constexpr const char* connectivity_text_ = "Node connectivity";
-  static constexpr const char* source_text_ = "Sources";
+  static constexpr const char* source_text_ = "Source nodes";
+  static constexpr const char* source_shape_text_ = "Source shapes";
 
   static constexpr int bold_multiplier_ = 2;
   static constexpr int node_pen_width_ = 2;

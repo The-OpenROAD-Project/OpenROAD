@@ -266,6 +266,8 @@ DebugGui::DebugGui(IRNetwork* network)
   addDisplayControl(bpin_nodes_text_, true);
   addDisplayControl(connectivity_text_, true);
   addDisplayControl(source_text_, true);
+  addDisplayControl(source_shape_text_, true);
+
   gui::Gui::get()->registerRenderer(this);
 }
 
@@ -277,6 +279,7 @@ void DebugGui::reset()
   bpin_nodes_.clear();
   connections_.clear();
   sources_.clear();
+  source_shapes_.clear();
 
   selected_shapes_.clear();
   selected_nodes_.clear();
@@ -411,6 +414,11 @@ void DebugGui::drawSource(const Node* node, gui::Painter& painter) const
   painter.drawCircle(pt.getX(), pt.getY(), src_node_size);
 }
 
+void DebugGui::drawSource(const odb::Rect& rect, gui::Painter& painter) const
+{
+  painter.drawRect(rect);
+}
+
 void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   const odb::Rect& rect = painter.getBounds();
@@ -465,6 +473,19 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
          conn_itr != connections_[layer].qend();
          conn_itr++) {
       drawConnection(conn_itr->second, painter);
+    }
+  }
+
+  if (checkDisplayControl(source_shape_text_)) {
+    gui::Painter::Color color = src_node_color_;
+    color.a = 100;
+    painter.setPen(color, /* cosmetic */ true, 1);
+
+    for (auto node_itr = source_shapes_[layer].qbegin(
+             boost::geometry::index::intersects(rect));
+         node_itr != source_shapes_[layer].qend();
+         node_itr++) {
+      drawSource(*node_itr, painter);
     }
   }
 
@@ -576,6 +597,16 @@ void DebugGui::setSources(
   for (const auto& [layer, values] : srcs) {
     sources_[layer] = NodeTree(values.begin(), values.end());
   }
+
+  redraw();
+}
+
+void DebugGui::setSourceShapes(odb::dbTechLayer* layer,
+                               const std::set<odb::Rect>& shapes)
+{
+  source_shapes_.clear();
+
+  source_shapes_[layer] = RectTree(shapes.begin(), shapes.end());
 
   redraw();
 }

@@ -621,6 +621,10 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     src_nodes.push_back(std::move(nodes[0]));
   }
 
+  if (gui_) {
+    gui_->setSourceShapes(network_->getTopLayer(), shapes);
+  }
+
   return src_nodes;
 }
 
