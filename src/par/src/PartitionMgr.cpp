@@ -78,6 +78,13 @@ using utl::PAR;
 
 namespace par {
 
+bool CompareInstancePtr::operator()(const sta::Instance* lhs,
+                                    const sta::Instance* rhs) const
+{
+  return db_network_->staToDb(lhs)->getName()
+         < db_network_->staToDb(rhs)->getName();
+}
+
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
                         sta::dbSta* sta,
@@ -427,9 +434,10 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
 }
 
 // determine the required direction of a port.
-static PortDirection* determinePortDirection(const Net* net,
-                                             const std::set<Instance*>* insts,
-                                             const dbNetwork* db_network)
+static PortDirection* determinePortDirection(
+    const Net* net,
+    const std::set<Instance*, CompareInstancePtr>* insts,
+    const dbNetwork* db_network)
 {
   bool local_only = true;
   bool locally_driven = false;
@@ -507,7 +515,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     sta::Library* library,
     sta::NetworkReader* network,
     sta::Instance* parent,
-    const std::set<Instance*>* insts,
+    const std::set<Instance*, CompareInstancePtr>* insts,
     std::map<Net*, Port*>* port_map)
 {
   // build cell
@@ -764,7 +772,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
   const std::string top_name = db_network_->name(db_network_->topInstance());
 
   // build partition instance map
-  std::map<int, std::set<Instance*>> instance_map;
+  std::map<int, std::set<Instance*, CompareInstancePtr>> instance_map;
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
@@ -774,6 +782,10 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
                     inst->getName());
     } else {
       const int partition = prop_id->getValue();
+      if (instance_map.find(partition) == instance_map.end()) {
+        instance_map.insert(
+            {partition, std::set<Instance*, CompareInstancePtr>(db_network_)});
+      }
       instance_map[partition].insert(db_network_->dbToSta(inst));
     }
   }
