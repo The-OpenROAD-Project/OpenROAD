@@ -110,7 +110,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_bloat_iter` | Set bloat iteration threshold for routability mode. The default value is `1`, and the allowed values are integers `[1, MAX_INT]`.|
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
-| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.25`, and the allowed values are floats. |
+| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.0`, and the allowed values are floats. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_rc_coefficients` | Set routability RC coefficients. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
