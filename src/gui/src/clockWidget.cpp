@@ -1361,7 +1361,7 @@ ClockWidget::ClockWidget(QWidget* parent)
 
   connect(update_button_, &QPushButton::clicked, [=] { populate(); });
   connect(fit_button_, &QPushButton::clicked, this, &ClockWidget::fit);
-  
+
   update_button_->setEnabled(false);
   fit_button_->setEnabled(false);
 
@@ -1527,7 +1527,7 @@ void ClockWidget::currentClockChanged(int index)
 
 void ClockWidget::fit()
 {
-  if (views_.size() > 0 && clocks_tab_->currentIndex() < views_.size()) {
+  if (!views_.empty() && clocks_tab_->currentIndex() < views_.size()) {
     views_[clocks_tab_->currentIndex()]->fit();
   }
 }
