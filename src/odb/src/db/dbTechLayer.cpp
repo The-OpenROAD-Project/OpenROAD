@@ -58,6 +58,7 @@
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
+#include "dbTechLayerTwoWiresForbiddenSpcRule.h"
 #include "dbTechLayerWidthTableRule.h"
 #include "dbTechLayerWrongDirSpacingRule.h"
 // User Code Begin Includes
@@ -175,6 +176,10 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*wrongdir_spacing_rules_tbl_ != *rhs.wrongdir_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*two_wires_forbidden_spc_rules_tbl_
+      != *rhs.two_wires_forbidden_spc_rules_tbl_) {
     return false;
   }
 
@@ -361,6 +366,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_TABLE(keepout_zone_rules_tbl_);
   DIFF_TABLE(wrongdir_spacing_rules_tbl_);
+  DIFF_TABLE(two_wires_forbidden_spc_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -443,6 +449,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
   DIFF_OUT_TABLE(wrongdir_spacing_rules_tbl_);
+  DIFF_OUT_TABLE(two_wires_forbidden_spc_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -585,6 +592,12 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerWrongDirSpacingRuleObj);
+  two_wires_forbidden_spc_rules_tbl_
+      = new dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>(
+          db,
+          this,
+          (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+          dbTechLayerTwoWiresForbiddenSpcRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -708,6 +721,9 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r.keepout_zone_rules_tbl_);
   wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
       db, this, *r.wrongdir_spacing_rules_tbl_);
+  two_wires_forbidden_spc_rules_tbl_
+      = new dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>(
+          db, this, *r.two_wires_forbidden_spc_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -798,6 +814,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
     stream >> *obj.wrongdir_spacing_rules_tbl_;
   }
+  if (obj.getDatabase()->isSchema(
+          db_schema_lef58_two_wires_forbidden_spacing)) {
+    stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
+  }
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -884,6 +904,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
     stream << *obj.wrongdir_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(
+          db_schema_lef58_two_wires_forbidden_spacing)) {
+    stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin <<
   stream << obj._pitch_x;
@@ -972,6 +996,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return keepout_zone_rules_tbl_;
     case dbTechLayerWrongDirSpacingRuleObj:
       return wrongdir_spacing_rules_tbl_;
+    case dbTechLayerTwoWiresForbiddenSpcRuleObj:
+      return two_wires_forbidden_spc_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -1011,6 +1037,7 @@ _dbTechLayer::~_dbTechLayer()
   delete forbidden_spacing_rules_tbl_;
   delete keepout_zone_rules_tbl_;
   delete wrongdir_spacing_rules_tbl_;
+  delete two_wires_forbidden_spc_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -1209,6 +1236,14 @@ dbTechLayer::getTechLayerWrongDirSpacingRules() const
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerWrongDirSpacingRule>(
       obj, obj->wrongdir_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
+dbTechLayer::getTechLayerTwoWiresForbiddenSpcRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerTwoWiresForbiddenSpcRule>(
+      obj, obj->two_wires_forbidden_spc_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)

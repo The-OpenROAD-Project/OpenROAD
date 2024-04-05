@@ -479,6 +479,27 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     c++;
   }
+  // check LEF58_TWOWIRESFORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto TWforbiddenSpacingRules = layer->getTechLayerTwoWiresForbiddenSpcRules();
+  BOOST_TEST(TWforbiddenSpacingRules.size() == 2);
+  c = 0;
+  for (auto* subRule : TWforbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getMinSpacing() == 0.16 * distFactor);
+      BOOST_TEST(subRule->getMaxSpacing() == 0.2 * distFactor);
+      BOOST_TEST(subRule->getMinSpanLength() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getMaxSpanLength() == 0.08 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0);
+      BOOST_TEST(subRule->isMinExactSpanLength());
+      BOOST_TEST(subRule->isMaxExactSpanLength());
+    } else {
+      BOOST_TEST(subRule->getPrl() == -0.5 * distFactor);
+      BOOST_TEST(!subRule->isMinExactSpanLength());
+      BOOST_TEST(!subRule->isMaxExactSpanLength());
+    }
+    c++;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

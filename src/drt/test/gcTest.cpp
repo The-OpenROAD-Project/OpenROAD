@@ -1375,6 +1375,27 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
   }
 }
 
+BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerTwoWiresForbiddenSpcRule::create(db_layer);
+  rule->setMinSpacing(0);
+  rule->setMaxSpacing(300);
+  rule->setMinSpanLength(0);
+  rule->setMaxSpanLength(500);
+  rule->setPrl(0);
+  makeLef58TwoWiresForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 200}, {500, 200});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 }  // namespace drt
