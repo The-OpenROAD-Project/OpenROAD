@@ -593,7 +593,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   calPenalty();
 
   if (centralization_on_) {
-    attemptCentralization(pre_cost);
+    attemptCentralization(calNormCost());
   }
 
   if (graphics_) {
@@ -608,16 +608,29 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
     return;
   }
 
+  // In order to revert the centralization, we cache the current
+  // location of the clusters to avoid floating-point evilness.
+  std::vector<std::pair<float, float>> clusters_locations;
+  for (int& id : pos_seq_) {
+    clusters_locations.emplace_back(macros_[id].getX(), macros_[id].getY());
+  }
+
   std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
                                  (outline_.getHeight() - height_) / 2);
   moveFloorplan(offset);
 
   // revert centralization
   if (calNormCost() > pre_cost) {
-    offset.first = -offset.first;
-    offset.second = -offset.second;
+    for (int& id : pos_seq_) {
+      macros_[id].setX(clusters_locations[id].first);
+      macros_[id].setY(clusters_locations[id].second);
+    }
 
-    moveFloorplan(offset);
+    if (graphics_) {
+      graphics_->saStep(macros_);
+    }
+
+    calPenalty();
   }
 }
 
