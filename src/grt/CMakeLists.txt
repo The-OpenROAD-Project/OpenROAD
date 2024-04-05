@@ -59,6 +59,7 @@ target_sources(grt
   PRIVATE
     src/MakeGlobalRouter.cpp
     src/heatMap.cpp
+    src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
 )

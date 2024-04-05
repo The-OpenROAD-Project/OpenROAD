@@ -60,7 +60,7 @@ class Rudy
     float rudy_ = 0;
   };
 
-  explicit Rudy(odb::dbBlock* block);
+  explicit Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter);
 
   /**
    * \pre we need to call this function after `setGridConfig` and
@@ -88,17 +88,13 @@ class Rudy
   /**
    * \pre This function should be called after `setGridConfig`
    * */
-  void makeGrid(const int tile_size);
+  void makeGrid();
   void getResourceReductions();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
   void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
   void processIntersectionGenericObstruction(odb::Rect obstruction_rect,
-                                             int tile_width,
-                                             int tile_height,
                                              int nets_per_tile);
-  void processIntersectionSignalNet(odb::Rect net_rect,
-                                    int tile_width,
-                                    int tile_height);
+  void processIntersectionSignalNet(odb::Rect net_rect);
 
   odb::dbBlock* block_;
   odb::Rect grid_block_;
@@ -106,6 +102,7 @@ class Rudy
   int tile_cnt_x_ = 40;
   int tile_cnt_y_ = 40;
   int wire_width_ = 100;
+  int tile_size_ = 0;
   std::vector<std::vector<Tile>> grid_;
 };
 

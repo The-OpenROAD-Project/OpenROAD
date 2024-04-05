@@ -916,11 +916,11 @@ void FastRouteCore::getCapacityReductionData(CapacityReductionData& cap_red_data
             && y_grid_ > 1) {
           uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
           uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
-          cap_red_data[x][y].second = blockageH + blockageV;
+          cap_red_data[x][y].second += blockageH + blockageV;
         } else {
           uint8_t blockageH = h_edges_3D_[k][y][x].red;
           uint8_t blockageV = v_edges_3D_[k][y][x].red;
-          cap_red_data[x][y].second = blockageH + blockageV;
+          cap_red_data[x][y].second += blockageH + blockageV;
         }
       }
     }

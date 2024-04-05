@@ -152,7 +152,9 @@ class GlobalRouter : public ant::GlobalRouteSource
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
-                routing_congestion_data_source);
+                routing_congestion_data_source,
+            std::unique_ptr<AbstractRoutingCongestionDataSource>
+                            routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -272,6 +274,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getMinMaxLayer(int& min_layer, int& max_layer);
   void getCapacityReductionData(
       CapacityReductionData& cap_red_data);
+  bool isInitialized() const { return initialized_; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -446,6 +449,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
+  bool initialized_;
 
   // Layer adjustment variables
   std::vector<float> adjustments_;
@@ -475,6 +479,7 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   RepairAntennas* repair_antennas_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
+  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
   // variables congestion report file
   const char* congestion_file_name_;
