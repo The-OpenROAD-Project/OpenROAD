@@ -532,14 +532,18 @@ IRSolver::generateSourceNodesGenericBumps() const
 
   const odb::Rect die_area = getBlock()->getDieArea();
   std::set<odb::Rect> bumps;
-  int bump_count = 0;
+  int row_count = 0;
   for (int x = die_area.xMin() + dx / 2; x < die_area.xMax(); x += dx) {
+    const int col_offset = row_count % generated_source_settings_.bump_interval;
+    int col_count = 0;
     for (int y = die_area.yMin() + dy / 2; y < die_area.yMax(); y += dy) {
-      if (bump_count % generated_source_settings_.bump_interval == 0) {
+      if ((col_offset + col_count) % generated_source_settings_.bump_interval
+          == 0) {
         bumps.emplace(x - size / 2, y - size / 2, x + size / 2, y + size / 2);
       }
-      bump_count++;
+      col_count++;
     }
+    row_count++;
   }
 
   if (bumps.empty()) {
