@@ -156,15 +156,10 @@ endif()
 add_subdirectory(src)
 
 # After all compiled, look for the respective flags
-if(NOT OPENROAD_GPU_COMPILED)
-  #include(GetCompileFlags)
-  #get_compile_flags()
-  target_compile_definitions(openroad PRIVATE GPU)
-  target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
-  target_compile_definitions(openroad PRIVATE BUILD_GUI)
-  target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
-
-endif()
+target_compile_definitions(openroad PRIVATE GPU)
+target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
+target_compile_definitions(openroad PRIVATE BUILD_GUI)
+target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
 
 ####################################################################
 
