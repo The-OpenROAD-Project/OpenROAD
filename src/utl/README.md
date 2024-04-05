@@ -33,6 +33,13 @@ man
 
 ## Example scripts
 
+You may run various commands
+```
+man openroad; level 1
+man clock_tree_synthesis; level 2
+man CTS-0005; level 3
+```
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
