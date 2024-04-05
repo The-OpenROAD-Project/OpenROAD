@@ -3164,6 +3164,13 @@ float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
   const float depth = (std_cell_area / sum_length)
                       * std::pow((1 - macro_dominance_factor), 2);
 
+  debugPrint(logger_,
+             MPL,
+             "coarse_shaping",
+             1,
+             "Bundled IO clusters blokaged depth = {}",
+             depth);
+
   return depth;
 }
 
