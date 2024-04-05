@@ -66,6 +66,19 @@ class Logger;
 
 namespace par {
 
+struct CompareInstancePtr
+{
+ public:
+  CompareInstancePtr(sta::dbNetwork* db_network = nullptr)
+      : db_network_(db_network)
+  {
+  }
+  bool operator()(const sta::Instance* lhs, const sta::Instance* rhs) const;
+
+ private:
+  sta::dbNetwork* db_network_ = nullptr;
+};
+
 class PartitionMgr
 {
  public:
@@ -252,7 +265,7 @@ class PartitionMgr
       sta::Library* library,
       sta::NetworkReader* network,
       sta::Instance* parent,
-      const std::set<sta::Instance*>* insts,
+      const std::set<sta::Instance*, CompareInstancePtr>* insts,
       std::map<sta::Net*, sta::Port*>* port_map);
 
   sta::Instance* buildPartitionedTopInstance(const char* name,

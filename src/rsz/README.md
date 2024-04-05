@@ -19,14 +19,21 @@ delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
 
+```
+# Either run 
+set_wire_rc -clock ... -signal ... -layer ...
+
+# Or
+set_wire_rc -resistance ... -capacitance ...
+```
+
 ```tcl
 set_wire_rc 
     [-clock] 
     [-signal]
+    [-data]
+    [-corner corner]
     [-layer layer_name]
-
-or 
-set_wire_rc
     [-resistance res]
     [-capacitance cap]
 ```
@@ -100,7 +107,14 @@ or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
 
 ```tcl
-set_dont_use lib_cells
+set_dont_use lib_cells 
+```
+
+### Unset Don't Use
+
+The `unset_dont_use` command reverses the `set_dont_use` command.
+
+```tcl
 unset_dont_use lib_cells
 ```
 
@@ -110,7 +124,14 @@ The `set_dont_touch` command prevents the resizer commands from
 modifying instances or nets.
 
 ```tcl
-set_dont_touch instances_nets
+set_dont_touch instances_nets 
+```
+
+### Unset Don't Touch
+
+The `unset_dont_touch` command reverse the `set_dont_touch` command.
+
+```tcl
 unset_dont_touch instances_nets
 ```
 
@@ -127,6 +148,7 @@ buffer_ports
     [-inputs] 
     [-outputs] 
     [-max_utilization util]
+    [-buffer_cell buf_cell]
 ```
 
 #### Options
@@ -144,6 +166,14 @@ in buffering nets.
 
 ```tcl
 remove_buffers
+```
+
+### Balance Row Usage
+
+Command description pending.
+
+```tcl
+balance_row_usage
 ```
 
 ### Repair Design
@@ -183,6 +213,7 @@ of the tie high/low cell.
 ```tcl
 repair_tie_fanout 
     [-separation dist]
+    [-max_fanout fanout]
     [-verbose]
     lib_port
 ```
@@ -212,10 +243,13 @@ repair_timing
     [-recover_power percent_of_paths_with_slack]
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
+    [-slack_margin slack_margin]
+    [-libraries libs]
     [-allow_setup_violations]
     [-skip_pin_swap]
     [-skip_gate_cloning]
     [-repair_tns tns_end_percent]
+    [-max_passes passes]
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
     [-verbose]
@@ -246,7 +280,9 @@ this option be used with global routing based parasitics.
 
 The `clock_tree_synthesis` command inserts a clock tree in the design
 but may leave a long wire from the clock input pin to the clock tree
-root buffer. The `repair_clock_nets` command inserts buffers in the
+root buffer.
+
+The `repair_clock_nets` command inserts buffers in the
 wire from the clock input pin to the clock root buffer.
 
 ```tcl
@@ -295,7 +331,7 @@ report_floating_nets
 | ----- | ----- |
 | `-verbose` | Print the net names. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
 
@@ -318,7 +354,7 @@ If you are a developer, you might find these useful. More details can be found i
 A typical `resizer` command file (after a design and Liberty libraries have
 been read) is shown below.
 
-```tcl
+```
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
@@ -336,7 +372,7 @@ repair_timing
 Note that OpenSTA commands can be used to report timing metrics before
 or after resizing the design.
 
-```tcl
+```
 set_wire_rc -layer metal2
 report_checks
 report_tns

@@ -27,5 +27,7 @@ record_tests {
   convergence01
   nograd01
   clust01
+  #gpl_man_tcl_check
+  #gpl_readme_msgs_check
 }
 #  clust02

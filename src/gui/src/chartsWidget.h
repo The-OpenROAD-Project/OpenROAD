@@ -46,10 +46,21 @@
 
 namespace sta {
 class dbSta;
-}
+class Clock;
+}  // namespace sta
 #endif
 
 namespace gui {
+
+#ifdef ENABLE_CHARTS
+
+struct SlackHistogramData
+{
+  std::vector<float> end_points_slack;
+  std::set<sta::Clock*> clocks;
+};
+
+#endif
 
 class ChartsWidget : public QDockWidget
 {
@@ -93,7 +104,8 @@ class ChartsWidget : public QDockWidget
     precision_count_ = precision_count;
   }
 
-  void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
+  SlackHistogramData fetchSlackHistogramData() const;
+
   void populateBuckets(const std::vector<float>& all_slack,
                        std::deque<int>& neg_buckets,
                        std::deque<int>& pos_buckets);
@@ -103,8 +115,9 @@ class ChartsWidget : public QDockWidget
                              float max_slack,
                              float min_slack);
 
-  void setXAxisConfig(int all_bars_count);
+  void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
   void setYAxisConfig();
+  QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
   int computeMaxYSnap();
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
