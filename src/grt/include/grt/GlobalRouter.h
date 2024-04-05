@@ -135,6 +135,8 @@ struct PinGridLocation
 };
 
 typedef std::vector<std::pair<int, odb::Rect>> Guides;
+using LayerId = int;
+using TileSet = std::set<std::pair<int, int>>;
 
 class GlobalRouter : public ant::GlobalRouteSource
 {
@@ -289,6 +291,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
+  std::vector<LayerId> findTransitionLayers();
+  void adjustTransitionLayers(
+      const std::vector<LayerId>& transition_layers,
+      std::map<int, std::vector<odb::Rect>>& layer_obs_map);
+  void adjustTileSet(const TileSet& tiles_to_reduce,
+                     odb::dbTechLayer* tech_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -389,8 +397,10 @@ class GlobalRouter : public ant::GlobalRouteSource
       std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
       int bottom_layer,
       int top_layer);
-  int findInstancesObstructions(odb::Rect& die_area,
-                                const std::vector<int>& layer_extensions);
+  int findInstancesObstructions(
+      odb::Rect& die_area,
+      const std::vector<int>& layer_extensions,
+      std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void findNetsObstructions(odb::Rect& die_area);
   int computeMaxRoutingLayer();
   std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);

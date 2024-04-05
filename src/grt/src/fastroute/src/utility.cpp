@@ -1954,7 +1954,8 @@ void FastRouteCore::copyBR(void)
         v_edges_[i][j].usage = 0;
       }
     }
-    for (int netID : net_ids_) {
+
+    for (int netID = 0; netID < netCount(); netID++) {
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();
 

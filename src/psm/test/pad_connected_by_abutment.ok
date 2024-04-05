@@ -1,13 +1,6 @@
-[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/sg13g2_tech.lef
-[INFO ODB-0223]     Created 19 technology layers
-[INFO ODB-0224]     Created 300 technology vias
-[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/sg13g2_tech.lef
-[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/sg13g2_stdcell.lef
-[INFO ODB-0225]     Created 78 library cells
-[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/sg13g2_stdcell.lef
-[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/IOLib.lef
-[INFO ODB-0225]     Created 34 library cells
-[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/IOLib.lef
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_stdcell.lef, created 78 library cells
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/IOLib.lef, created 34 library cells
 [INFO ODB-0128] Design: CantConnect
 [INFO ODB-0130]     Created 5 pins.
 [INFO ODB-0131]     Created 64 components and 281 component-terminals.

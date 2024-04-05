@@ -88,15 +88,19 @@ class frTechObject
     layer2Name2CutClass_.emplace_back();
     layerCutClass_.emplace_back();
   }
-  void addVia(std::unique_ptr<frViaDef> in)
+  frViaDef* addVia(std::unique_ptr<frViaDef> in)
   {
     in->setId(vias_.size());
     if (name2via_.find(in->getName()) != name2via_.end()) {
-      std::cout << "Error: duplicated via definition for " << in->getName()
-                << "\n";
+      if (*(name2via_[in->getName()]) == *in) {
+        return name2via_[in->getName()];
+      }
+      return nullptr;
     }
+    frViaDef* rptr = in.get();
     name2via_[in->getName()] = in.get();
     vias_.push_back(std::move(in));
+    return rptr;
   }
   void addCutClass(frLayerNum lNum, std::unique_ptr<frLef58CutClass> in)
   {

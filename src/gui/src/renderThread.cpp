@@ -87,7 +87,6 @@ void RenderThread::render(const QRect& draw_rect,
   }
 
   is_rendering_ = true;
-  viewer_->setLoadingState();
 
   QMutexLocker locker(&mutex_);
   draw_rect_ = draw_rect;

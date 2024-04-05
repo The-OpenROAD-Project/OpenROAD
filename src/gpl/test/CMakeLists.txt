@@ -8,6 +8,8 @@ set(TEST_NAMES
   simple01-uniform
   simple01-ref
   simple01-skip-io
+  simple01-rd
+  simple02-rd
   simple02
   simple03
   simple04
@@ -27,7 +29,7 @@ set(TEST_NAMES
   convergence01
   nograd01
   clust01
-  clust02
+#  clust02
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)

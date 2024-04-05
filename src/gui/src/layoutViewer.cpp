@@ -1335,7 +1335,8 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
     dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
+    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT
+        && type != dbTechLayerType::IMPLANT) {
       continue;
     }
     boxes[layer].obs.emplace_back(box_to_qrect(box));
@@ -1876,6 +1877,7 @@ void LayoutViewer::fullRepaint()
     QRect rect = scroller_->viewport()->geometry();
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
+    setLoadingState();
     viewer_thread_.render(rect, selected_, highlighted_, rulers_);
   }
 }
