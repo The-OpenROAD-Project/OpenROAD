@@ -844,12 +844,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
     timing_path->setSlack(path_end->slack(sta_));
     timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     timing_path->setPathRequiredTime(path_end->requiredTime(sta_));
-
-    /*
-      TO DO: add skew to the timing path
-
-      last endpoint arrival time - first endpoint (data) arrival path ?
-    */
+    timing_path->setSkew(path_end->clkSkew(sta_));
 
     bool clock_propagated = false;
     if (start_clock_edge != nullptr) {
