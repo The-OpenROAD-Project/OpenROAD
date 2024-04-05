@@ -556,11 +556,26 @@ IRSolver::generateSourceNodesGenericBumps() const
 std::vector<std::unique_ptr<SourceNode>>
 IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
 {
+  std::set<odb::Rect> intersect_shapes;
+  const auto& top_shapes = network_->getShapes().at(network_->getTopLayer());
+  for (const auto& shape : shapes) {
+    bool used = false;
+    for (const auto& top_shape : top_shapes) {
+      if (shape.intersects(top_shape->getShape())) {
+        used = true;
+        intersect_shapes.insert(shape.intersect(top_shape->getShape()));
+      }
+    }
+    if (!used) {
+      intersect_shapes.insert(shape);
+    }
+  }
+
   std::map<odb::Point, std::vector<std::unique_ptr<SourceNode>>> source_nodes;
   const double dbus = getBlock()->getDbUnitsPerMicron();
 
   const auto top_nodes = network_->getTopLayerNodeTree();
-  for (const auto& shape : shapes) {
+  for (const auto& shape : intersect_shapes) {
     debugPrint(
         logger_,
         utl::PSM,
