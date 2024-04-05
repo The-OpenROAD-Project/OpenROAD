@@ -1408,6 +1408,55 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   bool exceptEol_{false};
   frUInt4 eolWidth_{0};
 };
+// LEF58_TWOWIRESFORBIDDENSPACING
+class frLef58TwoWiresForbiddenSpcConstraint : public frConstraint
+{
+ public:
+  frLef58TwoWiresForbiddenSpcConstraint(
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* db_rule)
+      : db_rule_(db_rule)
+  {
+  }
+  // getters
+  odb::dbTechLayerTwoWiresForbiddenSpcRule* getODBRule() const
+  {
+    return db_rule_;
+  }
+  // setters
+  void setODBRule(odb::dbTechLayerTwoWiresForbiddenSpcRule* in)
+  {
+    db_rule_ = in;
+  }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EolKeepOutConstraint;
+  }
+  bool isValidForMinSpanLength(frCoord width)
+  {
+    return db_rule_->isMinExactSpanLength()
+               ? (width == db_rule_->getMinSpanLength())
+               : (width >= db_rule_->getMinSpanLength());
+  }
+  bool isValidForMaxSpanLength(frCoord width)
+  {
+    return db_rule_->isMaxExactSpanLength()
+               ? (width == db_rule_->getMaxSpanLength())
+               : (width <= db_rule_->getMaxSpanLength());
+  }
+  bool isForbiddenSpacing(frCoord spc)
+  {
+    return spc >= db_rule_->getMinSpacing() && spc <= db_rule_->getMaxSpacing();
+  }
+  bool isValidPrl(frCoord prl) { return prl > db_rule_->getPrl(); }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("TWOWIRESFORBIDDENSPACING");
+  }
+
+ private:
+  odb::dbTechLayerTwoWiresForbiddenSpcRule* db_rule_;
+};
 
 // ADJACENTCUTS
 class frCutSpacingConstraint : public frConstraint
