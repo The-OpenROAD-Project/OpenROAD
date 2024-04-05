@@ -491,16 +491,6 @@ static void showUsage(const char* prog, const char* init_filename)
 
 static void showSplash()
 {
-#ifdef ENABLE_MPL2
-  bool enable_mpl2 = true;
-#else
-  bool enable_mpl2 = false;
-#endif
-#ifdef ENABLE_PAR
-  bool enable_par = true;
-#else
-  bool enable_par = false;
-#endif
   utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
   logger->report("OpenROAD {} {}",
                  ord::OpenRoad::getVersion(),
@@ -511,8 +501,8 @@ static void showSplash()
       ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
-      enable_mpl2 ? "+" : "-",
-      enable_par ? "+" : "-",
+      ord::OpenRoad::getMPL2CompileOption() ? "+" : "-",
+      ord::OpenRoad::getPARCompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-");
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "

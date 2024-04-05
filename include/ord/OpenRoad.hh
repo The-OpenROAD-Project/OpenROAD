@@ -254,6 +254,8 @@ class OpenRoad
   static bool getPythonCompileOption();
   static bool getGUICompileOption();
   static bool getChartsCompileOption();
+  static bool getMPL2CompileOption();
+  static bool getPARCompileOption();
 
  protected:
   ~OpenRoad();

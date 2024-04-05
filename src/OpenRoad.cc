@@ -39,7 +39,6 @@
 #include <iostream>
 #include <thread>
 
-#include "ord/CompileOptions.hh"
 #include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
@@ -632,22 +631,32 @@ const char* OpenRoad::getGitDescribe()
 
 bool OpenRoad::getGPUCompileOption()
 {
-  return OPENROAD_GPU_COMPILED;
+  return GPU;
 }
 
 bool OpenRoad::getPythonCompileOption()
 {
-  return OPENROAD_PYTHON_COMPILED;
+  return BUILD_PYTHON;
 }
 
 bool OpenRoad::getGUICompileOption()
 {
-  return OPENROAD_GUI_COMPILED;
+  return BUILD_GUI;
 }
 
 bool OpenRoad::getChartsCompileOption()
 {
-  return OPENROAD_CHARTS_COMPILED;
+  return ENABLE_CHARTS;
+}
+
+bool OpenRoad::getMPL2CompileOption()
+{
+  return ENABLE_MPL2;
+}
+
+bool OpenRoad::getPARCompileOption()
+{
+  return ENABLE_PAR;
 }
 
 }  // namespace ord
