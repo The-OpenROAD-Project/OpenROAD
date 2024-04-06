@@ -1,6 +1,6 @@
 # IR Drop Analysis
 
-The IR Drop Analysis module in OpenROAD (`psm`) is based on PDNSim, 
+The IR Drop Analysis module in OpenROAD (`psm`) is based on PDNSim,
 an open-source static IR analyzer.
 
 Features:
@@ -41,13 +41,13 @@ analyze_power_grid
 | Switch Name | Description |
 | ----- | ----- |
 | `-net` | Name of the net to analyze, power or ground net name. |
-| `-corner` | Corner to use for analysis. | 
+| `-corner` | Corner to use for analysis. |
 | `-error_file` | File to write power grid error to. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
 | `-enable_em` | Report current per power grid segment. |
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
 | `-voltage_file` | Write per-instance voltage into the file. |
-| `-source_type` | Indicate the type of voltage source grid to model. FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. | 
+| `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
 
 ### Check Power Grid
 
@@ -87,9 +87,9 @@ write_pg_spice
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
-| `-corner` | Corner to use for analysis. | 
-| `-source_type` | Indicate the type of voltage source grid to model. FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. | 
-| `spice_file` | File to write spice netlist to. | 
+| `-corner` | Corner to use for analysis. |
+| `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
+| `spice_file` | File to write spice netlist to. |
 
 ### Set PDNSim Net voltage
 
@@ -130,6 +130,16 @@ set_pdnsim_source_settings
 | `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
 | `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
 
+### Source grid options
+
+The source grid models how power is going be delivered to the power grid.
+The image below illustrate how they can be modeled, the red elements are the source models, the black horizontal boxes represent the top metal layer of the power grid, and the gray boxes indicate these are not used in the modeling.
+
+| Bumps with 2x interval | Bumps with 3x interval | Straps | Full |
+| - | - | - | - |
+| ![Image 1](doc/top_grid_bumps_2x.png) | ![Image 2](doc/top_grid_bumps_3x.png) | ![Image 1](doc/top_grid_straps.png) | ![Image 2](doc/top_grid_full.png) |
+
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/pdnsim.cpp) or the [swig file](./src/pdnsim.i).
@@ -164,7 +174,7 @@ Simply run the following script:
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+psm+in%3Atitle)
 about this tool.
 
-## References 
+## References
 
 1. PDNSIM [documentation](doc/PDNSim-documentation.pdf)
 1. Chhabria, V.A. and Sapatnekar, S.S. (no date) The-openroad-project/pdnsim: Power Grid Analysis, GitHub. Available at: https://github.com/The-OpenROAD-Project/PDNSim (Accessed: 24 July 2023). [(link)](https://github.com/The-OpenROAD-Project/PDNSim)
