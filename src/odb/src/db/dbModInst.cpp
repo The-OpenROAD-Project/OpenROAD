@@ -44,7 +44,6 @@
 #include "dbTable.hpp"
 // User Code Begin Includes
 #include "dbGroup.h"
-#include "dbModInst.h"
 #include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {

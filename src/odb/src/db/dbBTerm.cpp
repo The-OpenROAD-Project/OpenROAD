@@ -464,8 +464,9 @@ void dbBTerm::connect(dbModNet* mod_net)
   _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
   _dbBTerm* bterm = (_dbBTerm*) this;
-  if (bterm->_mnet == _mod_net->getId())
+  if (bterm->_mnet == _mod_net->getId()) {
     return;
+  }
 
   if (bterm->_mnet) {
     bterm->disconnectModNet(bterm, block);

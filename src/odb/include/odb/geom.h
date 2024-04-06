@@ -156,13 +156,13 @@ class Oct
   };
   Oct() = default;
   Oct(const Oct& r) = default;
-  Oct(const Point p1, const Point p2, int width);
+  Oct(Point p1, Point p2, int width);
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
   bool operator==(const Oct& r) const;
   bool operator!=(const Oct& r) const { return !(*this == r); };
-  void init(const Point p1, const Point p2, int width);
+  void init(Point p1, Point p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
   Point getCenterLow() const;
@@ -191,7 +191,7 @@ class Rect
  public:
   Rect() = default;
   Rect(const Rect& r) = default;
-  Rect(const Point p1, const Point p2);
+  Rect(Point p1, Point p2);
   Rect(int x1, int y1, int x2, int y2);
 
   Rect& operator=(const Rect& r) = default;
@@ -271,7 +271,7 @@ class Rect
   bool inside(const Rect& r) const;
 
   // Return the point inside rect that is closest to pt.
-  Point closestPtInside(const Point pt) const;
+  Point closestPtInside(Point pt) const;
 
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);

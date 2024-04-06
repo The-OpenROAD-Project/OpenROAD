@@ -60,53 +60,69 @@ static void create_via_boxes(_dbVia* via, const dbViaParams& P);
 
 bool _dbVia::operator==(const _dbVia& rhs) const
 {
-  if (_flags._is_rotated != rhs._flags._is_rotated)
+  if (_flags._is_rotated != rhs._flags._is_rotated) {
     return false;
+  }
 
-  if (_flags._is_tech_via != rhs._flags._is_tech_via)
+  if (_flags._is_tech_via != rhs._flags._is_tech_via) {
     return false;
+  }
 
-  if (_flags._has_params != rhs._flags._has_params)
+  if (_flags._has_params != rhs._flags._has_params) {
     return false;
+  }
 
-  if (_flags._orient != rhs._flags._orient)
+  if (_flags._orient != rhs._flags._orient) {
     return false;
+  }
 
-  if (_flags.default_ != rhs._flags.default_)
+  if (_flags.default_ != rhs._flags.default_) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
   if (_pattern && rhs._pattern) {
-    if (strcmp(_pattern, rhs._pattern) != 0)
+    if (strcmp(_pattern, rhs._pattern) != 0) {
       return false;
-  } else if (_pattern || rhs._pattern)
+    }
+  } else if (_pattern || rhs._pattern) {
     return false;
+  }
 
-  if (_bbox != rhs._bbox)
+  if (_bbox != rhs._bbox) {
     return false;
+  }
 
-  if (_boxes != rhs._boxes)
+  if (_boxes != rhs._boxes) {
     return false;
+  }
 
-  if (_top != rhs._top)
+  if (_top != rhs._top) {
     return false;
+  }
 
-  if (_bottom != rhs._bottom)
+  if (_bottom != rhs._bottom) {
     return false;
+  }
 
-  if (_generate_rule != rhs._generate_rule)
+  if (_generate_rule != rhs._generate_rule) {
     return false;
+  }
 
-  if (_rotated_via_id != rhs._rotated_via_id)
+  if (_rotated_via_id != rhs._rotated_via_id) {
     return false;
+  }
 
-  if (_via_params != rhs._via_params)
+  if (_via_params != rhs._via_params) {
     return false;
+  }
 
   return true;
 }
@@ -193,11 +209,13 @@ _dbVia::_dbVia(_dbDatabase*)
 
 _dbVia::~_dbVia()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 
-  if (_pattern)
+  if (_pattern) {
     free((void*) _pattern);
+  }
 }
 
 _dbTech* _dbVia::getTech()
@@ -289,8 +307,9 @@ dbBox* dbVia::getBBox()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
   return (dbBox*) block->_box_tbl->getPtr(via->_bbox);
@@ -313,8 +332,9 @@ dbTechVia* dbVia::getTechVia()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 0))
+  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 0)) {
     return nullptr;
+  }
 
   _dbTech* tech = via->getTech();
   _dbTechVia* v = tech->_via_tbl->getPtr(via->_rotated_via_id);
@@ -325,8 +345,9 @@ dbVia* dbVia::getBlockVia()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 1))
+  if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 1)) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) via->getOwner();
   _dbVia* v = block->_via_tbl->getPtr(via->_rotated_via_id);
@@ -344,8 +365,9 @@ dbTechLayer* dbVia::getTopLayer()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_top == 0)
+  if (via->_top == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
@@ -355,8 +377,9 @@ dbTechLayer* dbVia::getBottomLayer()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_bottom == 0)
+  if (via->_bottom == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
@@ -378,8 +401,9 @@ dbTechViaGenerateRule* dbVia::getViaGenerateRule()
 {
   _dbVia* via = (_dbVia*) this;
 
-  if (via->_generate_rule == 0)
+  if (via->_generate_rule == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = via->getTech();
   auto rule = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
@@ -441,8 +465,9 @@ bool dbVia::isDefault()
 
 dbVia* dbVia::create(dbBlock* block_, const char* name_)
 {
-  if (block_->findVia(name_))
+  if (block_->findVia(name_)) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) block_;
   _dbVia* via = block->_via_tbl->create();
@@ -458,8 +483,9 @@ dbVia* dbVia::create(dbBlock* block,
 {
   _dbVia* via = (_dbVia*) dbVia::create(block, name);
 
-  if (via == nullptr)
+  if (via == nullptr) {
     return nullptr;
+  }
 
   via->_flags._is_rotated = 1;
   via->_flags._orient = orient;
@@ -487,8 +513,9 @@ dbVia* dbVia::create(dbBlock* block,
 {
   _dbVia* via = (_dbVia*) dbVia::create(block, name);
 
-  if (via == nullptr)
+  if (via == nullptr) {
     return nullptr;
+  }
 
   via->_flags._is_rotated = 1;
   via->_flags._is_tech_via = 1;
@@ -541,14 +568,15 @@ dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
   }
 
   if (via->_flags._is_rotated) {
-    if (via->_flags._is_tech_via)
+    if (via->_flags._is_tech_via) {
       cvia->_rotated_via_id = via->_rotated_via_id;
-    else {
+    } else {
       _dbVia* bv = (_dbVia*) via_->getBlockVia();
       _dbVia* cbv = (_dbVia*) block_->findVia(bv->_name);
 
-      if (copyRotatedVia && (cbv == nullptr))
+      if (copyRotatedVia && (cbv == nullptr)) {
         cbv = (_dbVia*) copyVia(block_, (dbVia*) bv, true);
+      }
 
       assert(cbv);
       cvia->_rotated_via_id = cbv->getOID();
@@ -573,9 +601,11 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
     dbVia* v = *itr;
     _dbVia* via = (_dbVia*) v;
 
-    if (!v->isViaRotated())
-      if (!dst_->findVia(via->_name))
+    if (!v->isViaRotated()) {
+      if (!dst_->findVia(via->_name)) {
         copyVia(dst_, v, false);
+      }
+    }
   }
 
   // copy rotated via's last
@@ -583,9 +613,11 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
     dbVia* v = *itr;
     _dbVia* via = (_dbVia*) v;
 
-    if (v->isViaRotated())
-      if (!dst_->findVia(via->_name))
+    if (v->isViaRotated()) {
+      if (!dst_->findVia(via->_name)) {
         copyVia(dst_, v, false);
+      }
+    }
   }
 
   return true;
