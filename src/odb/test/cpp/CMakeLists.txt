@@ -69,5 +69,5 @@ add_dependencies(build_and_test
         TestMaster
         OdbGTests
 )
-
 add_subdirectory(helper)
+add_subdirectory(scan)

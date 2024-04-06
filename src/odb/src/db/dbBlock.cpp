@@ -59,6 +59,7 @@
 #include "dbCapNodeItr.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
+#include "dbDft.h"
 #include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbExtControl.h"
@@ -333,6 +334,12 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _extControl = new dbExtControl();
 
+  _dft_tbl = new dbTable<_dbDft>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj, 4096, 12);
+  _dbDft* dft_ptr = _dft_tbl->create();
+  dft_ptr->initialize();
+  _dft = dft_ptr->getId();
+
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
@@ -449,7 +456,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _maxCCSegId(block._maxCCSegId),
       _children(block._children),
       _component_mask_shift(block._component_mask_shift),
-      _currentCcAdjOrder(block._currentCcAdjOrder)
+      _currentCcAdjOrder(block._currentCcAdjOrder),
+      _dft(block._dft)
 {
   if (block._name) {
     _name = strdup(block._name);
@@ -546,6 +554,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _cc_seg_tbl = new dbTable<_dbCCSeg>(db, this, *block._cc_seg_tbl);
 
   _extControl = new dbExtControl();
+
+  _dft_tbl = new dbTable<_dbDft>(db, this, *block._dft_tbl);
 
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
@@ -687,6 +697,7 @@ _dbBlock::~_dbBlock()
   delete _group_ground_net_itr;
   delete _bpin_itr;
   delete _prop_itr;
+  delete _dft_tbl;
 
   std::list<dbBlockCallBackObj*>::iterator _cbitr;
   while (_callbacks.begin() != _callbacks.end()) {
@@ -892,6 +903,10 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
 
     case dbPropertyObj:
       return _prop_tbl;
+
+    case dbDftObj:
+      return _dft_tbl;
+
     default:
       break;
   }
@@ -999,6 +1014,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << NamedTable("r_seg_tbl", block._r_seg_tbl);
   stream << NamedTable("cc_seg_tbl", block._cc_seg_tbl);
   stream << *block._extControl;
+  stream << block._dft;
+  stream << *block._dft_tbl;
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1129,6 +1146,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._r_seg_tbl;     // DKF
   stream >> *block._cc_seg_tbl;
   stream >> *block._extControl;
+  if (db->isSchema(db_schema_add_scan)) {
+    stream >> block._dft;
+    stream >> *block._dft_tbl;
+  }
 
   //---------------------------------------------------------- stream in
   // properties
@@ -1416,6 +1437,12 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (*_cc_seg_tbl != *rhs._cc_seg_tbl)
     return false;
 
+  if (_dft != rhs._dft)
+    return false;
+
+  if (*_dft_tbl != *rhs._dft_tbl)
+    return false;
+
   return true;
 }
 
@@ -1501,6 +1528,8 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_layer_rule_tbl);
   DIFF_TABLE_NO_DEEP(_prop_tbl);
   DIFF_NAME_CACHE(_name_cache);
+  DIFF_FIELD(_dft);
+  DIFF_TABLE(_dft_tbl);
 
   if (*_r_val_tbl != *rhs._r_val_tbl)
     _r_val_tbl->differences(diff, "_r_val_tbl", *rhs._r_val_tbl);
@@ -1597,6 +1626,8 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_layer_rule_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
   DIFF_OUT_NAME_CACHE(_name_cache);
+  DIFF_OUT_FIELD(_dft);
+  DIFF_OUT_TABLE(_dft_tbl);
 
   _r_val_tbl->out(diff, side, "_r_val_tbl");
   _c_val_tbl->out(diff, side, "_c_val_tbl");
@@ -2276,6 +2307,12 @@ dbExtControl* dbBlock::getExtControl()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (block->_extControl);
+}
+
+dbDft* dbBlock::getDft() const
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbDft*) block->_dft_tbl->getPtr(block->_dft);
 }
 
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)

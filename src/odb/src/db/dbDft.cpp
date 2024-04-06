@@ -31,131 +31,141 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbScanPartition.h"
+#include "dbDft.h"
 
 #include "db.h"
 #include "dbDatabase.h"
-#include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
-#include "dbScanList.h"
 #include "dbScanPin.h"
 #include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 namespace odb {
-template class dbTable<_dbScanPartition>;
+template class dbTable<_dbDft>;
 
-bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
+bool _dbDft::operator==(const _dbDft& rhs) const
 {
-  if (name_ != rhs.name_) {
+  if (scan_inserted_ != rhs.scan_inserted_) {
     return false;
   }
-  if (*scan_lists_ != *rhs.scan_lists_) {
+  if (*scan_pins_ != *rhs.scan_pins_) {
+    return false;
+  }
+  if (*scan_chains_ != *rhs.scan_chains_) {
     return false;
   }
 
   return true;
 }
 
-bool _dbScanPartition::operator<(const _dbScanPartition& rhs) const
+bool _dbDft::operator<(const _dbDft& rhs) const
 {
   return true;
 }
 
-void _dbScanPartition::differences(dbDiff& diff,
-                                   const char* field,
-                                   const _dbScanPartition& rhs) const
+void _dbDft::differences(dbDiff& diff,
+                         const char* field,
+                         const _dbDft& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(name_);
-  DIFF_TABLE(scan_lists_);
+  DIFF_FIELD(scan_inserted_);
+  DIFF_TABLE(scan_pins_);
+  DIFF_TABLE(scan_chains_);
   DIFF_END
 }
 
-void _dbScanPartition::out(dbDiff& diff, char side, const char* field) const
+void _dbDft::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(name_);
-  DIFF_OUT_TABLE(scan_lists_);
+  DIFF_OUT_FIELD(scan_inserted_);
+  DIFF_OUT_TABLE(scan_pins_);
+  DIFF_OUT_TABLE(scan_chains_);
 
   DIFF_END
 }
 
-_dbScanPartition::_dbScanPartition(_dbDatabase* db)
+_dbDft::_dbDft(_dbDatabase* db)
 {
-  scan_lists_ = new dbTable<_dbScanList>(
-      db, this, (GetObjTbl_t) &_dbScanPartition::getObjectTable, dbScanListObj);
+  scan_pins_ = new dbTable<_dbScanPin>(
+      db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanPinObj);
+  scan_chains_ = new dbTable<_dbScanChain>(
+      db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanChainObj);
 }
 
-_dbScanPartition::_dbScanPartition(_dbDatabase* db, const _dbScanPartition& r)
+_dbDft::_dbDft(_dbDatabase* db, const _dbDft& r)
 {
-  name_ = r.name_;
-  scan_lists_ = new dbTable<_dbScanList>(db, this, *r.scan_lists_);
+  scan_inserted_ = r.scan_inserted_;
+  scan_pins_ = new dbTable<_dbScanPin>(db, this, *r.scan_pins_);
+  scan_chains_ = new dbTable<_dbScanChain>(db, this, *r.scan_chains_);
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj)
+dbIStream& operator>>(dbIStream& stream, _dbDft& obj)
 {
-  stream >> obj.name_;
-  stream >> *obj.scan_lists_;
+  stream >> obj.scan_inserted_;
+  stream >> *obj.scan_pins_;
+  stream >> *obj.scan_chains_;
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbDft& obj)
 {
-  stream << obj.name_;
-  stream << *obj.scan_lists_;
+  stream << obj.scan_inserted_;
+  stream << *obj.scan_pins_;
+  stream << *obj.scan_chains_;
   return stream;
 }
 
-dbObjectTable* _dbScanPartition::getObjectTable(dbObjectType type)
+dbObjectTable* _dbDft::getObjectTable(dbObjectType type)
 {
   switch (type) {
-    case dbScanListObj:
-      return scan_lists_;
+    case dbScanPinObj:
+      return scan_pins_;
+    case dbScanChainObj:
+      return scan_chains_;
     default:
       break;
   }
   return getTable()->getObjectTable(type);
 }
 
-_dbScanPartition::~_dbScanPartition()
+_dbDft::~_dbDft()
 {
-  delete scan_lists_;
+  delete scan_pins_;
+  delete scan_chains_;
 }
+
+// User Code Begin PrivateMethods
+void _dbDft::initialize()
+{
+  scan_inserted_ = false;
+}
+// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbScanPartition - Methods
+// dbDft - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-dbSet<dbScanList> dbScanPartition::getScanLists() const
+void dbDft::setScanInserted(bool scan_inserted)
 {
-  _dbScanPartition* obj = (_dbScanPartition*) this;
-  return dbSet<dbScanList>(obj, obj->scan_lists_);
+  _dbDft* obj = (_dbDft*) this;
+
+  obj->scan_inserted_ = scan_inserted;
 }
 
-// User Code Begin dbScanPartitionPublicMethods
-
-const std::string& dbScanPartition::getName() const
+bool dbDft::isScanInserted() const
 {
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  return scan_partition->name_;
+  _dbDft* obj = (_dbDft*) this;
+  return obj->scan_inserted_;
 }
 
-void dbScanPartition::setName(const std::string& name)
+dbSet<dbScanChain> dbDft::getScanChains() const
 {
-  _dbScanPartition* scan_partition = (_dbScanPartition*) this;
-  scan_partition->name_ = name;
+  _dbDft* obj = (_dbDft*) this;
+  return dbSet<dbScanChain>(obj, obj->scan_chains_);
 }
 
-dbScanPartition* dbScanPartition::create(dbScanChain* chain)
-{
-  _dbScanChain* scan_chain = (_dbScanChain*) chain;
-  return (dbScanPartition*) (scan_chain->scan_partitions_->create());
-}
-
-// User Code End dbScanPartitionPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp
