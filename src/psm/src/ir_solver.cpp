@@ -412,7 +412,7 @@ IRSolver::Voltage IRSolver::generateSourceNodes(
     gui_->setSources(sources);
   }
 
-  if (logger_->debugCheck(utl::PSM, "construct", 3)) {
+  if (logger_->debugCheck(utl::PSM, "solve", 3)) {
     logger_->report("Source nodes: {}", sources.size());
   }
 
@@ -583,7 +583,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     debugPrint(
         logger_,
         utl::PSM,
-        "construct",
+        "solve",
         3,
         "Searching for source nodes in ({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
         shape.xMin() / dbus,
