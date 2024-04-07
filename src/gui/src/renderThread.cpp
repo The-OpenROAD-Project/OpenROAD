@@ -988,10 +988,12 @@ void RenderThread::drawLayer(QPainter* painter,
                                                bounds.yMax(),
                                                shape_limit);
 
-      for (const auto& [box, fill] : iter) {
+      for (auto* fill : iter) {
         if (restart_) {
           break;
         }
+        odb::Rect box;
+        fill->getRect(box);
         const auto& ll = box.ll();
         painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }

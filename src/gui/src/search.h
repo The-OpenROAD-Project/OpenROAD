@@ -93,6 +93,17 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     }
   };
 
+  struct FillIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbFill* t) const
+    {
+      odb::Rect fill;
+      t->getRect(fill);
+      return fill;
+    }
+  };
+
   template <typename T>
   using RtreeRect = bgi::rtree<RectValue<T>, bgi::quadratic<16>>;
   template <typename T>
@@ -103,6 +114,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using RtreeSNetShapes
       = bgi::rtree<SNetValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeFill
+      = bgi::rtree<odb::dbFill*, bgi::quadratic<16>, FillIndexableGetter>;
 
   // This is an iterator range for return values
   template <typename Tree>
@@ -127,7 +140,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
   using SNetSBoxRange = Range<RtreeDBox<odb::dbNet*>>;
   using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
-  using FillRange = Range<RtreeRect<odb::dbFill*>>;
+  using FillRange = Range<RtreeFill>;
   using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
   using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
   using RowRange = Range<RtreeRect<odb::dbRow*>>;
@@ -287,7 +300,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes_;
     std::atomic_bool shapes_init_{false};
     std::mutex shapes_init_mutex_;
-    LayerMap<RtreeRect<odb::dbFill*>> fills_;
+    LayerMap<RtreeFill> fills_;
     std::atomic_bool fills_init_{false};
     std::mutex fills_init_mutex_;
     RtreeDBox<odb::dbInst*> insts_;

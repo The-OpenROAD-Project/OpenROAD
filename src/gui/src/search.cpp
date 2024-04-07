@@ -312,15 +312,12 @@ void Search::updateFills(odb::dbBlock* block)
 
   data.fills_.clear();
 
-  LayerMap<std::vector<RectValue<odb::dbFill*>>> fills;
+  LayerMap<std::vector<odb::dbFill*>> fills;
   for (odb::dbFill* fill : block->getFills()) {
-    odb::Rect rect;
-    fill->getRect(rect);
-    fills[fill->getTechLayer()].emplace_back(rect, fill);
+    fills[fill->getTechLayer()].push_back(fill);
   }
   for (const auto& [layer, layer_fill] : fills) {
-    data.fills_[layer]
-        = RtreeRect<odb::dbFill*>(layer_fill.begin(), layer_fill.end());
+    data.fills_[layer] = RtreeFill(layer_fill.begin(), layer_fill.end());
   }
 
   data.fills_init_ = true;
@@ -508,6 +505,13 @@ class Search::MinSizePredicate
   bool operator()(const DBoxValue<T>& o) const
   {
     return checkBox(o.first->getBox());
+  }
+
+  bool operator()(odb::dbFill* o) const
+  {
+    odb::Rect fill;
+    o->getRect(fill);
+    return checkBox(fill);
   }
 
   bool checkBox(const odb::Rect& box) const

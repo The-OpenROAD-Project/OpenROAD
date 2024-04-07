@@ -708,7 +708,9 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.xMax(),
                                        search_line.yMax(),
                                        shape_limit);
-      for (const auto& [box, fill] : fills) {
+      for (auto* fill : fills) {
+        odb::Rect box;
+        fill->getRect(box);
         check_rect(box);
       }
     }
