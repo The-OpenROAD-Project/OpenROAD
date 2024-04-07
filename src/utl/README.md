@@ -33,11 +33,11 @@ man
 
 ## Example scripts
 
-You may run various commands
+You may run various commands or message IDs for manpages.
 ```
-man openroad; level 1
-man clock_tree_synthesis; level 2
-man CTS-0005; level 3
+man openroad
+man clock_tree_synthesis
+man CTS-0005
 ```
 
 ## Regression tests
