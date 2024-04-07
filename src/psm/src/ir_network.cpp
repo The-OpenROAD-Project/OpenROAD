@@ -207,9 +207,12 @@ IRNetwork::LayerMap<IRNetwork::Polygon90Set> IRNetwork::generatePolygonsFromBox(
     // handle as shape
     auto* layer = box->getTechLayer();
 
-    odb::Rect rect = box->getBox();
-    transform.apply(rect);
-    shapes_by_layer[layer] += rectToPolygon(rect);
+    if (layer->getRoutingLevel() != 0) {
+      // Only collect shapes on routing layers
+      odb::Rect rect = box->getBox();
+      transform.apply(rect);
+      shapes_by_layer[layer] += rectToPolygon(rect);
+    }
   }
 
   return shapes_by_layer;
@@ -265,8 +268,12 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
     bool has_routing_term = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
-        for (const auto& [layer, shapes] :
-             generatePolygonsFromBox(geom, transform)) {
+        const auto pin_shapes = generatePolygonsFromBox(geom, transform);
+        if (pin_shapes.empty()) {
+          continue;
+        }
+
+        for (const auto& [layer, shapes] : pin_shapes) {
           shapes_by_layer[layer] += shapes;
         }
 
@@ -1217,6 +1224,20 @@ bool IRNetwork::belongsTo(Node* node) const
         != nodes.end()) {
       return true;
     }
+  }
+
+  if (std::find_if(iterm_nodes_.begin(),
+                   iterm_nodes_.end(),
+                   [node](const auto& other) { return other.get() == node; })
+      != iterm_nodes_.end()) {
+    return true;
+  }
+
+  if (std::find_if(bpin_nodes_.begin(),
+                   bpin_nodes_.end(),
+                   [node](const auto& other) { return other.get() == node; })
+      != bpin_nodes_.end()) {
+    return true;
   }
 
   return false;
