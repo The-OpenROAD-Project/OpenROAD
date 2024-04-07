@@ -132,12 +132,12 @@ class IRSolver
   Voltage getNetVoltage(sta::Corner* corner) const;
   std::optional<Voltage> getVoltage(sta::Corner* corner, Node* node) const;
 
-  std::pair<bool, Voltage> getSDCVoltage(sta::Corner* corner,
-                                         odb::dbNet* net) const;
-  std::pair<bool, Voltage> getPVTVoltage(sta::Corner* corner) const;
-  std::pair<bool, Voltage> getUserVoltage(sta::Corner* corner,
-                                          odb::dbNet* net) const;
-  std::pair<bool, Voltage> getSolutionVoltage(sta::Corner* corner) const;
+  std::optional<Voltage> getSDCVoltage(sta::Corner* corner,
+                                       odb::dbNet* net) const;
+  std::optional<Voltage> getPVTVoltage(sta::Corner* corner) const;
+  std::optional<Voltage> getUserVoltage(sta::Corner* corner,
+                                        odb::dbNet* net) const;
+  std::optional<Voltage> getSolutionVoltage(sta::Corner* corner) const;
 
   odb::dbNet* getPowerNet() const;
 

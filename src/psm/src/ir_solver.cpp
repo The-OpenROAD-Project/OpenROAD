@@ -1017,9 +1017,8 @@ std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
   return inst_power;
 }
 
-std::pair<bool, IRSolver::Voltage> IRSolver::getSDCVoltage(
-    sta::Corner* corner,
-    odb::dbNet* net) const
+std::optional<IRSolver::Voltage> IRSolver::getSDCVoltage(sta::Corner* corner,
+                                                         odb::dbNet* net) const
 {
   const auto max = sta::MinMax::max();
   const sta::dbNetwork* network = sta_->getDbNetwork();
@@ -1029,18 +1028,18 @@ std::pair<bool, IRSolver::Voltage> IRSolver::getSDCVoltage(
   Voltage sdc_voltage;
   sdc->voltage(network->dbToSta(net), max, sdc_voltage, exists);
   if (exists) {
-    return {true, sdc_voltage};
+    return sdc_voltage;
   }
 
   sdc->voltage(max, sdc_voltage, exists);
   if (exists) {
-    return {true, sdc_voltage};
+    return sdc_voltage;
   }
 
-  return {false, 0.0};
+  return {};
 }
 
-std::pair<bool, IRSolver::Voltage> IRSolver::getPVTVoltage(
+std::optional<IRSolver::Voltage> IRSolver::getPVTVoltage(
     sta::Corner* corner) const
 {
   const auto max = sta::MinMax::max();
@@ -1057,45 +1056,44 @@ std::pair<bool, IRSolver::Voltage> IRSolver::getPVTVoltage(
     }
   }
   if (pvt) {
-    return {true, pvt->voltage()};
+    return pvt->voltage();
   }
 
-  return {false, 0.0};
+  return {};
 }
 
-std::pair<bool, IRSolver::Voltage> IRSolver::getUserVoltage(
-    sta::Corner* corner,
-    odb::dbNet* net) const
+std::optional<IRSolver::Voltage> IRSolver::getUserVoltage(sta::Corner* corner,
+                                                          odb::dbNet* net) const
 {
   auto find_net = user_voltages_.find(net);
   if (find_net == user_voltages_.end()) {
-    return {false, 0.0};
+    return {};
   }
 
   const auto& voltages = find_net->second;
 
   auto find_corner = voltages.find(corner);
   if (find_corner != voltages.end()) {
-    return {true, find_corner->second};
+    return find_corner->second;
   }
 
   auto find_default = voltages.find(nullptr);
   if (find_default != voltages.end()) {
-    return {true, find_default->second};
+    return find_default->second;
   }
 
-  return {false, 0.0};
+  return {};
 }
 
-std::pair<bool, IRSolver::Voltage> IRSolver::getSolutionVoltage(
+std::optional<IRSolver::Voltage> IRSolver::getSolutionVoltage(
     sta::Corner* corner) const
 {
   auto find_corner = solution_voltages_.find(corner);
   if (find_corner != solution_voltages_.end()) {
-    return {true, find_corner->second};
+    return find_corner->second;
   }
 
-  return {false, 0.0};
+  return {};
 }
 
 odb::dbNet* IRSolver::getPowerNet() const
@@ -1118,28 +1116,27 @@ IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Corner* corner) const
   odb::dbNet* net = getPowerNet();
 
   if (net == net_) {
-    const auto& [has_solution_voltage, solution_voltage]
-        = getSolutionVoltage(corner);
-    if (has_solution_voltage) {
-      return solution_voltage;
+    const auto solution_voltage = getSolutionVoltage(corner);
+    if (solution_voltage.has_value()) {
+      return solution_voltage.value();
     }
   }
 
   if (net != nullptr) {
-    const auto& [has_user, user_voltage] = getUserVoltage(corner, net);
-    if (has_user) {
-      return user_voltage;
+    const auto user_voltage = getUserVoltage(corner, net);
+    if (user_voltage.has_value()) {
+      return user_voltage.value();
     }
 
-    const auto& [has_sdc, sdc_voltage] = getSDCVoltage(corner, net);
-    if (has_sdc) {
-      return sdc_voltage;
+    const auto sdc_voltage = getSDCVoltage(corner, net);
+    if (sdc_voltage.has_value()) {
+      return sdc_voltage.value();
     }
   }
 
-  const auto& [has_pvt, pvt_voltage] = getPVTVoltage(corner);
-  if (has_pvt) {
-    return pvt_voltage;
+  const auto pvt_voltage = getPVTVoltage(corner);
+  if (pvt_voltage.has_value()) {
+    return pvt_voltage.value();
   }
 
   logger_->error(utl::PSM,
