@@ -483,7 +483,7 @@ void LayoutViewer::searchNearestViaEdge(
                                                 search_line.yMax(),
                                                 shape_limit);
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net)) {
       sbox->getViaLayerBoxes(search_layer, shapes);
       for (auto& shape : shapes) {
@@ -602,13 +602,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
-  for (auto& [box, inst] : inst_range) {
+  for (const auto& [box, inst] : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       if (inst_internals_visible) {
         // only add inst if it can be used for pin or obs search
         insts.push_back(inst);
       }
-      check_rect(box);
+      check_rect(box->getBox());
     }
   }
 
@@ -656,7 +656,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                 search_line.xMax(),
                                                 search_line.yMax(),
                                                 shape_limit);
-      for (auto& [box, is_via, net] : box_shapes) {
+      for (const auto& [box, is_via, net] : box_shapes) {
         if (!routing_visible && !is_via) {
           continue;
         }
@@ -693,9 +693,9 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                      search_line.xMax(),
                                                      search_line.yMax(),
                                                      shape_limit);
-      for (auto& [box, poly, net] : polygon_shapes) {
+      for (const auto& [box, poly, net] : polygon_shapes) {
         if (isNetVisible(net)) {
-          check_rect(box);
+          check_rect(box->getBox());
         }
       }
     }
@@ -708,7 +708,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.xMax(),
                                        search_line.yMax(),
                                        shape_limit);
-      for (auto& [box, fill] : fills) {
+      for (const auto& [box, fill] : fills) {
         check_rect(box);
       }
     }
@@ -721,8 +721,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.xMax(),
                                             search_line.yMax(),
                                             shape_limit);
-      for (auto& [box, ob] : obs) {
-        check_rect(box);
+      for (const auto& [box, ob] : obs) {
+        check_rect(box->getBox());
       }
     }
   }
@@ -734,8 +734,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (auto& [box, blck] : blcks) {
-      check_rect(box);
+    for (const auto& [box, blck] : blcks) {
+      check_rect(box->getBox());
     }
   }
 
@@ -796,7 +796,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                                 shape_limit);
 
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net) && options_->isNetSelectable(net)) {
       sbox->getViaLayerBoxes(select_layer, shapes);
       for (auto& shape : shapes) {
