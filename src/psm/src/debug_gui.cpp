@@ -156,6 +156,117 @@ void NodeDescriptor::highlight(std::any object, gui::Painter& painter) const
 
 /////////////////////////////////////
 
+ITermNodeDescriptor::ITermNodeDescriptor(
+    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    : NodeDescriptor(solvers)
+{
+}
+
+std::string ITermNodeDescriptor::getName(std::any object) const
+{
+  auto node = std::any_cast<ITermNode*>(object);
+  return node->getName();
+}
+
+bool ITermNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto node = std::any_cast<ITermNode*>(object);
+  bbox = node->getShape();
+  return true;
+}
+
+gui::Descriptor::Properties ITermNodeDescriptor::getProperties(
+    std::any object) const
+{
+  auto node = std::any_cast<ITermNode*>(object);
+
+  auto props = NodeDescriptor::getProperties(static_cast<Node*>(node));
+
+  auto gui = gui::Gui::get();
+  props.push_back({"ITerm", gui->makeSelected(node->getITerm())});
+
+  return props;
+}
+
+gui::Selected ITermNodeDescriptor::makeSelected(std::any object) const
+{
+  if (auto node = std::any_cast<ITermNode*>(&object)) {
+    return gui::Selected(*node, this);
+  }
+  return gui::Selected();
+}
+
+bool ITermNodeDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_node = std::any_cast<ITermNode*>(l);
+  auto r_node = std::any_cast<ITermNode*>(r);
+  return l_node->compare(r_node);
+}
+
+void ITermNodeDescriptor::highlight(std::any object,
+                                    gui::Painter& painter) const
+{
+  auto node = std::any_cast<ITermNode*>(object);
+  NodeDescriptor::highlight(static_cast<Node*>(node), painter);
+}
+
+/////////////////////////////////////
+
+BPinNodeDescriptor::BPinNodeDescriptor(
+    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    : NodeDescriptor(solvers)
+{
+}
+
+std::string BPinNodeDescriptor::getName(std::any object) const
+{
+  auto node = std::any_cast<BPinNode*>(object);
+  return node->getName();
+}
+
+bool BPinNodeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto node = std::any_cast<BPinNode*>(object);
+  bbox = node->getShape();
+  return true;
+}
+
+gui::Descriptor::Properties BPinNodeDescriptor::getProperties(
+    std::any object) const
+{
+  auto node = std::any_cast<BPinNode*>(object);
+
+  auto props = NodeDescriptor::getProperties(static_cast<Node*>(node));
+
+  auto gui = gui::Gui::get();
+  props.push_back({"BTerm", gui->makeSelected(node->getBPin()->getBTerm())});
+
+  return props;
+}
+
+gui::Selected BPinNodeDescriptor::makeSelected(std::any object) const
+{
+  if (auto node = std::any_cast<BPinNode*>(&object)) {
+    return gui::Selected(*node, this);
+  }
+  return gui::Selected();
+}
+
+bool BPinNodeDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_node = std::any_cast<BPinNode*>(l);
+  auto r_node = std::any_cast<BPinNode*>(r);
+  return l_node->compare(r_node);
+}
+
+void BPinNodeDescriptor::highlight(std::any object, gui::Painter& painter) const
+{
+  auto node = std::any_cast<BPinNode*>(object);
+  NodeDescriptor::highlight(static_cast<Node*>(node), painter);
+}
+
+/////////////////////////////////////
+
 ConnectionDescriptor::ConnectionDescriptor(
     const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
     : SolverDescriptor(solvers)

@@ -52,6 +52,7 @@ class SolverDescriptor : public gui::Descriptor
  public:
   SolverDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
+  virtual ~SolverDescriptor() = default;
 
  protected:
   IRSolver* getSolver(Node* node) const;
@@ -66,6 +67,7 @@ class NodeDescriptor : public SolverDescriptor
  public:
   NodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
+  virtual ~NodeDescriptor() = default;
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override { return "PSM Node"; }
@@ -75,6 +77,40 @@ class NodeDescriptor : public SolverDescriptor
   {
     return false;
   }
+  gui::Descriptor::Properties getProperties(std::any object) const override;
+  gui::Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  void highlight(std::any object, gui::Painter& painter) const override;
+};
+
+class ITermNodeDescriptor : public NodeDescriptor
+{
+ public:
+  ITermNodeDescriptor(
+      const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override { return "PSM ITerm Node"; }
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  gui::Descriptor::Properties getProperties(std::any object) const override;
+  gui::Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  void highlight(std::any object, gui::Painter& painter) const override;
+};
+
+class BPinNodeDescriptor : public NodeDescriptor
+{
+ public:
+  BPinNodeDescriptor(
+      const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
+
+  std::string getName(std::any object) const override;
+  std::string getTypeName() const override { return "PSM BPin Node"; }
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
   gui::Descriptor::Properties getProperties(std::any object) const override;
   gui::Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;

@@ -76,6 +76,10 @@ void PDNSim::setDebugGui(bool enable)
   }
 
   gui::Gui::get()->registerDescriptor<Node*>(new NodeDescriptor(solvers_));
+  gui::Gui::get()->registerDescriptor<ITermNode*>(
+      new ITermNodeDescriptor(solvers_));
+  gui::Gui::get()->registerDescriptor<BPinNode*>(
+      new BPinNodeDescriptor(solvers_));
   gui::Gui::get()->registerDescriptor<Connection*>(
       new ConnectionDescriptor(solvers_));
 }
