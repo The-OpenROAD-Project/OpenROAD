@@ -923,8 +923,8 @@ void RenderThread::drawLayer(QPainter* painter,
         if (!viewer_->isNetVisible(net)) {
           continue;
         }
-        const auto& ll = box.min_corner();
-        const auto& ur = box.max_corner();
+        const auto& ll = box.ll();
+        const auto& ur = box.ur();
         painter->drawRect(
             QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
       }
@@ -994,8 +994,8 @@ void RenderThread::drawLayer(QPainter* painter,
         if (restart_) {
           break;
         }
-        const auto& ll = std::get<0>(i).min_corner();
-        const auto& ur = std::get<0>(i).max_corner();
+        const auto& ll = std::get<0>(i).ll();
+        const auto& ur = std::get<0>(i).ur();
         painter->drawRect(
             QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
       }
@@ -1546,10 +1546,10 @@ void RenderThread::drawIOPins(Painter& painter,
 
   // RTree used to search for overlapping shapes and decide if rotation of
   // text is needed.
-  bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
+  bgi::rtree<odb::Rect, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText
   {
-    Search::Box rect;
+    odb::Rect rect;
     bool can_rotate;
     std::string text;
     odb::Point pt;
@@ -1652,12 +1652,10 @@ void RenderThread::drawIOPins(Painter& painter,
                                                        pin_specs.anchor,
                                                        pin_specs.text);
         text_rect.bloat(text_margin, text_rect);
-        pin_specs.rect
-            = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
-                          Search::Point(text_rect.xMax(), text_rect.yMax()));
+        pin_specs.rect = text_rect;
         pin_text_spec_shapes.insert(pin_specs.rect);
       } else {
-        pin_specs.rect = Search::Box();
+        pin_specs.rect = odb::Rect();
       }
       pin_text_spec.push_back(pin_specs);
     }

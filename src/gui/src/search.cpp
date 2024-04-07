@@ -289,10 +289,8 @@ void Search::updateShapes(odb::dbBlock* block)
         if (!box) {
           continue;
         }
-        const Box bbox(Point(box->xMin(), box->yMin()),
-                       Point(box->xMax(), box->yMax()));
         odb::dbTechLayer* layer = box->getTechLayer();
-        net_shapes[layer].emplace_back(bbox, false, term->getNet());
+        net_shapes[layer].emplace_back(box->getBox(), false, term->getNet());
       }
     }
   }
@@ -318,7 +316,7 @@ void Search::updateFills(odb::dbBlock* block)
   for (odb::dbFill* fill : block->getFills()) {
     odb::Rect rect;
     fill->getRect(rect);
-    fills[fill->getTechLayer()].emplace_back(convertRect(rect), fill);
+    fills[fill->getTechLayer()].emplace_back(rect, fill);
   }
   for (const auto& [layer, layer_fill] : fills) {
     data.fills_[layer]
@@ -342,10 +340,7 @@ void Search::updateInsts(odb::dbBlock* block)
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isPlaced()) {
       odb::dbBox* bbox = inst->getBBox();
-      const Point ll(bbox->xMin(), bbox->yMin());
-      const Point ur(bbox->xMax(), bbox->yMax());
-      const Box box(ll, ur);
-      insts.emplace_back(box, inst);
+      insts.emplace_back(bbox->getBox(), inst);
     }
   }
   data.insts_ = RtreeBox<odb::dbInst*>(insts.begin(), insts.end());
@@ -366,10 +361,7 @@ void Search::updateBlockages(odb::dbBlock* block)
   std::vector<BoxValue<odb::dbBlockage*>> blockages;
   for (odb::dbBlockage* blockage : block->getBlockages()) {
     odb::dbBox* bbox = blockage->getBBox();
-    const Point ll(bbox->xMin(), bbox->yMin());
-    const Point ur(bbox->xMax(), bbox->yMax());
-    const Box box(ll, ur);
-    blockages.emplace_back(box, blockage);
+    blockages.emplace_back(bbox->getBox(), blockage);
   }
   data.blockages_
       = RtreeBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
@@ -390,10 +382,7 @@ void Search::updateObstructions(odb::dbBlock* block)
   LayerMap<std::vector<BoxValue<odb::dbObstruction*>>> obstructions;
   for (odb::dbObstruction* obs : block->getObstructions()) {
     odb::dbBox* bbox = obs->getBBox();
-    const Point ll(bbox->xMin(), bbox->yMin());
-    const Point ur(bbox->xMax(), bbox->yMax());
-    const Box box(ll, ur);
-    obstructions[bbox->getTechLayer()].emplace_back(box, obs);
+    obstructions[bbox->getTechLayer()].emplace_back(bbox->getBox(), obs);
   }
   for (const auto& [layer, layer_obs] : obstructions) {
     data.obstructions_[layer]
@@ -415,8 +404,7 @@ void Search::updateRows(odb::dbBlock* block)
 
   std::vector<BoxValue<odb::dbRow*>> rows;
   for (odb::dbRow* row : block->getRows()) {
-    const odb::Rect bbox = row->getBBox();
-    rows.emplace_back(convertRect(bbox), row);
+    rows.emplace_back(row->getBBox(), row);
   }
   data.rows_ = RtreeBox<odb::dbRow*>(rows.begin(), rows.end());
 
@@ -433,17 +421,15 @@ void Search::addVia(
   if (shape->getType() == odb::dbShape::TECH_VIA) {
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
-      const Point ll(x + box->xMin(), y + box->yMin());
-      const Point ur(x + box->xMax(), y + box->yMax());
-      const Box bbox(ll, ur);
+      odb::Rect bbox = box->getBox();
+      bbox.moveTo(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
-      const Point ll(x + box->xMin(), y + box->yMin());
-      const Point ur(x + box->xMax(), y + box->yMax());
-      const Box bbox(ll, ur);
+      odb::Rect bbox = box->getBox();
+      bbox.moveTo(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   }
@@ -464,10 +450,8 @@ void Search::addSNet(
           auto block_via = box->getBlockVia();
           layer = block_via->getBottomLayer()->getUpperLayer();
         }
-        via_shapes[layer].emplace_back(convertRect(box->getBox()), box, net);
+        via_shapes[layer].emplace_back(box->getBox(), box, net);
       } else {
-        const Box bbox(Point(box->xMin(), box->yMin()),
-                       Point(box->xMax(), box->yMax()));
         std::vector<odb::Point> points;
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
           points = box->getOct().getPoints();
@@ -477,9 +461,9 @@ void Search::addSNet(
         }
         Polygon poly;
         for (const auto& point : points) {
-          bg::append(poly.outer(), Point(point.getX(), point.getY()));
+          bg::append(poly.outer(), point);
         }
-        net_shapes[box->getTechLayer()].emplace_back(bbox, poly, net);
+        net_shapes[box->getTechLayer()].emplace_back(box->getBox(), poly, net);
       }
     }
   }
@@ -502,17 +486,9 @@ void Search::addNet(
     if (s.isVia()) {
       addVia(net, &s, itr._prev_x, itr._prev_y, tree_shapes);
     } else {
-      const Box box(Point(s.xMin(), s.yMin()), Point(s.xMax(), s.yMax()));
-      tree_shapes[s.getTechLayer()].emplace_back(box, false, net);
+      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), false, net);
     }
   }
-}
-
-Search::Box Search::convertRect(const odb::Rect& box) const
-{
-  Point ll(box.xMin(), box.yMin());
-  Point ur(box.xMax(), box.yMax());
-  return Box(ll, ur);
 }
 
 template <typename T>
@@ -540,13 +516,9 @@ class Search::MinSizePredicate
     return checkBox(std::get<0>(o));
   }
 
-  bool checkBox(const Box& box) const
+  bool checkBox(const odb::Rect& box) const
   {
-    const Point& ll = box.min_corner();
-    const Point& ur = box.max_corner();
-    int w = ur.x() - ll.x();
-    int h = ur.y() - ll.y();
-    return std::max(w, h) >= min_size_;
+    return box.maxDXDY() >= min_size_;
   }
 
  private:
@@ -573,13 +545,7 @@ class Search::MinHeightPredicate
     return checkBox(std::get<0>(o));
   }
 
-  bool checkBox(const Box& box) const
-  {
-    const Point& ll = box.min_corner();
-    const Point& ur = box.max_corner();
-    int h = ur.y() - ll.y();
-    return h >= min_height_;
-  }
+  bool checkBox(const odb::Rect& box) const { return box.dy() >= min_height_; }
 
  private:
   int min_height_;
@@ -605,7 +571,7 @@ Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return RoutingRange(
         rtree.qbegin(
@@ -637,7 +603,7 @@ Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return SNetSBoxRange(
         rtree.qbegin(
@@ -669,7 +635,7 @@ Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
 
   auto& rtree = it->second;
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return SNetShapeRange(
         rtree.qbegin(
@@ -700,7 +666,7 @@ Search::FillRange Search::searchFills(odb::dbBlock* block,
   }
 
   auto& rtree = it->second;
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return FillRange(
         rtree.qbegin(
@@ -724,7 +690,7 @@ Search::InstRange Search::searchInsts(odb::dbBlock* block,
     updateInsts(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return InstRange(
         data.insts_.qbegin(
@@ -749,7 +715,7 @@ Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
     updateBlockages(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return BlockageRange(
         data.blockages_.qbegin(
@@ -782,7 +748,7 @@ Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
   }
 
   auto& rtree = it->second;
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_size > 0) {
     return ObstructionRange(
         rtree.qbegin(
@@ -806,7 +772,7 @@ Search::RowRange Search::searchRows(odb::dbBlock* block,
     updateRows(block);
   }
 
-  Box query(Point(x_lo, y_lo), Point(x_hi, y_hi));
+  const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
   if (min_height > 0) {
     return RowRange(
         data.rows_.qbegin(

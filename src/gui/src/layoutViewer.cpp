@@ -560,15 +560,6 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           }
         };
 
-  auto convert_box_to_rect = [](const Search::Box& box) -> odb::Rect {
-    const auto min_corner = box.min_corner();
-    const auto max_corner = box.max_corner();
-    const odb::Point ll(min_corner.x(), min_corner.y());
-    const odb::Point ur(max_corner.x(), max_corner.y());
-
-    return odb::Rect(ll, ur);
-  };
-
   // get die bounding box
   Rect bbox = block_->getDieArea();
   check_rect(bbox);
@@ -617,7 +608,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
         // only add inst if it can be used for pin or obs search
         insts.push_back(inst);
       }
-      check_rect(convert_box_to_rect(box));
+      check_rect(box);
     }
   }
 
@@ -673,7 +664,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           continue;
         }
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box);
         }
       }
     }
@@ -704,7 +695,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                      shape_limit);
       for (auto& [box, poly, net] : polygon_shapes) {
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box);
         }
       }
     }
@@ -718,7 +709,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.yMax(),
                                        shape_limit);
       for (auto& [box, fill] : fills) {
-        check_rect(convert_box_to_rect(box));
+        check_rect(box);
       }
     }
 
@@ -731,7 +722,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.yMax(),
                                             shape_limit);
       for (auto& [box, ob] : obs) {
-        check_rect(convert_box_to_rect(box));
+        check_rect(box);
       }
     }
   }
@@ -744,7 +735,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.yMax(),
                                          shape_limit);
     for (auto& [box, blck] : blcks) {
-      check_rect(convert_box_to_rect(box));
+      check_rect(box);
     }
   }
 

@@ -40,6 +40,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace gui {
 
@@ -66,18 +67,17 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
 
-  using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-  using Box = bg::model::box<Point>;
   using Polygon
-      = bg::model::polygon<Point, false>;  // counterclockwise(clockwise=false)
+      = bg::model::polygon<odb::Point,
+                           false>;  // counterclockwise(clockwise=false)
   template <typename T>
-  using BoxValue = std::tuple<Box, T>;
+  using BoxValue = std::tuple<odb::Rect, T>;
   template <typename T>
-  using RouteBoxValue = std::tuple<Box, bool, T>;
+  using RouteBoxValue = std::tuple<odb::Rect, bool, T>;
   template <typename T>
-  using SNetSBoxValue = std::tuple<Box, odb::dbSBox*, T>;
+  using SNetSBoxValue = std::tuple<odb::Rect, odb::dbSBox*, T>;
   template <typename T>
-  using SNetValue = std::tuple<Box, Polygon, T>;
+  using SNetValue = std::tuple<odb::Rect, Polygon, T>;
 
   template <typename T>
   using RtreeBox = bgi::rtree<BoxValue<T>, bgi::quadratic<16>>;
@@ -253,8 +253,6 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void updateBlockages(odb::dbBlock* block);
   void updateObstructions(odb::dbBlock* block);
   void updateRows(odb::dbBlock* block);
-
-  Box convertRect(const odb::Rect& box) const;
 
   void clear();
 
