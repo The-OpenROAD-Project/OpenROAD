@@ -62,8 +62,9 @@ bool _dbTechLayerEolExtensionRule::operator<(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
   // User Code Begin <
-  if (spacing_ >= rhs.spacing_)
+  if (spacing_ >= rhs.spacing_) {
     return false;
+  }
   // User Code End <
   return true;
 }

@@ -1374,8 +1374,9 @@ void dbJournal::redo_updateCCSegField()
 //
 void dbJournal::undo()
 {
-  if (_log.empty())
+  if (_log.empty()) {
     return;
+  }
 
   _log.set(_log.size() - sizeof(uint));
 
@@ -1415,8 +1416,9 @@ void dbJournal::undo()
         break;
     }
 
-    if (action_idx == 0)
+    if (action_idx == 0) {
       break;
+    }
 
     _log.set(action_idx -= sizeof(uint));
   }

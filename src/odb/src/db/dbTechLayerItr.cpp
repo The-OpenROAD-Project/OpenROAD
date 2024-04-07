@@ -63,8 +63,9 @@ uint dbTechLayerItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbTechLayerItr::begin(parent); id != dbTechLayerItr::end(parent);
-       id = dbTechLayerItr::next(id))
+       id = dbTechLayerItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

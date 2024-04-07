@@ -42,8 +42,9 @@ inline unsigned int hash_string(const char* str)
   unsigned int hash = 0;
   int c;
 
-  while ((c = *str++) != '\0')
+  while ((c = static_cast<unsigned char>(*str++)) != '\0') {
     hash = c + (hash << 6) + (hash << 16) - hash;
+}
 
   return hash;
 }
@@ -69,11 +70,13 @@ dbHashTable<T>::~dbHashTable()
 template <class T>
 bool dbHashTable<T>::operator==(const dbHashTable<T>& rhs) const
 {
-  if (_num_entries != rhs._num_entries)
+  if (_num_entries != rhs._num_entries) {
     return false;
+}
 
-  if (_hash_tbl != rhs._hash_tbl)
+  if (_hash_tbl != rhs._hash_tbl) {
     return false;
+}
 
   return true;
 }
@@ -101,8 +104,9 @@ void dbHashTable<T>::growTable()
 
   // double the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+}
 
   // reinsert the entries
   sz = _hash_tbl.size() - 1;
@@ -146,8 +150,9 @@ void dbHashTable<T>::shrinkTable()
 
   // halve the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+}
 
   sz -= 1;
   // reinsert the entries
@@ -194,8 +199,9 @@ T* dbHashTable<T>::find(const char* name)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
+  if (sz == 0) {
     return 0;
+}
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -203,8 +209,9 @@ T* dbHashTable<T>::find(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0)
+    if (strcmp(entry->_name, name) == 0) {
       return entry;
+}
 
     cur = entry->_next_entry;
   }
@@ -217,8 +224,9 @@ int dbHashTable<T>::hasMember(const char* name)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
+  if (sz == 0) {
     return false;
+}
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -226,8 +234,9 @@ int dbHashTable<T>::hasMember(const char* name)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0)
+    if (strcmp(entry->_name, name) == 0) {
       return true;
+}
 
     cur = entry->_next_entry;
   }
@@ -247,9 +256,9 @@ void dbHashTable<T>::remove(T* object)
     T* entry = _obj_tbl->getPtr(cur);
 
     if (entry == object) {
-      if (prev == 0)
+      if (prev == 0) {
         _hash_tbl[hid] = entry->_next_entry;
-      else {
+      } else {
         T* p = _obj_tbl->getPtr(prev);
         p->_next_entry = entry->_next_entry;
       }
@@ -258,8 +267,9 @@ void dbHashTable<T>::remove(T* object)
 
       uint r = (_num_entries + _num_entries / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1))
+      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
         shrinkTable();
+}
 
       return;
     }

@@ -178,8 +178,9 @@ _dbSite::_dbSite(_dbDatabase*)
 
 _dbSite::~_dbSite()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -322,8 +323,9 @@ dbLib* dbSite::getLib()
 
 dbSite* dbSite::create(dbLib* lib_, const char* name_)
 {
-  if (lib_->findSite(name_))
+  if (lib_->findSite(name_)) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();
