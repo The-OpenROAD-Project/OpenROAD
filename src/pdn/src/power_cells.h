@@ -128,7 +128,7 @@ class GridSwitchedPower
   void build();
   void ripup();
 
-  ShapeTreeMap getShapes() const;
+  Shape::ShapeTreeMap getShapes() const;
 
  private:
   Grid* grid_;
@@ -157,7 +157,7 @@ class GridSwitchedPower
                                     const InstTree& insts) const;
   void checkAndFixOverlappingInsts(const InstTree& insts);
 
-  ShapeTree buildStrapTargetList(Straps* target) const;
+  Shape::ShapeTree buildStrapTargetList(Straps* target) const;
 
   using RowValue = std::pair<Box, odb::dbRow*>;
   using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;

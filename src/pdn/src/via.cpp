@@ -2749,7 +2749,7 @@ bool Via::startsBelow(const ViaPtr& via) const
 
 void Via::writeToDb(odb::dbSWire* wire,
                     odb::dbBlock* block,
-                    const ShapeTreeMap& obstructions)
+                    const Shape::ObstructionTreeMap& obstructions)
 {
   odb::dbWireShapeType type = lower_->getType();
 

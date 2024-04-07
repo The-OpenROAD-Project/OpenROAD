@@ -39,6 +39,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -253,7 +254,7 @@ ViaRepair::ObsRect ViaRepair::collectInstanceObstructions(odb::dbBlock* block)
         continue;
       }
       auto& layer_obs = obstructions[layer];
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         layer_obs.insert(shape->getRect());
       }
     }

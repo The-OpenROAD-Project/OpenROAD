@@ -41,6 +41,7 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 
 namespace odb {
 class dbBlock;
@@ -77,11 +78,8 @@ using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
 using Box = bg::model::box<Point>;
 using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ShapeValue = std::pair<Box, ShapePtr>;
 using ViaValue = std::pair<Box, ViaPtr>;
-using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
 using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
 using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
@@ -757,7 +755,7 @@ class Via
 
   void writeToDb(odb::dbSWire* wire,
                  odb::dbBlock* block,
-                 const ShapeTreeMap& obstructions);
+                 const Shape::ObstructionTreeMap& obstructions);
 
   Grid* getGrid() const;
 

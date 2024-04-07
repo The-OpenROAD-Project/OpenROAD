@@ -36,6 +36,7 @@
 #include "grid.h"
 #include "pdn/PdnGen.hh"
 #include "straps.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -120,7 +121,7 @@ void PDNRenderer::update()
   }
 
   shapes_ = Shape::convertVectorToTree(shapes);
-  grid_obstructions_ = Shape::convertVectorToTree(obs);
+  grid_obstructions_ = Shape::convertVectorToObstructionTree(obs);
   shapes_ = Shape::convertVectorToTree(shapes);
   vias_ = Shape::convertVectorToTree(vias);
 
@@ -145,7 +146,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     for (auto it = shapes.qbegin(bgi::intersects(paint_box));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
       painter.drawRect(shape->getObstruction());
     }
   }
@@ -159,7 +160,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     for (auto it = shapes.qbegin(bgi::intersects(paint_box));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
 
       if (shape->getLayer() != layer) {
         continue;

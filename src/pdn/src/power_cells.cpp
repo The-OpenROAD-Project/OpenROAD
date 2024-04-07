@@ -179,17 +179,17 @@ GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
   return exisiting_insts;
 }
 
-ShapeTree GridSwitchedPower::buildStrapTargetList(Straps* target) const
+Shape::ShapeTree GridSwitchedPower::buildStrapTargetList(Straps* target) const
 {
   const odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
   const auto& target_shapes = target->getShapes();
 
-  ShapeTree targets;
-  for (const auto& [box, shape] : target_shapes.at(target->getLayer())) {
+  Shape::ShapeTree targets;
+  for (auto& shape : target_shapes.at(target->getLayer())) {
     if (shape->getNet() != alwayson) {
       continue;
     }
-    targets.insert({box, shape});
+    targets.insert(shape);
   }
 
   return targets;
@@ -256,7 +256,7 @@ void GridSwitchedPower::build()
 
   odb::dbRegion* region = grid_->getDomain()->getRegion();
 
-  const ShapeTree targets = buildStrapTargetList(target);
+  const Shape::ShapeTree targets = buildStrapTargetList(target);
   const RowTree row_search = buildRowTree();
 
   for (auto* row : grid_->getDomain()->getRows()) {
@@ -280,7 +280,7 @@ void GridSwitchedPower::build()
     for (auto itr = targets.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
          itr != targets.qend();
          itr++) {
-      const auto& shape = itr->second;
+      const auto& shape = *itr;
       straps.push_back(shape->getRect());
     }
 
@@ -606,19 +606,19 @@ Straps* GridSwitchedPower::getLowestStrap() const
   return target;
 }
 
-ShapeTreeMap GridSwitchedPower::getShapes() const
+Shape::ShapeTreeMap GridSwitchedPower::getShapes() const
 {
   odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
 
-  ShapeTreeMap shapes;
+  Shape::ShapeTreeMap shapes;
 
   for (const auto& [inst, inst_info] : insts_) {
     for (const auto& [layer, inst_shapes] :
          InstanceGrid::getInstancePins(inst)) {
       auto& layer_shapes = shapes[layer];
-      for (const auto& [box, shape] : inst_shapes) {
+      for (const auto& shape : inst_shapes) {
         if (shape->getNet() == alwayson) {
-          layer_shapes.insert({box, shape});
+          layer_shapes.insert(shape);
         }
       }
     }

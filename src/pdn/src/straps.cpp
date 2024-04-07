@@ -163,7 +163,7 @@ void Straps::setStrapStartEnd(int start, int end)
   strap_end_ = end;
 }
 
-void Straps::makeShapes(const ShapeTreeMap& other_shapes)
+void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -198,12 +198,12 @@ void Straps::makeShapes(const ShapeTreeMap& other_shapes)
   }
 
   // collect shapes to avoid placing straps over
-  ShapeTree avoid;
+  Shape::ObstructionTree avoid;
   if (other_shapes.count(layer_) != 0) {
-    for (const auto& [box, shape] : other_shapes.at(layer_)) {
+    for (const auto& shape : other_shapes.at(layer_)) {
       if (shape->getType() == odb::dbWireShapeType::RING) {
         // avoid ring shapes
-        avoid.insert({shape->getObstructionBox(), shape});
+        avoid.insert(shape);
       }
     }
   }
@@ -233,7 +233,7 @@ void Straps::makeStraps(int x_start,
                         int y_end,
                         bool is_delta_x,
                         const TechLayer& layer,
-                        const ShapeTree& avoid)
+                        const Shape::ObstructionTree& avoid)
 {
   const int half_width = width_ / 2;
   int strap_count = 0;
@@ -350,7 +350,7 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 }
 
-void FollowPins::makeShapes(const ShapeTreeMap& other_shapes)
+void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -817,7 +817,8 @@ bool PadDirectConnectionStraps::isConnectHorizontal() const
          || pad_edge_ == odb::dbDirection::EAST;
 }
 
-void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
+void PadDirectConnectionStraps::makeShapes(
+    const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -840,7 +841,7 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
 }
 
 ShapePtr PadDirectConnectionStraps::getClosestShape(
-    const ShapeTree& search_shapes,
+    const Shape::ShapeTree& search_shapes,
     const odb::Rect& pin_shape,
     odb::dbNet* net) const
 {
@@ -856,7 +857,6 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
     search_rect.set_ylo(die_rect.yMin());
     search_rect.set_yhi(die_rect.yMax());
   }
-  Box search = Shape::rectToBox(search_rect);
 
   const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
   const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
@@ -870,15 +870,15 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
   ShapePtr closest_shape = nullptr;
   int closest_dist = std::numeric_limits<int>::max();
 
-  for (auto it = search_shapes.qbegin(
-           bgi::intersects(search) && bgi::satisfies([&](const auto& other) {
-             const auto& shape = other.second;
-             return shape->getNet() == net
-                    && shape->getType() == target_shapes_type_;
-           }));
+  for (auto it = search_shapes.qbegin(bgi::intersects(search_rect)
+                                      && bgi::satisfies([&](const auto& other) {
+                                           return other->getNet() == net
+                                                  && other->getType()
+                                                         == target_shapes_type_;
+                                         }));
        it != search_shapes.qend();
        it++) {
-    const auto& shape = it->second;
+    const auto& shape = *it;
     const auto& shape_rect = shape->getRect();
 
     // check if shapes will make good intersections
@@ -927,7 +927,7 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
 }
 
 void PadDirectConnectionStraps::makeShapesFacingCore(
-    const ShapeTreeMap& other_shapes)
+    const Shape::ShapeTreeMap& other_shapes)
 {
   if (other_shapes.empty()) {
     return;
@@ -935,7 +935,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
 
   std::set<odb::dbTechLayer*> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       if (shape->getType() == target_shapes_type_) {
         const auto layers = getGrid()->connectableLayers(layer);
         connectable_layers.insert(layers.begin(), layers.end());
@@ -1039,7 +1039,7 @@ PadDirectConnectionStraps::getAssociatedStraps() const
 }
 
 void PadDirectConnectionStraps::makeShapesOverPads(
-    const ShapeTreeMap& other_shapes)
+    const Shape::ShapeTreeMap& other_shapes)
 {
   if (other_shapes.empty()) {
     return;
@@ -1169,7 +1169,8 @@ bool PadDirectConnectionStraps::snapRectToClosestShape(
   return true;
 }
 
-void PadDirectConnectionStraps::getConnectableShapes(ShapeTreeMap& shapes) const
+void PadDirectConnectionStraps::getConnectableShapes(
+    Shape::ShapeTreeMap& shapes) const
 {
   if (type_ != ConnectionType::OverPads) {
     return;
@@ -1184,17 +1185,18 @@ void PadDirectConnectionStraps::getConnectableShapes(ShapeTreeMap& shapes) const
       continue;
     }
 
-    for (const auto& [box, shape] : layer_pins) {
+    for (const auto& shape : layer_pins) {
       if (shape->getNet() != iterm_->getNet()) {
         continue;
       }
 
-      pin_shapes.insert({box, shape});
+      pin_shapes.insert(shape);
     }
   }
 }
 
-void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
+void PadDirectConnectionStraps::cutShapes(
+    const Shape::ObstructionTreeMap& obstructions)
 {
   Straps::cutShapes(obstructions);
 
@@ -1209,8 +1211,7 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
   // connect to ring)
   std::vector<Shape*> remove_shapes;
   for (const auto& [layer, layer_shapes] : getShapes()) {
-    for (const auto& entry : layer_shapes) {
-      const auto& shape = entry.second;
+    for (const auto& shape : layer_shapes) {
       if (inst_shape.contains(shape->getRect())) {
         // reject shapes that only connect to pad
         remove_shapes.push_back(shape.get());
@@ -1262,8 +1263,8 @@ void PadDirectConnectionStraps::setConnectionType(ConnectionType type)
 
 bool PadDirectConnectionStraps::strapViaIsObstructed(
     Shape* shape,
-    const ShapeTreeMap& other_shapes,
-    const ShapeTreeMap& other_obstructions,
+    const Shape::ShapeTreeMap& other_shapes,
+    const Shape::ObstructionTreeMap& other_obstructions,
     bool recheck) const
 {
   auto find_shape = target_shapes_.find(shape);
@@ -1320,8 +1321,9 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
   return false;
 }
 
-bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
-                                             ShapeTreeMap& all_obstructions)
+bool PadDirectConnectionStraps::refineShapes(
+    Shape::ShapeTreeMap& all_shapes,
+    Shape::ObstructionTreeMap& all_obstructions)
 {
   if (type_ != ConnectionType::OverPads) {
     return GridComponent::refineShapes(all_shapes, all_obstructions);
@@ -1329,7 +1331,7 @@ bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
 
   std::set<Shape*> refine;
   for (const auto& [layer, shapes] : getShapes()) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       if (!strapViaIsObstructed(
               shape.get(), all_shapes, all_obstructions, false)) {
         continue;
@@ -1349,10 +1351,8 @@ bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
 
     // remove shape from all_shapes and all_obstructions
     auto* layer = shape->getLayer();
-    auto find_shape = [&](const ShapeValue& other) {
-      const auto& other_shape = other.second;
-      return other_shape.get() == refine_shape;
-    };
+    auto find_shape
+        = [&](const ShapePtr& other) { return other.get() == refine_shape; };
     // remove from all_shapes
     auto& layer_shapes = all_shapes[layer];
     auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
@@ -1383,10 +1383,11 @@ bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
   return true;
 }
 
-bool PadDirectConnectionStraps::refineShape(Shape* shape,
-                                            const odb::Rect& pin_shape,
-                                            ShapeTreeMap& all_shapes,
-                                            ShapeTreeMap& all_obstructions)
+bool PadDirectConnectionStraps::refineShape(
+    Shape* shape,
+    const odb::Rect& pin_shape,
+    Shape::ShapeTreeMap& all_shapes,
+    Shape::ObstructionTreeMap& all_obstructions)
 {
   const TechLayer tech_layer(shape->getLayer());
 
@@ -1462,13 +1463,14 @@ bool PadDirectConnectionStraps::refineShape(Shape* shape,
 
 ////////
 
-RepairChannelStraps::RepairChannelStraps(Grid* grid,
-                                         Straps* target,
-                                         odb::dbTechLayer* connect_to,
-                                         const ShapeTreeMap& other_shapes,
-                                         const std::set<odb::dbNet*>& nets,
-                                         const odb::Rect& area,
-                                         const odb::Rect& obs_check_area)
+RepairChannelStraps::RepairChannelStraps(
+    Grid* grid,
+    Straps* target,
+    odb::dbTechLayer* connect_to,
+    const Shape::ObstructionTreeMap& other_shapes,
+    const std::set<odb::dbNet*>& nets,
+    const odb::Rect& area,
+    const odb::Rect& obs_check_area)
     : Straps(grid,
              target->getLayer(),
              target->getWidth(),
@@ -1543,7 +1545,8 @@ bool RepairChannelStraps::isAtEndOfRepairOptions() const
   return true;
 }
 
-void RepairChannelStraps::continueRepairs(const ShapeTreeMap& other_shapes)
+void RepairChannelStraps::continueRepairs(
+    const Shape::ObstructionTreeMap& other_shapes)
 {
   clearShapes();
   const int next_width = getNextWidth();
@@ -1564,7 +1567,8 @@ void RepairChannelStraps::continueRepairs(const ShapeTreeMap& other_shapes)
   determineParameters(other_shapes);
 }
 
-void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
+void RepairChannelStraps::determineParameters(
+    const Shape::ObstructionTreeMap& obstructions)
 {
   debugPrint(
       getLogger(),
@@ -1647,10 +1651,11 @@ void RepairChannelStraps::determineParameters(const ShapeTreeMap& obstructions)
   invalid_ = true;
 }
 
-bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
-                                          int extra_offset,
-                                          int bisect_dist,
-                                          int level)
+bool RepairChannelStraps::determineOffset(
+    const Shape::ObstructionTreeMap& obstructions,
+    int extra_offset,
+    int bisect_dist,
+    int level)
 {
   const TechLayer layer(getLayer());
   const bool is_horizontal = isHorizontal();
@@ -1718,11 +1723,12 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
     obs_check.set_ylo(obs_check_area_.yMin());
     obs_check.set_yhi(obs_check_area_.yMax());
   }
-  auto check_obstructions = [&obs_check](const ShapeTree& shapes) -> bool {
-    for (auto itr = shapes.qbegin(bgi::intersects(Shape::rectToBox(obs_check)));
+  auto check_obstructions
+      = [&obs_check](const Shape::ObstructionTree& shapes) -> bool {
+    for (auto itr = shapes.qbegin(bgi::intersects(obs_check));
          itr != shapes.qend();
          itr++) {
-      const auto& shape = itr->second;
+      const auto& shape = *itr;
       if (obs_check.overlaps(shape->getObstruction())) {
         return true;
       }
@@ -1813,15 +1819,15 @@ std::vector<odb::dbNet*> RepairChannelStraps::getNets() const
   return nets;
 }
 
-void RepairChannelStraps::cutShapes(const ShapeTreeMap& obstructions)
+void RepairChannelStraps::cutShapes(
+    const Shape::ObstructionTreeMap& obstructions)
 {
   Straps::cutShapes(obstructions);
 
   // filter out cut segments that do not overlap with the area
   std::vector<Shape*> remove_shapes;
   for (const auto& [layer, layer_shapes] : getShapes()) {
-    for (const auto& entry : layer_shapes) {
-      const auto& shape = entry.second;
+    for (const auto& shape : layer_shapes) {
       if (!shape->getRect().intersects(obs_check_area_)) {
         remove_shapes.push_back(shape.get());
       }
@@ -1837,7 +1843,7 @@ void RepairChannelStraps::cutShapes(const ShapeTreeMap& obstructions)
   odb::Rect region;
   region.mergeInit();
   for (const auto& [layer, layer_shapes] : getShapes()) {
-    for (const auto& [box, shape] : layer_shapes) {
+    for (const auto& shape : layer_shapes) {
       region.merge(shape->getRect());
     }
   }
@@ -1940,7 +1946,7 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
 
 std::vector<RepairChannelStraps::RepairChannelArea>
 RepairChannelStraps::findRepairChannels(Grid* grid,
-                                        const ShapeTree& shapes,
+                                        const Shape::ShapeTree& shapes,
                                         odb::dbTechLayer* layer)
 {
   Straps* target = getTargetStrap(grid, layer);
@@ -1959,7 +1965,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
   std::vector<Shape*> shapes_used;
   Polygon90Set shape_set;
-  for (const auto& [box, shape] : shapes) {
+  for (const auto& shape : shapes) {
     if (shape->getNumberOfConnectionsAbove() != 0) {
       // shape already connected to something
       continue;
@@ -1988,8 +1994,8 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
     const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
 
-    const auto& min_corner = box.min_corner();
-    const auto& max_corner = box.max_corner();
+    const auto& min_corner = shape->getRect().ll();
+    const auto& max_corner = shape->getRect().ur();
     std::array<Pt, 4> pts
         = {Pt(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
            Pt(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
@@ -2084,21 +2090,23 @@ RepairChannelStraps::findRepairChannels(Grid* grid)
   return channels;
 }
 
-bool RepairChannelStraps::testBuild(const ShapeTreeMap& local_shapes,
-                                    const ShapeTreeMap& obstructions)
+bool RepairChannelStraps::testBuild(
+    const Shape::ShapeTreeMap& local_shapes,
+    const Shape::ObstructionTreeMap& obstructions)
 {
   makeShapes(local_shapes);
   cutShapes(obstructions);
   return !isEmpty();
 }
 
-void RepairChannelStraps::repairGridChannels(Grid* grid,
-                                             const ShapeTreeMap& global_shapes,
-                                             ShapeTreeMap& obstructions,
-                                             bool allow)
+void RepairChannelStraps::repairGridChannels(
+    Grid* grid,
+    const Shape::ShapeTreeMap& global_shapes,
+    Shape::ObstructionTreeMap& obstructions,
+    bool allow)
 {
   // create copy of shapes so they can be used to determine repair locations
-  ShapeTreeMap local_shapes = global_shapes;
+  Shape::ShapeTreeMap local_shapes = global_shapes;
 
   std::set<odb::Rect> areas_repaired;
 

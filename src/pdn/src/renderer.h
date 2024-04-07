@@ -60,8 +60,8 @@ class PDNRenderer : public gui::Renderer
 
  private:
   PdnGen* pdn_;
-  ShapeTreeMap shapes_;
-  ShapeTreeMap grid_obstructions_;
+  Shape::ShapeTreeMap shapes_;
+  Shape::ObstructionTreeMap grid_obstructions_;
   ViaTree vias_;
   struct RepairChannel
   {

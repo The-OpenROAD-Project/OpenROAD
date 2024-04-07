@@ -120,20 +120,20 @@ void PdnGen::buildGrids(bool trim)
   Grid::makeInitialShapes(block, all_shapes_vec, logger_);
   for (const auto& [layer, layer_shapes] : all_shapes_vec) {
     auto& layer_obs = block_obs_vec[layer];
-    for (const auto& [box, shape] : layer_shapes) {
-      layer_obs.emplace_back(shape->getObstructionBox(), shape);
+    for (const auto& shape : layer_shapes) {
+      layer_obs.push_back(shape);
     }
   }
 
-  ShapeTreeMap block_obs;
+  Shape::ObstructionTreeMap block_obs;
   for (const auto& [layer, shapes] : block_obs_vec) {
-    block_obs[layer] = ShapeTree(shapes.begin(), shapes.end());
+    block_obs[layer] = Shape::ObstructionTree(shapes.begin(), shapes.end());
   }
   block_obs_vec.clear();
 
-  ShapeTreeMap all_shapes;
+  Shape::ShapeTreeMap all_shapes;
   for (const auto& [layer, shapes] : all_shapes_vec) {
-    all_shapes[layer] = ShapeTree(shapes.begin(), shapes.end());
+    all_shapes[layer] = Shape::ShapeTree(shapes.begin(), shapes.end());
   }
   all_shapes_vec.clear();
 
@@ -195,7 +195,7 @@ void PdnGen::updateVias()
 
   for (auto* grid : grids) {
     for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         shape->clearVias();
       }
     }
@@ -222,7 +222,7 @@ void PdnGen::trimShapes()
     }
     const auto& pin_layers = grid->getPinLayers();
     for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         if (!shape->isModifiable()) {
           continue;
         }
@@ -770,7 +770,8 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, net_shapes_vec);
   }
-  const ShapeTreeMap obstructions(net_shapes_vec.begin(), net_shapes_vec.end());
+  const Shape::ObstructionTreeMap obstructions(net_shapes_vec.begin(),
+                                               net_shapes_vec.end());
   net_shapes_vec.clear();
 
   // Remove existing non-fixed bpins
@@ -834,7 +835,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 
   ShapeVectorMap net_shapes_vec;
   Shape::populateMapFromDb(net, net_shapes_vec);
-  ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
+  Shape::ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
 
   // remove bterms that connect to swires
   std::set<odb::dbBTerm*> terms;
