@@ -258,7 +258,7 @@ void Search::updateShapes(odb::dbBlock* block)
   data.snet_shapes_.clear();
 
   LayerMap<std::vector<SNetValue<odb::dbNet*>>> snet_shapes;
-  LayerMap<std::vector<DBoxValue<odb::dbNet*>>> snet_net_via_shapes;
+  LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>> snet_net_via_shapes;
   for (odb::dbNet* net : block->getNets()) {
     addSNet(net, snet_shapes, snet_net_via_shapes);
   }
@@ -268,8 +268,8 @@ void Search::updateShapes(odb::dbBlock* block)
   }
   snet_shapes.clear();
   for (const auto& [layer, layer_shapes] : snet_net_via_shapes) {
-    data.snet_via_shapes_[layer]
-        = RtreeDBox<odb::dbNet*>(layer_shapes.begin(), layer_shapes.end());
+    data.snet_via_shapes_[layer] = RtreeSNetDBoxShapes<odb::dbNet*>(
+        layer_shapes.begin(), layer_shapes.end());
   }
   snet_net_via_shapes.clear();
 
@@ -333,10 +333,10 @@ void Search::updateInsts(odb::dbBlock* block)
 
   data.insts_.clear();
 
-  std::vector<DBoxValue<odb::dbInst*>> insts;
+  std::vector<odb::dbInst*> insts;
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isPlaced()) {
-      insts.emplace_back(inst->getBBox(), inst);
+      insts.push_back(inst);
     }
   }
   data.insts_ = RtreeDBox<odb::dbInst*>(insts.begin(), insts.end());
@@ -354,9 +354,9 @@ void Search::updateBlockages(odb::dbBlock* block)
 
   data.blockages_.clear();
 
-  std::vector<DBoxValue<odb::dbBlockage*>> blockages;
+  std::vector<odb::dbBlockage*> blockages;
   for (odb::dbBlockage* blockage : block->getBlockages()) {
-    blockages.emplace_back(blockage->getBBox(), blockage);
+    blockages.push_back(blockage);
   }
   data.blockages_
       = RtreeDBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
@@ -374,10 +374,10 @@ void Search::updateObstructions(odb::dbBlock* block)
 
   data.obstructions_.clear();
 
-  LayerMap<std::vector<DBoxValue<odb::dbObstruction*>>> obstructions;
+  LayerMap<std::vector<odb::dbObstruction*>> obstructions;
   for (odb::dbObstruction* obs : block->getObstructions()) {
     odb::dbBox* bbox = obs->getBBox();
-    obstructions[bbox->getTechLayer()].emplace_back(bbox, obs);
+    obstructions[bbox->getTechLayer()].push_back(obs);
   }
   for (const auto& [layer, layer_obs] : obstructions) {
     data.obstructions_[layer]
@@ -430,9 +430,10 @@ void Search::addVia(
   }
 }
 
-void Search::addSNet(odb::dbNet* net,
-                     LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
-                     LayerMap<std::vector<DBoxValue<odb::dbNet*>>>& via_shapes)
+void Search::addSNet(
+    odb::dbNet* net,
+    LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
+    LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>>& via_shapes)
 {
   for (odb::dbSWire* swire : net->getSWires()) {
     for (odb::dbSBox* box : swire->getWires()) {
@@ -502,9 +503,14 @@ class Search::MinSizePredicate
     return checkBox(std::get<0>(o));
   }
 
-  bool operator()(const DBoxValue<T>& o) const
+  bool operator()(const SNetDBoxValue<T>& o) const
   {
     return checkBox(o.first->getBox());
+  }
+
+  bool operator()(odb::dbObstruction* o) const
+  {
+    return checkBox(o->getBBox()->getBox());
   }
 
   bool operator()(odb::dbFill* o) const
@@ -540,9 +546,14 @@ class Search::MinHeightPredicate
 
   bool operator()(const RectValue<T>& o) const { return checkBox(o.first); }
 
-  bool operator()(const DBoxValue<T>& o) const
+  bool operator()(odb::dbInst* o) const
   {
-    return checkBox(o.first->getBox());
+    return checkBox(o->getBBox()->getBox());
+  }
+
+  bool operator()(odb::dbBlockage* o) const
+  {
+    return checkBox(o->getBBox()->getBox());
   }
 
   bool checkBox(const odb::Rect& box) const { return box.dy() >= min_height_; }

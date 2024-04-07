@@ -602,13 +602,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
-  for (const auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       if (inst_internals_visible) {
         // only add inst if it can be used for pin or obs search
         insts.push_back(inst);
       }
-      check_rect(box->getBox());
+      check_rect(inst->getBBox()->getBox());
     }
   }
 
@@ -723,8 +723,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.xMax(),
                                             search_line.yMax(),
                                             shape_limit);
-      for (const auto& [box, ob] : obs) {
-        check_rect(box->getBox());
+      for (auto* ob : obs) {
+        check_rect(ob->getBBox()->getBox());
       }
     }
   }
@@ -736,8 +736,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (const auto& [box, blck] : blcks) {
-      check_rect(box->getBox());
+    for (auto* blck : blcks) {
+      check_rect(blck->getBBox()->getBox());
     }
   }
 
@@ -829,7 +829,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.xMax(),
                                              region.yMax(),
                                              shape_limit);
-    for (auto& [box, blockage] : blockages) {
+    for (auto* blockage : blockages) {
       selections.push_back(gui_->makeSelected(blockage));
     }
   }
@@ -861,8 +861,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.xMax(),
                                             region.yMax(),
                                             shape_limit);
-      for (auto& [box, obs] : obs) {
-        selections.push_back(gui_->makeSelected(obs));
+      for (auto* ob : obs) {
+        selections.push_back(gui_->makeSelected(ob));
       }
     }
 
@@ -935,7 +935,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    region.yMax(),
                                    instanceSizeLimit());
 
-  for (auto& [box, inst] : insts) {
+  for (auto* inst : insts) {
     if (options_->isInstanceVisible(inst)) {
       if (options_->isInstanceSelectable(inst)) {
         selections.push_back(gui_->makeSelected(inst));

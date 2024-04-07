@@ -540,7 +540,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
                                                      instance_limit);
       child_insts.clear();
       child_insts.reserve(10000);
-      for (const auto& [box, inst] : inst_range) {
+      for (auto* inst : inst_range) {
         if (viewer_->options_->isInstanceVisible(inst)) {
           child_insts.push_back(inst);
         }
@@ -788,11 +788,11 @@ void RenderThread::drawBlockages(QPainter* painter,
                                          bounds.yMax(),
                                          viewer_->shapeSizeLimit());
 
-  for (const auto& [box, blockage] : blockage_range) {
+  for (auto* blockage : blockage_range) {
     if (restart_) {
       break;
     }
-    Rect bbox = box->getBox();
+    Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -821,11 +821,11 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
                                             bounds.yMax(),
                                             viewer_->shapeSizeLimit());
 
-  for (const auto& [box, obs] : obstructions_range) {
+  for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
     }
-    Rect bbox = box->getBox();
+    Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 }
@@ -1081,7 +1081,7 @@ void RenderThread::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (const auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (restart_) {
       break;
     }

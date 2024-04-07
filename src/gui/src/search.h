@@ -73,21 +73,23 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
   template <typename T>
-  using DBoxValue = std::pair<odb::dbBox*, T>;
-  template <typename T>
   using RouteBoxValue = std::tuple<odb::Rect, bool, T>;
   template <typename T>
-  using SNetValue = std::tuple<odb::dbBox*, Polygon, T>;
+  using SNetValue = std::tuple<odb::dbSBox*, Polygon, T>;
+  template <typename T>
+  using SNetDBoxValue = std::pair<odb::dbSBox*, T>;
+  ;
 
   template <typename T>
   struct BBoxIndexableGetter
   {
     using result_type = odb::Rect;
-    odb::Rect operator()(const DBoxValue<T>& t) const
-    {
-      return t.first->getBox();
-    }
+    odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
     odb::Rect operator()(const SNetValue<T>& t) const
+    {
+      return std::get<0>(t)->getBox();
+    }
+    odb::Rect operator()(const SNetDBoxValue<T>& t) const
     {
       return std::get<0>(t)->getBox();
     }
@@ -107,13 +109,15 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using RtreeRect = bgi::rtree<RectValue<T>, bgi::quadratic<16>>;
   template <typename T>
-  using RtreeDBox
-      = bgi::rtree<DBoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeDBox = bgi::rtree<T, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
   template <typename T>
   using RtreeRoutingShapes = bgi::rtree<RouteBoxValue<T>, bgi::quadratic<16>>;
   template <typename T>
   using RtreeSNetShapes
       = bgi::rtree<SNetValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  template <typename T>
+  using RtreeSNetDBoxShapes = bgi::
+      rtree<SNetDBoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
   using RtreeFill
       = bgi::rtree<odb::dbFill*, bgi::quadratic<16>, FillIndexableGetter>;
 
@@ -138,7 +142,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   };
   using InstRange = Range<RtreeDBox<odb::dbInst*>>;
   using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
-  using SNetSBoxRange = Range<RtreeDBox<odb::dbNet*>>;
+  using SNetSBoxRange = Range<RtreeSNetDBoxShapes<odb::dbNet*>>;
   using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
   using FillRange = Range<RtreeFill>;
   using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
@@ -266,7 +270,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   void addSNet(odb::dbNet* net,
                LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
-               LayerMap<std::vector<DBoxValue<odb::dbNet*>>>& via_shapes);
+               LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>>& via_shapes);
   void addNet(odb::dbNet* net,
               LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>>& tree_shapes);
   void addVia(odb::dbNet* net,
@@ -296,7 +300,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     // Special net vias may be large multi-cut vias.  It is more efficient
     // to store the dbSBox (ie the via) than all the cuts.  This is
     // particularly true when you have parallel straps like m1 & m2 in asap7.
-    LayerMap<RtreeDBox<odb::dbNet*>> snet_via_shapes_;
+    LayerMap<RtreeSNetDBoxShapes<odb::dbNet*>> snet_via_shapes_;
     LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes_;
     std::atomic_bool shapes_init_{false};
     std::mutex shapes_init_mutex_;
