@@ -924,9 +924,7 @@ void RenderThread::drawLayer(QPainter* painter,
           continue;
         }
         const auto& ll = box.ll();
-        const auto& ur = box.ur();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
 
@@ -990,14 +988,12 @@ void RenderThread::drawLayer(QPainter* painter,
                                                bounds.yMax(),
                                                shape_limit);
 
-      for (auto& i : iter) {
+      for (const auto& [box, fill] : iter) {
         if (restart_) {
           break;
         }
-        const auto& ll = std::get<0>(i).ll();
-        const auto& ur = std::get<0>(i).ur();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
   }
