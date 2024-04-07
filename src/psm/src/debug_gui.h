@@ -67,7 +67,6 @@ class NodeDescriptor : public SolverDescriptor
  public:
   NodeDescriptor(
       const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers);
-  virtual ~NodeDescriptor() = default;
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override { return "PSM Node"; }
