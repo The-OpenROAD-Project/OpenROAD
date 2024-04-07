@@ -44,7 +44,6 @@
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
-#include "via.h"
 
 namespace pdn {
 
@@ -307,7 +306,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
   };
 
   std::map<Shape*, Shape*> replace_shapes;
-  for (const auto& [box, via] : vias_) {
+  for (const auto& via : vias_) {
     // ensure shapes belong to something
     const auto& lower_shape = via->getLowerShape();
     if (lower_shape->getGridComponent() == nullptr) {
@@ -694,11 +693,9 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   }
 
   // populate shapes and obstructions
-  Box search_box(Point(search_area.xMin(), search_area.yMin()),
-                 Point(search_area.xMax(), search_area.yMax()));
   for (auto& [layer, layer_global_shape] : global_shapes) {
     auto& shapes = search_shapes[layer];
-    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_box));
+    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_area));
          it != layer_global_shape.qend();
          it++) {
       shapes.insert(*it);
@@ -739,7 +736,7 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
       auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getBox())
+      if (search_obs.qbegin(bgi::intersects(via->getArea())
                             && bgi::satisfies(obs_filter))
           != search_obs.qend()) {
         remove_vias.insert(via);
@@ -757,37 +754,36 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   remove_set_of_vias(remove_vias);
 
   // Remove overlapping vias and keep largest
-  ViaTree overlapping_via_tree;
+  Via::ViaTree overlapping_via_tree;
   for (const auto& via : vias) {
-    overlapping_via_tree.insert({via->getBox(), via});
+    overlapping_via_tree.insert(via);
   }
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
     }
     if (overlapping_via_tree.qbegin(
-            bgi::intersects(via->getBox())
-            && bgi::satisfies([&via](const ViaValue& other) -> bool {
-                 const auto& other_via = other.second;
-                 if (via == other_via) {
+            bgi::intersects(via->getArea())
+            && bgi::satisfies([&via](const ViaPtr& other) -> bool {
+                 if (via == other) {
                    // ignore the same via
                    return false;
                  }
 
-                 if (other_via->isFailed()) {
+                 if (other->isFailed()) {
                    return false;
                  }
 
-                 if (via->getLowerLayer() != other_via->getLowerLayer()) {
+                 if (via->getLowerLayer() != other->getLowerLayer()) {
                    return false;
                  }
 
-                 if (via->getUpperLayer() != other_via->getUpperLayer()) {
+                 if (via->getUpperLayer() != other->getUpperLayer()) {
                    return false;
                  }
 
                  // Remove the smaller of the two vias
-                 return via->getArea().area() <= other_via->getArea().area();
+                 return via->getArea().area() <= other->getArea().area();
                }))
         != overlapping_via_tree.qend()) {
       remove_vias.insert(via);
@@ -805,7 +801,7 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
-    vias_.insert({via->getBox(), via});
+    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
@@ -813,17 +809,16 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
 
 void Grid::getVias(std::vector<ViaPtr>& vias) const
 {
-  for (const auto& [box, via] : vias_) {
+  for (const auto& via : vias_) {
     vias.push_back(via);
   }
 }
 
 void Grid::removeVia(const ViaPtr& via)
 {
-  auto find
-      = std::find_if(vias_.begin(), vias_.end(), [via](const auto& other) {
-          return via == other.second;
-        });
+  auto find = std::find_if(vias_.begin(),
+                           vias_.end(),
+                           [via](const auto& other) { return via == other; });
   if (find != vias_.end()) {
     vias_.remove(*find);
   }
@@ -831,10 +826,10 @@ void Grid::removeVia(const ViaPtr& via)
 
 void Grid::removeInvalidVias()
 {
-  std::vector<ViaValue> remove_vias;
-  for (const auto& via_value : vias_) {
-    if (!via_value.second->isValid()) {
-      remove_vias.push_back(via_value);
+  std::vector<ViaPtr> remove_vias;
+  for (const auto& via : vias_) {
+    if (!via->isValid()) {
+      remove_vias.push_back(via);
     }
   }
   for (const auto& remove_via : remove_vias) {

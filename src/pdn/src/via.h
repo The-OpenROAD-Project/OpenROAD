@@ -74,12 +74,8 @@ class Shape;
 class Via;
 class ViaGenerator;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
-using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
+
 using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
@@ -727,6 +723,13 @@ class TechViaGenerator : public ViaGenerator
 class Via
 {
  public:
+  struct ViaIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ViaPtr& via) const { return via->getArea(); }
+  };
+  using ViaTree = bgi::rtree<ViaPtr, bgi::quadratic<16>, ViaIndexableGetter>;
+
   Via(Connect* connect,
       odb::dbNet* net,
       const odb::Rect& area,
@@ -735,7 +738,6 @@ class Via
 
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
-  Box getBox() const;
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
   const ShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
@@ -765,6 +767,8 @@ class Via
 
   void markFailed(failedViaReason reason);
   bool isFailed() const { return failed_; }
+
+  static ViaTree convertVectorToTree(std::vector<ViaPtr>& vec);
 
  private:
   odb::dbNet* net_;

@@ -74,11 +74,6 @@ using ViaPtr = std::shared_ptr<Via>;
 
 using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-
 class Grid;
 class GridComponent;
 class VoltageDomain;
@@ -247,8 +242,6 @@ class Shape
   // copy existing shapes into the map
   static void populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map);
 
-  static Box rectToBox(const odb::Rect& rect);
-
   bool allowsNonPreferredDirectionChange() const
   {
     return allow_non_preferred_change_;
@@ -260,7 +253,6 @@ class Shape
 
   static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
   static ObstructionTreeMap convertVectorToObstructionTree(ShapeVectorMap& vec);
-  static ViaTree convertVectorToTree(std::vector<ViaValue>& vec);
 
  protected:
   bool cut(const ObstructionTree& obstructions,

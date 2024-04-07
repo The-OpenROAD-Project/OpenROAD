@@ -104,8 +104,7 @@ void ViaRepair::repair()
 
     for (const auto& obs : layer_obstructions_rect) {
       const odb::Rect obs_rect(xl(obs), yl(obs), xh(obs), yh(obs));
-      for (auto itr
-           = layer_vias.qbegin(bgi::intersects(Shape::rectToBox(obs_rect)));
+      for (auto itr = layer_vias.qbegin(bgi::intersects(obs_rect));
            itr != layer_vias.qend();
            itr++) {
         odb::dbSBox* box = itr->second;
@@ -167,7 +166,7 @@ ViaRepair::LayerViaTree ViaRepair::collectVias()
           wire->getViaXY(x, y);
           for (const auto& obs : TechViaGenerator::getViaObstructionRects(
                    logger_, tech_via, x, y)) {
-            vias[cut_layer].insert({Shape::rectToBox(obs), wire});
+            vias[cut_layer].insert({obs, wire});
           }
         } else {
           // TODO: implement generate via

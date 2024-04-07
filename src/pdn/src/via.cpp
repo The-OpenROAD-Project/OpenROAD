@@ -2727,11 +2727,6 @@ odb::dbTechLayer* Via::getUpperLayer() const
   return connect_->getUpperLayer();
 }
 
-Box Via::getBox() const
-{
-  return Shape::rectToBox(area_);
-}
-
 Via* Via::copy() const
 {
   return new Via(connect_, net_, area_, lower_, upper_);
@@ -2783,8 +2778,7 @@ void Via::writeToDb(odb::dbSWire* wire,
       if (obstructions.find(layer) != obstructions.end()) {
         const auto& obs = obstructions.at(layer);
         for (const auto& [via_shape, box] : via_shapes) {
-          if (obs.qbegin(bgi::intersects(Shape::rectToBox(via_shape)))
-              != obs.qend()) {
+          if (obs.qbegin(bgi::intersects(via_shape)) != obs.qend()) {
             ripup.insert(box);
           }
         }
@@ -2933,6 +2927,15 @@ void Via::markFailed(failedViaReason reason)
 {
   failed_ = true;
   connect_->addFailedVia(reason, area_, net_);
+}
+
+Via::ViaTree Via::convertVectorToTree(std::vector<ViaPtr>& vec)
+{
+  ViaTree tree(vec.begin(), vec.end());
+
+  vec = std::vector<ViaPtr>();
+
+  return tree;
 }
 
 }  // namespace pdn

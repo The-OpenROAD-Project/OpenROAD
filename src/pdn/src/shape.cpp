@@ -100,11 +100,6 @@ void Shape::merge(Shape* shape)
   generateObstruction();
 }
 
-Box Shape::rectToBox(const odb::Rect& rect)
-{
-  return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
-}
-
 Shape::ObstructionHalo Shape::getObstructionHalo() const
 {
   return {rect_.xMin() - obs_.xMin(),
@@ -643,15 +638,6 @@ Shape::ObstructionTreeMap Shape::convertVectorToObstructionTree(
   vec.swap(empty);
 
   return trees;
-}
-
-ViaTree Shape::convertVectorToTree(std::vector<ViaValue>& vec)
-{
-  ViaTree tree(vec.begin(), vec.end());
-
-  vec = std::vector<ViaValue>();
-
-  return tree;
 }
 
 /////////

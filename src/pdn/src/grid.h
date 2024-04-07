@@ -41,6 +41,7 @@
 
 #include "odb/dbTypes.h"
 #include "shape.h"
+#include "via.h"
 
 namespace odb {
 class dbBlock;
@@ -223,7 +224,7 @@ class Grid
   std::set<odb::dbTechLayer*> pin_layers_;
   std::vector<odb::dbTechLayer*> obstruction_layers_;
 
-  ViaTree vias_;
+  Via::ViaTree vias_;
 
   std::vector<GridComponent*> getGridComponents() const;
   bool repairVias(const Shape::ShapeTreeMap& global_shapes,

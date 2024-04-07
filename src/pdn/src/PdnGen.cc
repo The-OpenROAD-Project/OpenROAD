@@ -854,9 +854,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 
         odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
-        Box search_box(Point(rect.xMin(), rect.yMin()),
-                       Point(rect.xMax(), rect.yMax()));
-        if (shapes.qbegin(bgi::intersects(search_box)) != shapes.qend()) {
+        if (shapes.qbegin(bgi::intersects(rect)) != shapes.qend()) {
           remove = true;
           break;
         }

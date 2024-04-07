@@ -271,10 +271,7 @@ void Straps::makeStraps(int x_start,
       group_pos += group_pitch;
       next_minimum_track = group_pos;
 
-      Box shape_check(Point(strap_rect.xMin(), strap_rect.yMin()),
-                      Point(strap_rect.xMax(), strap_rect.yMax()));
-
-      if (avoid.qbegin(bgi::intersects(shape_check)) != avoid.qend()) {
+      if (avoid.qbegin(bgi::intersects(strap_rect)) != avoid.qend()) {
         // dont add this strap as it intersects an avoidance
         continue;
       }
@@ -1289,7 +1286,6 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
 
   const odb::Rect expected_via
       = shape->getRect().intersect(find_shape->second->getRect());
-  const Box expected_via_box = Shape::rectToBox(expected_via);
 
   auto* tech = target->getLayer()->getTech();
   for (int layer = layer0 + 1; layer < layer1; layer++) {
@@ -1300,7 +1296,7 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
     }
     const auto& layer_shapes = other_obstructions.at(tech_layer);
     const bool has_obstruction
-        = layer_shapes.qbegin(bgi::intersects(expected_via_box))
+        = layer_shapes.qbegin(bgi::intersects(expected_via))
           != layer_shapes.qend();
 
     if (has_obstruction) {

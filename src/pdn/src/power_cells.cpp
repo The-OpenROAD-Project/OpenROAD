@@ -171,9 +171,7 @@ GridSwitchedPower::InstTree GridSwitchedPower::buildInstanceSearchTree() const
       continue;
     }
 
-    odb::Rect bbox = inst->getBBox()->getBox();
-
-    exisiting_insts.insert({Shape::rectToBox(bbox), inst});
+    exisiting_insts.insert(inst);
   }
 
   return exisiting_insts;
@@ -199,9 +197,7 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
 {
   RowTree row_search;
   for (auto* row : grid_->getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
-
-    row_search.insert({Shape::rectToBox(bbox), row});
+    row_search.insert(row);
   }
 
   return row_search;
@@ -215,10 +211,10 @@ std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(
 
   odb::Rect box = inst->getBBox()->getBox();
 
-  for (auto itr = row_search.qbegin(bgi::intersects(Shape::rectToBox(box)));
+  for (auto itr = row_search.qbegin(bgi::intersects(box));
        itr != row_search.qend();
        itr++) {
-    auto* row = itr->second;
+    auto* row = *itr;
     odb::Rect row_box = row->getBBox();
 
     if (row_box.overlaps(box)) {
@@ -277,7 +273,7 @@ void GridSwitchedPower::build()
 
     odb::Rect bbox = row->getBBox();
     std::vector<odb::Rect> straps;
-    for (auto itr = targets.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
+    for (auto itr = targets.qbegin(bgi::intersects(bbox));
          itr != targets.qend();
          itr++) {
       const auto& shape = *itr;
@@ -550,10 +546,9 @@ odb::dbInst* GridSwitchedPower::checkOverlappingInst(
 {
   odb::Rect bbox = cell->getBBox()->getBox();
 
-  for (auto itr = insts.qbegin(bgi::intersects(Shape::rectToBox(bbox)));
-       itr != insts.qend();
+  for (auto itr = insts.qbegin(bgi::intersects(bbox)); itr != insts.qend();
        itr++) {
-    auto* other_inst = itr->second;
+    auto* other_inst = *itr;
     if (checkInstanceOverlap(cell, other_inst)) {
       return other_inst;
     }
