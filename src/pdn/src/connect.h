@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "shape.h"
+#include "via.h"
 
 namespace odb {
 class dbVia;
@@ -49,9 +50,6 @@ class Rect;
 }  // namespace odb
 
 namespace pdn {
-
-class DbVia;
-class ViaGenerator;
 
 class Connect
 {
