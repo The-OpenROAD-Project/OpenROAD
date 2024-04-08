@@ -86,8 +86,9 @@ uint dbBPinItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbBPinItr::begin(parent); id != dbBPinItr::end(parent);
-       id = dbBPinItr::next(id))
+       id = dbBPinItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

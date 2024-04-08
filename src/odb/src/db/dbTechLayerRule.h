@@ -82,11 +82,13 @@ class _dbTechLayerRule : public _dbObject
   }
   bool operator<(const _dbTechLayerRule& rhs) const
   {
-    if (_layer < rhs._layer)
+    if (_layer < rhs._layer) {
       return true;
+    }
 
-    if (_layer > rhs._layer)
+    if (_layer > rhs._layer) {
       return false;
+    }
 
     return _non_default_rule < rhs._non_default_rule;
   }

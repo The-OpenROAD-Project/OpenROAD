@@ -85,8 +85,9 @@ uint dbPropertyItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbPropertyItr::begin(parent); id != dbPropertyItr::end(parent);
-       id = dbPropertyItr::next(id))
+       id = dbPropertyItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

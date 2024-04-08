@@ -86,8 +86,9 @@ uint dbNetTrackItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbNetTrackItr::begin(parent); id != dbNetTrackItr::end(parent);
-       id = dbNetTrackItr::next(id))
+       id = dbNetTrackItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

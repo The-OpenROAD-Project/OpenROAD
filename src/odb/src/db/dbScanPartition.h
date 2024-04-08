@@ -42,7 +42,9 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbScanPin;
+class _dbScanList;
+template <class T>
+class dbTable;
 
 class _dbScanPartition : public _dbObject
 {
@@ -50,7 +52,7 @@ class _dbScanPartition : public _dbObject
   _dbScanPartition(_dbDatabase*, const _dbScanPartition& r);
   _dbScanPartition(_dbDatabase*);
 
-  ~_dbScanPartition() = default;
+  ~_dbScanPartition();
 
   bool operator==(const _dbScanPartition& rhs) const;
   bool operator!=(const _dbScanPartition& rhs) const
@@ -62,10 +64,11 @@ class _dbScanPartition : public _dbObject
                    const char* field,
                    const _dbScanPartition& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
 
-  dbId<dbScanPin> start_;
-  dbId<dbScanPin> stop_;
   std::string name_;
+
+  dbTable<_dbScanList>* scan_lists_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj);

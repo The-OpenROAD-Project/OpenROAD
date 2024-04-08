@@ -1391,8 +1391,9 @@ bool dbTechLayerCutSpacingRule::isParWithinEnclosureValid() const
 dbTechLayerCutClassRule* dbTechLayerCutSpacingRule::getCutClass() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
-  if (obj->cut_class_ == 0)
+  if (obj->cut_class_ == 0) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);
@@ -1401,8 +1402,9 @@ dbTechLayerCutClassRule* dbTechLayerCutSpacingRule::getCutClass() const
 dbTechLayer* dbTechLayerCutSpacingRule::getSecondLayer() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
-  if (obj->second_layer_ == 0)
+  if (obj->second_layer_ == 0) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   _dbTech* _tech = (_dbTech*) layer->getOwner();
   return (dbTechLayer*) _tech->_layer_tbl->getPtr(obj->second_layer_);
