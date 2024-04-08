@@ -3451,10 +3451,8 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
   int l = tech_layer->getRoutingLevel();
 
   if (min_routing_layer_ <= l && l <= max_routing_layer_) {
-    odb::Point lower_bound
-        = odb::Point(rect.xMin(), rect.yMin());
-    odb::Point upper_bound
-        = odb::Point(rect.xMax(), rect.yMax());
+    odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
+    odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
     odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
     if (!die_area.contains(obstruction_rect)) {
       if (verbose_)
