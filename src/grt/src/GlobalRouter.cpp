@@ -3455,11 +3455,12 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
     odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
     odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
     if (!die_area.contains(obstruction_rect)) {
-      if (verbose_)
+      if (verbose_) {
         logger_->warn(GRT,
                       41,
                       "Net {} has wires/vias outside die area.",
                       db_net->getConstName());
+      }
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
   }
