@@ -209,6 +209,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
     };
+  } else if (col_index == Skew) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getSkew() < path2->getSkew();
+    };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
