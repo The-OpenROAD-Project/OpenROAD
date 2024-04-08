@@ -1191,9 +1191,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   // create subNets
   numClkNets_ = 0;
   numFixedNets_ = 0;
-  const ClockSubNet* rootSubNet = nullptr;
-  std::unordered_set<ClockInst*> removedSinks;
-  clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
+  ClockSubNet* rootSubNet = nullptr;
+  std::set<ClockInst*> removedSinks;
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     bool outputPinFound = true;
     bool inputPinFound = true;
     bool leafLevelNet = subNet.isLeafLevel();
@@ -1281,6 +1281,8 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
           maxPath = resultsForBranch.second;
         }
       }
+    } else {
+      rootSubNet->removeSinks(removedSinks);
     }
   });
 
