@@ -181,10 +181,11 @@ void dbGuide::destroy(dbGuide* guide)
   while (cur) {
     _dbGuide* c = block->_guide_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
-      else
+      } else {
         prev->guide_next_ = _guide->guide_next_;
+      }
       break;
     }
     prev = c;

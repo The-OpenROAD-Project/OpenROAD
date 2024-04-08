@@ -2284,7 +2284,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Technology", gui->makeSelected(layer->getTech())},
                     {"Direction", layer->getDirection().getString()},
-                    {"Type", layer->getType().getString()}});
+                    {"Layer type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
     props.push_back({"LEF58 type", layer->getLef58TypeString()});
   }

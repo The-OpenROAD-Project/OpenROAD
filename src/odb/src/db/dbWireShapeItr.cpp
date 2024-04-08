@@ -97,8 +97,9 @@ bool dbWireShapeItr::next(dbShape& shape)
 nextOpCode:
   _shape_id = _idx;
 
-  if (_idx == (int) _wire->_opcodes.size())
+  if (_idx == (int) _wire->_opcodes.size()) {
     return false;
+  }
 
   unsigned char opcode = nextOp(operand);
 
@@ -145,10 +146,11 @@ nextOpCode:
       int cur_x = operand;
       int cur_y;
 
-      if (_point_cnt == 0)
+      if (_point_cnt == 0) {
         opcode = nextOp(cur_y);
-      else
+      } else {
         cur_y = _prev_y;
+      }
 
       int cur_ext;
       bool has_cur_ext;
@@ -269,21 +271,24 @@ nextOpCode:
     case WOP_VIA: {
       dbVia* via = dbVia::getVia(_block, operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
-      if (_has_width == false)
+      if (_has_width == false) {
         _dw = _layer->getWidth() >> 1;
+      }
 
       _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
 
-      if (box == nullptr)
+      if (box == nullptr) {
         goto nextOpCode;
+      }
 
       Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;
@@ -298,21 +303,24 @@ nextOpCode:
     case WOP_TECH_VIA: {
       dbTechVia* via = dbTechVia::getTechVia(_tech, operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
-      if (_has_width == false)
+      if (_has_width == false) {
         _dw = _layer->getWidth() >> 1;
+      }
 
       _prev_ext = 0;
       _has_prev_ext = false;
 
       dbBox* box = via->getBBox();
 
-      if (box == nullptr)
+      if (box == nullptr) {
         goto nextOpCode;
+      }
 
       Rect b = box->getBox();
       int xmin = b.xMin() + _prev_x;

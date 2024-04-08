@@ -226,8 +226,9 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name))
+  if (_block->_isolation_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbIsolation* iso = _block->_isolation_tbl->create();
   iso->_name = strdup(name);
   ZALLOCATED(iso->_name);
