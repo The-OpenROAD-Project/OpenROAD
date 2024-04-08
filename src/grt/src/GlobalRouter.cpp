@@ -3406,36 +3406,12 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                 continue;
               }
               odb::Rect via_rect = box.getBox();
-              if (!die_area.contains(via_rect)) {
-                if (verbose_) {
-                  logger_->warn(GRT,
-                                46,
-                                "Net {} has vias outside die area.",
-                                db_net->getConstName());
-                }
-              }
-              applyObstructionAdjustment(via_rect, tech_layer);
+              applyNetObstruction(via_rect, tech_layer, die_area, db_net);
             }
           } else {
             odb::Rect wire_rect = s->getBox();
-            int l = s->getTechLayer()->getRoutingLevel();
-
-            if (min_routing_layer_ <= l && l <= max_routing_layer_) {
-              odb::Point lower_bound
-                  = odb::Point(wire_rect.xMin(), wire_rect.yMin());
-              odb::Point upper_bound
-                  = odb::Point(wire_rect.xMax(), wire_rect.yMax());
-              odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-              if (!die_area.contains(obstruction_rect)) {
-                if (verbose_)
-                  logger_->warn(GRT,
-                                40,
-                                "Net {} has wires outside die area.",
-                                db_net->getConstName());
-              }
-              odb::dbTechLayer* tech_layer = s->getTechLayer();
-              applyObstructionAdjustment(obstruction_rect, tech_layer);
-            }
+            odb::dbTechLayer* tech_layer = s->getTechLayer();
+            applyNetObstruction(wire_rect, tech_layer, die_area, db_net);
           }
         }
       }
@@ -3454,39 +3430,40 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
               continue;
             }
             odb::Rect via_rect = shape.getBox();
-            if (!die_area.contains(via_rect)) {
-              if (verbose_) {
-                logger_->warn(GRT,
-                              49,
-                              "Net {} has via outside die area.",
-                              db_net->getConstName());
-              }
-            }
-            applyObstructionAdjustment(via_rect, tech_layer);
+            applyNetObstruction(via_rect, tech_layer, die_area, db_net);
           } else {
             odb::Rect wire_rect = shape.getBox();
-            int l = shape.getTechLayer()->getRoutingLevel();
+            odb::dbTechLayer* tech_layer = shape.getTechLayer();
 
-            if (min_routing_layer_ <= l && l <= max_routing_layer_) {
-              odb::Point lower_bound
-                  = odb::Point(wire_rect.xMin(), wire_rect.yMin());
-              odb::Point upper_bound
-                  = odb::Point(wire_rect.xMax(), wire_rect.yMax());
-              odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-              if (!die_area.contains(obstruction_rect)) {
-                if (verbose_)
-                  logger_->warn(GRT,
-                                41,
-                                "Net {} has wires outside die area.",
-                                db_net->getConstName());
-              }
-              odb::dbTechLayer* tech_layer = shape.getTechLayer();
-              applyObstructionAdjustment(obstruction_rect, tech_layer);
-            }
+            applyNetObstruction(wire_rect, tech_layer, die_area, db_net);
           }
         }
       }
     }
+  }
+}
+
+void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
+                                       odb::dbTechLayer* tech_layer,
+                                       const odb::Rect& die_area,
+                                       odb::dbNet* db_net)
+{
+  int l = tech_layer->getRoutingLevel();
+
+  if (min_routing_layer_ <= l && l <= max_routing_layer_) {
+    odb::Point lower_bound
+        = odb::Point(rect.xMin(), rect.yMin());
+    odb::Point upper_bound
+        = odb::Point(rect.xMax(), rect.yMax());
+    odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
+    if (!die_area.contains(obstruction_rect)) {
+      if (verbose_)
+        logger_->warn(GRT,
+                      41,
+                      "Net {} has wires/vias outside die area.",
+                      db_net->getConstName());
+    }
+    applyObstructionAdjustment(obstruction_rect, tech_layer);
   }
 }
 
