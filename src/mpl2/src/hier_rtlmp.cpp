@@ -3085,10 +3085,8 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
   odb::Rect die = block_->getDieArea();
 
   // Initialize spans based on the dimensions of the die area.
-  io_spans[L] = std::pair<float, float>(dbuToMicron(die.yMax(), dbu_),
-                                        dbuToMicron(die.yMin(), dbu_));
-  io_spans[T] = std::pair<float, float>(dbuToMicron(die.xMax(), dbu_),
-                                        dbuToMicron(die.xMin(), dbu_));
+  io_spans[L] = {dbuToMicron(die.yMax(), dbu_), dbuToMicron(die.yMin(), dbu_)};
+  io_spans[T] = {dbuToMicron(die.xMax(), dbu_), dbuToMicron(die.xMin(), dbu_)};
   io_spans[R] = io_spans[L];
   io_spans[B] = io_spans[T];
 
