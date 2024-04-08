@@ -540,7 +540,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
                                                      instance_limit);
       child_insts.clear();
       child_insts.reserve(10000);
-      for (auto& [box, inst] : inst_range) {
+      for (auto* inst : inst_range) {
         if (viewer_->options_->isInstanceVisible(inst)) {
           child_insts.push_back(inst);
         }
@@ -788,7 +788,7 @@ void RenderThread::drawBlockages(QPainter* painter,
                                          bounds.yMax(),
                                          viewer_->shapeSizeLimit());
 
-  for (auto& [box, blockage] : blockage_range) {
+  for (auto* blockage : blockage_range) {
     if (restart_) {
       break;
     }
@@ -821,7 +821,7 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
                                             bounds.yMax(),
                                             viewer_->shapeSizeLimit());
 
-  for (auto& [box, obs] : obstructions_range) {
+  for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
     }
@@ -846,7 +846,7 @@ void RenderThread::drawViaShapes(QPainter* painter,
                                                             shape_limit);
 
   std::vector<odb::dbShape> via_shapes;
-  for (auto& [box, sbox, net] : via_sbox_iter) {
+  for (const auto& [sbox, net] : via_sbox_iter) {
     if (restart_) {
       break;
     }
@@ -923,10 +923,8 @@ void RenderThread::drawLayer(QPainter* painter,
         if (!viewer_->isNetVisible(net)) {
           continue;
         }
-        const auto& ll = box.min_corner();
-        const auto& ur = box.max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
 
@@ -990,14 +988,14 @@ void RenderThread::drawLayer(QPainter* painter,
                                                bounds.yMax(),
                                                shape_limit);
 
-      for (auto& i : iter) {
+      for (auto* fill : iter) {
         if (restart_) {
           break;
         }
-        const auto& ll = std::get<0>(i).min_corner();
-        const auto& ur = std::get<0>(i).max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        odb::Rect box;
+        fill->getRect(box);
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
   }
@@ -1083,7 +1081,7 @@ void RenderThread::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (restart_) {
       break;
     }
@@ -1546,10 +1544,10 @@ void RenderThread::drawIOPins(Painter& painter,
 
   // RTree used to search for overlapping shapes and decide if rotation of
   // text is needed.
-  bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
+  bgi::rtree<odb::Rect, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText
   {
-    Search::Box rect;
+    odb::Rect rect;
     bool can_rotate;
     std::string text;
     odb::Point pt;
@@ -1652,12 +1650,10 @@ void RenderThread::drawIOPins(Painter& painter,
                                                        pin_specs.anchor,
                                                        pin_specs.text);
         text_rect.bloat(text_margin, text_rect);
-        pin_specs.rect
-            = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
-                          Search::Point(text_rect.xMax(), text_rect.yMax()));
+        pin_specs.rect = text_rect;
         pin_text_spec_shapes.insert(pin_specs.rect);
       } else {
-        pin_specs.rect = Search::Box();
+        pin_specs.rect = odb::Rect();
       }
       pin_text_spec.push_back(pin_specs);
     }
