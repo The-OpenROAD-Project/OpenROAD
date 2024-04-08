@@ -67,6 +67,7 @@ using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
 using sta::Edge;
+using sta::Clock;
 using sta::PathExpanded;
 using sta::fuzzyEqual;
 using sta::fuzzyLess;
@@ -145,6 +146,22 @@ RepairSetup::repairSetup(const float setup_slack_margin,
     // nothing to repair
     logger_->metric("design__instance__count__setup_buffer", 0);
     return;
+  }
+
+  Vertex* worst_vertex = violating_ends.begin()->first;
+  const PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
+  const Slack worst_path_slack = worst_path.slack(sta_);
+  const auto worst_path_clock_period = worst_path.clock(sta_)->period();
+
+  const double hopeless_limit = 4.0;
+
+  if (std::abs(worst_path_slack / worst_path_clock_period) > hopeless_limit) {
+    logger_->error(RSZ, 97,
+                   "The worst slack {} is more than {} times the clock period "
+                   "{}.  This is too large to repair.",
+                   delayAsString(worst_path_slack, sta_, 3),
+                   hopeless_limit,
+                   delayAsString(worst_path_clock_period, sta_, 3));
   }
 
   int end_index = 0;

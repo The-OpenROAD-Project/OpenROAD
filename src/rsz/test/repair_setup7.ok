@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 17 components and 92 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 7 nets and 30 connections.
+[INFO RSZ-0094] Found 6 endpoints with setup violations.
+[ERROR RSZ-0097] The worst slack -0.603 is more than 4.0 times the clock period 0.030.  This is too large to repair.
+RSZ-0097
