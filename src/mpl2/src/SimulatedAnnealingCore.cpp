@@ -611,11 +611,10 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
   // In order to revert the centralization, we cache the current location
   // of the clusters to avoid floating-point evilness when creating the
   // x,y grid to fill the dead space by expanding mixed clusters.
-  std::vector<std::pair<float, float>> clusters_locations;
-  clusters_locations.reserve(pos_seq_.size());
+  std::map<int, std::pair<float, float>> clusters_locations;
 
   for (int& id : pos_seq_) {
-    clusters_locations.emplace_back(macros_[id].getX(), macros_[id].getY());
+    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
   }
 
   std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
