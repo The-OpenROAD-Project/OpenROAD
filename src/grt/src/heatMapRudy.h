@@ -33,11 +33,11 @@
 #pragma once
 
 #include "AbstractRoutingCongestionDataSource.h"
+#include "Rudy.h"
 #include "grt/GlobalRouter.h"
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
-#include "Rudy.h"
 
 namespace odb {
 class dbDatabase;
@@ -50,7 +50,9 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
                        public odb::dbBlockCallBackObj
 {
  public:
-  RUDYDataSource(utl::Logger* logger, grt::GlobalRouter* grouter, odb::dbDatabase* db);
+  RUDYDataSource(utl::Logger* logger,
+                 grt::GlobalRouter* grouter,
+                 odb::dbDatabase* db);
 
   void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
   void update() override { gui::HeatMapDataSource::update(); }

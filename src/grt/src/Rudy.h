@@ -106,4 +106,4 @@ class Rudy
   std::vector<std::vector<Tile>> grid_;
 };
 
-} // end namespace
+}  // namespace grt

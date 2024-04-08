@@ -32,14 +32,15 @@
 
 #include "Rudy.h"
 
-#include "grt/GlobalRouter.h"
 #include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace grt {
 
-Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter) : block_(block), grouter_(grouter)
+Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
+    : block_(block), grouter_(grouter)
 {
   grid_block_ = block_->getDieArea();
   if (grid_block_.area() == 0) {
@@ -82,7 +83,8 @@ void Rudy::makeGrid()
       Tile& grid = grid_[x][y];
       int x_ext = x == grid_.size() - 1 ? x_extra : 0;
       int y_ext = y == grid_[x].size() - 1 ? y_extra : 0;
-      grid.setRect(cur_x, cur_y, cur_x + tile_size_ + x_ext, cur_y + tile_size_ + y_ext);
+      grid.setRect(
+          cur_x, cur_y, cur_x + tile_size_ + x_ext, cur_y + tile_size_ + y_ext);
       cur_y += tile_size_;
     }
     cur_x += tile_size_;
@@ -103,7 +105,7 @@ void Rudy::getResourceReductions()
       Tile& tile = getEditableTile(x, y);
       uint8_t tile_cap = cap_usage_data[x][y].first;
       float tile_usage = cap_usage_data[x][y].second;
-      float cap_usage_data = tile_usage/tile_cap;
+      float cap_usage_data = tile_usage / tile_cap;
       tile.addRudy(cap_usage_data * 100);
     }
   }
@@ -129,8 +131,7 @@ void Rudy::calculateRudy()
   }
 }
 
-void Rudy::processMacroObstruction(odb::dbMaster* macro,
-                                             odb::dbInst* instance)
+void Rudy::processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance)
 {
   for (odb::dbBox* obstr_box : macro->getObstructions()) {
     const odb::Point origin = instance->getOrigin();
@@ -141,18 +142,16 @@ void Rudy::processMacroObstruction(odb::dbMaster* macro,
     if (obstr_area == 0) {
       continue;
     }
-    processIntersectionGenericObstruction(
-        macro_obstruction, 2);
+    processIntersectionGenericObstruction(macro_obstruction, 2);
   }
 }
 
-void Rudy::processIntersectionGenericObstruction(
-    odb::Rect obstruction_rect,
-    const int nets_per_tile)
+void Rudy::processIntersectionGenericObstruction(odb::Rect obstruction_rect,
+                                                 const int nets_per_tile)
 {
   // Calculate the intersection range
-  const int min_x_index
-      = std::max(0, (obstruction_rect.xMin() - grid_block_.xMin()) / tile_size_);
+  const int min_x_index = std::max(
+      0, (obstruction_rect.xMin() - grid_block_.xMin()) / tile_size_);
   const int max_x_index
       = std::min(tile_cnt_x_ - 1,
                  (obstruction_rect.xMax() - grid_block_.xMin()) / tile_size_);
@@ -174,8 +173,8 @@ void Rudy::processIntersectionGenericObstruction(
         const auto obstr_congestion = wire_area / tile_area;
         const auto intersect_area = obstruction_rect.intersect(tile_box).area();
 
-        const auto tile_obstr_box_ratio
-            = static_cast<float>(intersect_area) / static_cast<float>(tile_area);
+        const auto tile_obstr_box_ratio = static_cast<float>(intersect_area)
+                                          / static_cast<float>(tile_area);
         const auto rudy
             = obstr_congestion * tile_obstr_box_ratio * 100 * nets_per_tile;
         tile.addRudy(rudy);
@@ -213,8 +212,8 @@ void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
       if (net_rect.overlaps(tile_box)) {
         const auto intersect_area = net_rect.intersect(tile_box).area();
         const auto tile_area = tile_box.area();
-        const auto tile_net_box_ratio
-            = static_cast<float>(intersect_area) / static_cast<float>(tile_area);
+        const auto tile_net_box_ratio = static_cast<float>(intersect_area)
+                                        / static_cast<float>(tile_area);
         const auto rudy = net_congestion * tile_net_box_ratio * 100;
         tile.addRudy(rudy);
       }
@@ -240,4 +239,4 @@ void Rudy::Tile::addRudy(float rudy)
   rudy_ += rudy;
 }
 
-} // end namespace
+}  // namespace grt
