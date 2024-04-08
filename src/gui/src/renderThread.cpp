@@ -884,6 +884,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const bool draw_shapes
       = !(layer->getType() == dbTechLayerType::CUT
           && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
+                                || layer->getType() == dbTechLayerType::ROUTING;
 
   if (draw_shapes) {
     drawInstanceShapes(layer, painter, insts, bounds, gui_painter);
@@ -891,8 +893,10 @@ void RenderThread::drawLayer(QPainter* painter,
 
   drawObstructions(block, layer, painter, bounds);
 
-  const bool draw_routing = viewer_->options_->areRoutingSegmentsVisible();
-  const bool draw_vias = viewer_->options_->areRoutingViasVisible();
+  const bool draw_routing
+      = viewer_->options_->areRoutingSegmentsVisible() && layer_is_routing;
+  const bool draw_vias
+      = viewer_->options_->areRoutingViasVisible() && layer_is_routing;
   // Now draw the shapes
   QColor color = getColor(layer);
   Qt::BrushStyle brush_pattern = getPattern(layer);
@@ -928,7 +932,7 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
 
-    if (viewer_->options_->areSpecialRoutingViasVisible()) {
+    if (viewer_->options_->areSpecialRoutingViasVisible() && layer_is_routing) {
       if (layer->getType() == dbTechLayerType::CUT) {
         drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
       } else {
@@ -949,7 +953,8 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
 
-    if (viewer_->options_->areSpecialRoutingSegmentsVisible()) {
+    if (viewer_->options_->areSpecialRoutingSegmentsVisible()
+        && layer_is_routing) {
       auto polygon_iter = viewer_->search_.searchSNetShapes(block,
                                                             layer,
                                                             bounds.xMin(),
