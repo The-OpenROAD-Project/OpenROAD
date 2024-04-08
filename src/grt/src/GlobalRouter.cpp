@@ -902,8 +902,7 @@ int GlobalRouter::getGridTileSize()
   return grid_->getTileSize();
 }
 
-void GlobalRouter::getCapacityReductionData(
-      CapacityReductionData& cap_red_data)
+void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
 {
   fastroute_->getCapacityReductionData(cap_red_data);
 }

@@ -154,7 +154,7 @@ class GlobalRouter : public ant::GlobalRouteSource
             std::unique_ptr<AbstractRoutingCongestionDataSource>
                 routing_congestion_data_source,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
-                            routing_congestion_data_source_rudy);
+                routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -272,8 +272,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
   void getMinMaxLayer(int& min_layer, int& max_layer);
-  void getCapacityReductionData(
-      CapacityReductionData& cap_red_data);
+  void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
