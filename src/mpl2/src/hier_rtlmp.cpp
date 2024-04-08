@@ -5406,8 +5406,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   calculateConnection();
 
-  createFixedTerminals(
-      outline, macro_clusters, cluster_to_macro, sa_macros);
+  createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
 
   std::vector<BundledNet> nets
       = computeBundledNets(macro_clusters, cluster_to_macro);
@@ -5427,9 +5426,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                            + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
 
-  const int num_perturb_per_step = (sa_macros.size() > num_perturb_per_step_ / 10)
-                                       ? sa_macros.size()
-                                       : num_perturb_per_step_ / 10;
+  const int num_perturb_per_step
+      = (sa_macros.size() > num_perturb_per_step_ / 10)
+            ? sa_macros.size()
+            : num_perturb_per_step_ / 10;
   int remaining_runs = num_runs_;
   int run_id = 0;
   SACoreHardMacro* best_sa = nullptr;
