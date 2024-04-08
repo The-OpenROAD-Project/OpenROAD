@@ -38,15 +38,19 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbInst.h"
+#include "dbModBTerm.h"
+#include "dbModInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 // User Code Begin Includes
 #include <string>
 
-#include "dbInst.h"
-#include "dbModInst.h"
+#include "dbModNet.h"
 #include "dbModuleInstItr.h"
+#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
+#include "dbModuleModNetItr.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -63,10 +67,16 @@ bool _dbModule::operator==(const _dbModule& rhs) const
   if (_insts != rhs._insts) {
     return false;
   }
+  if (_mod_inst != rhs._mod_inst) {
+    return false;
+  }
   if (_modinsts != rhs._modinsts) {
     return false;
   }
-  if (_mod_inst != rhs._mod_inst) {
+  if (_modnets != rhs._modnets) {
+    return false;
+  }
+  if (_modbterms != rhs._modbterms) {
     return false;
   }
 
@@ -76,8 +86,9 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0)
+  if (strcmp(_name, rhs._name) >= 0) {
     return false;
+  }
   // User Code End <
   return true;
 }
@@ -90,8 +101,10 @@ void _dbModule::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_insts);
-  DIFF_FIELD(_modinsts);
   DIFF_FIELD(_mod_inst);
+  DIFF_FIELD(_modinsts);
+  DIFF_FIELD(_modnets);
+  DIFF_FIELD(_modbterms);
   DIFF_END
 }
 
@@ -101,8 +114,10 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_mod_inst);
+  DIFF_OUT_FIELD(_modinsts);
+  DIFF_OUT_FIELD(_modnets);
+  DIFF_OUT_FIELD(_modbterms);
 
   DIFF_END
 }
@@ -110,7 +125,7 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = 0;
+  _name = nullptr;
   _insts = 0;
   _modinsts = 0;
   _mod_inst = 0;
@@ -122,8 +137,10 @@ _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
   _name = r._name;
   _next_entry = r._next_entry;
   _insts = r._insts;
-  _modinsts = r._modinsts;
   _mod_inst = r._mod_inst;
+  _modinsts = r._modinsts;
+  _modnets = r._modnets;
+  _modbterms = r._modbterms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
@@ -131,8 +148,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._name;
   stream >> obj._next_entry;
   stream >> obj._insts;
-  stream >> obj._modinsts;
   stream >> obj._mod_inst;
+  stream >> obj._modinsts;
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._modnets;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+    stream >> obj._modbterms;
+  }
   return stream;
 }
 
@@ -141,8 +164,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._name;
   stream << obj._next_entry;
   stream << obj._insts;
-  stream << obj._modinsts;
   stream << obj._mod_inst;
+  stream << obj._modinsts;
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._modnets;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+    stream << obj._modbterms;
+  }
   return stream;
 }
 
@@ -165,6 +194,13 @@ const char* dbModule::getName() const
   return obj->_name;
 }
 
+void dbModule::setModInst(dbModInst* mod_inst)
+{
+  _dbModule* obj = (_dbModule*) this;
+
+  obj->_mod_inst = mod_inst->getImpl()->getOID();
+}
+
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -176,6 +212,21 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
+
+int dbModule::getModInstCount()
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return (int) ((dbSet<dbModInst>(module, block->_module_modinst_itr)).size());
+}
+
+int dbModule::getDbInstCount()
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return (int) (dbSet<dbInst>(module, block->_module_inst_itr).size());
+}
+
 void dbModule::addInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
@@ -210,25 +261,27 @@ void dbModule::addInst(dbInst* inst)
 
   _inst->_module = module->getOID();
 
-  if (module->_insts != 0) {
-    _dbInst* tail = block->_inst_tbl->getPtr(module->_insts);
-    _inst->_module_next = module->_insts;
-    _inst->_module_prev = 0;
-    tail->_module_prev = _inst->getOID();
-  } else {
+  if (module->_insts == 0) {
     _inst->_module_next = 0;
     _inst->_module_prev = 0;
+    module->_insts = _inst->getOID();
+  } else {
+    _dbInst* cur_head = block->_inst_tbl->getPtr(module->_insts);
+    _inst->_module_next = module->_insts;
+    module->_insts = _inst->getOID();
+    cur_head->_module_prev = _inst->getOID();
   }
-
-  module->_insts = _inst->getOID();
 }
 
 void _dbModule::removeInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
-  if (_inst->_module != getOID())
+  uint id = _inst->getOID();
+
+  if (_inst->_module != getOID()) {
     return;
+  }
 
   if (_inst->_flags._dont_touch) {
     _inst->getLogger()->error(
@@ -239,7 +292,6 @@ void _dbModule::removeInst(dbInst* inst)
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
-  uint id = _inst->getOID();
 
   if (module->_insts == id) {
     module->_insts = _inst->_module_next;
@@ -259,7 +311,6 @@ void _dbModule::removeInst(dbInst* inst)
       prev->_module_next = _inst->_module_next;
     }
   }
-
   _inst->_module = 0;
   _inst->_module_next = 0;
   _inst->_module_prev = 0;
@@ -272,6 +323,37 @@ dbSet<dbModInst> dbModule::getChildren()
   return dbSet<dbModInst>(module, block->_module_modinst_itr);
 }
 
+dbSet<dbModNet> dbModule::getModNets()
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return dbSet<dbModNet>(module, block->_module_modnet_itr);
+}
+
+dbModNet* dbModule::getModNet(const char* net_name)
+{
+  for (auto mnet : getModNets()) {
+    if (!strcmp(net_name, mnet->getName())) {
+      return mnet;
+    }
+  }
+  return nullptr;
+}
+
+dbSet<dbModInst> dbModule::getModInsts()
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return dbSet<dbModInst>(module, block->_module_modinst_itr);
+}
+
+dbSet<dbModBTerm> dbModule::getModBTerms()
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
+}
+
 dbSet<dbInst> dbModule::getInsts()
 {
   _dbModule* module = (_dbModule*) this;
@@ -282,8 +364,9 @@ dbSet<dbInst> dbModule::getInsts()
 dbModule* dbModule::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_module_hash.hasMember(name))
+  if (_block->_module_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbModule* module = _block->_module_tbl->create();
   module->_name = strdup(name);
   ZALLOCATED(module->_name);
@@ -319,6 +402,14 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
+  for (auto modbterm : module->getModBTerms()) {
+    block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
+  }
+
+  for (auto modnet : module->getModNets()) {
+    block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  }
+
   dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
@@ -332,10 +423,22 @@ dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
 
 dbModInst* dbModule::findModInst(const char* name)
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  std::string h_name = std::string(obj->_name) + "/" + std::string(name);
-  return (dbModInst*) par->_modinst_hash.find(h_name.c_str());
+  for (dbModInst* mod_inst : getModInsts()) {
+    if (!strcmp(mod_inst->getName(), name)) {
+      return mod_inst;
+    }
+  }
+  return nullptr;
+}
+
+dbInst* dbModule::findDbInst(const char* name)
+{
+  for (dbInst* inst : getInsts()) {
+    if (!strcmp(inst->getName().c_str(), name)) {
+      return inst;
+    }
+  }
+  return nullptr;
 }
 
 static void getLeafInsts(dbModule* module, std::vector<dbInst*>& insts)
@@ -356,16 +459,49 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   return insts;
 }
 
+dbModBTerm* dbModule::findModBTerm(const char* name)
+{
+  std::string bterm_name(name);
+  size_t last_idx = bterm_name.find_last_of('/');
+  if (last_idx != std::string::npos) {
+    bterm_name = bterm_name.substr(last_idx + 1);
+  }
+
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (!strcmp(mod_bterm->getName(), bterm_name.c_str())) {
+      return mod_bterm;
+    }
+  }
+  return nullptr;
+}
+
 std::string dbModule::getHierarchicalName() const
 {
   dbModInst* inst = getModInst();
   if (inst) {
     return inst->getHierarchicalName();
-  } else {
-    return "<top>";
   }
+  return "<top>";
+}
+
+void* dbModule::getStaCell()
+{
+  _dbModule* module = (_dbModule*) this;
+  return module->_sta_cell;
+}
+
+void dbModule::staSetCell(void* cell)
+{
+  _dbModule* module = (_dbModule*) this;
+  module->_sta_cell = cell;
+}
+
+dbBlock* dbModule::getOwner()
+{
+  _dbModule* obj = (_dbModule*) this;
+  return (dbBlock*) obj->getOwner();
 }
 
 // User Code End dbModulePublicMethods
 }  // namespace odb
-// Generator Code End Cpp
+   // Generator Code End Cpp

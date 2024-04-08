@@ -109,8 +109,9 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
 }
 inline _dbMTerm::~_dbMTerm()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 
   /************************************ dimitri_note
   *********************************** The following 4 vfields should change to

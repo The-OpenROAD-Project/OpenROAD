@@ -51,50 +51,65 @@ static void create_via_boxes(_dbTechVia* via, const dbViaParams& P);
 
 bool _dbTechVia::operator==(const _dbTechVia& rhs) const
 {
-  if (_flags._default_via != rhs._flags._default_via)
+  if (_flags._default_via != rhs._flags._default_via) {
     return false;
+  }
 
-  if (_flags._top_of_stack != rhs._flags._top_of_stack)
+  if (_flags._top_of_stack != rhs._flags._top_of_stack) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
   if (_pattern && rhs._pattern) {
-    if (strcmp(_pattern, rhs._pattern) != 0)
+    if (strcmp(_pattern, rhs._pattern) != 0) {
       return false;
-  } else if (_pattern || rhs._pattern)
+    }
+  } else if (_pattern || rhs._pattern) {
     return false;
+  }
 
-  if (_bbox != rhs._bbox)
+  if (_bbox != rhs._bbox) {
     return false;
+  }
 
-  if (_boxes != rhs._boxes)
+  if (_boxes != rhs._boxes) {
     return false;
+  }
 
-  if (_top != rhs._top)
+  if (_top != rhs._top) {
     return false;
+  }
 
-  if (_bottom != rhs._bottom)
+  if (_bottom != rhs._bottom) {
     return false;
+  }
 
-  if (_non_default_rule != rhs._non_default_rule)
+  if (_non_default_rule != rhs._non_default_rule) {
     return false;
+  }
 
-  if (_generate_rule != rhs._generate_rule)
+  if (_generate_rule != rhs._generate_rule) {
     return false;
+  }
 
-  if (_via_params != rhs._via_params)
+  if (_via_params != rhs._via_params) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
   return true;
 }
@@ -185,11 +200,13 @@ _dbTechVia::_dbTechVia(_dbDatabase*)
 
 _dbTechVia::~_dbTechVia()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 
-  if (_pattern)
+  if (_pattern) {
     free((void*) _pattern);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
@@ -292,8 +309,9 @@ dbBox* dbTechVia::getBBox()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbBox*) tech->_box_tbl->getPtr(via->_bbox);
@@ -310,8 +328,9 @@ dbTechLayer* dbTechVia::getTopLayer()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_top == 0)
+  if (via->_top == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
@@ -321,8 +340,9 @@ dbTechLayer* dbTechVia::getBottomLayer()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_bottom == 0)
+  if (via->_bottom == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
@@ -332,8 +352,9 @@ dbTechNonDefaultRule* dbTechVia::getNonDefaultRule()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_non_default_rule == 0)
+  if (via->_non_default_rule == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
@@ -356,8 +377,9 @@ dbTechViaGenerateRule* dbTechVia::getViaGenerateRule()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_generate_rule == 0)
+  if (via->_generate_rule == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbTechViaGenerateRule* rule
@@ -380,8 +402,9 @@ void dbTechVia::setPattern(const char* pattern)
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_pattern)
+  if (via->_pattern) {
     free((void*) via->_pattern);
+  }
 
   via->_pattern = strdup(pattern);
 }
@@ -428,8 +451,9 @@ dbViaParams dbTechVia::getViaParams()
 
 dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
 {
-  if (tech_->findVia(name_))
+  if (tech_->findVia(name_)) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
@@ -449,8 +473,9 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
 
   dbTech* tech_ = (dbTech*) rule->getOwner();
 
-  if (tech_->findVia(new_name))
+  if (tech_->findVia(new_name)) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
@@ -464,9 +489,10 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
   via->_top = _invia->_top;
   via->_bottom = _invia->_bottom;
   via->_non_default_rule = (rule) ? rule->getOID() : 0;
-  if (rule)
+  if (rule) {
     via->_flags._default_via
         = 0;  // DEFAULT via not allowed for non-default rule
+  }
 
   tech->_via_cnt++;
   tech->_via_hash.insert(via);
@@ -480,8 +506,9 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
 
   dbTech* tech_ = (dbTech*) rule->getOwner();
 
-  if (tech_->findVia(name_))
+  if (tech_->findVia(name_)) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();

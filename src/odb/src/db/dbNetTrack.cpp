@@ -181,10 +181,11 @@ void dbNetTrack::destroy(dbNetTrack* track)
   while (cur) {
     _dbNetTrack* c = block->_net_tracks_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->tracks_ = _track->track_next_;
-      else
+      } else {
         prev->track_next_ = _track->track_next_;
+      }
       break;
     }
     prev = c;

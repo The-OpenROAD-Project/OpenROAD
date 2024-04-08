@@ -46,17 +46,46 @@ using utl::DPL;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
+static dbTechLayer* getImplant(dbMaster* master)
+{
+  if (!master) {
+    return nullptr;
+  }
+
+  for (auto obs : master->getObstructions()) {
+    auto layer = obs->getTechLayer();
+    if (layer->getType() == odb::dbTechLayerType::IMPLANT) {
+      return layer;
+    }
+  }
+  return nullptr;
+}
+
+Opendp::MasterByImplant Opendp::splitByImplant(dbMasterSeq* filler_masters)
+{
+  MasterByImplant mapping;
+  for (auto master : *filler_masters) {
+    mapping[getImplant(master)].emplace_back(master);
+  }
+
+  return mapping;
+}
+
 void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
 {
   if (cells_.empty()) {
     importDb();
   }
 
-  std::sort(filler_masters->begin(),
-            filler_masters->end(),
-            [](dbMaster* master1, dbMaster* master2) {
-              return master1->getWidth() > master2->getWidth();
-            });
+  auto filler_masters_by_implant = splitByImplant(filler_masters);
+
+  for (auto& [layer, masters] : filler_masters_by_implant) {
+    std::sort(masters.begin(),
+              masters.end(),
+              [](dbMaster* master1, dbMaster* master2) {
+                return master1->getWidth() > master2->getWidth();
+              });
+  }
 
   gap_fillers_.clear();
   filler_count_ = 0;
@@ -80,8 +109,11 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
     if (!chosen_grid_info.isHybrid()) {
       int site_height = min_height;
       for (int row = 0; row < chosen_row_count; row++) {
-        placeRowFillers(
-            row, prefix, filler_masters, site_height, chosen_grid_info);
+        placeRowFillers(row,
+                        prefix,
+                        filler_masters_by_implant,
+                        site_height,
+                        chosen_grid_info);
       }
     } else {
       const auto& hybrid_sites_vec = chosen_grid_info.getSites();
@@ -90,7 +122,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
         placeRowFillers(
             row,
             prefix,
-            filler_masters,
+            filler_masters_by_implant,
             hybrid_sites_vec[row % hybrid_sites_num].site->getHeight(),
             chosen_grid_info);
       }
@@ -110,7 +142,7 @@ void Opendp::setGridCells()
 
 void Opendp::placeRowFillers(int row,
                              const char* prefix,
-                             dbMasterSeq* filler_masters,
+                             const MasterByImplant& filler_masters_by_implant,
                              int row_height,
                              GridInfo grid_info)
 {
@@ -128,9 +160,24 @@ void Opendp::placeRowFillers(int row,
         k++;
       }
 
+      dbTechLayer* implant = nullptr;
+      if (j > 0) {
+        auto pixel = gridPixel(grid_info.getGridIndex(), j - 1, row);
+        if (pixel->cell && pixel->cell->db_inst_) {
+          implant = getImplant(pixel->cell->db_inst_->getMaster());
+        }
+      } else if (k < row_site_count) {
+        auto pixel = gridPixel(grid_info.getGridIndex(), k, row);
+        if (pixel->cell && pixel->cell->db_inst_) {
+          implant = getImplant(pixel->cell->db_inst_->getMaster());
+        }
+      } else {  // totally empty row - use anything
+        implant = filler_masters_by_implant.begin()->first;
+      }
+
       int gap = k - j;
-      // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
-      dbMasterSeq& fillers = gapFillers(gap, filler_masters);
+      dbMasterSeq& fillers
+          = gapFillers(implant, gap, filler_masters_by_implant);
       if (fillers.empty()) {
         int x = core_.xMin() + j * site_width_;
         int y = core_.yMin() + row * row_height;
@@ -193,17 +240,27 @@ const char* Opendp::gridInstName(int row,
 }
 
 // Return list of masters to fill gap (in site width units).
-dbMasterSeq& Opendp::gapFillers(int gap, dbMasterSeq* filler_masters)
+dbMasterSeq& Opendp::gapFillers(
+    dbTechLayer* implant,
+    int gap,
+    const MasterByImplant& filler_masters_by_implant)
 {
-  if (gap_fillers_.size() < gap + 1) {
-    gap_fillers_.resize(gap + 1);
+  auto iter = filler_masters_by_implant.find(implant);
+  if (iter == filler_masters_by_implant.end()) {
+    logger_->error(DPL, 50, "No fillers found for {}.", implant->getName());
   }
-  dbMasterSeq& fillers = gap_fillers_[gap];
+  const dbMasterSeq& filler_masters = iter->second;
+
+  GapFillers& gap_fillers = gap_fillers_[implant];
+  if (gap_fillers.size() < gap + 1) {
+    gap_fillers.resize(gap + 1);
+  }
+  dbMasterSeq& fillers = gap_fillers[gap];
   if (fillers.empty()) {
     int width = 0;
-    dbMaster* smallest_filler = (*filler_masters)[filler_masters->size() - 1];
+    dbMaster* smallest_filler = filler_masters[filler_masters.size() - 1];
     bool have_filler1 = smallest_filler->getWidth() == site_width_;
-    for (dbMaster* filler_master : *filler_masters) {
+    for (dbMaster* filler_master : filler_masters) {
       int filler_width = filler_master->getWidth() / site_width_;
       while ((width + filler_width) <= gap
              && (have_filler1 || (width + filler_width) != gap - 1)) {

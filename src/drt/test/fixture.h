@@ -89,7 +89,7 @@ class Fixture
 
   void makeMinStepConstraint(frLayerNum layer_num);
 
-  void makeMinStep58Constraint(frLayerNum layer_num);
+  frLef58MinStepConstraint* makeMinStep58Constraint(frLayerNum layer_num);
 
   void makeRectOnlyConstraint(frLayerNum layer_num);
 
@@ -151,6 +151,9 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void makeLef58TwoWiresForbiddenSpc(
+      frLayerNum layer_num,
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule);
 
   void makeMinimumCut(frLayerNum layerNum,
                       frCoord width,

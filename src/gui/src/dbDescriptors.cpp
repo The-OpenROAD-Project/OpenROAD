@@ -34,6 +34,7 @@
 
 #include <QInputDialog>
 #include <QStringList>
+#include <boost/algorithm/string.hpp>
 #include <iomanip>
 #include <limits>
 #include <queue>
@@ -59,9 +60,23 @@ static void populateODBProperties(Descriptor::Properties& props,
   for (const auto prop : odb::dbProperty::getProperties(object)) {
     std::any value;
     switch (prop->getType()) {
-      case odb::dbProperty::STRING_PROP:
-        value = static_cast<odb::dbStringProperty*>(prop)->getValue();
+      case odb::dbProperty::STRING_PROP: {
+        auto str = static_cast<odb::dbStringProperty*>(prop)->getValue();
+
+        std::vector<std::string> lines;
+        boost::split(lines, str, boost::is_any_of("\n"));
+
+        std::vector<std::string> trimmed_lines;
+        for (auto& line : lines) {
+          boost::algorithm::trim(line);
+          if (!line.empty()) {
+            trimmed_lines.push_back(line);
+          }
+        }
+
+        value = boost::algorithm::join(trimmed_lines, "\n");
         break;
+      }
       case odb::dbProperty::BOOL_PROP:
         value = static_cast<odb::dbBoolProperty*>(prop)->getValue();
         break;
@@ -816,6 +831,7 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
     instances.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", instances});
+  props.push_back({"Origin", master->getOrigin()});
 
   populateODBProperties(props, master);
 
@@ -2268,7 +2284,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Technology", gui->makeSelected(layer->getTech())},
                     {"Direction", layer->getDirection().getString()},
-                    {"Type", layer->getType().getString()}});
+                    {"Layer type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
     props.push_back({"LEF58 type", layer->getLef58TypeString()});
   }

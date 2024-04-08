@@ -166,7 +166,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 3.0 REQUIRED)
+find_package(SWIG 4.0 REQUIRED)
 if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
   message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
 endif()
@@ -467,6 +467,11 @@ endif()
 
 # executable
 install(TARGETS openroad DESTINATION bin)
+
+
+if(BUILD_MAN)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+endif()
 
 ################################################################
 

@@ -372,11 +372,23 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   }
 }
 
+inline bool isSupplyVia(gcRect* rect)
+{
+  return rect->isFixed() && rect->hasNet() && rect->getNet()->getFrNet()
+         && rect->getNet()->getFrNet()->getType().isSupply();
+}
+
 inline bool isSkipVia(gcRect* rect)
 {
-  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
-         && rect->hasNet() && rect->getNet()->getFrNet()
-         && rect->getNet()->getFrNet()->getType().isSupply();
+  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER_NUM && isSupplyVia(rect);
+}
+
+inline bool isFixedVia(gcRect* rect)
+{
+  if (rect->getLayerNum() == REPAIR_PDN_LAYER_NUM && isSupplyVia(rect)) {
+    return false;
+  }
+  return rect->isFixed();
 }
 
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
@@ -431,7 +443,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryMaxRectangle(queryBox, queryLayerNum, results);
   for (auto& [box, ptr] : results) {
-    if (ptr->isFixed() && viaRect->isFixed()) {
+    if (isFixedVia(ptr) && isFixedVia(viaRect)) {
       continue;
     }
     if (ptr->getPin() == viaRect->getPin()) {
@@ -500,7 +512,7 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   for (auto& [box, ptr] : allResults) {
-    if (ptr->isFixed() && rect->isFixed()) {
+    if (isFixedVia(ptr) && isFixedVia(rect)) {
       continue;
     }
     if (ptr->getPin() == rect->getPin()) {

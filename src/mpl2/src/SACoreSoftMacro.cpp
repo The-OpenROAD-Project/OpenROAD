@@ -379,7 +379,6 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 
   int tot_num_macros = 0;
-
   for (const auto& macro_id : pos_seq_) {
     tot_num_macros += macros_[macro_id].getNumMacro();
   }
@@ -415,6 +414,13 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 }
 
+// Penalty for overlapping between clusters with macros and macro blockages.
+// There may be situations in which we cannot guarantee that there will be
+// no overlap, so we consider:
+// 1) Number of macros to prioritize clusters with more macros.
+// 2) The macro area percentage over the cluster's total area so that
+//    mixed clusters with large std cell area have less penalty.
+
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
@@ -423,36 +429,41 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (auto& bbox : blockages_) {
-    for (const auto& macro : macros_) {
-      if (macro.getNumMacro() > 0) {
-        const float lx = macro.getX();
-        const float ly = macro.getY();
-        const float ux = lx + macro.getWidth();
-        const float uy = ly + macro.getHeight();
-        const float region_lx = bbox.xMin();
-        const float region_ly = bbox.yMin();
-        const float region_ux = bbox.xMax();
-        const float region_uy = bbox.yMax();
-        // check each dimension seperately
-        // center to center distance
-        const float width = ((ux - lx) + (region_ux - region_lx)) / 2.0;
-        const float height = ((uy - ly) + (region_uy - region_ly)) / 2.0;
-        float x_dist
-            = std::abs((region_ux + region_lx) / 2.0 - (ux + lx) / 2.0);
-        float y_dist
-            = std::abs((region_uy + region_ly) / 2.0 - (uy + ly) / 2.0);
-        x_dist = std::max(width - x_dist, 0.0f) / width;
-        y_dist = std::max(height - y_dist, 0.0f) / height;
-        macro_blockage_penalty_
-            += (x_dist * x_dist + y_dist * y_dist) * macro.getNumMacro();
+  for (auto& blockage : blockages_) {
+    for (const auto& macro_id : pos_seq_) {
+      if (macros_[macro_id].getNumMacro() > 0) {
+        const float soft_macro_x_min = macros_[macro_id].getX();
+        const float soft_macro_x_max
+            = soft_macro_x_min + macros_[macro_id].getWidth();
+        const float soft_macro_y_min = macros_[macro_id].getY();
+        const float soft_macro_y_max
+            = soft_macro_y_min + macros_[macro_id].getHeight();
+
+        const float overlap_width
+            = std::min(blockage.xMax(), soft_macro_x_max)
+              - std::max(blockage.xMin(), soft_macro_x_min);
+        const float overlap_height
+            = std::min(blockage.yMax(), soft_macro_y_max)
+              - std::max(blockage.yMin(), soft_macro_y_min);
+
+        // If any of the dimensions is negative, then there's no overlap.
+        if (overlap_width < 0 || overlap_height < 0) {
+          continue;
+        }
+
+        Cluster* cluster = macros_[macro_id].getCluster();
+        float macro_dominance = cluster->getMacroArea() / cluster->getArea();
+
+        macro_blockage_penalty_ += overlap_width * overlap_height
+                                   * macros_[macro_id].getNumMacro()
+                                   * macro_dominance;
       }
     }
   }
@@ -472,12 +483,12 @@ void SACoreSoftMacro::alignMacroClusters()
   // update threshold value
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
-  for (auto& macro : macros_) {
-    if (macro.isMacroCluster()) {
-      adjust_h_th_
-          = std::min(adjust_h_th_, macro.getWidth() * (1 - acc_tolerance_));
-      adjust_v_th_
-          = std::min(adjust_v_th_, macro.getHeight() * (1 - acc_tolerance_));
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].isMacroCluster()) {
+      adjust_h_th_ = std::min(
+          adjust_h_th_, macros_[macro_id].getWidth() * (1 - acc_tolerance_));
+      adjust_v_th_ = std::min(
+          adjust_v_th_, macros_[macro_id].getHeight() * (1 - acc_tolerance_));
     }
   }
   const float ratio = 0.1;
@@ -485,23 +496,25 @@ void SACoreSoftMacro::alignMacroClusters()
   adjust_v_th_ = std::min(adjust_v_th_, outline_.getWidth() * ratio);
 
   // Align macro clusters to boundaries
-  for (auto& macro : macros_) {
-    if (macro.isMacroCluster()) {
-      const float lx = macro.getX();
-      const float ly = macro.getY();
-      const float ux = lx + macro.getWidth();
-      const float uy = ly + macro.getHeight();
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].isMacroCluster()) {
+      const float lx = macros_[macro_id].getX();
+      const float ly = macros_[macro_id].getY();
+      const float ux = lx + macros_[macro_id].getWidth();
+      const float uy = ly + macros_[macro_id].getHeight();
       // align to left / right boundaries
       if (lx <= adjust_h_th_) {
-        macro.setX(0.0);
+        macros_[macro_id].setX(0.0);
       } else if (outline_.getWidth() - ux <= adjust_h_th_) {
-        macro.setX(outline_.getWidth() - macro.getWidth());
+        macros_[macro_id].setX(outline_.getWidth()
+                               - macros_[macro_id].getWidth());
       }
       // align to top / bottom boundaries
       if (ly <= adjust_v_th_) {
-        macro.setY(0.0);
+        macros_[macro_id].setY(0.0);
       } else if (outline_.getHeight() - uy <= adjust_v_th_) {
-        macro.setY(outline_.getHeight() - macro.getHeight());
+        macros_[macro_id].setY(outline_.getHeight()
+                               - macros_[macro_id].getHeight());
       }
     }
   }
@@ -893,14 +906,14 @@ void SACoreSoftMacro::fillDeadSpace()
   // Step1 : Divide the entire floorplan into grids
   std::set<float> x_point;
   std::set<float> y_point;
-  for (auto& macro : macros_) {
-    if (macro.getArea() <= 0.0) {
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].getArea() <= 0.0) {
       continue;
     }
-    x_point.insert(macro.getX());
-    x_point.insert(macro.getX() + macro.getWidth());
-    y_point.insert(macro.getY());
-    y_point.insert(macro.getY() + macro.getHeight());
+    x_point.insert(macros_[macro_id].getX());
+    x_point.insert(macros_[macro_id].getX() + macros_[macro_id].getWidth());
+    y_point.insert(macros_[macro_id].getY());
+    y_point.insert(macros_[macro_id].getY() + macros_[macro_id].getHeight());
   }
   x_point.insert(0.0);
   y_point.insert(0.0);
@@ -918,7 +931,7 @@ void SACoreSoftMacro::fillDeadSpace()
     grids.push_back(macro_ids);
   }
 
-  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+  for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
     if (macros_[macro_id].getArea() <= 0.0) {
       continue;
     }
@@ -944,7 +957,7 @@ void SACoreSoftMacro::fillDeadSpace()
   }
   // propagate from the MixedCluster and then StdCellCluster
   for (int order = 0; order <= 1; order++) {
-    for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+    for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
       if (macros_[macro_id].getArea() <= 0.0) {
         continue;
       }
