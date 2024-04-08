@@ -40,7 +40,7 @@ RUDYDataSource::RUDYDataSource(utl::Logger* logger,
                                grt::GlobalRouter* grouter,
                                odb::dbDatabase* db)
     : GlobalRoutingDataSource(logger,
-                              "Estimated Congestion (RUDY inside GRT)",
+                              "Estimated Congestion (RUDY)",
                               "RUDY",
                               "RUDY")
 {
