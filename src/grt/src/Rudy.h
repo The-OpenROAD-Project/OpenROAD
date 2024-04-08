@@ -91,9 +91,6 @@ class Rudy
   void makeGrid();
   void getResourceReductions();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
-  void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
-  void processIntersectionGenericObstruction(odb::Rect obstruction_rect,
-                                             int nets_per_tile);
   void processIntersectionSignalNet(odb::Rect net_rect);
 
   odb::dbBlock* block_;

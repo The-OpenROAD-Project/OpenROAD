@@ -131,58 +131,6 @@ void Rudy::calculateRudy()
   }
 }
 
-void Rudy::processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance)
-{
-  for (odb::dbBox* obstr_box : macro->getObstructions()) {
-    const odb::Point origin = instance->getOrigin();
-    odb::dbTransform transform(instance->getOrient(), origin);
-    odb::Rect macro_obstruction = obstr_box->getBox();
-    transform.apply(macro_obstruction);
-    const auto obstr_area = macro_obstruction.area();
-    if (obstr_area == 0) {
-      continue;
-    }
-    processIntersectionGenericObstruction(macro_obstruction, 2);
-  }
-}
-
-void Rudy::processIntersectionGenericObstruction(odb::Rect obstruction_rect,
-                                                 const int nets_per_tile)
-{
-  // Calculate the intersection range
-  const int min_x_index = std::max(
-      0, (obstruction_rect.xMin() - grid_block_.xMin()) / tile_size_);
-  const int max_x_index
-      = std::min(tile_cnt_x_ - 1,
-                 (obstruction_rect.xMax() - grid_block_.xMin()) / tile_size_);
-  const int min_y_index = std::max(
-      0, (obstruction_rect.yMin() - grid_block_.yMin()) / tile_size_);
-  const int max_y_index
-      = std::min(tile_cnt_y_ - 1,
-                 (obstruction_rect.yMax() - grid_block_.yMin()) / tile_size_);
-
-  // Iterate over the tiles in the calculated range
-  for (int x = min_x_index; x <= max_x_index; ++x) {
-    for (int y = min_y_index; y <= max_y_index; ++y) {
-      Tile& tile = getEditableTile(x, y);
-      const auto tile_box = tile.getRect();
-      if (obstruction_rect.overlaps(tile_box)) {
-        const auto hpwl = static_cast<float>(tile_box.dx() + tile_box.dy());
-        const auto wire_area = hpwl * wire_width_;
-        const auto tile_area = tile_box.area();
-        const auto obstr_congestion = wire_area / tile_area;
-        const auto intersect_area = obstruction_rect.intersect(tile_box).area();
-
-        const auto tile_obstr_box_ratio = static_cast<float>(intersect_area)
-                                          / static_cast<float>(tile_area);
-        const auto rudy
-            = obstr_congestion * tile_obstr_box_ratio * 100 * nets_per_tile;
-        tile.addRudy(rudy);
-      }
-    }
-  }
-}
-
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
   const auto net_area = net_rect.area();
