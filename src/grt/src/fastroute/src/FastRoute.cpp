@@ -879,7 +879,8 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
-void FastRouteCore::getCapacityReductionData(CapacityReductionData& cap_red_data)
+void FastRouteCore::getCapacityReductionData(
+    CapacityReductionData& cap_red_data)
 {
   cap_red_data.resize(x_grid_);
   for (int x = 0; x < x_grid_; x++) {
@@ -902,13 +903,17 @@ void FastRouteCore::getCapacityReductionData(CapacityReductionData& cap_red_data
         if (is_horizontal) {
           if (!regular_y_ && y == y_grid_ - 1) {
             cap_red_data[x][y].first += last_row_capH;
-          } else {
+          } else if (x != x_grid_ - 1) {
+            // don't add horizontal cap in the last col because there is no
+            // usage there
             cap_red_data[x][y].first += capH;
           }
         } else {
           if (!regular_x_ && x == x_grid_ - 1) {
             cap_red_data[x][y].first += last_col_capV;
-          } else {
+          } else if (y != y_grid_ - 1) {
+            // don't add vertical cap in the last row because there is no usage
+            // there
             cap_red_data[x][y].first += capV;
           }
         }
