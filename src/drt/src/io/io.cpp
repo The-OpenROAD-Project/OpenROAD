@@ -318,10 +318,30 @@ void io::Parser::setVias(odb::dbBlock* block)
       auto viaDef = std::make_unique<frViaDef>(via->getName());
       viaDef->addLayer1Fig(std::move(uBotFig));
       viaDef->addLayer2Fig(std::move(uTopFig));
+      auto cutLayer = tech_->getLayer(cutLayerNum);
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
-      tech_->addVia(std::move(viaDef));
+      int cutClassIdx = -1;
+      frLef58CutClass* cutClass = nullptr;
+      for (auto& cutFig : viaDef->getCutFigs()) {
+        Rect box = cutFig->getBBox();
+        auto width = box.minDXDY();
+        auto length = box.maxDXDY();
+        cutClassIdx = cutLayer->getCutClassIdx(width, length);
+        if (cutClassIdx != -1) {
+          cutClass = cutLayer->getCutClass(cutClassIdx);
+          break;
+        }
+      }
+      if (cutClass) {
+        viaDef->setCutClass(cutClass);
+        viaDef->setCutClassIdx(cutClassIdx);
+      }
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 337, "Duplicated via definition for {}", via->getName());
+      }
     } else {
       std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
@@ -365,7 +385,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (via->isDefault()) {
         viaDef->setDefault(true);
       }
-      tech_->addVia(std::move(viaDef));
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 338, "Duplicated via definition for {}", via->getName());
+      }
     }
   }
 }
@@ -1199,7 +1222,6 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setTracks(block);
   setInsts(block);
   setObstructions(block);
-  setVias(block);
   setBTerms(block);
   setAccessPoints(db);
   setNets(block);
@@ -1522,6 +1544,11 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerAreaRules()) {
     auto con = std::make_unique<frLef58AreaConstraint>(rule);
     tmpLayer->addLef58AreaConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
+  for (auto rule : layer->getTechLayerTwoWiresForbiddenSpcRules()) {
+    auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(rule);
+    tmpLayer->addTwoWiresForbiddenSpacingConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
 }
@@ -2714,7 +2741,10 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       viaDef->setCutClass(cutClass);
       viaDef->setCutClassIdx(cutClassIdx);
     }
-    tech_->addVia(std::move(viaDef));
+    if (!tech_->addVia(std::move(viaDef))) {
+      logger_->error(
+          utl::DRT, 339, "Duplicated via definition for {}", via->getName());
+    }
   }
 }
 
@@ -2760,6 +2790,9 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
+  if (db->getChip() && db->getChip()->getBlock()) {
+    setVias(db->getChip()->getBlock());
+  }
   setMasters(db);
   setNDRs(db);
   initDefaultVias();

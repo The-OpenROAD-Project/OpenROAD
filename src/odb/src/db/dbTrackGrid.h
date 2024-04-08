@@ -67,11 +67,13 @@ class _dbTrackGrid : public _dbObject
 
   bool operator<(const _dbTrackGrid& rhs) const
   {
-    if (_layer < rhs._layer)
+    if (_layer < rhs._layer) {
       return true;
+    }
 
-    if (_layer > rhs._layer)
+    if (_layer > rhs._layer) {
       return false;
+    }
 
     return false;
   }

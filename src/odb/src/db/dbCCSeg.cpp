@@ -48,26 +48,33 @@ template class dbTable<_dbCCSeg>;
 
 bool _dbCCSeg::operator==(const _dbCCSeg& rhs) const
 {
-  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1)
+  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1) {
     return false;
+  }
 
-  if (_flags._mark != rhs._flags._mark)
+  if (_flags._mark != rhs._flags._mark) {
     return false;
+  }
 
-  if (_flags._inFileCnt != rhs._flags._inFileCnt)
+  if (_flags._inFileCnt != rhs._flags._inFileCnt) {
     return false;
+  }
 
-  if (_cap_node[0] != rhs._cap_node[0])
+  if (_cap_node[0] != rhs._cap_node[0]) {
     return false;
+  }
 
-  if (_cap_node[1] != rhs._cap_node[1])
+  if (_cap_node[1] != rhs._cap_node[1]) {
     return false;
+  }
 
-  if (_next[0] != rhs._next[0])
+  if (_next[0] != rhs._next[0]) {
     return false;
+  }
 
-  if (_next[1] != rhs._next[1])
+  if (_next[1] != rhs._next[1]) {
     return false;
+  }
 
   return true;
 }
@@ -141,8 +148,9 @@ void dbCCSeg::adjustCapacitance(float factor)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint corner;
-  for (corner = 0; corner < block->_corners_per_block; corner++)
+  for (corner = 0; corner < block->_corners_per_block; corner++) {
     adjustCapacitance(factor, corner);
+  }
 }
 
 double dbCCSeg::getCapacitance(int corner)
@@ -188,8 +196,9 @@ void dbCCSeg::setAllCcCap(double* ttcap)
     char ccCaps[400];
     int pos = 0;
     ccCaps[0] = '\0';
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       pos += sprintf(&ccCaps[pos], "%f ", ttcap[ii]);
+    }
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -201,8 +210,9 @@ void dbCCSeg::setAllCcCap(double* ttcap)
     block->_journal->pushParam(dbCCSegObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(_dbCCSeg::SETALLCCCAP);
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       block->_journal->pushParam(ttcap[ii]);
+    }
     block->_journal->endAction();
   }
 }
@@ -389,11 +399,11 @@ void dbCCSeg::printCapnCC(uint capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   uint sidx;
-  if (capn == seg->_cap_node[0])
+  if (capn == seg->_cap_node[0]) {
     sidx = 0;
-  else if (capn == seg->_cap_node[1])
+  } else if (capn == seg->_cap_node[1]) {
     sidx = 1;
-  else {
+  } else {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -426,11 +436,11 @@ bool dbCCSeg::checkCapnCC(uint capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   uint sidx;
-  if (capn == seg->_cap_node[0])
+  if (capn == seg->_cap_node[0]) {
     sidx = 0;
-  else if (capn == seg->_cap_node[1])
+  } else if (capn == seg->_cap_node[1]) {
     sidx = 1;
-  else {
+  } else {
     getImpl()->getLogger()->info(utl::ODB,
                                  22,
                                  "ccSeg {} has capnd {} {}, not {} !",
@@ -501,19 +511,23 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
   for (seg = tgt->_cc_segs; seg;) {
     ccs = block->_cc_seg_tbl->getPtr(seg);
 
-    if (ccs->_cap_node[0] == tgt_id && ccs->_cap_node[1] == src_id)
+    if (ccs->_cap_node[0] == tgt_id && ccs->_cap_node[1] == src_id) {
       break;
+    }
 
-    if (ccs->_cap_node[1] == tgt_id && ccs->_cap_node[0] == src_id)
+    if (ccs->_cap_node[1] == tgt_id && ccs->_cap_node[0] == src_id) {
       break;
+    }
 
     pccs = ccs;
     seg = ccs->next(tgt_id);
   }
-  if (!seg)
+  if (!seg) {
     return nullptr;
-  if (!pccs || !reInsert)
+  }
+  if (!pccs || !reInsert) {
     return ccs;
+  }
   pccs->_next[pccs->idx(tgt_id)] = ccs->next(tgt_id);
   ccs->_next[ccs->idx(tgt_id)] = tgt->_cc_segs;
   tgt->_cc_segs = ccs->getOID();
@@ -561,8 +575,12 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   }
 
   _dbCCSeg* seg;
-  if (mergeParallel && (seg = findParallelCCSeg(block, src, tgt, true)))
-    return (dbCCSeg*) seg;
+  if (mergeParallel) {
+    seg = findParallelCCSeg(block, src, tgt, true);
+    if (seg) {
+      return (dbCCSeg*) seg;
+    }
+  }
 
   seg = block->_cc_seg_tbl->create();
   // seg->_flags._cnt = block->_num_corners;
@@ -570,8 +588,9 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   // set corner values
   uint cornerCnt = block->_corners_per_block;
   if (block->_maxCCSegId >= seg->getOID()) {
-    for (uint ii = 0; ii < cornerCnt; ii++)
+    for (uint ii = 0; ii < cornerCnt; ii++) {
       (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+    }
   } else {
     block->_maxCCSegId = seg->getOID();
     uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
@@ -597,9 +616,9 @@ static void unlink_cc_seg(_dbBlock* block, _dbCapNode* node, _dbCCSeg* s)
 
   while (next) {
     if (next == seg) {
-      if (prev == 0)
+      if (prev == 0) {
         node->_cc_segs = s->next(cid);
-      else {
+      } else {
         _dbCCSeg* p = block->_cc_seg_tbl->getPtr(prev);
         p->next(cid) = s->next(cid);
       }

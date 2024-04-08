@@ -70,11 +70,13 @@ dbIntHashTable<T>::~dbIntHashTable()
 template <class T>
 bool dbIntHashTable<T>::operator==(const dbIntHashTable<T>& rhs) const
 {
-  if (_num_entries != rhs._num_entries)
+  if (_num_entries != rhs._num_entries) {
     return false;
+}
 
-  if (_hash_tbl != rhs._hash_tbl)
+  if (_hash_tbl != rhs._hash_tbl) {
     return false;
+}
 
   return true;
 }
@@ -102,8 +104,9 @@ void dbIntHashTable<T>::growTable()
 
   // double the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+}
 
   // reinsert the entries
   sz = _hash_tbl.size() - 1;
@@ -147,8 +150,9 @@ void dbIntHashTable<T>::shrinkTable()
 
   // halve the size of the hash-table
   dbId<T> nullId;
-  for (i = 0; i < sz; ++i)
+  for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
+}
 
   sz -= 1;
   // reinsert the entries
@@ -195,8 +199,9 @@ T* dbIntHashTable<T>::find(uint id)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
+  if (sz == 0) {
     return 0;
+}
 
   uint hid = hash_int(id) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -204,8 +209,9 @@ T* dbIntHashTable<T>::find(uint id)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (entry->_id == id)
+    if (entry->_id == id) {
       return entry;
+}
 
     cur = entry->_next_entry;
   }
@@ -218,8 +224,9 @@ int dbIntHashTable<T>::hasMember(uint id)
 {
   uint sz = _hash_tbl.size();
 
-  if (sz == 0)
+  if (sz == 0) {
     return false;
+}
 
   uint hid = hash_int(id) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -227,8 +234,9 @@ int dbIntHashTable<T>::hasMember(uint id)
   while (cur != 0) {
     T* entry = _obj_tbl->getPtr(cur);
 
-    if (entry->_id == id)
+    if (entry->_id == id) {
       return true;
+}
 
     cur = entry->_next_entry;
   }
@@ -248,9 +256,9 @@ void dbIntHashTable<T>::remove(T* object)
     T* entry = _obj_tbl->getPtr(cur);
 
     if (entry == object) {
-      if (prev == 0)
+      if (prev == 0) {
         _hash_tbl[hid] = entry->_next_entry;
-      else {
+      } else {
         T* p = _obj_tbl->getPtr(prev);
         p->_next_entry = entry->_next_entry;
       }
@@ -259,8 +267,9 @@ void dbIntHashTable<T>::remove(T* object)
 
       uint r = (_num_entries + _num_entries / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1))
+      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
         shrinkTable();
+}
 
       return;
     }

@@ -136,6 +136,7 @@ class dbBlockSearch;
 class dbBlockCallBackObj;
 class dbGuideItr;
 class dbNetTrackItr;
+class _dbDft;
 
 struct _dbBlockFlags
 {
@@ -195,6 +196,7 @@ class _dbBlock : public _dbObject
   dbVector<dbId<_dbBlock>> _children;
   dbVector<dbId<_dbTechLayer>> _component_mask_shift;
   uint _currentCcAdjOrder;
+  dbId<_dbDft> _dft;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -232,6 +234,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbGuide>* _guide_tbl;
   dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
+  dbTable<_dbDft>* _dft_tbl;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
   dbPagedVector<float, 4096, 12>* _c_val_tbl;
