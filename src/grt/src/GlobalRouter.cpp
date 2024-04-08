@@ -754,7 +754,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
     getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_routing_layer
         = db_->getTech()->findRoutingLayer(max_layer);
-    if (pin_count > 1 && !net->isLocal() && 1 == 0
+    if (pin_count > 1 && !net->isLocal()
         && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
