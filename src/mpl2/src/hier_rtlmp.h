@@ -270,9 +270,9 @@ class HierRTLMP
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
   void createClusterForEachMacro(const std::vector<HardMacro*>& hard_macros,
-                                 std::vector<HardMacro>& macros,
+                                 std::vector<HardMacro>& sa_macros,
                                  std::vector<Cluster*>& macro_clusters,
-                                 std::map<int, int>& cluster_id_macro_id_map,
+                                 std::map<int, int>& cluster_to_macro,
                                  std::set<odb::dbMaster*>& masters);
   void computeFencesAndGuides(const std::vector<HardMacro*>& hard_macros,
                               const Rect& outline,
@@ -281,7 +281,7 @@ class HierRTLMP
   void createFixedTerminals(const Rect& outline,
                             const std::vector<Cluster*>& macro_clusters,
                             std::map<int, int>& cluster_to_macro,
-                            std::vector<HardMacro>& macros);
+                            std::vector<HardMacro>& sa_macros);
   std::vector<BundledNet> computeBundledNets(
       const std::vector<Cluster*>& macro_clusters,
       const std::map<int, int>& cluster_to_macro);
