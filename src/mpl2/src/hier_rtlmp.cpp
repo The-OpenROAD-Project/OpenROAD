@@ -5388,12 +5388,12 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   num_hard_macros_cluster_ += hard_macros.size();
 
-  std::vector<HardMacro> macros;  // the macros for Simulated Annealing Core
+  std::vector<HardMacro> sa_macros;
   std::vector<Cluster*> macro_clusters;  // needed to calculate connections
-  std::map<int, int> cluster_id_macro_id_map;
+  std::map<int, int> cluster_to_macro;
   std::set<odb::dbMaster*> masters;
   createClusterForEachMacro(
-      hard_macros, macros, macro_clusters, cluster_id_macro_id_map, masters);
+      hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 
   const Rect outline(cluster->getX(),
                      cluster->getY(),
@@ -5407,10 +5407,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   calculateConnection();
 
   createFixedTerminals(
-      outline, macro_clusters, cluster_id_macro_id_map, macros);
+      outline, macro_clusters, cluster_to_macro, sa_macros);
 
   std::vector<BundledNet> nets
-      = computeBundledNets(macro_clusters, cluster_id_macro_id_map);
+      = computeBundledNets(macro_clusters, cluster_to_macro);
 
   if (graphics_) {
     graphics_->setBundledNets(nets);
@@ -5427,8 +5427,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                            + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
 
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
-                                       ? macros.size()
+  const int num_perturb_per_step = (sa_macros.size() > num_perturb_per_step_ / 10)
+                                       ? sa_macros.size()
                                        : num_perturb_per_step_ / 10;
   int remaining_runs = num_runs_;
   int run_id = 0;
@@ -5451,7 +5451,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
       SACoreHardMacro* sa
           = new SACoreHardMacro(outline,
-                                macros,
+                                sa_macros,
                                 area_weight_,
                                 outline_weight_ * (run_id + 1) * 10,
                                 wirelength_weight_ / (run_id + 1),
@@ -5536,25 +5536,25 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
 void HierRTLMP::createClusterForEachMacro(
     const std::vector<HardMacro*>& hard_macros,
-    std::vector<HardMacro>& macros,
+    std::vector<HardMacro>& sa_macros,
     std::vector<Cluster*>& macro_clusters,
-    std::map<int, int>& cluster_id_macro_id_map,
+    std::map<int, int>& cluster_to_macro,
     std::set<odb::dbMaster*>& masters)
 {
   int macro_id = 0;
   std::string cluster_name;
 
   for (auto& hard_macro : hard_macros) {
-    macro_id = macros.size();
+    macro_id = sa_macros.size();
     cluster_name = hard_macro->getName();
 
     Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
     macro_cluster->addLeafMacro(hard_macro->getInst());
     updateInstancesAssociation(macro_cluster);
 
-    macros.push_back(*hard_macro);
+    sa_macros.push_back(*hard_macro);
     macro_clusters.push_back(macro_cluster);
-    cluster_id_macro_id_map[cluster_id_] = macro_id;
+    cluster_to_macro[cluster_id_] = macro_id;
     masters.insert(hard_macro->getInst()->getMaster());
 
     cluster_map_[cluster_id_++] = macro_cluster;
@@ -5585,25 +5585,25 @@ void HierRTLMP::createFixedTerminals(
     const Rect& outline,
     const std::vector<Cluster*>& macro_clusters,
     std::map<int, int>& cluster_to_macro,
-    std::vector<HardMacro>& macros)
+    std::vector<HardMacro>& sa_macros)
 {
-  std::set<int> cluster_id_set;
+  std::set<int> clusters_ids;
 
   for (auto macro_cluster : macro_clusters) {
     for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
-      cluster_id_set.insert(cluster_id);
+      clusters_ids.insert(cluster_id);
     }
   }
 
-  for (auto cluster_id : cluster_id_set) {
+  for (auto cluster_id : clusters_ids) {
     if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
       continue;
     }
     auto& temp_cluster = cluster_map_[cluster_id];
 
     // model other cluster as a fixed macro with zero size
-    cluster_to_macro[cluster_id] = macros.size();
-    macros.emplace_back(
+    cluster_to_macro[cluster_id] = sa_macros.size();
+    sa_macros.emplace_back(
         std::pair<float, float>(
             temp_cluster->getX() + temp_cluster->getWidth() / 2.0
                 - outline.xMin(),
