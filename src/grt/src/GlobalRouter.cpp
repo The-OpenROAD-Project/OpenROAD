@@ -3398,7 +3398,24 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
       for (odb::dbSWire* swire : db_net->getSWires()) {
         for (odb::dbSBox* s : swire->getWires()) {
           if (s->isVia()) {
-            continue;
+            std::vector<odb::dbShape> via_boxes;
+            s->getViaBoxes(via_boxes);
+            for (const odb::dbShape& box : via_boxes) {
+              odb::dbTechLayer* tech_layer = box.getTechLayer();
+              if (tech_layer->getRoutingLevel() == 0) {
+                continue;
+              }
+              odb::Rect via_rect = box.getBox();
+              if (!die_area.contains(via_rect)) {
+                if (verbose_) {
+                  logger_->warn(GRT,
+                                46,
+                                "Net {} has vias outside die area.",
+                                db_net->getConstName());
+                }
+              }
+              applyObstructionAdjustment(via_rect, tech_layer);
+            }
           } else {
             odb::Rect wire_rect = s->getBox();
             int l = s->getTechLayer()->getRoutingLevel();
@@ -3430,11 +3447,25 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
       odb::dbWirePathItr pitr;
       for (pitr.begin(wire); pitr.getNextPath(path);) {
         while (pitr.getNextShape(pshape)) {
-          if (pshape.shape.isVia()) {
-            continue;
+          const odb::dbShape& shape = pshape.shape;
+          if (shape.isVia()) {
+            odb::dbTechLayer* tech_layer = shape.getTechLayer();
+            if (tech_layer == nullptr || tech_layer->getRoutingLevel() == 0) {
+              continue;
+            }
+            odb::Rect via_rect = shape.getBox();
+            if (!die_area.contains(via_rect)) {
+              if (verbose_) {
+                logger_->warn(GRT,
+                              49,
+                              "Net {} has via outside die area.",
+                              db_net->getConstName());
+              }
+            }
+            applyObstructionAdjustment(via_rect, tech_layer);
           } else {
-            odb::Rect wire_rect = pshape.shape.getBox();
-            int l = pshape.shape.getTechLayer()->getRoutingLevel();
+            odb::Rect wire_rect = shape.getBox();
+            int l = shape.getTechLayer()->getRoutingLevel();
 
             if (min_routing_layer_ <= l && l <= max_routing_layer_) {
               odb::Point lower_bound
@@ -3449,7 +3480,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
                                 "Net {} has wires outside die area.",
                                 db_net->getConstName());
               }
-              odb::dbTechLayer* tech_layer = pshape.shape.getTechLayer();
+              odb::dbTechLayer* tech_layer = shape.getTechLayer();
               applyObstructionAdjustment(obstruction_rect, tech_layer);
             }
           }
