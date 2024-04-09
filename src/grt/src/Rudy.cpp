@@ -103,9 +103,9 @@ void Rudy::getResourceReductions()
   for (int x = 0; x < grid_.size(); x++) {
     for (int y = 0; y < grid_[x].size(); y++) {
       Tile& tile = getEditableTile(x, y);
-      uint8_t tile_cap = cap_usage_data[x][y].first;
-      float tile_usage = cap_usage_data[x][y].second;
-      float cap_usage_data = tile_usage / tile_cap;
+      uint8_t tile_cap = cap_usage_data[x][y].capacity;
+      float tile_reduction = cap_usage_data[x][y].reduction;
+      float cap_usage_data = tile_reduction / tile_cap;
       tile.addRudy(cap_usage_data * 100);
     }
   }
