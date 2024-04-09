@@ -2186,6 +2186,45 @@ class frLef58KeepOutZoneConstraint : public frConstraint
  private:
   odb::dbTechLayerKeepOutZoneRule* db_rule_;
 };
+
+class frLef58EnclosureConstraint : public frConstraint
+{
+ public:
+  frLef58EnclosureConstraint(odb::dbTechLayerCutEnclosureRule* ruleIn)
+      : db_rule_(ruleIn)
+  {
+  }
+  void setCutClassIdx(int in) { cut_class_idx_ = in; }
+  int getCutClassIdx() const { return cut_class_idx_; }
+  bool isAbove() const { return db_rule_->isAbove(); }
+  bool isBelow() const { return db_rule_->isBelow(); }
+  bool isValidOverhang(frCoord endOverhang, frCoord sideOverhang) const
+  {
+    if (db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::ENDSIDE) {
+      return endOverhang >= db_rule_->getFirstOverhang()
+             && sideOverhang >= db_rule_->getSecondOverhang();
+    } else {
+      return (endOverhang >= db_rule_->getFirstOverhang()
+              && sideOverhang >= db_rule_->getSecondOverhang())
+             || (endOverhang >= db_rule_->getSecondOverhang()
+                 && sideOverhang >= db_rule_->getFirstOverhang());
+    }
+  }
+  frCoord getWidth() const { return db_rule_->getMinWidth(); }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_ENCLOSURE");
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EnclosureConstraint;
+  }
+
+ private:
+  odb::dbTechLayerCutEnclosureRule* db_rule_;
+  int cut_class_idx_;
+};
+
 class frNonDefaultRule
 {
  public:

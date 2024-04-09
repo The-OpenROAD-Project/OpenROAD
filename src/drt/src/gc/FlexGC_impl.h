@@ -486,6 +486,9 @@ class FlexGCWorker::Impl
   bool checkLef58CutSpacing_spc_hasTwoCuts_helper(
       gcRect* rect,
       frLef58CutSpacingConstraint* con);
+  // LEF58_ENCLOSURE
+  void checkLef58Enclosure_main(gcRect* rect);
+  void checkLef58Enclosure_main(gcRect* via, gcRect* enc);
   // LEF58_KEEPOUTZONE
   void checKeepOutZone_main(gcRect* rect, frLef58KeepOutZoneConstraint* con);
 

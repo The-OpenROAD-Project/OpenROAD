@@ -154,6 +154,8 @@ std::string frConstraint::getViolName() const
       return "KeepOutZone";
     case frConstraintTypeEnum::frcSpacingRangeConstraint:
       return "SpacingRange";
+    case frConstraintTypeEnum::frcLef58EnclosureConstraint:
+      return "Lef58Enclosure";
   }
   return "";
 }

@@ -3519,6 +3519,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkCutSpacing_main(maxrect.get());
+          checkLef58Enclosure_main(maxrect.get());
         }
       }
     }
@@ -3537,6 +3538,7 @@ void FlexGCWorker::Impl::checkCutSpacing()
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkCutSpacing_main(maxrect.get());
+            checkLef58Enclosure_main(maxrect.get());
           }
         }
       }
@@ -4036,7 +4038,7 @@ int FlexGCWorker::Impl::main()
   checkMetalShape(false);
   // check eolSpc based on polygon
   checkMetalEndOfLine();
-  // check CShort, cutSpc
+  // check CShort, cutSpc, enclosure
   checkCutSpacing();
   // check SpacingTable Influence
   checkMetalSpacingTableInfluence();

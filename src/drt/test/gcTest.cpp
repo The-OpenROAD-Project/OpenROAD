@@ -1396,6 +1396,33 @@ BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
   BOOST_TEST(markers.size() == 1);
 }
 
+BOOST_AUTO_TEST_CASE(lef58_enclosure)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "Vx", 100, 200);
+  makeLef58EnclosureConstrainut(3, 0, 0, 0, 0);
+  makeLef58EnclosureConstrainut(3, 0, 200, 100, 50);
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {200, 100});
+
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makePathseg(n1, 4, {-50, 50}, {250, 50}, 200);
+
+  runGC();
+  // BELOW ENC VALID, ABOVE ENCLOSURE VIOLATING
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               4,
+               frConstraintTypeEnum::frcLef58EnclosureConstraint,
+               Rect(0, 0, 200, 100));
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 }  // namespace drt
