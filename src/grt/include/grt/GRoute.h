@@ -123,8 +123,7 @@ struct CapacityReduction
   uint8_t reduction = 0;
 };
 
-using CapacityReductionData
-    = std::vector<std::vector<CapacityReduction>>;
+using CapacityReductionData = std::vector<std::vector<CapacityReduction>>;
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
