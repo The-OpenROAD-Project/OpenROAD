@@ -70,16 +70,17 @@ make DESTDIR=<prefix_path> install
 ### Build using support script
 
 ``` shell
-./etc/Build.sh
+sudo apt-get install pandoc
+./etc/Build.sh -build-man
 # To build with debug option enabled and if the Tcl library is not on the default path
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+./etc/Build.sh -build-man -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
 ```
 
 The default install directory is `/usr/local`.
 To install in a different directory use:
 
 ``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
+./etc/Build.sh -build-man -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
 ```
 
 ### LTO Options
