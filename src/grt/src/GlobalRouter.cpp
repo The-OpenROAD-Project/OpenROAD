@@ -3394,11 +3394,11 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
     if (wire_cnt == 0)
       continue;
 
+    std::vector<odb::dbShape> via_boxes;
     if (db_net->getSigType().isSupply()) {
       for (odb::dbSWire* swire : db_net->getSWires()) {
         for (odb::dbSBox* s : swire->getWires()) {
           if (s->isVia()) {
-            std::vector<odb::dbShape> via_boxes;
             s->getViaBoxes(via_boxes);
             for (const odb::dbShape& box : via_boxes) {
               odb::dbTechLayer* tech_layer = box.getTechLayer();
@@ -3425,12 +3425,15 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
         while (pitr.getNextShape(pshape)) {
           const odb::dbShape& shape = pshape.shape;
           if (shape.isVia()) {
-            odb::dbTechLayer* tech_layer = shape.getTechLayer();
-            if (tech_layer == nullptr || tech_layer->getRoutingLevel() == 0) {
-              continue;
+            shape.getViaBoxes(shape, via_boxes);
+            for (const odb::dbShape& box : via_boxes) {
+              odb::dbTechLayer* tech_layer = box.getTechLayer();
+              if (tech_layer->getRoutingLevel() == 0) {
+                continue;
+              }
+              odb::Rect via_rect = box.getBox();
+              applyNetObstruction(via_rect, tech_layer, die_area, db_net);
             }
-            odb::Rect via_rect = shape.getBox();
-            applyNetObstruction(via_rect, tech_layer, die_area, db_net);
           } else {
             odb::Rect wire_rect = shape.getBox();
             odb::dbTechLayer* tech_layer = shape.getTechLayer();
