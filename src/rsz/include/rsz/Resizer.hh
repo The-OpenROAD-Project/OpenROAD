@@ -453,10 +453,13 @@ protected:
   float pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const;
   void swapPins(Instance *inst, LibertyPort *port1,
                 LibertyPort *port2, bool journal);
-  void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
-                            float load_cap, const DcalcAnalysisPt *dcalc_ap,
+  void findSwapPinCandidate(LibertyPort* input_port,
+                            LibertyPort* drvr_port,
+                            const sta::LibertyPortSet& equiv_ports,
+                            float load_cap,
+                            const DcalcAnalysisPt* dcalc_ap,
                             // Return value
-                            LibertyPort **swap_port);
+                            LibertyPort** swap_port);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,

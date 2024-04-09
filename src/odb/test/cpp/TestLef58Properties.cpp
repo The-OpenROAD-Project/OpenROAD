@@ -25,12 +25,12 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path = testTmpPath("/data/gscl45nm.lef");
+  std::string path = testTmpPath("data", "gscl45nm.lef");
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = testTmpPath("/data/lef58class_gscl45nm.lef");
+  path = testTmpPath("data", "lef58class_gscl45nm.lef");
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
@@ -49,11 +49,11 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path = testTmpPath("/data/gscl45nm.lef");
+  std::string path = testTmpPath("data", "gscl45nm.lef");
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  path = testTmpPath("/results/TestLef58PropertiesDbRW");
+  path = testTmpPath("results", "TestLef58PropertiesDbRW");
 
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
@@ -476,6 +476,27 @@ BOOST_AUTO_TEST_CASE(test_default)
       BOOST_TEST(subRule->getWidth() == 0.5 * distFactor);
       BOOST_TEST(subRule->getPrl() == 0.02 * distFactor);
       BOOST_TEST(subRule->getTwoEdges() == 0.12 * distFactor);
+    }
+    c++;
+  }
+  // check LEF58_TWOWIRESFORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto TWforbiddenSpacingRules = layer->getTechLayerTwoWiresForbiddenSpcRules();
+  BOOST_TEST(TWforbiddenSpacingRules.size() == 2);
+  c = 0;
+  for (auto* subRule : TWforbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getMinSpacing() == 0.16 * distFactor);
+      BOOST_TEST(subRule->getMaxSpacing() == 0.2 * distFactor);
+      BOOST_TEST(subRule->getMinSpanLength() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getMaxSpanLength() == 0.08 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0);
+      BOOST_TEST(subRule->isMinExactSpanLength());
+      BOOST_TEST(subRule->isMaxExactSpanLength());
+    } else {
+      BOOST_TEST(subRule->getPrl() == -0.5 * distFactor);
+      BOOST_TEST(!subRule->isMinExactSpanLength());
+      BOOST_TEST(!subRule->isMaxExactSpanLength());
     }
     c++;
   }

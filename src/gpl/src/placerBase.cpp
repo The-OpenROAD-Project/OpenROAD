@@ -1289,7 +1289,7 @@ void PlacerBase::printInfo() const
   log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_);
 
   if (util >= 100.1) {
-    log_->error(GPL, 301, "Utilization exceeds 100%.");
+    log_->error(GPL, 301, "Utilization {:.2f}% exceeds 100%.", util);
   }
 }
 

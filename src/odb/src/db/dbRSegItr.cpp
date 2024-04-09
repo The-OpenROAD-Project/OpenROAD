@@ -83,8 +83,9 @@ uint dbRSegItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbRSegItr::begin(parent); id != dbRSegItr::end(parent);
-       id = dbRSegItr::next(id))
+       id = dbRSegItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }
@@ -92,8 +93,9 @@ uint dbRSegItr::size(dbObject* parent)
 uint dbRSegItr::begin(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  if (net->_r_segs == 0)
+  if (net->_r_segs == 0) {
     return 0;
+  }
   _dbRSeg* seg = _seg_tbl->getPtr(net->_r_segs);
   return seg->_next;
 }

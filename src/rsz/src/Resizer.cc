@@ -2195,10 +2195,12 @@ Resizer::bufferDelays(LibertyCell *buffer_cell,
 // Create a map of all the pins that are equivalent and then use the fastest pin
 // for our violating path. Current implementation does not handle the case
 // where 2 paths go through the same gate (we could end up swapping pins twice)
-void
-Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
-                              float load_cap, const DcalcAnalysisPt *dcalc_ap,
-                              LibertyPort **swap_port)
+void Resizer::findSwapPinCandidate(LibertyPort* input_port,
+                                   LibertyPort* drvr_port,
+                                   const sta::LibertyPortSet& equiv_ports,
+                                   float load_cap,
+                                   const DcalcAnalysisPt* dcalc_ap,
+                                   LibertyPort** swap_port)
 {
     const Pvt *pvt = dcalc_ap->operatingConditions();
     LibertyCell *cell = drvr_port->libertyCell();
@@ -2233,10 +2235,13 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
         }
     }
 
-    // Find the candidate port to swap with
-    auto port_iter = sta::LibertyCellPortIterator(cell);
-    while (port_iter.hasNext()) {
-        LibertyPort *port = port_iter.next();
+    for (LibertyPort* port : equiv_ports) {
+        if (port_delays.find(port) == port_delays.end()) {
+          // It's possible than an equivalent pin doesn't have
+          // a path to the driver.
+          continue;
+        }
+
         if (port->direction()->isInput() &&
             !sta::LibertyPort::equiv(input_port, port) &&
             !sta::LibertyPort::equiv(drvr_port, port) &&

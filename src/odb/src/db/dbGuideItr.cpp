@@ -86,8 +86,9 @@ uint dbGuideItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbGuideItr::begin(parent); id != dbGuideItr::end(parent);
-       id = dbGuideItr::next(id))
+       id = dbGuideItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

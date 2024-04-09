@@ -205,6 +205,9 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return true;
           };
 
+          // type
+          add_prop("Layer type", information);
+
           // direction
           add_prop("Direction", information);
 
@@ -1203,7 +1206,8 @@ void DisplayControls::addTech(odb::dbTech* tech)
 
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
-    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
+    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT
+        || type == dbTechLayerType::IMPLANT) {
       auto& row = layer_controls_[layer];
       makeLeafItem(row,
                    QString::fromStdString(layer->getName()),
@@ -1915,6 +1919,12 @@ void DisplayControls::techInit(odb::dbTech* tech)
                        50 + gen_color() % 200,
                        50 + gen_color() % 200);
       }
+    } else if (type == dbTechLayerType::IMPLANT) {
+      // Do not draw from the existing palette so the metal layers can claim
+      // those colors.
+      color = QColor(50 + gen_color() % 200,
+                     50 + gen_color() % 200,
+                     50 + gen_color() % 200);
     } else {
       continue;
     }

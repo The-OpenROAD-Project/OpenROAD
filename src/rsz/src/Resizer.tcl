@@ -152,7 +152,7 @@ proc set_wire_rc { args } {
     if { [info exists keys(-h_resistance)] \
            || [info exists keys(-h_capacitance)] \
            || [info exists keys(-v_resistance)] \
-           || [info exists keys(-v_capacitance)]  } {
+           || [info exists keys(-v_capacitance)] } {
       utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
     }
     if { [info exists keys(-layer)] } {
@@ -201,7 +201,7 @@ proc set_wire_rc { args } {
     if { $h_layers == 0 } {
       utl::error RSZ 16 "No horizontal layer specified."
     }
-    if { $v_layers == 0 }  {
+    if { $v_layers == 0 } {
       utl::error RSZ 17 "No vertical layer specified."
     }
 
