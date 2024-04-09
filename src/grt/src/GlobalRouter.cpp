@@ -96,6 +96,7 @@ GlobalRouter::GlobalRouter()
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
+      initialized_(false),
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
@@ -107,6 +108,7 @@ GlobalRouter::GlobalRouter()
       block_(nullptr),
       repair_antennas_(nullptr),
       heatmap_(nullptr),
+      heatmap_rudy_(nullptr),
       congestion_file_name_(nullptr),
       grouter_cbk_(nullptr)
 {
@@ -120,7 +122,9 @@ void GlobalRouter::init(utl::Logger* logger,
                         ant::AntennaChecker* antenna_checker,
                         dpl::Opendp* opendp,
                         std::unique_ptr<AbstractRoutingCongestionDataSource>
-                            routing_congestion_data_source)
+                            routing_congestion_data_source,
+                        std::unique_ptr<AbstractRoutingCongestionDataSource>
+                            routing_congestion_data_source_rudy)
 {
   logger_ = logger;
   stt_builder_ = stt_builder;
@@ -134,6 +138,8 @@ void GlobalRouter::init(utl::Logger* logger,
 
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
+  heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
+  heatmap_rudy_->registerHeatMap();
 }
 
 void GlobalRouter::clear()
@@ -149,6 +155,7 @@ void GlobalRouter::clear()
   fastroute_->clear();
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
+  initialized_ = false;
 }
 
 GlobalRouter::~GlobalRouter()
@@ -181,6 +188,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
+  initialized_ = true;
   return nets;
 }
 
@@ -206,6 +214,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getAdjustment());
   }
   fastroute_->initAuxVar();
+  updateDbCongestion();
 }
 
 // If file name is specified, save congestion report file.
@@ -880,6 +889,22 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
   max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                   ? max_layer_for_clock_
                   : max_routing_layer_;
+}
+
+void GlobalRouter::getGridSize(int& x_grids, int& y_grids)
+{
+  x_grids = grid_->getXGrids();
+  y_grids = grid_->getYGrids();
+}
+
+int GlobalRouter::getGridTileSize()
+{
+  return grid_->getTileSize();
+}
+
+void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
+{
+  fastroute_->getCapacityReductionData(cap_red_data);
 }
 
 void GlobalRouter::computeTrackConsumption(

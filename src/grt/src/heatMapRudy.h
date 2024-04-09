@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,9 @@
 
 #pragma once
 
+#include "AbstractRoutingCongestionDataSource.h"
+#include "Rudy.h"
+#include "grt/GlobalRouter.h"
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
@@ -40,13 +43,19 @@ namespace odb {
 class dbDatabase;
 }
 
-namespace gui {
+namespace grt {
 
-class RUDYDataSource : public GlobalRoutingDataSource,
+class RUDYDataSource : public gui::GlobalRoutingDataSource,
+                       public AbstractRoutingCongestionDataSource,
                        public odb::dbBlockCallBackObj
 {
  public:
-  RUDYDataSource(utl::Logger* logger);
+  RUDYDataSource(utl::Logger* logger,
+                 grt::GlobalRouter* grouter,
+                 odb::dbDatabase* db);
+
+  void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
+  void update() override { gui::HeatMapDataSource::update(); }
 
   void onShow() override;
   void onHide() override;
@@ -72,10 +81,11 @@ class RUDYDataSource : public GlobalRoutingDataSource,
                       const double data_area,
                       const double intersection_area,
                       const double rect_area) override;
-  void setBlock(odb::dbBlock* block) override;
 
  private:
-  std::unique_ptr<odb::RUDYCalculator> rudyInfo_;
+  grt::GlobalRouter* grouter_;
+  odb::dbDatabase* db_;
+  std::unique_ptr<grt::Rudy> rudy_;
 };
 
-}  // namespace gui
+}  // namespace grt
