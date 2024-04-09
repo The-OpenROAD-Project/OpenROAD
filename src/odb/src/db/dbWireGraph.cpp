@@ -34,6 +34,7 @@
 
 #include "dbWire.h"
 #include "dbWireCodec.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -819,6 +820,63 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
   }
 
   path.clear();
+}
+
+void dbWireGraph::dump(utl::Logger* logger)
+{
+  std::map<Node*, int> node2index;
+  int index = 0;
+  for (auto it = begin_nodes(); it != end_nodes(); ++it) {
+    auto node = *it;
+    node2index[node] = index;
+    int x;
+    int y;
+    node->xy(x, y);
+    std::string obj_name("-");
+    if (dbObject* object = node->object()) {
+      if (object->getObjectType() == dbITermObj) {
+        obj_name = static_cast<dbITerm*>(object)->getName();
+      } else if (object->getObjectType() == dbBTermObj) {
+        obj_name = static_cast<dbBTerm*>(object)->getName();
+      } else {
+        obj_name = "<unknown>";
+      }
+    }
+    logger->report("Node {:2}: ({}, {}) {} (obj {})",
+                   index++,
+                   x,
+                   y,
+                   node->layer()->getName(),
+                   obj_name);
+  }
+
+  index = 0;
+  for (auto it = begin_edges(); it != end_edges(); ++it) {
+    auto edge = *it;
+    std::string type;
+    switch (edge->type()) {
+      case Edge::SEGMENT:
+        type = "SEGMENT";
+        break;
+      case Edge::TECH_VIA:
+        type = "TECH_VIA";
+        break;
+      case Edge::VIA:
+        type = "VIA";
+        break;
+      case Edge::SHORT:
+        type = "SHORT";
+        break;
+      case Edge::VWIRE:
+        type = "VWIRE";
+        break;
+    }
+    logger->report("Edge {:2}: {:8} {:2} -> {:2}",
+                   index++,
+                   type,
+                   node2index.at(edge->source()),
+                   node2index.at(edge->target()));
+  }
 }
 
 }  // namespace odb
