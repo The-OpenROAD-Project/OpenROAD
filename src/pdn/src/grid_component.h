@@ -85,30 +85,30 @@ class GridComponent
   Grid* getGrid() const { return grid_; }
   VoltageDomain* getDomain() const;
 
-  virtual void makeShapes(const ShapeTreeMap& other_shapes) = 0;
-  virtual bool refineShapes(ShapeTreeMap& all_shapes,
-                            ShapeTreeMap& all_obstructions)
+  virtual void makeShapes(const Shape::ShapeTreeMap& other_shapes) = 0;
+  virtual bool refineShapes(Shape::ShapeTreeMap& all_shapes,
+                            Shape::ObstructionTreeMap& all_obstructions)
   {
     return false;
   };
 
-  const ShapeTreeMap& getShapes() const { return shapes_; }
-  void getShapes(ShapeTreeMap& shapes) const;
-  void removeShapes(ShapeTreeMap& shapes) const;
+  const Shape::ShapeTreeMap& getShapes() const { return shapes_; }
+  void getShapes(Shape::ShapeTreeMap& shapes) const;
+  void removeShapes(Shape::ShapeTreeMap& shapes) const;
   void removeShape(Shape* shape);
   void replaceShape(Shape* shape, const std::vector<Shape*>& replacements);
   void clearShapes() { shapes_.clear(); }
   int getShapeCount() const;
 
-  virtual void getConnectableShapes(ShapeTreeMap& shapes) const {}
+  virtual void getConnectableShapes(Shape::ShapeTreeMap& shapes) const {}
 
   // returns all the obstructions in this grid shape
-  void getObstructions(ShapeTreeMap& obstructions) const;
-  void removeObstructions(ShapeTreeMap& obstructions) const;
+  void getObstructions(Shape::ObstructionTreeMap& obstructions) const;
+  void removeObstructions(Shape::ObstructionTreeMap& obstructions) const;
 
   // cut the shapes according to the obstructions to avoid generating any DRC
   // violations.
-  virtual void cutShapes(const ShapeTreeMap& obstructions);
+  virtual void cutShapes(const Shape::ObstructionTreeMap& obstructions);
 
   void writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                  bool add_pins,
@@ -144,7 +144,7 @@ class GridComponent
   bool starts_with_power_;
   std::vector<odb::dbNet*> nets_;
 
-  ShapeTreeMap shapes_;
+  Shape::ShapeTreeMap shapes_;
 };
 
 }  // namespace pdn

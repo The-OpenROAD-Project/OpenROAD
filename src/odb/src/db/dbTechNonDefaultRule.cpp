@@ -76,8 +76,9 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*)
 
 _dbTechNonDefaultRule::~_dbTechNonDefaultRule()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule)
@@ -115,41 +116,53 @@ dbIStream& operator>>(dbIStream& stream, _dbTechNonDefaultRule& rule)
 
 bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
 {
-  if (_flags._hard_spacing != rhs._flags._hard_spacing)
+  if (_flags._hard_spacing != rhs._flags._hard_spacing) {
     return false;
+  }
 
-  if (_flags._block_rule != rhs._flags._block_rule)
+  if (_flags._block_rule != rhs._flags._block_rule) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_layer_rules != rhs._layer_rules)
+  if (_layer_rules != rhs._layer_rules) {
     return false;
+  }
 
-  if (_vias != rhs._vias)
+  if (_vias != rhs._vias) {
     return false;
+  }
 
-  if (_samenet_rules != rhs._samenet_rules)
+  if (_samenet_rules != rhs._samenet_rules) {
     return false;
+  }
 
-  if (_samenet_matrix != rhs._samenet_matrix)
+  if (_samenet_matrix != rhs._samenet_matrix) {
     return false;
+  }
 
-  if (_use_vias != rhs._use_vias)
+  if (_use_vias != rhs._use_vias) {
     return false;
+  }
 
-  if (_use_rules != rhs._use_rules)
+  if (_use_rules != rhs._use_rules) {
     return false;
+  }
 
-  if (_cut_layers != rhs._cut_layers)
+  if (_cut_layers != rhs._cut_layers) {
     return false;
+  }
 
-  if (_min_cuts != rhs._min_cuts)
+  if (_min_cuts != rhs._min_cuts) {
     return false;
+  }
 
   return true;
 }
@@ -243,14 +256,14 @@ dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
   _dbTechLayer* layer = (_dbTechLayer*) layer_;
   dbId<_dbTechLayerRule> id = rule->_layer_rules[layer->_number];
 
-  if (id == 0)
+  if (id == 0) {
     return nullptr;
+  }
 
   if (rule->_flags._block_rule == 0) {
     return (dbTechLayerRule*) rule->getTech()->_layer_rule_tbl->getPtr(id);
-  } else {
-    return (dbTechLayerRule*) rule->getBlock()->_layer_rule_tbl->getPtr(id);
   }
+  return (dbTechLayerRule*) rule->getBlock()->_layer_rule_tbl->getPtr(id);
 }
 
 void dbTechNonDefaultRule::getLayerRules(
@@ -275,8 +288,9 @@ void dbTechNonDefaultRule::getLayerRules(
        ++itr) {
     dbId<_dbTechLayerRule> id = *itr;
 
-    if (id != 0)
+    if (id != 0) {
       layer_rules.push_back((dbTechLayerRule*) layer_rule_tbl->getPtr(id));
+    }
   }
 }
 
@@ -284,8 +298,9 @@ void dbTechNonDefaultRule::getVias(std::vector<dbTechVia*>& vias)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  if (rule->_flags._block_rule == 1)  // not supported on block rules
+  if (rule->_flags._block_rule == 1) {  // not supported on block rules
     return;
+  }
 
   _dbTech* tech = rule->getTech();
   vias.clear();
@@ -303,8 +318,9 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
-  if (ndrule->_flags._block_rule == 1)  // not supported on block rules
+  if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
     return nullptr;
+  }
 
   _dbTech* tech = ndrule->getTech();
   _dbTechLayer* l1 = (_dbTechLayer*) l1_;
@@ -312,8 +328,9 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
   dbId<_dbTechSameNetRule> rule
       = ndrule->_samenet_matrix(l1->_number, l2->_number);
 
-  if (rule == 0)
+  if (rule == 0) {
     return nullptr;
+  }
 
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(rule);
 }
@@ -323,8 +340,9 @@ void dbTechNonDefaultRule::getSameNetRules(
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
-  if (ndrule->_flags._block_rule == 1)  // not supported on block rules
+  if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
     return;
+  }
 
   _dbTech* tech = ndrule->getTech();
   rules.clear();
@@ -438,8 +456,9 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
 dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
                                                    const char* name_)
 {
-  if (tech_->findNonDefaultRule(name_))
+  if (tech_->findNonDefaultRule(name_)) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
@@ -448,8 +467,9 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;
-  for (i = 0; i < tech->_layer_cnt; ++i)
+  for (i = 0; i < tech->_layer_cnt; ++i) {
     rule->_layer_rules.push_back(0);
+  }
 
   return (dbTechNonDefaultRule*) rule;
 }
@@ -457,8 +477,9 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
 dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
                                                    const char* name_)
 {
-  if (block_->findNonDefaultRule(name_))
+  if (block_->findNonDefaultRule(name_)) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) block_;
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();
@@ -470,8 +491,9 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
   rule->_layer_rules.resize(tech->_layer_cnt);
 
   int i;
-  for (i = 0; i < tech->_layer_cnt; ++i)
+  for (i = 0; i < tech->_layer_cnt; ++i) {
     rule->_layer_rules.push_back(0);
+  }
 
   return (dbTechNonDefaultRule*) rule;
 }

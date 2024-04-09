@@ -73,54 +73,62 @@ void definRegion::begin(const char* name)
 
 void definRegion::boundary(int x1, int y1, int x2, int y2)
 {
-  if (_cur_region)
+  if (_cur_region) {
     dbBox::create(_cur_region, dbdist(x1), dbdist(y1), dbdist(x2), dbdist(y2));
+  }
 }
 
 void definRegion::type(defRegionType type)
 {
   if (_cur_region) {
-    if (type == DEF_GUIDE)
+    if (type == DEF_GUIDE) {
       _cur_region->setRegionType(dbRegionType(dbRegionType::SUGGESTED));
 
-    else if (type == DEF_FENCE)
+    } else if (type == DEF_FENCE) {
       _cur_region->setRegionType(dbRegionType(dbRegionType::EXCLUSIVE));
+    }
   }
 }
 
 void definRegion::property(const char* name, const char* value)
 {
-  if (_cur_region == nullptr)
+  if (_cur_region == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_region, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_region, name, value);
 }
 
 void definRegion::property(const char* name, int value)
 {
-  if (_cur_region == nullptr)
+  if (_cur_region == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_region, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_region, name, value);
 }
 
 void definRegion::property(const char* name, double value)
 {
-  if (_cur_region == nullptr)
+  if (_cur_region == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_region, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_region, name, value);
 }
@@ -130,13 +138,15 @@ void definRegion::end()
   if (_cur_region) {
     dbSet<dbBox> boxes = _cur_region->getBoundaries();
 
-    if (boxes.reversible() && boxes.orderReversed())
+    if (boxes.reversible() && boxes.orderReversed()) {
       boxes.reverse();
+    }
 
     dbSet<dbProperty> props = dbProperty::getProperties(_cur_region);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
   }
 }
 

@@ -205,6 +205,9 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return true;
           };
 
+          // type
+          add_prop("Layer type", information);
+
           // direction
           add_prop("Direction", information);
 

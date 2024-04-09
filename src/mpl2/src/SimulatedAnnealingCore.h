@@ -79,10 +79,16 @@ class SimulatedAnnealingCore
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
   };
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
+
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
@@ -113,6 +119,8 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void attemptCentralization(float pre_cost);
+  void moveFloorplan(const std::pair<float, float>& offset);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -222,6 +230,8 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool centralization_on_ = false;
 };
 
 // SACore wrapper function
