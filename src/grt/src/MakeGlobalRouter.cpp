@@ -79,7 +79,9 @@ void initGlobalRouter(OpenRoad* openroad)
       openroad->getOpendp(),
       std::make_unique<grt::RoutingCongestionDataSource>(openroad->getLogger(),
                                                          openroad->getDb()),
-      std::make_unique<grt::RUDYDataSource>(openroad->getLogger(), openroad->getGlobalRouter(), openroad->getDb()));
+      std::make_unique<grt::RUDYDataSource>(openroad->getLogger(),
+                                            openroad->getGlobalRouter(),
+                                            openroad->getDb()));
 }
 
 }  // namespace ord

@@ -117,7 +117,8 @@ struct CongestionInformation
   std::set<odb::dbNet*, cmpById> sources;
 };
 
-using CapacityReductionData = std::vector<std::vector<std::pair<uint8_t, uint8_t>>>;
+using CapacityReductionData
+    = std::vector<std::vector<std::pair<uint8_t, uint8_t>>>;
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
