@@ -409,6 +409,10 @@ class GlobalRouter : public ant::GlobalRouteSource
       const std::vector<int>& layer_extensions,
       std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void findNetsObstructions(odb::Rect& die_area);
+  void applyNetObstruction(const odb::Rect& rect,
+                           odb::dbTechLayer* tech_layer,
+                           const odb::Rect& die_area,
+                           odb::dbNet* db_net);
   int computeMaxRoutingLayer();
   std::map<int, odb::dbTechVia*> getDefaultVias(int max_routing_layer);
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
