@@ -3425,7 +3425,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
         while (pitr.getNextShape(pshape)) {
           const odb::dbShape& shape = pshape.shape;
           if (shape.isVia()) {
-            shape.getViaBoxes(shape, via_boxes);
+            odb::dbShape::getViaBoxes(shape, via_boxes);
             for (const odb::dbShape& box : via_boxes) {
               odb::dbTechLayer* tech_layer = box.getTechLayer();
               if (tech_layer->getRoutingLevel() == 0) {
