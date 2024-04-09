@@ -381,15 +381,18 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       case lefiGeomPolygonIterE: {
         lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
         lefiGeomPolygon p;
-        double x;
-        double y;
 
         p.numPoints = pItr->numPoints;
         p.x = pItr->x;
         p.y = pItr->y;
 
-        for (y = 0; y < pItr->yStart; y++)
-          for (x = 0; x < pItr->xStart; x++)
+        // An oddity of the LEF parser is that the count is stored
+        // in the start field.
+        int num_x = lround(pItr->xStart);
+        int num_y = lround(pItr->yStart);
+
+        for (int y = 0; y < num_y; y++) {
+          for (int x = 0; x < num_x; x++) {
             createPolygon(object,
                           is_pin,
                           layer,
@@ -397,6 +400,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
                           designRuleWidth,
                           x * pItr->xStep,
                           y * pItr->yStep);
+          }
+        }
         break;
       }
       case lefiGeomViaE: {

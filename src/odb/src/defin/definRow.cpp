@@ -49,8 +49,9 @@ definRow::~definRow()
 {
   SiteMap::iterator sitr;
 
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
+  }
 }
 
 void definRow::init()
@@ -60,8 +61,9 @@ void definRow::init()
 
   SiteMap::iterator sitr;
 
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
+  }
 
   _sites.clear();
   _cur_row = nullptr;
@@ -118,7 +120,7 @@ void definRow::begin(const char* name,
     return;
   }
 
-  if (direction == DEF_VERTICAL)
+  if (direction == DEF_VERTICAL) {
     _cur_row = dbRow::create(_block,
                              name,
                              site,
@@ -128,7 +130,7 @@ void definRow::begin(const char* name,
                              dbRowDir::VERTICAL,
                              num_sites,
                              dbdist(spacing));
-  else
+  } else {
     _cur_row = dbRow::create(_block,
                              name,
                              site,
@@ -138,40 +140,47 @@ void definRow::begin(const char* name,
                              dbRowDir::HORIZONTAL,
                              num_sites,
                              dbdist(spacing));
+  }
 }
 void definRow::property(const char* name, const char* value)
 {
-  if (_cur_row == nullptr)
+  if (_cur_row == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_row, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_row, name, value);
 }
 
 void definRow::property(const char* name, int value)
 {
-  if (_cur_row == nullptr)
+  if (_cur_row == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_row, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_row, name, value);
 }
 
 void definRow::property(const char* name, double value)
 {
-  if (_cur_row == nullptr)
+  if (_cur_row == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_row, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_row, name, value);
 }
@@ -181,8 +190,9 @@ void definRow::end()
   if (_cur_row) {
     dbSet<dbProperty> props = dbProperty::getProperties(_cur_row);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
   }
 
   _cur_row = nullptr;

@@ -44,19 +44,22 @@ namespace odb {
 
 inline uint get_net_dbid(const char* name)
 {
-  if (*name != 'N')
+  if (*name != 'N') {
     return 0;
+  }
 
   ++name;
 
-  if (*name == '\0')
+  if (*name == '\0') {
     return 0;
+  }
 
   char* end;
   uint dbid = strtoul(name, &end, 10);
 
-  if (*end != '\0')
+  if (*end != '\0') {
     return 0;
+  }
 
   return dbid;
 }
@@ -104,18 +107,20 @@ void definNet::begin(const char* name)
   if (_replace_wires == false) {
     _cur_net = _block->findNet(name);
 
-    if (_cur_net == nullptr)
+    if (_cur_net == nullptr) {
       _cur_net = dbNet::create(_block, name);
+    }
 
     _non_default_rule = nullptr;
   } else {
-    if (_names_are_ids == false)
+    if (_names_are_ids == false) {
       _cur_net = _block->findNet(name);
-    else {
+    } else {
       uint netid = get_net_dbid(name);
 
-      if (netid)
+      if (netid) {
         _cur_net = dbNet::getNet(_block, netid);
+      }
     }
 
     if (_cur_net == nullptr) {
@@ -125,8 +130,9 @@ void definNet::begin(const char* name)
       if (!_assembly_mode) {
         dbWire* wire = _cur_net->getWire();
 
-        if (wire)
+        if (wire) {
           dbWire::destroy(wire);
+        }
       }
     }
 
@@ -135,16 +141,18 @@ void definNet::begin(const char* name)
     // This may cause problems with other routers.
     _non_default_rule = _cur_net->getNonDefaultRule();
   }
-  if (_mode == defin::FLOORPLAN)
+  if (_mode == defin::FLOORPLAN) {
     _update_cnt++;
-  else
+  } else {
     _net_cnt++;
+  }
 
   _wire = nullptr;
   _rule_for_path = nullptr;
   _found_new_routing = false;
-  if (_net_cnt != 0 && _net_cnt % 100000 == 0)
+  if (_net_cnt != 0 && _net_cnt % 100000 == 0) {
     _logger->info(utl::ODB, 97, "\t\tCreated {} Nets", _net_cnt);
+  }
 }
 
 void definNet::beginMustjoin(const char* iname, const char* tname)
@@ -174,11 +182,13 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 
 void definNet::connection(const char* iname, const char* tname)
 {
-  if (_skip_signal_connections == true)
+  if (_skip_signal_connections == true) {
     return;
+  }
 
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   if (iname[0] == 'P' || iname[0] == 'p') {
     if (iname[1] == 'I' || iname[1] == 'i') {
@@ -224,8 +234,9 @@ dbTechNonDefaultRule* definNet::findNonDefaultRule(const char* name)
 {
   dbTechNonDefaultRule* rule = _block->findNonDefaultRule(name);
 
-  if (rule)
+  if (rule) {
     return rule;
+  }
 
   rule = _tech->findNonDefaultRule(name);
   return rule;
@@ -233,8 +244,9 @@ dbTechNonDefaultRule* definNet::findNonDefaultRule(const char* name)
 
 void definNet::nonDefaultRule(const char* rule)
 {
-  if (_cur_net == nullptr)
+  if (_cur_net == nullptr) {
     return;
+  }
 
   if (_replace_wires == true) {
     // As per Glenn, in "replace" mode, ignore the
@@ -280,64 +292,72 @@ void definNet::nonDefaultRule(const char* rule)
                     "error: undefined NONDEFAULTRULE ({}) referenced",
                     rule);
       ++_errors;
-    } else
+    } else {
       _cur_net->setNonDefaultRule(_non_default_rule);
+    }
   }
 }
 
 void definNet::use(dbSigType type)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   _cur_net->setSigType(type);
 }
 
 void definNet::source(dbSourceType source)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   _cur_net->setSourceType(source);
 }
 
 void definNet::weight(int weight)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   _cur_net->setWeight(weight);
 }
 
 void definNet::fixedbump()
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   _cur_net->setFixedBump(true);
 }
 
 void definNet::xtalk(int value)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true)) {
     return;
+  }
 
   _cur_net->setXTalkClass(value);
 }
 
 void definNet::wire(dbWireType type)
 {
-  if (_skip_wires)
+  if (_skip_wires) {
     return;
+  }
 
   if (_wire == nullptr) {
-    if (!_assembly_mode)
+    if (!_assembly_mode) {
       _wire = dbWire::create(_cur_net);
-    else {
+    } else {
       _wire = _cur_net->getWire();
 
-      if (_wire == nullptr)
+      if (_wire == nullptr) {
         _wire = dbWire::create(_cur_net);
+      }
     }
     _wire_encoder.begin(_wire);
   }
@@ -354,8 +374,9 @@ void definNet::path(const char* layer_name)
 
 void definNet::pathBegin(const char* layer_name)
 {
-  if (_wire == nullptr)
+  if (_wire == nullptr) {
     return;
+  }
 
   _cur_layer = _tech->findLayer(layer_name);
 
@@ -384,10 +405,11 @@ void definNet::pathBegin(const char* layer_name)
     }
   }
 
-  if (_taper_rule)
+  if (_taper_rule) {
     _wire_encoder.newPath(_cur_layer, _wire_type, _taper_rule);
-  else
+  } else {
     _wire_encoder.newPath(_cur_layer, _wire_type);
+  }
 }
 
 void definNet::pathTaper(const char* layer)
@@ -415,8 +437,9 @@ void definNet::pathTaperRule(const char* layer_name, const char* rule_name)
 
 void definNet::pathPoint(int x, int y)
 {
-  if (_wire == nullptr)
+  if (_wire == nullptr) {
     return;
+  }
 
   _prev_x = dbdist(x);
   _prev_y = dbdist(y);
@@ -426,8 +449,9 @@ void definNet::pathPoint(int x, int y)
 
 void definNet::pathPoint(int x, int y, int ext)
 {
-  if (_wire == nullptr)
+  if (_wire == nullptr) {
     return;
+  }
 
   _prev_x = dbdist(x);
   _prev_y = dbdist(y);
@@ -438,8 +462,9 @@ void definNet::pathPoint(int x, int y, int ext)
 void definNet::getUniqueViaName(std::string& viaName)
 {
   if ((_tech->findVia(viaName.c_str()) == nullptr)
-      && (_block->findVia(viaName.c_str()) == nullptr))
+      && (_block->findVia(viaName.c_str()) == nullptr)) {
     return;
+  }
 
   int cnt = 1;
   for (;; ++cnt) {
@@ -500,8 +525,9 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
 
   dbVia*& via = _rotated_vias[viaName];
 
-  if (via != nullptr)
+  if (via != nullptr) {
     return via;
+  }
 
   getUniqueViaName(viaName);
 
@@ -529,23 +555,25 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
 
 void definNet::pathVia(const char* via_name, dbOrientType orient)
 {
-  if (_wire == nullptr)
+  if (_wire == nullptr) {
     return;
+  }
 
   dbVia* via = getRotatedVia(via_name, orient);
 
-  if (via == nullptr)
+  if (via == nullptr) {
     return;
+  }
 
   _wire_encoder.addVia(via);
   dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bot = via->getBottomLayer();
 
-  if (top == _cur_layer)
+  if (top == _cur_layer) {
     _cur_layer = bot;
-  else if (bot == _cur_layer)
+  } else if (bot == _cur_layer) {
     _cur_layer = top;
-  else {
+  } else {
     ++_errors;
     _logger->warn(
         utl::ODB,
@@ -556,8 +584,9 @@ void definNet::pathVia(const char* via_name, dbOrientType orient)
 
 void definNet::pathVia(const char* via_name)
 {
-  if (_wire == nullptr)
+  if (_wire == nullptr) {
     return;
+  }
 
   dbTechLayer* top;
   dbTechLayer* bot;
@@ -582,11 +611,11 @@ void definNet::pathVia(const char* via_name)
     bot = via->getBottomLayer();
   }
 
-  if (top == _cur_layer)
+  if (top == _cur_layer) {
     _cur_layer = bot;
-  else if (bot == _cur_layer)
+  } else if (bot == _cur_layer) {
     _cur_layer = top;
-  else {
+  } else {
     ++_errors;
     _logger->warn(utl::ODB,
                   110,
@@ -630,56 +659,65 @@ void definNet::wireEnd()
 
 void definNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == nullptr) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_net, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_net, name, value);
 }
 
 void definNet::property(const char* name, int value)
 {
-  if ((_cur_net == nullptr) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_net, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_net, name, value);
 }
 
 void definNet::property(const char* name, double value)
 {
-  if ((_cur_net == nullptr) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_net, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_net, name, value);
 }
 
 void definNet::end()
 {
-  if (_cur_net == nullptr)
+  if (_cur_net == nullptr) {
     return;
+  }
 
   if (!_replace_wires) {
     dbSet<dbITerm> iterms = _cur_net->getITerms();
 
-    if (iterms.reversible() && iterms.orderReversed())
+    if (iterms.reversible() && iterms.orderReversed()) {
       iterms.reverse();
+    }
 
     dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
   }
 
   if (_wire) {
@@ -688,8 +726,9 @@ void definNet::end()
     } else {
       _wire_encoder.end();
 
-      if (_replace_wires)
+      if (_replace_wires) {
         _cur_net->setWireAltered(true);
+      }
     }
   }
   _cur_net = nullptr;

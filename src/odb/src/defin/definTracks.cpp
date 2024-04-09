@@ -75,13 +75,15 @@ void definTracks::tracksLayer(const char* layer_name)
 
   dbTrackGrid* grid = _block->findTrackGrid(layer);
 
-  if (grid == nullptr)
+  if (grid == nullptr) {
     grid = dbTrackGrid::create(_block, layer);
+  }
 
-  if (_track._dir == DEF_X)
+  if (_track._dir == DEF_X) {
     grid->addGridPatternX(_track._orig, _track._count, _track._step);
-  else
+  } else {
     grid->addGridPatternY(_track._orig, _track._count, _track._step);
+  }
 }
 
 void definTracks::tracksEnd()
