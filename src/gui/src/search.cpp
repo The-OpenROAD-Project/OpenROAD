@@ -417,14 +417,14 @@ void Search::addVia(
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
-      bbox.moveTo(x, y);
+      bbox.moveDelta(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
-      bbox.moveTo(x, y);
+      bbox.moveDelta(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   }
