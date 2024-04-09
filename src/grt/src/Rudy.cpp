@@ -49,6 +49,13 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
   // TODO: Match the wire width with the paper definition
   wire_width_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
+  if (!grouter_->isInitialized()) {
+    int min_layer, max_layer;
+    grouter_->setDbBlock(block);
+    grouter_->getMinMaxLayer(min_layer, max_layer);
+    grouter_->initFastRoute(min_layer, max_layer);
+  }
+
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
   tile_size_ = grouter_->getGridTileSize();
@@ -93,11 +100,6 @@ void Rudy::makeGrid()
 
 void Rudy::getResourceReductions()
 {
-  if (!grouter_->isInitialized()) {
-    int min_layer, max_layer;
-    grouter_->getMinMaxLayer(min_layer, max_layer);
-    grouter_->initFastRoute(min_layer, max_layer);
-  }
   CapacityReductionData cap_usage_data;
   grouter_->getCapacityReductionData(cap_usage_data);
   for (int x = 0; x < grid_.size(); x++) {
