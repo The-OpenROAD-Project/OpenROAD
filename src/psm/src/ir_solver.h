@@ -187,7 +187,8 @@ class IRSolver
   bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
   bool wasNodeVisited(const Node* node) const;
 
-  std::map<Node*, std::set<Connection*>> getNodeConnectionMap(
+  std::map<Node*, std::set<Connection*, Connection::Compare>>
+  getNodeConnectionMap(
       const std::map<psm::Connection*, Connection::Conductance>& conductance)
       const;
   void buildNodeCurrentMap(sta::Corner* corner,
@@ -199,7 +200,8 @@ class IRSolver
       std::size_t start = 0) const;
   void buildCondMatrixAndVoltages(
       bool is_ground,
-      const std::map<Node*, std::set<Connection*>>& node_connections,
+      const std::map<Node*, std::set<Connection*, Connection::Compare>>&
+          node_connections,
       const ValueNodeMap<Current>& currents,
       const std::map<psm::Connection*, Connection::Conductance>& conductance,
       const std::map<Node*, std::size_t>& node_index,

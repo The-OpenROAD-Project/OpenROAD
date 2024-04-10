@@ -741,14 +741,15 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
   }
 }
 
-std::map<Node*, std::set<Connection*>> IRSolver::getNodeConnectionMap(
+std::map<Node*, std::set<Connection*, Connection::Compare>>
+IRSolver::getNodeConnectionMap(
     const std::map<psm::Connection*, Connection::Conductance>& conductance)
     const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/connection mapping: {}");
 
-  std::map<Node*, std::set<Connection*>> node_connections;
+  std::map<Node*, std::set<Connection*, Connection::Compare>> node_connections;
   for (const auto& [connection, cond] : conductance) {
     Node* node0 = connection->getNode0();
     Node* node1 = connection->getNode1();
@@ -784,7 +785,8 @@ std::map<Node*, std::size_t> IRSolver::assignNodeIDs(
 
 void IRSolver::buildCondMatrixAndVoltages(
     bool is_ground,
-    const std::map<Node*, std::set<Connection*>>& node_connections,
+    const std::map<Node*, std::set<Connection*, Connection::Compare>>&
+        node_connections,
     const ValueNodeMap<Current>& currents,
     const std::map<psm::Connection*, Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
@@ -807,7 +809,7 @@ void IRSolver::buildCondMatrixAndVoltages(
       J[node_idx] = find_node->second;
     }
 
-    long double node_cond = 0.0;
+    Connection::Conductance node_cond = 0.0;
     for (auto* conn : connections) {
       Node* other = conn->getOtherNode(node);
       const std::size_t other_idx = node_index.at(other);
@@ -817,8 +819,7 @@ void IRSolver::buildCondMatrixAndVoltages(
 
       cond_values.emplace_back(node_idx, other_idx, -cond);
     }
-    cond_values.emplace_back(
-        node_idx, node_idx, static_cast<Connection::Conductance>(node_cond));
+    cond_values.emplace_back(node_idx, node_idx, node_cond);
     if (print_progress && count % 1000 == 0) {
       logger_->report(
           "Processed nodes: {} of {}", count, node_connections.size());
@@ -897,8 +898,7 @@ void IRSolver::solve(sta::Corner* corner,
     dumpConductance(conductance, "cond");
   }
 
-  const std::map<Node*, std::set<Connection*>> node_connections
-      = getNodeConnectionMap(conductance);
+  const auto node_connections = getNodeConnectionMap(conductance);
   Node::NodeSet all_nodes;
   for (const auto& [node, conns] : node_connections) {
     all_nodes.insert(node);
