@@ -62,7 +62,7 @@ class IRNetwork;
 class IRSolver
 {
  public:
-  using Voltage = float;
+  using Voltage = double;
   using Current = double;
   using Power = float;
 
@@ -217,6 +217,9 @@ class IRSolver
   void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
   void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
                   const std::string& name) const;
+  void dumpConductance(
+      const std::map<Connection*, Connection::Conductance>& cond,
+      const std::string& name) const;
 
   odb::dbNet* net_;
 
