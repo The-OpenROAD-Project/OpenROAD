@@ -258,10 +258,6 @@ void GlobalRouter::globalRoute(bool save_guides,
       clear();
       block_ = db_->getChip()->getBlock();
 
-      if (max_routing_layer_ == -1) {
-        max_routing_layer_ = computeMaxRoutingLayer();
-      }
-
       int min_layer, max_layer;
       getMinMaxLayer(min_layer, max_layer);
 
@@ -1578,6 +1574,9 @@ void GlobalRouter::configFastRoute()
 
 void GlobalRouter::getMinMaxLayer(int& min_layer, int& max_layer)
 {
+  if (max_routing_layer_ == -1) {
+    max_routing_layer_ = computeMaxRoutingLayer();
+  }
   min_layer = min_layer_for_clock_ > 0
                   ? std::min(min_routing_layer_, min_layer_for_clock_)
                   : min_routing_layer_;
