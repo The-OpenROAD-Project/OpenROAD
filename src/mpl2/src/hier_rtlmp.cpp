@@ -3120,9 +3120,9 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
       // We don't consider tilings for right angle rotation orientations,
       // because they're not allowed in our macro placer.
-      tight_packing_tilings.emplace_back(std::pair<float, float>(
+      tight_packing_tilings.emplace_back(
           columns * macro_array->getHardMacros().front()->getWidth(),
-          rows * macro_array->getHardMacros().front()->getHeight()));
+          rows * macro_array->getHardMacros().front()->getHeight());
     }
 
     ++divider;
