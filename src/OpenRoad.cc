@@ -629,4 +629,34 @@ const char* OpenRoad::getGitDescribe()
   return OPENROAD_GIT_DESCRIBE;
 }
 
+bool OpenRoad::getGPUCompileOption()
+{
+  return GPU;
+}
+
+bool OpenRoad::getPythonCompileOption()
+{
+  return BUILD_PYTHON;
+}
+
+bool OpenRoad::getGUICompileOption()
+{
+  return BUILD_GUI;
+}
+
+bool OpenRoad::getChartsCompileOption()
+{
+  return ENABLE_CHARTS;
+}
+
+bool OpenRoad::getMPL2CompileOption()
+{
+  return ENABLE_MPL2;
+}
+
+bool OpenRoad::getPARCompileOption()
+{
+  return ENABLE_PAR;
+}
+
 }  // namespace ord

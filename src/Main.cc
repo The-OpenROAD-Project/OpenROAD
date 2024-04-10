@@ -496,6 +496,15 @@ static void showSplash()
                  ord::OpenRoad::getVersion(),
                  ord::OpenRoad::getGitDescribe());
   logger->report(
+      "Features included (+) or not (-):  "
+      "{}Charts {}GPU {}GUI {}MPL2 {}PAR {}Python",
+      ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGUICompileOption() ? "+" : "-",
+      ord::OpenRoad::getMPL2CompileOption() ? "+" : "-",
+      ord::OpenRoad::getPARCompileOption() ? "+" : "-",
+      ord::OpenRoad::getPythonCompileOption() ? "+" : "-");
+  logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");
   logger->report(
