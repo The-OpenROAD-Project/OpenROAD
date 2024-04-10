@@ -39,9 +39,12 @@
 #include <iostream>
 #include <unordered_set>
 
+#include <boost/polygon/polygon.hpp>
+
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
+#include "odb/dbShape.h"
 #include "odb/wOrder.h"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
@@ -64,6 +67,9 @@ using odb::dbWire;
 using odb::dbWireGraph;
 using odb::dbWireType;
 using odb::uint;
+using odb::dbWirePath;
+using odb::dbWirePathShape;
+using odb::dbWirePathItr;
 
 using utl::ANT;
 
@@ -1553,6 +1559,158 @@ void AntennaChecker::findWireRoots(dbWire* wire,
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////
+#include <map>
+
+namespace gtl = boost::polygon;
+using namespace gtl::operators;
+
+using Polygon =  gtl::polygon_90_data<int>;
+using PolygonSet = std::vector<Polygon>;
+using Point = gtl::polygon_traits<Polygon>::point_type;
+
+struct NodeTest{
+  bool isVia;
+  Polygon pol;
+  std::vector<int> low_adj;
+};
+
+typedef std::vector<NodeTest> wiresTest;
+
+Polygon rectToPolygon(const odb::Rect& rect) {
+  std::cerr << " (" << rect.xMin() << " " << rect.yMin() << ") , (" << rect.xMax() << " " << rect.yMax() << ")" << std::endl;
+  std::vector<Point> points{{gtl::construct<Point>(rect.xMin(),rect.yMin()),
+                             gtl::construct<Point>(rect.xMin(),rect.yMax()),
+                             gtl::construct<Point>(rect.xMax(),rect.yMax()),
+                             gtl::construct<Point>(rect.xMax(),rect.yMin())}};
+  Polygon pol;
+  gtl::set_points(pol, points.begin(), points.end());
+  return pol;
+}
+
+// used to find the element index which intersect the element (rect) on the parameter
+int findInter(const PolygonSet &wire_set, const Polygon& via_pol) {
+  int index = 0;
+  for (const auto & wire_pol : wire_set) {
+    bool isTouch = gtl::area(wire_pol & via_pol);
+    if (isTouch) {
+      return index;
+    }
+    index++;
+  }
+  return -1;
+}
+
+void testFunction(dbNet* net, dbWire* wires) { 
+
+  odb::dbShape shape;
+  odb::dbWireShapeItr shapes_it;
+  int count = 0;
+
+  std::unordered_map<odb::dbTechLayer*, PolygonSet> sets_layer;
+  std::vector<odb::dbShape> via_boxes;
+
+  // Add information on polygon sets
+  for (shapes_it.begin(wires); shapes_it.next(shape);) {
+
+    odb::dbTechLayer* layer;
+
+    // Get rect of the wire
+    odb::Rect wire_rect = shape.getBox(); 
+
+    if (shape.isVia()) {
+      odb::dbShape::getViaBoxes(shape, via_boxes);
+      for (const odb::dbShape& box : via_boxes) {
+        layer = box.getTechLayer();
+        if (layer->getRoutingLevel() != 0) {
+          continue;
+        }
+        std::cerr << "VIA on " << layer->getName() << " : " << layer->getLowerLayer()->getName() << " -> " << layer->getUpperLayer()->getName();
+        odb::Rect via_rect = box.getBox();
+        Polygon via_pol = rectToPolygon(via_rect);
+        sets_layer[layer] += via_pol;
+      }
+    }
+    else {
+      layer = shape.getTechLayer();
+      std::cerr << "WIRE on " << layer->getName();
+      // polygon set is used to join polygon on same layer with intersection
+      Polygon wire_pol = rectToPolygon(wire_rect);
+      sets_layer[layer] += wire_pol;
+    }
+    count++;
+  }
+
+  // Add instance pins
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    std::cerr << "Pin " << iterm->getName() << std::endl;
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    odb::dbInst* inst = iterm->getInst();
+    const odb::dbTransform transform = inst->getTransform(); 
+    for (odb::dbMPin* mterm : mterm->getMPins()) {
+      for (odb::dbBox* box : mterm->getGeometry()) {
+        odb::dbTechLayer* tech_layer = box->getTechLayer();
+        if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+        odb::Rect pin_rect = box->getBox();
+        transform.apply(pin_rect);
+        // create polygon and add on polygon set
+        Polygon pin_pol = rectToPolygon(pin_rect);
+        sets_layer[tech_layer] += pin_pol;
+      }
+    } 
+  }
+
+  // init struct (copy polygon set information on struct to save neighbors)
+  std::unordered_map<odb::dbTechLayer*, wiresTest> wire_layer;
+  for (const auto & layer_it : sets_layer){
+    for (const auto & pol_it : layer_it.second){
+      bool isVia = layer_it.first->getRoutingLevel()==0;
+      wire_layer[layer_it.first].push_back({isVia, pol_it, {}});
+    }
+  }
+
+  // set connections between Polygons ( wire -> via -> wire)
+  int index1, index2;
+  for (const auto &layer_it : sets_layer) {
+    // iterate only via layers
+    if (layer_it.first->getRoutingLevel() == 0) {
+      int via_index = 0;
+      for (const auto &via_it : layer_it.second) {
+        index1 = findInter(sets_layer[layer_it.first->getLowerLayer()], via_it);
+        std::cerr << "first find on layer " << layer_it.first->getLowerLayer()->getName() << " polygon " << index1 << std::endl;
+        index2 = findInter(sets_layer[layer_it.first->getUpperLayer()], via_it);
+        std::cerr << "first find on layer " << layer_it.first->getUpperLayer()->getName() << " polygon " << index2 << std::endl;
+        if (index1 != -1 && index2 != -1){
+          std::cerr << "Create connection " << index1 << " - " << index2 << std::endl;
+          wire_layer[layer_it.first->getUpperLayer()][index2].low_adj.push_back(via_index);
+          wire_layer[layer_it.first][via_index].low_adj.push_back(index1);
+        }
+        via_index++;
+      }
+    }
+  }
+
+  // Sumary information of map of polygon set
+  std::cerr << "Net: " << net->getConstName() << " has " << count << " parts" << std::endl;
+  std::cerr << "Polygon set info" << std::endl;
+  for (const auto &it: sets_layer) {
+    std::cerr << it.first->getName() << ": size = " << it.second.size() << " Area = " << gtl::area(it.second) << std::endl;
+  }
+
+  // information on my struct
+  std::cerr << "Struct information" << std::endl;
+  for (const auto &it: wire_layer) {
+    std::cerr << it.first->getName() << " number of segments = " << it.second.size() << std::endl;
+    for (const auto &node_it : it.second) {
+      std::cerr << "Area = " << gtl::area(node_it.pol) << " nbr_size = " << node_it.low_adj.size() << std::endl;
+    }
+  }
+  std::cerr << std::endl;
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+
 void AntennaChecker::checkNet(dbNet* net,
                               bool report_if_no_violation,
                               bool verbose,
@@ -1563,6 +1721,7 @@ void AntennaChecker::checkNet(dbNet* net,
 {
   dbWire* wire = net->getWire();
   if (wire) {
+    testFunction(net, wire);
     vector<dbWireGraph::Node*> wire_roots;
     vector<dbWireGraph::Node*> gate_nodes;
     findWireRoots(wire, wire_roots, gate_nodes);
