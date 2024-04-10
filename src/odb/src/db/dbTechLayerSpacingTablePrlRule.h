@@ -76,9 +76,9 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
 
-  uint getWidthIdx(const int width) const;
+  uint getWidthIdx(int width) const;
 
-  uint getLengthIdx(const int length) const;
+  uint getLengthIdx(int length) const;
 
   // User Code End Methods
 

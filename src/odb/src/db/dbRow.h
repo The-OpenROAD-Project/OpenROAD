@@ -110,8 +110,9 @@ inline _dbRow::_dbRow(_dbDatabase*)
 
 inline _dbRow::~_dbRow()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRow& row)

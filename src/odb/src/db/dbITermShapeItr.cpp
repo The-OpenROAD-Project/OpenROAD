@@ -64,10 +64,11 @@ void dbITermShapeItr::getShape(dbBox* box, dbShape& shape)
 
   dbTechVia* via = box->getTechVia();
 
-  if (via)
+  if (via) {
     shape.setVia(via, r);
-  else
+  } else {
     shape.setSegment(box->getTechLayer(), r);
+  }
 }
 
 #define INIT 0
@@ -90,23 +91,22 @@ next_state:
     }
 
     case MPIN_ITR: {
-      if (_mpin_itr == _mpins.end())
+      if (_mpin_itr == _mpins.end()) {
         return false;
-      else {
-        _mpin = *_mpin_itr;
-        ++_mpin_itr;
-        _boxes = _mpin->getGeometry();
-        _box_itr = _boxes.begin();
-        _state = MBOX_ITR;
       }
+      _mpin = *_mpin_itr;
+      ++_mpin_itr;
+      _boxes = _mpin->getGeometry();
+      _box_itr = _boxes.begin();
+      _state = MBOX_ITR;
 
       goto next_state;
     }
 
     case MBOX_ITR: {
-      if (_box_itr == _boxes.end())
+      if (_box_itr == _boxes.end()) {
         _state = MPIN_ITR;
-      else {
+      } else {
         dbBox* box = *_box_itr;
         ++_box_itr;
 
@@ -115,23 +115,21 @@ next_state:
           return true;
         }
 
-        else {
-          box->getViaXY(_via_x, _via_y);
-          _via = box->getTechVia();
-          assert(_via);
-          _via_boxes = _via->getBoxes();
-          _via_box_itr = _via_boxes.begin();
-          _state = VIA_BOX_ITR;
-        }
+        box->getViaXY(_via_x, _via_y);
+        _via = box->getTechVia();
+        assert(_via);
+        _via_boxes = _via->getBoxes();
+        _via_box_itr = _via_boxes.begin();
+        _state = VIA_BOX_ITR;
       }
 
       goto next_state;
     }
 
     case VIA_BOX_ITR: {
-      if (_via_box_itr == _via_boxes.end())
+      if (_via_box_itr == _via_boxes.end()) {
         _state = MBOX_ITR;
-      else {
+      } else {
         dbBox* box = *_via_box_itr;
         ++_via_box_itr;
         getViaBox(box, shape);
