@@ -5535,11 +5535,11 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   exchange_swap_prob = exchange_swap_prob / action_sum;
   float flip_prob = flip_prob_ / action_sum;
 
-  int num_perturb_per_step = (sa_macros.size() > num_perturb_per_step_ / 10)
-                                 ? sa_macros.size()
-                                 : num_perturb_per_step_ / 10;
-
   const int macros_to_place = static_cast<int>(hard_macros.size());
+
+  int num_perturb_per_step = (macros_to_place > num_perturb_per_step_ / 10)
+                                 ? macros_to_place
+                                 : num_perturb_per_step_ / 10;
 
   SequencePair initial_seq_pair;
   if (cluster->isArrayOfInterconnectedMacros()) {
@@ -5551,7 +5551,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     exchange_swap_prob = 0.95;
     flip_prob = 0.05;
 
-    num_perturb_per_step = num_perturb_per_step_;
+    // Large arrays need more steps to properly converge.
+    if (num_perturb_per_step > macros_to_place) {
+      num_perturb_per_step *= 2;
+    }
   }
 
   int run_id = 0;
