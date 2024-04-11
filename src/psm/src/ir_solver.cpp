@@ -431,7 +431,6 @@ IRSolver::generateSourceNodesFromBTerms() const
 
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
 
-  std::set<Node*, Node::Compare> bterm_nodes;
   for (auto* root_node : network_->getBPinShapeNodes()) {
     src_nodes.push_back(std::make_unique<SourceNode>(root_node));
   }
@@ -741,15 +740,14 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
   }
 }
 
-std::map<Node*, std::set<Connection*, Connection::Compare>>
-IRSolver::getNodeConnectionMap(
+std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
     const std::map<psm::Connection*, Connection::Conductance>& conductance)
     const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/connection mapping: {}");
 
-  std::map<Node*, std::set<Connection*, Connection::Compare>> node_connections;
+  std::map<Node*, Connection::ConnectionSet> node_connections;
   for (const auto& [connection, cond] : conductance) {
     Node* node0 = connection->getNode0();
     Node* node1 = connection->getNode1();
@@ -785,8 +783,7 @@ std::map<Node*, std::size_t> IRSolver::assignNodeIDs(
 
 void IRSolver::buildCondMatrixAndVoltages(
     bool is_ground,
-    const std::map<Node*, std::set<Connection*, Connection::Compare>>&
-        node_connections,
+    const std::map<Node*, Connection::ConnectionSet>& node_connections,
     const ValueNodeMap<Current>& currents,
     const std::map<psm::Connection*, Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
