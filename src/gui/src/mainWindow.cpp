@@ -328,6 +328,11 @@ MainWindow::MainWindow(QWidget* parent)
           script_,
           &ScriptWidget::setCommand);
 
+  // connect(charts_widget_,
+  //         &ChartsWidget::endPointsToReport,
+  //         this,
+  //         &MainWindow::runChartsBasedTimingReport);
+
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
   connect(
@@ -1605,5 +1610,12 @@ void MainWindow::openDesign()
     open_->setEnabled(true);
   }
 }
+
+// #ifdef ENABLE_CHARTS
+// void MainWindow::runChartsBasedTimingReport()
+// {
+
+// }
+// #endif
 
 }  // namespace gui
