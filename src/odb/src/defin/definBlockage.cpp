@@ -121,8 +121,9 @@ void definBlockage::blockageRoutingEffectiveWidth(int width)
 
 void definBlockage::blockageRoutingRect(int x1, int y1, int x2, int y2)
 {
-  if (_layer == nullptr)
+  if (_layer == nullptr) {
     return;
+  }
 
   x1 = dbdist(x1);
   y1 = dbdist(y1);
@@ -131,26 +132,32 @@ void definBlockage::blockageRoutingRect(int x1, int y1, int x2, int y2)
   dbObstruction* o
       = dbObstruction::create(_block, _layer, x1, y1, x2, y2, _inst);
 
-  if (_pushdown)
+  if (_pushdown) {
     o->setPushedDown();
+  }
 
-  if (_fills)
+  if (_fills) {
     o->setFillObstruction();
+  }
 
-  if (_slots)
+  if (_slots) {
     o->setSlotObstruction();
+  }
 
-  if (_has_min_spacing)
+  if (_has_min_spacing) {
     o->setMinSpacing(dbdist(_min_spacing));
+  }
 
-  if (_has_effective_width)
+  if (_has_effective_width) {
     o->setEffectiveWidth(dbdist(_effective_width));
+  }
 }
 
 void definBlockage::blockageRoutingPolygon(const std::vector<Point>& points)
 {
-  if (_layer == nullptr)
+  if (_layer == nullptr) {
     return;
+  }
 
   definPolygon polygon(points);
   std::vector<Rect> R;
@@ -163,22 +170,28 @@ void definBlockage::blockageRoutingPolygon(const std::vector<Point>& points)
 
     dbObstruction* o = dbObstruction::create(
         _block, _layer, r.xMin(), r.yMin(), r.xMax(), r.yMax(), _inst);
-    if (_pushdown)
+    if (_pushdown) {
       o->setPushedDown();
+    }
 
-    if (_fills)
+    if (_fills) {
       o->setFillObstruction();
+    }
 
-    if (_except_pg_nets)
+    if (_except_pg_nets) {
       o->setExceptPGNetsObstruction();
+    }
 
-    if (_slots)
+    if (_slots) {
       o->setSlotObstruction();
-    if (_has_min_spacing)
+    }
+    if (_has_min_spacing) {
       o->setMinSpacing(dbdist(_min_spacing));
+    }
 
-    if (_has_effective_width)
+    if (_has_effective_width) {
       o->setEffectiveWidth(dbdist(_effective_width));
+    }
   }
 }
 

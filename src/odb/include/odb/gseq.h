@@ -114,16 +114,8 @@ class gs
 
   int check_slice(int sl);
 
-  int get_seqrow(const int y,
-                 const int plane,
-                 const int start,
-                 int& end,
-                 int& bw);
-  int get_seqcol(const int x,
-                 const int plane,
-                 const int start,
-                 int& end,
-                 int& bw);
+  int get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol);
+  int get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol);
 
   static constexpr int PIXMAPGRID = 64;
 

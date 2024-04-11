@@ -69,7 +69,11 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 82;  // Current revision number
+
+const uint db_schema_minor = 83;  // Current revision number
+
+// Revision where scan structs are added
+const uint db_schema_add_scan = 83;
 
 // Revision where _dbTechLayer::two_wires_forbidden_spc_rules_tbl_ was added
 const uint db_schema_lef58_two_wires_forbidden_spacing = 82;

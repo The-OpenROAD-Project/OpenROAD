@@ -71,8 +71,9 @@ void definVia::viaBegin(const char* name)
 
 void definVia::viaRule(const char* rule)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
   dbTechViaGenerateRule* viarule = _tech->findViaGenerateRule(rule);
 
@@ -90,11 +91,13 @@ void definVia::viaRule(const char* rule)
 
 void definVia::viaCutSize(int xSize, int ySize)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setXCutSize(dbdist(xSize));
   _params->setYCutSize(dbdist(ySize));
@@ -104,11 +107,13 @@ bool definVia::viaLayers(const char* botName,
                          const char* cutName,
                          const char* topName)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return false;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   dbTechLayer* bot = _tech->findLayer(botName);
 
@@ -145,11 +150,13 @@ bool definVia::viaLayers(const char* botName,
 
 void definVia::viaCutSpacing(int xSpacing, int ySpacing)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setXCutSpacing(dbdist(xSpacing));
   _params->setYCutSpacing(dbdist(ySpacing));
@@ -157,11 +164,13 @@ void definVia::viaCutSpacing(int xSpacing, int ySpacing)
 
 void definVia::viaEnclosure(int xBot, int yBot, int xTop, int yTop)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setXBottomEnclosure(dbdist(xBot));
   _params->setYBottomEnclosure(dbdist(yBot));
@@ -171,11 +180,13 @@ void definVia::viaEnclosure(int xBot, int yBot, int xTop, int yTop)
 
 void definVia::viaRowCol(int numCutRows, int numCutCols)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setNumCutRows(numCutRows);
   _params->setNumCutCols(numCutCols);
@@ -183,11 +194,13 @@ void definVia::viaRowCol(int numCutRows, int numCutCols)
 
 void definVia::viaOrigin(int x, int y)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setXOrigin(dbdist(x));
   _params->setYOrigin(dbdist(y));
@@ -195,11 +208,13 @@ void definVia::viaOrigin(int x, int y)
 
 void definVia::viaOffset(int xBot, int yBot, int xTop, int yTop)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
-  if (_params == nullptr)
+  if (_params == nullptr) {
     _params = new dbViaParams();
+  }
 
   _params->setXBottomOffset(dbdist(xBot));
   _params->setYBottomOffset(dbdist(yBot));
@@ -209,16 +224,18 @@ void definVia::viaOffset(int xBot, int yBot, int xTop, int yTop)
 
 void definVia::viaPattern(const char* pattern)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
   _cur_via->setPattern(pattern);
 }
 
 void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
   x1 = dbdist(x1);
   y1 = dbdist(y1);
@@ -239,8 +256,9 @@ void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
 
 void definVia::viaEnd()
 {
-  if (_cur_via == nullptr)
+  if (_cur_via == nullptr) {
     return;
+  }
 
   if (_params) {
     _cur_via->setViaParams(*_params);
@@ -250,8 +268,9 @@ void definVia::viaEnd()
 
   dbSet<dbBox> boxes = _cur_via->getBoxes();
 
-  if (boxes.reversible() && boxes.orderReversed())
+  if (boxes.reversible() && boxes.orderReversed()) {
     boxes.reverse();
+  }
 
   if (boxes.size() < 3) {
     _logger->error(utl::ODB,
