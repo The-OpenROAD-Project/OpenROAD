@@ -255,9 +255,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showApplicationFont();
   void showGlobalConnect();
   void openDesign();
-// #ifdef ENABLE_CHARTS
-//   void runChartsBasedTimingReport();
-// #endif
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.

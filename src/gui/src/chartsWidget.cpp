@@ -63,6 +63,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       display_(new QChartView(chart_, this)),
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
+      buckets_(std::make_unique<Buckets>()),
 #endif
       label_(new QLabel(this))
 {
@@ -169,10 +170,8 @@ void ChartsWidget::setSlackMode()
   }
 
   setBucketInterval(data.max_slack, data.min_slack);
-
-  Buckets buckets = getFilledBuckets(data);
-
-  setNegativeCountOffset(static_cast<int>(buckets.negative.size()));
+  populateBuckets(data);
+  setNegativeCountOffset(static_cast<int>(buckets_->negative.size()));
 
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
@@ -183,16 +182,16 @@ void ChartsWidget::setSlackMode()
 
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
-  // connect(neg_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
-  // connect(pos_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
+  connect(neg_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
+  connect(pos_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
 
-  for (int i = 0; i < buckets.negative.size(); ++i) {
-    *neg_set << buckets.negative[i].size();
+  for (int i = 0; i < buckets_->negative.size(); ++i) {
+    *neg_set << buckets_->negative[i].size();
     *pos_set << 0;
   }
-  for (int i = 0; i < buckets.positive.size(); ++i) {
+  for (int i = 0; i < buckets_->positive.size(); ++i) {
     *neg_set << 0;
-    *pos_set << buckets.positive[i].size();
+    *pos_set << buckets_->positive[i].size();
   }
 
   QStackedBarSeries* series = new QStackedBarSeries(this);
@@ -257,10 +256,8 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
 
 // We define the slack interval as being inclusive in its lower
 // boundary and exclusive in upper: [lower upper)
-Buckets ChartsWidget::getFilledBuckets(const SlackHistogramData& data)
+void ChartsWidget::populateBuckets(const SlackHistogramData& data)
 {
-  Buckets buckets;
-
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
   float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
@@ -290,7 +287,7 @@ Buckets ChartsWidget::getFilledBuckets(const SlackHistogramData& data)
     // Push zeros - meaning no slack values in the current range - only in
     // situations where the bucket is in a valid position of the queue.
     if (data.min_slack < negative_upper) {
-      buckets.negative.push_front(neg_bucket);
+      buckets_->negative.push_front(neg_bucket);
 
       if (largest_slack_count_ < neg_bucket.size()) {
         largest_slack_count_ = neg_bucket.size();
@@ -298,7 +295,7 @@ Buckets ChartsWidget::getFilledBuckets(const SlackHistogramData& data)
     }
 
     if (data.max_slack >= positive_lower) {
-      buckets.positive.push_back(pos_bucket);
+      buckets_->positive.push_back(pos_bucket);
 
       if (largest_slack_count_ < pos_bucket.size()) {
         largest_slack_count_ = pos_bucket.size();
@@ -307,14 +304,46 @@ Buckets ChartsWidget::getFilledBuckets(const SlackHistogramData& data)
 
     ++bucket_index;
   } while (data.min_slack < negative_upper || data.max_slack >= positive_upper);
-
-  return buckets;
 }
 
-// void ChartsWidget::emitEndPointsInBucket(const int bar_index)
-// {
-//   emit endPointsToReport();
-// }
+void ChartsWidget::emitEndPointsInBucket(const int bar_index)
+{
+  EndPoints pins;
+
+  if (buckets_->negative.empty()) {
+    pins = buckets_->positive[bar_index];
+  } else {
+    int num_of_neg_buckets = static_cast<int>(buckets_->negative.size());
+
+    if (bar_index >= num_of_neg_buckets) {
+      pins = buckets_->positive[bar_index - num_of_neg_buckets];
+    } else {
+      pins = buckets_->negative[bar_index];
+    }
+  }
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+
+  std::vector<std::string> pins_names;
+
+  for (const sta::Pin* pin : pins) {
+    iterm = nullptr;
+    bterm = nullptr;
+
+    network->staToDb(pin, iterm, bterm);
+
+    if (iterm) {
+      pins_names.push_back(iterm->getName());
+    } else if (bterm) {
+      pins_names.push_back(bterm->getName());
+    }
+  }
+
+  emit endPointsToReport(pins_names);
+}
 
 void ChartsWidget::setBucketInterval(const float max_slack,
                                      const float min_slack)

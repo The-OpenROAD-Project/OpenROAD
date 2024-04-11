@@ -49,7 +49,6 @@
 #include "odb/db.h"
 
 namespace sta {
-// class StaPin;
 class dbSta;
 }
 
@@ -121,9 +120,9 @@ class TimingWidget : public QDockWidget
   void writePathReportCommand(const QModelIndex& selected_index,
                               const CommandType& type);
   void showCommandsMenu(const QPoint& pos);
-// #ifdef ENABLE_CHARTS
-//   void reportSlackHistogramPaths(const std::vector<sta::StaPin*> end_points);
-// #endif
+#ifdef ENABLE_CHARTS
+  void reportSlackHistogramPaths(const std::vector<std::string>& pins_names);
+#endif
 
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;

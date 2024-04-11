@@ -29,7 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// #include <iostream>
+#include <iostream>
 #include "timingWidget.h"
 
 #include <QApplication>
@@ -623,12 +623,13 @@ void TimingWidget::showSettings()
   settings_->show();
 }
 
-// #ifdef ENABLE_CHARTS
-// void TimingWidget::reportSlackHistogramPaths(
-//     const std::vector<sta::StaPin*> end_points)
-// {
-//   std::cout << fmt::format("Report charts paths\n");
-// }
-// #endif
+#ifdef ENABLE_CHARTS
+void TimingWidget::reportSlackHistogramPaths(const std::vector<std::string>& pins_names)
+{
+  for(auto& name : pins_names) {
+    std::cout << fmt::format("{}\n", name);
+  }
+}
+#endif
 
 }  // namespace gui

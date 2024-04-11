@@ -94,13 +94,13 @@ class ChartsWidget : public QDockWidget
     logger_ = logger;
   }
 
-//  signals:
-//   void endPointsToReport(std::vector<sta::StaPin*> end_points);
+ signals:
+  void endPointsToReport(const std::vector<std::string>& pins_names);
 
  private slots:
   void changeMode();
   void showToolTip(bool is_hovering, int bar_index);
-  // void emitEndPointsInBucket(int bar_index);
+  void emitEndPointsInBucket(int bar_index);
 
  private:
   void setSlackMode();
@@ -120,7 +120,7 @@ class ChartsWidget : public QDockWidget
   }
 
   SlackHistogramData fetchSlackHistogramData() const;
-  Buckets getFilledBuckets(const SlackHistogramData& data);
+  void populateBuckets(const SlackHistogramData& data);
 
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
@@ -147,6 +147,8 @@ class ChartsWidget : public QDockWidget
   QChartView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+
+  std::unique_ptr<Buckets> buckets_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
