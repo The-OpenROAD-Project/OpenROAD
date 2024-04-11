@@ -2196,8 +2196,8 @@ class frLef58EnclosureConstraint : public frConstraint
   }
   void setCutClassIdx(int in) { cut_class_idx_ = in; }
   int getCutClassIdx() const { return cut_class_idx_; }
-  bool isAbove() const { return db_rule_->isAbove(); }
-  bool isBelow() const { return db_rule_->isBelow(); }
+  bool isAboveOnly() const { return db_rule_->isAbove(); }
+  bool isBelowOnly() const { return db_rule_->isBelow(); }
   bool isValidOverhang(frCoord endOverhang, frCoord sideOverhang) const
   {
     if (db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::ENDSIDE) {

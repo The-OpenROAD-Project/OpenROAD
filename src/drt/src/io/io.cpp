@@ -1908,14 +1908,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    if (!rule->isWidthValid()) {
-      logger_->warn(DRT,
-                    350,
-                    "LEF58_ENCLOSURE with no WIDTH is not supported. Skipping "
-                    "for layer {}",
-                    layer->getName());
-      continue;
-    }
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frLef58EnclosureConstraint>(rule);
     auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());

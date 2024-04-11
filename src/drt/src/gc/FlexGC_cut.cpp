@@ -708,18 +708,12 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
     std::swap(sideOverhang, endOverhang);
   }
   frLef58EnclosureConstraint* lastCon = nullptr;
-  for (auto con :
-       layer->getLef58EnclosureConstraints(cutClassIdx, encRect->width())) {
-    if (con->isAbove() && !above) {
-      continue;
-    }
-    if (con->isBelow() && above) {
-      continue;
-    }
+  for (auto con : layer->getLef58EnclosureConstraints(
+           cutClassIdx, encRect->width(), above)) {
+    lastCon = con;
     if (con->isValidOverhang(endOverhang, sideOverhang)) {
       return;  // valid overhangs
     }
-    lastCon = con;
   }
   Rect markerBox(gtl::xl(*viaRect),
                  gtl::yl(*viaRect),
@@ -758,7 +752,11 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   }
   auto layer = getTech()->getLayer(rect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(rect->width(), rect->length());
-  if (!layer->hasLef58EnclosureConstraint(cutClassIdx)) {
+  bool hasAboveConstraints
+      = layer->hasLef58EnclosureConstraint(cutClassIdx, true);
+  bool hasBelowConstraints
+      = layer->hasLef58EnclosureConstraint(cutClassIdx, false);
+  if (!hasAboveConstraints && !hasBelowConstraints) {
     return;
   }
   auto getEnclosure = [this](gcRect* rect, frLayerNum layerNum) {
@@ -781,10 +779,14 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
     }
     return encRect;
   };
-  gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1);
-  checkLef58Enclosure_main(rect, belowEnc);
-  gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1);
-  checkLef58Enclosure_main(rect, aboveEnc);
+  if (hasBelowConstraints) {
+    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1);
+    checkLef58Enclosure_main(rect, belowEnc);
+  }
+  if (hasAboveConstraints) {
+    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1);
+    checkLef58Enclosure_main(rect, aboveEnc);
+  }
 }
 
 }  // namespace drt
