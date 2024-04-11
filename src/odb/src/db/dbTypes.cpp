@@ -1399,20 +1399,21 @@ const char* dbBoxOwner::getString() const
 
 dbPolygonOwner::dbPolygonOwner(const char* value)
 {
-  if (strcasecmp(value, "UNKNOWN") == 0)
+  if (strcasecmp(value, "UNKNOWN") == 0) {
     _value = UNKNOWN;
 
-  else if (strcasecmp(value, "BPIN") == 0)
+  } else if (strcasecmp(value, "BPIN") == 0) {
     _value = BPIN;
 
-  else if (strcasecmp(value, "OBSTRUCTION") == 0)
+  } else if (strcasecmp(value, "OBSTRUCTION") == 0) {
     _value = OBSTRUCTION;
 
-  else if (strcasecmp(value, "SWIRE") == 0)
+  } else if (strcasecmp(value, "SWIRE") == 0) {
     _value = SWIRE;
 
-  else
+  } else {
     _value = UNKNOWN;
+  }
 }
 
 dbPolygonOwner::dbPolygonOwner(Value value)
@@ -1839,17 +1840,18 @@ const char* dbRowDir::getString() const
 
 dbRegionType::dbRegionType(const char* instr)
 {
-  if (strcasecmp(instr, "INCLUSIVE") == 0)
+  if (strcasecmp(instr, "INCLUSIVE") == 0) {
     _value = INCLUSIVE;
 
-  else if (strcasecmp(instr, "EXCLUSIVE") == 0)
+  } else if (strcasecmp(instr, "EXCLUSIVE") == 0) {
     _value = EXCLUSIVE;
 
-  else if (strcasecmp(instr, "SUGGESTED") == 0)
+  } else if (strcasecmp(instr, "SUGGESTED") == 0) {
     _value = SUGGESTED;
 
-  else
+  } else {
     _value = INCLUSIVE;
+  }
 }
 
 const char* dbRegionType::getString() const
@@ -1937,20 +1939,21 @@ const char* dbSourceType::getString() const
 //
 dbJournalEntryType::dbJournalEntryType(const char* instr)
 {
-  if (strcasecmp(instr, "NONE") == 0)
+  if (strcasecmp(instr, "NONE") == 0) {
     _value = NONE;
 
-  else if (strcasecmp(instr, "OWNER") == 0)
+  } else if (strcasecmp(instr, "OWNER") == 0) {
     _value = OWNER;
 
-  else if (strcasecmp(instr, "ADD") == 0)
+  } else if (strcasecmp(instr, "ADD") == 0) {
     _value = ADD;
 
-  else if (strcasecmp(instr, "DESTROY") == 0)
+  } else if (strcasecmp(instr, "DESTROY") == 0) {
     _value = DESTROY;
 
-  else
+  } else {
     _value = NONE;
+  }
 }
 
 const char* dbJournalEntryType::getString() const
@@ -1983,29 +1986,30 @@ const char* dbJournalEntryType::getString() const
 //
 dbDirection::dbDirection(const char* instr)
 {
-  if (strcasecmp(instr, "NONE") == 0)
+  if (strcasecmp(instr, "NONE") == 0) {
     _value = NONE;
 
-  else if (strcasecmp(instr, "NORTH") == 0)
+  } else if (strcasecmp(instr, "NORTH") == 0) {
     _value = NORTH;
 
-  else if (strcasecmp(instr, "EAST") == 0)
+  } else if (strcasecmp(instr, "EAST") == 0) {
     _value = EAST;
 
-  else if (strcasecmp(instr, "SOUTH") == 0)
+  } else if (strcasecmp(instr, "SOUTH") == 0) {
     _value = SOUTH;
 
-  else if (strcasecmp(instr, "WEST") == 0)
+  } else if (strcasecmp(instr, "WEST") == 0) {
     _value = WEST;
 
-  else if (strcasecmp(instr, "UP") == 0)
+  } else if (strcasecmp(instr, "UP") == 0) {
     _value = UP;
 
-  else if (strcasecmp(instr, "DOWN") == 0)
+  } else if (strcasecmp(instr, "DOWN") == 0) {
     _value = DOWN;
 
-  else
+  } else {
     _value = NONE;
+  }
 }
 
 const char* dbDirection::getString() const
