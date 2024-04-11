@@ -1401,10 +1401,10 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
   if (layer > max_routing_layer_ && max_routing_layer_ > 0) {
     if (verbose_) {
-      odb::dbTech* tech = db_->getTech();
-      odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
       odb::dbTechLayer* max_tech_layer
           = tech->findRoutingLayer(max_routing_layer_);
       logger_->warn(GRT,
