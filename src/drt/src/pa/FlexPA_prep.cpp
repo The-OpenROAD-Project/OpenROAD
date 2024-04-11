@@ -45,7 +45,7 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-using namespace fr;
+namespace drt {
 
 using utl::ThreadException;
 
@@ -97,7 +97,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
           gtl::shrink(rect, gtl::HORIZONTAL, layerWidths[layerNum] / 2);
         }
       }
-      using namespace boost::polygon::operators;
+      using boost::polygon::operators::operator+=;
       pinShapes[layerNum] += rect;
     } else if (shape->typeId() == frcPolygon) {
       auto obj = static_cast<frPolygon*>(shape.get());
@@ -106,11 +106,11 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       // must be copied pts
       for (Point pt : obj->getPoints()) {
         xform.apply(pt);
-        points.push_back(gtl::point_data<frCoord>(pt.x(), pt.y()));
+        points.emplace_back(pt.x(), pt.y());
       }
       gtl::polygon_90_data<frCoord> poly;
       poly.set(points.begin(), points.end());
-      using namespace boost::polygon::operators;
+      using boost::polygon::operators::operator+=;
       pinShapes[layerNum] += poly;
     } else {
       logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
@@ -157,7 +157,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
       cnt++;
     }
   }
-  if (cnt >= 2) {
+  if (cnt >= 3) {
     return;
   }
 
@@ -274,7 +274,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
       } else if (ps.getEndPoint() == end) {
         ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
       }
-      ap->addPathSeg(std::move(ps));
+      ap->addPathSeg(ps);
       if (!(e == end)) {
         fpt = e;
         ps.setPoints_safe(fpt, end);
@@ -283,7 +283,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
         } else {
           ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
         }
-        ap->addPathSeg(std::move(ps));
+        ap->addPathSeg(ps);
       }
     }
   }
@@ -398,11 +398,12 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
   } else if (layer->isVertical()) {
     low = gtl::xl(rect);
     high = gtl::xh(rect);
-  } else
+  } else {
     logger_->error(
         DRT,
         1003,
         "enclosesPlanarAccess: layer is neither vertical or horizontal");
+  }
   const auto& tracks = trackCoords_[layerNum];
   const auto lowTrack = tracks.lower_bound(low);
   if (lowTrack == tracks.end()) {
@@ -768,33 +769,38 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
   gtl::rectangle_data<frCoord> rect;
   if (isBlock) {
     gtl::extents(rect, layerPolys[0]);
-    if (layerPolys.size() > 1)
+    if (layerPolys.size() > 1) {
       logger_->warn(DRT, 6000, "Macro pin has more than 1 polygon");
+    }
   }
   switch (dir) {
     case (frDirEnum::W):
-      if (isBlock)
+      if (isBlock) {
         x = gtl::xl(rect) - pitch;
-      else
+      } else {
         x -= stepSize;
+      }
       break;
     case (frDirEnum::E):
-      if (isBlock)
+      if (isBlock) {
         x = gtl::xh(rect) + pitch;
-      else
+      } else {
         x += stepSize;
+      }
       break;
     case (frDirEnum::S):
-      if (isBlock)
+      if (isBlock) {
         y = gtl::yl(rect) - pitch;
-      else
+      } else {
         y -= stepSize;
+      }
       break;
     case (frDirEnum::N):
-      if (isBlock)
+      if (isBlock) {
         y = gtl::yh(rect) + pitch;
-      else
+      } else {
         y += stepSize;
+      }
       break;
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
@@ -895,8 +901,9 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
     }
   }
   gcWorker.addPAObj(ps.get(), owner);
-  for (auto& apPs : ap->getPathSegs())
+  for (auto& apPs : ap->getPathSegs()) {
     gcWorker.addPAObj(&apPs, owner);
+  }
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -968,7 +975,7 @@ void FlexPA::getViasFromMetalWidthMap(
       continue;
     }
 
-    viaDefs.push_back({viaDefs.size(), tech->getVia(entry->getViaName())});
+    viaDefs.emplace_back(viaDefs.size(), tech->getVia(entry->getViaName()));
   }
 }
 
@@ -1020,9 +1027,10 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   if (viaDefs.empty()) {  // no via map entry
     // hardcode first two single vias
     for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-      viaDefs.push_back(std::make_pair(viaDefs.size(), viaDef));
-      if (viaDefs.size() >= maxNumViaTrial && !deepSearch)
+      viaDefs.emplace_back(viaDefs.size(), viaDef);
+      if (viaDefs.size() >= maxNumViaTrial && !deepSearch) {
         break;
+      }
     }
   }
 
@@ -1032,17 +1040,20 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     via->setOrigin(bp);
     const Rect box = via->getLayer1BBox();
     if (instTerm) {
-      if (!boundaryBBox.contains(box))
+      if (!boundaryBBox.contains(box)) {
         continue;
+      }
       Rect layer2BBox = via->getLayer2BBox();
-      if (!boundaryBBox.contains(layer2BBox))
+      if (!boundaryBBox.contains(layer2BBox)) {
         continue;
+      }
     }
 
     frCoord maxExt = 0;
     const gtl::rectangle_data<frCoord> viarect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
+    using boost::polygon::operators::operator&=;
     gtl::polygon_90_set_data<frCoord> intersection;
     intersection += viarect;
     intersection &= polyset;
@@ -1064,8 +1075,9 @@ void FlexPA::prepPoint_pin_checkPoint_via(
         maxExt = std::max(maxExt, gtl::yl(r) - box.yMin());
       }
     }
-    if (viainpin && maxExt)
+    if (viainpin && maxExt) {
       continue;
+    }
     if (prepPoint_pin_checkPoint_via_helper(
             ap, via.get(), pin, instTerm, layerPolys)) {
       validViaDefs.insert({maxExt, idx, viaDef});
@@ -1116,8 +1128,9 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
     if (upperlayer->isHorizontal()
         && (dir == frDirEnum::S || dir == frDirEnum::N)) {
       return false;
-    } else if (!upperlayer->isHorizontal()
-               && (dir == frDirEnum::W || dir == frDirEnum::E)) {
+    }
+    if (!upperlayer->isHorizontal()
+        && (dir == frDirEnum::W || dir == frDirEnum::E)) {
       return false;
     }
   }
@@ -1173,13 +1186,15 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
     if (!instTerm->getNet() || !instTerm->getNet()->getNondefaultRule()
-        || AUTO_TAPER_NDR_NETS)
+        || AUTO_TAPER_NDR_NETS) {
       gcWorker.addTargetObj(instTerm->getInst());
+    }
   } else {
     if (!pin->getTerm()->getNet()
         || !pin->getTerm()->getNet()->getNondefaultRule()
-        || AUTO_TAPER_NDR_NETS)
+        || AUTO_TAPER_NDR_NETS) {
       gcWorker.addTargetObj(pin->getTerm());
+    }
   }
 
   gcWorker.initPA0(getDesign());
@@ -1199,8 +1214,9 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   }
   gcWorker.addPAObj(ps.get(), owner);
   gcWorker.addPAObj(via, owner);
-  for (auto& apPs : ap->getPathSegs())
+  for (auto& apPs : ap->getPathSegs()) {
     gcWorker.addPAObj(&apPs, owner);
+  }
   gcWorker.initPA1();
   gcWorker.main();
   gcWorker.end();
@@ -1237,21 +1253,21 @@ void FlexPA::prepPoint_pin_checkPoint(
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    const std::vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
     T* pin,
     frInstTerm* instTerm,
     const bool& isStdCellPin)
 {
   std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layerPolys(
-      layerPolysets.size());
-  for (int i = 0; i < (int) layerPolysets.size(); i++) {
-    layerPolysets[i].get_polygons(layerPolys[i]);
+      pinShapes.size());
+  for (int i = 0; i < (int) pinShapes.size(); i++) {
+    pinShapes[i].get_polygons(layerPolys[i]);
   }
   bool hasAccess = false;
   for (auto& ap : aps) {
     const auto layerNum = ap->getLayerNum();
     prepPoint_pin_checkPoint(
-        ap.get(), layerPolysets[layerNum], layerPolys[layerNum], pin, instTerm);
+        ap.get(), pinShapes[layerNum], layerPolys[layerNum], pin, instTerm);
     if (isStdCellPin) {
       hasAccess
           |= ((layerNum == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
@@ -1264,7 +1280,7 @@ void FlexPA::prepPoint_pin_checkPoints(
     for (auto& ap : aps) {
       const auto layerNum = ap->getLayerNum();
       prepPoint_pin_checkPoint(ap.get(),
-                               layerPolysets[layerNum],
+                               pinShapes[layerNum],
                                layerPolys[layerNum],
                                pin,
                                instTerm,
@@ -1520,7 +1536,7 @@ void FlexPA::prepPoint()
   ThreadException exception;
   const auto& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) unique.size(); i++) {
+  for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
     try {
       auto& inst = unique[i];
       // only do for core and block cells
@@ -1554,12 +1570,12 @@ void FlexPA::prepPoint()
         {
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 1000) {
-              if (cnt % 100 == 0) {
+            if (cnt < 10000) {
+              if (cnt % 1000 == 0) {
                 logger_->info(DRT, 76, "  Complete {} pins.", cnt);
               }
             } else {
-              if (cnt % 1000 == 0) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 77, "  Complete {} pins.", cnt);
               }
             }
@@ -1576,11 +1592,12 @@ void FlexPA::prepPoint()
   if (target_insts_.empty()) {
     omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
-    for (unsigned i = 0; i < getDesign()->getTopBlock()->getTerms().size();
+    for (unsigned i = 0;  // NOLINT
+         i < getDesign()->getTopBlock()->getTerms().size();
          i++) {
       try {
         auto& term = getDesign()->getTopBlock()->getTerms()[i];
-        if (term.get()->getType().isSupply()) {
+        if (term->getType().isSupply()) {
           continue;
         }
         auto net = term->getNet();
@@ -1607,21 +1624,21 @@ void FlexPA::prepPoint()
   }
 }
 
-void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
+void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
 {
   ThreadException exception;
   int cnt = 0;
   if (isDistributed()) {
     omp_set_num_threads(cloud_sz_);
-    const int batch_size = instRows.size() / cloud_sz_;
+    const int batch_size = inst_rows.size() / cloud_sz_;
     paUpdate allUpdates;
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < cloud_sz_; i++) {
       try {
         std::vector<std::vector<frInst*>>::const_iterator start
-            = instRows.begin() + (i * batch_size);
+            = inst_rows.begin() + (i * batch_size);
         std::vector<std::vector<frInst*>>::const_iterator end
-            = (i == cloud_sz_ - 1) ? instRows.end() : start + batch_size;
+            = (i == cloud_sz_ - 1) ? inst_rows.end() : start + batch_size;
         std::vector<std::vector<frInst*>> batch(start, end);
         std::string path = fmt::format("{}/batch_{}.bin", shared_vol_, i);
         serializeInstRows(batch, path);
@@ -1635,8 +1652,9 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
         msg.setJobDescription(std::move(uDesc));
         const bool ok
             = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-        if (!ok)
+        if (!ok) {
           logger_->error(utl::DRT, 329, "Error sending INST_ROWS Job to cloud");
+        }
         auto desc
             = static_cast<PinAccessJobDescription*>(result.getJobDescription());
         paUpdate update;
@@ -1651,12 +1669,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
           }
           cnt += batch.size();
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 110, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 111, "  Complete {} groups.", cnt);
               }
             }
@@ -1680,28 +1698,29 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
     msg.setJobDescription(std::move(uDesc));
     const bool ok
         = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-    if (!ok)
+    if (!ok) {
       logger_->error(utl::DRT, 332, "Error sending UPDATE_PA Job to cloud");
+    }
   } else {
     omp_set_num_threads(MAX_THREADS);
     // choose access pattern of a row of insts
     int rowIdx = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) instRows.size(); i++) {
+    for (int i = 0; i < (int) inst_rows.size(); i++) {  // NOLINT
       try {
-        auto& instRow = instRows[i];
+        auto& instRow = inst_rows[i];
         genInstRowPattern(instRow);
 #pragma omp critical
         {
           rowIdx++;
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 82, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 83, "  Complete {} groups.", cnt);
               }
             }
@@ -1800,9 +1819,10 @@ void FlexPA::prepPattern()
     msg.setJobDescription(std::move(uDesc));
     const bool ok
         = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-    if (!ok)
+    if (!ok) {
       logger_->error(
           utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
+    }
   }
 
   // prep pattern for each row
@@ -1815,9 +1835,8 @@ void FlexPA::prepPattern()
     const Point originB = b->getOrigin();
     if (originA.y() == originB.y()) {
       return (originA.x() < originB.x());
-    } else {
-      return (originA.y() < originB.y());
     }
+    return (originA.y() < originB.y());
   };
 
   getInsts(insts);
@@ -2058,7 +2077,7 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
              i++) {
           auto& accessPoint = accessPoints[accessPointIdx];
           if (accessPoint) {
-            Point pt(accessPoint->getPoint());
+            const Point& pt(accessPoint->getPoint());
             if (instTerm->hasNet()) {
               std::cout << " gcclean2via " << inst->getName() << " "
                         << instTerm->getTerm()->getName() << " "
@@ -2161,9 +2180,9 @@ void FlexPA::addAccessPatternObj(
         via->setOrigin(pt);
         auto rvia = via.get();
         if (instTerm->hasNet()) {
-          objs.push_back(std::make_pair(rvia, instTerm->getNet()));
+          objs.emplace_back(rvia, instTerm->getNet());
         } else {
-          objs.push_back(std::make_pair(rvia, instTerm.get()));
+          objs.emplace_back(rvia, instTerm.get());
         }
         vias.push_back(std::move(via));
       }
@@ -2175,12 +2194,14 @@ void FlexPA::addAccessPatternObj(
 void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
   std::set<frInst*> target_frinsts;
-  for (auto inst : target_insts_)
+  for (auto inst : target_insts_) {
     target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+  }
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end())
+        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
+    }
     if (!unique_insts_.hasUnique(inst.get())) {
       continue;
     }
@@ -2267,8 +2288,9 @@ int FlexPA::prepPattern_inst(frInst* inst,
         pins.push_back({(int) std::round(coord), {pin.get(), instTerm.get()}});
       }
     }
-    if (nAps == 0 && instTerm->getTerm()->getPins().size())
+    if (nAps == 0 && !instTerm->getTerm()->getPins().empty()) {
       logger_->error(DRT, 86, "Pin does not have an access point.");
+    }
   }
   std::sort(pins.begin(),
             pins.end(),
@@ -2278,6 +2300,7 @@ int FlexPA::prepPattern_inst(frInst* inst,
             });
 
   std::vector<std::pair<frMPin*, frInstTerm*>> pinInstTermPairs;
+  pinInstTermPairs.reserve(pins.size());
   for (auto& [x, m] : pins) {
     pinInstTermPairs.push_back(m);
   }
@@ -2298,6 +2321,9 @@ int FlexPA::genPatterns(
   for (auto& [pin, instTerm] : pins) {
     maxAccessPointSize = std::max(
         maxAccessPointSize, pin->getPinAccess(paIdx)->getNumAccessPoints());
+  }
+  if (maxAccessPointSize == 0) {
+    return 0;
   }
   int numNode = (pins.size() + 2) * maxAccessPointSize;
   int numEdge = numNode * maxAccessPointSize;
@@ -2429,10 +2455,9 @@ void FlexPA::genPatterns_reset(
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     int maxAccessPointSize)
 {
-  for (int i = 0; i < (int) nodes.size(); i++) {
-    auto node = &nodes[i];
-    node->setPathCost(std::numeric_limits<int>::max());
-    node->setPrevNodeIdx(-1);
+  for (auto& node : nodes) {
+    node.setPathCost(std::numeric_limits<int>::max());
+    node.setPrevNodeIdx(-1);
   }
 
   int startNodeIdx = getFlatIdx(-1, 0, maxAccessPointSize);
@@ -2477,8 +2502,9 @@ bool FlexPA::genPatterns_gc(
   gcWorker.setDrcBox(extBox);
 
   gcWorker.setTargetObjs(targetObjs);
-  if (targetObjs.empty())
+  if (targetObjs.empty()) {
     gcWorker.setIgnoreDB();
+  }
   gcWorker.initPA0(getDesign());
   for (auto& [connFig, owner] : objs) {
     gcWorker.addPAObj(connFig, owner);
@@ -2587,9 +2613,9 @@ int FlexPA::getEdgeCost(
       xform.apply(pt1);
       via1->setOrigin(pt1);
       if (instTerm1->hasNet()) {
-        objs.push_back(std::make_pair(via1.get(), instTerm1->getNet()));
+        objs.emplace_back(via1.get(), instTerm1->getNet());
       } else {
-        objs.push_back(std::make_pair(via1.get(), instTerm1));
+        objs.emplace_back(via1.get(), instTerm1);
       }
     }
 
@@ -2603,9 +2629,9 @@ int FlexPA::getEdgeCost(
       xform.apply(pt2);
       via2->setOrigin(pt2);
       if (instTerm2->hasNet()) {
-        objs.push_back(std::make_pair(via2.get(), instTerm2->getNet()));
+        objs.emplace_back(via2.get(), instTerm2->getNet());
       } else {
-        objs.push_back(std::make_pair(via2.get(), instTerm2));
+        objs.emplace_back(via2.get(), instTerm2);
       }
     }
 
@@ -2631,9 +2657,9 @@ int FlexPA::getEdgeCost(
             xform.apply(pt3);
             via3->setOrigin(pt3);
             if (instTerm3->hasNet()) {
-              objs.push_back(std::make_pair(via3.get(), instTerm3->getNet()));
+              objs.emplace_back(via3.get(), instTerm3->getNet());
             } else {
-              objs.push_back(std::make_pair(via3.get(), instTerm3));
+              objs.emplace_back(via3.get(), instTerm3);
             }
           }
 
@@ -2733,9 +2759,9 @@ bool FlexPA::genPatterns_commit(
         xform.apply(pt);
         rvia->setOrigin(pt);
         if (instTerm->hasNet()) {
-          objs.push_back(std::make_pair(rvia, instTerm->getNet()));
+          objs.emplace_back(rvia, instTerm->getNet());
         } else {
-          objs.push_back(std::make_pair(rvia, instTerm));
+          objs.emplace_back(rvia, instTerm);
         }
       }
     }
@@ -2751,7 +2777,7 @@ bool FlexPA::genPatterns_commit(
       if (isSkipInstTerm(instTerm.get())) {
         continue;
       }
-      long unsigned int nNoApPins = 0;
+      uint64_t nNoApPins = 0;
       for (auto& pin : instTerm->getTerm()->getPins()) {
         if (pin2AP.find(pin.get()) == pin2AP.end()) {
           nNoApPins++;
@@ -2770,8 +2796,9 @@ bool FlexPA::genPatterns_commit(
           pinAccessPattern->addAccessPoint(ap);
         }
       }
-      if (nNoApPins == instTerm->getTerm()->getPins().size())
+      if (nNoApPins == instTerm->getTerm()->getPins().size()) {
         logger_->error(DRT, 91, "Pin does not have valid ap.");
+      }
     }
     pinAccessPattern->setBoundaryAP(true, leftAP);
     pinAccessPattern->setBoundaryAP(false, rightAP);
@@ -2916,3 +2943,5 @@ int FlexPA::getFlatEdgeIdx(const int prevIdx1,
 {
   return ((prevIdx1 + 1) * idx2Dim + prevIdx2) * idx2Dim + currIdx2;
 }
+
+}  // namespace drt

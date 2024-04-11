@@ -50,8 +50,9 @@ template class dbTable<_dbSBox>;
 
 bool _dbSBox::operator==(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type)
+  if (_sflags._wire_type != rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction != rhs._sflags._direction) {
     return false;
@@ -69,16 +70,18 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
     return false;
   }
 
-  if (_dbBox::operator!=(rhs))
+  if (_dbBox::operator!=(rhs)) {
     return false;
+  }
 
   return true;
 }
 
 int _dbSBox::equal(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type)
+  if (_sflags._wire_type != rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction != rhs._sflags._direction) {
     return false;
@@ -101,8 +104,9 @@ int _dbSBox::equal(const _dbSBox& rhs) const
 
 bool _dbSBox::operator<(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type < rhs._sflags._wire_type)
+  if (_sflags._wire_type < rhs._sflags._wire_type) {
     return true;
+  }
 
   if (_sflags._direction < rhs._sflags._direction) {
     return true;
@@ -120,8 +124,9 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
     return true;
   }
 
-  if (_sflags._wire_type > rhs._sflags._wire_type)
+  if (_sflags._wire_type > rhs._sflags._wire_type) {
     return false;
+  }
 
   if (_sflags._direction > rhs._sflags._direction) {
     return false;
@@ -146,8 +151,9 @@ void _dbSBox::differences(dbDiff& diff,
                           const char* field,
                           const _dbSBox& rhs) const
 {
-  if (diff.deepDiff())
+  if (diff.deepDiff()) {
     return;
+  }
 
   DIFF_BEGIN
   DIFF_FIELD(_sflags._wire_type);
@@ -305,36 +311,42 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbSBox* box = block->_sbox_tbl->create();
 
   uint dx;
-  if (x2 > x1)
+  if (x2 > x1) {
     dx = x2 - x1;
-  else
+  } else {
     dx = x1 - x2;
+  }
 
   uint dy;
-  if (y2 > y1)
+  if (y2 > y1) {
     dy = y2 - y1;
-  else
+  } else {
     dy = y1 - y2;
+  }
 
   switch (dir) {
     case UNDEFINED:
-      if ((dx & 1) && (dy & 1))  // both odd
+      if ((dx & 1) && (dy & 1)) {  // both odd
         return nullptr;
+      }
 
       break;
 
     case HORIZONTAL:
-      if (dy & 1)  // dy odd
+      if (dy & 1) {  // dy odd
         return nullptr;
+      }
       break;
 
     case VERTICAL:
-      if (dx & 1)  // dy odd
+      if (dx & 1) {  // dy odd
         return nullptr;
+      }
       break;
     case OCTILINEAR:
-      if (dx != dy)
+      if (dx != dy) {
         return nullptr;
+      }
       break;
   }
 
@@ -371,8 +383,9 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
   int xmin = vbbox->_shape._rect.xMin() + x;
@@ -403,8 +416,9 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbTechVia* via = (_dbTechVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);

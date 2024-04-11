@@ -1,11 +1,5 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: pad.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  pad.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: pad.lef, created 1 library cells
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
@@ -26,7 +20,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/Z                                   60.65  149.17  -88.52 (VIOLATED)
 
-[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.

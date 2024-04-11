@@ -562,8 +562,9 @@ bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
   }
   lefrClear();
 
-  if (res)
+  if (res) {
     return false;
+  }
 
   return true;
 }

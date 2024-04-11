@@ -65,26 +65,35 @@ void parallelEdgeParser(
 
   // Populating Object
   sc->setParallelEdgeValid(true);
-  if (isSubtractEolWidth.is_initialized())
+  if (isSubtractEolWidth.is_initialized()) {
     sc->setSubtractEolWidthValid(true);
+  }
   sc->setParSpace(l->dbdist(parSpace));
   sc->setParWithin(l->dbdist(parWithin));
-  if (prl.is_initialized())
+  if (prl.is_initialized()) {
     sc->setParPrlValid(true);
-  if (prl.is_initialized())
+  }
+  if (prl.is_initialized()) {
     sc->setParPrl(l->dbdist(at_c<1>(prl.value())));
-  if (minLength.is_initialized())
+  }
+  if (minLength.is_initialized()) {
     sc->setParMinLengthValid(true);
-  if (minLength.is_initialized())
+  }
+  if (minLength.is_initialized()) {
     sc->setParMinLength(l->dbdist(at_c<1>(minLength.value())));
-  if (isTwoEdges.is_initialized())
+  }
+  if (isTwoEdges.is_initialized()) {
     sc->setTwoEdgesValid(true);
-  if (isSameMetal.is_initialized())
+  }
+  if (isSameMetal.is_initialized()) {
     sc->setSameMetalValid(true);
-  if (isNonEolCornerOnly.is_initialized())
+  }
+  if (isNonEolCornerOnly.is_initialized()) {
     sc->setNonEolCornerOnlyValid(true);
-  if (isParallelSameMask.is_initialized())
+  }
+  if (isParallelSameMask.is_initialized()) {
     sc->setParallelSameMaskValid(true);
+  }
 }
 
 void exceptExactParser(
@@ -136,20 +145,26 @@ void withcutParser(
       = at_c<4>(params);
 
   sc->setWithcutValid(true);
-  if (cutclass.is_initialized())
+  if (cutclass.is_initialized()) {
     sc->setCutClassValid(true);
-  if (cutclass.is_initialized())
+  }
+  if (cutclass.is_initialized()) {
     sc->setCutClass(l->dbdist(at_c<1>(cutclass.value())));
-  if (above.is_initialized())
+  }
+  if (above.is_initialized()) {
     sc->setWithCutAboveValid(true);
+  }
   sc->setWithCutSpace(l->dbdist(cutSpace));
-  if (enclosureEnd.is_initialized())
+  if (enclosureEnd.is_initialized()) {
     sc->setEnclosureEndValid(true);
-  if (enclosureEnd.is_initialized())
+  }
+  if (enclosureEnd.is_initialized()) {
     sc->setEnclosureEndWidth(l->dbdist(at_c<1>(enclosureEnd.value())));
+  }
   if (enclosureEnd.is_initialized()
-      && (at_c<2>(enclosureEnd.value())).is_initialized())
+      && (at_c<2>(enclosureEnd.value())).is_initialized()) {
     sc->setEnclosureEndWithinValid(true);
+  }
   if (enclosureEnd.is_initialized()
       && (at_c<2>(enclosureEnd.value())).is_initialized()) {
     const double& enclosureEndWithin
@@ -193,25 +208,31 @@ void endtoendspacingParser(
 
   sc->setEndToEndValid(true);
   sc->setEndToEndSpace(l->dbdist(at_c<1>(params)));
-  if (twoCutSpaces.is_initialized())
+  if (twoCutSpaces.is_initialized()) {
     sc->setOneCutSpace(l->dbdist(at_c<0>(twoCutSpaces.value())));
-  if (twoCutSpaces.is_initialized())
+  }
+  if (twoCutSpaces.is_initialized()) {
     sc->setTwoCutSpace(l->dbdist(at_c<1>(twoCutSpaces.value())));
+  }
 
-  if (extension.is_initialized())
+  if (extension.is_initialized()) {
     sc->setExtensionValid(true);
-  if (extension.is_initialized())
+  }
+  if (extension.is_initialized()) {
     sc->setExtension(l->dbdist(at_c<1>(extension.value())));
+  }
   if (extension.is_initialized()
       && (at_c<2>(extension.value())).is_initialized()) {
     sc->setWrongDirExtensionValid(true);
     sc->setWrongDirExtension(l->dbdist((at_c<2>(extension.value())).value()));
   }
 
-  if (otherendWidth.is_initialized())
+  if (otherendWidth.is_initialized()) {
     sc->setOtherEndWidthValid(true);
-  if (otherendWidth.is_initialized())
+  }
+  if (otherendWidth.is_initialized()) {
     sc->setOtherEndWidth(l->dbdist(at_c<1>(otherendWidth.value())));
+  }
 }
 
 void maxminlengthParser(
@@ -235,8 +256,9 @@ void maxminlengthParser(
             params);
     sc->setMinLengthValid(true);
     sc->setMinLength(l->dbdist(at_c<1>(mn)));
-    if ((at_c<2>(mn)).is_initialized())
+    if ((at_c<2>(mn)).is_initialized()) {
       sc->setTwoSidesValid(true);
+    }
   }
 }
 
@@ -253,16 +275,18 @@ void enclosecutParser(
 {
   sc->setEncloseCutValid(true);
   if ((at_c<1>(params)).is_initialized()
-      && boost::get<std::string>((at_c<1>(params)).value()) == "ABOVE")
+      && boost::get<std::string>((at_c<1>(params)).value()) == "ABOVE") {
     sc->setAboveValid(true);
-  else if ((at_c<1>(params)).is_initialized()
-           && boost::get<std::string>((at_c<1>(params)).value()) == "BELOW")
+  } else if ((at_c<1>(params)).is_initialized()
+             && boost::get<std::string>((at_c<1>(params)).value()) == "BELOW") {
     sc->setBelowValid(true);
+  }
   sc->setEncloseDist(l->dbdist(at_c<2>(params)));
   sc->setCutSpacingValid(true);
   sc->setCutToMetalSpace(l->dbdist(at_c<4>(params)));
-  if ((at_c<5>(params)).is_initialized())
+  if ((at_c<5>(params)).is_initialized()) {
     sc->setAllCutsValid(true);
+  }
 }
 
 void oppositeWidthParser(
@@ -296,18 +320,21 @@ void concaveCornerParser(
       = at_c<2>(params);
 
   sc->setToConcaveCornerValid(true);
-  if (minlength.is_initialized())
+  if (minlength.is_initialized()) {
     sc->setMinLengthValid(true);
-  if (minlength.is_initialized())
+  }
+  if (minlength.is_initialized()) {
     sc->setMinLength(l->dbdist(at_c<1>(minlength.value())));
+  }
 
-  if (minAdjlength.is_initialized())
+  if (minAdjlength.is_initialized()) {
     sc->setMinAdjacentLengthValid(true);
+  }
   if (minAdjlength.is_initialized()
-      && boost::get<double>(&at_c<1>(minAdjlength.value())))
+      && boost::get<double>(&at_c<1>(minAdjlength.value()))) {
     sc->setMinAdjLength(
         l->dbdist(boost::get<double>(at_c<1>(minAdjlength.value()))));
-  else if (minAdjlength.is_initialized()) {
+  } else if (minAdjlength.is_initialized()) {
     const boost::fusion::vector<double, double>& twoAdjLengths
         = boost::get<boost::fusion::vector<double, double>>(
             at_c<1>(minAdjlength.value()));
@@ -453,8 +480,9 @@ bool parse(Iterator first,
   bool valid
       = qi::phrase_parse(first, last, spacingRule, space) && first == last;
 
-  if (!valid)
+  if (!valid) {
     odb::dbTechLayerSpacingEolRule::destroy(sc);
+  }
   return valid;
 }
 }  // namespace lefTechLayerSpacingEol
@@ -469,8 +497,9 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     if (rule.find("ENDOFLINE") == std::string::npos) {
       l->warning(254,
                  "unsupported LEF58_SPACING property for layer {} :\"{}\"",
@@ -478,12 +507,13 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
                  rule);
       continue;
     }
-    if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l))
+    if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l)) {
       l->warning(255,
                  "parse mismatch in layer propery LEF58_SPACING ENDOFLINE for "
                  "layer {} :\"{}\"",
                  layer->getName(),
                  rule);
+    }
   }
 }
 

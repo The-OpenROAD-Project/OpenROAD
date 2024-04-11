@@ -34,6 +34,7 @@
 
 #include <QInputDialog>
 #include <QStringList>
+#include <boost/algorithm/string.hpp>
 #include <iomanip>
 #include <limits>
 #include <queue>
@@ -59,9 +60,23 @@ static void populateODBProperties(Descriptor::Properties& props,
   for (const auto prop : odb::dbProperty::getProperties(object)) {
     std::any value;
     switch (prop->getType()) {
-      case odb::dbProperty::STRING_PROP:
-        value = static_cast<odb::dbStringProperty*>(prop)->getValue();
+      case odb::dbProperty::STRING_PROP: {
+        auto str = static_cast<odb::dbStringProperty*>(prop)->getValue();
+
+        std::vector<std::string> lines;
+        boost::split(lines, str, boost::is_any_of("\n"));
+
+        std::vector<std::string> trimmed_lines;
+        for (auto& line : lines) {
+          boost::algorithm::trim(line);
+          if (!line.empty()) {
+            trimmed_lines.push_back(line);
+          }
+        }
+
+        value = boost::algorithm::join(trimmed_lines, "\n");
         break;
+      }
       case odb::dbProperty::BOOL_PROP:
         value = static_cast<odb::dbBoolProperty*>(prop)->getValue();
         break;
@@ -531,7 +546,8 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
     props.push_back({"Module", gui->makeSelected(module)});
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
-  props.push_back({"Description", getInstanceTypeText(getInstanceType(inst))});
+  props.push_back(
+      {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
   props.push_back({"Source type", inst->getSourceType().getString()});
   props.push_back({"Dont Touch", inst->isDoNotTouch()});
@@ -732,169 +748,6 @@ bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-std::string DbInstDescriptor::getInstanceTypeText(Type type) const
-{
-  switch (type) {
-    case BLOCK:
-      return "Macro";
-    case PAD:
-      return "Pad";
-    case PAD_INPUT:
-      return "Input pad";
-    case PAD_OUTPUT:
-      return "Output pad";
-    case PAD_INOUT:
-      return "Input/output pad";
-    case PAD_POWER:
-      return "Power pad";
-    case PAD_SPACER:
-      return "Pad spacer";
-    case PAD_AREAIO:
-      return "Area IO";
-    case ENDCAP:
-      return "Endcap";
-    case FILL:
-      return "Fill";
-    case TAPCELL:
-      return "Tapcell";
-    case BUMP:
-      return "Bump";
-    case COVER:
-      return "Cover";
-    case ANTENNA:
-      return "Antenna";
-    case TIE:
-      return "Tie";
-    case LEF_OTHER:
-      return "Other";
-    case STD_CELL:
-      return "Standard cell";
-    case STD_BUFINV:
-      return "Buffer/inverter";
-    case STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case STD_BUFINV_TIMING_REPAIR:
-      return "Buffer/inverter from timing repair";
-    case STD_CLOCK_GATE:
-      return "Clock gate";
-    case STD_LEVEL_SHIFT:
-      return "Level shifter";
-    case STD_SEQUENTIAL:
-      return "Sequential";
-    case STD_PHYSICAL:
-      return "Physical";
-    case STD_COMBINATIONAL:
-      return "Combinational";
-    case STD_OTHER:
-      return "Other";
-  }
-
-  return "Unknown";
-}
-
-DbInstDescriptor::Type DbInstDescriptor::getInstanceType(
-    odb::dbInst* inst) const
-{
-  odb::dbMaster* master = inst->getMaster();
-  const auto master_type = master->getType();
-  const auto source_type = inst->getSourceType();
-  if (master->isBlock()) {
-    return BLOCK;
-  }
-  if (master->isPad()) {
-    if (master_type == odb::dbMasterType::PAD_INPUT) {
-      return PAD_INPUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_OUTPUT) {
-      return PAD_OUTPUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_INOUT) {
-      return PAD_INOUT;
-    }
-    if (master_type == odb::dbMasterType::PAD_POWER) {
-      return PAD_POWER;
-    }
-    if (master_type == odb::dbMasterType::PAD_SPACER) {
-      return PAD_SPACER;
-    }
-    if (master_type == odb::dbMasterType::PAD_AREAIO) {
-      return PAD_AREAIO;
-    }
-    return PAD;
-  }
-  if (master->isEndCap()) {
-    return ENDCAP;
-  }
-  if (master->isFiller()) {
-    return FILL;
-  }
-  if (master_type == odb::dbMasterType::CORE_WELLTAP) {
-    return TAPCELL;
-  }
-  if (master->isCover()) {
-    if (master_type == odb::dbMasterType::COVER_BUMP) {
-      return BUMP;
-    }
-    return COVER;
-  }
-  if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
-    return ANTENNA;
-  }
-  if (master_type == odb::dbMasterType::CORE_TIEHIGH
-      || master_type == odb::dbMasterType::CORE_TIELOW) {
-    return TIE;
-  }
-  if (source_type == odb::dbSourceType::DIST) {
-    return LEF_OTHER;
-  }
-
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Cell* cell = network->dbToSta(master);
-  if (cell == nullptr) {
-    return LEF_OTHER;
-  }
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (lib_cell == nullptr) {
-    if (master->isCore()) {
-      return STD_CELL;
-    }
-    // default to use overall instance setting if there is no liberty cell and
-    // it's not a core cell.
-    return STD_OTHER;
-  }
-
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-    if (source_type == odb::dbSourceType::TIMING) {
-      for (auto* iterm : inst->getITerms()) {
-        // look through iterms and check for clock nets
-        auto* net = iterm->getNet();
-        if (net == nullptr) {
-          continue;
-        }
-        if (net->getSigType() == odb::dbSigType::CLOCK) {
-          return STD_BUFINV_CLK_TREE;
-        }
-      }
-      return STD_BUFINV_TIMING_REPAIR;
-    }
-    return STD_BUFINV;
-  }
-  if (lib_cell->isClockGate()) {
-    return STD_CLOCK_GATE;
-  }
-  if (lib_cell->isLevelShifter()) {
-    return STD_LEVEL_SHIFT;
-  }
-  if (lib_cell->hasSequentials()) {
-    return STD_SEQUENTIAL;
-  }
-  if (lib_cell->portCount() == 0) {
-    return STD_PHYSICAL;  // generic physical
-  }
-  // not anything else, so combinational
-  return STD_COMBINATIONAL;
-}
-
 //////////////////////////////////////////////////
 
 DbMasterDescriptor::DbMasterDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
@@ -978,6 +831,7 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
     instances.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", instances});
+  props.push_back({"Origin", master->getOrigin()});
 
   populateODBProperties(props, master);
 
@@ -2430,7 +2284,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Technology", gui->makeSelected(layer->getTech())},
                     {"Direction", layer->getDirection().getString()},
-                    {"Type", layer->getType().getString()}});
+                    {"Layer type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
     props.push_back({"LEF58 type", layer->getLef58TypeString()});
   }

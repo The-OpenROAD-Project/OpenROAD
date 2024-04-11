@@ -66,7 +66,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMap.cpp
     src/heatMapSetup.cpp
     src/heatMapPlacementDensity.cpp
-    src/heatMapRUDY.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/clockWidget.cpp
@@ -115,3 +114,5 @@ target_include_directories(gui
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
 )
+
+add_subdirectory(test)

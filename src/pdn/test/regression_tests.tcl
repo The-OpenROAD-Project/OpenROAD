@@ -38,11 +38,12 @@ record_tests {
   core_grid_extend_to_boundary
   core_grid_extend_to_boundary_no_pins
   core_grid_with_M7_pins
+  core_grid_with_M6_min_area
 
   core_grid_strap_count
 
   core_grid_no_trim
-  
+
   core_grid_offset_strap
   core_grid_with_rings_with_limit_straps
 
@@ -66,6 +67,7 @@ record_tests {
   macros_cells_dont_touch
   macros_cells_overlapping_ports
   macros_cells_not_fixed
+  macros_cells_via_failure
 
   region_temp_sensor
   region_secondary_nets
@@ -102,8 +104,17 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
-  
+  power_switch_upf_error
+  power_switch_upf_star
+  power_switch_upf_daisy
+  power_switch_upf_regions
+
   repair_vias
 
   sroute_test
+
+  bpin_removal
+
+  #pdn_man_tcl_check
+  #pdn_readme_msgs_check
 }

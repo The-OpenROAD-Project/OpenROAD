@@ -205,6 +205,9 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             return true;
           };
 
+          // type
+          add_prop("Layer type", information);
+
           // direction
           add_prop("Direction", information);
 
@@ -1203,7 +1206,8 @@ void DisplayControls::addTech(odb::dbTech* tech)
 
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
-    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
+    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT
+        || type == dbTechLayerType::IMPLANT) {
       auto& row = layer_controls_[layer];
       makeLeafItem(row,
                    QString::fromStdString(layer->getName()),
@@ -1455,58 +1459,58 @@ bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 const DisplayControls::ModelRow* DisplayControls::getInstRow(
     odb::dbInst* inst) const
 {
-  switch (inst_descriptor_->getInstanceType(inst)) {
-    case DbInstDescriptor::BLOCK:
+  switch (sta_->getInstanceType(inst)) {
+    case sta::dbSta::InstType::BLOCK:
       return &instances_.blocks;
-    case DbInstDescriptor::PAD:
+    case sta::dbSta::InstType::PAD:
       return &pad_instances_.other;
-    case DbInstDescriptor::PAD_INPUT:
+    case sta::dbSta::InstType::PAD_INPUT:
       return &pad_instances_.input;
-    case DbInstDescriptor::PAD_OUTPUT:
+    case sta::dbSta::InstType::PAD_OUTPUT:
       return &pad_instances_.output;
-    case DbInstDescriptor::PAD_INOUT:
+    case sta::dbSta::InstType::PAD_INOUT:
       return &pad_instances_.inout;
-    case DbInstDescriptor::PAD_POWER:
+    case sta::dbSta::InstType::PAD_POWER:
       return &pad_instances_.power;
-    case DbInstDescriptor::PAD_SPACER:
+    case sta::dbSta::InstType::PAD_SPACER:
       return &pad_instances_.spacer;
-    case DbInstDescriptor::PAD_AREAIO:
+    case sta::dbSta::InstType::PAD_AREAIO:
       return &pad_instances_.areaio;
-    case DbInstDescriptor::ENDCAP:
+    case sta::dbSta::InstType::ENDCAP:
       return &physical_instances_.endcap;
-    case DbInstDescriptor::FILL:
+    case sta::dbSta::InstType::FILL:
       return &physical_instances_.fill;
-    case DbInstDescriptor::TAPCELL:
+    case sta::dbSta::InstType::TAPCELL:
       return &physical_instances_.tap;
-    case DbInstDescriptor::BUMP:
+    case sta::dbSta::InstType::BUMP:
       return &physical_instances_.bump;
-    case DbInstDescriptor::COVER:
+    case sta::dbSta::InstType::COVER:
       return &physical_instances_.cover;
-    case DbInstDescriptor::ANTENNA:
+    case sta::dbSta::InstType::ANTENNA:
       return &physical_instances_.antenna;
-    case DbInstDescriptor::TIE:
+    case sta::dbSta::InstType::TIE:
       return &physical_instances_.tie;
-    case DbInstDescriptor::LEF_OTHER:
+    case sta::dbSta::InstType::LEF_OTHER:
       return &physical_instances_.other;
-    case DbInstDescriptor::STD_CELL:
+    case sta::dbSta::InstType::STD_CELL:
       return &instances_.stdcells;
-    case DbInstDescriptor::STD_BUFINV:
+    case sta::dbSta::InstType::STD_BUFINV:
       return &bufinv_instances_.other;
-    case DbInstDescriptor::STD_BUFINV_CLK_TREE:
+    case sta::dbSta::InstType::STD_BUFINV_CLK_TREE:
       return &clock_tree_instances_.bufinv;
-    case DbInstDescriptor::STD_BUFINV_TIMING_REPAIR:
+    case sta::dbSta::InstType::STD_BUFINV_TIMING_REPAIR:
       return &bufinv_instances_.timing;
-    case DbInstDescriptor::STD_CLOCK_GATE:
+    case sta::dbSta::InstType::STD_CLOCK_GATE:
       return &clock_tree_instances_.clock_gates;
-    case DbInstDescriptor::STD_LEVEL_SHIFT:
+    case sta::dbSta::InstType::STD_LEVEL_SHIFT:
       return &stdcell_instances_.level_shiters;
-    case DbInstDescriptor::STD_SEQUENTIAL:
+    case sta::dbSta::InstType::STD_SEQUENTIAL:
       return &stdcell_instances_.sequential;
-    case DbInstDescriptor::STD_PHYSICAL:
+    case sta::dbSta::InstType::STD_PHYSICAL:
       return &instances_.physical;
-    case DbInstDescriptor::STD_COMBINATIONAL:
+    case sta::dbSta::InstType::STD_COMBINATIONAL:
       return &stdcell_instances_.combinational;
-    case DbInstDescriptor::STD_OTHER:
+    case sta::dbSta::InstType::STD_OTHER:
       return &instance_group_;
   }
 
@@ -1915,6 +1919,12 @@ void DisplayControls::techInit(odb::dbTech* tech)
                        50 + gen_color() % 200,
                        50 + gen_color() % 200);
       }
+    } else if (type == dbTechLayerType::IMPLANT) {
+      // Do not draw from the existing palette so the metal layers can claim
+      // those colors.
+      color = QColor(50 + gen_color() % 200,
+                     50 + gen_color() % 200,
+                     50 + gen_color() % 200);
     } else {
       continue;
     }

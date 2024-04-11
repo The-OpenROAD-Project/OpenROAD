@@ -287,7 +287,7 @@ cts::TritonCTS* Design::getTritonCts()
   return app->getTritonCts();
 }
 
-triton_route::TritonRoute* Design::getTritonRoute()
+drt::TritonRoute* Design::getTritonRoute()
 {
   auto app = OpenRoad::openRoad();
   return app->getTritonRoute();
@@ -345,6 +345,15 @@ pad::ICeWall* Design::getICeWall()
 {
   auto app = OpenRoad::openRoad();
   return app->getICeWall();
+}
+
+/* static */
+odb::dbDatabase* Design::createDetachedDb()
+{
+  auto app = OpenRoad::openRoad();
+  auto db = odb::dbDatabase::create();
+  db->setLogger(app->getLogger());
+  return db;
 }
 
 }  // namespace ord

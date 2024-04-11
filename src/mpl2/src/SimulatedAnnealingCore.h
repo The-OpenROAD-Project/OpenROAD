@@ -59,8 +59,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(
-      float outline_width,
-      float outline_height,          // boundary constraints
+      const Rect& outline,           // boundary constraints
       const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
       // weight for different penalty
       float area_weight,
@@ -77,23 +76,28 @@ class SimulatedAnnealingCore
       float init_prob,
       int max_num_step,
       int num_perturb_per_step,
-      int k,
-      int c,
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
   };
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
+
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
+  void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
-  bool isValid(float outline_width, float outline_height) const;
+  bool isValid(const Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
@@ -116,6 +120,8 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void attemptCentralization(float pre_cost);
+  void moveFloorplan(const std::pair<float, float>& offset);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -143,8 +149,7 @@ class SimulatedAnnealingCore
   // private member variables
   /////////////////////////////////////////////
   // boundary constraints
-  float outline_width_ = 0.0;
-  float outline_height_ = 0.0;
+  Rect outline_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
@@ -169,10 +174,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  int k_ = 0;
-  int c_ = 0;
 
   // shrink_factor for dynamic weight
   const float shrink_factor_ = 0.8;
@@ -230,6 +231,9 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool has_initial_sequence_pair_ = false;
+  bool centralization_on_ = false;
 };
 
 // SACore wrapper function

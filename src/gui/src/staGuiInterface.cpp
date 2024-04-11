@@ -174,6 +174,7 @@ TimingPath::TimingPath()
       start_clk_(),
       end_clk_(),
       slack_(0),
+      skew_(0),
       path_delay_(0),
       arr_time_(0),
       req_time_(0),
@@ -227,12 +228,8 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     float cap = 0.0;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
-      sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      sta::Parasitic* parasitic
-          = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(
-          pin, parasitic, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(pin, ref->transition(sta), dcalc_ap);
     }
 
     odb::dbITerm* term;
@@ -847,6 +844,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
     timing_path->setSlack(path_end->slack(sta_));
     timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     timing_path->setPathRequiredTime(path_end->requiredTime(sta_));
+    timing_path->setSkew(path_end->clkSkew(sta_));
 
     bool clock_propagated = false;
     if (start_clock_edge != nullptr) {

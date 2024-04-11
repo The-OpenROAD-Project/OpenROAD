@@ -255,8 +255,9 @@ bool dbTechLayerCutClassRule::isCutsValid() const
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
                                                          const char* name)
 {
-  if (_layer->findTechLayerCutClassRule(name) != nullptr)
+  if (_layer->findTechLayerCutClassRule(name) != nullptr) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
   newrule->_name = strdup(name);

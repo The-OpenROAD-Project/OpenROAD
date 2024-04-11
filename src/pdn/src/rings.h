@@ -63,7 +63,7 @@ class Rings : public GridComponent
   void setExtendToBoundary(bool value);
 
   // generate the rings
-  void makeShapes(const ShapeTreeMap& other_shapes) override;
+  void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 
   std::vector<odb::dbTechLayer*> getLayers() const;
 

@@ -36,14 +36,19 @@
 sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adj }
 
 proc set_global_routing_layer_adjustment { args } {
+  sta::parse_key_args "set_global_routing_layer_adjustment" args \
+    keys {} \
+    flags {}
+
   if {[llength $args] == 2} {
     lassign $args layer adj
 
     if {$layer == "*"} {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
-    } elseif [regexp -all {([^-]+)-([^ ]+)} $layer] {
-      lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer] first_layer last_layer
+    } elseif {[regexp -all {([^-]+)-([^ ]+)} $layer]} {
+      lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" \
+        $layer] first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         grt::check_routing_layer $l
         sta::check_positive_float "adjustment" $adj
@@ -69,7 +74,7 @@ sta::define_cmd_args "set_global_routing_region_adjustment" { region \
 
 proc set_global_routing_region_adjustment { args } {
   sta::parse_key_args "set_global_routing_region_adjustment" args \
-                 keys {-layer -adjustment}
+    keys {-layer -adjustment} flags {}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 47 "Missing dbTech."
@@ -86,7 +91,8 @@ proc set_global_routing_region_adjustment { args } {
   if { [info exists keys(-adjustment)] } {
     set adjustment $keys(-adjustment)
   } else {
-    utl::error GRT 49 "Command set_global_routing_region_adjustment is missing -adjustment argument."
+    utl::error GRT 49 \
+      "Command set_global_routing_region_adjustment is missing -adjustment argument."
   }
 
   sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
@@ -109,17 +115,19 @@ proc set_global_routing_region_adjustment { args } {
 
     grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
   } else {
-    utl::error GRT 50 "Command set_global_routing_region_adjustment needs four arguments to define a region: lower_x lower_y upper_x upper_y."
+    utl::error GRT 50 \
+      "Command set_global_routing_region_adjustment needs four arguments\
+       to define a region: lower_x lower_y upper_x upper_y."
   }
 }
 
-sta::define_cmd_args "set_routing_layers" { [-signal layers] \
-                                            [-clock layers] \
-}
+sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
+                                            [-clock min-max] \
+};# checker off
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock}
+    keys {-signal -clock} flags {};# checker off
 
   sta::check_argc_eq0 "set_routing_layers" $args
 
@@ -135,6 +143,9 @@ proc set_routing_layers { args } {
 sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
+  sta::parse_key_args "set_macro_extension" args \
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args extension
     sta::check_positive_integer "macro_extension" $extension
@@ -147,6 +158,9 @@ proc set_macro_extension { args } {
 sta::define_cmd_args "set_pin_offset" { offset }
 
 proc set_pin_offset { args } {
+  sta::parse_key_args "set_pin_offset" args \
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args offset
     sta::check_positive_integer "pin_offset" $offset
@@ -163,7 +177,7 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-    keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+    keys { -seed -capacities_perturbation_percentage -perturbation_amount } flags {}
 
   sta::check_argc_eq0 "set_global_routing_random" $args
 
@@ -197,6 +211,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
+                                  [-allow_overflow] \
+                                  [-overflow_iterations iterations] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental]
@@ -270,7 +286,8 @@ proc global_route { args } {
     utl::warn GRT 146 "Argument -allow_overflow is deprecated. Use -allow_congestion."
   }
 
-  set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
+  set allow_congestion [expr [info exists flags(-allow_congestion)] \
+    || [info exists flags(-allow_overflow)]]
   grt::set_allow_congestion $allow_congestion
 
   set start_incremental [info exists flags(-start_incremental)]
@@ -284,13 +301,13 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { [diode_cell] \
+sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-                 keys {-iterations -ratio_margin}
+    keys {-iterations -ratio_margin} flags {}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
@@ -303,7 +320,7 @@ proc repair_antennas { args } {
       if { $diode_master == "NULL" } {
         utl::error GRT 69 "Diode cell $diode_cell not found."
       }
-      
+
       set diode_mterms [$diode_master getMTerms]
       set non_pg_count 0
       foreach mterm $diode_mterms {
@@ -344,8 +361,8 @@ sta::define_cmd_args "set_nets_to_route" { net_names }
 
 proc set_nets_to_route { args } {
   sta::parse_key_args "set_nets_to_route" args \
-                 keys {} \
-                 flags {}
+    keys {} \
+    flags {}
   sta::check_argc_eq1 "set_nets_to_route" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
@@ -363,6 +380,9 @@ proc set_nets_to_route { args } {
 sta::define_cmd_args "read_guides" { file_name }
 
 proc read_guides { args } {
+  sta::parse_key_args "read_guides" args \
+    keys {} \
+    flags {}
   set file_name $args
   grt::read_guides $file_name
 }
@@ -372,8 +392,8 @@ sta::define_cmd_args "draw_route_guides" { net_names \
 
 proc draw_route_guides { args } {
   sta::parse_key_args "draw_route_guides" args \
-                 keys {} \
-                 flags {-show_pin_locations}
+    keys {} \
+    flags {-show_pin_locations}
   sta::check_argc_eq1 "draw_route_guides" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
@@ -390,20 +410,20 @@ proc draw_route_guides { args } {
   }
 }
 
-sta::define_cmd_args "global_route_debug" { 
+sta::define_cmd_args "global_route_debug" {
   [-st]       # Show the Steiner Tree generated by stt
   [-rst]      # Show the Rectilinear Steiner Tree generated by FastRoute
   [-tree2D]   # Show the Rectilinear Steiner Tree generated by FastRoute after overflow iterations
   [-tree3D]   # Show The Rectilinear Steiner Tree 3D after layer assignment
   [-saveSttInput file_name] # Save the stt input for a net on file_name
-  [-net name] 
+  [-net name]
 }
 
 proc global_route_debug { args } {
 
   sta::parse_key_args "global_route_debug" args \
-      keys {-saveSttInput -net} \
-      flags {-st -rst -tree2D -tree3D}
+    keys {-saveSttInput -net} \
+    flags {-st -rst -tree2D -tree3D}
 
   sta::check_argc_eq0 "global_route_debug" $args
 
@@ -434,9 +454,9 @@ sta::define_cmd_args "report_wire_length" { [-net net_list] \
 
 proc report_wire_length { args } {
   sta::parse_key_args "report_wire_length" args \
-                 keys {-net -file} \
-                 flags {-global_route -detailed_route -verbose}
-  
+    keys {-net -file} \
+    flags {-global_route -detailed_route -verbose}
+
   set block [ord::get_db_block]
   if { $block == "NULL" } {
     utl::error GRT 224 "Missing dbBlock."
@@ -487,10 +507,12 @@ proc check_routing_layer { layer } {
   set max_tech_layer [$tech findRoutingLayer $max_routing_layer]
 
   if {$layer > $max_routing_layer} {
-    utl::error GRT 60 "Layer [$tech_layer getConstName] is greater than the max routing layer ([$max_tech_layer getConstName])."
+    utl::error GRT 60 "Layer [$tech_layer getConstName] is greater than\
+      the max routing layer ([$max_tech_layer getConstName])."
   }
   if {$layer < 1} {
-    utl::error GRT 61 "Layer [$tech_layer getConstName] is less than the min routing layer ([$min_tech_layer getConstName])."
+    utl::error GRT 61 "Layer [$tech_layer getConstName] is less than the\
+      min routing layer ([$min_tech_layer getConstName])."
   }
 }
 
@@ -509,7 +531,7 @@ proc parse_layer_name { layer_name } {
 }
 
 proc parse_layer_range { cmd layer_range } {
-  if [regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name] {
+  if {[regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name]} {
     set min_layer [parse_layer_name $min_layer_name]
     set max_layer [parse_layer_name $max_layer_name]
 
@@ -574,7 +596,8 @@ proc define_clock_layer_range { layers } {
   if { $min_clock_layer < $max_clock_layer } {
     grt::set_clock_layer_range $min_clock_layer $max_clock_layer
   } else {
-    utl::error GRT 56 "In argument -clock_layers, min routing layer is greater than max routing layer."
+    utl::error GRT 56 "In argument -clock_layers, min routing layer is\
+      greater than max routing layer."
   }
 }
 

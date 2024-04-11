@@ -264,19 +264,35 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
     return;
   }
 
-  const Rect fitted_bb = getPaddedRect(getBounds());
+  bool scroll_bars_visible = scroller_->horizontalScrollBar()->isVisible()
+                             || scroller_->verticalScrollBar()->isVisible();
+  bool zoomed_out = pixels_per_dbu_ /*old*/ > pixels_per_dbu /*new*/;
+
+  if (!scroll_bars_visible && zoomed_out) {
+    return;
+  }
+
+  const Rect current_viewer(0,
+                            0,
+                            this->size().width() / pixels_per_dbu_,
+                            this->size().height() / pixels_per_dbu_);
+
   // ensure max size is not exceeded
   qreal maximum_pixels_per_dbu_
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
-                              fitted_bb);
+                              current_viewer);
   qreal target_pixels_per_dbu
       = std::min(pixels_per_dbu, maximum_pixels_per_dbu_);
 
-  const QSize new_size(ceil(fitted_bb.dx() * target_pixels_per_dbu),
-                       ceil(fitted_bb.dy() * target_pixels_per_dbu));
+  if (target_pixels_per_dbu == maximum_pixels_per_dbu_) {
+    return;
+  }
 
-  resize(new_size.expandedTo(scroller_->maximumViewportSize()));
+  const QSize new_size(ceil(current_viewer.dx() * target_pixels_per_dbu),
+                       ceil(current_viewer.dy() * target_pixels_per_dbu));
+
+  resize(new_size);
 }
 
 odb::Point LayoutViewer::getVisibleCenter()
@@ -467,7 +483,7 @@ void LayoutViewer::searchNearestViaEdge(
                                                 search_line.yMax(),
                                                 shape_limit);
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net)) {
       sbox->getViaLayerBoxes(search_layer, shapes);
       for (auto& shape : shapes) {
@@ -544,15 +560,6 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           }
         };
 
-  auto convert_box_to_rect = [](const Search::Box& box) -> odb::Rect {
-    const auto min_corner = box.min_corner();
-    const auto max_corner = box.max_corner();
-    const odb::Point ll(min_corner.x(), min_corner.y());
-    const odb::Point ur(max_corner.x(), max_corner.y());
-
-    return odb::Rect(ll, ur);
-  };
-
   // get die bounding box
   Rect bbox = block_->getDieArea();
   check_rect(bbox);
@@ -595,13 +602,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   // Cache the search results as we will iterate over the instances
   // for each layer.
   std::vector<dbInst*> insts;
-  for (auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (options_->isInstanceVisible(inst)) {
       if (inst_internals_visible) {
         // only add inst if it can be used for pin or obs search
         insts.push_back(inst);
       }
-      check_rect(convert_box_to_rect(box));
+      check_rect(inst->getBBox()->getBox());
     }
   }
 
@@ -649,7 +656,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                 search_line.xMax(),
                                                 search_line.yMax(),
                                                 shape_limit);
-      for (auto& [box, is_via, net] : box_shapes) {
+      for (const auto& [box, is_via, net] : box_shapes) {
         if (!routing_visible && !is_via) {
           continue;
         }
@@ -657,7 +664,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           continue;
         }
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box);
         }
       }
     }
@@ -686,9 +693,9 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                                      search_line.xMax(),
                                                      search_line.yMax(),
                                                      shape_limit);
-      for (auto& [box, poly, net] : polygon_shapes) {
+      for (const auto& [box, poly, net] : polygon_shapes) {
         if (isNetVisible(net)) {
-          check_rect(convert_box_to_rect(box));
+          check_rect(box->getBox());
         }
       }
     }
@@ -701,8 +708,10 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                        search_line.xMax(),
                                        search_line.yMax(),
                                        shape_limit);
-      for (auto& [box, fill] : fills) {
-        check_rect(convert_box_to_rect(box));
+      for (auto* fill : fills) {
+        odb::Rect box;
+        fill->getRect(box);
+        check_rect(box);
       }
     }
 
@@ -714,8 +723,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.xMax(),
                                             search_line.yMax(),
                                             shape_limit);
-      for (auto& [box, ob] : obs) {
-        check_rect(convert_box_to_rect(box));
+      for (auto* ob : obs) {
+        check_rect(ob->getBBox()->getBox());
       }
     }
   }
@@ -727,8 +736,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (auto& [box, blck] : blcks) {
-      check_rect(convert_box_to_rect(box));
+    for (auto* blck : blcks) {
+      check_rect(blck->getBBox()->getBox());
     }
   }
 
@@ -789,7 +798,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                                 shape_limit);
 
   std::vector<odb::dbShape> shapes;
-  for (auto& [box, sbox, net] : via_shapes) {
+  for (const auto& [sbox, net] : via_shapes) {
     if (isNetVisible(net) && options_->isNetSelectable(net)) {
       sbox->getViaLayerBoxes(select_layer, shapes);
       for (auto& shape : shapes) {
@@ -820,7 +829,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.xMax(),
                                              region.yMax(),
                                              shape_limit);
-    for (auto& [box, blockage] : blockages) {
+    for (auto* blockage : blockages) {
       selections.push_back(gui_->makeSelected(blockage));
     }
   }
@@ -852,8 +861,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.xMax(),
                                             region.yMax(),
                                             shape_limit);
-      for (auto& [box, obs] : obs) {
-        selections.push_back(gui_->makeSelected(obs));
+      for (auto* ob : obs) {
+        selections.push_back(gui_->makeSelected(ob));
       }
     }
 
@@ -926,7 +935,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    region.yMax(),
                                    instanceSizeLimit());
 
-  for (auto& [box, inst] : insts) {
+  for (auto* inst : insts) {
     if (options_->isInstanceVisible(inst)) {
       if (options_->isInstanceSelectable(inst)) {
         selections.push_back(gui_->makeSelected(inst));
@@ -1319,7 +1328,8 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
     dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
+    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT
+        && type != dbTechLayerType::IMPLANT) {
       continue;
     }
     boxes[layer].obs.emplace_back(box_to_qrect(box));
@@ -1860,6 +1870,7 @@ void LayoutViewer::fullRepaint()
     QRect rect = scroller_->viewport()->geometry();
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
+    setLoadingState();
     viewer_thread_.render(rect, selected_, highlighted_, rulers_);
   }
 }

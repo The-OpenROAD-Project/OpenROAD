@@ -82,11 +82,11 @@ class Replace
             utl::Logger* logger);
   void reset();
 
-  void doIncrementalPlace();
+  void doIncrementalPlace(int threads);
   void doInitialPlace();
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
-  int doNesterovPlace(int start_iter = 0);
+  int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
   void setInitialPlaceMaxIter(int iter);
@@ -107,7 +107,7 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
-  float getUniformTargetDensity();
+  float getUniformTargetDensity(int threads);
 
   // HPWL: half-parameter wire length.
   void setReferenceHpwl(float refHpwl);
@@ -144,7 +144,7 @@ class Replace
                 odb::dbInst* inst = nullptr);
 
  private:
-  bool initNesterovPlace();
+  bool initNesterovPlace(int threads);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -184,7 +184,7 @@ class Replace
 
   float routabilityCheckOverflow_ = 0.2;
   float routabilityMaxDensity_ = 0.99;
-  float routabilityTargetRcMetric_ = 1.25;
+  float routabilityTargetRcMetric_ = 1.0;
   float routabilityInflationRatioCoef_ = 2.5;
   float routabilityMaxInflationRatio_ = 2.5;
 
