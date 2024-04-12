@@ -79,17 +79,21 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
 
 bool _dbMPin::operator==(const _dbMPin& rhs) const
 {
-  if (_mterm != rhs._mterm)
+  if (_mterm != rhs._mterm) {
     return false;
+  }
 
-  if (_geoms != rhs._geoms)
+  if (_geoms != rhs._geoms) {
     return false;
+  }
 
-  if (_next_mpin != rhs._next_mpin)
+  if (_next_mpin != rhs._next_mpin) {
     return false;
+  }
 
-  if (aps_ != rhs.aps_)
+  if (aps_ != rhs.aps_) {
     return false;
+  }
 
   return true;
 }

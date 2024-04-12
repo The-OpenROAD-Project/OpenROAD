@@ -141,8 +141,9 @@ definReader::~definReader()
   delete _prop_defsR;
   delete _pin_propsR;
 
-  if (_block_name)
+  if (_block_name) {
     free((void*) _block_name);
+  }
 }
 
 int definReader::errors()
@@ -150,8 +151,9 @@ int definReader::errors()
   int e = _errors;
 
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     e += (*itr)->_errors;
+  }
 
   return e;
 }
@@ -208,8 +210,9 @@ void definReader::setAssemblyMode()
 
 void definReader::useBlockName(const char* name)
 {
-  if (_block_name)
+  if (_block_name) {
     free((void*) _block_name);
+  }
 
   _block_name = strdup(name);
   assert(_block_name);
@@ -231,16 +234,18 @@ void definReader::setTech(dbTech* tech)
   definBase::setTech(tech);
 
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     (*itr)->setTech(tech);
+  }
 }
 
 void definReader::setBlock(dbBlock* block)
 {
   definBase::setBlock(block);
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     (*itr)->setBlock(block);
+  }
 }
 
 // Generic handler for transfering properties from the
@@ -275,8 +280,9 @@ static std::string renameBlock(dbBlock* parent, const char* old_name)
     std::string name(old_name);
     name += n;
 
-    if (!parent->findChild(name.c_str()))
+    if (!parent->findChild(name.c_str())) {
       return name;
+    }
   }
 }
 
@@ -321,15 +327,16 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   std::string block_name;
-  if (reader->_block_name)
+  if (reader->_block_name) {
     block_name = reader->_block_name;
-  else
+  } else {
     block_name = design;
+  }
   if (reader->parent_ != nullptr) {
     if (reader->parent_->findChild(block_name.c_str())) {
-      if (reader->_mode != defin::DEFAULT)
+      if (reader->_mode != defin::DEFAULT) {
         reader->_block = reader->parent_->findChild(block_name.c_str());
-      else {
+      } else {
         std::string new_name = renameBlock(reader->parent_, block_name.c_str());
         reader->_logger->warn(
             utl::ODB,
@@ -342,22 +349,25 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
                                          reader->_tech,
                                          reader->hier_delimeter_);
       }
-    } else
+    } else {
       reader->_block = dbBlock::create(reader->parent_,
                                        block_name.c_str(),
                                        reader->_tech,
                                        reader->hier_delimeter_);
+    }
   } else {
     dbChip* chip = reader->_db->getChip();
-    if (reader->_mode != defin::DEFAULT)
+    if (reader->_mode != defin::DEFAULT) {
       reader->_block = chip->getBlock();
-    else
+    } else {
       reader->_block = dbBlock::create(
           chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
+    }
   }
-  if (reader->_mode == defin::DEFAULT)
+  if (reader->_mode == defin::DEFAULT) {
     reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
                                      reader->right_bus_delimeter_);
+  }
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);
   reader->setBlock(reader->_block);
@@ -564,17 +574,21 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
         int x = p.getX();
         int y = p.getY();
 
-        if (x < xmin)
+        if (x < xmin) {
           xmin = x;
+        }
 
-        if (y < ymin)
+        if (y < ymin) {
           ymin = y;
+        }
 
-        if (x > xmax)
+        if (x > xmax) {
           xmax = x;
+        }
 
-        if (y > ymax)
+        if (y > ymax) {
           ymax = y;
+        }
       }
 
       Rect r(xmin, ymin, xmax, ymax);
@@ -676,8 +690,9 @@ int definReader::groupCallback(defrCallbackType_e /* unused: type */,
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definGroup* groupR = reader->_groupR;
-  if (group->hasRegionName())
+  if (group->hasRegionName()) {
     groupR->region(group->regionName());
+  }
   handle_props(group, groupR);
   groupR->end();
 
@@ -1017,7 +1032,8 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
         } else {
           assert(0);
         }
-        dbOrientType orient = reader->translate_orientation(port->orient());
+        dbOrientType orient
+            = odb::definReader::translate_orientation(port->orient());
         pinR->pinPlacement(
             type, port->placementX(), port->placementY(), orient);
       }
@@ -1058,7 +1074,8 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
       } else {
         assert(0);
       }
-      dbOrientType orient = reader->translate_orientation(pin->orient());
+      dbOrientType orient
+          = odb::definReader::translate_orientation(pin->orient());
       pinR->pinPlacement(type, pin->placementX(), pin->placementY(), orient);
     }
 
@@ -1270,7 +1287,7 @@ int definReader::rowCallback(defrCallbackType_e /* unused: type */,
               row->macro(),
               row->x(),
               row->y(),
-              reader->translate_orientation(row->orient()),
+              odb::definReader::translate_orientation(row->orient()),
               dir,
               num_sites,
               spacing);
@@ -1358,11 +1375,13 @@ int definReader::unitsCallback(defrCallbackType_e, double d, defiUserData data)
 
   std::vector<definBase*>::iterator itr;
   for (itr = reader->_interfaces.begin(); itr != reader->_interfaces.end();
-       ++itr)
+       ++itr) {
     (*itr)->units(d);
+  }
 
-  if (!reader->_update)
+  if (!reader->_update) {
     reader->_block->setDefUnits(d);
+  }
   return PARSE_OK;
 }
 
@@ -1680,8 +1699,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   setLibs(libs);
   dbChip* chip = _db->getChip();
   if (_mode != defin::DEFAULT) {
-    if (chip == nullptr)
+    if (chip == nullptr) {
       _logger->error(utl::ODB, 250, "Chip does not exist");
+    }
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return nullptr;
@@ -1699,43 +1719,50 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
     return nullptr;
   }
 
-  if (_pinR->_bterm_cnt)
+  if (_pinR->_bterm_cnt) {
     _logger->info(utl::ODB, 130, "    Created {} pins.", _pinR->_bterm_cnt);
+  }
 
-  if (_pinR->_update_cnt)
+  if (_pinR->_update_cnt) {
     _logger->info(utl::ODB, 252, "    Updated {} pins.", _pinR->_update_cnt);
+  }
 
-  if (_componentR->_inst_cnt)
+  if (_componentR->_inst_cnt) {
     _logger->info(utl::ODB,
                   131,
                   "    Created {} components and {} component-terminals.",
                   _componentR->_inst_cnt,
                   _componentR->_iterm_cnt);
+  }
 
-  if (_componentR->_update_cnt)
+  if (_componentR->_update_cnt) {
     _logger->info(
         utl::ODB, 253, "    Updated {} components.", _componentR->_update_cnt);
+  }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(utl::ODB,
                   132,
                   "    Created {} special nets and {} connections.",
                   _snetR->_snet_cnt,
                   _snetR->_snet_iterm_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB,
                   133,
                   "    Created {} nets and {} connections.",
                   _netR->_net_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
-  if (_netR->_update_cnt)
+  if (_netR->_update_cnt) {
     _logger->info(utl::ODB,
                   254,
                   "    Updated {} nets and {} connections.",
                   _netR->_update_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
   return chip;
@@ -1758,29 +1785,33 @@ dbBlock* definReader::createBlock(dbBlock* parent,
     return nullptr;
   }
 
-  if (_pinR->_bterm_cnt)
+  if (_pinR->_bterm_cnt) {
     _logger->info(utl::ODB, 138, "    Created {} pins.", _pinR->_bterm_cnt);
+  }
 
-  if (_componentR->_inst_cnt)
+  if (_componentR->_inst_cnt) {
     _logger->info(utl::ODB,
                   139,
                   "    Created {} components and {} component-terminals.",
                   _componentR->_inst_cnt,
                   _componentR->_iterm_cnt);
+  }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(utl::ODB,
                   140,
                   "    Created {} special nets and {} connections.",
                   _snetR->_snet_cnt,
                   _snetR->_snet_iterm_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB,
                   141,
                   "    Created {} nets and {} connections.",
                   _netR->_net_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
@@ -1801,12 +1832,14 @@ bool definReader::replaceWires(dbBlock* block, const char* def_file)
     return false;
   }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(
         utl::ODB, 145, "    Processed {} special nets.", _snetR->_snet_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB, 146, "    Processed {} nets.", _netR->_net_cnt);
+  }
 
   _logger->info(utl::ODB, 147, "Finished DEF file: {}", def_file);
   return errors() == 0;

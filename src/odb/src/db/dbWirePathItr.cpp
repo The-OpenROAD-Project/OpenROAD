@@ -118,14 +118,16 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
       _prev_ext = 0;
       _has_prev_ext = false;
 
-      if (path.is_branch == false)
+      if (path.is_branch == false) {
         path.junction_id = _decoder.getJunctionId();
+      }
     } else if (_opcode == dbWireDecoder::POINT_EXT) {
       _decoder.getPoint(_prev_x, _prev_y, _prev_ext);
       _has_prev_ext = true;
 
-      if (path.is_branch == false)
+      if (path.is_branch == false) {
         path.junction_id = _decoder.getJunctionId();
+      }
 
     } else if (_opcode == dbWireDecoder::RULE) {
       lyr_rule = _decoder.getRule();
@@ -164,10 +166,11 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
     }
 
     path.rule = _rule;
-    if (lyr_rule)
+    if (lyr_rule) {
       _dw = lyr_rule->getWidth() >> 1;
-    else
+    } else {
       _dw = _decoder.getLayer()->getWidth() >> 1;
+    }
     _opcode = _decoder.next();
     return true;
   }
@@ -308,8 +311,9 @@ nextOpCode:
       _dw = _decoder.getLayer()->getWidth() >> 1;
       if (_rule) {
         dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
-        if (lyr_rule)
+        if (lyr_rule) {
           _dw = lyr_rule->getWidth() >> 1;
+        }
       }
       _prev_ext = 0;
       _prev_ext = 0;
@@ -335,8 +339,9 @@ nextOpCode:
       _dw = _decoder.getLayer()->getWidth() >> 1;
       if (_rule) {
         dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
-        if (lyr_rule)
+        if (lyr_rule) {
           _dw = lyr_rule->getWidth() >> 1;
+        }
       }
       _prev_ext = 0;
       _has_prev_ext = false;
@@ -505,8 +510,9 @@ void dbShape::dump(utl::Logger* logger, const char* group, int level) const
 //
 void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 {
-  if (!innet)
+  if (!innet) {
     return;
+  }
   utl::Logger* logger = innet->getImpl()->getLogger();
 
   const char* prfx = "dumpWirePaths:";
@@ -530,8 +536,9 @@ void dumpWirePaths4Net(dbNet* innet, const char* group, int level)
 
   while (pitr.getNextPath(curpath)) {
     curpath.dump(logger, group, level);
-    while (pitr.getNextShape(curshp))
+    while (pitr.getNextShape(curshp)) {
       curshp.dump(logger, group, level);
+    }
   }
 }
 

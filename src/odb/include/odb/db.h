@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
 class dbGroup;
@@ -146,6 +147,7 @@ class dbPowerDomain;
 class dbPowerSwitch;
 class dbScanChain;
 class dbScanInst;
+class dbScanList;
 class dbScanPartition;
 class dbScanPin;
 class dbTechLayer;
@@ -1365,6 +1367,11 @@ class dbBlock : public dbObject
   /// Get the extraction control settings
   ///
   dbExtControl* getExtControl();
+
+  ///
+  /// Get the dbDft object for persistent dft structs
+  ///
+  dbDft* getDft() const;
 
   ///
   /// Get the extraction corner names
@@ -7084,6 +7091,17 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+// Top level DFT (Design for Testing) class
+class dbDft : public dbObject
+{
+ public:
+  void setScanInserted(bool scan_inserted);
+
+  bool isScanInserted() const;
+
+  dbSet<dbScanChain> getScanChains() const;
+};
+
 class dbGCellGrid : public dbObject
 {
  public:
@@ -7740,27 +7758,131 @@ class dbPowerSwitch : public dbObject
   // User Code End dbPowerSwitch
 };
 
+// A scan chain is a collection of dbScanLists that contains dbScanInsts.  Here,
+// scan_in, scan_out and scan_enable are the top level ports/pins to where this
+// scan chain is connected.  Each scan chain is also associated with a
+// particular test mode and test mode pin that puts the Circuit Under Test (CUT)
+// in test. The Scan Enable port/pin puts the scan chain into shifting mode.
 class dbScanChain : public dbObject
 {
  public:
+  dbSet<dbScanPartition> getScanPartitions() const;
+
+  // User Code Begin dbScanChain
+  const std::string& getName() const;
+
+  void setName(std::string_view name);
+
+  void setScanIn(dbBTerm* scan_in);
+  void setScanIn(dbITerm* scan_in);
+  std::variant<dbBTerm*, dbITerm*> getScanIn() const;
+
+  void setScanOut(dbBTerm* scan_out);
+  void setScanOut(dbITerm* scan_out);
+  std::variant<dbBTerm*, dbITerm*> getScanOut() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
+
+  void setTestMode(dbBTerm* test_mode);
+  void setTestMode(dbITerm* test_mode);
+  std::variant<dbBTerm*, dbITerm*> getTestMode() const;
+
+  void setTestModeName(const std::string& test_mode_name);
+  const std::string& getTestModeName() const;
+
+  static dbScanChain* create(dbDft* dft);
+  // User Code End dbScanChain
 };
 
+// A scan inst is a cell with a scan in, scan out and an optional scan enable.
+// If no scan enable is provided, then this is an stateless component (because
+// we don't need to enable scan for it) and the number of bits is set to 0.  It
+// may be possible that two or more dbScanInst contains the same dbInst if the
+// dbInst has more than one scan_in/scan_out pair. Examples of those cases are
+// multibit cells with external scan or black boxes.  In this case, the scan_in,
+// scan_out and scan enables are pins in the dbInst. The scan clock is the pin
+// that we use to shift patterns in and out of the scan chain.
 class dbScanInst : public dbObject
 {
  public:
-  enum class SCAN_INST_TYPE
+  struct AccessPins
   {
-    OneBit,
-    ShiftRegister,
-    BlackBox
+    std::variant<dbBTerm*, dbITerm*> scan_in;
+    std::variant<dbBTerm*, dbITerm*> scan_out;
   };
+  enum class ClockEdge
+  {
+    Rising,
+    Falling
+  };
+
+  // User Code Begin dbScanInst
+  void setScanClock(std::string_view scan_clock);
+  const std::string& getScanClock() const;
+
+  void setClockEdge(ClockEdge clock_edge);
+  ClockEdge getClockEdge() const;
+
+  // The number of bits that are in this scan inst from the scan in to the scan
+  // out. For simple flops this is just 1.
+  void setBits(uint bits);
+  uint getBits() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
+
+  void setAccessPins(const AccessPins& access_pins);
+  AccessPins getAccessPins() const;
+
+  dbInst* getInst() const;
+
+  static dbScanInst* create(dbScanList* scan_list, dbInst* inst);
+  // User Code End dbScanInst
 };
 
+// A scan list is a collection of dbScanInsts in a particular order that must be
+// respected when performing scan reordering and repartitioning. For ScanList
+// with two or more elements we say that they are ORDERED. If the ScanList
+// contains only one element then they are FLOATING elements that don't have any
+// restriccion when optimizing the scan chain.
+class dbScanList : public dbObject
+{
+ public:
+  dbSet<dbScanInst> getScanInsts() const;
+
+  // User Code Begin dbScanList
+  dbScanInst* add(dbInst* inst);
+  static dbScanList* create(dbScanPartition* scan_partition);
+  // User Code End dbScanList
+};
+
+// A scan partition is way to split the scan chains into sub chains with
+// compatible scan flops (same clock, edge and voltage). The biggest partition
+// possible is the whole chain if all the scan flops inside it are compatible
+// between them for reordering and repartitioning. The name of this partition is
+// not unique, as multiple partitions may have the same same and therefore
+// contain the same type of flops.
 class dbScanPartition : public dbObject
 {
  public:
+  dbSet<dbScanList> getScanLists() const;
+
+  // User Code Begin dbScanPartition
+  const std::string& getName() const;
+  void setName(const std::string& name);
+
+  static dbScanPartition* create(dbScanChain* chain);
+  // User Code End dbScanPartition
 };
 
+// This is a helper class to contain dbBTerms and dbITerms in the same field. We
+// need this difference because some pins may need to be conected to top level
+// ports or cell's pins.  For example: a scan chain may be connected to a top
+// level design port (dbBTerm) or to an output/input pin of a cell that is part
+// of a decompressor/compressor
 class dbScanPin : public dbObject
 {
  public:
@@ -7768,6 +7890,8 @@ class dbScanPin : public dbObject
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);
   void setPin(dbITerm* iterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
+  static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
 };
 

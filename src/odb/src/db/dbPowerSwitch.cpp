@@ -272,8 +272,9 @@ dbPowerDomain* dbPowerSwitch::getPowerDomain() const
 dbPowerSwitch* dbPowerSwitch::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_powerswitch_hash.hasMember(name))
+  if (_block->_powerswitch_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbPowerSwitch* ps = _block->_powerswitch_tbl->create();
   ps->_name = strdup(name);
   ZALLOCATED(ps->_name);

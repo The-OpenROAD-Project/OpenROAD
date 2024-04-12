@@ -52,41 +52,53 @@ template class dbTable<_dbCapNode>;
 
 bool _dbCapNode::operator==(const _dbCapNode& rhs) const
 {
-  if (_flags._name != rhs._flags._name)
+  if (_flags._name != rhs._flags._name) {
     return false;
+  }
 
-  if (_flags._internal != rhs._flags._internal)
+  if (_flags._internal != rhs._flags._internal) {
     return false;
+  }
 
-  if (_flags._iterm != rhs._flags._iterm)
+  if (_flags._iterm != rhs._flags._iterm) {
     return false;
+  }
 
-  if (_flags._bterm != rhs._flags._bterm)
+  if (_flags._bterm != rhs._flags._bterm) {
     return false;
+  }
 
-  if (_flags._branch != rhs._flags._branch)
+  if (_flags._branch != rhs._flags._branch) {
     return false;
+  }
 
-  if (_flags._foreign != rhs._flags._foreign)
+  if (_flags._foreign != rhs._flags._foreign) {
     return false;
+  }
 
-  if (_flags._childrenCnt != rhs._flags._childrenCnt)
+  if (_flags._childrenCnt != rhs._flags._childrenCnt) {
     return false;
+  }
 
-  if (_flags._select != rhs._flags._select)
+  if (_flags._select != rhs._flags._select) {
     return false;
+  }
 
-  if (_node_num != rhs._node_num)
+  if (_node_num != rhs._node_num) {
     return false;
+  }
 
-  if (_net != rhs._net)
+  if (_net != rhs._net) {
     return false;
+  }
 
-  if (_next != rhs._next)
+  if (_next != rhs._next) {
     return false;
+  }
 
-  if (_cc_segs != rhs._cc_segs)
+  if (_cc_segs != rhs._cc_segs) {
     return false;
+  }
 
   return true;
 }
@@ -151,10 +163,12 @@ bool dbCapNode::needAdjustCC(double ccThreshHold)
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     dbCCSeg* cc = *ccitr;
     for (corner = 0; corner < cornerCnt; corner++) {
-      if (cc->getTheOtherCapn(this, cid)->getNet()->getCcAdjustFactor() > 0)
+      if (cc->getTheOtherCapn(this, cid)->getNet()->getCcAdjustFactor() > 0) {
         continue;
-      if (cc->getCapacitance(corner) >= ccThreshHold)
+      }
+      if (cc->getCapacitance(corner) >= ccThreshHold) {
         return true;
+      }
     }
   }
   return false;
@@ -176,8 +190,9 @@ bool dbCapNode::groundCC(float gndFactor)
     dbCCSeg* cc = *ccitr;
     agrNode = cc->getTheOtherCapn(this, cid);
     agrNetId = agrNode->getNet()->getId();
-    if (agrNetId < vicNetId)
+    if (agrNetId < vicNetId) {
       continue;  //  avoid duplicate grounding
+    }
     if (agrNetId == vicNetId) {
       getImpl()->getLogger()->warn(
           utl::ODB,
@@ -211,12 +226,14 @@ void dbCapNode::adjustCC(uint adjOrder,
   uint cid;
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     dbCCSeg* cc = *ccitr;
-    if (cc->isMarked())
+    if (cc->isMarked()) {
       continue;
+    }
     agrNet = cc->getTheOtherCapn(this, cid)->getNet();
     if (agrNet->getCcAdjustFactor() > 0
-        && agrNet->getCcAdjustOrder() < adjOrder)
+        && agrNet->getCcAdjustOrder() < adjOrder) {
       continue;
+    }
     adjustedCC.push_back(cc);
     cc->setMark(true);
     cc->adjustCapacitance(adjFactor);
@@ -265,8 +282,9 @@ void dbCapNode::adjustCapacitance(float factor)
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   uint cornerCnt = block->_corners_per_block;
   uint corner;
-  for (corner = 0; corner < cornerCnt; corner++)
+  for (corner = 0; corner < cornerCnt; corner++) {
     adjustCapacitance(factor, corner);
+  }
 }
 
 double dbCapNode::getCapacitance(uint corner)
@@ -278,49 +296,55 @@ double dbCapNode::getCapacitance(uint corner)
   if (seg->_flags._foreign > 0) {
     ZASSERT(corner < cornerCnt);
     return (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
-  } else {
-    return 0.0;
   }
+  return 0.0;
 }
 
 void dbCapNode::getGndCap(double* gndcap, double* totalcap)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  if (seg->_flags._foreign == 0)
+  if (seg->_flags._foreign == 0) {
     return;
+  }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
   double gcap;
   for (uint ii = 0; ii < cornerCnt; ii++) {
     gcap = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
-    if (gndcap)
+    if (gndcap) {
       gndcap[ii] = gcap;
-    if (totalcap)
+    }
+    if (totalcap) {
       totalcap[ii] = gcap;
+    }
   }
 }
 
 void dbCapNode::addGndCap(double* gndcap, double* totalcap)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  if (seg->_flags._foreign == 0)
+  if (seg->_flags._foreign == 0) {
     return;
+  }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
   double gcap;
   for (uint ii = 0; ii < cornerCnt; ii++) {
     gcap = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
-    if (gndcap)
+    if (gndcap) {
       gndcap[ii] += gcap;
-    if (totalcap)
+    }
+    if (totalcap) {
       totalcap[ii] += gcap;
+    }
   }
 }
 
 void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
 {
-  if (totalcap == nullptr || MillerMult == 0)
+  if (totalcap == nullptr || MillerMult == 0) {
     return;
+  }
   dbSet<dbCCSeg> ccSegs = getCCSegs();
   dbSet<dbCCSeg>::iterator ccitr;
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
@@ -352,8 +376,9 @@ void dbCapNode::getCapTable(double* cap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->_corners_per_block;
 
-  for (uint ii = 0; ii < cornerCnt; ii++)
+  for (uint ii = 0; ii < cornerCnt; ii++) {
     cap[ii] = (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+  }
 }
 
 void dbCapNode::addCapnCapacitance(dbCapNode* other)
@@ -486,16 +511,18 @@ dbITerm* dbCapNode::getITerm(dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (!seg->_flags._iterm)
+  if (!seg->_flags._iterm) {
     return nullptr;
+  }
   return dbITerm::getITerm(block, seg->_node_num);
 }
 dbBTerm* dbCapNode::getBTerm(dbBlock* mblock)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
-  if (!seg->_flags._bterm)
+  if (!seg->_flags._bterm) {
     return nullptr;
+  }
   return dbBTerm::getBTerm(block, seg->_node_num);
 }
 bool dbCapNode::isSourceTerm(dbBlock* mblock)
@@ -506,17 +533,17 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
   if (seg->_flags._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     iotype = iterm->getIoType();
-    if (iterm->getIoType() == dbIoType::OUTPUT)
+    if (iterm->getIoType() == dbIoType::OUTPUT) {
       return true;
-    else
-      return false;
+    }
+    return false;
   } else if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     iotype = bterm->getIoType();
-    if (bterm->getIoType() == dbIoType::INPUT)
+    if (bterm->getIoType() == dbIoType::INPUT) {
       return true;
-    else
-      return false;
+    }
+    return false;
   }
   return false;
 }
@@ -526,16 +553,16 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   if (seg->_flags._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
-    if (iterm->getIoType() == dbIoType::INOUT)
+    if (iterm->getIoType() == dbIoType::INOUT) {
       return true;
-    else
-      return false;
+    }
+    return false;
   } else if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
-    if (bterm->getIoType() == dbIoType::INOUT)
+    if (bterm->getIoType() == dbIoType::INOUT) {
       return true;
-    else
-      return false;
+    }
+    return false;
   }
   return false;
 }
@@ -836,9 +863,10 @@ uint dbCapNode::getShapeId()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) seg->getOwner();
-  if (seg->_flags._internal > 0)
+  if (seg->_flags._internal > 0) {
     return seg->_node_num;
-  else if (seg->_flags._iterm > 0) {
+  }
+  if (seg->_flags._iterm > 0) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     if (!iterm->getNet() || !iterm->getNet()->getWire())
       return 0;
@@ -886,7 +914,8 @@ bool dbCapNode::getTermCoords(int& x, int& y, dbBlock* mblock)
   if (seg->_flags._iterm > 0) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     return (iterm->getAvgXY(&x, &y));
-  } else if (seg->_flags._bterm > 0) {
+  }
+  if (seg->_flags._bterm > 0) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     return (bterm->getFirstPinLocation(x, y));
   } else
@@ -986,8 +1015,9 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
   if (foreign) {
     seg->_flags._foreign = 1;
     if (block->_maxCapNodeId >= seg->getOID()) {
-      for (uint ii = 0; ii < cornerCnt; ii++)
+      for (uint ii = 0; ii < cornerCnt; ii++) {
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+      }
     } else {
       block->_maxCapNodeId = seg->getOID();
       uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
@@ -1029,10 +1059,11 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
     _dbCapNode* s = block->_cap_node_tbl->getPtr(c);
 
     if (s == seg) {
-      if (p == nullptr)
+      if (p == nullptr) {
         net->_cap_nodes = s->_next;
-      else
+      } else {
         p->_next = s->_next;
+      }
       break;
     }
     p = s;
@@ -1076,8 +1107,9 @@ void dbCapNode::printCC()
   _dbCapNode* node = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) node->getOwner();
   uint ccn = node->_cc_segs;
-  if (ccn == 0)
+  if (ccn == 0) {
     return;
+  }
   dbCCSeg* ccs = dbCCSeg::getCCSeg(block, ccn);
   getImpl()->getLogger()->info(utl::ODB, 25, "  capn {}", getId());
   ccs->printCapnCC(getId());
@@ -1088,8 +1120,9 @@ bool dbCapNode::checkCC()
   _dbCapNode* node = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) node->getOwner();
   uint ccn = node->_cc_segs;
-  if (ccn == 0)
+  if (ccn == 0) {
     return true;
+  }
   dbCCSeg* ccs = dbCCSeg::getCCSeg(block, ccn);
   uint rc = ccs->checkCapnCC(getId());
   return rc;

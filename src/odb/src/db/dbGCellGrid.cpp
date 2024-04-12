@@ -63,23 +63,29 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
   }
 
   // User Code Begin ==
-  if (x_origin_ != rhs.x_origin_)
+  if (x_origin_ != rhs.x_origin_) {
     return false;
+  }
 
-  if (x_count_ != rhs.x_count_)
+  if (x_count_ != rhs.x_count_) {
     return false;
+  }
 
-  if (x_step_ != rhs.x_step_)
+  if (x_step_ != rhs.x_step_) {
     return false;
+  }
 
-  if (y_origin_ != rhs.y_origin_)
+  if (y_origin_ != rhs.y_origin_) {
     return false;
+  }
 
-  if (y_count_ != rhs.y_count_)
+  if (y_count_ != rhs.y_count_) {
     return false;
+  }
 
-  if (y_step_ != rhs.y_step_)
+  if (y_step_ != rhs.y_step_) {
     return false;
+  }
   // User Code End ==
   return true;
 }
@@ -87,8 +93,9 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const
 {
   // User Code Begin <
-  if (getOID() >= rhs.getOID())
+  if (getOID() >= rhs.getOID()) {
     return false;
+  }
   // User Code End <
   return true;
 }
@@ -427,8 +434,9 @@ dbGCellGrid* dbGCellGrid::create(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block->_gcell_grid != 0)
+  if (block->_gcell_grid != 0) {
     return nullptr;
+  }
 
   _dbGCellGrid* grid = block->_gcell_grid_tbl->create();
   block->_gcell_grid = grid->getOID();
@@ -445,8 +453,9 @@ uint dbGCellGrid::getXIdx(int x)
 {
   std::vector<int> grid;
   getGridX(grid);
-  if (grid.empty() || grid[0] > x)
+  if (grid.empty() || grid[0] > x) {
     return 0;
+  }
   auto pos = --(std::upper_bound(grid.begin(), grid.end(), x));
   return (int) std::distance(grid.begin(), pos);
 }
@@ -455,8 +464,9 @@ uint dbGCellGrid::getYIdx(int y)
 {
   std::vector<int> grid;
   getGridY(grid);
-  if (grid.empty() || grid[0] > y)
+  if (grid.empty() || grid[0] > y) {
     return 0;
+  }
   auto pos = --(std::upper_bound(grid.begin(), grid.end(), y));
   return (int) std::distance(grid.begin(), pos);
 }

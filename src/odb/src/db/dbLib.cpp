@@ -53,50 +53,65 @@ template class dbHashTable<_dbSite>;
 
 bool _dbLib::operator==(const _dbLib& rhs) const
 {
-  if (_lef_units != rhs._lef_units)
+  if (_lef_units != rhs._lef_units) {
     return false;
+  }
 
-  if (_dbu_per_micron != rhs._dbu_per_micron)
+  if (_dbu_per_micron != rhs._dbu_per_micron) {
     return false;
+  }
 
-  if (_hier_delimeter != rhs._hier_delimeter)
+  if (_hier_delimeter != rhs._hier_delimeter) {
     return false;
+  }
 
-  if (_left_bus_delimeter != rhs._left_bus_delimeter)
+  if (_left_bus_delimeter != rhs._left_bus_delimeter) {
     return false;
+  }
 
-  if (_right_bus_delimeter != rhs._right_bus_delimeter)
+  if (_right_bus_delimeter != rhs._right_bus_delimeter) {
     return false;
+  }
 
-  if (_spare != rhs._spare)
+  if (_spare != rhs._spare) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_master_hash != rhs._master_hash)
+  if (_master_hash != rhs._master_hash) {
     return false;
+  }
 
-  if (_site_hash != rhs._site_hash)
+  if (_site_hash != rhs._site_hash) {
     return false;
+  }
 
-  if (*_master_tbl != *rhs._master_tbl)
+  if (*_master_tbl != *rhs._master_tbl) {
     return false;
+  }
 
-  if (*_site_tbl != *rhs._site_tbl)
+  if (*_site_tbl != *rhs._site_tbl) {
     return false;
+  }
 
-  if (*_prop_tbl != *rhs._prop_tbl)
+  if (*_prop_tbl != *rhs._prop_tbl) {
     return false;
+  }
 
-  if (_tech != rhs._tech)
+  if (_tech != rhs._tech) {
     return false;
+  }
 
-  if (*_name_cache != *rhs._name_cache)
+  if (*_name_cache != *rhs._name_cache) {
     return false;
+  }
 
   return true;
 }
@@ -214,8 +229,9 @@ _dbLib::~_dbLib()
   delete _name_cache;
   delete _prop_itr;
 
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
