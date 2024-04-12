@@ -64,12 +64,15 @@ class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
 class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
+class _dbTechLayerWrongDirSpacingRule;
+class _dbTechLayerTwoWiresForbiddenSpcRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
 class _dbTechMinEncRule;
 class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
+class dbTrackGrid;
 // User Code End Classes
 
 struct dbTechLayerFlags
@@ -112,7 +115,7 @@ class _dbTechLayer : public _dbObject
   // User Code Begin Methods
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;
-  uint getTwIdx(const int width, const int prl) const;
+  uint getTwIdx(int width, int prl) const;
   // User Code End Methods
 
   dbTechLayerFlags flags_;
@@ -152,6 +155,11 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
+
+  dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
+
+  dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
+      two_wires_forbidden_spc_rules_tbl_;
 
   // User Code Begin Fields
 

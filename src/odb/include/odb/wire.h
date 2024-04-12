@@ -123,7 +123,7 @@ class Ath__wire
 
   void reset();
   // void set(int xy1, int xy2);
-  void set(uint dir, int* ll, int* ur);
+  void set(uint dir, const int* ll, const int* ur);
   void search(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
   void search1(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
 
@@ -266,25 +266,25 @@ class Ath__track
 
   bool place2(Ath__wire* w, int mark1, int mark2);
   void insertWire(Ath__wire* w, int mark1, int mark2);
-  uint initTargetTracks(uint sourceTrack, uint trackDist, bool tohi);
+  uint initTargetTracks(uint srcTrack, uint trackDist, bool tohi);
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
   void buildDgContext(Ath__array1D<odb::SEQ*>* dgContext,
                       Ath__wire**& allWire,
                       int& awcnt,
-                      int& a1wcnt);
+                      int& awsize);
   int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
-  uint couplingCaps(Ath__grid* resGrid,
-                    uint currentTrack,
-                    uint ccTrackDist,
-                    uint ccDomain,
-                    Ath__array1D<uint>* ccTable,
+  uint couplingCaps(Ath__grid* ccGrid,
+                    uint srcTrack,
+                    uint trackDist,
+                    uint ccThreshold,
+                    Ath__array1D<uint>* ccIdTable,
                     uint met,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
-                   uint ccDomain,
+                   uint ccThreshold,
                    Ath__array1D<Ath__wire*>* wTable,
                    Ath__array1D<Ath__wire*>* nwTable,
                    Ath__grid* ccGrid,
@@ -489,7 +489,7 @@ class Ath__grid
   uint defaultWireType();
   void setDefaultWireType(uint v);
   uint search(Ath__searchBox* bb,
-              uint* gxy,
+              const uint* gxy,
               Ath__array1D<uint>* idtable,
               Ath__grid* g);
   void adjustOverlapMakerEnd();
@@ -603,8 +603,8 @@ class Ath__gridTable
                  uint* width,
                  uint* pitch,
                  uint* spacing,
-                 int* X1 = nullptr,
-                 int* Y1 = nullptr);
+                 const int* X1 = nullptr,
+                 const int* Y1 = nullptr);
   ~Ath__gridTable();
   Ath__grid* getGrid(uint row, uint col);
   void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);

@@ -28,8 +28,7 @@
 
 #include "io.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 void io::Parser::instAnalysis()
 {
@@ -54,7 +53,7 @@ void io::Parser::instAnalysis()
   }
 
   int numLayers = design_->getTech()->getLayers().size();
-  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
       masterPinLayerRange;
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
@@ -66,24 +65,24 @@ void io::Parser::instAnalysis()
           auto pinFig = uPinFig.get();
           if (pinFig->typeId() == frcRect) {
             auto lNum = static_cast<frRect*>(pinFig)->getLayerNum();
-            minLayerNum = min(minLayerNum, lNum);
-            maxLayerNum = max(maxLayerNum, lNum);
+            minLayerNum = std::min(minLayerNum, lNum);
+            maxLayerNum = std::max(maxLayerNum, lNum);
           } else {
             logger_->warn(DRT, 248, "instAnalysis unsupported pinFig.");
           }
         }
       }
     }
-    maxLayerNum = min(maxLayerNum + 2, numLayers);
-    masterPinLayerRange[master] = make_tuple(minLayerNum, maxLayerNum);
+    maxLayerNum = std::min(maxLayerNum + 2, numLayers);
+    masterPinLayerRange[master] = std::make_tuple(minLayerNum, maxLayerNum);
   }
-  // cout <<"  master pin layer range done" <<endl;
+  // std::cout <<"  master pin layer range done" <<std::endl;
 
   if (VERBOSE > 0) {
     logger_->info(DRT, 163, "Instance analysis.");
   }
 
-  vector<frCoord> offset;
+  std::vector<frCoord> offset;
   int cnt = 0;
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     Point origin = inst->getOrigin();
@@ -96,30 +95,30 @@ void io::Parser::instAnalysis()
         // vertical track
         if (tp->isHorizontal()) {
           offset.push_back(origin.x() % tp->getTrackSpacing());
-          // cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.y() %
-          // tp->getTrackSpacing()
+          // std::cout <<"inst/offset/layer " <<inst->getName() <<" "
+          // <<origin.y() % tp->getTrackSpacing()
           //      <<" "
           //      <<design->getTech()->getLayer(tp->getLayerNum())->getName()
-          //      <<endl;
+          //      <<std::endl;
         } else {
           offset.push_back(origin.y() % tp->getTrackSpacing());
-          // cout <<"inst/offset/layer " <<inst->getName() <<" " <<origin.x() %
-          // tp->getTrackSpacing()
+          // std::cout <<"inst/offset/layer " <<inst->getName() <<" "
+          // <<origin.x() % tp->getTrackSpacing()
           //      <<" "
           //      <<design->getTech()->getLayer(tp->getLayerNum())->getName()
-          //      <<endl;
+          //      <<std::endl;
         }
       }
     }
     trackOffsetMap_[inst->getMaster()][orient][offset].insert(inst.get());
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  Complete {} instances.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  Complete {} instances.", cnt);
         }
       }
@@ -137,3 +136,5 @@ void io::Parser::instAnalysis()
     logger_->info(DRT, 164, "Number of unique instances = {}.", cnt);
   }
 }
+
+}  // namespace drt

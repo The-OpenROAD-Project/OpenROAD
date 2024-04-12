@@ -122,6 +122,8 @@ using sta::ArcDelayCalc;
 using sta::Corners;
 using sta::InputDrive;
 using sta::PinConnectedPinIterator;
+using sta::ArcDcalcResult;
+using sta::LoadPinIndexMap;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -286,9 +288,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   Pin *out_pin = db_network_->findPin(buffer, out_port);
   Net *in_net = db_network_->net(in_pin);
   Net *out_net = db_network_->net(out_pin);
-  bool in_net_ports = hasPort(in_net);
-  bool out_net_ports = hasPort(out_net);
-  return in_net_ports && out_net_ports;
+  return hasPort(in_net) && hasPort(out_net);
 }
 
 bool
@@ -436,11 +436,9 @@ void Resizer::balanceRowUsage()
       continue;
     }
 
-    int x;
-    int y;
-    inst->getOrigin(x, y);
-    const int x_bin = (x - core_.xMin()) / x_step;
-    const int y_bin = (y - core_.yMin()) / y_step;
+    const Point origin = inst->getOrigin();
+    const int x_bin = (origin.x() - core_.xMin()) / x_step;
+    const int y_bin = (origin.y() - core_.yMin()) / y_step;
     grid[x_bin][y_bin].push_back(inst);
   }
 
@@ -562,24 +560,33 @@ Resizer::bufferInput(const Pin *top_pin,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
 
+  bool has_non_buffer = false;
   bool has_dont_touch = false;
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     const Pin *pin = pin_iter->next();
     // Leave input port pin connected to input_net.
-    if (pin != top_pin && dontTouch(network_->instance(pin))) {
-      has_dont_touch = true;
-      logger_->warn(RSZ,
-                    85,
-                    "Input {} can't be buffered due to dont-touch fanout {}",
-                    network_->name(input_net),
-                    network_->name(pin));
-      break;
+    if (pin != top_pin) {
+      auto inst = network_->instance(pin);
+      if (dontTouch(inst)) {
+        has_dont_touch = true;
+        logger_->warn(RSZ,
+                      85,
+                      "Input {} can't be buffered due to dont-touch fanout {}",
+                      network_->name(input_net),
+                      network_->name(pin));
+        break;
+      }
+      auto cell = network_->cell(inst);
+      auto lib = network_->libertyCell(cell);
+      if (lib && !lib->isBuffer()) {
+        has_non_buffer = true;
+      }
     }
   }
   delete pin_iter;
 
-  if (has_dont_touch) {
+  if (has_dont_touch || !has_non_buffer) {
     return nullptr;
   }
 
@@ -724,17 +731,9 @@ Resizer::hasPort(const Net *net)
   if (!net) {
     return false;
   }
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
+
+  dbNet *db_net = db_network_->staToDb(net);
+  return !db_net->getBTerms().empty();
 }
 
 float
@@ -797,7 +796,8 @@ Resizer::halfDrivingPowerCell(LibertyCell* cell)
 bool
 Resizer::isSingleOutputCombinational(Instance* inst) const
 {
-  if (inst == network_->topInstance()) {
+  dbInst *db_inst = db_network_->staToDb(inst);
+  if (inst == network_->topInstance() || db_inst->isBlock()) {
     return false;
   }
   return isSingleOutputCombinational(network_->libertyCell(inst));
@@ -1534,7 +1534,7 @@ Resizer::dontTouch(const Instance *inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch();
+  return db_inst->isDoNotTouch() || db_inst->isPad();
 }
 
 void
@@ -1613,7 +1613,9 @@ Resizer::findTargetLoad(LibertyCell *cell)
     TimingRole *role = arc_set->role();
     if (!role->isTimingCheck()
         && role != TimingRole::tristateDisable()
-        && role != TimingRole::tristateEnable()) {
+        && role != TimingRole::tristateEnable()
+        && role != TimingRole::clockTreePathMin()
+        && role != TimingRole::clockTreePathMax()) {
       for (TimingArc *arc : arc_set->arcs()) {
         int in_rf_index = arc->fromEdge()->asRiseFall()->index();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
@@ -1696,7 +1698,7 @@ Resizer::gateSlewDiff(LibertyCell *cell,
   const Pvt *pvt = tgt_slew_dcalc_ap_->operatingConditions();
   ArcDelay arc_delay;
   Slew arc_slew;
-  model->gateDelay(pvt, in_slew, load_cap, 0.0, false,
+  model->gateDelay(pvt, in_slew, load_cap, false,
                    arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
@@ -1764,9 +1766,9 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
         Slew arc_slew;
-        model->gateDelay(pvt, 0.0, load_cap, 0.0, false,
+        model->gateDelay(pvt, 0.0, load_cap, false,
                         arc_delay, arc_slew);
-        model->gateDelay(pvt, arc_slew, load_cap, 0.0, false,
+        model->gateDelay(pvt, arc_slew, load_cap, false,
                         arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
@@ -2193,10 +2195,12 @@ Resizer::bufferDelays(LibertyCell *buffer_cell,
 // Create a map of all the pins that are equivalent and then use the fastest pin
 // for our violating path. Current implementation does not handle the case
 // where 2 paths go through the same gate (we could end up swapping pins twice)
-void
-Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
-                              float load_cap, const DcalcAnalysisPt *dcalc_ap,
-                              LibertyPort **swap_port)
+void Resizer::findSwapPinCandidate(LibertyPort* input_port,
+                                   LibertyPort* drvr_port,
+                                   const sta::LibertyPortSet& equiv_ports,
+                                   float load_cap,
+                                   const DcalcAnalysisPt* dcalc_ap,
+                                   LibertyPort** swap_port)
 {
     const Pvt *pvt = dcalc_ap->operatingConditions();
     LibertyCell *cell = drvr_port->libertyCell();
@@ -2231,11 +2235,15 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
         }
     }
 
-    // Find the candidate port to swap with
-    auto port_iter = sta::LibertyCellPortIterator(cell);
-    while (port_iter.hasNext()) {
-        LibertyPort *port = port_iter.next();
-        if (!sta::LibertyPort::equiv(input_port, port) &&
+    for (LibertyPort* port : equiv_ports) {
+        if (port_delays.find(port) == port_delays.end()) {
+          // It's possible than an equivalent pin doesn't have
+          // a path to the driver.
+          continue;
+        }
+
+        if (port->direction()->isInput() &&
+            !sta::LibertyPort::equiv(input_port, port) &&
             !sta::LibertyPort::equiv(drvr_port, port) &&
             port_delays[port] < base_delay) {
             *swap_port = port;
@@ -2460,29 +2468,28 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   delay = -INF;
   slew = -INF;
 
+  LoadPinIndexMap load_pin_index_map(network_);
+  load_pin_index_map[load_pin] = 0;
   for (Corner *corner : *corners) {
     const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
-    const Pvt *pvt = dcalc_ap->operatingConditions();
-
     makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner, parasitics);
-    // Let delay calc reduce parasitic network as it sees fit.
-    Parasitic *drvr_parasitic = arc_delay_calc->findParasitic(drvr_pin,
-                                                              RiseFall::rise(),
-                                                              dcalc_ap);
+
     for (TimingArcSet *arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
         for (TimingArc *arc : arc_set->arcs()) {
           RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+          RiseFall *drvr_rf = arc->toEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
-          ArcDelay gate_delay;
-          Slew drvr_slew;
-          arc_delay_calc->gateDelay(arc, in_slew, 0.0,
-                                    drvr_parasitic, 0.0, pvt, dcalc_ap,
-                                    gate_delay,
-                                    drvr_slew);
-          ArcDelay wire_delay;
-          Slew load_slew;
-          arc_delay_calc->loadDelay(load_pin, wire_delay, load_slew);
+          Parasitic *drvr_parasitic =
+            arc_delay_calc->findParasitic(drvr_pin, drvr_rf, dcalc_ap);
+          float load_cap = parasitics_->capacitance(drvr_parasitic);
+          ArcDcalcResult dcalc_result =
+            arc_delay_calc->gateDelay(drvr_pin, arc, in_slew, load_cap,
+                                      drvr_parasitic, load_pin_index_map, dcalc_ap);
+          ArcDelay gate_delay = dcalc_result.gateDelay();
+          // Only one load pin, so load_idx is 0.
+          ArcDelay wire_delay = dcalc_result.wireDelay(0);
+          ArcDelay load_slew = dcalc_result.loadSlew(0);
           delay = max(delay, gate_delay + wire_delay);
           slew = max(slew, load_slew);
         }
@@ -2511,13 +2518,13 @@ Resizer::makeWireParasitic(Net *net,
     corner->findParasiticAnalysisPt(max_);
   Parasitic *parasitic = parasitics->makeParasiticNetwork(net, false,
                                                           parasitics_ap);
-  ParasiticNode *n1 = parasitics->ensureParasiticNode(parasitic, drvr_pin);
-  ParasiticNode *n2 = parasitics->ensureParasiticNode(parasitic, load_pin);
+  ParasiticNode *n1 = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
+  ParasiticNode *n2 = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics->incrCap(n1, wire_cap / 2.0, parasitics_ap);
-  parasitics->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
-  parasitics->incrCap(n2, wire_cap / 2.0, parasitics_ap);
+  parasitics->incrCap(n1, wire_cap / 2.0);
+  parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
+  parasitics->incrCap(n2, wire_cap / 2.0);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2725,6 +2732,12 @@ Resizer::repairSetup(double setup_margin,
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
                              max_passes, verbose,
                              skip_pin_swap, skip_gate_cloning);
+}
+
+void Resizer::reportSwappablePins()
+{
+  resizePreamble();
+  repair_setup_->reportSwappablePins();
 }
 
 void

@@ -30,12 +30,12 @@
 
 #include <dst/JobMessage.h>
 #include <omp.h>
-#include <stdio.h>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
 #include <chrono>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <numeric>
@@ -55,12 +55,11 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-using namespace std;
-using namespace fr;
+BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
+
+namespace drt {
 
 using utl::ThreadException;
-
-BOOST_CLASS_EXPORT(RoutingJobDescription)
 
 enum class SerializationType
 {
@@ -91,7 +90,7 @@ void deserializeWorker(FlexDRWorker* worker,
   ar >> *worker;
 }
 
-void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
+void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
 {
   std::stringstream stream(std::ios_base::binary | std::ios_base::in
                            | std::ios_base::out);
@@ -101,7 +100,7 @@ void serializeViaData(FlexDRViaData viaData, std::string& serializedStr)
   serializedStr = stream.str();
 }
 
-FlexDR::FlexDR(triton_route::TritonRoute* router,
+FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn)
@@ -119,9 +118,7 @@ FlexDR::FlexDR(triton_route::TritonRoute* router,
 {
 }
 
-FlexDR::~FlexDR()
-{
-}
+FlexDR::~FlexDR() = default;
 
 void FlexDR::setDebug(frDebugSettings* settings)
 {
@@ -206,7 +203,7 @@ void FlexDRWorker::writeUpdates(const std::string& file_name)
 int FlexDRWorker::main(frDesign* design)
 {
   ProfileTask profile("DRW:main");
-  using namespace std::chrono;
+  using std::chrono::high_resolution_clock;
   high_resolution_clock::time_point t0 = high_resolution_clock::now();
   auto micronPerDBU = 1.0 / getTech()->getDBUPerUU();
   if (VERBOSE > 1) {
@@ -242,14 +239,16 @@ int FlexDRWorker::main(frDesign* design)
     {
       std::string viaDataStr;
       serializeViaData(*via_data_, viaDataStr);
-      ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
+      std::ofstream viaDataFile(
+          fmt::format("{}/viadata.bin", workerPath).c_str());
       viaDataFile << viaDataStr;
       viaDataFile.close();
     }
     {
       std::string workerStr;
       serializeWorker(this, workerStr);
-      ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
+      std::ofstream workerFile(
+          fmt::format("{}/worker.bin", workerPath).c_str());
       workerFile << workerStr;
       workerFile.close();
     }
@@ -274,15 +273,17 @@ int FlexDRWorker::main(frDesign* design)
   cleanup();
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
 
+  using std::chrono::duration;
+  using std::chrono::duration_cast;
   duration<double> time_span0 = duration_cast<duration<double>>(t1 - t0);
   duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
 
   if (VERBOSE > 1) {
-    stringstream ss;
+    std::stringstream ss;
     ss << "time (INIT/ROUTE/POST) " << time_span0.count() << " "
-       << time_span1.count() << " " << time_span2.count() << " " << endl;
-    cout << ss.str() << flush;
+       << time_span1.count() << " " << time_span2.count() << " " << std::endl;
+    std::cout << ss.str() << std::flush;
   }
 
   debugPrint(logger_,
@@ -326,7 +327,7 @@ void FlexDR::initFromTA()
     for (auto& guide : net->getGuides()) {
       for (auto& connFig : guide->getRoutes()) {
         if (connFig->typeId() == frcPathSeg) {
-          unique_ptr<frShape> ps = make_unique<frPathSeg>(
+          std::unique_ptr<frShape> ps = std::make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
           auto [bp, ep] = static_cast<frPathSeg*>(ps.get())->getPoints();
 
@@ -335,7 +336,7 @@ void FlexDR::initFromTA()
             net->addShape(std::move(ps));
           }
         } else {
-          cout << "Error: initFromTA unsupported shape" << endl;
+          std::cout << "Error: initFromTA unsupported shape" << std::endl;
         }
       }
     }
@@ -349,12 +350,14 @@ void FlexDR::initGCell2BoundaryPin()
   auto gCellPatterns = topBlock->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  auto tmpVec
-      = vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>(
-          (int) ygp.getCount());
-  gcell2BoundaryPin_ = vector<
-      vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>>(
-      (int) xgp.getCount(), tmpVec);
+  auto tmpVec = std::vector<std::map<frNet*,
+                                     std::set<std::pair<Point, frLayerNum>>,
+                                     frBlockObjectComp>>((int) ygp.getCount());
+  gcell2BoundaryPin_
+      = std::vector<std::vector<std::map<frNet*,
+                                         std::set<std::pair<Point, frLayerNum>>,
+                                         frBlockObjectComp>>>(
+          (int) xgp.getCount(), tmpVec);
   for (auto& net : topBlock->getNets()) {
     auto netPtr = net.get();
     for (auto& guide : net->getGuides()) {
@@ -412,7 +415,8 @@ void FlexDR::initGCell2BoundaryPin()
               }
             }
           } else {
-            cout << "Error: non-orthogonal pathseg in initGCell2BoundryPin\n";
+            std::cout
+                << "Error: non-orthogonal pathseg in initGCell2BoundryPin\n";
           }
         }
       }
@@ -432,14 +436,18 @@ void FlexDR::init_halfViaEncArea()
     if (i + 1 <= topLayerNum
         && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
-      frVia via(viaDef);
-      Rect layer1Box = via.getLayer1BBox();
-      Rect layer2Box = via.getLayer2BBox();
-      auto layer1HalfArea = layer1Box.area() / 2;
-      auto layer2HalfArea = layer2Box.area() / 2;
-      halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
+      if (viaDef) {
+        frVia via(viaDef);
+        Rect layer1Box = via.getLayer1BBox();
+        Rect layer2Box = via.getLayer2BBox();
+        auto layer1HalfArea = layer1Box.area() / 2;
+        auto layer2HalfArea = layer2Box.area() / 2;
+        halfViaEncArea.emplace_back(layer1HalfArea, layer2HalfArea);
+      } else {
+        halfViaEncArea.emplace_back(0, 0);
+      }
     } else {
-      halfViaEncArea.push_back(make_pair(0, 0));
+      halfViaEncArea.emplace_back(0, 0);
     }
   }
 }
@@ -473,13 +481,14 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>
+std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
                                 const Rect& routeBox)
 {
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
+  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
+      bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -528,12 +537,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   if (dist_on_) {
     if ((iter % 10 == 0 && iter != 60) || iter == 3 || iter == 15) {
       globals_path_ = fmt::format("{}globals.{}.ar", dist_dir_, iter);
-      router_->writeGlobals(globals_path_.c_str());
+      router_->writeGlobals(globals_path_);
     }
   }
   frTime t;
   if (VERBOSE > 0) {
-    string suffix;
+    std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
       suffix = "st";
     } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
@@ -557,21 +566,22 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   int prev_perc = 0;
   bool isExceed = false;
 
-  vector<unique_ptr<FlexDRWorker>> uworkers;
+  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
   int batchStepX, batchStepY;
 
   getBatchInfo(batchStepX, batchStepY);
 
-  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
-                                                           * batchStepY);
+  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
+      batchStepX * batchStepY);
 
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
+      auto worker
+          = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
-      const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
-      const int max_j = min((int) ygp.getCount(), j + size - 1);
+      const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
+      const int max_j = std::min((int) ygp.getCount(), j + size - 1);
       Rect routeBox2
           = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
@@ -589,11 +599,12 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       worker->setMazeEndIter(mazeEndIter);
       worker->setDRIter(iter);
       worker->setDebugSettings(router_->getDebugSettings());
-      if (dist_on_)
+      if (dist_on_) {
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
+      }
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
-        //   cout << "@@@ debug: " << i << " " << j << endl;
+        //   std::cout << "@@@ debug: " << i << " " << j << std::endl;
         // }
         // set boundary pin
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
@@ -612,7 +623,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       if (workers[batchIdx].empty()
           || (!dist_on_
               && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
-        workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
+        workers[batchIdx].push_back(
+            std::vector<std::unique_ptr<FlexDRWorker>>());
       }
       workers[batchIdx].back().push_back(std::move(worker));
 
@@ -641,20 +653,22 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             std::string serializedViaData;
             serializeViaData(via_data_, serializedViaData);
             router_->sendGlobalsUpdates(globals_path_, serializedViaData);
-          } else
+          } else {
             router_->sendDesignUpdates(globals_path_);
+          }
         }
         {
           ProfileTask task("DIST: PROCESS_BATCH");
           // multi thread
           ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-          for (int i = 0; i < (int) workersInBatch.size(); i++) {
+          for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
             try {
-              if (dist_on_)
+              if (dist_on_) {
                 workersInBatch[i]->distributedMain(getDesign());
-              else
+              } else {
                 workersInBatch[i]->main(getDesign());
+              }
 #pragma omp critical
               {
                 cnt++;
@@ -694,7 +708,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             {
               ProfileTask task("DIST: SERIALIZE+SEND");
 #pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < distWorkerBatches.size(); i++)
+              for (int i = 0; i < distWorkerBatches.size(); i++)  // NOLINT
                 sendWorkers(distWorkerBatches.at(i), workersInBatch);
             }
             logger_->report("    Received Batches:{}.", t);
@@ -703,7 +717,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
             {
               ProfileTask task("DIST: DESERIALIZING_BATCH");
 #pragma omp parallel for schedule(dynamic)
-              for (int i = 0; i < workers.size(); i++) {
+              for (int i = 0; i < workers.size(); i++) {  // NOLINT
                 deserializeWorker(workersInBatch.at(workers.at(i).first).get(),
                                   design_,
                                   workers.at(i).second);
@@ -716,11 +730,13 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       {
         ProfileTask profile("DR:end_batch");
         // single thread
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          if (workersInBatch[i]->end(getDesign()))
+        for (auto& worker : workersInBatch) {
+          if (worker->end(getDesign())) {
             numWorkUnits_ += 1;
-          if (workersInBatch[i]->isCongested())
+          }
+          if (worker->isCongested()) {
             increaseClipsize_ = true;
+          }
         }
         workersInBatch.clear();
       }
@@ -768,11 +784,13 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
              {"Lef58CutSpacingTable", "CutSpcTbl"},
              {"Lef58EolKeepOut", "eolKeepOut"}};
       for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
-        if (!marker->getConstraint())
+        if (!marker->getConstraint()) {
           continue;
+        }
         auto type = marker->getConstraint()->getViolName();
-        if (relabel.find(type) != relabel.end())
+        if (relabel.find(type) != relabel.end()) {
           type = relabel.at(type);
+        }
         violations[type][marker->getLayerNum()]++;
         layers.insert(marker->getLayerNum());
       }
@@ -785,10 +803,11 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         line += fmt::format("{:>7}", lName);
       }
       logger_->report(line);
-      for (auto [type, typeViolations] : violations) {
+      for (auto& [type, typeViolations] : violations) {
         std::string typeName = type;
-        if (typeName.size() >= 15)
+        if (typeName.size() >= 15) {
           typeName = typeName.substr(0, 12) + "..";
+        }
         line = fmt::format("{:<15}", typeName);
         for (auto lNum : layers) {
           line += fmt::format("{:>7}", typeViolations[lNum]);
@@ -797,7 +816,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
     t.print(logger_);
-    cout << flush;
+    std::cout << std::flush;
   }
   end();
   if ((DRC_RPT_ITER_STEP && iter > 0 && iter % DRC_RPT_ITER_STEP.value() == 0)
@@ -810,18 +829,18 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 
 void FlexDR::end(bool done)
 {
-  if (done && DRC_RPT_FILE != string("")) {
+  if (done && DRC_RPT_FILE != std::string("")) {
     router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
   }
   if (done && VERBOSE > 0) {
     logger_->info(DRT, 198, "Complete detail routing.");
   }
 
-  using ULL = unsigned long long;
+  using ULL = uint64_t;
   const auto size = getTech()->getLayers().size();
-  vector<ULL> wlen(size, 0);
-  vector<ULL> sCut(size, 0);
-  vector<ULL> mCut(size, 0);
+  std::vector<ULL> wlen(size, 0);
+  std::vector<ULL> sCut(size, 0);
+  std::vector<ULL> mCut(size, 0);
   auto topBlock = getDesign()->getTopBlock();
   for (auto& net : topBlock->getNets()) {
     for (auto& shape : net->getShapes()) {
@@ -888,73 +907,80 @@ void FlexDR::end(bool done)
          i <= getTech()->getTopLayerNum();
          i++) {
       if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        nameLen
-            = max(nameLen, (int) getTech()->getLayer(i - 1)->getName().size());
+        nameLen = std::max(nameLen,
+                           (int) getTech()->getLayer(i - 1)->getName().size());
       }
     }
-    int maxL = 1 + nameLen + 4 + (int) to_string(totSCut).length();
+    int maxL = 1 + nameLen + 4 + (int) std::to_string(totSCut).length();
     if (totMCut) {
-      maxL += 9 + 4 + (int) to_string(totMCut).length() + 9 + 4
-              + (int) to_string(totSCut + totMCut).length();
+      maxL += 9 + 4 + (int) std::to_string(totMCut).length() + 9 + 4
+              + (int) std::to_string(totSCut + totMCut).length();
     }
     std::ostringstream msg;
     if (totMCut) {
-      msg << " " << setw(nameLen + 4 + (int) to_string(totSCut).length() + 9)
+      msg << " "
+          << std::setw(nameLen + 4 + (int) std::to_string(totSCut).length() + 9)
           << "single-cut";
-      msg << setw(4 + (int) to_string(totMCut).length() + 9) << "multi-cut"
-          << setw(4 + (int) to_string(totSCut + totMCut).length()) << "total";
+      msg << std::setw(4 + (int) std::to_string(totMCut).length() + 9)
+          << "multi-cut"
+          << std::setw(4 + (int) std::to_string(totSCut + totMCut).length())
+          << "total";
     }
-    msg << endl;
+    msg << std::endl;
     for (int i = 0; i < maxL; i++) {
       msg << "-";
     }
-    msg << endl;
+    msg << std::endl;
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
       if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        msg << " " << setw(nameLen) << getTech()->getLayer(i - 1)->getName()
-            << "    " << setw((int) to_string(totSCut).length()) << sCut[i];
+        msg << " " << std::setw(nameLen)
+            << getTech()->getLayer(i - 1)->getName() << "    "
+            << std::setw((int) std::to_string(totSCut).length()) << sCut[i];
         if (totMCut) {
-          msg << " (" << setw(5)
+          msg << " (" << std::setw(5)
               << (double) ((sCut[i] + mCut[i])
                                ? sCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
               << "%)";
-          msg << "    " << setw((int) to_string(totMCut).length()) << mCut[i]
-              << " (" << setw(5)
+          msg << "    " << std::setw((int) std::to_string(totMCut).length())
+              << mCut[i] << " (" << std::setw(5)
               << (double) ((sCut[i] + mCut[i])
                                ? mCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
               << "%)"
-              << "    " << setw((int) to_string(totSCut + totMCut).length())
+              << "    "
+              << std::setw((int) std::to_string(totSCut + totMCut).length())
               << sCut[i] + mCut[i];
         }
-        msg << endl;
+        msg << std::endl;
       }
     }
     for (int i = 0; i < maxL; i++) {
       msg << "-";
     }
-    msg << endl;
-    msg << " " << setw(nameLen) << ""
-        << "    " << setw((int) to_string(totSCut).length()) << totSCut;
+    msg << std::endl;
+    msg << " " << std::setw(nameLen) << ""
+        << "    " << std::setw((int) std::to_string(totSCut).length())
+        << totSCut;
     if (totMCut) {
-      msg << " (" << setw(5)
+      msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
                            ? totSCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
           << "%)";
-      msg << "    " << setw((int) to_string(totMCut).length()) << totMCut
-          << " (" << setw(5)
+      msg << "    " << std::setw((int) std::to_string(totMCut).length())
+          << totMCut << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
                            ? totMCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
           << "%)"
-          << "    " << setw((int) to_string(totSCut + totMCut).length())
+          << "    "
+          << std::setw((int) std::to_string(totSCut + totMCut).length())
           << totSCut + totMCut;
     }
-    msg << endl << endl;
+    msg << std::endl << std::endl;
     logger_->report("{}", msg.str());
   }
 }
@@ -1036,28 +1062,28 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
 {
-  using namespace boost::polygon::operators;
   gtl::polygon_90_data<frCoord> poly;
-  vector<gtl::point_data<frCoord>> points;
+  std::vector<gtl::point_data<frCoord>> points;
   for (const auto& point : rect.getPoints()) {
-    points.push_back({point.x(), point.y()});
+    points.emplace_back(point.x(), point.y());
   }
   poly.set(points.begin(), points.end());
+  using boost::polygon::operators::operator+=;
   polySet += poly;
 }
 
 void FlexDR::reportGuideCoverage()
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator&;
 
   const auto numLayers = getTech()->getLayers().size();
-  std::vector<unsigned long long> totalAreaByLayerNum(numLayers, 0);
-  std::vector<unsigned long long> totalCoveredAreaByLayerNum(numLayers, 0);
-  map<frNet*, std::vector<float>> netsCoverage;
+  std::vector<uint64_t> totalAreaByLayerNum(numLayers, 0);
+  std::vector<uint64_t> totalCoveredAreaByLayerNum(numLayers, 0);
+  std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < nets.size(); i++) {
+  for (int i = 0; i < nets.size(); i++) {  // NOLINT
     const auto& net = nets.at(i);
     std::vector<gtl::polygon_90_set_data<frCoord>> routeSetByLayerNum(
         numLayers),
@@ -1090,19 +1116,21 @@ void FlexDR::reportGuideCoverage()
 
     for (frLayerNum lNum = 0; lNum < numLayers; lNum++) {
       if (getTech()->getLayer(lNum)->getType() != dbTechLayerType::ROUTING
-          || lNum > TOP_ROUTING_LAYER)
+          || lNum > TOP_ROUTING_LAYER) {
         continue;
+      }
       float coveredPercentage = -1.0;
-      unsigned long long routingArea = 0;
-      unsigned long long coveredArea = 0;
+      uint64_t routingArea = 0;
+      uint64_t coveredArea = 0;
       if (!routeSetByLayerNum[lNum].empty()) {
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if (routingArea == 0.0)
+        if (routingArea == 0.0) {
           coveredPercentage = -1.0;
-        else
+        } else {
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
+        }
       }
 
 #pragma omp critical
@@ -1114,7 +1142,7 @@ void FlexDR::reportGuideCoverage()
     }
   }
 
-  ofstream file(GUIDE_REPORT_FILE);
+  std::ofstream file(GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
@@ -1123,18 +1151,20 @@ void FlexDR::reportGuideCoverage()
     }
   }
   file << std::endl;
-  for (auto [net, coverage] : netsCoverage) {
+  for (const auto& [net, coverage] : netsCoverage) {
     file << net->getName() << ",";
-    for (auto coveredPercentage : coverage)
-      if (coveredPercentage < 0.0)
+    for (auto coveredPercentage : coverage) {
+      if (coveredPercentage < 0.0) {
         file << "NA,";
-      else
+      } else {
         file << fmt::format("{:.2f}%,", coveredPercentage);
+      }
+    }
     file << std::endl;
   }
   file << "Total,";
-  unsigned long long totalArea = 0;
-  unsigned long long totalCoveredArea = 0;
+  uint64_t totalArea = 0;
+  uint64_t totalCoveredArea = 0;
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getLayerNum() <= TOP_ROUTING_LAYER) {
@@ -1151,9 +1181,9 @@ void FlexDR::reportGuideCoverage()
       file << fmt::format("{:.2f}%,", coveredPercentage);
     }
   }
-  if (totalArea == 0)
+  if (totalArea == 0) {
     file << "NA";
-  else {
+  } else {
     auto totalCoveredPercentage = (totalCoveredArea / (double) totalArea) * 100;
     file << fmt::format("{:.2f}%,", totalCoveredPercentage);
   }
@@ -1171,9 +1201,10 @@ int FlexDR::main()
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
         clipSizeInc_ += 2;
-      } else
-        clipSizeInc_ = max((float) 0, clipSizeInc_ - 0.2f);
-      clipSize += min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
+      } else {
+        clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
+      }
+      clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
 
@@ -1186,7 +1217,7 @@ int FlexDR::main()
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
-      writer.updateDb(db_, true);
+      writer.updateDb(db_, false, true);
       // insert the stack of vias for bterms above max layer again.
       // all routing is deleted in updateDb, so it is necessary to insert the
       // stack again.
@@ -1197,11 +1228,12 @@ int FlexDR::main()
   }
 
   end(/* done */ true);
-  if (!GUIDE_REPORT_FILE.empty())
+  if (!GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
+  }
   if (VERBOSE > 0) {
     t.print(logger_);
-    cout << endl;
+    std::cout << std::endl;
   }
   return 0;
 }
@@ -1210,19 +1242,20 @@ void FlexDR::sendWorkers(
     const std::vector<std::pair<int, FlexDRWorker*>>& remote_batch,
     std::vector<std::unique_ptr<FlexDRWorker>>& batch)
 {
-  if (remote_batch.empty())
+  if (remote_batch.empty()) {
     return;
+  }
   std::vector<std::pair<int, std::string>> workers;
   {
     ProfileTask task("DIST: SERIALIZE_BATCH");
     for (auto& [idx, worker] : remote_batch) {
       std::string workerStr;
       serializeWorker(worker, workerStr);
-      workers.push_back({idx, workerStr});
+      workers.emplace_back(idx, workerStr);
     }
   }
   std::string remote_ip = dist_ip_;
-  unsigned short remote_port = dist_port_;
+  uint16_t remote_port = dist_port_;
   if (router_->getCloudSize() > 1) {
     dst::JobMessage msg(dst::JobMessage::BALANCER),
         result(dst::JobMessage::NONE);
@@ -1352,3 +1385,5 @@ template void FlexDRWorker::serialize<frIArchive>(
 template void FlexDRWorker::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
+
+}  // namespace drt

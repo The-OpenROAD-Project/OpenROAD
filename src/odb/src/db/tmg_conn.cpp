@@ -575,11 +575,7 @@ void tmg_conn::detachTilePins()
         continue;
       }
       dbMTerm* mterm = tx->_iterm->getMTerm();
-      int px, py;
-      tx->_iterm->getInst()->getOrigin(px, py);
-      const Point origin = Point(px, py);
-      const dbOrientType orient = tx->_iterm->getInst()->getOrient();
-      const dbTransform transform(orient, origin);
+      const dbTransform transform = tx->_iterm->getInst()->getTransform();
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
           Rect recti = box->getBox();
@@ -806,11 +802,7 @@ void tmg_conn::findConnections()
     tmg_rcterm* x = _termV + j;
     if (x->_iterm) {
       dbMTerm* mterm = x->_iterm->getMTerm();
-      int px, py;
-      x->_iterm->getInst()->getOrigin(px, py);
-      const Point origin(px, py);
-      const dbOrientType orient = x->_iterm->getInst()->getOrient();
-      const dbTransform transform(orient, origin);
+      const dbTransform transform = x->_iterm->getInst()->getTransform();
       for (dbMPin* mpin : mterm->getMPins()) {
         dbSet<dbBox> boxes = mpin->getGeometry();
         for (int ipass = 0; ipass < 2; ipass++) {
@@ -1387,7 +1379,7 @@ int tmg_conn::getStartNode()
       if (!x->_pt) {
         return 0;
       }
-      return (x->_pt - &_ptV[0]);
+      return (x->_pt - _ptV.data());
     }
   }
   return 0;
@@ -1489,7 +1481,7 @@ bool tmg_conn::checkConnected()
     while (tstack0 < tstackN && !pt) {
       tmg_rcterm* x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term) {
-        if (!isVisited(pt - &_ptV[0])) {
+        if (!isVisited(pt - _ptV.data())) {
           break;
         }
       }
@@ -1500,7 +1492,7 @@ bool tmg_conn::checkConnected()
     if (!pt) {
       break;
     }
-    jstart = pt - &_ptV[0];
+    jstart = pt - _ptV.data();
     if (!dfsStart(jstart)) {
       return false;
     }
@@ -1609,7 +1601,7 @@ void tmg_conn::treeReorder(const bool no_convert)
     while (tstack0 < tstackN && !pt) {
       x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term) {
-        if (!isVisited(pt - &_ptV[0])) {
+        if (!isVisited(pt - _ptV.data())) {
           break;
         }
       }
@@ -1622,7 +1614,7 @@ void tmg_conn::treeReorder(const bool no_convert)
       int j;
       for (j = last_term_index; j < _termN; j++) {
         x = _termV + j;
-        if (x->_pt && !isVisited(x->_pt - &_ptV[0])) {
+        if (x->_pt && !isVisited(x->_pt - _ptV.data())) {
           break;
         }
       }
@@ -1642,7 +1634,7 @@ void tmg_conn::treeReorder(const bool no_convert)
         _last_id = -1;
       }
     }
-    jstart = pt - &_ptV[0];
+    jstart = pt - _ptV.data();
     if (!dfsStart(jstart)) {
       logger_->warn(ODB, 396, "cannot order {}", _net->getConstName());
       return;
@@ -1892,7 +1884,7 @@ void tmg_conn::addToWire(const int fr,
 
   if (_ptV[to]._tindex >= 0 && _ptV[to]._tindex != _ptV[fr]._tindex
       && _ptV[to]._t_alt && _ptV[to]._t_alt->_tindex < 0
-      && !isVisited(_ptV[to]._t_alt - &_ptV[0])) {
+      && !isVisited(_ptV[to]._t_alt - _ptV.data())) {
     // move an ambiguous connection to the later point
     // this is for receiver; we should not get here for driver
     tmg_rcpt* pother = _ptV[to]._t_alt;

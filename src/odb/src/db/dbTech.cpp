@@ -60,116 +60,149 @@ template class dbTable<_dbTech>;
 
 bool _dbTech::operator==(const _dbTech& rhs) const
 {
-  if (_flags._namecase != rhs._flags._namecase)
+  if (_flags._namecase != rhs._flags._namecase) {
     return false;
+  }
 
-  if (_flags._haswireext != rhs._flags._haswireext)
+  if (_flags._haswireext != rhs._flags._haswireext) {
     return false;
+  }
 
-  if (_flags._nowireext != rhs._flags._nowireext)
+  if (_flags._nowireext != rhs._flags._nowireext) {
     return false;
+  }
 
-  if (_flags._hasclmeas != rhs._flags._hasclmeas)
+  if (_flags._hasclmeas != rhs._flags._hasclmeas) {
     return false;
+  }
 
-  if (_flags._clmeas != rhs._flags._clmeas)
+  if (_flags._clmeas != rhs._flags._clmeas) {
     return false;
+  }
 
-  if (_flags._hasminspobs != rhs._flags._hasminspobs)
+  if (_flags._hasminspobs != rhs._flags._hasminspobs) {
     return false;
+  }
 
-  if (_flags._minspobs != rhs._flags._minspobs)
+  if (_flags._minspobs != rhs._flags._minspobs) {
     return false;
+  }
 
-  if (_flags._hasminsppin != rhs._flags._hasminsppin)
+  if (_flags._hasminsppin != rhs._flags._hasminsppin) {
     return false;
+  }
 
-  if (_flags._minsppin != rhs._flags._minsppin)
+  if (_flags._minsppin != rhs._flags._minsppin) {
     return false;
+  }
 
-  if (_version != rhs._version)
+  if (_version != rhs._version) {
     return false;
+  }
 
-  if (strcmp(_version_buf, rhs._version_buf) != 0)
+  if (_name != rhs._name) {
     return false;
+  }
 
-  if (_name != rhs._name)
+  if (_via_cnt != rhs._via_cnt) {
     return false;
+  }
 
-  if (_via_cnt != rhs._via_cnt)
+  if (_layer_cnt != rhs._layer_cnt) {
     return false;
+  }
 
-  if (_layer_cnt != rhs._layer_cnt)
+  if (_rlayer_cnt != rhs._rlayer_cnt) {
     return false;
+  }
 
-  if (_rlayer_cnt != rhs._rlayer_cnt)
+  if (_lef_units != rhs._lef_units) {
     return false;
+  }
 
-  if (_lef_units != rhs._lef_units)
+  if (_dbu_per_micron != rhs._dbu_per_micron) {
     return false;
+  }
 
-  if (_dbu_per_micron != rhs._dbu_per_micron)
+  if (_mfgrid != rhs._mfgrid) {
     return false;
+  }
 
-  if (_mfgrid != rhs._mfgrid)
+  if (_bottom != rhs._bottom) {
     return false;
+  }
 
-  if (_bottom != rhs._bottom)
+  if (_top != rhs._top) {
     return false;
+  }
 
-  if (_top != rhs._top)
+  if (_non_default_rules != rhs._non_default_rules) {
     return false;
+  }
 
-  if (_non_default_rules != rhs._non_default_rules)
+  if (_samenet_rules != rhs._samenet_rules) {
     return false;
+  }
 
-  if (_samenet_rules != rhs._samenet_rules)
+  if (_samenet_matrix != rhs._samenet_matrix) {
     return false;
+  }
 
-  if (_samenet_matrix != rhs._samenet_matrix)
+  if (*_layer_tbl != *rhs._layer_tbl) {
     return false;
+  }
 
-  if (*_layer_tbl != *rhs._layer_tbl)
+  if (*_via_tbl != *rhs._via_tbl) {
     return false;
+  }
 
-  if (*_via_tbl != *rhs._via_tbl)
+  if (*_non_default_rule_tbl != *rhs._non_default_rule_tbl) {
     return false;
+  }
 
-  if (*_non_default_rule_tbl != *rhs._non_default_rule_tbl)
+  if (*_layer_rule_tbl != *rhs._layer_rule_tbl) {
     return false;
+  }
 
-  if (*_layer_rule_tbl != *rhs._layer_rule_tbl)
+  if (*_box_tbl != *rhs._box_tbl) {
     return false;
+  }
 
-  if (*_box_tbl != *rhs._box_tbl)
+  if (*_samenet_rule_tbl != *rhs._samenet_rule_tbl) {
     return false;
+  }
 
-  if (*_samenet_rule_tbl != *rhs._samenet_rule_tbl)
+  if (*_antenna_rule_tbl != *rhs._antenna_rule_tbl) {
     return false;
+  }
 
-  if (*_antenna_rule_tbl != *rhs._antenna_rule_tbl)
+  if (*_via_rule_tbl != *rhs._via_rule_tbl) {
     return false;
+  }
 
-  if (*_via_rule_tbl != *rhs._via_rule_tbl)
+  if (*_via_layer_rule_tbl != *rhs._via_layer_rule_tbl) {
     return false;
+  }
 
-  if (*_via_layer_rule_tbl != *rhs._via_layer_rule_tbl)
+  if (*_via_generate_rule_tbl != *rhs._via_generate_rule_tbl) {
     return false;
+  }
 
-  if (*_via_generate_rule_tbl != *rhs._via_generate_rule_tbl)
+  if (*_prop_tbl != *rhs._prop_tbl) {
     return false;
+  }
 
-  if (*_prop_tbl != *rhs._prop_tbl)
+  if (*_metal_width_via_map_tbl != *rhs._metal_width_via_map_tbl) {
     return false;
+  }
 
-  if (*_metal_width_via_map_tbl != *rhs._metal_width_via_map_tbl)
+  if (*_name_cache != *rhs._name_cache) {
     return false;
+  }
 
-  if (*_name_cache != *rhs._name_cache)
+  if (_via_hash != rhs._via_hash) {
     return false;
-
-  if (_via_hash != rhs._via_hash)
-    return false;
+  }
 
   return true;
 }
@@ -189,7 +222,6 @@ void _dbTech::differences(dbDiff& diff,
   DIFF_FIELD(_flags._hasminsppin);
   DIFF_FIELD(_flags._minsppin);
   DIFF_FIELD(_version);
-  DIFF_FIELD(_version_buf);
   DIFF_FIELD(_name);
   DIFF_FIELD(_via_cnt);
   DIFF_FIELD(_layer_cnt);
@@ -234,7 +266,6 @@ void _dbTech::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._hasminsppin);
   DIFF_OUT_FIELD(_flags._minsppin);
   DIFF_OUT_FIELD(_version);
-  DIFF_OUT_FIELD(_version_buf);
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_via_cnt);
   DIFF_OUT_FIELD(_layer_cnt);
@@ -291,7 +322,6 @@ _dbTech::_dbTech(_dbDatabase* db)
   _flags._minsppin = dbOnOffType::OFF;
   _flags._spare_bits = 0;
   _version = 5.4;
-  strncpy(_version_buf, "5.4", 9);
 
   _layer_tbl = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
@@ -393,8 +423,6 @@ _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
       _samenet_matrix(t._samenet_matrix),
       _via_hash(t._via_hash)
 {
-  strncpy(_version_buf, t._version_buf, sizeof(_version_buf));
-
   _layer_tbl = new dbTable<_dbTechLayer>(db, this, *t._layer_tbl);
 
   _via_tbl = new dbTable<_dbTechVia>(db, this, *t._via_tbl);
@@ -458,6 +486,7 @@ _dbTech::~_dbTech()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 {
+  dbOStreamScope scope(stream, "dbTech");
   stream << tech._name;
   stream << tech._via_cnt;
   stream << tech._layer_cnt;
@@ -475,18 +504,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech._non_default_rules;
   stream << tech._samenet_rules;
   stream << tech._samenet_matrix;
-  stream << *tech._layer_tbl;
-  stream << *tech._via_tbl;
-  stream << *tech._non_default_rule_tbl;
-  stream << *tech._layer_rule_tbl;
-  stream << *tech._box_tbl;
-  stream << *tech._samenet_rule_tbl;
-  stream << *tech._antenna_rule_tbl;
-  stream << *tech._via_rule_tbl;
-  stream << *tech._via_layer_rule_tbl;
-  stream << *tech._via_generate_rule_tbl;
-  stream << *tech._prop_tbl;
-  stream << *tech._metal_width_via_map_tbl;
+  stream << NamedTable("layer_tbl", tech._layer_tbl);
+  stream << NamedTable("via_tbl", tech._via_tbl);
+  stream << NamedTable("non_default_rule_tbl", tech._non_default_rule_tbl);
+  stream << NamedTable("layer_rule_tbl", tech._layer_rule_tbl);
+  stream << NamedTable("box_tbl", tech._box_tbl);
+  stream << NamedTable("samenet_rule_tbl", tech._samenet_rule_tbl);
+  stream << NamedTable("antenna_rule_tbl", tech._antenna_rule_tbl);
+  stream << NamedTable("via_rule_tbl", tech._via_rule_tbl);
+  stream << NamedTable("via_layer_rule_tbl", tech._via_layer_rule_tbl);
+  stream << NamedTable("via_generate_rule_tbl", tech._via_generate_rule_tbl);
+  stream << NamedTable("prop_tbl", tech._prop_tbl);
+  stream << NamedTable("metal_width_via_map_tbl",
+                       tech._metal_width_via_map_tbl);
   stream << *tech._name_cache;
   stream << tech._via_hash;
   return stream;
@@ -548,9 +578,18 @@ double _dbTech::_getLefVersion() const
   return _version;
 }
 
-const char* _dbTech::_getLefVersionStr() const
+std::string _dbTech::_getLefVersionStr() const
 {
-  return (const char*) _version_buf;
+  int major_version = (int) floor(_version);
+  int minor_version = ((int) floor(_version * 10.0)) - (major_version * 10);
+  int opt_minor_version = ((int) floor(_version * 1000.0))
+                          - (major_version * 1000) - (minor_version * 100);
+
+  if (opt_minor_version > 0) {
+    return fmt::format(
+        "{}.{}.{}", major_version, minor_version, opt_minor_version);
+  }
+  return fmt::format("{}.{}", major_version, minor_version);
 }
 
 //
@@ -560,19 +599,6 @@ const char* _dbTech::_getLefVersionStr() const
 void _dbTech::_setLefVersion(double inver)
 {
   _version = inver;
-  int major_version = (int) floor(inver);
-  int minor_version = ((int) floor(inver * 10.0)) - (major_version * 10);
-  int opt_minor_version = ((int) floor(inver * 1000.0)) - (major_version * 1000)
-                          - (minor_version * 100);
-  if (opt_minor_version > 0)
-    snprintf(_version_buf,
-             sizeof(_version_buf),
-             "%d.%d.%d",
-             major_version,
-             minor_version,
-             opt_minor_version);
-  else
-    snprintf(_version_buf, 10, "%d.%d", major_version, minor_version);
 }
 
 dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
@@ -629,8 +655,9 @@ dbTechLayer* dbTech::findLayer(const char* name)
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     _dbTechLayer* layer = (_dbTechLayer*) *itr;
 
-    if (strcmp(layer->_name, name) == 0)
+    if (strcmp(layer->_name, name) == 0) {
       return (dbTechLayer*) layer;
+    }
   }
 
   return nullptr;
@@ -644,8 +671,9 @@ dbTechLayer* dbTech::findLayer(int layer_number)
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     _dbTechLayer* layer = (_dbTechLayer*) *itr;
 
-    if (layer->_number == (uint) layer_number)
+    if (layer->_number == (uint) layer_number) {
       return (dbTechLayer*) layer;
+    }
   }
 
   return nullptr;
@@ -659,8 +687,9 @@ dbTechLayer* dbTech::findRoutingLayer(int level_number)
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     _dbTechLayer* layer = (_dbTechLayer*) *itr;
 
-    if (layer->_rlevel == (uint) level_number)
+    if (layer->_rlevel == (uint) level_number) {
       return (dbTechLayer*) layer;
+    }
   }
 
   return nullptr;
@@ -708,7 +737,7 @@ double dbTech::getLefVersion() const
   return tech->_getLefVersion();
 }
 
-const char* dbTech::getLefVersionStr() const
+std::string dbTech::getLefVersionStr() const
 {
   _dbTech* tech = (_dbTech*) this;
   return tech->_getLefVersionStr();
@@ -865,8 +894,9 @@ dbTechNonDefaultRule* dbTech::findNonDefaultRule(const char* name)
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
     _dbTechNonDefaultRule* r = (_dbTechNonDefaultRule*) *itr;
 
-    if (strcmp(r->_name, name) == 0)
+    if (strcmp(r->_name, name) == 0) {
       return (dbTechNonDefaultRule*) r;
+    }
   }
 
   return nullptr;
@@ -880,8 +910,9 @@ dbTechSameNetRule* dbTech::findSameNetRule(dbTechLayer* l1_, dbTechLayer* l2_)
   dbId<_dbTechSameNetRule> rule
       = tech->_samenet_matrix(l1->_number, l2->_number);
 
-  if (rule == 0)
+  if (rule == 0) {
     return nullptr;
+  }
 
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(rule);
 }
@@ -925,8 +956,9 @@ dbTechViaRule* dbTech::findViaRule(const char* name)
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
     _dbTechViaRule* rule = (_dbTechViaRule*) *itr;
 
-    if (strcmp(name, rule->_name) == 0)
+    if (strcmp(name, rule->_name) == 0) {
       return (dbTechViaRule*) rule;
+    }
   }
 
   return nullptr;
@@ -940,8 +972,9 @@ dbTechViaGenerateRule* dbTech::findViaGenerateRule(const char* name)
   for (itr = rules.begin(); itr != rules.end(); ++itr) {
     _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) *itr;
 
-    if (strcmp(name, rule->_name) == 0)
+    if (strcmp(name, rule->_name) == 0) {
       return (dbTechViaGenerateRule*) rule;
+    }
   }
 
   return nullptr;
@@ -968,8 +1001,9 @@ void dbTech::checkLayer(bool typeChk,
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     layer = (dbTechLayer*) *itr;
     type = layer->getType();
-    if (type.getValue() == dbTechLayerType::CUT)
+    if (type.getValue() == dbTechLayerType::CUT) {
       continue;
+    }
     if (typeChk && type.getValue() != dbTechLayerType::ROUTING) {
       getImpl()->getLogger()->warn(utl::ODB,
                                    58,
@@ -979,7 +1013,7 @@ void dbTech::checkLayer(bool typeChk,
     }
     level = layer->getRoutingLevel();
     pitch = layer->getPitch();
-    if (pitchChk && pitch <= 0)
+    if (pitchChk && pitch <= 0) {
       getImpl()->getLogger()->error(
           utl::ODB,
           59,
@@ -987,8 +1021,9 @@ void dbTech::checkLayer(bool typeChk,
           layer->getConstName(),
           level,
           pitch);
+    }
     width = layer->getWidth();
-    if (widthChk && width == 0)
+    if (widthChk && width == 0) {
       getImpl()->getLogger()->error(
           utl::ODB,
           60,
@@ -996,8 +1031,9 @@ void dbTech::checkLayer(bool typeChk,
           layer->getConstName(),
           level,
           width);
+    }
     spacing = layer->getSpacing();
-    if (spacingChk && spacing <= 0)
+    if (spacingChk && spacing <= 0) {
       getImpl()->getLogger()->error(
           utl::ODB,
           61,
@@ -1005,9 +1041,8 @@ void dbTech::checkLayer(bool typeChk,
           layer->getConstName(),
           level,
           spacing);
+    }
   }
-
-  return;
 }
 dbTech* dbTech::create(dbDatabase* db_, const char* name, int dbu_per_micron)
 {

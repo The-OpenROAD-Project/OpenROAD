@@ -42,6 +42,7 @@
 #include <map>
 
 #include "dpl/Opendp.h"
+#include "odb/util.h"
 #include "ord/OpenRoad.hh"  // closestPtInRect
 #include "utl/Logger.h"
 
@@ -97,7 +98,8 @@ void Optdp::improvePlacement(int seed,
   logger_->report("Detailed placement improvement.");
 
   opendp_->initBlock();
-  hpwlBefore_ = opendp_->hpwl();
+  odb::WireLengthEvaluator eval(db_->getChip()->getBlock());
+  hpwlBefore_ = eval.hpwl();
 
   if (hpwlBefore_ != 0) {
     // Get needed information from DB.
@@ -151,7 +153,7 @@ void Optdp::improvePlacement(int seed,
     updateDbInstLocations();
 
     // Get final hpwl.
-    hpwlAfter_ = opendp_->hpwl();
+    hpwlAfter_ = eval.hpwl();
 
     // Cleanup.
     delete network_;
@@ -706,14 +708,12 @@ void Optdp::createArchitecture()
       skip_list[site->getHeight()].insert(site->getName());
       continue;
     }
-    int originX;
-    int originY;
-    row->getOrigin(originX, originY);
+    odb::Point origin = row->getOrigin();
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(originX);
-    archRow->setBottom(originY);
+    archRow->setSubRowOrigin(origin.x());
+    archRow->setBottom(origin.y());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());

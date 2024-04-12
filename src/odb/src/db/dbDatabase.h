@@ -69,7 +69,31 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 74;  // Current revision number
+
+const uint db_schema_minor = 83;  // Current revision number
+
+// Revision where scan structs are added
+const uint db_schema_add_scan = 83;
+
+// Revision where _dbTechLayer::two_wires_forbidden_spc_rules_tbl_ was added
+const uint db_schema_lef58_two_wires_forbidden_spacing = 82;
+// Revision where hierarchy schema with modnets, modbterms, moditerms introduced
+const uint db_schema_update_hierarchy = 81;
+// Revision where dbPowerSwitch changed from strings to structs
+const uint db_schema_update_db_power_switch = 80;
+
+// Revision where dbGCellGrid::GCellData moved to uint8_t
+const uint db_schema_smaler_gcelldata = 79;
+
+// Revision where _dbBox / flags.mask was added
+const uint db_schema_dbbox_mask = 78;
+
+const uint db_schema_level_shifter_cell = 77;
+
+const uint db_schema_power_domain_voltage = 76;
+
+// Revision where _dbTechLayer::wrongdir_spacing_rules_tbl_ was added
+const uint db_schema_wrongdir_spacing = 75;
 
 // Revision where _dbLevelShifter was added
 const uint db_schema_level_shifter = 74;
@@ -160,7 +184,7 @@ class _dbDatabase : public _dbObject
   _dbDatabase(_dbDatabase* db, const _dbDatabase& d);
   ~_dbDatabase();
 
-  inline utl::Logger* getLogger() const { return _logger; }
+  utl::Logger* getLogger() const;
 
   bool operator==(const _dbDatabase& rhs) const;
   bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }

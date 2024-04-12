@@ -33,8 +33,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 {
@@ -108,24 +107,25 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 
   if (isFloatingVSS) {
     return nets_[0].get();
-  } else if (isFloatingVDD) {
-    return nets_[1].get();
-  } else {
-    auto it = owner2nets_.find(owner);
-    gcNet* currNet = nullptr;
-    if (it == owner2nets_.end()) {
-      currNet = addNet(owner);
-    } else {
-      currNet = it->second;
-    }
-    return currNet;
   }
+  if (isFloatingVDD) {
+    return nets_[1].get();
+  }
+  auto it = owner2nets_.find(owner);
+  gcNet* currNet = nullptr;
+  if (it == owner2nets_.end()) {
+    currNet = addNet(owner);
+  } else {
+    currNet = it->second;
+  }
+  return currNet;
 }
 gcNet* FlexGCWorker::Impl::getNet(frNet* net)
 {
   auto it = owner2nets_.find(net);
-  if (it == owner2nets_.end())
+  if (it == owner2nets_.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
@@ -256,7 +256,7 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
   }
 }
 void addNonTaperedPatches(gcNet* gNet,
-                          const std::vector<unique_ptr<drConnFig>>& figs)
+                          const std::vector<std::unique_ptr<drConnFig>>& figs)
 {
   for (auto& obj : figs) {
     if (obj->typeId() == drcPatchWire) {
@@ -289,11 +289,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     auto pathSeg = static_cast<drPathSeg*>(obj);
     Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
-    if (pathSeg->isTapered())
+    if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
-    else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-             && AUTO_TAPER_NDR_NETS)
+    } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
+               && AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
+    }
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
@@ -301,10 +302,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
     // push cut layer rect
@@ -319,10 +322,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
   } else if (obj->typeId() == drcPatchWire) {
@@ -342,11 +347,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     auto pathSeg = static_cast<frPathSeg*>(obj);
     Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
-    if (pathSeg->isTapered())
+    if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
-    else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-             && AUTO_TAPER_NDR_NETS)
+    } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
+               && AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
+    }
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
@@ -354,10 +360,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
     // push cut layer rect
@@ -372,10 +380,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
   } else if (obj->typeId() == frcPatchWire) {
@@ -409,7 +419,7 @@ void FlexGCWorker::Impl::initDRWorker()
 }
 void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
 {
-  vector<frBlockObject*> result;
+  std::vector<frBlockObject*> result;
   std::map<gcNet*, std::vector<frPatchWire*>> pwires;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
   for (auto rptr : result) {
@@ -431,7 +441,7 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
       }
     }
   }
-  for (auto [gNet, patches] : pwires) {
+  for (const auto& [gNet, patches] : pwires) {
     for (auto pwire : patches) {
       Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
@@ -449,11 +459,11 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
   // init pin from polygons
-  vector<gtl::polygon_90_set_data<frCoord>> layerPolys(numLayers);
-  vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+  std::vector<gtl::polygon_90_set_data<frCoord>> layerPolys(numLayers);
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
   for (int i = 0; i < numLayers; i++) {
     polys.clear();
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     layerPolys[i] += net->getPolygons(i, false);
     layerPolys[i] += net->getPolygons(i, true);
     layerPolys[i].get(polys);
@@ -474,10 +484,10 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
     gcNet* net,
-    vector<set<pair<Point, Point>>>& fixedPolygonEdges)
+    std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
   Point bp, ep, firstPt;
   // get fixed polygon edges from polygons
   for (int i = 0; i < numLayers; i++) {
@@ -492,11 +502,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
       // loop from second to last pt (n-1) edges
       for (; outerIt != poly.end(); outerIt++) {
         ep = {(*outerIt).x(), (*outerIt).y()};
-        fixedPolygonEdges[i].insert(make_pair(bp, ep));
+        fixedPolygonEdges[i].insert(std::make_pair(bp, ep));
         bp = ep;
       }
       // insert last edge
-      fixedPolygonEdges[i].insert(make_pair(bp, firstPt));
+      fixedPolygonEdges[i].insert(std::make_pair(bp, firstPt));
       for (auto holeIt = poly.begin_holes(); holeIt != poly.end_holes();
            holeIt++) {
         auto& hole_poly = *holeIt;
@@ -508,11 +518,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
         // loop from second to last pt (n-1) edges
         for (; innerIt != hole_poly.end(); innerIt++) {
           ep = {(*innerIt).x(), (*innerIt).y()};
-          fixedPolygonEdges[i].insert(make_pair(bp, ep));
+          fixedPolygonEdges[i].insert(std::make_pair(bp, ep));
           bp = ep;
         }
         // insert last edge
-        fixedPolygonEdges[i].insert(make_pair(bp, firstPt));
+        fixedPolygonEdges[i].insert(std::make_pair(bp, firstPt));
       }
     }
   }
@@ -520,17 +530,17 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_getFixedPolygonEdges(
   for (int i = 0; i < numLayers; i++) {
     for (auto& rect : net->getRectangles(i, true)) {
       fixedPolygonEdges[i].insert(
-          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
-                    Point(gtl::xh(rect), gtl::yl(rect))));
+          std::make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                         Point(gtl::xh(rect), gtl::yl(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(Point(gtl::xh(rect), gtl::yl(rect)),
-                    Point(gtl::xh(rect), gtl::yh(rect))));
+          std::make_pair(Point(gtl::xh(rect), gtl::yl(rect)),
+                         Point(gtl::xh(rect), gtl::yh(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(Point(gtl::xh(rect), gtl::yh(rect)),
-                    Point(gtl::xl(rect), gtl::yh(rect))));
+          std::make_pair(Point(gtl::xh(rect), gtl::yh(rect)),
+                         Point(gtl::xl(rect), gtl::yh(rect))));
       fixedPolygonEdges[i].insert(
-          make_pair(Point(gtl::xl(rect), gtl::yh(rect)),
-                    Point(gtl::xl(rect), gtl::yl(rect))));
+          std::make_pair(Point(gtl::xl(rect), gtl::yh(rect)),
+                         Point(gtl::xl(rect), gtl::yl(rect))));
     }
   }
 }
@@ -540,11 +550,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
     gcPin* pin,
     gcPolygon* poly,
     frLayerNum i,
-    const vector<set<pair<Point, Point>>>& fixedPolygonEdges)
+    const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
 {
   Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
-  vector<unique_ptr<gcSegment>> tmpEdges;
+  std::vector<std::unique_ptr<gcSegment>> tmpEdges;
   // skip the first pt
   auto outerIt = poly->begin();
   bp = {(*outerIt).x(), (*outerIt).y()};
@@ -556,13 +566,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
   for (; outerIt != poly->end(); outerIt++) {
     ep = {(*outerIt).x(), (*outerIt).y()};
     ep1 = *outerIt;
-    auto edge = make_unique<gcSegment>();
+    auto edge = std::make_unique<gcSegment>();
     edge->setLayerNum(i);
     edge->addToPin(pin);
     edge->addToNet(net);
     // edge->setPoints(bp, ep);
     edge->setSegment(bp1, ep1);
-    if (fixedPolygonEdges[i].find(make_pair(bp, ep))
+    if (fixedPolygonEdges[i].find(std::make_pair(bp, ep))
         != fixedPolygonEdges[i].end()) {
       // fixed edge
       edge->setFixed(true);
@@ -582,13 +592,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_outer(
     // cntOuter++;
   }
   // last edge
-  auto edge = make_unique<gcSegment>();
+  auto edge = std::make_unique<gcSegment>();
   edge->setLayerNum(i);
   edge->addToPin(pin);
   edge->addToNet(net);
   // edge->setPoints(bp, firstPt);
   edge->setSegment(bp1, firstPt1);
-  if (fixedPolygonEdges[i].find(make_pair(bp, firstPt))
+  if (fixedPolygonEdges[i].find(std::make_pair(bp, firstPt))
       != fixedPolygonEdges[i].end()) {
     // fixed edge
     edge->setFixed(true);
@@ -614,11 +624,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
     gcPin* pin,
     const gtl::polygon_90_data<frCoord>& hole_poly,
     frLayerNum i,
-    const vector<set<pair<Point, Point>>>& fixedPolygonEdges)
+    const std::vector<std::set<std::pair<Point, Point>>>& fixedPolygonEdges)
 {
   Point bp, ep, firstPt;
   gtl::point_data<frCoord> bp1, ep1, firstPt1;
-  vector<unique_ptr<gcSegment>> tmpEdges;
+  std::vector<std::unique_ptr<gcSegment>> tmpEdges;
   // skip the first pt
   auto innerIt = hole_poly.begin();
   bp = {(*innerIt).x(), (*innerIt).y()};
@@ -630,13 +640,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
   for (; innerIt != hole_poly.end(); innerIt++) {
     ep = {(*innerIt).x(), (*innerIt).y()};
     ep1 = *innerIt;
-    auto edge = make_unique<gcSegment>();
+    auto edge = std::make_unique<gcSegment>();
     edge->setLayerNum(i);
     edge->addToPin(pin);
     edge->addToNet(net);
     // edge->setPoints(bp, ep);
     edge->setSegment(bp1, ep1);
-    if (fixedPolygonEdges[i].find(make_pair(bp, ep))
+    if (fixedPolygonEdges[i].find(std::make_pair(bp, ep))
         != fixedPolygonEdges[i].end()) {
       // fixed edge
       edge->setFixed(true);
@@ -655,14 +665,14 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
     bp1 = ep1;
     // cntInner++;
   }
-  auto edge = make_unique<gcSegment>();
+  auto edge = std::make_unique<gcSegment>();
   edge->setLayerNum(i);
   edge->addToPin(pin);
   edge->addToNet(net);
   // edge->setPoints(bp, firstPt);
   edge->setSegment(bp1, firstPt1);
   // last edge
-  if (fixedPolygonEdges[i].find(make_pair(bp, firstPt))
+  if (fixedPolygonEdges[i].find(std::make_pair(bp, firstPt))
       != fixedPolygonEdges[i].end()) {
     // fixed edge
     edge->setFixed(true);
@@ -686,7 +696,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges_helper_inner(
 void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<set<pair<Point, Point>>> fixedPolygonEdges(numLayers);
+  std::vector<std::set<std::pair<Point, Point>>> fixedPolygonEdges(numLayers);
   // get all fixed polygon edges
   initNet_pins_polygonEdges_getFixedPolygonEdges(net, fixedPolygonEdges);
 
@@ -711,12 +721,11 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                                                             gcPin* pin)
 {
   for (auto& edges : pin->getPolygonEdges()) {
-    vector<unique_ptr<gcCorner>> tmpCorners;
+    std::vector<std::unique_ptr<gcCorner>> tmpCorners;
     auto prevEdge = edges.back().get();
     auto layerNum = prevEdge->getLayerNum();
     gcCorner* prevCorner = nullptr;
-    for (int i = 0; i < (int) edges.size(); i++) {
-      auto nextEdge = edges[i].get();
+    for (auto& nextEdge : edges) {
       auto uCurrCorner = std::make_unique<gcCorner>();
       auto currCorner = uCurrCorner.get();
       tmpCorners.push_back(std::move(uCurrCorner));
@@ -725,7 +734,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
       nextEdge->setLowCorner(currCorner);
       // set currCorner attributes
       currCorner->setPrevEdge(prevEdge);
-      currCorner->setNextEdge(nextEdge);
+      currCorner->setNextEdge(nextEdge.get());
       currCorner->x(prevEdge->high().x());
       currCorner->y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, *nextEdge);
@@ -786,7 +795,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         currCorner->setPrevCorner(prevCorner);
       }
       prevCorner = currCorner;
-      prevEdge = nextEdge;
+      prevEdge = nextEdge.get();
     }
     // update attributes between first and last corners
     auto currCorner = tmpCorners.front().get();
@@ -809,23 +818,23 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 
 void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
     gcNet* net,
-    vector<set<pair<Point, Point>>>& fixedMaxRectangles)
+    std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<gtl::rectangle_data<frCoord>> rects;
+  std::vector<gtl::rectangle_data<frCoord>> rects;
   for (int i = 0; i < numLayers; i++) {
     rects.clear();
     gtl::get_max_rectangles(rects, net->getPolygons(i, true));
     for (auto& rect : rects) {
       fixedMaxRectangles[i].insert(
-          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
-                    Point(gtl::xh(rect), gtl::yh(rect))));
+          std::make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                         Point(gtl::xh(rect), gtl::yh(rect))));
     }
     // for rectangles input --> non-merge scenario
     for (auto& rect : net->getRectangles(i, true)) {
       fixedMaxRectangles[i].insert(
-          make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
-                    Point(gtl::xh(rect), gtl::yh(rect))));
+          std::make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                         Point(gtl::xh(rect), gtl::yh(rect))));
     }
   }
 }
@@ -835,15 +844,16 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
     gcPin* pin,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum i,
-    const vector<set<pair<Point, Point>>>& fixedMaxRectangles)
+    const std::vector<std::set<std::pair<Point, Point>>>& fixedMaxRectangles)
 {
-  auto rectangle = make_unique<gcRect>();
+  auto rectangle = std::make_unique<gcRect>();
   rectangle->setRect(rect);
   rectangle->setLayerNum(i);
   rectangle->addToPin(pin);
   rectangle->addToNet(net);
-  if (fixedMaxRectangles[i].find(make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
-                                           Point(gtl::xh(rect), gtl::yh(rect))))
+  if (fixedMaxRectangles[i].find(
+          std::make_pair(Point(gtl::xl(rect), gtl::yl(rect)),
+                         Point(gtl::xh(rect), gtl::yh(rect))))
       != fixedMaxRectangles[i].end()) {
     // fixed max rectangles
     rectangle->setFixed(true);
@@ -872,12 +882,12 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_helper(
 void FlexGCWorker::Impl::initNet_pins_maxRectangles(gcNet* net)
 {
   int numLayers = getTech()->getLayers().size();
-  vector<set<pair<Point, Point>>> fixedMaxRectangles(numLayers);
+  std::vector<std::set<std::pair<Point, Point>>> fixedMaxRectangles(numLayers);
   // get all fixed max rectangles
   initNet_pins_maxRectangles_getFixedMaxRectangles(net, fixedMaxRectangles);
 
   // gen all max rectangles
-  vector<gtl::rectangle_data<frCoord>> rects;
+  std::vector<gtl::rectangle_data<frCoord>> rects;
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
       rects.clear();
@@ -944,12 +954,12 @@ void FlexGCWorker::Impl::initPA1()
 void FlexGCWorker::Impl::updateGCWorker()
 {
   if (!getDRWorker()) {
-    cout << "Error: updateGCWorker expects a valid DRWorker" << endl;
+    std::cout << "Error: updateGCWorker expects a valid DRWorker" << std::endl;
     exit(1);
   }
 
   // get all frNets, must be sorted by id
-  set<frNet*, frBlockObjectComp> fnets;
+  std::set<frNet*, frBlockObjectComp> fnets;
   for (auto dnet : modifiedDRNets_) {
     fnets.insert(dnet->getFrNet());
   }
@@ -1008,3 +1018,5 @@ void FlexGCWorker::updateDRNet(drNet* net)
 {
   impl_->modifiedDRNets_.push_back(net);
 }
+
+}  // namespace drt

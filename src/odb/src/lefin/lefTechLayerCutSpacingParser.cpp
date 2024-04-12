@@ -87,10 +87,11 @@ void addLayerSubRule(
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
   auto secondLayer = layer->getTech()->findLayer(name.c_str());
-  if (secondLayer != nullptr)
+  if (secondLayer != nullptr) {
     parser->curRule->setSecondLayer(secondLayer);
-  else
+  } else {
     incomplete_props.push_back({parser->curRule, name});
+  }
 }
 
 void addAdjacentCutsSubRule(
@@ -130,15 +131,18 @@ void addAdjacentCutsSubRule(
     parser->curRule->setTwoCuts(twocuts.value());
   }
   parser->curRule->setWithin(lefin->dbdist(within));
-  if (within2.is_initialized())
+  if (within2.is_initialized()) {
     parser->curRule->setSecondWithin(lefin->dbdist(within2.value()));
-  if (except_same_pgnet.is_initialized())
+  }
+  if (except_same_pgnet.is_initialized()) {
     parser->curRule->setExceptSamePgnet(true);
+  }
   if (className.is_initialized()) {
     auto cutClassName = className.value();
     auto cutClass = layer->findTechLayerCutClassRule(cutClassName.c_str());
-    if (cutClass != nullptr)
+    if (cutClass != nullptr) {
       parser->curRule->setCutClass(cutClass);
+    }
   }
   if (sideParallelNoPrl.is_initialized()) {
     auto option = sideParallelNoPrl.value();
@@ -148,8 +152,9 @@ void addAdjacentCutsSubRule(
       parser->curRule->setSideParallelOverlap(true);
     }
   }
-  if (sameMask.is_initialized())
+  if (sameMask.is_initialized()) {
     parser->curRule->setSameMask(true);
+  }
 }
 void addParallelOverlapSubRule(boost::optional<std::string> except,
                                odb::lefTechLayerCutSpacingParser* parser)
@@ -158,14 +163,15 @@ void addParallelOverlapSubRule(boost::optional<std::string> except,
       odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP);
   if (except.is_initialized()) {
     auto exceptWhat = except.value();
-    if (exceptWhat == "EXCEPTSAMENET")
+    if (exceptWhat == "EXCEPTSAMENET") {
       parser->curRule->setExceptSameNet(true);
-    else if (exceptWhat == "EXCEPTSAMEMETAL")
+    } else if (exceptWhat == "EXCEPTSAMEMETAL") {
       parser->curRule->setExceptSameMetal(true);
-    else if (exceptWhat == "EXCEPTSAMEVIA")
+    } else if (exceptWhat == "EXCEPTSAMEVIA") {
       parser->curRule->setExceptSameVia(true);
-    else if (exceptWhat == "EXCEPTSAMEMETALOVERLAP")
+    } else if (exceptWhat == "EXCEPTSAMEMETALOVERLAP") {
       parser->curRule->setExceptSameMetalOverlap(true);
+    }
   }
 }
 void addParallelWithinSubRule(
@@ -177,8 +183,9 @@ void addParallelWithinSubRule(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN);
   parser->curRule->setWithin(lefin->dbdist(at_c<0>(params)));
   auto except = at_c<1>(params);
-  if (except.is_initialized())
+  if (except.is_initialized()) {
     parser->curRule->setExceptSameNet(true);
+  }
 }
 void addSameMetalSharedEdgeSubRule(
     boost::fusion::vector<double,
@@ -198,16 +205,19 @@ void addSameMetalSharedEdgeSubRule(
   auto EXCEPTTWOEDGES = at_c<3>(params);
   auto EXCEPTSAMEVIA = at_c<4>(params);
   parser->curRule->setWithin(lefin->dbdist(within));
-  if (ABOVE.is_initialized())
+  if (ABOVE.is_initialized()) {
     parser->curRule->setAbove(true);
+  }
   if (CUTCLASS.is_initialized()) {
     auto cutClassName = CUTCLASS.value();
     auto cutClass = layer->findTechLayerCutClassRule(cutClassName.c_str());
-    if (cutClass != nullptr)
+    if (cutClass != nullptr) {
       parser->curRule->setCutClass(cutClass);
+    }
   }
-  if (EXCEPTTWOEDGES.is_initialized())
+  if (EXCEPTTWOEDGES.is_initialized()) {
     parser->curRule->setExceptTwoEdges(true);
+  }
   if (EXCEPTSAMEVIA.is_initialized()) {
     parser->curRule->setExceptSameVia(true);
     auto numCut = EXCEPTSAMEVIA.value();
@@ -269,10 +279,11 @@ void setParWithinEnclosure(
     odb::lefin* lefin)
 {
   auto aboveBelow = at_c<1>(params);
-  if (aboveBelow == "ABOVE")
+  if (aboveBelow == "ABOVE") {
     parser->curRule->setAbove(true);
-  else
+  } else {
     parser->curRule->setBelow(true);
+  }
   parser->curRule->setParWithinEnclosureValid(true);
   parser->curRule->setParEnclosure(lefin->dbdist(at_c<0>(params)));
   parser->curRule->setParLength(lefin->dbdist(at_c<2>(params)));
@@ -326,8 +337,9 @@ void setCutClass(std::string value,
                  odb::dbTechLayer* layer)
 {
   auto cutClass = layer->findTechLayerCutClassRule(value.c_str());
-  if (cutClass != nullptr)
+  if (cutClass != nullptr) {
     parser->curRule->setCutClass(cutClass);
+  }
 }
 template <typename Iterator>
 bool parse(
@@ -465,8 +477,9 @@ bool parse(
 
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()
-        && incomplete_props.back().first == parser->curRule)
+        && incomplete_props.back().first == parser->curRule) {
       incomplete_props.pop_back();
+    }
     odb::dbTechLayerCutSpacingRule::destroy(parser->curRule);
   }
   return valid;

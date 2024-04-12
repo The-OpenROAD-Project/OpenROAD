@@ -44,11 +44,13 @@ namespace odb {
 
 void dbBlockCallBackObj::addOwner(dbBlock* new_owner)
 {
-  if (!new_owner)
+  if (!new_owner) {
     return;
+  }
 
-  if (_owner)
+  if (_owner) {
     removeOwner();
+  }
 
   _dbBlock* block = (_dbBlock*) new_owner;
   block->_callbacks.insert(block->_callbacks.end(), this);

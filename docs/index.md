@@ -70,7 +70,7 @@ We maintain the following channels for communication:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
 -   Discussions:
     -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/discussions>
--   Inquiries: openroad@eng.ucsd.edu
+-   Inquiries: openroad@ucsd.edu
 
 See also our [FAQs](user/FAQS.md).
 

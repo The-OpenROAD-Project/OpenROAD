@@ -1,10 +1,5 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
@@ -24,6 +19,7 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 9
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 13
 
 [INFO GRT-0053] Routing resources analysis:
@@ -38,11 +34,11 @@ met4       Vertical         8968          4355          51.44%
 met5       Horizontal       2964          1443          51.32%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 37
+[INFO GRT-0197] Via related to pin nodes: 47
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 38
-[INFO GRT-0112] Final usage 3D: 143
+[INFO GRT-0111] Final number of vias: 56
+[INFO GRT-0112] Final usage 3D: 197
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow

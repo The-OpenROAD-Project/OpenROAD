@@ -90,40 +90,31 @@ class Grid
   {
     pitches_in_tile_ = pitches_in_tile;
   }
+
   int getPitchesInTile() const { return pitches_in_tile_; }
 
-  const std::vector<int>& getSpacings() const { return spacings_; }
-  const std::vector<int>& getMinWidths() const { return min_widths_; }
+  const std::vector<int>& getTrackPitches() const { return track_pitches_; }
 
-  void addSpacing(int value, int layer) { spacings_[layer] = value; }
-  void addMinWidth(int value, int layer) { min_widths_[layer] = value; }
+  void addTrackPitch(int value, int layer) { track_pitches_[layer] = value; }
 
   const std::vector<int>& getHorizontalEdgesCapacities()
   {
     return horizontal_edges_capacities_;
   };
+
   const std::vector<int>& getVerticalEdgesCapacities()
   {
     return vertical_edges_capacities_;
   };
 
-  void addHorizontalCapacity(int value, int layer)
+  void setHorizontalCapacity(int capacity, int layer)
   {
-    horizontal_edges_capacities_[layer] = value;
+    horizontal_edges_capacities_[layer] = capacity;
   }
-  void addVerticalCapacity(int value, int layer)
+  void setVerticalCapacity(int capacity, int layer)
   {
-    vertical_edges_capacities_[layer] = value;
+    vertical_edges_capacities_[layer] = capacity;
   }
-
-  void updateHorizontalEdgesCapacities(int layer, int reduction)
-  {
-    horizontal_edges_capacities_[layer] = reduction;
-  };
-  void updateVerticalEdgesCapacities(int layer, int reduction)
-  {
-    vertical_edges_capacities_[layer] = reduction;
-  };
 
   odb::Point getPositionOnGrid(const odb::Point& position);
 
@@ -157,8 +148,7 @@ class Grid
   bool perfect_regular_y_;
   int num_layers_;
   int pitches_in_tile_ = 15;
-  std::vector<int> spacings_;
-  std::vector<int> min_widths_;
+  std::vector<int> track_pitches_;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
 };

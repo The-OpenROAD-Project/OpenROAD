@@ -25,6 +25,14 @@ guide format.
 
 ### Detailed Route
 
+This command performs detailed routing.
+
+Developer arguments
+- `-or_seed`, `-or_k`
+
+Distributed arguments
+- `-distributed` , `-remote_host`, `-remote_port`, `-shared_volume`, `-cloud_size`
+
 ```tcl
 detailed_route 
     [-output_maze filename]
@@ -38,7 +46,7 @@ detailed_route
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-or_seed seed]
-    [-or_k_ k]
+    [-or_k k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
@@ -52,6 +60,7 @@ detailed_route
     [-min_access_points count]
     [-save_guide_updates]
     [-repair_pdn_vias layer]
+    [-single_step_dr]
 ```
 
 #### Options
@@ -102,11 +111,12 @@ detailed_route_debug
     [-maze]
     [-net name]
     [-pin name]
-    [-worker x y]
+    [-box x1 y1 x2 y2]
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
     [-dump_dir dir]
+    [-dump_last_worker]
     [-pa_edge]
     [-pa_commit]
     [-write_net_tracks]
@@ -122,6 +132,7 @@ detailed_route_debug
 | `-maze` | Enable debug for maze routing. | 
 | `-net` | Enable debug for net name. |
 | `-pin` | Enable debug for pin name. |
+| `-box` | Set the box for debugging given by lower left/upper right coordinates. |
 | `-worker` | Debugs routes that pass through the point `{x, y}`. |
 | `-iter` | Specifies the number of debug iterations. The default value is `0`, and the accepted values are integers `[0, MAX_INT`. |
 | `-pa_markers` | Enable pin access markers. |
@@ -131,7 +142,9 @@ detailed_route_debug
 | `-pa_commit` | Enable visibility of pin access commits. |
 | `-write_net_tracks` | Enable writing of net track assigments. |
 
-### Check Pin Access 
+### Check Pin Access
+
+This function checks pin access.
 
 ```tcl
 pin_access
@@ -158,7 +171,7 @@ pin_access
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
 
-### Distributed arguments
+#### Distributed Arguments
 
 We have compiled all distributed arguments in this section.
 
@@ -174,11 +187,11 @@ Additional setup is required. Please refer to this [guide](./doc/Distributed.md)
 | `-shared_volume` | The mount path of the nfs shared folder. |
 | `-cloud_size` | The number of workers. |
 
-### Useful developer functions
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
 
-| Function Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `detailed_route_set_default_via` | Set default via. |
 | `detailed_route_set_unidirectional_layer` | Set unidirectional layer. |

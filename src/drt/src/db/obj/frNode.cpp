@@ -31,8 +31,7 @@
 #include "db/grObj/grNet.h"
 #include "db/grObj/grNode.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 frNode::frNode(grNode& in)
 {
@@ -44,3 +43,5 @@ frNode::frNode(grNode& in)
   type = in.getType();
   parent = nullptr;
 }
+
+}  // namespace drt

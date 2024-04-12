@@ -49,17 +49,21 @@ template class dbTable<_dbChip>;
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
-  if (_top != rhs._top)
+  if (_top != rhs._top) {
     return false;
+  }
 
-  if (*_block_tbl != *rhs._block_tbl)
+  if (*_block_tbl != *rhs._block_tbl) {
     return false;
+  }
 
-  if (*_prop_tbl != *rhs._prop_tbl)
+  if (*_prop_tbl != *rhs._prop_tbl) {
     return false;
+  }
 
-  if (*_name_cache != *rhs._name_cache)
+  if (*_name_cache != *rhs._name_cache) {
     return false;
+  }
 
   return true;
 }
@@ -132,9 +136,10 @@ _dbChip::~_dbChip()
 
 dbOStream& operator<<(dbOStream& stream, const _dbChip& chip)
 {
+  dbOStreamScope scope(stream, "dbChip");
   stream << chip._top;
   stream << *chip._block_tbl;
-  stream << *chip._prop_tbl;
+  stream << NamedTable("prop_tbl", chip._prop_tbl);
   stream << *chip._name_cache;
   return stream;
 }
@@ -151,11 +156,12 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& chip)
 
 dbObjectTable* _dbChip::getObjectTable(dbObjectType type)
 {
-  if (type == dbBlockObj)
+  if (type == dbBlockObj) {
     return _block_tbl;
-
-  else if (type == dbPropertyObj)
+  }
+  if (type == dbPropertyObj) {
     return _prop_tbl;
+  }
 
   return getTable()->getObjectTable(type);
 }
@@ -170,8 +176,9 @@ dbBlock* dbChip::getBlock()
 {
   _dbChip* chip = (_dbChip*) this;
 
-  if (chip->_top == 0)
+  if (chip->_top == 0) {
     return nullptr;
+  }
 
   return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
 }
@@ -180,8 +187,9 @@ dbChip* dbChip::create(dbDatabase* db_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
 
-  if (db->_chip != 0)
+  if (db->_chip != 0) {
     return nullptr;
+  }
 
   _dbChip* chip = db->_chip_tbl->create();
   db->_chip = chip->getOID();

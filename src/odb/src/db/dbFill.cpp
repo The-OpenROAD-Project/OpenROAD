@@ -48,46 +48,58 @@ template class dbTable<_dbFill>;
 
 bool _dbFill::operator==(const _dbFill& rhs) const
 {
-  if (_flags._opc != rhs._flags._opc)
+  if (_flags._opc != rhs._flags._opc) {
     return false;
+  }
 
-  if (_flags._mask_id != rhs._flags._mask_id)
+  if (_flags._mask_id != rhs._flags._mask_id) {
     return false;
+  }
 
-  if (_flags._layer_id != rhs._flags._layer_id)
+  if (_flags._layer_id != rhs._flags._layer_id) {
     return false;
+  }
 
-  if (_rect != rhs._rect)
+  if (_rect != rhs._rect) {
     return false;
+  }
 
   return true;
 }
 
 bool _dbFill::operator<(const _dbFill& rhs) const
 {
-  if (_rect < rhs._rect)
+  if (_rect < rhs._rect) {
     return true;
+  }
 
-  if (_rect > rhs._rect)
+  if (_rect > rhs._rect) {
     return false;
+  }
 
-  if (_flags._opc < rhs._flags._opc)
+  if (_flags._opc < rhs._flags._opc) {
     return true;
+  }
 
-  if (_flags._opc > rhs._flags._opc)
+  if (_flags._opc > rhs._flags._opc) {
     return false;
+  }
 
-  if (_flags._mask_id < rhs._flags._mask_id)
+  if (_flags._mask_id < rhs._flags._mask_id) {
     return true;
+  }
 
-  if (_flags._mask_id > rhs._flags._mask_id)
+  if (_flags._mask_id > rhs._flags._mask_id) {
     return false;
+  }
 
-  if (_flags._layer_id < rhs._flags._layer_id)
+  if (_flags._layer_id < rhs._flags._layer_id) {
     return true;
+  }
 
-  if (_flags._layer_id > rhs._flags._layer_id)
+  if (_flags._layer_id > rhs._flags._layer_id) {
     return false;
+  }
 
   return false;
 }

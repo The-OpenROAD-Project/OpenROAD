@@ -48,6 +48,8 @@
 #include <map>
 
 #include "DplObserver.h"
+#include "dpl/OptMirror.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -164,7 +166,8 @@ void Opendp::detailedPlacement(int max_displacement_x,
                     "the -disallow_one_site_gaps flag.");
     }
   }
-  hpwl_before_ = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
@@ -224,7 +227,8 @@ void Opendp::reportLegalizationStats() const
                   dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
                   dbuToMicrons(hpwl_before_));
-  double hpwl_legal = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
   int hpwl_delta
@@ -257,36 +261,21 @@ void Opendp::findDisplacementStats()
   }
 }
 
-// Note that this does NOT use cell/core coordinates.
-int64_t Opendp::hpwl() const
-{
-  int64_t hpwl_sum = 0;
-  for (dbNet* net : block_->getNets()) {
-    hpwl_sum += hpwl(net);
-  }
-  return hpwl_sum;
-}
-
-int64_t Opendp::hpwl(dbNet* net) const
-{
-  if (net->getSigType().isSupply()) {
-    return 0;
-  }
-
-  Rect bbox = net->getTermBBox();
-  return bbox.dx() + bbox.dy();
-}
-
 ////////////////////////////////////////////////////////////////
+
+void Opendp::optimizeMirroring()
+{
+  OptimizeMirroring opt(logger_, db_);
+  opt.run();
+}
 
 Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  int site_width = getSiteWidth(cell);
   loc_x -= core_.xMin();
   if (padded) {
-    loc_x -= padLeft(cell) * site_width;
+    loc_x -= padLeft(cell) * site_width_;
   }
   loc_y -= core_.yMin();
   return Point(loc_x, loc_y);
@@ -456,31 +445,37 @@ int Opendp::padRight(dbInst* inst) const
   return 0;
 }
 
-int Opendp::paddedWidth(const Cell* cell, int site_width) const
-{
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width;
-}
-
 int Opendp::paddedWidth(const Cell* cell) const
 {
-  int site_width = getSiteWidth(cell);
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width;
-}
-
-int Opendp::gridPaddedWidth(const Cell* cell, int site_width) const
-{
-  return divCeil(paddedWidth(cell), site_width);
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
 }
 
 int Opendp::gridPaddedWidth(const Cell* cell) const
 {
-  int site_width = getSiteWidth(cell);
-  return divCeil(paddedWidth(cell), site_width);
+  return divCeil(paddedWidth(cell), site_width_);
 }
 
-int Opendp::gridHeight(const Cell* cell, int row_height) const
+int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 {
-  return std::max(1, divCeil(cell->height_, row_height));
+  // gets a coordinate and its grid, and returns the height of the coordinate.
+  // This is useful for hybrid sites
+  auto grid_info = grid_info_map_.at(gmk);
+  if (grid_info.isHybrid()) {
+    auto& grid_sites = grid_info.getSites();
+    const int total_height = grid_info.getSitesTotalHeight();
+    int patterns_below = divFloor(y_coordinate, grid_sites.size());
+    int remaining_rows = y_coordinate % grid_sites.size();
+    int remaining_rows_height
+        = std::accumulate(grid_sites.begin(),
+                          grid_sites.begin() + remaining_rows,
+                          0,
+                          [](int sum, const dbSite::OrientedSite& entry) {
+                            return sum + entry.site->getHeight();
+                          });
+    int height = patterns_below * total_height + remaining_rows_height;
+    return height;
+  }
+  return y_coordinate * grid_info.getSitesTotalHeight();
 }
 
 int Opendp::gridHeight(const Cell* cell) const
@@ -494,16 +489,9 @@ int64_t Opendp::paddedArea(const Cell* cell) const
   return int64_t(paddedWidth(cell)) * cell->height_;
 }
 
-// Callers should probably be using gridPaddedWidth.
-int Opendp::gridNearestWidth(const Cell* cell, int site_width) const
-{
-  return divRound(paddedWidth(cell), site_width);
-}
-
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  int site_width = getSiteWidth(cell);
-  return divRound(paddedWidth(cell), site_width);
+  return divRound(paddedWidth(cell), site_width_);
 }
 
 // Callers should probably be using gridHeight.
@@ -518,35 +506,24 @@ int Opendp::gridNearestHeight(const Cell* cell) const
   return divRound(cell->height_, row_height);
 }
 
-int Opendp::gridEndX(int x, int site_width) const
+int Opendp::gridEndX(int x) const
 {
-  return divCeil(x, site_width);
+  return divCeil(x, site_width_);
 }
 
-int Opendp::gridX(int x, int site_width) const
+int Opendp::gridX(int x) const
 {
-  return x / site_width;
-}
-
-int Opendp::gridX(const Cell* cell, int site_width) const
-{
-  return gridX(cell->x_, site_width);
+  return x / site_width_;
 }
 
 int Opendp::gridX(const Cell* cell) const
 {
-  return gridX(cell->x_, getSiteWidth(cell));
+  return gridX(cell->x_);
 }
 
 int Opendp::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->x_ - padLeft(cell) * getSiteWidth(cell),
-               getSiteWidth(cell));
-}
-
-int Opendp::gridPaddedX(const Cell* cell, int site_width) const
-{
-  return gridX(cell->x_ - padLeft(cell) * site_width, site_width);
+  return gridX(cell->x_ - padLeft(cell) * site_width_);
 }
 
 int Opendp::getRowCount(const Cell* cell) const
@@ -617,13 +594,6 @@ GridInfo Opendp::getGridInfo(const Cell* cell) const
   return grid_info_map_.at(getGridMapKey(cell));
 }
 
-int Opendp::getSiteWidth(const Cell* cell) const
-{
-  // TODO: this is not complete, it is here so that future changes to the code
-  // are easier
-  return site_width_;
-}
-
 pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
@@ -687,9 +657,9 @@ int Opendp::gridY(const int y, const Cell* cell) const
   return y / getRowHeight(cell);
 }
 
-void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
+void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
-  cell->x_ = (x + padLeft(cell)) * site_width;
+  cell->x_ = (x + padLeft(cell)) * site_width_;
   if (cell->isHybrid()) {
     auto grid_info = grid_info_map_.at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
@@ -718,28 +688,15 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
   cell->y_ = y * getRowHeight(cell);
 }
 
-int Opendp::gridPaddedEndX(const Cell* cell, int site_width) const
-{
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width,
-                 site_width);
-}
-
 int Opendp::gridPaddedEndX(const Cell* cell) const
 {
-  int site_width = getSiteWidth(cell);
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width,
-                 site_width);
-}
-
-int Opendp::gridEndX(const Cell* cell, int site_width) const
-{
-  return divCeil(cell->x_ + cell->width_, site_width);
+  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
+                 site_width_);
 }
 
 int Opendp::gridEndX(const Cell* cell) const
 {
-  int site_width = getSiteWidth(cell);
-  return divCeil(cell->x_ + cell->width_, site_width);
+  return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
 int Opendp::gridEndY(const Cell* cell) const

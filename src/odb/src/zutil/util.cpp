@@ -37,113 +37,14 @@
 #include <string>
 
 #include "db.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {
 
 using std::string;
 using std::vector;
-
-RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
-{
-  gridBlock_ = block_->getDieArea();
-  wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
-  makeGrid();
-}
-
-void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
-{
-  gridBlock_ = block;
-  tileCntX_ = tileCntX;
-  tileCntY_ = tileCntY;
-  makeGrid();
-}
-
-void RUDYCalculator::makeGrid()
-{
-  const int blockWidth = gridBlock_.dx();
-  const int blockHeight = gridBlock_.dy();
-  const int gridLx = gridBlock_.xMin();
-  const int gridLy = gridBlock_.yMin();
-  const int tileWidth = blockWidth / tileCntX_;
-  const int tileHeight = blockHeight / tileCntY_;
-
-  grid_.resize(tileCntX_);
-  int curX = gridLx;
-  for (auto& gridColumn : grid_) {
-    gridColumn.resize(tileCntY_);
-    int curY = gridLy;
-    for (auto& grid : gridColumn) {
-      grid.setRect(curX, curY, curX + tileWidth, curY + tileHeight);
-      curY += tileHeight;
-    }
-    curX += tileWidth;
-  }
-}
-
-void RUDYCalculator::calculateRUDY()
-{
-  // refer: https://ieeexplore.ieee.org/document/4211973
-
-  const int blockWidth = gridBlock_.dx();
-  const int blockHeight = gridBlock_.dy();
-  const int tileWidth = blockWidth / tileCntX_;
-  const int tileHeight = blockHeight / tileCntY_;
-
-  for (auto net : block_->getNets()) {
-    const auto netBox = net->getTermBBox();
-    const auto netArea = netBox.area();
-    if (netArea == 0) {
-      continue;
-    }
-    const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
-    const auto wireArea = hpwl * wireWidth_;
-    const auto netCongestion = wireArea / netArea;
-
-    // Calculate the intersection range
-    const int minXIndex
-        = std::max(0, (netBox.xMin() - gridBlock_.xMin()) / tileWidth);
-    const int maxXIndex = std::min(
-        tileCntX_ - 1, (netBox.xMax() - gridBlock_.xMin()) / tileWidth);
-    const int minYIndex
-        = std::max(0, (netBox.yMin() - gridBlock_.yMin()) / tileHeight);
-    const int maxYIndex = std::min(
-        tileCntY_ - 1, (netBox.yMax() - gridBlock_.yMin()) / tileHeight);
-
-    // Iterate over the tiles in the calculated range
-    for (int x = minXIndex; x <= maxXIndex; ++x) {
-      for (int y = minYIndex; y <= maxYIndex; ++y) {
-        Tile& grid = getEditableTile(x, y);
-        const auto gridBox = grid.getRect();
-        if (netBox.overlaps(gridBox)) {
-          const auto intersectArea = netBox.intersect(gridBox).area();
-          const auto gridArea = gridBox.area();
-          const auto gridNetBoxRatio = static_cast<float>(intersectArea)
-                                       / static_cast<float>(gridArea);
-          const auto rudy = netCongestion * gridNetBoxRatio * 100;
-          grid.addRUDY(rudy);
-        }
-      }
-    }
-  }
-}
-std::pair<int, int> RUDYCalculator::getGridSize() const
-{
-  if (grid_.empty()) {
-    return {0, 0};
-  }
-  return {grid_.size(), grid_.at(0).size()};
-}
-
-void RUDYCalculator::Tile::setRect(int lx, int ly, int ux, int uy)
-{
-  rect_ = odb::Rect(lx, ly, ux, uy);
-}
-
-void RUDYCalculator::Tile::addRUDY(float rudy)
-{
-  rudy_ += rudy;
-}
 
 static void buildRow(dbBlock* block,
                      const string& name,
@@ -353,6 +254,50 @@ void cutRows(dbBlock* block,
                blockages.size(),
                block->getRows().size(),
                final_sites_count);
+}
+
+std::string generateMacroPlacementString(dbBlock* block)
+{
+  std::string macro_placement;
+
+  const float dbu = block->getTech()->getDbUnitsPerMicron();
+  float x = 0.0f;
+  float y = 0.0f;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isBlock()) {
+      x = (inst->getLocation().x()) / dbu;
+      y = (inst->getLocation().y()) / dbu;
+
+      macro_placement += fmt::format(
+          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          inst->getName(),
+          x,
+          y,
+          inst->getOrient().getString());
+    }
+  }
+
+  return macro_placement;
+}
+
+int64_t WireLengthEvaluator::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    hpwl_sum += hpwl(net);
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net) const
+{
+  if (net->getSigType().isSupply()) {
+    return 0;
+  }
+
+  Rect bbox = net->getTermBBox();
+  return bbox.dx() + bbox.dy();
 }
 
 }  // namespace odb

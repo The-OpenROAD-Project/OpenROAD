@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_stdcell.lef, created 78 library cells
+[INFO ODB-0227] LEF file: ihp-sg13g2_data/IOLib.lef, created 34 library cells
+[INFO ODB-0128] Design: CantConnect
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 64 components and 281 component-terminals.
+[INFO ODB-0132]     Created 11 special nets and 249 connections.
+[INFO ODB-0133]     Created 11 nets and 27 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.20e+00 V
+Worstcase voltage: 1.20e+00 V
+Average voltage  : 1.20e+00 V
+Average IR drop  : 1.15e-08 V
+Worstcase IR drop: 1.05e-06 V
+Percentage drop  : 0.00 %
+######################################

@@ -1,0 +1,55 @@
+{
+  "name": "dbScanChain",
+  "type": "dbObject",
+  "description": ["A scan chain is a collection of dbScanLists that contains dbScanInsts.  Here,",
+    "scan_in, scan_out and scan_enable are the top level ports/pins to where this",
+    "scan chain is connected.  Each scan chain is also associated with a particular",
+    "test mode and test mode pin that puts the Circuit Under Test (CUT) in test. The",
+    "Scan Enable port/pin puts the scan chain into shifting mode."],
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_in_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_out_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_enable_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "test_mode_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "test_mode_name_",
+      "type": "std::string",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "dbVector.h",
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h",
+    "dbScanPartition.h",
+    "dbScanInst.h",
+    "dbBlock.h",
+    "dbDft.h"
+  ],
+  "classes": [
+      "dbScanPartition"
+  ]
+}

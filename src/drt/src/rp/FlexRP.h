@@ -32,7 +32,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexRP
 {
  public:
@@ -166,4 +166,4 @@ class FlexRP
       frCoord reqSpcVal,
       std::pair<frCoord, frCoord>& range);
 };
-}  // namespace fr
+}  // namespace drt

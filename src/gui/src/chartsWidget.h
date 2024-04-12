@@ -32,9 +32,11 @@
 
 #pragma once
 
-#include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
+
+#ifdef ENABLE_CHARTS
+#include <QComboBox>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
@@ -44,9 +46,21 @@
 
 namespace sta {
 class dbSta;
-}
+class Clock;
+}  // namespace sta
+#endif
 
 namespace gui {
+
+#ifdef ENABLE_CHARTS
+
+struct SlackHistogramData
+{
+  std::vector<float> end_points_slack;
+  std::set<sta::Clock*> clocks;
+};
+
+#endif
 
 class ChartsWidget : public QDockWidget
 {
@@ -54,23 +68,80 @@ class ChartsWidget : public QDockWidget
 
  public:
   ChartsWidget(QWidget* parent = nullptr);
-
-  void setSTA(sta::dbSta* sta) { sta_ = sta; };
-  void setSlackMode();
-  void clearChart();
+#ifdef ENABLE_CHARTS
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
+  void setSTA(sta::dbSta* sta)
+  {
+    sta_ = sta;
+  }
+  void setLogger(utl::Logger* logger)
+  {
+    logger_ = logger;
+  }
 
  private slots:
   void changeMode();
+  void showToolTip(bool is_hovering, int bar_index);
 
  private:
+  void setSlackMode();
+
+  void setBucketInterval(float max_slack, float min_slack);
+  void setBucketInterval(float bucket_interval)
+  {
+    bucket_interval_ = bucket_interval;
+  }
+  void setNegativeCountOffset(int neg_count_offset)
+  {
+    neg_count_offset_ = neg_count_offset;
+  }
+  void setDecimalPrecision(int precision_count)
+  {
+    precision_count_ = precision_count;
+  }
+
+  SlackHistogramData fetchSlackHistogramData() const;
+
+  void populateBuckets(const std::vector<float>& all_slack,
+                       std::deque<int>& neg_buckets,
+                       std::deque<int>& pos_buckets);
+  int computeSnapBucketInterval(float exact_interval);
+  float computeSnapBucketDecimalInterval(float minimum_interval);
+  int computeNumberofBuckets(int bucket_interval,
+                             float max_slack,
+                             float min_slack);
+
+  void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
+  void setYAxisConfig();
+  QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
+  int computeMaxYSnap();
+  int computeNumberOfDigits(int value);
+  int computeFirstDigit(int value, int digits);
+  int computeYInterval();
+
+  void clearChart();
+
+  utl::Logger* logger_;
   sta::dbSta* sta_;
 
-  QLabel* label_;
   QComboBox* mode_menu_;
   QChart* chart_;
   QChartView* display_;
-  QBarCategoryAxis* axis_x_;
+  QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+
+  const int default_number_of_buckets_ = 15;
+  int largest_slack_count_ = 0;  // Used to configure the y axis.
+  int precision_count_ = 0;      // Used to configure the x labels.
+
+  float bucket_interval_ = 0;
+  int neg_count_offset_ = 0;
+#endif
+  QLabel* label_;
 };
 
 }  // namespace gui

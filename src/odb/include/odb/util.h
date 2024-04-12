@@ -51,6 +51,9 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
+class dbInst;
+class dbMaster;
+class dbNet;
 using uint = unsigned int;
 
 // Simple list
@@ -66,8 +69,8 @@ class AthList
   t_elem* m_start;
 
  public:
-  AthList(void) { m_start = nullptr; };
-  ~AthList(void)
+  AthList() { m_start = nullptr; };
+  ~AthList()
   {
     t_elem* i;
     i = m_start;
@@ -90,23 +93,23 @@ class AthList
     AthList<T>* actual_class;
     t_elem* ptr_to_elem;
 
-    iterator next(void)
+    iterator next()
     {
       ptr_to_elem = ptr_to_elem->m_next;
       return *this;
     }
 
-    T getVal(void) { return ptr_to_elem->m_data; }
+    T getVal() { return ptr_to_elem->m_data; }
 
-    bool end(void)
+    bool end()
     {
-      if (ptr_to_elem)
+      if (ptr_to_elem) {
         return false;
-      else
-        return true;
+      }
+      return true;
     }
   };
-  iterator start(void)
+  iterator start()
   {
     iterator ret_val;
     ret_val.actual_class = this;
@@ -136,8 +139,9 @@ class AthArray
  public:
   AthArray(unsigned int alloc_size = 128)
   {
-    if (alloc_size < 2)
+    if (alloc_size < 2) {
       alloc_size = 2;
+    }
     m_alloc_size = alloc_size;
     m_num_mallocated_first_level = alloc_size;
     m_ptr = (T**) malloc(sizeof(T*) * m_num_mallocated_first_level);
@@ -152,9 +156,11 @@ class AthArray
   ~AthArray()
   {
     unsigned int i;
-    for (i = 0; i < m_num_mallocated_first_level; i++)
-      if (m_ptr[i])
+    for (i = 0; i < m_num_mallocated_first_level; i++) {
+      if (m_ptr[i]) {
         free(m_ptr[i]);
+      }
+    }
     free(m_ptr);
   }
   void allocNext(unsigned int* ii, unsigned int* jj)
@@ -182,7 +188,7 @@ class AthArray
     *ii = first_level_idx;
     *jj = second_level_idx;
   }
-  void add(void)
+  void add()
   {
     unsigned int first_level_idx, second_level_idx;
     allocNext(&first_level_idx, &second_level_idx);
@@ -221,7 +227,7 @@ class AthArray
     find_indexes(idx, first_level_idx, second_level_idx);
     return m_ptr[first_level_idx][second_level_idx];
   }
-  unsigned int getLast(void) { return m_num_allocated_elem; }
+  unsigned int getLast() { return m_num_allocated_elem; }
 };
 
 // A simple pool allocation function
@@ -258,8 +264,9 @@ class AthPool
     delete m_heap;
     delete _freeTable;
 
-    if (_dbgTable != nullptr)
+    {
       delete _dbgTable;
+    }
   }
 
   T* alloc(uint* freeTableFlag = nullptr, uint* id = nullptr)
@@ -270,18 +277,21 @@ class AthPool
       if (_freeTable->notEmpty()) {
         a = _freeTable->pop();
 
-        if (freeTableFlag != nullptr)
+        if (freeTableFlag != nullptr) {
           *freeTableFlag = 1;
+        }
       } else {
         m_heap->add();
         uint n = m_heap->getLast() - 1;
         a = &(*m_heap)[n];
 
-        if (id != nullptr)
+        if (id != nullptr) {
           *id = n;
+        }
 
-        if (freeTableFlag != nullptr)
+        if (freeTableFlag != nullptr) {
           *freeTableFlag = 0;
+        }
       }
     } else {
       a = new T;
@@ -291,10 +301,12 @@ class AthPool
 
       uint n = _dbgTable->add(a);
 
-      if (id != nullptr)
+      if (id != nullptr) {
         *id = n;
-      if (freeTableFlag != nullptr)
+      }
+      if (freeTableFlag != nullptr) {
         *freeTableFlag = 1;
+      }
     }
     return a;
   }
@@ -321,7 +333,7 @@ class AthHash
 {
   unsigned int* m_listOfPrimes;
 
-  void init_list_of_primes(void)
+  void init_list_of_primes()
   {
     m_listOfPrimes = new unsigned int[16];
     m_listOfPrimes[0] = 49978783;
@@ -348,37 +360,27 @@ class AthHash
   {
     assert(number > 3);
     int i = 0;
-    while (m_listOfPrimes[i] > number)
+    while (m_listOfPrimes[i] > number) {
       i++;
+    }
     return m_listOfPrimes[i];
   }
 
-  unsigned int hashFunction(char* key, unsigned int, unsigned int prime)
+  unsigned int hashFunction(const char* key, unsigned int, unsigned int prime)
   {
     unsigned int hash = 0;
     int c;
 
-    while ((c = *key++) != '\0')
+    while ((c = static_cast<unsigned char>(*key++)) != '\0') {
       hash = c + (hash << 6) + (hash << 16) - hash;
+    }
 
     return hash % prime;
   }
 
-#if 0
-        // original "broken" hash function
-	unsigned int hashFunction(char *key, unsigned int len,
-unsigned int prime)
-	{
-		unsigned int hash, i;
-		for (hash=len, i=0; i<len; ++i)
-			hash = (hash<<4)^(hash>>28)^key[i];
-		return (hash % prime);
-	}
-#endif
-
   struct t_elem
   {
-    char* key;
+    const char* key;
     T data;
   };
   int _allocKeyFlag;
@@ -402,29 +404,31 @@ unsigned int prime)
     for (i = 0; i < m_prime; i++) {
       typename AthList<t_elem>::iterator iter = m_data[i].start();
       while (!iter.end()) {
-        if (_allocKeyFlag > 0)
-          free(iter.getVal().key);
+        if (_allocKeyFlag > 0) {
+          free((void*) iter.getVal().key);
+        }
         iter.next();
       }
     }
     delete[] m_data;
   }
 
-  void add(char* key, T data)
+  void add(const char* key, T data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     t_elem new_t_elem;
     new_t_elem.data = data;
-    if (_allocKeyFlag > 0)
+    if (_allocKeyFlag > 0) {
       new_t_elem.key = strdup(key);
-    else
+    } else {
       new_t_elem.key = key;
+    }
     m_data[hash_val].push(new_t_elem);
   }
 
   // Get a stored value. Returns success of failure depending
   // if the value actually is stored or not
-  bool get(char* key, T& data)
+  bool get(const char* key, T& data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     typename AthList<t_elem>::iterator iter = m_data[hash_val].start();
@@ -454,32 +458,35 @@ unsigned int prime)
       if (m_list_iterator.end()) {
         assert(m_first_level_idx < m_ptr_to_hash->m_prime);
         return next();
-      } else
-        return *this;
+      }
+      return *this;
     }
 
     bool end()
     {
-      if (m_first_level_idx >= m_ptr_to_hash->m_prime)
+      if (m_first_level_idx >= m_ptr_to_hash->m_prime) {
         return true;
-      if (m_first_level_idx < m_ptr_to_hash->m_prime - 1)
+      }
+      if (m_first_level_idx < m_ptr_to_hash->m_prime - 1) {
         return false;
+      }
       return m_list_iterator.end();
     }
 
-    T getVal(void) { return m_list_iterator.getVal().data; }
+    T getVal() { return m_list_iterator.getVal().data; }
 
-    char* getKey(void) { return m_list_iterator.getVal().key; }
+    char* getKey() { return m_list_iterator.getVal().key; }
   };
 
-  iterator start(void)
+  iterator start()
   {
     iterator tmp_iter;
     unsigned int i;
     for (i = 0; i < m_prime; i++) {
       tmp_iter.m_list_iterator = m_data[i].start();
-      if (!tmp_iter.m_list_iterator.end())
+      if (!tmp_iter.m_list_iterator.end()) {
         break;
+      }
     }
     tmp_iter.m_first_level_idx = i;
     tmp_iter.m_ptr_to_hash = this;
@@ -487,69 +494,29 @@ unsigned int prime)
   }
 };
 
-class RUDYCalculator
-{
- public:
-  class Tile
-  {
-   public:
-    odb::Rect getRect() const { return rect_; }
-    void setRect(int lx, int ly, int ux, int uy);
-    void addRUDY(float rudy);
-    float getRUDY() const { return rudy_; }
-
-   private:
-    odb::Rect rect_;
-    float rudy_ = 0;
-  };
-
-  explicit RUDYCalculator(dbBlock* block);
-
-  /**
-   * \pre we need to call this function after `setGridConfig` and
-   * `setWireWidth`.
-   * */
-  void calculateRUDY();
-
-  /**
-   * Set the grid area and grid numbers.
-   * Default value will be the die area of block and (40, 40), respectively.
-   * */
-  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
-
-  /**
-   * Set the wire length for calculate RUDY.
-   * If the layer which name is metal1 and it has getWidth value, then this
-   * function will not applied, but it will apply that information.
-   * */
-  void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
-
-  const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
-  std::pair<int, int> getGridSize() const;
-
- private:
-  /**
-   * \pre This function should be called after `setGridConfig`
-   * */
-  void makeGrid();
-  Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
-
-  dbBlock* block_;
-  odb::Rect gridBlock_;
-  int tileCntX_ = 40;
-  int tileCntY_ = 40;
-  int wireWidth_ = 100;
-
-  std::vector<std::vector<Tile>> grid_;
-};
-
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
 
 void cutRows(dbBlock* block,
-             const int min_row_width,
+             int min_row_width,
              const std::vector<dbBox*>& blockages,
              int halo_x,
              int halo_y,
              utl::Logger* logger);
+
+// Generates a string with the macro placement in mpl2 input format for
+// individual macro placement
+std::string generateMacroPlacementString(dbBlock* block);
+
+class WireLengthEvaluator
+{
+ public:
+  WireLengthEvaluator(dbBlock* block) : block_(block) {}
+  int64_t hpwl() const;
+
+ private:
+  int64_t hpwl(dbNet* net) const;
+
+  dbBlock* block_;
+};
 
 }  // namespace odb

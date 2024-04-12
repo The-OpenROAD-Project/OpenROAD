@@ -6,6 +6,11 @@ class {{klass.name}};
 //Generator Code Begin ClassDefinition
 {% for klass in schema.classes|sort(attribute='name') %}
 
+{% if klass.description %}
+  {% for line in klass.description %}
+    // {{ line }}
+  {% endfor %}
+{% endif %}
 class {{klass.name}} : public dbObject
 {
  public:
@@ -22,7 +27,7 @@ class {{klass.name}} : public dbObject
   {% endfor %}
   {% for _enum in klass.enums %}
     {% if _enum.public %}
-    enum {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
+    enum {% if _enum.class %} class {% endif %} {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
     {
       {% for value in _enum["values"]%}
       {% if not loop.first %},{%endif%}{{value}}

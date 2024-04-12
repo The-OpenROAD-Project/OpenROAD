@@ -42,6 +42,7 @@
 #include "odb/db.h"
 #include "ord/Tech.h"
 #include "ord/Design.h"
+#include "ord/Timing.h"
 
 using odb::dbDatabase;
 using odb::dbBlock;
@@ -53,6 +54,21 @@ openroad_version();
 
 const char *
 openroad_git_describe();
+
+const bool
+openroad_gpu_compiled();
+
+const bool 
+openroad_python_compiled();
+
+const bool
+openroad_gui_compiled();
+
+const bool
+openroad_mpl2_compiled();
+
+const bool
+openroad_par_compiled();
 
 odb::dbDatabase *
 get_db();
@@ -74,6 +90,7 @@ get_db_block();
 %include "Exception-py.i"
 %include "ord/Tech.h"
 %include "ord/Design.h"
+%include "ord/Timing.h"
 
 %newobject Design::getFloorplan();
 

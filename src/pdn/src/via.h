@@ -41,6 +41,7 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 
 namespace odb {
 class dbBlock;
@@ -73,15 +74,8 @@ class Shape;
 class Via;
 class ViaGenerator;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
-using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ShapeValue = std::pair<Box, ShapePtr>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+
 using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
@@ -159,6 +153,7 @@ class DbVia
                                  odb::dbWireShapeType type,
                                  int x,
                                  int y,
+                                 const std::set<odb::dbTechLayer*>& ongrid,
                                  utl::Logger* logger)
       = 0;
 
@@ -225,6 +220,7 @@ class DbTechVia : public DbBaseVia
                          odb::dbWireShapeType type,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   bool requiresPatch() const override { return rows_ > 1 || cols_ > 1; }
@@ -276,6 +272,7 @@ class DbGenerateVia : public DbBaseVia
                          odb::dbWireShapeType type,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   std::string getName() const override;
@@ -327,6 +324,7 @@ class DbSplitCutVia : public DbVia
                          odb::dbWireShapeType type,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   ViaReport getViaReport() const override;
@@ -360,6 +358,7 @@ class DbArrayVia : public DbVia
                          odb::dbWireShapeType type,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   bool requiresPatch() const override { return true; }
@@ -387,14 +386,14 @@ class DbGenerateStackedVia : public DbVia
  public:
   DbGenerateStackedVia(const std::vector<DbVia*>& vias,
                        odb::dbTechLayer* bottom,
-                       odb::dbBlock* block,
-                       const std::set<odb::dbTechLayer*>& ongrid);
+                       odb::dbBlock* block);
 
   ViaLayerShape generate(odb::dbBlock* block,
                          odb::dbSWire* wire,
                          odb::dbWireShapeType type,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   ViaReport getViaReport() const override;
@@ -420,6 +419,7 @@ class DbGenerateDummyVia : public DbVia
                          odb::dbWireShapeType /* type */,
                          int x,
                          int y,
+                         const std::set<odb::dbTechLayer*>& ongrid,
                          utl::Logger* logger) override;
 
   ViaReport getViaReport() const override { return {}; }
@@ -723,6 +723,13 @@ class TechViaGenerator : public ViaGenerator
 class Via
 {
  public:
+  struct ViaIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ViaPtr& via) const { return via->getArea(); }
+  };
+  using ViaTree = bgi::rtree<ViaPtr, bgi::quadratic<16>, ViaIndexableGetter>;
+
   Via(Connect* connect,
       odb::dbNet* net,
       const odb::Rect& area,
@@ -731,7 +738,6 @@ class Via
 
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
-  Box getBox() const;
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
   const ShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
@@ -751,7 +757,7 @@ class Via
 
   void writeToDb(odb::dbSWire* wire,
                  odb::dbBlock* block,
-                 const ShapeTreeMap& obstructions);
+                 const Shape::ObstructionTreeMap& obstructions);
 
   Grid* getGrid() const;
 
@@ -761,6 +767,8 @@ class Via
 
   void markFailed(failedViaReason reason);
   bool isFailed() const { return failed_; }
+
+  static ViaTree convertVectorToTree(std::vector<ViaPtr>& vec);
 
  private:
   odb::dbNet* net_;

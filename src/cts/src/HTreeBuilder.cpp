@@ -238,7 +238,7 @@ void HTreeBuilder::preSinkClustering(
 		   baseName + std::to_string(clusterCount),
 		   center, legalCenter);
       }
-      // clang-format on 
+      // clang-format on
       if (!secondLevel) {
         addFirstLevelSinkDriver(&rootBuffer);
       } else {
@@ -246,7 +246,7 @@ void HTreeBuilder::preSinkClustering(
       }
 
       baseName = secondLevel ? "clknet_leaf2_" : "clknet_leaf_";
-      Clock::SubNet& clockSubNet
+      ClockSubNet& clockSubNet
           = clock_.addSubNet(baseName + std::to_string(clusterCount));
       // Subnet that connects the new -sink- buffer to each specific sink
       clockSubNet.addInst(rootBuffer);
@@ -263,7 +263,7 @@ void HTreeBuilder::preSinkClustering(
     }
     clusterCount++;
   }
-  topLevelSinksClustered_ = newSinkLocations;
+  topLevelSinksClustered_ = std::move(newSinkLocations);
   if (clusterCount) {
     treeBufLevels_++;
   }
@@ -1691,9 +1691,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
-#ifndef NDEBUG
-  const double targetDist = computeDist(branchPt2, rootLocation);
-#endif
 
   std::vector<std::pair<float, float>> means;
   means.emplace_back(branchPt1.getX(), branchPt1.getY());
@@ -1736,14 +1733,14 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   }
 
   if (movedSinks > 0) {
-    logger_->report(" Out of {} sinks, {} sinks closer to other cluster.",
-                    sinks.size(),
-                    movedSinks);
+    debugPrint(logger_,
+               CTS,
+               "clustering",
+               1,
+               " Out of {} sinks, {} sinks closer to other cluster.",
+               sinks.size(),
+               movedSinks);
   }
-
-  assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
-         && std::abs(computeDist(branchPt2, rootLocation) - targetDist)
-                < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
@@ -1770,7 +1767,7 @@ void HTreeBuilder::createClockSubNets()
   // clang-format on
 
   addTreeLevelBuffer(&rootBuffer);
-  Clock::SubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
+  ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -1882,7 +1879,7 @@ void HTreeBuilder::createClockSubNets()
   unsigned numSinks = 0;
   leafTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
-        Clock::SubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
+        ClockSubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
@@ -1922,7 +1919,7 @@ void HTreeBuilder::createSingleBufferClockNet()
   // clang-format on
 
   addTreeLevelBuffer(&rootBuffer);
-  Clock::SubNet& clockSubNet = clock_.addSubNet("clknet_0");
+  ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
@@ -2030,7 +2027,7 @@ SegmentBuilder::SegmentBuilder(const std::string& instPrefix,
                                const Point<double>& target,
                                const std::vector<unsigned>& techCharWires,
                                Clock& clock,
-                               Clock::SubNet& drivingSubNet,
+                               ClockSubNet& drivingSubNet,
                                const TechChar& techChar,
                                const unsigned techCharDistUnit,
                                TreeBuilder* tree)

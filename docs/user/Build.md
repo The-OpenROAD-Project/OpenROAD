@@ -1,4 +1,4 @@
-# Build OpenROAD
+# Installing OpenROAD
 
 ## Build
 
@@ -51,7 +51,7 @@ sudo ./etc/DependencyInstaller.sh
 mkdir build && cd build
 cmake ..
 make
-make install 
+sudo make install 
 ```
 
 The default install directory is `/usr/local`.

@@ -17,7 +17,71 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbModule.h"]
+	"includes": ["dbModInst.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModBTermItr",
+      "parentObject": "dbModBTerm",
+      "tableName": "modbterm_tbl",
+      "reversible": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
+      "sequential": 0,
+	"includes": ["dbModBTerm.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModInstModITermItr",
+      "parentObject": "dbModITerm",
+      "tableName": "moditerm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModITerm.h", "dbModule.h", "dbModInst.h"]
+    },
+    {
+      "name": "dbModuleModNetItr",
+      "parentObject": "dbModNet",
+      "tableName": "modnet_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetModITermItr",
+      "parentObject": "dbModITerm",
+      "tableName": "moditerm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetModBTermItr",
+      "parentObject": "dbModBTerm",
+      "tableName": "modbterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h","dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetBTermItr",
+      "parentObject": "dbBTerm",
+      "tableName": "bterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h", "dbModule.h"]
+    },
+    {
+      "name": "dbModuleModNetITermItr",
+      "parentObject": "dbITerm",
+      "tableName": "iterm_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+	"includes": ["dbModNet.h", "dbModule.h"]
     },
     {
       "name": "dbGroupModInstItr",
@@ -175,6 +239,51 @@
       "type":"1_n",
       "tbl_name":"keepout_zone_rules_tbl_",
       "schema":"db_schema_keepout_zone"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerWrongDirSpacingRule",
+      "type":"1_n",
+      "tbl_name":"wrongdir_spacing_rules_tbl_",
+      "schema":"db_schema_wrongdir_spacing"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerTwoWiresForbiddenSpcRule",
+      "type":"1_n",
+      "tbl_name":"two_wires_forbidden_spc_rules_tbl_",
+      "schema":"db_schema_lef58_two_wires_forbidden_spacing"
+    },
+    {
+      "first": "dbDft",
+      "second": "dbScanPin",
+      "type": "1_n",
+      "tbl_name": "scan_pins_",
+      "flags": ["no-get"]
+    },
+    {
+      "first": "dbScanChain",
+      "second": "dbScanPartition",
+      "type": "1_n",
+      "tbl_name": "scan_partitions_"
+    },
+    {
+      "first": "dbScanPartition",
+      "second": "dbScanList",
+      "type": "1_n",
+      "tbl_name": "scan_lists_"
+    },
+    {
+      "first": "dbScanList",
+      "second": "dbScanInst",
+      "type": "1_n",
+      "tbl_name": "scan_insts_"
+    },
+    {
+      "first": "dbDft",
+      "second": "dbScanChain",
+      "type": "1_n",
+      "tbl_name": "scan_chains_"
     }
   ]
 }

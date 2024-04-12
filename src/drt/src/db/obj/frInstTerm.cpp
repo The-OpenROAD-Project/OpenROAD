@@ -30,7 +30,7 @@
 
 #include "db/obj/frInst.h"
 
-using namespace fr;
+namespace drt {
 
 frString frInstTerm::getName() const
 {
@@ -58,10 +58,11 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes,
   term_->getShapes(outShapes);
   for (auto& shape : outShapes) {
     dbTransform trans;
-    if (updatedTransform)
+    if (updatedTransform) {
       trans = getInst()->getUpdatedXform();
-    else
+    } else {
       trans = getInst()->getTransform();
+    }
     shape.move(trans);
   }
 }
@@ -70,10 +71,13 @@ Rect frInstTerm::getBBox(bool updatedTransform)
 {
   Rect bbox(term_->getBBox());
   dbTransform trans;
-  if (updatedTransform)
+  if (updatedTransform) {
     trans = getInst()->getUpdatedXform();
-  else
+  } else {
     trans = getInst()->getTransform();
+  }
   trans.apply(bbox);
   return bbox;
 }
+
+}  // namespace drt

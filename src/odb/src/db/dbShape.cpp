@@ -41,11 +41,13 @@ namespace odb {
 
 bool dbShape::operator<(const dbShape& rhs)
 {
-  if (_type < rhs._type)
+  if (_type < rhs._type) {
     return true;
+  }
 
-  if (_type > rhs._type)
+  if (_type > rhs._type) {
     return false;
+  }
 
   switch (_type) {
     case VIA: {
@@ -54,11 +56,13 @@ bool dbShape::operator<(const dbShape& rhs)
 
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
 
       break;
     }
@@ -69,11 +73,13 @@ bool dbShape::operator<(const dbShape& rhs)
 
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
 
@@ -83,11 +89,13 @@ bool dbShape::operator<(const dbShape& rhs)
 
       int r = strcmp(lhs_lay->_name, rhs_lay->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
 
@@ -97,22 +105,26 @@ bool dbShape::operator<(const dbShape& rhs)
 
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
 
       _dbTechLayer* lhs_lay = (_dbTechLayer*) _layer;
       _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs._layer;
 
       r = strcmp(lhs_lay->_name, rhs_lay->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
 
@@ -122,22 +134,26 @@ bool dbShape::operator<(const dbShape& rhs)
 
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
 
       _dbTechLayer* lhs_lay = (_dbTechLayer*) _layer;
       _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs._layer;
 
       r = strcmp(lhs_lay->_name, rhs_lay->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
   }

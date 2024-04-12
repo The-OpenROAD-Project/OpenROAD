@@ -89,7 +89,7 @@ bool MacroPlacer2::place(const int num_threads,
                          const float target_dead_space,
                          const float min_ar,
                          const int snap_layer,
-                         const bool bus_planning_flag,
+                         const bool bus_planning_on,
                          const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
@@ -116,10 +116,10 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setSnapLayer(snap_layer);
-  hier_rtlmp_->setBusPlanningFlag(bus_planning_flag);
+  hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
-  hier_rtlmp_->hierRTLMacroPlacer();
+  hier_rtlmp_->run();
 
   return true;
 }
@@ -158,17 +158,8 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
 
     HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
 
-    mpl2::Rect macro_new_bbox_micron(
-        x_origin,
-        y_origin,
-        dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
-        dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
-
-    float pitch_x = 0.0;
-    float pitch_y = 0.0;
-
     odb::Point snap_origin = macro.computeSnapOrigin(
-        macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+        macro_new_bbox, orientation, inst->getBlock());
 
     // Orientation is already set, so now we set the origin to snap macro.
     inst->setOrigin(snap_origin.x(), snap_origin.y());
@@ -200,14 +191,14 @@ void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
-void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
-{
-  hier_rtlmp_->writeMacroPlacement(file_name);
-}
-
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);
+}
+
+void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

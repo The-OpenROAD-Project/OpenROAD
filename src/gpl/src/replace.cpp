@@ -53,64 +53,11 @@
 
 namespace gpl {
 
-using namespace std;
 using utl::GPL;
 
-Replace::Replace()
-    : db_(nullptr),
-      rs_(nullptr),
-      fr_(nullptr),
-      log_(nullptr),
-      pbc_(nullptr),
-      nbc_(nullptr),
-      rb_(nullptr),
-      tb_(nullptr),
-      ip_(nullptr),
-      np_(nullptr),
-      initialPlaceMaxIter_(20),
-      initialPlaceMinDiffLength_(1500),
-      initialPlaceMaxSolverIter_(100),
-      initialPlaceMaxFanout_(200),
-      initialPlaceNetWeightScale_(800),
-      forceCPU_(false),
-      nesterovPlaceMaxIter_(5000),
-      binGridCntX_(0),
-      binGridCntY_(0),
-      overflow_(0.1),
-      density_(1.0),
-      initDensityPenalityFactor_(0.00008),
-      initWireLengthCoef_(0.25),
-      minPhiCoef_(0.95),
-      maxPhiCoef_(1.05),
-      referenceHpwl_(446000000),
-      routabilityCheckOverflow_(0.20),
-      routabilityMaxDensity_(0.99),
-      routabilityTargetRcMetric_(1.25),
-      routabilityInflationRatioCoef_(2.5),
-      routabilityMaxInflationRatio_(2.5),
-      routabilityRcK1_(1.0),
-      routabilityRcK2_(1.0),
-      routabilityRcK3_(0.0),
-      routabilityRcK4_(0.0),
-      routabilityMaxBloatIter_(1),
-      routabilityMaxInflationIter_(4),
-      timingNetWeightMax_(1.9),
-      timingDrivenMode_(true),
-      routabilityDrivenMode_(true),
-      uniformTargetDensityMode_(false),
-      skipIoMode_(false),
-      padLeft_(0),
-      padRight_(0),
-      gui_debug_(false),
-      gui_debug_pause_iterations_(10),
-      gui_debug_update_iterations_(10),
-      gui_debug_draw_bins_(false),
-      gui_debug_initial_(false),
-      gui_debug_inst_(nullptr){};
+Replace::Replace() = default;
 
-Replace::~Replace()
-{
-}
+Replace::~Replace() = default;
 
 void Replace::init(odb::dbDatabase* odb,
                    sta::dbSta* sta,
@@ -160,7 +107,7 @@ void Replace::reset()
 
   routabilityCheckOverflow_ = 0.20;
   routabilityMaxDensity_ = 0.99;
-  routabilityTargetRcMetric_ = 1.25;
+  routabilityTargetRcMetric_ = 1.0;
   routabilityInflationRatioCoef_ = 2.5;
   routabilityMaxInflationRatio_ = 2.5;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
@@ -186,7 +133,7 @@ void Replace::reset()
   gui_debug_initial_ = false;
 }
 
-void Replace::doIncrementalPlace()
+void Replace::doIncrementalPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -232,7 +179,7 @@ void Replace::doIncrementalPlace()
       pb->unlockAll();
     }
     // pbc_->unlockAll();
-    doNesterovPlace();
+    doNesterovPlace(threads);
     return;
   }
 
@@ -247,9 +194,9 @@ void Replace::doIncrementalPlace()
   doInitialPlace();
 
   int previous_max_iter = nesterovPlaceMaxIter_;
-  initNesterovPlace();
+  initNesterovPlace(threads);
   setNesterovPlaceMaxIter(300);
-  int iter = doNesterovPlace();
+  int iter = doNesterovPlace(threads);
   setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
@@ -260,7 +207,7 @@ void Replace::doIncrementalPlace()
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
-    doNesterovPlace(iter + 1);
+    doNesterovPlace(threads, iter + 1);
   }
 }
 
@@ -304,13 +251,17 @@ void Replace::doInitialPlace()
   ip_->doBicgstabPlace();
 }
 
-void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+void Replace::runMBFF(int max_sz,
+                      float alpha,
+                      float beta,
+                      int threads,
+                      int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, threads, 4, 10, gui_debug_);
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, num_paths, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 
-bool Replace::initNesterovPlace()
+bool Replace::initNesterovPlace(int threads)
 {
   if (!pbc_) {
     PlacerBaseVars pbVars;
@@ -345,14 +296,14 @@ bool Replace::initNesterovPlace()
     nbVars.targetDensity = density_;
 
     if (binGridCntX_ != 0 && binGridCntY_ != 0) {
-      nbVars.isSetBinCnt = 1;
+      nbVars.isSetBinCnt = true;
       nbVars.binCntX = binGridCntX_;
       nbVars.binCntY = binGridCntY_;
     }
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
+    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, threads);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
@@ -412,13 +363,14 @@ bool Replace::initNesterovPlace()
   return true;
 }
 
-int Replace::doNesterovPlace(int start_iter)
+int Replace::doNesterovPlace(int threads, int start_iter)
 {
-  if (!initNesterovPlace()) {
+  if (!initNesterovPlace(threads)) {
     return 0;
   }
-  if (timingDrivenMode_)
+  if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
+  }
   return np_->doNesterovPlace(start_iter);
 }
 
@@ -479,10 +431,10 @@ void Replace::setUniformTargetDensityMode(bool mode)
   uniformTargetDensityMode_ = mode;
 }
 
-float Replace::getUniformTargetDensity()
+float Replace::getUniformTargetDensity(int threads)
 {
   // TODO: update to be compatible with multiple target densities
-  if (initNesterovPlace()) {
+  if (initNesterovPlace(threads)) {
     return nbVec_[0]->uniformTargetDensity();
   }
   return 1;

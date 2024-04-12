@@ -87,9 +87,7 @@ struct Segment  // A Segment is a 2-pin connection
 struct FrNet  // A Net is a set of connected MazePoints
 {
   bool isClock() const { return is_clock_; }
-  bool isRouted() const { return is_routed_; }
   bool isCritical() { return is_critical_; }
-  bool isDeleted() { return is_deleted_; }
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
@@ -102,6 +100,7 @@ struct FrNet  // A Net is a set of connected MazePoints
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
+  int getPinL(int idx) const { return pin_l_[idx]; }
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
@@ -115,12 +114,10 @@ struct FrNet  // A Net is a set of connected MazePoints
              int max_layer,
              float slack,
              std::vector<int>* edge_cost_per_layer);
-  void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
   void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
-  void setIsDeleted(bool is_deleted) { is_deleted_ = is_deleted; }
 
  private:
   odb::dbNet* db_net_;
@@ -136,8 +133,6 @@ struct FrNet  // A Net is a set of connected MazePoints
   float slack_;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
-  bool is_routed_ = false;
-  bool is_deleted_ = false;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent
@@ -226,13 +221,13 @@ struct TreeEdge
 
 struct StTree
 {
-  int num_nodes = 0;
   int num_terminals = 0;
   // The nodes (pin and Steiner nodes) in the tree.
   std::vector<TreeNode> nodes;
   std::vector<TreeEdge> edges;
 
-  int num_edges() const { return num_nodes - 1; }
+  int num_edges() const { return edges.size(); }
+  int num_nodes() const { return nodes.size(); }
 };
 
 struct OrderNetPin

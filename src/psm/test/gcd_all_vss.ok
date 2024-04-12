@@ -1,46 +1,30 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
-[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
-[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 80.180 or core height of 79.800. Changing bump location to the center of the die at (50.160, 51.100).
-[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[WARNING PSM-0030] VSRC location at (50.160um, 51.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (40.070um, 33.115um).
-[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VSS are connected.
-[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
-[INFO PSM-0004] EM calculation is enabled.
-[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VSS are connected.
+[INFO PSM-0040] All shapes on net VSS are connected.
+[INFO PSM-0040] All shapes on net VSS are connected.
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vss.loc.
 ########## IR report #################
-Corner: default
-Worstcase voltage: 1.10e-03 V
-Average IR drop  : 7.02e-04 V
-Worstcase IR drop: 1.10e-03 V
+Net              : VSS
+Corner           : default
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 9.35e-04 V
+Average voltage  : 6.07e-04 V
+Average IR drop  : 6.07e-04 V
+Worstcase IR drop: 9.35e-04 V
+Percentage drop  : 0.09 %
 ######################################
 ########## EM analysis ###############
-Maximum current: 1.26e-04 A
-Average current: 3.78e-06 A
-Number of resistors: 506
+Net                : VSS
+Corner             : default
+Maximum current    : 1.14e-04 A
+Average current    : 1.65e-06 A
+Number of resistors: 2139
 ######################################
-[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
-[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net VSS = 507.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VSS are connected.
 No differences found.
+No differences found.
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vss.loc.
 No differences found.

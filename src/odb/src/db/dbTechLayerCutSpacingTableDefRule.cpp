@@ -838,8 +838,9 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getSecondLayer() const
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
-  if (obj->second_layer_ == 0)
+  if (obj->second_layer_ == 0) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   _dbTech* _tech = (_dbTech*) layer->getOwner();
   return (dbTechLayer*) _tech->_layer_tbl->getPtr(obj->second_layer_);
@@ -882,19 +883,20 @@ int dbTechLayerCutSpacingTableDefRule::getMaxSpacing(std::string cutClass,
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   std::string classDir = cutClass;
-  if (SIDE)
+  if (SIDE) {
     classDir += "/SIDE";
-  else
+  } else {
     classDir += "/END";
+  }
 
-  if (obj->col_map_.find(classDir) == obj->col_map_.end())
+  if (obj->col_map_.find(classDir) == obj->col_map_.end()) {
     return obj->default_;
+  }
   auto colIdx = obj->col_map_[classDir];
   auto spc = 0;
-  for (int rowIdx = 0; rowIdx < obj->spacing_tbl_.size(); rowIdx++)
-    spc = std::max(spc,
-                   std::max(obj->spacing_tbl_[rowIdx][colIdx].first,
-                            obj->spacing_tbl_[rowIdx][colIdx].second));
+  for (const auto& row : obj->spacing_tbl_) {
+    spc = std::max(spc, std::max(row[colIdx].first, row[colIdx].second));
+  }
   return spc;
 }
 
@@ -918,11 +920,13 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterToCenter(std::string cutClass1,
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   for (auto& [class1, class2] : obj->center_to_center_tbl_) {
     if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+        && (class2 == cutClass2 || class2 == "ALL")) {
       return true;
+    }
     if ((class1 == cutClass2 || class1 == "ALL")
-        && (class2 == cutClass1 || class2 == "ALL"))
+        && (class2 == cutClass1 || class2 == "ALL")) {
       return true;
+    }
   }
   return false;
 }
@@ -933,8 +937,9 @@ int dbTechLayerCutSpacingTableDefRule::getExactAlignedSpacing(
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   for (auto& [cls, spc] : obj->exact_aligned_spacing_tbl_) {
-    if (cls == cutClass)
+    if (cls == cutClass) {
       return spc;
+    }
   }
   return -1;
 }
@@ -947,24 +952,27 @@ bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   for (auto& [class1, class2] : obj->prl_for_aligned_cut_tbl_) {
     if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+        && (class2 == cutClass2 || class2 == "ALL")) {
       return true;
+    }
   }
   return false;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
-                                                   std::string cutClass2)
+int dbTechLayerCutSpacingTableDefRule::getPrlEntry(const std::string& cutClass1,
+                                                   const std::string& cutClass2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   for (const auto& [class1, class2, prl] : obj->prl_tbl_) {
     if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+        && (class2 == cutClass2 || class2 == "ALL")) {
       return prl;
+    }
     if ((class1 == cutClass2 || class1 == "ALL")
-        && (class2 == cutClass1 || class2 == "ALL"))
+        && (class2 == cutClass1 || class2 == "ALL")) {
       return prl;
+    }
   }
   return obj->prl_;
 }
@@ -976,11 +984,13 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdge(std::string cutClass1,
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   for (auto& [class1, class2] : obj->center_and_edge_tbl_) {
     if ((class1 == cutClass1 || class1 == "ALL")
-        && (class2 == cutClass2 || class2 == "ALL"))
+        && (class2 == cutClass2 || class2 == "ALL")) {
       return true;
+    }
     if ((class1 == cutClass2 || class1 == "ALL")
-        && (class2 == cutClass1 || class2 == "ALL"))
+        && (class2 == cutClass1 || class2 == "ALL")) {
       return true;
+    }
   }
   return false;
 }
@@ -994,21 +1004,24 @@ int dbTechLayerCutSpacingTableDefRule::getSpacing(
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
-  if (SIDE1)
+  if (SIDE1) {
     c1 += "/SIDE";
-  else
+  } else {
     c1 += "/END";
+  }
 
-  if (SIDE2)
+  if (SIDE2) {
     c2 += "/SIDE";
-  else
+  } else {
     c2 += "/END";
+  }
   std::pair<int, int> res;
   if (obj->row_map_.find(c2) != obj->row_map_.end()
-      && obj->col_map_.find(c1) != obj->col_map_.end())
+      && obj->col_map_.find(c1) != obj->col_map_.end()) {
     res = obj->spacing_tbl_[obj->row_map_[c2]][obj->col_map_[c1]];
-  else
+  } else {
     res = {obj->default_, obj->default_};
+  }
   switch (strategy) {
     case FIRST:
       return res.first;

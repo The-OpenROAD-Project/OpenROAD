@@ -137,19 +137,49 @@ configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh
   )
 
+
 ################################################################
 
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-
-
 add_subdirectory(third-party)
 
 if(ENABLE_TESTS)
+  find_program (BASH_PROGRAM bash REQUIRED)
+
   enable_testing()
-  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure -LE IntegrationTest)
   include(GoogleTest)
 endif()
 
 add_subdirectory(src)
+
+# After all compiled, look for the respective flags
+target_compile_definitions(openroad PRIVATE GPU)
+target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
+target_compile_definitions(openroad PRIVATE BUILD_GUI)
+target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
+
+####################################################################
+
+# Build man pages (Optional)
+
+# Use the processor_count command to get the number of cores
+include(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+message("Number of processor cores: ${PROCESSOR_COUNT}")
+
+option(BUILD_MAN "Enable building man pages" OFF)
+if(BUILD_MAN)
+  add_custom_target(
+    man_page ALL
+    COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
+    WORKING_DIRECTORY ${OPENROAD_HOME}/docs
+  )
+  
+  # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
+  set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+
+endif()

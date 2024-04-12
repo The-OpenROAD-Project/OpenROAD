@@ -84,16 +84,18 @@ void definPin::pinBegin(const char* name, const char* net_name)
 {
   dbNet* net = _block->findNet(net_name);
 
-  if (net == nullptr)
+  if (net == nullptr) {
     net = dbNet::create(_block, net_name);
+  }
 
   const char* s = strstr(name, ".extra");
 
   if (s == nullptr) {
     if (_mode != defin::DEFAULT) {
       _cur_bterm = _block->findBTerm(name);
-      if (_cur_bterm != nullptr)
+      if (_cur_bterm != nullptr) {
         _update_cnt++;
+      }
     } else {
       _cur_bterm = dbBTerm::create(net, name);
       _bterm_cnt++;
@@ -144,24 +146,27 @@ void definPin::pinBegin(const char* name, const char* net_name)
 
 void definPin::pinSpecial()
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _cur_bterm->setSpecial();
 }
 
 void definPin::pinUse(dbSigType type)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _cur_bterm->setSigType(type);
 }
 
 void definPin::pinDirection(dbIoType type)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _cur_bterm->setIoType(type);
 }
@@ -171,8 +176,9 @@ void definPin::pinPlacement(defPlacement status,
                             int y,
                             dbOrientType orient)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _orig_x = dbdist(x);
   _orig_y = dbdist(y);
@@ -226,10 +232,16 @@ void definPin::pinEffectiveWidth(int width)
   _has_effective_width = true;
 }
 
-void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
+void definPin::pinRect(const char* layer_name,
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       uint mask)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _layer = _tech->findLayer(layer_name);
 
@@ -241,28 +253,30 @@ void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
   }
 
   Rect r(dbdist(x1), dbdist(y1), dbdist(x2), dbdist(y2));
-  _rects.push_back(PinRect(_layer, r));
+  _rects.emplace_back(_layer, r, mask);
 }
 
-void definPin::pinPolygon(std::vector<defPoint>& points)
+void definPin::pinPolygon(std::vector<defPoint>& points, uint mask)
 {
   std::vector<Point> P;
   translate(points, P);
-  _polygons.push_back(Polygon(_layer, P));
+  _polygons.emplace_back(_layer, P, mask);
 }
 
 void definPin::pinGroundPin(const char* groundPin)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _ground_pins.push_back(Pin(_cur_bterm, std::string(groundPin)));
 }
 
 void definPin::pinSupplyPin(const char* supplyPin)
 {
-  if (_cur_bterm == nullptr)
+  if (_cur_bterm == nullptr) {
     return;
+  }
 
   _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
 }
@@ -288,23 +302,27 @@ void definPin::portEnd()
     pin = dbBPin::create(_cur_bterm);
     pin->setPlacementStatus(_status);
 
-    if (_has_min_spacing)
+    if (_has_min_spacing) {
       pin->setMinSpacing(_min_spacing);
+    }
 
-    if (_has_effective_width)
+    if (_has_effective_width) {
       pin->setEffectiveWidth(_effective_width);
+    }
   }
 
   if (!_rects.empty()) {
-    for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr)
+    for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr) {
       addRect(*itr, pin);
+    }
   }
 
   if (!_polygons.empty()) {
     std::vector<Polygon>::iterator itr;
 
-    for (itr = _polygons.begin(); itr != _polygons.end(); ++itr)
+    for (itr = _polygons.begin(); itr != _polygons.end(); ++itr) {
       addPolygon(*itr, pin);
+    }
   }
 }
 
@@ -325,7 +343,7 @@ void definPin::addRect(PinRect& r, dbBPin* pin)
   int ymin = r._rect.yMin() + _orig_y;
   int xmax = r._rect.xMax() + _orig_x;
   int ymax = r._rect.yMax() + _orig_y;
-  dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax);
+  dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax, r._mask);
 }
 
 void definPin::addPolygon(Polygon& p, dbBPin* pin)
@@ -338,7 +356,7 @@ void definPin::addPolygon(Polygon& p, dbBPin* pin)
 
   for (itr = R.begin(); itr != R.end(); ++itr) {
     Rect& r = *itr;
-    PinRect R(p._layer, r);
+    PinRect R(p._layer, r, p._mask);
     addRect(R, pin);
   }
 }
@@ -354,8 +372,9 @@ void definPin::pinsEnd()
 
     dbSet<dbBPin> bpins = bterm->getBPins();
 
-    if (bpins.reversible() && bpins.orderReversed())
+    if (bpins.reversible() && bpins.orderReversed()) {
       bpins.reverse();
+    }
   }
 
   std::vector<Pin>::iterator pitr;

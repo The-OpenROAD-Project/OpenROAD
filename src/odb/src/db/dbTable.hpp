@@ -419,16 +419,16 @@ void dbTable<T>::destroy(T* t)
   ZASSERT(t->_oid & DB_ALLOC_BIT);
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
+  _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
   t->~T();  // call destructor
-  t->_oid &= ~DB_ALLOC_BIT;
+  o->_oid &= ~DB_ALLOC_BIT;
 
   uint offset = t - (T*) page->_objects;
   uint id = page->_page_addr + offset;
 
   // Add to freelist
-  _dbFreeObject* o = (_dbFreeObject*) t;
   pushQ(_free_list, o);
 
   if (id == _bottom_idx) {
@@ -619,6 +619,16 @@ void dbTable<T>::copy_page(uint page_id, dbTablePage* page)
       *((_dbFreeObject*) o) = *((_dbFreeObject*) t);
     }
   }
+}
+
+template <class T>
+dbOStream& operator<<(dbOStream& stream, const NamedTable<T>& named_table)
+{
+  dbOStreamScope scope(
+      stream,
+      fmt::format("{}({})", named_table.name, named_table.table->size()));
+  stream << *named_table.table;
+  return stream;
 }
 
 template <class T>

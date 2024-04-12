@@ -136,7 +136,7 @@ class extMasterConductor
                           double width,
                           double X,
                           double volt,
-                          extProcess* p = NULL);
+                          extProcess* p = nullptr);
   void printDielBox(FILE* fp, double X, double width, extDielectric* diel);
   void writeRaphaelPointXY(FILE* fp, double X, double Y);
   void writeRaphaelDielPoly(FILE* fp,

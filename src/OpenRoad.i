@@ -44,7 +44,6 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
-#include "ord/Version.hh"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 
@@ -162,7 +161,7 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
-triton_route::TritonRoute *
+drt::TritonRoute *
 getTritonRoute()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -295,13 +294,49 @@ using odb::dbTech;
 const char *
 openroad_version()
 {
-  return OPENROAD_VERSION;
+  return ord::OpenRoad::getVersion();
 }
 
 const char *
 openroad_git_describe()
 {
-  return OPENROAD_GIT_DESCRIBE;
+  return ord::OpenRoad::getGitDescribe();
+}
+
+const bool 
+openroad_gpu_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
+const bool
+openroad_python_compiled()
+{
+  return ord::OpenRoad::getPythonCompileOption();
+}
+
+const bool
+openroad_gui_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
+const bool
+openroad_charts_compiled()
+{
+  return ord::OpenRoad::getChartsCompileOption();
+}
+
+const bool
+openroad_mpl2_compiled()
+{
+  return ord::OpenRoad::getMPL2CompileOption();
+}
+
+const bool
+openroad_par_compiled()
+{
+  return ord::OpenRoad::getPARCompileOption();
 }
 
 void

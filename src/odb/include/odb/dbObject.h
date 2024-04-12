@@ -87,6 +87,7 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbDftObj,
   dbGCellGridObj,
   dbGlobalConnectObj,
   dbGroupObj,
@@ -95,11 +96,19 @@ enum dbObjectType
   dbLevelShifterObj,
   dbLogicPortObj,
   dbMetalWidthViaMapObj,
+  dbModBTermObj,
   dbModInstObj,
+  dbModITermObj,
+  dbModNetObj,
   dbModuleObj,
   dbNetTrackObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
+  dbScanChainObj,
+  dbScanInstObj,
+  dbScanListObj,
+  dbScanPartitionObj,
+  dbScanPinObj,
   dbTechLayerObj,
   dbTechLayerAreaRuleObj,
   dbTechLayerArraySpacingRuleObj,
@@ -117,7 +126,9 @@ enum dbObjectType
   dbTechLayerMinStepRuleObj,
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerTwoWiresForbiddenSpcRuleObj,
   dbTechLayerWidthTableRuleObj,
+  dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

@@ -1,0 +1,27 @@
+{
+  "name": "dbScanPartition",
+  "type": "dbObject",
+  "description": [
+    "A scan partition is way to split the scan chains into sub chains with compatible",
+    "scan flops (same clock, edge and voltage). The biggest partition possible is the",
+    "whole chain if all the scan flops inside it are compatible between them for",
+    "reordering and repartitioning. The name of this partition is not unique, as",
+    "multiple partitions may have the same same and therefore contain the same type",
+    "of flops."
+  ],
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h",
+    "dbScanChain.h",
+    "dbDft.h"
+  ]
+}

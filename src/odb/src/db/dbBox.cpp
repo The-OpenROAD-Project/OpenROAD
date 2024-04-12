@@ -68,34 +68,49 @@ bool _dbBox::isOct() const
 
 bool _dbBox::operator==(const _dbBox& rhs) const
 {
-  if (_flags._owner_type != rhs._flags._owner_type)
+  if (_flags._owner_type != rhs._flags._owner_type) {
     return false;
+  }
 
-  if (_flags._is_tech_via != rhs._flags._is_tech_via)
+  if (_flags._is_tech_via != rhs._flags._is_tech_via) {
     return false;
+  }
 
-  if (_flags._is_block_via != rhs._flags._is_block_via)
+  if (_flags._is_block_via != rhs._flags._is_block_via) {
     return false;
+  }
 
-  if (_flags._layer_id != rhs._flags._layer_id)
+  if (_flags._layer_id != rhs._flags._layer_id) {
     return false;
+  }
 
-  if (_flags._via_id != rhs._flags._via_id)
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
     return false;
-  if (_flags._octilinear != rhs._flags._octilinear)
-    return false;
-  if (isOct() && _shape._oct != _shape._oct)
-    return false;
-  else if (_shape._rect != _shape._rect)
-    return false;
+  }
 
-  if (_owner != rhs._owner)
+  if (_flags._via_id != rhs._flags._via_id) {
     return false;
+  }
+  if (_flags._octilinear != rhs._flags._octilinear) {
+    return false;
+  }
+  if (isOct() && _shape._oct != _shape._oct) {
+    return false;
+  }
+  if (_shape._rect != _shape._rect) {
+    return false;
+  }
 
-  if (_next_box != rhs._next_box)
+  if (_owner != rhs._owner) {
     return false;
-  if (design_rule_width_ != rhs.design_rule_width_)
+  }
+
+  if (_next_box != rhs._next_box) {
     return false;
+  }
+  if (design_rule_width_ != rhs.design_rule_width_) {
+    return false;
+  }
   return true;
 }
 
@@ -104,16 +119,18 @@ int _dbBox::equal(const _dbBox& rhs) const
   Type lhs_type = getType();
   Type rhs_type = rhs.getType();
 
-  if (lhs_type != rhs_type)
+  if (lhs_type != rhs_type) {
     return false;
+  }
 
   switch (lhs_type) {
     case BLOCK_VIA: {
       _dbVia* lhs_via = getBlockVia();
       _dbVia* rhs_via = rhs.getBlockVia();
 
-      if (strcmp(lhs_via->_name, rhs_via->_name) != 0)
+      if (strcmp(lhs_via->_name, rhs_via->_name) != 0) {
         return false;
+      }
       break;
     }
 
@@ -121,8 +138,9 @@ int _dbBox::equal(const _dbBox& rhs) const
       _dbTechVia* lhs_via = getTechVia();
       _dbTechVia* rhs_via = rhs.getTechVia();
 
-      if (strcmp(lhs_via->_name, rhs_via->_name) != 0)
+      if (strcmp(lhs_via->_name, rhs_via->_name) != 0) {
         return false;
+      }
       break;
     }
 
@@ -130,19 +148,27 @@ int _dbBox::equal(const _dbBox& rhs) const
       _dbTechLayer* lhs_lay = getTechLayer();
       _dbTechLayer* rhs_lay = rhs.getTechLayer();
 
-      if (strcmp(lhs_lay->_name, rhs_lay->_name) != 0)
+      if (strcmp(lhs_lay->_name, rhs_lay->_name) != 0) {
         return false;
+      }
       break;
     }
   }
-  if (_flags._octilinear != rhs._flags._octilinear)
+  if (_flags._octilinear != rhs._flags._octilinear) {
     return false;
-  if (design_rule_width_ != rhs.design_rule_width_)
+  }
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
     return false;
-  if (isOct() && _shape._oct != _shape._oct)
+  }
+  if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
-  else if (_shape._rect != _shape._rect)
+  }
+  if (isOct() && _shape._oct != _shape._oct) {
     return false;
+  }
+  if (_shape._rect != _shape._rect) {
+    return false;
+  }
 
   return true;
 }
@@ -152,11 +178,13 @@ bool _dbBox::operator<(const _dbBox& rhs) const
   Type lhs_type = getType();
   Type rhs_type = rhs.getType();
 
-  if (lhs_type < rhs_type)
+  if (lhs_type < rhs_type) {
     return true;
+  }
 
-  if (lhs_type > rhs_type)
+  if (lhs_type > rhs_type) {
     return false;
+  }
 
   switch (lhs_type) {
     case BLOCK_VIA: {
@@ -164,11 +192,13 @@ bool _dbBox::operator<(const _dbBox& rhs) const
       _dbVia* rhs_via = rhs.getBlockVia();
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
 
@@ -177,11 +207,13 @@ bool _dbBox::operator<(const _dbBox& rhs) const
       _dbTechVia* rhs_via = rhs.getTechVia();
       int r = strcmp(lhs_via->_name, rhs_via->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
       break;
     }
 
@@ -191,25 +223,33 @@ bool _dbBox::operator<(const _dbBox& rhs) const
         _dbTechLayer* rhs_lay = rhs.getTechLayer();
         int r = strcmp(lhs_lay->_name, rhs_lay->_name);
 
-        if (r < 0)
+        if (r < 0) {
           return true;
+        }
 
-        if (r > 0)
+        if (r > 0) {
           return false;
+        }
       }
 
-      else if (_flags._layer_id != 0)
+      else if (_flags._layer_id != 0) {
         return true;
-      else if (rhs._flags._layer_id != 0)
+      } else if (rhs._flags._layer_id != 0) {
         return false;
+      }
 
       break;
     }
   }
-  if (!isOct() && !rhs.isOct())
+  if (!isOct() && !rhs.isOct()) {
     return _shape._rect < rhs._shape._rect;
-  if (design_rule_width_ >= rhs.design_rule_width_)
+  }
+  if (design_rule_width_ >= rhs.design_rule_width_) {
     return false;
+  }
+  if (_flags._layer_mask >= rhs._flags._layer_mask) {
+    return false;
+  }
   return false;
 }
 
@@ -217,8 +257,9 @@ void _dbBox::differences(dbDiff& diff,
                          const char* field,
                          const _dbBox& rhs) const
 {
-  if (diff.deepDiff())
+  if (diff.deepDiff()) {
     return;
+  }
 
   DIFF_BEGIN
   DIFF_FIELD(_flags._owner_type);
@@ -227,6 +268,7 @@ void _dbBox::differences(dbDiff& diff,
   DIFF_FIELD(_flags._layer_id);
   DIFF_FIELD(_flags._via_id);
   DIFF_FIELD(_flags._octilinear);
+  DIFF_FIELD(_flags._layer_mask);
 
   if (isOct()) {
     DIFF_FIELD(_shape._oct);
@@ -249,6 +291,7 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_FIELD(_flags._layer_id);
     DIFF_OUT_FIELD(_flags._via_id);
     DIFF_OUT_FIELD(_flags._octilinear);
+    DIFF_OUT_FIELD(_flags._layer_mask);
     if (isOct()) {
       DIFF_OUT_FIELD(_shape._oct);
     } else {
@@ -307,8 +350,9 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer* _dbBox::getTechLayer() const
 {
-  if (_flags._layer_id == 0)
+  if (_flags._layer_id == 0) {
     return nullptr;
+  }
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
@@ -348,8 +392,9 @@ _dbTechLayer* _dbBox::getTechLayer() const
 
 _dbTechVia* _dbBox::getTechVia() const
 {
-  if (_flags._is_tech_via == 0)
+  if (_flags._is_tech_via == 0) {
     return nullptr;
+  }
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
@@ -389,8 +434,9 @@ _dbTechVia* _dbBox::getTechVia() const
 
 _dbVia* _dbBox::getBlockVia() const
 {
-  if (_flags._is_block_via == 0)
+  if (_flags._is_block_via == 0) {
     return nullptr;
+  }
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
@@ -447,6 +493,14 @@ void _dbBox::getViaXY(int& x, int& y) const
   }
 }
 
+void _dbBox::checkMask(uint mask)
+{
+  if (mask >= 4) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 434, "Mask must be between 0 and 3.");
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbBox - Methods
@@ -458,9 +512,8 @@ int dbBox::xMin()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.xMin();
-  } else {
-    return box->_shape._rect.xMin();
   }
+  return box->_shape._rect.xMin();
 }
 
 int dbBox::yMin()
@@ -468,9 +521,8 @@ int dbBox::yMin()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.yMin();
-  } else {
-    return box->_shape._rect.yMin();
   }
+  return box->_shape._rect.yMin();
 }
 
 int dbBox::xMax()
@@ -478,9 +530,8 @@ int dbBox::xMax()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.xMax();
-  } else {
-    return box->_shape._rect.xMax();
   }
+  return box->_shape._rect.xMax();
 }
 
 int dbBox::yMax()
@@ -488,9 +539,8 @@ int dbBox::yMax()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.yMax();
-  } else {
-    return box->_shape._rect.yMax();
   }
+  return box->_shape._rect.yMax();
 }
 
 bool dbBox::isVia()
@@ -599,9 +649,8 @@ uint dbBox::getDX()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.dx();
-  } else {
-    return box->_shape._rect.dx();
   }
+  return box->_shape._rect.dx();
 }
 
 uint dbBox::getDY()
@@ -609,16 +658,15 @@ uint dbBox::getDY()
   _dbBox* box = (_dbBox*) this;
   if (box->_flags._octilinear) {
     return box->_shape._oct.dy();
-  } else {
-    return box->_shape._rect.dy();
   }
+  return box->_shape._rect.dy();
 }
 uint dbBox::getWidth(uint dir)
 {
-  if (dir == 1)  // horizontal
+  if (dir == 1) {  // horizontal
     return getDY();
-  else
-    return getDX();
+  }
+  return getDX();
 }
 
 int dbBox::getDesignRuleWidth() const
@@ -635,10 +683,10 @@ void dbBox::setDesignRuleWidth(int width)
 
 uint dbBox::getLength(uint dir)
 {
-  if (dir == 1)  // horizontal
+  if (dir == 1) {  // horizontal
     return getDX();
-  else
-    return getDY();
+  }
+  return getDY();
 }
 
 void dbBox::getViaXY(int& x, int& y)
@@ -741,12 +789,32 @@ dbTechLayer* dbBox::getTechLayer()
   return (dbTechLayer*) box->getTechLayer();
 }
 
+uint dbBox::getLayerMask()
+{
+  _dbBox* box = (_dbBox*) this;
+  return box->_flags._layer_mask;
+}
+
+void dbBox::setLayerMask(uint mask)
+{
+  _dbBox* box = (_dbBox*) this;
+  box->checkMask(mask);
+
+  if (box->_flags._layer_id == 0 && mask != 0) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 435, "Mask must be 0 when no layer is provided.");
+  }
+
+  box->_flags._layer_mask = mask;
+}
+
 dbBox* dbBox::create(dbBPin* bpin_,
                      dbTechLayer* layer_,
                      int x1,
                      int y1,
                      int x2,
-                     int y2)
+                     int y2,
+                     uint mask)
 {
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
@@ -766,6 +834,9 @@ dbBox* dbBox::create(dbBPin* bpin_,
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
+
+  dbBox* dbbox = (dbBox*) box;
+  dbbox->setLayerMask(mask);
 
   box->_next_box = bpin->_boxes;
   bpin->_boxes = box->getOID();
@@ -812,11 +883,13 @@ dbBox* dbBox::create(dbVia* via_,
     _dbTechLayer* top = tech->_layer_tbl->getPtr(via->_top);
     _dbTechLayer* bottom = tech->_layer_tbl->getPtr(via->_bottom);
 
-    if (layer->_number > top->_number)
+    if (layer->_number > top->_number) {
       via->_top = layer->getOID();
+    }
 
-    if (layer->_number < bottom->_number)
+    if (layer->_number < bottom->_number) {
       via->_bottom = layer->getOID();
+    }
   }
 
   // link box to via
@@ -851,8 +924,9 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   _dbMaster* master = (_dbMaster*) master_;
   _dbTechVia* via = (_dbTechVia*) via_;
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
@@ -901,8 +975,9 @@ dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
   _dbMPin* pin = (_dbMPin*) pin_;
   _dbTechVia* via = (_dbTechVia*) via_;
 
-  if (via->_bbox == 0)
+  if (via->_bbox == 0) {
     return nullptr;
+  }
 
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   _dbTech* tech = (_dbTech*) via->getOwner();
@@ -964,11 +1039,13 @@ dbBox* dbBox::create(dbTechVia* via_,
     _dbTechLayer* top = tech->_layer_tbl->getPtr(via->_top);
     _dbTechLayer* bottom = tech->_layer_tbl->getPtr(via->_bottom);
 
-    if (layer->_number > top->_number)
+    if (layer->_number > top->_number) {
       via->_top = layer_->getImpl()->getOID();
+    }
 
-    if (layer->_number < bottom->_number)
+    if (layer->_number < bottom->_number) {
       via->_bottom = layer_->getImpl()->getOID();
+    }
   }
 
   // link box to via
@@ -1001,8 +1078,9 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   _dbInst* inst = (_dbInst*) inst_;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
 
-  if (inst->_halo)
+  if (inst->_halo) {
     return nullptr;
+  }
 
   _dbBox* box = block->_box_tbl->create();
   box->_flags._octilinear = false;

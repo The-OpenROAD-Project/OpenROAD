@@ -32,12 +32,11 @@
 #include "FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 // pinGCellNodes size always >= 2
-void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
-                                 vector<frNode*>& steinerNodes)
+void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
+                                 std::vector<frNode*>& steinerNodes)
 {
   auto root = pinGCellNodes[0];
   auto net = root->getNet();
@@ -55,8 +54,8 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   stt_builder_->setAlpha(0);
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
 
-  map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
-  map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
+  std::map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
       adjacencyList;
 
   for (auto pinNode : pinGCellNodes) {
@@ -83,7 +82,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
       if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
         // add steiner
-        auto steinerNode = make_unique<frNode>();
+        auto steinerNode = std::make_unique<frNode>();
         bpNode = steinerNode.get();
         steinerNode->setType(frNodeTypeEnum::frcSteiner);
         steinerNode->setLoc(bp);
@@ -100,7 +99,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     if (pinGCell2Nodes.find(ep) == pinGCell2Nodes.end()) {
       if (steinerGCell2Nodes.find(ep) == steinerGCell2Nodes.end()) {
         // add steiner
-        auto steinerNode = make_unique<frNode>();
+        auto steinerNode = std::make_unique<frNode>();
         epNode = steinerNode.get();
         steinerNode->setType(frNodeTypeEnum::frcSteiner);
         steinerNode->setLoc(ep);
@@ -116,7 +115,7 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
     }
 
     if (bpNode == nullptr || epNode == nullptr) {
-      cout << "Error: bpNode or epNode is void\n";
+      std::cout << "Error: bpNode or epNode is void\n";
     }
 
     adjacencyList[bpNode].insert(epNode);
@@ -129,8 +128,8 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   }
 
   // build tree
-  set<frNode*> visitedNodes;
-  deque<frNode*> nodeQueue;
+  std::set<frNode*> visitedNodes;
+  std::deque<frNode*> nodeQueue;
 
   nodeQueue.push_front(root);
   visitedNodes.insert(root);
@@ -150,19 +149,20 @@ void FlexGR::genSTTopology_FLUTE(vector<frNode*>& pinGCellNodes,
   }
 }
 
-void FlexGR::genMSTTopology(vector<frNode*>& nodes)
+void FlexGR::genMSTTopology(std::vector<frNode*>& nodes)
 {
   genMSTTopology_PD(nodes);
 }
 
-void FlexGR::genMSTTopology_PD(vector<frNode*>& nodes, double alpha)
+void FlexGR::genMSTTopology_PD(std::vector<frNode*>& nodes, double alpha)
 {
   // manhattan distance array
-  vector<vector<int>> dists(nodes.size(), vector<int>(nodes.size(), INT_MAX));
-  vector<bool> isVisited(nodes.size(), false);
-  vector<int> pathLens(nodes.size(), INT_MAX);
-  vector<int> parentIdx(nodes.size(), -1);
-  vector<int> keys(nodes.size(), INT_MAX);
+  std::vector<std::vector<int>> dists(nodes.size(),
+                                      std::vector<int>(nodes.size(), INT_MAX));
+  std::vector<bool> isVisited(nodes.size(), false);
+  std::vector<int> pathLens(nodes.size(), INT_MAX);
+  std::vector<int> parentIdx(nodes.size(), -1);
+  std::vector<int> keys(nodes.size(), INT_MAX);
 
   // init dist array
   for (int i = 0; i < (int) nodes.size(); i++) {
@@ -208,8 +208,8 @@ void FlexGR::genMSTTopology_PD(vector<frNode*>& nodes, double alpha)
   }
 }
 
-int FlexGR::genMSTTopology_PD_minIdx(const vector<int>& keys,
-                                     const vector<bool>& isVisited)
+int FlexGR::genMSTTopology_PD_minIdx(const std::vector<int>& keys,
+                                     const std::vector<bool>& isVisited)
 {
   int min = INT_MAX;
   int minIdx = -1;
@@ -224,14 +224,14 @@ int FlexGR::genMSTTopology_PD_minIdx(const vector<int>& keys,
 }
 
 // root is 0
-void FlexGR::genSTTopology_HVW(vector<frNode*>& nodes,
-                               vector<frNode*>& steinerNodes)
+void FlexGR::genSTTopology_HVW(std::vector<frNode*>& nodes,
+                               std::vector<frNode*>& steinerNodes)
 {
-  vector<unsigned> overlapL(nodes.size(), 0);
-  vector<unsigned> overlapU(nodes.size(), 0);
-  vector<unsigned> bestCombL(nodes.size(), 0);
-  vector<unsigned> bestCombU(nodes.size(), 0);
-  vector<bool> isU(nodes.size(), false);
+  std::vector<unsigned> overlapL(nodes.size(), 0);
+  std::vector<unsigned> overlapU(nodes.size(), 0);
+  std::vector<unsigned> bestCombL(nodes.size(), 0);
+  std::vector<unsigned> bestCombU(nodes.size(), 0);
+  std::vector<bool> isU(nodes.size(), false);
 
   // recursively compute best overlap
   genSTTopology_HVW_compute(
@@ -259,11 +259,11 @@ void FlexGR::genSTTopology_HVW(vector<frNode*>& nodes,
 }
 
 void FlexGR::genSTTopology_HVW_compute(frNode* currNode,
-                                       vector<frNode*>& nodes,
-                                       vector<unsigned>& overlapL,
-                                       vector<unsigned>& overlapU,
-                                       vector<unsigned>& bestCombL,
-                                       vector<unsigned>& bestCombU)
+                                       std::vector<frNode*>& nodes,
+                                       std::vector<unsigned>& overlapL,
+                                       std::vector<unsigned>& overlapU,
+                                       std::vector<unsigned>& bestCombL,
+                                       std::vector<unsigned>& bestCombU)
 {
   if (currNode == nullptr) {
     return;
@@ -285,9 +285,9 @@ void FlexGR::genSTTopology_HVW_compute(frNode* currNode,
   unsigned currMaxOverlap = 0;
   unsigned bestComb = 0;
   int currNodeIdx = distance(nodes[0]->getIter(), currNode->getIter());
-  // cout << "1. currNodeIdx = " << currNodeIdx << "\n";
+  // std::cout << "1. currNodeIdx = " << currNodeIdx << "\n";
 
-  // curr overlapL = min(comb(children) + L)
+  // curr overlapL = std::min(comb(children) + L)
   // bit 1 means using U, 0 means using L
   for (unsigned comb = 0; comb < numComb; comb++) {
     currOverlap = genSTTopology_HVW_levelOvlp(currNode, false, comb);
@@ -312,7 +312,7 @@ void FlexGR::genSTTopology_HVW_compute(frNode* currNode,
   bestCombL[currNodeIdx] = bestComb;
 
   currMaxOverlap = 0;
-  // curr overlapU = min(comb(children) + R)
+  // curr overlapU = std::min(comb(children) + R)
   for (unsigned comb = 0; comb < numComb; comb++) {
     currOverlap = genSTTopology_HVW_levelOvlp(currNode, true, comb);
     unsigned combIdx = 0;
@@ -340,11 +340,12 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
                                              unsigned comb)
 {
   unsigned overlap = 0;
-  map<frCoord, boost::icl::interval_map<frCoord, set<frNode*>>>
+  std::map<frCoord, boost::icl::interval_map<frCoord, std::set<frNode*>>>
       horzIntvMaps;  // denoted by children node index
-  map<frCoord, boost::icl::interval_map<frCoord, set<frNode*>>> vertIntvMaps;
+  std::map<frCoord, boost::icl::interval_map<frCoord, std::set<frNode*>>>
+      vertIntvMaps;
 
-  pair<frCoord, frCoord> horzIntv, vertIntv;
+  std::pair<frCoord, frCoord> horzIntv, vertIntv;
   Point turnLoc;
 
   // connection to parent if exists
@@ -352,15 +353,15 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
   if (parent) {
     genSTTopology_HVW_levelOvlp_helper(
         parent, currNode, isCurrU, horzIntv, vertIntv, turnLoc);
-    set<frNode*> currNodeSet;
+    std::set<frNode*> currNodeSet;
     currNodeSet.insert(currNode);
     if (horzIntv.first != horzIntv.second) {
-      horzIntvMaps[turnLoc.y()] += make_pair(
+      horzIntvMaps[turnLoc.y()] += std::make_pair(
           boost::icl::interval<int>::closed(horzIntv.first, horzIntv.second),
           currNodeSet);
     }
     if (vertIntv.first != vertIntv.second) {
-      vertIntvMaps[turnLoc.x()] += make_pair(
+      vertIntvMaps[turnLoc.x()] += std::make_pair(
           boost::icl::interval<int>::closed(vertIntv.first, vertIntv.second),
           currNodeSet);
     }
@@ -372,15 +373,15 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
     bool isCurrU = (comb >> combIdx) & 1;
     genSTTopology_HVW_levelOvlp_helper(
         currNode, child, isCurrU, horzIntv, vertIntv, turnLoc);
-    set<frNode*> childSet;
+    std::set<frNode*> childSet;
     childSet.insert(child);
     if (horzIntv.first != horzIntv.second) {
-      horzIntvMaps[turnLoc.y()] += make_pair(
+      horzIntvMaps[turnLoc.y()] += std::make_pair(
           boost::icl::interval<int>::closed(horzIntv.first, horzIntv.second),
           childSet);
     }
     if (vertIntv.first != vertIntv.second) {
-      vertIntvMaps[turnLoc.x()] += make_pair(
+      vertIntvMaps[turnLoc.x()] += std::make_pair(
           boost::icl::interval<int>::closed(vertIntv.first, vertIntv.second),
           childSet);
     }
@@ -389,9 +390,7 @@ unsigned FlexGR::genSTTopology_HVW_levelOvlp(frNode* currNode,
 
   // iterate over intvMaps to get overlaps
   for (auto& [coord, intvMap] : horzIntvMaps) {
-    for (auto it = intvMap.begin(); it != intvMap.end(); it++) {
-      auto intv = it->first;
-      auto idxs = it->second;
+    for (auto& [intv, idxs] : intvMap) {
       overlap += (intv.upper() - intv.lower()) * ((int) idxs.size() - 1);
     }
   }
@@ -403,8 +402,8 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
     frNode* parent,
     frNode* child,
     bool isCurrU,
-    pair<frCoord, frCoord>& horzIntv,
-    pair<frCoord, frCoord>& vertIntv,
+    std::pair<frCoord, frCoord>& horzIntv,
+    std::pair<frCoord, frCoord>& vertIntv,
     Point& turnLoc)
 {
   Point parentLoc = parent->getLoc();
@@ -413,61 +412,61 @@ void FlexGR::genSTTopology_HVW_levelOvlp_helper(
   if (isCurrU) {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = Point(min(childLoc.x(), parentLoc.x()),
-                      max(childLoc.y(), parentLoc.y()));
+      turnLoc = Point(std::min(childLoc.x(), parentLoc.x()),
+                      std::max(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = Point(max(childLoc.x(), parentLoc.x()),
-                      max(childLoc.y(), parentLoc.y()));
+      turnLoc = Point(std::max(childLoc.x(), parentLoc.x()),
+                      std::max(childLoc.y(), parentLoc.y()));
     }
   } else {
     if ((childLoc.x() >= parentLoc.x() && childLoc.y() >= parentLoc.y())
         || (childLoc.x() <= parentLoc.x() && childLoc.y() <= parentLoc.y())) {
-      turnLoc = Point(max(childLoc.x(), parentLoc.x()),
-                      min(childLoc.y(), parentLoc.y()));
+      turnLoc = Point(std::max(childLoc.x(), parentLoc.x()),
+                      std::min(childLoc.y(), parentLoc.y()));
     } else {
-      turnLoc = Point(min(childLoc.x(), parentLoc.x()),
-                      min(childLoc.y(), parentLoc.y()));
+      turnLoc = Point(std::min(childLoc.x(), parentLoc.x()),
+                      std::min(childLoc.y(), parentLoc.y()));
     }
   }
 
   // set intvs
   // horz colinear
   if (childLoc.y() == parentLoc.y()) {
-    horzIntv = make_pair(min(childLoc.x(), parentLoc.x()),
-                         max(childLoc.x(), parentLoc.x()));
-    vertIntv = make_pair(min(childLoc.y(), parentLoc.y()),
-                         max(childLoc.y(), parentLoc.y()));
+    horzIntv = std::make_pair(std::min(childLoc.x(), parentLoc.x()),
+                              std::max(childLoc.x(), parentLoc.x()));
+    vertIntv = std::make_pair(std::min(childLoc.y(), parentLoc.y()),
+                              std::max(childLoc.y(), parentLoc.y()));
   } else if (childLoc.x() == parentLoc.x()) {
-    horzIntv = make_pair(min(childLoc.x(), parentLoc.x()),
-                         max(childLoc.x(), parentLoc.x()));
-    vertIntv = make_pair(min(childLoc.y(), parentLoc.y()),
-                         max(childLoc.y(), parentLoc.y()));
+    horzIntv = std::make_pair(std::min(childLoc.x(), parentLoc.x()),
+                              std::max(childLoc.x(), parentLoc.x()));
+    vertIntv = std::make_pair(std::min(childLoc.y(), parentLoc.y()),
+                              std::max(childLoc.y(), parentLoc.y()));
   } else {
     if (turnLoc.y() == childLoc.y()) {
-      horzIntv = make_pair(min(turnLoc.x(), childLoc.x()),
-                           max(turnLoc.x(), childLoc.x()));
-      vertIntv = make_pair(min(turnLoc.y(), parentLoc.y()),
-                           max(turnLoc.y(), parentLoc.y()));
+      horzIntv = std::make_pair(std::min(turnLoc.x(), childLoc.x()),
+                                std::max(turnLoc.x(), childLoc.x()));
+      vertIntv = std::make_pair(std::min(turnLoc.y(), parentLoc.y()),
+                                std::max(turnLoc.y(), parentLoc.y()));
     } else {
-      horzIntv = make_pair(min(turnLoc.x(), parentLoc.x()),
-                           max(turnLoc.x(), parentLoc.x()));
-      vertIntv = make_pair(min(turnLoc.y(), childLoc.y()),
-                           max(turnLoc.y(), childLoc.y()));
+      horzIntv = std::make_pair(std::min(turnLoc.x(), parentLoc.x()),
+                                std::max(turnLoc.x(), parentLoc.x()));
+      vertIntv = std::make_pair(std::min(turnLoc.y(), childLoc.y()),
+                                std::max(turnLoc.y(), childLoc.y()));
     }
   }
 }
 
 void FlexGR::genSTTopology_HVW_commit(frNode* currNode,
                                       bool isCurrU,
-                                      vector<frNode*>& nodes,
-                                      // vector<unsigned> &overlapL,
-                                      // vector<unsigned> &overlapU,
-                                      vector<unsigned>& bestCombL,
-                                      vector<unsigned>& bestCombU,
-                                      vector<bool>& isU)
+                                      std::vector<frNode*>& nodes,
+                                      // std::vector<unsigned> &overlapL,
+                                      // std::vector<unsigned> &overlapU,
+                                      std::vector<unsigned>& bestCombL,
+                                      std::vector<unsigned>& bestCombU,
+                                      std::vector<bool>& isU)
 {
   int currNodeIdx = distance(nodes[0]->getIter(), currNode->getIter());
-  // cout << "2. currNodeIdx = " << currNodeIdx << "\n";
+  // std::cout << "2. currNodeIdx = " << currNodeIdx << "\n";
   isU[currNodeIdx] = isCurrU;
 
   unsigned comb = 0;
@@ -492,12 +491,12 @@ void FlexGR::genSTTopology_HVW_commit(frNode* currNode,
 }
 
 // build tree from L-shaped segment results
-void FlexGR::genSTTopology_build_tree(vector<frNode*>& pinNodes,
-                                      vector<bool>& isU,
-                                      vector<frNode*>& steinerNodes)
+void FlexGR::genSTTopology_build_tree(std::vector<frNode*>& pinNodes,
+                                      std::vector<bool>& isU,
+                                      std::vector<frNode*>& steinerNodes)
 {
-  map<frCoord, boost::icl::interval_set<frCoord>> horzIntvs, vertIntvs;
-  map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
+  std::map<frCoord, boost::icl::interval_set<frCoord>> horzIntvs, vertIntvs;
+  std::map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
 
   genSTTopology_build_tree_mergeSeg(pinNodes, isU, horzIntvs, vertIntvs);
 
@@ -517,25 +516,25 @@ void FlexGR::genSTTopology_build_tree(vector<frNode*>& pinNodes,
   for (int i = 0; i < (int) pinNodes.size(); i++) {
     if (i != 0) {
       if (pinNodes[i]->getParent() == nullptr) {
-        cout << "Error: non-root pin node does not have parent\n";
+        std::cout << "Error: non-root pin node does not have parent\n";
       }
     }
   }
-  for (int i = 0; i < (int) steinerNodes.size(); i++) {
-    if (steinerNodes[i]->getParent() == nullptr) {
-      cout << "Error: non-root steiner node does not have parent\n";
+  for (auto node : steinerNodes) {
+    if (node->getParent() == nullptr) {
+      std::cout << "Error: non-root steiner node does not have parent\n";
     }
   }
 }
 
 void FlexGR::genSTTopology_build_tree_mergeSeg(
-    vector<frNode*>& pinNodes,
-    vector<bool>& isU,
-    map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
-    map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs)
+    std::vector<frNode*>& pinNodes,
+    std::vector<bool>& isU,
+    std::map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
+    std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs)
 {
   Point turnLoc;
-  pair<frCoord, frCoord> horzIntv, vertIntv;
+  std::pair<frCoord, frCoord> horzIntv, vertIntv;
   for (int i = 1; i < (int) pinNodes.size(); i++) {
     genSTTopology_HVW_levelOvlp_helper(pinNodes[i],
                                        pinNodes[i]->getParent(),
@@ -555,34 +554,34 @@ void FlexGR::genSTTopology_build_tree_mergeSeg(
 }
 
 void FlexGR::genSTTopology_build_tree_splitSeg(
-    vector<frNode*>& pinNodes,
-    map<Point, frNode*>& pinGCell2Nodes,
-    map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
-    map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs,
-    map<Point, frNode*>& steinerGCell2Nodes,
-    vector<frNode*>& steinerNodes)
+    std::vector<frNode*>& pinNodes,
+    std::map<Point, frNode*>& pinGCell2Nodes,
+    std::map<frCoord, boost::icl::interval_set<frCoord>>& horzIntvs,
+    std::map<frCoord, boost::icl::interval_set<frCoord>>& vertIntvs,
+    std::map<Point, frNode*>& steinerGCell2Nodes,
+    std::vector<frNode*>& steinerNodes)
 {
-  map<frCoord, set<pair<frCoord, frCoord>>> horzSegs, vertSegs;
-  map<frNode*, set<frNode*, frBlockObjectComp>, frBlockObjectComp>
+  std::map<frCoord, std::set<std::pair<frCoord, frCoord>>> horzSegs, vertSegs;
+  std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
       adjacencyList;
 
   auto root = pinNodes[0];
   auto net = root->getNet();
 
   // horz first dimension is y coord, second dimension is x coord
-  map<frCoord, set<frCoord>> horzPinHelper, vertPinHelper;
+  std::map<frCoord, std::set<frCoord>> horzPinHelper, vertPinHelper;
   // init
-  for (auto [loc, node] : pinGCell2Nodes) {
+  for (const auto& [loc, node] : pinGCell2Nodes) {
     horzPinHelper[loc.y()].insert(loc.x());
     vertPinHelper[loc.x()].insert(loc.y());
   }
 
   // trackIdx == y coord
   for (auto& [trackIdx, currIntvs] : horzIntvs) {
-    for (auto it = currIntvs.begin(); it != currIntvs.end(); it++) {
-      set<frCoord> lineIdx;
-      auto beginIdx = it->lower();
-      auto endIdx = it->upper();
+    for (auto& intv : currIntvs) {
+      std::set<frCoord> lineIdx;
+      auto beginIdx = intv.lower();
+      auto endIdx = intv.upper();
       // split by vertSeg
       for (auto it2 = vertIntvs.lower_bound(beginIdx);
            it2 != vertIntvs.end() && it2->first <= endIdx;
@@ -602,16 +601,17 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       }
       // add horz seg
       if (lineIdx.empty()) {
-        cout << "Error: genSTTopology_build_tree_splitSeg lineIdx is empty\n";
+        std::cout
+            << "Error: genSTTopology_build_tree_splitSeg lineIdx is empty\n";
         exit(1);
       } else if (lineIdx.size() == 1) {
-        // cout << "Error: genSTTopology_build_tree_splitSeg lineIdx size ==
-        // 1\n"; exit(1);
+        // std::cout << "Error: genSTTopology_build_tree_splitSeg lineIdx size
+        // == 1\n"; exit(1);
       } else {
         auto prevIt = lineIdx.begin();
         for (auto currIt = (++(lineIdx.begin())); currIt != lineIdx.end();
              currIt++) {
-          horzSegs[trackIdx].insert(make_pair(*prevIt, *currIt));
+          horzSegs[trackIdx].insert(std::make_pair(*prevIt, *currIt));
           prevIt = currIt;
         }
       }
@@ -620,10 +620,10 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
 
   // trackIdx == x coord
   for (auto& [trackIdx, currIntvs] : vertIntvs) {
-    for (auto it = currIntvs.begin(); it != currIntvs.end(); it++) {
-      set<frCoord> lineIdx;
-      auto beginIdx = it->lower();
-      auto endIdx = it->upper();
+    for (auto& intv : currIntvs) {
+      std::set<frCoord> lineIdx;
+      auto beginIdx = intv.lower();
+      auto endIdx = intv.upper();
       // split by horzSeg
       for (auto it2 = horzIntvs.lower_bound(beginIdx);
            it2 != horzIntvs.end() && it2->first <= endIdx;
@@ -643,16 +643,17 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       }
       // add vert seg
       if (lineIdx.empty()) {
-        cout << "Error: genSTTopology_build_tree_splitSeg lineIdx is empty\n";
+        std::cout
+            << "Error: genSTTopology_build_tree_splitSeg lineIdx is empty\n";
         exit(1);
       } else if (lineIdx.size() == 1) {
-        // cout << "Error: genSTTopology_build_tree_splitSeg lineIdx size ==
-        // 1\n"; exit(1);
+        // std::cout << "Error: genSTTopology_build_tree_splitSeg lineIdx size
+        // == 1\n"; exit(1);
       } else {
         auto prevIt = lineIdx.begin();
         for (auto currIt = (++(lineIdx.begin())); currIt != lineIdx.end();
              currIt++) {
-          vertSegs[trackIdx].insert(make_pair(*prevIt, *currIt));
+          vertSegs[trackIdx].insert(std::make_pair(*prevIt, *currIt));
           prevIt = currIt;
         }
       }
@@ -668,7 +669,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
-          auto steinerNode = make_unique<frNode>();
+          auto steinerNode = std::make_unique<frNode>();
           steinerNode->setType(frNodeTypeEnum::frcSteiner);
           steinerNode->setLoc(bp);
           steinerNode->setLayerNum(2);
@@ -680,7 +681,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       if (pinGCell2Nodes.find(ep) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(ep) == steinerGCell2Nodes.end()) {
           // add steiner
-          auto steinerNode = make_unique<frNode>();
+          auto steinerNode = std::make_unique<frNode>();
           steinerNode->setType(frNodeTypeEnum::frcSteiner);
           steinerNode->setLoc(ep);
           steinerNode->setLayerNum(2);
@@ -699,7 +700,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       if (pinGCell2Nodes.find(bp) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(bp) == steinerGCell2Nodes.end()) {
           // add steiner
-          auto steinerNode = make_unique<frNode>();
+          auto steinerNode = std::make_unique<frNode>();
           steinerNode->setType(frNodeTypeEnum::frcSteiner);
           steinerNode->setLoc(bp);
           steinerNode->setLayerNum(2);
@@ -711,7 +712,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       if (pinGCell2Nodes.find(ep) == pinGCell2Nodes.end()) {
         if (steinerGCell2Nodes.find(ep) == steinerGCell2Nodes.end()) {
           // add steiner
-          auto steinerNode = make_unique<frNode>();
+          auto steinerNode = std::make_unique<frNode>();
           steinerNode->setType(frNodeTypeEnum::frcSteiner);
           steinerNode->setLoc(ep);
           steinerNode->setLayerNum(2);
@@ -736,18 +737,18 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       } else if (steinerGCell2Nodes.find(bp) != steinerGCell2Nodes.end()) {
         bpNode = steinerGCell2Nodes[bp];
       } else {
-        cout << "Error: node not found\n";
+        std::cout << "Error: node not found\n";
       }
       if (pinGCell2Nodes.find(ep) != pinGCell2Nodes.end()) {
         epNode = pinGCell2Nodes[ep];
       } else if (steinerGCell2Nodes.find(ep) != steinerGCell2Nodes.end()) {
         epNode = steinerGCell2Nodes[ep];
       } else {
-        cout << "Error: node not found\n";
+        std::cout << "Error: node not found\n";
       }
 
       if (bpNode == nullptr || epNode == nullptr) {
-        cout << "Error: node is nullptr";
+        std::cout << "Error: node is nullptr";
       }
 
       adjacencyList[bpNode].insert(epNode);
@@ -766,18 +767,18 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
       } else if (steinerGCell2Nodes.find(bp) != steinerGCell2Nodes.end()) {
         bpNode = steinerGCell2Nodes[bp];
       } else {
-        cout << "Error: node not found\n";
+        std::cout << "Error: node not found\n";
       }
       if (pinGCell2Nodes.find(ep) != pinGCell2Nodes.end()) {
         epNode = pinGCell2Nodes[ep];
       } else if (steinerGCell2Nodes.find(ep) != steinerGCell2Nodes.end()) {
         epNode = steinerGCell2Nodes[ep];
       } else {
-        cout << "Error: node not found\n";
+        std::cout << "Error: node not found\n";
       }
 
       if (bpNode == nullptr || epNode == nullptr) {
-        cout << "Error: node is nullptr";
+        std::cout << "Error: node is nullptr";
       }
 
       adjacencyList[bpNode].insert(epNode);
@@ -790,8 +791,8 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
     node->reset();
   }
 
-  set<frNode*, frBlockObjectComp> visitedNodes;
-  deque<frNode*> nodeQueue;
+  std::set<frNode*, frBlockObjectComp> visitedNodes;
+  std::deque<frNode*> nodeQueue;
 
   nodeQueue.push_front(root);
   visitedNodes.insert(root);
@@ -810,3 +811,5 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
     }
   }
 }
+
+}  // namespace drt

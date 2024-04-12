@@ -147,6 +147,18 @@ using TgtSlews = array<Slew, RiseFall::index_count>;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
+struct ParasiticsResistance
+{
+  double h_res;
+  double v_res;
+};
+
+struct ParasiticsCapacitance
+{
+  double h_cap;
+  double v_cap;
+};
+
 class Resizer : public StaState
 {
 public:
@@ -168,12 +180,20 @@ public:
                // Return values.
                double &res,
                double &cap) const;
-  // Set the resistance and capacitance used for parasitics on signal nets.
-  void setWireSignalRC(const Corner *corner,
+  // Set the resistance and capacitance used for horizontal parasitics on signal nets.
+  void setHWireSignalRC(const Corner *corner,
+                       double res, // ohms/meter
+                       double cap); // farads/meter
+  // Set the resistance and capacitance used for vertical wires parasitics on signal nets.
+  void setVWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
                        double cap); // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setWireClkRC(const Corner *corner,
+  void setHWireClkRC(const Corner *corner,
+                    double res,
+                    double cap); // farads/meter
+  // Set the resistance and capacitance used for parasitics on clock nets.
+  void setVWireClkRC(const Corner *corner,
                     double res,
                     double cap); // farads/meter
   // ohms/meter, farads/meter
@@ -182,10 +202,18 @@ public:
                     double &res,
                     double &cap) const;
   double wireSignalResistance(const Corner *corner) const;
+  double wireSignalHResistance(const Corner *corner) const;
+  double wireSignalVResistance(const Corner *corner) const;
   double wireClkResistance(const Corner *corner) const;
+  double wireClkHResistance(const Corner *corner) const;
+  double wireClkVResistance(const Corner *corner) const;
   // farads/meter
   double wireSignalCapacitance(const Corner *corner) const;
+  double wireSignalHCapacitance(const Corner *corner) const;
+  double wireSignalVCapacitance(const Corner *corner) const;
   double wireClkCapacitance(const Corner *corner) const;
+  double wireClkHCapacitance(const Corner *corner) const;
+  double wireClkVCapacitance(const Corner *corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
@@ -238,6 +266,8 @@ public:
                    bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -423,10 +453,13 @@ protected:
   float pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const;
   void swapPins(Instance *inst, LibertyPort *port1,
                 LibertyPort *port2, bool journal);
-  void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
-                            float load_cap, const DcalcAnalysisPt *dcalc_ap,
+  void findSwapPinCandidate(LibertyPort* input_port,
+                            LibertyPort* drvr_port,
+                            const sta::LibertyPortSet& equiv_ports,
+                            float load_cap,
+                            const DcalcAnalysisPt* dcalc_ap,
                             // Return value
-                            LibertyPort **swap_port);
+                            LibertyPort** swap_port);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -520,7 +553,7 @@ protected:
                                 ParasiticNode *node,
                                 SteinerTree *tree,
                                 SteinerPt pt,
-                                const ParasiticAnalysisPt *parasitics_ap);
+                                size_t &resistor_id);
 
   bool replaceCell(Instance *inst,
                    LibertyCell *replacement,
@@ -600,11 +633,11 @@ protected:
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
   // Signal wire RC indexed by corner->index
-  vector<double> wire_signal_res_;  // ohms/metre
-  vector<double> wire_signal_cap_;  // Farads/meter
+  vector<ParasiticsResistance> wire_signal_res_;  // ohms/metre
+  vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
   // Clock wire RC.
-  vector<double> wire_clk_res_;     // ohms/metre
-  vector<double> wire_clk_cap_;     // Farads/meter
+  vector<ParasiticsResistance> wire_clk_res_;     // ohms/metre
+  vector<ParasiticsCapacitance> wire_clk_cap_;     // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 

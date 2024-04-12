@@ -28,11 +28,12 @@
 
 #include "frDesign.h"
 
-using namespace fr;
-
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
+
+namespace drt {
+
 // General Fixture for tests using db objects.
 class Fixture
 {
@@ -88,7 +89,7 @@ class Fixture
 
   void makeMinStepConstraint(frLayerNum layer_num);
 
-  void makeMinStep58Constraint(frLayerNum layer_num);
+  frLef58MinStepConstraint* makeMinStep58Constraint(frLayerNum layer_num);
 
   void makeRectOnlyConstraint(frLayerNum layer_num);
 
@@ -116,6 +117,11 @@ class Fixture
       frCoord within = 50,
       frCoord end_prl_spacing = 0,
       frCoord end_prl = 0);
+
+  frSpacingRangeConstraint* makeSpacingRangeConstraint(frLayerNum layer_num,
+                                                       frCoord spacing,
+                                                       frCoord minWidth,
+                                                       frCoord maxWidth);
 
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
   makeLef58SpacingEolParEdgeConstraint(frLef58SpacingEndOfLineConstraint* con,
@@ -145,6 +151,9 @@ class Fixture
 
   void makeLef58CutSpcTbl(frLayerNum layer_num,
                           odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void makeLef58TwoWiresForbiddenSpc(
+      frLayerNum layer_num,
+      odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule);
 
   void makeMinimumCut(frLayerNum layerNum,
                       frCoord width,
@@ -212,9 +221,11 @@ class Fixture
       int adjacent_cuts,
       int two_cuts,
       frCoord within);
-
+  void makeLef58WrongDirSpcConstraint(
+      frLayerNum layer_num,
+      odb::dbTechLayerWrongDirSpacingRule* dbRule);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<fr::Logger> logger;
+  std::unique_ptr<Logger> logger;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;
@@ -225,3 +236,5 @@ class Fixture
 // Just compare them as integers to avoid this requirement.
 #define TEST_ENUM_EQUAL(L, R) \
   BOOST_TEST(static_cast<int>(L) == static_cast<int>(R))
+
+}  // namespace drt

@@ -63,14 +63,13 @@ void dbHierInstShapeItr::push_transform(dbTransform t)
 
 bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
 {
-  if (isFiltered(filter, INST_OBS | INST_VIA | INST_PIN))
+  if (isFiltered(filter, INST_OBS | INST_VIA | INST_PIN)) {
     return true;
+  }
 
   _callback->beginInst(inst, level);
 
-  int x, y;
-  inst->getOrigin(x, y);
-  push_transform(dbTransform(inst->getOrient(), Point(x, y)));
+  push_transform(inst->getTransform());
   dbMaster* master = inst->getMaster();
 
   if (!isFiltered(filter, INST_OBS | INST_VIA)) {
@@ -160,14 +159,13 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
 
 bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
 {
-  if (!inst->isHierarchical())
+  if (!inst->isHierarchical()) {
     return iterate_leaf(inst, filter, level);
+  }
 
   _callback->beginInst(inst, level);
 
-  int x, y;
-  inst->getOrigin(x, y);
-  push_transform(dbTransform(inst->getOrient(), Point(x, y)));
+  push_transform(inst->getTransform());
   dbBlock* child = inst->getChild();
   dbShape shape;
 
@@ -243,8 +241,9 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     bool draw_segments;
     bool draw_vias;
 
-    if (!drawNet(filter, net, draw_vias, draw_segments))
+    if (!drawNet(filter, net, draw_vias, draw_segments)) {
       continue;
+    }
 
     if (!isFiltered(filter, NET_SWIRE)) {
       if (!iterate_swires(filter, net, draw_vias, draw_segments)) {
@@ -286,54 +285,66 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
     case dbSigType::ANALOG:
     case dbSigType::TIEOFF:
     case dbSigType::SIGNAL: {
-      if (isFiltered(filter, SIGNAL_WIRE | SIGNAL_VIA))
+      if (isFiltered(filter, SIGNAL_WIRE | SIGNAL_VIA)) {
         return false;
+      }
 
-      if (!isFiltered(filter, SIGNAL_WIRE))
+      if (!isFiltered(filter, SIGNAL_WIRE)) {
         draw_segment = true;
+      }
 
-      if (!isFiltered(filter, SIGNAL_VIA))
+      if (!isFiltered(filter, SIGNAL_VIA)) {
         draw_via = true;
+      }
 
       return true;
     }
 
     case dbSigType::POWER:
     case dbSigType::GROUND: {
-      if (isFiltered(filter, POWER_WIRE | POWER_VIA))
+      if (isFiltered(filter, POWER_WIRE | POWER_VIA)) {
         return false;
+      }
 
-      if (!isFiltered(filter, POWER_WIRE))
+      if (!isFiltered(filter, POWER_WIRE)) {
         draw_segment = true;
+      }
 
-      if (!isFiltered(filter, POWER_VIA))
+      if (!isFiltered(filter, POWER_VIA)) {
         draw_via = true;
+      }
 
       return true;
     }
 
     case dbSigType::CLOCK: {
-      if (isFiltered(filter, CLOCK_WIRE | CLOCK_VIA))
+      if (isFiltered(filter, CLOCK_WIRE | CLOCK_VIA)) {
         return false;
+      }
 
-      if (!isFiltered(filter, CLOCK_WIRE))
+      if (!isFiltered(filter, CLOCK_WIRE)) {
         draw_segment = true;
+      }
 
-      if (!isFiltered(filter, CLOCK_VIA))
+      if (!isFiltered(filter, CLOCK_VIA)) {
         draw_via = true;
+      }
 
       return true;
     }
 
     case dbSigType::RESET: {
-      if (isFiltered(filter, RESET_WIRE | RESET_VIA))
+      if (isFiltered(filter, RESET_WIRE | RESET_VIA)) {
         return false;
+      }
 
-      if (!isFiltered(filter, RESET_WIRE))
+      if (!isFiltered(filter, RESET_WIRE)) {
         draw_segment = true;
+      }
 
-      if (!isFiltered(filter, RESET_VIA))
+      if (!isFiltered(filter, RESET_VIA)) {
         draw_via = true;
+      }
 
       return true;
     }
@@ -355,8 +366,9 @@ bool dbHierInstShapeItr::iterate_swires(unsigned filter,
   for (itr = swires.begin(); itr != swires.end(); ++itr) {
     dbSWire* swire = *itr;
 
-    if (!iterate_swire(filter, swire, draw_vias, draw_segments))
+    if (!iterate_swire(filter, swire, draw_vias, draw_segments)) {
       return false;
+    }
   }
 
   return true;
@@ -413,8 +425,9 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
 {
   dbWire* wire = net->getWire();
 
-  if (wire == nullptr)
+  if (wire == nullptr) {
     return true;
+  }
 
   _callback->beginWire(wire);
 
@@ -469,9 +482,9 @@ void dbHierInstShapeItr::getShape(dbBox* box, dbShape& shape)
   } else {
     dbTechVia* tech_via = box->getTechVia();
 
-    if (tech_via)
+    if (tech_via) {
       shape.setVia(tech_via, r);
-    else {
+    } else {
       dbVia* via = box->getBlockVia();
       assert(via);
       shape.setVia(via, r);

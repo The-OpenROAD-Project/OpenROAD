@@ -125,7 +125,7 @@ for relation in schema["relations"]:
     inParentField["table"] = True
     inParentField["dbSetGetter"] = True
     inParentField["components"] = [inParentField["name"]]
-    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get("flags", [])
     if "schema" in relation:
         inParentField["schema"] = relation["schema"]
 
@@ -160,11 +160,10 @@ for relation in schema["relations"]:
         logging.debug(f"Add hash field {inParentHashField['name']} to {relation['first']}")
         logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['second']}")
 
-
 for klass in schema["classes"]:
 
     # Adding functional name to fields and extracting field components
-    struct = {"name": f"{klass['name']}Flags", "fields": []}
+    struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
     klass["hasTables"] = False
     flag_num_bits = 0
     for field in klass["fields"]:
@@ -217,6 +216,7 @@ for klass in schema["classes"]:
                 and template_class_name not in std
                 and "no-template" not in field["flags"]
                 and klass["name"] != template_class_name[1:]
+                and klass["name"]+"::" != template_class_name[0:len(klass["name"])+2]
             ):
                 klass["classes"].append(template_class_name)
         ####
@@ -266,7 +266,7 @@ for klass in schema["classes"]:
 
         # For fields that we need to free/destroy in the destructor
         if field["name"] == '_name' and 'no-destruct' not in field["flags"] or "table" in field:
-          klass["needs_non_default_destructor"] = True
+            klass["needs_non_default_destructor"] = True
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
 
@@ -302,6 +302,13 @@ for klass in schema["classes"]:
                 "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
             },
         )
+
+    # Add required header files if they are not already expressed
+    for struct in klass["structs"]:
+        if "public" in struct and struct["public"]:
+            if "db.h" not in klass["h_includes"]:
+                klass["h_includes"].append("db.h")
+            break
 
     # Generating files
     for template_file in ["impl.h", "impl.cpp"]:

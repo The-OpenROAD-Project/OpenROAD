@@ -86,8 +86,9 @@ uint dbGroupItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbGroupItr::begin(parent); id != dbGroupItr::end(parent);
-       id = dbGroupItr::next(id))
+       id = dbGroupItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

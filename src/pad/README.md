@@ -11,30 +11,39 @@ boundary of the chip and connect with either wirebond pads or a bump array.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Placing Terminals
+### Place IO Terminals
 
 In the case where the bond pads are integrated into the padcell, the IO terminals need to be placed.
-To place a terminals on the padring
+This command place terminals on the padring.
+
+Example usage: 
+```
+place_io_terminals u_*/PAD
+place_io_terminals u_*/VDD
+```
 
 ```tcl
-place_io_terminals inst_pins
+place_io_terminals
+    -allow_non_top_layer
+    inst_pins
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-allow_non_top_layer` | Allow the terminal to be placed below the top layer. |
 | `inst_pins` | Instance pins to place the terminals on. |
-
-#### Examples
-```
-place_io_terminals u_*/PAD
-place_io_terminals u_*/VDD
-```
 
 ### Defining a Bump Array
 
-To define a bump array.
+This command defines a bump array.
+
+Example usage:
+
+```
+make_io_bump_array -bump BUMP -origin "200 200" -rows 14 -columns 14 -pitch "200 200"
+```
 
 ```tcl
 make_io_bump_array 
@@ -56,18 +65,21 @@ make_io_bump_array
 | `-columns` | Number of columns to create. |
 | `-pitch` | Pitch of the array. |
 | `-prefix` | Name prefix for the bump array. The default value is `BUMP_`. |
+
+
+### Remove Entire Bump Array
+
+This command removes the entire bump array.
+
 Example usage:
 
-```tcl
-make_io_bump_array -bump BUMP -origin "200 200" -rows 14 -columns 14 -pitch "200 200"
+```
+remove_io_bump_array -bump BUMP
 ```
 
-### Removing Entire Bump Array
-
-To remove a bump array.
-
 ```tcl
-remove_io_bump_array -bump master
+remove_io_bump_array 
+    -bump master
 ```
 
 #### Options
@@ -76,18 +88,13 @@ remove_io_bump_array -bump master
 | ----- | ----- |
 | `-bump` | Name of the bump master. |
 
-Example usage:
+### Remove a single Bump Instance
+
+This command removes a single bump instance.
 
 ```tcl
-remove_io_bump_array -bump BUMP
-```
-
-### Removing a Single Bump Instance
-
-To remove a single bump instance.
-
-```tcl
-remove_io_bump instance_name
+remove_io_bump 
+    instance_name
 ```
 
 #### Options
@@ -96,9 +103,21 @@ remove_io_bump instance_name
 | ----- | ----- |
 | `instance_name` | Name of the bump. |
 
-### Assigning a Net to a Bump
+### Assign a net to IO Bump
 
-To assign a net to a bump.
+This command assigns a net to a bump instance.
+
+Example usage:
+
+```
+assign_io_bump -net p_ddr_addr_9_o BUMP_6_0
+assign_io_bump -net p_ddr_addr_8_o BUMP_6_2
+assign_io_bump -net DVSS BUMP_6_4
+assign_io_bump -net DVDD BUMP_7_3
+assign_io_bump -net DVDD -terminal u_dvdd/DVDD BUMP_8_3
+assign_io_bump -net p_ddr_addr_7_o BUMP_7_1
+assign_io_bump -net p_ddr_addr_6_o BUMP_7_0
+```
 
 ```tcl
 assign_io_bump 
@@ -117,21 +136,16 @@ assign_io_bump
 | `-dont_route` | Flag to indicate that this bump should not be routed, only perform assignment. |
 | `instance` | Name of the bump. |
 
+### Make IO Sites
+
+This command defines an IO site for the pads to be placed into.
+
 Example usage:
 
-```tcl
-assign_io_bump -net p_ddr_addr_9_o BUMP_6_0
-assign_io_bump -net p_ddr_addr_8_o BUMP_6_2
-assign_io_bump -net DVSS BUMP_6_4
-assign_io_bump -net DVDD BUMP_7_3
-assign_io_bump -net DVDD -terminal u_dvdd/DVDD BUMP_8_3
-assign_io_bump -net p_ddr_addr_7_o BUMP_7_1
-assign_io_bump -net p_ddr_addr_6_o BUMP_7_0
 ```
-
-### Define IO Rows
-
-Define an IO site for the pads to be placed into.
+make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35
+make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35 -rotation_horizontal R180
+```
 
 ```tcl
 make_io_sites 
@@ -158,12 +172,6 @@ make_io_sites
 | `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0`. |
 | `-ring_index` | Used to specify the index of the ring in case of multiple rings. |
 
-Example usage:
-
-```tcl
-make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35
-make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35 -rotation_horizontal R180
-```
 
 ### Remove IO Rows
 
@@ -173,9 +181,9 @@ When the padring is complete, the following command can remove the IO rows to av
 remove_io_rows
 ```
 
-### Placing Corners
+### Placing Corner Cells
 
-To place the corner cells
+This command places the corner cells.
 
 ```tcl
 place_corners 
@@ -192,13 +200,22 @@ place_corners
 
 Example usage:
 
-```tcl
+```
 place_corners sky130_fd_io__corner_bus_overlay
 ```
 
 ### Placing Pads
 
 To place a pad into the pad ring.
+
+Example usage:
+
+```
+place_pad -row IO_SOUTH -location 280.0 {u_clk.u_in}
+place_pad -row IO_SOUTH -location 360.0 -mirror {u_reset.u_in}
+place_pad -master sky130_fd_io__top_ground_hvc_wpad -row IO_SOUTH -location 439.5 {u_vzz_0}
+place_pad -master sky130_fd_io__top_power_hvc_wpad -row IO_SOUTH -location 517.5 {u_v18_0}
+```
 
 ```tcl
 place_pad 
@@ -219,18 +236,19 @@ place_pad
 | `-master` | Name of the instance master if the instance needs to be created. |
 | `name` | Name of the instance. |
 
-Example usage:
-
-```tcl
-place_pad -row IO_SOUTH -location 280.0 {u_clk.u_in}
-place_pad -row IO_SOUTH -location 360.0 -mirror {u_reset.u_in}
-place_pad -master sky130_fd_io__top_ground_hvc_wpad -row IO_SOUTH -location 439.5 {u_vzz_0}
-place_pad -master sky130_fd_io__top_power_hvc_wpad -row IO_SOUTH -location 517.5 {u_v18_0}
-```
 
 ### Placing IO Filler Cells
 
 To place the IO filler cells.
+
+Example usage: 
+
+```
+place_io_fill -row IO_NORTH s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
+place_io_fill -row IO_SOUTH s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
+place_io_fill -row IO_WEST s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
+place_io_fill -row IO_EAST s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
+```
 
 ```tcl
 place_io_fill 
@@ -247,15 +265,6 @@ place_io_fill
 | `-permit_overlaps` | Names of the masters for the IO filler cells that allow for overlapping. |
 | `masters` | Names of the masters for the IO filler cells. |
 
-Example usage: 
-
-```tcl
-place_io_fill -row IO_NORTH s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
-place_io_fill -row IO_SOUTH s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
-place_io_fill -row IO_WEST s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
-place_io_fill -row IO_EAST s8iom0s8_com_bus_slice_10um s8iom0s8_com_bus_slice_5um s8iom0s8_com_bus_slice_1um
-```
-
 ### Connecting Ring Signals
 
 Once the ring is complete, use the following command to connect the ring signals.
@@ -264,9 +273,15 @@ Once the ring is complete, use the following command to connect the ring signals
 connect_by_abutment
 ```
 
-### Placing Wirebond Pads
+### Place Wirebond Pads
 
 To place the wirebond pads over the IO cells.
+
+Example usage:
+
+```
+place_bondpad -bond PAD IO_*
+```
 
 ```tcl
 place_bondpad 
@@ -285,16 +300,19 @@ place_bondpad
 | `-rotation` | Rotation of the bondpad. |
 | `io_instances` | Names of the instances to add bond pads to. |
 
-Example usage:
-
-```tcl
-place_bondpad -bond PAD IO_*
-```
-
-### Creating False IO Sites
+### Make False IO Site
 
 If the library does not contain sites for the IO cells, the following command can be used to add them.
 This should not be used unless the sites are not in the library.
+
+Example usage:
+
+```
+make_fake_io_site -name IO_HSITE -width 1 -height 204
+make_fake_io_site -name IO_VSITE -width 1 -height 200
+make_fake_io_site -name IO_CSITE -width 200 -height 204
+```
+
 
 ```tcl
 make_fake_io_site 
@@ -311,17 +329,10 @@ make_fake_io_site
 | `-width` | Width of the site (in microns). |
 | `-height` | Height of the site (in microns). |
 
-Example usage:
-
-```tcl
-make_fake_io_site -name IO_HSITE -width 1 -height 204
-make_fake_io_site -name IO_VSITE -width 1 -height 200
-make_fake_io_site -name IO_CSITE -width 200 -height 204
-```
 
 ### Redistribution Layer Routing
 
-To route the RDL for the bump arrays.
+To route the Redistribution Layer (RDL) for the bump arrays.
 
 ```tcl
 rdl_route 
@@ -348,7 +359,7 @@ rdl_route
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/ICeWall.cpp) or the [swig file](./src/pad.i).
 
@@ -366,7 +377,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 Example scripts for running ICeWall functions can be found in `./test`.
 
-```tcl
+```
 ./test/assign_bumps.tcl
 ./test/bump_array_make.tcl
 ./test/bump_array_remove.tcl

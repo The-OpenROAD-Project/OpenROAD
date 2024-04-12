@@ -61,16 +61,15 @@ class Tile
  public:
   Tile();
   Tile(int x, int y, int lx, int ly, int ux, int uy, int layers);
-  ~Tile();
 
   // getter funcs
-  int x() const;
-  int y() const;
+  int x() const { return x_; }
+  int y() const { return y_; }
 
-  int lx() const;
-  int ly() const;
-  int ux() const;
-  int uy() const;
+  int lx() const { return lx_; }
+  int ly() const { return ly_; }
+  int ux() const { return ux_; }
+  int uy() const { return uy_; }
 
   // only area is needed
   int64_t area() const;
@@ -89,62 +88,22 @@ class Tile
   // blockage / capacity / route-ability
   // idx : metalLayer
 
-  int x_;
-  int y_;
+  int x_ = 0;
+  int y_ = 0;
 
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
 
   // to bloat cells in tile
-  float inflationRatio_;
-  float inflatedRatio_;
-
-  void reset();
+  float inflationRatio_ = 1.0;
+  float inflatedRatio_ = 0;
 };
-
-inline int Tile::x() const
-{
-  return x_;
-}
-
-inline int Tile::y() const
-{
-  return y_;
-}
-
-inline int Tile::lx() const
-{
-  return lx_;
-}
-
-inline int Tile::ly() const
-{
-  return ly_;
-}
-
-inline int Tile::ux() const
-{
-  return ux_;
-}
-
-inline int Tile::uy() const
-{
-  return uy_;
-}
-
-inline int64_t Tile::area() const
-{
-  return static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
-}
 
 class TileGrid
 {
  public:
-  TileGrid();
-  ~TileGrid();
-
   void setLogger(utl::Logger* log);
   void setTileCnt(int tileCntX, int tileCntY);
   void setTileCntX(int tileCntX);
@@ -175,26 +134,19 @@ class TileGrid
 
  private:
   // for traversing layer info!
-  utl::Logger* log_;
+  utl::Logger* log_ = nullptr;
 
   std::vector<Tile> tileStor_;
   std::vector<Tile*> tiles_;
 
-  int lx_;
-  int ly_;
-  int tileCntX_;
-  int tileCntY_;
-  int tileSizeX_;
-  int tileSizeY_;
-  int numRoutingLayers_;
-
-  void reset();
+  int lx_ = 0;
+  int ly_ = 0;
+  int tileCntX_ = 0;
+  int tileCntY_ = 0;
+  int tileSizeX_ = 0;
+  int tileSizeY_ = 0;
+  int numRoutingLayers_ = 0;
 };
-
-inline const std::vector<Tile*>& TileGrid::tiles() const
-{
-  return tiles_;
-}
 
 class RouteBaseVars
 {
@@ -249,28 +201,28 @@ class RouteBase
 
  private:
   RouteBaseVars rbVars_;
-  odb::dbDatabase* db_;
-  grt::GlobalRouter* grouter_;
+  odb::dbDatabase* db_ = nullptr;
+  grt::GlobalRouter* grouter_ = nullptr;
 
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
-  utl::Logger* log_;
+  utl::Logger* log_ = nullptr;
 
   std::unique_ptr<TileGrid> tg_;
 
-  int64_t inflatedAreaDelta_;
+  int64_t inflatedAreaDelta_ = 0;
 
-  int bloatIterCnt_;
-  int inflationIterCnt_;
-  int numCall_;
+  int bloatIterCnt_ = 0;
+  int inflationIterCnt_ = 0;
+  int numCall_ = 0;
 
   // if solutions are not improved at all,
   // needs to revert back to have the minimized RC values.
   // minRcInflationSize_ will store
   // GCell's width and height
-  float minRc_;
-  float minRcTargetDensity_;
-  int minRcViolatedCnt_;
+  float minRc_ = 1e30;
+  float minRcTargetDensity_ = 0;
+  int minRcViolatedCnt_ = 0;
   std::vector<std::pair<int, int>> minRcCellSize_;
 
   void init();

@@ -1,26 +1,18 @@
-[INFO ODB-0222] Reading LEF file: ./asap7/asap7_tech_1x_201209.lef
-[INFO ODB-0223]     Created 24 technology layers
-[INFO ODB-0224]     Created 9 technology vias
-[INFO ODB-0226] Finished LEF file:  ./asap7/asap7_tech_1x_201209.lef
-[INFO ODB-0222] Reading LEF file: ./asap7/asap7sc7p5t_28_R_1x_220121a.lef
-[INFO ODB-0225]     Created 212 library cells
-[INFO ODB-0226] Finished LEF file:  ./asap7/asap7sc7p5t_28_R_1x_220121a.lef
-[INFO ODB-0222] Reading LEF file: ./TwoBitTray/asap7sc7p5t_DFFHQNV2X.lef
-[INFO ODB-0225]     Created 9 library cells
-[INFO ODB-0226] Finished LEF file:  ./TwoBitTray/asap7sc7p5t_DFFHQNV2X.lef
-[INFO ODB-0222] Reading LEF file: ./clust.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  ./clust.lef
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef, created 9 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNV4X already seen in asap7sc7p5t_DFFHQNV2X
+[INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNH2V2X already seen in asap7sc7p5t_DFFHQNV2X
+[INFO ODB-0227] LEF file: ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef, created 9 library cells
 [INFO ODB-0128] Design: tray_test
 [INFO ODB-0130]     Created 1 pins.
-[INFO ODB-0131]     Created 4 components and 12 component-terminals.
+[INFO ODB-0131]     Created 4 components and 20 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 4 connections.
-[INFO GPL-1001] Name of master with minimum area for size = 2: DFFHQNV2Xx1_ASAP7_75t_L
-[INFO GPL-1010] delta x: 0.6495, delta y: 0.135
-[INFO GPL-1010] delta x: 0.6495, delta y: 0.405
-[INFO GPL-1002] Ratio for tray size 2: 0.54
-Alpha = 20.0, Beta = 1.0, max size = -1
-Total ILP Cost: 46.661
+Alpha = 40.0, Beta = 1.0, #paths = 0, max size = -1
+Total ILP Cost: 97.22825
 Total Timing Critical Path Displacement: 0.0
-Final Objective Value: 46.661
+Average slot-to-flop displacement: 0.865
+Final Objective Value: 97.22825
+1-bit: 0, 2-bit: 2, 4-bit: 0
 No differences found.

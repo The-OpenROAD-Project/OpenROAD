@@ -95,7 +95,7 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
-      BufferedNetSeq Z = rebufferBottomUp(bnet, 1);
+      const BufferedNetSeq& Z = rebufferBottomUp(bnet, 1);
       Required best_slack_penalized = -INF;
       BufferedNetPtr best_option = nullptr;
       int best_index = 0;
@@ -213,13 +213,24 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     return addWireAndBuffer(Z, bnet, level);
   }
   case BufferedNetType::junction: {
-    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), level + 1);
-    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
+    const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
+    const BufferedNetSeq& Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
-    // Combine the options from both branches.
-    for (BufferedNetPtr p : Z1) {
-      for (BufferedNetPtr q : Z2) {
-        BufferedNetPtr min_req = fuzzyLess(p->required(sta_),
+
+    size_t size = Z1.size()*Z2.size();
+    // This assumption is used only in the final loop
+    // but we can quit as early as we know there's nothing to do here.
+    if (size == 0) {
+      return Z;
+    }
+    Z.reserve(size);
+
+    std::unordered_map<BufferedNet*, Slack> slacks;
+
+    // Combine the options from both branches.=
+    for (const BufferedNetPtr& p : Z1) {
+      for (const BufferedNetPtr& q : Z2) {
+        const BufferedNetPtr& min_req = fuzzyLess(p->required(sta_),
                                            q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
                                                        bnet->location(),
@@ -227,55 +238,44 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
         junc->setCapacitance(p->cap() + q->cap());
         junc->setRequiredPath(min_req->requiredPath());
         junc->setRequiredDelay(min_req->requiredDelay());
-        Z.push_back(junc);
+        slacks[junc.get()] = slackPenalized(junc);
+        Z.push_back(std::move(junc));
       }
     }
     // Prune the options if there exists another option with
     // larger required and smaller capacitance.
-    // This is fanout^2.
-    // Presort options to hit better options sooner.
+    // This is fanout*log(fanout) if options are
+    // presorted to hit better options sooner.
     sort(Z.begin(),
          Z.end(),
-         [=](BufferedNetPtr option1, BufferedNetPtr option2) {
-           Slack slack1 = slackPenalized(option1);
-           Slack slack2 = slackPenalized(option2);
+         [&slacks](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
+           const Slack slack1 = slacks[option1.get()];
+           const Slack slack2 = slacks[option2.get()];
 
-           if (slack1 > slack2) {
-             return true;
-           }
-           if (slack2 > slack1) {
-             return false;
+           if (slack1 != slack2) {
+             return slack1 > slack2;
            }
 
-           if (option1->cap() < option2->cap()) {
-             return true;
-           }
-           if (option2->cap() < option1->cap()) {
-             return false;
-           }
-
-           return false;
+           return option1->cap() < option2->cap();
          });
-    int si = 0;
-    for (size_t pi = 0; pi < Z.size(); pi++) {
-      BufferedNetPtr p = Z[pi];
+    float Lsmall = Z[0]->cap();
+    size_t si = 1;
+    // Remove options by shifting down with index si.
+    // Because the options are sorted we don't have to look
+    // beyond the first option. We also know that slack
+    // is nonincreasing, so we can remove everything that has
+    // higher capacitance than the lowest found so far.
+    for (size_t pi = si; pi < size; pi++) {
+      const BufferedNetPtr& p = Z[pi];
       float Lp = p->cap();
-      // Remove options by shifting down with index si.
-      si = pi + 1;
-      // Because the options are sorted we don't have to look
-      // beyond the first option.
-      for (size_t qi = pi + 1; qi < Z.size(); qi++) {
-        BufferedNetPtr q = Z[qi];
-        float Lq = q->cap();
-        // We know Tq <= Tp from the sort so we don't need to check req.
-        // If q is the same or worse than p, remove solution q.
-        if (fuzzyLess(Lq, Lp)) {
-          // Copy survivor down.
-          Z[si++] = q;
-        }
+      // If Lp is the same or worse than Lsmall, remove solution p.
+      if (fuzzyLess(Lp, Lsmall)) {
+        // Otherwise copy the survivor down.
+        Z[si++] = p;
+        Lsmall = Lp;
       }
-      Z.resize(si);
     }
+    Z.resize(si);
     return Z;
   }
   case BufferedNetType::load: {
@@ -305,8 +305,9 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                               int level)
 {
   BufferedNetSeq Z1;
+  Z1.reserve(Z.size());
   Point wire_end = bnet_wire->location();
-  for (BufferedNetPtr p : Z) {
+  for (const BufferedNetPtr& p : Z) {
     Point p_loc = p->location();
     int wire_length_dbu = abs(wire_end.x() - p_loc.x())
       + abs(wire_end.y() - p_loc.y());

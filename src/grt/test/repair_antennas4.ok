@@ -1,24 +1,27 @@
-[INFO ODB-0222] Reading LEF file: repair_antennas4.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  repair_antennas4.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: repair_antennas4.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [WARNING ANT-0009] Net clk requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net req_msg[11] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net req_msg[14] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net req_msg[15] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net req_msg[23] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net req_msg[25] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net req_msg[28] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net req_msg[31] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[13] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[14] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net resp_msg[1] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net resp_msg[3] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[7] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[8] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net resp_rdy requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net _229_ requires more than 10 diodes per gate to repair violations.
-[INFO GRT-0012] Found 9 antenna violations.
-[INFO GRT-0015] Inserted 132 diodes.
-[INFO GRT-0054] Using detailed placer to place 57 diodes.
+[INFO GRT-0012] Found 17 antenna violations.
+[INFO GRT-0015] Inserted 275 diodes.
+[INFO GRT-0054] Using detailed placer to place 113 diodes.
