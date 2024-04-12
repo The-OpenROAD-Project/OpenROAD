@@ -52,26 +52,26 @@ namespace rsz {
 
 class Resizer;
 
-using std::vector;
-using std::pair;
 using odb::Point;
+using std::pair;
+using std::vector;
 using utl::Logger;
 
-using sta::StaState;
-using sta::dbSta;
+using sta::Corner;
 using sta::dbNetwork;
-using sta::Pin;
-using sta::Net;
-using sta::PathRef;
-using sta::MinMax;
-using sta::Slack;
-using sta::PathExpanded;
+using sta::dbSta;
+using sta::DcalcAnalysisPt;
 using sta::LibertyCell;
 using sta::LibertyPort;
+using sta::MinMax;
+using sta::Net;
+using sta::PathExpanded;
+using sta::PathRef;
+using sta::Pin;
+using sta::Slack;
+using sta::StaState;
 using sta::TimingArc;
-using sta::DcalcAnalysisPt;
 using sta::Vertex;
-using sta::Corner;
 
 class BufferedNet;
 enum class BufferedNetType;
@@ -80,8 +80,8 @@ using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RepairSetup : StaState
 {
-public:
-  RepairSetup(Resizer *resizer);
+ public:
+  RepairSetup(Resizer* resizer);
   void repairSetup(float setup_slack_margin,
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
@@ -91,21 +91,20 @@ public:
                    bool skip_pin_swap,
                    bool skip_gate_cloning);
   // For testing.
-  void repairSetup(const Pin *end_pin);
+  void repairSetup(const Pin* end_pin);
   // For testing.
   void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
-  void rebufferNet(const Pin *drvr_pin);
+  void rebufferNet(const Pin* drvr_pin);
 
-private:
+ private:
   void init();
-  bool repairPath(PathRef &path,
+  bool repairPath(PathRef& path,
                   Slack path_slack,
                   bool skip_pin_swap,
                   bool skip_gate_cloning);
-  void debugCheckMultipleBuffers(PathRef &path,
-                                 PathExpanded *expanded);
+  void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
       sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
@@ -120,63 +119,59 @@ private:
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
-  bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
-  bool upsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded);
-  Point computeCloneGateLocation(const Pin *drvr_pin,
-                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
-  bool cloneDriver(PathRef* drvr_path, int drvr_index,
-                   Slack drvr_slack, PathExpanded *expanded);
-  void splitLoads(PathRef *drvr_path,
+  bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  Point computeCloneGateLocation(
+      const Pin* drvr_pin,
+      const vector<pair<Vertex*, Slack>>& fanout_slacks);
+  bool cloneDriver(PathRef* drvr_path,
+                   int drvr_index,
+                   Slack drvr_slack,
+                   PathExpanded* expanded);
+  void splitLoads(PathRef* drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
-                  PathExpanded *expanded);
-  LibertyCell *upsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
+                  PathExpanded* expanded);
+  LibertyCell* upsizeCell(LibertyPort* in_port,
+                          LibertyPort* drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
-  int fanout(Vertex *vertex);
-  bool hasTopLevelOutputPort(Net *net);
+                          const DcalcAnalysisPt* dcalc_ap);
+  int fanout(Vertex* vertex);
+  bool hasTopLevelOutputPort(Net* net);
 
-  int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet,
+  int rebuffer(const Pin* drvr_pin);
+  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
+  int rebufferTopDown(const BufferedNetPtr& choice, Net* net, int level);
+  BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
+                                  const BufferedNetPtr& bnet_wire,
                                   int level);
-  int rebufferTopDown(const BufferedNetPtr& choice,
-                      Net *net,
-                      int level);
-  BufferedNetSeq
-  addWireAndBuffer(const BufferedNetSeq& Z,
-                   const BufferedNetPtr& bnet_wire,
-                   int level);
-  float bufferInputCapacitance(LibertyCell *buffer_cell,
-                               const DcalcAnalysisPt *dcalc_ap);
+  float bufferInputCapacitance(LibertyCell* buffer_cell,
+                               const DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(const BufferedNetPtr& bnet);
-  Slack slackPenalized(const BufferedNetPtr& bnet,
-                       int index);
+  Slack slackPenalized(const BufferedNetPtr& bnet, int index);
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger *logger_;
-  dbSta *sta_;
-  dbNetwork *db_network_;
-  Resizer *resizer_;
-  const Corner *corner_;
-  LibertyPort *drvr_port_;
+  Logger* logger_;
+  dbSta* sta_;
+  dbNetwork* db_network_;
+  Resizer* resizer_;
+  const Corner* corner_;
+  LibertyPort* drvr_port_;
 
   int resize_count_;
   int inserted_buffer_count_;
   int split_load_buffer_count_;
   int rebuffer_net_count_;
-  int cloned_gate_count_;  
+  int cloned_gate_count_;
   int swap_pin_count_;
   // Map to block pins from being swapped more than twice for the
-  // same instance. 
-  std::unordered_set<const sta::Instance *> swap_pin_inst_set_;
-  
-  const MinMax *min_;
-  const MinMax *max_;
+  // same instance.
+  std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
+
+  const MinMax* min_;
+  const MinMax* max_;
 
   sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
@@ -187,4 +182,4 @@ private:
   static constexpr int print_interval_ = 10;
 };
 
-} // namespace rsz
+}  // namespace rsz

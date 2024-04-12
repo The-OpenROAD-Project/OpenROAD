@@ -35,12 +35,11 @@
 
 #pragma once
 
-#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
-
-#include "sta/StaState.hh"
-#include "sta/MinMax.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/MinMax.hh"
+#include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace sta {
 class PathExpanded;
@@ -54,21 +53,21 @@ using std::vector;
 
 using utl::Logger;
 
-using sta::StaState;
-using sta::dbSta;
+using sta::Corner;
 using sta::dbNetwork;
-using sta::Pin;
-using sta::Net;
-using sta::PathRef;
-using sta::MinMax;
-using sta::Slack;
-using sta::PathExpanded;
+using sta::dbSta;
+using sta::DcalcAnalysisPt;
 using sta::LibertyCell;
 using sta::LibertyPort;
+using sta::MinMax;
+using sta::Net;
+using sta::PathExpanded;
+using sta::PathRef;
+using sta::Pin;
+using sta::Slack;
+using sta::StaState;
 using sta::TimingArc;
-using sta::DcalcAnalysisPt;
 using sta::Vertex;
-using sta::Corner;
 
 class BufferedNet;
 enum class BufferedNetType;
@@ -77,56 +76,61 @@ using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RecoverPower : StaState
 {
-public:
-  RecoverPower(Resizer *resizer);
+ public:
+  RecoverPower(Resizer* resizer);
   void recoverPower(float recover_power_percent);
   // For testing.
-  void recoverPower(const Pin *end_pin);
+  void recoverPower(const Pin* end_pin);
 
-private:
+ private:
   void init();
-  bool recoverPower(PathRef &path,
-                   Slack path_slack);
-  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
-  bool downsizeDrvr(PathRef *drvr_path, int drvr_index,
-                    PathExpanded *expanded, bool only_same_size_swap,
+  bool recoverPower(PathRef& path, Slack path_slack);
+  bool meetsSizeCriteria(LibertyCell* cell,
+                         LibertyCell* equiv,
+                         bool match_size);
+  bool downsizeDrvr(PathRef* drvr_path,
+                    int drvr_index,
+                    PathExpanded* expanded,
+                    bool only_same_size_swap,
                     Slack path_slack);
 
-  LibertyCell *downsizeCell(LibertyPort *in_port, LibertyPort *drvr_port,
-                          float load_cap, float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap,
-                          bool match_size,  Slack path_slack);
-  int fanout(Vertex *vertex);
-  bool hasTopLevelOutputPort(Net *net);
+  LibertyCell* downsizeCell(LibertyPort* in_port,
+                            LibertyPort* drvr_port,
+                            float load_cap,
+                            float prev_drive,
+                            const DcalcAnalysisPt* dcalc_ap,
+                            bool match_size,
+                            Slack path_slack);
+  int fanout(Vertex* vertex);
+  bool hasTopLevelOutputPort(Net* net);
 
-  BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
-                   int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
-  float bufferInputCapacitance(LibertyCell *buffer_cell,
-                               const DcalcAnalysisPt *dcalc_ap);
+  BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
+                                  BufferedNetPtr bnet_wire,
+                                  int level);
+  float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap);
+  float bufferInputCapacitance(LibertyCell* buffer_cell,
+                               const DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet,
-                       int index);
+  Slack slackPenalized(BufferedNetPtr bnet, int index);
 
-  Logger *logger_;
-  dbSta *sta_;
-  dbNetwork *db_network_;
-  Resizer *resizer_;
-  const Corner *corner_;
+  Logger* logger_;
+  dbSta* sta_;
+  dbNetwork* db_network_;
+  Resizer* resizer_;
+  const Corner* corner_;
   int resize_count_;
-  const MinMax *max_;
+  const MinMax* max_;
 
   // Paths with slack more than this would be considered for power recovery
   static constexpr float setup_slack_margin_ = 1e-11;
-  // For paths with no timing the max margin is INT_MAX. We need to filter those out (using 1e-4)
+  // For paths with no timing the max margin is INT_MAX. We need to filter those
+  // out (using 1e-4)
   static constexpr float setup_slack_max_margin_ = 1e-4;
-  // Threshold for failed successive moves for power recovery before we stop trying
+  // Threshold for failed successive moves for power recovery before we stop
+  // trying
   static constexpr int failed_move_threshold_limit_ = 500;
 
-  sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
+  sta::UnorderedMap<LibertyCell*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
@@ -134,4 +138,4 @@ private:
   static constexpr double rebuffer_buffer_penalty_ = .01;
 };
 
-} // namespace rsz
+}  // namespace rsz
