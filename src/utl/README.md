@@ -9,7 +9,18 @@ The utility module contains the `man` command.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+## Man installation
+
+The `man` command can be installed optionally as part of the OpenROAD
+binary. For more instructions, please refer to [here](../../docs/README.md).
+
 ### Man
+
+The `man` command in OpenROAD is similar in functionality to Unix
+(and Unix-like operating systems such as Linux) . It is used to 
+display the manual pages for various applications, tools and error 
+messages. These manual pages provide detailed information about how
+to use a particular command or function, along with its syntax and options.
 
 This can be used for a range of commands in different levels as follows:
 - Level 1: Top-level openroad command (e.g. `man openroad`)
@@ -42,7 +53,13 @@ man CTS-0005
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+
+For information regarding the Manpage test framework, refer to this
+[link](../../docs/src/test/README.md).
+
+You should also be aware of the [README](../../docs/contrib/ReadmeFormat.md) and [Tcl](../../docs/contrib/TclFormat.md) format enforced to ensure
+accurate parsing of manpages. 
 
 Simply run the following script:
 
