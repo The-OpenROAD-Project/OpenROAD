@@ -56,10 +56,8 @@ using utl::Logger;
 using odb::Point;
 
 using sta::Corner;
-using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::LibertyCell;
-using sta::Network;
 using sta::PathRef;
 using sta::Pin;
 using sta::Required;

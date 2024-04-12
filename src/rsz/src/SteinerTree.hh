@@ -55,12 +55,10 @@ using utl::Logger;
 using odb::Point;
 
 using sta::dbNetwork;
-using sta::hashIncr;
 using sta::Net;
 using sta::Network;
 using sta::Pin;
 using sta::PinSeq;
-using sta::UnorderedMap;
 
 using stt::SteinerTreeBuilder;
 
