@@ -557,8 +557,7 @@ void SimulatedAnnealingCore<T>::fastSA()
     graphics_->startSA();
   }
 
-  std::vector<int> best_positive_sequence;
-  std::vector<int> best_negative_sequence;
+  SequencePair best_sequence_pair;
 
   float cost = calNormCost();
   float lowest_cost = std::numeric_limits<float>::max();
@@ -594,8 +593,8 @@ void SimulatedAnnealingCore<T>::fastSA()
       // when temperature is too high
       if (lowest_cost > cost && isValid()) {
         lowest_cost = cost;
-        best_negative_sequence = neg_seq_;
-        best_positive_sequence = pos_seq_;
+        best_sequence_pair.neg_sequence = neg_seq_;
+        best_sequence_pair.pos_sequence = pos_seq_;
       }
 
       delta_cost = cost - pre_cost;
@@ -641,8 +640,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
 
   if (lowest_cost < calNormCost()) {
-    pos_seq_ = best_positive_sequence;
-    neg_seq_ = best_negative_sequence;
+    pos_seq_ = best_sequence_pair.pos_sequence;
+    neg_seq_ = best_sequence_pair.neg_sequence;
   }
   packFloorplan();
   calPenalty();
