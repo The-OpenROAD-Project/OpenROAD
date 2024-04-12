@@ -840,7 +840,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj.layer_adjustment_;
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -871,6 +870,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
     stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_layer_adjustment)) {
+    stream >> obj.layer_adjustment_;
+  } else {
+    obj.layer_adjustment_ = 0.0;
+  }
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
   stream >> obj._offset_x;
@@ -933,7 +937,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj.layer_adjustment_;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -964,6 +967,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
     stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin <<
+  stream << obj.layer_adjustment_;
   stream << obj._pitch_x;
   stream << obj._pitch_y;
   stream << obj._offset_x;
