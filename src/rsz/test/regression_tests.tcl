@@ -64,6 +64,7 @@ record_tests {
   repair_setup4
   repair_setup5
   repair_setup6
+  repair_setup7
   repair_slew1
   repair_slew2
   repair_slew3
