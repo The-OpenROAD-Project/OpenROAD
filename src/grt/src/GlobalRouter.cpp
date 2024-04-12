@@ -213,7 +213,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getAdjustment());
   }
   fastroute_->initAuxVar();
-  updateDbCongestion();
 }
 
 // If file name is specified, save congestion report file.
@@ -1538,6 +1537,7 @@ void GlobalRouter::initGridAndNets()
     initCoreGrid(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
+    updateDbCongestion();
   }
   std::vector<Net*> nets = findNets();
   initNetlist(nets);
