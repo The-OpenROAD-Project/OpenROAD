@@ -72,7 +72,6 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 84;  // Current revision number
 
-
 // Revision where GRT layer adjustment was relocated to dbTechLayer
 const uint db_schema_layer_adjustment = 84;
 
