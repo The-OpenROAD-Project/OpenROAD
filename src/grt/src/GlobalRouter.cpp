@@ -1201,8 +1201,9 @@ void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
     return;
 
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-    if (db_->getTech()->findRoutingLayer(l)->getLayerAdjustment() == 0.0) {
-      db_->getTech()->findRoutingLayer(l)->setLayerAdjustment(adjustment_);
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(l);
+    if (tech_layer->getLayerAdjustment() == 0.0) {
+      tech_layer->setLayerAdjustment(adjustment_);
     }
   }
 }
@@ -1217,8 +1218,8 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   const std::vector<int>& ver_capacities = grid_->getVerticalEdgesCapacities();
 
   for (int layer = 1; layer <= max_routing_layer; layer++) {
-    float adjustment
-        = db_->getTech()->findRoutingLayer(layer)->getLayerAdjustment();
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
+    float adjustment = tech_layer->getLayerAdjustment();
     if (adjustment != 0) {
       if (horizontal_capacities_[layer - 1] != 0) {
         int new_cap = hor_capacities[layer - 1] * (1 - adjustment);
