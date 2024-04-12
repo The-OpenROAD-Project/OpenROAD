@@ -5537,6 +5537,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   const int macros_to_place = static_cast<int>(hard_macros.size());
 
+  int remaining_runs = num_runs_;
   int num_perturb_per_step = (macros_to_place > num_perturb_per_step_ / 10)
                                  ? macros_to_place
                                  : num_perturb_per_step_ / 10;
@@ -5545,20 +5546,27 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   if (cluster->isArrayOfInterconnectedMacros()) {
     setArrayTilingSequencePair(cluster, macros_to_place, initial_seq_pair);
 
+    // Only exchange and flip macros to preserve the array shape.
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
     double_swap_prob = 0.0f;
     exchange_swap_prob = 0.95;
     flip_prob = 0.05;
 
-    // Large arrays need more steps to properly converge.
+    // Subsequent runs would account for weight variations in order to ease the
+    // convergence to a valid result (floorplan fit in the outline). As SA will
+    // never generate a non-valid result for arrays of interconnected macros and
+    // we only care about WL, we can use a single run.
+    remaining_runs = 1;
+
+    // Although all solutions will be valid, large arrays need more steps to
+    // properly converge to an optimal solution in terms of WL.
     if (num_perturb_per_step > macros_to_place) {
       num_perturb_per_step *= 2;
     }
   }
 
   int run_id = 0;
-  int remaining_runs = num_runs_;
   float best_cost = std::numeric_limits<float>::max();
 
   SACoreHardMacro* best_sa = nullptr;

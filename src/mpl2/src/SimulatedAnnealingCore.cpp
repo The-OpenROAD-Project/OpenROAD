@@ -576,6 +576,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 
   int num_restart = 1;
   int step = 1;
+  const int check_interval = 500;
 
   while (step <= max_num_step_) {
     if (graphics_) {
@@ -606,6 +607,10 @@ void SimulatedAnnealingCore<T>::fastSA()
       } else {
         restore();
       }
+    }
+
+    if (step % check_interval == 0) {
+      updateSeqPairBasedOnLowestCost(lowest_cost, best_sequence_pair);
     }
 
     temperature *= t_factor;
@@ -639,12 +644,7 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }
 
-  if (lowest_cost < calNormCost()) {
-    pos_seq_ = best_sequence_pair.pos_sequence;
-    neg_seq_ = best_sequence_pair.neg_sequence;
-  }
-  packFloorplan();
-  calPenalty();
+  updateSeqPairBasedOnLowestCost(lowest_cost, best_sequence_pair);
 
   if (centralization_on_) {
     attemptCentralization(calNormCost());
@@ -653,6 +653,21 @@ void SimulatedAnnealingCore<T>::fastSA()
   if (graphics_) {
     graphics_->endSA();
   }
+}
+
+// Explore more good results generated when the temperature is still high.
+template <class T>
+void SimulatedAnnealingCore<T>::updateSeqPairBasedOnLowestCost(
+    const float lowest_cost,
+    const SequencePair& best_sequence_pair)
+{
+  if (lowest_cost < calNormCost()) {
+    pos_seq_ = best_sequence_pair.pos_sequence;
+    neg_seq_ = best_sequence_pair.neg_sequence;
+  }
+
+  packFloorplan();
+  calPenalty();
 }
 
 template <class T>

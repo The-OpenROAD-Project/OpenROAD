@@ -120,6 +120,8 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void updateSeqPairBasedOnLowestCost(float lowest_cost,
+                                      const SequencePair& best_sequence_pair);
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const std::pair<float, float>& offset);
 
