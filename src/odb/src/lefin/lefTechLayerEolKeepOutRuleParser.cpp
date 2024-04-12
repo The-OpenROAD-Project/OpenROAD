@@ -47,15 +47,17 @@ void lefTechLayerEolKeepOutRuleParser::parse(const std::string& s,
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     rule += " ; ";
-    if (!parseSubRule(rule, layer))
+    if (!parseSubRule(rule, layer)) {
       lefin_->warning(280,
                       "parse mismatch in layer propery LEF58_EOLKEEPOUT for "
                       "layer {} :\"{}\"",
                       layer->getName(),
                       rule);
+    }
   }
 }
 void lefTechLayerEolKeepOutRuleParser::setClass(
@@ -128,8 +130,9 @@ bool lefTechLayerEolKeepOutRuleParser::parseSubRule(std::string s,
   auto last = s.end();
   bool valid
       = qi::phrase_parse(first, last, EOLKEEPOUT, space) && first == last;
-  if (!valid)
+  if (!valid) {
     odb::dbTechLayerEolKeepOutRule::destroy(rule);
+  }
   return valid;
 }
 

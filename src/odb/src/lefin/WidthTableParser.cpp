@@ -58,8 +58,9 @@ bool WidthTableParser::parseSubRule(std::string s)
   bool valid
       = qi::phrase_parse(first, last, LEF58_WIDTHTABLE, space) && first == last;
 
-  if (!valid && rule_ != nullptr)  // fail if we did not get a full match
+  if (!valid && rule_ != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerWidthTableRule::destroy(rule_);
+  }
   return valid;
 }
 
@@ -69,14 +70,16 @@ void WidthTableParser::parse(const std::string& s)
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     rule += " ; ";
-    if (!parseSubRule(rule))
+    if (!parseSubRule(rule)) {
       lefin_->warning(279,
                       "parse mismatch in layer property LEF58_WIDTHTABLE for "
                       "layer {} :\"{}\"",
                       layer_->getName(),
                       rule);
+    }
   }
 }

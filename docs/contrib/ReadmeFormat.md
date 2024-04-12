@@ -13,6 +13,11 @@ the format and replace the contents where necessary.
 
 ### Command ABC
 
+```{note}
+Please add a description, even a one-liner will be sufficient to 
+avoid triggering CI errors.
+```
+
 The `command_abc` command performs...
 
 The developer arguments are...
