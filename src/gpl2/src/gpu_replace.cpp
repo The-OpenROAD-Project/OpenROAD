@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,14 +22,15 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "gpl2/GpuReplace.h"
@@ -36,19 +38,18 @@
 // for test only
 #include <iostream>
 
-#include "initialPlace.h"
-#include "nesterovPlace.h"
-#include "placerBase.h"
 #include "gpuRouteBase.h"
 #include "gpuTimingBase.h"
+#include "initialPlace.h"
+#include "nesterovPlace.h"
+#include "odb/db.h"
+#include "placerBase.h"
+#include "rsz/Resizer.hh"
 #include "util.h"
 #include "utl/Logger.h"
-#include "rsz/Resizer.hh"
-#include "odb/db.h"
 
 namespace gpl2 {
 
-using namespace std;
 using utl::GPL2;
 
 GpuReplace::GpuReplace()
@@ -92,17 +93,17 @@ GpuReplace::GpuReplace()
       routabilityDrivenMode_(true),
       uniformTargetDensityMode_(false),
       skipIoMode_(false),
+      datapathFlag_(false),
       dataflowFlag_(false),
-      DREAMPlaceFlag_(false),
       clusterConstraintFlag_(false),
       padLeft_(0),
-      padRight_(0) {  };
+      padRight_(0){};
 
 GpuReplace::~GpuReplace()
 {
 }
 
-void GpuReplace::init(sta::dbNetwork* network, 
+void GpuReplace::init(sta::dbNetwork* network,
                       odb::dbDatabase* odb,
                       rsz::Resizer* resizer,
                       grt::GlobalRouter* router,
@@ -165,76 +166,8 @@ void GpuReplace::reset()
   timingNetWeightMax_ = 1.9;
 }
 
-// TODO: dummy function now
-void GpuReplace::doIncrementalPlace()
-{
-  std::cout << "GpuReplace :: doIncrementalPlace" << std::endl;
-}
-
-
-/*
-// TODO: dummy function now
 void GpuReplace::doInitialPlace()
 {
-  std::cout << "GpuReplace :: doInitialPlace" << std::endl;
-  // If the netlist is loaded into the placer database,
-  // we need to create the PlacerBaseCommon
-  if (pbc_ == nullptr) {
-    PlacerBaseVars pbVars;
-    pbVars.padLeft = padLeft_;
-    pbVars.padRight = padRight_;
-    pbVars.skipIoMode = skipIoMode_;
-    std::cout << "padLeft  = " << padLeft_ << "  "
-              << "padRight = " << padRight_ << "  "
-              << "skipIoMode = " << skipIoMode_ << std::endl;
-
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
-    //std::cout << "hpwl = " << pbc_->hpwl() << std::endl;
-    //pbc_->unlockAll();
-    //pbc_->SyncInstLocH2D();
-    //pbc_->SyncInstLocD2H();
-    //pbc_->printInstInfo();
-    NesterovBaseVars nbVars;
-    nbVars.targetDensity = density_;
-    nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
-    pbVec_.push_back(std::make_shared<PlacerBase>(nbVars, db_, pbc_, log_));
-    // Each power domain is represented by a group
-    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
-      if (pd->getGroup()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(nbVars, db_, pbc_, log_, pd->getGroup()));
-      }
-    }
-    std::cout << "Finish creating placer database" << std::endl;
-    //total_placeable_insts_ = 0;
-    //for (const auto& pb : pbVec_) {
-    //  total_placeable_insts_ += pb->placeInsts().size();
-    //}
-  }
-
-  InitialPlaceVars ipVars;
-  ipVars.maxIter = initialPlaceMaxIter_;
-  ipVars.minDiffLength = initialPlaceMinDiffLength_;
-  ipVars.maxSolverIter = initialPlaceMaxSolverIter_;
-  ipVars.maxFanout = initialPlaceMaxFanout_;
-  ipVars.netWeightScale = initialPlaceNetWeightScale_;
-  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pbc_, pbVec_, log_));
-  ip_ = std::move(ip);
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
-  ip_->doBicgstabPlace();
-  auto end_timestamp_global = std::chrono::high_resolution_clock::now();
-  double total_global_time
-      = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            end_timestamp_global - start_timestamp_global)
-            .count();
-  total_global_time *= 1e-9;
-  std::cout << "the initial placement runtime is " << total_global_time << std::endl;
-}
-*/
-
-void GpuReplace::doInitialPlace()
-{
-  std::cout << "GpuReplace :: doInitialPlace" << std::endl;
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
   pbVars.padRight = padRight_;
@@ -250,7 +183,6 @@ void GpuReplace::doInitialPlace()
   ipVars.maxSolverIter = initialPlaceMaxSolverIter_;
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
-  
 
   NesterovPlaceVars npVars;
   npVars.minPhiCoef = minPhiCoef_;
@@ -264,22 +196,17 @@ void GpuReplace::doInitialPlace()
   npVars.timingDrivenMode = timingDrivenMode_;
   npVars.routabilityDrivenMode = routabilityDrivenMode_;
 
-  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, haloWidth_,
-          numHops_, dataflowFlag_, network_, db_, log_));
+  std::unique_ptr<InitialPlace> ip(new InitialPlace(
+      ipVars, haloWidth_, numHops_, dataflowFlag_, network_, db_, log_));
   ip_ = std::move(ip);
   ip_->setPlacerBaseVars(pbVars);
   ip_->setNesterovBaseVars(nbVars);
   ip_->setNesterovPlaceVars(npVars);
   ip_->doInitialPlace();
-  // for test
-  //ip_->doClusterNesterovPlace(); 
 }
 
-
-// TODO: dummy function now
 bool GpuReplace::initNesterovPlace()
 {
-  std::cout << "GpuReplace :: initNesterovPlace " << std::endl;
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
@@ -294,25 +221,37 @@ bool GpuReplace::initNesterovPlace()
       nbVars.binCntX = binGridCntX_;
       nbVars.binCntY = binGridCntY_;
     }
-    pbc_ = std::make_shared<PlacerBaseCommon>(network_, db_, pbVars, log_, 
+
+    // for standard cell placement
+    const int virtualIter = 0;
+    const int numHops = 0;
+    const float bloatFactor = 1.0;
+    const bool clusterFlag = false;
+    const bool dataflowFlag = false;
+    const bool datapathFlag = false;
+    const bool clusterConstraintFlag = false;
+    pbc_ = std::make_shared<PlacerBaseCommon>(network_,
+                                              db_,
+                                              pbVars,
+                                              log_,
                                               haloWidth_,
-                                              virtualIter_,
-                                              0,
-                                              1.0,
-                                              false,
-                                              false,
-                                              datapathFlag_,
-                                              clusterConstraintFlag_);
+                                              virtualIter,
+                                              numHops,
+                                              bloatFactor,
+                                              clusterFlag,
+                                              dataflowFlag,
+                                              datapathFlag,
+                                              clusterConstraintFlag);
     pbVec_.push_back(std::make_shared<PlacerBase>(nbVars, db_, pbc_, log_));
     // Each power domain is represented by a group
     for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
       if (pd->getGroup()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(nbVars, db_, pbc_, log_, pd->getGroup()));
+        pbVec_.push_back(std::make_shared<PlacerBase>(
+            nbVars, db_, pbc_, log_, pd->getGroup()));
       }
     }
 
-    // check how many place instances 
+    // check how many place instances
     totalPlaceableInsts_ = 0;
     for (const auto& pb : pbVec_) {
       totalPlaceableInsts_ += pb->numPlaceInsts();
@@ -322,9 +261,7 @@ bool GpuReplace::initNesterovPlace()
       log_->warn(GPL2, 136, "No placeable instances - skipping placement.");
       return false;
     }
-    std::cout << "Finish creating placer database" << std::endl;
   }
-
 
   if (!np_) {
     NesterovPlaceVars npVars;
@@ -349,32 +286,20 @@ bool GpuReplace::initNesterovPlace()
     tb_ = nullptr;
 
     std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars, DREAMPlaceFlag_, pbc_, pbVec_, rb_, tb_, log_));
+        new NesterovPlace(npVars, pbc_, pbVec_, rb_, tb_, log_));
     np_ = std::move(np);
   }
 
-  std::cout << "Finish initNesterovPlace()" << std::endl;
   return true;
 }
 
-// TODO: dummy function now
 int GpuReplace::doNesterovPlace(int start_iter)
 {
-  std::cout << "GpuReplace :: doNesterovPlace" << std::endl;
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
-  
   if (!initNesterovPlace()) {
     return 0;
   }
-  int val =  np_->doNesterovPlace(start_iter);
 
-  auto end_timestamp_global = std::chrono::high_resolution_clock::now();
-  double total_global_time
-      = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            end_timestamp_global - start_timestamp_global)
-            .count();
-  total_global_time *= 1e-9;
-  std::cout << "the nesterov placement runtime is " << total_global_time << std::endl;
+  int val = np_->doNesterovPlace(start_iter);
 
   auto block = db_->getChip()->getBlock();
   for (odb::dbBTerm* bterm : block->getBTerms()) {
@@ -383,7 +308,6 @@ int GpuReplace::doNesterovPlace(int start_iter)
 
   return val;
 }
-
 
 void GpuReplace::setInitialPlaceMaxIter(int iter)
 {
@@ -410,14 +334,9 @@ void GpuReplace::setInitialPlaceNetWeightScale(float scale)
   initialPlaceNetWeightScale_ = scale;
 }
 
-// TODO:  Enable np_ for setMaxIters
 void GpuReplace::setNesterovPlaceMaxIter(int iter)
 {
   nesterovPlaceMaxIter_ = iter;
-  // TODO: we need to enable this
-  //if (np_) {
-  //  np_->setMaxIters(iter);
-  //}
 }
 
 void GpuReplace::setBinGridCnt(int binGridCntX, int binGridCntY)
@@ -426,14 +345,9 @@ void GpuReplace::setBinGridCnt(int binGridCntX, int binGridCntY)
   binGridCntY_ = binGridCntY;
 }
 
-// TODO: Enable np_ for setTargetOverflow
 void GpuReplace::setTargetOverflow(float overflow)
 {
   overflow_ = overflow;
-  // TODO: we need to enable this
-  //if (np_) {
-  //  np_->setTargetOverflow(overflow);
-  //}
 }
 
 void GpuReplace::setTargetDensity(float density)
@@ -450,9 +364,6 @@ void GpuReplace::setUniformTargetDensityMode(bool mode)
 float GpuReplace::getUniformTargetDensity()
 {
   return 0.0;
-  // TODO: update to be compatible with multiple target densities
-  //initNesterovPlace();
-  //return nbVec_[0]->uniformTargetDensity();
 }
 
 void GpuReplace::setInitDensityPenalityFactor(float penaltyFactor)
@@ -531,9 +442,9 @@ void GpuReplace::setRoutabilityMaxInflationRatio(float ratio)
 }
 
 void GpuReplace::setRoutabilityRcCoefficients(float k1,
-                                           float k2,
-                                           float k3,
-                                           float k4)
+                                              float k2,
+                                              float k3,
+                                              float k4)
 {
   routabilityRcK1_ = k1;
   routabilityRcK2_ = k2;
@@ -571,7 +482,7 @@ void GpuReplace::setDataflowFlag(bool flag)
   dataflowFlag_ = flag;
 }
 
-void GpuReplace::setDatapathFlag(bool flag) 
+void GpuReplace::setDatapathFlag(bool flag)
 {
   datapathFlag_ = flag;
 }
@@ -579,11 +490,6 @@ void GpuReplace::setDatapathFlag(bool flag)
 void GpuReplace::setClusterConstraintFlag(bool flag)
 {
   clusterConstraintFlag_ = flag;
-}
-
-void GpuReplace::setDREAMPlaceFlag(bool flag)
-{
-  DREAMPlaceFlag_ = flag;
 }
 
 void GpuReplace::addTimingNetWeightOverflow(int overflow)

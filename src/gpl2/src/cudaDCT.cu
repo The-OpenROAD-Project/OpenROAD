@@ -44,7 +44,7 @@
 #include <cassert>
 
 #include "cudaDCT.h"
-#include "cudaUtil.h"
+#include "util.h"
 
 #define TPB 16
 

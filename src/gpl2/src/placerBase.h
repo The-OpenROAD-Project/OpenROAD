@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,14 +22,15 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 // Keep in mind that CUDA is C not C++ !!!
@@ -50,7 +52,6 @@
 #include "wirelengthOp.h"
 #include "densityOp.h"
 #include "util.h" 
-#include "cudaUtil.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -71,21 +72,16 @@
 
 namespace odb {
 class dbDatabase;
-
 class dbInst;
 class dbITerm;
 class dbBTerm;
 class dbNet;
 class dbGroup;
-
 class dbPlacementStatus;
 class dbSigType;
-
 class dbBox;
-
 class Rect;
 class Point;
-
 }  // namespace odb
 
 namespace utl {
@@ -100,7 +96,6 @@ class dbSta;
  
 
 namespace gpl2 {
-
 
 class Net;
 class Pin;
@@ -209,7 +204,6 @@ class PlacerBaseCommon {
 
     void setVirtualWeightFactor(float weight) {
       virtualWeightFactor_ = weight;
-      std::cout << "[INFO] Set virtualWeightFactor to " << virtualWeightFactor_ << std::endl;
     }
 
     // basic information
@@ -250,8 +244,7 @@ class PlacerBaseCommon {
     void evaluateHPWL();
 
     // This is called during nesterovPlace::init
-    void initCUDAKernel();
-    void enableDREAMPlaceFlag() { wlGradOp_->enableDREAMPlaceFlag(); };
+    void initCUDAKernel(); // allocate memory on device
 
 
     void updateVirtualWeightFactor(int iter);
@@ -515,10 +508,10 @@ class PlacerBase
     float initTargetDensity() const { return nbVars_.targetDensity; }
     float targetDensity() const { return targetDensity_; }
 
-
     // Functions called by NesterovPlace
     // for nesterovplace initialization
-    void initCUDAKernel(); 
+    void initCUDAKernel();  // allocate memory on device
+
     void setNpVars(NesterovPlaceVars npVars) { npVars_ = npVars; }
     void initDensity1();
     // overflow information 
@@ -553,7 +546,6 @@ class PlacerBase
     void nesterovAdjustPhi();
     bool checkConvergence();
 		
-
     // For nesterov:  UpdateNextIter
     // exchange the states:  prev -> current, 
     // current -> next
@@ -569,38 +561,6 @@ class PlacerBase
     // wirelength force and density force
     float getWireLengthGradSum() const { return wireLengthGradSum_; }
     float getDensityGradSum() const { return densityGradSum_; }
-
-    // for debug
-    double densityTime() const {
-      return densityOp_->densityTime(); 
-    }
-    
-    double fftTime() const {
-      return densityOp_->fftTime(); 
-    }
-
-    double updateGradientRuntime() const {
-      return updateGradientRuntime_;
-    }
-
-    double updateGradientRuntime1() const {
-      return updateGradientRuntime1_;
-    }
-
-    double updateGradientRuntime2() const {
-      return updateGradientRuntime2_;
-    }
-
-    double updateGradientRuntime3() const {
-      return updateGradientRuntime3_;
-    }
-
-     double updateGradientRuntime4() const {
-      return updateGradientRuntime4_;
-    }
-
-    void printInstInfo() const;
-
     void reset();
 
   private:
@@ -808,37 +768,19 @@ class PlacerBase
     void updateDensityCenterCurSLP();
     void updateDensityCenterNextSLP();
 
-    float overflowArea() const {
-      return densityOp_->sumOverflow();
-    }
+    float overflowArea() const;
 
-    // TODO: do we need overflowAreaUnscaled?
     float overflowAreaUnscaled() const {
       return overflowArea();
-      //return densityOp_->sumOverflowUnscaled();
     }
 
     void init();
     void initFillerGCells();
-    //void reset();
     void initInstsForUnusableSites();
     void updateDensitySize();
-
-    bool debugFlag_ = false;
-
-     // for runtime debug
-    double updateGradientRuntime_ = 0.0;
-    double updateGradientRuntime1_ = 0.0;
-    double updateGradientRuntime2_ = 0.0;
-    double updateGradientRuntime3_ = 0.0;
-    double updateGradientRuntime4_ = 0.0;
 };
 
-
-
-
-
-}
+} // namespace gpl2
 
 
 

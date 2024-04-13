@@ -1029,13 +1029,6 @@ void PlacerBaseCommon::createDataFlow()
     }
   }
  }
-
-  // for debug
-  if (debugFlag_ == true) {
-    for (auto& dVertex : dataflowVertices_) {
-      dVertex.printVirtualNets();
-    }
-  }
 }
 
 
@@ -1718,19 +1711,6 @@ void PlacerBaseCommon::printInfo() const
 }
 
 
-void PlacerBaseCommon::printInstInfo() const
-{
-  std::cout << std::string(80, '-') << std::endl;
-  std::cout << "Instance Info" << std::endl;
-  for (int i = 0; i < numInsts_; i++) {
-    std::cout << "instId = " << i << "  "
-              << "cx = " << dInstDCx_[i] << "  "
-              << "cy = " << dInstDCy_[i] << std::endl;
-  }
-  std::cout << std::endl;
-}
-
-
 int64_t PlacerBaseCommon::hpwl() const
 {
   if (wlGradOp_ != nullptr) {
@@ -2393,21 +2373,73 @@ bool PlacerBase::checkConvergence()
   return false;
 }
 
-void PlacerBase::printInstInfo() const
-{
-  std::cout << std::string(80, '-') << std::endl;
-  std::cout << "Instance Info" << std::endl;
-  for (int i = 0; i < numInsts_; i++) {
-    std::cout << "instId = " << i << "  "
-              << "cx = " << dInstDCx_[i] << "  "
-              << "cy = " << dInstDCy_[i] << "  "
-              << "dx = " << dInstDDx_[i] << "  "
-              << "dy = " << dInstDDy_[i] << "  "
-              << "densityScale = " << insts_[i]->densityScale() << std::endl;
-  }
-  std::cout << std::endl;
+
+float PlacerBase::overflowArea() const {
+  return densityOp_->sumOverflow();
 }
 
+// exchange the states:  prev -> current, current -> next
+// update the parameters
+void PlacerBase::updateNextIter(int iter)
+{
+  if (isConverged_) {
+    return;
+  }
+
+  // Previous <= Current
+  std::swap(dCurSLPCoordiPtr_, dPrevSLPCoordiPtr_);
+  std::swap(dCurSLPSumGradsPtr_, dPrevSLPSumGradsPtr_);
+  std::swap(dCurSLPWireLengthGradXPtr_, dPrevSLPWireLengthGradXPtr_);
+  std::swap(dCurSLPWireLengthGradYPtr_, dPrevSLPWireLengthGradYPtr_);
+  std::swap(dCurSLPDensityGradXPtr_, dPrevSLPDensityGradXPtr_);
+  std::swap(dCurSLPDensityGradYPtr_, dPrevSLPDensityGradYPtr_);
+
+  // Current <= Next
+  std::swap(dCurSLPCoordiPtr_, dNextSLPCoordiPtr_);
+  std::swap(dCurSLPSumGradsPtr_, dNextSLPSumGradsPtr_);
+  std::swap(dCurSLPWireLengthGradXPtr_, dNextSLPWireLengthGradXPtr_);
+  std::swap(dCurSLPWireLengthGradYPtr_, dNextSLPWireLengthGradYPtr_);
+  std::swap(dCurSLPDensityGradXPtr_, dNextSLPDensityGradXPtr_);
+  std::swap(dCurSLPDensityGradYPtr_, dNextSLPDensityGradYPtr_);
+  
+  std::swap(dCurCoordiPtr_, dNextCoordiPtr_);
+  
+  // In a macro dominated design like mock-array-big you may be placing
+  // very few std cells in a sea of fixed macros. The overflow denominator
+  // may be quite small and prevent convergence. This is mostly due to 
+  // our limited ability to move instances off macros cleanly.
+  // As that improves this should no longer be needed.
+  const float fractionOfMaxIters
+      = static_cast<float>(iter) / npVars_.maxNesterovIter;  
+  const float overflowDenominator
+      = std::max(static_cast<float>(nesterovInstsArea()),
+                 fractionOfMaxIters * nonPlaceInstsArea() * 0.05f); 
+      
+  sumOverflow_ = overflowArea() / overflowDenominator;
+  sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
+
+  int64_t hpwl = pbCommon_->hpwl();
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
+                             / npVars_.referenceHpwl);
+
+  prevHpwl_ = hpwl;
+  // TODO:  use autotuner to autotune this parameter for better tradeoff between overflow and wirelength
+  //densityPenalty_ *= phiCoef * 1.01;
+  densityPenalty_ *= phiCoef * 0.99;
+
+  if (iter == 0 || (iter + 1) % 10 == 0) {
+    std::string msg = "[NesterovSolve] Iter: "+ std::to_string(iter + 1) + " ";
+    msg += "overflow: " + std::to_string(sumOverflowUnscaled_) + " ";
+    msg += "HPWL: " + std::to_string(prevHpwl_) + " ";
+    msg += "densityPenalty: " + std::to_string(double(densityPenalty_));
+    log_->report(msg);
+  }
+
+  if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
+    minSumOverflow_ = sumOverflowUnscaled_;
+    hpwlWithMinSumOverflow_ = prevHpwl_;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////
 // class BinGrid
@@ -2659,5 +2691,4 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntY_));
 }
 
-
-}
+} // namespace gpl2

@@ -44,6 +44,8 @@
 
 #include <cufft.h>
 #include <stdio.h>
+#include "util.h"
+#include "cudaDCT.h"
 
 #include <memory>
 

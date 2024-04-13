@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,14 +22,15 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "placerBase.h"
@@ -69,7 +71,6 @@
 
 namespace gpl2 {
 
-using namespace std;
 using utl::GPL2;
 
 
@@ -826,73 +827,6 @@ void PlacerBase::nesterovUpdateCoordinates(float coeff)
   // update density
   updateGCellDensityCenterLocation(dNextSLPCoordiPtr_);
   updateDensityForceBin();
-}
-
-
-// exchange the states:  prev -> current, current -> next
-// update the parameters
-void PlacerBase::updateNextIter(int iter)
-{
-  if (isConverged_) {
-    return;
-  }
-
-  // Previous <= Current
-  std::swap(dCurSLPCoordiPtr_, dPrevSLPCoordiPtr_);
-  std::swap(dCurSLPSumGradsPtr_, dPrevSLPSumGradsPtr_);
-  std::swap(dCurSLPWireLengthGradXPtr_, dPrevSLPWireLengthGradXPtr_);
-  std::swap(dCurSLPWireLengthGradYPtr_, dPrevSLPWireLengthGradYPtr_);
-  std::swap(dCurSLPDensityGradXPtr_, dPrevSLPDensityGradXPtr_);
-  std::swap(dCurSLPDensityGradYPtr_, dPrevSLPDensityGradYPtr_);
-
-  // Current <= Next
-  std::swap(dCurSLPCoordiPtr_, dNextSLPCoordiPtr_);
-  std::swap(dCurSLPSumGradsPtr_, dNextSLPSumGradsPtr_);
-  std::swap(dCurSLPWireLengthGradXPtr_, dNextSLPWireLengthGradXPtr_);
-  std::swap(dCurSLPWireLengthGradYPtr_, dNextSLPWireLengthGradYPtr_);
-  std::swap(dCurSLPDensityGradXPtr_, dNextSLPDensityGradXPtr_);
-  std::swap(dCurSLPDensityGradYPtr_, dNextSLPDensityGradYPtr_);
-  
-  std::swap(dCurCoordiPtr_, dNextCoordiPtr_);
-  
-  // In a macro dominated design like mock-array-big you may be placing
-  // very few std cells in a sea of fixed macros. The overflow denominator
-  // may be quite small and prevent convergence. This is mostly due to 
-  // our limited ability to move instances off macros cleanly.
-  // As that improves this should no longer be needed.
-  const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_.maxNesterovIter;  
-  const float overflowDenominator
-      = std::max(static_cast<float>(nesterovInstsArea()),
-                 fractionOfMaxIters * nonPlaceInstsArea() * 0.05f); 
-      
-  sumOverflow_ = overflowArea() / overflowDenominator;
-  sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
-
-  int64_t hpwl = pbCommon_->hpwl();
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
-                             / npVars_.referenceHpwl);
-
-  prevHpwl_ = hpwl;
-  // TODO:  use autotuner to autotune this parameter for better tradeoff between overflow and wirelength
-  //densityPenalty_ *= phiCoef * 1.01;
-  densityPenalty_ *= phiCoef * 0.99;
-
-  // TODO: we cannot use the spd::log in cuda
-  if (iter == 0 || (iter + 1) % 10 == 0) {
-    std::string msg = "[NesterovSolve] Iter: "+ std::to_string(iter + 1) + " ";
-    msg += "overflow: " + std::to_string(sumOverflowUnscaled_) + " ";
-    msg += "HPWL: " + std::to_string(prevHpwl_) + " ";
-    std::cout << msg << " ";
-    std::cout << "densityPenalty: " << densityPenalty_ << std::endl;
-    //msg += "densityPenalty: " + std::to_string(double(densityPenalty_));
-    //log_->report(msg);
-  }
-
-  if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
-    minSumOverflow_ = sumOverflowUnscaled_;
-    hpwlWithMinSumOverflow_ = prevHpwl_;
-  }
 }
 
 

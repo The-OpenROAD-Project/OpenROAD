@@ -127,13 +127,6 @@ gpu_set_init_wirelength_coef_cmd(float coef)
   gpu_replace->setInitWireLengthCoef(coef);
 }
 
-void
-gpu_replace_incremental_place_cmd()
-{
-  GpuReplace* gpu_replace = getGpuReplace();
-  gpu_replace->doIncrementalPlace();
-}
-
 void gpu_set_timing_driven_mode(bool timing_driven)
 {
   GpuReplace* gpu_replace = getGpuReplace();
@@ -150,12 +143,6 @@ void gpu_set_dataflow_flag_cmd(bool dataflow_flag)
 {
   GpuReplace* gpu_replace = getGpuReplace();
   gpu_replace->setDataflowFlag(dataflow_flag);
-}
-
-void gpu_set_dreamplace_flag_cmd(bool flag) 
-{
-  GpuReplace* gpu_replace = getGpuReplace();
-  gpu_replace->setDREAMPlaceFlag(flag);
 }
 
 void gpu_set_cluster_constraint_flag_cmd(bool cluster_constraint)

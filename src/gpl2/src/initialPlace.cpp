@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,61 +22,63 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-// In our implementation, we use the 
-// Biconjugate Gradient Stabilized (BiCGstab) from the cusp
-// library to solve the linear equation.
-// Check here from example : 
-// https://cusplibrary.github.io/group__krylov__methods.html#ga23cfa8325966505d6580151f91525887
+// We have two kinds of initial placement methods
+// (i) for designs with preplaced macros, we call the original conjugate
+// gradient based flat placement method.  The CG solver is implemented on the
+// cpu side. (ii) for designs without preplaced macros, we call the nesterov
+// based clustered placement method. The nesterov solver is implemented on the
+// gpu side.
 
 #include "initialPlace.h"
-#include <utility>
-#include "utl/Logger.h"
-#include "placerBase.h"
-#include <cusparse.h>
-#include <filesystem>
+
 #include <cuda.h>
-#include <thread>
-#include <chrono>
 #include <cuda_runtime.h>
+#include <cusparse.h>
+
+#include <chrono>
+#include <filesystem>
+#include <thread>
+#include <utility>
+
+#include "placerBase.h"
+#include "utl/Logger.h"
 // basic vectors
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
-#include <thrust/sequence.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <thrust/reduce.h>
+#include <thrust/sequence.h>
 // memory related
 #include <thrust/copy.h>
 #include <thrust/fill.h>
 // algorithm related
-#include <thrust/transform.h>
-#include <thrust/replace.h>
-#include <thrust/functional.h>
-#include <thrust/for_each.h>
 #include <thrust/execution_policy.h>
-#include <thrust/sort.h>
-#include <thrust/reduce.h>
+#include <thrust/for_each.h>
+#include <thrust/functional.h>
 #include <thrust/inner_product.h>
 #include <thrust/iterator/zip_iterator.h>
+#include <thrust/reduce.h>
+#include <thrust/replace.h>
+#include <thrust/sort.h>
+#include <thrust/transform.h>
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseCore>
 #include <memory>
 
-
 namespace gpl2 {
-
-using namespace std;
 
 using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
@@ -89,14 +92,115 @@ struct ResidualError
   float y;  // The relative residual error for Y
 };
 
-// We have two kinds of initial placement methods
-// (i) for designs with preplaced macros, we call the original conjugate gradient based
-// flat placement method.  The CG solver is implemented on the cpu side.
-// (ii) for designs without preplaced macros, we call the nesterov based clustered placement
-// method. The nesterov solver is implemented on the gpu side.
+//////////////////////////////////////////////////////////////
+// Class InitialPlaceVars
+InitialPlaceVars::InitialPlaceVars()
+{
+  reset();
+}
+
+void InitialPlaceVars::reset()
+{
+  maxIter = 20;
+  minDiffLength = 1500;
+  maxSolverIter = 100;
+  maxFanout = 200;
+  netWeightScale = 800.0;
+}
+
+/////////////////////////////////////////////////////////////////
+// Class InitialPlace
+InitialPlace::InitialPlace() : pbc_(nullptr), log_(nullptr)
+{
+}
+
+InitialPlace::InitialPlace(InitialPlaceVars ipVars,
+                           std::shared_ptr<PlacerBaseCommon> pbc,
+                           std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                           utl::Logger* log)
+    : ipVars_(ipVars), pbc_(std::move(pbc)), pbVec_(pbVec), log_(log)
+{
+}
+
+InitialPlace::InitialPlace(InitialPlaceVars ipVars,
+                           float haloWidth,
+                           int numHops,
+                           bool dataflowFlag,
+                           sta::dbNetwork* network,
+                           odb::dbDatabase* db,
+                           utl::Logger* log)
+    : ipVars_(ipVars),
+      log_(log),
+      network_(network),
+      db_(db),
+      haloWidth_(haloWidth),
+      numHops_(numHops),
+      dataflowFlag_(dataflowFlag)
+{
+}
+
+InitialPlace::~InitialPlace()
+{
+  reset();
+}
+
+void InitialPlace::reset()
+{
+  pbc_ = nullptr;
+  ipVars_.reset();
+}
+
+void InitialPlace::doInitialPlace()
+{
+  bool fixedMacroFlag = false;
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbSet<odb::dbInst> insts = block->getInsts();
+  for (odb::dbInst* inst : insts) {
+    auto type = inst->getMaster()->getType();
+    if (type.isBlock()
+        && (inst->getPlacementStatus() == odb::dbPlacementStatus::LOCKED
+            || inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM)) {
+      fixedMacroFlag = true;
+      break;
+    }
+  }
+
+  // check if the design has fixed macros
+  if (fixedMacroFlag == true) {
+    log_->report("[InitialPlace]  Design has fixed macros.");
+    log_->report("[InitialPlace]  Use CG-based initial placement.");
+    doBicgstabPlace();
+  } else {
+    log_->report("[InitialPlace]  Design has no fixed macros.");
+    log_->report("[InitialPlace]  Use Nesterov-based initial placement.");
+    if (doClusterNesterovPlace() == false) {
+      log_->report("[InitialPlace] Nesterov-based initial placement failed.");
+      log_->report("[InitialPlace] Use CG-based initial placement.");
+      doBicgstabPlace();
+    }
+  }
+}
+
+void InitialPlace::setPlacerBaseVars(PlacerBaseVars pbVars)
+{
+  pbVars_ = pbVars;
+}
+
+void InitialPlace::setNesterovBaseVars(NesterovBaseVars nbVars)
+{
+  nbVars_ = nbVars;
+}
+
+void InitialPlace::setNesterovPlaceVars(NesterovPlaceVars npVars)
+{
+  npVars_ = npVars;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Conjugate Gradient Solver for Initial Placement
+//////////////////////////////////////////////////////////////////////////////
 
 // CPU Solver from the original RePlAce
-
 ResidualError cpuSparseSolve(int maxSolverIter,
                              int iter,
                              SMatrix& placeInstForceMatrixX,
@@ -119,125 +223,23 @@ ResidualError cpuSparseSolve(int maxSolverIter,
   return error;
 }
 
-
-
-//////////////////////////////////////////////////////////////
-// Class InitialPlaceVars
-InitialPlaceVars::InitialPlaceVars()
-{
-  reset();
-
-}
-
-void InitialPlaceVars::reset()
-{
-  maxIter = 20;
-  minDiffLength = 1500;
-  maxSolverIter = 100;
-  maxFanout = 200;
-  netWeightScale = 800.0;
-}
-
-/////////////////////////////////////////////////////////////////
-// Class InitialPlace
-InitialPlace::InitialPlace() : pbc_(nullptr), log_(nullptr)
-{
-}
-
-InitialPlace::InitialPlace(InitialPlaceVars ipVars,
-                           std::shared_ptr<PlacerBaseCommon> pbc,
-                           std::vector<std::shared_ptr<PlacerBase> >& pbVec,
-                           utl::Logger* log)
-    : ipVars_(ipVars), pbc_(std::move(pbc)), pbVec_(pbVec), log_(log)
-{
-}
-
-
-InitialPlace::InitialPlace(InitialPlaceVars ipVars,
-                           float haloWidth,
-                           int numHops,
-                           bool dataflowFlag,
-                           sta::dbNetwork* network,
-                           odb::dbDatabase* db,
-                           utl::Logger* log)
-    : ipVars_(ipVars), 
-      haloWidth_(haloWidth),
-      numHops_(numHops),
-      dataflowFlag_(dataflowFlag), 
-      network_(network),
-      db_(db), 
-      log_(log)
-{  }
-
-
-InitialPlace::~InitialPlace()
-{
-  reset();
-}
-
-void InitialPlace::reset()
-{
-  pbc_ = nullptr;
-  ipVars_.reset();
-}
-
-
-void InitialPlace::doInitialPlace()
-{
-  bool fixedMacroFlag = false;
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::dbSet<odb::dbInst> insts = block->getInsts();
-  for (odb::dbInst* inst : insts) {
-    auto type = inst->getMaster()->getType();
-    if (type.isBlock() && (inst->getPlacementStatus() == odb::dbPlacementStatus::LOCKED ||
-                           inst->getPlacementStatus() == odb::dbPlacementStatus::FIRM)) {
-      fixedMacroFlag = true; 
-      break;  
-    }
-  }
-
-  // for test: 
-  if (dpFlag_ == true) {
-    fixedMacroFlag = true;
-  }
-  
-  // check if the design has fixed macros
-  if (fixedMacroFlag == true) {
-    log_->report("[InitialPlace]  Design has fixed macros.");
-    log_->report("[InitialPlace]  Use CG-based initial placement.");
-    doBicgstabPlace();
-  } else {
-    log_->report("[InitialPlace]  Design has no fixed macros.");
-    log_->report("[InitialPlace]  Use Nesterov-based initial placement.");
-    if (doClusterNesterovPlace() == false) {
-      log_->report("[InitialPlace] Nesterov-based initial placement failed.");
-      log_->report("[InitialPlace] Use CG-based initial placement.");
-      doBicgstabPlace();
-    }
-  }
-}
-
 void InitialPlace::doBicgstabPlace()
 {
-  pbc_ = std::make_shared<PlacerBaseCommon>(network_, db_, pbVars_, log_, 
-            haloWidth_, 0, 0, false, false, false, false);
+  pbc_ = std::make_shared<PlacerBaseCommon>(network_,
+                                            db_,
+                                            pbVars_,
+                                            log_,
+                                            haloWidth_,
+                                            0,
+                                            0,
+                                            false,
+                                            false,
+                                            false,
+                                            false);
   pbVec_.push_back(std::make_shared<PlacerBase>(nbVars_, db_, pbc_, log_));
   for (const auto& pb : pbVec_) {
     pb->setNpVars(npVars_);
   }
-
-  /*
-  int numInsts = 0;
-  // handle on the host side
-  for (auto& inst : pbc_->placeInsts()) {
-    inst->dbSetLocation();
-    inst->dbSetPlaced();
-    numInsts++;
-  }
-
-  std::cout << "Number of placed instances = " << numInsts << std::endl;
-  return;
-  */
 
   ResidualError error;
   placeInstsCenter();
@@ -245,27 +247,27 @@ void InitialPlace::doBicgstabPlace()
     updatePinInfo();
     createSparseMatrix();
     error = cpuSparseSolve(ipVars_.maxSolverIter,
-                            iter,
-                            placeInstForceMatrixX_,
-                            fixedInstForceVecX_,
-                            instLocVecX_,
-                            placeInstForceMatrixY_,
-                            fixedInstForceVecY_,
-                            instLocVecY_);
-    float error_max = max(error.x, error.y);
-    log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f}", iter, error_max);
+                           iter,
+                           placeInstForceMatrixX_,
+                           fixedInstForceVecX_,
+                           instLocVecX_,
+                           placeInstForceMatrixY_,
+                           fixedInstForceVecY_,
+                           instLocVecY_);
+    float error_max = std::max(error.x, error.y);
+    log_->report(
+        "[InitialPlace]  Iter: {} CG residual: {:0.8f}", iter, error_max);
     updateCoordi();
-  
+
     if (error_max <= 1e-5 && iter >= 5) {
       break;
     }
   }
 }
 
-
 void InitialPlace::placeInstsCenter()
-{  
-  const int centerX = pbc_->die().coreCx();  
+{
+  const int centerX = pbc_->die().coreCx();
   const int centerY = pbc_->die().coreCy();
 
   // handle on the host side
@@ -283,8 +285,8 @@ void InitialPlace::placeInstsCenter()
         domainXMax = std::max(domainXMax, boundary->xMax());
         domainYMax = std::max(domainYMax, boundary->yMax());
       }
-      inst->setCenterLocation(domainXMax - (domainXMax - domainXMin) / 2, 
-                              domainYMax - (domainYMax - domainYMin) / 2); 
+      inst->setCenterLocation(domainXMax - (domainXMax - domainXMin) / 2,
+                              domainYMax - (domainYMax - domainYMin) / 2);
     } else {
       inst->setCenterLocation(centerX, centerY);
     }
@@ -292,7 +294,7 @@ void InitialPlace::placeInstsCenter()
 }
 
 // Same as the original CPU-based RePlAce
-void InitialPlace::updatePinInfo() 
+void InitialPlace::updatePinInfo()
 {
   // reset all MinMax attributes
   for (auto& pin : pbc_->pins()) {
@@ -349,7 +351,6 @@ void InitialPlace::updatePinInfo()
   }
 }
 
-
 void InitialPlace::createSparseMatrix()
 {
   const int placeCnt = pbc_->placeInsts().size();
@@ -371,7 +372,7 @@ void InitialPlace::createSparseMatrix()
   // to fill in SparseMatrix from Eigen docs.
   //
 
-  vector<T> listX, listY;
+  std::vector<T> listX, listY;
   listX.reserve(1000000);
   listY.reserve(1000000);
 
@@ -396,7 +397,7 @@ void InitialPlace::createSparseMatrix()
       continue;
     }
 
-    float netWeight = ipVars_.netWeightScale / (net->pins().size() - 1);  
+    float netWeight = ipVars_.netWeightScale / (net->pins().size() - 1);
     // foreach two pins in single nets.
     auto& pins = net->pins();
     for (int pinIdx1 = 1; pinIdx1 < pins.size(); ++pinIdx1) {
@@ -424,7 +425,7 @@ void InitialPlace::createSparseMatrix()
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instId();
             const int inst2 = pin2->instId();
-            
+
             listX.push_back(T(inst1, inst1, weightX));
             listX.push_back(T(inst2, inst2, weightX));
 
@@ -444,7 +445,7 @@ void InitialPlace::createSparseMatrix()
           // pin1 from IO port / pin2 from Instance
           else if (!pin1->isPlaceInstConnected()
                    && pin2->isPlaceInstConnected()) {
-            const int inst2 = pin2->instId();  
+            const int inst2 = pin2->instId();
             listX.push_back(T(inst2, inst2, weightX));
 
             fixedInstForceVecX_(inst2)
@@ -478,7 +479,7 @@ void InitialPlace::createSparseMatrix()
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instId();
             const int inst2 = pin2->instId();
-           
+
             listY.push_back(T(inst1, inst1, weightY));
             listY.push_back(T(inst2, inst2, weightY));
 
@@ -527,19 +528,6 @@ void InitialPlace::createSparseMatrix()
 void InitialPlace::updateCoordi()
 {
   int instIdx = 0;
-  if (dpFlag_ == true) {
-    const int centerX = pbc_->die().coreCx();
-    const int centerY = pbc_->die().coreCy();
-    for (auto& inst : pbc_->placeInsts()) {
-      inst->setCenterLocation(centerX, centerY);
-      inst->dbSetLocation();
-      inst->dbSetPlaced();
-      instIdx++;
-    }
-    
-    return;    
-  } 
-  
   for (auto& inst : pbc_->placeInsts()) {
     inst->setCenterLocation(instLocVecX_(instIdx), instLocVecY_(instIdx));
     inst->dbSetLocation();
@@ -548,46 +536,46 @@ void InitialPlace::updateCoordi()
   }
 }
 
-void InitialPlace::setPlacerBaseVars(PlacerBaseVars pbVars)
-{
-  pbVars_ = pbVars;
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Nesterov-based Initial Placement
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-void InitialPlace::setNesterovBaseVars(NesterovBaseVars nbVars)
+bool InitialPlace::doClusterNesterovPlace()
 {
-  nbVars_ = nbVars;
-}
+  float bloatFactor = 1.0;
+  bool convergeFlag = false;
+  for (int i = 0; i < 10; i++) {
+    if (doClusterNesterovPlaceIter(bloatFactor) == true) {
+      convergeFlag = true;
+      break;
+    }
+    // Wait for the GPU to free memory
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
 
-void InitialPlace::setNesterovPlaceVars(NesterovPlaceVars npVars)
-{
-  npVars_ = npVars;
+  return convergeFlag;
 }
-
 
 bool InitialPlace::doClusterNesterovPlaceIter(float& bloatFactor)
 {
-  std::cout << "[InitialPlace] Set bloat factor = " << bloatFactor << std::endl;
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
-  
-  const char* rpt_dir = "./dgl_rpt";
-  // Check if the directory exists
-  if (std::filesystem::exists(rpt_dir) && std::filesystem::is_directory(rpt_dir)) {
-    // Attempt to remove the directory and its contents
-    try {
-      auto removed_files = std::filesystem::remove_all(rpt_dir); // Returns the number of files removed
-      std::cout << "Removed " << removed_files << " files or directories." << std::endl;
-    } catch (const std::filesystem::filesystem_error& e) {
-      std::cerr << "Error: " << e.what() << std::endl;
-    }
-  } else {
-      std::cout << "The directory does not exist or is not a directory." << std::endl;
-  }
-      
-  std::filesystem::create_directory(rpt_dir);
-  
-  pbc_ = std::make_shared<PlacerBaseCommon>(network_, db_, pbVars_, log_, 
-            haloWidth_, 0, numHops_,  bloatFactor, true, dataflowFlag_, false, false);
+  // set the flag for clustered placement
+  const int virtualIter = 0;        // We do not consider virtual connections
+  const bool clusterFlag = true;    // We need to do cluster placement
+  const bool datapathFlag = false;  // We do not need to consider datapath
+  const bool clusterConstraintFlag = false;  // not applied here
+  pbc_ = std::make_shared<PlacerBaseCommon>(network_,
+                                            db_,
+                                            pbVars_,
+                                            log_,
+                                            haloWidth_,
+                                            virtualIter,
+                                            numHops_,
+                                            bloatFactor,
+                                            clusterFlag,
+                                            datapathFlag,
+                                            clusterConstraintFlag);
 
+  // put all instances to the center
   const int centerX = pbc_->die().coreCx();
   const int centerY = pbc_->die().coreCy();
   for (auto& inst : pbc_->placeInsts()) {
@@ -599,86 +587,21 @@ bool InitialPlace::doClusterNesterovPlaceIter(float& bloatFactor)
     pb->setNpVars(npVars_);
   }
 
-   // TODO:  we do not have timing-driven or routability-driven mode
-  rb_ = nullptr;
-  tb_ = nullptr;
-
-  std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars_, false, pbc_, pbVec_, rb_, tb_, log_));
-
-  const int start_iter = 0;  
-  bool convergeFlag =  np->doNesterovPlace(start_iter);
-  bloatFactor = bloatFactor * 0.1 / pbVec_[0]->getSumOverflow();
-  std::cout << "[InitialPlace] sumOveflow = " << pbVec_[0]->getSumOverflow() << std::endl;
-  std::cout << "[InitialPlace] adjusted bloatFactor = " << bloatFactor << std::endl;
-
-  pbVec_.clear();
-
-  return convergeFlag;
-}
-
-bool InitialPlace::doClusterNesterovPlace()
-{
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
- 
-  float bloatFactor = 1.0;
-  bool convergeFlag = false;
-  for (int i = 0; i < 10; i++) {
-    if (doClusterNesterovPlaceIter(bloatFactor) == true) {
-      convergeFlag = true;
-      break;
-    }
-    std::cout << "Wait for a second..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << "Done waiting." << std::endl;
-  }
-
-  auto end_timestamp_global = std::chrono::high_resolution_clock::now();
-  double total_global_time
-      = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            end_timestamp_global - start_timestamp_global)
-            .count();
-  total_global_time *= 1e-9;
-  std::cout << "[Time Info] The nesterov placement for clustered netlist runtime is " 
-            << total_global_time << std::endl;
-
-  return convergeFlag;
-}
-
-/*
-// Nesterov Place
-bool InitialPlace::doClusterNesterovPlace()
-{
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
-  pbc_ = std::make_shared<PlacerBaseCommon>(network_, db_, pbVars_, log_, 
-            haloWidth_, 0, numHops_, true, dataflowFlag_, false, false);
-  pbVec_.push_back(std::make_shared<PlacerBase>(nbVars_, db_, pbc_, log_));
-  for (const auto& pb : pbVec_) {
-    pb->setNpVars(npVars_);
-  }
-
   // TODO:  we do not have timing-driven or routability-driven mode
   rb_ = nullptr;
   tb_ = nullptr;
 
   std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars_, false, pbc_, pbVec_, rb_, tb_, log_));
+      new NesterovPlace(npVars_, pbc_, pbVec_, rb_, tb_, log_));
 
-  const int start_iter = 0;  
-  bool convergeFlag =  np->doNesterovPlace(start_iter);
+  const int start_iter = 0;
+  bool convergeFlag = np->doNesterovPlace(start_iter);
 
-  auto end_timestamp_global = std::chrono::high_resolution_clock::now();
-  double total_global_time
-      = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            end_timestamp_global - start_timestamp_global)
-            .count();
-  total_global_time *= 1e-9;
-  std::cout << "[Time Info] The nesterov placement for clustered netlist runtime is " 
-            << total_global_time << std::endl;
+  bloatFactor
+      = bloatFactor * npVars_.targetOverflow / pbVec_[0]->getSumOverflow();
+  pbVec_.clear();
 
   return convergeFlag;
 }
-*/
-
 
 }  // namespace gpl2

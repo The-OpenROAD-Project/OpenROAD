@@ -54,8 +54,7 @@
 #include <iostream>
 #include <memory>
 
-#include "cudaDCT.h"
-#include "cudaUtil.h"
+#include "util.h"
 #include "poissonSolver.h"
 
 namespace gpl2 {

@@ -1,7 +1,8 @@
 ###############################################################################
+##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2018-2023, The Regents of the University of California
+## Copyright (c) 2024, The Regents of the University of California
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -21,14 +22,15 @@
 ## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 ## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 ## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE
-## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
 ###############################################################################
 
 sta::define_cmd_args "gpu_global_placement" { \
@@ -62,7 +64,6 @@ sta::define_cmd_args "gpu_global_placement" { \
     [-timing_driven_net_weight_max timing_driven_net_weight_max] \
     [-timing_driven_nets_percentage timing_driven_nets_percentage] \
     [-dataflow_flag] \
-    [-dreamplace_flag] \
     [-datapath_flag] \
     [-cluster_constraint_flag] \
     [-halo_width halo_width] \
@@ -102,7 +103,6 @@ proc gpu_global_placement { args } {
       -datapath_flag \
       -dataflow_flag \
       -cluster_constraint_flag \
-      -dreamplace_flag \
       -incremental }
 
   # flow control for initial_place
@@ -123,17 +123,11 @@ proc gpu_global_placement { args } {
   set dataflow_flag [info exists flags(-dataflow_flag)]
   gpl2::gpu_set_dataflow_flag_cmd $dataflow_flag
 
-  set dreamplace_flag [info exists flags(-dreamplace_flag)]
-  gpl2::gpu_set_dreamplace_flag_cmd $dreamplace_flag
-
   set datapath_flag [info exists flags(-datapath_flag)]
   gpl2::gpu_set_datapath_flag_cmd $datapath_flag
 
   set cluster_constraint_flag [info exists flags(-cluster_constraint_flag)]
   gpl2::gpu_set_cluster_constraint_flag_cmd $cluster_constraint_flag
-
-  puts "dataflow_flag $dataflow_flag"
-  puts "cluster_constraint_flag $cluster_constraint_flag"
 
   set timing_driven [info exists flags(-timing_driven)]
   gpl2::gpu_set_timing_driven_mode $timing_driven
@@ -342,9 +336,10 @@ proc gpu_global_placement { args } {
 
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
-  
+
+    # TODO:  Enable incremental placement 
     if { [info exists flags(-incremental)] } {
-      gpl2::gpu_replace_incremental_place_cmd
+      puts "Sorry, we do not support incremental placement yet."
     } else {
       gpl2::gpu_replace_initial_place_cmd
 

@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,17 +22,16 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
-
-#include "gpuRouteBase.h"
 
 #include <algorithm>
 #include <cmath>
@@ -39,9 +39,10 @@
 #include <string>
 #include <utility>
 
+#include "gpuRouteBase.h"
 #include "grt/GlobalRouter.h"
-#include "placerBase.h"
 #include "odb/db.h"
+#include "placerBase.h"
 #include "utl/Logger.h"
 
 using grt::GlobalRouter;
@@ -81,11 +82,7 @@ void RouteBaseVars::reset()
 // GpuRouteBase
 
 GpuRouteBase::GpuRouteBase()
-    : rbVars_(),
-      db_(nullptr),
-      grouter_(nullptr),
-      nbc_(nullptr),
-      log_(nullptr)
+    : rbVars_(), db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
 {
 }
 
@@ -103,17 +100,10 @@ GpuRouteBase::GpuRouteBase(RouteBaseVars rbVars,
   nbc_ = std::move(nbc);
   log_ = log;
   nbVec_ = std::move(nbVec);
-  init();
 }
 
 GpuRouteBase::~GpuRouteBase()
 {
-}
-
-// TODO : dummy function now
-void GpuRouteBase::init()
-{
-  std::cout << "GpuRouteBase :: init" << std::endl;
 }
 
 }  // namespace gpl2

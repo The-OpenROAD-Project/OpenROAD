@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,14 +22,15 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -73,29 +75,25 @@ class RouteBaseVars
   void reset();
 };
 
-
 class GpuRouteBase
 {
-  public:
-    GpuRouteBase();
-    GpuRouteBase(RouteBaseVars rbVars,
-                 odb::dbDatabase* db,
-                 grt::GlobalRouter* grouter,
-                 std::shared_ptr<PlacerBaseCommon> nbc,
-                 std::vector<std::shared_ptr<PlacerBase> > nbVec,
-                 utl::Logger* log);
-    ~GpuRouteBase();
+ public:
+  GpuRouteBase();
+  GpuRouteBase(RouteBaseVars rbVars,
+               odb::dbDatabase* db,
+               grt::GlobalRouter* grouter,
+               std::shared_ptr<PlacerBaseCommon> nbc,
+               std::vector<std::shared_ptr<PlacerBase>> nbVec,
+               utl::Logger* log);
+  ~GpuRouteBase();
 
-  private:
-    RouteBaseVars rbVars_;
-    odb::dbDatabase* db_;
-    grt::GlobalRouter* grouter_;
+ private:
+  RouteBaseVars rbVars_;
+  odb::dbDatabase* db_;
+  grt::GlobalRouter* grouter_;
 
-    std::shared_ptr<PlacerBaseCommon> nbc_;
-    std::vector<std::shared_ptr<PlacerBase> > nbVec_;
-    utl::Logger* log_;
-
-    // TODO: dummy function now
-    void init();
+  std::shared_ptr<PlacerBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> nbVec_;
+  utl::Logger* log_;
 };
 }  // namespace gpl2

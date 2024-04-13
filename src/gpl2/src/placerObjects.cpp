@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -21,76 +22,80 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "placerObjects.h"
-#include <odb/db.h>
-#include "utl/Logger.h"
-#include "util.h"
-#include <iostream>
-#include <cmath>
-#include <memory>
-#include <numeric>
-#include <chrono>
+
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <odb/db.h>
+
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <numeric>
+
+#include "util.h"
+#include "utl/Logger.h"
 // basic vectors
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
-#include <thrust/sequence.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <thrust/reduce.h>
+#include <thrust/sequence.h>
 // memory related
 #include <thrust/copy.h>
 #include <thrust/fill.h>
 // algorithm related
-#include <thrust/transform.h>
-#include <thrust/replace.h>
-#include <thrust/functional.h>
-#include <thrust/for_each.h>
 #include <thrust/execution_policy.h>
+#include <thrust/for_each.h>
+#include <thrust/functional.h>
+#include <thrust/replace.h>
+#include <thrust/transform.h>
 
 namespace gpl2 {
 
-using namespace std;
 using utl::GPL2;
 
 ///////////////////////////////////////////////////////////////
 // Instance
 Instance::Instance()
-  : instId_(-1),
-    inst_(nullptr),
-    cx_(0.0),
-    cy_(0.0),
-    dx_(0.0),
-    dy_(0.0),
-    dDx_(0.0),
-    dDy_(0.0),
-    densityScale_(0.0),
-    type_(InstanceType::FILLER),
-    isFixed_(false)
+    : inst_(nullptr),
+      instId_(-1),
+      cx_(0.0),
+      cy_(0.0),
+      dx_(0.0),
+      dy_(0.0),
+      dDx_(0.0),
+      dDy_(0.0),
+      densityScale_(0.0),
+      haloWidth_(0),
+      type_(InstanceType::FILLER),
+      isFixed_(false)
 {
 }
 
-
 Instance::Instance(odb::dbInst* inst,
-    int padLeft,
-    int padRight,
-    int siteHeight,
-    int rowLimit,
-    utl::Logger* logger) : Instance()
+                   int padLeft,
+                   int padRight,
+                   int siteHeight,
+                   int rowLimit,
+                   utl::Logger* logger)
+    : Instance()
 {
-  // get the instance id  
-  instId_ = odb::dbIntProperty::find(inst, "instId")->getValue();  
+  // get the instance id
+  instId_ = odb::dbIntProperty::find(inst, "instId")->getValue();
   inst_ = inst;
   // get the bounding box
   odb::dbBox* bbox = inst->getBBox();
@@ -100,9 +105,7 @@ Instance::Instance(odb::dbInst* inst,
   int ux = lx + floor(bbox->getDX() / 2) * 2;
   int uy = ly + floor(bbox->getDY() / 2) * 2;
 
-  
-
-  isFixed_ = isFixedOdbInst(inst);  
+  isFixed_ = isFixedOdbInst(inst);
   if (isPlaceInstance()) {
     lx -= padLeft;
     ux += padRight;
@@ -121,21 +124,22 @@ Instance::Instance(odb::dbInst* inst,
     setMacro();
   } else if (bbox->getDY() > rowLimit * siteHeight) {
     setMacro();
-    std::string msg = std::string("Master ") + std::string(inst->getMaster()->getName());
+    std::string msg
+        = std::string("Master ") + std::string(inst->getMaster()->getName());
     msg += std::string(" is not marked as a BLOCK in LEF but is more than ");
-    msg += std::to_string(rowLimit) + " rows tall.  It will be treated as a macro.";
+    msg += std::to_string(rowLimit)
+           + " rows tall.  It will be treated as a macro.";
     logger->report(msg);
   } else {
     setStdInstance();
   }
 }
 
-
 // for dummy instances or filler instance
-Instance::Instance(int cx, int cy, int width, int height, bool isDummy) 
-  : Instance()
+Instance::Instance(int cx, int cy, int width, int height, bool isDummy)
+    : Instance()
 {
-  instId_ = -1; // This is a dummy instance
+  instId_ = -1;  // This is a dummy instance
   cx_ = cx;
   cy_ = cy;
 
@@ -148,10 +152,10 @@ Instance::Instance(int cx, int cy, int width, int height, bool isDummy)
 
   if (isDummy == true) {
     setDummy();
-    isFixed_ = true; // dummy instance is always fixed
+    isFixed_ = true;  // dummy instance is always fixed
   } else {
     setFiller();
-    isFixed_ = false; // filler instance is not fixed
+    isFixed_ = false;  // filler instance is not fixed
   }
 }
 
@@ -162,10 +166,7 @@ Instance::~Instance()
   pins_.clear();
 }
 
-
-void Instance::snapOutward(const odb::Point& origin, 
-                           int step_x, 
-                           int step_y)
+void Instance::snapOutward(const odb::Point& origin, int step_x, int step_y)
 {
   int lx = cx_ - dx_ / 2;
   int ly = cy_ - dy_ / 2;
@@ -186,14 +187,12 @@ void Instance::snapOutward(const odb::Point& origin,
   dDy_ = dy_;
 }
 
-
 void Instance::dbSetPlaced()
 {
   if (inst_ != nullptr) {
     inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 }
-
 
 void Instance::dbSetPlacementStatus(odb::dbPlacementStatus ps)
 {
@@ -203,7 +202,7 @@ void Instance::dbSetPlacementStatus(odb::dbPlacementStatus ps)
 }
 
 void Instance::dbSetLocation()
-{ 
+{
   if (inst_ != nullptr) {
     int lx = cx_ - dx_ / 2 - haloWidth_;
     int ly = cy_ - dy_ / 2 - haloWidth_;
@@ -221,7 +220,6 @@ void Instance::setCenterLocation(int cx, int cy)
   }
 }
 
-
 void Instance::setDensitySize(int dDx, int dDy, float densityScale)
 {
   dDx_ = dDx / 2 * 2;
@@ -229,27 +227,25 @@ void Instance::setDensitySize(int dDx, int dDy, float densityScale)
   densityScale_ = densityScale;
 }
 
-
 ////////////////////////////////////////////////////////
 // Pin
 Pin::Pin()
-  : pinId_(-1),
-    pin_(nullptr),
-    inst_(nullptr),
-    net_(nullptr),
-    cx_(0),
-    cy_(0),
-    offsetCx_(0),
-    offsetCy_(0),
-    iTermField_(false),
-    bTermField_(false),
-    minPinXField_(false),
-    minPinYField_(false),
-    maxPinXField_(false),
-    maxPinYField_(false)
+    : pin_(nullptr),
+      pinId_(-1),
+      inst_(nullptr),
+      net_(nullptr),
+      cx_(0),
+      cy_(0),
+      offsetCx_(0),
+      offsetCy_(0),
+      iTermField_(false),
+      bTermField_(false),
+      minPinXField_(false),
+      minPinYField_(false),
+      maxPinXField_(false),
+      maxPinYField_(false)
 {
 }
-
 
 Pin::Pin(int pinId) : Pin()
 {
@@ -260,16 +256,15 @@ Pin::Pin(int pinId) : Pin()
 Pin::Pin(odb::dbITerm* iTerm, utl::Logger* logger) : Pin()
 {
   iTermField_ = true;
-  pinId_ = odb::dbIntProperty::find(iTerm, "pinId")->getValue();  
+  pinId_ = odb::dbIntProperty::find(iTerm, "pinId")->getValue();
   pin_ = (void*) iTerm;
   updateCoordi(iTerm, logger);
 }
 
-
 Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
 {
   bTermField_ = true;
-  pinId_ = odb::dbIntProperty::find(bTerm, "pinId")->getValue();  
+  pinId_ = odb::dbIntProperty::find(bTerm, "pinId")->getValue();
   pin_ = (void*) bTerm;
   updateCoordi(bTerm, logger);
 }
@@ -279,12 +274,13 @@ std::string Pin::name() const
   if (pinId_ == -1) {
     return "DUMMY";
   }
+
   if (isITerm()) {
     return dbITerm()->getInst()->getName() + '/'
            + dbITerm()->getMTerm()->getName();
-  } else {
-    return dbBTerm()->getName();
   }
+
+  return dbBTerm()->getName();
 }
 
 odb::dbITerm* Pin::dbITerm() const
@@ -326,7 +322,7 @@ void Pin::updateCoordi(odb::dbITerm* iTerm, utl::Logger* logger)
     // offset is center of instances
     offsetCx_ = 0;
     offsetCy_ = 0;
-  } else { // usual case
+  } else {  // usual case
     // offset is Pin BBoxs' center, so
     // subtract the Origin coordinates (e.g. instCenterX, instCenterY)
     //
@@ -341,7 +337,6 @@ void Pin::updateCoordi(odb::dbITerm* iTerm, utl::Logger* logger)
   cx_ = lx + instCenterX + offsetCx_;
   cy_ = ly + instCenterY + offsetCy_;
 }
-
 
 //
 // for BTerm, offset* will hold bbox info.
@@ -362,9 +357,9 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
   }
 
   if (lx == INT_MAX || ly == INT_MAX || ux == INT_MIN || uy == INT_MIN) {
-    std::string msg
-        = string(bTerm->getConstName()) + " toplevel port is not placed!\n";
-    msg += "Replace will regard " + string(bTerm->getConstName());
+    std::string msg = std::string(bTerm->getConstName())
+                      + " toplevel port is not placed!\n";
+    msg += "Replace will regard " + std::string(bTerm->getConstName());
     msg += " is placed in (0, 0)";
     logger->report(msg);
   }
@@ -397,19 +392,18 @@ void Pin::updateLocation(Instance* inst)
   cy_ = inst->cy() + offsetCy_;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Net
-Net::Net() 
-  : netId_(-1), 
-    net_(nullptr),
-    lx_(0), 
-    ly_(0), 
-    ux_(0), 
-    uy_(0),
-    isDontCare_(false),
-    weight_(1.0),
-    virtualWeight_(0.0)
+Net::Net()
+    : net_(nullptr),
+      netId_(-1),
+      lx_(0),
+      ly_(0),
+      ux_(0),
+      uy_(0),
+      isDontCare_(false),
+      virtualWeight_(0.0),
+      weight_(1.0)
 {
 }
 
@@ -422,9 +416,9 @@ Net::Net(int netId) : Net()
 
 Net::Net(odb::dbNet* net) : Net()
 {
-  netId_ = odb::dbIntProperty::find(net, "netId")->getValue();  
+  netId_ = odb::dbIntProperty::find(net, "netId")->getValue();
   net_ = net;
- 
+
   weight_ = 1.0;
   virtualWeight_ = 0.0;
 
@@ -437,7 +431,7 @@ Net::Net(odb::dbNet* net) : Net()
     ux_ = std::max(box->xMax(), ux_);
     uy_ = std::max(box->yMax(), uy_);
   }
- 
+
   for (odb::dbBTerm* bTerm : net_->getBTerms()) {
     for (odb::dbBPin* bPin : bTerm->getBPins()) {
       odb::Rect bbox = bPin->getBBox();
@@ -449,14 +443,12 @@ Net::Net(odb::dbNet* net) : Net()
   }
 }
 
-
 Net::~Net()
 {
   net_ = nullptr;
   netId_ = -1;
   pins_.clear();
 }
-
 
 void Net::updateBBox()
 {
@@ -473,25 +465,25 @@ void Net::updateBBox()
 ////////////////////////////////////////////////
 // Bin
 Bin::Bin()
-  : x_(0),
-    y_(0),
-    lx_(0),
-    ly_(0),
-    ux_(0),
-    uy_(0),
-    nonPlaceArea_(0),
-    instPlacedArea_(0),
-    fillerArea_(0),
-    density_(0),
-    targetDensity_(0),
-    electroPhi_(0),
-    electroForceX_(0),
-    electroForceY_(0)
+    : x_(0),
+      y_(0),
+      lx_(0),
+      ly_(0),
+      ux_(0),
+      uy_(0),
+      nonPlaceArea_(0),
+      instPlacedArea_(0),
+      fillerArea_(0),
+      density_(0),
+      targetDensity_(0),
+      electroPhi_(0),
+      electroForceX_(0),
+      electroForceY_(0)
 {
 }
 
-
-Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity) : Bin()
+Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
+    : Bin()
 {
   x_ = x;
   y_ = y;
@@ -502,23 +494,21 @@ Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity) : Bi
   targetDensity_ = targetDensity;
 }
 
-
 ////////////////////////////////////////////////////////
 // Die
 Die::Die()
-  : dieLx_(0),
-    dieLy_(0),
-    dieUx_(0),
-    dieUy_(0),
-    coreLx_(0),
-    coreLy_(0),
-    coreUx_(0),
-    coreUy_(0)
+    : dieLx_(0),
+      dieLy_(0),
+      dieUx_(0),
+      dieUy_(0),
+      coreLx_(0),
+      coreLy_(0),
+      coreUx_(0),
+      coreUy_(0)
 {
 }
 
-Die::Die(const odb::Rect& dieRect, 
-         const odb::Rect& coreRect) : Die()
+Die::Die(const odb::Rect& dieRect, const odb::Rect& coreRect) : Die()
 {
   setDieBox(dieRect);
   setCoreBox(coreRect);
@@ -540,7 +530,6 @@ void Die::setCoreBox(const odb::Rect& coreRect)
   coreUy_ = coreRect.yMax();
 }
 
-
 /////////////////////////////////////////////////////////////////
 // Utilites functions
 bool isCoreAreaOverlap(Die& die, const Instance* inst)
@@ -554,40 +543,41 @@ bool isCoreAreaOverlap(Die& die, const Instance* inst)
 
 int64_t getOverlapWithCoreArea(Die& die, const Instance* inst)
 {
-  int rectLx = max(die.coreLx(), inst->lx());
-  int rectLy = max(die.coreLy(), inst->ly());
-  int rectUx = min(die.coreUx(), inst->ux());
-  int rectUy = min(die.coreUy(), inst->uy());
+  int rectLx = std::max(die.coreLx(), inst->lx());
+  int rectLy = std::max(die.coreLy(), inst->ly());
+  int rectUx = std::min(die.coreUx(), inst->ux());
+  int rectUy = std::min(die.coreUy(), inst->uy());
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
-  } else {
-    return static_cast<int64_t>(rectUx - rectLx)
-        * static_cast<int64_t>(rectUy - rectLy);
   }
+
+  return static_cast<int64_t>(rectUx - rectLx)
+         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // check if the odb::dbInst is fixed
-bool isFixedOdbInst(odb::dbInst* inst) 
+bool isFixedOdbInst(odb::dbInst* inst)
 {
   bool isFixed = false;
   if (inst == nullptr) {
     return isFixed;
-  } else {
-    switch (inst->getPlacementStatus()) {
-      case odb::dbPlacementStatus::NONE:
-      case odb::dbPlacementStatus::UNPLACED:
-      case odb::dbPlacementStatus::SUGGESTED:
-      case odb::dbPlacementStatus::PLACED:
-        isFixed = false;  
-        break;
-      case odb::dbPlacementStatus::LOCKED:
-      case odb::dbPlacementStatus::FIRM:
-      case odb::dbPlacementStatus::COVER:
-        isFixed = true;  
-        break;
-    }
   }
-  return isFixed;  
+
+  switch (inst->getPlacementStatus()) {
+    case odb::dbPlacementStatus::NONE:
+    case odb::dbPlacementStatus::UNPLACED:
+    case odb::dbPlacementStatus::SUGGESTED:
+    case odb::dbPlacementStatus::PLACED:
+      isFixed = false;
+      break;
+    case odb::dbPlacementStatus::LOCKED:
+    case odb::dbPlacementStatus::FIRM:
+    case odb::dbPlacementStatus::COVER:
+      isFixed = true;
+      break;
+  }
+
+  return isFixed;
 }
 
 // utility functions for snaping the inst into sites
@@ -601,24 +591,19 @@ int snapUp(int value, int origin, int step)
   return ((value + step - 1 - origin) / step) * step + origin;
 }
 
-
-std::string intToStringWithPrecision(int value, int precision) 
+std::string intToStringWithPrecision(int value, int precision)
 {
   std::ostringstream out;
   out << std::fixed << std::setprecision(precision) << value;
   return out.str();
 }
 
-
-std::string floatToStringWithPrecision(float value, int precision) 
+std::string floatToStringWithPrecision(float value, int precision)
 {
   std::ostringstream out;
   out << std::fixed << std::setprecision(precision) << value;
   return out.str();
 }
-
-
-
 
 // utility functions for both host and device
 // A function that does 2D integration to the density function of a
@@ -643,16 +628,10 @@ int calculateBiVariateNormalCDF(biNormalParameters i)
             - erf(x2) * erf(y1));
 }
 
-
-
-
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
-__host__ __device__
-int fastModulo(const int input, const int ceil)
+__host__ __device__ int fastModulo(const int input, const int ceil)
 {
   return input >= ceil ? input % ceil : input;
 }
 
-
-
-}
+}  // namespace gpl2

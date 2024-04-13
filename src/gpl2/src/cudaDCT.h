@@ -43,7 +43,7 @@
 
 #include <cufft.h>
 
-#include "cudaUtil.h"
+#include "util.h"
 
 void dct_2d_fft(const int M,
                 const int N,
