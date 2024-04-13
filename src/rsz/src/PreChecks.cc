@@ -48,13 +48,7 @@ using sta::LibertyCell;
 using sta::LibertyCellSeq;
 using utl::RSZ;
 
-PreChecks::PreChecks(Resizer* resizer)
-    : logger_(nullptr),
-      sta_(nullptr),
-      resizer_(resizer),
-      best_case_slew_(-1.0),
-      best_case_slew_load_(-1.0),
-      best_case_slew_computed_(false)
+PreChecks::PreChecks(Resizer* resizer) : resizer_(resizer)
 {
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;

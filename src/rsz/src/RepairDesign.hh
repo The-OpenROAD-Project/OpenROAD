@@ -38,6 +38,7 @@
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/GraphClass.hh"
@@ -123,14 +124,14 @@ class RepairDesign : StaState
   bool needRepairSlew(const Pin* drvr_pin,
                       int& slew_violations,
                       float& max_cap,
-                      const Corner* corner);
+                      const Corner*& corner);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
-                     const Corner* corner);
+                     const Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
   bool needRepair(const Pin* drvr_pin,
-                  const Corner* corner,
+                  const Corner*& corner,
                   int max_length,
                   int wire_length,
                   bool check_cap,
@@ -241,28 +242,28 @@ class RepairDesign : StaState
                      bool end,
                      int repaired_net_count) const;
 
-  Logger* logger_;
-  dbSta* sta_;
-  dbNetwork* db_network_;
-  PreChecks* pre_checks_;
+  Logger* logger_ = nullptr;
+  dbSta* sta_ = nullptr;
+  dbNetwork* db_network_ = nullptr;
+  PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;
-  int dbu_;
-  ParasiticsSrc parasitics_src_;
+  int dbu_ = 0;
+  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Implicit arguments to repairNet bnet recursion.
-  const Pin* drvr_pin_;
-  float max_cap_;
-  int max_length_;
-  double slew_margin_;
-  double cap_margin_;
-  const Corner* corner_;
+  const Pin* drvr_pin_ = nullptr;
+  float max_cap_ = 0;
+  int max_length_ = 0;
+  double slew_margin_ = 0;
+  double cap_margin_ = 0;
+  const Corner* corner_ = nullptr;
 
-  int resize_count_;
-  int inserted_buffer_count_;
-  const MinMax* min_;
-  const MinMax* max_;
+  int resize_count_ = 0;
+  int inserted_buffer_count_ = 0;
+  const MinMax* min_ = MinMax::min();
+  const MinMax* max_ = MinMax::max();
 
-  int print_interval_;
+  int print_interval_ = 0;
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;

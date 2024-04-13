@@ -72,20 +72,7 @@ using sta::PathExpanded;
 using sta::Port;
 using sta::VertexOutEdgeIterator;
 
-RepairHold::RepairHold(Resizer* resizer)
-    : logger_(nullptr),
-      sta_(nullptr),
-      db_network_(nullptr),
-      resizer_(resizer),
-      resize_count_(0),
-      inserted_buffer_count_(0),
-      cloned_gate_count_(0),
-      min_(MinMax::min()),
-      max_(MinMax::max()),
-      min_index_(MinMax::minIndex()),
-      max_index_(MinMax::maxIndex()),
-      rise_index_(RiseFall::riseIndex()),
-      fall_index_(RiseFall::fallIndex())
+RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -525,16 +512,16 @@ void RepairHold::mergeInit(Slacks& slacks)
   slacks[fall_index_][max_index_] = -INF;
 }
 
-void RepairHold::mergeInto(Slacks& slacks, Slacks& result)
+void RepairHold::mergeInto(Slacks& from, Slacks& result)
 {
   result[rise_index_][min_index_]
-      = min(result[rise_index_][min_index_], slacks[rise_index_][min_index_]);
+      = min(result[rise_index_][min_index_], from[rise_index_][min_index_]);
   result[fall_index_][min_index_]
-      = min(result[fall_index_][min_index_], slacks[fall_index_][min_index_]);
+      = min(result[fall_index_][min_index_], from[fall_index_][min_index_]);
   result[rise_index_][max_index_]
-      = max(result[rise_index_][max_index_], slacks[rise_index_][max_index_]);
+      = max(result[rise_index_][max_index_], from[rise_index_][max_index_]);
   result[fall_index_][max_index_]
-      = max(result[fall_index_][max_index_], slacks[fall_index_][max_index_]);
+      = max(result[fall_index_][max_index_], from[fall_index_][max_index_]);
 }
 
 void RepairHold::makeHoldDelay(Vertex* drvr,

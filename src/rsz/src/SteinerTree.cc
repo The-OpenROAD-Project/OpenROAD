@@ -164,10 +164,7 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
 }
 
 SteinerTree::SteinerTree(const Pin* drvr_pin, Resizer* resizer)
-    : drvr_pin_(drvr_pin),
-      drvr_steiner_pt_(0),
-      resizer_(resizer),
-      logger_(resizer->logger())
+    : drvr_pin_(drvr_pin), resizer_(resizer), logger_(resizer->logger())
 {
 }
 

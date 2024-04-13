@@ -68,25 +68,7 @@ using sta::NetIterator;
 using sta::NetPinIterator;
 using sta::Port;
 
-RepairDesign::RepairDesign(Resizer* resizer)
-    : logger_(nullptr),
-      sta_(nullptr),
-      db_network_(nullptr),
-      pre_checks_(nullptr),
-      resizer_(resizer),
-      dbu_(0),
-      parasitics_src_(ParasiticsSrc::none),
-      drvr_pin_(nullptr),
-      max_cap_(0),
-      max_length_(0),
-      slew_margin_(0.0),
-      cap_margin_(0.0),
-      corner_(nullptr),
-      resize_count_(0),
-      inserted_buffer_count_(0),
-      min_(MinMax::min()),
-      max_(MinMax::max()),
-      print_interval_(0)
+RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
 }
 
@@ -178,7 +160,7 @@ void RepairDesign::repairDesign(
 
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
-  if (resizer_->level_drvr_vertices_.size() > 5 * max_print_interval_) {
+  if (resizer_->level_drvr_vertices_.size() > size_t(5) * max_print_interval_) {
     print_interval_ = max_print_interval_;
   } else {
     print_interval_ = min_print_interval_;
@@ -495,7 +477,7 @@ void RepairDesign::repairNet(Net* net,
 bool RepairDesign::needRepairSlew(const Pin* drvr_pin,
                                   int& slew_violations,
                                   float& max_cap,
-                                  const Corner* corner)
+                                  const Corner*& corner)
 {
   bool repair_slew = false;
   float slew1, slew_slack1, max_slew1;
@@ -554,7 +536,7 @@ bool RepairDesign::needRepairSlew(const Pin* drvr_pin,
 bool RepairDesign::needRepairCap(const Pin* drvr_pin,
                                  int& cap_violations,
                                  float& max_cap,
-                                 const Corner* corner)
+                                 const Corner*& corner)
 {
   float cap1, max_cap1, cap_slack1;
   const Corner* corner1;
@@ -586,7 +568,7 @@ bool RepairDesign::needRepairWire(const int max_length,
 }
 
 bool RepairDesign::needRepair(const Pin* drvr_pin,
-                              const Corner* corner,
+                              const Corner*& corner,
                               const int max_length,
                               const int wire_length,
                               const bool check_cap,

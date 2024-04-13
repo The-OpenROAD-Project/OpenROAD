@@ -113,13 +113,13 @@ class RecoverPower : StaState
   Slack slackPenalized(BufferedNetPtr bnet);
   Slack slackPenalized(BufferedNetPtr bnet, int index);
 
-  Logger* logger_;
-  dbSta* sta_;
-  dbNetwork* db_network_;
+  Logger* logger_ = nullptr;
+  dbSta* sta_ = nullptr;
+  dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  const Corner* corner_;
-  int resize_count_;
-  const MinMax* max_;
+  const Corner* corner_ = nullptr;
+  int resize_count_ = 0;
+  const MinMax* max_ = MinMax::max();
 
   // Paths with slack more than this would be considered for power recovery
   static constexpr float setup_slack_margin_ = 1e-11;
