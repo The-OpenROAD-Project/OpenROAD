@@ -73,6 +73,9 @@ make DESTDIR=<prefix_path> install
 ./etc/Build.sh
 # To build with debug option enabled and if the Tcl library is not on the default path
 ./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+
+# To build manpages
+./etc/Build.sh -build-man
 ```
 
 The default install directory is `/usr/local`.

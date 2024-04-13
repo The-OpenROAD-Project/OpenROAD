@@ -12,7 +12,7 @@ The utility module contains the `man` command.
 ## Man installation
 
 The `man` command can be installed optionally as part of the OpenROAD
-binary. For more instructions, please refer to [here](../../docs/README.md).
+binary. For more instructions, please refer to [here](manREADME.md).
 
 ### Man
 

@@ -25,9 +25,16 @@ make preprocess && make all -j16
 
 #### To view manpages
 
-You will be prompted to enter the RELATIVE path to cat folders which is optional.
-
+- To run `man` commands inside OpenROAD, you can either use the Linux `man` binary:
 ```tcl
+# create a man wrapper
+source man/scripts/main.tcl
+man openroad
+```
+
+- Or just within OpenROAD itself.
+```tcl
+# you will be prompted to enter the RELATIVE path to cat folders which is optional.
 man openroad
 ```
 
