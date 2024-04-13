@@ -71,21 +71,7 @@ using sta::InstancePinIterator;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
-RepairSetup::RepairSetup(Resizer* resizer)
-    : logger_(nullptr),
-      sta_(nullptr),
-      db_network_(nullptr),
-      resizer_(resizer),
-      corner_(nullptr),
-      drvr_port_(nullptr),
-      resize_count_(0),
-      inserted_buffer_count_(0),
-      split_load_buffer_count_(0),
-      rebuffer_net_count_(0),
-      cloned_gate_count_(0),
-      swap_pin_count_(0),
-      min_(MinMax::min()),
-      max_(MinMax::max())
+RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
 }
 

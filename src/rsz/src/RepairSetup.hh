@@ -153,25 +153,25 @@ class RepairSetup : StaState
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_;
-  dbSta* sta_;
-  dbNetwork* db_network_;
+  Logger* logger_ = nullptr;
+  dbSta* sta_ = nullptr;
+  dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  const Corner* corner_;
-  LibertyPort* drvr_port_;
+  const Corner* corner_ = nullptr;
+  LibertyPort* drvr_port_ = nullptr;
 
-  int resize_count_;
-  int inserted_buffer_count_;
-  int split_load_buffer_count_;
-  int rebuffer_net_count_;
-  int cloned_gate_count_;
-  int swap_pin_count_;
+  int resize_count_ = 0;
+  int inserted_buffer_count_ = 0;
+  int split_load_buffer_count_ = 0;
+  int rebuffer_net_count_ = 0;
+  int cloned_gate_count_ = 0;
+  int swap_pin_count_ = 0;
   // Map to block pins from being swapped more than twice for the
   // same instance.
   std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
 
-  const MinMax* min_;
-  const MinMax* max_;
+  const MinMax* min_ = MinMax::min();
+  const MinMax* max_ = MinMax::max();
 
   sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 

@@ -120,24 +120,24 @@ class RepairHold : StaState
                      const Point& loc);
   bool checkMaxSlewCap(const Pin* drvr_pin);
   void mergeInit(Slacks& slacks);
-  void mergeInto(Slacks& slacks, Slacks& result);
+  void mergeInto(Slacks& from, Slacks& result);
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_;
-  dbSta* sta_;
-  dbNetwork* db_network_;
+  Logger* logger_ = nullptr;
+  dbSta* sta_ = nullptr;
+  dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
 
-  int resize_count_;
-  int inserted_buffer_count_;
-  int cloned_gate_count_;
-  const MinMax* min_;
-  const MinMax* max_;
-  const int min_index_;
-  const int max_index_;
-  const int rise_index_;
-  const int fall_index_;
+  int resize_count_ = 0;
+  int inserted_buffer_count_ = 0;
+  int cloned_gate_count_ = 0;
+  const MinMax* min_ = MinMax::min();
+  const MinMax* max_ = MinMax::max();
+  const int min_index_ = MinMax::minIndex();
+  const int max_index_ = MinMax::maxIndex();
+  const int rise_index_ = RiseFall::riseIndex();
+  const int fall_index_ = RiseFall::fallIndex();
 
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
   static constexpr int print_interval_ = 10;

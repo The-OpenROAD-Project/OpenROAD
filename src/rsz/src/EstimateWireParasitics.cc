@@ -52,7 +52,6 @@ using utl::RSZ;
 
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
-using sta::OperatingConditions;
 using sta::PinSet;
 
 using odb::dbInst;
@@ -668,7 +667,7 @@ bool Resizer::isPadPin(const Pin* pin) const
 bool Resizer::isPad(const Instance* inst) const
 {
   dbInst* db_inst = db_network_->staToDb(inst);
-  dbMasterType type = db_inst->getMaster()->getType();
+  const auto type = db_inst->getMaster()->getType().getValue();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
     case dbMasterType::CORE:

@@ -92,7 +92,6 @@ class Pin;
 class Net;
 class Netlist;
 class RoutingTracks;
-class SteinerTree;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
