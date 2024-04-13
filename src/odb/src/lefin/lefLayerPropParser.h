@@ -34,8 +34,8 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 namespace utl {
 class Logger;
 }

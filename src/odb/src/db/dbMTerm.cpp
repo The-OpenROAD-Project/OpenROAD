@@ -34,7 +34,6 @@
 
 #include <spdlog/fmt/ostr.h>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbMPinItr.h"
@@ -43,7 +42,8 @@
 #include "dbTable.hpp"
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/lefout.h"
 
 namespace odb {
 

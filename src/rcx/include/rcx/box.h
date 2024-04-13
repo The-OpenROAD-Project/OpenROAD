@@ -35,9 +35,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "util.h"
+#include "odb/util.h"
 
-namespace odb {
+namespace rcx {
 
 using uint = unsigned int;
 
@@ -78,4 +78,4 @@ class Ath__box
   uint getOwner();
 };
 
-}  // namespace odb
+}  // namespace rcx

@@ -34,16 +34,17 @@
 
 #include <map>
 
-#include "db.h"
-#include "dbExtControl.h"
-#include "dbShape.h"
-#include "dbUtil.h"
 #include "ext2dBox.h"
 #include "extprocess.h"
-#include "gseq.h"
-#include "odb.h"
-#include "util.h"
-#include "wire.h"
+#include "odb/db.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbShape.h"
+#include "odb/dbUtil.h"
+#include "rcx/gseq.h"
+#include "odb/odb.h"
+#include "rcx/rcx.h"
+#include "odb/util.h"
+#include "rcx/wire.h"
 
 namespace utl {
 class Logger;
@@ -54,7 +55,6 @@ namespace rcx {
 class extMeasure;
 
 using odb::Ath__array1D;
-using odb::Ath__gridTable;
 using odb::AthPool;
 using odb::uint;
 using utl::Logger;
@@ -728,15 +728,10 @@ class extMeasure
                        const char* tableEntryName);
   bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
 
-  void swap_coords(odb::SEQ* s);
-  uint swap_coords(uint initCnt,
-                   uint endCnt,
-                   Ath__array1D<odb::SEQ*>* resTable);
-  uint getOverlapSeq(uint met, odb::SEQ* s, Ath__array1D<odb::SEQ*>* resTable);
-  uint getOverlapSeq(uint met,
-                     int* ll,
-                     int* ur,
-                     Ath__array1D<odb::SEQ*>* resTable);
+  void swap_coords(SEQ* s);
+  uint swap_coords(uint initCnt, uint endCnt, Ath__array1D<SEQ*>* resTable);
+  uint getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable);
+  uint getOverlapSeq(uint met, int* ll, int* ur, Ath__array1D<SEQ*>* resTable);
 
   bool isConnectedToBterm(odb::dbRSeg* rseg1);
   uint defineBox(CoupleOptions& options);
@@ -791,38 +786,34 @@ class extMeasure
 
   void updateForBench(extMainOptions* opt, extMain* extMain);
   uint measureOverUnderCap();
-  uint measureOverUnderCap_orig(odb::gs* pixelTable,
-                                uint** ouPixelTableIndexMap);
-  uint getSeqOverOrUnder(Ath__array1D<odb::SEQ*>* seqTable,
-                         odb::gs* pixelTable,
+  uint measureOverUnderCap_orig(gs* pixelTable, uint** ouPixelTableIndexMap);
+  uint getSeqOverOrUnder(Ath__array1D<SEQ*>* seqTable,
+                         gs* pixelTable,
                          uint met,
-                         Ath__array1D<odb::SEQ*>* resTable);
-  uint computeOverOrUnderSeq(Ath__array1D<odb::SEQ*>* seqTable,
+                         Ath__array1D<SEQ*>* resTable);
+  uint computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
                              uint met,
-                             Ath__array1D<odb::SEQ*>* resTable,
+                             Ath__array1D<SEQ*>* resTable,
                              bool over);
-  uint computeOverUnder(int* ll, int* ur, Ath__array1D<odb::SEQ*>* resTable);
+  uint computeOverUnder(int* ll, int* ur, Ath__array1D<SEQ*>* resTable);
 
-  void release(Ath__array1D<odb::SEQ*>* seqTable,
-               odb::gs* pixelTable = nullptr);
-  void addSeq(Ath__array1D<odb::SEQ*>* seqTable, odb::gs* pixelTable);
+  void release(Ath__array1D<SEQ*>* seqTable, gs* pixelTable = nullptr);
+  void addSeq(Ath__array1D<SEQ*>* seqTable, gs* pixelTable);
   void addSeq(const int* ll,
               const int* ur,
-              Ath__array1D<odb::SEQ*>* seqTable,
-              odb::gs* pixelTable = nullptr);
-  odb::SEQ* addSeq(const int* ll, const int* ur);
-  void copySeq(odb::SEQ* t,
-               Ath__array1D<odb::SEQ*>* seqTable,
-               odb::gs* pixelTable);
-  void tableCopyP(Ath__array1D<odb::SEQ*>* src, Ath__array1D<odb::SEQ*>* dst);
-  void tableCopy(Ath__array1D<odb::SEQ*>* src,
-                 Ath__array1D<odb::SEQ*>* dst,
-                 odb::gs* pixelTable);
+              Ath__array1D<SEQ*>* seqTable,
+              gs* pixelTable = nullptr);
+  SEQ* addSeq(const int* ll, const int* ur);
+  void copySeq(SEQ* t, Ath__array1D<SEQ*>* seqTable, gs* pixelTable);
+  void tableCopyP(Ath__array1D<SEQ*>* src, Ath__array1D<SEQ*>* dst);
+  void tableCopy(Ath__array1D<SEQ*>* src,
+                 Ath__array1D<SEQ*>* dst,
+                 gs* pixelTable);
 
   uint measureDiagFullOU();
-  uint ouFlowStep(Ath__array1D<odb::SEQ*>* overTable);
-  int underFlowStep(Ath__array1D<odb::SEQ*>* srcTable,
-                    Ath__array1D<odb::SEQ*>* overTable);
+  uint ouFlowStep(Ath__array1D<SEQ*>* overTable);
+  int underFlowStep(Ath__array1D<SEQ*>* srcTable,
+                    Ath__array1D<SEQ*>* overTable);
 
   void measureRC(CoupleOptions& options);
   int computeAndStoreRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, int srcCovered);
@@ -839,8 +830,8 @@ class extMeasure
                       int diagCovered,
                       int srcCovered);
 
-  void copySeqUsingPool(odb::SEQ* t, Ath__array1D<odb::SEQ*>* seqTable);
-  void seq_release(Ath__array1D<odb::SEQ*>* table);
+  void copySeqUsingPool(SEQ* t, Ath__array1D<SEQ*>* seqTable);
+  void seq_release(Ath__array1D<SEQ*>* table);
   void calcOU(uint len);
   void calcRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, uint totLenCovered);
   int getMaxDist(int tgtMet, uint modelIndex);
@@ -850,23 +841,23 @@ class extMeasure
                 uint len,
                 int dist1 = 0,
                 int dist2 = 0);
-  uint computeRes(odb::SEQ* s,
+  uint computeRes(SEQ* s,
                   uint targetMet,
                   uint dir,
                   uint planeIndex,
                   uint trackn,
-                  Ath__array1D<odb::SEQ*>* residueSeq);
-  int computeResDist(odb::SEQ* s,
+                  Ath__array1D<SEQ*>* residueSeq);
+  int computeResDist(SEQ* s,
                      uint trackMin,
                      uint trackMax,
                      uint targetMet,
-                     Ath__array1D<odb::SEQ*>* diagTable);
-  uint computeDiag(odb::SEQ* s,
+                     Ath__array1D<SEQ*>* diagTable);
+  uint computeDiag(SEQ* s,
                    uint targetMet,
                    uint dir,
                    uint planeIndex,
                    uint trackn,
-                   Ath__array1D<odb::SEQ*>* residueSeq);
+                   Ath__array1D<SEQ*>* residueSeq);
 
   odb::dbCCSeg* makeCcap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   void addCCcap(odb::dbCCSeg* ccap, double v, uint model);
@@ -886,8 +877,8 @@ class extMeasure
   void ccReportProgress();
   uint getOverUnderIndex();
 
-  uint getLength(odb::SEQ* s, int dir);
-  uint blackCount(uint start, Ath__array1D<odb::SEQ*>* resTable);
+  uint getLength(SEQ* s, int dir);
+  uint blackCount(uint start, Ath__array1D<SEQ*>* resTable);
   extDistRC* computeR(uint len, double* valTable);
   extDistRC* computeOverFringe(uint overMet,
                                uint overWidth,
@@ -923,9 +914,7 @@ class extMeasure
   void getMinWidth(odb::dbTech* tech);
   uint measureOverUnderCapCJ();
   uint computeOverUnder(int xy1, int xy2, Ath__array1D<int>* resTable);
-  uint computeOUwith2planes(int* ll,
-                            int* ur,
-                            Ath__array1D<odb::SEQ*>* resTable);
+  uint computeOUwith2planes(int* ll, int* ur, Ath__array1D<SEQ*>* resTable);
   uint intersectContextArray(int pmin,
                              int pmax,
                              uint met1,
@@ -936,12 +925,12 @@ class extMeasure
                              Ath__array1D<int>* resTable,
                              bool over);
   bool updateLengthAndExit(int& remainder, int& totCovered, int len);
-  int compute_Diag_Over_Under(Ath__array1D<odb::SEQ*>* seqTable,
-                              Ath__array1D<odb::SEQ*>* resTable);
-  int compute_Diag_OverOrUnder(Ath__array1D<odb::SEQ*>* seqTable,
+  int compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
+                              Ath__array1D<SEQ*>* resTable);
+  int compute_Diag_OverOrUnder(Ath__array1D<SEQ*>* seqTable,
                                bool over,
                                uint met,
-                               Ath__array1D<odb::SEQ*>* resTable);
+                               Ath__array1D<SEQ*>* resTable);
   uint measureUnderOnly(bool diagFlag);
   uint measureOverOnly(bool diagFlag);
   uint measureDiagOU(uint ouLevelLimit, uint diagLevelLimit);
@@ -984,27 +973,25 @@ class extMeasure
                               int trackDist,
                               int& loTrack,
                               int& hiTrack);
-  int computeDiagOU(odb::SEQ* s,
-                    uint targetMet,
-                    Ath__array1D<odb::SEQ*>* residueSeq);
-  int computeDiagOU(odb::SEQ* s,
+  int computeDiagOU(SEQ* s, uint targetMet, Ath__array1D<SEQ*>* residueSeq);
+  int computeDiagOU(SEQ* s,
                     uint trackMin,
                     uint trackMax,
                     uint targetMet,
-                    Ath__array1D<odb::SEQ*>* diagTable);
+                    Ath__array1D<SEQ*>* diagTable);
   void printDgContext();
   void initTargetSeq();
   void getDgOverlap(CoupleOptions& options);
-  void getDgOverlap(odb::SEQ* sseq,
+  void getDgOverlap(SEQ* sseq,
                     uint dir,
-                    Ath__array1D<odb::SEQ*>* dgContext,
-                    Ath__array1D<odb::SEQ*>* overlapSeq,
-                    Ath__array1D<odb::SEQ*>* residueSeq);
-  void getDgOverlap_res(odb::SEQ* sseq,
+                    Ath__array1D<SEQ*>* dgContext,
+                    Ath__array1D<SEQ*>* overlapSeq,
+                    Ath__array1D<SEQ*>* residueSeq);
+  void getDgOverlap_res(SEQ* sseq,
                         uint dir,
-                        Ath__array1D<odb::SEQ*>* dgContext,
-                        Ath__array1D<odb::SEQ*>* overlapSeq,
-                        Ath__array1D<odb::SEQ*>* residueSeq);
+                        Ath__array1D<SEQ*>* dgContext,
+                        Ath__array1D<SEQ*>* overlapSeq,
+                        Ath__array1D<SEQ*>* residueSeq);
 
   uint getRSeg(odb::dbNet* net, uint shapeId);
 
@@ -1074,17 +1061,17 @@ class extMeasure
   Ath__array1D<double> _diagSpaceTable0;
   Ath__array1D<double> _diagWidthTable0;
 
-  Ath__array1D<odb::SEQ*>*** _dgContextArray;  // array
-  uint* _dgContextDepth;                       // not array
-  uint* _dgContextPlanes;                      // not array
-  uint* _dgContextTracks;                      // not array
-  uint* _dgContextBaseLvl;                     // not array
-  int* _dgContextLowLvl;                       // not array
-  int* _dgContextHiLvl;                        // not array
-  uint* _dgContextBaseTrack;                   // array
-  int* _dgContextLowTrack;                     // array
-  int* _dgContextHiTrack;                      // array
-  int** _dgContextTrackBase;                   // array
+  Ath__array1D<SEQ*>*** _dgContextArray;  // array
+  uint* _dgContextDepth;                  // not array
+  uint* _dgContextPlanes;                 // not array
+  uint* _dgContextTracks;                 // not array
+  uint* _dgContextBaseLvl;                // not array
+  int* _dgContextLowLvl;                  // not array
+  int* _dgContextHiLvl;                   // not array
+  uint* _dgContextBaseTrack;              // array
+  int* _dgContextLowTrack;                // array
+  int* _dgContextHiTrack;                 // array
+  int** _dgContextTrackBase;              // array
   FILE* _dgContextFile;
   uint _dgContextCnt;
 
@@ -1129,15 +1116,15 @@ class extMeasure
   double _gndcFactor;
   bool _gndcModify;
 
-  odb::gs* _pixelTable;
+  gs* _pixelTable;
 
-  Ath__array1D<odb::SEQ*>* _diagTable;
-  Ath__array1D<odb::SEQ*>* _tmpSrcTable;
-  Ath__array1D<odb::SEQ*>* _tmpDstTable;
-  Ath__array1D<odb::SEQ*>* _tmpTable;
-  Ath__array1D<odb::SEQ*>* _underTable;
-  Ath__array1D<odb::SEQ*>* _ouTable;
-  Ath__array1D<odb::SEQ*>* _overTable;
+  Ath__array1D<SEQ*>* _diagTable;
+  Ath__array1D<SEQ*>* _tmpSrcTable;
+  Ath__array1D<SEQ*>* _tmpDstTable;
+  Ath__array1D<SEQ*>* _tmpTable;
+  Ath__array1D<SEQ*>* _underTable;
+  Ath__array1D<SEQ*>* _ouTable;
+  Ath__array1D<SEQ*>* _overTable;
 
   int _diagLen;
   uint _netId;
@@ -1147,7 +1134,7 @@ class extMeasure
   int _netTgtId;
   FILE* _debugFP;
 
-  AthPool<odb::SEQ>* _seqPool;
+  AthPool<SEQ>* _seqPool;
 
   AthPool<extLenOU>* _lenOUPool;
   Ath__array1D<extLenOU*>* _lenOUtable;
@@ -2102,11 +2089,11 @@ class extMain
   uint* _singlePlaneLayerMap = nullptr;
   bool _usingMetalPlanes = false;
 
-  odb::gs* _geomSeq = nullptr;
+  gs* _geomSeq = nullptr;
 
-  AthPool<odb::SEQ>* _seqPool = nullptr;
+  AthPool<SEQ>* _seqPool = nullptr;
 
-  Ath__array1D<odb::SEQ*>*** _dgContextArray = nullptr;
+  Ath__array1D<SEQ*>*** _dgContextArray = nullptr;
   uint _dgContextDepth;
   uint _dgContextPlanes;
   uint _dgContextTracks;

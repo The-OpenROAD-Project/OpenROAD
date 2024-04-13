@@ -77,8 +77,6 @@ add_library(db
     dbProperty.cpp 
     dbPropertyItr.cpp 
     dbUtil.cpp
-    gs.cpp
-    grids.cpp
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp

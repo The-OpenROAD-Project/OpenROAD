@@ -33,14 +33,13 @@
 #include <map>
 #include <vector>
 
-#include "dbUtil.h"
+#include "odb/dbUtil.h"
 #include "rcx/extRCap.h"
+#include "rcx/wire.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
-using odb::Ath__overlapAdjust;
 using odb::dbCreateNetUtil;
 using odb::dbInst;
 using odb::dbNet;
@@ -56,7 +55,6 @@ using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbWire;
 using odb::dbWireShapeItr;
-using odb::gs;
 using odb::MAX_INT;
 using odb::MIN_INT;
 using odb::Rect;
@@ -381,8 +379,7 @@ uint extMain::initSearchForNets(int* X1,
   }
   uint layerCnt = n + 1;
 
-  _search = new odb::Ath__gridTable(
-      &maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
   return layerCnt;
 }
@@ -1202,7 +1199,7 @@ uint extMain::couplingFlow(Rect& extRect,
   int lo_sdb[2];
   int hi_sdb[2];
 
-  Ath__overlapAdjust overlapAdj = odb::Z_noAdjust;
+  Ath__overlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,

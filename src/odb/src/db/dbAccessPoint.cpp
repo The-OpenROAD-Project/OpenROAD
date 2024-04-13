@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbAccessPoint.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTypes.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 

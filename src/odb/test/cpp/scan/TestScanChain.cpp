@@ -32,7 +32,7 @@
 
 #include <fstream>
 
-#include "db.h"
+#include "odb/db.h"
 #include "env.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

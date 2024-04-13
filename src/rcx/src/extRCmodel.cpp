@@ -35,13 +35,12 @@
 
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
+#include "rcx/wire.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
 using odb::dbRSeg;
-using odb::SEQ;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;

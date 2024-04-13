@@ -57,14 +57,14 @@
 #include <tuple>
 #include <vector>
 
-#include "db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
-#include "dbTransform.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "painter.h"
 #include "ruler.h"
 #include "scriptWidget.h"

@@ -2,8 +2,8 @@
 #include <boost/test/included/unit_test.hpp>
 #include <iostream>
 
-#include "db.h"
 #include "helper.h"
+#include "odb/db.h"
 namespace odb {
 namespace {
 

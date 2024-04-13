@@ -39,9 +39,9 @@
 
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
-#include "lefin.h"
 #include "lefrReader.hpp"
 #include "lefzlib.hpp"
+#include "odb/lefin.h"
 #include "utl/Logger.h"
 
 namespace odb {

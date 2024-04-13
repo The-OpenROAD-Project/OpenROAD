@@ -36,9 +36,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "db.h"
-#include "dbShape.h"
-#include "dbWireCodec.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 namespace odb {
 

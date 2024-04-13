@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "parse.h"
+#include "odb/parse.h"
 #include "rcx/extSpef.h"
+#include "rcx/wire.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -138,7 +138,7 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
 }  // namespace rcx
 
-namespace odb {
+namespace rcx {
 
 void Ath__grid::dealloc()
 {
@@ -172,4 +172,4 @@ void Ath__gridTable::dealloc()
   }
 }
 
-}  // namespace odb
+}  // namespace rcx

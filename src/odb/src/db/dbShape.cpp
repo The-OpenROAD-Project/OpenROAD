@@ -30,12 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbShape.h"
+#include "odb/dbShape.h"
 
-#include "db.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/db.h"
 
 namespace odb {
 

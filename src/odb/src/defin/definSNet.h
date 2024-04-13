@@ -35,9 +35,9 @@
 #include <map>
 #include <vector>
 
-#include "db.h"
 #include "definBase.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 

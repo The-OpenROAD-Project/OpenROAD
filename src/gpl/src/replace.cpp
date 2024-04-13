@@ -35,7 +35,6 @@
 
 #include <iostream>
 
-#include "db.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "initialPlace.h"

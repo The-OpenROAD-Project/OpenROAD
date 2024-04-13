@@ -32,10 +32,10 @@
 
 #pragma once
 
-#include "ZException.h"
-#include "dbDiff.h"
-#include "dbStream.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
 namespace odb {
 
 template <class T, const uint P, const uint S>

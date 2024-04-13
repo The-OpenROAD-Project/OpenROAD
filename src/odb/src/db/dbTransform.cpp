@@ -32,10 +32,10 @@
 
 // OpenDB --- Transformation utilities
 
-#include "dbTransform.h"
+#include "odb/dbTransform.h"
 
-#include "dbDiff.h"
-#include "dbStream.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 

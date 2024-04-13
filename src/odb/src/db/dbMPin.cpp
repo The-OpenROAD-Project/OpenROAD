@@ -32,7 +32,6 @@
 
 #include "dbMPin.h"
 
-#include "db.h"
 #include "dbAccessPoint.h"
 #include "dbBlock.h"
 #include "dbBoxItr.h"
@@ -41,6 +40,7 @@
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 namespace odb {
 

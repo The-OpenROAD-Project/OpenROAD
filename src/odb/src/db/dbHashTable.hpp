@@ -44,7 +44,7 @@ inline unsigned int hash_string(const char* str)
 
   while ((c = static_cast<unsigned char>(*str++)) != '\0') {
     hash = c + (hash << 6) + (hash << 16) - hash;
-}
+  }
 
   return hash;
 }
@@ -72,11 +72,11 @@ bool dbHashTable<T>::operator==(const dbHashTable<T>& rhs) const
 {
   if (_num_entries != rhs._num_entries) {
     return false;
-}
+  }
 
   if (_hash_tbl != rhs._hash_tbl) {
     return false;
-}
+  }
 
   return true;
 }
@@ -106,7 +106,7 @@ void dbHashTable<T>::growTable()
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
-}
+  }
 
   // reinsert the entries
   sz = _hash_tbl.size() - 1;
@@ -152,7 +152,7 @@ void dbHashTable<T>::shrinkTable()
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
-}
+  }
 
   sz -= 1;
   // reinsert the entries
@@ -201,7 +201,7 @@ T* dbHashTable<T>::find(const char* name)
 
   if (sz == 0) {
     return 0;
-}
+  }
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -211,7 +211,7 @@ T* dbHashTable<T>::find(const char* name)
 
     if (strcmp(entry->_name, name) == 0) {
       return entry;
-}
+    }
 
     cur = entry->_next_entry;
   }
@@ -226,7 +226,7 @@ int dbHashTable<T>::hasMember(const char* name)
 
   if (sz == 0) {
     return false;
-}
+  }
 
   uint hid = hash_string(name) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -236,7 +236,7 @@ int dbHashTable<T>::hasMember(const char* name)
 
     if (strcmp(entry->_name, name) == 0) {
       return true;
-}
+    }
 
     cur = entry->_next_entry;
   }
@@ -269,7 +269,7 @@ void dbHashTable<T>::remove(T* object)
 
       if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
         shrinkTable();
-}
+      }
 
       return;
     }

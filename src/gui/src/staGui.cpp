@@ -48,9 +48,9 @@
 #include <limits>
 #include <string>
 
-#include "db.h"
+#include "odb/db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
+#include "odb/dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
