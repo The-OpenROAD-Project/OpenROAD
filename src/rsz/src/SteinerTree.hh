@@ -150,9 +150,9 @@ class SteinerTree
 
   stt::Tree tree_;
   const Pin* drvr_pin_;
-  int drvr_steiner_pt_;     // index into tree_.branch
-  Vector<PinLoc> pinlocs_;  // Initial input
-  LocPinMap loc_pin_map_;   // location -> pins map
+  int drvr_steiner_pt_ = 0;  // index into tree_.branch
+  Vector<PinLoc> pinlocs_;   // Initial input
+  LocPinMap loc_pin_map_;    // location -> pins map
   std::vector<SteinerPt> left_;
   std::vector<SteinerPt> right_;
   std::vector<const Pin*> point_pin_array_;

@@ -66,14 +66,7 @@ using sta::Edge;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
-RecoverPower::RecoverPower(Resizer* resizer)
-    : logger_(nullptr),
-      sta_(nullptr),
-      db_network_(nullptr),
-      resizer_(resizer),
-      corner_(nullptr),
-      resize_count_(0),
-      max_(MinMax::max())
+RecoverPower::RecoverPower(Resizer* resizer) : resizer_(resizer)
 {
 }
 

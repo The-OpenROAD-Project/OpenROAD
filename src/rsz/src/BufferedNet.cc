@@ -42,7 +42,6 @@
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include <spdlog/fmt/fmt.h>
 
-#include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"

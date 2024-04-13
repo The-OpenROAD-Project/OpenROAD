@@ -49,14 +49,14 @@ class PreChecks
   void checkSlewLimit(float ref_cap, float max_load_slew);
 
  private:
-  Logger* logger_;
-  dbSta* sta_;
+  Logger* logger_ = nullptr;
+  dbSta* sta_ = nullptr;
   Resizer* resizer_;
 
   // best slew numbers to ensure the max_slew in SDC is reasonable
-  float best_case_slew_;
-  float best_case_slew_load_;
-  bool best_case_slew_computed_;
+  float best_case_slew_ = -1.0;
+  float best_case_slew_load_ = -1.0;
+  bool best_case_slew_computed_ = false;
 };
 
 }  // namespace rsz
