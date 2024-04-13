@@ -12,7 +12,7 @@ entries:
   - file: contrib/GitGuide
     title: Git Quickstart
   - file: main/src/utl/README
-    title: Manpages
+    title: Man pages
 
 - file: main/src/README
   title: OpenROAD User Guide
@@ -99,7 +99,7 @@ entries:
   - file: contrib/TclFormat
     title: Tcl Format
   - file: src/test/README
-    title: Manpages Test Framework
+    title: Man pages Test Framework
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   

@@ -31,20 +31,20 @@ This can be used for a range of commands in different levels as follows:
 man
     name
     [-manpath manpath]
-    [-no_query]
+    [-no_pager]
 ```
 
 #### Options
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-name` | Name of the command/message to query. |
-| `-manpath` | Include optional path to manpage pages (e.g. ~/OpenROAD/docs/cat). |
-| `-no_query` | This flag determines whether you wish to see all of the man output at once. Default value is `False`, which shows a buffered output. |
+| `name` | Name of the command/message to query. |
+| `-manpath` | Include optional path to man pages (e.g. ~/OpenROAD/docs/cat). |
+| `-no_pager` | This flag determines whether you wish to see all of the man output at once. Default value is `False`, which shows a buffered output. |
 
 ## Example scripts
 
-You may run various commands or message IDs for manpages.
+You may run various commands or message IDs for man pages.
 ```
 man openroad
 man clock_tree_synthesis
@@ -55,11 +55,11 @@ man CTS-0005
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-For information regarding the Manpage test framework, refer to this
+For information regarding the Man page test framework, refer to this
 [link](../../docs/src/test/README.md).
 
 You should also be aware of the [README](../../docs/contrib/ReadmeFormat.md) and [Tcl](../../docs/contrib/TclFormat.md) format enforced to ensure
-accurate parsing of manpages. 
+accurate parsing of man pages. 
 
 Simply run the following script:
 
