@@ -100,6 +100,7 @@ class MacroPlacer2
              float min_ar,
              int snap_layer,
              bool bus_planning_flag,
+             bool auto_cluster_only_flag,
              const char* report_directory);
 
   void placeMacro(odb::dbInst* inst,

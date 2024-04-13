@@ -1,8 +1,7 @@
-///////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2018-2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,15 +21,14 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "densityOp.h"
@@ -61,12 +59,11 @@ DensityOp::DensityOp()
       coreLy_(0),
       coreUx_(0),
       coreUy_(0),
-      // Instance information
+      // bin pointers
       dBinLxPtr_(nullptr),
       dBinLyPtr_(nullptr),
       dBinUxPtr_(nullptr),
       dBinUyPtr_(nullptr),
-      dBinTargetDensityPtr_(nullptr),
       dBinNonPlaceAreaPtr_(nullptr),
       dBinInstPlacedAreaPtr_(nullptr),
       dBinFillerAreaPtr_(nullptr),
@@ -76,17 +73,15 @@ DensityOp::DensityOp()
       dBinElectroPhiPtr_(nullptr),
       dBinElectroForceXPtr_(nullptr),
       dBinElectroForceYPtr_(nullptr),
+      // instance information
       numInsts_(0),
       sumOverflow_(0),
-      sumOverflowUnscaled_(0),
-      // instance information
       dGCellDensityWidthPtr_(nullptr),
       dGCellDensityHeightPtr_(nullptr),
       dGCellDCxPtr_(nullptr),
       dGCellDCyPtr_(nullptr),
       dGCellDensityScalePtr_(nullptr),
-      dGCellIsFillerPtr_(nullptr),
-      dGCellIsMacroPtr_(nullptr)
+      dGCellIsFillerPtr_(nullptr)
 {
 }
 

@@ -32,43 +32,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "placerBase.h"
-#include "placerObjects.h"
-#include "db_sta/dbNetwork.hh"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+
 #include <odb/db.h>
-#include "util.h"
-#include "poissonSolver.h"
-
-
 #include <stdio.h>
-#include <memory>
-#include <iostream>
-#include <sstream>
+
+#include <chrono>
 #include <cmath>
+#include <iostream>
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <unordered_set>
-#include <chrono>
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cufft.h>
 
-// basic vectors
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-#include <thrust/device_malloc.h>
-#include <thrust/device_free.h>
-#include <thrust/sequence.h>
-#include <thrust/reduce.h>
-// memory related
-#include <thrust/copy.h>
-#include <thrust/fill.h>
-// algorithm related
-#include <thrust/transform.h>
-#include <thrust/replace.h>
-#include <thrust/functional.h>
-#include <thrust/execution_policy.h>
+#include "db_sta/dbNetwork.hh"
+#include "placerObjects.h"
+#include "poissonSolver.h"
+#include "sta/Liberty.hh"
+#include "util.h"
+#include "utl/Logger.h"
 
 namespace gpl2 {
 
@@ -115,7 +96,6 @@ void NesterovBaseVars::reset()
 // NesterovPlaceVars
 /////////////////////////////////////////////////////////////////////////////////////
 
-
 NesterovPlaceVars::NesterovPlaceVars()
 {
   reset();
@@ -139,39 +119,37 @@ void NesterovPlaceVars::reset()
   routabilityDrivenMode = true;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 // PlacerBaseCommon
 /////////////////////////////////////////////////////////////////////////////////////
 
 PlacerBaseCommon::PlacerBaseCommon()
-  : network_(nullptr),
-    db_(nullptr),
-    log_(nullptr),
-    pbVars_(),
-    wlGradOp_(nullptr),
-    die_(),
-    siteSizeX_(0),
-    siteSizeY_(0),
-    numInsts_(0),
-    haloWidth_(0),
-    virtualIter_(0),
-    clusterFlag_(false),
-    numPlaceInsts_(0),
-    numFixedInsts_(0),
-    numDummyInsts_(0),
-    placeInstsArea_(0),
-    nonPlaceInstsArea_(0),
-    macroInstsArea_(0),
-    stdCellInstsArea_(0),
-    virtualWeightFactor_(0.0),
-    dInstDCxPtr_(nullptr),
-    dInstDCyPtr_(nullptr),
-    dWLGradXPtr_(nullptr),
-    dWLGradYPtr_(nullptr)
+    : network_(nullptr),
+      db_(nullptr),
+      log_(nullptr),
+      pbVars_(),
+      wlGradOp_(nullptr),
+      die_(),
+      siteSizeX_(0),
+      siteSizeY_(0),
+      numInsts_(0),
+      haloWidth_(0),
+      virtualIter_(0),
+      clusterFlag_(false),
+      numPlaceInsts_(0),
+      numFixedInsts_(0),
+      numDummyInsts_(0),
+      placeInstsArea_(0),
+      nonPlaceInstsArea_(0),
+      macroInstsArea_(0),
+      stdCellInstsArea_(0),
+      virtualWeightFactor_(0.0),
+      dInstDCxPtr_(nullptr),
+      dInstDCyPtr_(nullptr),
+      dWLGradXPtr_(nullptr),
+      dWLGradYPtr_(nullptr)
 {
 }
-
 
 PlacerBaseCommon::PlacerBaseCommon(sta::dbNetwork* network,
                                    odb::dbDatabase* db,
@@ -185,7 +163,7 @@ PlacerBaseCommon::PlacerBaseCommon(sta::dbNetwork* network,
                                    bool dataflowFlag,
                                    bool datapathFlag,
                                    bool clusterConstraintFlag)
-  : PlacerBaseCommon()
+    : PlacerBaseCommon()
 {
   network_ = network;
   db_ = db;
@@ -197,39 +175,38 @@ PlacerBaseCommon::PlacerBaseCommon(sta::dbNetwork* network,
   dataflowFlag_ = dataflowFlag;
   datapathFlag_ = datapathFlag;
   clusterConstraintFlag_ = clusterConstraintFlag;
-  
+
   virtualIter_ = virtualIter;
   numHops_ = numHops;
   bloatFactor_ = bloatFactor;
 
-
   std::cout << "[INFO] clusterFlag = " << clusterFlag_ << std::endl;
   std::cout << "[INFO] dataflowFlag = " << dataflowFlag_ << std::endl;
   std::cout << "[INFO] datapathFlag = " << datapathFlag_ << std::endl;
-  std::cout << "[INFO] clusterConstraintFlag = " << clusterConstraintFlag_ << std::endl;
+  std::cout << "[INFO] clusterConstraintFlag = " << clusterConstraintFlag_
+            << std::endl;
   std::cout << "[INFO] virtualIter = " << virtualIter_ << std::endl;
   std::cout << "[INFO] numHops = " << numHops_ << std::endl;
   std::cout << "[INFO] haloWidth = " << haloWidth << std::endl;
   std::cout << "[INFO] bloatFactor = " << bloatFactor << std::endl;
 
-  float dbuPerMicron = static_cast<float>(db_->getTech()->getDbUnitsPerMicron());
-  haloWidth_ = haloWidth * dbuPerMicron;  
- 
+  float dbuPerMicron
+      = static_cast<float>(db_->getTech()->getDbUnitsPerMicron());
+  haloWidth_ = haloWidth * dbuPerMicron;
+
   createDataFlow();
 
   if (clusterFlag_ == true) {
-    initClusterNetlist(); // for cluster placement
+    initClusterNetlist();  // for cluster placement
   } else {
-    init(); // for stamdard cell placement
+    init();  // for stamdard cell placement
   }
 }
-
 
 PlacerBaseCommon::~PlacerBaseCommon()
 {
   reset();
 }
-
 
 void PlacerBaseCommon::evaluateHPWL()
 {
@@ -239,12 +216,12 @@ void PlacerBaseCommon::evaluateHPWL()
   for (odb::dbNet* net : nets) {
     odb::dbSigType netType = net->getSigType();
     // escape nets with VDD/VSS/reset nets
-    if (netType == odb::dbSigType::SIGNAL || netType == odb::dbSigType::CLOCK) { 
+    if (netType == odb::dbSigType::SIGNAL || netType == odb::dbSigType::CLOCK) {
       int minX = std::numeric_limits<int>::max();
       int minY = std::numeric_limits<int>::max();
       int maxX = std::numeric_limits<int>::min();
       int maxY = std::numeric_limits<int>::min();
-     
+
       for (odb::dbITerm* iTerm : net->getITerms()) {
         int offsetLx = std::numeric_limits<int>::max();
         int offsetLy = std::numeric_limits<int>::max();
@@ -272,7 +249,7 @@ void PlacerBaseCommon::evaluateHPWL()
         // Pin SHAPE is NOT FOUND;
         // (may happen on OpenDB bug case)
         if (offsetLx == INT_MAX || offsetLy == INT_MAX || offsetUx == INT_MIN
-          || offsetUy == INT_MIN) {
+            || offsetUy == INT_MIN) {
           // offset is center of instances
           offsetCx_ = offsetCy_ = 0;
         } else {
@@ -319,11 +296,10 @@ void PlacerBaseCommon::evaluateHPWL()
         maxY = std::max(maxY, cy);
       }
       hpwl += (maxX - minX) + (maxY - minY);
-    }     
-  }  
+    }
+  }
   std::cout << "[Total HPWL] HPWL = " << hpwl << std::endl;
 }
-
 
 // In this mode, we assume there is no fixed instances
 // This is for mixed-size placement
@@ -347,7 +323,7 @@ void PlacerBaseCommon::initClusterNetlist()
   odb::Rect coreRect = block->getCoreArea();
   odb::Rect dieRect = block->getDieArea();
   die_ = Die(dieRect, coreRect);
-  
+
   // Reorder the cluster id
   int numClusters = 0;
   std::map<int, int> clusterIdReorderMap;
@@ -360,20 +336,20 @@ void PlacerBaseCommon::initClusterNetlist()
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    // check if the instance has a cluster id attribute    
+    // check if the instance has a cluster id attribute
     auto clusterIdProp = odb::dbIntProperty::find(inst, "cluster_id");
     if (clusterIdProp != nullptr) {
       const int clusterId = clusterIdProp->getValue();
       if (clusterIdReorderMap.find(clusterId) == clusterIdReorderMap.end()) {
-        clusterIdReorderMap[clusterId] = numClusters++; 
+        clusterIdReorderMap[clusterId] = numClusters++;
       }
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(clusterIdReorderMap[clusterId]);
+      odb::dbIntProperty::find(inst, "cluster_id")
+          ->setValue(clusterIdReorderMap[clusterId]);
     }
   }
 
- 
   std::cout << "[INFO] Number of clusters = " << numClusters << std::endl;
-  std::vector<int64_t> clustersArea(numClusters, 0);  
+  std::vector<int64_t> clustersArea(numClusters, 0);
   for (odb::dbInst* inst : insts) {
     auto type = inst->getMaster()->getType();
     if (!type.isCore() && !type.isBlock()) {
@@ -384,23 +360,24 @@ void PlacerBaseCommon::initClusterNetlist()
     if (inst->getMaster()->isBlock()) {
       haloWidth = haloWidth_;
     }
-    const int64_t instArea = static_cast<int64_t>(bbox->getDX() + haloWidth * 2) * 
-                             static_cast<int64_t>(bbox->getDY() + haloWidth * 2);
-    // check if the instance has a cluster id attribute    
+    const int64_t instArea
+        = static_cast<int64_t>(bbox->getDX() + haloWidth * 2)
+          * static_cast<int64_t>(bbox->getDY() + haloWidth * 2);
+    // check if the instance has a cluster id attribute
     auto clusterIdProp = odb::dbIntProperty::find(inst, "cluster_id");
     if (clusterIdProp != nullptr) {
       const int clusterId = clusterIdProp->getValue();
-      clustersArea[clusterId] += instArea; 
+      clustersArea[clusterId] += instArea;
     }
   }
 
-
   // We need to bloat the area of clusters to speed the clusters
   int64_t coreArea = die_.coreArea();
-  int64_t sumArea = std::accumulate(clustersArea.begin(),
-                                    clustersArea.end(), static_cast<int64_t>(0));
-  
-  // In the default node (bloatFactor_ == 1.0), we bloat the clusters to fill the entire core area
+  int64_t sumArea = std::accumulate(
+      clustersArea.begin(), clustersArea.end(), static_cast<int64_t>(0));
+
+  // In the default node (bloatFactor_ == 1.0), we bloat the clusters to fill
+  // the entire core area
   std::cout << "[INFO] bloatFactor = " << bloatFactor_ << std::endl;
   float bloatFactor = bloatFactor_;
   if (bloatFactor >= 0.99) {
@@ -411,7 +388,7 @@ void PlacerBaseCommon::initClusterNetlist()
   for (auto& area : clustersArea) {
     area = area * bloatFactor;
   }
-    
+
   // create fake instances
   numInsts_ = numClusters;
   numPlaceInsts_ = numClusters;
@@ -423,13 +400,14 @@ void PlacerBaseCommon::initClusterNetlist()
   // So we do not use inst_map_
   int placeInstId = -1;
   int fixedInstId = -1;
-  const float cluster_ratio = 1.0; // We assume the aspect ratio of the cluster is 1.0
-  for (int clusterId = 0; clusterId < numClusters; clusterId++) {    
+  const float cluster_ratio
+      = 1.0;  // We assume the aspect ratio of the cluster is 1.0
+  for (int clusterId = 0; clusterId < numClusters; clusterId++) {
     // create fake instances
     placeInstId++;
     const int64_t height = std::sqrt(clustersArea[clusterId] * cluster_ratio);
     const int64_t width = clustersArea[clusterId] / height;
-    Instance myInst(0, 0, width, height, false); // just a small instance
+    Instance myInst(0, 0, width, height, false);  // just a small instance
     myInst.setMacro();
     myInst.setInstId(placeInstId);
     instStor_[placeInstId] = myInst;
@@ -451,18 +429,19 @@ void PlacerBaseCommon::initClusterNetlist()
   }
 
   // store the connections between clusters
-  std::map<int, std::map<int, int> > adjMatrix; 
+  std::map<int, std::map<int, int>> adjMatrix;
   // nets fill
   odb::dbSet<odb::dbNet> nets = block->getNets();
-  // TODO: I obersve that if the reserve size is not large enough, the program will crash
-  netStor_.reserve(nets.size() * 10);   // Here we do not use resize
-  pinStor_.reserve(nets.size() * 10); // average degree is around 3
+  // TODO: I obersve that if the reserve size is not large enough, the program
+  // will crash
+  netStor_.reserve(nets.size() * 10);  // Here we do not use resize
+  pinStor_.reserve(nets.size() * 10);  // average degree is around 3
   int netId = -1;
   int pinId = -1;
   for (odb::dbNet* net : nets) {
     odb::dbSigType netType = net->getSigType();
-    odb::dbIntProperty::create(net, "netId", -1);    
-    
+    odb::dbIntProperty::create(net, "netId", -1);
+
     // escape nets with VDD/VSS/reset nets
     if (netType == odb::dbSigType::SIGNAL || netType == odb::dbSigType::CLOCK) {
       // check number of clusters connected to this net
@@ -470,8 +449,10 @@ void PlacerBaseCommon::initClusterNetlist()
       // check all the instance pins connected to this net
       for (odb::dbITerm* iTerm : net->getITerms()) {
         // map the pin to its inst
-        const int clusterId = odb::dbIntProperty::find(iTerm->getInst(), "cluster_id")->getValue();
-        iTermClusters.insert(clusterId);        
+        const int clusterId
+            = odb::dbIntProperty::find(iTerm->getInst(), "cluster_id")
+                  ->getValue();
+        iTermClusters.insert(clusterId);
       }
 
       if (iTermClusters.size() + net->getBTerms().size() <= 1) {
@@ -500,10 +481,10 @@ void PlacerBaseCommon::initClusterNetlist()
         myPin.setInstance(&instStor_[clusterId]);
         pinStor_.push_back(myPin);
       }
-      
+
       for (odb::dbBTerm* bTerm : net->getBTerms()) {
         pinId++;
-        odb::dbIntProperty::create(bTerm, "pinId", pinId);    
+        odb::dbIntProperty::create(bTerm, "pinId", pinId);
         Pin myPin(bTerm, log_);
         // link the pin with the net
         myPin.setNet(&netStor_.back());
@@ -518,23 +499,24 @@ void PlacerBaseCommon::initClusterNetlist()
     btermClusterMap[btermClusterId++] = bterm;
   }
 
-
   for (int clusterId = 0; clusterId < adjMatrix_.size(); clusterId++) {
     for (auto& adj : adjMatrix_[clusterId]) {
       if (clusterId >= numClusters) {
         // check if pinId exists
-        if (odb::dbIntProperty::find(btermClusterMap[clusterId], "pinId") == nullptr) {
+        if (odb::dbIntProperty::find(btermClusterMap[clusterId], "pinId")
+            == nullptr) {
           continue;
         }
       }
 
       if (adj.first >= numClusters) {
         // check if pinId exists
-        if (odb::dbIntProperty::find(btermClusterMap[adj.first], "pinId") == nullptr) {
+        if (odb::dbIntProperty::find(btermClusterMap[adj.first], "pinId")
+            == nullptr) {
           continue;
         }
       }
-      
+
       netId++;
       Net myNet(netId);
       myNet.setWeight(adj.second);
@@ -585,24 +567,20 @@ void PlacerBaseCommon::initClusterNetlist()
     }
   }
 
-
   // Initialize the virtual weight related variables
   initVirtualWeightFactor_ = 0.00;
   virtualWeightFactor_ = 0.00;
 
   // print the statistics
-  printInfo(); 
+  printInfo();
 }
 
-
-
-
-void splitString(std::string& inputString) 
+void splitString(std::string& inputString)
 {
   if (inputString.back() != '_') {
     return;
-  }  
-  
+  }
+
   // Create a stringstream from the input string
   std::istringstream ss(inputString);
   // Create a vector to store the split parts
@@ -620,67 +598,75 @@ void splitString(std::string& inputString)
   inputString.erase(inputString.length() - parts.back().length() - 2);
 }
 
-
-size_t customHash(const std::string& input) {
+size_t customHash(const std::string& input)
+{
   size_t hash = 0;
   for (char ch : input) {
-      // Multiply the current hash value by a prime number 
-      // and add the character's ASCII value
-      hash = hash * 11 + static_cast<size_t>(ch);
+    // Multiply the current hash value by a prime number
+    // and add the character's ASCII value
+    hash = hash * 11 + static_cast<size_t>(ch);
   }
   return hash;
 }
 
-
-bool checkSDFF(std::string input) {
+bool checkSDFF(std::string input)
+{
   if (input.at(0) == 'S') {
     return true;
-  }      
-  
-  return false; 
+  }
+
+  return false;
 }
 
-void addVirtualConnection(
-  std::map<int, float>& adjList,
-  const int clusterId,
-  const int seqVertexId,
-  const int level,
-  const int numHops,
-  const int bitWidth,
-  std::map<int, odb::dbBTerm*>& ioPinVertex,
-  std::map<int, odb::dbInst*>&  instVertex,
-  const std::vector<Vertex>& seqVertices)
+void addVirtualConnection(std::map<int, float>& adjList,
+                          const int clusterId,
+                          const int seqVertexId,
+                          const int level,
+                          const int numHops,
+                          const int bitWidth,
+                          std::map<int, odb::dbBTerm*>& ioPinVertex,
+                          std::map<int, odb::dbInst*>& instVertex,
+                          const std::vector<Vertex>& seqVertices)
 {
   std::set<int> sinkClusters;
-  std::set<int> sinkSeqVertexIds; // We need to further traverse the sequential graph
+  std::set<int>
+      sinkSeqVertexIds;  // We need to further traverse the sequential graph
   for (auto& sink : seqVertices[seqVertexId].sinks) {
     if (sink.first >= ioPinVertex.size()) {
       // check if we should stop here
-      if (odb::dbIntProperty::find(instVertex[sink.first], "cluster_id") == nullptr) {
+      if (odb::dbIntProperty::find(instVertex[sink.first], "cluster_id")
+          == nullptr) {
         continue;
       }
 
-      const int sinkClusterId = odb::dbIntProperty::find(instVertex[sink.first], "cluster_id")->getValue();    
+      const int sinkClusterId
+          = odb::dbIntProperty::find(instVertex[sink.first], "cluster_id")
+                ->getValue();
       auto prop = odb::dbIntProperty::find(instVertex[sink.first], "dVertexId");
       if (sinkClusterId != clusterId && prop != nullptr) {
         sinkClusters.insert(sinkClusterId);
       } else {
-        auto seqProp = odb::dbIntProperty::find(instVertex[sink.first], "seqVertexId");
+        auto seqProp
+            = odb::dbIntProperty::find(instVertex[sink.first], "seqVertexId");
         if (seqProp != nullptr) {
           const int sinkSeqVertexId = seqProp->getValue();
           sinkSeqVertexIds.insert(sinkSeqVertexId);
         } else {
-          std::cout << "instName = " << instVertex[sink.first]->getName() << std::endl;
+          std::cout << "instName = " << instVertex[sink.first]->getName()
+                    << std::endl;
         }
       }
     } else {
-      auto prop = odb::dbIntProperty::find(ioPinVertex[sink.first], "dVertexId");
+      auto prop
+          = odb::dbIntProperty::find(ioPinVertex[sink.first], "dVertexId");
       if (prop != nullptr) {
-        const int sinkClusterId = odb::dbIntProperty::find(ioPinVertex[sink.first], "cluster_id")->getValue();   
+        const int sinkClusterId
+            = odb::dbIntProperty::find(ioPinVertex[sink.first], "cluster_id")
+                  ->getValue();
         sinkClusters.insert(sinkClusterId);
-      } 
+      }
     }
-  }  
+  }
 
   for (auto& sinkClusterId : sinkClusters) {
     if (adjList.find(sinkClusterId) == adjList.end()) {
@@ -692,53 +678,62 @@ void addVirtualConnection(
 
   if (level < numHops) {
     for (auto& sink : sinkSeqVertexIds) {
-      addVirtualConnection(adjList, clusterId, sink, level + 1, numHops, bitWidth, ioPinVertex, instVertex, seqVertices);
+      addVirtualConnection(adjList,
+                           clusterId,
+                           sink,
+                           level + 1,
+                           numHops,
+                           bitWidth,
+                           ioPinVertex,
+                           instVertex,
+                           seqVertices);
     }
   }
 }
 
-
-void addDataflowEdge(
-  DVertex& dVertex,
-  const int seqVertexId,
-  const int maxDist,
-  std::map<int, odb::dbBTerm*>& ioPinVertex,
-  std::map<int, odb::dbInst*>&  instVertex,
-  const std::vector<Vertex>& seqVertices) 
+void addDataflowEdge(DVertex& dVertex,
+                     const int seqVertexId,
+                     const int maxDist,
+                     std::map<int, odb::dbBTerm*>& ioPinVertex,
+                     std::map<int, odb::dbInst*>& instVertex,
+                     const std::vector<Vertex>& seqVertices)
 {
   for (auto& sink : seqVertices[seqVertexId].sinks) {
-    const float weight = static_cast<float>(sink.second) / static_cast<float>(maxDist);  
+    const float weight
+        = static_cast<float>(sink.second) / static_cast<float>(maxDist);
     int sinkDVertexId = -1;
     if (sink.first >= ioPinVertex.size()) {
       auto prop = odb::dbIntProperty::find(instVertex[sink.first], "dVertexId");
       if (prop == nullptr) {
-        std::cout << "instName = " << instVertex[sink.first]->getName() << std::endl;
+        std::cout << "instName = " << instVertex[sink.first]->getName()
+                  << std::endl;
         continue;
       } else {
         sinkDVertexId = prop->getValue();
       }
     } else {
-      auto prop = odb::dbIntProperty::find(ioPinVertex[sink.first], "dVertexId");
+      auto prop
+          = odb::dbIntProperty::find(ioPinVertex[sink.first], "dVertexId");
       if (prop == nullptr) {
-        std::cout << "ioName = " << ioPinVertex[sink.first]->getName() << std::endl;
+        std::cout << "ioName = " << ioPinVertex[sink.first]->getName()
+                  << std::endl;
         continue;
       } else {
         sinkDVertexId = prop->getValue();
-      } 
+      }
     }
-    dVertex.addSink(sinkDVertexId, weight);      
+    dVertex.addSink(sinkDVertexId, weight);
   }
 }
-
 
 // Create Dataflow Information
 // model each std cell instance, IO pin and macro pin as vertices
 void PlacerBaseCommon::createDataFlow()
 {
-  //if (datapathFlag_ == false && dataflowFlag_ == false) {
+  // if (datapathFlag_ == false && dataflowFlag_ == false) {
   //  return;
   //}
-  
+
   std::map<int64_t, int> instMap;
   std::map<int64_t, int> multiFFMap;
   int numMacros = 0;
@@ -752,12 +747,12 @@ void PlacerBaseCommon::createDataFlow()
     if (master->isPad() || master->isCover()) {
       continue;
     }
-    
+
     if (master->isBlock()) {
       numMacros++;
       continue;
     }
-    
+
     const sta::LibertyCell* libertyCell = network_->libertyCell(inst);
     if (libertyCell == nullptr) {
       continue;
@@ -769,7 +764,7 @@ void PlacerBaseCommon::createDataFlow()
 
     const std::string masterName = master->getName();
     if (checkSDFF(masterName)) {
-      continue; // ignore scan FF
+      continue;  // ignore scan FF
     }
 
     std::string instName = inst->getName();
@@ -795,7 +790,8 @@ void PlacerBaseCommon::createDataFlow()
     }
   }
 
-  std::cout << "Number of multiFF instances = " << multiFFMap.size() << std::endl;
+  std::cout << "Number of multiFF instances = " << multiFFMap.size()
+            << std::endl;
   std::cout << "maxFFBits = " << maxFFBits << std::endl;
 
   if (maxFFBits == 0) {
@@ -805,12 +801,14 @@ void PlacerBaseCommon::createDataFlow()
   }
 
   // create the data flow vertices
-  dataflowVertices_.resize(multiFFMap.size() + numMacros + block_->getBTerms().size());
+  dataflowVertices_.resize(multiFFMap.size() + numMacros
+                           + block_->getBTerms().size());
   int dVertexId = 0;
   std::map<int64_t, int> multiFFDVertexIdMap;
   for (auto& inst : multiFFMap) {
     dataflowVertices_[dVertexId] = DVertex(dVertexId);
-    multiFFDVertexIdMap[inst.first] = dVertexId; // map from hash id to dVertexId
+    multiFFDVertexIdMap[inst.first]
+        = dVertexId;  // map from hash id to dVertexId
     dVertexId++;
   }
 
@@ -822,7 +820,7 @@ void PlacerBaseCommon::createDataFlow()
     if (master->isPad() || master->isCover()) {
       continue;
     }
-    
+
     if (master->isBlock()) {
       dataflowVertices_[dVertexId] = DVertex(dVertexId, inst);
       auto prop = odb::dbIntProperty::find(inst, "dVertexId");
@@ -832,7 +830,7 @@ void PlacerBaseCommon::createDataFlow()
       dVertexId++;
       continue;
     }
-    
+
     const sta::LibertyCell* libertyCell = network_->libertyCell(inst);
     if (libertyCell == nullptr) {
       continue;
@@ -844,7 +842,7 @@ void PlacerBaseCommon::createDataFlow()
 
     const std::string masterName = master->getName();
     if (checkSDFF(masterName)) {
-      continue; // ignore scan FF
+      continue;  // ignore scan FF
     }
 
     std::string instName = inst->getName();
@@ -876,19 +874,18 @@ void PlacerBaseCommon::createDataFlow()
 
   // create sequential graph
   std::map<int, odb::dbBTerm*> ioPinVertex;
-  std::map<int, odb::dbInst*>  instVertex;
+  std::map<int, odb::dbInst*> instVertex;
   std::vector<Vertex> seqVertices;
   // create the original netlist
-  std::vector<std::vector<int> > vertices;
-  std::vector<std::vector<int> > sinkHyperedges;  // dircted hypergraph
-
+  std::vector<std::vector<int>> vertices;
+  std::vector<std::vector<int>> sinkHyperedges;  // dircted hypergraph
 
   std::cout << "Before createSeqGraph" << std::endl;
-  createSeqGraph(ioPinVertex, instVertex, seqVertices, vertices, sinkHyperedges);
+  createSeqGraph(
+      ioPinVertex, instVertex, seqVertices, vertices, sinkHyperedges);
   std::cout << "After createSeqGraph" << std::endl;
 
   std::cout << "finish creating the sequential graph" << std::endl;
-
 
   // for debug, print the statistics
   // print the average fannots
@@ -900,14 +897,17 @@ void PlacerBaseCommon::createDataFlow()
       maxDist = max(maxDist, sink.second);
     }
   }
-  
-  std::cout << "Average fanouts = " << static_cast<double>(totalFanouts) / static_cast<double>(seqVertices.size()) << std::endl;
+
+  std::cout << "Average fanouts = "
+            << static_cast<double>(totalFanouts)
+                   / static_cast<double>(seqVertices.size())
+            << std::endl;
   std::cout << "maxDist = " << maxDist << std::endl;
 
   // Reorder the cluster id
   int numClusters = 0;
   std::map<int, int> clusterIdReorderMap;
- 
+
   // insts fill with real instances
   // update the clusters
   odb::dbSet<odb::dbInst> insts = block_->getInsts();
@@ -916,14 +916,15 @@ void PlacerBaseCommon::createDataFlow()
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
-    // check if the instance has a cluster id attribute    
+    // check if the instance has a cluster id attribute
     auto clusterIdProp = odb::dbIntProperty::find(inst, "cluster_id");
     if (clusterIdProp != nullptr) {
       const int clusterId = clusterIdProp->getValue();
       if (clusterIdReorderMap.find(clusterId) == clusterIdReorderMap.end()) {
-        clusterIdReorderMap[clusterId] = numClusters++; 
+        clusterIdReorderMap[clusterId] = numClusters++;
       }
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(clusterIdReorderMap[clusterId]);
+      odb::dbIntProperty::find(inst, "cluster_id")
+          ->setValue(clusterIdReorderMap[clusterId]);
     }
   }
 
@@ -932,8 +933,9 @@ void PlacerBaseCommon::createDataFlow()
   // create clusterId on each IO pin
   // clear the property
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
-    odb::dbIntProperty *prop = odb::dbIntProperty::find(bterm, "cluster_id");
-    if (prop != nullptr) {  // Ensure the property exists before trying to delete it
+    odb::dbIntProperty* prop = odb::dbIntProperty::find(bterm, "cluster_id");
+    if (prop
+        != nullptr) {  // Ensure the property exists before trying to delete it
       odb::dbIntProperty::find(bterm, "cluster_id")->setValue(numClusters++);
     } else {
       odb::dbIntProperty::create(bterm, "cluster_id", numClusters++);
@@ -943,19 +945,23 @@ void PlacerBaseCommon::createDataFlow()
   std::cout << "finish remaping the IO cluster id" << std::endl;
 
   if (numClusters > 0 && dataflowFlag_ == true) {
-   
     // We need to determine the connections between clusters
-    // We have number of clusters from 0, ..., numClusters_ - 1 (really clusters + IOs)
-    adjMatrix_.resize(numClusters);   
-    // A breath-first search at G_{seq} starts simultaneously from all components
-    // of block i traversing only outgoing edges through glue logic.
+    // We have number of clusters from 0, ..., numClusters_ - 1 (really clusters
+    // + IOs)
+    adjMatrix_.resize(numClusters);
+    // A breath-first search at G_{seq} starts simultaneously from all
+    // components of block i traversing only outgoing edges through glue logic.
     // When a component of block j is reached, the bitwidth of its predecessor
-    // in the path is added to the bin corresponding to the number of flops stage
-    // create the virtaul nodes for each multiFF instance
+    // in the path is added to the bin corresponding to the number of flops
+    // stage create the virtaul nodes for each multiFF instance
     for (auto& dVertex : dataflowVertices_) {
       if (dVertex.isBTerm()) {
-        const int seqVertexId = odb::dbIntProperty::find(dVertex.getBTerm(), "seqVertexId")->getValue();
-        const int clusterId = odb::dbIntProperty::find(dVertex.getBTerm(), "cluster_id")->getValue();
+        const int seqVertexId
+            = odb::dbIntProperty::find(dVertex.getBTerm(), "seqVertexId")
+                  ->getValue();
+        const int clusterId
+            = odb::dbIntProperty::find(dVertex.getBTerm(), "cluster_id")
+                  ->getValue();
         addVirtualConnection(adjMatrix_[clusterId],
                              clusterId,
                              seqVertexId,
@@ -966,40 +972,47 @@ void PlacerBaseCommon::createDataFlow()
                              instVertex,
                              seqVertices);
       } else if (dVertex.isMacro()) {
-        const int seqVertexId = odb::dbIntProperty::find(dVertex.getMacro(), "seqVertexId")->getValue();
-        const int clusterId = odb::dbIntProperty::find(dVertex.getMacro(), "cluster_id")->getValue();
+        const int seqVertexId
+            = odb::dbIntProperty::find(dVertex.getMacro(), "seqVertexId")
+                  ->getValue();
+        const int clusterId
+            = odb::dbIntProperty::find(dVertex.getMacro(), "cluster_id")
+                  ->getValue();
         int bitWidth = 0;
         for (odb::dbITerm* pin : dVertex.getMacro()->getITerms()) {
-          if (pin->getSigType() != odb::dbSigType::SIGNAL || pin->getIoType() != odb::dbIoType::OUTPUT) {
+          if (pin->getSigType() != odb::dbSigType::SIGNAL
+              || pin->getIoType() != odb::dbIoType::OUTPUT) {
             continue;
           }
           bitWidth++;
         }
         addVirtualConnection(adjMatrix_[clusterId],
-          clusterId,
-          seqVertexId,
-          0,
-          numHops_,
-          bitWidth,
-          ioPinVertex,
-          instVertex,
-          seqVertices);
+                             clusterId,
+                             seqVertexId,
+                             0,
+                             numHops_,
+                             bitWidth,
+                             ioPinVertex,
+                             instVertex,
+                             seqVertices);
       } else {
         for (auto& inst : dVertex.getFFs()) {
-          const int seqVertexId = odb::dbIntProperty::find(inst, "seqVertexId")->getValue();
-          const int clusterId = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+          const int seqVertexId
+              = odb::dbIntProperty::find(inst, "seqVertexId")->getValue();
+          const int clusterId
+              = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
           addVirtualConnection(adjMatrix_[clusterId],
-            clusterId,
-            seqVertexId,
-            0,
-            numHops_,
-            1,
-            ioPinVertex,
-            instVertex,
-            seqVertices);
+                               clusterId,
+                               seqVertexId,
+                               0,
+                               numHops_,
+                               1,
+                               ioPinVertex,
+                               instVertex,
+                               seqVertices);
         }
       }
-    }  
+    }
   }
 
   std::cout << "finish adding virtual connection" << std::endl;
@@ -1013,24 +1026,43 @@ void PlacerBaseCommon::createDataFlow()
   }
 
   if (datapathFlag_ == true) {
-  // create the virtaul nodes for each multiFF instance
-  for (auto& dVertex : dataflowVertices_) {
-    if (dVertex.isBTerm()) {
-      const int seqVertexId = odb::dbIntProperty::find(dVertex.getBTerm(), "seqVertexId")->getValue();
-      addDataflowEdge(dVertex, seqVertexId, maxDist, ioPinVertex, instVertex, seqVertices);
-    } else if (dVertex.isMacro()) {
-      const int seqVertexId = odb::dbIntProperty::find(dVertex.getMacro(), "seqVertexId")->getValue();
-      addDataflowEdge(dVertex, seqVertexId, maxDist, ioPinVertex, instVertex, seqVertices);
-    } else {
-      for (auto& inst : dVertex.getFFs()) {
-        const int seqVertexId = odb::dbIntProperty::find(inst, "seqVertexId")->getValue();
-        addDataflowEdge(dVertex, seqVertexId, maxDist, ioPinVertex, instVertex, seqVertices);
+    // create the virtaul nodes for each multiFF instance
+    for (auto& dVertex : dataflowVertices_) {
+      if (dVertex.isBTerm()) {
+        const int seqVertexId
+            = odb::dbIntProperty::find(dVertex.getBTerm(), "seqVertexId")
+                  ->getValue();
+        addDataflowEdge(dVertex,
+                        seqVertexId,
+                        maxDist,
+                        ioPinVertex,
+                        instVertex,
+                        seqVertices);
+      } else if (dVertex.isMacro()) {
+        const int seqVertexId
+            = odb::dbIntProperty::find(dVertex.getMacro(), "seqVertexId")
+                  ->getValue();
+        addDataflowEdge(dVertex,
+                        seqVertexId,
+                        maxDist,
+                        ioPinVertex,
+                        instVertex,
+                        seqVertices);
+      } else {
+        for (auto& inst : dVertex.getFFs()) {
+          const int seqVertexId
+              = odb::dbIntProperty::find(inst, "seqVertexId")->getValue();
+          addDataflowEdge(dVertex,
+                          seqVertexId,
+                          maxDist,
+                          ioPinVertex,
+                          instVertex,
+                          seqVertices);
+        }
       }
     }
   }
- }
 }
-
 
 // Extract the sequence graph from the original netlist
 // sequence graph consists of FFs, macros and IOs, we do not consider SDFFs
@@ -1038,13 +1070,13 @@ void PlacerBaseCommon::createDataFlow()
 // analyzing their transitive fanin/fanout in the original netlist
 
 void buildSeqGraphFromVertex(
-  Vertex& vertex,
-  const int vertexId,
-  int step, 
-  const std::vector<std::vector<int> >& vertices,
-  const std::vector<std::vector<int> >& sinkHyperedges,
-  const std::vector<bool>& stopFlagVec,
-  std::unordered_set<int>& visited)
+    Vertex& vertex,
+    const int vertexId,
+    int step,
+    const std::vector<std::vector<int>>& vertices,
+    const std::vector<std::vector<int>>& sinkHyperedges,
+    const std::vector<bool>& stopFlagVec,
+    std::unordered_set<int>& visited)
 {
   if (stopFlagVec[vertexId] == true && vertex.src != vertexId) {
     vertex.addSink(vertexId, step);
@@ -1055,13 +1087,18 @@ void buildSeqGraphFromVertex(
   for (auto hyperedgeId : vertices[vertexId]) {
     for (auto& sink : sinkHyperedges[hyperedgeId]) {
       if (visited.find(sink) != visited.end()) {
-        continue; // This sink has been visited
+        continue;  // This sink has been visited
       }
-      buildSeqGraphFromVertex(vertex, sink, step + 1, vertices, sinkHyperedges, stopFlagVec, visited);
+      buildSeqGraphFromVertex(vertex,
+                              sink,
+                              step + 1,
+                              vertices,
+                              sinkHyperedges,
+                              stopFlagVec,
+                              visited);
     }
   }
-}               
-
+}
 
 void PlacerBaseCommon::clearPinProperty()
 {
@@ -1078,21 +1115,21 @@ void PlacerBaseCommon::clearInstProperty()
 }
 
 void PlacerBaseCommon::createSeqGraph(
-  std::map<int, odb::dbBTerm*>& ioPinVertex,
-  std::map<int, odb::dbInst*>&  instVertex,
-  std::vector<Vertex>& seqVertices,
-  // create the original netlist, directed hypergraph
-  std::vector<std::vector<int> >& vertices,
-  std::vector<std::vector<int> >& sinkHyperedges)
+    std::map<int, odb::dbBTerm*>& ioPinVertex,
+    std::map<int, odb::dbInst*>& instVertex,
+    std::vector<Vertex>& seqVertices,
+    // create the original netlist, directed hypergraph
+    std::vector<std::vector<int>>& vertices,
+    std::vector<std::vector<int>>& sinkHyperedges)
 {
-  std::vector<bool> stopFlagVec; // stop at IO pins, FFs and macros
+  std::vector<bool> stopFlagVec;  // stop at IO pins, FFs and macros
   int vertexId = 0;
   // assign vertexId property of each Bterm
   // All boundary terms are marked as sequential stopping points
   for (odb::dbBTerm* term : block_->getBTerms()) {
     auto prop1 = odb::dbIntProperty::find(term, "vertexId");
     if (prop1 == nullptr) {
-      odb::dbIntProperty::create(term, "vertexId",  vertexId);
+      odb::dbIntProperty::create(term, "vertexId", vertexId);
     }
     ioPinVertex[vertexId] = term;
     vertexId++;
@@ -1101,11 +1138,11 @@ void PlacerBaseCommon::createSeqGraph(
     if (prop2 == nullptr) {
       odb::dbIntProperty::create(term, "seqVertexId", seqVertices.size());
     }
-    seqVertices.emplace_back(vertexId, true); // true means it is an IO pin
+    seqVertices.emplace_back(vertexId, true);  // true means it is an IO pin
   }
 
   std::cout << "[Test] Finish adding IO pins" << std::endl;
-    
+
   // assign vertexId property of each instance
   for (auto inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
@@ -1122,31 +1159,33 @@ void PlacerBaseCommon::createSeqGraph(
     }
 
     // mark sequential instances
-    if (master->isBlock() || (libertyCell->hasSequentials() && !checkSDFF(master->getName()))) {
+    if (master->isBlock()
+        || (libertyCell->hasSequentials() && !checkSDFF(master->getName()))) {
       auto prop1 = odb::dbIntProperty::find(inst, "vertexId");
       if (prop1 == nullptr) {
-        odb::dbIntProperty::create(inst, "vertexId",  vertexId);
+        odb::dbIntProperty::create(inst, "vertexId", vertexId);
       }
       auto prop2 = odb::dbIntProperty::find(inst, "seqVertexId");
       if (prop2 == nullptr) {
         odb::dbIntProperty::create(inst, "seqVertexId", seqVertices.size());
       }
       instVertex[vertexId] = inst;
-      stopFlagVec.push_back(true); // Sequential cells 
-      seqVertices.emplace_back(vertexId, false); // false means it is not an IO pin
+      stopFlagVec.push_back(true);  // Sequential cells
+      seqVertices.emplace_back(vertexId,
+                               false);  // false means it is not an IO pin
       vertexId++;
-    } else if (!libertyCell->hasSequentials()) { 
+    } else if (!libertyCell->hasSequentials()) {
       auto prop1 = odb::dbIntProperty::find(inst, "vertexId");
       if (prop1 == nullptr) {
-        odb::dbIntProperty::create(inst, "vertexId",  vertexId);
+        odb::dbIntProperty::create(inst, "vertexId", vertexId);
       }
       instVertex[vertexId] = inst;
-      stopFlagVec.push_back(false); // Comb cells
+      stopFlagVec.push_back(false);  // Comb cells
       vertexId++;
     } else {
       auto prop1 = odb::dbIntProperty::find(inst, "vertexId");
       if (prop1 == nullptr) {
-        odb::dbIntProperty::create(inst, "vertexId",  -1);
+        odb::dbIntProperty::create(inst, "vertexId", -1);
       }
     }
   }
@@ -1158,14 +1197,15 @@ void PlacerBaseCommon::createSeqGraph(
   // traverse the netlist
   for (odb::dbNet* net : block_->getNets()) {
     // ignore all the power net
-    if (net->getSigType().isSupply() || net->getITerms().size() >= largeNetThreshold_) {
+    if (net->getSigType().isSupply()
+        || net->getITerms().size() >= largeNetThreshold_) {
       continue;
     }
-  
+
     int driverId = -1;      // driver vertex id
     std::set<int> loadsId;  // load vertex id
     bool padSDFFFlag = false;
-    
+
     // check the connected instances
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
@@ -1176,19 +1216,20 @@ void PlacerBaseCommon::createSeqGraph(
         padSDFFFlag = true;
         break;
       }
-      
-      const int vertexId = odb::dbIntProperty::find(inst, "vertexId")->getValue();
+
+      const int vertexId
+          = odb::dbIntProperty::find(inst, "vertexId")->getValue();
       if (vertexId == -1) {
         continue;
-      }      
-      
+      }
+
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         driverId = vertexId;
       } else {
         loadsId.insert(vertexId);
       }
     }
-    
+
     if (padSDFFFlag) {
       continue;  // the nets with Pads should be ignored
     }
@@ -1207,7 +1248,8 @@ void PlacerBaseCommon::createSeqGraph(
     //
     // Skip high fanout nets or nets that do not have valid driver or loads
     //
-    if (driverId < 0 || loadsId.size() < 1 || loadsId.size() > largeNetThreshold_) {
+    if (driverId < 0 || loadsId.size() < 1
+        || loadsId.size() > largeNetThreshold_) {
       continue;
     }
 
@@ -1218,8 +1260,8 @@ void PlacerBaseCommon::createSeqGraph(
         hyperedge.push_back(load);
       }
     }
-    
-    vertices[driverId].push_back(sinkHyperedges.size());  
+
+    vertices[driverId].push_back(sinkHyperedges.size());
     sinkHyperedges.push_back(hyperedge);
   }  // end net traversal
 
@@ -1229,14 +1271,12 @@ void PlacerBaseCommon::createSeqGraph(
   // Build the sequence graph
   for (auto& vertex : seqVertices) {
     visited.clear();
-    buildSeqGraphFromVertex(vertex, vertex.src, 0, vertices, sinkHyperedges, stopFlagVec, visited);
+    buildSeqGraphFromVertex(
+        vertex, vertex.src, 0, vertices, sinkHyperedges, stopFlagVec, visited);
   }
   visited.clear();
   std::cout << "[Test] Finish building the sequence graph" << std::endl;
 }
-
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 // for standard cell placement
@@ -1263,7 +1303,7 @@ void PlacerBaseCommon::init()
   odb::Rect dieRect = block->getDieArea();
   die_ = Die(dieRect, coreRect);
 
-  // cluster constraint 
+  // cluster constraint
   // Reorder the cluster id
   int numClusters = 0;
   numPlaceInsts_ = 0;
@@ -1276,19 +1316,19 @@ void PlacerBaseCommon::init()
       continue;
     }
     numInsts_++;
-    if (!isFixedOdbInst(inst)) { 
+    if (!isFixedOdbInst(inst)) {
       // call the utility function to check if the instance is a fixed instance
       numPlaceInsts_++;
     }
 
-    // check if the instance has a cluster id attribute    
+    // check if the instance has a cluster id attribute
     auto clusterIdProp = odb::dbIntProperty::find(inst, "cluster_id");
     if (clusterIdProp != nullptr) {
       const int clusterId = clusterIdProp->getValue();
       numClusters = max(numClusters, clusterId + 1);
     }
   }
-  
+
   if (clusterConstraintFlag_ == false) {
     numClusters = 0;
   }
@@ -1307,7 +1347,7 @@ void PlacerBaseCommon::init()
     dataflowVertices_.clear();
   }
 
-  std::map<int, std::pair<int, int> > clusterLoc;
+  std::map<int, std::pair<int, int>> clusterLoc;
   const int numRealPlaceInsts = numPlaceInsts_;
   numInsts_ += numClusters + numMultiFFs;
   numPlaceInsts_ += numClusters + numMultiFFs;
@@ -1321,9 +1361,9 @@ void PlacerBaseCommon::init()
   // So we do not use inst_map_
   int placeInstId = -1;
   int fixedInstId = -1;
-  for (odb::dbInst* inst : insts) {  
+  for (odb::dbInst* inst : insts) {
     // check the instance id
-    odb::dbIntProperty::create(inst, "instId", -1);    
+    odb::dbIntProperty::create(inst, "instId", -1);
     auto type = inst->getMaster()->getType();
     if (!type.isCore() && !type.isBlock()) {
       continue;
@@ -1332,19 +1372,19 @@ void PlacerBaseCommon::init()
     // check if the instance is a fixed instance
     if (isFixedOdbInst(inst)) {
       fixedInstId++;
-      instId = numPlaceInsts_ + fixedInstId; 
+      instId = numPlaceInsts_ + fixedInstId;
     } else {
       placeInstId++;
       instId = placeInstId;
-    } 
+    }
     odb::dbIntProperty::find(inst, "instId")->setValue(instId);
     // create the GpuInstance
-    Instance myInst(inst, 
+    Instance myInst(inst,
                     pbVars_.padLeft * siteSizeX_,
                     pbVars_.padRight * siteSizeX_,
                     siteSizeY_,
                     pbVars_.row_limit,
-                    log_);    
+                    log_);
     if (type.isBlock()) {
       myInst.setHaloWidth(haloWidth_);
     }
@@ -1353,10 +1393,10 @@ void PlacerBaseCommon::init()
     // is the simplest way to ensure it is counted as fully used.
     if (myInst.isFixed()) {
       myInst.snapOutward(coreRect.ll(), siteSizeX_, siteSizeY_);
-    } 
+    }
     dbInstStor_[instId] = inst;
     instStor_[instId] = myInst;
-    
+
     // for clustered netlist
     auto prop = odb::dbIntProperty::find(inst, "cluster_id");
     if (prop != nullptr) {
@@ -1380,19 +1420,18 @@ void PlacerBaseCommon::init()
     }
   }
 
-
   // for clustered netlist
   // create virtual instances for each cluster
   // 2729, 2800 is the size of a dummy instance
   for (int clusterId = 0; clusterId < numClusters; clusterId++) {
     placeInstId++;
     auto& loc = clusterLoc[clusterId];
-    Instance myInst(loc.first, loc.second, 2729, 2800, false); // just a small instance
+    Instance myInst(
+        loc.first, loc.second, 2729, 2800, false);  // just a small instance
     dbInstStor_[placeInstId] = nullptr;
     instStor_[placeInstId] = myInst;
-  } 
+  }
 
-  
   // for multi-bit FFs
   for (auto& vertex : dataflowVertices_) {
     if (vertex.getFFs().size() > 1) {
@@ -1409,8 +1448,8 @@ void PlacerBaseCommon::init()
         cy += ly;
       }
       cx = static_cast<float>(cx) / vertex.getFFs().size();
-      cy = static_cast<float>(cy) / vertex.getFFs().size(); 
-      Instance myInst(cx, cy, 2729, 2800, false); // just a small instance
+      cy = static_cast<float>(cy) / vertex.getFFs().size();
+      Instance myInst(cx, cy, 2729, 2800, false);  // just a small instance
       vertex.instId = placeInstId;
       dbInstStor_[placeInstId] = nullptr;
       instStor_[placeInstId] = myInst;
@@ -1427,22 +1466,24 @@ void PlacerBaseCommon::init()
 
   // nets fill
   odb::dbSet<odb::dbNet> nets = block->getNets();
-  // TODO: I obersve that if the reserve size is not large enough, the program will crash
-  netStor_.reserve(nets.size() * 100);   // Here we do not use resize
-  dbNetStor_.reserve(nets.size() * 100);  
-  pinStor_.reserve(nets.size() * 100); // average degree is around 3
+  // TODO: I obersve that if the reserve size is not large enough, the program
+  // will crash
+  netStor_.reserve(nets.size() * 100);  // Here we do not use resize
+  dbNetStor_.reserve(nets.size() * 100);
+  pinStor_.reserve(nets.size() * 100);  // average degree is around 3
   dbPinStor_.reserve(nets.size() * 100);
   int netId = -1;
   int pinId = -1;
   int ignoreNet = 0;
   for (odb::dbNet* net : nets) {
     odb::dbSigType netType = net->getSigType();
-    odb::dbIntProperty *prop = odb::dbIntProperty::find(net, "netId");
-    if (prop != nullptr) {  // Ensure the property exists before trying to delete it
-      odb::dbProperty::destroy(prop); 
+    odb::dbIntProperty* prop = odb::dbIntProperty::find(net, "netId");
+    if (prop
+        != nullptr) {  // Ensure the property exists before trying to delete it
+      odb::dbProperty::destroy(prop);
     }
-    odb::dbIntProperty::create(net, "netId", -1);    
-    
+    odb::dbIntProperty::create(net, "netId", -1);
+
     // escape nets with VDD/VSS/reset nets
     if (netType == odb::dbSigType::SIGNAL || netType == odb::dbSigType::CLOCK) {
       const int num_fanouts = net->getITerms().size() + net->getBTerms().size();
@@ -1451,34 +1492,36 @@ void PlacerBaseCommon::init()
         ignoreNet++;
         continue;
       }
-         
+
       netId++;
       dbNetStor_.push_back(net);
       odb::dbIntProperty::find(net, "netId")->setValue(netId);
-      
-      Net myNet(net); 
+
+      Net myNet(net);
       netStor_.push_back(myNet);
-      
+
       // check all the instance pins connected to this net
       for (odb::dbITerm* iTerm : net->getITerms()) {
         pinId++;
-        odb::dbIntProperty::create(iTerm, "pinId", pinId);    
-        Pin myPin(iTerm, log_);   
+        odb::dbIntProperty::create(iTerm, "pinId", pinId);
+        Pin myPin(iTerm, log_);
         // link the pin with the net
         myPin.setNet(&netStor_.back());
         // map the pin to its inst
-        int instId = odb::dbIntProperty::find(iTerm->getInst(), "instId")->getValue();
+        int instId
+            = odb::dbIntProperty::find(iTerm->getInst(), "instId")->getValue();
         myPin.setInstance(&instStor_[instId]);
         pinStor_.push_back(myPin);
       }
 
       for (odb::dbBTerm* bTerm : net->getBTerms()) {
         pinId++;
-        odb::dbIntProperty *prop = odb::dbIntProperty::find(bTerm, "pinId");
-        if (prop != nullptr) {  // Ensure the property exists before trying to delete it
-          odb::dbProperty::destroy(prop); 
+        odb::dbIntProperty* prop = odb::dbIntProperty::find(bTerm, "pinId");
+        if (prop != nullptr) {  // Ensure the property exists before trying to
+                                // delete it
+          odb::dbProperty::destroy(prop);
         }
-        odb::dbIntProperty::create(bTerm, "pinId", pinId);    
+        odb::dbIntProperty::create(bTerm, "pinId", pinId);
         Pin myPin(bTerm, log_);
         // link the pin with the net
         myPin.setNet(&netStor_.back());
@@ -1487,16 +1530,16 @@ void PlacerBaseCommon::init()
     }
   }
 
-
   // create cluster constraints
   if (numClusters > 0) {
     // create virtual nets within each cluster
-    for (odb::dbInst* inst : insts) {  
+    for (odb::dbInst* inst : insts) {
       const int instId = odb::dbIntProperty::find(inst, "instId")->getValue();
       if (instId == -1) {
         continue;
       }
-      const int clusterId = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+      const int clusterId
+          = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
       // create a virtual net
       // create a virtual pin for each instance and a cluster
       netId++;
@@ -1520,10 +1563,9 @@ void PlacerBaseCommon::init()
     }
   }
 
-
   // create the datapath constraints
   int FF_limit = 2;
-  float FF_weight = 1.0 / 2980; // default value exp(-8)
+  float FF_weight = 1.0 / 2980;  // default value exp(-8)
 
   if (numMultiFFs > 0) {
     for (auto& vertex : dataflowVertices_) {
@@ -1531,7 +1573,8 @@ void PlacerBaseCommon::init()
         int numSinks = 0;
         for (auto& sink : vertex.sinks) {
           for (auto& inst : dataflowVertices_[sink.first].getFFs()) {
-            const int instId = odb::dbIntProperty::find(inst, "instId")->getValue();
+            const int instId
+                = odb::dbIntProperty::find(inst, "instId")->getValue();
             if (instId == -1) {
               continue;
             }
@@ -1539,8 +1582,10 @@ void PlacerBaseCommon::init()
           }
 
           if (dataflowVertices_[sink.first].isBTerm()) {
-            auto prop1 = odb::dbIntProperty::find(dataflowVertices_[sink.first].getBTerm(), "pinId");
-            if (prop1 == nullptr) {  // Ensure the property exists before trying to delete it
+            auto prop1 = odb::dbIntProperty::find(
+                dataflowVertices_[sink.first].getBTerm(), "pinId");
+            if (prop1 == nullptr) {  // Ensure the property exists before trying
+                                     // to delete it
               continue;
             }
             numSinks++;
@@ -1558,21 +1603,22 @@ void PlacerBaseCommon::init()
         Net myNet(netId);
         myNet.setVirtualWeight(1.0 / (numFFs - 1) * FF_weight);
         netStor_.push_back(myNet);
-    
+
         // create a virtual pin for each instance
         pinId++;
         Pin myPin(pinId);
         myPin.setNet(&netStor_.back());
         myPin.setInstance(&instStor_[vertex.instId]);
         pinStor_.push_back(myPin);
-        
+
         // create a virtual pin for each cluster
         for (auto& inst : vertex.getFFs()) {
-          const int instId = odb::dbIntProperty::find(inst, "instId")->getValue();
+          const int instId
+              = odb::dbIntProperty::find(inst, "instId")->getValue();
           if (instId == -1) {
             continue;
           }
-          
+
           pinId++;
           Pin myPin2(pinId);
           myPin2.setNet(&netStor_.back());
@@ -1599,14 +1645,17 @@ void PlacerBaseCommon::init()
 
   initVirtualWeightFactor_ = std::exp(virtualIter_);
   virtualWeightFactor_ = std::exp(virtualIter_);
-  std::cout << "[INFO] initVirtualWeightFactor = " << initVirtualWeightFactor_ << std::endl;
-  std::cout << "[INFO] virtualWeightFactor = " << virtualWeightFactor_ << std::endl;
+  std::cout << "[INFO] initVirtualWeightFactor = " << initVirtualWeightFactor_
+            << std::endl;
+  std::cout << "[INFO] virtualWeightFactor = " << virtualWeightFactor_
+            << std::endl;
 
   // print the statistics
-  printInfo(); 
+  printInfo();
 }
 
-void PlacerBaseCommon::updateVirtualWeightFactor(int iter) {
+void PlacerBaseCommon::updateVirtualWeightFactor(int iter)
+{
   virtualWeightFactor_ = initVirtualWeightFactor_ / std::exp(iter);
 }
 
@@ -1653,7 +1702,8 @@ void PlacerBaseCommon::reset()
 void PlacerBaseCommon::printInfo() const
 {
   std::string msg;
-  float dbuPerMicron = static_cast<float>(db_->getTech()->getDbUnitsPerMicron());
+  float dbuPerMicron
+      = static_cast<float>(db_->getTech()->getDbUnitsPerMicron());
 
   msg = "NumInstances: " + std::to_string(numInsts_);
   log_->report(msg);
@@ -1667,54 +1717,82 @@ void PlacerBaseCommon::printInfo() const
   msg = "NumDummyInstances: " + std::to_string(numDummyInsts_);
   log_->report(msg);
 
-  msg = "DieAreaLxLy: " + floatToStringWithPrecision(static_cast<float>(die_.dieLx()) / dbuPerMicron, 2);
-  msg += " " + floatToStringWithPrecision(static_cast<float>(die_.dieLy()) / dbuPerMicron, 2);
+  msg = "DieAreaLxLy: "
+        + floatToStringWithPrecision(
+            static_cast<float>(die_.dieLx()) / dbuPerMicron, 2);
+  msg += " "
+         + floatToStringWithPrecision(
+             static_cast<float>(die_.dieLy()) / dbuPerMicron, 2);
   log_->report(msg);
 
-  msg = "DieAreaUxUy: " + floatToStringWithPrecision(static_cast<float>(die_.dieUx()) / dbuPerMicron, 2);
-  msg += " " + floatToStringWithPrecision(static_cast<float>(die_.dieUy()) / dbuPerMicron, 2);
+  msg = "DieAreaUxUy: "
+        + floatToStringWithPrecision(
+            static_cast<float>(die_.dieUx()) / dbuPerMicron, 2);
+  msg += " "
+         + floatToStringWithPrecision(
+             static_cast<float>(die_.dieUy()) / dbuPerMicron, 2);
   log_->report(msg);
 
-  msg = "CoreAreaLxLy: " + floatToStringWithPrecision(static_cast<float>(die_.coreLx()) / dbuPerMicron, 2);
-  msg += " " + floatToStringWithPrecision(static_cast<float>(die_.coreLy()) / dbuPerMicron, 2);
+  msg = "CoreAreaLxLy: "
+        + floatToStringWithPrecision(
+            static_cast<float>(die_.coreLx()) / dbuPerMicron, 2);
+  msg += " "
+         + floatToStringWithPrecision(
+             static_cast<float>(die_.coreLy()) / dbuPerMicron, 2);
   log_->report(msg);
 
-  msg = "CoreAreaUxUy: " + floatToStringWithPrecision(static_cast<float>(die_.coreUx()) / dbuPerMicron, 2);
-  msg += " " + floatToStringWithPrecision(static_cast<float>(die_.coreUy()) / dbuPerMicron, 2);
+  msg = "CoreAreaUxUy: "
+        + floatToStringWithPrecision(
+            static_cast<float>(die_.coreUx()) / dbuPerMicron, 2);
+  msg += " "
+         + floatToStringWithPrecision(
+             static_cast<float>(die_.coreUy()) / dbuPerMicron, 2);
   log_->report(msg);
-  
 
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<double>(stdCellInstsArea_ + macroInstsArea_)
-             / static_cast<double>(coreArea) * 100;
-  msg = "CoreArea: " + floatToStringWithPrecision(static_cast<float>(coreArea) / dbuPerMicron / dbuPerMicron, 2);
+               / static_cast<double>(coreArea) * 100;
+  msg = "CoreArea: "
+        + floatToStringWithPrecision(
+            static_cast<float>(coreArea) / dbuPerMicron / dbuPerMicron, 2);
   log_->report(msg);
 
-  msg = "NonPlaceInstsArea: " + floatToStringWithPrecision(static_cast<float>(nonPlaceInstsArea_) / dbuPerMicron / dbuPerMicron, 2);
+  msg = "NonPlaceInstsArea: "
+        + floatToStringWithPrecision(static_cast<float>(nonPlaceInstsArea_)
+                                         / dbuPerMicron / dbuPerMicron,
+                                     2);
   log_->report(msg);
 
-  msg = "PlaceInstsArea: " + floatToStringWithPrecision(static_cast<float>(placeInstsArea_) / dbuPerMicron / dbuPerMicron, 2);
+  msg = "PlaceInstsArea: "
+        + floatToStringWithPrecision(
+            static_cast<float>(placeInstsArea_) / dbuPerMicron / dbuPerMicron,
+            2);
   log_->report(msg);
 
-  msg = "StdInstsArea: " + floatToStringWithPrecision(static_cast<float>(stdCellInstsArea_) / dbuPerMicron / dbuPerMicron, 2);
+  msg = "StdInstsArea: "
+        + floatToStringWithPrecision(
+            static_cast<float>(stdCellInstsArea_) / dbuPerMicron / dbuPerMicron,
+            2);
   log_->report(msg);
 
-  msg = "MacroInstsArea: " + floatToStringWithPrecision(static_cast<float>(macroInstsArea_) / dbuPerMicron / dbuPerMicron, 2);
+  msg = "MacroInstsArea: "
+        + floatToStringWithPrecision(
+            static_cast<float>(macroInstsArea_) / dbuPerMicron / dbuPerMicron,
+            2);
   log_->report(msg);
 
   msg = "Util(%): " + floatToStringWithPrecision(util, 2);
   log_->report(msg);
-  
+
   if (util >= 100.1) {
     log_->error(GPL2, 301, "Utilization exceeds 100%.");
   }
 }
 
-
 int64_t PlacerBaseCommon::hpwl() const
 {
   if (wlGradOp_ != nullptr) {
-    //return wlGradOp_->computeHPWL();
+    // return wlGradOp_->computeHPWL();
     return wlGradOp_->computeWeightedHPWL(virtualWeightFactor_);
   } else {
     return 0;
@@ -1730,108 +1808,95 @@ void PlacerBaseCommon::updatePinLocation()
 
 // calculate the wirelength gradient
 // we encapsulate the GPU acceleration into the WireLengthGradientOp class
-void PlacerBaseCommon::updateWireLengthForce(const float wlCoeffX, const float wlCoeffY)
+void PlacerBaseCommon::updateWireLengthForce(const float wlCoeffX,
+                                             const float wlCoeffY)
 {
   if (wlGradOp_ != nullptr) {
-    wlGradOp_->computeWireLengthForce(wlCoeffX, 
-                                      wlCoeffY, 
-                                      virtualWeightFactor_,
-                                      dWLGradXPtr_,
-                                      dWLGradYPtr_);
+    wlGradOp_->computeWireLengthForce(
+        wlCoeffX, wlCoeffY, virtualWeightFactor_, dWLGradXPtr_, dWLGradYPtr_);
   }
 }
-
-double PlacerBaseCommon::wireLengthRuntime() const
-{
-  if (wlGradOp_ != nullptr) {
-    return wlGradOp_->runtime();
-  } else {
-    return 0.0;
-  }
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Class PlacerBase
 ////////////////////////////////////////////////////////////////////////////////
 
-PlacerBase::PlacerBase() 
-  : db_(nullptr),
-    log_(nullptr),
-    pbCommon_(nullptr),
-    group_(nullptr),
-    densityOp_(nullptr),
-    bg_(),
-    die_(),
-    siteSizeX_(0),
-    siteSizeY_(0),
-    nbVars_(),
-    npVars_(),
-    fillerDx_(0),
-    fillerDy_(0),
-    whiteSpaceArea_(0),
-    movableArea_(0),
-    totalFillerArea_(0),
-    placeInstsArea_(0),
-    nonPlaceInstsArea_(0),
-    macroInstsArea_(0),
-    stdInstsArea_(0),
-    numInsts_(0),
-    numNonPlaceInsts_(0),
-    numPlaceInsts_(0),
-    numFixedInsts_(0),
-    numDummyInsts_(0),
-    numFillerInsts_(0),
-    sumPhi_(0.0),
-    targetDensity_(0.0),
-    uniformTargetDensity_(0.0),
-    densityPenalty_(0.0),
-    baseWireLengthCoef_(0.0),
-    sumOverflow_(0.0),
-    sumOverflowUnscaled_(0.0),
-    prevHpwl_(0),
-    isDiverged_(false),
-    isMaxPhiCoefChanged_(false),
-    minSumOverflow_(1e30),
-    hpwlWithMinSumOverflow_(1e30),
-    iter_(0),
-    isConverged_(false),
-    stepLength_(0.0),
-    wireLengthGradSum_(0.0),
-    densityGradSum_(0.0),
-    dInstDDxPtr_(nullptr),
-    dInstDDyPtr_(nullptr),
-    dInstDCxPtr_(nullptr),
-    dInstDCyPtr_(nullptr),
-    dDensityGradXPtr_(nullptr),
-    dDensityGradYPtr_(nullptr),
-    dWireLengthGradXPtr_(nullptr),
-    dWireLengthGradYPtr_(nullptr),
-    dWireLengthPrecondiPtr_(nullptr),
-    dDensityPrecondiPtr_(nullptr),
-    dCurSLPCoordiPtr_(nullptr),
-    dCurSLPSumGradsPtr_(nullptr),
-    dCurSLPWireLengthGradXPtr_(nullptr),
-    dCurSLPWireLengthGradYPtr_(nullptr),
-    dCurSLPDensityGradXPtr_(nullptr),
-    dCurSLPDensityGradYPtr_(nullptr),
-    dPrevSLPCoordiPtr_(nullptr),
-    dPrevSLPSumGradsPtr_(nullptr),
-    dPrevSLPWireLengthGradXPtr_(nullptr),
-    dPrevSLPWireLengthGradYPtr_(nullptr),
-    dPrevSLPDensityGradXPtr_(nullptr),
-    dPrevSLPDensityGradYPtr_(nullptr),
-    dNextSLPCoordiPtr_(nullptr),
-    dNextSLPSumGradsPtr_(nullptr),
-    dNextSLPWireLengthGradXPtr_(nullptr),
-    dNextSLPWireLengthGradYPtr_(nullptr),
-    dNextSLPDensityGradXPtr_(nullptr),
-    dNextSLPDensityGradYPtr_(nullptr),
-    dCurCoordiPtr_(nullptr),
-    dNextCoordiPtr_(nullptr)
-  { }
-
-
+PlacerBase::PlacerBase()
+    : db_(nullptr),
+      log_(nullptr),
+      pbCommon_(nullptr),
+      group_(nullptr),
+      densityOp_(nullptr),
+      bg_(),
+      die_(),
+      siteSizeX_(0),
+      siteSizeY_(0),
+      nbVars_(),
+      npVars_(),
+      fillerDx_(0),
+      fillerDy_(0),
+      whiteSpaceArea_(0),
+      movableArea_(0),
+      totalFillerArea_(0),
+      placeInstsArea_(0),
+      nonPlaceInstsArea_(0),
+      macroInstsArea_(0),
+      stdInstsArea_(0),
+      numInsts_(0),
+      numNonPlaceInsts_(0),
+      numPlaceInsts_(0),
+      numFixedInsts_(0),
+      numDummyInsts_(0),
+      numFillerInsts_(0),
+      dInstDDxPtr_(nullptr),
+      dInstDDyPtr_(nullptr),
+      dInstDCxPtr_(nullptr),
+      dInstDCyPtr_(nullptr),
+      dWireLengthPrecondiPtr_(nullptr),
+      dDensityPrecondiPtr_(nullptr),
+      sumPhi_(0.0),
+      targetDensity_(0.0),
+      uniformTargetDensity_(0.0),
+      densityPenalty_(0.0),
+      baseWireLengthCoef_(0.0),
+      sumOverflow_(0.0),
+      sumOverflowUnscaled_(0.0),
+      prevHpwl_(0),
+      isDiverged_(false),
+      isMaxPhiCoefChanged_(false),
+      minSumOverflow_(1e30),
+      hpwlWithMinSumOverflow_(1e30),
+      iter_(0),
+      isConverged_(false),
+      stepLength_(0.0),
+      wireLengthGradSum_(0.0),
+      densityGradSum_(0.0),
+      dDensityGradXPtr_(nullptr),
+      dDensityGradYPtr_(nullptr),
+      dWireLengthGradXPtr_(nullptr),
+      dWireLengthGradYPtr_(nullptr),
+      dCurSLPCoordiPtr_(nullptr),
+      dCurSLPWireLengthGradXPtr_(nullptr),
+      dCurSLPWireLengthGradYPtr_(nullptr),
+      dCurSLPDensityGradXPtr_(nullptr),
+      dCurSLPDensityGradYPtr_(nullptr),
+      dCurSLPSumGradsPtr_(nullptr),
+      dPrevSLPCoordiPtr_(nullptr),
+      dPrevSLPWireLengthGradXPtr_(nullptr),
+      dPrevSLPWireLengthGradYPtr_(nullptr),
+      dPrevSLPDensityGradXPtr_(nullptr),
+      dPrevSLPDensityGradYPtr_(nullptr),
+      dPrevSLPSumGradsPtr_(nullptr),
+      dNextSLPCoordiPtr_(nullptr),
+      dNextSLPWireLengthGradXPtr_(nullptr),
+      dNextSLPWireLengthGradYPtr_(nullptr),
+      dNextSLPDensityGradXPtr_(nullptr),
+      dNextSLPDensityGradYPtr_(nullptr),
+      dNextSLPSumGradsPtr_(nullptr),
+      dCurCoordiPtr_(nullptr),
+      dNextCoordiPtr_(nullptr)
+{
+}
 
 // Constructor
 PlacerBase::PlacerBase(NesterovBaseVars nbVars,
@@ -1839,7 +1904,7 @@ PlacerBase::PlacerBase(NesterovBaseVars nbVars,
                        std::shared_ptr<PlacerBaseCommon> pbCommon,
                        utl::Logger* log,
                        odb::dbGroup* group)
-  : PlacerBase()
+    : PlacerBase()
 {
   nbVars_ = nbVars;
   db_ = db;
@@ -1849,12 +1914,10 @@ PlacerBase::PlacerBase(NesterovBaseVars nbVars,
   init();
 }
 
-
 PlacerBase::~PlacerBase()
 {
   reset();
 }
-
 
 void PlacerBase::reset()
 {
@@ -1863,7 +1926,7 @@ void PlacerBase::reset()
 
 void PlacerBase::init()
 {
-  // set a fixed seed 
+  // set a fixed seed
   srand(42);
   // get the die information
   die_ = pbCommon_->die();
@@ -1924,10 +1987,8 @@ void PlacerBase::init()
   // them as nonPlaceInsts
   numNonPlaceInsts_ = nonPlaceInsts_.size();
 
-    
   std::cout << "placeInstsArea_ = " << placeInstsArea_ << std::endl;
   std::cout << "numInsts_ " << numInsts_ << std::endl;
-
 
   // initialize bin grid structure
   if (nbVars_.isSetBinCnt) {
@@ -1938,11 +1999,10 @@ void PlacerBase::init()
   bg_.setCorePoints(&die());
   bg_.setTargetDensity(targetDensity_);
   bg_.initBins();
- 
+
   // update densitySize and densityScale in each gCell
   updateDensitySize();
 }
-
 
 std::pair<int, int> getMinMaxIdx(int ll,
                                  int uu,
@@ -1953,29 +2013,27 @@ std::pair<int, int> getMinMaxIdx(int ll,
 {
   int lowerIdx = (ll - coreLL) / siteSize;
   int upperIdx = (fastModulo((uu - coreLL), siteSize) == 0)
-               ? (uu - coreLL) / siteSize
-               : (uu - coreLL) / siteSize + 1;
+                     ? (uu - coreLL) / siteSize
+                     : (uu - coreLL) / siteSize + 1;
   return std::make_pair(std::max(minIdx, lowerIdx), std::min(maxIdx, upperIdx));
 }
-
-
-
 
 // Use dummy instance to fill unusable sites.  Sites are unusable
 // due to fragmented rows or placement blockages.
 void PlacerBase::initInstsForUnusableSites()
 {
   odb::dbSet<odb::dbRow> rows = db_->getChip()->getBlock()->getRows();
-  odb::dbSet<odb::dbPowerDomain> pds = db_->getChip()->getBlock()->getPowerDomains();
+  odb::dbSet<odb::dbPowerDomain> pds
+      = db_->getChip()->getBlock()->getPowerDomains();
 
   int64_t siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int64_t siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
   enum PlaceInfo
   {
-    Empty, // This site cannot be used
-    Row, // This site can be used
-    FixedInst // This site is blocked by the fixed instance
+    Empty,     // This site cannot be used
+    Row,       // This site can be used
+    FixedInst  // This site is blocked by the fixed instance
   };
 
   //
@@ -2099,16 +2157,15 @@ void PlacerBase::initInstsForUnusableSites()
         }
         int endX = i;
         Instance myInst(die_.coreLx() + siteSizeX_ * startX,
-                           die_.coreLy() + siteSizeY_ * j,
-                           siteSizeX_ * (endX - startX),
-                           siteSizeY_, 
-                           true); // dummy instances
+                        die_.coreLy() + siteSizeY_ * j,
+                        siteSizeX_ * (endX - startX),
+                        siteSizeY_,
+                        true);  // dummy instances
         dummyInsts_.push_back(myInst);
       }
     }
   }
 }
-
 
 // Note that filler cells can be moved around
 // create the filler cells
@@ -2160,8 +2217,8 @@ void PlacerBase::initFillerGCells()
   // targetDensity initialize
   if (nbVars_.useUniformTargetDensity) {
     // calculate the default uniform target density
-    targetDensity_ = static_cast<float>(stdInstsArea_) /
-                     static_cast<float>(whiteSpaceArea_ - macroInstsArea_)
+    targetDensity_ = static_cast<float>(stdInstsArea_)
+                         / static_cast<float>(whiteSpaceArea_ - macroInstsArea_)
                      + 0.01;
   } else {
     targetDensity_ = nbVars_.targetDensity;
@@ -2176,13 +2233,13 @@ void PlacerBase::initFillerGCells()
   if (totalFillerArea_ < 0) {
     uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL2,
-      302,
-      "Use a higher -density or "
-      "re-floorplan with a larger core area.\n"
-      "Given target density: {:.2f}\n"
-      "Suggested target density: {:.2f}",
-      targetDensity_,
-      uniformTargetDensity_);
+                302,
+                "Use a higher -density or "
+                "re-floorplan with a larger core area.\n"
+                "Given target density: {:.2f}\n"
+                "Suggested target density: {:.2f}",
+                targetDensity_,
+                uniformTargetDensity_);
   }
 
   // calculate the number of filler cells
@@ -2192,16 +2249,19 @@ void PlacerBase::initFillerGCells()
   if (numFillerInsts_ < 0) {
     numFillerInsts_ = 0;
   }
-  
+
   if (pbCommon_->numPlaceInsts() <= 10000) {
     std::cout << "[DEBUG ]Manually set the numFillerInst_ to 0" << std::endl;
     numFillerInsts_ = 0;
   }
 
   // only for debug
-  std::cout << "[GpuPlacerBase] totalFillerArea = " << totalFillerArea_ << std::endl;
-  std::cout << "[GpuPlacerBase] FillerInit : NumFillerCells = " << numFillerInsts_ << std::endl;
-  std::cout << "[GpuPlacerBase] FillerInit : FillerCellSize = " << fillerDx_ << " , " << fillerDy_ << std::endl;
+  std::cout << "[GpuPlacerBase] totalFillerArea = " << totalFillerArea_
+            << std::endl;
+  std::cout << "[GpuPlacerBase] FillerInit : NumFillerCells = "
+            << numFillerInsts_ << std::endl;
+  std::cout << "[GpuPlacerBase] FillerInit : FillerCellSize = " << fillerDx_
+            << " , " << fillerDy_ << std::endl;
 
   //
   // mt19937 supports huge range of random values.
@@ -2216,7 +2276,7 @@ void PlacerBase::initFillerGCells()
     int cy = randY % pbCommon_->die().coreDy() + pbCommon_->die().coreLy();
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    Instance myGCell(cx, cy, fillerDx_, fillerDy_, false); // filler instance
+    Instance myGCell(cx, cy, fillerDx_, fillerDy_, false);  // filler instance
     fillerInsts_.push_back(myGCell);
   }
 }
@@ -2251,7 +2311,6 @@ void PlacerBase::updateDensitySize()
   }
 }
 
-
 // update the step length
 bool PlacerBase::nesterovUpdateStepLength()
 {
@@ -2259,12 +2318,10 @@ bool PlacerBase::nesterovUpdateStepLength()
     return true;
   }
 
-  float newStepLength = getStepLength(
-      dCurSLPCoordiPtr_,
-      dCurSLPSumGradsPtr_,
-      dNextSLPCoordiPtr_,
-      dNextSLPSumGradsPtr_);
-
+  float newStepLength = getStepLength(dCurSLPCoordiPtr_,
+                                      dCurSLPSumGradsPtr_,
+                                      dNextSLPCoordiPtr_,
+                                      dNextSLPSumGradsPtr_);
 
   if (isnan(newStepLength) || isinf(newStepLength)) {
     isDiverged_ = true;
@@ -2309,7 +2366,6 @@ void PlacerBase::updateDensityCenterNextSLP()
   updateGCellDensityCenterLocation(dNextSLPCoordiPtr_);
 }
 
-
 void PlacerBase::updateDensityForceBin()
 {
   densityOp_->updateDensityForceBin();
@@ -2331,13 +2387,12 @@ void PlacerBase::nesterovAdjustPhi()
   }
 }
 
-
 float PlacerBase::getPhiCoef(float scaledDiffHpwl) const
 {
   float retCoef = (scaledDiffHpwl < 0)
-                ? npVars_.maxPhiCoef
-                : npVars_.maxPhiCoef
-                * pow(npVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
+                      ? npVars_.maxPhiCoef
+                      : npVars_.maxPhiCoef
+                            * pow(npVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
   retCoef = std::max(npVars_.minPhiCoef, retCoef);
   return retCoef;
 }
@@ -2348,12 +2403,14 @@ bool PlacerBase::checkConvergence()
     return true;
   }
 
-  //std::cout << "npVars_.targetOverflow = " << npVars_.targetOverflow << std::endl;
+  // std::cout << "npVars_.targetOverflow = " << npVars_.targetOverflow <<
+  // std::endl;
   if (numPlaceInsts_ <= 10000) {
-    npVars_.targetOverflow = 0.2; 
-    //std::cout << "[Update] npVars_.targetOverflow = " << npVars_.targetOverflow << std::endl;
+    npVars_.targetOverflow = 0.2;
+    // std::cout << "[Update] npVars_.targetOverflow = " <<
+    // npVars_.targetOverflow << std::endl;
   }
-  
+
   if (sumOverflowUnscaled_ <= npVars_.targetOverflow) {
     if (group_) {
       std::string msg = "[NesterovSolve] PowerDomain ";
@@ -2373,8 +2430,8 @@ bool PlacerBase::checkConvergence()
   return false;
 }
 
-
-float PlacerBase::overflowArea() const {
+float PlacerBase::overflowArea() const
+{
   return densityOp_->sumOverflow();
 }
 
@@ -2401,20 +2458,20 @@ void PlacerBase::updateNextIter(int iter)
   std::swap(dCurSLPWireLengthGradYPtr_, dNextSLPWireLengthGradYPtr_);
   std::swap(dCurSLPDensityGradXPtr_, dNextSLPDensityGradXPtr_);
   std::swap(dCurSLPDensityGradYPtr_, dNextSLPDensityGradYPtr_);
-  
+
   std::swap(dCurCoordiPtr_, dNextCoordiPtr_);
-  
+
   // In a macro dominated design like mock-array-big you may be placing
   // very few std cells in a sea of fixed macros. The overflow denominator
-  // may be quite small and prevent convergence. This is mostly due to 
+  // may be quite small and prevent convergence. This is mostly due to
   // our limited ability to move instances off macros cleanly.
   // As that improves this should no longer be needed.
   const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_.maxNesterovIter;  
+      = static_cast<float>(iter) / npVars_.maxNesterovIter;
   const float overflowDenominator
       = std::max(static_cast<float>(nesterovInstsArea()),
-                 fractionOfMaxIters * nonPlaceInstsArea() * 0.05f); 
-      
+                 fractionOfMaxIters * nonPlaceInstsArea() * 0.05f);
+
   sumOverflow_ = overflowArea() / overflowDenominator;
   sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
 
@@ -2423,12 +2480,13 @@ void PlacerBase::updateNextIter(int iter)
                              / npVars_.referenceHpwl);
 
   prevHpwl_ = hpwl;
-  // TODO:  use autotuner to autotune this parameter for better tradeoff between overflow and wirelength
-  //densityPenalty_ *= phiCoef * 1.01;
+  // TODO:  use autotuner to autotune this parameter for better tradeoff between
+  // overflow and wirelength
+  // densityPenalty_ *= phiCoef * 1.01;
   densityPenalty_ *= phiCoef * 0.99;
 
   if (iter == 0 || (iter + 1) % 10 == 0) {
-    std::string msg = "[NesterovSolve] Iter: "+ std::to_string(iter + 1) + " ";
+    std::string msg = "[NesterovSolve] Iter: " + std::to_string(iter + 1) + " ";
     msg += "overflow: " + std::to_string(sumOverflowUnscaled_) + " ";
     msg += "HPWL: " + std::to_string(prevHpwl_) + " ";
     msg += "densityPenalty: " + std::to_string(double(densityPenalty_));
@@ -2445,19 +2503,19 @@ void PlacerBase::updateNextIter(int iter)
 // class BinGrid
 ////////////////////////////////////////////////////////////////////////////
 BinGrid::BinGrid()
-  : log_(nullptr),
-    pb_(nullptr),
-    numBins_(0),
-    lx_(0),
-    ly_(0),
-    ux_(0),
-    uy_(0),
-    binCntX_(0),
-    binCntY_(0),
-    binSizeX_(0),
-    binSizeY_(0),
-    targetDensity_(0),
-    isSetBinCnt_(0)
+    : log_(nullptr),
+      pb_(nullptr),
+      numBins_(0),
+      lx_(0),
+      ly_(0),
+      ux_(0),
+      uy_(0),
+      binCntX_(0),
+      binCntY_(0),
+      binSizeX_(0),
+      binSizeY_(0),
+      targetDensity_(0),
+      isSetBinCnt_(0)
 {
 }
 
@@ -2477,7 +2535,6 @@ BinGrid::~BinGrid()
   binSizeX_ = binSizeY_ = 0;
   isSetBinCnt_ = 0;
 }
-
 
 void BinGrid::setCorePoints(const Die* die)
 {
@@ -2507,15 +2564,11 @@ static unsigned int roundDownToPowerOfTwo(unsigned int x)
 void BinGrid::initBins()
 {
   int64_t totalBinArea
-    = static_cast<int64_t>(ux_ - lx_) 
-      * static_cast<int64_t>(uy_ - ly_);
-  int64_t averagePlaceInstArea
-      = pb_->placeInstsArea() / pb_->numPlaceInsts();
+      = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
+  int64_t averagePlaceInstArea = pb_->placeInstsArea() / pb_->numPlaceInsts();
 
   int64_t idealBinArea
-      = std::round(
-        static_cast<float>(averagePlaceInstArea) 
-                           / targetDensity_);
+      = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
 
   int idealBinCnt = totalBinArea / idealBinArea;
   if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
@@ -2535,7 +2588,7 @@ void BinGrid::initBins()
     for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
       if ((foundBinCnt == 2
            || foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt)
-           && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
+          && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
         break;
       }
     }
@@ -2549,7 +2602,6 @@ void BinGrid::initBins()
     }
   }
 
-
   if (binCntX_ >= 512) {
     binCntX_ = 512;
     binCntY_ = 512;
@@ -2559,7 +2611,7 @@ void BinGrid::initBins()
   binSizeY_ = ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
   // create bins_ on host and device
   numBins_ = binCntX_ * binCntY_;
-  
+
   std::cout << "isSetBinCnt_ =  " << isSetBinCnt_ << std::endl;
   std::cout << "binSizeX_ = " << binSizeX_ << std::endl;
   std::cout << "binSizeY_ = " << binSizeY_ << std::endl;
@@ -2587,8 +2639,6 @@ void BinGrid::initBins()
 
   updateBinsNonPlaceArea();
 }
-
-
 
 static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
@@ -2643,7 +2693,6 @@ static int64_t getOverlapArea(const Bin* bin,
   }
 }
 
-
 void BinGrid::updateBinsNonPlaceArea()
 {
   for (auto bin : bins_) {
@@ -2691,4 +2740,4 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntY_));
 }
 
-} // namespace gpl2
+}  // namespace gpl2

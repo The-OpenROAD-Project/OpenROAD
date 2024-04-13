@@ -90,6 +90,7 @@ bool MacroPlacer2::place(const int num_threads,
                          const float min_ar,
                          const int snap_layer,
                          const bool bus_planning_on,
+                         const bool auto_cluster_only_on,
                          const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
@@ -117,6 +118,7 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setSnapLayer(snap_layer);
   hier_rtlmp_->setBusPlanningOn(bus_planning_on);
+  hier_rtlmp_->setAutoClusterOnlyOn(auto_cluster_only_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->run();

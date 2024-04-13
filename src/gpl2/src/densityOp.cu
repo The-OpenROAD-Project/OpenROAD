@@ -1,8 +1,7 @@
-///////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2018-2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,15 +21,14 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cufft.h>
@@ -72,7 +70,7 @@ void DensityOp::initCUDAKernel()
   thrust::host_vector<int> hBinLy(numBins_);
   thrust::host_vector<int> hBinUx(numBins_);
   thrust::host_vector<int> hBinUy(numBins_);
-  thrust::host_vector<int64_t> hBinNonPlaceArea(numBins_);
+  thrust::host_vector<int64_t_cu> hBinNonPlaceArea(numBins_);
   thrust::host_vector<float> hBinScaledArea(numBins_);
   thrust::host_vector<float> hBinTargetDensity(numBins_);
 
@@ -95,10 +93,11 @@ void DensityOp::initCUDAKernel()
   dBinUyPtr_ = setThrustVector<int>(numBins_, dBinUy_);
   dBinTargetDensityPtr_ = setThrustVector<float>(numBins_, dBinTargetDensity_);
 
-  dBinNonPlaceAreaPtr_ = setThrustVector<int64_t>(numBins_, dBinNonPlaceArea_);
+  dBinNonPlaceAreaPtr_
+      = setThrustVector<int64_t_cu>(numBins_, dBinNonPlaceArea_);
   dBinInstPlacedAreaPtr_
-      = setThrustVector<int64_t>(numBins_, dBinInstPlacedArea_);
-  dBinFillerAreaPtr_ = setThrustVector<int64_t>(numBins_, dBinFillerArea_);
+      = setThrustVector<int64_t_cu>(numBins_, dBinInstPlacedArea_);
+  dBinFillerAreaPtr_ = setThrustVector<int64_t_cu>(numBins_, dBinFillerArea_);
   dBinScaledAreaPtr_ = setThrustVector<float>(numBins_, dBinScaledArea_);
   dBinOverflowAreaPtr_ = setThrustVector<float>(numBins_, dBinOverflowArea_);
 
@@ -191,14 +190,8 @@ void DensityOp::freeCUDAKernel()
   dBinElectroForceXPtr_ = nullptr;
   dBinElectroForceYPtr_ = nullptr;
 
-  numInsts_ = 0;
-  sumOverflow_ = 0.0;
-  sumOverflowUnscaled_ = 0.0;
-
   dGCellDensityWidthPtr_ = nullptr;
   dGCellDensityHeightPtr_ = nullptr;
-  dGCellDCxPtr_ = nullptr;
-  dGCellDCyPtr_ = nullptr;
   dGCellDensityScalePtr_ = nullptr;
   dGCellIsFillerPtr_ = nullptr;
   dGCellIsMacroPtr_ = nullptr;
@@ -206,8 +199,8 @@ void DensityOp::freeCUDAKernel()
 
 // Step1 :  Initialize bin density information
 __global__ void initBinsGCellDensityArea(const int numBins,
-                                         int64_t* dBinInstPlacedAreaPtr,
-                                         int64_t* dBinFillerAreaPtr)
+                                         int64_t_cu* dBinInstPlacedAreaPtr,
+                                         int64_t_cu* dBinFillerAreaPtr)
 {
   const int binIdx = blockIdx.x * blockDim.x + threadIdx.x;
   if (binIdx < numBins) {
@@ -215,8 +208,6 @@ __global__ void initBinsGCellDensityArea(const int numBins,
     dBinFillerAreaPtr[binIdx] = 0;
   }
 }
-
-// Utility functions
 
 __device__ inline IntRect getMinMaxIdxXY(const int numBins,
                                          const int binSizeX,
@@ -252,10 +243,11 @@ __device__ inline IntRect getMinMaxIdxXY(const int numBins,
   return binRect;
 }
 
-__device__ inline float getOverlapWidth(const float instDLx,
-                                        const float instDUx,
-                                        const float binLx,
-                                        const float binUx)
+// Utility functions
+__device__ inline float getOverlapWidth(const float& instDLx,
+                                        const float& instDUx,
+                                        const float& binLx,
+                                        const float& binUx)
 {
   if (instDUx <= binLx || instDLx >= binUx) {
     return 0.0;
@@ -280,7 +272,7 @@ __global__ void updateBinsGCellDensityArea(
     const int* dBinUxPtr,
     const int* dBinUyPtr,
     const float* dBinTargetDensityPtr,
-    const int64_t* dBinNonPlaceAreaPtr,
+    const int64_t_cu* dBinNonPlaceAreaPtr,
     // die information
     const int coreLx,
     const int coreLy,
@@ -296,8 +288,8 @@ __global__ void updateBinsGCellDensityArea(
     const bool* dGCellIsFillerPtr,
     const bool* dGCellIsMacroPtr,
     // output
-    int64_t* dBinInstPlacedAreaPtr,
-    int64_t* dBinFillerAreaPtr)
+    int64_t_cu* dBinInstPlacedAreaPtr,
+    int64_t_cu* dBinFillerAreaPtr)
 {
   const int instIdx = blockIdx.x * blockDim.x + threadIdx.x;
   if (instIdx < numInsts) {
@@ -339,42 +331,42 @@ __global__ void updateBinsGCellDensityArea(
         // update the same bin simultaneously.
         if (dGCellIsFillerPtr[instIdx]) {
           atomicAdd(&dBinFillerAreaPtr[binIdx],
-                    static_cast<int64_t>(overlapArea));
+                    static_cast<int64_t_cu>(overlapArea));
         } else {
           if (dGCellIsMacroPtr[instIdx] == true) {
             overlapArea = overlapArea * dBinTargetDensityPtr[binIdx];
           }
           atomicAdd(&dBinInstPlacedAreaPtr[binIdx],
-                    static_cast<int64_t>(overlapArea));
+                    static_cast<int64_t_cu>(overlapArea));
         }
       }
-    }  // end for the current instance
-  }    // finish all the instances
+    }
+  }
 }
 
 // Step 3: update the bin overflow information
 __global__ void updateBinDensityAndOverflow(
     const int numBins,
-    const int64_t* dBinNonPlaceAreaPtr,
-    const int64_t* dBinInstPlacedAreaPtr,
-    const int64_t* dBinFillerAreaPtr,
-    const float* dBinScaledAreaPtr,
-    float* dBinDensityPtr,
-    float* dBinOverflowAreaPtr)
+    const int64_t_cu* dBinNonPlaceAreaPtr_,
+    const int64_t_cu* dBinInstPlacedAreaPtr_,
+    const int64_t_cu* dBinFillerAreaPtr_,
+    const float* dBinScaledAreaPtr_,
+    float* dBinDensityPtr_,
+    float* dBinOverflowAreaPtr_)
 {
   const int binIdx = blockIdx.x * blockDim.x + threadIdx.x;
   if (binIdx < numBins) {
-    dBinDensityPtr[binIdx]
-        = (static_cast<float>(dBinNonPlaceAreaPtr[binIdx])
-           + static_cast<float>(dBinInstPlacedAreaPtr[binIdx])
-           + static_cast<float>(dBinFillerAreaPtr[binIdx]))
-          / dBinScaledAreaPtr[binIdx];
+    dBinDensityPtr_[binIdx]
+        = (static_cast<float>(dBinNonPlaceAreaPtr_[binIdx])
+           + static_cast<float>(dBinInstPlacedAreaPtr_[binIdx])
+           + static_cast<float>(dBinFillerAreaPtr_[binIdx]))
+          / dBinScaledAreaPtr_[binIdx];
 
-    dBinOverflowAreaPtr[binIdx]
+    dBinOverflowAreaPtr_[binIdx]
         = max(0.0,
-              static_cast<float>(dBinInstPlacedAreaPtr[binIdx])
-                  + static_cast<float>(dBinNonPlaceAreaPtr[binIdx])
-                  - dBinScaledAreaPtr[binIdx]);
+              static_cast<float>(dBinInstPlacedAreaPtr_[binIdx])
+                  + static_cast<float>(dBinNonPlaceAreaPtr_[binIdx])
+                  - dBinScaledAreaPtr_[binIdx]);
   }
 }
 

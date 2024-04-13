@@ -45,7 +45,7 @@
 #include <ctime>
 #include <memory>
 
-#include "util.h"
+#include "cudaUtil.h"
 #include "placerBase.h"
 #include "placerObjects.h"
 #include "utl/Logger.h"
@@ -53,6 +53,8 @@
 namespace gpl2 {
 
 using utl::GPL2;
+
+typedef unsigned long long int int64_t_cu;
 
 class DensityOp
 {
@@ -102,15 +104,15 @@ class DensityOp
   int* dBinUyPtr_;
   float* dBinTargetDensityPtr_;
 
-  thrust::device_vector<int64_t> dBinNonPlaceArea_;
-  thrust::device_vector<int64_t> dBinInstPlacedArea_;
-  thrust::device_vector<int64_t> dBinFillerArea_;
+  thrust::device_vector<int64_t_cu> dBinNonPlaceArea_;
+  thrust::device_vector<int64_t_cu> dBinInstPlacedArea_;
+  thrust::device_vector<int64_t_cu> dBinFillerArea_;
   thrust::device_vector<float> dBinScaledArea_;
   thrust::device_vector<float> dBinOverflowArea_;
 
-  int64_t* dBinNonPlaceAreaPtr_;
-  int64_t* dBinInstPlacedAreaPtr_;
-  int64_t* dBinFillerAreaPtr_;
+  int64_t_cu* dBinNonPlaceAreaPtr_;
+  int64_t_cu* dBinInstPlacedAreaPtr_;
+  int64_t_cu* dBinFillerAreaPtr_;
   float* dBinScaledAreaPtr_;
   float* dBinOverflowAreaPtr_;
 

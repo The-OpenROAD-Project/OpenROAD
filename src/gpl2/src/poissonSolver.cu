@@ -54,8 +54,8 @@
 #include <iostream>
 #include <memory>
 
-#include "util.h"
 #include "poissonSolver.h"
+#include "util.h"
 
 namespace gpl2 {
 

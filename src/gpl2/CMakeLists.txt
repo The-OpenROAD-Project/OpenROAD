@@ -73,7 +73,7 @@ target_sources(gpl2
     src/poissonSolver.cu
     src/placerObjects.cpp
     src/placerBase.cu
-    src/placerBase.cpp
+    src/cudaPlacerBase.cu
     src/gpuRouteBase.cu
     src/gpuTimingBase.cu
   )

@@ -33,9 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "gpl2/MakeGpuReplace.h"
+
 #include <tcl.h>
+
 #include "gpl2/GpuReplace.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -60,7 +61,7 @@ void initGpuReplace(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl2_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::gpl2_tcl_inits);
-  openroad->getGpuReplace()->init(openroad->getDbNetwork(), 
+  openroad->getGpuReplace()->init(openroad->getDbNetwork(),
                                   openroad->getDb(),
                                   openroad->getResizer(),
                                   openroad->getGlobalRouter(),

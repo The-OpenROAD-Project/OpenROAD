@@ -120,6 +120,14 @@ enum PinAccess
 std::string toString(const PinAccess& pin_access);
 PinAccess opposite(const PinAccess& pin_access);
 
+
+// store the nets connected to the instance
+struct instNet
+{
+  int instIdx = -1;
+  std::vector<int> netIds;
+};
+
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
 // only has leaf_std_cells_ and dbModules_

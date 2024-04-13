@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include <cufft.h>
 #include <math_functions.h>  // Include CUDA math functions header
 #include <stdio.h>

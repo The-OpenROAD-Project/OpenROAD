@@ -165,6 +165,7 @@ void InitialPlace::doInitialPlace()
     }
   }
 
+  fixedMacroFlag = true;
   // check if the design has fixed macros
   if (fixedMacroFlag == true) {
     log_->report("[InitialPlace]  Design has fixed macros.");

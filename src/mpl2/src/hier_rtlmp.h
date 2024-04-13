@@ -52,6 +52,7 @@ class dbITerm;
 class dbInst;
 class dbMaster;
 class dbModule;
+class dbNet;
 }  // namespace odb
 
 namespace sta {
@@ -74,6 +75,7 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
+struct instNet;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -132,6 +134,7 @@ class HierRTLMP
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setBusPlanningOn(bool bus_planning_on);
+  void setAutoClusterOnlyOn(bool auto_cluster_only_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
@@ -316,6 +319,26 @@ class HierRTLMP
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
+   
+  bool auto_cluster_only_on_ = false; 
+
+  // To speedup the autoclustering process, 
+  // we store the netlist as a hypergraph instead of using OpenDB to traverse the netlist
+  std::vector<odb::dbNet*> netVec_;
+  std::vector<instNet> instNetVec_;
+  void initHypergraph();
+  void clearHypergraph();
+  void getInsts(Cluster* cluster, std::vector<odb::dbInst*>& insts);
+  void getInsts(odb::dbModule* module, std::vector<odb::dbInst*>& insts);
+  void calculateConnection(std::vector<odb::dbInst*>& insts);
+
+  // for dataflow-driven RePlAce
+  void flatPhysicalHierarchyTree(Cluster* parent);
+  void setInstProperty(Cluster* cluster);
+  void setInstProperty(odb::dbModule* module,
+                       int cluster_id,
+                       bool include_macro);
+
 
   // technology-related variables
   float dbu_ = 0.0;

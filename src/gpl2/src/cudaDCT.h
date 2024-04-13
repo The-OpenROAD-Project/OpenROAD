@@ -31,19 +31,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// The CudaDCT implementation is based on the algorithms proposed by the paper
-// https://arxiv.org/abs/2110.01172.
-// It is developed by the graduate student Jaekyung Kim (jkim97@postech.ac.kr)
-// at Pohang University of Science and Technology (POSTECH).
-// We thank Jaekyung Kim for his contribution.
+// The density force is calculated by solving the Poisson equation.
+// It is originally developed by the graduate student Jaekyung Kim
+// (jkim97@postech.ac.kr) at Pohang University of Science and Technology
+// (POSTECH), then modified by our UCSD team. We thank Jaekyung Kim for his
+// contribution.
+//
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
 #include <cufft.h>
 
-#include "util.h"
+#include "cudaUtil.h"
 
 void dct_2d_fft(const int M,
                 const int N,

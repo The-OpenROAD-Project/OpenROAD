@@ -45,6 +45,7 @@
 #include <ctime>
 #include <memory>
 
+#include "cudaUtil.h"
 #include "placerBase.h"
 #include "placerObjects.h"
 #include "util.h"

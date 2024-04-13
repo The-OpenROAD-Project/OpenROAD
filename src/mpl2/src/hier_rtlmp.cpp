@@ -342,8 +342,222 @@ void HierRTLMP::setDefaultThresholds()
     logger_->report("halo_width_ = {}", halo_width_);
     logger_->report("halo_height_ = {}", halo_height_);
     logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
+    logger_->report("auto_cluster_only_on_ = {}\n", auto_cluster_only_on_);
   }
 }
+
+
+// For dataflow driven RePlAce
+void HierRTLMP::flatPhysicalHierarchyTree(Cluster* parent)
+{
+  if (parent->isLeaf() == true) {
+    setInstProperty(parent);
+    return;
+  }
+
+  // set the instance property
+  for (auto& cluster : parent->getChildren()) {
+    flatPhysicalHierarchyTree(cluster);
+  }
+}
+
+void HierRTLMP::setInstProperty(Cluster* cluster)
+{
+  int cluster_id = cluster->getId();
+  ClusterType cluster_type = cluster->getClusterType();
+  if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
+    for (auto& inst : cluster->getLeafMacros()) {
+      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+    }
+  }
+
+  if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
+    for (auto& inst : cluster->getLeafStdCells()) {
+      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+    }
+  }
+
+  if (cluster_type == StdCellCluster) {
+    for (auto& module : cluster->getDbModules()) {
+      setInstProperty(module, cluster_id, false);
+    }
+  } else if (cluster_type == MixedCluster) {
+    for (auto& module : cluster->getDbModules()) {
+      setInstProperty(module, cluster_id, true);
+    }
+  }
+}
+
+
+// update the cluster_id property of insts in a logical module
+// In any case, we will consider std cells in the logical modules
+// If include_macro = true, we will consider the macros also.
+// Otherwise, not.
+void HierRTLMP::setInstProperty(odb::dbModule* module,
+                                int cluster_id,
+                                bool include_macro)
+{
+  if (include_macro) {
+    for (odb::dbInst* inst : module->getInsts()) {
+      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+    }
+  } else {  // only consider standard cells
+    for (odb::dbInst* inst : module->getInsts()) {
+      odb::dbMaster* master = inst->getMaster();
+      // check if the instance is a Pad, Cover or empty block (such as marker)
+      // or macro
+      if (master->isPad() || master->isCover() || master->isBlock()) {
+        continue;
+      }
+      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+    }
+  }
+  for (odb::dbModInst* inst : module->getChildren()) {
+    setInstProperty(inst->getMaster(), cluster_id, include_macro);
+  }
+}
+
+void HierRTLMP::getInsts(Cluster* cluster, std::vector<odb::dbInst*>& insts)
+{
+  for (auto& inst : cluster->getLeafStdCells()) {
+    insts.push_back(inst);
+  }
+  for (auto& inst : cluster->getLeafMacros()) {
+    insts.push_back(inst);
+  }
+  for (auto& module : cluster->getDbModules()) {
+    getInsts(module, insts);
+  }
+}
+
+void HierRTLMP::getInsts(odb::dbModule* module, std::vector<odb::dbInst*>& insts)
+{
+  for (auto inst : module->getInsts()) {
+    insts.push_back(inst);
+  }
+  for (auto child : module->getChildren()) {
+    getInsts(child->getMaster(), insts);
+  }
+}
+
+
+void HierRTLMP::initHypergraph()
+{
+  // set instIdx and netId attribute
+  odb::dbSet<odb::dbInst> insts = block_->getInsts();
+  instNetVec_.resize(insts.size());
+  int instIdx = 0;
+  for (odb::dbInst* inst : insts) {
+    odb::dbIntProperty::create(inst, "instIdx", instIdx);
+    instNetVec_[instIdx].instIdx = instIdx;
+    instIdx++;
+  }
+
+  odb::dbSet<odb::dbNet> nets = block_->getNets();
+  int netId = 0;
+  netVec_.reserve(nets.size());
+  for (odb::dbNet* net : nets) {
+    odb::dbSigType netType = net->getSigType();
+    // escape nets with VDD/VSS/reset nets
+    if (netType == odb::dbSigType::SIGNAL || netType == odb::dbSigType::CLOCK) {
+      const int num_fanouts = net->getITerms().size() + net->getBTerms().size();
+      if (num_fanouts > large_net_threshold_) {
+        continue;
+      }
+      netVec_.push_back(net);
+      for (odb::dbITerm* iTerm : net->getITerms()) {
+        int instIdx = odb::dbIntProperty::find(iTerm->getInst(), "instIdx")->getValue();
+        instNetVec_[instIdx].netIds.push_back(netId);
+      }
+      netId++;
+    }
+  }
+}
+
+void HierRTLMP::clearHypergraph()
+{
+  instNetVec_.clear();
+  netVec_.clear();
+}
+
+
+// Calculate Connections between clusters
+void HierRTLMP::calculateConnection(std::vector<odb::dbInst*>& insts)
+{
+  // Initialize the connections of all clusters
+  for (auto& [cluster_id, cluster] : cluster_map_) {
+    cluster->initConnection();
+  }
+
+  std::set<odb::dbNet*> nets;
+  for (auto inst : insts) {
+    const int instIdx = odb::dbIntProperty::find(inst, "instIdx")->getValue();
+    for (auto netId : instNetVec_[instIdx].netIds) {
+      nets.insert(netVec_[netId]);
+    }
+  }
+
+  // Traverse all nets through OpenDB
+  for (odb::dbNet* net : nets) {
+    // ignore all the power net
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    int driver_id = -1;         // cluster id of the driver instance
+    std::vector<int> loads_id;  // cluster id of sink instances
+    bool pad_flag = false;
+    // check the connected instances
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+      if (liberty_cell == nullptr) {
+        continue;
+      }
+      odb::dbMaster* master = inst->getMaster();
+      // check if the instance is a Pad, Cover or empty block (such as marker)
+      // We ignore nets connecting Pads, Covers, or markers
+      if (master->isPad() || master->isCover()) {
+        pad_flag = true;
+        break;
+      }
+      const int cluster_id
+          = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        driver_id = cluster_id;
+      } else {
+        loads_id.push_back(cluster_id);
+      }
+    }
+    if (pad_flag) {
+      continue;  // the nets with Pads should be ignored
+    }
+    bool io_flag = false;
+    // check the connected IO pins
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      const int cluster_id
+          = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
+      io_flag = true;
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        driver_id = cluster_id;
+      } else {
+        loads_id.push_back(cluster_id);
+      }
+    }
+    // add the net to connections between clusters
+    if (driver_id != -1 && !loads_id.empty()
+        && loads_id.size() < large_net_threshold_) {
+      const float weight = io_flag == true ? virtual_weight_ : 1.0;
+      for (const int load_id : loads_id) {
+        // we model the connections as undirected edges
+        if (load_id != driver_id) {
+          cluster_map_[driver_id]->addConnection(load_id, weight);
+          cluster_map_[load_id]->addConnection(driver_id, weight);
+        }
+      }  // end sinks
+    }    // end adding current net
+  }      // end net traversal
+}
+
 
 // Top Level Function
 // The flow of our MacroPlacer is divided into 5 stages.
@@ -365,6 +579,11 @@ void HierRTLMP::run()
   initMacroPlacer();
 
   runMultilevelAutoclustering();
+
+  if (auto_cluster_only_on_ == true) {
+    return;
+  }
+
   runCoarseShaping();
 
   if (graphics_) {
@@ -1047,13 +1266,14 @@ void HierRTLMP::updateInstancesAssociation(Cluster* cluster)
   ClusterType cluster_type = cluster->getClusterType();
   if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafMacros()) {
-      inst_to_cluster_[inst] = cluster_id;
+      inst_to_cluster_[inst] = cluster_id; 
     }
   }
 
   if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafStdCells()) {
       inst_to_cluster_[inst] = cluster_id;
+
     }
   }
 
@@ -1339,7 +1559,12 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
 
   int num_candidate_clusters = candidate_clusters.size();
   while (true) {
-    calculateConnection();  // update the connections between clusters
+    //calculateConnection();  // update the connections between clusters
+    std::vector<odb::dbInst*> candidate_clusters_inst;
+    for (auto& cluster : candidate_clusters) {
+      getInsts(cluster, candidate_clusters_inst);
+    }
+    calculateConnection(candidate_clusters_inst);
 
     std::vector<int> cluster_class(num_candidate_clusters, -1);  // merge flag
     std::vector<int> candidate_clusters_id;  // store cluster id
@@ -2272,7 +2497,13 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
   std::vector<int> size_class(hard_macros.size(), -1);
   classifyMacrosBySize(hard_macros, size_class);
 
-  calculateConnection();
+  // calculateConnection();
+  std::vector<odb::dbInst*> macro_insts;
+  macro_insts.reserve(hard_macros.size());
+  for (auto& macro : hard_macros) {
+    macro_insts.push_back(macro->getInst());
+  }
+  calculateConnection(macro_insts);
 
   std::vector<int> signature_class(hard_macros.size(), -1);
   classifyMacrosByConnSignature(macro_clusters, signature_class);
@@ -3314,7 +3545,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
-  calculateConnection();
+  //  calculateConnection();
+  std::vector<odb::dbInst*> parent_insts;
+  getInsts(parent, parent_insts);
+  calculateConnection(parent_insts);
+
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -4316,7 +4551,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
 
   // update the connnection
-  calculateConnection();
+  //calculateConnection();
+  std::vector<odb::dbInst*> parent_insts;
+  getInsts(parent, parent_insts);
+  calculateConnection(parent_insts);
+  
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -4816,7 +5055,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   }
 
   // update the connnection
-  calculateConnection();
+  //calculateConnection();
+  std::vector<odb::dbInst*> parent_insts;
+  getInsts(parent, parent_insts);
+  calculateConnection(parent_insts);
+  
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -5408,7 +5651,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::map<int, Rect> guides;
   computeFencesAndGuides(hard_macros, outline, fences, guides);
 
-  calculateConnection();
+  //calculateConnection();
+  std::vector<odb::dbInst*> cluster_insts;
+  getInsts(cluster, cluster_insts);
+  calculateConnection(cluster_insts);
 
   createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
 
@@ -6459,6 +6705,11 @@ void HierRTLMP::clear()
 void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
 {
   bus_planning_on_ = bus_planning_on;
+}
+
+void HierRTLMP::setAutoClusterOnlyOn(bool auto_cluster_only_on)
+{
+  auto_cluster_only_on_ = auto_cluster_only_on;
 }
 
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
