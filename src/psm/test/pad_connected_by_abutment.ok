@@ -14,7 +14,7 @@ Corner           : default
 Supply voltage   : 1.20e+00 V
 Worstcase voltage: 1.20e+00 V
 Average voltage  : 1.20e+00 V
-Average IR drop  : 0.00e+00 V
-Worstcase IR drop: 1.07e-06 V
+Average IR drop  : 1.15e-08 V
+Worstcase IR drop: 1.05e-06 V
 Percentage drop  : 0.00 %
 ######################################
