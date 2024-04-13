@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "odb/util.h"
 #include "util.h"
 
 namespace rcx {
@@ -61,7 +62,7 @@ class NameTable
   uint addName(const char* name, uint dataId);
   uint getDataId(int poolId);
 
-  odb::AthHash<int>* _hashTable;
+  rcx::AthHash<int>* _hashTable;
   odb::AthPool<NameBucket>* _bucketPool;
 };
 

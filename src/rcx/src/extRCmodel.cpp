@@ -2156,7 +2156,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   _capOver = new extRCTable(true, layerCnt);
   _capUnder = new extRCTable(false, layerCnt);
   _capDiagUnder = new extRCTable(false, layerCnt);
-  _rcPoolPtr = new AthPool<extDistRC>(false, 1024);
+  _rcPoolPtr = new AthPool<extDistRC>(1024);
   _process = nullptr;
   _maxMinFlag = false;
 
@@ -2193,7 +2193,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   _capOver = nullptr;
   _capUnder = nullptr;
   _capDiagUnder = nullptr;
-  _rcPoolPtr = new AthPool<extDistRC>(false, 1024);
+  _rcPoolPtr = new AthPool<extDistRC>(1024);
   _process = nullptr;
   _maxMinFlag = false;
 
@@ -2388,7 +2388,7 @@ extMeasure::extMeasure(utl::Logger* logger)
   }
   _extMain = nullptr;
 
-  _2dBoxPool = new AthPool<ext2dBox>(false, 1024);
+  _2dBoxPool = new AthPool<ext2dBox>(1024);
 
   _lenOUPool = nullptr;
   _lenOUtable = nullptr;
@@ -2407,7 +2407,7 @@ extMeasure::extMeasure(utl::Logger* logger)
   _overTable = new Ath__array1D<SEQ*>(32);
   _underTable = new Ath__array1D<SEQ*>(32);
 
-  _seqPool = new AthPool<SEQ>(false, 1024);
+  _seqPool = new AthPool<SEQ>(1024);
 
   _dgContextFile = nullptr;
   _diagFlow = false;
@@ -2417,7 +2417,7 @@ extMeasure::extMeasure(utl::Logger* logger)
 
 void extMeasure::allocOUpool()
 {
-  _lenOUPool = new AthPool<extLenOU>(false, 128);
+  _lenOUPool = new AthPool<extLenOU>(128);
   _lenOUtable = new Ath__array1D<extLenOU*>(128);
 }
 
