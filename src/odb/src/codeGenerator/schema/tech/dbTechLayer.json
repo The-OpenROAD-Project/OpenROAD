@@ -167,8 +167,8 @@
     }
   ],
   "h_includes": [
-    "dbMatrix.h",
-    "dbTypes.h",
+    "odb/dbMatrix.h",
+    "odb/dbTypes.h",
     "dbVector.h"
   ]
 }
