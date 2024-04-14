@@ -40,10 +40,10 @@
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/dbUtil.h"
-#include "rcx/gseq.h"
 #include "odb/odb.h"
-#include "rcx/rcx.h"
 #include "odb/util.h"
+#include "rcx/gseq.h"
+#include "rcx/rcx.h"
 #include "rcx/wire.h"
 
 namespace utl {

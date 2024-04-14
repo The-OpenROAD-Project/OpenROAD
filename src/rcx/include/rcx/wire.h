@@ -37,9 +37,9 @@
 #include <string.h>
 
 #include "odb/array1.h"
-#include "rcx/box.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rcx/box.h"
 #include "rcx/rcx.h"
 
 namespace rcx {
