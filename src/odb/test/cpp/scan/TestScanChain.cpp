@@ -32,11 +32,11 @@
 
 #include <fstream>
 
-#include "odb/db.h"
 #include "env.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
