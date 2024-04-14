@@ -36,11 +36,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "box.h"
 #include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "rcx/box.h"
-#include "rcx/rcx.h"
+#include "rcx/extRCap.h"
 
 namespace rcx {
 
@@ -287,7 +287,7 @@ class Ath__track
                     uint ccThreshold,
                     Ath__array1D<uint>* ccIdTable,
                     uint met,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
@@ -297,7 +297,7 @@ class Ath__track
                    Ath__grid* ccGrid,
                    Ath__array1D<Ath__wire*>* ccTable,
                    uint met,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr);
 
   void initTargetWire(int noPowerWire);
@@ -489,7 +489,7 @@ class Ath__grid
   uint couplingCaps(Ath__grid* resGrid,
                     uint couplingDist,
                     Ath__array1D<uint>* ccTable,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
@@ -506,14 +506,14 @@ class Ath__grid
   void gridContextOn(int orig, int len, int base, int width);
 
   int initCouplingCapLoops(uint couplingDist,
-                           rcx::CoupleAndCompute coupleAndCompute,
+                           CoupleAndCompute coupleAndCompute,
                            void* compPtr,
                            bool startSearchTrack = true,
                            int startXY = 0);
   int couplingCaps(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    int* limitArray);
   int dealloc(int hiXY);
@@ -673,7 +673,7 @@ class Ath__gridTable
   uint couplingCaps(Ath__gridTable* resGridTable,
                     uint couplingDist,
                     Ath__array1D<uint>* ccTable,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
@@ -758,13 +758,13 @@ class Ath__gridTable
                    uint couplingDist,
                    uint dir,
                    uint& wireCnt,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    bool getBandWire,
                    int** limitArray);
   void initCouplingCapLoops(uint dir,
                             uint couplingDist,
-                            rcx::CoupleAndCompute coupleAndCompute,
+                            CoupleAndCompute coupleAndCompute,
                             void* compPtr,
                             int* startXY = nullptr);
   int dealloc(uint dir, int hiXY);

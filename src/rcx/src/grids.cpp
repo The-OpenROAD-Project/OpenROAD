@@ -32,7 +32,7 @@
 
 #include <cstdio>
 
-#include "rcx/wire.h"
+#include "wire.h"
 
 namespace rcx {
 

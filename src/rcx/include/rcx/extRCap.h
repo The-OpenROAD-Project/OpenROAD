@@ -43,8 +43,6 @@
 #include "odb/odb.h"
 #include "odb/util.h"
 #include "rcx/gseq.h"
-#include "rcx/rcx.h"
-#include "rcx/wire.h"
 
 namespace utl {
 class Logger;
@@ -60,6 +58,12 @@ using odb::uint;
 using utl::Logger;
 
 class extSpef;
+class Ath__gridTable;
+
+// CoupleOptions seriously needs to be rewriten to use a class with named
+// members. -cherry 05/09/2021
+using CoupleOptions = std::array<int, 21>;
+using CoupleAndCompute = void (*)(CoupleOptions&, void*);
 
 class extDistRC
 {

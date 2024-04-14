@@ -36,8 +36,8 @@
 
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
-#include "rcx/wire.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 

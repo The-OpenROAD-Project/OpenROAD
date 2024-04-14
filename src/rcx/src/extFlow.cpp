@@ -35,8 +35,8 @@
 
 #include "odb/dbUtil.h"
 #include "rcx/extRCap.h"
-#include "rcx/wire.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 

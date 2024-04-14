@@ -33,7 +33,7 @@
 #include <algorithm>
 
 #include "rcx/gseq.h"
-#include "rcx/wire.h"
+#include "wire.h"
 
 namespace rcx {
 CoupleOptions coupleOptionsNull{};
@@ -351,7 +351,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                               uint ccThreshold,
                               Ath__array1D<uint>* ccIdTable,
                               uint met,
-                              rcx::CoupleAndCompute coupleAndCompute,
+                              CoupleAndCompute coupleAndCompute,
                               void* compPtr)
 {
   Ath__track* tstrack;
