@@ -17,7 +17,7 @@ node {
   try {
     node {
       checkout scm
-      docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged --rm -v /var/run/docker.sock:/var/run/docker.sock') {
+      docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
        sh "git config --system --add safe.directory '*'"
 
        stage('Build for Coverage') {
