@@ -211,12 +211,13 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // IO cluster
   // Position must be specified when setting an IO cluster
   void setAsIOCluster(const std::pair<float, float>& pos,
                       float width,
                       float height);
   bool isIOCluster() const;
+  void setAsArrayOfInterconnectedMacros();
+  bool isArrayOfInterconnectedMacros() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -255,6 +256,7 @@ class Cluster
   void addConnection(int cluster_id, float weight);
   const std::map<int, float> getConnection() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
+  bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
   // Get closely-connected cluster if such cluster exists
   // For example, if a small cluster A is closely connected to a
   // well-formed cluster B, (there are also other well-formed clusters
@@ -308,6 +310,7 @@ class Cluster
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
+  bool is_array_of_interconnected_macros = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -863,6 +866,12 @@ struct Rect
   float f_y = 0.0;
 
   bool fixed_flag = false;
+};
+
+struct SequencePair
+{
+  std::vector<int> pos_sequence;
+  std::vector<int> neg_sequence;
 };
 
 }  // namespace mpl2

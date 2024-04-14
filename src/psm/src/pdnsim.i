@@ -71,7 +71,7 @@ using sta::Corner;
 
 
 void 
-set_net_voltage_cmd(odb::dbNet* net, Corner* corner, float voltage)
+set_net_voltage_cmd(odb::dbNet* net, Corner* corner, double voltage)
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setNetVoltage(net, corner, voltage);

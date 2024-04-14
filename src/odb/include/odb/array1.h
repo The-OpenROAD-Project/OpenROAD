@@ -41,94 +41,86 @@ namespace odb {
 template <class T>
 class Ath__array1D
 {
- private:
-  T* _array;
-  int _size;
-  int _chunk;
-  int _current;
-  int _iterCnt;
-
  public:
   explicit Ath__array1D(int chunk = 0)
   {
-    _chunk = chunk;
-    if (_chunk <= 0) {
-      _chunk = 1024;
+    chunk_ = chunk;
+    if (chunk_ <= 0) {
+      chunk_ = 1024;
     }
 
-    _current = 0;
+    current_ = 0;
     if (chunk > 0) {
-      _size = _chunk;
-      _array = (T*) realloc(nullptr, _size * sizeof(T));
+      size_ = chunk_;
+      array_ = (T*) realloc(nullptr, size_ * sizeof(T));
     } else {
-      _size = 0;
-      _array = nullptr;
+      size_ = 0;
+      array_ = nullptr;
     }
-    _iterCnt = 0;
+    iter_cnt_ = 0;
   }
   ~Ath__array1D()
   {
-    if (_array != nullptr) {
-      ::free(_array);
+    if (array_ != nullptr) {
+      ::free(array_);
     }
   }
   int add(T t)
   {
-    if (_current >= _size) {
-      _size += _chunk;
-      _array = (T*) realloc(_array, _size * sizeof(T));
+    if (current_ >= size_) {
+      size_ += chunk_;
+      array_ = (T*) realloc(array_, size_ * sizeof(T));
     }
-    int n = _current;
-    _array[_current++] = t;
+    int n = current_;
+    array_[current_++] = t;
 
     return n;
   }
-  int reSize(int maxSize)
+  int resize(int maxSize)
   {
-    if (maxSize < _size) {
-      return _size;
+    if (maxSize < size_) {
+      return size_;
     }
 
-    _size = (maxSize / _chunk + 1) * _chunk;
-    _array = (T*) realloc(_array, _size * sizeof(T));
+    size_ = (maxSize / chunk_ + 1) * chunk_;
+    array_ = (T*) realloc(array_, size_ * sizeof(T));
 
-    if (_array == nullptr) {
-      fprintf(stderr, "Cannot allocate array of size %d\n", _size);
+    if (array_ == nullptr) {
+      fprintf(stderr, "Cannot allocate array of size %d\n", size_);
       assert(0);
     }
-    return _size;
+    return size_;
   }
-  T* getTable() { return _array; }
   T& get(int i)
   {
-    assert((i >= 0) && (i < _current));
+    assert((i >= 0) && (i < current_));
 
-    return _array[i];
+    return array_[i];
   }
   T& geti(int i)
   {
-    if (i >= _size) {
-      reSize(i + 1);
+    if (i >= size_) {
+      resize(i + 1);
     }
 
-    return _array[i];
+    return array_[i];
   }
   T& getLast()
   {
-    assert(_current - 1 >= 0);
+    assert(current_ - 1 >= 0);
 
-    return _array[_current - 1];
+    return array_[current_ - 1];
   }
   void clear(T t)
   {
-    for (int ii = 0; ii < _size; ii++) {
-      _array[ii] = t;
+    for (int ii = 0; ii < size_; ii++) {
+      array_[ii] = t;
     }
   }
   int findIndex(T t)
   {
-    for (int ii = 0; ii < _current; ii++) {
-      if (_array[ii] == t) {
+    for (int ii = 0; ii < current_; ii++) {
+      if (array_[ii] == t) {
         return ii;
       }
     }
@@ -137,50 +129,57 @@ class Ath__array1D
   }
   int findNextBiggestIndex(T t, int start = 0)
   {
-    for (int ii = start; ii < _current; ii++) {
-      if (t == _array[ii]) {
+    for (int ii = start; ii < current_; ii++) {
+      if (t == array_[ii]) {
         return ii;
       }
-      if (t < _array[ii]) {
+      if (t < array_[ii]) {
         return ii > 0 ? ii - 1 : 0;
       }
     }
-    return _current;
+    return current_;
   }
 
-  bool notEmpty() { return _current > 0; }
+  bool notEmpty() { return current_ > 0; }
   bool getNext(T& a)
   {
-    if (_iterCnt < _current) {
-      a = _array[_iterCnt++];
+    if (iter_cnt_ < current_) {
+      a = array_[iter_cnt_++];
       return true;
     }
     return false;
   }
   T& pop()
   {
-    assert(_current > 0);
+    assert(current_ > 0);
 
-    _current--;
+    current_--;
 
-    return _array[_current];
+    return array_[current_];
   }
-  unsigned int getSize() { return _size; }
-  void resetIterator(unsigned int v = 0) { _iterCnt = v; }
-  void resetCnt(unsigned int v = 0)
+  int getSize() { return size_; }
+  void resetIterator(int v = 0) { iter_cnt_ = v; }
+  void resetCnt(int v = 0)
   {
-    _current = v;
-    _iterCnt = v;
+    current_ = v;
+    iter_cnt_ = v;
   }
-  unsigned int getCnt() { return _current; }
+  int getCnt() { return current_; }
   void set(int ii, T t)
   {
-    if (ii >= _size) {
-      reSize(ii + 1);
+    if (ii >= size_) {
+      resize(ii + 1);
     }
 
-    _array[ii] = t;
+    array_[ii] = t;
   }
+
+ private:
+  T* array_;
+  int size_;
+  int chunk_;
+  int current_;
+  int iter_cnt_;
 };
 
 }  // namespace odb

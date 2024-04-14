@@ -31,7 +31,7 @@ analyze_power_grid
     [-error_file error_file]
     [-voltage_file voltage_file]
     [-enable_em]
-    [-em_file em_file]
+    [-em_outfile em_file]
     [-vsrc voltage_source_file]
     [-source_type FULL|BUMPS|STRAPS]
 ```
@@ -112,6 +112,8 @@ set_pdnsim_net_voltage
 
 ### Set PDNSim Power Source Settings
 
+Set PDNSim power source setting.
+
 ```tcl
 set_pdnsim_source_settings
     [-bump_dx pitch]
@@ -130,7 +132,7 @@ set_pdnsim_source_settings
 | `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
 | `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
 
-### Source grid options
+## Source grid options
 
 The source grid models how power is going be delivered to the power grid.
 The image below illustrate how they can be modeled, the red elements are the source models, the black horizontal boxes represent the top metal layer of the power grid, and the gray boxes indicate these are not used in the modeling.

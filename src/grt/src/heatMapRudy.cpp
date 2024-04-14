@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,18 +30,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "heatMapRUDY.h"
+#include "heatMapRudy.h"
 
 #include "odb/db.h"
 
-namespace gui {
+namespace grt {
 
-RUDYDataSource::RUDYDataSource(utl::Logger* logger)
+RUDYDataSource::RUDYDataSource(utl::Logger* logger,
+                               grt::GlobalRouter* grouter,
+                               odb::dbDatabase* db)
     : GlobalRoutingDataSource(logger,
                               "Estimated Congestion (RUDY)",
                               "RUDY",
                               "RUDY")
 {
+  grouter_ = grouter;
+  db_ = db;
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
@@ -59,29 +63,24 @@ bool RUDYDataSource::populateMap()
   if (!getBlock()) {
     return false;
   }
+  rudy_ = std::make_unique<grt::Rudy>(db_->getChip()->getBlock(), grouter_);
 
-  const auto& [x_grid_size, y_grid_size] = rudyInfo_->getGridSize();
+  const auto& [x_grid_size, y_grid_size] = rudy_->getGridSize();
   if (x_grid_size == 0 || y_grid_size == 0) {
     return false;
   }
 
-  rudyInfo_->calculateRUDY();
+  rudy_->calculateRudy();
 
   for (int x = 0; x < x_grid_size; ++x) {
     for (int y = 0; y < y_grid_size; ++y) {
-      auto tile = rudyInfo_->getTile(x, y);
+      auto tile = rudy_->getTile(x, y);
       auto box = tile.getRect();
-      const double value = tile.getRUDY();
+      const double value = tile.getRudy();
       addToMap(box, value);
     }
   }
   return true;
-}
-
-void RUDYDataSource::setBlock(odb::dbBlock* block)
-{
-  HeatMapDataSource::setBlock(block);
-  rudyInfo_ = std::make_unique<odb::RUDYCalculator>(getBlock());
 }
 
 void RUDYDataSource::onShow()
@@ -150,4 +149,4 @@ void RUDYDataSource::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
   destroyMap();
 }
 
-}  // namespace gui
+}  // namespace grt

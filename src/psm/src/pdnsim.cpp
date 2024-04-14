@@ -84,7 +84,7 @@ void PDNSim::setDebugGui(bool enable)
       new ConnectionDescriptor(solvers_));
 }
 
-void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, float voltage)
+void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
   voltages[corner] = voltage;
