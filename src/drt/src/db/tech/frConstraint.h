@@ -1430,7 +1430,7 @@ class frLef58TwoWiresForbiddenSpcConstraint : public frConstraint
   // others
   frConstraintTypeEnum typeId() const override
   {
-    return frConstraintTypeEnum::frcLef58EolKeepOutConstraint;
+    return frConstraintTypeEnum::frcLef58TwoWiresForbiddenSpcConstraint;
   }
   bool isValidForMinSpanLength(frCoord width)
   {
@@ -1451,13 +1451,50 @@ class frLef58TwoWiresForbiddenSpcConstraint : public frConstraint
   bool isValidPrl(frCoord prl) { return prl > db_rule_->getPrl(); }
   void report(utl::Logger* logger) const override
   {
-    logger->report("TWOWIRESFORBIDDENSPACING");
+    logger->report("LEF58_TWOWIRESFORBIDDENSPACING");
   }
 
  private:
   odb::dbTechLayerTwoWiresForbiddenSpcRule* db_rule_;
 };
+// LEF58_FORBIDDENSPACING
+class frLef58ForbiddenSpcConstraint : public frConstraint
+{
+ public:
+  frLef58ForbiddenSpcConstraint(odb::dbTechLayerForbiddenSpacingRule* db_rule)
+      : db_rule_(db_rule)
+  {
+  }
+  // getters
+  odb::dbTechLayerForbiddenSpacingRule* getODBRule() const { return db_rule_; }
+  frCoord getMinSpc() const { return db_rule_->getForbiddenSpacing().first; }
+  frCoord getMaxSpc() const { return db_rule_->getForbiddenSpacing().first; }
+  frCoord getTwoEdgesWithin() const { return db_rule_->getTwoEdges(); }
+  // setters
+  void setODBRule(odb::dbTechLayerForbiddenSpacingRule* in) { db_rule_ = in; }
+  // others
+  bool isPrlValid(frCoord prl) const { return prl > db_rule_->getPrl(); }
+  bool isWidthValid(frCoord width) const
+  {
+    return width < db_rule_->getWidth();
+  }
+  bool isForbiddenSpc(frCoord spc) const
+  {
+    return spc >= getMinSpc() && spc <= getMaxSpc();
+  }
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58ForbiddenSpcConstraint;
+  }
 
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_FORBIDDENSPACING");
+  }
+
+ private:
+  odb::dbTechLayerForbiddenSpacingRule* db_rule_;
+};
 // ADJACENTCUTS
 class frCutSpacingConstraint : public frConstraint
 {
