@@ -16,6 +16,7 @@ RUN /tmp/DependencyInstaller.sh -base
 RUN /tmp/DependencyInstaller.sh -common $INSTALLER_ARGS
 
 RUN echo "$fromImage" | grep -q "ubuntu" && \
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || \
+    echo "Skipping strip command as fromImage does not contain 'ubuntu'"
     
 RUN rm -f /tmp/DependencyInstaller.sh
