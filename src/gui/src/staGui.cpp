@@ -48,11 +48,11 @@
 #include <limits>
 #include <string>
 
-#include "odb/db.h"
 #include "dbDescriptors.h"
-#include "odb/dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"
