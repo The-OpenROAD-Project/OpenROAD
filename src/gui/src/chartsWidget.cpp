@@ -314,7 +314,7 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
   if (buckets_->negative.empty()) {
     pins = buckets_->positive[bar_index];
   } else {
-    int num_of_neg_buckets = static_cast<int>(buckets_->negative.size());
+    const int num_of_neg_buckets = static_cast<int>(buckets_->negative.size());
 
     if (bar_index >= num_of_neg_buckets) {
       pins = buckets_->positive[bar_index - num_of_neg_buckets];
@@ -330,8 +330,8 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
-  int max_number_of_pins = 50;
-  int pin_count = 1;
+  const int max_number_of_pins = 50;
+  int pin_count = 0;
 
   std::set<const sta::Pin*> report_pins;
   for (const sta::Pin* pin : pins) {
