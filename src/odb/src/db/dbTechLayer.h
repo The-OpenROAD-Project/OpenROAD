@@ -120,6 +120,7 @@ class _dbTechLayer : public _dbObject
 
   dbTechLayerFlags flags_;
   uint wrong_way_width_;
+  float layer_adjustment_;
 
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
