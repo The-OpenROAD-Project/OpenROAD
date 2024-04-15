@@ -327,11 +327,12 @@ MainWindow::MainWindow(QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
-
+#ifdef ENABLE_CHARTS
   connect(charts_widget_,
           &ChartsWidget::endPointsToReport,
           this,
           &MainWindow::reportSlackHistogramPaths);
+#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -1611,6 +1612,7 @@ void MainWindow::openDesign()
   }
 }
 
+#ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
     const std::set<const sta::Pin*>& report_pins)
 {
@@ -1626,5 +1628,5 @@ void MainWindow::reportSlackHistogramPaths(
 
   timing_widget_->reportSlackHistogramPaths(report_pins);
 }
-
+#endif
 }  // namespace gui
