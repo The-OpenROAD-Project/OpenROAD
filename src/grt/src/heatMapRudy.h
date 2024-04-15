@@ -85,7 +85,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
  private:
   grt::GlobalRouter* grouter_;
   odb::dbDatabase* db_;
-  std::unique_ptr<grt::Rudy> rudy_;
+  grt::Rudy* rudy_;
 };
 
 }  // namespace grt

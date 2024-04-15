@@ -98,6 +98,7 @@ class AbstractFastRouteRenderer;
 class GlobalRouter;
 class AbstractRoutingCongestionDataSource;
 class GRouteDbCbk;
+class Rudy;
 
 struct RegionAdjustment
 {
@@ -280,6 +281,7 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
+  Rudy* getRudy();
 
  private:
   // Net functions
@@ -481,6 +483,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
+  Rudy* rudy_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
