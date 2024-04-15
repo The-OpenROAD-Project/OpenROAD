@@ -1725,8 +1725,8 @@ Ath__wire* Ath__wire::makeCoupleWire(AthPool<Ath__wire>* wirePool,
 }
 Ath__wire* Ath__wire::getPoolWire(AthPool<Ath__wire>* wirePool)
 {
-  uint n;
-  uint getRecycleFlag = 0;
+  int n;
+  int getRecycleFlag = 0;
   Ath__wire* w = wirePool->alloc(&getRecycleFlag, &n);
   if (getRecycleFlag == 0) {
     w->_id = n;
@@ -1757,8 +1757,8 @@ Ath__wire* Ath__wire::makeWire(AthPool<Ath__wire>* wirePool, int xy1, uint len)
 }
 Ath__wire* Ath__grid::getPoolWire()
 {
-  uint n;
-  uint getRecycleFlag = 0;
+  int n;
+  int getRecycleFlag = 0;
   Ath__wire* w = _wirePoolPtr->alloc(&getRecycleFlag, &n);
   if (getRecycleFlag == 0) {
     w->_id = n;
@@ -2429,8 +2429,8 @@ void Ath__gridTable::init1(uint memChunk,
                            uint dx,
                            uint dy)
 {
-  _trackPool = new AthPool<Ath__track>(false, memChunk);
-  _wirePool = new AthPool<Ath__wire>(false, memChunk * 1000);
+  _trackPool = new AthPool<Ath__track>(memChunk);
+  _wirePool = new AthPool<Ath__wire>(memChunk * 1000);
 
   _wirePool->alloc();  // so all wire ids>0
 

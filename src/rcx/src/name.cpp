@@ -82,15 +82,15 @@ NameTable::NameTable(uint n, char* zero)
     zero = strdup("zeroName");
   }
 
-  _hashTable = new odb::AthHash<int>(n, 0);
-  _bucketPool = new odb::AthPool<NameBucket>(false, 0);
+  _hashTable = new rcx::AthHash<int>(n, 0);
+  _bucketPool = new odb::AthPool<NameBucket>(0);
 
   addNewName(zero, 0);
 }
 
 uint NameTable::addName(const char* name, uint dataId)
 {
-  uint poolIndex = 0;
+  int poolIndex = 0;
   NameBucket* b = _bucketPool->alloc(nullptr, &poolIndex);
   b->set(name, dataId);
 

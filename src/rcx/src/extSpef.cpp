@@ -249,7 +249,7 @@ void extSpef::reinitCapTable(Ath__array1D<double*>* table, const uint n)
 {
   if (n > table->getSize()) {
     const uint prevCnt = table->getSize();
-    table->reSize(n);
+    table->resize(n);
     table->resetCnt(prevCnt);
     double* a = new double[_cornerCnt];
     table->add(a);
