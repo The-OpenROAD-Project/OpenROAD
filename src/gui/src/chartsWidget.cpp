@@ -147,6 +147,9 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 
 void ChartsWidget::clearChart()
 {
+  buckets_->positive.clear();
+  buckets_->negative.clear();
+
   chart_->setTitle("");
   chart_->removeAllSeries();
 

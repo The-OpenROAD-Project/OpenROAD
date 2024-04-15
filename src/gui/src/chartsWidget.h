@@ -44,11 +44,6 @@
 
 #include "gui/gui.h"
 
-namespace odb {
-class dbBTerm;
-class dbITerm;
-}  // namespace odb
-
 namespace sta {
 class Pin;
 class dbSta;
@@ -57,7 +52,6 @@ class Clock;
 #endif
 
 namespace gui {
-
 class STAGuiInterface;
 
 #ifdef ENABLE_CHARTS
