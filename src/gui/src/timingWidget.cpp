@@ -633,23 +633,10 @@ void TimingWidget::showSettings()
 
 #ifdef ENABLE_CHARTS
 void TimingWidget::reportSlackHistogramPaths(
-    const std::vector<odb::dbITerm*>& iterms,
-    const std::vector<odb::dbBTerm*>& bterms)
+    const std::set<const sta::Pin*>& report_pins)
 {
-  gui::StaPins thru;
-
-  sta::dbNetwork* network = settings_->getSTA()->getSTA()->getDbNetwork();
-
-  for (odb::dbITerm* iterm : iterms) {
-    thru.insert(network->dbToSta(iterm));
-  }
-
-  for (odb::dbBTerm* bterm : bterms) {
-    thru.insert(network->dbToSta(bterm));
-  }
-
   clearPathDetails();
-  populateAndSortModels({}, {thru}, {});
+  populateAndSortModels({}, {report_pins}, {});
 }
 #endif
 

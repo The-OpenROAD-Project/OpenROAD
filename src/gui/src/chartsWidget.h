@@ -97,8 +97,7 @@ class ChartsWidget : public QDockWidget
   }
 
  signals:
-  void endPointsToReport(const std::vector<odb::dbITerm*>& iterms,
-                         const std::vector<odb::dbBTerm*>& bterms);
+  void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
 
  private slots:
   void changeMode();

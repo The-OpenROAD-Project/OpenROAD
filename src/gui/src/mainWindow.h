@@ -53,6 +53,10 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class Pin;
+}
+
 namespace gui {
 
 class LayoutViewer;
@@ -255,8 +259,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showApplicationFont();
   void showGlobalConnect();
   void openDesign();
-  void reportSlackHistogramPaths(const std::vector<odb::dbITerm*>& iterms,
-                                 const std::vector<odb::dbBTerm*>& bterms);
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.

@@ -328,32 +328,22 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
   };
   std::sort(pins.begin(), pins.end(), compareSlack);
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  std::vector<odb::dbITerm*> iterms;
-  std::vector<odb::dbBTerm*> bterms;
-
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
   int max_number_of_pins = 50;
   int pin_count = 1;
+
+  std::set<const sta::Pin*> report_pins;
   for (const sta::Pin* pin : pins) {
-    if (pin_count >= max_number_of_pins) {
+    if (pin_count == max_number_of_pins) {
       break;
     }
 
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
-
-    network->staToDb(pin, iterm, bterm);
-    if (iterm) {
-      iterms.push_back(iterm);
-    } else if (bterm) {
-      bterms.push_back(bterm);
-    }
+    report_pins.insert(pin);
     ++pin_count;
   }
 
-  emit endPointsToReport(iterms, bterms);
+  emit endPointsToReport(report_pins);
 }
 
 void ChartsWidget::setBucketInterval(const float max_slack,

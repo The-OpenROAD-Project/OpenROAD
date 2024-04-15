@@ -88,8 +88,7 @@ class TimingWidget : public QDockWidget
 
   void updatePaths();
 #ifdef ENABLE_CHARTS
-  void reportSlackHistogramPaths(const std::vector<odb::dbITerm*>& iterms,
-                                 const std::vector<odb::dbBTerm*>& bterms);
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
 #endif
 
  signals:

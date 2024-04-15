@@ -1612,8 +1612,7 @@ void MainWindow::openDesign()
 }
 
 void MainWindow::reportSlackHistogramPaths(
-    const std::vector<odb::dbITerm*>& iterms,
-    const std::vector<odb::dbBTerm*>& bterms)
+    const std::set<const sta::Pin*>& report_pins)
 {
   if (!timing_widget_->isVisible()) {
     timing_widget_->show();
@@ -1625,7 +1624,7 @@ void MainWindow::reportSlackHistogramPaths(
     timing_widget_->raise();
   }
 
-  timing_widget_->reportSlackHistogramPaths(iterms, bterms);
+  timing_widget_->reportSlackHistogramPaths(report_pins);
 }
 
 }  // namespace gui
