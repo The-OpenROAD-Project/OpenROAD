@@ -33,14 +33,13 @@
 #include <map>
 #include <vector>
 
-#include "odb/dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 #include "wire.h"
 
 namespace rcx {
 
-using odb::dbCreateNetUtil;
 using odb::dbInst;
 using odb::dbNet;
 using odb::dbRSeg;

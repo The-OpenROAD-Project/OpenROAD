@@ -39,9 +39,9 @@
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
-#include "odb/dbUtil.h"
 #include "odb/odb.h"
 #include "odb/util.h"
+#include "rcx/dbUtil.h"
 #include "rcx/gseq.h"
 
 namespace utl {
@@ -1149,7 +1149,7 @@ class extMeasure
 
   bool _rotatedGs;
 
-  odb::dbCreateNetUtil _create_net_util;
+  dbCreateNetUtil _create_net_util;
   int _dbunit;
 
  private:
@@ -1279,7 +1279,7 @@ class extMain
                     int* bb_ll,
                     int* bb_ur,
                     uint wtype,
-                    odb::dbCreateNetUtil* netUtil = nullptr);
+                    dbCreateNetUtil* netUtil = nullptr);
   uint addNetSBoxes2(odb::dbNet* net,
                      uint dir,
                      int* bb_ll,
@@ -1290,14 +1290,14 @@ class extMain
                     int* bb_ll,
                     int* bb_ur,
                     uint wtype,
-                    odb::dbCreateNetUtil* netUtil = nullptr);
+                    dbCreateNetUtil* netUtil = nullptr);
   uint addNetShapesOnSearch(odb::dbNet* net,
                             uint dir,
                             int* bb_ll,
                             int* bb_ur,
                             uint wtype,
                             FILE* fp,
-                            odb::dbCreateNetUtil* netUtil = nullptr);
+                            dbCreateNetUtil* netUtil = nullptr);
   int GetDBcoords2(int coord);
   void GetDBcoords2(odb::Rect& r);
   double GetDBcoords1(int coord);
@@ -1311,7 +1311,7 @@ class extMain
                      int* bb_ll,
                      int* bb_ur,
                      uint wtype,
-                     odb::dbCreateNetUtil* createDbNet = nullptr);
+                     dbCreateNetUtil* createDbNet = nullptr);
   uint addNets(uint dir,
                int* bb_ll,
                int* bb_ur,
@@ -1658,7 +1658,7 @@ class extMain
                 int* bb_ur,
                 uint bucketSize,
                 Ath__array1D<uint>*** wireBinTable,
-                odb::dbCreateNetUtil* createDbNet);
+                dbCreateNetUtil* createDbNet);
 
   uint getNetBbox(odb::dbNet* net, odb::Rect* maxRect[2]);
 
@@ -2164,7 +2164,7 @@ class extMain
 
   Ath__array1D<int>* _junct2viaMap = nullptr;
   bool _dbgPowerFlow;
-  odb::dbCreateNetUtil* _netUtil = nullptr;
+  dbCreateNetUtil* _netUtil = nullptr;
 
   std::vector<odb::dbBox*> _viaUp_VDDtable;
   std::vector<odb::dbBox*> _viaUp_GNDtable;

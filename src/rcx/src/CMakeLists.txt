@@ -53,6 +53,7 @@ add_library(rcx_lib
   name.cpp
   grids.cpp
   gs.cpp
+  dbUtil.cpp
 )
 
 target_include_directories(rcx_lib
