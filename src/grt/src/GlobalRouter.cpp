@@ -58,6 +58,7 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "Rudy.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -107,6 +108,7 @@ GlobalRouter::GlobalRouter()
       db_(nullptr),
       block_(nullptr),
       repair_antennas_(nullptr),
+      rudy_(nullptr),
       heatmap_(nullptr),
       heatmap_rudy_(nullptr),
       congestion_file_name_(nullptr),
@@ -545,6 +547,15 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     }
   }
   dirty_nets_.clear();
+}
+
+Rudy* GlobalRouter::getRudy()
+{
+  if (rudy_ == nullptr) {
+    rudy_ = new Rudy(db_->getChip()->getBlock(), this);
+  }
+
+  return rudy_;
 }
 
 bool GlobalRouter::findPinAccessPointPositions(
