@@ -348,6 +348,9 @@ void HierRTLMP::setDefaultThresholds()
 
 
 // For dataflow driven RePlAce
+// We use cluster_id attribute in OpenDB to make sure the clustering
+// results can be stored in the database.
+// So it can be used by later stages.
 void HierRTLMP::flatPhysicalHierarchyTree(Cluster* parent)
 {
   if (parent->isLeaf() == true) {
@@ -367,13 +370,13 @@ void HierRTLMP::setInstProperty(Cluster* cluster)
   ClusterType cluster_type = cluster->getClusterType();
   if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafMacros()) {
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+      odb::dbIntProperty::create(inst, "cluster_id", cluster_id);
     }
   }
 
   if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
     for (auto& inst : cluster->getLeafStdCells()) {
-      odb::dbIntProperty::find(inst, "cluster_id")->setValue(cluster_id);
+      odb::dbIntProperty::create(inst, "cluster_id", cluster_id);
     }
   }
 
@@ -520,8 +523,7 @@ void HierRTLMP::calculateConnection(std::vector<odb::dbInst*>& insts)
         pad_flag = true;
         break;
       }
-      const int cluster_id
-          = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+      const int cluster_id = inst_to_cluster_.at(inst);
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         driver_id = cluster_id;
       } else {
@@ -534,8 +536,7 @@ void HierRTLMP::calculateConnection(std::vector<odb::dbInst*>& insts)
     bool io_flag = false;
     // check the connected IO pins
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int cluster_id
-          = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
+      const int cluster_id = bterm_to_cluster_.at(bterm);
       io_flag = true;
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_id;
@@ -577,6 +578,8 @@ void HierRTLMP::calculateConnection(std::vector<odb::dbInst*>& insts)
 void HierRTLMP::run()
 {
   initMacroPlacer();
+  
+  initHypergraph();
 
   runMultilevelAutoclustering();
 

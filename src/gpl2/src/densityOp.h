@@ -46,6 +46,7 @@
 #include <memory>
 
 #include "cudaUtil.h"
+#include "poissonSolver.h"
 #include "placerBase.h"
 #include "placerObjects.h"
 #include "utl/Logger.h"
