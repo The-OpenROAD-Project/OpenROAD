@@ -330,8 +330,8 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(charts_widget_,
           &ChartsWidget::endPointsToReport,
-          timing_widget_,
-          &TimingWidget::reportSlackHistogramPaths);
+          this,
+          &MainWindow::reportSlackHistogramPaths);
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -1609,6 +1609,23 @@ void MainWindow::openDesign()
     // restore option
     open_->setEnabled(true);
   }
+}
+
+void MainWindow::reportSlackHistogramPaths(
+    const std::vector<odb::dbITerm*>& iterms,
+    const std::vector<odb::dbBTerm*>& bterms)
+{
+  if (!timing_widget_->isVisible()) {
+    timing_widget_->show();
+  }
+
+  // In Qt, an enabled tabified widget is visible, so
+  // we need to make it the active tab.
+  if (timing_widget_->visibleRegion().isEmpty()) {
+    timing_widget_->raise();
+  }
+
+  timing_widget_->reportSlackHistogramPaths(iterms, bterms);
 }
 
 }  // namespace gui

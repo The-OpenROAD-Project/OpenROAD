@@ -182,8 +182,10 @@ void ChartsWidget::setSlackMode()
 
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
-  connect(neg_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
-  connect(pos_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
+  connect(
+      neg_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
+  connect(
+      pos_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
 
   for (int i = 0; i < buckets_->negative.size(); ++i) {
     *neg_set << buckets_->negative[i].size();
@@ -324,25 +326,23 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
 
   sta::dbNetwork* network = sta_->getDbNetwork();
 
-  odb::dbITerm* iterm = nullptr;
-  odb::dbBTerm* bterm = nullptr;
-
-  std::vector<std::string> pins_names;
+  std::vector<odb::dbITerm*> iterms;
+  std::vector<odb::dbBTerm*> bterms;
 
   for (const sta::Pin* pin : pins) {
-    iterm = nullptr;
-    bterm = nullptr;
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
 
     network->staToDb(pin, iterm, bterm);
 
     if (iterm) {
-      pins_names.push_back(iterm->getName());
+      iterms.push_back(iterm);
     } else if (bterm) {
-      pins_names.push_back(bterm->getName());
+      bterms.push_back(bterm);
     }
   }
 
-  emit endPointsToReport(pins_names);
+  emit endPointsToReport(iterms, bterms);
 }
 
 void ChartsWidget::setBucketInterval(const float max_slack,

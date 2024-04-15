@@ -29,7 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <iostream>
+
 #include "timingWidget.h"
 
 #include <QApplication>
@@ -489,6 +489,14 @@ void TimingWidget::populatePaths()
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
 
+  populateAndSortModels(from, thru, to);
+}
+
+void TimingWidget::populateAndSortModels(
+    const std::set<const sta::Pin*>& from,
+    const std::vector<std::set<const sta::Pin*>>& thru,
+    const std::set<const sta::Pin*>& to)
+{
   setup_timing_paths_model_->populateModel(from, thru, to);
   hold_timing_paths_model_->populateModel(from, thru, to);
 
@@ -624,11 +632,24 @@ void TimingWidget::showSettings()
 }
 
 #ifdef ENABLE_CHARTS
-void TimingWidget::reportSlackHistogramPaths(const std::vector<std::string>& pins_names)
+void TimingWidget::reportSlackHistogramPaths(
+    const std::vector<odb::dbITerm*>& iterms,
+    const std::vector<odb::dbBTerm*>& bterms)
 {
-  for(auto& name : pins_names) {
-    std::cout << fmt::format("{}\n", name);
+  gui::StaPins thru;
+
+  sta::dbNetwork* network = settings_->getSTA()->getSTA()->getDbNetwork();
+
+  for (odb::dbITerm* iterm : iterms) {
+    thru.insert(network->dbToSta(iterm));
   }
+
+  for (odb::dbBTerm* bterm : bterms) {
+    thru.insert(network->dbToSta(bterm));
+  }
+
+  clearPathDetails();
+  populateAndSortModels({}, {thru}, {});
 }
 #endif
 

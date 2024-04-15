@@ -52,7 +52,6 @@
 #include "dbDescriptors.h"
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"

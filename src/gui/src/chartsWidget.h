@@ -44,6 +44,11 @@
 
 #include "gui/gui.h"
 
+namespace odb {
+class dbBTerm;
+class dbITerm;
+}  // namespace odb
+
 namespace sta {
 class Pin;
 class dbSta;
@@ -95,7 +100,8 @@ class ChartsWidget : public QDockWidget
   }
 
  signals:
-  void endPointsToReport(const std::vector<std::string>& pins_names);
+  void endPointsToReport(const std::vector<odb::dbITerm*>& iterms,
+                         const std::vector<odb::dbBTerm*>& bterms);
 
  private slots:
   void changeMode();
