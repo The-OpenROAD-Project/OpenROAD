@@ -273,8 +273,7 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
     negative_lower = -positive_upper;
     negative_upper = -positive_lower;
 
-    std::vector<const sta::Pin*> pos_bucket;
-    std::vector<const sta::Pin*> neg_bucket;
+    EndPoints pos_bucket, neg_bucket;
 
     for (const auto& pin : data.constrained_pins) {
       const float slack = time_unit->staToUser(stagui_->getPinSlack(pin));
@@ -324,22 +323,34 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
     }
   }
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
+  auto compareSlack = [=](const sta::Pin* a, const sta::Pin* b) {
+    return stagui_->getPinSlack(a) < stagui_->getPinSlack(b);
+  };
+  std::sort(pins.begin(), pins.end(), compareSlack);
 
+  sta::dbNetwork* network = sta_->getDbNetwork();
   std::vector<odb::dbITerm*> iterms;
   std::vector<odb::dbBTerm*> bterms;
 
+  // Depeding on the size of the bucket, the report can become rather slow
+  // to generate so we define this limit.
+  int max_number_of_pins = 50;
+  int pin_count = 1;
   for (const sta::Pin* pin : pins) {
+    if (pin_count >= max_number_of_pins) {
+      break;
+    }
+
     odb::dbITerm* iterm = nullptr;
     odb::dbBTerm* bterm = nullptr;
 
     network->staToDb(pin, iterm, bterm);
-
     if (iterm) {
       iterms.push_back(iterm);
     } else if (bterm) {
       bterms.push_back(bterm);
     }
+    ++pin_count;
   }
 
   emit endPointsToReport(iterms, bterms);
