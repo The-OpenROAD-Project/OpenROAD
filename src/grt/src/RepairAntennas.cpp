@@ -297,11 +297,13 @@ void RepairAntennas::addWireTerms(Net* net,
               = tech->findRoutingLayer(grouter_->getMinRoutingLayer());
 
           if (connect_to_segment && tech_layer != min_layer) {
-            // create vias to connect the guide segment to the min routing layer.
-            // the min routing layer will be used to connect to the pin.
+            // create vias to connect the guide segment to the min routing
+            // layer. the min routing layer will be used to connect to the pin.
             wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
             wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-            for (int l = min_layer->getRoutingLevel(); l < tech_layer->getRoutingLevel(); l++) {
+            for (int l = min_layer->getRoutingLevel();
+                 l < tech_layer->getRoutingLevel();
+                 l++) {
               wire_encoder.addTechVia(default_vias[l]);
             }
           }
