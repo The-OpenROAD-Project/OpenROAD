@@ -61,12 +61,9 @@ namespace gui {
 class STAGuiInterface;
 
 #ifdef ENABLE_CHARTS
-
-using EndPoints = std::vector<const sta::Pin*>;
-
 struct SlackHistogramData
 {
-  EndPoints constrained_pins;
+  std::vector<const sta::Pin*> constrained_pins;
   std::set<sta::Clock*> clocks;
   float max_slack = 0;
   float min_slack = 0;

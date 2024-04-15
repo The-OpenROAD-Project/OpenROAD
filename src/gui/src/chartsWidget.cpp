@@ -273,7 +273,7 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
     negative_lower = -positive_upper;
     negative_upper = -positive_lower;
 
-    EndPoints pos_bucket, neg_bucket;
+    std::vector<const sta::Pin*> pos_bucket, neg_bucket;
 
     for (const auto& pin : data.constrained_pins) {
       const float slack = time_unit->staToUser(stagui_->getPinSlack(pin));
@@ -309,7 +309,7 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
 
 void ChartsWidget::emitEndPointsInBucket(const int bar_index)
 {
-  EndPoints pins;
+  std::vector<const sta::Pin*> pins;
 
   if (buckets_->negative.empty()) {
     pins = buckets_->positive[bar_index];
