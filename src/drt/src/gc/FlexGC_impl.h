@@ -274,6 +274,19 @@ class FlexGCWorker::Impl
                              frCoord distY,
                              bool checkNDRs = true,
                              bool checkPolyEdge = true);
+  void checkForbiddenSpc_main(gcRect* rect1,
+                              gcRect* rect2,
+                              frLef58ForbiddenSpcConstraint* con,
+                              bool isH);
+  Rect checkForbiddenSpc_queryBox(gcRect* rect,
+                                  frCoord minSpc,
+                                  frCoord maxSpc,
+                                  bool isH,
+                                  bool right);
+  bool checkForbiddenSpc_twoedges(gcRect* rect,
+                                  frLef58ForbiddenSpcConstraint* con,
+                                  bool isH);
+  void checkForbiddenSpc_main(gcRect* rect, frLef58ForbiddenSpcConstraint* con);
   void checkTwoWiresForbiddenSpc_main(
       gcRect* rect,
       frLef58TwoWiresForbiddenSpcConstraint* con);

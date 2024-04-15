@@ -1017,22 +1017,12 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
         }
         auto layerNum = marker->getLayerNum();
         auto con = marker->getConstraint();
-        std::vector<frBlockObject*> srcs(2, nullptr);
-        int i = 0;
-        for (auto& src : marker->getSrcs()) {
-          srcs.at(i) = src;
-          i++;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
-            != mapMarkers.end()) {
-          continue;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+        if (mapMarkers.find({bbox, layerNum, con, marker->getSrcs()})
             != mapMarkers.end()) {
           continue;
         }
         markers.push_back(std::make_unique<frMarker>(*marker));
-        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
+        mapMarkers[{bbox, layerNum, con, marker->getSrcs()}]
             = markers.back().get();
       }
     }

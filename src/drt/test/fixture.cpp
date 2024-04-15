@@ -555,6 +555,16 @@ void Fixture::makeLef58TwoWiresForbiddenSpc(
   design->getTech()->addUConstraint(std::move(con));
 }
 
+void Fixture::makeLef58ForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerForbiddenSpacingRule* dbRule)
+{
+  auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addForbiddenSpacingConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
 frLef58EnclosureConstraint* Fixture::makeLef58EnclosureConstrainut(
     frLayerNum layer_num,
     int cut_class_idx,

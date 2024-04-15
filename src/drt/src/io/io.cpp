@@ -1553,6 +1553,43 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addTwoWiresForbiddenSpacingConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerForbiddenSpacingRules()) {
+    if (!rule->hasTwoEdges()) {
+      logger_->warn(utl::DRT,
+                    619,
+                    "LEF58_FORBIDDENSPACING rule without TWOEDGES is not "
+                    "supported for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->hasPrl()) {
+      logger_->warn(utl::DRT,
+                    620,
+                    "LEF58_FORBIDDENSPACING rule without PRL is not supported "
+                    "for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->hasWidth()) {
+      logger_->warn(utl::DRT,
+                    621,
+                    "LEF58_FORBIDDENSPACING rule without WIDTH is not "
+                    "supported for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (rule->hasWithin()) {
+      logger_->warn(utl::DRT,
+                    622,
+                    "LEF58_FORBIDDENSPACING rule with WITHIN is not supported "
+                    "for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(rule);
+    tmpLayer->addForbiddenSpacingConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
