@@ -52,12 +52,10 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-
 #ifdef ENABLE_CHARTS
 namespace sta {
 class Pin;
 }
-
 #endif
 namespace gui {
 

@@ -52,9 +52,9 @@ class Clock;
 #endif
 
 namespace gui {
+#ifdef ENABLE_CHARTS
 class STAGuiInterface;
 
-#ifdef ENABLE_CHARTS
 struct SlackHistogramData
 {
   std::vector<const sta::Pin*> constrained_pins;
