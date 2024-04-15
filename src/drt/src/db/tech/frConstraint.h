@@ -1468,7 +1468,7 @@ class frLef58ForbiddenSpcConstraint : public frConstraint
   // getters
   odb::dbTechLayerForbiddenSpacingRule* getODBRule() const { return db_rule_; }
   frCoord getMinSpc() const { return db_rule_->getForbiddenSpacing().first; }
-  frCoord getMaxSpc() const { return db_rule_->getForbiddenSpacing().first; }
+  frCoord getMaxSpc() const { return db_rule_->getForbiddenSpacing().second; }
   frCoord getTwoEdgesWithin() const { return db_rule_->getTwoEdges(); }
   // setters
   void setODBRule(odb::dbTechLayerForbiddenSpacingRule* in) { db_rule_ = in; }

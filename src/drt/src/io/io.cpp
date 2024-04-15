@@ -1576,7 +1576,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    if (!rule->hasWithin()) {
+    if (rule->hasWithin()) {
       logger_->warn(utl::DRT,
                     622,
                     "LEF58_FORBIDDENSPACING rule with WITHIN is not supported "
