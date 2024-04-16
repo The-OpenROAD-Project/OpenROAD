@@ -743,7 +743,6 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
                                     viaRect->isFixed()));
   marker->addSrc(net->getOwner());
   addMarker(std::move(marker));
-  return;
 }
 void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
 {

@@ -2240,12 +2240,11 @@ class frLef58EnclosureConstraint : public frConstraint
     if (db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::ENDSIDE) {
       return endOverhang >= db_rule_->getFirstOverhang()
              && sideOverhang >= db_rule_->getSecondOverhang();
-    } else {
-      return (endOverhang >= db_rule_->getFirstOverhang()
-              && sideOverhang >= db_rule_->getSecondOverhang())
-             || (endOverhang >= db_rule_->getSecondOverhang()
-                 && sideOverhang >= db_rule_->getFirstOverhang());
     }
+    return (endOverhang >= db_rule_->getFirstOverhang()
+            && sideOverhang >= db_rule_->getSecondOverhang())
+           || (endOverhang >= db_rule_->getSecondOverhang()
+               && sideOverhang >= db_rule_->getFirstOverhang());
   }
   frCoord getWidth() const { return db_rule_->getMinWidth(); }
   void report(utl::Logger* logger) const override
