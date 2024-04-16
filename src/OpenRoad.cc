@@ -235,6 +235,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initReplace(this);
+  initGpuReplace(this);
   initOpendp(this);
   initOptdp(this);
   initFinale(this);
