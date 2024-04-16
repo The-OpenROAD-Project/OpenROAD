@@ -29,15 +29,14 @@
 namespace drt {
 
 Rect FlexGCWorker::Impl::checkForbiddenSpc_queryBox(gcRect* rect,
-                                frCoord minSpc,
-                                frCoord maxSpc,
-                                bool isH,
-                                bool right)
+                                                    frCoord minSpc,
+                                                    frCoord maxSpc,
+                                                    bool isH,
+                                                    bool right)
 {
   Rect queryBox(gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
-  if (isH)
-  {
-    if(right) {
+  if (isH) {
+    if (right) {
       queryBox.set_ylo(gtl::yh(*rect) + minSpc);
       queryBox.set_yhi(gtl::yh(*rect) + maxSpc);
     } else {
@@ -45,7 +44,7 @@ Rect FlexGCWorker::Impl::checkForbiddenSpc_queryBox(gcRect* rect,
       queryBox.set_yhi(gtl::yl(*rect) - minSpc);
     }
   } else {
-    if(right) {
+    if (right) {
       queryBox.set_xlo(gtl::xh(*rect) + minSpc);
       queryBox.set_xhi(gtl::xh(*rect) + maxSpc);
     } else {
@@ -96,13 +95,14 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
     using boost::polygon::operators::operator&=;
     tmpPoly += markerRect;
     tmpPoly &= *ptr;  // tmpPoly now is widthrect
-    if(gtl::area(tmpPoly) == 0) {
+    if (gtl::area(tmpPoly) == 0) {
       continue;
     }
     if (rect1->isFixed() && rect2->isFixed() && ptr->isFixed()) {
       continue;
     }
-    if (!hasRoute(rect1, markerRect) && !hasRoute(rect2, markerRect) && !hasRoute(ptr, markerRect)) {
+    if (!hasRoute(rect1, markerRect) && !hasRoute(rect2, markerRect)
+        && !hasRoute(ptr, markerRect)) {
       continue;
     }
     // add violation
@@ -115,20 +115,21 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
     marker->setLayerNum(rect1->getLayerNum());
     marker->setConstraint(con);
     marker->addSrc(rect1->getNet()->getOwner());
-    marker->addVictim(
-        rect1->getNet()->getOwner(),
-        std::make_tuple(
-            rect1->getLayerNum(),
-            Rect(
-                gtl::xl(*rect1), gtl::yl(*rect1), gtl::xh(*rect1), gtl::yh(*rect1)),
-            rect1->isFixed()));
+    marker->addVictim(rect1->getNet()->getOwner(),
+                      std::make_tuple(rect1->getLayerNum(),
+                                      Rect(gtl::xl(*rect1),
+                                           gtl::yl(*rect1),
+                                           gtl::xh(*rect1),
+                                           gtl::yh(*rect1)),
+                                      rect1->isFixed()));
     marker->addSrc(rect2->getNet()->getOwner());
-    marker->addAggressor(
-        rect2->getNet()->getOwner(),
-        std::make_tuple(
-            rect2->getLayerNum(),
-            Rect(gtl::xl(*rect2), gtl::yl(*rect2), gtl::xh(*rect2), gtl::yh(*rect2)),
-            rect2->isFixed()));
+    marker->addAggressor(rect2->getNet()->getOwner(),
+                         std::make_tuple(rect2->getLayerNum(),
+                                         Rect(gtl::xl(*rect2),
+                                              gtl::yl(*rect2),
+                                              gtl::xh(*rect2),
+                                              gtl::yh(*rect2)),
+                                         rect2->isFixed()));
     marker->addSrc(ptr->getNet()->getOwner());
     marker->addAggressor(
         ptr->getNet()->getOwner(),
@@ -146,26 +147,27 @@ bool FlexGCWorker::Impl::checkForbiddenSpc_twoedges(
     bool isH)
 {
   Rect queryBox;
-  auto hasWireInWithin = [] (gcRect* rect,
-                             const std::vector<rq_box_value_t<gcRect*>>& result)
-  {
-    for (auto& [objBox, ptr] : result) {
-      if (rect == ptr) {
-        continue;
-      }
-      return true;
-    }
-    return false;
-  };
+  auto hasWireInWithin
+      = [](gcRect* rect, const std::vector<rq_box_value_t<gcRect*>>& result) {
+          for (auto& [objBox, ptr] : result) {
+            if (rect == ptr) {
+              continue;
+            }
+            return true;
+          }
+          return false;
+        };
   std::vector<rq_box_value_t<gcRect*>> result;
   auto& workerRegionQuery = getWorkerRegionQuery();
-  queryBox = checkForbiddenSpc_queryBox(rect, 0, con->getTwoEdgesWithin(), isH, true);
+  queryBox = checkForbiddenSpc_queryBox(
+      rect, 0, con->getTwoEdgesWithin(), isH, true);
   workerRegionQuery.queryMaxRectangle(queryBox, rect->getLayerNum(), result);
   if (!hasWireInWithin(rect, result)) {
     return false;
   }
   result.clear();
-  queryBox = checkForbiddenSpc_queryBox(rect, 0, con->getTwoEdgesWithin(), isH, false);
+  queryBox = checkForbiddenSpc_queryBox(
+      rect, 0, con->getTwoEdgesWithin(), isH, false);
   workerRegionQuery.queryMaxRectangle(queryBox, rect->getLayerNum(), result);
   return hasWireInWithin(rect, result);
 }
@@ -173,15 +175,14 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
     gcRect* rect,
     frLef58ForbiddenSpcConstraint* con)
 {
-  if (!con->isWidthValid(rect->width()) || !con->isPrlValid(rect->length()))
-  {
+  if (!con->isWidthValid(rect->width()) || !con->isPrlValid(rect->length())) {
     return;
   }
   bool isH = getTech()->getLayer(rect->getLayerNum())->getDir()
              == odb::dbTechLayerDir::HORIZONTAL;
-  if (rect->width() != rect->length())
-  {
-    isH = gtl::delta(*rect, gtl::orientation_2d_enum::HORIZONTAL) > gtl::delta(*rect, gtl::orientation_2d_enum::VERTICAL);
+  if (rect->width() != rect->length()) {
+    isH = gtl::delta(*rect, gtl::orientation_2d_enum::HORIZONTAL)
+          > gtl::delta(*rect, gtl::orientation_2d_enum::VERTICAL);
   }
   // check TWOEDGES
   if (!checkForbiddenSpc_twoedges(rect, con, isH)) {
@@ -190,27 +191,28 @@ void FlexGCWorker::Impl::checkForbiddenSpc_main(
   Rect queryBox;
   std::vector<rq_box_value_t<gcRect*>> result;
   auto& workerRegionQuery = getWorkerRegionQuery();
-  
-  queryBox = checkForbiddenSpc_queryBox(rect, con->getMinSpc(), con->getMaxSpc(), isH, true);
+
+  queryBox = checkForbiddenSpc_queryBox(
+      rect, con->getMinSpc(), con->getMaxSpc(), isH, true);
   workerRegionQuery.queryMaxRectangle(queryBox, rect->getLayerNum(), result);
-  
-  queryBox = checkForbiddenSpc_queryBox(rect, con->getMinSpc(), con->getMaxSpc(), isH, false);
+
+  queryBox = checkForbiddenSpc_queryBox(
+      rect, con->getMinSpc(), con->getMaxSpc(), isH, false);
   workerRegionQuery.queryMaxRectangle(queryBox, rect->getLayerNum(), result);
   // result.insert(result.end(), tmpResult.begin(), tmpResult.end());
   for (auto& [objBox, ptr] : result) {
     if (rect == ptr) {
       continue;
     }
-    if (ptr->width() != ptr->length())
-    {
-      bool isPtrH = gtl::delta(*ptr, gtl::orientation_2d_enum::HORIZONTAL) > gtl::delta(*ptr, gtl::orientation_2d_enum::VERTICAL);
+    if (ptr->width() != ptr->length()) {
+      bool isPtrH = gtl::delta(*ptr, gtl::orientation_2d_enum::HORIZONTAL)
+                    > gtl::delta(*ptr, gtl::orientation_2d_enum::VERTICAL);
       if (isPtrH != isH) {
         continue;
       }
     }
-    checkForbiddenSpc_main(rect, ptr, con, isH);    
-
+    checkForbiddenSpc_main(rect, ptr, con, isH);
   }
 }
 
-}
+}  // namespace drt

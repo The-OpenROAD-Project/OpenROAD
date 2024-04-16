@@ -7926,6 +7926,10 @@ class dbTechLayer : public dbObject
 
   uint getWrongWayWidth() const;
 
+  void setLayerAdjustment(float layer_adjustment);
+
+  float getLayerAdjustment() const;
+
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 
   dbTechLayerCutClassRule* findTechLayerCutClassRule(const char* name) const;
