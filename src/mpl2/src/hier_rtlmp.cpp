@@ -5553,12 +5553,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     exchange_swap_prob = 0.95;
     flip_prob = 0.05;
 
-    // Subsequent runs would account for weight variations in order to ease the
-    // convergence to a valid result (floorplan fit in the outline). As SA will
-    // never generate a non-valid result for arrays of interconnected macros and
-    // we only care about WL, we can use a single run.
-    remaining_runs = 1;
-
     // Although all solutions will be valid, large arrays need more steps to
     // properly converge to an optimal solution in terms of WL.
     if (num_perturb_per_step > macros_to_place) {
