@@ -5537,7 +5537,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   const int macros_to_place = static_cast<int>(hard_macros.size());
 
-  int remaining_runs = num_runs_;
   int num_perturb_per_step = (macros_to_place > num_perturb_per_step_ / 10)
                                  ? macros_to_place
                                  : num_perturb_per_step_ / 10;
@@ -5561,6 +5560,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   }
 
   int run_id = 0;
+  int remaining_runs = num_runs_;
   float best_cost = std::numeric_limits<float>::max();
 
   SACoreHardMacro* best_sa = nullptr;
