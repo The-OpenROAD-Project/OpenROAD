@@ -42,6 +42,7 @@ class dbDatabase;
 
 namespace grt {
 class GlobalRouter;
+class Rudy;
 }
 
 namespace utl {
@@ -180,10 +181,13 @@ class RouteBase
             utl::Logger* log);
   ~RouteBase();
 
-  // update Route and Est info
-  // from GlobalRouter
-  void updateRoute();
-  void getGlobalRouterResult();
+//  void updateRoute();
+//  void getGlobalRouterResult();
+//  float getRC() const;
+    
+  void updateRudyRoute();
+  void getRudyResult();
+  float getRudyRC() const;
 
   // first: is Routability Need
   // second: reverting procedure need in NesterovPlace
@@ -194,8 +198,6 @@ class RouteBase
   int numCall() const;
   int bloatIterCnt() const;
   int inflationIterCnt() const;
-
-  float getRC() const;
 
   void revertGCellSizeToMinRc();
 

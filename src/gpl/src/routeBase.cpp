@@ -40,6 +40,7 @@
 #include <utility>
 
 #include "grt/GlobalRouter.h"
+#include "grt/Rudy.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -307,22 +308,31 @@ void RouteBase::init()
   minRcCellSize_.resize(nbc_->gCells().size(), std::make_pair(0, 0));
 }
 
-void RouteBase::getGlobalRouterResult()
+void RouteBase::getRudyResult()
 {
-  // update gCells' location to DB for GR
+  //TODO make sure this is necessary, if not getRudyResult() is not necessary also.
   nbc_->updateDbGCells();
 
-  // these two options must be on
-  grouter_->setAllowCongestion(true);
-  grouter_->setOverflowIterations(0);
-
-  // this option must be off
-  grouter_->setCriticalNetsPercentage(0);
-
-  grouter_->globalRoute();
-
-  updateRoute();
+  updateRudyRoute();
 }
+
+//void RouteBase::getGlobalRouterResult()
+//{
+//  // update gCells' location to DB for GR
+//  nbc_->updateDbGCells();
+//
+//  // these two options must be on
+//  grouter_->setAllowCongestion(true);
+//  grouter_->setOverflowIterations(0);
+//
+//  // this option must be off
+//  grouter_->setCriticalNetsPercentage(0);
+//
+//  grouter_->globalRoute();
+//
+//  updateRoute();
+//}
+
 
 int64_t RouteBase::inflatedAreaDelta() const
 {
@@ -344,117 +354,70 @@ int RouteBase::inflationIterCnt() const
   return inflationIterCnt_;
 }
 
-static float getUsageCapacityRatio(Tile* tile,
-                                   odb::dbTechLayer* layer,
-                                   odb::dbGCellGrid* gGrid,
-                                   grt::GlobalRouter* grouter,
-                                   float ignoreEdgeRatio)
-{
-  uint8_t blockH = 0, blockV = 0;
-  grouter->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
-
-  bool isHorizontal
-      = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
-
-  // from the dbGCellGrid discussion in PR,
-  // 'usage' contains (blockage + wire consumption).
-  // where blockage is unavailable wires due to obstruction.
-  //
-  // 'capacity' contains (total capacity)
-  // (i.e., total number of wires in the current tile)
-  //
-  // RePlAce/RC metric need 'blockage' because
-  // if blockage ratio is larger than certain ratio,
-  // need to skip.
-  uint8_t curCap = gGrid->getCapacity(layer, tile->x(), tile->y());
-  uint8_t curUse = gGrid->getUsage(layer, tile->x(), tile->y());
-  uint8_t blockage = (isHorizontal) ? blockH : blockV;
-
-  // escape tile ratio cals when capacity = 0
-  if (curCap == 0) {
-    return std::numeric_limits<float>::lowest();
-  }
-
-  // ignore if blockage is too huge in current tile
-  float blockageRatio = static_cast<float>(blockage) / curCap;
-  if (blockageRatio >= ignoreEdgeRatio) {
-    return std::numeric_limits<float>::lowest();
-  }
-
-  // return usage (used routing track + blockage) / total capacity
-  return static_cast<float>(curUse) / curCap;
-}
-
-// fill
+//static float getUsageCapacityRatio(Tile* tile,
+//                                   odb::dbTechLayer* layer,
+//                                   odb::dbGCellGrid* gGrid,
+//                                   grt::GlobalRouter* grouter,
+//                                   float ignoreEdgeRatio)
+//{
+//  uint8_t blockH = 0, blockV = 0;
+//  grouter->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 //
-// TileGrids'
-// lx_ ly_
-// tileCntX_ tileCntY_
-// tileSizeX_ tileSizeY_
+//  bool isHorizontal
+//      = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 //
-void RouteBase::updateRoute()
-{
-  odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
-  std::vector<int> gridX, gridY;
-  gGrid->getGridX(gridX);
-  gGrid->getGridY(gridY);
+//  // from the dbGCellGrid discussion in PR,
+//  // 'usage' contains (blockage + wire consumption).
+//  // where blockage is unavailable wires due to obstruction.
+//  //
+//  // 'capacity' contains (total capacity)
+//  // (i.e., total number of wires in the current tile)
+//  //
+//  // RePlAce/RC metric need 'blockage' because
+//  // if blockage ratio is larger than certain ratio,
+//  // need to skip.
+//  uint8_t curCap = gGrid->getCapacity(layer, tile->x(), tile->y());
+//  uint8_t curUse = gGrid->getUsage(layer, tile->x(), tile->y());
+//  uint8_t blockage = (isHorizontal) ? blockH : blockV;
+//
+//  // escape tile ratio cals when capacity = 0
+//  if (curCap == 0) {
+//    return std::numeric_limits<float>::lowest();
+//  }
+//
+//  // ignore if blockage is too huge in current tile
+//  float blockageRatio = static_cast<float>(blockage) / curCap;
+//  if (blockageRatio >= ignoreEdgeRatio) {
+//    return std::numeric_limits<float>::lowest();
+//  }
+//
+//  // return usage (used routing track + blockage) / total capacity
+//  return static_cast<float>(curUse) / curCap;
+//}
 
-  // retrieve routing Layer Count from odb
-  odb::dbTech* tech = db_->getTech();
-  int numLayers = tech->getRoutingLayerCount();
-  tg_->setNumRoutingLayers(numLayers);
+void RouteBase::updateRudyRoute()
+{
+  grt::Rudy* rudy = grouter_->getRudy();
+  rudy->calculateRudy();
+  tg_->setNumRoutingLayers(0); // TODO this should not be required.
 
   // update grid tile info
-  tg_->setLx(gridX[0]);
-  tg_->setLy(gridY[0]);
-  tg_->setTileSize(gridX[1] - gridX[0], gridY[1] - gridY[0]);
-  tg_->setTileCnt(gridX.size(), gridY.size());
+  tg_->setLx(0);
+  tg_->setLy(0);
+  tg_->setTileSize(rudy->getTileSize(), rudy->getTileSize());
+  int x_grids, y_grids;
+  grouter_->getGridSize(x_grids, y_grids);
+  tg_->setTileCnt(x_grids, y_grids);
   tg_->initTiles();
 
-  for (int i = 1; i <= numLayers; i++) {
-    odb::dbTechLayer* layer = tech->findRoutingLayer(i);
-    bool isHorizontalLayer
-        = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+  for (auto& tile : tg_->tiles()) {
+    float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
 
-    for (auto& tile : tg_->tiles()) {
-      // Check left and down tile
-      // and set the minimum usage/cap vals for
-      // TileGrid setup.
-
-      // first extract current tiles' usage
-      float ratio = getUsageCapacityRatio(
-          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
-
-      // if horizontal layer (i.e., vertical edges)
-      // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
-      // (current 'ratio' points to RIGHT edges usage)
-      if (isHorizontalLayer && tile->x() >= 1) {
-        Tile* leftTile
-            = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
-        float leftRatio = getUsageCapacityRatio(
-            leftTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
-        ratio = std::fmax(leftRatio, ratio);
-      }
-
-      // if vertical layer (i.e., horizontal edges)
-      // should consider DOWN tile's UP edge == current 'tile's DOWN edge
-      // (current 'ratio' points to UP edges usage)
-      if (!isHorizontalLayer && tile->y() >= 1) {
-        Tile* downTile
-            = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
-        float downRatio = getUsageCapacityRatio(
-            downTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
-        ratio = std::fmax(downRatio, ratio);
-      }
-
-      ratio = std::fmax(ratio, 0.0f);
-
-      // update inflation Ratio
-      if (ratio >= rbVars_.minInflationRatio) {
-        float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
-        inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
-        tile->setInflationRatio(inflationRatio);
-      }
+    // update inflation Ratio
+    if (ratio >= rbVars_.minInflationRatio) {
+      float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
+      inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
+      tile->setInflationRatio(inflationRatio);
     }
   }
 
@@ -492,6 +455,112 @@ void RouteBase::updateRoute()
   }
 }
 
+// fill
+//
+// TileGrids'
+// lx_ ly_
+// tileCntX_ tileCntY_
+// tileSizeX_ tileSizeY_
+//
+//void RouteBase::updateRoute()
+//{
+//  odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
+//  std::vector<int> gridX, gridY;
+//  gGrid->getGridX(gridX);
+//  gGrid->getGridY(gridY);
+//
+//  // retrieve routing Layer Count from odb
+//  odb::dbTech* tech = db_->getTech();
+//  int numLayers = tech->getRoutingLayerCount();
+//  tg_->setNumRoutingLayers(numLayers);
+//
+//  // update grid tile info
+//  tg_->setLx(gridX[0]);
+//  tg_->setLy(gridY[0]);
+//  tg_->setTileSize(gridX[1] - gridX[0], gridY[1] - gridY[0]);
+//  tg_->setTileCnt(gridX.size(), gridY.size());
+//  tg_->initTiles();
+//
+//  for (int i = 1; i <= numLayers; i++) {
+//    odb::dbTechLayer* layer = tech->findRoutingLayer(i);
+//    bool isHorizontalLayer
+//        = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+//
+//    for (auto& tile : tg_->tiles()) {
+//      // Check left and down tile
+//      // and set the minimum usage/cap vals for
+//      // TileGrid setup.
+//
+//      // first extract current tiles' usage
+//      float ratio = getUsageCapacityRatio(
+//          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+//
+//      // if horizontal layer (i.e., vertical edges)
+//      // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
+//      // (current 'ratio' points to RIGHT edges usage)
+//      if (isHorizontalLayer && tile->x() >= 1) {
+//        Tile* leftTile
+//            = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
+//        float leftRatio = getUsageCapacityRatio(
+//            leftTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+//        ratio = std::fmax(leftRatio, ratio);
+//      }
+//
+//      // if vertical layer (i.e., horizontal edges)
+//      // should consider DOWN tile's UP edge == current 'tile's DOWN edge
+//      // (current 'ratio' points to UP edges usage)
+//      if (!isHorizontalLayer && tile->y() >= 1) {
+//        Tile* downTile
+//            = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
+//        float downRatio = getUsageCapacityRatio(
+//            downTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+//        ratio = std::fmax(downRatio, ratio);
+//      }
+//
+//      ratio = std::fmax(ratio, 0.0f);
+//      //  update inflation Ratio
+//      if (ratio >= rbVars_.minInflationRatio) {
+//        float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
+//        inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
+//        tile->setInflationRatio(inflationRatio);
+//      }
+//    }
+//  }
+//
+//  // debug print
+//  for (auto& tile : tg_->tiles()) {
+//    if (tile->inflationRatio() > 1.0) {
+//      debugPrint(log_,
+//                 GPL,
+//                 "updateInflationRatio",
+//                 1,
+//                 "xy: {} {}",
+//                 tile->x(),
+//                 tile->y());
+//      debugPrint(log_,
+//                 GPL,
+//                 "updateInflationRatio",
+//                 1,
+//                 "minxy: {} {}",
+//                 tile->lx(),
+//                 tile->ly());
+//      debugPrint(log_,
+//                 GPL,
+//                 "updateInflationRatio",
+//                 1,
+//                 "maxxy: {} {}",
+//                 tile->ux(),
+//                 tile->uy());
+//      debugPrint(log_,
+//                 GPL,
+//                 "updateInflationRatio",
+//                 1,
+//                 "calcInflationRatio: {}",
+//                 tile->inflationRatio());
+//    }
+//  }
+//}
+
 // first: is Routability Need
 // second: reverting procedure init need
 //          (e.g. calling NesterovPlace's init())
@@ -504,10 +573,10 @@ std::pair<bool, bool> RouteBase::routability()
   tg_ = std::move(tg);
   tg_->setLogger(log_);
 
-  getGlobalRouterResult();
+  getRudyResult();
 
   // no need routing if RC is lower than targetRC val
-  float curRc = getRC();
+  float curRc = getRudyRC();
 
   if (curRc < rbVars_.targetRC) {
     resetRoutabilityResources();
@@ -697,120 +766,183 @@ void RouteBase::revertGCellSizeToMinRc()
   }
 }
 
-// extract RC values
-float RouteBase::getRC() const
+float RouteBase::getRudyRC() const
 {
-  double totalRouteOverflowH2 = 0;
-  double totalRouteOverflowV2 = 0;
-  int overflowTileCnt2 = 0;
-
-  std::vector<double> horEdgeCongArray;
-  std::vector<double> verEdgeCongArray;
-
-  odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
+  grt::Rudy* rudy = grouter_->getRudy();
+  double totalRouteOverflow = 0;
+  int overflowTileCnt = 0;
+  std::vector<double> edgeCongArray;
+  
   for (auto& tile : tg_->tiles()) {
-    for (int i = 1; i <= tg_->numRoutingLayers(); i++) {
-      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
-      bool isHorizontalLayer
-          = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+    float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
+    // Escape the case when blockage ratio is too huge
+    if (ratio >= 0.0f) {
+      totalRouteOverflow += std::fmax(0.0, -1 + ratio);
+      edgeCongArray.push_back(ratio);
 
-      // extract the ratio in the same way as inflation ratio cals
-      float ratio = getUsageCapacityRatio(
-          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
-
-      // escape the case when blockageRatio is too huge
-      if (ratio >= 0.0f) {
-        if (isHorizontalLayer) {
-          totalRouteOverflowH2 += std::fmax(0.0, -1 + ratio);
-          horEdgeCongArray.push_back(ratio);
-        } else {
-          totalRouteOverflowV2 += std::fmax(0.0, -1 + ratio);
-          verEdgeCongArray.push_back(ratio);
-        }
-
-        if (ratio > 1.0) {
-          overflowTileCnt2++;
-        }
+      if (ratio > 1.0) {
+        overflowTileCnt++;
       }
     }
   }
 
-  log_->info(GPL, 63, "TotalRouteOverflowH2: {}", totalRouteOverflowH2);
-  log_->info(GPL, 64, "TotalRouteOverflowV2: {}", totalRouteOverflowV2);
-  log_->info(GPL, 65, "OverflowTileCnt2: {}", overflowTileCnt2);
+  log_->info(GPL, 63, "TotalRouteOverflow: {}", totalRouteOverflow);
+  log_->info(GPL, 64, "OverflowTileCnt: {}", overflowTileCnt);
 
-  int horArraySize = horEdgeCongArray.size();
-  int verArraySize = verEdgeCongArray.size();
+  int arraySize = edgeCongArray.size();
+  std::sort(edgeCongArray.rbegin(), edgeCongArray.rend());
 
-  std::sort(horEdgeCongArray.rbegin(), horEdgeCongArray.rend());
-  std::sort(verEdgeCongArray.rbegin(), verEdgeCongArray.rend());
+  double avg005RC = 0;
+  double avg010RC = 0;
+  double avg020RC = 0;
+  double avg050RC = 0;
 
-  double horAvg005RC = 0;
-  double horAvg010RC = 0;
-  double horAvg020RC = 0;
-  double horAvg050RC = 0;
-  for (int i = 0; i < horArraySize; ++i) {
-    if (i < 0.005 * horArraySize) {
-      horAvg005RC += horEdgeCongArray[i];
+  for (int i = 0; i < arraySize; ++i) {
+    if (i < 0.005 * arraySize) {
+      avg005RC += edgeCongArray[i];
     }
-    if (i < 0.01 * horArraySize) {
-      horAvg010RC += horEdgeCongArray[i];
+    if (i < 0.01 * arraySize) {
+      avg010RC += edgeCongArray[i];
     }
-    if (i < 0.02 * horArraySize) {
-      horAvg020RC += horEdgeCongArray[i];
+    if (i < 0.02 * arraySize) {
+      avg020RC += edgeCongArray[i];
     }
-    if (i < 0.05 * horArraySize) {
-      horAvg050RC += horEdgeCongArray[i];
+    if (i < 0.05 * arraySize) {
+      avg050RC += edgeCongArray[i];
     }
   }
 
-  horAvg005RC /= ceil(0.005 * horArraySize);
-  horAvg010RC /= ceil(0.010 * horArraySize);
-  horAvg020RC /= ceil(0.020 * horArraySize);
-  horAvg050RC /= ceil(0.050 * horArraySize);
+  avg005RC /= ceil(0.005 * arraySize);
+  avg010RC /= ceil(0.010 * arraySize);
+  avg020RC /= ceil(0.020 * arraySize);
+  avg050RC /= ceil(0.050 * arraySize);
 
-  double verAvg005RC = 0;
-  double verAvg010RC = 0;
-  double verAvg020RC = 0;
-  double verAvg050RC = 0;
-  for (int i = 0; i < verArraySize; ++i) {
-    if (i < 0.005 * verArraySize) {
-      verAvg005RC += verEdgeCongArray[i];
-    }
-    if (i < 0.01 * verArraySize) {
-      verAvg010RC += verEdgeCongArray[i];
-    }
-    if (i < 0.02 * verArraySize) {
-      verAvg020RC += verEdgeCongArray[i];
-    }
-    if (i < 0.05 * verArraySize) {
-      verAvg050RC += verEdgeCongArray[i];
-    }
-  }
-  verAvg005RC /= ceil(0.005 * verArraySize);
-  verAvg010RC /= ceil(0.010 * verArraySize);
-  verAvg020RC /= ceil(0.020 * verArraySize);
-  verAvg050RC /= ceil(0.050 * verArraySize);
+  log_->info(GPL, 65, "0.5%RC: {}", avg005RC);
+  log_->info(GPL, 66, "1.0%RC: {}", avg010RC);
+  log_->info(GPL, 67, "2.0%RC: {}", avg020RC);
+  log_->info(GPL, 68, "5.0%RC: {}", avg050RC);
 
-  log_->info(GPL, 66, "0.5%RC: {}", std::fmax(horAvg005RC, verAvg005RC));
-  log_->info(GPL, 67, "1.0%RC: {}", std::fmax(horAvg010RC, verAvg010RC));
-  log_->info(GPL, 68, "2.0%RC: {}", std::fmax(horAvg020RC, verAvg020RC));
-  log_->info(GPL, 69, "5.0%RC: {}", std::fmax(horAvg050RC, verAvg050RC));
-
-  log_->info(GPL, 70, "0.5rcK: {}", rbVars_.rcK1);
-  log_->info(GPL, 71, "1.0rcK: {}", rbVars_.rcK2);
-  log_->info(GPL, 72, "2.0rcK: {}", rbVars_.rcK3);
-  log_->info(GPL, 73, "5.0rcK: {}", rbVars_.rcK4);
-
-  float finalRC = (rbVars_.rcK1 * std::fmax(horAvg005RC, verAvg005RC)
-                   + rbVars_.rcK2 * std::fmax(horAvg010RC, verAvg010RC)
-                   + rbVars_.rcK3 * std::fmax(horAvg020RC, verAvg020RC)
-                   + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
+  float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
+                   + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL, 74, "FinalRC: {}", finalRC);
+  log_->info(GPL, 69, "FinalRC: {}", finalRC);
   return finalRC;
 }
+
+// extract RC values
+//float RouteBase::getRC() const
+//{
+//  double totalRouteOverflowH2 = 0;
+//  double totalRouteOverflowV2 = 0;
+//  int overflowTileCnt2 = 0;
+//
+//  std::vector<double> horEdgeCongArray;
+//  std::vector<double> verEdgeCongArray;
+//
+//  odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
+//  for (auto& tile : tg_->tiles()) {
+//    for (int i = 1; i <= tg_->numRoutingLayers(); i++) {
+//      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
+//      bool isHorizontalLayer
+//          = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+//
+//      // extract the ratio in the same way as inflation ratio cals
+//      float ratio = getUsageCapacityRatio(
+//          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+//      // escape the case when blockageRatio is too huge
+//      if (ratio >= 0.0f) {
+//        if (isHorizontalLayer) {
+//          totalRouteOverflowH2 += std::fmax(0.0, -1 + ratio);
+//          horEdgeCongArray.push_back(ratio);
+//        } else {
+//          totalRouteOverflowV2 += std::fmax(0.0, -1 + ratio);
+//          verEdgeCongArray.push_back(ratio);
+//        }
+//
+//        if (ratio > 1.0) {
+//          overflowTileCnt2++;
+//        }
+//      }
+//    }
+//  }
+//
+//  log_->info(GPL, xx, "TotalRouteOverflowH2: {}", totalRouteOverflowH2);
+//  log_->info(GPL, xx, "TotalRouteOverflowV2: {}", totalRouteOverflowV2);
+//  log_->info(GPL, xx, "OverflowTileCnt2: {}", overflowTileCnt2);
+//
+//  int horArraySize = horEdgeCongArray.size();
+//  int verArraySize = verEdgeCongArray.size();
+//
+//  std::sort(horEdgeCongArray.rbegin(), horEdgeCongArray.rend());
+//  std::sort(verEdgeCongArray.rbegin(), verEdgeCongArray.rend());
+//
+//  double horAvg005RC = 0;
+//  double horAvg010RC = 0;
+//  double horAvg020RC = 0;
+//  double horAvg050RC = 0;
+//  for (int i = 0; i < horArraySize; ++i) {
+//    if (i < 0.005 * horArraySize) {
+//      horAvg005RC += horEdgeCongArray[i];
+//    }
+//    if (i < 0.01 * horArraySize) {
+//      horAvg010RC += horEdgeCongArray[i];
+//    }
+//    if (i < 0.02 * horArraySize) {
+//      horAvg020RC += horEdgeCongArray[i];
+//    }
+//    if (i < 0.05 * horArraySize) {
+//      horAvg050RC += horEdgeCongArray[i];
+//    }
+//  }
+//
+//  horAvg005RC /= ceil(0.005 * horArraySize);
+//  horAvg010RC /= ceil(0.010 * horArraySize);
+//  horAvg020RC /= ceil(0.020 * horArraySize);
+//  horAvg050RC /= ceil(0.050 * horArraySize);
+//
+//  double verAvg005RC = 0;
+//  double verAvg010RC = 0;
+//  double verAvg020RC = 0;
+//  double verAvg050RC = 0;
+//  for (int i = 0; i < verArraySize; ++i) {
+//    if (i < 0.005 * verArraySize) {
+//      verAvg005RC += verEdgeCongArray[i];
+//    }
+//    if (i < 0.01 * verArraySize) {
+//      verAvg010RC += verEdgeCongArray[i];
+//    }
+//    if (i < 0.02 * verArraySize) {
+//      verAvg020RC += verEdgeCongArray[i];
+//    }
+//    if (i < 0.05 * verArraySize) {
+//      verAvg050RC += verEdgeCongArray[i];
+//    }
+//  }
+//  verAvg005RC /= ceil(0.005 * verArraySize);
+//  verAvg010RC /= ceil(0.010 * verArraySize);
+//  verAvg020RC /= ceil(0.020 * verArraySize);
+//  verAvg050RC /= ceil(0.050 * verArraySize);
+//
+//  log_->info(GPL, xx, "0.5%RC: {}", std::fmax(horAvg005RC, verAvg005RC));
+//  log_->info(GPL, xx, "1.0%RC: {}", std::fmax(horAvg010RC, verAvg010RC));
+//  log_->info(GPL, xx, "2.0%RC: {}", std::fmax(horAvg020RC, verAvg020RC));
+//  log_->info(GPL, xx, "5.0%RC: {}", std::fmax(horAvg050RC, verAvg050RC));
+//
+//  log_->info(GPL, xx, "0.5rcK: {}", rbVars_.rcK1);
+//  log_->info(GPL, xx, "1.0rcK: {}", rbVars_.rcK2);
+//  log_->info(GPL, xx, "2.0rcK: {}", rbVars_.rcK3);
+//  log_->info(GPL, xx, "5.0rcK: {}", rbVars_.rcK4);
+//
+//  float finalRC = (rbVars_.rcK1 * std::fmax(horAvg005RC, verAvg005RC)
+//                   + rbVars_.rcK2 * std::fmax(horAvg010RC, verAvg010RC)
+//                   + rbVars_.rcK3 * std::fmax(horAvg020RC, verAvg020RC)
+//                   + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
+//                  / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
+//
+//  log_->info(GPL, xx, "FinalRC: {}", finalRC);
+//  return finalRC;
+//}
 
 void RouteBase::increaseCounter()
 {

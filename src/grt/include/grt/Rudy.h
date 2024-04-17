@@ -82,6 +82,7 @@ class Rudy
   void setWireWidth(int wire_width) { wire_width_ = wire_width; }
 
   const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
+  int getTileSize() const { return tile_size_; }
   std::pair<int, int> getGridSize() const;
 
  private:
