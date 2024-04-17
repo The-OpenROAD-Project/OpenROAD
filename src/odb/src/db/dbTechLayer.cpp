@@ -36,10 +36,8 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerAreaRule.h"
@@ -61,6 +59,8 @@
 #include "dbTechLayerTwoWiresForbiddenSpcRule.h"
 #include "dbTechLayerWidthTableRule.h"
 #include "dbTechLayerWrongDirSpacingRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 

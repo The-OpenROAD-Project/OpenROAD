@@ -36,7 +36,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
@@ -50,6 +49,7 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
