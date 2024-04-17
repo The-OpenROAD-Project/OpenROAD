@@ -205,6 +205,8 @@ enum class frConstraintTypeEnum
   frcMetalWidthViaConstraint,
   frcLef58AreaConstraint,
   frcLef58KeepOutZoneConstraint,
+  frcLef58TwoWiresForbiddenSpcConstraint,
+  frcLef58ForbiddenSpcConstraint,
   frcSpacingRangeConstraint
 };
 

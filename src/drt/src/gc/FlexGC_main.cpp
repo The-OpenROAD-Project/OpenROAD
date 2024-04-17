@@ -902,6 +902,11 @@ void FlexGCWorker::Impl::checkMetalSpacing()
               checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
             }
           }
+          if (currLayer->hasForbiddenSpacingConstraints()) {
+            for (auto con : currLayer->getForbiddenSpacingConstraints()) {
+              checkForbiddenSpc_main(maxrect.get(), con);
+            }
+          }
         }
       }
       for (auto& sr : targetNet_->getSpecialSpcRects()) {
@@ -933,6 +938,11 @@ void FlexGCWorker::Impl::checkMetalSpacing()
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {
                 checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
+              }
+            }
+            if (currLayer->hasForbiddenSpacingConstraints()) {
+              for (auto con : currLayer->getForbiddenSpacingConstraints()) {
+                checkForbiddenSpc_main(maxrect.get(), con);
               }
             }
           }
