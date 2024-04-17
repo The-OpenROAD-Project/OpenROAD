@@ -350,17 +350,6 @@ target_link_libraries(openroad
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
-if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # mpl2 aborts with link error on darwin and par causes abseil link error at startup on apple silicon so do not link it.
-  target_link_libraries(openroad mpl2 par)
-  target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
-  target_compile_definitions(openroad PRIVATE ENABLE_PAR)
-  add_subdirectory(mpl2)
-  add_subdirectory(par)
-else()
-  message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
-endif()
-
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
   target_compile_definitions(openroad PRIVATE ENABLE_READLINE)

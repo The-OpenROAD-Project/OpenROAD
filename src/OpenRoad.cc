@@ -60,10 +60,7 @@
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
-#ifdef ENABLE_MPL2
-// mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
-#endif
 #include "dft/MakeDft.hh"
 #include "odb/cdl.h"
 #include "odb/db.h"
@@ -73,10 +70,7 @@
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
 #include "pad/MakeICeWall.h"
-#ifdef ENABLE_PAR
-// par causes abseil link error at startup on apple silicon
 #include "par/MakePartitionMgr.h"
-#endif
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -140,18 +134,14 @@ OpenRoad::~OpenRoad()
   deleteTritonCts(tritonCts_);
   deleteTapcell(tapcell_);
   deleteMacroPlacer(macro_placer_);
-#ifdef ENABLE_MPL2
   deleteMacroPlacer2(macro_placer2_);
-#endif
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
-#ifdef ENABLE_PAR
   deletePartitionMgr(partitionMgr_);
-#endif
   deletePdnGen(pdngen_);
   deleteICeWall(icewall_);
   deleteDistributed(distributer_);
@@ -199,17 +189,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   macro_placer_ = makeMacroPlacer();
-#ifdef ENABLE_MPL2
   macro_placer2_ = makeMacroPlacer2();
-#endif
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
-#ifdef ENABLE_PAR
   partitionMgr_ = makePartitionMgr();
-#endif
   pdngen_ = makePdnGen();
   icewall_ = makeICeWall();
   distributer_ = makeDistributed();
@@ -239,18 +225,14 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initTritonCts(this);
   initTapcell(this);
   initMacroPlacer(this);
-#ifdef ENABLE_MPL2
   initMacroPlacer2(this);
-#endif
   initOpenRCX(this);
   initICeWall(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
-#ifdef ENABLE_PAR
   initPartitionMgr(this);
-#endif
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);
@@ -647,16 +629,6 @@ bool OpenRoad::getGUICompileOption()
 bool OpenRoad::getChartsCompileOption()
 {
   return ENABLE_CHARTS;
-}
-
-bool OpenRoad::getMPL2CompileOption()
-{
-  return ENABLE_MPL2;
-}
-
-bool OpenRoad::getPARCompileOption()
-{
-  return ENABLE_PAR;
 }
 
 }  // namespace ord
