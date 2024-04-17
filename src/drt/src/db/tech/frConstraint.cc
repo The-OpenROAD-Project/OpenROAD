@@ -158,6 +158,8 @@ std::string frConstraint::getViolName() const
       return "TwoWiresForbiddenSpc";
     case frConstraintTypeEnum::frcLef58ForbiddenSpcConstraint:
       return "ForbiddenSpc";
+    case frConstraintTypeEnum::frcLef58EnclosureConstraint:
+      return "Lef58Enclosure";
   }
   return "";
 }

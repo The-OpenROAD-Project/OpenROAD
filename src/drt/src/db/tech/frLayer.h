@@ -719,6 +719,56 @@ class frLayer
     return lef58DefaultInterCutSpacingTableConstraint_;
   }
 
+  void addLef58EnclosureConstraint(frLef58EnclosureConstraint* con)
+  {
+    auto addToLef58EncConstraints
+        = [](std::vector<
+                 std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>&
+                 lef58EncConstraints,
+             frLef58EnclosureConstraint* con) {
+            int cutClassIdx = con->getCutClassIdx();
+            if (lef58EncConstraints.size() <= cutClassIdx) {
+              lef58EncConstraints.resize(cutClassIdx + 1);
+            }
+            lef58EncConstraints[cutClassIdx][con->getWidth()].push_back(con);
+          };
+    if (!con->isAboveOnly()) {
+      addToLef58EncConstraints(belowLef58EncConstraints_, con);
+    }
+    if (!con->isBelowOnly()) {
+      addToLef58EncConstraints(aboveLef58EncConstraints_, con);
+    }
+  }
+
+  bool hasLef58EnclosureConstraint(int cutClassIdx, bool above) const
+  {
+    auto& lef58EncConstraints
+        = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+    if (cutClassIdx < 0 || lef58EncConstraints.size() <= cutClassIdx) {
+      return false;
+    }
+    return !lef58EncConstraints.at(cutClassIdx).empty();
+  }
+
+  std::vector<frLef58EnclosureConstraint*>
+  getLef58EnclosureConstraints(int cutClassIdx, frCoord width, bool above) const
+  {
+    // initialize with empty vector
+    std::vector<frLef58EnclosureConstraint*> result;
+    // check class and size match first
+    if (hasLef58EnclosureConstraint(cutClassIdx, above)) {
+      auto& lef58EncConstraints
+          = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+      const auto& mmap = lef58EncConstraints.at(cutClassIdx);
+      auto it = mmap.upper_bound(width);
+      if (it != mmap.begin()) {
+        it--;
+        result = it->second;
+      }
+    }
+    return result;
+  }
+
   void setDrEolSpacingConstraint(frCoord width, frCoord space, frCoord within)
   {
     drEolCon_.eolWidth = width;
@@ -812,6 +862,10 @@ class frLayer
   std::vector<frLef58TwoWiresForbiddenSpcConstraint*>
       twForbiddenSpcConstraints_;
   std::vector<frLef58ForbiddenSpcConstraint*> forbiddenSpcConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      aboveLef58EncConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      belowLef58EncConstraints_;
   drEolSpacingConstraint drEolCon_;
 
   friend class io::Parser;

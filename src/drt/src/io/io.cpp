@@ -442,6 +442,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
     fnd->addViaRule(design_->getTech()->getViaRule(via->getName()), z);
   }
 }
+
 void io::Parser::setNDRs(odb::dbDatabase* db)
 {
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
@@ -459,6 +460,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
                               layer->getLayerNum() / 2 - 1));
   }
 }
+
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
                                frCoord& beginY,
@@ -1861,6 +1863,95 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto rptr = static_cast<frLef58KeepOutZoneConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addKeepOutZoneConstraint(rptr);
+  }
+  for (auto rule : layer->getTechLayerCutEnclosureRules()) {
+    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::EOL) {
+      logger_->warn(
+          DRT,
+          340,
+          "LEF58_ENCLOSURE EOL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT) {
+      logger_->warn(DRT,
+                    341,
+                    "LEF58_ENCLOSURE HORIZONTAL/VERTICAL is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isIncludeAbutted()) {
+      logger_->warn(DRT,
+                    342,
+                    "LEF58_ENCLOSURE INCLUDEABUTTED is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isOffCenterLine()) {
+      logger_->warn(DRT,
+                    343,
+                    "LEF58_ENCLOSURE OFFCENTERLINE is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isLengthValid()) {
+      logger_->warn(
+          DRT,
+          344,
+          "LEF58_ENCLOSURE LENGTH is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isExtraCutValid()) {
+      logger_->warn(
+          DRT,
+          345,
+          "LEF58_ENCLOSURE EXTRACUT is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isRedundantCutValid()) {
+      logger_->warn(DRT,
+                    346,
+                    "LEF58_ENCLOSURE REDUNDANTCUT is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isParallelValid()) {
+      logger_->warn(
+          DRT,
+          347,
+          "LEF58_ENCLOSURE PARALLEL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isConcaveCornersValid()) {
+      logger_->warn(DRT,
+                    348,
+                    "LEF58_ENCLOSURE CONCAVECORNERS is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->isCutClassValid()) {
+      logger_->warn(DRT,
+                    349,
+                    "LEF58_ENCLOSURE with no CUTCLASS is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58EnclosureConstraint>(rule);
+    auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());
+    rptr->setCutClassIdx(
+        tmpLayer->getCutClassIdx(rule->getCutClass()->getName()));
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58EnclosureConstraint(rptr);
   }
 }
 
@@ -3489,6 +3580,7 @@ void io::Writer::updateTrackAssignment(odb::dbBlock* block)
     }
   }
 }
+
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 {
   for (auto ap : block->getAccessPoints()) {
