@@ -32,8 +32,8 @@
 
 #include <algorithm>
 
-#include "gseq.h"
-#include "wire.h"
+#include "odb/gseq.h"
+#include "odb/wire.h"
 
 namespace rcx {
 CoupleOptions coupleOptionsNull{};

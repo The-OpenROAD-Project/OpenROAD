@@ -31,10 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "name.h"
+#include "odb/wire.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 

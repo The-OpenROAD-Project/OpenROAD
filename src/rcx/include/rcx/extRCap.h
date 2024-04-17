@@ -34,16 +34,16 @@
 
 #include <map>
 
-#include "db.h"
-#include "dbExtControl.h"
-#include "dbShape.h"
-#include "dbUtil.h"
 #include "ext2dBox.h"
 #include "extprocess.h"
-#include "gseq.h"
-#include "odb.h"
-#include "util.h"
-#include "wire.h"
+#include "odb/db.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbShape.h"
+#include "odb/dbUtil.h"
+#include "odb/gseq.h"
+#include "odb/odb.h"
+#include "odb/util.h"
+#include "odb/wire.h"
 
 namespace utl {
 class Logger;
