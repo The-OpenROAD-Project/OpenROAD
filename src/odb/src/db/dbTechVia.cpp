@@ -32,7 +32,6 @@
 
 #include "dbTechVia.h"
 
-#include "db.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -42,7 +41,8 @@
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbTechViaGenerateRule.h"
-#include "dbViaParams.h"
+#include "odb/db.h"
+#include "odb/dbViaParams.h"
 
 namespace odb {
 

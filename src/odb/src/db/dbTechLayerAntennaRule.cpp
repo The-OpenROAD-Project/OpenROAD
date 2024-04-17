@@ -34,14 +34,14 @@
 
 #include <spdlog/fmt/ostr.h>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/lefout.h"
 
 namespace odb {
 

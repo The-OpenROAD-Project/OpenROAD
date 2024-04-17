@@ -30,9 +30,9 @@
 #include <vector>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace lefTechLayerCutSpacingTable {
 

@@ -32,7 +32,6 @@
 
 #include "dbTechLayerRule.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -40,6 +39,7 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
+#include "odb/db.h"
 
 namespace odb {
 

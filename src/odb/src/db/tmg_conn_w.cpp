@@ -34,9 +34,9 @@
 #include <cstdlib>
 #include <unordered_set>
 
-#include "db.h"
-#include "dbShape.h"
-#include "dbWireCodec.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbWireCodec.h"
 #include "tmg_conn.h"
 #include "utl/Logger.h"
 
