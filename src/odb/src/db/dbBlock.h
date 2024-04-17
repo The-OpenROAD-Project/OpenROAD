@@ -39,11 +39,11 @@
 #include "dbHashTable.h"
 #include "dbIntHashTable.h"
 #include "dbPagedVector.h"
-#include "dbTransform.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 
