@@ -37,15 +37,12 @@
 #include <map>
 #include <string>
 
-#include "db.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbChip.h"
-#include "dbExtControl.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
 #include "dbLib.h"
@@ -54,11 +51,14 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
-#include "dbStream.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbWire.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbStream.h"
 #include "utl/Logger.h"
 
 namespace odb {

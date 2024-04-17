@@ -33,7 +33,7 @@
 //Generator Code Begin Header
 #pragma once
 
-#include "odb.h"
+#include "odb/odb.h"
 #include "dbCore.h"
 
 {% for include in klass.h_includes %}

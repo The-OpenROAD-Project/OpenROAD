@@ -38,7 +38,7 @@
 #include "dbMatrix.h"
 #include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

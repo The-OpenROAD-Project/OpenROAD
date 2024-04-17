@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,6 +43,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbLogicPort>;
 
