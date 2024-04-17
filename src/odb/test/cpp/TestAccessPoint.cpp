@@ -2,9 +2,9 @@
 #include <boost/test/included/unit_test.hpp>
 #include <fstream>
 
-#include "db.h"
 #include "env.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {

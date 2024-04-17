@@ -33,10 +33,10 @@
 #include <map>
 #include <vector>
 
+#include "odb/wire.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
