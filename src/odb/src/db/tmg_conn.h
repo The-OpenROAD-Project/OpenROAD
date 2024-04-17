@@ -36,9 +36,9 @@
 #include <memory>
 #include <vector>
 
-#include "db.h"
-#include "dbWireCodec.h"
-#include "geom.h"
+#include "odb/db.h"
+#include "odb/dbWireCodec.h"
+#include "odb/geom.h"
 
 namespace odb {
 

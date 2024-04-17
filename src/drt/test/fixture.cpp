@@ -565,6 +565,27 @@ void Fixture::makeLef58ForbiddenSpc(
   design->getTech()->addUConstraint(std::move(con));
 }
 
+frLef58EnclosureConstraint* Fixture::makeLef58EnclosureConstrainut(
+    frLayerNum layer_num,
+    int cut_class_idx,
+    frCoord width,
+    frCoord firstOverhang,
+    frCoord secondOverhang)
+{
+  auto layer = design->getTech()->getLayer(layer_num);
+  auto dbRule = odb::dbTechLayerCutEnclosureRule::create(layer->getDbLayer());
+  auto con = std::make_unique<frLef58EnclosureConstraint>(dbRule);
+  auto rptr = con.get();
+  rptr->setCutClassIdx(cut_class_idx);
+  dbRule->setMinWidth(width);
+  dbRule->setFirstOverhang(firstOverhang);
+  dbRule->setSecondOverhang(secondOverhang);
+  dbRule->setType(odb::dbTechLayerCutEnclosureRule::DEFAULT);
+  layer->addLef58EnclosureConstraint(rptr);
+  design->getTech()->addUConstraint(std::move(con));
+  return rptr;
+}
+
 void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
                                    odb::dbMetalWidthViaMap* dbRule)
 {

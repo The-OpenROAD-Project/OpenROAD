@@ -44,7 +44,7 @@
 
 #include "CtsObserver.h"
 #include "Util.h"
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace stt {

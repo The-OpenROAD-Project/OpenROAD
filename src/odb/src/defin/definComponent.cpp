@@ -32,15 +32,16 @@
 
 #include "definComponent.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
-#include "db.h"
-#include "dbTransform.h"
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definComponent::definComponent()

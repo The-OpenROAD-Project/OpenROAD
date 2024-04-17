@@ -32,7 +32,7 @@
 
 #include <cstdio>
 
-#include "wire.h"
+#include "odb/wire.h"
 
 namespace odb {
 

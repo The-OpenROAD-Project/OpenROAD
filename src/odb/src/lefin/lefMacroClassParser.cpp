@@ -28,9 +28,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefMacroPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace lefMacroClassType {
 

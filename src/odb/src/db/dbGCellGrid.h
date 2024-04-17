@@ -39,8 +39,8 @@
 // User Code Begin Includes
 #include <map>
 
-#include "dbMatrix.h"
 #include "dbVector.h"
+#include "odb/dbMatrix.h"
 // User Code End Includes
 
 namespace odb {
