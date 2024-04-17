@@ -30,15 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbWire.h"
 #include "dbWireCodec.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {

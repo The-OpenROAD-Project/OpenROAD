@@ -34,11 +34,9 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCapNode.h"
@@ -46,7 +44,6 @@
 #include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbExtControl.h"
 #include "dbGroup.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
@@ -61,13 +58,16 @@
 #include "dbRSegItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbSet.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {

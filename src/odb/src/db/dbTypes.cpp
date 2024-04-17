@@ -32,11 +32,10 @@
 
 #include "odb/dbTypes.h"
 
-#include <ctype.h>
-
+#include <cctype>
 #include <cstring>
 
-#include "dbId.h"
+#include "odb/dbId.h"
 
 namespace odb {
 

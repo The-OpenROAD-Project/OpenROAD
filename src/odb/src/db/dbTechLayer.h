@@ -35,9 +35,9 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "dbMatrix.h"
-#include "dbTypes.h"
 #include "dbVector.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbTypes.h"
 #include "odb/odb.h"
 
 namespace odb {
