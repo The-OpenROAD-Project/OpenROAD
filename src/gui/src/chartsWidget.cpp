@@ -60,7 +60,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       stagui_(nullptr),
       mode_menu_(new QComboBox(this)),
       chart_(new QChart),
-      display_(new QChartView(chart_, this)),
+      display_(new HistogramView(chart_, this)),
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
@@ -99,6 +99,10 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changeMode);
+  connect(display_,
+          &HistogramView::barIndex,
+          this,
+          &ChartsWidget::emitEndPointsInBucket);
 #else
   label_->setText("QtCharts is not installed.");
   label_->setAlignment(Qt::AlignCenter);
@@ -185,10 +189,6 @@ void ChartsWidget::setSlackMode()
 
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
-  connect(
-      neg_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
-  connect(
-      pos_set, &QBarSet::clicked, this, &ChartsWidget::emitEndPointsInBucket);
 
   for (int i = 0; i < buckets_->negative.size(); ++i) {
     *neg_set << buckets_->negative[i].size();
@@ -543,6 +543,44 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
   stagui_ = std::make_unique<STAGuiInterface>(sta_);
+}
+
+////// HistogramView ///////
+HistogramView::HistogramView(QChart* chart, QWidget* parent)
+    : QChartView(chart, parent)
+{
+}
+
+void HistogramView::mousePressEvent(QMouseEvent* event)
+{
+  // There's only one series for the slack histogram mode.
+  QStackedBarSeries* series
+      = static_cast<QStackedBarSeries*>(chart()->series().front());
+
+  const QPointF series_value = chart()->mapToValue(event->pos(), series);
+
+  // Using QValueAxis for the x axis results in an offset of half unit between
+  // the chart's origin (not the widget's origin, the actual x,y origin from
+  // the chart) and the first bar.
+  const float attachment_offset = 0.5;
+  const float index_mapped_x
+      = static_cast<float>(series_value.x()) + attachment_offset;
+  const float index_mapped_y = static_cast<float>(series_value.y());
+
+  bool valid_horizontal_range
+      = index_mapped_x >= 0
+        && index_mapped_x <= series->barSets().front()->count();
+
+  QValueAxis* y_axis
+      = static_cast<QValueAxis*>(chart()->axes(Qt::Vertical).first());
+
+  bool valid_vertical_range
+      = index_mapped_y >= 0
+        && index_mapped_y <= static_cast<float>(y_axis->max());
+
+  if (valid_horizontal_range && valid_vertical_range) {
+    emit barIndex(static_cast<int>(index_mapped_x));
+  }
 }
 
 #endif

@@ -69,6 +69,19 @@ struct Buckets
   std::deque<std::vector<const sta::Pin*>> negative;
 };
 
+class HistogramView : public QChartView
+{
+  Q_OBJECT
+
+ public:
+  HistogramView(QChart* chart, QWidget* parent);
+
+  virtual void mousePressEvent(QMouseEvent* event) override;
+
+ signals:
+  void barIndex(int bar_index);
+};
+
 #endif
 
 class ChartsWidget : public QDockWidget
@@ -140,7 +153,7 @@ class ChartsWidget : public QDockWidget
 
   QComboBox* mode_menu_;
   QChart* chart_;
-  QChartView* display_;
+  HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
