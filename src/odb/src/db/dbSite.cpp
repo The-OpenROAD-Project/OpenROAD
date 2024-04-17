@@ -32,11 +32,11 @@
 
 #include "dbSite.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 namespace odb {
 

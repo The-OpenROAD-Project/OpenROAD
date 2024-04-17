@@ -32,13 +32,13 @@
 
 #include "dbTechSameNetRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
+#include "odb/db.h"
 
 namespace odb {
 

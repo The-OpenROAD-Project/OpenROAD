@@ -34,11 +34,11 @@
 
 #include <string>
 
-#include "dbTypes.h"
 #include "definBase.h"
 #include "definPolygon.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

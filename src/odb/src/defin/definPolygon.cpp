@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-#include "poly_decomp.h"
+#include "odb/poly_decomp.h"
 
 namespace odb {
 

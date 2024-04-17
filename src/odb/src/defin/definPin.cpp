@@ -36,9 +36,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "db.h"
-#include "dbShape.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 namespace odb {
 

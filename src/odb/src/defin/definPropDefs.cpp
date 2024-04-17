@@ -32,7 +32,7 @@
 
 #include "definPropDefs.h"
 
-#include "db.h"
+#include "odb/db.h"
 
 namespace odb {
 

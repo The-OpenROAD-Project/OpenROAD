@@ -32,7 +32,6 @@
 
 #include "dbJournal.h"
 
-#include "db.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
@@ -41,6 +40,7 @@
 #include "dbInst.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

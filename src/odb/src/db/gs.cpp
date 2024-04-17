@@ -33,7 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "gseq.h"
+#include "odb/gseq.h"
 
 namespace odb {
 

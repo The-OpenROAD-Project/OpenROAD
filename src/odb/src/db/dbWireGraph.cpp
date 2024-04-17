@@ -33,8 +33,8 @@
 #include "odb/dbWireGraph.h"
 
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "odb/db.h"
+#include "odb/dbWireCodec.h"
 
 namespace odb {
 
