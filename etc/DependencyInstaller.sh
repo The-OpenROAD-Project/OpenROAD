@@ -456,7 +456,8 @@ _installOpenSusePackages() {
 _installHomebrewPackage() {
     package=$1
     commit=$2
-    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
+    dir=$3
+    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${dir}${package}.rb
     curl -L ${url} > ${package}.rb
 
     if brew list "${package}" &> /dev/null; then
@@ -499,9 +500,11 @@ EOF
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
     # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
+    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b" ""
     # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0" ""
+    # Install or-tools 9.9_1
+    _installHomebrewPackage "or-tools" "f8c74e18f642db76edc2160841cb580b6b12014c" "o/"
 }
 
 _installDebianCleanUp() {
@@ -727,7 +730,6 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
