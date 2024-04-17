@@ -35,11 +35,11 @@
 #include <cstring>
 #include <new>
 
-#include "ZException.h"
 #include "dbDatabase.h"
-#include "dbDiff.h"
-#include "dbStream.h"
 #include "dbTable.h"
+#include "odb/ZException.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 

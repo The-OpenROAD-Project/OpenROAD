@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbViaParams.h"
+#include "odb/dbViaParams.h"
 
-#include "db.h"
-#include "dbDiff.h"
+#include "odb/db.h"
+#include "odb/dbDiff.h"
 
 namespace odb {
 

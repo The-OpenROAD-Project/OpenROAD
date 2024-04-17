@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "dbIterator.h"
-#include "odb.h"
+#include "odb/dbIterator.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -30,13 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbTypes.h"
+#include "odb/dbTypes.h"
 
-#include <ctype.h>
-
+#include <cctype>
 #include <cstring>
 
-#include "dbId.h"
+#include "odb/dbId.h"
 
 namespace odb {
 

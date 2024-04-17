@@ -47,13 +47,10 @@ namespace ord {
 
 class OpenRoad;
 
-rsz::Resizer *
-makeResizer();
+rsz::Resizer* makeResizer();
 
-void
-deleteResizer(rsz::Resizer *resizer);
+void deleteResizer(rsz::Resizer* resizer);
 
-void
-initResizer(OpenRoad *openroad);
+void initResizer(OpenRoad* openroad);
 
-} // namespace ord
+}  // namespace ord

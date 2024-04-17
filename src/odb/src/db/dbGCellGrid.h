@@ -33,9 +33,9 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "db.h"
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
 

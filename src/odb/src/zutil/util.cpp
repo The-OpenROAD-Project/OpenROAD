@@ -30,13 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "util.h"
+#include "odb/util.h"
 
 #include <map>
 #include <numeric>
 #include <string>
 
-#include "db.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"

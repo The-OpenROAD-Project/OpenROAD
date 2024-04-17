@@ -293,6 +293,10 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcLef58KeepOutZoneConstraint";
     case frConstraintTypeEnum::frcSpacingRangeConstraint:
       return os << "frcSpacingRangeConstraint";
+    case frConstraintTypeEnum::frcLef58TwoWiresForbiddenSpcConstraint:
+      return os << "frcLef58TwoWiresForbiddenSpcConstraint";
+    case frConstraintTypeEnum::frcLef58ForbiddenSpcConstraint:
+      return os << "frcLef58ForbiddenSpcConstraint";
   }
   return os << "Bad frConstraintTypeEnum";
 }

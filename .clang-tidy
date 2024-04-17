@@ -57,6 +57,7 @@ Checks: >
   -misc-non-private-member-variables-in-classes,
   -misc-redundant-expression,
   -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
 
 CheckOptions:
    - key:             google-runtime-int.TypeSuffix

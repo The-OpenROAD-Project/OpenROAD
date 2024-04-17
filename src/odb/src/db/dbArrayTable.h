@@ -34,10 +34,10 @@
 
 #include <vector>
 
-#include "ZException.h"
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/odb.h"
 
 namespace odb {
 

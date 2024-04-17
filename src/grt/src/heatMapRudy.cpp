@@ -63,7 +63,8 @@ bool RUDYDataSource::populateMap()
   if (!getBlock()) {
     return false;
   }
-  rudy_ = std::make_unique<grt::Rudy>(db_->getChip()->getBlock(), grouter_);
+
+  rudy_ = grouter_->getRudy();
 
   const auto& [x_grid_size, y_grid_size] = rudy_->getGridSize();
   if (x_grid_size == 0 || y_grid_size == 0) {

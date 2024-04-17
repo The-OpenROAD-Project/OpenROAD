@@ -1396,6 +1396,30 @@ BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
   BOOST_TEST(markers.size() == 1);
 }
 
+BOOST_AUTO_TEST_CASE(forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerForbiddenSpacingRule::create(db_layer);
+  rule->setForbiddenSpacing({550, 800});
+  rule->setPrl(1);
+  rule->setWidth(300);
+  rule->setTwoEdges(300);
+  makeLef58ForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 700}, {500, 700});
+  // wire in between
+  makePathseg(n1, 2, {0, 300}, {500, 300});
+  // wire above
+  makePathseg(n1, 2, {0, 900}, {500, 900});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 }  // namespace drt

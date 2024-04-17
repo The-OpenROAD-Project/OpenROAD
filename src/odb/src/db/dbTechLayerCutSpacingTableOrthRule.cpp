@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbTechLayer.h"
 // User Code End Includes
