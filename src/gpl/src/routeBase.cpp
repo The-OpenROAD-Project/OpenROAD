@@ -294,7 +294,7 @@ void RouteBase::resetRoutabilityResources()
 {
   inflatedAreaDelta_ = 0;
 
-  grouter_->clear();
+  //grouter_->clear();
   tg_.reset();
 }
 
