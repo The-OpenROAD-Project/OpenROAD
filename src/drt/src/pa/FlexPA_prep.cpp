@@ -2467,7 +2467,6 @@ void FlexPA::genPatterns_reset(
   nodes[endNodeIdx].setNodeCost(0);
 }
 
-// objs must hold at least 1 obj
 bool FlexPA::genPatterns_gc(
     const std::set<frBlockObject*>& targetObjs,
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
@@ -2478,7 +2477,7 @@ bool FlexPA::genPatterns_gc(
     if (VERBOSE > 1) {
       logger_->warn(DRT, 89, "genPattern_gc objs empty.");
     }
-    return false;
+    return true;
   }
 
   FlexGCWorker gcWorker(getTech(), logger_);
