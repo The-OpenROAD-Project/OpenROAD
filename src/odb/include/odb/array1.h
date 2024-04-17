@@ -91,7 +91,7 @@ class Ath__array1D
     }
     return size_;
   }
-  T& get(int i)
+  T& get(const int i)
   {
     assert((i >= 0) && (i < current_));
 
