@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbModule.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbModInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 // User Code Begin Includes
 #include <string>
 

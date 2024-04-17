@@ -32,16 +32,16 @@
 
 #include "dbRSeg.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbJournal.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {

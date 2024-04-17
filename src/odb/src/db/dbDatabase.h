@@ -35,7 +35,7 @@
 #include <iostream>
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;

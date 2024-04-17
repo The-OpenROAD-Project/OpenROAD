@@ -34,12 +34,10 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbArrayTable.h"
 #include "dbArrayTable.hpp"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbChip.h"
 #include "dbCommon.h"
@@ -58,10 +56,12 @@
 #include "dbNet.h"
 #include "dbNullIterator.h"
 #include "dbRegion.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {

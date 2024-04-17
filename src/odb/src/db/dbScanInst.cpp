@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbScanInst.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbScanPin.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbScanInst>;
 

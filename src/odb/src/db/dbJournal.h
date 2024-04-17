@@ -33,7 +33,7 @@
 #pragma once
 
 #include "dbJournalLog.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;

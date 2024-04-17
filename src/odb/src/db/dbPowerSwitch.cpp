@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbPowerSwitch.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,6 +43,7 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 #include "utl/Logger.h"
 namespace odb {
 template class dbTable<_dbPowerSwitch>;

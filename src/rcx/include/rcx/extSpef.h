@@ -34,12 +34,12 @@
 
 #include <map>
 
-#include "array1.h"
-#include "db.h"
-#include "dbShape.h"
 #include "extRCap.h"
-#include "odb.h"
-#include "parse.h"
+#include "odb/array1.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/odb.h"
+#include "odb/parse.h"
 
 namespace utl {
 class Logger;

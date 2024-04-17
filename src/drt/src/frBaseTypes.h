@@ -207,6 +207,7 @@ enum class frConstraintTypeEnum
   frcLef58KeepOutZoneConstraint,
   frcLef58TwoWiresForbiddenSpcConstraint,
   frcLef58ForbiddenSpcConstraint,
+  frcLef58EnclosureConstraint,
   frcSpacingRangeConstraint
 };
 

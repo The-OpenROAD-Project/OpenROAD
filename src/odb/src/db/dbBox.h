@@ -34,10 +34,10 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

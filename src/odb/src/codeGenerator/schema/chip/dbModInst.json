@@ -51,6 +51,6 @@
     "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp", "dbModITerm.h"],
     "h_includes": [
 	"dbVector.h",
-	"dbSet.h"
+	"odb/dbSet.h"
     ]
 }
