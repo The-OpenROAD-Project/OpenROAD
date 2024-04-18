@@ -32,9 +32,9 @@
 
 #include <cstdio>
 
-#include "odb/wire.h"
+#include "wire.h"
 
-namespace odb {
+namespace rcx {
 
 Ath__box::Ath__box()
 {
@@ -349,7 +349,7 @@ int Ath__wire::getShapeProperty(int id)
   }
   char buff[64];
   sprintf(buff, "%d", id);
-  dbIntProperty* p = dbIntProperty::find(net, buff);
+  auto* p = odb::dbIntProperty::find(net, buff);
   if (p == nullptr) {
     return 0;
   }
@@ -361,12 +361,12 @@ dbNet* Ath__wire::getNet()
   Ath__gridTable* gtb = _track->getGrid()->getGridTable();
   dbBlock* block = gtb->getBlock();
   if (_otherId == 0) {
-    return (dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
+    return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   }
   if (gtb->usingDbSdb()) {
     return dbNet::getNet(block, _boxId);
   }
-  return (dbRSeg::getRSeg(block, _boxId)->getNet());
+  return (odb::dbRSeg::getRSeg(block, _boxId)->getNet());
 }
 uint Ath__wire::getBoxId()
 {
@@ -3160,4 +3160,4 @@ void Ath__gridTable::getIds(uint wid, uint* id1, uint* id2, uint* wtype)
   *id2 = w->_otherId;
 }
 
-}  // namespace odb
+}  // namespace rcx

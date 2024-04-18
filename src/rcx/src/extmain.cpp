@@ -45,7 +45,6 @@ using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbTech;
 using odb::dbTechLayer;
-using odb::SEQ;
 using utl::RCX;
 
 void extMain::init(odb::dbDatabase* db, Logger* logger)

@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2019, Nefelus Inc
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,16 +29,53 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include <array>
+#pragma once
+
+#include <stdio.h>
+#include <string.h>
+
+#include "odb/util.h"
 
 namespace rcx {
 
-// CoupleOptions seriously needs to be rewriten to use a class with named
-// members. -cherry 05/09/2021
-using CoupleOptions = std::array<int, 21>;
-using CoupleAndCompute = void (*)(CoupleOptions&, void*);
+using uint = unsigned int;
+
+bool Ath__intersect(int X1, int DX, int x1, int dx, int* ix1, int* ix2);
+
+// TODO center line with width and length and direction
+
+class Ath__box
+{
+ public:
+  uint _layer : 4;
+  uint _valid : 1;
+  uint _id : 28;
+
+ public:
+  int _xlo;
+  int _ylo;
+  int _xhi;
+  int _yhi;
+  Ath__box* _next;
+
+ public:
+  Ath__box();
+  uint getDir();
+  int getYhi(int bound);
+  int getXhi(int bound);
+  int getXlo(int bound);
+  int getYlo(int bound);
+  uint getWidth(uint* dir);
+  Ath__box(int x1, int y1, int x2, int y2, uint units = 1);
+  void set(int x1, int y1, int x2, int y2, uint units = 1);
+  uint getDX();
+  uint getDY();
+  uint getLength();
+  void invalidateBox();
+  void set(Ath__box* bb);
+  bool outside(int x1, int y1, int x2, int y2);
+  uint getOwner();
+};
 
 }  // namespace rcx
