@@ -481,7 +481,10 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
   odb::dbInst* diode_inst
       = odb::dbInst::create(block_, diode_master, diode_inst_name.c_str());
 
-  bool legally_placed = setDiodeLoc(diode_inst, gate, site_width, fixed_insts);
+  bool place_vertically
+      = violation_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  bool legally_placed = setDiodeLoc(
+      diode_inst, gate, site_width, place_vertically, fixed_insts);
 
   odb::Rect inst_rect = diode_inst->getBBox()->getBox();
 
@@ -553,18 +556,21 @@ void RepairAntennas::setInstsPlacementStatus(
 bool RepairAntennas::setDiodeLoc(odb::dbInst* diode_inst,
                                  odb::dbITerm* gate,
                                  int site_width,
+                                 const bool place_vertically,
                                  r_tree& fixed_insts)
 {
   const int max_legalize_itr = 50;
   bool place_at_left = true;
+  bool place_at_top = false;
   int left_offset = 0, right_offset = 0;
-  int offset;
+  int top_offset = 0, bottom_offset = 0;
+  int horizontal_offset = 0, vertical_offset = 0;
   bool legally_placed = false;
 
-  int inst_loc_x, inst_loc_y, inst_width;
+  int inst_loc_x, inst_loc_y, inst_width, inst_height;
   odb::dbOrientType inst_orient;
   getInstancePlacementData(
-      gate, inst_loc_x, inst_loc_y, inst_width, inst_orient);
+      gate, inst_loc_x, inst_loc_y, inst_width, inst_height, inst_orient);
 
   odb::dbBox* diode_bbox = diode_inst->getBBox();
   int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
@@ -574,20 +580,29 @@ bool RepairAntennas::setDiodeLoc(odb::dbInst* diode_inst,
   // other fixed cells
   int legalize_itr = 0;
   while (!legally_placed && legalize_itr < max_legalize_itr) {
-    computeHorizontalOffset(diode_width,
-                            inst_width,
-                            site_width,
-                            left_offset,
-                            right_offset,
-                            place_at_left,
-                            offset);
+    if (place_vertically) {
+      computeVerticalOffset(inst_height,
+                            top_offset,
+                            bottom_offset,
+                            place_at_top,
+                            vertical_offset);
+    } else {
+      computeHorizontalOffset(diode_width,
+                              inst_width,
+                              site_width,
+                              left_offset,
+                              right_offset,
+                              place_at_left,
+                              horizontal_offset);
+    }
     diode_inst->setOrient(inst_orient);
     if (sink_inst->isBlock() || sink_inst->isPad()) {
-      odb::dbOrientType orient
-          = getRowOrient(odb::Point(inst_loc_x + offset, inst_loc_y));
+      odb::dbOrientType orient = getRowOrient(odb::Point(
+          inst_loc_x + horizontal_offset, inst_loc_y + vertical_offset));
       diode_inst->setOrient(orient);
     }
-    diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
+    diode_inst->setLocation(inst_loc_x + horizontal_offset,
+                            inst_loc_y + vertical_offset);
 
     legally_placed = checkDiodeLoc(diode_inst, site_width, fixed_insts);
     legalize_itr++;
@@ -600,6 +615,7 @@ void RepairAntennas::getInstancePlacementData(odb::dbITerm* gate,
                                               int& inst_loc_x,
                                               int& inst_loc_y,
                                               int& inst_width,
+                                              int& inst_height,
                                               odb::dbOrientType& inst_orient)
 {
   odb::dbInst* sink_inst = gate->getInst();
@@ -607,6 +623,7 @@ void RepairAntennas::getInstancePlacementData(odb::dbITerm* gate,
   inst_loc_x = sink_bbox.xMin();
   inst_loc_y = sink_bbox.yMin();
   inst_width = sink_bbox.xMax() - sink_bbox.xMin();
+  inst_height = sink_bbox.yMax() - sink_bbox.yMin();
   inst_orient = sink_inst->getOrient();
 }
 

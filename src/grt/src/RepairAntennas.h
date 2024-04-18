@@ -132,11 +132,13 @@ class RepairAntennas
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
                    int site_width,
+                   const bool place_vertically,
                    r_tree& fixed_insts);
   void getInstancePlacementData(odb::dbITerm* gate,
                                 int& inst_loc_x,
                                 int& inst_loc_y,
                                 int& inst_width,
+                                int& inst_height,
                                 odb::dbOrientType& inst_orient);
   bool checkDiodeLoc(odb::dbInst* diode_inst,
                      const int site_width,
