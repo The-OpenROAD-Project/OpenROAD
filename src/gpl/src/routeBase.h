@@ -42,7 +42,6 @@ class dbDatabase;
 
 namespace grt {
 class GlobalRouter;
-class Rudy;
 }
 
 namespace utl {

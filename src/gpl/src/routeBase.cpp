@@ -310,9 +310,7 @@ void RouteBase::init()
 
 void RouteBase::getRudyResult()
 {
-  //TODO make sure this is necessary, if not getRudyResult() is not necessary also.
   nbc_->updateDbGCells();
-
   updateRudyRoute();
 }
 
