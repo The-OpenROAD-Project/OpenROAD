@@ -39,6 +39,7 @@
 #include <QPushButton>
 
 #include "gui/gui.h"
+#include "gui_utils.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
 Q_DECLARE_METATYPE(gui::Descriptor::Editor);
@@ -632,6 +633,7 @@ Inspector::Inspector(const SelectionSet& selected,
       button_prev_(
           new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
+      commands_menu_(new QMenu("Commands Menu", this)),
       highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings
@@ -678,6 +680,7 @@ Inspector::Inspector(const SelectionSet& selected,
   connect(button_next_, &QPushButton::pressed, this, &Inspector::selectNext);
 
   view_->setMouseTracking(true);
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(view_, &ObjectTree::entered, this, &Inspector::focusIndex);
 
   connect(view_, &ObjectTree::viewportEntered, this, &Inspector::defocus);
@@ -687,6 +690,44 @@ Inspector::Inspector(const SelectionSet& selected,
                            * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
   connect(&mouse_timer_, &QTimer::timeout, this, &Inspector::indexClicked);
+
+  setCommandsMenu();
+}
+
+void Inspector::setCommandsMenu()
+{
+  connect(view_,
+          &ObjectTree::customContextMenuRequested,
+          this,
+          &Inspector::showCommandsMenu);
+
+  connect(commands_menu_->addAction("Report Path"),
+          &QAction::triggered,
+          [this] { writePathReportCommand(); });
+}
+
+void Inspector::showCommandsMenu(const QPoint& pos)
+{
+  clicked_index_ = view_->indexAt(pos);
+
+  QStandardItem* item = model_->itemFromIndex(clicked_index_);
+  Selected selected
+      = item->data(EditorItemDelegate::selected_).value<Selected>();
+
+  if (selected) {
+    if (selected.getTypeName() == "ITerm") {
+      report_text_ = selected.getName();
+      commands_menu_->popup(view_->viewport()->mapToGlobal(pos));
+    }
+  }
+}
+
+void Inspector::writePathReportCommand()
+{
+  QString command = "report_checks -through ";
+  command += Utils::wrapInCurly(QString::fromStdString(report_text_));
+
+  emit setCommand(command);
 }
 
 void Inspector::adjustHeaders()

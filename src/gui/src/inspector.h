@@ -35,6 +35,7 @@
 #include <QDockWidget>
 #include <QItemDelegate>
 #include <QLabel>
+#include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -214,6 +215,8 @@ class Inspector : public QDockWidget
   void addHighlight(const SelectionSet& selection);
   void removeHighlight(const QList<const Selected*>& selected);
 
+  void setCommand(const QString& command);
+
  public slots:
   void inspect(const Selected& object);
   void clicked(const QModelIndex& index);
@@ -235,6 +238,8 @@ class Inspector : public QDockWidget
   void indexClicked();
   void indexDoubleClicked(const QModelIndex& index);
 
+  void showCommandsMenu(const QPoint& pos);
+
  private:
   void handleAction(QWidget* action);
   void loadActions();
@@ -248,6 +253,9 @@ class Inspector : public QDockWidget
   void makeAction(const Descriptor::Action& action);
 
   void navigateBack();
+
+  void setCommandsMenu();
+  void writePathReportCommand();
 
   // The columns in the tree view
   enum Column
@@ -269,6 +277,9 @@ class Inspector : public QDockWidget
   QLabel* selected_itr_label_;
   QTimer mouse_timer_;
   QModelIndex clicked_index_;
+  QMenu* commands_menu_;
+
+  std::string report_text_;
 
   const HighlightSet& highlighted_;
 
