@@ -440,9 +440,14 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
       if (violation.diode_count_per_gate > 0) {
         for (odb::dbITerm* gate : violation.gates) {
           for (int j = 0; j < violation.diode_count_per_gate; j++) {
-            odb::dbTechLayer* violation_layer = tech->findRoutingLayer(violation.routing_level);
-            insertDiode(
-                db_net, diode_mterm, gate, site_width, fixed_insts, violation_layer);
+            odb::dbTechLayer* violation_layer
+                = tech->findRoutingLayer(violation.routing_level);
+            insertDiode(db_net,
+                        diode_mterm,
+                        gate,
+                        site_width,
+                        fixed_insts,
+                        violation_layer);
             inserted_diodes = true;
           }
         }
@@ -475,12 +480,9 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
       = "ANTENNA_" + std::to_string(unique_diode_index_++);
   odb::dbInst* diode_inst
       = odb::dbInst::create(block_, diode_master, diode_inst_name.c_str());
-  odb::dbITerm* diode_iterm
-      = diode_inst->findITerm(diode_mterm->getConstName());
 
-  const odb::Rect& core_area = block_->getCoreArea();
-
-  bool legally_placed = setDiodePlacement(diode_inst, gate, site_width, fixed_insts);
+  bool legally_placed
+      = setDiodePlacement(diode_inst, gate, site_width, fixed_insts);
 
   odb::Rect inst_rect = diode_inst->getBBox()->getBox();
 
@@ -491,6 +493,7 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
 
   // allow detailed placement to move diodes with geometry out of the core area,
   // or near macro pins (can be placed out of row), or illegal placed diodes
+  const odb::Rect& core_area = block_->getCoreArea();
   odb::dbInst* sink_inst = gate->getInst();
   if (core_area.contains(inst_rect) && !sink_inst->getMaster()->isBlock()
       && legally_placed) {
@@ -499,6 +502,8 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
     diode_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
+  odb::dbITerm* diode_iterm
+      = diode_inst->findITerm(diode_mterm->getConstName());
   diode_iterm->connect(net);
   diode_insts_.push_back(diode_inst);
 
@@ -546,27 +551,26 @@ void RepairAntennas::setInstsPlacementStatus(
   }
 }
 
-bool RepairAntennas::setDiodePlacement(odb::dbInst* diode_inst, odb::dbITerm* gate, int site_width, r_tree& fixed_insts)
+bool RepairAntennas::setDiodePlacement(odb::dbInst* diode_inst,
+                                       odb::dbITerm* gate,
+                                       int site_width,
+                                       r_tree& fixed_insts)
 {
   const int max_legalize_itr = 50;
   bool place_at_left = true;
-  int left_offset = 0;
-  int right_offset = 0;
+  int left_offset = 0, right_offset = 0;
   int offset;
   bool legally_placed = false;
-  std::vector<value> overlap_insts;
 
   int inst_loc_x, inst_loc_y, inst_width;
-  odb::dbInst* sink_inst = gate->getInst();
-  odb::Rect sink_bbox = getInstRect(sink_inst, gate);
-  inst_loc_x = sink_bbox.xMin();
-  inst_loc_y = sink_bbox.yMin();
-  inst_width = sink_bbox.xMax() - sink_bbox.xMin();
-  odb::dbOrientType inst_orient = sink_inst->getOrient();
+  odb::dbOrientType inst_orient;
+  getInstancePlacementData(
+      gate, inst_loc_x, inst_loc_y, inst_width, inst_orient);
 
   odb::dbBox* diode_bbox = diode_inst->getBBox();
   int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
-  const odb::Rect& core_area = block_->getCoreArea();
+  odb::dbInst* sink_inst = gate->getInst();
+
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other fixed cells
   int legalize_itr = 0;
@@ -581,8 +585,6 @@ bool RepairAntennas::setDiodePlacement(odb::dbInst* diode_inst, odb::dbITerm* ga
       place_at_left = true;
     }
 
-    const int left_pad = opendp_->padLeft(diode_inst);
-    const int right_pad = opendp_->padRight(diode_inst);
     diode_inst->setOrient(inst_orient);
     if (sink_inst->isBlock() || sink_inst->isPad()) {
       odb::dbOrientType orient
@@ -591,22 +593,45 @@ bool RepairAntennas::setDiodePlacement(odb::dbInst* diode_inst, odb::dbITerm* ga
     }
     diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
 
-    odb::dbBox* instBox = diode_inst->getBBox();
-    box box(point(instBox->xMin() - ((left_pad + right_pad) * site_width) + 1,
-                  instBox->yMin() + 1),
-            point(instBox->xMax() + ((left_pad + right_pad) * site_width) - 1,
-                  instBox->yMax() - 1));
-    fixed_insts.query(bgi::intersects(box), std::back_inserter(overlap_insts));
-
-    if (overlap_insts.empty() && instBox->xMin() >= core_area.xMin()
-        && instBox->xMax() <= core_area.xMax()) {
-      legally_placed = true;
-    }
-    overlap_insts.clear();
+    legally_placed = checkDiodeLoc(diode_inst, site_width, fixed_insts);
     legalize_itr++;
   }
 
   return legally_placed;
+}
+
+void RepairAntennas::getInstancePlacementData(odb::dbITerm* gate,
+                                              int& inst_loc_x,
+                                              int& inst_loc_y,
+                                              int& inst_width,
+                                              odb::dbOrientType& inst_orient)
+{
+  odb::dbInst* sink_inst = gate->getInst();
+  odb::Rect sink_bbox = getInstRect(sink_inst, gate);
+  inst_loc_x = sink_bbox.xMin();
+  inst_loc_y = sink_bbox.yMin();
+  inst_width = sink_bbox.xMax() - sink_bbox.xMin();
+  inst_orient = sink_inst->getOrient();
+}
+
+bool RepairAntennas::checkDiodeLoc(odb::dbInst* diode_inst,
+                                   const int site_width,
+                                   r_tree& fixed_insts)
+{
+  const odb::Rect& core_area = block_->getCoreArea();
+  const int left_pad = opendp_->padLeft(diode_inst);
+  const int right_pad = opendp_->padRight(diode_inst);
+  odb::dbBox* instBox = diode_inst->getBBox();
+  box box(point(instBox->xMin() - ((left_pad + right_pad) * site_width) + 1,
+                instBox->yMin() + 1),
+          point(instBox->xMax() + ((left_pad + right_pad) * site_width) - 1,
+                instBox->yMax() - 1));
+
+  std::vector<value> overlap_insts;
+  fixed_insts.query(bgi::intersects(box), std::back_inserter(overlap_insts));
+
+  return overlap_insts.empty() && instBox->xMin() >= core_area.xMin()
+         && instBox->xMax() <= core_area.xMax();
 }
 
 odb::Rect RepairAntennas::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)

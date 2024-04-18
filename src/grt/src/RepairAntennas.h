@@ -129,7 +129,18 @@ class RepairAntennas
                    odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
-  bool setDiodePlacement(odb::dbInst* diode_inst, odb::dbITerm* gate, int site_width, r_tree& fixed_insts);
+  bool setDiodePlacement(odb::dbInst* diode_inst,
+                         odb::dbITerm* gate,
+                         int site_width,
+                         r_tree& fixed_insts);
+  void getInstancePlacementData(odb::dbITerm* gate,
+                                int& inst_loc_x,
+                                int& inst_loc_y,
+                                int& inst_width,
+                                odb::dbOrientType& inst_orient);
+  bool checkDiodeLoc(odb::dbInst* diode_inst,
+                     const int site_width,
+                     r_tree& fixed_insts);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
   odb::dbOrientType getRowOrient(const odb::Point& point);
