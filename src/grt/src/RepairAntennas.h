@@ -123,12 +123,13 @@ class RepairAntennas
 
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
-                   odb::dbInst* sink_inst,
                    odb::dbITerm* sink_iterm,
                    int site_width,
-                   r_tree& fixed_insts);
+                   r_tree& fixed_insts,
+                   odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
+  bool setDiodePlacement(odb::dbInst* diode_inst, odb::dbITerm* gate, int site_width, r_tree& fixed_insts);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
   odb::dbOrientType getRowOrient(const odb::Point& point);
