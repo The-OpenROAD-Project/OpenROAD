@@ -32,14 +32,14 @@
 
 #include <algorithm>
 
-#include "odb/gseq.h"
-#include "odb/wire.h"
+#include "rcx/gseq.h"
+#include "wire.h"
 
 namespace rcx {
 CoupleOptions coupleOptionsNull{};
 };
 
-namespace odb {
+namespace rcx {
 
 static uint ttttGetDgOverlap;
 
@@ -351,7 +351,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                               uint ccThreshold,
                               Ath__array1D<uint>* ccIdTable,
                               uint met,
-                              rcx::CoupleAndCompute coupleAndCompute,
+                              CoupleAndCompute coupleAndCompute,
                               void* compPtr)
 {
   Ath__track* tstrack;
@@ -1116,4 +1116,4 @@ void Ath__gridTable::initCouplingCapLoops(
   }
 }
 
-}  // namespace odb
+}  // namespace rcx

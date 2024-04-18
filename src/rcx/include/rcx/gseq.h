@@ -31,11 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "array1.h"
-#include "odb.h"
-#include "util.h"
+#include "odb/array1.h"
+#include "odb/odb.h"
+#include "odb/util.h"
 
-namespace odb {
+namespace rcx {
 
 struct SEQ
 {
@@ -47,7 +47,7 @@ struct SEQ
 class gs
 {
  public:
-  gs(AthPool<SEQ>* seqPool);
+  gs(odb::AthPool<SEQ>* seqPool);
   ~gs();
 
   void configureSlice(int slicenum,
@@ -68,7 +68,7 @@ class gs
                int* ur,
                uint order,
                uint plane,
-               Ath__array1D<SEQ*>* array);
+               odb::Ath__array1D<SEQ*>* array);
 
   void release(SEQ* s);
 
@@ -81,7 +81,7 @@ class gs
  private:
   using gsPixel = char;
 
-  using pixint = uint64;
+  using pixint = std::uint64_t;
   using pixints = unsigned int;
 
   union pixmap
@@ -131,7 +131,7 @@ class gs
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];
 
-  AthPool<SEQ>* seqPool_;
+  odb::AthPool<SEQ>* seqPool_;
 };
 
-}  // namespace odb
+}  // namespace rcx

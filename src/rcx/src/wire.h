@@ -36,13 +36,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "array1.h"
 #include "box.h"
-#include "db.h"
-#include "geom.h"
-#include "rcx.h"
+#include "odb/array1.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "rcx/extRCap.h"
 
-namespace odb {
+namespace rcx {
+
+using odb::Ath__array1D;
+using odb::AthPool;
+using odb::dbBlock;
+using odb::dbBox;
+using odb::dbNet;
+using odb::Rect;
 
 enum Ath__overlapAdjust
 {
@@ -269,7 +276,7 @@ class Ath__track
   uint initTargetTracks(uint srcTrack, uint trackDist, bool tohi);
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
-  void buildDgContext(Ath__array1D<odb::SEQ*>* dgContext,
+  void buildDgContext(Ath__array1D<SEQ*>* dgContext,
                       Ath__wire**& allWire,
                       int& awcnt,
                       int& awsize);
@@ -280,7 +287,7 @@ class Ath__track
                     uint ccThreshold,
                     Ath__array1D<uint>* ccIdTable,
                     uint met,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
@@ -290,7 +297,7 @@ class Ath__track
                    Ath__grid* ccGrid,
                    Ath__array1D<Ath__wire*>* ccTable,
                    uint met,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr);
 
   void initTargetWire(int noPowerWire);
@@ -482,7 +489,7 @@ class Ath__grid
   uint couplingCaps(Ath__grid* resGrid,
                     uint couplingDist,
                     Ath__array1D<uint>* ccTable,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   AthPool<Ath__wire>* getWirePoolPtr();
   uint placeWire(Ath__wire* w);
@@ -499,14 +506,14 @@ class Ath__grid
   void gridContextOn(int orig, int len, int base, int width);
 
   int initCouplingCapLoops(uint couplingDist,
-                           rcx::CoupleAndCompute coupleAndCompute,
+                           CoupleAndCompute coupleAndCompute,
                            void* compPtr,
                            bool startSearchTrack = true,
                            int startXY = 0);
   int couplingCaps(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    int* limitArray);
   int dealloc(int hiXY);
@@ -547,8 +554,8 @@ class Ath__gridTable
 
   Ath__array1D<int>** _ccContextArray;
 
-  AthPool<odb::SEQ>* _seqPool;
-  Ath__array1D<odb::SEQ*>*** _dgContextArray;  // array
+  AthPool<SEQ>* _seqPool;
+  Ath__array1D<SEQ*>*** _dgContextArray;  // array
 
   uint* _dgContextDepth;      // not array
   uint* _dgContextPlanes;     // not array
@@ -662,11 +669,11 @@ class Ath__gridTable
 
   void setDefaultWireType(uint v);
   void buildDgContext(int base, uint level, uint dir);
-  Ath__array1D<odb::SEQ*>* renewDgContext(uint gridn, uint trackn);
+  Ath__array1D<SEQ*>* renewDgContext(uint gridn, uint trackn);
   uint couplingCaps(Ath__gridTable* resGridTable,
                     uint couplingDist,
                     Ath__array1D<uint>* ccTable,
-                    rcx::CoupleAndCompute coupleAndCompute,
+                    CoupleAndCompute coupleAndCompute,
                     void* compPtr);
   uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
@@ -694,8 +701,8 @@ class Ath__gridTable
   uint getCcFlag() { return _ccFlag; };
   uint contextDepth() { return _ccContextDepth; };
   Ath__array1D<int>** contextArray() { return _ccContextArray; };
-  AthPool<odb::SEQ>* seqPool() { return _seqPool; };
-  Ath__array1D<odb::SEQ*>*** dgContextArray() { return _dgContextArray; };
+  AthPool<SEQ>* seqPool() { return _seqPool; };
+  Ath__array1D<SEQ*>*** dgContextArray() { return _dgContextArray; };
   int** dgContextTrackBase() { return _dgContextTrackBase; };
   uint* dgContextBaseTrack() { return _dgContextBaseTrack; };
   int* dgContextLowTrack() { return _dgContextLowTrack; };
@@ -721,7 +728,7 @@ class Ath__gridTable
                      bool allNet,
                      uint contextDepth,
                      Ath__array1D<int>** contextArray,
-                     Ath__array1D<odb::SEQ*>*** dgContextArray,
+                     Ath__array1D<SEQ*>*** dgContextArray,
                      uint* dgContextDepth,
                      uint* dgContextPlanes,
                      uint* dgContextTracks,
@@ -732,7 +739,7 @@ class Ath__gridTable
                      int* dgContextLowTrack,
                      int* dgContextHiTrack,
                      int** dgContextTrackBase,
-                     AthPool<odb::SEQ>* seqPool);
+                     AthPool<SEQ>* seqPool);
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
@@ -751,13 +758,13 @@ class Ath__gridTable
                    uint couplingDist,
                    uint dir,
                    uint& wireCnt,
-                   rcx::CoupleAndCompute coupleAndCompute,
+                   CoupleAndCompute coupleAndCompute,
                    void* compPtr,
                    bool getBandWire,
                    int** limitArray);
   void initCouplingCapLoops(uint dir,
                             uint couplingDist,
-                            rcx::CoupleAndCompute coupleAndCompute,
+                            CoupleAndCompute coupleAndCompute,
                             void* compPtr,
                             int* startXY = nullptr);
   int dealloc(uint dir, int hiXY);
@@ -766,4 +773,4 @@ class Ath__gridTable
   uint getWireCnt();
 };
 
-}  // namespace odb
+}  // namespace rcx
