@@ -456,7 +456,8 @@ _installOpenSusePackages() {
 _installHomebrewPackage() {
     package=$1
     commit=$2
-    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
+    dir=$3
+    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${dir}${package}.rb
     curl -L ${url} > ${package}.rb
 
     if brew list "${package}" &> /dev/null; then
@@ -490,7 +491,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex groff libomp pandoc pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex groff libomp or-tools pandoc pyqt5 python tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -499,9 +500,11 @@ EOF
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
     # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
+    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b" ""
     # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0" ""
+    # Install swig 4.1.1
+    _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
 
 _installDebianCleanUp() {
@@ -727,7 +730,6 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
