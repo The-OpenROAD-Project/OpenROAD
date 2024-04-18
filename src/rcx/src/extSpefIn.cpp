@@ -31,10 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "name.h"
+#include "odb/wire.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -1516,7 +1516,7 @@ uint extSpef::sortRSegs()
   if (cnn > (int) _hcnrc->getSize()) {
     const int ocsz = _hcnrc->getSize();
     int ncsz = (cnn / 1024 + 1) * 1024;
-    _hcnrc->reSize(ncsz);
+    _hcnrc->resize(ncsz);
     ncsz = _hcnrc->getSize();
     for (int ii = ocsz; ii < ncsz; ii++) {
       Ath__array1D<int>* n1d = new Ath__array1D<int>(4);
@@ -2140,7 +2140,7 @@ void extSpef::setupMapping(uint itermCnt)
 void extSpef::resetNameTable(const uint n)
 {
   _nameMapTable = new Ath__array1D<const char*>(128000);
-  _nameMapTable->reSize(n);
+  _nameMapTable->resize(n);
   _lastNameMapIndex = 0;
 }
 
@@ -2500,7 +2500,7 @@ uint extSpef::readBlock(const uint debug,
     }
     setupMapping();
 
-    _idMapTable->reSize(_maxMapId + 1);
+    _idMapTable->resize(_maxMapId + 1);
     resetNameTable(_maxMapId + 1);
   }
   if (_nodeHashTable == nullptr) {

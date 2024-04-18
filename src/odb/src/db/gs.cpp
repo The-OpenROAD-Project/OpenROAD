@@ -33,7 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "gseq.h"
+#include "odb/gseq.h"
 
 namespace odb {
 
@@ -240,14 +240,18 @@ int gs::box(int px0, int py0, int px1, int py1, int sl)
     std::swap(py0, py1);
   }
 
-  if (px1 < plc_->x0)
+  if (px1 < plc_->x0) {
     return -1;
-  if (px0 > plc_->x1)
+  }
+  if (px0 > plc_->x1) {
     return -1;
-  if (py1 < plc_->y0)
+  }
+  if (py1 < plc_->y0) {
     return -1;
-  if (py0 > plc_->y1)
+  }
+  if (py0 > plc_->y1) {
     return -1;
+  }
 
   // convert to pixel space
   int cx0 = int((px0 - plc_->x0) / plc_->xres);
@@ -401,27 +405,35 @@ uint gs::get_seq(int* ll,
   plc_ = pldata_[plane];
 
   // Sanity checks
-  if (ur[0] < plc_->x0)
+  if (ur[0] < plc_->x0) {
     return 0;
-  if (ll[0] > plc_->x1)
+  }
+  if (ll[0] > plc_->x1) {
     return 0;
+  }
 
-  if (ur[1] < plc_->y0)
+  if (ur[1] < plc_->y0) {
     return 0;
-  if (ll[1] > plc_->y1)
+  }
+  if (ll[1] > plc_->y1) {
     return 0;
+  }
 
-  if (ll[0] < plc_->x0)
+  if (ll[0] < plc_->x0) {
     ll[0] = plc_->x0;
+  }
 
-  if (ur[0] > plc_->x1)
+  if (ur[0] > plc_->x1) {
     ur[0] = plc_->x1;
+  }
 
-  if (ll[1] < plc_->y0)
+  if (ll[1] < plc_->y0) {
     ll[1] = plc_->y0;
+  }
 
-  if (ur[1] > plc_->y1)
+  if (ur[1] > plc_->y1) {
     ur[1] = plc_->y1;
+  }
   // End Sanity Checks
 
   SEQ* s = salloc();
@@ -457,8 +469,9 @@ uint gs::get_seq(int* ll,
           flag = true;
         }
 
-        if ((row == cy0) && (s->_ll[0] < ll[0]))
+        if ((row == cy0) && (s->_ll[0] < ll[0])) {
           s->_ll[0] = ll[0];
+        }
 
         s->_ll[1] = rs;
         s->_ur[1] = re;
@@ -478,19 +491,22 @@ uint gs::get_seq(int* ll,
         start = end + 1;
       }
       rs += plc_->yres;
-      if (rs > ur[1])
+      if (rs > ur[1]) {
         break;
+      }
       re += plc_->yres;
     }
   } else if (order == GS_COLUMN) {
     int cs = ((cx1 + cx0) / 2) * plc_->xres + plc_->x0;
     int ce = cs;
 
-    if (cs < ll[0])
+    if (cs < ll[0]) {
       cs = ll[0];
+    }
 
-    if (ce > ur[0])
+    if (ce > ur[0]) {
       ce = ur[0];
+    }
 
     for (int col = cx0; col <= cx0; col++) {
       int start = cy0;
@@ -504,8 +520,9 @@ uint gs::get_seq(int* ll,
           s->_ur[1] = ur[1];
         }
 
-        if ((col == cx0) && (s->_ll[1] < ll[1]))
+        if ((col == cx0) && (s->_ll[1] < ll[1])) {
           s->_ll[1] = ll[1];
+        }
 
         s->_ll[0] = cs;
         s->_ur[0] = ce;
@@ -545,11 +562,13 @@ int gs::get_seqrow(const int y,
     return -1;
   }
 
-  if (y >= plc_->height)
+  if (y >= plc_->height) {
     return -1;
+  }
 
-  if (stpix >= plc_->width)
+  if (stpix >= plc_->width) {
     return -1;
+  }
 
   int sto = stpix / PIXMAPGRID;
   const int str = stpix - (sto * PIXMAPGRID);
@@ -657,11 +676,13 @@ int gs::get_seqcol(const int x,
     return -1;
   }
 
-  if (x >= plc_->width)
+  if (x >= plc_->width) {
     return -1;
+  }
 
-  if (stpix >= plc_->height)
+  if (stpix >= plc_->height) {
     return -1;
+  }
 
   // get proper "word" offset
   const int sto = x / PIXMAPGRID;
@@ -684,17 +705,16 @@ int gs::get_seqcol(const int x,
     if (pl->lword & bitmask) {
       if (seqcol == GS_BLACK) {
         continue;
-      } else {
-        epix = row - 1;
-        return 0;
       }
+      epix = row - 1;
+      return 0;
+
     } else {
       if (seqcol == GS_BLACK) {
         epix = row - 1;
         return 0;
-      } else {
-        continue;
       }
+      continue;
     }
   }
 

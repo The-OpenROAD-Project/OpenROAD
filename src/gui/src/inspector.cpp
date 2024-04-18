@@ -153,6 +153,12 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   auto item = new QStandardItem(name);
   item->setEditable(false);
   item->setSelectable(false);
+  item->setData(Qt::AlignTop, Qt::TextAlignmentRole);
+  if (name.contains('\n')) {
+    QFont font("Monospace");
+    font.setStyleHint(QFont::Monospace);
+    item->setData(font, Qt::FontRole);
+  }
   return item;
 }
 

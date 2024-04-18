@@ -33,11 +33,11 @@
 #pragma once
 
 #include "dbBox.h"
-#include "dbId.h"
-#include "dbObject.h"
-#include "dbTypes.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

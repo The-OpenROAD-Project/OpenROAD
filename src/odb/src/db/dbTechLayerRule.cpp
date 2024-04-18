@@ -32,7 +32,6 @@
 
 #include "dbTechLayerRule.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -40,6 +39,7 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -105,29 +105,37 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerRule& rule)
 
 bool _dbTechLayerRule::operator==(const _dbTechLayerRule& rhs) const
 {
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_spacing != rhs._spacing)
+  if (_spacing != rhs._spacing) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
-  if (_capacitance != rhs._capacitance)
+  if (_capacitance != rhs._capacitance) {
     return false;
+  }
 
-  if (_edge_capacitance != rhs._edge_capacitance)
+  if (_edge_capacitance != rhs._edge_capacitance) {
     return false;
+  }
 
-  if (_wire_extension != rhs._wire_extension)
+  if (_wire_extension != rhs._wire_extension) {
     return false;
+  }
 
-  if (_non_default_rule != rhs._non_default_rule)
+  if (_non_default_rule != rhs._non_default_rule) {
     return false;
+  }
 
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
   return true;
 }
@@ -197,18 +205,18 @@ dbTechNonDefaultRule* dbTechLayerRule::getNonDefaultRule()
 {
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
 
-  if (rule->_non_default_rule == 0)
+  if (rule->_non_default_rule == 0) {
     return nullptr;
+  }
 
   if (isBlockRule()) {
     _dbBlock* block = rule->getBlock();
     return (dbTechNonDefaultRule*) block->_non_default_rule_tbl->getPtr(
         rule->_non_default_rule);
-  } else {
-    _dbTech* tech = rule->getTech();
-    return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
-        rule->_non_default_rule);
   }
+  _dbTech* tech = rule->getTech();
+  return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
+      rule->_non_default_rule);
 }
 
 bool dbTechLayerRule::isBlockRule()
@@ -304,8 +312,9 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
     layer_rule_tbl = tech->_layer_rule_tbl;
   }
 
-  if (rule->_layer_rules[layer->_number] != 0)
+  if (rule->_layer_rules[layer->_number] != 0) {
     return nullptr;
+  }
 
   _dbTechLayerRule* layer_rule = layer_rule_tbl->create();
   layer_rule->_non_default_rule = rule->getOID();

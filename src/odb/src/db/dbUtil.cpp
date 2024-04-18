@@ -30,13 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbUtil.h"
+#include "odb/dbUtil.h"
 
-#include "array1.h"
-#include "db.h"
-#include "dbShape.h"
 #include "dbTechLayerRule.h"
-#include "dbWireCodec.h"
+#include "odb/array1.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -60,15 +60,17 @@ dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
 }
 dbCreateNetUtil::~dbCreateNetUtil()
 {
-  if (_mapArray != nullptr)
+  if (_mapArray != nullptr) {
     free(_mapArray);
+  }
 }
 void dbCreateNetUtil::allocMapArray(uint n)
 {
   _mapArray = (dbNet**) realloc(nullptr, n * sizeof(dbNet*));
   _mapCnt = n;
-  for (uint ii = 0; ii < n; ii++)
+  for (uint ii = 0; ii < n; ii++) {
     _mapArray[ii] = nullptr;
+  }
 }
 void dbCreateNetUtil::setCurrentNet(dbNet* net)
 {
@@ -84,8 +86,9 @@ void dbCreateNetUtil::checkAndSet(uint id)
   if (id >= _mapCnt) {  // re-aLLOC
 
     uint n = _mapCnt * 2;
-    while (id >= n)
+    while (id >= n) {
       n *= 2;
+    }
 
     _mapArray = (dbNet**) realloc(_mapArray, n * sizeof(dbNet*));
     if (_mapArray == nullptr) {
@@ -94,8 +97,9 @@ void dbCreateNetUtil::checkAndSet(uint id)
                      "Cannot allocate {} MBytes for mapArray",
                      n * sizeof(dbNet*));
     } else {
-      for (uint ii = _mapCnt; ii < n; ii++)
+      for (uint ii = _mapCnt; ii < n; ii++) {
         _mapArray[ii] = nullptr;
+      }
 
       _mapCnt = n;
     }
@@ -109,8 +113,9 @@ dbInst* dbCreateNetUtil::createInst(dbInst* inst0)
   sprintf(instName, "N%d", inst0->getId());
 
   dbInst* inst = dbInst::create(_block, inst0->getMaster(), instName);
-  if (inst == nullptr)
+  if (inst == nullptr) {
     return nullptr;
+  }
 
   inst->setOrient(inst0->getOrient());
   const Point origin = inst0->getOrigin();
@@ -159,33 +164,35 @@ dbInst* dbCreateNetUtil::createInst(dbInst* inst0,
       return inst0;
     }
     return ii;
-  } else {
-    dbInst* inst
-        = dbInst::create(_block, inst0->getMaster(), inst0->getConstName());
-    inst->setOrient(inst0->getOrient());
-    const Point origin = inst0->getOrigin();
-    inst->setOrigin(origin.x(), origin.y());
-    inst->setPlacementStatus(inst0->getPlacementStatus());
-
-    if (createInstance)
-      inst->setEcoCreate(true);
-    else if (destroyInstance)
-      inst->setEcoDestroy(true);
-    else
-      inst->setEcoModify(true);
-
-    return inst;
   }
+  dbInst* inst
+      = dbInst::create(_block, inst0->getMaster(), inst0->getConstName());
+  inst->setOrient(inst0->getOrient());
+  const Point origin = inst0->getOrigin();
+  inst->setOrigin(origin.x(), origin.y());
+  inst->setPlacementStatus(inst0->getPlacementStatus());
+
+  if (createInstance) {
+    inst->setEcoCreate(true);
+  } else if (destroyInstance) {
+    inst->setEcoDestroy(true);
+  } else {
+    inst->setEcoModify(true);
+  }
+
+  return inst;
 }
 dbNet* dbCreateNetUtil::updateNet(dbNet* nn, bool create, bool destroy)
 {
   dbNet* ecoNet = _block->findNet(nn->getConstName());
-  if (ecoNet == nullptr)
+  if (ecoNet == nullptr) {
     return createNet(nn, create, destroy);
+  }
 
   if (ecoNet->isMark_1ed()) {  // original new net
-    if (destroy)
+    if (destroy) {
       dbNet::destroy(ecoNet);
+    }
   } else if (ecoNet->isMarked()) {  // original deleted net
     if (create) {
       dbNet::destroy(ecoNet);
@@ -207,15 +214,18 @@ dbInst* dbCreateNetUtil::updateInst(dbInst* inst0,
                                     bool destroyInstance)
 {
   dbInst* ecoInst = _block->findInst(inst0->getConstName());
-  if (ecoInst == nullptr)
+  if (ecoInst == nullptr) {
     return createInst(inst0, createInstance, destroyInstance);
+  }
 
   if (ecoInst->getEcoCreate()) {  // original new
-    if (destroyInstance)
+    if (destroyInstance) {
       dbInst::destroy(ecoInst);
+    }
 
     return inst0;
-  } else if (ecoInst->getEcoDestroy()) {
+  }
+  if (ecoInst->getEcoDestroy()) {
     if (createInstance)
       dbInst::destroy(ecoInst);
 
@@ -244,8 +254,9 @@ bool dbCreateNetUtil::printEcoInstVerbose(FILE* fp,
                                           dbInst* inst,
                                           const char* header)
 {
-  if (_verbose)
+  if (_verbose) {
     return false;
+  }
 
   dbBox* bb = inst->getBBox();
 
@@ -281,9 +292,9 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
   dbInst* origInst = srcBlock->findInst(ecoInst->getConstName());
   if (ecoInst->getEcoDestroy()) {
     if (origInst == nullptr) {
-      if (_milosFormat)
+      if (_milosFormat) {
         fprintf(fp, "milos_removeCell %s\n", ecoInst->getConstName());
-      else {
+      } else {
         fprintf(fp, "Milos Delete Instance %s\n", ecoInst->getConstName());
         // annotateSlack(fp, ecoInst);
       }
@@ -361,8 +372,9 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
   // if (r0!=r1) { // different bboxes
   std::string orient = ecoInst->getOrient().getString();
   Point pt = origInst->getOrigin();
-  if (_useLocation)
+  if (_useLocation) {
     pt = origInst->getLocation();
+  }
 
   std::string orient1 = origInst->getOrient().getString();
 
@@ -484,23 +496,25 @@ uint dbCreateNetUtil::printEcoNet(dbNet* ecoNet, dbBlock* srcBlock, FILE* fp)
   if (ecoNet->isMark_1ed()) {  // create net
     dbNet* origNet = srcBlock->findNet(ecoNet->getConstName());
     if (origNet != nullptr) {  // new net
-      if (_milosFormat)
+      if (_milosFormat) {
         fprintf(fp, "milos_createNet %s\n", origNet->getConstName());
-      else {
+      } else {
         fprintf(fp, "Milos Create Net %s\n", origNet->getConstName());
         // annotateSlack(fp, ecoNet);
       }
-    } else
+    } else {
       return 0;
+    }
   } else if (ecoNet->isMarked()) {  // DestroyNet
-    if (_milosFormat)
+    if (_milosFormat) {
       fprintf(fp, "milos_removeNet %s\n", ecoNet->getConstName());
-    else {
+    } else {
       fprintf(fp, "Milos Delete Net %s\n", ecoNet->getConstName());
       // annotateSlack(fp, ecoNet);
     }
-  } else
+  } else {
     return 0;
+  }
 
   return 1;
 }
@@ -543,8 +557,9 @@ uint dbCreateNetUtil::printModifiedInsts(dbBlock* ecoBlock,
   dbSet<dbInst>::iterator iitr;
   for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
     dbInst* inst = *iitr;
-    if (inst->getEcoModify())
+    if (inst->getEcoModify()) {
       cnt += printEcoInst(inst, srcBlock, fp);
+    }
   }
   return cnt;
 }
@@ -565,10 +580,11 @@ uint dbCreateNetUtil::printDeletedNets(dbBlock* ecoBlock,
     dbNet* net = *nitr;
 
     if (net->isMarked()) {
-      if (itermCnt < 0)
+      if (itermCnt < 0) {
         cnt += printEcoTerms(net, disconnectIterm, fp);
-      else
+      } else {
         cnt += printEcoNet(net, srcBlock, fp);
+      }
     }
   }
   return cnt;
@@ -583,8 +599,9 @@ uint dbCreateNetUtil::printDisconnectedTerms(dbBlock* ecoBlock,
   for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
     dbNet* net = *nitr;
 
-    if (net->isMarked())
+    if (net->isMarked()) {
       cnt += printEcoTerms(net, "DisconnectITerm", fp);
+    }
   }
   return cnt;
 }
@@ -600,8 +617,9 @@ uint dbCreateNetUtil::printConnectedTerms(dbBlock* ecoBlock,
 
     if (net->isMark_1ed()) {
       dbNet* origNet = srcBlock->findNet(net->getConstName());
-      if (origNet != nullptr)
+      if (origNet != nullptr) {
         cnt += printEcoTerms(origNet, "ConnectITerm", fp);
+      }
     }
   }
   return cnt;
@@ -628,8 +646,9 @@ uint dbCreateNetUtil::printNewNets(dbBlock* ecoBlock,
         continue;
       }
       dbNet* origNet = srcBlock->findNet(net->getConstName());
-      if (origNet != nullptr)
+      if (origNet != nullptr) {
         cnt += printEcoTerms(origNet, connectIterm, fp);
+      }
     }
   }
   return cnt;
@@ -654,17 +673,20 @@ uint dbCreateNetUtil::printModifiedNets(dbBlock* ecoBlock,
 
     if (_skipPowerNets) {
       dbSigType ty = net->getSigType();
-      if ((ty == dbSigType::POWER) || (ty == dbSigType::GROUND))
+      if ((ty == dbSigType::POWER) || (ty == dbSigType::GROUND)) {
         continue;
+      }
     }
 
-    if (!net->isDisconnected())
+    if (!net->isDisconnected()) {
       continue;
+    }
 
-    if (connectTerm)
+    if (connectTerm) {
       cnt += printModifiedNetECO(net, connectIterm, nullptr, fp);
-    else
+    } else {
       cnt += printModifiedNetECO(net, nullptr, disconnectIterm, fp);
+    }
   }
   return cnt;
 }
@@ -679,12 +701,13 @@ dbNet* dbCreateNetUtil::createNet(dbNet* nn, bool create, bool destroy)
 
   net->setSigType(ty);
 
-  if (create)
+  if (create) {
     net->setMark_1(true);
-  else if (destroy)
+  } else if (destroy) {
     net->setMark(true);
-  else
+  } else {
     net->setDisconnected(true);
+  }
 
   return net;
 }
@@ -695,11 +718,13 @@ dbITerm* dbCreateNetUtil::updateITerm(dbITerm* iterm,
   dbInst* ecoInst = _block->findInst(iterm->getInst()->getConstName());
   if (ecoInst != nullptr) {
     t = ecoInst->findITerm(iterm->getMTerm()->getConstName());
-    if ((t != nullptr) && (t->getNet() != nullptr))
+    if ((t != nullptr) && (t->getNet() != nullptr)) {
       return t;
+    }
   }
-  if (ecoInst == nullptr)
+  if (ecoInst == nullptr) {
     ecoInst = updateInst(iterm->getInst(), false, false);
+  }
 
   dbNet* ecoNet = updateNet(iterm->getNet(), false, false);
 
@@ -780,11 +805,13 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
     dbInst* inst = *iitr;
 
     dbIntProperty* p = dbIntProperty::find(inst, "ECO");
-    if (p == nullptr)
+    if (p == nullptr) {
       continue;
+    }
     uint n = p->getValue();
-    if (maxInstEco < n)
+    if (maxInstEco < n) {
       maxInstEco = n;
+    }
   }
   uint maxNetEco = 0;
   dbSet<dbNet>::iterator nitr;
@@ -792,26 +819,30 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
     dbNet* net = *nitr;
 
     dbIntProperty* p = dbIntProperty::find(net, "ECO");
-    if (p == nullptr)
+    if (p == nullptr) {
       continue;
+    }
     uint n = p->getValue();
-    if (maxNetEco < n)
+    if (maxNetEco < n) {
       maxNetEco = n;
+    }
   }
 
   uint maxSize = maxNetEco > maxInstEco ? maxNetEco : maxInstEco;
   Ath__array1D<dbObject*> transactionArray(2040);
 
   uint ii = 0;
-  for (ii = 0; ii <= maxSize; ii++)
+  for (ii = 0; ii <= maxSize; ii++) {
     transactionArray.set(ii, nullptr);
+  }
 
   for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
     dbInst* inst = *iitr;
 
     dbIntProperty* p = dbIntProperty::find(inst, "ECO");
-    if (p == nullptr)
+    if (p == nullptr) {
       continue;
+    }
     uint n = p->getValue();
 
     transactionArray.set(n, inst);
@@ -820,8 +851,9 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
     dbNet* net = *nitr;
 
     dbIntProperty* p = dbIntProperty::find(net, "ECO");
-    if (p == nullptr)
+    if (p == nullptr) {
       continue;
+    }
     uint n = p->getValue();
     transactionArray.set(n, net);
   }
@@ -829,8 +861,9 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
 void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
 {
   _block = block;
-  if (skipInit)
+  if (skipInit) {
     return;
+  }
 
   _tech = block->getDb()->getTech();
   _ruleNameHint = 0;
@@ -848,8 +881,9 @@ void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
     dbTechLayer* layer = *itr;
     int rlevel = layer->getRoutingLevel();
 
-    if (rlevel > 0)
+    if (rlevel > 0) {
       _routingLayers[rlevel] = layer;
+    }
   }
 
   // Build mapping table to rule widths
@@ -871,8 +905,9 @@ void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
       if (rlevel > 0) {
         dbTechLayerRule*& r = _rules[rlevel][rule->getWidth()];
 
-        if (r == nullptr)  // Don't overide any existing rule.
+        if (r == nullptr) {  // Don't overide any existing rule.
           r = rule;
+        }
       }
     }
   }
@@ -891,8 +926,9 @@ void dbCreateNetUtil::setBlock(dbBlock* block, bool skipInit)
     int topR = top->getRoutingLevel();
     int botR = bot->getRoutingLevel();
 
-    if (topR == 0 || botR == 0)
+    if (topR == 0 || botR == 0) {
       continue;
+    }
 
     _vias(botR, topR).push_back(via);
   }
@@ -902,8 +938,9 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
 {
   dbTechLayerRule*& rule = _rules[routingLayer][width];
 
-  if (rule != nullptr)
+  if (rule != nullptr) {
     return rule;
+  }
 
   // Create a non-default-rule for this width
   dbTechNonDefaultRule* nd_rule = nullptr;
@@ -913,12 +950,14 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
     snprintf(rule_name, 64, "ADS_ND_%d", _ruleNameHint++);
     nd_rule = dbTechNonDefaultRule::create(_tech, rule_name);
 
-    if (nd_rule)
+    if (nd_rule) {
       break;
+    }
   }
 
-  if (nd_rule == nullptr)
+  if (nd_rule == nullptr) {
     return nullptr;
+  }
   rule->getImpl()->getLogger()->info(utl::ODB,
                                      273,
                                      "Create ND RULE {} for layer/width {},{}",
@@ -936,19 +975,20 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
       lr->setSpacing(layer->getSpacing());
 
       dbTechLayerRule*& r = _rules[i][width];
-      if (r == nullptr)
+      if (r == nullptr) {
         r = lr;
+      }
     }
   }
 
   // dbTechVia  *curly_via;
   dbSet<dbTechVia> all_vias = _tech->getVias();
   dbSet<dbTechVia>::iterator viter;
-  std::string nd_via_name("");
+  std::string nd_via_name;
   for (viter = all_vias.begin(); viter != all_vias.end(); ++viter) {
     if (((*viter)->getNonDefaultRule() == nullptr) && ((*viter)->isDefault())) {
       nd_via_name = std::string(rule_name) + std::string("_")
-                    + std::string((*viter)->getName().c_str());
+                    + std::string((*viter)->getName());
       // curly_via = dbTechVia::clone(nd_rule, (*viter), nd_via_name.c_str());
     }
   }
@@ -979,16 +1019,18 @@ dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, Rect& bbox)
   for (itr = vias.begin(); itr != vias.end(); ++itr) {
     dbTechVia* via = *itr;
 
-    if (via->isDefault())
+    if (via->isDefault()) {
       def = via;
+    }
 
     dbBox* bbox = via->getBBox();
     uint vdx = bbox->getDX();
     uint vdy = bbox->getDY();
 
-    if (vdx == dx && vdy == dy)  // This is a guess!
-      return via;                // There's no way to determine
-                                 // the via from the placed bbox.
+    if (vdx == dx && vdy == dy) {  // This is a guess!
+      return via;                  // There's no way to determine
+    }
+    // the via from the placed bbox.
     // There could be multiple vias with the same width and
     // height
   }
@@ -1005,20 +1047,22 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
                                             dbTechLayerDir dir,
                                             bool skipBterms)
 {
-  if (dir == dbTechLayerDir::NONE)
+  if (dir == dbTechLayerDir::NONE) {
     return createNetSingleWire(
         netName, x1, y1, x2, y2, routingLayer, dir, skipBterms);
+  }
 
   if ((netName == nullptr) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
-    if (netName == nullptr)
+    if (netName == nullptr) {
       logger_->warn(
           ODB, 400, "Cannot create wire, because net name is nullptr\n");
-    else
+    } else {
       logger_->warn(ODB,
                     401,
                     "Cannot create wire, because routing layer ({}) is invalid",
                     routingLayer);
+    }
 
     return nullptr;
   }
@@ -1077,8 +1121,9 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   dbNet* net = dbNet::create(_block, netName);
 
-  if (net == nullptr)
+  if (net == nullptr) {
     return nullptr;
+  }
 
   net->setSigType(dbSigType::SIGNAL);
 
@@ -1099,26 +1144,30 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   }
 
   dbTechLayerRule* rule = nullptr;
-  if ((int) layer->getWidth() != width)
+  if ((int) layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
+  }
 
   dbWireEncoder encoder;
   encoder.begin(dbWire::create(net));
 
-  if (rule == nullptr)
+  if (rule == nullptr) {
     encoder.newPath(layer, dbWireType::ROUTED);
-  else
+  } else {
     encoder.newPath(layer, dbWireType::ROUTED, rule);
+  }
 
   encoder.addPoint(p0.x(), p0.y(), 0);
 
-  if (!skipBterms)
+  if (!skipBterms) {
     encoder.addBTerm(blutrms.first);
+  }
 
   encoder.addPoint(p1.x(), p1.y(), 0);
 
-  if (!skipBterms)
+  if (!skipBterms) {
     encoder.addBTerm(blutrms.second);
+  }
 
   encoder.end();
 
@@ -1130,10 +1179,11 @@ dbSBox* dbCreateNetUtil::createSpecialWire(dbNet* mainNet,
                                            uint /* unused: sboxId */)
 {
   dbSWire* swire = nullptr;
-  if (mainNet == nullptr)
+  if (mainNet == nullptr) {
     swire = _currentNet->getFirstSWire();
-  else
+  } else {
     swire = mainNet->getFirstSWire();
+  }
 
   return dbSBox::create(swire,
                         layer,
@@ -1152,10 +1202,11 @@ dbNet* dbCreateNetUtil::createSpecialNet(dbNet* origNet, const char* name)
   char netName[128];
 
   if (_currentNet == nullptr) {
-    if (name == nullptr)
+    if (name == nullptr) {
       sprintf(netName, "S%d", origNet->getId());
-    else
+    } else {
       sprintf(netName, "%s", name);
+    }
 
     net = _block->findNet(netName);
   }
@@ -1163,15 +1214,17 @@ dbNet* dbCreateNetUtil::createSpecialNet(dbNet* origNet, const char* name)
     net = dbNet::create(_block, netName);
     if ((origNet != nullptr)
         && ((origNet->getSigType() == dbSigType::POWER)
-            || (origNet->getSigType() == dbSigType::GROUND)))
+            || (origNet->getSigType() == dbSigType::GROUND))) {
       net->setSigType(origNet->getSigType());
-    else
+    } else {
       net->setSigType(dbSigType::POWER);
+    }
 
     dbSWire::create(net, dbWireType::NONE, nullptr);
 
-    if ((_mapArray != nullptr) && (name == nullptr))
+    if ((_mapArray != nullptr) && (name == nullptr)) {
       _mapArray[origNet->getId()] = net;
+    }
     _currentNet = net;
   }
   return net;
@@ -1190,10 +1243,11 @@ dbNet* dbCreateNetUtil::createSpecialNetSingleWire(Rect& r,
   if (net == nullptr) {
     net = dbNet::create(_block, netName);
     if ((origNet->getSigType() == dbSigType::POWER)
-        || (origNet->getSigType() == dbSigType::GROUND))
+        || (origNet->getSigType() == dbSigType::GROUND)) {
       net->setSigType(origNet->getSigType());
-    else
+    } else {
       net->setSigType(dbSigType::POWER);
+    }
 
     swire = dbSWire::create(net, dbWireType::NONE, nullptr);
   } else {
@@ -1230,8 +1284,9 @@ uint dbCreateNetUtil::getFirstShape(dbNet* net, dbShape& s)
 }
 bool dbCreateNetUtil::setFirstShapeProperty(dbNet* net, uint prop)
 {
-  if (net == nullptr)
+  if (net == nullptr) {
     return false;
+  }
 
   dbShape s;
   uint jid = getFirstShape(net, s);
@@ -1261,33 +1316,35 @@ dbNet* dbCreateNetUtil::createNetSingleWire(Rect& r,
                                         true /*skipBterms*/,
                                         true);
 
-    if (shapeId > 0)
+    if (shapeId > 0) {
       setFirstShapeProperty(newNet, shapeId);
+    }
 
     _currentNet = newNet;
-    if (_mapArray != nullptr)
+    if (_mapArray != nullptr) {
       _mapArray[netId] = _currentNet;
-    return newNet;
-  } else {
-    sprintf(netName, "N%d_%d", netId, shapeId);
-    dbNet* newNet = createNetSingleWire(netName,
-                                        r.xMin(),
-                                        r.yMin(),
-                                        r.xMax(),
-                                        r.yMax(),
-                                        level,
-                                        true /*skipBterms*/,
-                                        true);
-
-    if (newNet != nullptr) {
-      if (shapeId > 0)
-        setFirstShapeProperty(newNet, shapeId);
-
-      _currentNet->getWire()->append(newNet->getWire(), true);
-      dbNet::destroy(newNet);
     }
     return newNet;
   }
+  sprintf(netName, "N%d_%d", netId, shapeId);
+  dbNet* newNet = createNetSingleWire(netName,
+                                      r.xMin(),
+                                      r.yMin(),
+                                      r.xMax(),
+                                      r.yMax(),
+                                      level,
+                                      true /*skipBterms*/,
+                                      true);
+
+  if (newNet != nullptr) {
+    if (shapeId > 0) {
+      setFirstShapeProperty(newNet, shapeId);
+    }
+
+    _currentNet->getWire()->append(newNet->getWire(), true);
+    dbNet::destroy(newNet);
+  }
+  return newNet;
 }
 
 dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
@@ -1302,14 +1359,15 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 {
   if ((netName == nullptr) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
-    if (netName == nullptr)
+    if (netName == nullptr) {
       logger_->warn(
           ODB, 404, "Cannot create wire, because net name is nullptr");
-    else
+    } else {
       logger_->warn(ODB,
                     405,
                     "Cannot create wire, because routing layer ({}) is invalid",
                     routingLayer);
+    }
 
     return nullptr;
   }
@@ -1338,12 +1396,13 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   {
     make_vertical = false;
   } else if ((dx < minWidth) && (dy < minWidth)) {
-    if (dx > dy)
+    if (dx > dy) {
       make_vertical = true;
-    else if (dx < dy)
+    } else if (dx < dy) {
       make_vertical = false;
-    else
+    } else {
       make_vertical = true;
+    }
   } else if (dx == minWidth) {
     make_vertical = true;
   } else if (dy == minWidth) {
@@ -1403,8 +1462,9 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   }
 
   dbTechLayerRule* rule = nullptr;
-  if (layer->getWidth() != width)
+  if (layer->getWidth() != width) {
     rule = getRule(routingLayer, width);
+  }
 
   dbWireEncoder encoder;
   encoder.begin(dbWire::create(net));
@@ -1414,20 +1474,23 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     encoder.setColor(color);
   }
 
-  if (rule == nullptr)
+  if (rule == nullptr) {
     encoder.newPath(layer, dbWireType::ROUTED);
-  else
+  } else {
     encoder.newPath(layer, dbWireType::ROUTED, rule);
+  }
 
   encoder.addPoint(p0.x(), p0.y(), 0);
 
-  if (!skipBterms)
+  if (!skipBterms) {
     encoder.addBTerm(blutrms.first);
+  }
 
   encoder.addPoint(p1.x(), p1.y(), 0);
 
-  if (!skipBterms)
+  if (!skipBterms) {
     encoder.addBTerm(blutrms.second);
+  }
 
   encoder.end();
 
@@ -1454,8 +1517,9 @@ std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
   uint dy = y2 - y1;
   uint fwidth = dx < dy ? dx : dy;
   uint hwidth = fwidth / 2;
-  if (!blterm)
+  if (!blterm) {
     return retpr;
+  }
 
   term_str = net->getName();
   term_str = term_str + "_BU";

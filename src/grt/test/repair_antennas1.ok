@@ -8,7 +8,7 @@
 Net: clk
   Pin: clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
     Layer: met2
-      Partial area ratio:  462.20
+      Partial area ratio:  451.78
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
@@ -61,10 +61,10 @@ Net: req_msg[31]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: resp_msg[14]
-  Pin: _658_/A (sky130_fd_sc_hs__nand2_1)
-    Layer: met2
-      Partial area ratio:  506.30
+Net: resp_msg[11]
+  Pin: _648_/A (sky130_fd_sc_hs__nand2_1)
+    Layer: met1
+      Partial area ratio:  572.13
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 

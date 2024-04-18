@@ -36,8 +36,8 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "dbBlockCallBackObj.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "spdlog/fmt/fmt.h"
 
 namespace odb {

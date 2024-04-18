@@ -30,17 +30,18 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 using namespace odb;
 
 void ArraySpacingParser::setCutClass(std::string class_name)
 {
   auto cut_class = layer_->findTechLayerCutClassRule(class_name.c_str());
-  if (cut_class != nullptr)
+  if (cut_class != nullptr) {
     rule_->setCutClass(cut_class);
+  }
 }
 
 void ArraySpacingParser::setArraySpacing(
@@ -103,7 +104,8 @@ bool ArraySpacingParser::parse(std::string s)
   bool valid = qi::phrase_parse(first, last, LEF58_ARRAYSPACING, space)
                && first == last;
 
-  if (!valid && rule_ != nullptr)  // fail if we did not get a full match
+  if (!valid && rule_ != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerArraySpacingRule::destroy(rule_);
+  }
   return valid;
 }

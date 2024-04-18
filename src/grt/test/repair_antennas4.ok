@@ -14,7 +14,9 @@
 [WARNING ANT-0009] Net req_msg[28] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net req_msg[31] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[13] requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net resp_msg[14] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[14] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[1] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[3] requires more than 10 diodes per gate to repair violations.
@@ -22,6 +24,7 @@
 [WARNING ANT-0009] Net resp_msg[8] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_rdy requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net _229_ requires more than 10 diodes per gate to repair violations.
+[WARNING ANT-0009] Net _229_ requires more than 10 diodes per gate to repair violations.
 [INFO GRT-0012] Found 17 antenna violations.
-[INFO GRT-0015] Inserted 264 diodes.
-[INFO GRT-0054] Using detailed placer to place 107 diodes.
+[INFO GRT-0015] Inserted 330 diodes.
+[INFO GRT-0054] Using detailed placer to place 168 diodes.

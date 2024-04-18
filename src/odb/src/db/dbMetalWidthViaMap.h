@@ -34,11 +34,11 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 // User Code Begin Includes
-#include "db.h"
 #include "dbVector.h"
+#include "odb/db.h"
 // User Code End Includes
 
 namespace odb {

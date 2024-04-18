@@ -52,8 +52,9 @@ void writeLine(FILE* f, const std::string& s)
 {
   std::size_t bufferBegin = 0, currentPos = -1;
   while ((currentPos = s.find(' ', currentPos + 1)) != std::string::npos) {
-    if (currentPos - bufferBegin < 57)
+    if (currentPos - bufferBegin < 57) {
       continue;
+    }
 
     fwrite(s.substr(bufferBegin, currentPos - bufferBegin).c_str(),
            sizeof(char),
@@ -61,13 +62,15 @@ void writeLine(FILE* f, const std::string& s)
            f);
     bufferBegin = currentPos + 1;
 
-    if (bufferBegin < s.size() - 1)
+    if (bufferBegin < s.size() - 1) {
       fwrite("\n+ ", sizeof(char), 3, f);
+    }
   }
 
-  if (bufferBegin < s.size() - 1)
+  if (bufferBegin < s.size() - 1) {
     fwrite(
         s.substr(bufferBegin).c_str(), sizeof(char), s.size() - bufferBegin, f);
+  }
   fwrite("\n", sizeof(char), 1, f);
 }
 
@@ -76,8 +79,9 @@ std::string getUnconnectedNet(dbBlock* block, int& unconnectedNets)
   while (block->findNet(
              std::string("_unconnected_" + std::to_string(unconnectedNets++))
                  .c_str())
-         != nullptr)
+         != nullptr) {
     ;
+  }
   return "_unconnected_" + std::to_string(unconnectedNets - 1);
 }
 
@@ -204,8 +208,9 @@ bool cdl::writeCdl(utl::Logger* logger,
 
   for (auto&& inst : block->getInsts()) {
     dbMaster* master = inst->getMaster();
-    if (!includeFillers && master->isFiller())
+    if (!includeFillers && master->isFiller()) {
       continue;
+    }
 
     line = "X" + inst->getName();
     auto it = mtermMap.find(master);

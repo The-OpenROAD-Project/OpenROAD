@@ -29,9 +29,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace lefTechLayerCornerSpacing {
 
@@ -87,8 +87,9 @@ void addSpacing(
   auto spacing2 = at_c<2>(params);
   if (spacing2.is_initialized()) {
     rule->addSpacing(width, spacing1, lefin->dbdist(spacing2.value()));
-  } else
+  } else {
     rule->addSpacing(width, spacing1, spacing1);
+  }
 }
 template <typename Iterator>
 bool parse(Iterator first,
@@ -153,8 +154,9 @@ bool parse(Iterator first,
   bool valid = qi::phrase_parse(first, last, cornerSpacingRule, space)
                && first == last;
 
-  if (!valid)
+  if (!valid) {
     odb::dbTechLayerCornerSpacingRule::destroy(rule);
+  }
 
   return valid;
 }

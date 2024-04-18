@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -68,16 +68,18 @@ void definNonDefaultRule::beginRule(const char* name)
 
 void definNonDefaultRule::hardSpacing()
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   _cur_rule->setHardSpacing(true);
 }
 
 void definNonDefaultRule::via(const char* name)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechVia* via = _tech->findVia(name);
 
@@ -92,8 +94,9 @@ void definNonDefaultRule::via(const char* name)
 
 void definNonDefaultRule::viaRule(const char* name)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechViaGenerateRule* rule = _tech->findViaGenerateRule(name);
 
@@ -109,8 +112,9 @@ void definNonDefaultRule::viaRule(const char* name)
 
 void definNonDefaultRule::minCuts(const char* name, int count)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechLayer* layer = _tech->findLayer(name);
 
@@ -125,8 +129,9 @@ void definNonDefaultRule::minCuts(const char* name, int count)
 
 void definNonDefaultRule::beginLayerRule(const char* name, int width)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbTechLayer* layer = _tech->findLayer(name);
 
@@ -153,16 +158,18 @@ void definNonDefaultRule::beginLayerRule(const char* name, int width)
 
 void definNonDefaultRule::spacing(int s)
 {
-  if (_cur_layer_rule == nullptr)
+  if (_cur_layer_rule == nullptr) {
     return;
+  }
 
   _cur_layer_rule->setSpacing(dbdist(s));
 }
 
 void definNonDefaultRule::wireExt(int e)
 {
-  if (_cur_layer_rule == nullptr)
+  if (_cur_layer_rule == nullptr) {
     return;
+  }
 
   _cur_layer_rule->setWireExtension(dbdist(e));
 }
@@ -173,37 +180,43 @@ void definNonDefaultRule::endLayerRule()
 
 void definNonDefaultRule::property(const char* name, const char* value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_rule, name, value);
 }
 
 void definNonDefaultRule::property(const char* name, int value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_rule, name, value);
 }
 
 void definNonDefaultRule::property(const char* name, double value)
 {
-  if (_cur_rule == nullptr)
+  if (_cur_rule == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_rule, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_rule, name, value);
 }
@@ -213,8 +226,9 @@ void definNonDefaultRule::endRule()
   if (_cur_rule) {
     dbSet<dbProperty> props = dbProperty::getProperties(_cur_rule);
 
-    if (!props.empty() && props.orderReversed())
+    if (!props.empty() && props.orderReversed()) {
       props.reverse();
+    }
 
     // Verify all routing layers have a rule
     for (int level = 1; level < _tech->getRoutingLayerCount(); ++level) {

@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbExtControl.h"
+#include "odb/dbExtControl.h"
 
-#include "db.h"
 #include "dbDatabase.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -66,8 +66,9 @@ dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)
 {
   stream << extControl._overCell;
   stream << extControl._extracted;
-  if (!extControl._extracted)
+  if (!extControl._extracted) {
     return stream;
+  }
   stream << extControl._independentExtCorners;
   stream << extControl._wireStamped;
   stream << extControl._foreign;
@@ -103,8 +104,9 @@ dbIStream& operator>>(dbIStream& stream, dbExtControl& extControl)
 {
   stream >> extControl._overCell;
   stream >> extControl._extracted;
-  if (!extControl._extracted)
+  if (!extControl._extracted) {
     return stream;
+  }
   stream >> extControl._independentExtCorners;
   stream >> extControl._wireStamped;
   stream >> extControl._foreign;

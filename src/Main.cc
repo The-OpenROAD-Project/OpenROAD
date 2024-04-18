@@ -468,8 +468,8 @@ int ord::tclAppInit(Tcl_Interp* interp)
 
 static void showUsage(const char* prog, const char* init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] ", prog);
-  printf("[-threads count|max] [-log file_name] [-metrics file_name] ");
+  printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
+  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
   printf("cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
@@ -495,6 +495,15 @@ static void showSplash()
   logger->report("OpenROAD {} {}",
                  ord::OpenRoad::getVersion(),
                  ord::OpenRoad::getGitDescribe());
+  logger->report(
+      "Features included (+) or not (-):  "
+      "{}Charts {}GPU {}GUI {}MPL2 {}PAR {}Python",
+      ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGUICompileOption() ? "+" : "-",
+      ord::OpenRoad::getMPL2CompileOption() ? "+" : "-",
+      ord::OpenRoad::getPARCompileOption() ? "+" : "-",
+      ord::OpenRoad::getPythonCompileOption() ? "+" : "-");
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");

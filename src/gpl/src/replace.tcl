@@ -36,6 +36,8 @@ sta::define_cmd_args "global_placement" {\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
+    [-disable_timing_driven]\
+    [-disable_routability_driven]\
     [-incremental]\
     [-force_cpu]\
     [-skip_io]\
@@ -326,8 +328,8 @@ sta::define_cmd_args "cluster_flops" {\
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size -num_paths }
-
+    keys { -tray_weight -timing_weight -max_split_size -num_paths } \
+    flags {}
 
   set tray_weight 20.0
   set timing_weight 1.0
@@ -353,12 +355,10 @@ proc cluster_flops { args } {
   gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
 }
 
-
-namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
     keys {-pause -update -inst} \
-    flags {-draw_bins -initial}
+    flags {-draw_bins -initial};# checker off
 
   set pause 10
   if { [info exists keys(-pause)] } {
@@ -383,9 +383,11 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial $inst
 }
 
+namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
-    keys { -pad_left -pad_right }
+    keys { -pad_left -pad_right } \
+    flags {};# checker off
 
   # no need for init IP, TD and RD
   gpl::set_initial_place_max_iter_cmd 0

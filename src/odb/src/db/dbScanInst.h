@@ -34,8 +34,11 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbInst.h"
 #include "dbScanPin.h"
-#include "odb.h"
+#include "dbVector.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -43,6 +46,7 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class dbScanPin;
+class dbInst;
 
 class _dbScanInst : public _dbObject
 {
@@ -60,9 +64,12 @@ class _dbScanInst : public _dbObject
                    const _dbScanInst& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  uint bits;
-  dbId<dbScanPin> scanIn;
-  dbId<dbScanPin> scanOut;
+  uint bits_;
+  std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;
+  dbId<dbScanPin> scan_enable_;
+  dbId<dbInst> inst_;
+  std::string scan_clock_;
+  uint clock_edge_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj);

@@ -123,7 +123,7 @@ class Ath__wire
 
   void reset();
   // void set(int xy1, int xy2);
-  void set(uint dir, int* ll, int* ur);
+  void set(uint dir, const int* ll, const int* ur);
   void search(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
   void search1(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
 
@@ -489,7 +489,7 @@ class Ath__grid
   uint defaultWireType();
   void setDefaultWireType(uint v);
   uint search(Ath__searchBox* bb,
-              uint* gxy,
+              const uint* gxy,
               Ath__array1D<uint>* idtable,
               Ath__grid* g);
   void adjustOverlapMakerEnd();
@@ -603,8 +603,8 @@ class Ath__gridTable
                  uint* width,
                  uint* pitch,
                  uint* spacing,
-                 int* X1 = nullptr,
-                 int* Y1 = nullptr);
+                 const int* X1 = nullptr,
+                 const int* Y1 = nullptr);
   ~Ath__gridTable();
   Ath__grid* getGrid(uint row, uint col);
   void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);

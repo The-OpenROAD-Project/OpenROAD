@@ -50,6 +50,7 @@ class dbBlock;
 class dbDatabase;
 class dbITerm;
 class dbInst;
+class dbMaster;
 class dbModule;
 }  // namespace odb
 
@@ -137,6 +138,8 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+  using IOSpans = std::map<PinAccess, std::pair<float, float>>;
+
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
   void computeMetricsForModules(float core_area);
@@ -213,13 +216,17 @@ class HierRTLMP
                                     std::vector<Cluster*>& macro_clusters);
   void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
                             std::vector<int>& size_class);
+  void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
+                                 std::vector<int>& interconn_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
                                 const std::vector<int>& size_class,
                                 const std::vector<int>& signature_class,
+                                std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
+  void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
   void addStdCellClusterToSubTree(Cluster* parent,
                                   Cluster* mixed_leaf,
                                   std::vector<int>& virtual_conn_clusters);
@@ -231,7 +238,10 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
+  IOSpans computeIOSpans();
+  float computeIOBlockagesDepth(const IOSpans& io_spans);
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -263,7 +273,26 @@ class HierRTLMP
   void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
-  void hardMacroClusterMacroPlacement(Cluster* cluster);
+  void placeMacros(Cluster* cluster);
+  void createClusterForEachMacro(const std::vector<HardMacro*>& hard_macros,
+                                 std::vector<HardMacro>& sa_macros,
+                                 std::vector<Cluster*>& macro_clusters,
+                                 std::map<int, int>& cluster_to_macro,
+                                 std::set<odb::dbMaster*>& masters);
+  void computeFencesAndGuides(const std::vector<HardMacro*>& hard_macros,
+                              const Rect& outline,
+                              std::map<int, Rect>& fences,
+                              std::map<int, Rect>& guides);
+  void createFixedTerminals(const Rect& outline,
+                            const std::vector<Cluster*>& macro_clusters,
+                            std::map<int, int>& cluster_to_macro,
+                            std::vector<HardMacro>& sa_macros);
+  std::vector<BundledNet> computeBundledNets(
+      const std::vector<Cluster*>& macro_clusters,
+      const std::map<int, int>& cluster_to_macro);
+  void setArrayTilingSequencePair(Cluster* cluster,
+                                  int macros_to_place,
+                                  SequencePair& initial_seq_pair);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
@@ -340,8 +369,6 @@ class HierRTLMP
   float notch_h_th_ = 10.0;
 
   int snap_layer_ = 4;
-  float pitch_x_ = 0.0;
-  float pitch_y_ = 0.0;
 
   // SA related parameters
   // weight for different penalty
@@ -378,11 +405,6 @@ class HierRTLMP
   float resize_prob_ = 0.4;
 
   // design-related variables
-  // core area (in float)
-  float floorplan_lx_ = 0.0;
-  float floorplan_ly_ = 0.0;
-  float floorplan_ux_ = 0.0;
-  float floorplan_uy_ = 0.0;
   float macro_with_halo_area_ = 0.0;
 
   // dataflow parameters and store the dataflow

@@ -33,9 +33,9 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "db.h"
-#include "dbShape.h"
-#include "dbWireCodec.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbWireCodec.h"
 #include "tmg_conn.h"
 #include "utl/Logger.h"
 
@@ -794,7 +794,7 @@ void tmg_conn::copyWireIdToVisitedShorts(const int j)
   const int wire_id = _ptV[j]._dbwire_id;
   tmg_rcpt* x0 = &_ptV[j];
   for (tmg_rcpt* x = x0->_sring; x && x != x0; x = x->_sring) {
-    if (x->_dbwire_id < 0 && _graph->_ptV[x - &_ptV[0]].visited) {
+    if (x->_dbwire_id < 0 && _graph->_ptV[x - _ptV.data()].visited) {
       x->_dbwire_id = wire_id;
     }
   }

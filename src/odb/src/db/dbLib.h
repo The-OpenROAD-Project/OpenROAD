@@ -34,7 +34,7 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -83,8 +83,9 @@ uint dbCapNodeItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbCapNodeItr::begin(parent); id != dbCapNodeItr::end(parent);
-       id = dbCapNodeItr::next(id))
+       id = dbCapNodeItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

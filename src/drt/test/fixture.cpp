@@ -91,7 +91,7 @@ void Fixture::setupTech(frTechObject* tech)
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
-  addLayer(tech, "m1", dbTechLayerType::ROUTING);
+  addLayer(tech, "m1", dbTechLayerType::ROUTING, dbTechLayerDir::HORIZONTAL);
 }
 
 frMaster* Fixture::makeMacro(const char* name,
@@ -543,6 +543,47 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
     }
   }
   design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58TwoWiresForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerTwoWiresForbiddenSpcRule* dbRule)
+{
+  auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addTwoWiresForbiddenSpacingConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeLef58ForbiddenSpc(
+    frLayerNum layer_num,
+    odb::dbTechLayerForbiddenSpacingRule* dbRule)
+{
+  auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addForbiddenSpacingConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+frLef58EnclosureConstraint* Fixture::makeLef58EnclosureConstrainut(
+    frLayerNum layer_num,
+    int cut_class_idx,
+    frCoord width,
+    frCoord firstOverhang,
+    frCoord secondOverhang)
+{
+  auto layer = design->getTech()->getLayer(layer_num);
+  auto dbRule = odb::dbTechLayerCutEnclosureRule::create(layer->getDbLayer());
+  auto con = std::make_unique<frLef58EnclosureConstraint>(dbRule);
+  auto rptr = con.get();
+  rptr->setCutClassIdx(cut_class_idx);
+  dbRule->setMinWidth(width);
+  dbRule->setFirstOverhang(firstOverhang);
+  dbRule->setSecondOverhang(secondOverhang);
+  dbRule->setType(odb::dbTechLayerCutEnclosureRule::DEFAULT);
+  layer->addLef58EnclosureConstraint(rptr);
+  design->getTech()->addUConstraint(std::move(con));
+  return rptr;
 }
 
 void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,

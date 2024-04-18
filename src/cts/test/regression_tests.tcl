@@ -18,4 +18,6 @@ record_tests {
   array_ins_delay
   insertion_delay    
   dummy_load
+  #cts_readme_msgs_check
+  #cts_man_tcl_check
 }

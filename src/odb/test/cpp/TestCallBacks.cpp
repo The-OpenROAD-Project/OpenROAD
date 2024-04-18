@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "CallBack.h"
-#include "db.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
@@ -58,7 +58,10 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   BOOST_TEST(cb->events[1] == "PostMove inst i1");
   cb->clearEvents();
   i1->setOrigin(100, 100);
-  BOOST_TEST(cb->events.size() == 0);
+  BOOST_TEST(cb->events.size() == 2);
+  BOOST_TEST(cb->events[0] == "PreMove inst i1");
+  BOOST_TEST(cb->events[1] == "PostMove inst i1");
+  cb->clearEvents();
   i1->findITerm("a")->connect(n1);
   BOOST_TEST(cb->events.size() == 2);
   BOOST_TEST(cb->events[0] == "PreConnect iterm to net n1");

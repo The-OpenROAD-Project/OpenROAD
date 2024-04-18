@@ -36,6 +36,7 @@
 
 #include "gui/gui.h"
 #include "shape.h"
+#include "via.h"
 
 namespace odb {
 class Rect;
@@ -60,9 +61,9 @@ class PDNRenderer : public gui::Renderer
 
  private:
   PdnGen* pdn_;
-  ShapeTreeMap shapes_;
-  ShapeTreeMap grid_obstructions_;
-  ViaTree vias_;
+  Shape::ShapeTreeMap shapes_;
+  Shape::ObstructionTreeMap grid_obstructions_;
+  Via::ViaTree vias_;
   struct RepairChannel
   {
     odb::dbTechLayer* source;

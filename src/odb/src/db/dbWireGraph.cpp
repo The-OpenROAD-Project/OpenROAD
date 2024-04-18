@@ -30,10 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWireGraph.h"
+#include "odb/dbWireGraph.h"
 
 #include "dbWire.h"
-#include "dbWireCodec.h"
+#include "odb/db.h"
+#include "odb/dbWireCodec.h"
 
 namespace odb {
 
@@ -60,8 +61,9 @@ void dbWireGraph::clear()
 {
   node_iterator itr;
 
-  for (itr = begin_nodes(); itr != end_nodes();)
+  for (itr = begin_nodes(); itr != end_nodes();) {
     itr = deleteNode(itr);
+  }
 
   _junction_map.clear();
 }
@@ -400,15 +402,17 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::ITERM: {
-        if (prev->_object)
+        if (prev->_object) {
           assert(prev->_object == (dbObject*) decoder.getITerm());
+        }
         prev->_object = (dbObject*) decoder.getITerm();
         break;
       }
 
       case dbWireDecoder::BTERM: {
-        if (prev->_object)
+        if (prev->_object) {
           assert(prev->_object == (dbObject*) decoder.getBTerm());
+        }
         prev->_object = (dbObject*) decoder.getBTerm();
         break;
       }
@@ -502,19 +506,22 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder,
       type_or_rule_changed = true;
     }
 
-    if (type_or_rule_changed && (!path.empty()))
+    if (type_or_rule_changed && (!path.empty())) {
       encodePath(encoder, path);
+    }
 
     path.push_back(e);
     encodePath(encoder, path, e->_tgt, cur_type, cur_rule);
   }
 
   // Handle the case where there was only a short branch(es) from the src node:
-  if (!path.empty())
+  if (!path.empty()) {
     encodePath(encoder, path);
+  }
 
-  if (!has_shorts_or_vwires)
+  if (!has_shorts_or_vwires) {
     return;
+  }
 
   for (itr = src->begin(); itr != src->end(); ++itr) {
     Edge* e = *itr;
@@ -532,8 +539,9 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
 {
   std::vector<Edge*>::iterator itr = path.begin();
 
-  if (itr == path.end())
+  if (itr == path.end()) {
     return;
+  }
 
   Edge* e = *itr;
   EndStyle prev_style;
@@ -545,49 +553,57 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
       Segment* s = (Segment*) e;
 
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == nullptr)
+        if (e->_non_default_rule == nullptr) {
           encoder.newPath(e->_src->_layer, e->_wire_type);
-        else
+        } else {
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
+        }
 
-        if (s->_src_style._type == EndStyle::EXTENDED)
+        if (s->_src_style._type == EndStyle::EXTENDED) {
           e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
-        else
+        } else {
           e->_src->_jct_id
               = encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
+        }
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       } else {
         if (e->_non_default_rule == nullptr) {
-          if (s->_src_style._type == EndStyle::EXTENDED)
+          if (s->_src_style._type == EndStyle::EXTENDED) {
             encoder.newPath(e->_src->_jct_id, e->_wire_type);
-          else
+          } else {
             encoder.newPathExt(
                 e->_src->_jct_id, s->_src_style._ext, e->_wire_type);
+          }
         } else {
-          if (s->_src_style._type == EndStyle::EXTENDED)
+          if (s->_src_style._type == EndStyle::EXTENDED) {
             encoder.newPath(
                 e->_src->_jct_id, e->_wire_type, e->_non_default_rule);
-          else
+          } else {
             encoder.newPathExt(e->_src->_jct_id,
                                s->_src_style._ext,
                                e->_wire_type,
                                e->_non_default_rule);
+          }
         }
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       }
 
-      if (s->_tgt_style._type == EndStyle::EXTENDED)
+      if (s->_tgt_style._type == EndStyle::EXTENDED) {
         e->_tgt->_jct_id = encoder.addPoint(e->_tgt->_x, e->_tgt->_y);
-      else
+      } else {
         e->_tgt->_jct_id
             = encoder.addPoint(e->_tgt->_x, e->_tgt->_y, s->_tgt_style._ext);
+      }
 
-      if (e->_tgt->_object != nullptr)
+      if (e->_tgt->_object != nullptr) {
         addObject(encoder, e->_tgt->_object);
+      }
 
       prev_style = s->_tgt_style;
       break;
@@ -595,74 +611,85 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
 
     case Edge::TECH_VIA: {
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == nullptr)
+        if (e->_non_default_rule == nullptr) {
           encoder.newPath(e->_src->_layer, e->_wire_type);
-        else
+        } else {
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
+        }
 
         e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       } else {
-        if (e->_non_default_rule == nullptr)
+        if (e->_non_default_rule == nullptr) {
           encoder.newPath(e->_src->_jct_id, e->_wire_type);
-        else
+        } else {
           encoder.newPath(
               e->_src->_jct_id, e->_wire_type, e->_non_default_rule);
+        }
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       }
 
       TechVia* v = (TechVia*) e;
       e->_tgt->_jct_id = encoder.addTechVia(v->_via);
 
-      if (e->_tgt->_object != nullptr)
+      if (e->_tgt->_object != nullptr) {
         addObject(encoder, e->_tgt->_object);
+      }
       break;
     }
 
     case Edge::VIA: {
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == nullptr)
+        if (e->_non_default_rule == nullptr) {
           encoder.newPath(e->_src->_layer, e->_wire_type);
-        else
+        } else {
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
+        }
 
         e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       } else {
-        if (e->_non_default_rule == nullptr)
+        if (e->_non_default_rule == nullptr) {
           encoder.newPath(e->_src->_jct_id, e->_wire_type);
-        else
+        } else {
           encoder.newPath(
               e->_src->_jct_id, e->_wire_type, e->_non_default_rule);
+        }
 
-        if (e->_src->_object != nullptr)
+        if (e->_src->_object != nullptr) {
           addObject(encoder, e->_src->_object);
+        }
       }
 
       Via* v = (Via*) e;
       e->_tgt->_jct_id = encoder.addVia(v->_via);
 
-      if (e->_tgt->_object != nullptr)
+      if (e->_tgt->_object != nullptr) {
         addObject(encoder, e->_tgt->_object);
+      }
       break;
     }
 
     case Edge::SHORT: {
       assert(e->_src->_jct_id != -1);
 
-      if (e->_non_default_rule == nullptr)
+      if (e->_non_default_rule == nullptr) {
         encoder.newPathShort(e->_src->_jct_id, e->_src->_layer, e->_wire_type);
-      else
+      } else {
         encoder.newPathShort(e->_src->_jct_id,
                              e->_src->_layer,
                              e->_wire_type,
                              e->_non_default_rule);
+      }
 
       is_short_or_vwire_path = true;
       break;
@@ -671,14 +698,15 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
     case Edge::VWIRE: {
       assert(e->_src->_jct_id != -1);
 
-      if (e->_non_default_rule == nullptr)
+      if (e->_non_default_rule == nullptr) {
         encoder.newPathVirtualWire(
             e->_src->_jct_id, e->_src->_layer, e->_wire_type);
-      else
+      } else {
         encoder.newPathVirtualWire(e->_src->_jct_id,
                                    e->_src->_layer,
                                    e->_wire_type,
                                    e->_non_default_rule);
+      }
 
       is_short_or_vwire_path = true;
       break;
@@ -693,44 +721,49 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         Segment* s = (Segment*) e;
 
         if (is_short_or_vwire_path) {
-          if (s->_src_style._type == EndStyle::EXTENDED)
+          if (s->_src_style._type == EndStyle::EXTENDED) {
             e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
-          else
+          } else {
             e->_src->_jct_id = encoder.addPoint(
                 e->_src->_x, e->_src->_y, s->_src_style._ext);
+          }
 
-          if (e->_src->_object != nullptr)
+          if (e->_src->_object != nullptr) {
             addObject(encoder, e->_src->_object);
+          }
           is_short_or_vwire_path = false;
         }
 
         else if (prev_style._type != s->_src_style._type) {
           // reset: default ext
           if (prev_style._type == EndStyle::VARIABLE
-              && s->_src_style._type == EndStyle::EXTENDED)
+              && s->_src_style._type == EndStyle::EXTENDED) {
             encoder.addPoint(e->_src->_x, e->_src->_y);
 
-          // reset: variable ext
-          else if (prev_style._type == EndStyle::EXTENDED
-                   && s->_src_style._type == EndStyle::VARIABLE)
+            // reset: variable ext
+          } else if (prev_style._type == EndStyle::EXTENDED
+                     && s->_src_style._type == EndStyle::VARIABLE) {
             encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
 
-          // Reset: variable ext
-          else if (prev_style._type == EndStyle::VARIABLE
-                   && s->_src_style._type == EndStyle::VARIABLE)
+            // Reset: variable ext
+          } else if (prev_style._type == EndStyle::VARIABLE
+                     && s->_src_style._type == EndStyle::VARIABLE) {
             encoder.addPoint(e->_src->_x, e->_src->_y, s->_src_style._ext);
+          }
         }
 
         assert(e->_src->_jct_id != -1);
 
-        if (s->_tgt_style._type == EndStyle::EXTENDED)
+        if (s->_tgt_style._type == EndStyle::EXTENDED) {
           e->_tgt->_jct_id = encoder.addPoint(e->_tgt->_x, e->_tgt->_y);
-        else
+        } else {
           e->_tgt->_jct_id
               = encoder.addPoint(e->_tgt->_x, e->_tgt->_y, s->_tgt_style._ext);
+        }
 
-        if (e->_tgt->_object != nullptr)
+        if (e->_tgt->_object != nullptr) {
           addObject(encoder, e->_tgt->_object);
+        }
         prev_style = s->_tgt_style;
         break;
       }
@@ -740,8 +773,9 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
           e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
           is_short_or_vwire_path = false;
 
-          if (e->_src->_object != nullptr)
+          if (e->_src->_object != nullptr) {
             addObject(encoder, e->_src->_object);
+          }
         }
 
         assert(e->_src->_jct_id != -1);
@@ -749,8 +783,9 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         TechVia* v = (TechVia*) e;
         e->_tgt->_jct_id = encoder.addTechVia(v->_via);
 
-        if (e->_tgt->_object != nullptr)
+        if (e->_tgt->_object != nullptr) {
           addObject(encoder, e->_tgt->_object);
+        }
         break;
       }
 
@@ -759,8 +794,9 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
           e->_src->_jct_id = encoder.addPoint(e->_src->_x, e->_src->_y);
           is_short_or_vwire_path = false;
 
-          if (e->_src->_object != nullptr)
+          if (e->_src->_object != nullptr) {
             addObject(encoder, e->_src->_object);
+          }
         }
 
         assert(e->_src->_jct_id != -1);
@@ -768,8 +804,9 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
         Via* v = (Via*) e;
         e->_tgt->_jct_id = encoder.addVia(v->_via);
 
-        if (e->_tgt->_object != nullptr)
+        if (e->_tgt->_object != nullptr) {
           addObject(encoder, e->_tgt->_object);
+        }
         break;
       }
 
@@ -783,6 +820,63 @@ void dbWireGraph::encodePath(dbWireEncoder& encoder, std::vector<Edge*>& path)
   }
 
   path.clear();
+}
+
+void dbWireGraph::dump(utl::Logger* logger)
+{
+  std::map<Node*, int> node2index;
+  int index = 0;
+  for (auto it = begin_nodes(); it != end_nodes(); ++it) {
+    auto node = *it;
+    node2index[node] = index;
+    int x;
+    int y;
+    node->xy(x, y);
+    std::string obj_name("-");
+    if (dbObject* object = node->object()) {
+      if (object->getObjectType() == dbITermObj) {
+        obj_name = static_cast<dbITerm*>(object)->getName();
+      } else if (object->getObjectType() == dbBTermObj) {
+        obj_name = static_cast<dbBTerm*>(object)->getName();
+      } else {
+        obj_name = "<unknown>";
+      }
+    }
+    logger->report("Node {:2}: ({}, {}) {} (obj {})",
+                   index++,
+                   x,
+                   y,
+                   node->layer()->getName(),
+                   obj_name);
+  }
+
+  index = 0;
+  for (auto it = begin_edges(); it != end_edges(); ++it) {
+    auto edge = *it;
+    std::string type;
+    switch (edge->type()) {
+      case Edge::SEGMENT:
+        type = "SEGMENT";
+        break;
+      case Edge::TECH_VIA:
+        type = "TECH_VIA";
+        break;
+      case Edge::VIA:
+        type = "VIA";
+        break;
+      case Edge::SHORT:
+        type = "SHORT";
+        break;
+      case Edge::VWIRE:
+        type = "VWIRE";
+        break;
+    }
+    logger->report("Edge {:2}: {:8} {:2} -> {:2}",
+                   index++,
+                   type,
+                   node2index.at(edge->source()),
+                   node2index.at(edge->target()));
+  }
 }
 
 }  // namespace odb

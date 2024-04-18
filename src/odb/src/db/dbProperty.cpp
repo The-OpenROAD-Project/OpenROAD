@@ -36,7 +36,6 @@
 
 #include <sstream>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
@@ -47,6 +46,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -75,22 +75,28 @@ _dbProperty::~_dbProperty()
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_flags._owner_type != rhs._flags._owner_type)
+  if (_flags._owner_type != rhs._flags._owner_type) {
     return false;
+  }
 
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
+  }
 
   if (_flags._owner_type
-      != dbDatabaseObj)  // database owners are never the same...
-    if (_owner != rhs._owner)
+      != dbDatabaseObj) {  // database owners are never the same...
+    if (_owner != rhs._owner) {
       return false;
+    }
+  }
 
-  if (_next != rhs._next)
+  if (_next != rhs._next) {
     return false;
+  }
 
   if (_value != rhs._value) {
     return false;
@@ -383,8 +389,9 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
 
   uint name_id = cache->findName(name);
 
-  if (name_id == 0)
+  if (name_id == 0) {
     return nullptr;
+  }
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -393,8 +400,9 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
   for (itr = props.begin(); itr != props.end(); ++itr) {
     _dbProperty* p = (_dbProperty*) *itr;
 
-    if (p->_name == name_id)
+    if (p->_name == name_id) {
       return (dbProperty*) p;
+    }
   }
 
   return nullptr;
@@ -406,8 +414,9 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
 
   uint name_id = cache->findName(name);
 
-  if (name_id == 0)
+  if (name_id == 0) {
     return nullptr;
+  }
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -416,8 +425,9 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
   for (itr = props.begin(); itr != props.end(); ++itr) {
     _dbProperty* p = (_dbProperty*) *itr;
 
-    if ((p->_name == name_id) && (p->_flags._type == (_PropTypeEnum) type))
+    if ((p->_name == name_id) && (p->_flags._type == (_PropTypeEnum) type)) {
       return (dbProperty*) p;
+    }
   }
 
   return nullptr;
@@ -446,10 +456,11 @@ void dbProperty::destroy(dbProperty* prop_)
     _dbProperty* p = propTable->getPtr(cur);
 
     if (cur == oid) {
-      if (cur == propList)
+      if (cur == propList) {
         ownerTable->setPropList(prop->_owner, p->_next);
-      else
+      } else {
         p->_next = prop->_next;
+      }
 
       break;
     }
@@ -474,8 +485,9 @@ void dbProperty::destroyProperties(dbObject* obj)
   dbObjectTable* objTable = object->getTable();
   dbId<_dbProperty> cur = objTable->getPropList(oid);
 
-  if (!cur)
+  if (!cur) {
     return;
+  }
 
   _dbNameCache* cache = _dbProperty::getNameCache(obj);
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(obj);
@@ -518,8 +530,9 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
                                        const char* name,
                                        bool value)
 {
-  if (find(object, name))
+  if (find(object, name)) {
     return nullptr;
+  }
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
   prop->_value = value;
@@ -590,8 +603,9 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
                                      const char* name,
                                      int value)
 {
-  if (find(object, name))
+  if (find(object, name)) {
     return nullptr;
+  }
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
   prop->_value = value;
@@ -623,8 +637,9 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
                                            const char* name,
                                            double value)
 {
-  if (find(object, name))
+  if (find(object, name)) {
     return nullptr;
+  }
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
   prop->_value = value;

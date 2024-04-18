@@ -1375,6 +1375,78 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
   }
 }
 
+BOOST_AUTO_TEST_CASE(twowires_forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerTwoWiresForbiddenSpcRule::create(db_layer);
+  rule->setMinSpacing(0);
+  rule->setMaxSpacing(300);
+  rule->setMinSpanLength(0);
+  rule->setMaxSpanLength(500);
+  rule->setPrl(0);
+  makeLef58TwoWiresForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 200}, {500, 200});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(forbidden_spc)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  auto rule = odb::dbTechLayerForbiddenSpacingRule::create(db_layer);
+  rule->setForbiddenSpacing({550, 800});
+  rule->setPrl(1);
+  rule->setWidth(300);
+  rule->setTwoEdges(300);
+  makeLef58ForbiddenSpc(2, rule);
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 50}, {500, 50});
+  makePathseg(n1, 2, {0, 700}, {500, 700});
+  // wire in between
+  makePathseg(n1, 2, {0, 300}, {500, 300});
+  // wire above
+  makePathseg(n1, 2, {0, 900}, {500, 900});
+
+  runGC();
+
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+}
+
+BOOST_AUTO_TEST_CASE(lef58_enclosure)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "Vx", 100, 200);
+  makeLef58EnclosureConstrainut(3, 0, 0, 0, 0);
+  makeLef58EnclosureConstrainut(3, 0, 200, 100, 50);
+
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {200, 100});
+
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {0, 0});
+  makePathseg(n1, 4, {-50, 50}, {250, 50}, 200);
+
+  runGC();
+  // BELOW ENC VALID, ABOVE ENCLOSURE VIOLATING
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               4,
+               frConstraintTypeEnum::frcLef58EnclosureConstraint,
+               Rect(0, 0, 200, 100));
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 }  // namespace drt

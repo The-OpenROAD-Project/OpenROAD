@@ -32,13 +32,13 @@
 
 #include "dbTechSameNetRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -46,17 +46,21 @@ template class dbTable<_dbTechSameNetRule>;
 
 bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
 {
-  if (_flags._stack != rhs._flags._stack)
+  if (_flags._stack != rhs._flags._stack) {
     return false;
+  }
 
-  if (_spacing != rhs._spacing)
+  if (_spacing != rhs._spacing) {
     return false;
+  }
 
-  if (_layer_1 != rhs._layer_1)
+  if (_layer_1 != rhs._layer_1) {
     return false;
+  }
 
-  if (_layer_2 != rhs._layer_2)
+  if (_layer_2 != rhs._layer_2) {
     return false;
+  }
 
   return true;
 }
@@ -119,10 +123,11 @@ void dbTechSameNetRule::setAllowStackedVias(bool value)
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
 
-  if (value)
+  if (value) {
     rule->_flags._stack = 1;
-  else
+  } else {
     rule->_flags._stack = 0;
+  }
 }
 
 bool dbTechSameNetRule::getAllowStackedVias()
@@ -140,11 +145,12 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
   _dbTech* tech = (_dbTech*) tech_;
   assert(tech_ == (dbTech*) layer2->getOwner());
 
-  if (tech->_samenet_rules.size() == 0)
+  if (tech->_samenet_rules.empty()) {
     tech->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
 
-  else if (tech_->findSameNetRule(layer1_, layer2_))
+  } else if (tech_->findSameNetRule(layer1_, layer2_)) {
     return nullptr;
+  }
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
   rule->_layer_1 = layer1->getOID();
@@ -167,11 +173,12 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
   assert(tech_ == (dbTech*) layer2->getOwner());
   assert(tech_ == (dbTech*) ndrule->getOwner());
 
-  if (ndrule->_samenet_rules.size() == 0)
+  if (ndrule->_samenet_rules.empty()) {
     ndrule->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
 
-  else if (ndrule_->findSameNetRule(layer1_, layer2_))
+  } else if (ndrule_->findSameNetRule(layer1_, layer2_)) {
     return nullptr;
+  }
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
   rule->_layer_1 = layer1->getOID();

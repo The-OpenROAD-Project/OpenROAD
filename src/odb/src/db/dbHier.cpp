@@ -32,7 +32,6 @@
 
 #include "dbHier.h"
 
-#include "db.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbChip.h"
@@ -42,6 +41,7 @@
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -49,14 +49,17 @@ template class dbTable<_dbHier>;
 
 bool _dbHier::operator==(const _dbHier& rhs) const
 {
-  if (_inst != rhs._inst)
+  if (_inst != rhs._inst) {
     return false;
+  }
 
-  if (_child_block != rhs._child_block)
+  if (_child_block != rhs._child_block) {
     return false;
+  }
 
-  if (_child_bterms != rhs._child_bterms)
+  if (_child_bterms != rhs._child_bterms) {
     return false;
+  }
 
   return true;
 }
@@ -123,8 +126,9 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
   dbSet<dbMTerm> mterms = ((dbMaster*) master)->getMTerms();
 
   // bterms do not map 1-to-1 to mterms.
-  if (mterms.size() != bterms.size())
+  if (mterms.size() != bterms.size()) {
     return nullptr;
+  }
 
   // initialize the hier structure
   _dbHier* hier = parent->_hier_tbl->create();

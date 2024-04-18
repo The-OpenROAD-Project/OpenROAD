@@ -32,7 +32,6 @@
 
 #include "dbTarget.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbMTerm.h"
@@ -41,6 +40,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -48,17 +48,21 @@ template class dbTable<_dbTarget>;
 
 bool _dbTarget::operator==(const _dbTarget& rhs) const
 {
-  if (_point != rhs._point)
+  if (_point != rhs._point) {
     return false;
+  }
 
-  if (_mterm != rhs._mterm)
+  if (_mterm != rhs._mterm) {
     return false;
+  }
 
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
-  if (_next != rhs._next)
+  if (_next != rhs._next) {
     return false;
+  }
 
   return true;
 }
@@ -147,10 +151,11 @@ void dbTarget::destroy(dbTarget* target_)
     _dbTarget* t = master->_target_tbl->getPtr(id);
 
     if (id == tid) {
-      if (p == nullptr)
+      if (p == nullptr) {
         mterm->_targets = t->_next;
-      else
+      } else {
         p->_next = t->_next;
+      }
 
       break;
     }

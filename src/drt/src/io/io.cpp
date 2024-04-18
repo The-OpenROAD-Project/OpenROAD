@@ -318,10 +318,30 @@ void io::Parser::setVias(odb::dbBlock* block)
       auto viaDef = std::make_unique<frViaDef>(via->getName());
       viaDef->addLayer1Fig(std::move(uBotFig));
       viaDef->addLayer2Fig(std::move(uTopFig));
+      auto cutLayer = tech_->getLayer(cutLayerNum);
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
-      tech_->addVia(std::move(viaDef));
+      int cutClassIdx = -1;
+      frLef58CutClass* cutClass = nullptr;
+      for (auto& cutFig : viaDef->getCutFigs()) {
+        Rect box = cutFig->getBBox();
+        auto width = box.minDXDY();
+        auto length = box.maxDXDY();
+        cutClassIdx = cutLayer->getCutClassIdx(width, length);
+        if (cutClassIdx != -1) {
+          cutClass = cutLayer->getCutClass(cutClassIdx);
+          break;
+        }
+      }
+      if (cutClass) {
+        viaDef->setCutClass(cutClass);
+        viaDef->setCutClassIdx(cutClassIdx);
+      }
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 337, "Duplicated via definition for {}", via->getName());
+      }
     } else {
       std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
@@ -365,7 +385,10 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (via->isDefault()) {
         viaDef->setDefault(true);
       }
-      tech_->addVia(std::move(viaDef));
+      if (!tech_->addVia(std::move(viaDef))) {
+        logger_->error(
+            utl::DRT, 338, "Duplicated via definition for {}", via->getName());
+      }
     }
   }
 }
@@ -419,6 +442,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
     fnd->addViaRule(design_->getTech()->getViaRule(via->getName()), z);
   }
 }
+
 void io::Parser::setNDRs(odb::dbDatabase* db)
 {
   for (auto ndr : db->getTech()->getNonDefaultRules()) {
@@ -436,6 +460,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
                               layer->getLayerNum() / 2 - 1));
   }
 }
+
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
                                frCoord& beginX,
                                frCoord& beginY,
@@ -1199,7 +1224,6 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setTracks(block);
   setInsts(block);
   setObstructions(block);
-  setVias(block);
   setBTerms(block);
   setAccessPoints(db);
   setNets(block);
@@ -1524,6 +1548,48 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58AreaConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerTwoWiresForbiddenSpcRules()) {
+    auto con = std::make_unique<frLef58TwoWiresForbiddenSpcConstraint>(rule);
+    tmpLayer->addTwoWiresForbiddenSpacingConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
+  for (auto rule : layer->getTechLayerForbiddenSpacingRules()) {
+    if (!rule->hasTwoEdges()) {
+      logger_->warn(utl::DRT,
+                    619,
+                    "LEF58_FORBIDDENSPACING rule without TWOEDGES is not "
+                    "supported for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->hasPrl()) {
+      logger_->warn(utl::DRT,
+                    620,
+                    "LEF58_FORBIDDENSPACING rule without PRL is not supported "
+                    "for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->hasWidth()) {
+      logger_->warn(utl::DRT,
+                    621,
+                    "LEF58_FORBIDDENSPACING rule without WIDTH is not "
+                    "supported for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    if (rule->hasWithin()) {
+      logger_->warn(utl::DRT,
+                    622,
+                    "LEF58_FORBIDDENSPACING rule with WITHIN is not supported "
+                    "for layer {}.",
+                    layer->getName());
+      continue;
+    }
+    auto con = std::make_unique<frLef58ForbiddenSpcConstraint>(rule);
+    tmpLayer->addForbiddenSpacingConstraint(con.get());
+    tech_->addUConstraint(std::move(con));
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
@@ -1797,6 +1863,95 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto rptr = static_cast<frLef58KeepOutZoneConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addKeepOutZoneConstraint(rptr);
+  }
+  for (auto rule : layer->getTechLayerCutEnclosureRules()) {
+    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::EOL) {
+      logger_->warn(
+          DRT,
+          340,
+          "LEF58_ENCLOSURE EOL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT) {
+      logger_->warn(DRT,
+                    341,
+                    "LEF58_ENCLOSURE HORIZONTAL/VERTICAL is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isIncludeAbutted()) {
+      logger_->warn(DRT,
+                    342,
+                    "LEF58_ENCLOSURE INCLUDEABUTTED is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isOffCenterLine()) {
+      logger_->warn(DRT,
+                    343,
+                    "LEF58_ENCLOSURE OFFCENTERLINE is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isLengthValid()) {
+      logger_->warn(
+          DRT,
+          344,
+          "LEF58_ENCLOSURE LENGTH is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isExtraCutValid()) {
+      logger_->warn(
+          DRT,
+          345,
+          "LEF58_ENCLOSURE EXTRACUT is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isRedundantCutValid()) {
+      logger_->warn(DRT,
+                    346,
+                    "LEF58_ENCLOSURE REDUNDANTCUT is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (rule->isParallelValid()) {
+      logger_->warn(
+          DRT,
+          347,
+          "LEF58_ENCLOSURE PARALLEL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isConcaveCornersValid()) {
+      logger_->warn(DRT,
+                    348,
+                    "LEF58_ENCLOSURE CONCAVECORNERS is not supported. Skipping "
+                    "for layer {}",
+                    layer->getName());
+      continue;
+    }
+    if (!rule->isCutClassValid()) {
+      logger_->warn(DRT,
+                    349,
+                    "LEF58_ENCLOSURE with no CUTCLASS is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58EnclosureConstraint>(rule);
+    auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());
+    rptr->setCutClassIdx(
+        tmpLayer->getCutClassIdx(rule->getCutClass()->getName()));
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58EnclosureConstraint(rptr);
   }
 }
 
@@ -2288,6 +2443,16 @@ void io::Parser::setMasters(odb::dbDatabase* db)
   const frLayerNum numLayers = tech_->getLayers().size();
   std::vector<RTree<frMPin*>> pin_shapes;
   pin_shapes.resize(numLayers);
+  auto addPinFig
+      = [&pin_shapes](const Rect& box, frLayerNum lNum, frMPin* pinIn) {
+          std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
+          pinFig->setBBox(box);
+          pinFig->addToPin(pinIn);
+          pinFig->setLayerNum(lNum);
+          std::unique_ptr<frPinFig> uptr(std::move(pinFig));
+          pinIn->addPinFig(std::move(uptr));
+          pin_shapes[lNum].insert(std::make_pair(box, pinIn));
+        };
 
   for (auto lib : db->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
@@ -2321,54 +2486,61 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         term->setType(_term->getSigType());
         term->setDirection(_term->getIoType());
 
-        bool warned = false;
         int i = 0;
         for (auto mpin : _term->getMPins()) {
           auto pinIn = std::make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
-            frLayerNum layerNum = -1;
             auto layer = box->getTechLayer();
             if (!layer) {
-              if (!warned) {
+              if (tech_->name2via_.find(box->getTechVia()->getName())
+                  == tech_->name2via_.end()) {
                 logger_->warn(DRT,
-                              323,
-                              "Via(s) in pin {} of {} will be ignored",
-                              _term->getName(),
-                              master->getName());
-                warned = true;
-              }
-              continue;
-            }
-            std::string layer_name = layer->getName();
-            if (tech_->name2layer_.find(layer_name)
-                == tech_->name2layer_.end()) {
-              auto type = box->getTechLayer()->getType();
-              if (type == odb::dbTechLayerType::ROUTING
-                  || type == odb::dbTechLayerType::CUT) {
-                logger_->warn(DRT,
-                              122,
-                              "Layer {} is skipped for {}/{}.",
-                              layer_name,
-                              tmpMaster->getName(),
+                              193,
+                              "Skipping unsupported via {} in macro pin {}/{}.",
+                              box->getTechVia()->getName(),
+                              master->getName(),
                               _term->getName());
               }
-              continue;
-            }
-            layerNum = tech_->name2layer_.at(layer_name)->getLayerNum();
+              int x, y;
+              box->getViaXY(x, y);
+              auto viaDef = tech_->name2via_[box->getTechVia()->getName()];
+              auto tmpP = std::make_unique<frVia>(viaDef);
+              tmpP->setOrigin({x, y});
+              // layer1 rect
+              addPinFig(
+                  tmpP->getLayer1BBox(), viaDef->getLayer1Num(), pinIn.get());
+              // layer2 rect
+              addPinFig(
+                  tmpP->getLayer2BBox(), viaDef->getLayer2Num(), pinIn.get());
+              // cut rect
+              addPinFig(
+                  tmpP->getCutBBox(), viaDef->getCutLayerNum(), pinIn.get());
+            } else {
+              std::string layer_name = layer->getName();
+              if (tech_->name2layer_.find(layer_name)
+                  == tech_->name2layer_.end()) {
+                auto type = box->getTechLayer()->getType();
+                if (type == odb::dbTechLayerType::ROUTING
+                    || type == odb::dbTechLayerType::CUT) {
+                  logger_->warn(DRT,
+                                122,
+                                "Layer {} is skipped for {}/{}.",
+                                layer_name,
+                                tmpMaster->getName(),
+                                _term->getName());
+                }
+                continue;
+              }
+              frLayerNum layerNum
+                  = tech_->name2layer_.at(layer_name)->getLayerNum();
 
-            frCoord xl = box->xMin();
-            frCoord yl = box->yMin();
-            frCoord xh = box->xMax();
-            frCoord yh = box->yMax();
-            std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
-            pinFig->setBBox(Rect(xl, yl, xh, yh));
-            pinFig->addToPin(pinIn.get());
-            pinFig->setLayerNum(layerNum);
-            std::unique_ptr<frPinFig> uptr(std::move(pinFig));
-            pinIn->addPinFig(std::move(uptr));
-            pin_shapes[layerNum].insert(
-                std::make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
+              frCoord xl = box->xMin();
+              frCoord yl = box->yMin();
+              frCoord xh = box->xMax();
+              frCoord yh = box->yMax();
+              addPinFig(Rect(xl, yl, xh, yh), layerNum, pinIn.get());
+            }
           }
           term->addPin(std::move(pinIn));
         }
@@ -2697,7 +2869,10 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       viaDef->setCutClass(cutClass);
       viaDef->setCutClassIdx(cutClassIdx);
     }
-    tech_->addVia(std::move(viaDef));
+    if (!tech_->addVia(std::move(viaDef))) {
+      logger_->error(
+          utl::DRT, 339, "Duplicated via definition for {}", via->getName());
+    }
   }
 }
 
@@ -2743,6 +2918,9 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
+  if (db->getChip() && db->getChip()->getBlock()) {
+    setVias(db->getChip()->getBlock());
+  }
   setMasters(db);
   setNDRs(db);
   initDefaultVias();
@@ -3402,6 +3580,7 @@ void io::Writer::updateTrackAssignment(odb::dbBlock* block)
     }
   }
 }
+
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 {
   for (auto ap : block->getAccessPoints()) {

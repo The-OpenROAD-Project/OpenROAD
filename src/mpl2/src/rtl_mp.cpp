@@ -158,17 +158,8 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
 
     HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
 
-    mpl2::Rect macro_new_bbox_micron(
-        x_origin,
-        y_origin,
-        dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
-        dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
-
-    float pitch_x = 0.0;
-    float pitch_y = 0.0;
-
     odb::Point snap_origin = macro.computeSnapOrigin(
-        macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+        macro_new_bbox, orientation, inst->getBlock());
 
     // Orientation is already set, so now we set the origin to snap macro.
     inst->setOrigin(snap_origin.x(), snap_origin.y());

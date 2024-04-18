@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
 #include <boost/polygon/polygon.hpp>
 
 #include "odb/geom.h"
@@ -82,6 +84,16 @@ struct boost::polygon::point_mutable_traits<odb::Point>
     return odb::Point(x_value, y_value);
   }
 };
+
+// Make odb's Point work with boost geometry
+
+BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
+                                         int,
+                                         boost::geometry::cs::cartesian,
+                                         getX,
+                                         getY,
+                                         setX,
+                                         setY);
 
 // Make odb's Rect work with boost polgyon
 
@@ -134,3 +146,65 @@ struct boost::polygon::rectangle_mutable_traits<odb::Rect>
                      high(interval_vertical));
   }
 };
+
+// Make odb's Rect work with boost geometry.
+//
+// Unfortunately BOOST_GEOMETRY_REGISTER_BOX forces a bad API on the class
+// and there is not _GET_SET version.  Instead we have to go lower to the
+// traits to adapt.
+
+namespace boost::geometry::traits {
+
+template <>
+struct tag<odb::Rect>
+{
+  using type = box_tag;
+};
+
+template <>
+struct point_type<odb::Rect>
+{
+  using type = odb::Point;
+};
+
+template <std::size_t Dimension>
+struct indexed_access<odb::Rect, min_corner, Dimension>
+{
+  using coordinate_type = int;
+
+  static constexpr coordinate_type get(const odb::Rect& b)
+  {
+    return (Dimension == 0) ? b.xMin() : b.yMin();
+  }
+
+  static void set(odb::Rect& b, const int value)
+  {
+    if (Dimension == 0) {
+      b.set_xlo(value);
+    } else {
+      b.set_ylo(value);
+    }
+  }
+};
+
+template <std::size_t Dimension>
+struct indexed_access<odb::Rect, max_corner, Dimension>
+{
+  using coordinate_type = int;
+
+  static constexpr coordinate_type get(const odb::Rect& b)
+  {
+    return (Dimension == 0) ? b.xMax() : b.yMax();
+  }
+
+  static void set(odb::Rect& b, const int value)
+  {
+    if (Dimension == 0) {
+      b.set_xhi(value);
+    } else {
+      b.set_yhi(value);
+    }
+  }
+};
+
+}  // namespace boost::geometry::traits

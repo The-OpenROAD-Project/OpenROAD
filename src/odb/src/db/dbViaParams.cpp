@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbViaParams.h"
+#include "odb/dbViaParams.h"
 
-#include "db.h"
-#include "dbDiff.h"
+#include "odb/db.h"
+#include "odb/dbDiff.h"
 
 namespace odb {
 
@@ -45,62 +45,81 @@ namespace odb {
 
 bool _dbViaParams::operator==(const _dbViaParams& rhs) const
 {
-  if (_x_cut_size != rhs._x_cut_size)
+  if (_x_cut_size != rhs._x_cut_size) {
     return false;
+  }
 
-  if (_y_cut_size != rhs._y_cut_size)
+  if (_y_cut_size != rhs._y_cut_size) {
     return false;
+  }
 
-  if (_x_cut_spacing != rhs._x_cut_spacing)
+  if (_x_cut_spacing != rhs._x_cut_spacing) {
     return false;
+  }
 
-  if (_y_cut_spacing != rhs._y_cut_spacing)
+  if (_y_cut_spacing != rhs._y_cut_spacing) {
     return false;
+  }
 
-  if (_x_top_enclosure != rhs._x_top_enclosure)
+  if (_x_top_enclosure != rhs._x_top_enclosure) {
     return false;
+  }
 
-  if (_y_top_enclosure != rhs._y_top_enclosure)
+  if (_y_top_enclosure != rhs._y_top_enclosure) {
     return false;
+  }
 
-  if (_x_bot_enclosure != rhs._x_bot_enclosure)
+  if (_x_bot_enclosure != rhs._x_bot_enclosure) {
     return false;
+  }
 
-  if (_y_bot_enclosure != rhs._y_bot_enclosure)
+  if (_y_bot_enclosure != rhs._y_bot_enclosure) {
     return false;
+  }
 
-  if (_num_cut_rows != rhs._num_cut_rows)
+  if (_num_cut_rows != rhs._num_cut_rows) {
     return false;
+  }
 
-  if (_num_cut_cols != rhs._num_cut_cols)
+  if (_num_cut_cols != rhs._num_cut_cols) {
     return false;
+  }
 
-  if (_x_origin != rhs._x_origin)
+  if (_x_origin != rhs._x_origin) {
     return false;
+  }
 
-  if (_y_origin != rhs._y_origin)
+  if (_y_origin != rhs._y_origin) {
     return false;
+  }
 
-  if (_x_top_offset != rhs._x_top_offset)
+  if (_x_top_offset != rhs._x_top_offset) {
     return false;
+  }
 
-  if (_y_top_offset != rhs._y_top_offset)
+  if (_y_top_offset != rhs._y_top_offset) {
     return false;
+  }
 
-  if (_x_bot_offset != rhs._x_bot_offset)
+  if (_x_bot_offset != rhs._x_bot_offset) {
     return false;
+  }
 
-  if (_y_bot_offset != rhs._y_bot_offset)
+  if (_y_bot_offset != rhs._y_bot_offset) {
     return false;
+  }
 
-  if (_top_layer != rhs._top_layer)
+  if (_top_layer != rhs._top_layer) {
     return false;
+  }
 
-  if (_cut_layer != rhs._cut_layer)
+  if (_cut_layer != rhs._cut_layer) {
     return false;
+  }
 
-  if (_bot_layer != rhs._bot_layer)
+  if (_bot_layer != rhs._bot_layer) {
     return false;
+  }
 
   return true;
 }
@@ -109,10 +128,11 @@ void _dbViaParams::differences(dbDiff& diff,
                                const char* field,
                                const _dbViaParams& rhs) const
 {
-  if (field)
+  if (field) {
     diff.begin_object("<> %s\n", field);
-  else
+  } else {
     diff.begin_object("<> _dbViaParams\n");
+  }
 
   DIFF_FIELD(_x_cut_size);
   DIFF_FIELD(_y_cut_size);
@@ -138,10 +158,11 @@ void _dbViaParams::differences(dbDiff& diff,
 
 void _dbViaParams::out(dbDiff& diff, char side, const char* field) const
 {
-  if (field)
+  if (field) {
     diff.begin_object("%c %s\n", side, field);
-  else
+  } else {
     diff.begin_object("%c _dbViaParams\n", side);
+  }
 
   DIFF_OUT_FIELD(_x_cut_size);
   DIFF_OUT_FIELD(_y_cut_size);
@@ -365,24 +386,27 @@ int dbViaParams::getYBottomOffset() const
 
 dbTechLayer* dbViaParams::getTopLayer() const
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     return nullptr;
+  }
 
   return dbTechLayer::getTechLayer(_tech, _top_layer);
 }
 
 dbTechLayer* dbViaParams::getCutLayer() const
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     return nullptr;
+  }
 
   return dbTechLayer::getTechLayer(_tech, _cut_layer);
 }
 
 dbTechLayer* dbViaParams::getBottomLayer() const
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     return nullptr;
+  }
 
   return dbTechLayer::getTechLayer(_tech, _bot_layer);
 }
@@ -469,8 +493,9 @@ void dbViaParams::setYBottomOffset(int value)
 
 void dbViaParams::setTopLayer(dbTechLayer* layer)
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     _tech = layer->getTech();
+  }
 
   assert(_tech == layer->getTech());
   _top_layer = layer->getId();
@@ -478,8 +503,9 @@ void dbViaParams::setTopLayer(dbTechLayer* layer)
 
 void dbViaParams::setCutLayer(dbTechLayer* layer)
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     _tech = layer->getTech();
+  }
 
   assert(_tech == layer->getTech());
   _cut_layer = layer->getId();
@@ -487,8 +513,9 @@ void dbViaParams::setCutLayer(dbTechLayer* layer)
 
 void dbViaParams::setBottomLayer(dbTechLayer* layer)
 {
-  if (_tech == nullptr)
+  if (_tech == nullptr) {
     _tech = layer->getTech();
+  }
 
   assert(_tech == layer->getTech());
   _bot_layer = layer->getId();

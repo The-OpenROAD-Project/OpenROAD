@@ -32,8 +32,8 @@
 
 #include "definBase.h"
 
-#include "db.h"
 #include "defiUtil.hpp"
+#include "odb/db.h"
 
 namespace odb {
 

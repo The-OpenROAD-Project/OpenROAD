@@ -34,16 +34,17 @@
 
 #include <iostream>
 
-#include "db.h"
 #include "dbAccessPoint.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+
 namespace odb {
 
 template class dbTable<_dbBPin>;
@@ -75,32 +76,41 @@ _dbBPin::~_dbBPin()
 
 bool _dbBPin::operator==(const _dbBPin& rhs) const
 {
-  if (_flags._status != rhs._flags._status)
+  if (_flags._status != rhs._flags._status) {
     return false;
+  }
 
-  if (_flags._has_min_spacing != rhs._flags._has_min_spacing)
+  if (_flags._has_min_spacing != rhs._flags._has_min_spacing) {
     return false;
+  }
 
-  if (_flags._has_effective_width != rhs._flags._has_effective_width)
+  if (_flags._has_effective_width != rhs._flags._has_effective_width) {
     return false;
+  }
 
-  if (_bterm != rhs._bterm)
+  if (_bterm != rhs._bterm) {
     return false;
+  }
 
-  if (_boxes != rhs._boxes)
+  if (_boxes != rhs._boxes) {
     return false;
+  }
 
-  if (_next_bpin != rhs._next_bpin)
+  if (_next_bpin != rhs._next_bpin) {
     return false;
+  }
 
-  if (_min_spacing != rhs._min_spacing)
+  if (_min_spacing != rhs._min_spacing) {
     return false;
+  }
 
-  if (_effective_width != rhs._effective_width)
+  if (_effective_width != rhs._effective_width) {
     return false;
+  }
 
-  if (aps_ != rhs.aps_)
+  if (aps_ != rhs.aps_) {
     return false;
+  }
 
   return true;
 }
@@ -266,8 +276,9 @@ dbBPin* dbBPin::create(dbBTerm* bterm_)
   bpin->_bterm = bterm->getOID();
   bpin->_next_bpin = bterm->_bpins;
   bterm->_bpins = bpin->getOID();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbBPinCreate((dbBPin*) bpin);
+  }
   return (dbBPin*) bpin;
 }
 
@@ -276,8 +287,9 @@ void dbBPin::destroy(dbBPin* bpin_)
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
   _dbBTerm* bterm = (_dbBTerm*) bpin_->getBTerm();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbBPinDestroy(bpin_);
+  }
   // unlink bpin from bterm
   uint id = bpin->getOID();
   _dbBPin* prev = nullptr;
@@ -285,10 +297,11 @@ void dbBPin::destroy(dbBPin* bpin_)
   while (cur) {
     _dbBPin* c = block->_bpin_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         bterm->_bpins = bpin->_next_bpin;
-      else
+      } else {
         prev->_next_bpin = bpin->_next_bpin;
+      }
       break;
     }
     prev = c;

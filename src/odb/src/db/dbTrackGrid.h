@@ -33,10 +33,10 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -67,11 +67,13 @@ class _dbTrackGrid : public _dbObject
 
   bool operator<(const _dbTrackGrid& rhs) const
   {
-    if (_layer < rhs._layer)
+    if (_layer < rhs._layer) {
       return true;
+    }
 
-    if (_layer > rhs._layer)
+    if (_layer > rhs._layer) {
       return false;
+    }
 
     return false;
   }

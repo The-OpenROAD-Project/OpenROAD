@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "dbTypes.h"
+#include "geom.h"
 #include "odb.h"
 #include "odbDList.h"
 
@@ -191,6 +192,7 @@ class dbWireGraph
       x = _x;
       y = _y;
     }
+    Point point() const { return {_x, _y}; }
     dbTechLayer* layer() const { return _layer; }
     Edge* in_edge() const { return _in_edge; }
     edge_iterator begin() { return _out_edges.begin(); }
@@ -386,6 +388,8 @@ class dbWireGraph
   // The deletion of a edge WILL NOT delete the src/tgt node.
   void deleteEdge(Edge* e);
   edge_iterator deleteEdge(edge_iterator itr);
+
+  void dump(utl::Logger* logger);
 
  private:
   void encodePath(dbWireEncoder& encoder,
