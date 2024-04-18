@@ -643,8 +643,7 @@ bool RepairAntennas::checkDiodeLoc(odb::dbInst* diode_inst,
   std::vector<value> overlap_insts;
   fixed_insts.query(bgi::intersects(box), std::back_inserter(overlap_insts));
 
-  return overlap_insts.empty() && instBox->xMin() >= core_area.xMin()
-         && instBox->xMax() <= core_area.xMax();
+  return overlap_insts.empty() && core_area.contains(instBox);
 }
 
 void RepairAntennas::computeHorizontalOffset(const int diode_width,
