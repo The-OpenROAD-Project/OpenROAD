@@ -46,6 +46,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Vector.hh"
 #include "sta/VerilogReader.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -56,8 +57,12 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbIoType;
+using odb::dbITerm;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
+using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -139,12 +144,29 @@ class Verilog2db
   Verilog2db(Network* verilog_network, dbDatabase* db, Logger* logger);
   void makeBlock();
   void makeDbNetlist();
+  static string makePinName(std::string& name);
+  bool hierarchy_ = false;
 
  protected:
-  void makeDbModule(Instance* inst, dbModule* parent);
+  void makeDbModule(
+      Instance* inst,
+      dbModule* parent,
+      std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec);
   dbIoType staToDb(PortDirection* dir);
+  bool staToDb(dbModule* module,
+               const Pin* pin,
+               dbBTerm*& bterm,
+               dbITerm*& iterm,
+               dbModBTerm*& mod_bterm,
+               dbModITerm*& mod_iterm);
   void recordBusPortsOrder();
   void makeDbNets(const Instance* inst);
+
+  void makeVModNets(const Instance* inst,
+                    dbModule* module,
+                    std::map<std::string, dbModNet*>& mod_net_set);
+  void makeVModNets(
+      std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec);
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
   dbModule* makeUniqueDbModule(const char* name);
@@ -167,6 +189,14 @@ void dbLinkDesign(const char* top_cell_name,
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
     Verilog2db v2db(verilog_network, db, logger);
+    Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
+    const char* tcl_obj;
+    // temporary code: used to enable/disable hierarchy.
+    std::string hierarchy("hierarchy");
+    tcl_obj = Tcl_GetVar(tcl_interp, hierarchy.c_str(), TCL_GLOBAL_ONLY);
+    if (tcl_obj) {
+      v2db.hierarchy_ = true;
+    }
     v2db.makeBlock();
     v2db.makeDbNetlist();
     deleteVerilogReader();
@@ -176,6 +206,16 @@ void dbLinkDesign(const char* top_cell_name,
 Verilog2db::Verilog2db(Network* network, dbDatabase* db, Logger* logger)
     : network_(network), db_(db), logger_(logger)
 {
+}
+
+std::string Verilog2db::makePinName(std::string& port_name)
+{
+  std::string p_name = port_name;
+  size_t last_idx = p_name.find_last_of('/');
+  if (last_idx != string::npos) {
+    p_name = p_name.substr(last_idx + 1);
+  }
+  return p_name;
 }
 
 void Verilog2db::makeBlock()
@@ -216,9 +256,13 @@ void Verilog2db::makeBlock()
 
 void Verilog2db::makeDbNetlist()
 {
+  std::vector<std::pair<const Instance*, dbModule*>> inst_module_vec;
   recordBusPortsOrder();
-  makeDbModule(network_->topInstance(), /* parent */ nullptr);
+  makeDbModule(network_->topInstance(), /* parent */ nullptr, inst_module_vec);
   makeDbNets(network_->topInstance());
+  if (hierarchy_) {
+    makeVModNets(inst_module_vec);
+  }
 }
 
 void Verilog2db::recordBusPortsOrder()
@@ -261,7 +305,10 @@ dbModule* Verilog2db::makeUniqueDbModule(const char* name)
 // to the sta network rooted at inst.  parent is the dbModule to build
 // the hierarchy under. If null the top module is used.
 
-void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
+void Verilog2db::makeDbModule(
+    Instance* inst,
+    dbModule* parent,
+    std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec)
 {
   Cell* cell = network_->cell(inst);
 
@@ -270,8 +317,18 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
     module = block_->getTopModule();
   } else {
     module = makeUniqueDbModule(network_->name(cell));
+    inst_module_vec.emplace_back(
+        std::pair<const Instance*, dbModule*>(inst, parent));
+
+    std::string module_inst_name = network_->name(inst);
+    size_t last_idx = module_inst_name.find_last_of('/');
+    if (last_idx != string::npos) {
+      module_inst_name = module_inst_name.substr(last_idx + 1);
+    }
+
     dbModInst* modinst
-        = dbModInst::create(parent, module, network_->name(inst));
+        = dbModInst::create(parent, module, module_inst_name.c_str());
+
     if (modinst == nullptr) {
       logger_->warn(ORD,
                     2014,
@@ -280,14 +337,71 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
                     network_->name(cell));
       return;
     }
+    if (hierarchy_) {
+      // make the module bterms
+      CellPortIterator* cp_iter = network_->portIterator(cell);
+      while (cp_iter->hasNext()) {
+        Port* port = cp_iter->next();
+        /* Ports are prefixed by instance name*/
+        if (network_->isBus(port)) {
+          const char* port_name = network_->name(port);
+          const char* cell_name = network_->name(cell);
+          int from = network_->fromIndex(port);
+          int to = network_->toIndex(port);
+          string key = "bus_msb_first ";
+          key += key + port_name + " " + cell_name;
+          key += port_name;
+          odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+          // Make a modbterm for each bus bit
+          int start_index = from < to ? from : to;
+          int end_index = from < to ? to : from;
+          for (int i = start_index; i <= end_index; i++) {
+            // use actual here
+            std::string bus_bit_port = port_name + std::string("[")
+                                       + std::to_string(i) + std::string("]");
+            dbModBTerm* bmodterm
+                = dbModBTerm::create(module, bus_bit_port.c_str());
+            dbIoType io_type = staToDb(network_->direction(port));
+            bmodterm->setIoType(io_type);
+          }
+        } else {
+          std::string port_name = network_->name(port);
+          dbModBTerm* bmodterm = dbModBTerm::create(module, port_name.c_str());
+          dbIoType io_type = staToDb(network_->direction(port));
+          bmodterm->setIoType(io_type);
+        }
+      }
+      // make the instance iterms
+      InstancePinIterator* ip_iter = network_->pinIterator(inst);
+      while (ip_iter->hasNext()) {
+        Pin* cur_pin = ip_iter->next();
+        std::string pin_name_string(network_->name(cur_pin));
+        pin_name_string = makePinName(pin_name_string);
+        dbModITerm* moditerm
+            = dbModITerm::create(modinst, pin_name_string.c_str());
+        (void) moditerm;
+      }
+    }
   }
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
     if (network_->isHierarchical(child)) {
-      makeDbModule(child, module);
+      makeDbModule(child, module, inst_module_vec);
     } else {
       const char* child_name = network_->pathName(child);
+      Instance* parent_instance = network_->parent(child);
+      dbModule* parent_module = nullptr;
+      Cell* parent_cell = nullptr;
+      if (parent_instance == network_->topInstance()) {
+        parent_module = block_->getTopModule();
+        parent_cell = network_->cell(parent_instance);
+      } else {
+        parent_cell = network_->cell(parent_instance);
+        parent_module = block_->findModule(network_->name(parent_cell));
+      }
+      (void) parent_module;
+      (void) parent_cell;
       Cell* cell = network_->cell(child);
       dbMaster* master = getMaster(cell);
       if (master == nullptr) {
@@ -298,7 +412,11 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
                       network_->name(cell));
         continue;
       }
-      auto db_inst = dbInst::create(block_, master, child_name);
+      auto db_inst = dbInst::create(block_, master, child_name, false, module);
+
+      inst_module_vec.emplace_back(
+          std::pair<const Instance*, dbModule*>(child, module));
+
       if (db_inst == nullptr) {
         logger_->warn(ORD,
                       2015,
@@ -311,7 +429,6 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
     }
   }
   delete child_iter;
-
   if (module->getChildren().reversible()
       && module->getChildren().orderReversed()) {
     module->getChildren().reverse();
@@ -319,6 +436,74 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
   if (module->getInsts().reversible() && module->getInsts().orderReversed()) {
     module->getInsts().reverse();
   }
+}
+
+bool Verilog2db::staToDb(dbModule* module,
+                         const Pin* pin,
+                         dbBTerm*& bterm,
+                         dbITerm*& iterm,
+                         dbModBTerm*& mod_bterm,
+                         dbModITerm*& mod_iterm)
+{
+  mod_bterm = nullptr;
+  mod_iterm = nullptr;
+  bterm = nullptr;
+  iterm = nullptr;
+
+  const char* port_name = network_->portName(pin);
+  Instance* cur_inst = network_->instance(pin);
+  std::string pin_name = network_->name(pin);
+
+  //
+  // cases: All the things a pin could be:
+  //
+  // 1. A pin on a module instance (moditerm)
+  // 2. A port on the top level (bterm)
+  // 3. A pin on a dbInst (iterm)
+  // 4. A port on a module (modbterm).
+  //
+
+  if (module) {
+    if (cur_inst) {
+      pin_name = makePinName(pin_name);
+      std::string instance_name = network_->pathName(cur_inst);
+      size_t last_idx = instance_name.find_last_of('/');
+      if (last_idx != string::npos) {
+        instance_name = instance_name.substr(last_idx + 1);
+      }
+      dbModInst* mod_inst = module->findModInst(instance_name.c_str());
+      if (mod_inst) {
+        mod_iterm = mod_inst->findModITerm(pin_name.c_str());
+      }
+    }
+  }
+
+  if (!mod_iterm) {
+    // a pin on the top level. Use the port name
+    if (cur_inst == network_->topInstance()) {
+      bterm = block_->findBTerm(port_name);
+    } else {
+      // a pin on an instance
+      // we store just the pin name on the db inst iterm
+      std::string instance_name = network_->pathName(cur_inst);
+      size_t last_idx = pin_name.find_last_of('/');
+      if (last_idx != string::npos) {
+        pin_name = pin_name.substr(last_idx + 1);
+      }
+      // we store the full instance name for db insts
+      dbInst* db_inst = module->findDbInst(instance_name.c_str());
+      if (db_inst) {
+        iterm = db_inst->findITerm(pin_name.c_str());
+      } else {
+        // a port on the module itself (a mod bterm)
+        mod_bterm = module->findModBTerm(pin_name.c_str());
+      }
+    }
+  }
+  if (bterm || iterm || mod_iterm || mod_bterm) {
+    return true;
+  }
+  return false;
 }
 
 dbIoType Verilog2db::staToDb(PortDirection* dir)
@@ -400,6 +585,124 @@ void Verilog2db::makeDbNets(const Instance* inst)
     makeDbNets(child);
   }
   delete child_iter;
+}
+
+void Verilog2db::makeVModNets(
+    std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec)
+{
+  std::map<dbModule*, std::set<const Instance*>> module_instance_set;
+  for (auto im : inst_module_vec) {
+    const Instance* cur_inst = im.first;
+    dbModule* dm = im.second;
+    module_instance_set[dm].insert(cur_inst);
+  }
+  for (auto& [dm, inst_set] : module_instance_set) {
+    // scope mod nets within each module using mod_net_map
+    std::map<std::string, dbModNet*> mod_net_map;
+    for (auto cur_inst : inst_set) {  // all instances in this module.
+      makeVModNets(cur_inst, dm, mod_net_map);
+    }
+  }
+}
+
+void Verilog2db::makeVModNets(const Instance* inst,
+                              dbModule* module,
+                              std::map<std::string, dbModNet*>& mod_net_set)
+{
+  Instance* top_instance = network_->topInstance();
+
+  InstancePinIterator* pinIter = network_->pinIterator(inst);
+  while (pinIter->hasNext()) {
+    Pin* inst_pin = pinIter->next();
+    Net* inst_pin_net = network_->net(inst_pin);
+    if (!inst_pin_net) {
+      continue;
+    }
+    const char* net_name = network_->name(inst_pin_net);
+    // Sort connected pins for regression stability.
+    PinSeq net_pins;
+    NetConnectedPinIterator* pin_iter
+        = network_->connectedPinIterator(inst_pin_net);
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      net_pins.push_back(pin);
+    }
+    delete pin_iter;
+    sort(net_pins, PinPathNameLess(network_));
+
+    bool top_pin_connection = false;
+    for (const Pin* pin : net_pins) {
+      Instance* cur_inst = network_->instance(pin);
+      if (cur_inst == network_->topInstance()) {
+        top_pin_connection = true;
+      }
+    }
+    (void) top_pin_connection;
+
+    //
+    // only make module nets if:
+    //
+    // 1. There are module instances and we are in the top level.
+    // 2. We are in an intermediate level of hierarchy (in which case
+    //   the binsts might need to connect to the module ports).
+    //
+
+    bool add_mod_connection
+        = ((module->getModInstCount() > 0 && module == block_->getTopModule())
+           || (module != block_->getTopModule()));
+    if (!add_mod_connection) {
+      continue;
+    }
+    // Make the module net (if it is not already present)
+    dbModNet* db_mod_net = nullptr;
+    std::string net_name_str(net_name);
+    auto set_iter = mod_net_set.find(net_name_str);
+    if (set_iter != mod_net_set.end()) {
+      db_mod_net = (*set_iter).second;
+    } else {
+      db_mod_net = dbModNet::create(module, net_name);
+      mod_net_set[net_name_str] = db_mod_net;
+    }
+
+    for (const Pin* pin : net_pins) {
+      dbITerm* iterm = nullptr;
+      dbBTerm* bterm = nullptr;
+      dbModITerm* mod_iterm = nullptr;
+      dbModBTerm* mod_bterm = nullptr;
+      Instance* cur_inst = network_->instance(pin);
+
+      if (!((cur_inst == inst) || (cur_inst == network_->parent(inst))
+            || (network_->parent(inst) == network_->parent(cur_inst))
+            || (cur_inst == top_instance
+                && network_->parent(inst) == top_instance))) {
+        continue;
+      }
+
+      //
+      // make the mod iterm and bterm here when doing the nets.
+      //
+
+      // get the type of the pin: on a binst or a mod inst
+      staToDb(module, pin, bterm, iterm, mod_bterm, mod_iterm);
+      // leaf -> iterm
+      // root -> bterm
+      // instance -> moditerm
+      // parent -> modbterm
+
+      // local connections..
+      if (iterm && add_mod_connection) {
+        iterm->connect(db_mod_net);
+      } else if (bterm && add_mod_connection) {
+        bterm->connect(db_mod_net);
+      }
+      // hier connections
+      else if (mod_bterm) {
+        mod_bterm->connect(db_mod_net);
+      } else if (mod_iterm) {
+        mod_iterm->connect(db_mod_net);
+      }
+    }
+  }
 }
 
 bool Verilog2db::hasTerminals(Net* net) const
