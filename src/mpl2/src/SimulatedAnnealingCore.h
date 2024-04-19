@@ -49,6 +49,15 @@ struct BundledNet;
 struct Rect;
 class Graphics;
 
+struct SACoreWeights
+{
+  float area = 0.0f;
+  float outline = 0.0f;
+  float wirelength = 0.0f;
+  float guidance = 0.0f;
+  float fence = 0.0f;
+};
+
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
 // 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine

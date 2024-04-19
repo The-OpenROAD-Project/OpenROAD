@@ -279,6 +279,15 @@ void SACoreHardMacro::initialize()
   }
 }
 
+void SACoreHardMacro::setWeights(const SACoreWeights& weights)
+{
+  area_weight_ = weights.area;
+  outline_weight_ = weights.outline;
+  wirelength_weight_ = weights.wirelength;
+  guidance_weight_ = weights.guidance;
+  fence_weight_ = weights.fence;
+}
+
 void SACoreHardMacro::printResults()
 {
   debugPrint(
