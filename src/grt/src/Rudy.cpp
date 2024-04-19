@@ -187,6 +187,9 @@ void Rudy::Tile::setRect(int lx, int ly, int ux, int uy)
 void Rudy::Tile::addRudy(float rudy)
 {
   rudy_ += rudy;
+  if( rudy_ > 110 ){
+    rudy_ = 110;
+  }
 }
 
 }  // namespace grt
