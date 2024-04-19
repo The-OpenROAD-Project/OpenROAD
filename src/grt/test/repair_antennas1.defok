@@ -108,7 +108,7 @@ VIAS 3 ;
     - via3_960x490 + VIARULE M3M4_PR + CUTSIZE 200 200  + LAYERS met3 via3 met4  + CUTSPACING 200 200  + ENCLOSURE 180 60 180 145  + ROWCOL 1 2  ;
 END VIAS
 COMPONENTS 1370 ;
-    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 127680 146520 ) FS ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 127680 146520 ) N ;
     - ANTENNA_10 sky130_fd_sc_hs__diode_2 + PLACED ( 207360 166500 ) N ;
     - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 106560 49950 ) FS ;
     - ANTENNA_3 sky130_fd_sc_hs__diode_2 + PLACED ( 169440 263070 ) FS ;
