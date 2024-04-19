@@ -64,6 +64,12 @@ openroad_python_compiled();
 const bool
 openroad_gui_compiled();
 
+const bool
+openroad_mpl2_compiled();
+
+const bool
+openroad_par_compiled();
+
 odb::dbDatabase *
 get_db();
 

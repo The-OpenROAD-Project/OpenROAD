@@ -79,6 +79,12 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
+// par causes abseil link error at startup on apple silicon
+#ifdef ENABLE_PAR
+#define TOOL_PAR X(par)
+#else
+#define TOOL_PAR
+#endif
 
 #define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
   X(ifp)                                 \
@@ -94,7 +100,7 @@ using std::string;
   X(drt)                                 \
   X(dpo)                                 \
   X(fin)                                 \
-  X(par)                                 \
+  TOOL_PAR                               \
   X(rcx)                                 \
   X(rmp)                                 \
   X(stt)                                 \
@@ -491,10 +497,12 @@ static void showSplash()
                  ord::OpenRoad::getGitDescribe());
   logger->report(
       "Features included (+) or not (-):  "
-      "{}Charts {}GPU {}GUI {}Python",
+      "{}Charts {}GPU {}GUI {}MPL2 {}PAR {}Python",
       ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
+      ord::OpenRoad::getMPL2CompileOption() ? "+" : "-",
+      ord::OpenRoad::getPARCompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-");
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
