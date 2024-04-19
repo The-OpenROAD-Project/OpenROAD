@@ -132,7 +132,7 @@ class RepairAntennas
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
                    int site_width,
-                   const bool place_vertically,
+                   bool place_vertically,
                    r_tree& fixed_insts);
   void getInstancePlacementData(odb::dbITerm* gate,
                                 int& inst_loc_x,
@@ -141,16 +141,16 @@ class RepairAntennas
                                 int& inst_height,
                                 odb::dbOrientType& inst_orient);
   bool checkDiodeLoc(odb::dbInst* diode_inst,
-                     const int site_width,
+                     int site_width,
                      r_tree& fixed_insts);
-  void computeHorizontalOffset(const int diode_width,
-                               const int inst_width,
-                               const int site_width,
+  void computeHorizontalOffset(int diode_width,
+                               int inst_width,
+                               int site_width,
                                int& left_offset,
                                int& right_offset,
                                bool& place_at_left,
                                int& offset);
-  void computeVerticalOffset(const int inst_height,
+  void computeVerticalOffset(int inst_height,
                              int& top_offset,
                              int& bottom_offset,
                              bool& place_at_top,
