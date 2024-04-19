@@ -574,6 +574,7 @@ bool RepairAntennas::setDiodeLoc(odb::dbInst* diode_inst,
 
   odb::dbBox* diode_bbox = diode_inst->getBBox();
   int diode_width = diode_bbox->xMax() - diode_bbox->xMin();
+  int diode_height = diode_bbox->yMax() - diode_bbox->yMin();
   odb::dbInst* sink_inst = gate->getInst();
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
@@ -597,8 +598,10 @@ bool RepairAntennas::setDiodeLoc(odb::dbInst* diode_inst,
     }
     diode_inst->setOrient(inst_orient);
     if (sink_inst->isBlock() || sink_inst->isPad() || place_vertically) {
-      odb::dbOrientType orient = getRowOrient(odb::Point(
-          inst_loc_x + horizontal_offset, inst_loc_y + vertical_offset));
+      int x_center = inst_loc_x + horizontal_offset + diode_width / 2;
+      int y_center = inst_loc_y + vertical_offset + diode_height / 2;
+      odb::Point diode_center(x_center, y_center);
+      odb::dbOrientType orient = getRowOrient(diode_center);
       diode_inst->setOrient(orient);
     }
     diode_inst->setLocation(inst_loc_x + horizontal_offset,
