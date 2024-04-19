@@ -596,7 +596,7 @@ bool RepairAntennas::setDiodeLoc(odb::dbInst* diode_inst,
                               horizontal_offset);
     }
     diode_inst->setOrient(inst_orient);
-    if (sink_inst->isBlock() || sink_inst->isPad()) {
+    if (sink_inst->isBlock() || sink_inst->isPad() || place_vertically) {
       odb::dbOrientType orient = getRowOrient(odb::Point(
           inst_loc_x + horizontal_offset, inst_loc_y + vertical_offset));
       diode_inst->setOrient(orient);
