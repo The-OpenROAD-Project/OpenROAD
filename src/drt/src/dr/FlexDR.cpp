@@ -530,7 +530,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (ripupMode != RipUpMode::ALL
+  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
       && getDesign()->getTopBlock()->getMarkers().empty()) {
     return;
   }

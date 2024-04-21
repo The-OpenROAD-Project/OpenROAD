@@ -87,6 +87,7 @@ class frNet : public frBlockObject
   bool isModified() const { return modified_; }
   bool isFake() const { return isFakeNet_; }
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
+  bool hasInitialRouting() const { return hasInitialRouting_; }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
@@ -179,6 +180,7 @@ class frNet : public frBlockObject
   void removeNode(frNode* in) { nodes_.erase(in->getIter()); }
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
+  void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
   // others
   dbSigType getType() const { return type_; }
   void setType(const dbSigType& in) { type_ = in; }
@@ -246,6 +248,7 @@ class frNet : public frBlockObject
                           // ordering before other criteria
   bool isClock_{false};
   bool isSpecial_{false};
+  bool hasInitialRouting_{false};
 
   std::vector<frPinFig*> all_pinfigs_;
 };

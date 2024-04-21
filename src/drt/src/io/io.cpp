@@ -664,6 +664,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     odb::dbWireDecoder decoder;
 
     if (!net->isSpecial() && net->getWire() != nullptr) {
+      netIn->setHasInitialRouting(true);
       decoder.begin(net->getWire());
       odb::dbWireDecoder::OpCode pathId = decoder.next();
       while (pathId != odb::dbWireDecoder::END_DECODE) {
@@ -796,9 +797,19 @@ void io::Parser::setNets(odb::dbBlock* block)
         if (hasEndPoint) {
           auto tmpP = std::make_unique<frPathSeg>();
           if (beginX > endX || beginY > endY) {
+            if (net->getName() == "text_out[118]")
+              logger_->report("1: LAYER {} {} {}",
+                              layerName,
+                              Point(endX, endY),
+                              Point(beginX, beginY));
             tmpP->setPoints(Point(endX, endY), Point(beginX, beginY));
             std::swap(beginExt, endExt);
           } else {
+            if (net->getName() == "text_out[118]")
+              logger_->report("2: LAYER {} {} {}",
+                              layerName,
+                              Point(beginX, beginY),
+                              Point(endX, endY));
             tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
           }
           tmpP->addToNet(netIn);
@@ -3407,6 +3418,11 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
         odb::dbWire::destroy(wire);
         wire = odb::dbWire::create(net);
         _wire_encoder.begin(wire);
+      } else if (!getDesign()
+                      ->getTopBlock()
+                      ->findNet(net->getName())
+                      ->isModified()) {
+        continue;
       } else {
         _wire_encoder.append(wire);
       }

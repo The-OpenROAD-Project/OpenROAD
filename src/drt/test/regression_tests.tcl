@@ -4,6 +4,7 @@ record_tests {
   ndr_vias2
   obstruction
   single_step
+  single_step_incr
   ta_ap_aligned
   ta_pin_aligned
   top_level_term

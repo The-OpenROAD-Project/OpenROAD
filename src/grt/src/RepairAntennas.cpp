@@ -65,6 +65,10 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       illegal_diode_placement_count_(0)
 {
   block_ = db_->getChip()->getBlock();
+  while (block_->findInst(
+      fmt::format("ANTENNA_{}", unique_diode_index_).c_str())) {
+    unique_diode_index_++;
+  }
 }
 
 bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
@@ -72,6 +76,18 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
                                             odb::dbMTerm* diode_mterm,
                                             float ratio_margin)
 {
+  // safe copy net wires before orderWires calls
+  std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
+      copy_wires;
+  for (auto [net, tmp] : routing) {
+    if (net->getWire() == nullptr) {
+      continue;
+    }
+    std::vector<int> data;
+    std::vector<unsigned char> op_codes;
+    net->getWire()->getRawWireData(data, op_codes);
+    copy_wires[net] = {data, op_codes};
+  }
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
   for (auto& [db_net, route] : routing) {
@@ -90,6 +106,12 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
     }
   }
   destroyNetWires();
+  for (auto [net, val] : copy_wires) {
+    if (antenna_violations_.find(net) == antenna_violations_.end()) {
+      auto wire = odb::dbWire::create(net);
+      wire->setRawWireData(val.first, val.second);
+    }
+  }
 
   logger_->info(
       GRT, 12, "Found {} antenna violations.", antenna_violations_.size());
@@ -102,6 +124,10 @@ void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
       = grouter_->getDefaultVias(max_routing_layer);
 
   for (auto& [db_net, route] : routing) {
+    if (db_net->getWireType() == odb::dbWireType::ROUTED) {
+      odb::orderWires(logger_, db_net);
+      continue;
+    }
     if (!grouter_->getNet(db_net)->isLocal()) {
       makeNetWire(db_net, route, default_vias);
     }
