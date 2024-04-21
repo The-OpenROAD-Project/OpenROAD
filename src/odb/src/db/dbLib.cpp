@@ -32,7 +32,6 @@
 
 #include "dbLib.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
@@ -43,7 +42,8 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 
 namespace odb {
 

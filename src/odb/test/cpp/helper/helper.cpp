@@ -32,7 +32,7 @@
 
 #include "helper.h"
 
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

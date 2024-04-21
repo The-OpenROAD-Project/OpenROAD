@@ -32,20 +32,20 @@
 
 #include "dbVia.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

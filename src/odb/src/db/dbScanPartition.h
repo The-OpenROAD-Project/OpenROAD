@@ -35,7 +35,7 @@
 
 #include "dbCore.h"
 #include "dbScanPin.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

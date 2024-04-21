@@ -38,8 +38,6 @@
 
 #include <string>
 
-#include "db.h"
-#include "dbShape.h"
 #include "definBlockage.h"
 #include "definComponent.h"
 #include "definComponentMaskShift.h"
@@ -57,6 +55,8 @@
 #include "definTracks.h"
 #include "definVia.h"
 #include "defzlib.hpp"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \

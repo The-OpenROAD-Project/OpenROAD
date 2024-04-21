@@ -244,6 +244,8 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_,
           &Inspector::addHighlight,
           [=](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,

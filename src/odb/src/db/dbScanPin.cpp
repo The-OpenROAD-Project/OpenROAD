@@ -33,13 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbScanPin.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 // User Code Begin Includes
 namespace {
 template <class>

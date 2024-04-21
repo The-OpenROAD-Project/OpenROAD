@@ -35,7 +35,7 @@
 
 #include "dbBlock.h"
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

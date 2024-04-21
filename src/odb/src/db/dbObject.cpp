@@ -32,11 +32,11 @@
 
 #include <cstring>
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

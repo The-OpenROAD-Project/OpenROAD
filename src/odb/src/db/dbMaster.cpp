@@ -32,7 +32,6 @@
 
 #include "dbMaster.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
@@ -48,7 +47,8 @@
 #include "dbTarget.h"
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
