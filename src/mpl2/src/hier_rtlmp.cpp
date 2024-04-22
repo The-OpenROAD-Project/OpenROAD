@@ -6751,12 +6751,11 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
     for (HardMacro* hard_macro : hard_macros) {
       if (overlapsWithOtherHardMacro(hard_macro)) {
         produced_overlap = true;
-        break;
       }
     }
 
     if (produced_overlap) {
-      // Move back to original position
+      // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
       }
