@@ -294,7 +294,7 @@ class CtsOptions
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = false;
   bool applyNDR_ = false;
-  bool insertionDelay_ = false;
+  bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;

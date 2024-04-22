@@ -26,8 +26,7 @@ clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -sink_clustering_size 10 \
                      -sink_clustering_max_diameter 60 \
                      -num_static_layers 1 \
-                     -obstruction_aware \
-                     -insertion_delay
+                     -obstruction_aware
 
 set unconnected_buffers 0
 foreach buf [get_cells clkbuf_*_clk] {
