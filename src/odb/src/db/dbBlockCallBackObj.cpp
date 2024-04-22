@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbBlockCallBackObj.h"
+#include "odb/dbBlockCallBackObj.h"
 
 #include "dbBlock.h"
 
@@ -44,11 +44,13 @@ namespace odb {
 
 void dbBlockCallBackObj::addOwner(dbBlock* new_owner)
 {
-  if (!new_owner)
+  if (!new_owner) {
     return;
+  }
 
-  if (_owner)
+  if (_owner) {
     removeOwner();
+  }
 
   _dbBlock* block = (_dbBlock*) new_owner;
   block->_callbacks.insert(block->_callbacks.end(), this);

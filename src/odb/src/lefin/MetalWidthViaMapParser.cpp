@@ -31,9 +31,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 using namespace odb;
 void MetalWidthViaMapParser::addEntry(
@@ -78,14 +78,16 @@ void MetalWidthViaMapParser::parse(const std::string& s)
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     rule += " ; ";
-    if (!parseSubRule(rule))
+    if (!parseSubRule(rule)) {
       lefin_->warning(299,
                       "parse mismatch in propery LEF58_METALWIDTHVIAMAP"
                       ":\"{}\"",
                       rule);
+    }
   }
 }
 

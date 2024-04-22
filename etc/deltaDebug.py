@@ -19,6 +19,7 @@
 ################################
 
 import odb
+from openroad import Design
 import os
 import sys
 import signal
@@ -149,7 +150,8 @@ class deltaDebugger:
             print(
                 "Performing a step with the original input file to calculate timeout."
             )
-            if self.perform_step() is None:
+            error, _ = self.perform_step()
+            if error is None:
                 print("No error found in the original input file.")
                 sys.exit(1)
 
@@ -158,11 +160,13 @@ class deltaDebugger:
                 err = None
                 self.n = 2  # Initial Number of cuts
 
+                cuts = None
+
                 while self.n <= (2**self.persistence):
                     error_in_range = None
                     j = 0
-                    while j < self.get_cuts():
-                        current_err = self.perform_step(cut_index=j)
+                    while j == 0 or j < cuts:
+                        current_err, cuts = self.perform_step(cut_index=j)
                         self.step_count += 1
                         if (current_err is not None):
                             # Found the target error with the cut DB
@@ -184,7 +188,7 @@ class deltaDebugger:
                     else:
                         break
 
-                if err is None or self.get_cuts() == 0:
+                if err is None or cuts == 0:
                     break
 
         # Change deltaDebug resultant base_db file name to a representative name
@@ -203,7 +207,7 @@ class deltaDebugger:
     # and calls the step function, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
-        self.base_db = odb.dbDatabase.create()
+        self.base_db = Design.createDetachedDb()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         # Cut the block with the given step index.
@@ -219,10 +223,13 @@ class deltaDebugger:
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.base_def_file)
 
+        cuts = self.get_cuts() if cut_index != -1 else None
+
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
         if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
+            self.base_db = None
 
         # Perform step, and check the error code
         start_time = time.time()
@@ -236,7 +243,7 @@ class deltaDebugger:
             self.timeout = max(120, 1.2 * (end_time - start_time))
             print(f"Error Code found: {error_string}")
 
-        return error_string
+        return error_string, cuts
 
     def run_command(self, command):
         poll_obj = select.poll()

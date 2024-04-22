@@ -578,7 +578,7 @@ void TritonRoute::initDesign()
   if (!REPAIR_PDN_LAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(REPAIR_PDN_LAYER_NAME);
     if (layer) {
-      GC_IGNORE_PDN_LAYER = layer->getLayerNum();
+      GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
     } else {
       logger_->warn(
           utl::DRT, 617, "PDN layer {} not found.", REPAIR_PDN_LAYER_NAME);
@@ -666,7 +666,8 @@ void TritonRoute::endFR()
     frLayerNum pdnLayerNum = pdnLayer->getLayerNum();
     frList<std::unique_ptr<frMarker>> markers;
     auto blockBox = design_->getTopBlock()->getBBox();
-    GC_IGNORE_PDN_LAYER = -1;
+    REPAIR_PDN_LAYER_NUM = pdnLayerNum;
+    GC_IGNORE_PDN_LAYER_NUM = -1;
     getDRCMarkers(markers, blockBox);
     std::vector<std::pair<odb::Rect, odb::dbId<odb::dbSBox>>> allWires;
     for (auto* net : dbBlock->getNets()) {
@@ -1016,22 +1017,12 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
         }
         auto layerNum = marker->getLayerNum();
         auto con = marker->getConstraint();
-        std::vector<frBlockObject*> srcs(2, nullptr);
-        int i = 0;
-        for (auto& src : marker->getSrcs()) {
-          srcs.at(i) = src;
-          i++;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[0], srcs[1]})
-            != mapMarkers.end()) {
-          continue;
-        }
-        if (mapMarkers.find({bbox, layerNum, con, srcs[1], srcs[0]})
+        if (mapMarkers.find({bbox, layerNum, con, marker->getSrcs()})
             != mapMarkers.end()) {
           continue;
         }
         markers.push_back(std::make_unique<frMarker>(*marker));
-        mapMarkers[{bbox, layerNum, con, srcs[0], srcs[1]}]
+        mapMarkers[{bbox, layerNum, con, marker->getSrcs()}]
             = markers.back().get();
       }
     }
@@ -1041,7 +1032,8 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
 
 void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
-  GC_IGNORE_PDN_LAYER = -1;
+  GC_IGNORE_PDN_LAYER_NUM = -1;
+  REPAIR_PDN_LAYER_NUM = -1;
   initDesign();
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1

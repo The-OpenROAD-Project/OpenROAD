@@ -1753,6 +1753,8 @@ void FlexDRWorker::identifyCongestionLevel()
 
 void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
 {
+  int gc_version = 1;
+  std::map<frBlockObject*, int> obj_gc_version;
   auto& workerRegionQuery = getWorkerRegionQuery();
   while (!rerouteQueue.empty()) {
     auto& entry = rerouteQueue.front();
@@ -1826,6 +1828,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         graphics_->midNet(net);
       }
       mazeNetEnd(net);
+      gc_version++;
       net->addNumReroutes();
       didRoute = true;
       // gc
@@ -1867,11 +1870,18 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           }
         }
         didCheck = true;
+        obj_gc_version[net->getFrNet()] = gc_version;
+
       } else {
         logger_->error(DRT, 1006, "failed to setTargetNet");
       }
     } else {
       gcWorker_->setEnableSurgicalFix(false);
+      if (obj_gc_version.find(obj) != obj_gc_version.end()
+          && obj_gc_version[obj] == gc_version) {
+        continue;
+      }
+      obj_gc_version[obj] = gc_version;
       if (obj->typeId() == frcNet) {
         auto net = static_cast<frNet*>(obj);
         if (gcWorker_->setTargetNet(net)) {

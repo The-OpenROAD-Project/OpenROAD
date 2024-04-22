@@ -113,7 +113,8 @@ int MISALIGNMENTCOST = 8;
 int CONGCOST = 8;
 int HISTCOST = 32;
 std::string REPAIR_PDN_LAYER_NAME;
-frLayerNum GC_IGNORE_PDN_LAYER = -1;
+frLayerNum REPAIR_PDN_LAYER_NUM = -1;
+frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 
 std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
 {

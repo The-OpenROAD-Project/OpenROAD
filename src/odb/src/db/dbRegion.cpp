@@ -32,19 +32,18 @@
 
 #include "dbRegion.h"
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
 #include "dbGroup.h"
 #include "dbInst.h"
-#include "dbRegion.h"
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -64,58 +63,72 @@ _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
       _boxes(r._boxes),
       groups_(r.groups_)
 {
-  if (r._name)
+  if (r._name) {
     _name = strdup(r._name);
+  }
 }
 
 _dbRegion::~_dbRegion()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 bool _dbRegion::operator==(const _dbRegion& rhs) const
 {
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_flags._invalid != rhs._flags._invalid)
+  if (_flags._invalid != rhs._flags._invalid) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_insts != rhs._insts)
+  if (_insts != rhs._insts) {
     return false;
+  }
 
-  if (groups_ != rhs.groups_)
+  if (groups_ != rhs.groups_) {
     return false;
+  }
 
   return true;
 }
 
 bool _dbRegion::operator<(const _dbRegion& rhs) const
 {
-  if (_flags._type < rhs._flags._type)
+  if (_flags._type < rhs._flags._type) {
     return false;
+  }
 
-  if (_flags._type > rhs._flags._type)
+  if (_flags._type > rhs._flags._type) {
     return true;
+  }
 
-  if (_flags._invalid < rhs._flags._invalid)
+  if (_flags._invalid < rhs._flags._invalid) {
     return false;
+  }
 
-  if (_flags._invalid > rhs._flags._invalid)
+  if (_flags._invalid > rhs._flags._invalid) {
     return true;
+  }
 
-  if (_insts < rhs._insts)
+  if (_insts < rhs._insts) {
     return true;
+  }
 
-  if (groups_ < rhs.groups_)
+  if (groups_ < rhs.groups_) {
     return true;
+  }
   return _boxes < rhs._boxes;
 }
 
@@ -123,8 +136,9 @@ void _dbRegion::differences(dbDiff& diff,
                             const char* field,
                             const _dbRegion& rhs) const
 {
-  if (diff.deepDiff())
+  if (diff.deepDiff()) {
     return;
+  }
 
   DIFF_BEGIN
   DIFF_FIELD(_flags._type);
@@ -138,8 +152,9 @@ void _dbRegion::differences(dbDiff& diff,
 
 void _dbRegion::out(dbDiff& diff, char side, const char* field) const
 {
-  if (diff.deepDiff())
+  if (diff.deepDiff()) {
     return;
+  }
 
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._type);
@@ -278,8 +293,9 @@ void dbRegion::removeGroup(dbGroup* group)
 {
   _dbRegion* region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
-  if (_group->region_ != region->getOID())
+  if (_group->region_ != region->getOID()) {
     return;
+  }
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
   uint id = _group->getOID();
@@ -315,8 +331,9 @@ void dbRegion::addGroup(dbGroup* group)
 {
   _dbRegion* _region = (_dbRegion*) this;
   _dbGroup* _group = (_dbGroup*) group;
-  if (_group->region_)
+  if (_group->region_) {
     return;
+  }
   if (_region->groups_.isValid()) {
     _dbGroup* prev_group = (_dbGroup*) dbGroup::getGroup(
         (dbBlock*) _region->getOwner(), _region->groups_);
@@ -340,14 +357,16 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block_->findRegion(name))
+  if (block_->findRegion(name)) {
     return nullptr;
+  }
 
   _dbRegion* region = block->_region_tbl->create();
   region->_name = strdup(name);
   ZALLOCATED(region->_name);
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbRegionCreate((dbRegion*) region);
+  }
   return (dbRegion*) region;
 }
 
@@ -356,8 +375,9 @@ void dbRegion::destroy(dbRegion* region_)
   _dbRegion* region = (_dbRegion*) region_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbRegionDestroy((dbRegion*) region);
+  }
 
   dbSet<dbInst> insts = region_->getRegionInsts();
   dbSet<dbInst>::iterator iitr;

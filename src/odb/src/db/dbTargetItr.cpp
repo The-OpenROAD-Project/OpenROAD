@@ -83,8 +83,9 @@ uint dbTargetItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbTargetItr::begin(parent); id != dbTargetItr::end(parent);
-       id = dbTargetItr::next(id))
+       id = dbTargetItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

@@ -30,9 +30,9 @@
 #include <vector>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace lefTechLayerCutSpacingTable {
 
@@ -331,12 +331,14 @@ void setCutClass(
       else {
         cols[col + "/SIDE"] = i;
         cols[col + "/END"] = colSz++;
-        for (size_t k = 0; k < table.size(); k++)
-          table[k].push_back(table[k][i]);
+        for (auto& k : table) {
+          k.push_back(k[i]);
+        }
       }
       cols.erase(it++);
-    } else
+    } else {
       ++it;
+    }
   }
   for (auto it = rows.cbegin(); it != rows.cend();) {
     std::string row = (*it).first;

@@ -36,10 +36,20 @@ is scaled from the full value for the worst slack, to 1.0 at the
 `timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing.
 
-```
+Routability-driven arguments
+- They begin with `-routability`.
+- `-routability_check_overflow`, `-routability_max_density`, `-routability_max_bloat_iter`, `-routability_max_inflation_iter`, `-routability_target_rc_metric`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+
+Timing-driven arguments
+- They begin with `-timing_driven`.
+- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`
+
+```tcl
 global_placement
     [-timing_driven]
     [-routability_driven]
+    [-disable_timing_driven]
+    [-disable_routability_driven]
     [-skip_initial_place]
     [-incremental]
     [-bin_grid_count grid_count]
@@ -48,21 +58,21 @@ global_placement
     [-init_wirelength_coef init_wirelength_coef]
     [-min_phi_coef min_phi_conef]
     [-max_phi_coef max_phi_coef]
+    [-reference_hpwl reference_hpwl]
     [-overflow overflow]
     [-initial_place_max_iter initial_place_max_iter]
     [-initial_place_max_fanout initial_place_max_fanout]
     [-pad_left pad_left]
     [-pad_right pad_right]
-    [-verbose_level level]
     [-force_cpu]
     [-skip_io]
+    [-skip_nesterov_place]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
     [-routability_max_bloat_iter routability_max_bloat_iter]
     [-routability_max_inflation_iter routability_max_inflation_iter]
     [-routability_target_rc_metric routability_target_rc_metric]
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
-    [-routability_pitch_scale routability_pitch_scale]
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
     [-routability_rc_coefficients routability_rc_coefficients]
     [-timing_driven_net_reweight_overflow]
@@ -70,7 +80,7 @@ global_placement
     [-timing_driven_nets_percentage]
 ```
 
-#### General Arguments
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -89,7 +99,6 @@ global_placement
 | `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
-| `-verbose_level` | Set verbose level for `gpl`. The default value is 1. Allowed values are integers `[0, 5]`. |
 | `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 
@@ -101,7 +110,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_bloat_iter` | Set bloat iteration threshold for routability mode. The default value is `1`, and the allowed values are integers `[1, MAX_INT]`.|
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
-| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.25`, and the allowed values are floats. |
+| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.0`, and the allowed values are floats. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode. The default value is `2.5`, and the allowed values are floats. |
 | `-routability_rc_coefficients` | Set routability RC coefficients. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
@@ -114,43 +123,62 @@ global_placement
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 
-
-### Useful developer functions
-
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
-
-```tcl
-# debugging global placement 
-global_placement_debug -pause -update -inst -draw_bins -initial
-
-# adds padding and gets global placement uniform target density
-get_global_placement_uniform_density -pad_left -pad_right 
-```
-
 ### Cluster Flops
 
-Cluster single bit flops into multi-bit flops.
+This command does flop clustering based on parameters.
 
-```
+```tcl
 cluster_flops
-    [-tray_weight tray_weight]
-    [-timing_weight timing_weight]
-    [-max_split_size max_split_size]
+    [-tray_weight tray_weight]\
+    [-timing_weight timing_weight]\
+    [-max_split_size max_split_size]\
     [-num_paths num_paths]
 ```
 
-#### General Arguments
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-tray_weight` | Set the weighting factor for tray cost (recommended to be `[20.0, float]`). |
-| `-timing_weight` | Set the weighting factor for timing-critical paths in (recommended to be `[1.0. float]`). |
-| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (default = 250). |
-| `num_paths` | Number of timing-critical paths to consider (default = 0). |
+| `-tray_weight` | Tray weight, default value is 20.0, type `float`. |
+| `-timing_weight` | Timing weight, default value is 1.0, type `float`. |
+| `-max_split_size` | Maximum split size, default value is -1, type `int`.|
+| `-num_paths` | KIV, default value is 0, type `int`. |
 
 
-## Example Scripts
+### Debug Mode
 
+The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
+
+```tcl
+global_placement_debug
+    [-pause] 
+    [-update]
+    [-inst]
+    [-draw_bins]
+    [-initial]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Useful for closely monitoring the progression of the placement algorithm. Allowed values are integers, default is 10. |
+| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is 10.  |
+| `-inst` | Targets a specific instance name for debugging focus. Allowed value is a string, the default behavior focuses on no specific instance. |
+| `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
+| `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
+
+Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
+This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
+
+## Useful Developer Commands
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
+
+```
+# adds padding and gets global placement uniform target density
+get_global_placement_uniform_density -pad_left -pad_right 
+```
 Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
 
 ```shell

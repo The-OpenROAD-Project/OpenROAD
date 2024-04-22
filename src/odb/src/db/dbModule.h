@@ -34,8 +34,9 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
-
+#include "dbVector.h"
+#include "odb/dbSet.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbHashTable.h"
 // User Code End Includes
@@ -47,6 +48,8 @@ class dbDiff;
 class _dbDatabase;
 class _dbInst;
 class _dbModInst;
+class _dbModNet;
+class _dbModBTerm;
 
 class _dbModule : public _dbObject
 {
@@ -71,8 +74,14 @@ class _dbModule : public _dbObject
   char* _name;
   dbId<_dbModule> _next_entry;
   dbId<_dbInst> _insts;
-  dbId<_dbModInst> _modinsts;
   dbId<_dbModInst> _mod_inst;
+  dbId<_dbModInst> _modinsts;
+  dbId<_dbModNet> _modnets;
+  dbId<_dbModBTerm> _modbterms;
+
+  // User Code Begin Fields
+  void* _sta_cell;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);

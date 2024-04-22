@@ -74,33 +74,23 @@ void PDNRenderer::update()
   vias_.clear();
   repair_.clear();
 
+  ShapeVectorMap shapes;
+  ShapeVectorMap obs;
+  std::vector<ViaPtr> vias;
   for (const auto& domain : pdn_->getDomains()) {
     for (auto* net : domain->getBlock()->getNets()) {
-      ShapeTreeMap net_shapes;
-      Shape::populateMapFromDb(net, net_shapes);
-      for (const auto& [layer, net_obs_layer] : net_shapes) {
-        auto& obs_layer = grid_obstructions_[layer];
-        for (const auto& [box, shape] : net_obs_layer) {
-          obs_layer.insert({shape->getObstructionBox(), shape});
-        }
-      }
+      Shape::populateMapFromDb(net, obs);
     }
 
     for (const auto& grid : domain->getGrids()) {
-      grid->getGridLevelObstructions(grid_obstructions_);
+      grid->getGridLevelObstructions(obs);
 
-      for (const auto& [layer, shapes] : grid->getShapes()) {
-        auto& save_shapes = shapes_[layer];
-        for (const auto& shape : shapes) {
-          save_shapes.insert(shape);
-        }
+      for (const auto& [layer, grid_shapes] : grid->getShapes()) {
+        shapes[layer].insert(
+            shapes[layer].end(), grid_shapes.begin(), grid_shapes.end());
       }
 
-      std::vector<ViaPtr> vias;
       grid->getVias(vias);
-      for (const auto& via : vias) {
-        vias_.insert({via->getBox(), via});
-      }
 
       for (const auto& repair :
            RepairChannelStraps::findRepairChannels(grid.get())) {
@@ -125,6 +115,11 @@ void PDNRenderer::update()
     }
   }
 
+  shapes_ = Shape::convertVectorToTree(shapes);
+  grid_obstructions_ = Shape::convertVectorToObstructionTree(obs);
+  shapes_ = Shape::convertVectorToTree(shapes);
+  vias_ = Via::convertVectorToTree(vias);
+
   redraw();
 }
 
@@ -136,17 +131,15 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const int min_shape = 1.0 / painter.getPixelsPerDBU();
 
   const odb::Rect paint_rect = painter.getBounds();
-  Box paint_box(Point(paint_rect.xMin(), paint_rect.yMin()),
-                Point(paint_rect.xMax(), paint_rect.yMax()));
 
   if (checkDisplayControl(grid_obs_text_)) {
     painter.setPen(gui::Painter::highlight, true);
     painter.setBrush(gui::Painter::transparent);
     auto& shapes = grid_obstructions_[layer];
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
       painter.drawRect(shape->getObstruction());
     }
   }
@@ -157,10 +150,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool show_obs = checkDisplayControl(obs_text_);
   auto& shapes = shapes_[layer];
   if (show_rings || show_followpins || show_straps) {
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
 
       if (shape->getLayer() != layer) {
         continue;
@@ -237,9 +230,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (checkDisplayControl(vias_text_)) {
-    for (auto it = vias_.qbegin(bgi::intersects(paint_box)); it != vias_.qend();
+    for (auto it = vias_.qbegin(bgi::intersects(paint_rect));
+         it != vias_.qend();
          it++) {
-      const auto& via = it->second;
+      const auto& via = *it;
       if (layer->getNumber() < via->getLowerLayer()->getNumber()
           || layer->getNumber() > via->getUpperLayer()->getNumber()) {
         continue;

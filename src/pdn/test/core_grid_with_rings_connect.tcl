@@ -19,6 +19,6 @@ add_pdn_connect -layers {metal1 metal6}
 
 pdngen
 
-set def_file [make_result_file core_grid_with_rings.def]
+set def_file [make_result_file core_grid_with_rings_connect.def]
 write_def $def_file
 diff_files core_grid_with_rings.defok $def_file

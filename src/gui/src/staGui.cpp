@@ -48,11 +48,11 @@
 #include <limits>
 #include <string>
 
-#include "db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"
@@ -126,6 +126,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Required:
       case Arrival:
       case Slack:
+      case Skew:
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
@@ -140,6 +141,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getPathArrivalTime(), time_units);
       case Slack:
         return convertDelay(timing_path->getSlack(), time_units);
+      case Skew:
+        return convertDelay(timing_path->getSkew(), time_units);
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -163,6 +166,8 @@ QVariant TimingPathsModel::headerData(int section,
         return "Arrival";
       case Slack:
         return "Slack";
+      case Skew:
+        return "Skew";
       case Start:
         return "Start";
       case End:
@@ -203,6 +208,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
+    };
+  } else if (col_index == Skew) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getSkew() < path2->getSkew();
     };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,

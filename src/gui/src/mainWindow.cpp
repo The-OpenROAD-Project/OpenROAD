@@ -244,6 +244,8 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_,
           &Inspector::addHighlight,
           [=](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
@@ -327,6 +329,12 @@ MainWindow::MainWindow(QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
+#ifdef ENABLE_CHARTS
+  connect(charts_widget_,
+          &ChartsWidget::endPointsToReport,
+          this,
+          &MainWindow::reportSlackHistogramPaths);
+#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -1606,4 +1614,21 @@ void MainWindow::openDesign()
   }
 }
 
+#ifdef ENABLE_CHARTS
+void MainWindow::reportSlackHistogramPaths(
+    const std::set<const sta::Pin*>& report_pins)
+{
+  if (!timing_widget_->isVisible()) {
+    timing_widget_->show();
+  }
+
+  // In Qt, an enabled tabified widget is visible, so
+  // we need to make it the active tab.
+  if (timing_widget_->visibleRegion().isEmpty()) {
+    timing_widget_->raise();
+  }
+
+  timing_widget_->reportSlackHistogramPaths(report_pins);
+}
+#endif
 }  // namespace gui

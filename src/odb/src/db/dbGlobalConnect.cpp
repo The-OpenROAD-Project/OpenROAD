@@ -33,11 +33,11 @@
 // Generator Code Begin Cpp
 #include "dbGlobalConnect.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 // User Code Begin Includes
 #include "dbInst.h"

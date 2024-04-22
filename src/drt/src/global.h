@@ -119,7 +119,8 @@ extern int HISTCOST;
 extern int CONGCOST;
 
 extern std::string REPAIR_PDN_LAYER_NAME;
-extern frLayerNum GC_IGNORE_PDN_LAYER;
+extern frLayerNum REPAIR_PDN_LAYER_NUM;
+extern frLayerNum GC_IGNORE_PDN_LAYER_NUM;
 
 #define DIRBITSIZE 3
 #define WAVEFRONTBUFFERSIZE 2

@@ -182,6 +182,8 @@ class TimingPath
   void setSlack(float slack) { slack_ = slack; }
   float getPathDelay() const { return path_delay_; }
   void setPathDelay(float del) { path_delay_ = del; }
+  float getSkew() const { return skew_; }
+  void setSkew(float skew) { skew_ = skew; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -211,6 +213,7 @@ class TimingPath
   std::string start_clk_;
   std::string end_clk_;
   float slack_;
+  float skew_;
   float path_delay_;
   float arr_time_;
   float req_time_;

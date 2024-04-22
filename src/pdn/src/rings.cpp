@@ -169,7 +169,7 @@ void Rings::setExtendToBoundary(bool value)
   extend_to_boundary_ = value;
 }
 
-void Rings::makeShapes(const ShapeTreeMap& other_shapes)
+void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,

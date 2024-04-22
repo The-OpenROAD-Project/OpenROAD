@@ -87,7 +87,6 @@ struct Segment  // A Segment is a 2-pin connection
 struct FrNet  // A Net is a set of connected MazePoints
 {
   bool isClock() const { return is_clock_; }
-  bool isRouted() const { return is_routed_; }
   bool isCritical() { return is_critical_; }
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
@@ -115,7 +114,6 @@ struct FrNet  // A Net is a set of connected MazePoints
              int max_layer,
              float slack,
              std::vector<int>* edge_cost_per_layer);
-  void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
@@ -135,7 +133,6 @@ struct FrNet  // A Net is a set of connected MazePoints
   float slack_;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
-  bool is_routed_ = false;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent

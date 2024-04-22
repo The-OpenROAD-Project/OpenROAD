@@ -83,6 +83,7 @@ warn_regexp_c = \
       (?P<message>("((?:[^"\\]|\\.)+?\s*)+" ))          # message
     ''', re.VERBOSE | re.MULTILINE)
 
+
 warn_regexp_tcl = \
     re.compile(r'''
       (?P<type>info|warn|error|critical)     # type
@@ -109,6 +110,7 @@ def scan_file(path, file_name, msgs):
 
         # remove quotes and join strings
         message = match.group('message')
+        message = message.replace("\n", "")
         message = message.rstrip()[1:-1]
         message = re.sub(r'"\s*"', '', message)
         message_type = match.group('type').upper()

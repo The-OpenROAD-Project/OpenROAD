@@ -124,50 +124,146 @@ proc set_layer_rc {args} {
   }
 }
 
-sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
-                                      [-layer layer_name]\
+sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
+                                      [-layers layers]\
+                                      [-layer layer]\
+                                      [-h_resistance h_res]\
+                                      [-h_capacitance h_cap]\
+                                      [-v_resistance v_res]\
+                                      [-v_capacitance v_cap]\
                                       [-resistance res]\
                                       [-capacitance cap]\
                                       [-corner corner]}
 
 proc set_wire_rc { args } {
   sta::parse_key_args "set_wire_rc" args \
-    keys {-layer -resistance -capacitance -corner} \
+    keys {-layer -layers -resistance -capacitance -corner \
+          -h_resistance -h_capacitance -v_resistance -v_capacitance} \
     flags {-clock -signal -data}
 
   set corner [sta::parse_corner_or_all keys]
 
-  set wire_res 0.0
-  set wire_cap 0.0
-  if { [info exists keys(-layer)] } {
-    if { [info exists keys(-resistance)] \
-           || [info exists keys(-capacitance)] } {
-      utl::error RSZ 1 "Use -layer or -resistance/-capacitance but not both."
+  set h_wire_res 0.0
+  set h_wire_cap 0.0
+  set v_wire_res 0.0
+  set v_wire_cap 0.0
+
+  if { [info exists keys(-layers)] } {
+    if { [info exists keys(-h_resistance)] \
+           || [info exists keys(-h_capacitance)] \
+           || [info exists keys(-v_resistance)] \
+           || [info exists keys(-v_capacitance)] } {
+      utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
     }
+    if { [info exists keys(-layer)] } {
+      utl::error RSZ 6 "Use -layers or -layer but not both."
+    }
+    set total_h_wire_res 0.0
+    set total_h_wire_cap 0.0
+    set total_v_wire_res 0.0
+    set total_v_wire_cap 0.0
+
+    set h_layers 0
+    set v_layers 0
+
+    set layers $keys(-layers)
+
+    foreach layer_name $layers {
+
+      set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+      if { $tec_layer == "NULL" } {
+        utl::error RSZ 2 "layer $layer_name not found."
+      }
+      if { $corner == "NULL" } {
+        lassign [rsz::dblayer_wire_rc $tec_layer] layer_wire_res layer_wire_cap
+      } else {
+        set layer_wire_res [rsz::layer_resistance $tec_layer $corner]
+        set layer_wire_cap [rsz::layer_capacitance $tec_layer $corner]
+      }
+      set layer_direction [$tec_layer getDirection]
+      if {$layer_direction == "HORIZONTAL"} {
+        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
+        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        incr h_layers
+      } elseif {$layer_direction == "VERTICAL"} {
+        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
+        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        incr v_layers
+      } else {
+        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
+        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        incr h_layers
+        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
+        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        incr v_layers
+      }
+    }
+    if { $h_layers == 0 } {
+      utl::error RSZ 16 "No horizontal layer specified."
+    }
+    if { $v_layers == 0 } {
+      utl::error RSZ 17 "No vertical layer specified."
+    }
+
+    set h_wire_res [expr $total_h_wire_res / $h_layers]
+    set h_wire_cap [expr $total_h_wire_cap / $h_layers]
+    set v_wire_res [expr $total_v_wire_res / $v_layers]
+    set v_wire_cap [expr $total_v_wire_cap / $v_layers]
+  } elseif { [info exists keys(-layer)] } {
+
     set layer_name $keys(-layer)
-    set layer [[ord::get_db_tech] findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error RSZ 2 "layer $layer_name not found."
+    set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+    if { $tec_layer == "NULL" } {
+      utl::error RSZ 15 "layer $tec_layer not found."
     }
 
     if { $corner == "NULL" } {
-      lassign [rsz::dblayer_wire_rc $layer] wire_res wire_cap
+      lassign [rsz::dblayer_wire_rc $tec_layer] h_wire_res h_wire_cap
+      lassign [rsz::dblayer_wire_rc $tec_layer] v_wire_res v_wire_cap
     } else {
-      set wire_res [rsz::layer_resistance $layer $corner]
-      set wire_cap [rsz::layer_capacitance $layer $corner]
+      set h_wire_res [rsz::layer_resistance $tec_layer $corner]
+      set v_wire_res [rsz::layer_resistance $tec_layer $corner]
+      set h_wire_cap [rsz::layer_capacitance $tec_layer $corner]
+      set v_wire_cap [rsz::layer_capacitance $tec_layer $corner]
     }
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
       set res $keys(-resistance)
       sta::check_positive_float "-resistance" $res
-      set wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+      set h_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+      set v_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
     }
 
     if { [info exists keys(-capacitance)] } {
       set cap $keys(-capacitance)
       sta::check_positive_float "-capacitance" $cap
-      set wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+      set h_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+      set v_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-h_resistance)] } {
+      set h_res $keys(-h_resistance)
+      sta::check_positive_float "-h_resistance" $h_res
+      set h_wire_res [expr [sta::resistance_ui_sta $h_res] / [sta::distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-h_capacitance)] } {
+      set h_cap $keys(-h_capacitance)
+      sta::check_positive_float "-h_capacitance" $h_cap
+      set h_wire_cap [expr [sta::capacitance_ui_sta $h_cap] / [sta::distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-v_resistance)] } {
+      set v_res $keys(-v_resistance)
+      sta::check_positive_float "-v_resistance" $v_res
+      set v_wire_res [expr [sta::resistance_ui_sta $v_res] / [sta::distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-v_capacitance)] } {
+      set v_cap $keys(-v_capacitance)
+      sta::check_positive_float "-v_capacitance" $v_cap
+      set v_wire_cap [expr [sta::capacitance_ui_sta $v_cap] / [sta::distance_ui_sta 1.0]]
     }
   }
 
@@ -188,11 +284,17 @@ proc set_wire_rc { args } {
     set signal_clk "Clock"
   }
 
-  if { $wire_res == 0.0 } {
-    utl::warn RSZ 10 "$signal_clk wire resistance is 0."
+  if { $h_wire_res == 0.0 } {
+    utl::warn RSZ 10 "$signal_clk horizontal wire resistance is 0."
   }
-  if { $wire_cap == 0.0 } {
-    utl::warn RSZ 11 "$signal_clk wire capacitance is 0."
+  if { $v_wire_res == 0.0 } {
+    utl::warn RSZ 11 "$signal_clk vertical wire resistance is 0."
+  }
+  if { $h_wire_cap == 0.0 } {
+    utl::warn RSZ 12 "$signal_clk horizontal wire capacitance is 0."
+  }
+  if { $v_wire_cap == 0.0 } {
+    utl::warn RSZ 13 "$signal_clk vertical wire capacitance is 0."
   }
 
   set corners $corner
@@ -201,10 +303,12 @@ proc set_wire_rc { args } {
   }
   foreach corner $corners {
     if { $signal } {
-      rsz::set_wire_signal_rc_cmd $corner $wire_res $wire_cap
+      rsz::set_h_wire_signal_rc_cmd $corner $h_wire_res $h_wire_cap
+      rsz::set_v_wire_signal_rc_cmd $corner $v_wire_res $v_wire_cap
     }
     if { $clk } {
-      rsz::set_wire_clk_rc_cmd $corner $wire_res $wire_cap
+      rsz::set_h_wire_clk_rc_cmd $corner $h_wire_res $h_wire_cap
+      rsz::set_v_wire_clk_rc_cmd $corner $v_wire_res $v_wire_cap
     }
   }
 }
@@ -235,12 +339,14 @@ proc estimate_parasitics { args } {
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
+  sta::parse_key_args "set_dont_use" args keys {} flags {}
   set_dont_use_cmd "set_dont_use" $args 1
 }
 
 sta::define_cmd_args "unset_dont_use" {lib_cells}
 
 proc unset_dont_use { args } {
+  sta::parse_key_args "unset_dont_use" args keys {} flags {}
   set_dont_use_cmd "unset_dont_use" $args 0
 }
 
@@ -254,12 +360,14 @@ proc set_dont_use_cmd { cmd cmd_args dont_use } {
 sta::define_cmd_args "set_dont_touch" {nets_instances}
 
 proc set_dont_touch { args } {
+  sta::parse_key_args "set_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "set_dont_touch" $args 1
 }
 
 sta::define_cmd_args "unset_dont_touch" {nets_instances}
 
 proc unset_dont_touch { args } {
+  sta::parse_key_args "unset_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "unset_dont_touch" $args 0
 }
 
@@ -275,7 +383,8 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                       [-max_utilization util]}
+                                       [-max_utilization util]\
+                                       [-buffer_cell buf_cell]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
@@ -302,6 +411,7 @@ proc buffer_ports { args } {
 sta::define_cmd_args "remove_buffers" {}
 
 proc remove_buffers { args } {
+  sta::parse_key_args "remove_buffers" args keys {} flags {}
   sta::check_argc_eq0 "remove_buffers" $args
   rsz::remove_buffers_cmd
 }
@@ -309,6 +419,7 @@ proc remove_buffers { args } {
 sta::define_cmd_args "balance_row_usage" {}
 
 proc balance_row_usage { args } {
+  sta::parse_key_args "balance_row_usage" args keys {} flags {}
   sta::check_argc_eq0 "balance_row_usage" $args
   rsz::balance_row_usage_cmd
 }
@@ -355,11 +466,15 @@ proc repair_clock_nets { args } {
 sta::define_cmd_args "repair_clock_inverters" {}
 
 proc repair_clock_inverters { args } {
+  sta::parse_key_args "repair_clock_inverters" args keys {} flags {}
   sta::check_argc_eq0 "repair_clock_inverters" $args
   rsz::repair_clk_inverters_cmd
 }
 
-sta::define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
+sta::define_cmd_args "repair_tie_fanout" {lib_port\
+                                         [-separation dist]\
+                                         [-max_fanout fanout]\
+                                         [-verbose]}
 
 proc repair_tie_fanout { args } {
   sta::parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
@@ -390,13 +505,17 @@ proc repair_tie_fanout { args } {
 
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power percent_of_paths_with_slack]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                        [-recover_power percent_of_paths_with_slack]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
+                                        [-slack_margin slack_margin]\
+                                        [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-skip_pin_swap]\
-                                        [-skip_gate_cloning)]\
+                                        [-skip_gate_cloning]\
                                         [-repair_tns tns_end_percent]\
+                                        [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-verbose]}
@@ -439,8 +558,8 @@ proc repair_timing { args } {
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)
     sta::check_percent "-max_buffer_percent" $max_buffer_percent
-    set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
+  set max_buffer_percent [expr $max_buffer_percent / 100.0]
 
   set repair_tns_end_percent 0.0
   if { [info exists keys(-repair_tns)] } {
@@ -487,16 +606,17 @@ proc repair_timing { args } {
 
 sta::define_cmd_args "report_design_area" {}
 
-proc report_design_area {} {
+proc report_design_area { args } {
+  sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]};# checker off
 
 sta::proc_redirect report_floating_nets {
-  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
+  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
 
   set verbose [info exists flags(-verbose)]
   set floating_nets [rsz::find_floating_nets]
@@ -524,12 +644,12 @@ sta::proc_redirect report_floating_nets {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]}
+sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]};# checker off
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
 
-  sta::parse_key_args "report_long_wires" args keys {-digits} flags {}
+  sta::parse_key_args "report_long_wires" args keys {-digits} flags {};# checker off
 
   set digits $sta_report_default_digits
   if { [info exists keys(-digits)] } {

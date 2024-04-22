@@ -1,13 +1,6 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_stdcell.lef
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
-[INFO ODB-0222] Reading LEF file: array_tile.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  array_tile.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.

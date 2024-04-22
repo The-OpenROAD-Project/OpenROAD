@@ -3,9 +3,9 @@
 #include <iostream>
 #include <string>
 
-#include "db.h"
 #include "env.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
@@ -24,7 +24,7 @@ struct F_DEFAULT
   dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
-  std::string journal_path = testTmpPath("/results/db_jounal.eco");
+  std::string journal_path = testTmpPath("results", "db_jounal.eco");
 };
 BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
 {

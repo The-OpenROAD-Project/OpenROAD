@@ -34,7 +34,7 @@
 
 #include <algorithm>
 
-#include "dbSet.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 //

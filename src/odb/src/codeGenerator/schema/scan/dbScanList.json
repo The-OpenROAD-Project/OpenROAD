@@ -1,0 +1,14 @@
+{
+  "name": "dbScanList",
+  "type": "dbObject",
+  "description": [
+    "A scan list is a collection of dbScanInsts in a particular order that must be",
+    "respected when performing scan reordering and repartitioning. For ScanList with",
+    "two or more elements we say that they are ORDERED. If the ScanList contains only",
+    "one element then they are FLOATING elements that don't have any restriccion when",
+    "optimizing the scan chain."],
+  "cpp_includes": [
+    "dbScanChain.h",
+    "dbScanPartition.h"
+  ]
+}

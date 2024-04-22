@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbAccessPoint.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTypes.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 
@@ -266,8 +266,9 @@ void dbAccessPoint::getAccesses(std::vector<dbDirection>& tbl) const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   for (int dir = 0; dir < 6; dir++) {
-    if (obj->accesses_[dir])
+    if (obj->accesses_[dir]) {
       tbl.push_back(dbDirection::Value(dir + 1));
+    }
   }
 }
 
@@ -347,8 +348,9 @@ dbTechLayer* dbAccessPoint::getLayer() const
 dbMPin* dbAccessPoint::getMPin() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (!obj->mpin_.isValid())
+  if (!obj->mpin_.isValid()) {
     return nullptr;
+  }
   _dbDatabase* db = obj->getDatabase();
   auto lib = (_dbLib*) db->_lib_tbl->getPtr(obj->lib_);
   auto master = (_dbMaster*) lib->_master_tbl->getPtr(obj->master_);
@@ -358,8 +360,9 @@ dbMPin* dbAccessPoint::getMPin() const
 dbBPin* dbAccessPoint::getBPin() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (!obj->bpin_.isValid())
+  if (!obj->bpin_.isValid()) {
     return nullptr;
+  }
   _dbBlock* block = (_dbBlock*) obj->getOwner();
   return (dbBPin*) block->_bpin_tbl->getPtr(obj->bpin_);
 }
@@ -388,8 +391,9 @@ std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 void dbAccessPoint::addTechVia(int num_cuts, dbTechVia* via)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (num_cuts > obj->vias_.size())
+  if (num_cuts > obj->vias_.size()) {
     obj->vias_.resize(num_cuts);
+  }
   obj->vias_[num_cuts - 1].push_back(
       {via->getObjectType(), via->getImpl()->getOID()});
 }
@@ -397,8 +401,9 @@ void dbAccessPoint::addTechVia(int num_cuts, dbTechVia* via)
 void dbAccessPoint::addBlockVia(int num_cuts, dbVia* via)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (num_cuts > obj->vias_.size())
+  if (num_cuts > obj->vias_.size()) {
     obj->vias_.resize(num_cuts);
+  }
   obj->vias_[num_cuts - 1].push_back(
       {via->getObjectType(), via->getImpl()->getOID()});
 }
@@ -440,25 +445,24 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
       if (*ap_itr == ap->getImpl()->getOID()) {
         pin->aps_.erase(ap_itr);
         break;
-      } else {
-        ++ap_itr;
       }
+      ++ap_itr;
     }
   } else {
     _dbMPin* pin = (_dbMPin*) ap->getMPin();
     bool found = false;
     for (auto& aps : pin->aps_) {
-      if (found)
+      if (found) {
         break;
+      }
       auto ap_itr = aps.begin();
       while (ap_itr != aps.end()) {
         if (*ap_itr == ap->getImpl()->getOID()) {
           aps.erase(ap_itr);
           found = true;
           break;
-        } else {
-          ++ap_itr;
         }
+        ++ap_itr;
       }
     }
     for (const auto& iterm_id : _ap->iterms_) {
@@ -468,9 +472,8 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
         if ((*ap_itr).second == ap->getImpl()->getOID()) {
           iterm->aps_.erase(ap_itr);
           break;
-        } else {
-          ++ap_itr;
         }
+        ++ap_itr;
       }
     }
   }

@@ -89,7 +89,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_buffer_max_cap_derate] \
                                              [-use_dummy_load] \
                                              [-delay_buffer_derate] \
-                                            }
+};# checker off
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
@@ -102,6 +102,7 @@ proc clock_tree_synthesis { args } {
           -sink_buffer_max_cap_derate -delay_buffer_derate} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -apply_ndr -use_dummy_load}
+  };# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
@@ -239,7 +240,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}
+    keys {} flags {-plot}; # checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]

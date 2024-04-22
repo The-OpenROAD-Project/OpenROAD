@@ -18,6 +18,7 @@ add_library(lefin
     lefTechLayerAreaRuleParser.cpp
     lefTechLayerPitchRuleParser.cpp
     lefTechLayerForbiddenSpacingRuleParser.cpp
+    lefTechLayerTwoWiresForbiddenSpcRuleParser.cpp
     lefMacroClassParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp

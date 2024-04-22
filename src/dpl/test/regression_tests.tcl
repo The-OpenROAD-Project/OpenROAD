@@ -22,6 +22,7 @@ record_tests {
   fillers6
   fillers7
   fillers8
+  fillers9
   fragmented_row01
   fragmented_row02
   fragmented_row03
@@ -60,4 +61,6 @@ record_tests {
   simple08
   simple09
   simple10
+  #dpl_man_tcl_check
+  #dpl_readme_msgs_check
 }

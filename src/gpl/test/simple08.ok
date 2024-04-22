@@ -1,12 +1,8 @@
-[INFO ODB-0222] Reading LEF file: ./sky130hd.lef
 [WARNING ODB-0220] WARNING (LEFPARS-2036): SOURCE statement is obsolete in version 5.6 and later.
 The LEF parser will ignore this statement.
 To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file ./sky130hd.lef at line 794.
 
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0225]     Created 441 library cells
-[INFO ODB-0226] Finished LEF file:  ./sky130hd.lef
+[INFO ODB-0227] LEF file: ./sky130hd.lef, created 13 layers, 25 vias, 441 library cells
 [INFO ODB-0128] Design: inverter
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 32 components and 116 component-terminals.

@@ -110,6 +110,7 @@ class TimingPathsModel : public QAbstractTableModel
     Required,
     Arrival,
     Slack,
+    Skew,
     Start,
     End
   };

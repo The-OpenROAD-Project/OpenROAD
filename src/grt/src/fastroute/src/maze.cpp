@@ -60,10 +60,8 @@ void FastRouteCore::fixEmbeddedTrees()
   // check embedded trees only when maze router is called
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (!skipNet(netID)) {
-        checkAndFixEmbeddedTree(netID);
-      }
+    for (const int& netID : net_ids_) {
+      checkAndFixEmbeddedTree(netID);
     }
   }
 }
@@ -499,10 +497,8 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 
 void FastRouteCore::convertToMazeroute()
 {
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (!skipNet(netID)) {
-      convertToMazerouteNet(netID);
-    }
+  for (const int& netID : net_ids_) {
+    convertToMazerouteNet(netID);
   }
 
   for (int i = 0; i < y_grid_; i++) {
@@ -1360,12 +1356,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
-  for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
-    const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
-
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int nidRPC = 0; nidRPC < net_ids_.size(); nidRPC++) {
+    const int netID
+        = ordering ? tree_order_cong_[nidRPC].treeIndex : net_ids_[nidRPC];
 
     const int num_terminals = sttrees_[netID].num_terminals;
 
@@ -2566,10 +2559,7 @@ void FastRouteCore::InitLastUsage(const int upType)
 
 void FastRouteCore::SaveLastRouteLen()
 {
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (const int& netID : net_ids_) {
     auto& treeedges = sttrees_[netID].edges;
     // loop for all the tree edges
     const int num_edges = sttrees_[netID].num_edges();
