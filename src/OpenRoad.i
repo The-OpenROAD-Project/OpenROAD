@@ -327,18 +327,6 @@ openroad_charts_compiled()
   return ord::OpenRoad::getChartsCompileOption();
 }
 
-const bool
-openroad_mpl2_compiled()
-{
-  return ord::OpenRoad::getMPL2CompileOption();
-}
-
-const bool
-openroad_par_compiled()
-{
-  return ord::OpenRoad::getPARCompileOption();
-}
-
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
