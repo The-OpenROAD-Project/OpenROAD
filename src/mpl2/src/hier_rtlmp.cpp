@@ -6742,12 +6742,7 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
   std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
 
   for (const auto& [boundary, distance] : boundaries_distance) {
-    std::vector<HardMacro*> moved_hard_macros;
     bool produced_overlap = false;
-
-    // The distance to revert the move that caused the overlap.
-    int overlap_distance = 0;
-    Boundary overlap_boundary;
 
     for (HardMacro* hard_macro : hard_macros) {
       moveHardMacro(hard_macro, boundary, distance);
@@ -6756,15 +6751,14 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
     for (HardMacro* hard_macro : hard_macros) {
       if (overlapsWithOtherHardMacro(hard_macro)) {
         produced_overlap = true;
-        overlap_distance = -distance;
-        overlap_boundary = boundary;
         break;
       }
     }
 
     if (produced_overlap) {
-      for (HardMacro* hard_macro : moved_hard_macros) {
-        moveHardMacro(hard_macro, overlap_boundary, overlap_distance);
+      // Move back to original position
+      for (HardMacro* hard_macro : hard_macros) {
+        moveHardMacro(hard_macro, boundary, (-distance));
       }
     }
   }
