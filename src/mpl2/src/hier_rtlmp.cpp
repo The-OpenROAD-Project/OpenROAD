@@ -6643,7 +6643,7 @@ BoundaryPusher::BoundaryPusher(Cluster* root, odb::dbBlock* block)
     : root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
-  dbu_ = block->getTech()->getDbUnitsPerMicron();
+  dbu_ = block_->getTech()->getDbUnitsPerMicron();
 }
 
 void BoundaryPusher::fetchMacroClusters(Cluster* parent,
