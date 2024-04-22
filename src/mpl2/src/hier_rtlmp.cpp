@@ -377,6 +377,9 @@ void HierRTLMP::run()
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
+  BoundaryPusher boundary_pusher(root_cluster_, block_);
+  boundary_pusher.pushMacrosToCoreBoundaries();
+
   generateTemporaryStdCellsPlacement(root_cluster_);
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
@@ -4207,8 +4210,6 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
-  alignHardMacroGlobal(parent);
-
   sa_containers.clear();
 
   updateInstancesAssociation(parent);
@@ -4737,8 +4738,6 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       runHierarchicalMacroPlacementWithoutBusPlanning(cluster);
     }
   }
-
-  alignHardMacroGlobal(parent);
 
   sa_containers.clear();
 
@@ -6636,6 +6635,144 @@ void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
 {
   graphics_->setShowBundledNets(show_bundled_nets);
+}
+
+BoundaryPusher::BoundaryPusher(Cluster* root, odb::dbBlock* block)
+    : root_(root), block_(block)
+{
+  core_ = block_->getCoreArea();
+  dbu_ = block->getTech()->getDbUnitsPerMicron();
+}
+
+void BoundaryPusher::fetchMacroClusters(Cluster* parent,
+                                   std::vector<Cluster*>& macro_clusters)
+{
+  for (Cluster* child : parent->getChildren()) {
+    if (child->getClusterType() == HardMacroCluster) {
+      macro_clusters.push_back(child);
+    } else if (child->getClusterType() == MixedCluster) {
+      fetchMacroClusters(child, macro_clusters);
+    }
+  }
+}
+
+void BoundaryPusher::pushMacrosToCoreBoundaries()
+{
+  std::vector<Cluster*> macro_clusters;
+  fetchMacroClusters(root_, macro_clusters);
+
+  for (Cluster* macro_cluster : macro_clusters) {
+    std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
+
+    bool horizontal_move_allowed = true;
+    bool vertical_move_allowed = true;
+
+    const int width = micronToDbu(macro_cluster->getWidth(), dbu_);
+    if (width > (core_.dx() / 2)) {
+      horizontal_move_allowed = false;
+    }
+
+    const int height = micronToDbu(macro_cluster->getHeight(), dbu_);
+    if (height > (core_.dy() / 2)) {
+      vertical_move_allowed = false;
+    }
+
+    if (!horizontal_move_allowed && !vertical_move_allowed) {
+      continue;
+    }
+
+    // A partir daqui ja pode ser uma nova função eu acho
+    int min_dx_to_push = std::numeric_limits<int>::max();
+    int min_dy_to_push = std::numeric_limits<int>::max();
+
+    for (auto& hard_macro : hard_macros) {
+      hard_macros_.push_back(hard_macro);
+
+      min_dx_to_push = std::min(min_dx_to_push, hard_macro->getRealWidthDBU());
+      min_dy_to_push = std::min(min_dy_to_push, hard_macro->getRealHeightDBU());
+
+      if (std::abs(hard_macro->getXDBU() - core_.xMin()) < min_dx_to_push
+          && horizontal_move_allowed) {
+        moveHorizontally(hard_macro, core_.xMin());
+      }
+
+      if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_push
+          && vertical_move_allowed) {
+        moveVertically(hard_macro, core_.yMax() - hard_macro->getHeightDBU());
+      }
+
+      if (std::abs(hard_macro->getUXDBU() - core_.xMax()) < min_dx_to_push
+          && horizontal_move_allowed) {
+        moveHorizontally(hard_macro, core_.xMax() - hard_macro->getWidthDBU());
+      }
+
+      if (std::abs(hard_macro->getUYDBU() - core_.yMin()) < min_dy_to_push
+          && vertical_move_allowed) {
+        moveHorizontally(hard_macro, core_.yMin());
+      }
+    }
+  }
+}
+
+bool BoundaryPusher::moveVertically(HardMacro* hard_macro, int y)
+{
+  const int y_old = hard_macro->getYDBU();
+
+  hard_macro->setYDBU(y);
+
+  if (!fitsInCore(hard_macro) || overlapsWithOtherHardMacro(hard_macro)) {
+    hard_macro->setYDBU(y_old);
+    return false;
+  }
+
+  return true;
+}
+
+bool BoundaryPusher::moveHorizontally(HardMacro* hard_macro, int x)
+{
+  const int x_old = hard_macro->getXDBU();
+
+  hard_macro->setXDBU(x);
+
+  if (!fitsInCore(hard_macro) || overlapsWithOtherHardMacro(hard_macro)) {
+    hard_macro->setXDBU(x_old);
+    return false;
+  }
+
+  return true;
+}
+
+bool BoundaryPusher::fitsInCore(HardMacro* hard_macro)
+{
+  if (hard_macro->getXDBU() < core_.xMin()
+      || hard_macro->getYDBU() < core_.yMin()
+      || hard_macro->getUXDBU() > core_.xMax()
+      || hard_macro->getUYDBU() > core_.yMax()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool BoundaryPusher::overlapsWithOtherHardMacro(HardMacro* hard_macro)
+{
+  for (const HardMacro* other_hard_macro : hard_macros_) {
+    if (hard_macro == other_hard_macro) {
+      continue;
+    }
+
+    if (hard_macro->getXDBU() >= other_hard_macro->getUXDBU()
+        || hard_macro->getYDBU() >= other_hard_macro->getUYDBU()
+        || hard_macro->getUXDBU() <= other_hard_macro->getXDBU()
+        || hard_macro->getUYDBU() <= other_hard_macro->getYDBU())
+    {
+      continue;
+    }
+
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace mpl2

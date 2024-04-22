@@ -484,4 +484,31 @@ class HierRTLMP
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
+
+class BoundaryPusher
+{
+ public:
+  BoundaryPusher(Cluster* root, odb::dbBlock* block);
+
+  void pushMacrosToCoreBoundaries();
+
+  void fetchMacroClusters(Cluster* parent, std::vector<Cluster*>& macro_clusters);
+  
+  bool moveHorizontally(HardMacro* hard_macro, int x);
+  bool moveVertically(HardMacro* hard_macro, int y);
+
+  bool fitsInCore(HardMacro* hard_macro);
+  bool overlapsWithOtherHardMacro(HardMacro* hard_macro);
+
+ private:
+  Cluster* root_;
+  odb::dbBlock* block_;
+  odb::Rect core_;
+
+  float dbu_ = 0.0f;
+
+  std::vector<HardMacro*> hard_macros_;
+};
+
+
 }  // namespace mpl2
