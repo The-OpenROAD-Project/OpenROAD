@@ -1030,7 +1030,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     debugPrint(logger, MPL, "bus_planning", 1, "working on path {}", i);
     auto target_cluster
         = soft_macros[nets[path_net_map[i]].terminals.second].getCluster();
-    PinAccess src_pin = NONE;
+    Boundary src_pin = NONE;
     Cluster* pre_cluster = nullptr;
     int last_edge_id = -1;
     const float net_weight = nets[path_net_map[i]].weight;

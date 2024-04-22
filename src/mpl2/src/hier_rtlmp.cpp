@@ -3432,7 +3432,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     // height = 0.0) In our simulated annealing engine, the dummary softmacro
     // will no effect on SA We have four dummy SoftMacros based on our
     // definition
-    std::vector<PinAccess> pins = {L, T, R, B};
+    std::vector<Boundary> pins = {L, T, R, B};
     for (auto& pin : pins) {
       soft_macro_id_map[toString(pin)] = macros.size();
       macros.emplace_back(0.0, 0.0, toString(pin));
@@ -6637,6 +6637,8 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
   graphics_->setShowBundledNets(show_bundled_nets);
 }
 
+//////// BoundaryPusher ////////
+
 BoundaryPusher::BoundaryPusher(Cluster* root, odb::dbBlock* block)
     : root_(root), block_(block)
 {
@@ -6645,7 +6647,7 @@ BoundaryPusher::BoundaryPusher(Cluster* root, odb::dbBlock* block)
 }
 
 void BoundaryPusher::fetchMacroClusters(Cluster* parent,
-                                   std::vector<Cluster*>& macro_clusters)
+                                        std::vector<Cluster*>& macro_clusters)
 {
   for (Cluster* child : parent->getChildren()) {
     if (child->getClusterType() == HardMacroCluster) {
@@ -6662,8 +6664,8 @@ void BoundaryPusher::pushMacrosToCoreBoundaries()
   fetchMacroClusters(root_, macro_clusters);
 
   for (Cluster* macro_cluster : macro_clusters) {
-    std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
-
+    // We don't push macros to the boundaries if that will destroy
+    // the shape of an array of macros.
     bool horizontal_move_allowed = true;
     bool vertical_move_allowed = true;
 
@@ -6681,77 +6683,109 @@ void BoundaryPusher::pushMacrosToCoreBoundaries()
       continue;
     }
 
-    // A partir daqui ja pode ser uma nova função eu acho
-    int min_dx_to_push = std::numeric_limits<int>::max();
-    int min_dy_to_push = std::numeric_limits<int>::max();
+    std::map<Boundary, int> boundaries_distance = getDistanceToCloseBoundaries(
+        macro_cluster, vertical_move_allowed, horizontal_move_allowed);
 
-    for (auto& hard_macro : hard_macros) {
-      hard_macros_.push_back(hard_macro);
+    pushMacrosToCoreBoundaries(macro_cluster, boundaries_distance);
+  }
+}
 
-      min_dx_to_push = std::min(min_dx_to_push, hard_macro->getRealWidthDBU());
-      min_dy_to_push = std::min(min_dy_to_push, hard_macro->getRealHeightDBU());
+std::map<Boundary, int> BoundaryPusher::getDistanceToCloseBoundaries(
+    Cluster* macro_cluster,
+    bool vertical_move_allowed,
+    bool horizontal_move_allowed)
+{
+  std::map<Boundary, int> boundaries_distance;
 
-      if (std::abs(hard_macro->getXDBU() - core_.xMin()) < min_dx_to_push
-          && horizontal_move_allowed) {
-        moveHorizontally(hard_macro, core_.xMin());
+  std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
+
+  int min_dx_to_core = std::numeric_limits<int>::max();
+  int min_dy_to_core = std::numeric_limits<int>::max();
+
+  for (HardMacro* hard_macro : hard_macros) {
+    hard_macros_.push_back(hard_macro);
+
+    min_dx_to_core = std::min(min_dy_to_core, hard_macro->getRealWidthDBU());
+    min_dy_to_core = std::min(min_dy_to_core, hard_macro->getRealHeightDBU());
+  }
+
+  for (HardMacro* hard_macro : hard_macros) {
+    int dx_to_core = std::abs(hard_macro->getXDBU() - core_.xMin());
+    if (dx_to_core < min_dx_to_core && horizontal_move_allowed) {
+      boundaries_distance[L] = -dx_to_core;
+    }
+
+    dx_to_core = std::abs(hard_macro->getUXDBU() - core_.xMax());
+    if (dx_to_core < min_dx_to_core && horizontal_move_allowed) {
+      boundaries_distance[R] = dx_to_core;
+    }
+
+    int dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMax());
+    if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_core
+        && vertical_move_allowed) {
+      boundaries_distance[T] = dy_to_core;
+    }
+
+    dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMin());
+    if (dy_to_core < min_dy_to_core && vertical_move_allowed) {
+      boundaries_distance[B] = -dy_to_core;
+    }
+  }
+
+  return boundaries_distance;
+}
+
+void BoundaryPusher::pushMacrosToCoreBoundaries(
+    Cluster* macro_cluster,
+    const std::map<Boundary, int>& boundaries_distance)
+{
+  std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
+
+  for (const auto& [boundary, distance] : boundaries_distance) {
+    std::vector<HardMacro*> moved_hard_macros;
+    bool produced_overlap = false;
+
+    // The distance to revert the move that caused the overlap.
+    int overlap_distance = 0;
+    Boundary overlap_boundary;
+
+    for (HardMacro* hard_macro : hard_macros) {
+      moveHardMacro(hard_macro, boundary, distance);
+    }
+
+    for (HardMacro* hard_macro : hard_macros) {
+      if (overlapsWithOtherHardMacro(hard_macro)) {
+        produced_overlap = true;
+        overlap_distance = -distance;
+        overlap_boundary = boundary;
+        break;
       }
+    }
 
-      if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_push
-          && vertical_move_allowed) {
-        moveVertically(hard_macro, core_.yMax() - hard_macro->getHeightDBU());
-      }
-
-      if (std::abs(hard_macro->getUXDBU() - core_.xMax()) < min_dx_to_push
-          && horizontal_move_allowed) {
-        moveHorizontally(hard_macro, core_.xMax() - hard_macro->getWidthDBU());
-      }
-
-      if (std::abs(hard_macro->getUYDBU() - core_.yMin()) < min_dy_to_push
-          && vertical_move_allowed) {
-        moveHorizontally(hard_macro, core_.yMin());
+    if (produced_overlap) {
+      for (HardMacro* hard_macro : moved_hard_macros) {
+        moveHardMacro(hard_macro, overlap_boundary, overlap_distance);
       }
     }
   }
 }
 
-bool BoundaryPusher::moveVertically(HardMacro* hard_macro, int y)
-{
-  const int y_old = hard_macro->getYDBU();
-
-  hard_macro->setYDBU(y);
-
-  if (!fitsInCore(hard_macro) || overlapsWithOtherHardMacro(hard_macro)) {
-    hard_macro->setYDBU(y_old);
-    return false;
+void BoundaryPusher::moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance)
+{ 
+  switch(boundary) {
+    case NONE:
+      return;
+    case L:
+    case R: {
+      hard_macro->setXDBU(hard_macro->getXDBU() + distance);
+      break;
+    }
+    case T:
+    case B: {
+      hard_macro->setYDBU(hard_macro->getYDBU() + distance);
+      break;
+    }
   }
-
-  return true;
-}
-
-bool BoundaryPusher::moveHorizontally(HardMacro* hard_macro, int x)
-{
-  const int x_old = hard_macro->getXDBU();
-
-  hard_macro->setXDBU(x);
-
-  if (!fitsInCore(hard_macro) || overlapsWithOtherHardMacro(hard_macro)) {
-    hard_macro->setXDBU(x_old);
-    return false;
-  }
-
-  return true;
-}
-
-bool BoundaryPusher::fitsInCore(HardMacro* hard_macro)
-{
-  if (hard_macro->getXDBU() < core_.xMin()
-      || hard_macro->getYDBU() < core_.yMin()
-      || hard_macro->getUXDBU() > core_.xMax()
-      || hard_macro->getUYDBU() > core_.yMax()) {
-    return false;
-  }
-
-  return true;
 }
 
 bool BoundaryPusher::overlapsWithOtherHardMacro(HardMacro* hard_macro)
@@ -6764,8 +6798,7 @@ bool BoundaryPusher::overlapsWithOtherHardMacro(HardMacro* hard_macro)
     if (hard_macro->getXDBU() >= other_hard_macro->getUXDBU()
         || hard_macro->getYDBU() >= other_hard_macro->getUYDBU()
         || hard_macro->getUXDBU() <= other_hard_macro->getXDBU()
-        || hard_macro->getUYDBU() <= other_hard_macro->getYDBU())
-    {
+        || hard_macro->getUYDBU() <= other_hard_macro->getYDBU()) {
       continue;
     }
 

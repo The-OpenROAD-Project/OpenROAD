@@ -138,7 +138,7 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
-  using IOSpans = std::map<PinAccess, std::pair<float, float>>;
+  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
@@ -492,15 +492,19 @@ class BoundaryPusher
 
   void pushMacrosToCoreBoundaries();
 
-  void fetchMacroClusters(Cluster* parent, std::vector<Cluster*>& macro_clusters);
-  
-  bool moveHorizontally(HardMacro* hard_macro, int x);
-  bool moveVertically(HardMacro* hard_macro, int y);
+ private:
+  void pushMacrosToCoreBoundaries(
+      Cluster* macro_cluster,
+      const std::map<Boundary, int>& boundaries_distance);
 
-  bool fitsInCore(HardMacro* hard_macro);
+  void fetchMacroClusters(Cluster* parent,
+                          std::vector<Cluster*>& macro_clusters);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster,
+                                                       bool vertical_move_allowed,
+                                                       bool horizontal_move_allowed);
+  void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
   bool overlapsWithOtherHardMacro(HardMacro* hard_macro);
 
- private:
   Cluster* root_;
   odb::dbBlock* block_;
   odb::Rect core_;
@@ -509,6 +513,5 @@ class BoundaryPusher
 
   std::vector<HardMacro*> hard_macros_;
 };
-
 
 }  // namespace mpl2
