@@ -1195,7 +1195,13 @@ int FlexDR::main()
   ProfileTask profile("DR:main");
   init();
   frTime t;
-
+  bool incremental = false;
+  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
+    incremental |= net->hasInitialRouting();
+    if (incremental) {
+      break;
+    }
+  }
   for (auto& args : strategy()) {
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
@@ -1207,7 +1213,9 @@ int FlexDR::main()
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
-
+    if (incremental && iter_ == 0) {
+      args.ripupMode = RipUpMode::INCR;
+    }
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
