@@ -499,9 +499,10 @@ class BoundaryPusher
 
   void fetchMacroClusters(Cluster* parent,
                           std::vector<Cluster*>& macro_clusters);
-  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster,
-                                                       bool vertical_move_allowed,
-                                                       bool horizontal_move_allowed);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(
+      Cluster* macro_cluster,
+      bool vertical_move_allowed,
+      bool horizontal_move_allowed);
   void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
   bool overlapsWithOtherHardMacro(HardMacro* hard_macro);
 

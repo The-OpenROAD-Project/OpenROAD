@@ -6770,9 +6770,11 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
   }
 }
 
-void BoundaryPusher::moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance)
-{ 
-  switch(boundary) {
+void BoundaryPusher::moveHardMacro(HardMacro* hard_macro,
+                                   Boundary boundary,
+                                   int distance)
+{
+  switch (boundary) {
     case NONE:
       return;
     case L:
