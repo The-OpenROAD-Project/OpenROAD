@@ -7,6 +7,7 @@ read_guides testcase/ispd18_sample/ispd18_sample.input.guide
 set net [[ord::get_db_block] findNet "net1231"]
 odb::dbWire_destroy [$net getWire]
 
+detailed_route_debug -dr -net net1231
 detailed_route -output_drc results/single_step.output.drc.rpt \
                -output_maze results/single_step.output.maze.log \
                -verbose 0 \
@@ -16,4 +17,4 @@ drt::step_end
 
 set def_file [make_result_file single_step_incr.def]
 write_def $def_file
-diff_files single_step_incr.defok $def_file
+diff_files ispd18_sample.defok $def_file

@@ -39,14 +39,14 @@ bool FlexDRWorker::isRoutePatchWire(const frPatchWire* pwire) const
 {
   const auto& gridBBox = getRouteBox();
   Point origin = pwire->getOrigin();
-  return (isInitDR()) ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
 }
 
 bool FlexDRWorker::isRouteVia(const frVia* via) const
 {
   const auto& gridBBox = getRouteBox();
   Point origin = via->getOrigin();
-  return (isInitDR()) ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
 }
 
 void FlexDRWorker::initNetObjs_pathSeg(
@@ -1419,9 +1419,10 @@ void FlexDRWorker::initNet_boundary(
   // location to area
   std::map<std::pair<Point, frLayerNum>, frCoord> extBounds;
   frCoord currArea = 0;
-  if (!isInitDR()
-      || (getRipupMode() == RipUpMode::INCR
-          && dNet->getFrNet()->hasInitialRouting())) {
+  bool initFromExtObjs = isInitDR() ? (getRipupMode() == RipUpMode::INCR
+                                       && dNet->getFrNet()->hasInitialRouting())
+                                    : true;
+  if (initFromExtObjs) {
     for (auto& obj : extObjs) {
       if (obj->typeId() == drcPathSeg) {
         auto ps = static_cast<drPathSeg*>(obj.get());
@@ -1449,10 +1450,7 @@ void FlexDRWorker::initNet_boundary(
       }
     }
     // initDR
-  }
-  if (isInitDR()
-      || (getRipupMode() == RipUpMode::INCR
-          && !dNet->getFrNet()->hasInitialRouting())) {
+  } else {
     const auto it = boundaryPin_.find(dNet->getFrNet());
     if (it != boundaryPin_.end()) {
       transform(it->second.begin(),
@@ -1694,7 +1692,7 @@ void FlexDRWorker::initNets(const frDesign* design)
   // get lock
   initNetObjs(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   // release lock
-  if (isInitDR() || getRipupMode() == RipUpMode::INCR) {
+  if (isInitDR()) {
     initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
   if (!isInitDR() || getRipupMode() == RipUpMode::INCR) {

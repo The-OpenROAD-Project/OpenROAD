@@ -45,7 +45,9 @@ class dbTechLayer;
 namespace utl {
 class Logger;
 }
-
+namespace drt {
+class TritonRoute;
+}
 namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
@@ -259,13 +261,13 @@ class Writer
 {
  public:
   // constructors
-  Writer(frDesign* designIn, Logger* loggerIn)
-      : tech_(designIn->getTech()), design_(designIn), logger_(loggerIn)
+  Writer(drt::TritonRoute* router, Logger* loggerIn)
+      : router_(router), logger_(loggerIn)
   {
   }
   // getters
-  frTechObject* getTech() const { return tech_; }
-  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const;
+  frDesign* getDesign() const;
   // others
   void updateDb(odb::dbDatabase* db,
                 bool pin_access = false,
@@ -290,8 +292,7 @@ class Writer
   void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
   void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
 
-  frTechObject* tech_;
-  frDesign* design_;
+  drt::TritonRoute* router_;
   Logger* logger_;
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs_;  // all connFigs ready to def

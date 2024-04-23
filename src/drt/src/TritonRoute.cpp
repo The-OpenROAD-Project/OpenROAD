@@ -231,7 +231,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
                                     const std::string& drcRpt)
 {
   {
-    io::Writer writer(design_.get(), logger_);
+    io::Writer writer(this, logger_);
     writer.updateTrackAssignment(db_->getChip()->getBlock());
   }
   bool on = debug_->debugDR;
@@ -655,7 +655,7 @@ void TritonRoute::endFR()
     dr_->end(/* done */ true);
   }
   dr_.reset();
-  io::Writer writer(getDesign(), logger_);
+  io::Writer writer(this, logger_);
   writer.updateDb(db_);
   if (debug_->writeNetTracks) {
     writer.updateTrackAssignment(db_->getChip()->getBlock());
@@ -900,7 +900,7 @@ int TritonRoute::main()
     pa_pool.join();
     pa.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
-      io::Writer writer(getDesign(), logger_);
+      io::Writer writer(this, logger_);
       writer.updateDb(db_, true);
     }
     if (distributed_) {
@@ -962,7 +962,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
     dist_pool_.join();
   }
   pa.main();
-  io::Writer writer(getDesign(), logger_);
+  io::Writer writer(this, logger_);
   writer.updateDb(db_, true);
 }
 

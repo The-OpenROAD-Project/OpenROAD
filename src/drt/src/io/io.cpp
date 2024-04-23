@@ -664,7 +664,6 @@ void io::Parser::setNets(odb::dbBlock* block)
     odb::dbWireDecoder decoder;
 
     if (!net->isSpecial() && net->getWire() != nullptr) {
-      netIn->setHasInitialRouting(true);
       decoder.begin(net->getWire());
       odb::dbWireDecoder::OpCode pathId = decoder.next();
       while (pathId != odb::dbWireDecoder::END_DECODE) {
@@ -792,24 +791,19 @@ void io::Parser::setNets(odb::dbBlock* block)
         } while (!endpath);
         auto layerNum = tech_->name2layer_[layerName]->getLayerNum();
         if (hasRect) {
-          continue;
+          auto tmpPWire = std::make_unique<frPatchWire>();
+          tmpPWire->setLayerNum(layerNum);
+          tmpPWire->setOrigin({beginX, beginY});
+          tmpPWire->setOffsetBox(Rect(left, bottom, right, top));
+          netIn->addPatchWire(std::move(tmpPWire));
         }
         if (hasEndPoint) {
+          netIn->setHasInitialRouting(true);
           auto tmpP = std::make_unique<frPathSeg>();
           if (beginX > endX || beginY > endY) {
-            if (net->getName() == "text_out[118]")
-              logger_->report("1: LAYER {} {} {}",
-                              layerName,
-                              Point(endX, endY),
-                              Point(beginX, beginY));
             tmpP->setPoints(Point(endX, endY), Point(beginX, beginY));
             std::swap(beginExt, endExt);
           } else {
-            if (net->getName() == "text_out[118]")
-              logger_->report("2: LAYER {} {} {}",
-                              layerName,
-                              Point(beginX, beginY),
-                              Point(endX, endY));
             tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
           }
           tmpP->addToNet(netIn);
@@ -3022,6 +3016,16 @@ bool io::Parser::readGuide()
   return !tmpGuides_.empty();
 }
 
+frTechObject* io::Writer::getTech() const
+{
+  return getDesign()->getTech();
+}
+
+frDesign* io::Writer::getDesign() const
+{
+  return router_->getDesign();
+}
+
 void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
 {
   const auto& netName = net->getName();
@@ -3340,7 +3344,7 @@ void io::Writer::mergeSplitConnFigs(
 void io::Writer::fillViaDefs()
 {
   viaDefs_.clear();
-  for (auto& uViaDef : getDesign()->getTech()->getVias()) {
+  for (auto& uViaDef : getTech()->getVias()) {
     auto viaDef = uViaDef.get();
     if (viaDef->isAddedByRouter()) {
       viaDefs_.push_back(viaDef);
@@ -3414,17 +3418,10 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
       if (wire == nullptr) {
         wire = odb::dbWire::create(net);
         _wire_encoder.begin(wire);
-      } else if (snapshot) {
+      } else {
         odb::dbWire::destroy(wire);
         wire = odb::dbWire::create(net);
         _wire_encoder.begin(wire);
-      } else if (!getDesign()
-                      ->getTopBlock()
-                      ->findNet(net->getName())
-                      ->isModified()) {
-        continue;
-      } else {
-        _wire_encoder.append(wire);
       }
 
       for (auto& connFig : connFigs_.at(net->getName())) {
@@ -3585,12 +3582,12 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
 
 void io::Writer::updateTrackAssignment(odb::dbBlock* block)
 {
-  for (const auto& net : design_->getTopBlock()->getNets()) {
+  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
     auto dbNet = block->findNet(net->getName().c_str());
     for (const auto& guide : net->getGuides()) {
       for (const auto& route : guide->getRoutes()) {
         frPathSeg* track = static_cast<frPathSeg*>(route.get());
-        auto layer = design_->getTech()->getLayer(track->getLayerNum());
+        auto layer = getTech()->getLayer(track->getLayerNum());
         odb::dbNetTrack::create(dbNet, layer->getDbLayer(), track->getBBox());
       }
     }
@@ -3604,7 +3601,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
   }
   auto db = block->getDb();
   std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
-  for (auto& master : design_->getMasters()) {
+  for (auto& master : getDesign()->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
     if (db_master == nullptr) {
       logger_->error(DRT, 294, "master {} not found in db", master->getName());
@@ -3640,7 +3637,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       }
     }
   }
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
+  for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     auto db_inst = block->findInst(inst->getName().c_str());
     if (db_inst == nullptr) {
       logger_->error(DRT, 297, "inst {} not found in db", inst->getName());
@@ -3676,7 +3673,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       }
     }
   }
-  for (auto& term : design_->getTopBlock()->getTerms()) {
+  for (auto& term : getDesign()->getTopBlock()->getTerms()) {
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr) {
       logger_->error(DRT, 301, "bterm {} not found in db", term->getName());
@@ -3709,7 +3706,9 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
   }
 }
 
-void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access, bool snapshot)
+void io::Writer::updateDb(odb::dbDatabase* db,
+                          bool pin_access_only,
+                          bool snapshot)
 {
   if (db->getChip() == nullptr) {
     logger_->error(DRT, 3, "Load design first.");
@@ -3723,9 +3722,10 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access, bool snapshot)
   fillViaDefs();
   updateDbVias(block, db_tech);
   updateDbAccessPoints(block, db_tech);
-  if (!pin_access) {
+  if (!pin_access_only) {
     fillConnFigs(false);
     updateDbConn(block, db_tech, snapshot);
+    router_->processBTermsAboveTopLayer(true);
   }
 }
 

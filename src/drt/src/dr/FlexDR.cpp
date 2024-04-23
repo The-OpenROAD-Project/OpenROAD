@@ -761,7 +761,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     }
   }
   FlexDRConnectivityChecker checker(
-      getDesign(), logger_, db_, graphics_.get(), dist_on_);
+      router_, logger_, graphics_.get(), dist_on_);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
@@ -1213,7 +1213,7 @@ int FlexDR::main()
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
-    if (incremental && iter_ == 0) {
+    if (incremental && args.ripupMode == RipUpMode::ALL) {
       args.ripupMode = RipUpMode::INCR;
     }
     searchRepair(args);
@@ -1224,7 +1224,7 @@ int FlexDR::main()
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
-      io::Writer writer(getDesign(), logger_);
+      io::Writer writer(router_, logger_);
       writer.updateDb(db_, false, true);
       // insert the stack of vias for bterms above max layer again.
       // all routing is deleted in updateDb, so it is necessary to insert the
