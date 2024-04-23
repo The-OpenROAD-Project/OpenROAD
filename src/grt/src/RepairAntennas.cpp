@@ -72,6 +72,19 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
                                             odb::dbMTerm* diode_mterm,
                                             float ratio_margin)
 {
+  // safe copy net wires before orderWires calls
+  std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
+      copy_wires;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (db_net->getWire() == nullptr) {
+      continue;
+    }
+    std::vector<int> data;
+    std::vector<unsigned char> op_codes;
+    db_net->getWire()->getRawWireData(data, op_codes);
+    copy_wires[db_net] = {data, op_codes};
+  }
+
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
   for (auto& [db_net, route] : routing) {
@@ -90,6 +103,12 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
     }
   }
   destroyNetWires();
+  for (auto [net, val] : copy_wires) {
+    if (antenna_violations_.find(net) == antenna_violations_.end()) {
+      auto wire = odb::dbWire::create(net);
+      wire->setRawWireData(val.first, val.second);
+    }
+  }
 
   logger_->info(
       GRT, 12, "Found {} antenna violations.", antenna_violations_.size());
