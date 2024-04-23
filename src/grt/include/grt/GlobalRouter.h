@@ -215,6 +215,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
+  bool haveDetailedRoutes();
   void makeNetWires() override;
   void destroyNetWires() override;
 

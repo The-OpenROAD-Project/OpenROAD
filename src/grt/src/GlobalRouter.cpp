@@ -236,6 +236,18 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty();
 }
 
+bool GlobalRouter::haveDetailedRoutes()
+{
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial()
+        && net->getWireType() == odb::dbWireType::ROUTED
+        && net->getWire()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
