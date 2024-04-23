@@ -110,6 +110,8 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
     if (antenna_violations_.find(net) == antenna_violations_.end()) {
       auto wire = odb::dbWire::create(net);
       wire->setRawWireData(val.first, val.second);
+    } else {
+      grouter_->getNet(net)->setHasWires(false);
     }
   }
 
