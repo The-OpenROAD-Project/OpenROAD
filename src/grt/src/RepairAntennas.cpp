@@ -96,6 +96,24 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
   return !antenna_violations_.empty();
 }
 
+void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
+                                        odb::dbMTerm* diode_mterm,
+                                        float ratio_margin)
+{
+  if (!db_net->isSpecial() && db_net->getWire()) {
+    std::vector<ant::Violation> net_violations
+        = arc_->getAntennaViolations(db_net, diode_mterm, ratio_margin);
+    if (!net_violations.empty()) {
+      antenna_violations_[db_net] = std::move(net_violations);
+      debugPrint(logger_,
+                  GRT,
+                  "repair_antennas",
+                  1,
+                  "antenna violations {}",
+                  db_net->getConstName());
+    }
+  }
+}
 void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
 {
   std::map<int, odb::dbTechVia*> default_vias
