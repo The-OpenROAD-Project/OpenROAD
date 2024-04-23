@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -50,8 +50,6 @@ using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
-using odb::gs;
-using odb::SEQ;
 using utl::RCX;
 
 bool extMeasure::getFirstShape(dbNet* net, dbShape& s)

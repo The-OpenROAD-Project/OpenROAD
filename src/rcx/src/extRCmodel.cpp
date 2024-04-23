@@ -33,15 +33,14 @@
 #include <map>
 #include <vector>
 
-#include "odb/wire.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
 using odb::dbRSeg;
-using odb::SEQ;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;

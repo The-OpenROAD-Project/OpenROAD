@@ -8,12 +8,6 @@ cmake_minimum_required(VERSION 3.14...3.16)
 project(odb VERSION 0.0.1
   LANGUAGES CXX)
 
-# Configure build version
-configure_file (
-    "${PROJECT_SOURCE_DIR}/include/odb/version.hh.in"
-    "${PROJECT_BINARY_DIR}/include/odb/version.hh"
-)
-
 ############################################################################
 ################################# Targets ##################################
 ############################################################################
