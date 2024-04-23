@@ -101,7 +101,7 @@ proc clock_tree_synthesis { args } {
           -sink_clustering_levels -tree_buf \
           -sink_buffer_max_cap_derate -delay_buffer_derate} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-           -obstruction_aware -apply_ndr -use_dummy_load}
+           -obstruction_aware -apply_ndr -use_dummy_load
   };# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
