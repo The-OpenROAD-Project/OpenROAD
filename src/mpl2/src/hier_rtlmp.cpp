@@ -377,7 +377,8 @@ void HierRTLMP::run()
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
-  BoundaryPusher boundary_pusher(root_cluster_, block_);
+  BoundaryPusher boundary_pusher(
+      root_cluster_, block_, boundary_to_io_blockage_);
   boundary_pusher.pushMacrosToCoreBoundaries();
 
   generateTemporaryStdCellsPlacement(root_cluster_);
@@ -3151,31 +3152,43 @@ void HierRTLMP::setIOClustersBlockages()
   // Note that the range can be larger than the respective core dimension.
   // As SA only sees what is inside its current outline, this is not a problem.
   if (io_spans[L].second > io_spans[L].first) {
-    macro_blockages_.emplace_back(root.xMin(),
-                                  io_spans[L].first,
-                                  root.xMin() + depth,
-                                  io_spans[L].second);
+    Rect left_io_blockage(root.xMin(),
+                          io_spans[L].first,
+                          root.xMin() + depth,
+                          io_spans[L].second);
+
+    boundary_to_io_blockage_[L] = left_io_blockage;
+    macro_blockages_.push_back(left_io_blockage);
   }
 
   if (io_spans[T].second > io_spans[T].first) {
-    macro_blockages_.emplace_back(io_spans[T].first,
-                                  root.yMax() - depth,
-                                  io_spans[T].second,
-                                  root.yMax());
+    Rect top_io_blockage(io_spans[T].first,
+                         root.yMax() - depth,
+                         io_spans[T].second,
+                         root.yMax());
+
+    boundary_to_io_blockage_[T] = top_io_blockage;
+    macro_blockages_.push_back(top_io_blockage);
   }
 
   if (io_spans[R].second > io_spans[R].first) {
-    macro_blockages_.emplace_back(root.xMax() - depth,
-                                  io_spans[R].first,
-                                  root.xMax(),
-                                  io_spans[R].second);
+    Rect right_io_blockage(root.xMax() - depth,
+                           io_spans[R].first,
+                           root.xMax(),
+                           io_spans[R].second);
+
+    boundary_to_io_blockage_[R] = right_io_blockage;
+    macro_blockages_.push_back(right_io_blockage);
   }
 
   if (io_spans[B].second > io_spans[B].first) {
-    macro_blockages_.emplace_back(io_spans[B].first,
-                                  root.yMin(),
-                                  io_spans[B].second,
-                                  root.yMin() + depth);
+    Rect bottom_io_blockage(io_spans[B].first,
+                            root.yMin(),
+                            io_spans[B].second,
+                            root.yMin() + depth);
+
+    boundary_to_io_blockage_[B] = bottom_io_blockage;
+    macro_blockages_.push_back(bottom_io_blockage);
   }
 }
 
@@ -6639,11 +6652,28 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
 
 //////// BoundaryPusher ////////
 
-BoundaryPusher::BoundaryPusher(Cluster* root, odb::dbBlock* block)
+BoundaryPusher::BoundaryPusher(
+    Cluster* root,
+    odb::dbBlock* block,
+    const std::map<Boundary, Rect>& boundary_to_io_blockage)
     : root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
   dbu_ = block_->getTech()->getDbUnitsPerMicron();
+
+  setIOBlockages(boundary_to_io_blockage);
+}
+
+void BoundaryPusher::setIOBlockages(
+    const std::map<Boundary, Rect>& boundary_to_io_blockage)
+{
+  for (const auto& [boundary, box] : boundary_to_io_blockage) {
+    boundary_to_io_blockage_[boundary]
+        = odb::Rect(micronToDbu(box.getX(), dbu_),
+                    micronToDbu(box.getY(), dbu_),
+                    micronToDbu(box.getX() + box.getWidth(), dbu_),
+                    micronToDbu(box.getY() + box.getHeight(), dbu_));
+  }
 }
 
 void BoundaryPusher::fetchMacroClusters(Cluster* parent,
@@ -6705,36 +6735,36 @@ std::map<Boundary, int> BoundaryPusher::getDistanceToCloseBoundaries(
   for (HardMacro* hard_macro : hard_macros) {
     hard_macros_.push_back(hard_macro);
 
-    min_dx_to_core = std::min(min_dy_to_core, hard_macro->getRealWidthDBU());
-    min_dy_to_core = std::min(min_dy_to_core, hard_macro->getRealHeightDBU());
+    min_dx_to_core = std::min(min_dy_to_core, hard_macro->getWidthDBU());
+    min_dy_to_core = std::min(min_dy_to_core, hard_macro->getHeightDBU());
   }
 
   for (HardMacro* hard_macro : hard_macros) {
     if (horizontal_move_allowed) {
-      int dx_to_core = std::abs(hard_macro->getXDBU() - core_.xMin());
-
-      if (dx_to_core < min_dx_to_core) {
-        boundaries_distance[L] = -dx_to_core;
+      const int distance_to_left
+          = std::abs(hard_macro->getXDBU() - core_.xMin());
+      if (distance_to_left < min_dx_to_core) {
+        boundaries_distance[L] = -distance_to_left;
       }
 
-      dx_to_core = std::abs(hard_macro->getUXDBU() - core_.xMax());
-
-      if (dx_to_core < min_dx_to_core) {
-        boundaries_distance[R] = dx_to_core;
+      const int distance_to_right
+          = std::abs(hard_macro->getUXDBU() - core_.xMax());
+      if (distance_to_right < min_dx_to_core) {
+        boundaries_distance[R] = distance_to_right;
       }
     }
 
     if (vertical_move_allowed) {
-      int dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMax());
-
-      if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_core) {
-        boundaries_distance[T] = dy_to_core;
+      const int distance_to_top
+          = std::abs(hard_macro->getUYDBU() - core_.yMax());
+      if (distance_to_top < min_dy_to_core) {
+        boundaries_distance[T] = distance_to_top;
       }
 
-      dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMin());
-
-      if (dy_to_core < min_dy_to_core) {
-        boundaries_distance[B] = -dy_to_core;
+      const int distance_to_bottom
+          = std::abs(hard_macro->getUYDBU() - core_.yMin());
+      if (distance_to_bottom < min_dy_to_core) {
+        boundaries_distance[B] = -distance_to_bottom;
       }
     }
   }
@@ -6749,6 +6779,10 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
   std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
 
   for (const auto& [boundary, distance] : boundaries_distance) {
+    if (distance == 0) {
+      continue;
+    }
+
     bool produced_overlap = false;
 
     for (HardMacro* hard_macro : hard_macros) {
@@ -6756,7 +6790,7 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
     }
 
     for (HardMacro* hard_macro : hard_macros) {
-      if (overlapsWithOtherHardMacro(hard_macro)) {
+      if (overlapsWithOtherHardMacro(hard_macro, hard_macros)) {
         produced_overlap = true;
       }
     }
@@ -6790,24 +6824,40 @@ void BoundaryPusher::moveHardMacro(HardMacro* hard_macro,
   }
 }
 
-bool BoundaryPusher::overlapsWithOtherHardMacro(HardMacro* hard_macro)
+bool BoundaryPusher::overlapsWithOtherHardMacro(
+    HardMacro* hard_macro,
+    const std::vector<HardMacro*>& same_cluster_hard_macros)
 {
   for (const HardMacro* other_hard_macro : hard_macros_) {
-    if (hard_macro == other_hard_macro) {
+    // Due to floating point evilness, there might exist overlap across the
+    // HardMacros inside a macro cluster so we don't consider those.
+    bool other_hard_macro_belongs_to_same_cluster = false;
+
+    for (const HardMacro* same_cluster_hard_macro : same_cluster_hard_macros) {
+      if (other_hard_macro == same_cluster_hard_macro) {
+        other_hard_macro_belongs_to_same_cluster = true;
+        break;
+      }
+    }
+
+    if (other_hard_macro_belongs_to_same_cluster) {
       continue;
     }
 
-    if (hard_macro->getXDBU() >= other_hard_macro->getUXDBU()
-        || hard_macro->getYDBU() >= other_hard_macro->getUYDBU()
-        || hard_macro->getUXDBU() <= other_hard_macro->getXDBU()
-        || hard_macro->getUYDBU() <= other_hard_macro->getYDBU()) {
-      continue;
+    if (hard_macro->getXDBU() < other_hard_macro->getUXDBU()
+        && hard_macro->getYDBU() < other_hard_macro->getUYDBU()
+        && hard_macro->getUXDBU() > other_hard_macro->getXDBU()
+        && hard_macro->getUYDBU() > other_hard_macro->getYDBU()) {
+      return true;
     }
-
-    return true;
   }
 
   return false;
+}
+
+bool BoundaryPusher::overlapsWithIOBlockage(HardMacro* hard_macro,
+                                            Boundary boundary)
+{
 }
 
 }  // namespace mpl2

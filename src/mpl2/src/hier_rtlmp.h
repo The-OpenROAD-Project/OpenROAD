@@ -386,6 +386,7 @@ class HierRTLMP
   std::map<std::string, Rect> guides_;  // macro_name, guide
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
+  std::map<Boundary, Rect> boundary_to_io_blockage_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -488,15 +489,17 @@ class HierRTLMP
 class BoundaryPusher
 {
  public:
-  BoundaryPusher(Cluster* root, odb::dbBlock* block);
+  BoundaryPusher(Cluster* root,
+                 odb::dbBlock* block,
+                 const std::map<Boundary, Rect>& boundary_to_io_blockage);
 
   void pushMacrosToCoreBoundaries();
 
  private:
+  void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
   void pushMacrosToCoreBoundaries(
       Cluster* macro_cluster,
       const std::map<Boundary, int>& boundaries_distance);
-
   void fetchMacroClusters(Cluster* parent,
                           std::vector<Cluster*>& macro_clusters);
   std::map<Boundary, int> getDistanceToCloseBoundaries(
@@ -504,14 +507,17 @@ class BoundaryPusher
       bool vertical_move_allowed,
       bool horizontal_move_allowed);
   void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
-  bool overlapsWithOtherHardMacro(HardMacro* hard_macro);
+  bool overlapsWithOtherHardMacro(
+      HardMacro* hard_macro,
+      const std::vector<HardMacro*>& cluster_hard_macros);
+  bool overlapsWithIOBlockage(HardMacro* hard_macro, Boundary boundary);
 
   Cluster* root_;
   odb::dbBlock* block_;
   odb::Rect core_;
+  float dbu_;
 
-  float dbu_ = 0.0f;
-
+  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
   std::vector<HardMacro*> hard_macros_;
 };
 
