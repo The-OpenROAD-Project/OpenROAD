@@ -65,6 +65,10 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       illegal_diode_placement_count_(0)
 {
   block_ = db_->getChip()->getBlock();
+  while (block_->findInst(
+      fmt::format("ANTENNA_{}", unique_diode_index_).c_str())) {
+    unique_diode_index_++;
+  }
 }
 
 bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
