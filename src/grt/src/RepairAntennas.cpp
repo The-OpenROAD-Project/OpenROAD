@@ -91,19 +91,13 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
 
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
-  for (auto& [db_net, route] : routing) {
-    if (db_net->getWire()) {
-      std::vector<ant::Violation> net_violations
-          = arc_->getAntennaViolations(db_net, diode_mterm, ratio_margin);
-      if (!net_violations.empty()) {
-        antenna_violations_[db_net] = std::move(net_violations);
-        debugPrint(logger_,
-                   GRT,
-                   "repair_antennas",
-                   1,
-                   "antenna violations {}",
-                   db_net->getConstName());
-      }
+  if (grouter_->haveDetailedRoutes()) {
+    for (odb::dbNet* db_net : block_->getNets()) {
+      checkNetViolations(db_net, diode_mterm, ratio_margin);
+    }
+  } else {
+    for (auto& [db_net, route] : routing) {
+      checkNetViolations(db_net, diode_mterm, ratio_margin);
     }
   }
   destroyNetWires();
