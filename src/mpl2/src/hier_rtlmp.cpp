@@ -6710,25 +6710,32 @@ std::map<Boundary, int> BoundaryPusher::getDistanceToCloseBoundaries(
   }
 
   for (HardMacro* hard_macro : hard_macros) {
-    int dx_to_core = std::abs(hard_macro->getXDBU() - core_.xMin());
-    if (dx_to_core < min_dx_to_core && horizontal_move_allowed) {
-      boundaries_distance[L] = -dx_to_core;
+    if (horizontal_move_allowed) {
+      int dx_to_core = std::abs(hard_macro->getXDBU() - core_.xMin());
+
+      if (dx_to_core < min_dx_to_core) {
+        boundaries_distance[L] = -dx_to_core;
+      }
+
+      dx_to_core = std::abs(hard_macro->getUXDBU() - core_.xMax());
+
+      if (dx_to_core < min_dx_to_core) {
+        boundaries_distance[R] = dx_to_core;
+      }
     }
 
-    dx_to_core = std::abs(hard_macro->getUXDBU() - core_.xMax());
-    if (dx_to_core < min_dx_to_core && horizontal_move_allowed) {
-      boundaries_distance[R] = dx_to_core;
-    }
+    if (vertical_move_allowed) {
+      int dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMax());
 
-    int dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMax());
-    if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_core
-        && vertical_move_allowed) {
-      boundaries_distance[T] = dy_to_core;
-    }
+      if (std::abs(hard_macro->getUYDBU() - core_.yMax()) < min_dy_to_core) {
+        boundaries_distance[T] = dy_to_core;
+      }
 
-    dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMin());
-    if (dy_to_core < min_dy_to_core && vertical_move_allowed) {
-      boundaries_distance[B] = -dy_to_core;
+      dy_to_core = std::abs(hard_macro->getUYDBU() - core_.yMin());
+
+      if (dy_to_core < min_dy_to_core) {
+        boundaries_distance[B] = -dy_to_core;
+      }
     }
   }
 
