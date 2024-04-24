@@ -59,7 +59,7 @@ static bool swapWidthHeight(const dbOrientType& orient);
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  grid_.initBlock(block_);
   have_fillers_ = false;
   have_one_site_cells_ = false;
 
@@ -156,8 +156,8 @@ void Opendp::examineRows()
   }
   row_height_ = min_row_height_;
   site_width_ = min_site_width_;
-  row_site_count_ = divFloor(core_.dx(), site_width_);
-  row_count_ = divFloor(core_.dy(), row_height_);
+  row_site_count_ = divFloor(grid_.getCore().dx(), site_width_);
+  row_count_ = divFloor(grid_.getCore().dy(), row_height_);
 }
 
 void Opendp::makeCells()
@@ -201,8 +201,8 @@ Rect Opendp::getBbox(dbInst* inst)
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
   // Shift by core lower left.
-  loc_x -= core_.xMin();
-  loc_y -= core_.yMin();
+  loc_x -= grid_.getCore().xMin();
+  loc_y -= grid_.getCore().yMin();
 
   int width = master->getWidth();
   int height = master->getHeight();
@@ -272,9 +272,10 @@ void Opendp::makeGroups()
 
         for (dbBox* boundary : boundaries) {
           Rect box = boundary->getBox();
-          box = box.intersect(core_);
+          const Rect core = grid_.getCore();
+          box = box.intersect(core);
           // offset region to core origin
-          box.moveDelta(-core_.xMin(), -core_.yMin());
+          box.moveDelta(-core.xMin(), -core.yMin());
           if (height == *(unique_heights.begin())) {
             bgBox bbox(
                 bgPoint(box.xMin(), box.yMin()),

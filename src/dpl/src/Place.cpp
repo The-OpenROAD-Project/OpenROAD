@@ -1334,7 +1334,8 @@ void Opendp::legalCellPos(dbInst* db_inst)
   // Transform position on real position
   setGridPaddedLoc(&cell, legal_grid_pt.getX(), legal_grid_pt.getY());
   // Set position of cell on db
-  db_inst->setLocation(core_.xMin() + cell.x_, core_.yMin() + cell.y_);
+  const Rect core = grid_.getCore();
+  db_inst->setLocation(core.xMin() + cell.x_, core.yMin() + cell.y_);
 }
 
 // Legalize pt origin for cell

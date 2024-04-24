@@ -169,6 +169,8 @@ class Grid
 {
  public:
   void init(Logger* logger) { logger_ = logger; }
+  void initBlock(dbBlock* block) { core_ = block->getCoreArea(); }
+  void initGridLayersMap(dbDatabase* db, dbBlock* block);
 
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   Pixel& operator()(int g, int y, int x) { return pixels_[g][y][x]; }
@@ -234,7 +236,13 @@ class Grid
   bool getHasHybridRows() const { return has_hybrid_rows_; }
   void setHasHybridRows(bool has) { has_hybrid_rows_ = has; }
 
+  int getRowCount(int row_height) const;
+
+  Rect getCore() const { return core_; }
+
  private:
+  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
+
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<const GridInfo*> grid_info_vector_;
@@ -247,6 +255,7 @@ class Grid
   map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
   bool has_hybrid_rows_ = false;
+  Rect core_;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -402,7 +411,7 @@ class Opendp
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   const vector<Cell>& getCells() const { return cells_; }
-  Rect getCore() const { return core_; }
+  Rect getCore() const { return grid_.getCore(); }
   int getRowHeight() const { return row_height_; }
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
@@ -431,7 +440,6 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
-  void initGridLayersMap();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
@@ -470,7 +478,6 @@ class Opendp
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
   int getHybridSiteIndex(dbSite* site);
-  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
   Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
   Point legalGridPt(const Cell* cell,
@@ -551,7 +558,6 @@ class Opendp
   // Cell initial location wrt core origin.
 
   int getRowCount(const Cell* cell) const;
-  int getRowCount(int row_height) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
   int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
@@ -615,7 +621,6 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  Rect core_;
   int row_height_ = 0;  // dbu
   int site_width_ = 0;  // dbu
   int row_count_ = 0;

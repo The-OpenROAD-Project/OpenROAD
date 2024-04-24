@@ -148,7 +148,7 @@ void Opendp::placeRowFillers(int row,
 {
   int j = 0;
 
-  int row_site_count = divFloor(core_.dx(), site_width_);
+  int row_site_count = divFloor(grid_.getCore().dx(), site_width_);
   while (j < row_site_count) {
     Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), j, row);
     const dbOrientType orient = pixel->orient_;
@@ -179,9 +179,10 @@ void Opendp::placeRowFillers(int row,
       int gap = k - j;
       dbMasterSeq& fillers
           = gapFillers(implant, gap, filler_masters_by_implant);
+      const Rect core = grid_.getCore();
       if (fillers.empty()) {
-        int x = core_.xMin() + j * site_width_;
-        int y = core_.yMin() + row * row_height;
+        int x = core.xMin() + j * site_width_;
+        int y = core.yMin() + row * row_height;
         logger_->error(
             DPL,
             2,
@@ -204,8 +205,8 @@ void Opendp::placeRowFillers(int row,
                                         master,
                                         inst_name.c_str(),
                                         /* physical_only */ true);
-          int x = core_.xMin() + k * site_width_;
-          int y = core_.yMin() + row * row_height;
+          int x = core.xMin() + k * site_width_;
+          int y = core.yMin() + row * row_height;
           inst->setOrient(orient);
           inst->setLocation(x, y);
           inst->setPlacementStatus(dbPlacementStatus::PLACED);

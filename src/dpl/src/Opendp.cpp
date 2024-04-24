@@ -107,7 +107,7 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 void Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  grid_.initBlock(block_);
 }
 
 void Opendp::setPaddingGlobal(int left, int right)
@@ -199,8 +199,8 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      int x = core_.xMin() + cell.x_;
-      int y = core_.yMin() + cell.y_;
+      int x = grid_.getCore().xMin() + cell.x_;
+      int y = grid_.getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -274,11 +274,11 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  loc_x -= core_.xMin();
+  loc_x -= grid_.getCore().xMin();
   if (padded) {
     loc_x -= padLeft(cell) * site_width_;
   }
-  loc_y -= core_.yMin();
+  loc_y -= grid_.getCore().yMin();
   return Point(loc_x, loc_y);
 }
 
@@ -529,10 +529,10 @@ int Opendp::gridPaddedX(const Cell* cell) const
 
 int Opendp::getRowCount(const Cell* cell) const
 {
-  return getRowCount(getRowHeight(cell));
+  return grid_.getRowCount(getRowHeight(cell));
 }
 
-int Opendp::getRowCount(int row_height) const
+int Grid::getRowCount(int row_height) const
 {
   return divFloor(core_.dy(), row_height);
 }
