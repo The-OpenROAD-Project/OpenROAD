@@ -208,12 +208,27 @@ class Grid
     hybrid_parent_[child] = parent;
   }
 
+  const map<const dbSite*, GridMapKey>& getSiteToGrid() const
+  {
+    return site_to_grid_key_;
+  }
+
+  void addSiteToGrid(dbSite* site, const GridMapKey& key)
+  {
+    site_to_grid_key_[site] = key;
+  }
+
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;
   std::unordered_map<dbSite*, dbSite*> hybrid_parent_;  // child -> parent
+
+  // This map is used to map each unique site to a grid. The key is always
+  // unique, but the value is not unique in the case of hybrid sites
+  // (alternating rows)
+  map<const dbSite*, GridMapKey> site_to_grid_key_;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -582,10 +597,6 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  // This map is used to map each unqie site to a grid. The key is always
-  // unique, but the value is not unique in the case of hybrid sites
-  // (alternating rows)
-  map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
   bool has_hybrid_rows_ = false;
 
