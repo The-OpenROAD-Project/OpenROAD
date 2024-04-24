@@ -102,10 +102,8 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
   }
   destroyNetWires();
   for (auto [net, val] : copy_wires) {
-    if (antenna_violations_.find(net) == antenna_violations_.end()) {
-      auto wire = odb::dbWire::create(net);
-      wire->setRawWireData(val.first, val.second);
-    }
+    auto wire = odb::dbWire::create(net);
+    wire->setRawWireData(val.first, val.second);
   }
 
   logger_->info(

@@ -567,10 +567,69 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 void GlobalRouter::destroyNetWire(Net* net)
 {
   odb::dbWire* wire = net->getDbNet()->getWire();
-  if (wire) {
+  if (wire != nullptr) {
+    removeWireUsage(wire);
     odb::dbWire::destroy(wire);
   }
   net->setHasWires(false);
+}
+
+void GlobalRouter::removeWireUsage(odb::dbWire* wire)
+{
+  std::vector<odb::dbShape> via_boxes;
+  
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWirePathItr pitr;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      const odb::dbShape& shape = pshape.shape;
+      if (shape.isVia()) {
+        odb::dbShape::getViaBoxes(shape, via_boxes);
+        for (const odb::dbShape& box : via_boxes) {
+          odb::dbTechLayer* tech_layer = box.getTechLayer();
+          if (tech_layer->getRoutingLevel() == 0) {
+            continue;
+          }
+          odb::Rect via_rect = box.getBox();
+          removeRectUsage(via_rect, tech_layer);
+        }
+      } else {
+        odb::Rect wire_rect = shape.getBox();
+        odb::dbTechLayer* tech_layer = shape.getTechLayer();
+        removeRectUsage(wire_rect, tech_layer);
+      }
+    }
+  }
+}
+
+void GlobalRouter::removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer)
+{
+  bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  int layer_idx = tech_layer->getRoutingLevel();
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
+
+  grid_->getBlockedTiles(
+      rect, first_tile_box, last_tile_box, first_tile, last_tile);
+
+  if (vertical) {
+    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+        int cap =
+         fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        fastroute_->addAdjustment(x, y, x, y + 1, layer_idx, cap + 1, false);
+      }
+    }
+  } else {
+    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+        int cap =
+         fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        fastroute_->addAdjustment(x, y, x + 1, y, layer_idx, cap + 1, false);
+      }
+    }
+  }
 }
 
 bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
