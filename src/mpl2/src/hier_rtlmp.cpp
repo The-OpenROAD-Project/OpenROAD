@@ -377,9 +377,8 @@ void HierRTLMP::run()
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
-  BoundaryPusher boundary_pusher(
-      root_cluster_, block_, boundary_to_io_blockage_);
-  boundary_pusher.pushMacrosToCoreBoundaries();
+  Pusher pusher(root_cluster_, block_, boundary_to_io_blockage_);
+  pusher.pushMacrosToCoreBoundaries();
 
   generateTemporaryStdCellsPlacement(root_cluster_);
 
@@ -6650,12 +6649,11 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
   graphics_->setShowBundledNets(show_bundled_nets);
 }
 
-//////// BoundaryPusher ////////
+//////// Pusher ////////
 
-BoundaryPusher::BoundaryPusher(
-    Cluster* root,
-    odb::dbBlock* block,
-    const std::map<Boundary, Rect>& boundary_to_io_blockage)
+Pusher::Pusher(Cluster* root,
+               odb::dbBlock* block,
+               const std::map<Boundary, Rect>& boundary_to_io_blockage)
     : root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
@@ -6664,7 +6662,7 @@ BoundaryPusher::BoundaryPusher(
   setIOBlockages(boundary_to_io_blockage);
 }
 
-void BoundaryPusher::setIOBlockages(
+void Pusher::setIOBlockages(
     const std::map<Boundary, Rect>& boundary_to_io_blockage)
 {
   for (const auto& [boundary, box] : boundary_to_io_blockage) {
@@ -6676,8 +6674,8 @@ void BoundaryPusher::setIOBlockages(
   }
 }
 
-void BoundaryPusher::fetchMacroClusters(Cluster* parent,
-                                        std::vector<Cluster*>& macro_clusters)
+void Pusher::fetchMacroClusters(Cluster* parent,
+                                std::vector<Cluster*>& macro_clusters)
 {
   for (Cluster* child : parent->getChildren()) {
     if (child->getClusterType() == HardMacroCluster) {
@@ -6688,7 +6686,7 @@ void BoundaryPusher::fetchMacroClusters(Cluster* parent,
   }
 }
 
-void BoundaryPusher::pushMacrosToCoreBoundaries()
+void Pusher::pushMacrosToCoreBoundaries()
 {
   std::vector<Cluster*> macro_clusters;
   fetchMacroClusters(root_, macro_clusters);
@@ -6716,11 +6714,11 @@ void BoundaryPusher::pushMacrosToCoreBoundaries()
     std::map<Boundary, int> boundaries_distance = getDistanceToCloseBoundaries(
         macro_cluster, vertical_move_allowed, horizontal_move_allowed);
 
-    pushMacrosToCoreBoundaries(macro_cluster, boundaries_distance);
+    pushMacroClusterToCoreBoundaries(macro_cluster, boundaries_distance);
   }
 }
 
-std::map<Boundary, int> BoundaryPusher::getDistanceToCloseBoundaries(
+std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
     Cluster* macro_cluster,
     bool vertical_move_allowed,
     bool horizontal_move_allowed)
@@ -6772,7 +6770,7 @@ std::map<Boundary, int> BoundaryPusher::getDistanceToCloseBoundaries(
   return boundaries_distance;
 }
 
-void BoundaryPusher::pushMacrosToCoreBoundaries(
+void Pusher::pushMacroClusterToCoreBoundaries(
     Cluster* macro_cluster,
     const std::map<Boundary, int>& boundaries_distance)
 {
@@ -6815,9 +6813,9 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
   }
 }
 
-void BoundaryPusher::moveHardMacro(HardMacro* hard_macro,
-                                   Boundary boundary,
-                                   int distance)
+void Pusher::moveHardMacro(HardMacro* hard_macro,
+                           Boundary boundary,
+                           int distance)
 {
   switch (boundary) {
     case NONE:
@@ -6835,7 +6833,7 @@ void BoundaryPusher::moveHardMacro(HardMacro* hard_macro,
   }
 }
 
-bool BoundaryPusher::overlapsWithHardMacro(
+bool Pusher::overlapsWithHardMacro(
     const odb::Rect& cluster_box,
     const std::vector<HardMacro*>& cluster_hard_macros)
 {
@@ -6864,9 +6862,8 @@ bool BoundaryPusher::overlapsWithHardMacro(
   return false;
 }
 
-bool BoundaryPusher::overlapsWithIOBlockage(
-    const odb::Rect& cluster_box,
-    Boundary boundary)
+bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
+                                    Boundary boundary)
 {
   if (boundary_to_io_blockage_.find(boundary)
       == boundary_to_io_blockage_.end()) {
@@ -6875,10 +6872,8 @@ bool BoundaryPusher::overlapsWithIOBlockage(
 
   const odb::Rect box = boundary_to_io_blockage_.at(boundary);
 
-  if (cluster_box.xMin() < box.xMax()
-      && cluster_box.yMin() < box.yMax()
-      && cluster_box.xMax() > box.xMin()
-      && cluster_box.yMax() > box.yMin()) {
+  if (cluster_box.xMin() < box.xMax() && cluster_box.yMin() < box.yMax()
+      && cluster_box.xMax() > box.xMin() && cluster_box.yMax() > box.yMin()) {
     return true;
   }
 

@@ -486,18 +486,18 @@ class HierRTLMP
   std::unique_ptr<Mpl2Observer> graphics_;
 };
 
-class BoundaryPusher
+class Pusher
 {
  public:
-  BoundaryPusher(Cluster* root,
-                 odb::dbBlock* block,
-                 const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  Pusher(Cluster* root,
+         odb::dbBlock* block,
+         const std::map<Boundary, Rect>& boundary_to_io_blockage);
 
   void pushMacrosToCoreBoundaries();
 
  private:
   void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
-  void pushMacrosToCoreBoundaries(
+  void pushMacroClusterToCoreBoundaries(
       Cluster* macro_cluster,
       const std::map<Boundary, int>& boundaries_distance);
   void fetchMacroClusters(Cluster* parent,
@@ -510,8 +510,7 @@ class BoundaryPusher
   bool overlapsWithHardMacro(
       const odb::Rect& cluster_box,
       const std::vector<HardMacro*>& cluster_hard_macros);
-  bool overlapsWithIOBlockage(const odb::Rect& cluster_box,
-                                          Boundary boundary);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
 
   Cluster* root_;
   odb::dbBlock* block_;
