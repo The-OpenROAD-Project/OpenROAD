@@ -577,7 +577,7 @@ void GlobalRouter::destroyNetWire(Net* net)
 void GlobalRouter::removeWireUsage(odb::dbWire* wire)
 {
   std::vector<odb::dbShape> via_boxes;
-  
+
   odb::dbWirePath path;
   odb::dbWirePathShape pshape;
   odb::dbWirePathItr pitr;
@@ -603,7 +603,8 @@ void GlobalRouter::removeWireUsage(odb::dbWire* wire)
   }
 }
 
-void GlobalRouter::removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer)
+void GlobalRouter::removeRectUsage(const odb::Rect& rect,
+                                   odb::dbTechLayer* tech_layer)
 {
   bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
   int layer_idx = tech_layer->getRoutingLevel();
@@ -616,16 +617,14 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech
   if (vertical) {
     for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
       for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
-        int cap =
-         fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
         fastroute_->addAdjustment(x, y, x, y + 1, layer_idx, cap + 1, false);
       }
     }
   } else {
     for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
       for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-        int cap =
-         fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
         fastroute_->addAdjustment(x, y, x + 1, y, layer_idx, cap + 1, false);
       }
     }

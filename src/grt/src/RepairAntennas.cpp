@@ -121,11 +121,11 @@ void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
     if (!net_violations.empty()) {
       antenna_violations_[db_net] = std::move(net_violations);
       debugPrint(logger_,
-                  GRT,
-                  "repair_antennas",
-                  1,
-                  "antenna violations {}",
-                  db_net->getConstName());
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "antenna violations {}",
+                 db_net->getConstName());
     }
   }
 }
