@@ -64,14 +64,14 @@
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 89 buffers in 33 nets.
+[INFO RSZ-0048] Inserted 92 buffers in 33 nets.
 Placement Analysis
 ---------------------------------
-total displacement       2501.3 u
-average displacement        0.9 u
-max displacement           85.3 u
-original HPWL          133077.5 u
-legalized HPWL         133357.9 u
+total displacement       2683.7 u
+average displacement        1.0 u
+max displacement          111.5 u
+original HPWL          133043.7 u
+legalized HPWL         133342.2 u
 delta HPWL                    0 %
 
 Clock clk

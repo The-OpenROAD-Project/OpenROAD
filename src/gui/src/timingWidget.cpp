@@ -489,6 +489,14 @@ void TimingWidget::populatePaths()
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
 
+  populateAndSortModels(from, thru, to);
+}
+
+void TimingWidget::populateAndSortModels(
+    const std::set<const sta::Pin*>& from,
+    const std::vector<std::set<const sta::Pin*>>& thru,
+    const std::set<const sta::Pin*>& to)
+{
   setup_timing_paths_model_->populateModel(from, thru, to);
   hold_timing_paths_model_->populateModel(from, thru, to);
 
@@ -622,5 +630,14 @@ void TimingWidget::showSettings()
   settings_->populate();
   settings_->show();
 }
+
+#ifdef ENABLE_CHARTS
+void TimingWidget::reportSlackHistogramPaths(
+    const std::set<const sta::Pin*>& report_pins)
+{
+  clearPathDetails();
+  populateAndSortModels({}, {report_pins}, {});
+}
+#endif
 
 }  // namespace gui
