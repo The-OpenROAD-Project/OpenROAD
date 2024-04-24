@@ -182,7 +182,8 @@ void Opendp::initGridLayersMap()
       }
     }
   }
-  if (!has_hybrid_rows_ && min_site_height == std::numeric_limits<int>::max()) {
+  if (!grid_.getHasHybridRows()
+      && min_site_height == std::numeric_limits<int>::max()) {
     logger_->error(
         DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
@@ -256,7 +257,7 @@ void Opendp::initGridLayersMap()
     grid_.setInfo(grid_info.getGridIndex(), &grid_info);
     if (grid_info.getSitesTotalHeight() < min_height) {
       min_height = grid_info.getSitesTotalHeight();
-      if (has_hybrid_rows_) {
+      if (grid_.getHasHybridRows()) {
         grid_.setSmallestNonHybridGridKey(gmk);
       }
     }

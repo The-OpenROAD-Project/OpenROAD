@@ -231,6 +231,9 @@ class Grid
     smallest_non_hybrid_grid_key_ = key;
   }
 
+  bool getHasHybridRows() const { return has_hybrid_rows_; }
+  void setHasHybridRows(bool has) { has_hybrid_rows_ = has; }
+
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
@@ -243,6 +246,7 @@ class Grid
   // (alternating rows)
   map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
+  bool has_hybrid_rows_ = false;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -610,8 +614,6 @@ class Opendp
 
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
-
-  bool has_hybrid_rows_ = false;
 
   Rect core_;
   int row_height_ = 0;  // dbu

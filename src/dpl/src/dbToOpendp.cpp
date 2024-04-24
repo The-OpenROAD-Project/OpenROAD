@@ -122,7 +122,7 @@ void Opendp::examineRows()
   auto block_rows = block_->getRows();
   rows.reserve(block_rows.size());
 
-  has_hybrid_rows_ = false;
+  grid_.setHasHybridRows(false);
   bool has_non_hybrid_rows = false;
 
   for (auto* row : block_rows) {
@@ -131,7 +131,7 @@ void Opendp::examineRows()
       continue;
     }
     if (site->isHybrid()) {
-      has_hybrid_rows_ = true;
+      grid_.setHasHybridRows(true);
     } else {
       has_non_hybrid_rows = true;
     }
@@ -140,7 +140,7 @@ void Opendp::examineRows()
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
-  if (has_hybrid_rows_ && has_non_hybrid_rows) {
+  if (grid_.getHasHybridRows() && has_non_hybrid_rows) {
     logger_->error(
         DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
   }
