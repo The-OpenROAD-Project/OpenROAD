@@ -221,6 +221,16 @@ class Grid
     site_to_grid_key_[site] = key;
   }
 
+  GridMapKey getSmallestNonHybridGridKey() const
+  {
+    return smallest_non_hybrid_grid_key_;
+  }
+
+  void setSmallestNonHybridGridKey(const GridMapKey& key)
+  {
+    smallest_non_hybrid_grid_key_ = key;
+  }
+
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
@@ -232,6 +242,7 @@ class Grid
   // unique, but the value is not unique in the case of hybrid sites
   // (alternating rows)
   map<const dbSite*, GridMapKey> site_to_grid_key_;
+  GridMapKey smallest_non_hybrid_grid_key_;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -600,7 +611,6 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  GridMapKey smallest_non_hybrid_grid_key_;
   bool has_hybrid_rows_ = false;
 
   Rect core_;
@@ -608,6 +618,7 @@ class Opendp
   int site_width_ = 0;  // dbu
   int row_count_ = 0;
   int row_site_count_ = 0;
+
   int have_multi_row_cells_ = 0;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites

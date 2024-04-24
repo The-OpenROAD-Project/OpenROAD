@@ -692,7 +692,7 @@ bool Opendp::refineMove(Cell* cell)
   if (pixel_pt.pixel) {
     int scaled_max_displacement_y_
         = map_ycoordinates(max_displacement_y_,
-                           smallest_non_hybrid_grid_key_,
+                           grid_.getSmallestNonHybridGridKey(),
                            getGridMapKey(cell),
                            true);
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
@@ -740,7 +740,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  x and y on the grid.
   int scaled_max_displacement_y_
       = map_ycoordinates(max_displacement_y_,
-                         smallest_non_hybrid_grid_key_,
+                         grid_.getSmallestNonHybridGridKey(),
                          getGridMapKey(cell),
                          true);
   int y_min = y - scaled_max_displacement_y_;
@@ -962,12 +962,13 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
   auto row_info = getRowInfo(cell);
   auto gmk = getGridMapKey(cell);
   int min_row_height = row_height_;
+  const auto smallest_non_hybrid_grid_key = grid_.getSmallestNonHybridGridKey();
   bgBox queryBox(
       bgPoint(x * site_width_,
-              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key_, true)
+              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key, true)
                   * min_row_height),
       bgPoint(x_end * site_width_ - 1,
-              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key_, false)
+              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key, false)
                       * min_row_height
                   - 1));
 
@@ -1066,8 +1067,8 @@ bool Opendp::checkPixels(const Cell* cell,
       // cell and we are not sure if there is a single height cell direcly in
       // the middle that would be missed by the 4 corners check above.
       // So, we loop with steps of min_row_height and check the left and right
-      int y_begin_mapped
-          = map_ycoordinates(y_begin, gmk, smallest_non_hybrid_grid_key_, true);
+      int y_begin_mapped = map_ycoordinates(
+          y_begin, gmk, grid_.getSmallestNonHybridGridKey(), true);
 
       int offset = 0;
       for (int step = 0; step < steps; step++) {

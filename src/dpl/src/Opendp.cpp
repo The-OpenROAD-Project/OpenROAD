@@ -577,7 +577,7 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
   auto site = cell->getSite();
   if (!isStdCell(cell)) {
     // non std cells can go to the first grid.
-    return smallest_non_hybrid_grid_key_;
+    return grid_.getSmallestNonHybridGridKey();
   }
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());

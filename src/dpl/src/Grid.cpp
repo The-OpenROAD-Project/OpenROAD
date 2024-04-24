@@ -153,7 +153,7 @@ void Opendp::initGridLayersMap()
     if (!site->isHybrid()) {
       if (site->getHeight() < min_site_height) {
         min_site_height = site->getHeight();
-        smallest_non_hybrid_grid_key_ = grid_.getSiteToGrid().at(site);
+        grid_.setSmallestNonHybridGridKey(grid_.getSiteToGrid().at(site));
       }
     }
   }
@@ -257,7 +257,7 @@ void Opendp::initGridLayersMap()
     if (grid_info.getSitesTotalHeight() < min_height) {
       min_height = grid_info.getSitesTotalHeight();
       if (has_hybrid_rows_) {
-        smallest_non_hybrid_grid_key_ = gmk;
+        grid_.setSmallestNonHybridGridKey(gmk);
       }
     }
   }
@@ -429,10 +429,12 @@ void Opendp::visitCellPixels(
       int grid_idx = 0;
       for (const auto& [target_GridMapKey, target_grid_info] :
            grid_.getInfoMap()) {
+        const auto smallest_non_hybrid_grid_key
+            = grid_.getSmallestNonHybridGridKey();
         int layer_y_start = map_ycoordinates(
-            y_start, smallest_non_hybrid_grid_key_, target_GridMapKey, true);
+            y_start, smallest_non_hybrid_grid_key, target_GridMapKey, true);
         int layer_y_end = map_ycoordinates(
-            y_end, smallest_non_hybrid_grid_key_, target_GridMapKey, false);
+            y_end, smallest_non_hybrid_grid_key, target_GridMapKey, false);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
         }
