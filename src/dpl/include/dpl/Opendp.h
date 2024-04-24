@@ -185,7 +185,7 @@ class Grid
 
   void clearInfo() { grid_info_vector_.clear(); }
   void resizeInfo(int size) { grid_info_vector_.resize(size); }
-  void setInfo(int idx, GridInfo* info) { grid_info_vector_[idx] = info; }
+  void setInfo(int idx, const GridInfo* info) { grid_info_vector_[idx] = info; }
 
   GridInfo& infoMap(const GridMapKey& key) { return grid_info_map_.at(key); }
   const GridInfo& infoMap(const GridMapKey& key) const
@@ -194,7 +194,10 @@ class Grid
   }
   bool infoMapEmpty() const { return grid_info_map_.empty(); }
   const map<GridMapKey, GridInfo>& getInfoMap() const { return grid_info_map_; }
-  map<GridMapKey, GridInfo>& getInfoMap() { return grid_info_map_; }
+  void addInfoMap(const GridMapKey& key, const GridInfo& info)
+  {
+    grid_info_map_.emplace(key, info);
+  }
   void clearInfoMap() { grid_info_map_.clear(); }
 
   void clearHybridParent() { hybrid_parent_.clear(); }
@@ -221,7 +224,7 @@ class Grid
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
-  std::vector<GridInfo*> grid_info_vector_;
+  std::vector<const GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;
   std::unordered_map<dbSite*, dbSite*> hybrid_parent_;  // child -> parent
 

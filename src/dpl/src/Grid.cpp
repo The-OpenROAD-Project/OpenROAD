@@ -213,7 +213,7 @@ void Opendp::initGridLayersMap()
                      working_site->getName(),
                      row_offset);
         }
-        grid_.getInfoMap().emplace(gmk, newGridInfo);
+        grid_.addInfoMap(gmk, newGridInfo);
       } else {
         dbSite* parent_site = grid_.getHybridParent().at(working_site);
         GridInfo newGridInfo = {
@@ -238,14 +238,14 @@ void Opendp::initGridLayersMap()
                      newGridInfo.getGridIndex(),
                      newGridInfo.getOffset());
         }
-        grid_.getInfoMap().emplace(gmk, newGridInfo);
+        grid_.addInfoMap(gmk, newGridInfo);
       }
     } else {
       int row_offset = db_row->getBBox().ll().getY() - min_row_y_coordinate;
       auto grid_info = grid_.getInfoMap().at(gmk);
       if (grid_info.isHybrid()) {
         grid_info.setOffset(min(grid_info.getOffset(), row_offset));
-        grid_.getInfoMap().insert(std::make_pair(gmk, grid_info));
+        grid_.addInfoMap(gmk, grid_info);
       }
     }
   }
@@ -384,7 +384,7 @@ Pixel* Grid::gridPixel(int grid_idx, int grid_x, int grid_y) const
   if (grid_idx < 0 || grid_idx >= grid_info_vector_.size()) {
     return nullptr;
   }
-  GridInfo* grid_info = grid_info_vector_[grid_idx];
+  const GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->getSiteCount() && grid_y >= 0
       && grid_y < grid_info->getRowCount()) {
     return const_cast<Pixel*>(&pixels_[grid_idx][grid_y][grid_x]);
@@ -635,7 +635,7 @@ void Opendp::groupAssignCellRegions()
 void Opendp::groupInitPixels2()
 {
   for (auto& layer : grid_.getInfoMap()) {
-    GridInfo& grid_info = layer.second;
+    const GridInfo& grid_info = layer.second;
     int row_count = layer.second.getRowCount();
     int row_site_count = layer.second.getSiteCount();
     auto grid_sites = layer.second.getSites();
@@ -695,7 +695,7 @@ void Opendp::groupInitPixels()
     }
     int row_height = group.cells_[0]->height_;
     GridMapKey gmk = getGridMapKey(group.cells_[0]);
-    GridInfo& grid_info = grid_.getInfoMap().at(gmk);
+    const GridInfo& grid_info = grid_.getInfoMap().at(gmk);
     int grid_index = grid_info.getGridIndex();
     for (Rect& rect : group.regions) {
       debugPrint(logger_,
