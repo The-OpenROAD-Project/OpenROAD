@@ -441,9 +441,9 @@ void Opendp::visitCellPixels(
            grid_.getInfoMap()) {
         const auto smallest_non_hybrid_grid_key
             = grid_.getSmallestNonHybridGridKey();
-        int layer_y_start = map_ycoordinates(
+        int layer_y_start = grid_.map_ycoordinates(
             y_start, smallest_non_hybrid_grid_key, target_GridMapKey, true);
-        int layer_y_end = map_ycoordinates(
+        int layer_y_end = grid_.map_ycoordinates(
             y_end, smallest_non_hybrid_grid_key, target_GridMapKey, false);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
@@ -470,8 +470,9 @@ void Opendp::visitCellPixels(
       int layer_x_start = x_start;
       int layer_x_end = x_end;
       int layer_y_start
-          = map_ycoordinates(y_start, src_gmk, layer_it.first, true);
-      int layer_y_end = map_ycoordinates(y_end, src_gmk, layer_it.first, false);
+          = grid_.map_ycoordinates(y_start, src_gmk, layer_it.first, true);
+      int layer_y_end
+          = grid_.map_ycoordinates(y_end, src_gmk, layer_it.first, false);
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
       }
@@ -800,8 +801,9 @@ void Opendp::erasePixel(Cell* cell)
     for (const auto& [target_GridMapKey, target_grid_info] :
          grid_.getInfoMap()) {
       int layer_y_start
-          = map_ycoordinates(y_start, gmk, target_GridMapKey, true);
-      int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey, false);
+          = grid_.map_ycoordinates(y_start, gmk, target_GridMapKey, true);
+      int layer_y_end
+          = grid_.map_ycoordinates(y_end, gmk, target_GridMapKey, false);
 
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
@@ -823,16 +825,16 @@ void Opendp::erasePixel(Cell* cell)
   }
 }
 
-int Opendp::map_ycoordinates(int source_grid_coordinate,
-                             const GridMapKey& source_grid_key,
-                             const GridMapKey& target_grid_key,
-                             const bool start) const
+int Grid::map_ycoordinates(int source_grid_coordinate,
+                           const GridMapKey& source_grid_key,
+                           const GridMapKey& target_grid_key,
+                           const bool start) const
 {
   if (source_grid_key == target_grid_key) {
     return source_grid_coordinate;
   }
-  auto src_grid_info = grid_.getInfoMap().at(source_grid_key);
-  auto target_grid_info = grid_.getInfoMap().at(target_grid_key);
+  auto src_grid_info = getInfoMap().at(source_grid_key);
+  auto target_grid_info = getInfoMap().at(target_grid_key);
   if (!src_grid_info.isHybrid()) {
     if (!target_grid_info.isHybrid()) {
       int original_step = src_grid_info.getSites()[0].site->getHeight();
@@ -843,9 +845,8 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
       return divCeil(original_step * source_grid_coordinate, target_step);
     }
     // count until we find it.
-    return grid_
-        .gridY(source_grid_coordinate * source_grid_key.grid_index,
-               target_grid_info.getSites())
+    return gridY(source_grid_coordinate * source_grid_key.grid_index,
+                 target_grid_info.getSites())
         .first;
   }
   // src is hybrid
@@ -859,7 +860,7 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
   }
   if (target_grid_info.isHybrid()) {
     // both are hybrids.
-    return grid_.gridY(src_height, target_grid_info.getSites()).first;
+    return gridY(src_height, target_grid_info.getSites()).first;
   }
   int target_step = target_grid_info.getSites()[0].site->getHeight();
   if (start) {
@@ -898,8 +899,8 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
     int layer_x = grid_x;
     int layer_x_end = x_end;
-    int layer_y = map_ycoordinates(grid_y, gmk, layer.first, true);
-    int layer_y_end = map_ycoordinates(y_end, gmk, layer.first, false);
+    int layer_y = grid_.map_ycoordinates(grid_y, gmk, layer.first, true);
+    int layer_y_end = grid_.map_ycoordinates(y_end, gmk, layer.first, false);
     if (layer_x_end == layer_x) {
       ++layer_x_end;
     }

@@ -691,15 +691,15 @@ bool Opendp::refineMove(Cell* cell)
 
   if (pixel_pt.pixel) {
     int scaled_max_displacement_y_
-        = map_ycoordinates(max_displacement_y_,
-                           grid_.getSmallestNonHybridGridKey(),
-                           grid_.getGridMapKey(cell),
-                           true);
+        = grid_.map_ycoordinates(max_displacement_y_,
+                                 grid_.getSmallestNonHybridGridKey(),
+                                 grid_.getGridMapKey(cell),
+                                 true);
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
         || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;
     }
-
+    
     int dist_change = distChange(cell,
                                  pixel_pt.pt.getX() * grid_.getSiteWidth(),
                                  pixel_pt.pt.getY() * row_height);
@@ -739,7 +739,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  max_displacement_y_ is in microns, and this doesn't translate directly to
   //  x and y on the grid.
   int scaled_max_displacement_y_
-      = map_ycoordinates(max_displacement_y_,
+      = grid_.map_ycoordinates(max_displacement_y_,
                          grid_.getSmallestNonHybridGridKey(),
                          grid_.getGridMapKey(cell),
                          true);
@@ -967,10 +967,10 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
   const int site_width = grid_.getSiteWidth();
   bgBox queryBox(
       bgPoint(x * site_width,
-              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key, true)
+              grid_.map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key, true)
                   * min_row_height),
       bgPoint(x_end * site_width - 1,
-              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key, false)
+              grid_.map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key, false)
                       * min_row_height
                   - 1));
 
@@ -1069,7 +1069,7 @@ bool Opendp::checkPixels(const Cell* cell,
       // cell and we are not sure if there is a single height cell direcly in
       // the middle that would be missed by the 4 corners check above.
       // So, we loop with steps of min_row_height and check the left and right
-      int y_begin_mapped = map_ycoordinates(
+      int y_begin_mapped = grid_.map_ycoordinates(
           y_begin, gmk, grid_.getSmallestNonHybridGridKey(), true);
 
       int offset = 0;

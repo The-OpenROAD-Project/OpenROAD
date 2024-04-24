@@ -186,6 +186,10 @@ class Grid
   int getSiteWidth() const { return site_width_; }
   void setRowHeight(int height) { row_height_ = height; }
   void setSiteWidth(int width) { site_width_ = width; }
+  int map_ycoordinates(int source_grid_coordinate,
+                       const GridMapKey& source_grid_key,
+                       const GridMapKey& target_grid_key,
+                       const bool start) const;
 
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   Pixel& operator()(int g, int y, int x) { return pixels_[g][y][x]; }
@@ -537,10 +541,6 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
-  int map_ycoordinates(int source_grid_coordinate,
-                       const GridMapKey& source_grid_key,
-                       const GridMapKey& target_grid_key,
-                       const bool start) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
