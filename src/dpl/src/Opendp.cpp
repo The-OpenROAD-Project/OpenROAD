@@ -193,7 +193,7 @@ void Opendp::detailedPlacement(int max_displacement_x,
 void Opendp::updateDbInstLocations()
 {
   for (Cell& cell : cells_) {
-    if (!isFixed(&cell) && isStdCell(&cell)) {
+    if (!isFixed(&cell) && cell.isStdCell()) {
       dbInst* db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell.orient_) {
@@ -341,12 +341,12 @@ bool Opendp::isPaddedType(dbInst* inst) const
   return false;
 }
 
-bool Opendp::isStdCell(const Cell* cell) const
+bool Cell::isStdCell() const
 {
-  if (cell->db_inst_ == nullptr) {
+  if (db_inst_ == nullptr) {
     return false;
   }
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  dbMasterType type = db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
     case dbMasterType::CORE:
@@ -540,7 +540,7 @@ int Grid::getRowCount(int row_height) const
 int Opendp::getRowHeight(const Cell* cell) const
 {
   int row_height = grid_.getRowHeight();
-  if (isStdCell(cell) || cell->isHybrid()) {
+  if (cell->isStdCell() || cell->isHybrid()) {
     row_height = cell->height_;
   }
   return row_height;
@@ -551,7 +551,7 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
   if (grid_.infoMapEmpty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
-  GridMapKey key = getGridMapKey(cell);
+  GridMapKey key = grid_.getGridMapKey(cell);
   auto layer = grid_.getInfoMap().find(key);
   if (layer == grid_.getInfoMap().end()) {
     // this means the cell is taller than any layer
@@ -569,25 +569,25 @@ GridMapKey Grid::getGridMapKey(const dbSite* site) const
   return getSiteToGrid().at(site);
 }
 
-GridMapKey Opendp::getGridMapKey(const Cell* cell) const
+GridMapKey Grid::getGridMapKey(const Cell* cell) const
 {
   if (cell == nullptr) {
     logger_->error(DPL, 5211, "getGridMapKey cell is null");
   }
   auto site = cell->getSite();
-  if (!isStdCell(cell)) {
+  if (!cell->isStdCell()) {
     // non std cells can go to the first grid.
-    return grid_.getSmallestNonHybridGridKey();
+    return getSmallestNonHybridGridKey();
   }
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
   }
-  return grid_.getGridMapKey(site);
+  return getGridMapKey(site);
 }
 
-GridInfo Opendp::getGridInfo(const Cell* cell) const
+GridInfo Grid::getGridInfo(const Cell* cell) const
 {
-  return grid_.getInfoMap().at(getGridMapKey(cell));
+  return getInfoMap().at(getGridMapKey(cell));
 }
 
 pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
@@ -645,7 +645,7 @@ int Opendp::gridY(const Cell* cell) const
 int Opendp::gridY(const int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
-    auto grid_info = getGridInfo(cell);
+    auto grid_info = grid_.getGridInfo(cell);
     return grid_.gridY(y, grid_info.getSites()).first;
   }
 
@@ -656,7 +656,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
   cell->x_ = (x + padLeft(cell)) * grid_.getSiteWidth();
   if (cell->isHybrid()) {
-    auto grid_info = grid_.getInfoMap().at(getGridMapKey(cell));
+    auto grid_info = grid_.getInfoMap().at(grid_.getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
     const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();
@@ -703,7 +703,7 @@ int Opendp::gridEndY(const Cell* cell) const
 int Opendp::gridEndY(int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
-    auto grid_info = getGridInfo(cell);
+    auto grid_info = grid_.getGridInfo(cell);
     const auto& grid_sites = grid_info.getSites();
     return grid_.gridY(y, grid_sites).first;
   }

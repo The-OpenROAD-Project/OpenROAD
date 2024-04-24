@@ -63,7 +63,7 @@ void Opendp::checkPlacement(bool verbose,
   initGrid();
   groupAssignCellRegions();
   for (Cell& cell : cells_) {
-    if (isStdCell(&cell)) {
+    if (cell.isStdCell()) {
       // Site alignment check
       if (!cell.isHybrid()) {
         if (cell.x_ % grid_.getSiteWidth() != 0
@@ -77,7 +77,7 @@ void Opendp::checkPlacement(bool verbose,
           site_align_failures.push_back(&cell);
           continue;
         }
-        auto grid_info = getGridInfo(&cell);
+        auto grid_info = grid_.getGridInfo(&cell);
         auto [cell_index, cell_height]
             = grid_.gridY(cell.y_, grid_info.getSites());
         if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {

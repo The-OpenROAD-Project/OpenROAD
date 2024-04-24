@@ -465,7 +465,7 @@ void Opendp::visitCellPixels(
     int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
-    auto src_gmk = getGridMapKey(&cell);
+    auto src_gmk = grid_.getGridMapKey(&cell);
     for (const auto& layer_it : grid_.getInfoMap()) {
       int layer_x_start = x_start;
       int layer_x_end = x_end;
@@ -498,7 +498,7 @@ void Opendp::visitCellBoundaryPixels(
         void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor) const
 {
   dbInst* inst = cell.db_inst_;
-  const GridMapKey& gmk = getGridMapKey(&cell);
+  const GridMapKey& gmk = grid_.getGridMapKey(&cell);
   GridInfo grid_info = grid_.getInfoMap().at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
   const auto& grid_sites = grid_info.getSites();
@@ -616,7 +616,7 @@ void Opendp::groupAssignCellRegions()
       int max_row_site_count = divFloor(core.dx(), site_width);
       row_height = getRowHeight(group_cell);
       int row_count = divFloor(core.dy(), row_height);
-      auto gmk = getGridMapKey(group_cell);
+      auto gmk = grid_.getGridMapKey(group_cell);
       auto grid_info = grid_.getInfoMap().at(gmk);
 
       for (int x = 0; x < max_row_site_count; x++) {
@@ -710,7 +710,7 @@ void Opendp::groupInitPixels()
       continue;
     }
     int row_height = group.cells_[0]->height_;
-    GridMapKey gmk = getGridMapKey(group.cells_[0]);
+    GridMapKey gmk = grid_.getGridMapKey(group.cells_[0]);
     const GridInfo& grid_info = grid_.getInfoMap().at(gmk);
     int grid_index = grid_info.getGridIndex();
     const int site_width = grid_.getSiteWidth();
@@ -777,7 +777,7 @@ void Opendp::groupInitPixels()
 void Opendp::erasePixel(Cell* cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
-    auto gmk = getGridMapKey(cell);
+    auto gmk = grid_.getGridMapKey(cell);
     int x_end = gridPaddedEndX(cell);
     int y_end = gridEndY(cell);
     debugPrint(logger_,
@@ -874,7 +874,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int x_end = grid_x + gridPaddedWidth(cell);
   int grid_height = gridHeight(cell);
   int y_end = grid_y + grid_height;
-  GridMapKey gmk = getGridMapKey(cell);
+  GridMapKey gmk = grid_.getGridMapKey(cell);
   GridInfo grid_info = grid_.getInfoMap().at(gmk);
   const int index_in_grid = gmk.grid_index;
   setGridPaddedLoc(cell, grid_x, grid_y);
@@ -927,7 +927,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           // partially filled by a single-height or shorter cell, which is
           // allowed. However, if they do match, it means that we are trying
           // to overwrite a double-height cell placement, which is an error.
-          auto candidate_grid_key = getGridMapKey(pixel->cell);
+          auto candidate_grid_key = grid_.getGridMapKey(pixel->cell);
           if (candidate_grid_key == layer.first) {
             // Occupied by a multi-height cell this should not happen.
             logger_->error(DPL,

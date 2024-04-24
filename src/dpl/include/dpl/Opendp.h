@@ -88,6 +88,7 @@ using odb::Rect;
 
 struct Pixel;
 struct Group;
+struct Cell;
 class DplObserver;
 
 using bgPoint
@@ -176,8 +177,10 @@ class Grid
                 int max_displacement_y);
 
   GridMapKey getGridMapKey(const dbSite* site) const;
+  GridMapKey getGridMapKey(const Cell* cell) const;
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
+  GridInfo getGridInfo(const Cell* cell) const;
 
   int getRowHeight() const { return row_height_; }
   int getSiteWidth() const { return site_width_; }
@@ -303,6 +306,7 @@ struct Cell
   const char* name() const;
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
+  bool isStdCell() const;
 
   dbInst* db_inst_ = nullptr;
   int x_ = 0;  // lower left wrt core DBU
@@ -450,7 +454,6 @@ class Opendp
   bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
-  GridMapKey getGridMapKey(const Cell* cell) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -580,7 +583,6 @@ class Opendp
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
   int gridHeight(const Cell* cell) const;
-  GridInfo getGridInfo(const Cell* cell) const;
   int gridX(int x) const;
   int gridX(const Cell* cell) const;
   int gridPaddedX(const Cell* cell) const;
@@ -595,7 +597,6 @@ class Opendp
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
-  bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
   int paddedWidth(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
