@@ -312,6 +312,11 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations,
                                   float ratio_margin)
 {
+  if (!initialized_) {
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
+    initFastRoute(min_layer, max_layer);
+  }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
         = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
