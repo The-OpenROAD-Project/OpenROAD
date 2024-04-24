@@ -608,11 +608,12 @@ void Opendp::groupAssignCellRegions()
 {
   for (Group& group : groups_) {
     int64_t site_count = 0;
-    int row_height = row_height_;
+    int row_height = grid_.getRowHeight();
+    const int site_width = grid_.getSiteWidth();
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
       const Rect core = grid_.getCore();
-      int max_row_site_count = divFloor(core.dx(), site_width_);
+      int max_row_site_count = divFloor(core.dx(), site_width);
       row_height = getRowHeight(group_cell);
       int row_count = divFloor(core.dy(), row_height);
       auto gmk = getGridMapKey(group_cell);
@@ -627,7 +628,7 @@ void Opendp::groupAssignCellRegions()
         }
       }
     }
-    int64_t site_area = site_count * site_width_ * row_height;
+    int64_t site_area = site_count * site_width * row_height;
 
     int64_t cell_area = 0;
     for (Cell* cell : group.cells_) {
@@ -659,9 +660,10 @@ void Opendp::groupInitPixels2()
         Rect sub;
         // TODO: Site width here is wrong if multiple site widths are
         // supported!
-        sub.init(x * site_width_,
+        const int site_width = grid_.getSiteWidth();
+        sub.init(x * site_width,
                  y * row_height,
-                 (x + 1) * site_width_,
+                 (x + 1) * site_width,
                  (y + 1) * row_height);
         Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
@@ -711,6 +713,7 @@ void Opendp::groupInitPixels()
     GridMapKey gmk = getGridMapKey(group.cells_[0]);
     const GridInfo& grid_info = grid_.getInfoMap().at(gmk);
     int grid_index = grid_info.getGridIndex();
+    const int site_width = grid_.getSiteWidth();
     for (Rect& rect : group.regions) {
       debugPrint(logger_,
                  DPL,
@@ -726,22 +729,22 @@ void Opendp::groupInitPixels()
       int row_end = divFloor(rect.yMax(), row_height);
 
       for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width_);
-        int col_end = divFloor(rect.xMax(), site_width_);
+        int col_start = divCeil(rect.xMin(), site_width);
+        int col_end = divFloor(rect.xMax(), site_width);
 
         for (int l = col_start; l < col_end; l++) {
           Pixel* pixel = grid_.gridPixel(grid_index, l, k);
           pixel->util += 1.0;
         }
-        if (rect.xMin() % site_width_ != 0) {
+        if (rect.xMin() % site_width != 0) {
           Pixel* pixel = grid_.gridPixel(grid_index, col_start, k);
           pixel->util
-              -= (rect.xMin() % site_width_) / static_cast<double>(site_width_);
+              -= (rect.xMin() % site_width) / static_cast<double>(site_width);
         }
-        if (rect.xMax() % site_width_ != 0) {
+        if (rect.xMax() % site_width != 0) {
           Pixel* pixel = grid_.gridPixel(grid_index, col_end - 1, k);
-          pixel->util -= ((site_width_ - rect.xMax()) % site_width_)
-                         / static_cast<double>(site_width_);
+          pixel->util -= ((site_width - rect.xMax()) % site_width)
+                         / static_cast<double>(site_width);
         }
       }
     }
@@ -750,8 +753,8 @@ void Opendp::groupInitPixels()
       int row_end = divFloor(rect.yMax(), row_height);
 
       for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width_);
-        int col_end = divFloor(rect.xMax(), site_width_);
+        int col_start = divCeil(rect.xMin(), site_width);
+        int col_end = divFloor(rect.xMax(), site_width);
 
         // Assign group to each pixel.
         for (int l = col_start; l < col_end; l++) {

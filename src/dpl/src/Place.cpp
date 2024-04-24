@@ -701,7 +701,7 @@ bool Opendp::refineMove(Cell* cell)
     }
 
     int dist_change = distChange(cell,
-                                 pixel_pt.pt.getX() * site_width_,
+                                 pixel_pt.pt.getX() * grid_.getSiteWidth(),
                                  pixel_pt.pt.getY() * row_height);
 
     if (dist_change < 0) {
@@ -752,9 +752,10 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   Group* group = cell->group_;
   if (group) {
     // Map boundary to grid staying inside.
-    Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
+    const int site_width = grid_.getSiteWidth();
+    Rect grid_boundary(divCeil(group->boundary.xMin(), site_width),
                        divCeil(group->boundary.yMin(), row_height),
-                       group->boundary.xMax() / site_width_,
+                       group->boundary.xMax() / site_width,
                        group->boundary.yMax() / row_height);
     Point min = grid_boundary.closestPtInside(Point(x_min, y_min));
     Point max = grid_boundary.closestPtInside(Point(x_max, y_max));
@@ -910,7 +911,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      Point p((bin_x + i) * site_width_, bin_y * row_height);
+      Point p((bin_x + i) * grid_.getSiteWidth(), bin_y * row_height);
       if (cell->region_ && !cell->region_->intersects(p)) {
         continue;
       }
@@ -924,7 +925,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
-      Point p((bin_x + i) * site_width_, bin_y * row_height);
+      Point p((bin_x + i) * grid_.getSiteWidth(), bin_y * row_height);
       if (cell->region_) {
         if (!cell->region_->intersects(p)) {
           continue;
@@ -961,13 +962,14 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
              y_end);
   auto row_info = getRowInfo(cell);
   auto gmk = getGridMapKey(cell);
-  int min_row_height = row_height_;
+  int min_row_height = grid_.getRowHeight();
   const auto smallest_non_hybrid_grid_key = grid_.getSmallestNonHybridGridKey();
+  const int site_width = grid_.getSiteWidth();
   bgBox queryBox(
-      bgPoint(x * site_width_,
+      bgPoint(x * site_width,
               map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key, true)
                   * min_row_height),
-      bgPoint(x_end * site_width_ - 1,
+      bgPoint(x_end * site_width - 1,
               map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key, false)
                       * min_row_height
                   - 1));
@@ -1061,7 +1063,7 @@ bool Opendp::checkPixels(const Cell* cell,
         return false;
       }
 
-      int min_row_height = row_height_;
+      const int min_row_height = grid_.getRowHeight();
       int steps = row_info.first / min_row_height;
       // This is needed for the scenario where we are placing a triple height
       // cell and we are not sure if there is a single height cell direcly in
@@ -1103,11 +1105,12 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt, int row_height) const
     row_height = getRowHeight(cell);
   }
   auto grid_info = grid_.infoMap(getGridMapKey(cell));
+  const int site_width = grid_.getSiteWidth();
   int core_x = min(max(0, pt.getX()),
-                   grid_info.getSiteCount() * site_width_ - cell->width_);
+                   grid_info.getSiteCount() * site_width - cell->width_);
   // Align with row site.
-  int grid_x = divRound(core_x, site_width_);
-  int legal_x = grid_x * site_width_;
+  int grid_x = divRound(core_x, site_width);
+  int legal_x = grid_x * site_width;
   int legal_y = 0;
   if (cell->isHybrid()) {
     int index(0), height(0);
@@ -1194,13 +1197,14 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int grid_index = grid_info.getGridIndex();
   int layer_site_count = grid_info.getSiteCount();
   int layer_row_count = grid_info.getRowCount();
+  const int site_width = grid_.getSiteWidth();
 
   // since the site doesn't have to be empty, we don't need to check all layers.
   // They will be checked in the checkPixels in the diamondSearch method after
   // this initialization
   for (int x = grid_x - 1; x >= 0; --x) {  // left
     if (grid_(grid_index, grid_y, x).is_valid) {
-      best_dist = (grid_x - x - 1) * site_width_;
+      best_dist = (grid_x - x - 1) * site_width;
       best_x = x;
       best_y = grid_y;
       break;
@@ -1208,7 +1212,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   }
   for (int x = grid_x + 1; x < layer_site_count; ++x) {  // right
     if (grid_(grid_index, grid_y, x).is_valid) {
-      const int dist = (x - grid_x) * site_width_ - cell->width_;
+      const int dist = (x - grid_x) * site_width - cell->width_;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = x;
@@ -1364,7 +1368,7 @@ Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
-      legal_pt = Point(grid_x * site_width_, grid_y * row_height);
+      legal_pt = Point(grid_x * grid_.getSiteWidth(), grid_y * row_height);
       pixel = grid_.gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
     }
 

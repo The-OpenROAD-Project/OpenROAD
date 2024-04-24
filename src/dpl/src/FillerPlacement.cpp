@@ -148,7 +148,8 @@ void Opendp::placeRowFillers(int row,
 {
   int j = 0;
 
-  int row_site_count = divFloor(grid_.getCore().dx(), site_width_);
+  const int site_width = grid_.getSiteWidth();
+  int row_site_count = divFloor(grid_.getCore().dx(), site_width);
   while (j < row_site_count) {
     Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), j, row);
     const dbOrientType orient = pixel->orient_;
@@ -181,7 +182,7 @@ void Opendp::placeRowFillers(int row,
           = gapFillers(implant, gap, filler_masters_by_implant);
       const Rect core = grid_.getCore();
       if (fillers.empty()) {
-        int x = core.xMin() + j * site_width_;
+        int x = core.xMin() + j * site_width;
         int y = core.yMin() + row * row_height;
         logger_->error(
             DPL,
@@ -199,20 +200,18 @@ void Opendp::placeRowFillers(int row,
         for (dbMaster* master : fillers) {
           string inst_name = prefix + to_string(grid_info.getGridIndex()) + "_"
                              + to_string(row) + "_" + to_string(k);
-          // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
-          // site_width_);
           dbInst* inst = dbInst::create(block_,
                                         master,
                                         inst_name.c_str(),
                                         /* physical_only */ true);
-          int x = core.xMin() + k * site_width_;
+          int x = core.xMin() + k * site_width;
           int y = core.yMin() + row * row_height;
           inst->setOrient(orient);
           inst->setLocation(x, y);
           inst->setPlacementStatus(dbPlacementStatus::PLACED);
           inst->setSourceType(odb::dbSourceType::DIST);
           filler_count_++;
-          k += master->getWidth() / site_width_;
+          k += master->getWidth() / site_width;
         }
         j += gap;
       }
@@ -261,9 +260,10 @@ dbMasterSeq& Opendp::gapFillers(
   if (fillers.empty()) {
     int width = 0;
     dbMaster* smallest_filler = filler_masters[filler_masters.size() - 1];
-    bool have_filler1 = smallest_filler->getWidth() == site_width_;
+    const int site_width = grid_.getSiteWidth();
+    bool have_filler1 = smallest_filler->getWidth() == site_width;
     for (dbMaster* filler_master : filler_masters) {
-      int filler_width = filler_master->getWidth() / site_width_;
+      int filler_width = filler_master->getWidth() / site_width;
       while ((width + filler_width) <= gap
              && (have_filler1 || (width + filler_width) != gap - 1)) {
         fillers.push_back(filler_master);
@@ -301,7 +301,7 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
 bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
 {
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
-         && db_master->getWidth() == site_width_;
+    && db_master->getWidth() == grid_.getSiteWidth();
 }
 
 }  // namespace dpl

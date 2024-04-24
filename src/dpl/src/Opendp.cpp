@@ -276,7 +276,7 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
   cell->db_inst_->getLocation(loc_x, loc_y);
   loc_x -= grid_.getCore().xMin();
   if (padded) {
-    loc_x -= padLeft(cell) * site_width_;
+    loc_x -= padLeft(cell) * grid_.getSiteWidth();
   }
   loc_y -= grid_.getCore().yMin();
   return Point(loc_x, loc_y);
@@ -448,12 +448,12 @@ int Opendp::padRight(dbInst* inst) const
 
 int Opendp::paddedWidth(const Cell* cell) const
 {
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * grid_.getSiteWidth();
 }
 
 int Opendp::gridPaddedWidth(const Cell* cell) const
 {
-  return divCeil(paddedWidth(cell), site_width_);
+  return divCeil(paddedWidth(cell), grid_.getSiteWidth());
 }
 
 int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
@@ -492,7 +492,7 @@ int64_t Opendp::paddedArea(const Cell* cell) const
 
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  return divRound(paddedWidth(cell), site_width_);
+  return divRound(paddedWidth(cell), grid_.getSiteWidth());
 }
 
 // Callers should probably be using gridHeight.
@@ -509,12 +509,12 @@ int Opendp::gridNearestHeight(const Cell* cell) const
 
 int Opendp::gridEndX(int x) const
 {
-  return divCeil(x, site_width_);
+  return divCeil(x, grid_.getSiteWidth());
 }
 
 int Opendp::gridX(int x) const
 {
-  return x / site_width_;
+  return x / grid_.getSiteWidth();
 }
 
 int Opendp::gridX(const Cell* cell) const
@@ -524,7 +524,7 @@ int Opendp::gridX(const Cell* cell) const
 
 int Opendp::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->x_ - padLeft(cell) * site_width_);
+  return gridX(cell->x_ - padLeft(cell) * grid_.getSiteWidth());
 }
 
 int Opendp::getRowCount(const Cell* cell) const
@@ -539,7 +539,7 @@ int Grid::getRowCount(int row_height) const
 
 int Opendp::getRowHeight(const Cell* cell) const
 {
-  int row_height = row_height_;
+  int row_height = grid_.getRowHeight();
   if (isStdCell(cell) || cell->isHybrid()) {
     row_height = cell->height_;
   }
@@ -615,8 +615,7 @@ pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
   return {base_height_index + index, cur_height};
 }
 
-pair<int, int> Grid::gridEndY(int y,
-                                const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridEndY(int y, const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
       = std::accumulate(grid_sites.begin(),
@@ -655,7 +654,7 @@ int Opendp::gridY(const int y, const Cell* cell) const
 
 void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
-  cell->x_ = (x + padLeft(cell)) * site_width_;
+  cell->x_ = (x + padLeft(cell)) * grid_.getSiteWidth();
   if (cell->isHybrid()) {
     auto grid_info = grid_.getInfoMap().at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
@@ -686,13 +685,14 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 
 int Opendp::gridPaddedEndX(const Cell* cell) const
 {
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
-                 site_width_);
+  const int site_width = grid_.getSiteWidth();
+  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width,
+                 site_width);
 }
 
 int Opendp::gridEndX(const Cell* cell) const
 {
-  return divCeil(cell->x_ + cell->width_, site_width_);
+  return divCeil(cell->x_ + cell->width_, grid_.getSiteWidth());
 }
 
 int Opendp::gridEndY(const Cell* cell) const

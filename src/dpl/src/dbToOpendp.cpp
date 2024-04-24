@@ -112,8 +112,9 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
+  const int row_height = grid_.getRowHeight();
   master->is_multi_row
-      = (master_height != row_height_ && master_height % row_height_ == 0);
+      = (master_height != row_height && master_height % row_height == 0);
 }
 
 void Opendp::examineRows()
@@ -154,10 +155,10 @@ void Opendp::examineRows()
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
   }
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
-  row_site_count_ = divFloor(grid_.getCore().dx(), site_width_);
-  row_count_ = divFloor(grid_.getCore().dy(), row_height_);
+  grid_.setRowHeight(min_row_height_);
+  grid_.setSiteWidth(min_site_width_);
+  row_site_count_ = divFloor(grid_.getCore().dx(), grid_.getSiteWidth());
+  row_count_ = divFloor(grid_.getCore().dy(), grid_.getRowHeight());
 }
 
 void Opendp::makeCells()

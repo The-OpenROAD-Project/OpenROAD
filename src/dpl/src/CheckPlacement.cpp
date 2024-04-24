@@ -66,13 +66,14 @@ void Opendp::checkPlacement(bool verbose,
     if (isStdCell(&cell)) {
       // Site alignment check
       if (!cell.isHybrid()) {
-        if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
+        if (cell.x_ % grid_.getSiteWidth() != 0
+            || cell.y_ % grid_.getRowHeight() != 0) {
           site_align_failures.push_back(&cell);
         }
       } else {
         // here, the cell is hybrid, if it is a parent, then the check is
         // quite simple
-        if (cell.x_ % site_width_ != 0) {
+        if (cell.x_ % grid_.getSiteWidth() != 0) {
           site_align_failures.push_back(&cell);
           continue;
         }
@@ -468,11 +469,12 @@ bool Opendp::checkRegionPlacement(const Cell* cell) const
   int y_end = y_begin + cell->height_;
 
   if (cell->region_) {
+    const int site_width = grid_.getSiteWidth();
     return cell->region_->contains(odb::Rect(x_begin, y_begin, x_end, y_end))
            && checkRegionOverlap(cell,
-                                 x_begin / site_width_,
+                                 x_begin / site_width,
                                  y_begin / cell->height_,
-                                 x_end / site_width_,
+                                 x_end / site_width,
                                  y_end / cell->height_);
   }
   return true;

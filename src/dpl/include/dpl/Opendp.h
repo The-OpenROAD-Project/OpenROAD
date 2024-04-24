@@ -179,6 +179,11 @@ class Grid
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
 
+  int getRowHeight() const { return row_height_; }
+  int getSiteWidth() const { return site_width_; }
+  void setRowHeight(int height) { row_height_ = height; }
+  void setSiteWidth(int width) { site_width_ = width; }
+
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   Pixel& operator()(int g, int y, int x) { return pixels_[g][y][x]; }
   const Pixel& operator()(int g, int y, int x) const
@@ -264,6 +269,9 @@ class Grid
   GridMapKey smallest_non_hybrid_grid_key_;
   bool has_hybrid_rows_ = false;
   Rect core_;
+
+  int row_height_ = 0;  // dbu
+  int site_width_ = 0;  // dbu
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -420,9 +428,9 @@ class Opendp
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return grid_.getCore(); }
-  int getRowHeight() const { return row_height_; }
+  int getRowHeight() const { return grid_.getRowHeight(); }
   int getRowHeight(const Cell* cell) const;
-  int getSiteWidth() const { return site_width_; }
+  int getSiteWidth() const { return grid_.getSiteWidth(); }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
   // Return error count.
@@ -626,8 +634,6 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  int row_height_ = 0;  // dbu
-  int site_width_ = 0;  // dbu
   int row_count_ = 0;
   int row_site_count_ = 0;
 
