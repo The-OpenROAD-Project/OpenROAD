@@ -78,13 +78,13 @@ int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 
 void Opendp::initGridLayersMap()
 {
-  _hybrid_parent.clear();
+  hybrid_parent_.clear();
   for (auto lib : db_->getLibs()) {
     for (auto site : lib->getSites()) {
       if (site->hasRowPattern()) {
         for (const auto& [child_site, orient] : site->getRowPattern()) {
-          if (_hybrid_parent.count(child_site) == 0) {
-            _hybrid_parent[child_site] = site;
+          if (hybrid_parent_.count(child_site) == 0) {
+            hybrid_parent_[child_site] = site;
           }
         }
       }
@@ -166,16 +166,16 @@ void Opendp::initGridLayersMap()
     if (row_base.y() == min_row_y_coordinate) {
       if (working_site->hasRowPattern()) {
         for (const auto& [child_site, orient] : working_site->getRowPattern()) {
-          if (_hybrid_parent[child_site] != working_site) {
+          if (hybrid_parent_[child_site] != working_site) {
             debugPrint(logger_,
                        DPL,
                        "hybrid",
                        1,
                        "Overriding the parent of site {} from {} to {}",
                        child_site->getName(),
-                       _hybrid_parent[child_site]->getName(),
+                       hybrid_parent_[child_site]->getName(),
                        working_site->getName());
-            _hybrid_parent[child_site] = working_site;
+            hybrid_parent_[child_site] = working_site;
           }
         }
       }
@@ -214,7 +214,7 @@ void Opendp::initGridLayersMap()
         }
         grid_.getInfoMap().emplace(gmk, newGridInfo);
       } else {
-        dbSite* parent_site = _hybrid_parent.at(working_site);
+        dbSite* parent_site = hybrid_parent_.at(working_site);
         GridInfo newGridInfo = {
             calculateHybridSitesRowCount(parent_site),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),
@@ -261,7 +261,7 @@ void Opendp::initGridLayersMap()
     }
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
-}  // namespace dpl
+}
 
 void Opendp::initGrid()
 {
@@ -426,7 +426,8 @@ void Opendp::visitCellPixels(
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
-      for (const auto& [target_GridMapKey, target_grid_info] : grid_.getInfoMap()) {
+      for (const auto& [target_GridMapKey, target_grid_info] :
+           grid_.getInfoMap()) {
         int layer_y_start = map_ycoordinates(
             y_start, smallest_non_hybrid_grid_key_, target_GridMapKey, true);
         int layer_y_end = map_ycoordinates(
@@ -778,7 +779,8 @@ void Opendp::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (const auto& [target_GridMapKey, target_grid_info] : grid_.getInfoMap()) {
+    for (const auto& [target_GridMapKey, target_grid_info] :
+         grid_.getInfoMap()) {
       int layer_y_start
           = map_ycoordinates(y_start, gmk, target_GridMapKey, true);
       int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey, false);
