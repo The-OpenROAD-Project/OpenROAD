@@ -98,8 +98,68 @@ using RtreeBox
     = boost::geometry::index::rtree<bgBox,
                                     boost::geometry::index::quadratic<16>>;
 
-class GridInfo;
-struct GridMapKey;
+class GridInfo
+{
+ public:
+  GridInfo(const int row_count,
+           const int site_count,
+           const int grid_index,
+           const dbSite::RowPattern& sites)
+      : row_count_(row_count),
+        site_count_(site_count),
+        grid_index_(grid_index),
+        sites_(sites)
+  {
+  }
+
+  int getRowCount() const { return row_count_; }
+
+  int getSiteCount() const { return site_count_; }
+
+  int getGridIndex() const { return grid_index_; }
+
+  int getOffset() const { return offset_; }
+
+  void setOffset(int offset) { offset_ = offset; }
+
+  const dbSite::RowPattern& getSites() const { return sites_; }
+
+  bool isHybrid() const
+  {
+    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
+  }
+  int getSitesTotalHeight() const
+  {
+    return std::accumulate(sites_.begin(),
+                           sites_.end(),
+                           0,
+                           [](int sum, const dbSite::OrientedSite& entry) {
+                             return sum + entry.site->getHeight();
+                           });
+  }
+
+ private:
+  const int row_count_;
+  const int site_count_;
+  const int grid_index_;
+  int offset_ = 0;
+  // will have one site only for non-hybrid and hybrid parent cells.
+  // For hybrid children, this will have all the sites
+  const dbSite::RowPattern sites_;
+};
+
+struct GridMapKey
+{
+  int grid_index;
+  bool operator<(const GridMapKey& other) const
+  {
+    return grid_index < other.grid_index;
+  }
+  bool operator==(const GridMapKey& other) const
+  {
+    return grid_index == other.grid_index;
+  }
+};
 
 // The "Grid" is now an array of 2D grids. The new dimension is to support
 // multi-height cells. Each unique row height creates a new grid that is used in
@@ -155,19 +215,6 @@ using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
 struct Master
 {
   bool is_multi_row = false;
-};
-
-struct GridMapKey
-{
-  int grid_index;
-  bool operator<(const GridMapKey& other) const
-  {
-    return grid_index < other.grid_index;
-  }
-  bool operator==(const GridMapKey& other) const
-  {
-    return grid_index == other.grid_index;
-  }
 };
 
 class HybridSiteInfo
@@ -238,56 +285,6 @@ struct Pixel
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
   dbSite* site;      // site that this pixel is
-};
-
-class GridInfo
-{
- public:
-  GridInfo(const int row_count,
-           const int site_count,
-           const int grid_index,
-           const dbSite::RowPattern& sites)
-      : row_count_(row_count),
-        site_count_(site_count),
-        grid_index_(grid_index),
-        sites_(sites)
-  {
-  }
-
-  int getRowCount() const { return row_count_; }
-
-  int getSiteCount() const { return site_count_; }
-
-  int getGridIndex() const { return grid_index_; }
-
-  int getOffset() const { return offset_; }
-
-  void setOffset(int offset) { offset_ = offset; }
-
-  const dbSite::RowPattern& getSites() const { return sites_; }
-
-  bool isHybrid() const
-  {
-    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
-  }
-  int getSitesTotalHeight() const
-  {
-    return std::accumulate(sites_.begin(),
-                           sites_.end(),
-                           0,
-                           [](int sum, const dbSite::OrientedSite& entry) {
-                             return sum + entry.site->getHeight();
-                           });
-  }
-
- private:
-  const int row_count_;
-  const int site_count_;
-  const int grid_index_;
-  int offset_ = 0;
-  // will have one site only for non-hybrid and hybrid parent cells.
-  // For hybrid children, this will have all the sites
-  const dbSite::RowPattern sites_;
 };
 
 ////////////////////////////////////////////////////////////////
