@@ -6785,15 +6785,15 @@ void Pusher::pushMacroClusterToCoreBoundaries(
       continue;
     }
 
+    for (HardMacro* hard_macro : hard_macros) {
+      moveHardMacro(hard_macro, boundary, distance);
+    }
+
     odb::Rect cluster_box(
         micronToDbu(macro_cluster->getX(), dbu_),
         micronToDbu(macro_cluster->getY(), dbu_),
         micronToDbu(macro_cluster->getX() + macro_cluster->getWidth(), dbu_),
         micronToDbu(macro_cluster->getY() + macro_cluster->getHeight(), dbu_));
-
-    for (HardMacro* hard_macro : hard_macros) {
-      moveHardMacro(hard_macro, boundary, distance);
-    }
 
     if (boundary == L || boundary == R) {
       cluster_box.moveDelta(distance, 0);
