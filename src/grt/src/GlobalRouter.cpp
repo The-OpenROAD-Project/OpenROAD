@@ -552,12 +552,22 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
+    net->setHasWires(false);
+    destroyNetWire(db_net);
     // compare new positions with last positions & add on vector
     if (pinPositionsChanged(net, last_pos)) {
       dirty_nets.push_back(db_net_map_[db_net]);
     }
   }
   dirty_nets_.clear();
+}
+
+void GlobalRouter::destroyNetWire(odb::dbNet* db_net)
+{
+  odb::dbWire* wire = db_net->getWire();
+  if (wire) {
+    odb::dbWire::destroy(wire);
+  }
 }
 
 Rudy* GlobalRouter::getRudy()
