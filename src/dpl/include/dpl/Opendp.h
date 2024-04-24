@@ -170,7 +170,14 @@ class Grid
  public:
   void init(Logger* logger) { logger_ = logger; }
   void initBlock(dbBlock* block) { core_ = block->getCoreArea(); }
-  void initGridLayersMap(dbDatabase* db, dbBlock* block);
+  void initGrid(dbDatabase* db,
+                dbBlock* block,
+                int max_displacement_x,
+                int max_displacement_y);
+
+  GridMapKey getGridMapKey(const dbSite* site) const;
+  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
+  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
 
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   Pixel& operator()(int g, int y, int x) { return pixels_[g][y][x]; }
@@ -242,6 +249,7 @@ class Grid
 
  private:
   int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
+  void initGridLayersMap(dbDatabase* db, dbBlock* block);
 
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
@@ -435,7 +443,6 @@ class Opendp
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
   GridMapKey getGridMapKey(const Cell* cell) const;
-  GridMapKey getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -571,8 +578,6 @@ class Opendp
   int gridPaddedX(const Cell* cell) const;
   int gridY(int y, const Cell* cell) const;
   int gridY(const Cell* cell) const;
-  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
-  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridEndX(int x) const;
   int gridEndX(const Cell* cell) const;

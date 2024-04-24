@@ -564,9 +564,9 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
   return std::make_pair(cell->height_, layer->second);
 }
 
-GridMapKey Opendp::getGridMapKey(const dbSite* site) const
+GridMapKey Grid::getGridMapKey(const dbSite* site) const
 {
-  return grid_.getSiteToGrid().at(site);
+  return getSiteToGrid().at(site);
 }
 
 GridMapKey Opendp::getGridMapKey(const Cell* cell) const
@@ -582,7 +582,7 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
   }
-  return getGridMapKey(site);
+  return grid_.getGridMapKey(site);
 }
 
 GridInfo Opendp::getGridInfo(const Cell* cell) const
@@ -590,7 +590,7 @@ GridInfo Opendp::getGridInfo(const Cell* cell) const
   return grid_.getInfoMap().at(getGridMapKey(cell));
 }
 
-pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
       = std::accumulate(grid_sites.begin(),
@@ -615,7 +615,7 @@ pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
   return {base_height_index + index, cur_height};
 }
 
-pair<int, int> Opendp::gridEndY(int y,
+pair<int, int> Grid::gridEndY(int y,
                                 const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
@@ -647,7 +647,7 @@ int Opendp::gridY(const int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    return gridY(y, grid_info.getSites()).first;
+    return grid_.gridY(y, grid_info.getSites()).first;
   }
 
   return y / getRowHeight(cell);
@@ -705,7 +705,7 @@ int Opendp::gridEndY(int y, const Cell* cell) const
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
     const auto& grid_sites = grid_info.getSites();
-    return gridY(y, grid_sites).first;
+    return grid_.gridY(y, grid_sites).first;
   }
   int row_height = getRowHeight(cell);
   return divCeil(y, row_height);

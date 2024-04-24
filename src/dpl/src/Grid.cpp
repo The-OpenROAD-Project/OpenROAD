@@ -266,29 +266,37 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
 
 void Opendp::initGrid()
 {
+  grid_.initGrid(db_, block_, max_displacement_x_, max_displacement_y_);
+}
+
+void Grid::initGrid(dbDatabase* db,
+                    dbBlock* block,
+                    int max_displacement_x,
+                    int max_displacement_y)
+{
   // the number of layers in the grid is the number of unique row heights
   // the map key is the row height, the value is a pair of row count and site
   // count
 
-  if (grid_.infoMapEmpty()) {
-    grid_.initGridLayersMap(db_, block_);
+  if (infoMapEmpty()) {
+    initGridLayersMap(db, block);
   }
 
   // Make pixel grid
-  if (grid_.empty()) {
-    grid_.resize(grid_.getInfoMap().size());
-    for (auto& [gmk, grid_info] : grid_.getInfoMap()) {
-      grid_.resize(grid_info.getGridIndex(), grid_info.getRowCount());
+  if (empty()) {
+    resize(getInfoMap().size());
+    for (auto& [gmk, grid_info] : getInfoMap()) {
+      resize(grid_info.getGridIndex(), grid_info.getRowCount());
     }
   }
 
-  for (auto& [gmk, grid_info] : grid_.getInfoMap()) {
+  for (auto& [gmk, grid_info] : getInfoMap()) {
     const int layer_row_count = grid_info.getRowCount();
     const int layer_row_site_count = grid_info.getSiteCount();
     const int index = grid_info.getGridIndex();
-    grid_.resize(index, layer_row_count);
+    resize(index, layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
-      grid_.resize(index, j, layer_row_site_count);
+      resize(index, j, layer_row_site_count);
       const auto& grid_sites = grid_info.getSites();
       dbSite* row_site = nullptr;
       if (!grid_sites.empty()) {
@@ -296,7 +304,7 @@ void Opendp::initGrid()
       }
 
       for (int k = 0; k < layer_row_site_count; k++) {
-        Pixel& pixel = grid_(index, j, k);
+        Pixel& pixel = pixels_[index][j][k];
         pixel.cell = nullptr;
         pixel.group_ = nullptr;
         pixel.util = 0.0;
@@ -312,30 +320,30 @@ void Opendp::initGrid()
   using namespace gtl::operators;
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
-  hopeless.resize(grid_.getInfoMap().size());
-  for (const auto& [row_height, grid_info] : grid_.getInfoMap()) {
+  hopeless.resize(getInfoMap().size());
+  for (const auto& [row_height, grid_info] : getInfoMap()) {
     hopeless[grid_info.getGridIndex()] += gtl::rectangle_data<int>{
         0, 0, grid_info.getSiteCount(), grid_info.getRowCount()};
   }
   // Fragmented row support; mark valid sites.
-  for (auto db_row : block_->getRows()) {
+  for (auto db_row : block->getRows()) {
     const auto db_row_site = db_row->getSite();
     if (db_row_site->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
     int current_row_site_count = db_row->getSiteCount();
     auto gmk = getGridMapKey(db_row_site);
-    auto entry = grid_.getInfoMap().at(gmk);
+    auto entry = getInfoMap().at(gmk);
     int current_row_count = entry.getRowCount();
     int current_row_grid_index = entry.getGridIndex();
     const odb::Point orig = db_row->getOrigin();
 
-    const Rect core = grid_.getCore();
+    const Rect core = getCore();
     const int x_start = (orig.x() - core.xMin()) / db_row_site->getWidth();
     const int x_end = x_start + current_row_site_count;
     const int y_row = gridY(orig.y() - core.yMin(), entry.getSites()).first;
     for (int x = x_start; x < x_end; x++) {
-      Pixel* pixel = grid_.gridPixel(current_row_grid_index, x, y_row);
+      Pixel* pixel = gridPixel(current_row_grid_index, x, y_row);
       if (pixel == nullptr) {
         continue;
       }
@@ -348,26 +356,26 @@ void Opendp::initGrid()
     const int safety = 20;
     int max_row_site_count = divFloor(core.dx(), db_row_site->getWidth());
 
-    const int xl = std::max(0, x_start - max_displacement_x_ + safety);
+    const int xl = std::max(0, x_start - max_displacement_x + safety);
     const int xh
-        = std::min(max_row_site_count, x_end + max_displacement_x_ - safety);
+        = std::min(max_row_site_count, x_end + max_displacement_x - safety);
 
-    const int yl = std::max(0, y_row - max_displacement_y_ + safety);
+    const int yl = std::max(0, y_row - max_displacement_y + safety);
     const int yh
-        = std::min(current_row_count, y_row + max_displacement_y_ - safety);
+        = std::min(current_row_count, y_row + max_displacement_y - safety);
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
   }
 
   std::vector<gtl::rectangle_data<int>> rects;
-  for (auto& grid_layer : grid_.getInfoMap()) {
+  for (auto& grid_layer : getInfoMap()) {
     rects.clear();
     int h_index = grid_layer.second.getGridIndex();
     hopeless[h_index].get_rectangles(rects);
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
-          Pixel& pixel = grid_(h_index, y, x);
+          Pixel& pixel = pixels_[h_index][y][x];
           pixel.is_hopeless = true;
         }
       }
@@ -508,8 +516,8 @@ void Opendp::visitCellBoundaryPixels(
 
       int x_start = gridX(rect.xMin() - core.xMin());
       int x_end = gridEndX(rect.xMax() - core.xMin());
-      int y_start = gridY(rect.yMin() - core.yMin(), grid_sites).first;
-      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
+      int y_start = grid_.gridY(rect.yMin() - core.yMin(), grid_sites).first;
+      int y_end = grid_.gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = grid_.gridPixel(index_in_grid, x, y_start);
         if (pixel) {
@@ -832,8 +840,9 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
       return divCeil(original_step * source_grid_coordinate, target_step);
     }
     // count until we find it.
-    return gridY(source_grid_coordinate * source_grid_key.grid_index,
-                 target_grid_info.getSites())
+    return grid_
+        .gridY(source_grid_coordinate * source_grid_key.grid_index,
+               target_grid_info.getSites())
         .first;
   }
   // src is hybrid
@@ -847,7 +856,7 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
   }
   if (target_grid_info.isHybrid()) {
     // both are hybrids.
-    return gridY(src_height, target_grid_info.getSites()).first;
+    return grid_.gridY(src_height, target_grid_info.getSites()).first;
   }
   int target_step = target_grid_info.getSites()[0].site->getHeight();
   if (start) {

@@ -1119,7 +1119,7 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt, int row_height) const
       last_row_height = (grid_info.getRowCount() - 1) * parent->getHeight();
     }
     std::tie(index, height)
-        = gridY(min(max(0, pt.getY()), last_row_height), grid_info.getSites());
+        = grid_.gridY(min(max(0, pt.getY()), last_row_height), grid_info.getSites());
     legal_y = height;
   } else {
     int core_y = min(max(0, pt.getY()),
@@ -1359,7 +1359,7 @@ Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
   int grid_x = gridX(legal_pt.getX());
   int grid_y, height;
   int y = legal_pt.getY() + grid_info.getOffset();
-  std::tie(grid_y, height) = gridY(y, grid_info.getSites());
+  std::tie(grid_y, height) = grid_.gridY(y, grid_info.getSites());
   Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
