@@ -270,7 +270,6 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
