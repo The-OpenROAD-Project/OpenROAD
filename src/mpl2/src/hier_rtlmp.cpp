@@ -6272,6 +6272,11 @@ void Pusher::fetchMacroClusters(Cluster* parent,
   for (Cluster* child : parent->getChildren()) {
     if (child->getClusterType() == HardMacroCluster) {
       macro_clusters.push_back(child);
+
+      for (HardMacro* hard_macro : child->getHardMacros()) {
+        hard_macros_.push_back(hard_macro);
+      }
+
     } else if (child->getClusterType() == MixedCluster) {
       fetchMacroClusters(child, macro_clusters);
     }
@@ -6280,6 +6285,10 @@ void Pusher::fetchMacroClusters(Cluster* parent,
 
 void Pusher::pushMacrosToCoreBoundaries()
 {
+  if (root_->getClusterType() == HardMacroCluster) {
+    return;
+  }
+
   std::vector<Cluster*> macro_clusters;
   fetchMacroClusters(root_, macro_clusters);
 
@@ -6312,50 +6321,45 @@ void Pusher::pushMacrosToCoreBoundaries()
 
 std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
     Cluster* macro_cluster,
-    bool vertical_move_allowed,
-    bool horizontal_move_allowed)
+    const bool vertical_move_allowed,
+    const bool horizontal_move_allowed)
 {
   std::map<Boundary, int> boundaries_distance;
 
+  const odb::Rect cluster_box(
+      micronToDbu(macro_cluster->getX(), dbu_),
+      micronToDbu(macro_cluster->getY(), dbu_),
+      micronToDbu(macro_cluster->getX() + macro_cluster->getWidth(), dbu_),
+      micronToDbu(macro_cluster->getY() + macro_cluster->getHeight(), dbu_));
+
   std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
 
-  int min_dx_to_core = std::numeric_limits<int>::max();
-  int min_dy_to_core = std::numeric_limits<int>::max();
+  // We only group macros of the same size, so here we
+  // can use any HardMacro from the cluster.
+  const int hard_macro_width = hard_macros.front()->getWidthDBU();
+  const int hard_macro_height = hard_macros.front()->getHeightDBU();
 
-  for (HardMacro* hard_macro : hard_macros) {
-    hard_macros_.push_back(hard_macro);
-
-    min_dx_to_core = std::min(min_dy_to_core, hard_macro->getWidthDBU());
-    min_dy_to_core = std::min(min_dy_to_core, hard_macro->getHeightDBU());
-  }
-
-  for (HardMacro* hard_macro : hard_macros) {
-    if (horizontal_move_allowed) {
-      const int distance_to_left
-          = std::abs(hard_macro->getXDBU() - core_.xMin());
-      if (distance_to_left < min_dx_to_core) {
-        boundaries_distance[L] = -distance_to_left;
-      }
-
-      const int distance_to_right
-          = std::abs(hard_macro->getUXDBU() - core_.xMax());
-      if (distance_to_right < min_dx_to_core) {
-        boundaries_distance[R] = distance_to_right;
-      }
+  if (horizontal_move_allowed) {
+    const int distance_to_left = std::abs(cluster_box.xMin() - core_.xMin());
+    if (distance_to_left < hard_macro_width) {
+      boundaries_distance[L] = -distance_to_left;
     }
 
-    if (vertical_move_allowed) {
-      const int distance_to_top
-          = std::abs(hard_macro->getUYDBU() - core_.yMax());
-      if (distance_to_top < min_dy_to_core) {
-        boundaries_distance[T] = distance_to_top;
-      }
+    const int distance_to_right = std::abs(cluster_box.xMax() - core_.xMax());
+    if (distance_to_right < hard_macro_width) {
+      boundaries_distance[R] = distance_to_right;
+    }
+  }
 
-      const int distance_to_bottom
-          = std::abs(hard_macro->getUYDBU() - core_.yMin());
-      if (distance_to_bottom < min_dy_to_core) {
-        boundaries_distance[B] = -distance_to_bottom;
-      }
+  if (vertical_move_allowed) {
+    const int distance_to_top = std::abs(cluster_box.yMax() - core_.yMax());
+    if (distance_to_top < hard_macro_height) {
+      boundaries_distance[T] = distance_to_top;
+    }
+
+    const int distance_to_bottom = std::abs(cluster_box.yMin() - core_.yMin());
+    if (distance_to_bottom < hard_macro_height) {
+      boundaries_distance[B] = -distance_to_bottom;
     }
   }
 
