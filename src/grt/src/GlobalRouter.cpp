@@ -238,10 +238,8 @@ bool GlobalRouter::haveRoutes()
 
 bool GlobalRouter::haveDetailedRoutes()
 {
-  for (odb::dbNet* net : block_->getNets()) {
-    if (!net->isSpecial()
-        && net->getWireType() == odb::dbWireType::ROUTED
-        && net->getWire()) {
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (isDetailedRouted(db_net)) {
       return true;
     }
   }
@@ -573,6 +571,13 @@ void GlobalRouter::destroyNetWire(Net* net)
     odb::dbWire::destroy(wire);
   }
   net->setHasWires(false);
+}
+
+bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
+{
+  return (!db_net->isSpecial()
+          && db_net->getWireType() == odb::dbWireType::ROUTED
+          && db_net->getWire());
 }
 
 Rudy* GlobalRouter::getRudy()
@@ -1780,9 +1785,8 @@ void GlobalRouter::updateVias()
 
 void GlobalRouter::updateEdgesUsage()
 {
-  for (const auto& [net, groute] : routes_) {
-    if (net->getWireType() == odb::dbWireType::ROUTED
-        && net->getWire()) {
+  for (const auto& [db_net, groute] : routes_) {
+    if (isDetailedRouted(db_net)) {
       continue;
     }
 

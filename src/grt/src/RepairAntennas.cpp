@@ -139,9 +139,7 @@ void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
 
   if (grouter_->haveDetailedRoutes()) {
     for (odb::dbNet* db_net : block_->getNets()) {
-      if (!db_net->isSpecial()
-          && db_net->getWireType() == odb::dbWireType::ROUTED
-          && db_net->getWire()) {
+      if (grouter_->isDetailedRouted(db_net)) {
         odb::orderWires(logger_, db_net);
       }
     }
