@@ -1771,9 +1771,7 @@ void GlobalRouter::readGuides(const char* file_name)
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
       guides[net].push_back(std::make_pair(layer->getRoutingLevel(), rect));
-      if (!isDetailedRouted(net)) {
-        boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
-      }
+      boxToGlobalRouting(rect, layer->getRoutingLevel(), routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
     }
@@ -1799,10 +1797,8 @@ void GlobalRouter::loadGuidesFromDB()
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
-      if (!isDetailedRouted(net)) {
-        boxToGlobalRouting(
-            guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
-      }
+      boxToGlobalRouting(
+          guide->getBox(), guide->getLayer()->getRoutingLevel(), routes_[net]);
     }
   }
 
