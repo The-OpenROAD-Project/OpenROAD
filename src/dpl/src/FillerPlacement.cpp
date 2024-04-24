@@ -150,24 +150,25 @@ void Opendp::placeRowFillers(int row,
 
   int row_site_count = divFloor(core_.dx(), site_width_);
   while (j < row_site_count) {
-    Pixel* pixel = gridPixel(grid_info.getGridIndex(), j, row);
+    Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       int k = j;
       while (k < row_site_count
-             && gridPixel(grid_info.getGridIndex(), k, row)->cell == nullptr
-             && gridPixel(grid_info.getGridIndex(), k, row)->is_valid) {
+             && grid_.gridPixel(grid_info.getGridIndex(), k, row)->cell
+                    == nullptr
+             && grid_.gridPixel(grid_info.getGridIndex(), k, row)->is_valid) {
         k++;
       }
 
       dbTechLayer* implant = nullptr;
       if (j > 0) {
-        auto pixel = gridPixel(grid_info.getGridIndex(), j - 1, row);
+        auto pixel = grid_.gridPixel(grid_info.getGridIndex(), j - 1, row);
         if (pixel->cell && pixel->cell->db_inst_) {
           implant = getImplant(pixel->cell->db_inst_->getMaster());
         }
       } else if (k < row_site_count) {
-        auto pixel = gridPixel(grid_info.getGridIndex(), k, row);
+        auto pixel = grid_.gridPixel(grid_info.getGridIndex(), k, row);
         if (pixel->cell && pixel->cell->db_inst_) {
           implant = getImplant(pixel->cell->db_inst_->getMaster());
         }
@@ -232,7 +233,7 @@ const char* Opendp::gridInstName(int row,
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(grid_info.getGridIndex(), col, row)->cell;
+  const Cell* cell = grid_.gridPixel(grid_info.getGridIndex(), col, row)->cell;
   if (cell) {
     return cell->db_inst_->getConstName();
   }

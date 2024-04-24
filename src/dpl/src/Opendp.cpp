@@ -101,6 +101,7 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
+  grid_.init(logger);
 }
 
 void Opendp::initBlock()

@@ -97,11 +97,41 @@ using bgBox = boost::geometry::model::box<bgPoint>;
 using RtreeBox
     = boost::geometry::index::rtree<bgBox,
                                     boost::geometry::index::quadratic<16>>;
+
+class GridInfo;
+
 // The "Grid" is now an array of 2D grids. The new dimension is to support
 // multi-height cells. Each unique row height creates a new grid that is used in
 // legalization. The first index is the grid index (corresponding to row
 // height), second index is the row index, and third index is the site index.
-using Grid = std::vector<std::vector<std::vector<Pixel>>>;
+class Grid
+{
+ public:
+  void init(Logger* logger) { logger_ = logger; }
+
+  Pixel* gridPixel(int grid_idx, int x, int y) const;
+  Pixel& operator()(int g, int y, int x) { return pixels_[g][y][x]; }
+  const Pixel& operator()(int g, int y, int x) const
+  {
+    return pixels_[g][y][x];
+  }
+
+  bool empty() const { return pixels_.empty(); }
+  void resize(int size) { pixels_.resize(size); }
+  void resize(int g, int size) { pixels_[g].resize(size); }
+  void resize(int g, int y, int size) { pixels_[g][y].resize(size); }
+  void clear() { pixels_.clear(); }
+
+  void clear_info() { grid_info_vector_.clear(); }
+  void resize_info(int size) { grid_info_vector_.resize(size); }
+  void setInfo(int idx, GridInfo* info) { grid_info_vector_[idx] = info; }
+
+ private:
+  Logger* logger_ = nullptr;
+  std::vector<std::vector<std::vector<Pixel>>> pixels_;
+  std::vector<GridInfo*> grid_info_vector_;
+};
+
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -464,7 +494,6 @@ class Opendp
   bool havePadding() const;
   void checkOneSiteDbMaster();
   void deleteGrid();
-  Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
 
   int getRowCount(const Cell* cell) const;
@@ -536,7 +565,6 @@ class Opendp
   // (alternating rows)
   map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
-  std::vector<GridInfo*> grid_info_vector_;
   std::unordered_map<dbSite*, dbSite*> _hybrid_parent;
   map<dbInst*, Cell*> db_inst_map_;
   bool has_hybrid_rows_ = false;

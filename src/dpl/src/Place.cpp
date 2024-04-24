@@ -632,7 +632,7 @@ void Opendp::shiftMove(Cell* cell)
   std::set<Cell*> region_cells;
   for (int x = grid_x - margin_width; x < grid_x + margin_width; x++) {
     for (int y = grid_y - boundary_margin; y < grid_y + boundary_margin; y++) {
-      Pixel* pixel = gridPixel(grid_index, x, y);
+      Pixel* pixel = grid_.gridPixel(grid_index, x, y);
       if (pixel) {
         Cell* cell = pixel->cell;
         if (cell && !isFixed(cell)) {
@@ -928,7 +928,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       // rtree in checkPixels
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         Pixel* valid_grid_pixel
-            = gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
+            = grid_.gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
         return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
@@ -942,7 +942,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       }
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         Pixel* valid_grid_pixel
-            = gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
+            = grid_.gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
         return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
@@ -1018,7 +1018,7 @@ bool Opendp::checkPixels(const Cell* cell,
   int layer = row_info.second.getGridIndex();
   for (int y1 = y; y1 < y_end; y1++) {
     for (int x1 = x; x1 < x_end; x1++) {
-      Pixel* pixel = gridPixel(layer, x1, y1);
+      Pixel* pixel = grid_.gridPixel(layer, x1, y1);
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group_ != cell->group_)
           || (!cell->inGroup() && pixel->group_)
@@ -1041,12 +1041,12 @@ bool Opendp::checkPixels(const Cell* cell,
       int y_finish = min(y_end, row_info.second.getRowCount() - 1);
 
       auto isAbutted = [this](int layer, int x, int y) {
-        Pixel* pixel = gridPixel(layer, x, y);
+        Pixel* pixel = grid_.gridPixel(layer, x, y);
         return (pixel == nullptr || pixel->cell);
       };
 
       auto cellAtSite = [this](int layer, int x, int y) {
-        Pixel* pixel = gridPixel(layer, x, y);
+        Pixel* pixel = grid_.gridPixel(layer, x, y);
         return (pixel != nullptr && pixel->cell);
       };
       // upper left corner
@@ -1213,7 +1213,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   // They will be checked in the checkPixels in the diamondSearch method after
   // this initialization
   for (int x = grid_x - 1; x >= 0; --x) {  // left
-    if (grid_[grid_index][grid_y][x].is_valid) {
+    if (grid_(grid_index, grid_y, x).is_valid) {
       best_dist = (grid_x - x - 1) * site_width_;
       best_x = x;
       best_y = grid_y;
@@ -1221,7 +1221,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
     }
   }
   for (int x = grid_x + 1; x < layer_site_count; ++x) {  // right
-    if (grid_[grid_index][grid_y][x].is_valid) {
+    if (grid_(grid_index, grid_y, x).is_valid) {
       const int dist = (x - grid_x) * site_width_ - cell->width_;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1232,7 +1232,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
     }
   }
   for (int y = grid_y - 1; y >= 0; --y) {  // below
-    if (grid_[grid_index][y][grid_x].is_valid) {
+    if (grid_(grid_index, y, grid_x).is_valid) {
       const int dist
           = (grid_y - y - 1)
             * row_height;  // FIXME(mina1460): this is wrong for hybrid sites
@@ -1245,7 +1245,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
     }
   }
   for (int y = grid_y + 1; y < layer_row_count; ++y) {  // above
-    if (grid_[grid_index][y][grid_x].is_valid) {
+    if (grid_(grid_index, y, grid_x).is_valid) {
       const int dist = (y - grid_y) * row_height - cell->height_;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1289,17 +1289,17 @@ Point Opendp::pointOffMacro(const Cell& cell)
   int init_y = init.getY();
 
   auto grid_info = getGridInfo(&cell);
-  Pixel* pixel1 = gridPixel(
+  Pixel* pixel1 = grid_.gridPixel(
       grid_info.getGridIndex(), gridX(init_x), gridY(init_y, &cell));
-  Pixel* pixel2 = gridPixel(grid_info.getGridIndex(),
-                            gridX(init_x + cell.width_),
-                            gridY(init_y, &cell));
-  Pixel* pixel3 = gridPixel(grid_info.getGridIndex(),
-                            gridX(init_x),
-                            gridY(init_y + cell.height_, &cell));
-  Pixel* pixel4 = gridPixel(grid_info.getGridIndex(),
-                            gridX(init_x + cell.width_),
-                            gridY(init_y + cell.height_, &cell));
+  Pixel* pixel2 = grid_.gridPixel(grid_info.getGridIndex(),
+                                  gridX(init_x + cell.width_),
+                                  gridY(init_y, &cell));
+  Pixel* pixel3 = grid_.gridPixel(grid_info.getGridIndex(),
+                                  gridX(init_x),
+                                  gridY(init_y + cell.height_, &cell));
+  Pixel* pixel4 = grid_.gridPixel(grid_info.getGridIndex(),
+                                  gridX(init_x + cell.width_),
+                                  gridY(init_y + cell.height_, &cell));
 
   Cell* block = nullptr;
   if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) {
@@ -1373,12 +1373,12 @@ Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
   int grid_y, height;
   int y = legal_pt.getY() + grid_info.getOffset();
   std::tie(grid_y, height) = gridY(y, grid_info.getSites());
-  Pixel* pixel = gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
+  Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
       legal_pt = Point(grid_x * site_width_, grid_y * row_height);
-      pixel = gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
+      pixel = grid_.gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
     }
 
     const Cell* block = pixel->cell;

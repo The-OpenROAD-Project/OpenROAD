@@ -348,7 +348,7 @@ bool Opendp::checkInRows(const Cell& cell) const
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(grid_info.second.getGridIndex(), x, y);
+      Pixel* pixel = grid_.gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;
@@ -442,13 +442,14 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         }
         if (0 != abut_x) {
           // check the abutting pixel
-          Pixel* abut_pixel = gridPixel(index_in_grid, x + abut_x, y);
+          Pixel* abut_pixel = grid_.gridPixel(index_in_grid, x + abut_x, y);
           bool abuttment_exists
               = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell
                  && abut_pixel->cell != nullptr);
           if (!abuttment_exists) {
             // check the 1 site gap pixel
-            Pixel* gap_pixel = gridPixel(index_in_grid, x + 2 * abut_x, y);
+            Pixel* gap_pixel
+                = grid_.gridPixel(index_in_grid, x + 2 * abut_x, y);
             if (gap_pixel && gap_pixel->cell != pixel_cell) {
               gap_cell = gap_pixel->cell;
             }
