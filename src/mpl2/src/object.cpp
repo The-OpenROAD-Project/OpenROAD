@@ -664,8 +664,7 @@ const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
   return pin_access_map_[cluster_id];
 }
 
-const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap()
-    const
+const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
 {
   return pin_access_map_;
 }

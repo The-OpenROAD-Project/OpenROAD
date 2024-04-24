@@ -3152,9 +3152,9 @@ void HierRTLMP::setIOClustersBlockages()
   // As SA only sees what is inside its current outline, this is not a problem.
   if (io_spans[L].second > io_spans[L].first) {
     const Rect left_io_blockage(root.xMin(),
-                          io_spans[L].first,
-                          root.xMin() + depth,
-                          io_spans[L].second);
+                                io_spans[L].first,
+                                root.xMin() + depth,
+                                io_spans[L].second);
 
     boundary_to_io_blockage_[L] = left_io_blockage;
     macro_blockages_.push_back(left_io_blockage);
@@ -3162,9 +3162,9 @@ void HierRTLMP::setIOClustersBlockages()
 
   if (io_spans[T].second > io_spans[T].first) {
     const Rect top_io_blockage(io_spans[T].first,
-                         root.yMax() - depth,
-                         io_spans[T].second,
-                         root.yMax());
+                               root.yMax() - depth,
+                               io_spans[T].second,
+                               root.yMax());
 
     boundary_to_io_blockage_[T] = top_io_blockage;
     macro_blockages_.push_back(top_io_blockage);
@@ -3172,9 +3172,9 @@ void HierRTLMP::setIOClustersBlockages()
 
   if (io_spans[R].second > io_spans[R].first) {
     const Rect right_io_blockage(root.xMax() - depth,
-                           io_spans[R].first,
-                           root.xMax(),
-                           io_spans[R].second);
+                                 io_spans[R].first,
+                                 root.xMax(),
+                                 io_spans[R].second);
 
     boundary_to_io_blockage_[R] = right_io_blockage;
     macro_blockages_.push_back(right_io_blockage);
@@ -3182,9 +3182,9 @@ void HierRTLMP::setIOClustersBlockages()
 
   if (io_spans[B].second > io_spans[B].first) {
     const Rect bottom_io_blockage(io_spans[B].first,
-                            root.yMin(),
-                            io_spans[B].second,
-                            root.yMin() + depth);
+                                  root.yMin(),
+                                  io_spans[B].second,
+                                  root.yMin() + depth);
 
     boundary_to_io_blockage_[B] = bottom_io_blockage;
     macro_blockages_.push_back(bottom_io_blockage);
