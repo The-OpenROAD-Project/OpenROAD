@@ -48,7 +48,6 @@ class Logger;
 namespace rcx {
 
 using odb::Ath__array1D;
-using odb::Ath__gridTable;
 using odb::uint;
 using utl::Logger;
 

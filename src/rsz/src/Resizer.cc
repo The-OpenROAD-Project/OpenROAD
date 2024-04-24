@@ -1128,8 +1128,8 @@ void Resizer::swapPins(Instance* inst,
 
 // Replace LEF with LEF so ports stay aligned in instance.
 bool Resizer::replaceCell(Instance* inst,
-                          LibertyCell* replacement,
-                          bool journal)
+                          const LibertyCell* replacement,
+                          const bool journal)
 {
   const char* replacement_name = replacement->name();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
@@ -2165,8 +2165,8 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
 
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
-void Resizer::gateDelays(LibertyPort* drvr_port,
-                         float load_cap,
+void Resizer::gateDelays(const LibertyPort* drvr_port,
+                         const float load_cap,
                          const DcalcAnalysisPt* dcalc_ap,
                          // Return values.
                          ArcDelay delays[RiseFall::index_count],
@@ -2202,9 +2202,9 @@ void Resizer::gateDelays(LibertyPort* drvr_port,
   }
 }
 
-ArcDelay Resizer::gateDelay(LibertyPort* drvr_port,
+ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
                             const RiseFall* rf,
-                            float load_cap,
+                            const float load_cap,
                             const DcalcAnalysisPt* dcalc_ap)
 {
   ArcDelay delays[RiseFall::index_count];
@@ -2213,8 +2213,8 @@ ArcDelay Resizer::gateDelay(LibertyPort* drvr_port,
   return delays[rf->index()];
 }
 
-ArcDelay Resizer::gateDelay(LibertyPort* drvr_port,
-                            float load_cap,
+ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
+                            const float load_cap,
                             const DcalcAnalysisPt* dcalc_ap)
 {
   ArcDelay delays[RiseFall::index_count];

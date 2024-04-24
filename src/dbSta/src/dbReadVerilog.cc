@@ -141,11 +141,13 @@ void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network)
 class Verilog2db
 {
  public:
-  Verilog2db(Network* verilog_network, dbDatabase* db, Logger* logger);
+  Verilog2db(Network* verilog_network,
+             dbDatabase* db,
+             Logger* logger,
+             bool hierarchy);
   void makeBlock();
   void makeDbNetlist();
-  static string makePinName(std::string& name);
-  bool hierarchy_ = false;
+  static string makePinName(const std::string& name);
 
  protected:
   void makeDbModule(
@@ -177,38 +179,36 @@ class Verilog2db
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
   std::map<std::string, int> uniquify_id_;  // key: module name
+ private:
+  bool hierarchy_ = false;
 };
 
 void dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
                   dbDatabase* db,
-                  Logger* logger)
+                  Logger* logger,
+                  bool hierarchy)
 {
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
-    Verilog2db v2db(verilog_network, db, logger);
-    Tcl_Interp* tcl_interp = OpenRoad::openRoad()->tclInterp();
-    const char* tcl_obj;
-    // temporary code: used to enable/disable hierarchy.
-    std::string hierarchy("hierarchy");
-    tcl_obj = Tcl_GetVar(tcl_interp, hierarchy.c_str(), TCL_GLOBAL_ONLY);
-    if (tcl_obj) {
-      v2db.hierarchy_ = true;
-    }
+    Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
     deleteVerilogReader();
   }
 }
 
-Verilog2db::Verilog2db(Network* network, dbDatabase* db, Logger* logger)
-    : network_(network), db_(db), logger_(logger)
+Verilog2db::Verilog2db(Network* network,
+                       dbDatabase* db,
+                       Logger* logger,
+                       bool hierarchy)
+    : network_(network), db_(db), logger_(logger), hierarchy_(hierarchy)
 {
 }
 
-std::string Verilog2db::makePinName(std::string& port_name)
+std::string Verilog2db::makePinName(const std::string& port_name)
 {
   std::string p_name = port_name;
   size_t last_idx = p_name.find_last_of('/');
@@ -328,6 +328,14 @@ void Verilog2db::makeDbModule(
 
     dbModInst* modinst
         = dbModInst::create(parent, module, module_inst_name.c_str());
+
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Created module instance {} in parent {} ",
+               module_inst_name.c_str(),
+               parent->getName());
 
     if (modinst == nullptr) {
       logger_->warn(ORD,
@@ -591,6 +599,7 @@ void Verilog2db::makeVModNets(
     std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec)
 {
   std::map<dbModule*, std::set<const Instance*>> module_instance_set;
+  int mod_net_count = 0;
   for (auto im : inst_module_vec) {
     const Instance* cur_inst = im.first;
     dbModule* dm = im.second;
@@ -602,7 +611,15 @@ void Verilog2db::makeVModNets(
     for (auto cur_inst : inst_set) {  // all instances in this module.
       makeVModNets(cur_inst, dm, mod_net_map);
     }
+    mod_net_count += mod_net_map.size();
   }
+  debugPrint(logger_,
+             utl::ODB,
+             "dbReadVerilog",
+             1,
+             "Created {} modules and {} module nets",
+             inst_module_vec.size(),
+             mod_net_count);
 }
 
 void Verilog2db::makeVModNets(const Instance* inst,

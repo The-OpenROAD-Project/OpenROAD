@@ -41,11 +41,14 @@ proc read_verilog { filename } {
   ord::read_verilog_cmd [file nativename $filename]
 }
 
-sta::define_cmd_args "link_design" {[top_cell_name]}
-
-proc link_design { {top_cell_name ""} } {
+sta::define_cmd_args "link_design" {[top_cell_name][hier]}
+proc link_design { {top_cell_name ""} {hier ""}} {
   variable current_design_name
-
+    if { $hier == "-hier" } {
+	set hierarchy true
+    } else {
+	set hierarchy false
+    }
   if { $top_cell_name == "" } {
     if { $current_design_name == "" } {
       utl::error ORD 2009 "missing top_cell_name argument and no current_design."
@@ -57,8 +60,13 @@ proc link_design { {top_cell_name ""} } {
   if { ![ord::db_has_tech] } {
     utl::error ORD 2010 "no technology has been read."
   }
-  ord::link_design_db_cmd $top_cell_name
+  ord::link_design_db_cmd $top_cell_name $hierarchy
 }
+
+
+
+
+
 
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
                                         [-remove_cells cells] filename}
