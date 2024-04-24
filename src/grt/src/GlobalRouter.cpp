@@ -1776,6 +1776,11 @@ void GlobalRouter::updateVias()
 void GlobalRouter::updateEdgesUsage()
 {
   for (const auto& [net, groute] : routes_) {
+    if (net->getWireType() == odb::dbWireType::ROUTED
+        && net->getWire()) {
+      continue;
+    }
+
     for (const GSegment& seg : groute) {
       int x0 = (seg.init_x - grid_->getXMin()) / grid_->getTileSize();
       int y0 = (seg.init_y - grid_->getYMin()) / grid_->getTileSize();
