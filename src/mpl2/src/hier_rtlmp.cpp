@@ -3151,7 +3151,7 @@ void HierRTLMP::setIOClustersBlockages()
   // Note that the range can be larger than the respective core dimension.
   // As SA only sees what is inside its current outline, this is not a problem.
   if (io_spans[L].second > io_spans[L].first) {
-    Rect left_io_blockage(root.xMin(),
+    const Rect left_io_blockage(root.xMin(),
                           io_spans[L].first,
                           root.xMin() + depth,
                           io_spans[L].second);
@@ -3161,7 +3161,7 @@ void HierRTLMP::setIOClustersBlockages()
   }
 
   if (io_spans[T].second > io_spans[T].first) {
-    Rect top_io_blockage(io_spans[T].first,
+    const Rect top_io_blockage(io_spans[T].first,
                          root.yMax() - depth,
                          io_spans[T].second,
                          root.yMax());
@@ -3171,7 +3171,7 @@ void HierRTLMP::setIOClustersBlockages()
   }
 
   if (io_spans[R].second > io_spans[R].first) {
-    Rect right_io_blockage(root.xMax() - depth,
+    const Rect right_io_blockage(root.xMax() - depth,
                            io_spans[R].first,
                            root.xMax(),
                            io_spans[R].second);
@@ -3181,7 +3181,7 @@ void HierRTLMP::setIOClustersBlockages()
   }
 
   if (io_spans[B].second > io_spans[B].first) {
-    Rect bottom_io_blockage(io_spans[B].first,
+    const Rect bottom_io_blockage(io_spans[B].first,
                             root.yMin(),
                             io_spans[B].second,
                             root.yMin() + depth);
