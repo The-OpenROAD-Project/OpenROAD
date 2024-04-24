@@ -92,19 +92,19 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  if (!grid_info_map_.empty()) {
+  if (!grid_.infoMapEmpty()) {
     int min_height = std::numeric_limits<int>::max();
     GridMapKey chosen_grid_key = {0};
     // we will first try to find the grid with min height that is non hybrid, if
     // that doesn't exist, we will pick the first hybrid grid.
-    for (auto [grid_idx, itr_grid_info] : grid_info_map_) {
+    for (auto [grid_idx, itr_grid_info] : grid_.getInfoMap()) {
       int site_height = itr_grid_info.getSites()[0].site->getHeight();
       if (!itr_grid_info.isHybrid() && site_height < min_height) {
         min_height = site_height;
         chosen_grid_key = grid_idx;
       }
     }
-    auto chosen_grid_info = grid_info_map_.at(chosen_grid_key);
+    auto chosen_grid_info = grid_.getInfoMap().at(chosen_grid_key);
     int chosen_row_count = chosen_grid_info.getRowCount();
     if (!chosen_grid_info.isHybrid()) {
       int site_height = min_height;

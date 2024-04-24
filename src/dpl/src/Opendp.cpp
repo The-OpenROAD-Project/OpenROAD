@@ -460,7 +460,7 @@ int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 {
   // gets a coordinate and its grid, and returns the height of the coordinate.
   // This is useful for hybrid sites
-  auto grid_info = grid_info_map_.at(gmk);
+  auto grid_info = grid_.infoMap(gmk);
   if (grid_info.isHybrid()) {
     auto& grid_sites = grid_info.getSites();
     const int total_height = grid_info.getSitesTotalHeight();
@@ -548,12 +548,12 @@ int Opendp::getRowHeight(const Cell* cell) const
 
 pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 {
-  if (grid_info_map_.empty()) {
+  if (grid_.infoMapEmpty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
   GridMapKey key = getGridMapKey(cell);
-  auto layer = grid_info_map_.find(key);
-  if (layer == grid_info_map_.end()) {
+  auto layer = grid_.getInfoMap().find(key);
+  if (layer == grid_.getInfoMap().end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
                    44,
@@ -592,7 +592,7 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
 
 GridInfo Opendp::getGridInfo(const Cell* cell) const
 {
-  return grid_info_map_.at(getGridMapKey(cell));
+  return grid_.getInfoMap().at(getGridMapKey(cell));
 }
 
 pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
@@ -662,7 +662,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
   cell->x_ = (x + padLeft(cell)) * site_width_;
   if (cell->isHybrid()) {
-    auto grid_info = grid_info_map_.at(getGridMapKey(cell));
+    auto grid_info = grid_.getInfoMap().at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
     const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();

@@ -99,6 +99,7 @@ using RtreeBox
                                     boost::geometry::index::quadratic<16>>;
 
 class GridInfo;
+struct GridMapKey;
 
 // The "Grid" is now an array of 2D grids. The new dimension is to support
 // multi-height cells. Each unique row height creates a new grid that is used in
@@ -122,14 +123,26 @@ class Grid
   void resize(int g, int y, int size) { pixels_[g][y].resize(size); }
   void clear() { pixels_.clear(); }
 
-  void clear_info() { grid_info_vector_.clear(); }
-  void resize_info(int size) { grid_info_vector_.resize(size); }
+  void clearInfo() { grid_info_vector_.clear(); }
+  void resizeInfo(int size) { grid_info_vector_.resize(size); }
   void setInfo(int idx, GridInfo* info) { grid_info_vector_[idx] = info; }
 
+  GridInfo& infoMap(const GridMapKey& key) { return grid_info_map_.at(key); }
+  const GridInfo& infoMap(const GridMapKey& key) const
+  {
+    return grid_info_map_.at(key);
+  }
+  bool infoMapEmpty() const { return grid_info_map_.empty(); }
+  const map<GridMapKey, GridInfo>& getInfoMap() const { return grid_info_map_; }
+  map<GridMapKey, GridInfo>& getInfoMap() { return grid_info_map_; }
+  void clearInfoMap() { grid_info_map_.clear(); }
+
+  
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<GridInfo*> grid_info_vector_;
+  map<GridMapKey, GridInfo> grid_info_map_;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -559,7 +572,6 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<GridMapKey, GridInfo> grid_info_map_;
   // This map is used to map each unqie site to a grid. The key is always
   // unique, but the value is not unique in the case of hybrid sites
   // (alternating rows)
