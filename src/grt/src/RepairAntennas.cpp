@@ -77,6 +77,7 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
                                             float ratio_margin)
 {
   // safe copy net wires before orderWires calls
+  // TODO: remove this copy when antenna checker update is done
   std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
       copy_wires;
   for (odb::dbNet* db_net : block_->getNets()) {

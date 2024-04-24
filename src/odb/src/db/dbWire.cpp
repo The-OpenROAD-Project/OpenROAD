@@ -1858,8 +1858,8 @@ void dbWire::getRawWireData(std::vector<int>& data,
   op_codes = wire->_opcodes;
 }
 
-void dbWire::setRawWireData(std::vector<int> data,
-                            std::vector<unsigned char> op_codes)
+void dbWire::setRawWireData(const std::vector<int>& data,
+                            const std::vector<unsigned char>& op_codes)
 {
   _dbWire* wire = (_dbWire*) this;
   wire->_data = data;
