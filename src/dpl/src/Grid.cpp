@@ -78,13 +78,13 @@ int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 
 void Opendp::initGridLayersMap()
 {
-  hybrid_parent_.clear();
+  grid_.clearHybridParent();
   for (auto lib : db_->getLibs()) {
     for (auto site : lib->getSites()) {
       if (site->hasRowPattern()) {
         for (const auto& [child_site, orient] : site->getRowPattern()) {
-          if (hybrid_parent_.count(child_site) == 0) {
-            hybrid_parent_[child_site] = site;
+          if (grid_.getHybridParent().count(child_site) == 0) {
+            grid_.addHybridParent(child_site, site);
           }
         }
       }
@@ -166,16 +166,16 @@ void Opendp::initGridLayersMap()
     if (row_base.y() == min_row_y_coordinate) {
       if (working_site->hasRowPattern()) {
         for (const auto& [child_site, orient] : working_site->getRowPattern()) {
-          if (hybrid_parent_[child_site] != working_site) {
+          if (grid_.getHybridParent().at(child_site) != working_site) {
             debugPrint(logger_,
                        DPL,
                        "hybrid",
                        1,
                        "Overriding the parent of site {} from {} to {}",
                        child_site->getName(),
-                       hybrid_parent_[child_site]->getName(),
+                       grid_.getHybridParent().at(child_site)->getName(),
                        working_site->getName());
-            hybrid_parent_[child_site] = working_site;
+            grid_.addHybridParent(child_site, working_site);
           }
         }
       }
@@ -214,7 +214,7 @@ void Opendp::initGridLayersMap()
         }
         grid_.getInfoMap().emplace(gmk, newGridInfo);
       } else {
-        dbSite* parent_site = hybrid_parent_.at(working_site);
+        dbSite* parent_site = grid_.getHybridParent().at(working_site);
         GridInfo newGridInfo = {
             calculateHybridSitesRowCount(parent_site),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),

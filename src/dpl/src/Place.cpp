@@ -1114,7 +1114,7 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt, int row_height) const
     if (cell->isHybridParent()) {
       last_row_height = grid_info.getRowCount() * row_height - cell->height_;
     } else {
-      auto parent = hybrid_parent_.at(cell->getSite());
+      auto parent = grid_.getHybridParent().at(cell->getSite());
       last_row_height = (grid_info.getRowCount() - 1) * parent->getHeight();
     }
     std::tie(index, height)

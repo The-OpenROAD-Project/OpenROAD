@@ -197,12 +197,23 @@ class Grid
   map<GridMapKey, GridInfo>& getInfoMap() { return grid_info_map_; }
   void clearInfoMap() { grid_info_map_.clear(); }
 
-  
+  void clearHybridParent() { hybrid_parent_.clear(); }
+  const std::unordered_map<dbSite*, dbSite*>& getHybridParent() const
+  {
+    return hybrid_parent_;
+  }
+
+  void addHybridParent(dbSite* child, dbSite* parent)
+  {
+    hybrid_parent_[child] = parent;
+  }
+
  private:
   Logger* logger_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;
+  std::unordered_map<dbSite*, dbSite*> hybrid_parent_;  // child -> parent
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -576,7 +587,6 @@ class Opendp
   // (alternating rows)
   map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
-  std::unordered_map<dbSite*, dbSite*> hybrid_parent_;
   bool has_hybrid_rows_ = false;
 
   Rect core_;
