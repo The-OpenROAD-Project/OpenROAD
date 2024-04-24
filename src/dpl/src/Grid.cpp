@@ -429,10 +429,10 @@ void Opendp::visitCellPixels(
 
       Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
-      int x_start = gridX(rect.xMin() - core.xMin());
-      int x_end = gridEndX(rect.xMax() - core.xMin());
-      int y_start = gridY(rect.yMin() - core.yMin(), &cell);
-      int y_end = gridEndY(rect.yMax() - core.yMin(), &cell);
+      int x_start = grid_.gridX(rect.xMin() - core.xMin());
+      int x_end = grid_.gridEndX(rect.xMax() - core.xMin());
+      int y_start = grid_.gridY(rect.yMin() - core.yMin(), &cell);
+      int y_end = grid_.gridEndY(rect.yMax() - core.yMin(), &cell);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
@@ -461,10 +461,10 @@ void Opendp::visitCellPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    int y_start = gridY(&cell);
-    int y_end = gridEndY(&cell);
+    int x_start = padded ? gridPaddedX(&cell) : grid_.gridX(&cell);
+    int x_end = padded ? gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
+    int y_start = grid_.gridY(&cell);
+    int y_end = grid_.gridEndY(&cell);
     auto src_gmk = grid_.getGridMapKey(&cell);
     for (const auto& layer_it : grid_.getInfoMap()) {
       int layer_x_start = x_start;
@@ -515,8 +515,8 @@ void Opendp::visitCellBoundaryPixels(
       Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
 
-      int x_start = gridX(rect.xMin() - core.xMin());
-      int x_end = gridEndX(rect.xMax() - core.xMin());
+      int x_start = grid_.gridX(rect.xMin() - core.xMin());
+      int x_end = grid_.gridEndX(rect.xMax() - core.xMin());
       int y_start = grid_.gridY(rect.yMin() - core.yMin(), grid_sites).first;
       int y_end = grid_.gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
       for (int x = x_start; x < x_end; x++) {
@@ -542,9 +542,9 @@ void Opendp::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    int y_start = gridY(&cell);
+    int x_start = padded ? gridPaddedX(&cell) : grid_.gridX(&cell);
+    int x_end = padded ? gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
+    int y_start = grid_.gridY(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -552,7 +552,7 @@ void Opendp::visitCellBoundaryPixels(
                "Checking cell {} isHybrid {}",
                cell.name(),
                cell.isHybrid());
-    int y_end = gridEndY(&cell);
+    int y_end = grid_.gridEndY(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -615,7 +615,7 @@ void Opendp::groupAssignCellRegions()
       auto group_cell = group.cells_.at(0);
       const Rect core = grid_.getCore();
       int max_row_site_count = divFloor(core.dx(), site_width);
-      row_height = getRowHeight(group_cell);
+      row_height = grid_.getRowHeight(group_cell);
       int row_count = divFloor(core.dy(), row_height);
       auto gmk = grid_.getGridMapKey(group_cell);
       auto grid_info = grid_.getInfoMap().at(gmk);
@@ -780,7 +780,7 @@ void Opendp::erasePixel(Cell* cell)
   if (!(isFixed(cell) || !cell->is_placed_)) {
     auto gmk = grid_.getGridMapKey(cell);
     int x_end = gridPaddedEndX(cell);
-    int y_end = gridEndY(cell);
+    int y_end = grid_.gridEndY(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -788,7 +788,7 @@ void Opendp::erasePixel(Cell* cell)
                "Checking cell {} isHybrid {}",
                cell->name(),
                cell->isHybrid());
-    int y_start = gridY(cell);
+    int y_start = grid_.gridY(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",

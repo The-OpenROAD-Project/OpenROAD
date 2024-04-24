@@ -178,11 +178,20 @@ class Grid
 
   GridMapKey getGridMapKey(const dbSite* site) const;
   GridMapKey getGridMapKey(const Cell* cell) const;
+  int gridX(int x) const;
+  int gridX(const Cell* cell) const;
+  int gridEndX(int x) const;
+  int gridEndX(const Cell* cell) const;
+  int gridY(int y, const Cell* cell) const;
+  int gridY(const Cell* cell) const;
+  int gridEndY(int y, const Cell* cell) const;
+  int gridEndY(const Cell* cell) const;
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   GridInfo getGridInfo(const Cell* cell) const;
 
   int getRowHeight() const { return row_height_; }
+  int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
   void setRowHeight(int height) { row_height_ = height; }
   void setSiteWidth(int width) { site_width_ = width; }
@@ -437,7 +446,6 @@ class Opendp
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return grid_.getCore(); }
   int getRowHeight() const { return grid_.getRowHeight(); }
-  int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return grid_.getSiteWidth(); }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
@@ -583,16 +591,8 @@ class Opendp
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
   int gridHeight(const Cell* cell) const;
-  int gridX(int x) const;
-  int gridX(const Cell* cell) const;
   int gridPaddedX(const Cell* cell) const;
-  int gridY(int y, const Cell* cell) const;
-  int gridY(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell) const;
-  int gridEndX(int x) const;
-  int gridEndX(const Cell* cell) const;
-  int gridEndY(int y, const Cell* cell) const;
-  int gridEndY(const Cell* cell) const;
   void setGridPaddedLoc(Cell* cell, int x, int y) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
