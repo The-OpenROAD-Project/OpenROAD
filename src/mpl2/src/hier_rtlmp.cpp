@@ -6776,6 +6776,10 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
     Cluster* macro_cluster,
     const std::map<Boundary, int>& boundaries_distance)
 {
+  if (boundaries_distance.empty()) {
+    return;
+  }
+
   std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
 
   for (const auto& [boundary, distance] : boundaries_distance) {
@@ -6783,19 +6787,26 @@ void BoundaryPusher::pushMacrosToCoreBoundaries(
       continue;
     }
 
-    bool produced_overlap = false;
+    odb::Rect cluster_box(
+        micronToDbu(macro_cluster->getX(), dbu_),
+        micronToDbu(macro_cluster->getY(), dbu_),
+        micronToDbu(macro_cluster->getX() + macro_cluster->getWidth(), dbu_),
+        micronToDbu(macro_cluster->getY() + macro_cluster->getHeight(), dbu_));
 
     for (HardMacro* hard_macro : hard_macros) {
       moveHardMacro(hard_macro, boundary, distance);
     }
 
-    for (HardMacro* hard_macro : hard_macros) {
-      if (overlapsWithOtherHardMacro(hard_macro, hard_macros)) {
-        produced_overlap = true;
-      }
+    if (boundary == L || boundary == R) {
+      cluster_box.moveDelta(distance, 0);
+    } else if (boundary == T || boundary == B) {
+      cluster_box.moveDelta(0, distance);
     }
 
-    if (produced_overlap) {
+    // Check based on the shape of the macro cluster to avoid iterating each
+    // of its HardMacros.
+    if (overlapsWithHardMacro(cluster_box, hard_macros)
+        || overlapsWithIOBlockage(cluster_box, boundary)) {
       // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
@@ -6824,30 +6835,28 @@ void BoundaryPusher::moveHardMacro(HardMacro* hard_macro,
   }
 }
 
-bool BoundaryPusher::overlapsWithOtherHardMacro(
-    HardMacro* hard_macro,
-    const std::vector<HardMacro*>& same_cluster_hard_macros)
+bool BoundaryPusher::overlapsWithHardMacro(
+    const odb::Rect& cluster_box,
+    const std::vector<HardMacro*>& cluster_hard_macros)
 {
-  for (const HardMacro* other_hard_macro : hard_macros_) {
-    // Due to floating point evilness, there might exist overlap across the
-    // HardMacros inside a macro cluster so we don't consider those.
-    bool other_hard_macro_belongs_to_same_cluster = false;
+  for (const HardMacro* hard_macro : hard_macros_) {
+    bool hard_macro_belongs_to_cluster = false;
 
-    for (const HardMacro* same_cluster_hard_macro : same_cluster_hard_macros) {
-      if (other_hard_macro == same_cluster_hard_macro) {
-        other_hard_macro_belongs_to_same_cluster = true;
+    for (const HardMacro* cluster_hard_macro : cluster_hard_macros) {
+      if (hard_macro == cluster_hard_macro) {
+        hard_macro_belongs_to_cluster = true;
         break;
       }
     }
 
-    if (other_hard_macro_belongs_to_same_cluster) {
+    if (hard_macro_belongs_to_cluster) {
       continue;
     }
 
-    if (hard_macro->getXDBU() < other_hard_macro->getUXDBU()
-        && hard_macro->getYDBU() < other_hard_macro->getUYDBU()
-        && hard_macro->getUXDBU() > other_hard_macro->getXDBU()
-        && hard_macro->getUYDBU() > other_hard_macro->getYDBU()) {
+    if (cluster_box.xMin() < hard_macro->getUXDBU()
+        && cluster_box.yMin() < hard_macro->getUYDBU()
+        && cluster_box.xMax() > hard_macro->getXDBU()
+        && cluster_box.yMax() > hard_macro->getYDBU()) {
       return true;
     }
   }
@@ -6855,9 +6864,25 @@ bool BoundaryPusher::overlapsWithOtherHardMacro(
   return false;
 }
 
-bool BoundaryPusher::overlapsWithIOBlockage(HardMacro* hard_macro,
-                                            Boundary boundary)
+bool BoundaryPusher::overlapsWithIOBlockage(
+    const odb::Rect& cluster_box,
+    Boundary boundary)
 {
+  if (boundary_to_io_blockage_.find(boundary)
+      == boundary_to_io_blockage_.end()) {
+    return false;
+  }
+
+  const odb::Rect box = boundary_to_io_blockage_.at(boundary);
+
+  if (cluster_box.xMin() < box.xMax()
+      && cluster_box.yMin() < box.yMax()
+      && cluster_box.xMax() > box.xMin()
+      && cluster_box.yMax() > box.yMin()) {
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace mpl2

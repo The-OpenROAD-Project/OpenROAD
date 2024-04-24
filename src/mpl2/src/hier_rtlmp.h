@@ -507,10 +507,11 @@ class BoundaryPusher
       bool vertical_move_allowed,
       bool horizontal_move_allowed);
   void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
-  bool overlapsWithOtherHardMacro(
-      HardMacro* hard_macro,
+  bool overlapsWithHardMacro(
+      const odb::Rect& cluster_box,
       const std::vector<HardMacro*>& cluster_hard_macros);
-  bool overlapsWithIOBlockage(HardMacro* hard_macro, Boundary boundary);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box,
+                                          Boundary boundary);
 
   Cluster* root_;
   odb::dbBlock* block_;
