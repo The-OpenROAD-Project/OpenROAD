@@ -287,9 +287,6 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qt5-default
     fi
-
-    # need the strip "hack" above to run on docker
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
 
 _installRHELCleanUp() {
