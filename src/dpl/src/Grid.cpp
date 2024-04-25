@@ -465,8 +465,8 @@ void Opendp::visitCellPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : grid_.gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
+    int x_start = padded ? grid_.gridPaddedX(&cell) : grid_.gridX(&cell);
+    int x_end = padded ? grid_.gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
     int y_start = grid_.gridY(&cell);
     int y_end = grid_.gridEndY(&cell);
     auto src_gmk = grid_.getGridMapKey(&cell);
@@ -546,8 +546,8 @@ void Opendp::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : grid_.gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
+    int x_start = padded ? grid_.gridPaddedX(&cell) : grid_.gridX(&cell);
+    int x_end = padded ? grid_.gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
     int y_start = grid_.gridY(&cell);
     debugPrint(logger_,
                DPL,
@@ -783,7 +783,7 @@ void Opendp::erasePixel(Cell* cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
     auto gmk = grid_.getGridMapKey(cell);
-    int x_end = gridPaddedEndX(cell);
+    int x_end = grid_.gridPaddedEndX(cell);
     int y_end = grid_.gridEndY(cell);
     debugPrint(logger_,
                DPL,
@@ -813,7 +813,7 @@ void Opendp::erasePixel(Cell* cell)
         ++layer_y_end;
       }
 
-      for (int x = gridPaddedX(cell); x < x_end; x++) {
+      for (int x = grid_.gridPaddedX(cell); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = grid_.gridPixel(target_grid_info.getGridIndex(), x, y);
           if (nullptr == pixel) {

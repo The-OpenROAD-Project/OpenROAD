@@ -551,9 +551,9 @@ int Grid::gridX(const Cell* cell) const
   return gridX(cell->x_);
 }
 
-int Opendp::gridPaddedX(const Cell* cell) const
+int Grid::gridPaddedX(const Cell* cell) const
 {
-  return grid_.gridX(cell->x_ - padding_->padLeft(cell) * grid_.getSiteWidth());
+  return gridX(cell->x_ - padding_->padLeft(cell) * getSiteWidth());
 }
 
 int Opendp::getRowCount(const Cell* cell) const
@@ -712,9 +712,9 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
   cell->y_ = y * grid_.getRowHeight(cell);
 }
 
-int Opendp::gridPaddedEndX(const Cell* cell) const
+int Grid::gridPaddedEndX(const Cell* cell) const
 {
-  const int site_width = grid_.getSiteWidth();
+  const int site_width = getSiteWidth();
   return divCeil(
       cell->x_ + cell->width_ + padding_->padRight(cell) * site_width,
       site_width);

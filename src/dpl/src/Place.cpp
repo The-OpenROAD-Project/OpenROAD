@@ -666,9 +666,9 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
                       + distChange(cell2, cell1->x_, cell1->y_);
 
     if (dist_change < 0) {
-      int grid_x1 = gridPaddedX(cell2);
+      int grid_x1 = grid_.gridPaddedX(cell2);
       int grid_y1 = grid_.gridY(cell2);
-      int grid_x2 = gridPaddedX(cell1);
+      int grid_x2 = grid_.gridPaddedX(cell1);
       int grid_y2 = grid_.gridY(cell1);
 
       erasePixel(cell1);
