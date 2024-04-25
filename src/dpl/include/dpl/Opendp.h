@@ -94,6 +94,7 @@ class DplObserver;
 class Grid;
 class GridInfo;
 class Padding;
+class PixelPt;
 
 using bgPoint
     = boost::geometry::model::d2::point_xy<int, boost::geometry::cs::cartesian>;
@@ -162,28 +163,7 @@ struct Group
   double util = 0.0;
 };
 
-struct Pixel
-{
-  Cell* cell;
-  Group* group_;
-  double util;
-  dbOrientType orient_;
-  bool is_valid;     // false for dummy cells
-  bool is_hopeless;  // too far from sites for diamond search
-  dbSite* site;      // site that this pixel is
-};
-
 ////////////////////////////////////////////////////////////////
-
-// Return value for grid searches.
-class PixelPt
-{
- public:
-  PixelPt() = default;
-  PixelPt(Pixel* pixel, int grid_x, int grid_y);
-  Pixel* pixel = nullptr;
-  Point pt;  // grid locataion
-};
 
 class Opendp
 {

@@ -43,6 +43,27 @@
 
 namespace dpl {
 
+struct Pixel
+{
+  Cell* cell;
+  Group* group_;
+  double util;
+  dbOrientType orient_;
+  bool is_valid;     // false for dummy cells
+  bool is_hopeless;  // too far from sites for diamond search
+  dbSite* site;      // site that this pixel is
+};
+
+// Return value for grid searches.
+class PixelPt
+{
+ public:
+  PixelPt() = default;
+  PixelPt(Pixel* pixel, int grid_x, int grid_y);
+  Pixel* pixel = nullptr;
+  Point pt;  // grid locataion
+};
+
 class GridInfo
 {
  public:
