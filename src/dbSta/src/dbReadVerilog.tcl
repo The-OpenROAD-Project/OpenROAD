@@ -44,29 +44,25 @@ proc read_verilog { filename } {
 sta::define_cmd_args "link_design" {[top_cell_name][hier]}
 proc link_design { {top_cell_name ""} {hier ""}} {
     variable current_design_name
-    if { $hier == "-hier" } {
-	set hierarchy true
+    if {$hier == "-hier"} {
+        set hierarchy true
     } else {
-	set hierarchy false
+        set hierarchy false
     }
-    if { $top_cell_name == "" } {
-	if { $current_design_name == "" } {
-	    utl::error ORD 2009 "missing top_cell_name argument and no current_design."
-	    return 0
-	} else {
-	    set top_cell_name $current_design_name
-	}
+    if {$top_cell_name == ""} {
+        if {$current_design_name == ""} {
+            utl::error ORD 2009 "missing top_cell_name argument\
+             and no current_design."
+            return 0
+        } else {
+            set top_cell_name $current_design_name
+        }
     }
-    if { ![ord::db_has_tech] } {
-	utl::error ORD 2010 "no technology has been read."
+    if {![ord::db_has_tech]} {
+        utl::error ORD 2010 "no technology has been read."
     }
     ord::link_design_db_cmd $top_cell_name $hierarchy
 }
-
-
-
-
-
 
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
 					  [-remove_cells cells] filename}
@@ -75,11 +71,10 @@ sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
 # that is in the same file.
 proc write_verilog { args } {
     sta::parse_key_args "write_verilog" args keys {-remove_cells} \
-	flags {-sort -include_pwr_gnd}
-
+        flags {-sort -include_pwr_gnd}
     set remove_cells {}
-    if { [info exists keys(-remove_cells)] } {
-	set remove_cells [sta::parse_cell_arg $keys(-remove_cells)]
+    if {[info exists keys(-remove_cells)]} {
+        set remove_cells [sta::parse_cell_arg $keys(-remove_cells)]
     }
     set sort [info exists flags(-sort)]
     set include_pwr_gnd [info exists flags(-include_pwr_gnd)]
