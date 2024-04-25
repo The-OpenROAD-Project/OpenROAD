@@ -378,11 +378,11 @@ void Verilog2db::makeDbModule(
           dbIoType io_type = staToDb(network_->direction(port));
           bmodterm->setIoType(io_type);
           debugPrint(logger_,
-               utl::ODB,
-               "dbReadVerilog",
-               1,
-               "Created module bterm {} ",
-                     bmodterm -> getName());
+                     utl::ODB,
+                     "dbReadVerilog",
+                     1,
+                     "Created module bterm {} ",
+                     bmodterm->getName());
         }
       }
       // make the instance iterms
@@ -399,7 +399,7 @@ void Verilog2db::makeDbModule(
                    "dbReadVerilog",
                    1,
                    "Created module iterm {} ",
-                   moditerm -> getName());
+                   moditerm->getName());
       }
     }
   }
