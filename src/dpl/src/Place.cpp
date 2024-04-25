@@ -349,8 +349,8 @@ void Opendp::place()
 
 bool Opendp::cellFitsInCore(Cell* cell)
 {
-  return gridPaddedWidth(cell) <= grid_.getRowSiteCount()
-         && gridHeight(cell) <= grid_.getRowCount();
+  return grid_.gridPaddedWidth(cell) <= grid_.getRowSiteCount()
+         && grid_.gridHeight(cell) <= grid_.getRowCount();
 }
 
 void Opendp::placeGroups2()
@@ -604,7 +604,7 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
              pixel_pt.pt.getY(),
              pixel_pt.pixel->site->getName());
   if (pixel_pt.pixel) {
-    paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
+    grid_.paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     if (debug_observer_) {
       debug_observer_->placeInstance(cell->db_inst_);
     }
@@ -623,7 +623,7 @@ void Opendp::shiftMove(Cell* cell)
   int grid_index = grid_info.getGridIndex();
   // magic number alert
   int boundary_margin = 3;
-  int margin_width = gridPaddedWidth(cell) * boundary_margin;
+  int margin_width = grid_.gridPaddedWidth(cell) * boundary_margin;
   std::set<Cell*> region_cells;
   for (int x = grid_x - margin_width; x < grid_x + margin_width; x++) {
     for (int y = grid_y - boundary_margin; y < grid_y + boundary_margin; y++) {
@@ -673,8 +673,8 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 
       grid_.erasePixel(cell1);
       grid_.erasePixel(cell2);
-      paintPixel(cell1, grid_x1, grid_y1);
-      paintPixel(cell2, grid_x2, grid_y2);
+      grid_.paintPixel(cell1, grid_x1, grid_y1);
+      grid_.paintPixel(cell2, grid_x2, grid_y2);
       return true;
     }
   }
@@ -706,7 +706,7 @@ bool Opendp::refineMove(Cell* cell)
 
     if (dist_change < 0) {
       grid_.erasePixel(cell);
-      paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
+      grid_.paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
       return true;
     }
   }
@@ -891,14 +891,14 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
              x > bin_x ? "-" : "+",
              x > bin_x ? bin_x : bin_x + bin_search_width_ - 1,
              bin_y);
-  int x_end = bin_x + gridPaddedWidth(cell);
+  int x_end = bin_x + grid_.gridPaddedWidth(cell);
   int row_height = grid_.getRowHeight(cell);
   auto grid_info = grid_.infoMap(grid_.getGridMapKey(cell));
   if (bin_y >= grid_info.getRowCount()) {
     return PixelPt();
   }
 
-  int height = gridHeight(cell);
+  int height = grid_.gridHeight(cell);
   int y_end = bin_y + height;
 
   if (debug_observer_) {
@@ -1338,7 +1338,7 @@ void Opendp::legalCellPos(dbInst* db_inst)
   const Point legal_grid_pt
       = Point(grid_.gridX(new_pos.getX()), grid_.gridY(new_pos.getY(), &cell));
   // Transform position on real position
-  setGridPaddedLoc(&cell, legal_grid_pt.getX(), legal_grid_pt.getY());
+  grid_.setGridPaddedLoc(&cell, legal_grid_pt.getX(), legal_grid_pt.getY());
   // Set position of cell on db
   const Rect core = grid_.getCore();
   db_inst->setLocation(core.xMin() + cell.x_, core.yMin() + cell.y_);

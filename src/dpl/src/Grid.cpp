@@ -870,20 +870,20 @@ int Grid::map_ycoordinates(int source_grid_coordinate,
   return divCeil(src_height, target_step);
 }
 
-void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
+void Grid::paintPixel(Cell* cell, int grid_x, int grid_y)
 {
   assert(!cell->is_placed_);
   int x_end = grid_x + gridPaddedWidth(cell);
   int grid_height = gridHeight(cell);
   int y_end = grid_y + grid_height;
-  GridMapKey gmk = grid_.getGridMapKey(cell);
-  GridInfo grid_info = grid_.getInfoMap().at(gmk);
+  GridMapKey gmk = getGridMapKey(cell);
+  GridInfo grid_info = getInfoMap().at(gmk);
   const int index_in_grid = gmk.grid_index;
   setGridPaddedLoc(cell, grid_x, grid_y);
   cell->is_placed_ = true;
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
-      Pixel* pixel = grid_.gridPixel(index_in_grid, x, y);
+      Pixel* pixel = gridPixel(index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(
             DPL, 13, "Cannot paint grid because it is already occupied.");
@@ -894,14 +894,14 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  for (const auto& layer : grid_.getInfoMap()) {
+  for (const auto& layer : getInfoMap()) {
     if (layer.first == gmk) {
       continue;
     }
     int layer_x = grid_x;
     int layer_x_end = x_end;
-    int layer_y = grid_.map_ycoordinates(grid_y, gmk, layer.first, true);
-    int layer_y_end = grid_.map_ycoordinates(y_end, gmk, layer.first, false);
+    int layer_y = map_ycoordinates(grid_y, gmk, layer.first, true);
+    int layer_y_end = map_ycoordinates(y_end, gmk, layer.first, false);
     if (layer_x_end == layer_x) {
       ++layer_x_end;
     }
@@ -922,14 +922,14 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
-        Pixel* pixel = grid_.gridPixel(layer.second.getGridIndex(), x, y);
+        Pixel* pixel = gridPixel(layer.second.getGridIndex(), x, y);
         if (pixel && pixel->cell) {
           // Checks that the row heights of the found cell match the row
           // height of this layer. If they don't, it means that this pixel is
           // partially filled by a single-height or shorter cell, which is
           // allowed. However, if they do match, it means that we are trying
           // to overwrite a double-height cell placement, which is an error.
-          auto candidate_grid_key = grid_.getGridMapKey(pixel->cell);
+          auto candidate_grid_key = getGridMapKey(pixel->cell);
           if (candidate_grid_key == layer.first) {
             // Occupied by a multi-height cell this should not happen.
             logger_->error(DPL,
@@ -952,7 +952,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  cell->orient_ = grid_.gridPixel(index_in_grid, grid_x, grid_y)->orient_;
+  cell->orient_ = gridPixel(index_in_grid, grid_x, grid_y)->orient_;
 }
 
 }  // namespace dpl

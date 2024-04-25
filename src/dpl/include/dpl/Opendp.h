@@ -222,7 +222,11 @@ class Grid
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   GridInfo getGridInfo(const Cell* cell) const;
+  int gridPaddedWidth(const Cell* cell) const;
+  int gridHeight(const Cell* cell) const;
+  void setGridPaddedLoc(Cell* cell, int x, int y) const;
 
+  void paintPixel(Cell* cell, int grid_x, int grid_y);
   void erasePixel(Cell* cell);
   void visitCellPixels(Cell& cell,
                        bool padded,
@@ -583,7 +587,6 @@ class Opendp
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
-  void paintPixel(Cell* cell, int grid_x, int grid_y);
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -618,14 +621,11 @@ class Opendp
   // Cell initial location wrt core origin.
 
   int getRowCount(const Cell* cell) const;
-  int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
   int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  int gridHeight(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;

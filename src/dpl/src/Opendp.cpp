@@ -480,9 +480,9 @@ bool Opendp::isBlock(const Cell* cell)
   return type == dbMasterType::BLOCK;
 }
 
-int Opendp::gridPaddedWidth(const Cell* cell) const
+int Grid::gridPaddedWidth(const Cell* cell) const
 {
-  return divCeil(padding_->paddedWidth(cell), grid_.getSiteWidth());
+  return divCeil(padding_->paddedWidth(cell), getSiteWidth());
 }
 
 int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
@@ -508,9 +508,9 @@ int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
   return y_coordinate * grid_info.getSitesTotalHeight();
 }
 
-int Opendp::gridHeight(const Cell* cell) const
+int Grid::gridHeight(const Cell* cell) const
 {
-  int row_height = grid_.getRowHeight(cell);
+  int row_height = getRowHeight(cell);
   return std::max(1, divCeil(cell->height_, row_height));
 }
 
@@ -681,11 +681,11 @@ int Grid::gridY(const int y, const Cell* cell) const
   return y / getRowHeight(cell);
 }
 
-void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
+void Grid::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
-  cell->x_ = (x + padding_->padLeft(cell)) * grid_.getSiteWidth();
+  cell->x_ = (x + padding_->padLeft(cell)) * getSiteWidth();
   if (cell->isHybrid()) {
-    auto grid_info = grid_.getInfoMap().at(grid_.getGridMapKey(cell));
+    auto grid_info = getInfoMap().at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
     const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();
@@ -709,7 +709,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
     }
     return;
   }
-  cell->y_ = y * grid_.getRowHeight(cell);
+  cell->y_ = y * getRowHeight(cell);
 }
 
 int Grid::gridPaddedEndX(const Cell* cell) const
