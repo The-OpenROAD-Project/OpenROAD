@@ -1850,4 +1850,20 @@ void dbWire::destroy(dbWire* wire_)
   block->_wire_tbl->destroy(wire);
 }
 
+void dbWire::getRawWireData(std::vector<int>& data,
+                            std::vector<unsigned char>& op_codes)
+{
+  _dbWire* wire = (_dbWire*) this;
+  data = wire->_data;
+  op_codes = wire->_opcodes;
+}
+
+void dbWire::setRawWireData(const std::vector<int>& data,
+                            const std::vector<unsigned char>& op_codes)
+{
+  _dbWire* wire = (_dbWire*) this;
+  wire->_data = data;
+  wire->_opcodes = op_codes;
+}
+
 }  // namespace odb
