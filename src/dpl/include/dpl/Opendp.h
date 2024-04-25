@@ -112,18 +112,6 @@ struct Master
   bool is_multi_row = false;
 };
 
-class HybridSiteInfo
-{
- public:
-  HybridSiteInfo(int index, dbSite* site) : index_(index), site_(site) {}
-  int getIndex() const { return index_; }
-  const dbSite* getSite() const { return site_; }
-
- private:
-  const int index_;
-  const dbSite* site_;
-};
-
 struct Cell
 {
   const char* name() const;
