@@ -488,7 +488,8 @@ class HierRTLMP
 class Pusher
 {
  public:
-  Pusher(Cluster* root,
+  Pusher(utl::Logger* logger,
+         Cluster* root,
          odb::dbBlock* block,
          const std::map<Boundary, Rect>& boundary_to_io_blockage);
 
@@ -501,15 +502,17 @@ class Pusher
       const std::map<Boundary, int>& boundaries_distance);
   void fetchMacroClusters(Cluster* parent,
                           std::vector<Cluster*>& macro_clusters);
-  std::map<Boundary, int> getDistanceToCloseBoundaries(
-      Cluster* macro_cluster,
-      bool vertical_move_allowed,
-      bool horizontal_move_allowed);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster);
   void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
+  void moveMacroClusterBox(odb::Rect& cluster_box,
+                           Boundary boundary,
+                           const int distance);
   bool overlapsWithHardMacro(
       const odb::Rect& cluster_box,
       const std::vector<HardMacro*>& cluster_hard_macros);
   bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
+
+  utl::Logger* logger_;
 
   Cluster* root_;
   odb::dbBlock* block_;
