@@ -86,11 +86,13 @@ using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
-struct Pixel;
-struct Group;
 struct Cell;
+struct Group;
+struct Pixel;
+
 class DplObserver;
 class Grid;
+class Padding;
 
 using bgPoint
     = boost::geometry::model::d2::point_xy<int, boost::geometry::cs::cartesian>;
@@ -99,35 +101,6 @@ using bgBox = boost::geometry::model::box<bgPoint>;
 using RtreeBox
     = boost::geometry::index::rtree<bgBox,
                                     boost::geometry::index::quadratic<16>>;
-
-using InstPaddingMap = map<dbInst*, pair<int, int>>;
-using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
-
-class Padding
-{
- public:
-  int padGlobalLeft() const { return pad_left_; }
-  int padGlobalRight() const { return pad_right_; }
-
-  void setPaddingGlobal(int left, int right);
-  void setPadding(dbInst* inst, int left, int right);
-  void setPadding(dbMaster* master, int left, int right);
-  bool havePadding() const;
-
-  // Find instance/master/global padding value for an instance.
-  int padLeft(dbInst* inst) const;
-  int padLeft(const Cell* cell) const;
-  int padRight(dbInst* inst) const;
-  int padRight(const Cell* cell) const;
-  bool isPaddedType(dbInst* inst) const;
-  int paddedWidth(const Cell* cell) const;
-
- private:
-  int pad_left_ = 0;
-  int pad_right_ = 0;
-  InstPaddingMap inst_padding_map_;
-  MasterPaddingMap master_padding_map_;
-};
 
 class GridInfo
 {
@@ -300,11 +273,11 @@ class Opendp
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
   // Global padding.
-  int padGlobalLeft() const { return padding_->padGlobalLeft(); }
-  int padGlobalRight() const { return padding_->padGlobalRight(); }
+  int padGlobalLeft() const;
+  int padGlobalRight() const;
   // Find instance/master/global padding value for an instance.
-  int padLeft(dbInst* inst) const { return padding_->padLeft(inst); }
-  int padRight(dbInst* inst) const { return padding_->padRight(inst); }
+  int padLeft(dbInst* inst) const;
+  int padRight(dbInst* inst) const;
 
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,

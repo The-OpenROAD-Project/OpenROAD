@@ -49,6 +49,7 @@
 
 #include "DplObserver.h"
 #include "Grid.h"
+#include "Padding.h"
 #include "dpl/OptMirror.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -145,130 +146,6 @@ bool Cell::isStdCell() const
   }
   // gcc warniing
   return false;
-}
-
-////////////////////////////////////////////////////////////////
-
-void Padding::setPaddingGlobal(int left, int right)
-{
-  pad_left_ = left;
-  pad_right_ = right;
-}
-
-void Padding::setPadding(dbInst* inst, int left, int right)
-{
-  inst_padding_map_[inst] = {left, right};
-}
-
-void Padding::setPadding(dbMaster* master, int left, int right)
-{
-  master_padding_map_[master] = {left, right};
-}
-
-bool Padding::havePadding() const
-{
-  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
-         || !inst_padding_map_.empty();
-}
-
-bool Padding::isPaddedType(dbInst* inst) const
-{
-  dbMasterType type = inst->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-      return true;
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
-}
-
-int Padding::padLeft(const Cell* cell) const
-{
-  return padLeft(cell->db_inst_);
-}
-
-int Padding::padLeft(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.first;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.first;
-    }
-    return pad_left_;
-  }
-  return 0;
-}
-
-int Padding::padRight(const Cell* cell) const
-{
-  return padRight(cell->db_inst_);
-}
-
-int Padding::padRight(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.second;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.second;
-    }
-    return pad_right_;
-  }
-  return 0;
-}
-
-int Padding::paddedWidth(const Cell* cell) const
-{
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * cell->siteWidth();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -768,6 +645,25 @@ int Opendp::getRowHeight() const
 int Opendp::getSiteWidth() const
 {
   return grid_->getSiteWidth();
+}
+int Opendp::padGlobalLeft() const
+{
+  return padding_->padGlobalLeft();
+}
+
+int Opendp::padGlobalRight() const
+{
+  return padding_->padGlobalRight();
+}
+
+int Opendp::padLeft(dbInst* inst) const
+{
+  return padding_->padLeft(inst);
+}
+
+int Opendp::padRight(dbInst* inst) const
+{
+  return padding_->padRight(inst);
 }
 
 int divRound(int dividend, int divisor)
