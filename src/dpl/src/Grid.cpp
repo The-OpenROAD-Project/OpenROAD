@@ -266,14 +266,18 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
 
 void Opendp::initGrid()
 {
-  grid_.initGrid(db_, block_, max_displacement_x_, max_displacement_y_);
+  grid_.initGrid(
+      db_, block_, padding_.get(), max_displacement_x_, max_displacement_y_);
 }
 
 void Grid::initGrid(dbDatabase* db,
                     dbBlock* block,
+                    Padding* padding,
                     int max_displacement_x,
                     int max_displacement_y)
 {
+  padding_ = padding;
+
   // the number of layers in the grid is the number of unique row heights
   // the map key is the row height, the value is a pair of row count and site
   // count

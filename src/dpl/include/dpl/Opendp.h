@@ -99,6 +99,35 @@ using RtreeBox
     = boost::geometry::index::rtree<bgBox,
                                     boost::geometry::index::quadratic<16>>;
 
+using InstPaddingMap = map<dbInst*, pair<int, int>>;
+using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
+
+class Padding
+{
+ public:
+  int padGlobalLeft() const { return pad_left_; }
+  int padGlobalRight() const { return pad_right_; }
+
+  void setPaddingGlobal(int left, int right);
+  void setPadding(dbInst* inst, int left, int right);
+  void setPadding(dbMaster* master, int left, int right);
+  bool havePadding() const;
+
+  // Find instance/master/global padding value for an instance.
+  int padLeft(dbInst* inst) const;
+  int padLeft(const Cell* cell) const;
+  int padRight(dbInst* inst) const;
+  int padRight(const Cell* cell) const;
+  bool isPaddedType(dbInst* inst) const;
+  int paddedWidth(const Cell* cell) const;
+
+ private:
+  int pad_left_ = 0;
+  int pad_right_ = 0;
+  InstPaddingMap inst_padding_map_;
+  MasterPaddingMap master_padding_map_;
+};
+
 class GridInfo
 {
  public:
@@ -173,6 +202,7 @@ class Grid
   void initBlock(dbBlock* block) { core_ = block->getCoreArea(); }
   void initGrid(dbDatabase* db,
                 dbBlock* block,
+                Padding* padding,
                 int max_displacement_x,
                 int max_displacement_y);
 
@@ -273,6 +303,7 @@ class Grid
   void initGridLayersMap(dbDatabase* db, dbBlock* block);
 
   Logger* logger_ = nullptr;
+  Padding* padding_ = nullptr;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<const GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;
@@ -293,9 +324,6 @@ class Grid
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
-
-using InstPaddingMap = map<dbInst*, pair<int, int>>;
-using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
 
 struct Master
 {
@@ -320,6 +348,7 @@ struct Cell
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
   bool isStdCell() const;
+  int siteWidth() const;
 
   dbInst* db_inst_ = nullptr;
   int x_ = 0;  // lower left wrt core DBU
@@ -415,11 +444,11 @@ class Opendp
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
   // Global padding.
-  int padGlobalLeft() const { return pad_left_; }
-  int padGlobalRight() const { return pad_right_; }
+  int padGlobalLeft() const { return padding_->padGlobalLeft(); }
+  int padGlobalRight() const { return padding_->padGlobalRight(); }
   // Find instance/master/global padding value for an instance.
-  int padRight(dbInst* inst) const;
-  int padLeft(dbInst* inst) const;
+  int padLeft(dbInst* inst) const { return padding_->padLeft(inst); }
+  int padRight(dbInst* inst) const { return padding_->padRight(inst); }
 
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
@@ -578,7 +607,6 @@ class Opendp
                 int* x,
                 int* y) const;
   int rectDist(const Cell* cell, const Rect* rect) const;
-  bool havePadding() const;
   void checkOneSiteDbMaster();
   void deleteGrid();
   // Cell initial location wrt core origin.
@@ -598,10 +626,6 @@ class Opendp
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);
-  int paddedWidth(const Cell* cell) const;
-  bool isPaddedType(dbInst* inst) const;
-  int padLeft(const Cell* cell) const;
-  int padRight(const Cell* cell) const;
   int disp(const Cell* cell) const;
   // Place fillers
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
@@ -624,10 +648,7 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
-  int pad_left_ = 0;
-  int pad_right_ = 0;
-  InstPaddingMap inst_padding_map_;
-  MasterPaddingMap master_padding_map_;
+  std::unique_ptr<Padding> padding_;
 
   vector<Cell> cells_;
   vector<Group> groups_;

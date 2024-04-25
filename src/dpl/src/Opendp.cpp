@@ -74,6 +74,197 @@ int64_t Cell::area() const
   return int64_t(master->getWidth()) * master->getHeight();
 }
 
+int Cell::siteWidth() const
+{
+  if (db_inst_) {
+    auto site =  db_inst_->getMaster()->getSite();
+    if (site) {
+      return db_inst_->getMaster()->getSite()->getWidth();
+    }
+  }
+  return 0;
+}
+
+bool Cell::isStdCell() const
+{
+  if (db_inst_ == nullptr) {
+    return false;
+  }
+  dbMasterType type = db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      return true;
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+    case dbMasterType::NONE:
+      return false;
+  }
+  // gcc warniing
+  return false;
+}
+
+////////////////////////////////////////////////////////////////
+
+void Padding::setPaddingGlobal(int left, int right)
+{
+  pad_left_ = left;
+  pad_right_ = right;
+}
+
+void Padding::setPadding(dbInst* inst, int left, int right)
+{
+  inst_padding_map_[inst] = {left, right};
+}
+
+void Padding::setPadding(dbMaster* master, int left, int right)
+{
+  master_padding_map_[master] = {left, right};
+}
+
+bool Padding::havePadding() const
+{
+  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
+         || !inst_padding_map_.empty();
+}
+
+bool Padding::isPaddedType(dbInst* inst) const
+{
+  dbMasterType type = inst->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+      return true;
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+    case dbMasterType::NONE:
+      return false;
+  }
+  // gcc warniing
+  return false;
+}
+
+int Padding::padLeft(const Cell* cell) const
+{
+  return padLeft(cell->db_inst_);
+}
+
+int Padding::padLeft(dbInst* inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end()) {
+      return itr1->second.first;
+    }
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end()) {
+      return itr2->second.first;
+    }
+    return pad_left_;
+  }
+  return 0;
+}
+
+int Padding::padRight(const Cell* cell) const
+{
+  return padRight(cell->db_inst_);
+}
+
+int Padding::padRight(dbInst* inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end()) {
+      return itr1->second.second;
+    }
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end()) {
+      return itr2->second.second;
+    }
+    return pad_right_;
+  }
+  return 0;
+}
+
+int Padding::paddedWidth(const Cell* cell) const
+{
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * cell->siteWidth();
+}
+
 ////////////////////////////////////////////////////////////////
 
 bool Opendp::isFixed(const Cell* cell) const
@@ -101,6 +292,7 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
+  padding_ = std::make_unique<Padding>();
   grid_.init(logger);
 }
 
@@ -112,24 +304,17 @@ void Opendp::initBlock()
 
 void Opendp::setPaddingGlobal(int left, int right)
 {
-  pad_left_ = left;
-  pad_right_ = right;
+  padding_->setPaddingGlobal(left, right);
 }
 
 void Opendp::setPadding(dbInst* inst, int left, int right)
 {
-  inst_padding_map_[inst] = std::make_pair(left, right);
+  padding_->setPadding(inst, left, right);
 }
 
 void Opendp::setPadding(dbMaster* master, int left, int right)
 {
-  master_padding_map_[master] = std::make_pair(left, right);
-}
-
-bool Opendp::havePadding() const
-{
-  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
-         || !inst_padding_map_.empty();
+  padding_->setPadding(master, left, right);
 }
 
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
@@ -276,7 +461,7 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
   cell->db_inst_->getLocation(loc_x, loc_y);
   loc_x -= grid_.getCore().xMin();
   if (padded) {
-    loc_x -= padLeft(cell) * grid_.getSiteWidth();
+    loc_x -= padding_->padLeft(cell) * grid_.getSiteWidth();
   }
   loc_y -= grid_.getCore().yMin();
   return Point(loc_x, loc_y);
@@ -288,115 +473,6 @@ int Opendp::disp(const Cell* cell) const
   return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
 }
 
-bool Opendp::isPaddedType(dbInst* inst) const
-{
-  dbMasterType type = inst->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-      return true;
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
-}
-
-bool Cell::isStdCell() const
-{
-  if (db_inst_ == nullptr) {
-    return false;
-  }
-  dbMasterType type = db_inst_->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      return true;
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
-}
-
 /* static */
 bool Opendp::isBlock(const Cell* cell)
 {
@@ -404,56 +480,9 @@ bool Opendp::isBlock(const Cell* cell)
   return type == dbMasterType::BLOCK;
 }
 
-int Opendp::padLeft(const Cell* cell) const
-{
-  return padLeft(cell->db_inst_);
-}
-
-int Opendp::padLeft(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.first;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.first;
-    }
-    return pad_left_;
-  }
-  return 0;
-}
-
-int Opendp::padRight(const Cell* cell) const
-{
-  return padRight(cell->db_inst_);
-}
-
-int Opendp::padRight(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.second;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.second;
-    }
-    return pad_right_;
-  }
-  return 0;
-}
-
-int Opendp::paddedWidth(const Cell* cell) const
-{
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * grid_.getSiteWidth();
-}
-
 int Opendp::gridPaddedWidth(const Cell* cell) const
 {
-  return divCeil(paddedWidth(cell), grid_.getSiteWidth());
+  return divCeil(padding_->paddedWidth(cell), grid_.getSiteWidth());
 }
 
 int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
@@ -487,12 +516,12 @@ int Opendp::gridHeight(const Cell* cell) const
 
 int64_t Opendp::paddedArea(const Cell* cell) const
 {
-  return int64_t(paddedWidth(cell)) * cell->height_;
+  return int64_t(padding_->paddedWidth(cell)) * cell->height_;
 }
 
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  return divRound(paddedWidth(cell), grid_.getSiteWidth());
+  return divRound(padding_->paddedWidth(cell), grid_.getSiteWidth());
 }
 
 // Callers should probably be using gridHeight.
@@ -524,7 +553,7 @@ int Grid::gridX(const Cell* cell) const
 
 int Opendp::gridPaddedX(const Cell* cell) const
 {
-  return grid_.gridX(cell->x_ - padLeft(cell) * grid_.getSiteWidth());
+  return grid_.gridX(cell->x_ - padding_->padLeft(cell) * grid_.getSiteWidth());
 }
 
 int Opendp::getRowCount(const Cell* cell) const
@@ -654,7 +683,7 @@ int Grid::gridY(const int y, const Cell* cell) const
 
 void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
-  cell->x_ = (x + padLeft(cell)) * grid_.getSiteWidth();
+  cell->x_ = (x + padding_->padLeft(cell)) * grid_.getSiteWidth();
   if (cell->isHybrid()) {
     auto grid_info = grid_.getInfoMap().at(grid_.getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
@@ -686,8 +715,9 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
 int Opendp::gridPaddedEndX(const Cell* cell) const
 {
   const int site_width = grid_.getSiteWidth();
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width,
-                 site_width);
+  return divCeil(
+      cell->x_ + cell->width_ + padding_->padRight(cell) * site_width,
+      site_width);
 }
 
 int Grid::gridEndX(const Cell* cell) const

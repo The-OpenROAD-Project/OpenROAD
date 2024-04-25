@@ -408,13 +408,15 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
     return false;
   }
 
-  bool padded = havePadding() && isOverlapPadded(cell1, cell2);
+  bool padded = padding_->havePadding() && isOverlapPadded(cell1, cell2);
   Point ll1 = initialLocation(cell1, padded);
   Point ll2 = initialLocation(cell2, padded);
   Point ur1, ur2;
   if (padded) {
-    ur1 = Point(ll1.getX() + paddedWidth(cell1), ll1.getY() + cell1->height_);
-    ur2 = Point(ll2.getX() + paddedWidth(cell2), ll2.getY() + cell2->height_);
+    ur1 = Point(ll1.getX() + padding_->paddedWidth(cell1),
+                ll1.getY() + cell1->height_);
+    ur2 = Point(ll2.getX() + padding_->paddedWidth(cell2),
+                ll2.getY() + cell2->height_);
   } else {
     ur1 = Point(ll1.getX() + cell1->width_, ll1.getY() + cell1->height_);
     ur2 = Point(ll2.getX() + cell2->width_, ll2.getY() + cell2->height_);
