@@ -185,7 +185,7 @@ class Grid
   int map_ycoordinates(int source_grid_coordinate,
                        const GridMapKey& source_grid_key,
                        const GridMapKey& target_grid_key,
-                       const bool start) const;
+                       bool start) const;
 
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   Pixel& pixel(int g, int y, int x) { return pixels_[g][y][x]; }
