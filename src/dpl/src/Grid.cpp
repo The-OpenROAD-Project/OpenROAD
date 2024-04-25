@@ -589,7 +589,7 @@ void Grid::visitCellBoundaryPixels(
 void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
-    if (isFixed(&cell)) {
+    if (cell.isFixed()) {
       grid_.visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
     }
@@ -776,12 +776,12 @@ void Opendp::groupInitPixels()
   }
 }
 
-void Opendp::erasePixel(Cell* cell)
+void Grid::erasePixel(Cell* cell)
 {
-  if (!(isFixed(cell) || !cell->is_placed_)) {
-    auto gmk = grid_.getGridMapKey(cell);
-    int x_end = grid_.gridPaddedEndX(cell);
-    int y_end = grid_.gridEndY(cell);
+  if (!(cell->isFixed() || !cell->is_placed_)) {
+    auto gmk = getGridMapKey(cell);
+    int x_end = gridPaddedEndX(cell);
+    int y_end = gridEndY(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -789,7 +789,7 @@ void Opendp::erasePixel(Cell* cell)
                "Checking cell {} isHybrid {}",
                cell->name(),
                cell->isHybrid());
-    int y_start = grid_.gridY(cell);
+    int y_start = gridY(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -800,19 +800,19 @@ void Opendp::erasePixel(Cell* cell)
                y_end);
 
     for (const auto& [target_GridMapKey, target_grid_info] :
-         grid_.getInfoMap()) {
+         getInfoMap()) {
       int layer_y_start
-          = grid_.map_ycoordinates(y_start, gmk, target_GridMapKey, true);
+          = map_ycoordinates(y_start, gmk, target_GridMapKey, true);
       int layer_y_end
-          = grid_.map_ycoordinates(y_end, gmk, target_GridMapKey, false);
+          = map_ycoordinates(y_end, gmk, target_GridMapKey, false);
 
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
       }
 
-      for (int x = grid_.gridPaddedX(cell); x < x_end; x++) {
+      for (int x = gridPaddedX(cell); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = grid_.gridPixel(target_grid_info.getGridIndex(), x, y);
+          Pixel* pixel = gridPixel(target_grid_info.getGridIndex(), x, y);
           if (nullptr == pixel) {
             continue;
           }

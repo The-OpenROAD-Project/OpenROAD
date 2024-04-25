@@ -180,7 +180,7 @@ void Opendp::makeCells()
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
       // Cell is already placed if it is FIXED.
-      cell.is_placed_ = isFixed(&cell);
+      cell.is_placed_ = cell.isFixed();
 
       Master& master = db_master_map_[db_master];
       // We only want to set this if we have multi-row cells to

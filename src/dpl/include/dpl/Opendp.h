@@ -223,6 +223,7 @@ class Grid
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   GridInfo getGridInfo(const Cell* cell) const;
 
+  void erasePixel(Cell* cell);
   void visitCellPixels(Cell& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
@@ -367,6 +368,7 @@ struct Cell
   int64_t area() const;
   bool isStdCell() const;
   int siteWidth() const;
+  bool isFixed() const;
 
   dbInst* db_inst_ = nullptr;
   int x_ = 0;  // lower left wrt core DBU
@@ -507,7 +509,6 @@ class Opendp
   void makeGroups();
   double dbuToMicrons(int64_t dbu) const;
   double dbuAreaToMicrons(int64_t dbu_area) const;
-  bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
 
@@ -582,7 +583,6 @@ class Opendp
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
-  void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
 
   // checkPlacement

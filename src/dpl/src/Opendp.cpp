@@ -85,6 +85,11 @@ int Cell::siteWidth() const
   return 0;
 }
 
+bool Cell::isFixed() const
+{
+  return !db_inst_ || db_inst_->isFixed();
+}
+
 bool Cell::isStdCell() const
 {
   if (db_inst_ == nullptr) {
@@ -267,11 +272,6 @@ int Padding::paddedWidth(const Cell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isFixed(const Cell* cell) const
-{
-  return cell == &dummy_cell_ || cell->db_inst_->isFixed();
-}
-
 bool Opendp::isMultiRow(const Cell* cell) const
 {
   auto iter = db_master_map_.find(cell->db_inst_->getMaster());
@@ -378,7 +378,7 @@ void Opendp::detailedPlacement(int max_displacement_x,
 void Opendp::updateDbInstLocations()
 {
   for (Cell& cell : cells_) {
-    if (!isFixed(&cell) && cell.isStdCell()) {
+    if (!cell.isFixed() && cell.isStdCell()) {
       dbInst* db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell.orient_) {

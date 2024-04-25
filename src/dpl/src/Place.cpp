@@ -202,7 +202,7 @@ void Opendp::prePlaceGroups()
 {
   for (Group& group : groups_) {
     for (Cell* cell : group.cells_) {
-      if (!isFixed(cell) && !cell->is_placed_) {
+      if (!cell->isFixed() && !cell->is_placed_) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
         Rect* nearest_rect = nullptr;
@@ -308,7 +308,7 @@ void Opendp::place()
   sorted_cells.reserve(cells_.size());
 
   for (Cell& cell : cells_) {
-    if (!(isFixed(&cell) || cell.inGroup() || cell.is_placed_)) {
+    if (!(cell.isFixed() || cell.inGroup() || cell.is_placed_)) {
       sorted_cells.push_back(&cell);
       if (!cellFitsInCore(&cell)) {
         logger_->error(DPL,
@@ -359,7 +359,7 @@ void Opendp::placeGroups2()
     vector<Cell*> group_cells;
     group_cells.reserve(cells_.size());
     for (Cell* cell : group.cells_) {
-      if (!isFixed(cell) && !cell->is_placed_) {
+      if (!cell->isFixed() && !cell->is_placed_) {
         group_cells.push_back(cell);
       }
     }
@@ -368,7 +368,7 @@ void Opendp::placeGroups2()
     // Place multi-row cells in each group region.
     bool multi_pass = true;
     for (Cell* cell : group_cells) {
-      if (!isFixed(cell) && !cell->is_placed_) {
+      if (!cell->isFixed() && !cell->is_placed_) {
         assert(cell->inGroup());
         if (isMultiRow(cell)) {
           multi_pass = mapMove(cell);
@@ -382,7 +382,7 @@ void Opendp::placeGroups2()
     if (multi_pass) {
       // Place single-row cells in each group region.
       for (Cell* cell : group_cells) {
-        if (!isFixed(cell) && !cell->is_placed_) {
+        if (!cell->isFixed() && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
             single_pass = mapMove(cell);
@@ -397,7 +397,7 @@ void Opendp::placeGroups2()
     if (!single_pass || !multi_pass) {
       // Erase group cells
       for (Cell* cell : group.cells_) {
-        erasePixel(cell);
+        grid_.erasePixel(cell);
       }
 
       // Determine brick placement by utilization.
@@ -549,7 +549,7 @@ int Opendp::refine()
   sorted.reserve(cells_.size());
 
   for (Cell& cell : cells_) {
-    if (!(isFixed(&cell) || cell.hold_ || cell.inGroup())) {
+    if (!(cell.isFixed() || cell.hold_ || cell.inGroup())) {
       sorted.push_back(&cell);
     }
   }
@@ -630,7 +630,7 @@ void Opendp::shiftMove(Cell* cell)
       Pixel* pixel = grid_.gridPixel(grid_index, x, y);
       if (pixel) {
         Cell* cell = pixel->cell;
-        if (cell && !isFixed(cell)) {
+        if (cell && !cell->isFixed()) {
           region_cells.insert(cell);
         }
       }
@@ -640,7 +640,7 @@ void Opendp::shiftMove(Cell* cell)
   // erase region cells
   for (Cell* around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      erasePixel(around_cell);
+      grid_.erasePixel(around_cell);
     }
   }
 
@@ -661,7 +661,7 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 {
   if (cell1 != cell2 && !cell1->hold_ && !cell2->hold_
       && cell1->width_ == cell2->width_ && cell1->height_ == cell2->height_
-      && !isFixed(cell1) && !isFixed(cell2)) {
+      && !cell1->isFixed() && !cell2->isFixed()) {
     int dist_change = distChange(cell1, cell2->x_, cell2->y_)
                       + distChange(cell2, cell1->x_, cell1->y_);
 
@@ -671,8 +671,8 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
       int grid_x2 = grid_.gridPaddedX(cell1);
       int grid_y2 = grid_.gridY(cell1);
 
-      erasePixel(cell1);
-      erasePixel(cell2);
+      grid_.erasePixel(cell1);
+      grid_.erasePixel(cell2);
       paintPixel(cell1, grid_x1, grid_y1);
       paintPixel(cell2, grid_x2, grid_y2);
       return true;
@@ -705,7 +705,7 @@ bool Opendp::refineMove(Cell* cell)
                                  pixel_pt.pt.getY() * row_height);
 
     if (dist_change < 0) {
-      erasePixel(cell);
+      grid_.erasePixel(cell);
       paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
       return true;
     }
@@ -1351,7 +1351,7 @@ void Opendp::legalCellPos(dbInst* db_inst)
 //  not in a hopeless site
 Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
 {
-  if (isFixed(cell)) {
+  if (cell->isFixed()) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
   }
 
