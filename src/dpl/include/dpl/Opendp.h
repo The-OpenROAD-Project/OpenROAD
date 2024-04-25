@@ -318,6 +318,7 @@ class Grid
   int getRowCount(int row_height) const;
 
   Rect getCore() const { return core_; }
+  bool cellFitsInCore(Cell* cell) const;
 
  private:
   int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
@@ -557,7 +558,6 @@ class Opendp
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
-  int getHybridSiteIndex(dbSite* site);
 
   Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
   Point legalGridPt(const Cell* cell,
@@ -582,7 +582,6 @@ class Opendp
   int anneal(Group* group);
   int anneal();
   int refine();
-  bool cellFitsInCore(Cell* cell);
   void setFixedGridCells();
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();

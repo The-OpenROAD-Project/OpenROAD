@@ -310,7 +310,7 @@ void Opendp::place()
   for (Cell& cell : cells_) {
     if (!(cell.isFixed() || cell.inGroup() || cell.is_placed_)) {
       sorted_cells.push_back(&cell);
-      if (!cellFitsInCore(&cell)) {
+      if (!grid_.cellFitsInCore(&cell)) {
         logger_->error(DPL,
                        15,
                        "instance {} does not fit inside the ROW core area.",
@@ -323,7 +323,7 @@ void Opendp::place()
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
     for (Cell* cell : sorted_cells) {
-      if (isMultiRow(cell) && cellFitsInCore(cell)) {
+      if (isMultiRow(cell) && grid_.cellFitsInCore(cell)) {
         debugPrint(logger_,
                    DPL,
                    "place",
@@ -337,7 +337,7 @@ void Opendp::place()
     }
   }
   for (Cell* cell : sorted_cells) {
-    if (!isMultiRow(cell) && cellFitsInCore(cell)) {
+    if (!isMultiRow(cell) && grid_.cellFitsInCore(cell)) {
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
@@ -347,10 +347,10 @@ void Opendp::place()
   // anneal();
 }
 
-bool Opendp::cellFitsInCore(Cell* cell)
+bool Grid::cellFitsInCore(Cell* cell) const
 {
-  return grid_.gridPaddedWidth(cell) <= grid_.getRowSiteCount()
-         && grid_.gridHeight(cell) <= grid_.getRowCount();
+  return gridPaddedWidth(cell) <= getRowSiteCount()
+         && gridHeight(cell) <= getRowCount();
 }
 
 void Opendp::placeGroups2()
