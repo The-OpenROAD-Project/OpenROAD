@@ -308,7 +308,7 @@ sta::define_cmd_args "repair_antennas" { diode_cell \
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
     keys {-iterations -ratio_margin} flags {}
-  if { [grt::have_routes] } {
+  if { [grt::have_routes] || [grt::have_detailed_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
       set diode_mterm "NULL"
