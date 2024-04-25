@@ -120,4 +120,4 @@ bool Cell::isStdCell() const
   return false;
 }
 
-}
+}  // namespace dpl
