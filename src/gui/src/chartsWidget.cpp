@@ -553,9 +553,14 @@ HistogramView::HistogramView(QChart* chart, QWidget* parent)
 
 void HistogramView::mousePressEvent(QMouseEvent* event)
 {
+  const auto abstract_series = chart()->series();
+  if (abstract_series.isEmpty()) {
+    return;
+  }
+
   // There's only one series for the slack histogram mode.
   QStackedBarSeries* series
-      = static_cast<QStackedBarSeries*>(chart()->series().front());
+      = static_cast<QStackedBarSeries*>(abstract_series.front());
 
   const QPointF series_value = chart()->mapToValue(event->pos(), series);
 

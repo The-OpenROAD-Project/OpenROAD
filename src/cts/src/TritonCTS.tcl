@@ -86,8 +86,6 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
                                              [-apply_ndr] \
-                                             [-insertion_delay] \
-                                             [-no_insertion_delay] \
                                              [-sink_buffer_max_cap_derate] \
                                              [-dont_use_dummy_load] \
                                              [-delay_buffer_derate] \
@@ -103,8 +101,7 @@ proc clock_tree_synthesis { args } {
           -sink_clustering_levels -tree_buf \
           -sink_buffer_max_cap_derate -delay_buffer_derate} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-           -obstruction_aware -apply_ndr -insertion_delay -no_insertion_delay \
-           -dont_use_dummy_load
+           -obstruction_aware -apply_ndr -dont_use_dummy_load
   };# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
@@ -221,12 +218,6 @@ proc clock_tree_synthesis { args } {
   }
 
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
-
-  if { [info exists flags(-no_insertion_delay)] } {
-    cts::set_insertion_delay false
-  } else {
-    cts::set_insertion_delay true
-  }
 
 
   if { [ord::get_db_block] == "NULL" } {

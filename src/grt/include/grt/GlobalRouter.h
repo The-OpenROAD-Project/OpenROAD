@@ -215,6 +215,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
+  bool haveDetailedRoutes();
   void makeNetWires() override;
   void destroyNetWires() override;
 
@@ -387,6 +388,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  void destroyNetWire(Net* net);
+  void removeWireUsage(odb::dbWire* wire);
+  void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
+  bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
 
   // db functions
