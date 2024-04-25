@@ -43,6 +43,7 @@
 #include <cmath>
 #include <limits>
 
+#include "Objects.h"
 #include "dpl/Opendp.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
@@ -674,7 +675,7 @@ void Opendp::groupInitPixels2()
           for (Rect& rect : group.regions) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
               pixel->util = 0.0;
-              pixel->cell = &dummy_cell_;
+              pixel->cell = &Cell::dummy_cell;
               pixel->is_valid = false;
             }
           }
@@ -768,7 +769,7 @@ void Opendp::groupInitPixels()
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {
-            pixel->cell = &dummy_cell_;
+            pixel->cell = &Cell::dummy_cell;
             pixel->util = 0.0;
             pixel->is_valid = false;
           }

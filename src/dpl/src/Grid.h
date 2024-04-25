@@ -43,6 +43,9 @@
 
 namespace dpl {
 
+using odb::dbOrientType;
+using odb::dbSite;
+
 struct Pixel
 {
   Cell* cell;

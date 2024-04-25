@@ -65,7 +65,6 @@ using std::map;
 using std::pair;
 using std::set;
 using std::string;
-using std::unordered_map;
 using std::vector;
 
 using utl::Logger;
@@ -73,21 +72,15 @@ using utl::Logger;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
-using odb::dbLib;
 using odb::dbMaster;
 using odb::dbMasterType;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbNet;
-using odb::dbOrientType;
-using odb::dbRow;
-using odb::dbSite;
 using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
 struct Cell;
 struct Group;
+struct Master;
 struct Pixel;
 
 class DplObserver;
@@ -96,72 +89,7 @@ class GridInfo;
 class Padding;
 class PixelPt;
 
-using bgPoint
-    = boost::geometry::model::d2::point_xy<int, boost::geometry::cs::cartesian>;
-using bgBox = boost::geometry::model::box<bgPoint>;
-
-using RtreeBox
-    = boost::geometry::index::rtree<bgBox,
-                                    boost::geometry::index::quadratic<16>>;
-
 using dbMasterSeq = vector<dbMaster*>;
-// gap -> sequence of masters to fill the gap
-using GapFillers = vector<dbMasterSeq>;
-
-struct Master
-{
-  bool is_multi_row = false;
-};
-
-struct Cell
-{
-  const char* name() const;
-  bool inGroup() const { return group_ != nullptr; }
-  int64_t area() const;
-  bool isStdCell() const;
-  int siteWidth() const;
-  bool isFixed() const;
-
-  dbInst* db_inst_ = nullptr;
-  int x_ = 0;  // lower left wrt core DBU
-  int y_ = 0;
-  dbOrientType orient_;
-  int width_ = 0;  // DBU
-  int height_ = 0;
-  bool is_placed_ = false;
-  bool hold_ = false;
-  Group* group_ = nullptr;
-  Rect* region_ = nullptr;  // group rect
-
-  bool isHybrid() const
-  {
-    dbSite* site = getSite();
-    return site ? site->isHybrid() : false;
-  }
-
-  bool isHybridParent() const
-  {
-    dbSite* site = getSite();
-    return site ? site->hasRowPattern() : false;
-  }
-
-  dbSite* getSite() const
-  {
-    if (!db_inst_ || !db_inst_->getMaster()) {
-      return nullptr;
-    }
-    return db_inst_->getMaster()->getSite();
-  }
-};
-
-struct Group
-{
-  string name;
-  vector<Rect> regions;
-  vector<Cell*> cells_;
-  Rect boundary;
-  double util = 0.0;
-};
 
 ////////////////////////////////////////////////////////////////
 
@@ -217,6 +145,18 @@ class Opendp
   void optimizeMirroring();
 
  private:
+  using bgPoint
+      = boost::geometry::model::d2::point_xy<int,
+                                             boost::geometry::cs::cartesian>;
+  using bgBox = boost::geometry::model::box<bgPoint>;
+
+  using RtreeBox
+      = boost::geometry::index::rtree<bgBox,
+                                      boost::geometry::index::quadratic<16>>;
+
+  // gap -> sequence of masters to fill the gap
+  using GapFillers = vector<dbMasterSeq>;
+
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
@@ -392,7 +332,6 @@ class Opendp
 
   // 3D pixel grid
   std::unique_ptr<Grid> grid_;
-  Cell dummy_cell_;
   RtreeBox regions_rtree;
 
   // Filler placement.

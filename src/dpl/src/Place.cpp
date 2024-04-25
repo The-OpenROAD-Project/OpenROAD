@@ -45,6 +45,7 @@
 
 #include "DplObserver.h"
 #include "Grid.h"
+#include "Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 

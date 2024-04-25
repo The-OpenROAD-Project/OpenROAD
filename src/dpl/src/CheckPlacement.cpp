@@ -39,6 +39,7 @@
 #include <limits>
 
 #include "Grid.h"
+#include "Objects.h"
 #include "Padding.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"

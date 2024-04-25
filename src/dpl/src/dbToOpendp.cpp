@@ -39,6 +39,7 @@
 #include <unordered_set>
 
 #include "Grid.h"
+#include "Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -53,6 +54,7 @@ using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbRegion;
+using odb::dbRow;
 using odb::Rect;
 
 static bool swapWidthHeight(const dbOrientType& orient);
