@@ -77,7 +77,7 @@ int64_t Cell::area() const
 int Cell::siteWidth() const
 {
   if (db_inst_) {
-    auto site =  db_inst_->getMaster()->getSite();
+    auto site = db_inst_->getMaster()->getSite();
     if (site) {
       return db_inst_->getMaster()->getSite()->getWidth();
     }

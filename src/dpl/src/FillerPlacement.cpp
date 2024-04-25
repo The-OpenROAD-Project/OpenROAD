@@ -301,7 +301,7 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
 bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
 {
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
-    && db_master->getWidth() == grid_.getSiteWidth();
+         && db_master->getWidth() == grid_.getSiteWidth();
 }
 
 }  // namespace dpl
