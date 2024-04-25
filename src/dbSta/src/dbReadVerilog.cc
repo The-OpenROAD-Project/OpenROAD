@@ -147,7 +147,6 @@ class Verilog2db
              bool hierarchy);
   void makeBlock();
   void makeDbNetlist();
-  static string makePinName(const std::string& name);
 
  protected:
   void makeDbModule(
@@ -180,6 +179,7 @@ class Verilog2db
   std::map<Cell*, dbMaster*> master_map_;
   std::map<std::string, int> uniquify_id_;  // key: module name
  private:
+  string makePinName(const std::string& name);
   bool hierarchy_ = false;
 };
 
@@ -377,6 +377,12 @@ void Verilog2db::makeDbModule(
           dbModBTerm* bmodterm = dbModBTerm::create(module, port_name.c_str());
           dbIoType io_type = staToDb(network_->direction(port));
           bmodterm->setIoType(io_type);
+          debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Created module bterm {} ",
+                     bmodterm -> getName());
         }
       }
       // make the instance iterms
@@ -388,6 +394,12 @@ void Verilog2db::makeDbModule(
         dbModITerm* moditerm
             = dbModITerm::create(modinst, pin_name_string.c_str());
         (void) moditerm;
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   1,
+                   "Created module iterm {} ",
+                   moditerm -> getName());
       }
     }
   }
