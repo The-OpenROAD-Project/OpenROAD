@@ -349,8 +349,8 @@ void Opendp::place()
 
 bool Opendp::cellFitsInCore(Cell* cell)
 {
-  return gridPaddedWidth(cell) <= row_site_count_
-         && gridHeight(cell) <= row_count_;
+  return gridPaddedWidth(cell) <= grid_.getRowSiteCount()
+         && gridHeight(cell) <= grid_.getRowCount();
 }
 
 void Opendp::placeGroups2()

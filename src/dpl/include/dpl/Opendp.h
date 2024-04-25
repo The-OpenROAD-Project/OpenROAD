@@ -205,6 +205,7 @@ class Grid
                 Padding* padding,
                 int max_displacement_x,
                 int max_displacement_y);
+  void examineRows(dbBlock* block);
 
   GridMapKey getGridMapKey(const dbSite* site) const;
   GridMapKey getGridMapKey(const Cell* cell) const;
@@ -232,6 +233,8 @@ class Grid
           void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
       const;
 
+  int getRowCount() const { return row_count_; }
+  int getRowSiteCount() const { return row_site_count_; }
   int getRowHeight() const { return row_height_; }
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
@@ -331,6 +334,9 @@ class Grid
 
   int row_height_ = 0;  // dbu
   int site_width_ = 0;  // dbu
+
+  int row_count_ = 0;
+  int row_site_count_ = 0;
 };
 
 using dbMasterSeq = vector<dbMaster*>;
@@ -488,8 +494,6 @@ class Opendp
   Rect getCore() const { return grid_.getCore(); }
   int getRowHeight() const { return grid_.getRowHeight(); }
   int getSiteWidth() const { return grid_.getSiteWidth(); }
-  int getRowCount() const { return row_count_; }
-  int getRowSiteCount() const { return row_site_count_; }
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
                               const std::vector<Cell*>& failures,
@@ -498,7 +502,6 @@ class Opendp
   void importClear();
   Rect getBbox(dbInst* inst);
   void makeMacros();
-  void examineRows();
   void makeCells();
   static bool isPlacedType(dbMasterType type);
   void makeGroups();
@@ -656,9 +659,6 @@ class Opendp
 
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
-
-  int row_count_ = 0;
-  int row_site_count_ = 0;
 
   int have_multi_row_cells_ = 0;
   int max_displacement_x_ = 0;  // sites

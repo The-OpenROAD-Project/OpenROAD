@@ -64,7 +64,7 @@ void Opendp::importDb()
   have_one_site_cells_ = false;
 
   importClear();
-  examineRows();
+  grid_.examineRows(block_);
   checkOneSiteDbMaster();
   makeMacros();
   makeCells();
@@ -117,13 +117,13 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
       = (master_height != row_height && master_height % row_height == 0);
 }
 
-void Opendp::examineRows()
+void Grid::examineRows(dbBlock* block)
 {
   std::vector<dbRow*> rows;
-  auto block_rows = block_->getRows();
+  auto block_rows = block->getRows();
   rows.reserve(block_rows.size());
 
-  grid_.setHasHybridRows(false);
+  setHasHybridRows(false);
   bool has_non_hybrid_rows = false;
 
   for (auto* row : block_rows) {
@@ -132,7 +132,7 @@ void Opendp::examineRows()
       continue;
     }
     if (site->isHybrid()) {
-      grid_.setHasHybridRows(true);
+      setHasHybridRows(true);
     } else {
       has_non_hybrid_rows = true;
     }
@@ -141,7 +141,7 @@ void Opendp::examineRows()
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
-  if (grid_.getHasHybridRows() && has_non_hybrid_rows) {
+  if (getHasHybridRows() && has_non_hybrid_rows) {
     logger_->error(
         DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
   }
@@ -155,10 +155,10 @@ void Opendp::examineRows()
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
   }
-  grid_.setRowHeight(min_row_height_);
-  grid_.setSiteWidth(min_site_width_);
-  row_site_count_ = divFloor(grid_.getCore().dx(), grid_.getSiteWidth());
-  row_count_ = divFloor(grid_.getCore().dy(), grid_.getRowHeight());
+  setRowHeight(min_row_height_);
+  setSiteWidth(min_site_width_);
+  row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
+  row_count_ = divFloor(getCore().dy(), getRowHeight());
 }
 
 void Opendp::makeCells()
