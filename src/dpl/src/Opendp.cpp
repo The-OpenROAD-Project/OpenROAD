@@ -48,6 +48,7 @@
 #include <map>
 
 #include "DplObserver.h"
+#include "Grid.h"
 #include "dpl/OptMirror.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -293,13 +294,14 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   db_ = db;
   logger_ = logger;
   padding_ = std::make_unique<Padding>();
-  grid_.init(logger);
+  grid_ = std::make_unique<Grid>();
+  grid_->init(logger);
 }
 
 void Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  grid_.initBlock(block_);
+  grid_->initBlock(block_);
 }
 
 void Opendp::setPaddingGlobal(int left, int right)
@@ -384,8 +386,8 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      int x = grid_.getCore().xMin() + cell.x_;
-      int y = grid_.getCore().yMin() + cell.y_;
+      int x = grid_->getCore().xMin() + cell.x_;
+      int y = grid_->getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -459,11 +461,11 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  loc_x -= grid_.getCore().xMin();
+  loc_x -= grid_->getCore().xMin();
   if (padded) {
-    loc_x -= padding_->padLeft(cell) * grid_.getSiteWidth();
+    loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
   }
-  loc_y -= grid_.getCore().yMin();
+  loc_y -= grid_->getCore().yMin();
   return Point(loc_x, loc_y);
 }
 
@@ -521,7 +523,7 @@ int64_t Opendp::paddedArea(const Cell* cell) const
 
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  return divRound(padding_->paddedWidth(cell), grid_.getSiteWidth());
+  return divRound(padding_->paddedWidth(cell), grid_->getSiteWidth());
 }
 
 // Callers should probably be using gridHeight.
@@ -532,7 +534,7 @@ int Opendp::gridNearestHeight(const Cell* cell, int row_height) const
 
 int Opendp::gridNearestHeight(const Cell* cell) const
 {
-  int row_height = grid_.getRowHeight(cell);
+  int row_height = grid_->getRowHeight(cell);
   return divRound(cell->height_, row_height);
 }
 
@@ -558,7 +560,7 @@ int Grid::gridPaddedX(const Cell* cell) const
 
 int Opendp::getRowCount(const Cell* cell) const
 {
-  return grid_.getRowCount(grid_.getRowHeight(cell));
+  return grid_->getRowCount(grid_->getRowHeight(cell));
 }
 
 int Grid::getRowCount(int row_height) const
@@ -577,12 +579,12 @@ int Grid::getRowHeight(const Cell* cell) const
 
 pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 {
-  if (grid_.infoMapEmpty()) {
+  if (grid_->infoMapEmpty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
-  GridMapKey key = grid_.getGridMapKey(cell);
-  auto layer = grid_.getInfoMap().find(key);
-  if (layer == grid_.getInfoMap().end()) {
+  GridMapKey key = grid_->getGridMapKey(cell);
+  auto layer = grid_->getInfoMap().find(key);
+  if (layer == grid_->getInfoMap().end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
                    44,
@@ -751,6 +753,21 @@ double Opendp::dbuAreaToMicrons(int64_t dbu_area) const
 {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu_area / (dbu_micron * dbu_micron);
+}
+
+Rect Opendp::getCore() const
+{
+  return grid_->getCore();
+}
+
+int Opendp::getRowHeight() const
+{
+  return grid_->getRowHeight();
+}
+
+int Opendp::getSiteWidth() const
+{
+  return grid_->getSiteWidth();
 }
 
 int divRound(int dividend, int divisor)

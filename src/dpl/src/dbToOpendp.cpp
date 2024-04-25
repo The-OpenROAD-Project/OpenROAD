@@ -38,6 +38,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "Grid.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -59,12 +60,12 @@ static bool swapWidthHeight(const dbOrientType& orient);
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  grid_.initBlock(block_);
+  grid_->initBlock(block_);
   have_fillers_ = false;
   have_one_site_cells_ = false;
 
   importClear();
-  grid_.examineRows(block_);
+  grid_->examineRows(block_);
   checkOneSiteDbMaster();
   makeMacros();
   makeCells();
@@ -112,7 +113,7 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
-  const int row_height = grid_.getRowHeight();
+  const int row_height = grid_->getRowHeight();
   master->is_multi_row
       = (master_height != row_height && master_height % row_height == 0);
 }
@@ -202,8 +203,8 @@ Rect Opendp::getBbox(dbInst* inst)
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
   // Shift by core lower left.
-  loc_x -= grid_.getCore().xMin();
-  loc_y -= grid_.getCore().yMin();
+  loc_x -= grid_->getCore().xMin();
+  loc_y -= grid_->getCore().yMin();
 
   int width = master->getWidth();
   int height = master->getHeight();
@@ -273,7 +274,7 @@ void Opendp::makeGroups()
 
         for (dbBox* boundary : boundaries) {
           Rect box = boundary->getBox();
-          const Rect core = grid_.getCore();
+          const Rect core = grid_->getCore();
           box = box.intersect(core);
           // offset region to core origin
           box.moveDelta(-core.xMin(), -core.yMin());

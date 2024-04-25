@@ -37,6 +37,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "Grid.h"
+
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <limits>
@@ -266,7 +268,7 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
 
 void Opendp::initGrid()
 {
-  grid_.initGrid(
+  grid_->initGrid(
       db_, block_, padding_.get(), max_displacement_x_, max_displacement_y_);
 }
 
@@ -389,7 +391,7 @@ void Grid::initGrid(dbDatabase* db,
 
 void Opendp::deleteGrid()
 {
-  grid_.clear();
+  grid_->clear();
 }
 
 Pixel* Grid::gridPixel(int grid_idx, int grid_x, int grid_y) const
@@ -590,7 +592,7 @@ void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
     if (cell.isFixed()) {
-      grid_.visitCellPixels(
+      grid_->visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
     }
   }
@@ -610,20 +612,20 @@ void Opendp::groupAssignCellRegions()
 {
   for (Group& group : groups_) {
     int64_t site_count = 0;
-    int row_height = grid_.getRowHeight();
-    const int site_width = grid_.getSiteWidth();
+    int row_height = grid_->getRowHeight();
+    const int site_width = grid_->getSiteWidth();
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
-      const Rect core = grid_.getCore();
+      const Rect core = grid_->getCore();
       int max_row_site_count = divFloor(core.dx(), site_width);
-      row_height = grid_.getRowHeight(group_cell);
+      row_height = grid_->getRowHeight(group_cell);
       int row_count = divFloor(core.dy(), row_height);
-      auto gmk = grid_.getGridMapKey(group_cell);
-      auto grid_info = grid_.getInfoMap().at(gmk);
+      auto gmk = grid_->getGridMapKey(group_cell);
+      auto grid_info = grid_->getInfoMap().at(gmk);
 
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
-          Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), x, y);
+          Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
           if (pixel->is_valid && pixel->group_ == &group) {
             site_count++;
           }
@@ -651,7 +653,7 @@ void Opendp::groupAssignCellRegions()
 
 void Opendp::groupInitPixels2()
 {
-  for (auto& layer : grid_.getInfoMap()) {
+  for (auto& layer : grid_->getInfoMap()) {
     const GridInfo& grid_info = layer.second;
     int row_count = layer.second.getRowCount();
     int row_site_count = layer.second.getSiteCount();
@@ -662,12 +664,12 @@ void Opendp::groupInitPixels2()
         Rect sub;
         // TODO: Site width here is wrong if multiple site widths are
         // supported!
-        const int site_width = grid_.getSiteWidth();
+        const int site_width = grid_->getSiteWidth();
         sub.init(x * site_width,
                  y * row_height,
                  (x + 1) * site_width,
                  (y + 1) * row_height);
-        Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), x, y);
+        Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
           for (Rect& rect : group.regions) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
@@ -697,11 +699,11 @@ bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
 
 void Opendp::groupInitPixels()
 {
-  for (const auto& layer : grid_.getInfoMap()) {
+  for (const auto& layer : grid_->getInfoMap()) {
     const GridInfo& grid_info = layer.second;
     for (int x = 0; x < grid_info.getSiteCount(); x++) {
       for (int y = 0; y < grid_info.getRowCount(); y++) {
-        Pixel* pixel = grid_.gridPixel(grid_info.getGridIndex(), x, y);
+        Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         pixel->util = 0.0;
       }
     }
@@ -712,10 +714,10 @@ void Opendp::groupInitPixels()
       continue;
     }
     int row_height = group.cells_[0]->height_;
-    GridMapKey gmk = grid_.getGridMapKey(group.cells_[0]);
-    const GridInfo& grid_info = grid_.getInfoMap().at(gmk);
+    GridMapKey gmk = grid_->getGridMapKey(group.cells_[0]);
+    const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
     int grid_index = grid_info.getGridIndex();
-    const int site_width = grid_.getSiteWidth();
+    const int site_width = grid_->getSiteWidth();
     for (Rect& rect : group.regions) {
       debugPrint(logger_,
                  DPL,
@@ -735,16 +737,16 @@ void Opendp::groupInitPixels()
         int col_end = divFloor(rect.xMax(), site_width);
 
         for (int l = col_start; l < col_end; l++) {
-          Pixel* pixel = grid_.gridPixel(grid_index, l, k);
+          Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           pixel->util += 1.0;
         }
         if (rect.xMin() % site_width != 0) {
-          Pixel* pixel = grid_.gridPixel(grid_index, col_start, k);
+          Pixel* pixel = grid_->gridPixel(grid_index, col_start, k);
           pixel->util
               -= (rect.xMin() % site_width) / static_cast<double>(site_width);
         }
         if (rect.xMax() % site_width != 0) {
-          Pixel* pixel = grid_.gridPixel(grid_index, col_end - 1, k);
+          Pixel* pixel = grid_->gridPixel(grid_index, col_end - 1, k);
           pixel->util -= ((site_width - rect.xMax()) % site_width)
                          / static_cast<double>(site_width);
         }
@@ -760,7 +762,7 @@ void Opendp::groupInitPixels()
 
         // Assign group to each pixel.
         for (int l = col_start; l < col_end; l++) {
-          Pixel* pixel = grid_.gridPixel(grid_index, l, k);
+          Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           if (pixel->util == 1.0) {
             pixel->group_ = &group;
             pixel->is_valid = true;
@@ -799,12 +801,10 @@ void Grid::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (const auto& [target_GridMapKey, target_grid_info] :
-         getInfoMap()) {
+    for (const auto& [target_GridMapKey, target_grid_info] : getInfoMap()) {
       int layer_y_start
           = map_ycoordinates(y_start, gmk, target_GridMapKey, true);
-      int layer_y_end
-          = map_ycoordinates(y_end, gmk, target_GridMapKey, false);
+      int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey, false);
 
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;

@@ -38,6 +38,7 @@
 #include <fstream>
 #include <limits>
 
+#include "Grid.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 namespace dpl {
@@ -66,20 +67,20 @@ void Opendp::checkPlacement(bool verbose,
     if (cell.isStdCell()) {
       // Site alignment check
       if (!cell.isHybrid()) {
-        if (cell.x_ % grid_.getSiteWidth() != 0
-            || cell.y_ % grid_.getRowHeight() != 0) {
+        if (cell.x_ % grid_->getSiteWidth() != 0
+            || cell.y_ % grid_->getRowHeight() != 0) {
           site_align_failures.push_back(&cell);
         }
       } else {
         // here, the cell is hybrid, if it is a parent, then the check is
         // quite simple
-        if (cell.x_ % grid_.getSiteWidth() != 0) {
+        if (cell.x_ % grid_->getSiteWidth() != 0) {
           site_align_failures.push_back(&cell);
           continue;
         }
-        auto grid_info = grid_.getGridInfo(&cell);
+        auto grid_info = grid_->getGridInfo(&cell);
         auto [cell_index, cell_height]
-            = grid_.gridY(cell.y_, grid_info.getSites());
+            = grid_->gridY(cell.y_, grid_info.getSites());
         if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
           site_align_failures.push_back(&cell);
         }
@@ -332,10 +333,10 @@ bool Opendp::isPlaced(const Cell* cell)
 bool Opendp::checkInRows(const Cell& cell) const
 {
   auto grid_info = getRowInfo(&cell);
-  int x_ll = grid_.gridX(&cell);
-  int x_ur = grid_.gridEndX(&cell);
-  int y_ll = grid_.gridY(&cell);
-  int y_ur = grid_.gridEndY(&cell);
+  int x_ll = grid_->gridX(&cell);
+  int x_ur = grid_->gridEndX(&cell);
+  int y_ll = grid_->gridY(&cell);
+  int y_ur = grid_->gridEndY(&cell);
   debugPrint(logger_,
              DPL,
              "hybrid",
@@ -350,7 +351,7 @@ bool Opendp::checkInRows(const Cell& cell) const
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = grid_.gridPixel(grid_info.second.getGridIndex(), x, y);
+      Pixel* pixel = grid_->gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;
@@ -388,7 +389,7 @@ Cell* Opendp::checkOverlap(Cell& cell) const
   debugPrint(
       logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   Cell* overlap_cell = nullptr;
-  grid_.visitCellPixels(cell, true, [&](Pixel* pixel) {
+  grid_->visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
     if (pixel_cell) {
       if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
@@ -430,7 +431,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
   Cell* gap_cell = nullptr;
   auto row_info = getRowInfo(&cell);
   int index_in_grid = row_info.second.getGridIndex();
-  grid_.visitCellBoundaryPixels(
+  grid_->visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
 
@@ -446,14 +447,14 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         }
         if (0 != abut_x) {
           // check the abutting pixel
-          Pixel* abut_pixel = grid_.gridPixel(index_in_grid, x + abut_x, y);
+          Pixel* abut_pixel = grid_->gridPixel(index_in_grid, x + abut_x, y);
           bool abuttment_exists
               = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell
                  && abut_pixel->cell != nullptr);
           if (!abuttment_exists) {
             // check the 1 site gap pixel
             Pixel* gap_pixel
-                = grid_.gridPixel(index_in_grid, x + 2 * abut_x, y);
+                = grid_->gridPixel(index_in_grid, x + 2 * abut_x, y);
             if (gap_pixel && gap_pixel->cell != pixel_cell) {
               gap_cell = gap_pixel->cell;
             }
@@ -471,7 +472,7 @@ bool Opendp::checkRegionPlacement(const Cell* cell) const
   int y_end = y_begin + cell->height_;
 
   if (cell->region_) {
-    const int site_width = grid_.getSiteWidth();
+    const int site_width = grid_->getSiteWidth();
     return cell->region_->contains(odb::Rect(x_begin, y_begin, x_end, y_end))
            && checkRegionOverlap(cell,
                                  x_begin / site_width,
