@@ -236,6 +236,16 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty();
 }
 
+bool GlobalRouter::haveDetailedRoutes()
+{
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (isDetailedRouted(db_net)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
@@ -300,6 +310,11 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations,
                                   float ratio_margin)
 {
+  if (!initialized_) {
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
+    initFastRoute(min_layer, max_layer);
+  }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
         = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
@@ -540,12 +555,87 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
+    destroyNetWire(net);
     // compare new positions with last positions & add on vector
     if (pinPositionsChanged(net, last_pos)) {
       dirty_nets.push_back(db_net_map_[db_net]);
     }
   }
   dirty_nets_.clear();
+}
+
+void GlobalRouter::destroyNetWire(Net* net)
+{
+  odb::dbWire* wire = net->getDbNet()->getWire();
+  if (wire != nullptr) {
+    removeWireUsage(wire);
+    odb::dbWire::destroy(wire);
+  }
+  net->setHasWires(false);
+}
+
+void GlobalRouter::removeWireUsage(odb::dbWire* wire)
+{
+  std::vector<odb::dbShape> via_boxes;
+
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWirePathItr pitr;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      const odb::dbShape& shape = pshape.shape;
+      if (shape.isVia()) {
+        odb::dbShape::getViaBoxes(shape, via_boxes);
+        for (const odb::dbShape& box : via_boxes) {
+          odb::dbTechLayer* tech_layer = box.getTechLayer();
+          if (tech_layer->getRoutingLevel() == 0) {
+            continue;
+          }
+          odb::Rect via_rect = box.getBox();
+          removeRectUsage(via_rect, tech_layer);
+        }
+      } else {
+        odb::Rect wire_rect = shape.getBox();
+        odb::dbTechLayer* tech_layer = shape.getTechLayer();
+        removeRectUsage(wire_rect, tech_layer);
+      }
+    }
+  }
+}
+
+void GlobalRouter::removeRectUsage(const odb::Rect& rect,
+                                   odb::dbTechLayer* tech_layer)
+{
+  bool vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  int layer_idx = tech_layer->getRoutingLevel();
+  odb::Rect first_tile_box, last_tile_box;
+  odb::Point first_tile, last_tile;
+
+  grid_->getBlockedTiles(
+      rect, first_tile_box, last_tile_box, first_tile, last_tile);
+
+  if (vertical) {
+    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y < last_tile.getY(); y++) {
+        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        fastroute_->addAdjustment(x, y, x, y + 1, layer_idx, cap + 1, false);
+      }
+    }
+  } else {
+    for (int x = first_tile.getX(); x < last_tile.getX(); x++) {
+      for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+        int cap = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer_idx);
+        fastroute_->addAdjustment(x, y, x + 1, y, layer_idx, cap + 1, false);
+      }
+    }
+  }
+}
+
+bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
+{
+  return (!db_net->isSpecial()
+          && db_net->getWireType() == odb::dbWireType::ROUTED
+          && db_net->getWire());
 }
 
 Rudy* GlobalRouter::getRudy()
@@ -1753,7 +1843,11 @@ void GlobalRouter::updateVias()
 
 void GlobalRouter::updateEdgesUsage()
 {
-  for (const auto& [net, groute] : routes_) {
+  for (const auto& [db_net, groute] : routes_) {
+    if (isDetailedRouted(db_net)) {
+      continue;
+    }
+
     for (const GSegment& seg : groute) {
       int x0 = (seg.init_x - grid_->getXMin()) / grid_->getTileSize();
       int y0 = (seg.init_y - grid_->getYMin()) / grid_->getTileSize();
