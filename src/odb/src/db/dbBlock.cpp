@@ -40,7 +40,6 @@
 #include <set>
 #include <string>
 
-#include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbArrayTable.hpp"
@@ -48,7 +47,6 @@
 #include "dbBPinItr.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBlockItr.h"
 #include "dbBlockage.h"
 #include "dbBox.h"
@@ -60,9 +58,7 @@
 #include "dbChip.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.h"
 #include "dbDiff.hpp"
-#include "dbExtControl.h"
 #include "dbFill.h"
 #include "dbGCellGrid.h"
 #include "dbGlobalConnect.h"
@@ -118,7 +114,6 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -128,9 +123,14 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
-#include "defout.h"
-#include "lefout.h"
-#include "parse.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbDiff.h"
+#include "odb/dbExtControl.h"
+#include "odb/dbShape.h"
+#include "odb/defout.h"
+#include "odb/lefout.h"
+#include "odb/parse.h"
 #include "utl/Logger.h"
 
 namespace odb {

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "lefin.h"
+#include "odb/lefin.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -42,15 +42,15 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "dbTransform.h"
-#include "geom.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
-#include "poly_decomp.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "odb/poly_decomp.h"
 #include "utl/Logger.h"
 namespace odb {
 

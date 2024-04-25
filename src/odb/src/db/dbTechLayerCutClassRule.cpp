@@ -36,13 +36,13 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 // User Code End Includes

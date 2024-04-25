@@ -34,7 +34,7 @@
 
 #include "wire.h"
 
-namespace odb {
+namespace rcx {
 
 Ath__box::Ath__box()
 {
@@ -349,7 +349,7 @@ int Ath__wire::getShapeProperty(int id)
   }
   char buff[64];
   sprintf(buff, "%d", id);
-  dbIntProperty* p = dbIntProperty::find(net, buff);
+  auto* p = odb::dbIntProperty::find(net, buff);
   if (p == nullptr) {
     return 0;
   }
@@ -361,12 +361,12 @@ dbNet* Ath__wire::getNet()
   Ath__gridTable* gtb = _track->getGrid()->getGridTable();
   dbBlock* block = gtb->getBlock();
   if (_otherId == 0) {
-    return (dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
+    return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
   }
   if (gtb->usingDbSdb()) {
     return dbNet::getNet(block, _boxId);
   }
-  return (dbRSeg::getRSeg(block, _boxId)->getNet());
+  return (odb::dbRSeg::getRSeg(block, _boxId)->getNet());
 }
 uint Ath__wire::getBoxId()
 {
@@ -1725,8 +1725,8 @@ Ath__wire* Ath__wire::makeCoupleWire(AthPool<Ath__wire>* wirePool,
 }
 Ath__wire* Ath__wire::getPoolWire(AthPool<Ath__wire>* wirePool)
 {
-  uint n;
-  uint getRecycleFlag = 0;
+  int n;
+  int getRecycleFlag = 0;
   Ath__wire* w = wirePool->alloc(&getRecycleFlag, &n);
   if (getRecycleFlag == 0) {
     w->_id = n;
@@ -1757,8 +1757,8 @@ Ath__wire* Ath__wire::makeWire(AthPool<Ath__wire>* wirePool, int xy1, uint len)
 }
 Ath__wire* Ath__grid::getPoolWire()
 {
-  uint n;
-  uint getRecycleFlag = 0;
+  int n;
+  int getRecycleFlag = 0;
   Ath__wire* w = _wirePoolPtr->alloc(&getRecycleFlag, &n);
   if (getRecycleFlag == 0) {
     w->_id = n;
@@ -2429,8 +2429,8 @@ void Ath__gridTable::init1(uint memChunk,
                            uint dx,
                            uint dy)
 {
-  _trackPool = new AthPool<Ath__track>(false, memChunk);
-  _wirePool = new AthPool<Ath__wire>(false, memChunk * 1000);
+  _trackPool = new AthPool<Ath__track>(memChunk);
+  _wirePool = new AthPool<Ath__wire>(memChunk * 1000);
 
   _wirePool->alloc();  // so all wire ids>0
 
@@ -3160,4 +3160,4 @@ void Ath__gridTable::getIds(uint wid, uint* id1, uint* id2, uint* wtype)
   *id2 = w->_otherId;
 }
 
-}  // namespace odb
+}  // namespace rcx

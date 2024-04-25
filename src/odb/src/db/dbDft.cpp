@@ -33,14 +33,14 @@
 // Generator Code Begin Cpp
 #include "dbDft.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 namespace odb {
 template class dbTable<_dbDft>;
 

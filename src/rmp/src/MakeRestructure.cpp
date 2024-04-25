@@ -35,7 +35,7 @@
 
 #include "rmp/MakeRestructure.h"
 
-#include "db.h"
+#include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/Restructure.h"
 #include "sta/StaMain.hh"

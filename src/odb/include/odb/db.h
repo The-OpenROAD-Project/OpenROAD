@@ -3842,6 +3842,18 @@ class dbWire : public dbObject
   ///
   static void destroy(dbWire* wire);
 
+  ///
+  /// get raw data of _dbWire
+  ///
+  void getRawWireData(std::vector<int>& data,
+                      std::vector<unsigned char>& op_codes);
+
+  ////
+  /// set raw data of _dbWire
+  ///
+  void setRawWireData(const std::vector<int>& data,
+                      const std::vector<unsigned char>& op_codes);
+
  private:
   void addOneSeg(unsigned char op,
                  int value,
@@ -7925,6 +7937,10 @@ class dbTechLayer : public dbObject
   void setWrongWayWidth(uint wrong_way_width);
 
   uint getWrongWayWidth() const;
+
+  void setLayerAdjustment(float layer_adjustment);
+
+  float getLayerAdjustment() const;
 
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 

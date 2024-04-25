@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include "array1.h"
-#include "odb.h"
-#include "parse.h"
+#include "odb/array1.h"
+#include "odb/odb.h"
+#include "odb/parse.h"
 
 namespace utl {
 class Logger;

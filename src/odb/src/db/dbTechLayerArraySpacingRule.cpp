@@ -36,13 +36,13 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerArraySpacingRule>;
 

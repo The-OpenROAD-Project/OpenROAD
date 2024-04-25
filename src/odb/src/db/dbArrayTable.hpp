@@ -35,10 +35,10 @@
 #include <cstring>
 #include <new>
 
-#include "ZException.h"
 #include "dbArrayTable.h"
-#include "dbDiff.h"
-#include "dbStream.h"
+#include "odb/ZException.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
 
 namespace odb {
 template <class T>
@@ -108,15 +108,15 @@ void dbArrayTable<T>::clear()
     for (; t < e; t++) {
       if (t->_oid & DB_ALLOC_BIT) {
         t->~T();
-}
+      }
     }
 
     free((void*) page);
   }
 
-   {
+  {
     delete[] _pages;
-}
+  }
 
   _page_cnt = 0;
   _page_tbl_size = 0;
@@ -180,11 +180,11 @@ void dbArrayTable<T>::resizePageTbl()
 
   for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
-}
+  }
 
   for (; i < _page_tbl_size; ++i) {
     _pages[i] = nullptr;
-}
+  }
 
   delete[] old_tbl;
 }
@@ -224,7 +224,7 @@ void dbArrayTable<T>::newPage()
 
       if (t != b) {  // don't link zero-object
         pushQ(_free_list, o);
-}
+      }
     }
   } else {
     T* b = (T*) page->_objects;
@@ -245,7 +245,7 @@ T* dbArrayTable<T>::create()
 
   if (_free_list == 0) {
     newPage();
-}
+  }
 
   _dbFreeObject* o = popQ(_free_list);
   o->_oid |= DB_ALLOC_BIT;
@@ -286,7 +286,7 @@ void dbArrayTable<T>::destroyArray(dbId<T> id)
   // freelist in the correct order.
   for (; i >= id; --i) {
     destroy(getPtr(i));
-}
+  }
 }
 
 template <class T>
@@ -369,7 +369,7 @@ void dbArrayTable<T>::copy_pages(const dbArrayTable<T>& t)
 
   for (i = 0; i < _page_tbl_size; ++i) {
     _pages[i] = nullptr;
-}
+  }
 
   for (i = 0; i < _page_cnt; ++i) {
     dbArrayTablePage* page = t._pages[i];
@@ -455,7 +455,7 @@ dbIStream& operator>>(dbIStream& stream, dbArrayTable<T>& table)
 
   for (; i < table._page_tbl_size; ++i) {
     table._pages[i] = nullptr;
-}
+  }
 
   return stream;
 }
@@ -478,17 +478,17 @@ bool dbArrayTable<T>::operator==(const dbArrayTable<T>& rhs) const
   // empty tables
   if ((lhs._page_cnt == 0) && (rhs._page_cnt == 0)) {
     return true;
-}
+  }
 
   // Simple rejection test
   if (lhs._page_cnt != rhs._page_cnt) {
     return false;
-}
+  }
 
   // Simple rejection test
   if (lhs._alloc_cnt != rhs._alloc_cnt) {
     return false;
-}
+  }
 
   uint i;
 
@@ -502,7 +502,7 @@ bool dbArrayTable<T>::operator==(const dbArrayTable<T>& rhs) const
 
       if (*l != *r) {
         return false;
-}
+      }
     } else if (lhs_valid_o) {
       return false;
     } else if (rhs_valid_o) {
@@ -574,7 +574,7 @@ void dbArrayTable<T>::getObjects(std::vector<T*>& objects)
   for (i = 1; i < _alloc_cnt; ++i) {
     if (validId(i)) {
       objects.push_back(getPtr(i));
-}
+    }
   }
 }
 

@@ -32,10 +32,8 @@
 
 #include "dbTechViaLayerRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -43,6 +41,8 @@
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
