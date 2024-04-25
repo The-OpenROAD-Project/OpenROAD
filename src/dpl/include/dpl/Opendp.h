@@ -222,6 +222,16 @@ class Grid
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   GridInfo getGridInfo(const Cell* cell) const;
 
+  void visitCellPixels(Cell& cell,
+                       bool padded,
+                       const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellBoundaryPixels(
+      Cell& cell,
+      bool padded,
+      const std::function<
+          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
+      const;
+
   int getRowHeight() const { return row_height_; }
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
@@ -565,15 +575,6 @@ class Opendp
   int refine();
   bool cellFitsInCore(Cell* cell);
   void setFixedGridCells();
-  void visitCellPixels(Cell& cell,
-                       bool padded,
-                       const std::function<void(Pixel* pixel)>& visitor) const;
-  void visitCellBoundaryPixels(
-      Cell& cell,
-      bool padded,
-      const std::function<
-          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
-      const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();

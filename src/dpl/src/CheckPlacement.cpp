@@ -388,7 +388,7 @@ Cell* Opendp::checkOverlap(Cell& cell) const
   debugPrint(
       logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   Cell* overlap_cell = nullptr;
-  visitCellPixels(cell, true, [&](Pixel* pixel) {
+  grid_.visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
     if (pixel_cell) {
       if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
@@ -430,7 +430,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
   Cell* gap_cell = nullptr;
   auto row_info = getRowInfo(&cell);
   int index_in_grid = row_info.second.getGridIndex();
-  visitCellBoundaryPixels(
+  grid_.visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
 

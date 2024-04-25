@@ -416,7 +416,7 @@ void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
 
 ////////////////////////////////////////////////////////////////
 
-void Opendp::visitCellPixels(
+void Grid::visitCellPixels(
     Cell& cell,
     bool padded,
     const std::function<void(Pixel* pixel)>& visitor) const
@@ -424,7 +424,7 @@ void Opendp::visitCellPixels(
   dbInst* inst = cell.db_inst_;
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
-  const Rect core = grid_.getCore();
+  const Rect core = getCore();
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
@@ -433,28 +433,26 @@ void Opendp::visitCellPixels(
 
       Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
-      int x_start = grid_.gridX(rect.xMin() - core.xMin());
-      int x_end = grid_.gridEndX(rect.xMax() - core.xMin());
-      int y_start = grid_.gridY(rect.yMin() - core.yMin(), &cell);
-      int y_end = grid_.gridEndY(rect.yMax() - core.yMin(), &cell);
+      int x_start = gridX(rect.xMin() - core.xMin());
+      int x_end = gridEndX(rect.xMax() - core.xMin());
+      int y_start = gridY(rect.yMin() - core.yMin(), &cell);
+      int y_end = gridEndY(rect.yMax() - core.yMin(), &cell);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
-      for (const auto& [target_GridMapKey, target_grid_info] :
-           grid_.getInfoMap()) {
-        const auto smallest_non_hybrid_grid_key
-            = grid_.getSmallestNonHybridGridKey();
-        int layer_y_start = grid_.map_ycoordinates(
+      for (const auto& [target_GridMapKey, target_grid_info] : getInfoMap()) {
+        const auto smallest_non_hybrid_grid_key = getSmallestNonHybridGridKey();
+        int layer_y_start = map_ycoordinates(
             y_start, smallest_non_hybrid_grid_key, target_GridMapKey, true);
-        int layer_y_end = grid_.map_ycoordinates(
+        int layer_y_end = map_ycoordinates(
             y_end, smallest_non_hybrid_grid_key, target_GridMapKey, false);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
         }
         for (int x = x_start; x < x_end; x++) {
           for (int y = layer_y_start; y < layer_y_end; y++) {
-            Pixel* pixel = grid_.gridPixel(grid_idx, x, y);
+            Pixel* pixel = gridPixel(grid_idx, x, y);
             if (pixel) {
               visitor(pixel);
             }
@@ -465,18 +463,17 @@ void Opendp::visitCellPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? grid_.gridPaddedX(&cell) : grid_.gridX(&cell);
-    int x_end = padded ? grid_.gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
-    int y_start = grid_.gridY(&cell);
-    int y_end = grid_.gridEndY(&cell);
-    auto src_gmk = grid_.getGridMapKey(&cell);
-    for (const auto& layer_it : grid_.getInfoMap()) {
+    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
+    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
+    int y_start = gridY(&cell);
+    int y_end = gridEndY(&cell);
+    auto src_gmk = getGridMapKey(&cell);
+    for (const auto& layer_it : getInfoMap()) {
       int layer_x_start = x_start;
       int layer_x_end = x_end;
       int layer_y_start
-          = grid_.map_ycoordinates(y_start, src_gmk, layer_it.first, true);
-      int layer_y_end
-          = grid_.map_ycoordinates(y_end, src_gmk, layer_it.first, false);
+          = map_ycoordinates(y_start, src_gmk, layer_it.first, true);
+      int layer_y_end = map_ycoordinates(y_end, src_gmk, layer_it.first, false);
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
       }
@@ -486,7 +483,7 @@ void Opendp::visitCellPixels(
 
       for (int x = layer_x_start; x < layer_x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = grid_.gridPixel(layer_it.second.getGridIndex(), x, y);
+          Pixel* pixel = gridPixel(layer_it.second.getGridIndex(), x, y);
           if (pixel) {
             visitor(pixel);
           }
@@ -496,21 +493,21 @@ void Opendp::visitCellPixels(
   }
 }
 
-void Opendp::visitCellBoundaryPixels(
+void Grid::visitCellBoundaryPixels(
     Cell& cell,
     bool padded,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor) const
 {
   dbInst* inst = cell.db_inst_;
-  const GridMapKey& gmk = grid_.getGridMapKey(&cell);
-  GridInfo grid_info = grid_.getInfoMap().at(gmk);
+  const GridMapKey& gmk = getGridMapKey(&cell);
+  GridInfo grid_info = getInfoMap().at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
   const auto& grid_sites = grid_info.getSites();
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
-  const Rect core = grid_.getCore();
+  const Rect core = getCore();
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
         == odb::dbTechLayerType::Value::OVERLAP) {
@@ -519,26 +516,26 @@ void Opendp::visitCellBoundaryPixels(
       Rect rect = obs->getBox();
       inst->getTransform().apply(rect);
 
-      int x_start = grid_.gridX(rect.xMin() - core.xMin());
-      int x_end = grid_.gridEndX(rect.xMax() - core.xMin());
-      int y_start = grid_.gridY(rect.yMin() - core.yMin(), grid_sites).first;
-      int y_end = grid_.gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
+      int x_start = gridX(rect.xMin() - core.xMin());
+      int x_end = gridEndX(rect.xMax() - core.xMin());
+      int y_start = gridY(rect.yMin() - core.yMin(), grid_sites).first;
+      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
       for (int x = x_start; x < x_end; x++) {
-        Pixel* pixel = grid_.gridPixel(index_in_grid, x, y_start);
+        Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
           visitor(pixel, odb::Direction2D::North, x, y_start);
         }
-        pixel = grid_.gridPixel(index_in_grid, x, y_end - 1);
+        pixel = gridPixel(index_in_grid, x, y_end - 1);
         if (pixel) {
           visitor(pixel, odb::Direction2D::South, x, y_end - 1);
         }
       }
       for (int y = y_start; y < y_end; y++) {
-        Pixel* pixel = grid_.gridPixel(index_in_grid, x_start, y);
+        Pixel* pixel = gridPixel(index_in_grid, x_start, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::West, x_start, y);
         }
-        pixel = grid_.gridPixel(index_in_grid, x_end - 1, y);
+        pixel = gridPixel(index_in_grid, x_end - 1, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::East, x_end - 1, y);
         }
@@ -546,9 +543,9 @@ void Opendp::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? grid_.gridPaddedX(&cell) : grid_.gridX(&cell);
-    int x_end = padded ? grid_.gridPaddedEndX(&cell) : grid_.gridEndX(&cell);
-    int y_start = grid_.gridY(&cell);
+    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
+    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
+    int y_start = gridY(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -556,7 +553,7 @@ void Opendp::visitCellBoundaryPixels(
                "Checking cell {} isHybrid {}",
                cell.name(),
                cell.isHybrid());
-    int y_end = grid_.gridEndY(&cell);
+    int y_end = gridEndY(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -567,21 +564,21 @@ void Opendp::visitCellBoundaryPixels(
                y_end);
 
     for (int x = x_start; x < x_end; x++) {
-      Pixel* pixel = grid_.gridPixel(index_in_grid, x, y_start);
+      Pixel* pixel = gridPixel(index_in_grid, x, y_start);
       if (pixel) {
         visitor(pixel, odb::Direction2D::North, x, y_start);
       }
-      pixel = grid_.gridPixel(index_in_grid, x, y_end - 1);
+      pixel = gridPixel(index_in_grid, x, y_end - 1);
       if (pixel) {
         visitor(pixel, odb::Direction2D::South, x, y_end - 1);
       }
     }
     for (int y = y_start; y < y_end; y++) {
-      Pixel* pixel = grid_.gridPixel(index_in_grid, x_start, y);
+      Pixel* pixel = gridPixel(index_in_grid, x_start, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::West, x_start, y);
       }
-      pixel = grid_.gridPixel(index_in_grid, x_end - 1, y);
+      pixel = gridPixel(index_in_grid, x_end - 1, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
       }
@@ -593,7 +590,7 @@ void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
     if (isFixed(&cell)) {
-      visitCellPixels(
+      grid_.visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
     }
   }

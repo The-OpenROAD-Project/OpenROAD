@@ -135,7 +135,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
 void Opendp::setGridCells()
 {
   for (Cell& cell : cells_) {
-    visitCellPixels(
+    grid_.visitCellPixels(
         cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
   }
 }
