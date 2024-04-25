@@ -225,6 +225,7 @@ class Grid
   int gridPaddedWidth(const Cell* cell) const;
   int gridHeight(const Cell* cell) const;
   void setGridPaddedLoc(Cell* cell, int x, int y) const;
+  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
 
   void paintPixel(Cell* cell, int grid_x, int grid_y);
   void erasePixel(Cell* cell);
@@ -622,7 +623,6 @@ class Opendp
 
   int getRowCount(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
-  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;

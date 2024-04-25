@@ -485,11 +485,11 @@ int Grid::gridPaddedWidth(const Cell* cell) const
   return divCeil(padding_->paddedWidth(cell), getSiteWidth());
 }
 
-int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
+int Grid::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 {
   // gets a coordinate and its grid, and returns the height of the coordinate.
   // This is useful for hybrid sites
-  auto grid_info = grid_.infoMap(gmk);
+  auto grid_info = infoMap(gmk);
   if (grid_info.isHybrid()) {
     auto& grid_sites = grid_info.getSites();
     const int total_height = grid_info.getSitesTotalHeight();

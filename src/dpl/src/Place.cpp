@@ -866,8 +866,8 @@ void Opendp::diamondSearchSide(const Cell* cell,
     if (cell->isHybrid() && !cell->isHybridParent()) {
       auto gmk = grid_.getGridMapKey(cell);
 
-      y_dist = abs(coordinateToHeight(y, gmk)
-                   - coordinateToHeight(avail_pt.pt.getY(), gmk));
+      y_dist = abs(grid_.coordinateToHeight(y, gmk)
+                   - grid_.coordinateToHeight(avail_pt.pt.getY(), gmk));
     } else {
       y_dist = abs(y - avail_pt.pt.getY()) * grid_.getRowHeight(cell);
     }
