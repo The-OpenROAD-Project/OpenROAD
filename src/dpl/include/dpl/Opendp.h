@@ -304,7 +304,7 @@ class Opendp
                        const MasterByImplant& filler_masters,
                        int row_height,
                        const GridInfo& grid_info);
-  bool isFiller(odb::dbInst* db_inst);
+  static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row,
                            int col,
