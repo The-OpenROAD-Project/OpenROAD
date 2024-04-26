@@ -6333,9 +6333,10 @@ bool Pusher::designHasSingleCentralizedMacroArray()
         ++macro_cluster_count;
         break;
       case StdCellCluster: {
-        // Note: the Cluster area comes from the metrics (std cell area),
-        // while the SoftMacro area is the "tiny std cell cluster" area
-        // which is 0.
+        // Note: to check whether or not a std cell cluster is "tiny"
+        // we use the area of its SoftMacro abstraction, because the
+        // Cluster::getArea() will give us the actual std cell area
+        // of the instances from that cluster.
         if (child->getSoftMacro()->getArea() != 0) {
           return false;
         }
