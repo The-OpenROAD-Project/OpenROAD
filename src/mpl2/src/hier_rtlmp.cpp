@@ -6286,7 +6286,12 @@ void Pusher::fetchMacroClusters(Cluster* parent,
 
 void Pusher::pushMacrosToCoreBoundaries()
 {
+  // Case in which the design has nothing but macros.
   if (root_->getClusterType() == HardMacroCluster) {
+    return;
+  }
+
+  if (designHasSingleCentralizedMacroArray()) {
     return;
   }
 
@@ -6314,6 +6319,35 @@ void Pusher::pushMacrosToCoreBoundaries()
 
     pushMacroClusterToCoreBoundaries(macro_cluster, boundaries_distance);
   }
+}
+
+bool Pusher::designHasSingleCentralizedMacroArray()
+{
+  int macro_cluster_count = 0;
+
+  for (Cluster* child : root_->getChildren()) {
+    switch (child->getClusterType()) {
+      case MixedCluster:
+        return false;
+      case HardMacroCluster:
+        ++macro_cluster_count;
+        break;
+      case StdCellCluster: {
+        // Note: the Cluster area comes from the metrics (std cell area),
+        // while the SoftMacro area is the "tiny std cell cluster" area
+        // which is 0.
+        if (child->getSoftMacro()->getArea() != 0) {
+          return false;
+        }
+      }
+    }
+
+    if (macro_cluster_count > 1) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // We only group macros of the same size, so here we can use any HardMacro

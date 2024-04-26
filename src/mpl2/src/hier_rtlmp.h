@@ -497,6 +497,7 @@ class Pusher
 
  private:
   void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  bool designHasSingleCentralizedMacroArray();
   void pushMacroClusterToCoreBoundaries(
       Cluster* macro_cluster,
       const std::map<Boundary, int>& boundaries_distance);
