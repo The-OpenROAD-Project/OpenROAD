@@ -349,12 +349,6 @@ void Opendp::place()
   // anneal();
 }
 
-bool Grid::cellFitsInCore(Cell* cell) const
-{
-  return gridPaddedWidth(cell) <= getRowSiteCount()
-         && gridHeight(cell) <= getRowCount();
-}
-
 void Opendp::placeGroups2()
 {
   for (Group& group : groups_) {
@@ -1408,13 +1402,6 @@ Point Opendp::legalGridPt(const Cell* cell, bool padded, int row_height) const
   }
   Point pt = legalPt(cell, padded, row_height);
   return Point(grid_->gridX(pt.getX()), grid_->gridY(pt.getY(), cell));
-}
-
-////////////////////////////////////////////////////////////////
-
-PixelPt::PixelPt(Pixel* pixel1, int grid_x, int grid_y)
-    : pixel(pixel1), pt(grid_x, grid_y)
-{
 }
 
 }  // namespace dpl

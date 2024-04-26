@@ -57,6 +57,14 @@ using std::min;
 using utl::DPL;
 
 using odb::dbBox;
+using odb::dbRow;
+
+PixelPt::PixelPt(Pixel* pixel1, int grid_x, int grid_y)
+    : pixel(pixel1), pt(grid_x, grid_y)
+{
+}
+
+////////////////////////////////////////////////////////////////
 
 GridInfo::GridInfo(const int row_count,
                    const int site_count,
@@ -1041,6 +1049,56 @@ int Grid::gridEndY(int y, const Cell* cell) const
   }
   int row_height = getRowHeight(cell);
   return divCeil(y, row_height);
+}
+
+bool Grid::cellFitsInCore(Cell* cell) const
+{
+  return gridPaddedWidth(cell) <= getRowSiteCount()
+         && gridHeight(cell) <= getRowCount();
+}
+
+void Grid::examineRows(dbBlock* block)
+{
+  std::vector<dbRow*> rows;
+  auto block_rows = block->getRows();
+  rows.reserve(block_rows.size());
+
+  has_hybrid_rows_ = false;
+  bool has_non_hybrid_rows = false;
+
+  for (auto* row : block_rows) {
+    dbSite* site = row->getSite();
+    if (site->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    if (site->isHybrid()) {
+      has_hybrid_rows_ = true;
+    } else {
+      has_non_hybrid_rows = true;
+    }
+    rows.push_back(row);
+  }
+  if (rows.empty()) {
+    logger_->error(DPL, 12, "no rows found.");
+  }
+  if (hasHybridRows() && has_non_hybrid_rows) {
+    logger_->error(
+        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
+  }
+
+  int min_row_height_ = std::numeric_limits<int>::max();
+  int min_site_width_ = std::numeric_limits<int>::max();
+  for (dbRow* db_row : rows) {
+    dbSite* site = db_row->getSite();
+    min_site_width_
+        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
+    min_row_height_
+        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
+  }
+  row_height_ = min_row_height_;
+  site_width_ = min_site_width_;
+  row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
+  row_count_ = divFloor(getCore().dy(), getRowHeight());
 }
 
 }  // namespace dpl

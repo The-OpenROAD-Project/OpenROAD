@@ -54,7 +54,6 @@ using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbRegion;
-using odb::dbRow;
 using odb::Rect;
 
 static bool swapWidthHeight(const dbOrientType& orient);
@@ -118,50 +117,6 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
   const int row_height = grid_->getRowHeight();
   master->is_multi_row
       = (master_height != row_height && master_height % row_height == 0);
-}
-
-void Grid::examineRows(dbBlock* block)
-{
-  std::vector<dbRow*> rows;
-  auto block_rows = block->getRows();
-  rows.reserve(block_rows.size());
-
-  has_hybrid_rows_ = false;
-  bool has_non_hybrid_rows = false;
-
-  for (auto* row : block_rows) {
-    dbSite* site = row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
-    if (site->isHybrid()) {
-      has_hybrid_rows_ = true;
-    } else {
-      has_non_hybrid_rows = true;
-    }
-    rows.push_back(row);
-  }
-  if (rows.empty()) {
-    logger_->error(DPL, 12, "no rows found.");
-  }
-  if (hasHybridRows() && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
-  int min_row_height_ = std::numeric_limits<int>::max();
-  int min_site_width_ = std::numeric_limits<int>::max();
-  for (dbRow* db_row : rows) {
-    dbSite* site = db_row->getSite();
-    min_site_width_
-        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
-  }
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
-  row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
-  row_count_ = divFloor(getCore().dy(), getRowHeight());
 }
 
 void Opendp::makeCells()
