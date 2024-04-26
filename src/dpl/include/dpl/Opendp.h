@@ -163,7 +163,6 @@ class Opendp
   void findDisplacementStats();
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
-  const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const;
   int getRowHeight() const;
   int getSiteWidth() const;
