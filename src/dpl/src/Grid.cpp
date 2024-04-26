@@ -44,6 +44,7 @@
 #include <limits>
 
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
@@ -294,12 +295,6 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
 
-void Opendp::initGrid()
-{
-  grid_->initGrid(
-      db_, block_, padding_.get(), max_displacement_x_, max_displacement_y_);
-}
-
 void Grid::initGrid(dbDatabase* db,
                     dbBlock* block,
                     Padding* padding,
@@ -417,11 +412,6 @@ void Grid::initGrid(dbDatabase* db,
   }
 }
 
-void Opendp::deleteGrid()
-{
-  grid_->clear();
-}
-
 Pixel* Grid::gridPixel(int grid_idx, int grid_x, int grid_y) const
 {
   if (grid_idx < 0 || grid_idx >= grid_info_vector_.size()) {
@@ -434,17 +424,6 @@ Pixel* Grid::gridPixel(int grid_idx, int grid_x, int grid_y) const
   }
   return nullptr;
 }
-
-////////////////////////////////////////////////////////////////
-
-void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
-{
-  overlaps.clear();
-  regions_rtree.query(boost::geometry::index::intersects(queryBox),
-                      std::back_inserter(overlaps));
-}
-
-////////////////////////////////////////////////////////////////
 
 void Grid::visitCellPixels(
     Cell& cell,
@@ -611,196 +590,6 @@ void Grid::visitCellBoundaryPixels(
       pixel = gridPixel(index_in_grid, x_end - 1, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
-      }
-    }
-  }
-}
-
-void Opendp::setFixedGridCells()
-{
-  for (Cell& cell : cells_) {
-    if (cell.isFixed()) {
-      grid_->visitCellPixels(
-          cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
-    }
-  }
-}
-
-void Opendp::setGridCell(Cell& cell, Pixel* pixel)
-{
-  pixel->cell = &cell;
-  pixel->util = 1.0;
-  if (isBlock(&cell)) {
-    // Try the is_hopeless strategy to get off of a block
-    pixel->is_hopeless = true;
-  }
-}
-
-void Opendp::groupAssignCellRegions()
-{
-  for (Group& group : groups_) {
-    int64_t site_count = 0;
-    int row_height = grid_->getRowHeight();
-    const int site_width = grid_->getSiteWidth();
-    if (!group.cells_.empty()) {
-      auto group_cell = group.cells_.at(0);
-      const Rect core = grid_->getCore();
-      int max_row_site_count = divFloor(core.dx(), site_width);
-      row_height = grid_->getRowHeight(group_cell);
-      int row_count = divFloor(core.dy(), row_height);
-      auto gmk = grid_->getGridMapKey(group_cell);
-      auto grid_info = grid_->getInfoMap().at(gmk);
-
-      for (int x = 0; x < max_row_site_count; x++) {
-        for (int y = 0; y < row_count; y++) {
-          Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
-          if (pixel->is_valid && pixel->group == &group) {
-            site_count++;
-          }
-        }
-      }
-    }
-    int64_t site_area = site_count * site_width * row_height;
-
-    int64_t cell_area = 0;
-    for (Cell* cell : group.cells_) {
-      cell_area += cell->area();
-
-      for (Rect& rect : group.regions) {
-        if (isInside(cell, &rect)) {
-          cell->region_ = &rect;
-        }
-      }
-      if (cell->region_ == nullptr) {
-        cell->region_ = &group.regions[0];
-      }
-    }
-    group.util = static_cast<double>(cell_area) / site_area;
-  }
-}
-
-void Opendp::groupInitPixels2()
-{
-  for (auto& layer : grid_->getInfoMap()) {
-    const GridInfo& grid_info = layer.second;
-    int row_count = layer.second.getRowCount();
-    int row_site_count = layer.second.getSiteCount();
-    auto grid_sites = layer.second.getSites();
-    for (int x = 0; x < row_site_count; x++) {
-      for (int y = 0; y < row_count; y++) {
-        int row_height = grid_sites[y % grid_sites.size()].site->getHeight();
-        Rect sub;
-        // TODO: Site width here is wrong if multiple site widths are
-        // supported!
-        const int site_width = grid_->getSiteWidth();
-        sub.init(x * site_width,
-                 y * row_height,
-                 (x + 1) * site_width,
-                 (y + 1) * row_height);
-        Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
-        for (Group& group : groups_) {
-          for (Rect& rect : group.regions) {
-            if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
-              pixel->util = 0.0;
-              pixel->cell = &Cell::dummy_cell;
-              pixel->is_valid = false;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-/* static */
-bool Opendp::isInside(const Rect& cell, const Rect& box)
-{
-  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax()
-         && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
-}
-
-bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
-{
-  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin()
-         && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
-}
-
-void Opendp::groupInitPixels()
-{
-  for (const auto& layer : grid_->getInfoMap()) {
-    const GridInfo& grid_info = layer.second;
-    for (int x = 0; x < grid_info.getSiteCount(); x++) {
-      for (int y = 0; y < grid_info.getRowCount(); y++) {
-        Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
-        pixel->util = 0.0;
-      }
-    }
-  }
-  for (Group& group : groups_) {
-    if (group.cells_.empty()) {
-      logger_->warn(DPL, 42, "No cells found in group {}. ", group.name);
-      continue;
-    }
-    int row_height = group.cells_[0]->height_;
-    GridMapKey gmk = grid_->getGridMapKey(group.cells_[0]);
-    const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
-    int grid_index = grid_info.getGridIndex();
-    const int site_width = grid_->getSiteWidth();
-    for (Rect& rect : group.regions) {
-      debugPrint(logger_,
-                 DPL,
-                 "detailed",
-                 1,
-                 "Group {} region [x{} y{}] [x{} y{}]",
-                 group.name,
-                 rect.xMin(),
-                 rect.yMin(),
-                 rect.xMax(),
-                 rect.yMax());
-      int row_start = divCeil(rect.yMin(), row_height);
-      int row_end = divFloor(rect.yMax(), row_height);
-
-      for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width);
-        int col_end = divFloor(rect.xMax(), site_width);
-
-        for (int l = col_start; l < col_end; l++) {
-          Pixel* pixel = grid_->gridPixel(grid_index, l, k);
-          pixel->util += 1.0;
-        }
-        if (rect.xMin() % site_width != 0) {
-          Pixel* pixel = grid_->gridPixel(grid_index, col_start, k);
-          pixel->util
-              -= (rect.xMin() % site_width) / static_cast<double>(site_width);
-        }
-        if (rect.xMax() % site_width != 0) {
-          Pixel* pixel = grid_->gridPixel(grid_index, col_end - 1, k);
-          pixel->util -= ((site_width - rect.xMax()) % site_width)
-                         / static_cast<double>(site_width);
-        }
-      }
-    }
-    for (Rect& rect : group.regions) {
-      int row_start = divCeil(rect.yMin(), row_height);
-      int row_end = divFloor(rect.yMax(), row_height);
-
-      for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width);
-        int col_end = divFloor(rect.xMax(), site_width);
-
-        // Assign group to each pixel.
-        for (int l = col_start; l < col_end; l++) {
-          Pixel* pixel = grid_->gridPixel(grid_index, l, k);
-          if (pixel->util == 1.0) {
-            pixel->group = &group;
-            pixel->is_valid = true;
-            pixel->util = 1.0;
-          } else if (pixel->util > 0.0 && pixel->util < 1.0) {
-            pixel->cell = &Cell::dummy_cell;
-            pixel->util = 0.0;
-            pixel->is_valid = false;
-          }
-        }
       }
     }
   }
@@ -1015,6 +804,245 @@ const std::unordered_map<dbSite*, dbSite*>& Grid::getHybridParent() const
 GridMapKey Grid::getSmallestNonHybridGridKey() const
 {
   return smallest_non_hybrid_grid_key_;
+}
+
+int Grid::gridPaddedWidth(const Cell* cell) const
+{
+  return divCeil(padding_->paddedWidth(cell), getSiteWidth());
+}
+
+int Grid::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
+{
+  // gets a coordinate and its grid, and returns the height of the coordinate.
+  // This is useful for hybrid sites
+  auto grid_info = infoMap(gmk);
+  if (grid_info.isHybrid()) {
+    auto& grid_sites = grid_info.getSites();
+    const int total_height = grid_info.getSitesTotalHeight();
+    int patterns_below = divFloor(y_coordinate, grid_sites.size());
+    int remaining_rows = y_coordinate % grid_sites.size();
+    int remaining_rows_height
+        = std::accumulate(grid_sites.begin(),
+                          grid_sites.begin() + remaining_rows,
+                          0,
+                          [](int sum, const dbSite::OrientedSite& entry) {
+                            return sum + entry.site->getHeight();
+                          });
+    int height = patterns_below * total_height + remaining_rows_height;
+    return height;
+  }
+  return y_coordinate * grid_info.getSitesTotalHeight();
+}
+
+int Grid::gridHeight(const Cell* cell) const
+{
+  int row_height = getRowHeight(cell);
+  return std::max(1, divCeil(cell->height_, row_height));
+}
+
+int Grid::gridEndX(int x) const
+{
+  return divCeil(x, getSiteWidth());
+}
+
+int Grid::gridX(int x) const
+{
+  return x / getSiteWidth();
+}
+
+int Grid::gridX(const Cell* cell) const
+{
+  return gridX(cell->x_);
+}
+
+int Grid::gridPaddedX(const Cell* cell) const
+{
+  return gridX(cell->x_ - padding_->padLeft(cell) * getSiteWidth());
+}
+
+int Opendp::getRowCount(const Cell* cell) const
+{
+  return grid_->getRowCount(grid_->getRowHeight(cell));
+}
+
+int Grid::getRowCount(int row_height) const
+{
+  return divFloor(core_.dy(), row_height);
+}
+
+int Grid::getRowHeight(const Cell* cell) const
+{
+  int row_height = getRowHeight();
+  if (cell->isStdCell() || cell->isHybrid()) {
+    row_height = cell->height_;
+  }
+  return row_height;
+}
+
+pair<int, GridInfo> Grid::getRowInfo(const Cell* cell) const
+{
+  if (infoMapEmpty()) {
+    logger_->error(DPL, 43, "No grid layers mapped.");
+  }
+  GridMapKey key = getGridMapKey(cell);
+  auto layer = getInfoMap().find(key);
+  if (layer == getInfoMap().end()) {
+    // this means the cell is taller than any layer
+    logger_->error(DPL,
+                   44,
+                   "Cell {} with height {} is taller than any row.",
+                   cell->name(),
+                   cell->height_);
+  }
+  return std::make_pair(cell->height_, layer->second);
+}
+
+GridMapKey Grid::getGridMapKey(const dbSite* site) const
+{
+  return getSiteToGrid().at(site);
+}
+
+GridMapKey Grid::getGridMapKey(const Cell* cell) const
+{
+  if (cell == nullptr) {
+    logger_->error(DPL, 5211, "getGridMapKey cell is null");
+  }
+  auto site = cell->getSite();
+  if (!cell->isStdCell()) {
+    // non std cells can go to the first grid.
+    return getSmallestNonHybridGridKey();
+  }
+  if (site == nullptr) {
+    logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
+  }
+  return getGridMapKey(site);
+}
+
+GridInfo Grid::getGridInfo(const Cell* cell) const
+{
+  return getInfoMap().at(getGridMapKey(cell));
+}
+
+pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
+{
+  int sum_heights
+      = std::accumulate(grid_sites.begin(),
+                        grid_sites.end(),
+                        0,
+                        [](int sum, const dbSite::OrientedSite& entry) {
+                          return sum + entry.site->getHeight();
+                        });
+
+  int base_height_index = divFloor(y, sum_heights);
+  int cur_height = base_height_index * sum_heights;
+  int index = 0;
+  base_height_index *= grid_sites.size();
+  while (cur_height < y && index < grid_sites.size()) {
+    auto site = grid_sites.at(index);
+    if (cur_height + site.site->getHeight() > y) {
+      break;
+    }
+    cur_height += site.site->getHeight();
+    index++;
+  }
+  return {base_height_index + index, cur_height};
+}
+
+pair<int, int> Grid::gridEndY(int y, const dbSite::RowPattern& grid_sites) const
+{
+  int sum_heights
+      = std::accumulate(grid_sites.begin(),
+                        grid_sites.end(),
+                        0,
+                        [](int sum, const dbSite::OrientedSite& entry) {
+                          return sum + entry.site->getHeight();
+                        });
+
+  int base_height_index = divFloor(y, sum_heights);
+  int cur_height = base_height_index * sum_heights;
+  int index = 0;
+  base_height_index *= grid_sites.size();
+  while (cur_height < y && index < grid_sites.size()) {
+    auto site = grid_sites.at(index);
+    cur_height += site.site->getHeight();
+    index++;
+  }
+  return {base_height_index + index, cur_height};
+}
+
+int Grid::gridY(const Cell* cell) const
+{
+  return gridY(cell->y_, cell);
+}
+
+int Grid::gridY(const int y, const Cell* cell) const
+{
+  if (cell->isHybrid()) {
+    auto grid_info = getGridInfo(cell);
+    return gridY(y, grid_info.getSites()).first;
+  }
+
+  return y / getRowHeight(cell);
+}
+
+void Grid::setGridPaddedLoc(Cell* cell, int x, int y) const
+{
+  cell->x_ = (x + padding_->padLeft(cell)) * getSiteWidth();
+  if (cell->isHybrid()) {
+    auto grid_info = getInfoMap().at(getGridMapKey(cell));
+    int total_sites_height = grid_info.getSitesTotalHeight();
+    const auto& sites = grid_info.getSites();
+    const int sites_size = sites.size();
+    int height = (y / sites_size) * total_sites_height;
+    for (int s = 0; s < y % sites_size; s++) {
+      height += sites[s].site->getHeight();
+    }
+    cell->y_ = height;
+    if (cell->isHybridParent()) {
+      debugPrint(
+          logger_,
+          DPL,
+          "hybrid",
+          1,
+          "Offsetting cell {} to start at {} instead of {} -> offset: {}",
+          cell->name(),
+          cell->y_ + grid_info.getOffset(),
+          cell->y_,
+          grid_info.getOffset());
+      cell->y_ += grid_info.getOffset();
+    }
+    return;
+  }
+  cell->y_ = y * getRowHeight(cell);
+}
+
+int Grid::gridPaddedEndX(const Cell* cell) const
+{
+  const int site_width = getSiteWidth();
+  return divCeil(
+      cell->x_ + cell->width_ + padding_->padRight(cell) * site_width,
+      site_width);
+}
+
+int Grid::gridEndX(const Cell* cell) const
+{
+  return divCeil(cell->x_ + cell->width_, getSiteWidth());
+}
+
+int Grid::gridEndY(const Cell* cell) const
+{
+  return gridEndY(cell->y_ + cell->height_, cell);
+}
+
+int Grid::gridEndY(int y, const Cell* cell) const
+{
+  if (cell->isHybrid()) {
+    auto grid_info = getGridInfo(cell);
+    const auto& grid_sites = grid_info.getSites();
+    return gridY(y, grid_sites).first;
+  }
+  int row_height = getRowHeight(cell);
+  return divCeil(y, row_height);
 }
 
 }  // namespace dpl
