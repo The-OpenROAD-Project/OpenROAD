@@ -196,7 +196,6 @@ class Grid
   }
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
-  void setHasHybridRows(bool has) { has_hybrid_rows_ = has; }
 
   int getRowCount(int row_height) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;

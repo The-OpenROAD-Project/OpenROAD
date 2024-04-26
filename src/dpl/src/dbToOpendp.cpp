@@ -126,7 +126,7 @@ void Grid::examineRows(dbBlock* block)
   auto block_rows = block->getRows();
   rows.reserve(block_rows.size());
 
-  setHasHybridRows(false);
+  has_hybrid_rows_ = false;
   bool has_non_hybrid_rows = false;
 
   for (auto* row : block_rows) {
@@ -135,7 +135,7 @@ void Grid::examineRows(dbBlock* block)
       continue;
     }
     if (site->isHybrid()) {
-      setHasHybridRows(true);
+      has_hybrid_rows_ = true;
     } else {
       has_non_hybrid_rows = true;
     }
