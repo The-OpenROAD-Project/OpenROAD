@@ -58,6 +58,34 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbTransform;
 
+GridInfo::GridInfo(const int row_count,
+                   const int site_count,
+                   const int grid_index,
+                   const dbSite::RowPattern& sites)
+    : row_count_(row_count),
+      site_count_(site_count),
+      grid_index_(grid_index),
+      sites_(sites)
+{
+}
+
+int GridInfo::getSitesTotalHeight() const
+{
+  return std::accumulate(sites_.begin(),
+                         sites_.end(),
+                         0,
+                         [](int sum, const dbSite::OrientedSite& entry) {
+                           return sum + entry.site->getHeight();
+                         });
+}
+
+bool GridInfo::isHybrid() const
+{
+  return sites_.size() > 1 || sites_[0].site->hasRowPattern();
+}
+
+////////////////////////////////////////////////////////////////
+
 int Grid::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 {
   auto row_pattern = parent_hybrid_site->getRowPattern();
@@ -81,7 +109,7 @@ int Grid::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 
 void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
 {
-  clearHybridParent();
+  hybrid_parent_.clear();
   for (auto lib : db->getLibs()) {
     for (auto site : lib->getSites()) {
       if (site->hasRowPattern()) {
@@ -95,8 +123,8 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
   }
 
   int grid_index = 0;
-  clearInfoMap();
-  clearInfo();
+  grid_info_map_.clear();
+  grid_info_vector_.clear();
   int min_site_height = std::numeric_limits<int>::max();
   int min_row_y_coordinate = std::numeric_limits<int>::max();
   for (auto db_row : block->getRows()) {
@@ -184,8 +212,7 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
       }
     }
   }
-  if (!getHasHybridRows()
-      && min_site_height == std::numeric_limits<int>::max()) {
+  if (!hasHybridRows() && min_site_height == std::numeric_limits<int>::max()) {
     logger_->error(
         DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
@@ -252,14 +279,14 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
       }
     }
   }
-  resizeInfo(getInfoMap().size());
+  grid_info_vector_.resize(getInfoMap().size());
   int min_height(std::numeric_limits<int>::max());
   for (auto& [gmk, grid_info] : getInfoMap()) {
     assert(gmk.grid_index == grid_info.getGridIndex());
-    setInfo(grid_info.getGridIndex(), &grid_info);
+    grid_info_vector_[grid_info.getGridIndex()] = &grid_info;
     if (grid_info.getSitesTotalHeight() < min_height) {
       min_height = grid_info.getSitesTotalHeight();
-      if (getHasHybridRows()) {
+      if (hasHybridRows()) {
         setSmallestNonHybridGridKey(gmk);
       }
     }
@@ -290,7 +317,7 @@ void Grid::initGrid(dbDatabase* db,
   }
 
   // Make pixel grid
-  if (empty()) {
+  if (pixels_.empty()) {
     resize(getInfoMap().size());
     for (auto& [gmk, grid_info] : getInfoMap()) {
       resize(grid_info.getGridIndex(), grid_info.getRowCount());
@@ -313,7 +340,7 @@ void Grid::initGrid(dbDatabase* db,
       for (int k = 0; k < layer_row_site_count; k++) {
         Pixel& pixel = pixels_[index][j][k];
         pixel.cell = nullptr;
-        pixel.group_ = nullptr;
+        pixel.group = nullptr;
         pixel.util = 0.0;
         pixel.is_valid = false;
         pixel.is_hopeless = false;
@@ -627,7 +654,7 @@ void Opendp::groupAssignCellRegions()
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
           Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
-          if (pixel->is_valid && pixel->group_ == &group) {
+          if (pixel->is_valid && pixel->group == &group) {
             site_count++;
           }
         }
@@ -765,7 +792,7 @@ void Opendp::groupInitPixels()
         for (int l = col_start; l < col_end; l++) {
           Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           if (pixel->util == 1.0) {
-            pixel->group_ = &group;
+            pixel->group = &group;
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {
@@ -954,6 +981,30 @@ void Grid::paintPixel(Cell* cell, int grid_x, int grid_y)
   }
 
   cell->orient_ = gridPixel(index_in_grid, grid_x, grid_y)->orient_;
+}
+
+void Grid::addSiteToGrid(dbSite* site, const GridMapKey& key)
+{
+  site_to_grid_key_[site] = key;
+}
+const map<const dbSite*, GridMapKey>& Grid::getSiteToGrid() const
+{
+  return site_to_grid_key_;
+}
+
+void Grid::setSmallestNonHybridGridKey(const GridMapKey& key)
+{
+  smallest_non_hybrid_grid_key_ = key;
+}
+
+void Grid::addHybridParent(dbSite* child, dbSite* parent)
+{
+  hybrid_parent_[child] = parent;
+}
+
+void Grid::addInfoMap(const GridMapKey& key, const GridInfo& info)
+{
+  grid_info_map_.emplace(key, info);
 }
 
 }  // namespace dpl

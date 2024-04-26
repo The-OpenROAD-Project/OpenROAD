@@ -748,7 +748,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   int y_min = y - scaled_max_displacement_y_;
   int y_max = y + scaled_max_displacement_y_;
 
-  auto [row_height, grid_info] = getRowInfo(cell);
+  auto [row_height, grid_info] = grid_->getRowInfo(cell);
 
   // Restrict search to group boundary.
   Group* group = cell->group_;
@@ -962,7 +962,7 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
              x_end,
              y,
              y_end);
-  auto row_info = getRowInfo(cell);
+  auto row_info = grid_->getRowInfo(cell);
   auto gmk = grid_->getGridMapKey(cell);
   int min_row_height = grid_->getRowHeight();
   const auto smallest_non_hybrid_grid_key
@@ -1004,7 +1004,7 @@ bool Opendp::checkPixels(const Cell* cell,
                          int y_end) const
 {
   auto gmk = grid_->getGridMapKey(cell);
-  auto row_info = getRowInfo(cell);
+  auto row_info = grid_->getRowInfo(cell);
   if (x_end > row_info.second.getSiteCount()) {
     return false;
   }
@@ -1017,8 +1017,8 @@ bool Opendp::checkPixels(const Cell* cell,
     for (int x1 = x; x1 < x_end; x1++) {
       Pixel* pixel = grid_->gridPixel(layer, x1, y1);
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
-          || (cell->inGroup() && pixel->group_ != cell->group_)
-          || (!cell->inGroup() && pixel->group_)
+          || (cell->inGroup() && pixel->group != cell->group_)
+          || (!cell->inGroup() && pixel->group)
           || (pixel->site != nullptr && pixel->site != cell_site)) {
         return false;
       }
@@ -1197,7 +1197,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int best_x = grid_x;
   int best_y = grid_y;
   int best_dist = std::numeric_limits<int>::max();
-  auto [row_height, grid_info] = getRowInfo(cell);
+  auto [row_height, grid_info] = grid_->getRowInfo(cell);
   int grid_index = grid_info.getGridIndex();
   int layer_site_count = grid_info.getSiteCount();
   int layer_row_count = grid_info.getRowCount();

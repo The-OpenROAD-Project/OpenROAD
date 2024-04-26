@@ -290,7 +290,6 @@ class Opendp
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);

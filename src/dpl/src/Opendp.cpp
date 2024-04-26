@@ -372,14 +372,14 @@ int Grid::getRowHeight(const Cell* cell) const
   return row_height;
 }
 
-pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
+pair<int, GridInfo> Grid::getRowInfo(const Cell* cell) const
 {
-  if (grid_->infoMapEmpty()) {
+  if (infoMapEmpty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
-  GridMapKey key = grid_->getGridMapKey(cell);
-  auto layer = grid_->getInfoMap().find(key);
-  if (layer == grid_->getInfoMap().end()) {
+  GridMapKey key = getGridMapKey(cell);
+  auto layer = getInfoMap().find(key);
+  if (layer == getInfoMap().end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
                    44,

@@ -334,7 +334,7 @@ bool Opendp::isPlaced(const Cell* cell)
 
 bool Opendp::checkInRows(const Cell& cell) const
 {
-  auto grid_info = getRowInfo(&cell);
+  auto grid_info = grid_->getRowInfo(&cell);
   int x_ll = grid_->gridX(&cell);
   int x_ur = grid_->gridEndX(&cell);
   int y_ll = grid_->gridY(&cell);
@@ -431,7 +431,7 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
-  auto row_info = getRowInfo(&cell);
+  auto row_info = grid_->getRowInfo(&cell);
   int index_in_grid = row_info.second.getGridIndex();
   grid_->visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {

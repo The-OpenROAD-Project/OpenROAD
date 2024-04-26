@@ -144,7 +144,7 @@ void Grid::examineRows(dbBlock* block)
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
-  if (getHasHybridRows() && has_non_hybrid_rows) {
+  if (hasHybridRows() && has_non_hybrid_rows) {
     logger_->error(
         DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
   }
