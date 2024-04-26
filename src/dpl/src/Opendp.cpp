@@ -48,6 +48,9 @@
 #include <map>
 
 #include "DplObserver.h"
+#include "Grid.h"
+#include "Objects.h"
+#include "Padding.h"
 #include "dpl/OptMirror.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -63,23 +66,7 @@ using odb::dbMasterType;
 using odb::dbNet;
 using odb::Rect;
 
-const char* Cell::name() const
-{
-  return db_inst_->getConstName();
-}
-
-int64_t Cell::area() const
-{
-  dbMaster* master = db_inst_->getMaster();
-  return int64_t(master->getWidth()) * master->getHeight();
-}
-
 ////////////////////////////////////////////////////////////////
-
-bool Opendp::isFixed(const Cell* cell) const
-{
-  return cell == &dummy_cell_ || cell->db_inst_->isFixed();
-}
 
 bool Opendp::isMultiRow(const Cell* cell) const
 {
@@ -92,7 +79,7 @@ bool Opendp::isMultiRow(const Cell* cell) const
 
 Opendp::Opendp()
 {
-  dummy_cell_.is_placed_ = true;
+  Cell::dummy_cell.is_placed_ = true;
 }
 
 Opendp::~Opendp() = default;
@@ -101,34 +88,30 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
+  padding_ = std::make_unique<Padding>();
+  grid_ = std::make_unique<Grid>();
+  grid_->init(logger);
 }
 
 void Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  grid_->initBlock(block_);
 }
 
 void Opendp::setPaddingGlobal(int left, int right)
 {
-  pad_left_ = left;
-  pad_right_ = right;
+  padding_->setPaddingGlobal(left, right);
 }
 
 void Opendp::setPadding(dbInst* inst, int left, int right)
 {
-  inst_padding_map_[inst] = std::make_pair(left, right);
+  padding_->setPadding(inst, left, right);
 }
 
 void Opendp::setPadding(dbMaster* master, int left, int right)
 {
-  master_padding_map_[master] = std::make_pair(left, right);
-}
-
-bool Opendp::havePadding() const
-{
-  return pad_left_ > 0 || pad_right_ > 0 || !master_padding_map_.empty()
-         || !inst_padding_map_.empty();
+  padding_->setPadding(master, left, right);
 }
 
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
@@ -192,14 +175,14 @@ void Opendp::detailedPlacement(int max_displacement_x,
 void Opendp::updateDbInstLocations()
 {
   for (Cell& cell : cells_) {
-    if (!isFixed(&cell) && isStdCell(&cell)) {
+    if (!cell.isFixed() && cell.isStdCell()) {
       dbInst* db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      int x = core_.xMin() + cell.x_;
-      int y = core_.yMin() + cell.y_;
+      int x = grid_->getCore().xMin() + cell.x_;
+      int y = grid_->getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -273,11 +256,11 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  loc_x -= core_.xMin();
+  loc_x -= grid_->getCore().xMin();
   if (padded) {
-    loc_x -= padLeft(cell) * site_width_;
+    loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
   }
-  loc_y -= core_.yMin();
+  loc_y -= grid_->getCore().yMin();
   return Point(loc_x, loc_y);
 }
 
@@ -287,115 +270,6 @@ int Opendp::disp(const Cell* cell) const
   return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
 }
 
-bool Opendp::isPaddedType(dbInst* inst) const
-{
-  dbMasterType type = inst->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-      return true;
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
-}
-
-bool Opendp::isStdCell(const Cell* cell) const
-{
-  if (cell->db_inst_ == nullptr) {
-    return false;
-  }
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      return true;
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
-}
-
 /* static */
 bool Opendp::isBlock(const Cell* cell)
 {
@@ -403,63 +277,16 @@ bool Opendp::isBlock(const Cell* cell)
   return type == dbMasterType::BLOCK;
 }
 
-int Opendp::padLeft(const Cell* cell) const
+int Grid::gridPaddedWidth(const Cell* cell) const
 {
-  return padLeft(cell->db_inst_);
+  return divCeil(padding_->paddedWidth(cell), getSiteWidth());
 }
 
-int Opendp::padLeft(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.first;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.first;
-    }
-    return pad_left_;
-  }
-  return 0;
-}
-
-int Opendp::padRight(const Cell* cell) const
-{
-  return padRight(cell->db_inst_);
-}
-
-int Opendp::padRight(dbInst* inst) const
-{
-  if (isPaddedType(inst)) {
-    auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end()) {
-      return itr1->second.second;
-    }
-    auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end()) {
-      return itr2->second.second;
-    }
-    return pad_right_;
-  }
-  return 0;
-}
-
-int Opendp::paddedWidth(const Cell* cell) const
-{
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
-}
-
-int Opendp::gridPaddedWidth(const Cell* cell) const
-{
-  return divCeil(paddedWidth(cell), site_width_);
-}
-
-int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
+int Grid::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 {
   // gets a coordinate and its grid, and returns the height of the coordinate.
   // This is useful for hybrid sites
-  auto grid_info = grid_info_map_.at(gmk);
+  auto grid_info = infoMap(gmk);
   if (grid_info.isHybrid()) {
     auto& grid_sites = grid_info.getSites();
     const int total_height = grid_info.getSitesTotalHeight();
@@ -478,7 +305,7 @@ int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
   return y_coordinate * grid_info.getSitesTotalHeight();
 }
 
-int Opendp::gridHeight(const Cell* cell) const
+int Grid::gridHeight(const Cell* cell) const
 {
   int row_height = getRowHeight(cell);
   return std::max(1, divCeil(cell->height_, row_height));
@@ -486,12 +313,12 @@ int Opendp::gridHeight(const Cell* cell) const
 
 int64_t Opendp::paddedArea(const Cell* cell) const
 {
-  return int64_t(paddedWidth(cell)) * cell->height_;
+  return int64_t(padding_->paddedWidth(cell)) * cell->height_;
 }
 
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  return divRound(paddedWidth(cell), site_width_);
+  return divRound(padding_->paddedWidth(cell), grid_->getSiteWidth());
 }
 
 // Callers should probably be using gridHeight.
@@ -502,44 +329,44 @@ int Opendp::gridNearestHeight(const Cell* cell, int row_height) const
 
 int Opendp::gridNearestHeight(const Cell* cell) const
 {
-  int row_height = getRowHeight(cell);
+  int row_height = grid_->getRowHeight(cell);
   return divRound(cell->height_, row_height);
 }
 
-int Opendp::gridEndX(int x) const
+int Grid::gridEndX(int x) const
 {
-  return divCeil(x, site_width_);
+  return divCeil(x, getSiteWidth());
 }
 
-int Opendp::gridX(int x) const
+int Grid::gridX(int x) const
 {
-  return x / site_width_;
+  return x / getSiteWidth();
 }
 
-int Opendp::gridX(const Cell* cell) const
+int Grid::gridX(const Cell* cell) const
 {
   return gridX(cell->x_);
 }
 
-int Opendp::gridPaddedX(const Cell* cell) const
+int Grid::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->x_ - padLeft(cell) * site_width_);
+  return gridX(cell->x_ - padding_->padLeft(cell) * getSiteWidth());
 }
 
 int Opendp::getRowCount(const Cell* cell) const
 {
-  return getRowCount(getRowHeight(cell));
+  return grid_->getRowCount(grid_->getRowHeight(cell));
 }
 
-int Opendp::getRowCount(int row_height) const
+int Grid::getRowCount(int row_height) const
 {
   return divFloor(core_.dy(), row_height);
 }
 
-int Opendp::getRowHeight(const Cell* cell) const
+int Grid::getRowHeight(const Cell* cell) const
 {
-  int row_height = row_height_;
-  if (isStdCell(cell) || cell->isHybrid()) {
+  int row_height = getRowHeight();
+  if (cell->isStdCell() || cell->isHybrid()) {
     row_height = cell->height_;
   }
   return row_height;
@@ -547,12 +374,12 @@ int Opendp::getRowHeight(const Cell* cell) const
 
 pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 {
-  if (grid_info_map_.empty()) {
+  if (grid_->infoMapEmpty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
-  GridMapKey key = getGridMapKey(cell);
-  auto layer = grid_info_map_.find(key);
-  if (layer == grid_info_map_.end()) {
+  GridMapKey key = grid_->getGridMapKey(cell);
+  auto layer = grid_->getInfoMap().find(key);
+  if (layer == grid_->getInfoMap().end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
                    44,
@@ -563,25 +390,20 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
   return std::make_pair(cell->height_, layer->second);
 }
 
-GridMapKey Opendp::getGridMapKey(const dbSite* site) const
+GridMapKey Grid::getGridMapKey(const dbSite* site) const
 {
-  auto grid_itr = site_to_grid_key_.find(site);
-  if (grid_itr == site_to_grid_key_.end()) {
-    logger_->error(
-        DPL, 46, "Site {} is not mapped to a grid.", site->getName());
-  }
-  return grid_itr->second;
+  return getSiteToGrid().at(site);
 }
 
-GridMapKey Opendp::getGridMapKey(const Cell* cell) const
+GridMapKey Grid::getGridMapKey(const Cell* cell) const
 {
   if (cell == nullptr) {
     logger_->error(DPL, 5211, "getGridMapKey cell is null");
   }
   auto site = cell->getSite();
-  if (!isStdCell(cell)) {
+  if (!cell->isStdCell()) {
     // non std cells can go to the first grid.
-    return smallest_non_hybrid_grid_key_;
+    return getSmallestNonHybridGridKey();
   }
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
@@ -589,12 +411,12 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
   return getGridMapKey(site);
 }
 
-GridInfo Opendp::getGridInfo(const Cell* cell) const
+GridInfo Grid::getGridInfo(const Cell* cell) const
 {
-  return grid_info_map_.at(getGridMapKey(cell));
+  return getInfoMap().at(getGridMapKey(cell));
 }
 
-pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
       = std::accumulate(grid_sites.begin(),
@@ -619,8 +441,7 @@ pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
   return {base_height_index + index, cur_height};
 }
 
-pair<int, int> Opendp::gridEndY(int y,
-                                const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridEndY(int y, const dbSite::RowPattern& grid_sites) const
 {
   int sum_heights
       = std::accumulate(grid_sites.begin(),
@@ -642,12 +463,12 @@ pair<int, int> Opendp::gridEndY(int y,
   return {base_height_index + index, cur_height};
 }
 
-int Opendp::gridY(const Cell* cell) const
+int Grid::gridY(const Cell* cell) const
 {
   return gridY(cell->y_, cell);
 }
 
-int Opendp::gridY(const int y, const Cell* cell) const
+int Grid::gridY(const int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
@@ -657,11 +478,11 @@ int Opendp::gridY(const int y, const Cell* cell) const
   return y / getRowHeight(cell);
 }
 
-void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
+void Grid::setGridPaddedLoc(Cell* cell, int x, int y) const
 {
-  cell->x_ = (x + padLeft(cell)) * site_width_;
+  cell->x_ = (x + padding_->padLeft(cell)) * getSiteWidth();
   if (cell->isHybrid()) {
-    auto grid_info = grid_info_map_.at(getGridMapKey(cell));
+    auto grid_info = getInfoMap().at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
     const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();
@@ -688,23 +509,25 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
   cell->y_ = y * getRowHeight(cell);
 }
 
-int Opendp::gridPaddedEndX(const Cell* cell) const
+int Grid::gridPaddedEndX(const Cell* cell) const
 {
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
-                 site_width_);
+  const int site_width = getSiteWidth();
+  return divCeil(
+      cell->x_ + cell->width_ + padding_->padRight(cell) * site_width,
+      site_width);
 }
 
-int Opendp::gridEndX(const Cell* cell) const
+int Grid::gridEndX(const Cell* cell) const
 {
-  return divCeil(cell->x_ + cell->width_, site_width_);
+  return divCeil(cell->x_ + cell->width_, getSiteWidth());
 }
 
-int Opendp::gridEndY(const Cell* cell) const
+int Grid::gridEndY(const Cell* cell) const
 {
   return gridEndY(cell->y_ + cell->height_, cell);
 }
 
-int Opendp::gridEndY(int y, const Cell* cell) const
+int Grid::gridEndY(int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
@@ -725,6 +548,40 @@ double Opendp::dbuAreaToMicrons(int64_t dbu_area) const
 {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu_area / (dbu_micron * dbu_micron);
+}
+
+Rect Opendp::getCore() const
+{
+  return grid_->getCore();
+}
+
+int Opendp::getRowHeight() const
+{
+  return grid_->getRowHeight();
+}
+
+int Opendp::getSiteWidth() const
+{
+  return grid_->getSiteWidth();
+}
+int Opendp::padGlobalLeft() const
+{
+  return padding_->padGlobalLeft();
+}
+
+int Opendp::padGlobalRight() const
+{
+  return padding_->padGlobalRight();
+}
+
+int Opendp::padLeft(dbInst* inst) const
+{
+  return padding_->padLeft(inst);
+}
+
+int Opendp::padRight(dbInst* inst) const
+{
+  return padding_->padRight(inst);
 }
 
 int divRound(int dividend, int divisor)

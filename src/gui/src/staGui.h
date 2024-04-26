@@ -70,7 +70,32 @@ class TimingPathsModel : public QAbstractTableModel
 {
   Q_OBJECT
 
+ private:
+  enum Column
+  {
+    Clock,
+    Required,
+    Arrival,
+    Slack,
+    Skew,
+    Start,
+    End
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> columnNames
+        = {{Clock, "Capture Clock"},
+           {Required, "Required"},
+           {Arrival, "Arrival"},
+           {Slack, "Slack"},
+           {Skew, "Skew"},
+           {Start, "Start"},
+           {End, "End"}};
+    return columnNames;
+  }
+
   TimingPathsModel(bool is_setup,
                    STAGuiInterface* sta,
                    QObject* parent = nullptr);
@@ -103,17 +128,6 @@ class TimingPathsModel : public QAbstractTableModel
   STAGuiInterface* sta_;
   bool is_setup_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
-
-  enum Column
-  {
-    Clock,
-    Required,
-    Arrival,
-    Slack,
-    Skew,
-    Start,
-    End
-  };
 };
 
 class TimingPathDetailModel : public QAbstractTableModel

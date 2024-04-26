@@ -38,6 +38,8 @@
 #include <string>
 #include <unordered_set>
 
+#include "Grid.h"
+#include "Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -52,6 +54,7 @@ using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbRegion;
+using odb::dbRow;
 using odb::Rect;
 
 static bool swapWidthHeight(const dbOrientType& orient);
@@ -59,12 +62,12 @@ static bool swapWidthHeight(const dbOrientType& orient);
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  grid_->initBlock(block_);
   have_fillers_ = false;
   have_one_site_cells_ = false;
 
   importClear();
-  examineRows();
+  grid_->examineRows(block_);
   checkOneSiteDbMaster();
   makeMacros();
   makeCells();
@@ -112,17 +115,18 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
+  const int row_height = grid_->getRowHeight();
   master->is_multi_row
-      = (master_height != row_height_ && master_height % row_height_ == 0);
+      = (master_height != row_height && master_height % row_height == 0);
 }
 
-void Opendp::examineRows()
+void Grid::examineRows(dbBlock* block)
 {
   std::vector<dbRow*> rows;
-  auto block_rows = block_->getRows();
+  auto block_rows = block->getRows();
   rows.reserve(block_rows.size());
 
-  has_hybrid_rows_ = false;
+  setHasHybridRows(false);
   bool has_non_hybrid_rows = false;
 
   for (auto* row : block_rows) {
@@ -131,7 +135,7 @@ void Opendp::examineRows()
       continue;
     }
     if (site->isHybrid()) {
-      has_hybrid_rows_ = true;
+      setHasHybridRows(true);
     } else {
       has_non_hybrid_rows = true;
     }
@@ -140,7 +144,7 @@ void Opendp::examineRows()
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
-  if (has_hybrid_rows_ && has_non_hybrid_rows) {
+  if (getHasHybridRows() && has_non_hybrid_rows) {
     logger_->error(
         DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
   }
@@ -154,10 +158,10 @@ void Opendp::examineRows()
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
   }
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
-  row_site_count_ = divFloor(core_.dx(), site_width_);
-  row_count_ = divFloor(core_.dy(), row_height_);
+  setRowHeight(min_row_height_);
+  setSiteWidth(min_site_width_);
+  row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
+  row_count_ = divFloor(getCore().dy(), getRowHeight());
 }
 
 void Opendp::makeCells()
@@ -179,7 +183,7 @@ void Opendp::makeCells()
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
       // Cell is already placed if it is FIXED.
-      cell.is_placed_ = isFixed(&cell);
+      cell.is_placed_ = cell.isFixed();
 
       Master& master = db_master_map_[db_master];
       // We only want to set this if we have multi-row cells to
@@ -201,8 +205,8 @@ Rect Opendp::getBbox(dbInst* inst)
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
   // Shift by core lower left.
-  loc_x -= core_.xMin();
-  loc_y -= core_.yMin();
+  loc_x -= grid_->getCore().xMin();
+  loc_y -= grid_->getCore().yMin();
 
   int width = master->getWidth();
   int height = master->getHeight();
@@ -272,9 +276,10 @@ void Opendp::makeGroups()
 
         for (dbBox* boundary : boundaries) {
           Rect box = boundary->getBox();
-          box = box.intersect(core_);
+          const Rect core = grid_->getCore();
+          box = box.intersect(core);
           // offset region to core origin
-          box.moveDelta(-core_.xMin(), -core_.yMin());
+          box.moveDelta(-core.xMin(), -core.yMin());
           if (height == *(unique_heights.begin())) {
             bgBox bbox(
                 bgPoint(box.xMin(), box.yMin()),

@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2024, Precision Innovations Inc.
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,45 +29,41 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "dpl/Opendp.h"
 
-#include "Pin.h"
-#include "odb/db.h"
+namespace dpl {
 
-namespace grt {
-
-class Net
+class Padding
 {
  public:
-  Net(odb::dbNet* net, bool has_wires);
-  odb::dbNet* getDbNet() const { return net_; }
-  const std::string getName() const;
-  const char* getConstName() const;
-  odb::dbSigType getSignalType() const;
-  void addPin(Pin& pin);
-  std::vector<Pin>& getPins() { return pins_; }
-  int getNumPins() const { return pins_.size(); }
-  float getSlack() const { return slack_; }
-  void setSlack(float slack) { slack_ = slack; }
-  bool isLocal();
-  void destroyPins();
-  bool hasWires() const { return has_wires_; }
-  void setHasWires(bool has_wires) { has_wires_ = has_wires; }
-  bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
+  int padGlobalLeft() const { return pad_left_; }
+  int padGlobalRight() const { return pad_right_; }
+
+  void setPaddingGlobal(int left, int right);
+  void setPadding(dbInst* inst, int left, int right);
+  void setPadding(dbMaster* master, int left, int right);
+  bool havePadding() const;
+
+  // Find instance/master/global padding value for an instance.
+  int padLeft(dbInst* inst) const;
+  int padLeft(const Cell* cell) const;
+  int padRight(dbInst* inst) const;
+  int padRight(const Cell* cell) const;
+  bool isPaddedType(dbInst* inst) const;
+  int paddedWidth(const Cell* cell) const;
 
  private:
-  int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
+  using InstPaddingMap = map<dbInst*, pair<int, int>>;
+  using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
 
-  odb::dbNet* net_;
-  std::vector<Pin> pins_;
-  float slack_;
-  bool has_wires_;
+  int pad_left_ = 0;
+  int pad_right_ = 0;
+  InstPaddingMap inst_padding_map_;
+  MasterPaddingMap master_padding_map_;
 };
 
-}  // namespace grt
+}  // namespace dpl

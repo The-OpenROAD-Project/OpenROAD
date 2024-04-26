@@ -65,7 +65,6 @@ using std::map;
 using std::pair;
 using std::set;
 using std::string;
-using std::unordered_map;
 using std::vector;
 
 using utl::Logger;
@@ -73,191 +72,26 @@ using utl::Logger;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
-using odb::dbLib;
 using odb::dbMaster;
 using odb::dbMasterType;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbNet;
-using odb::dbOrientType;
-using odb::dbRow;
-using odb::dbSite;
 using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
-struct Pixel;
+struct Cell;
 struct Group;
+struct Master;
+struct Pixel;
+
 class DplObserver;
+class Grid;
+class GridInfo;
+class Padding;
+class PixelPt;
 
-using bgPoint
-    = boost::geometry::model::d2::point_xy<int, boost::geometry::cs::cartesian>;
-using bgBox = boost::geometry::model::box<bgPoint>;
-
-using RtreeBox
-    = boost::geometry::index::rtree<bgBox,
-                                    boost::geometry::index::quadratic<16>>;
-// The "Grid" is now an array of 2D grids. The new dimension is to support
-// multi-height cells. Each unique row height creates a new grid that is used in
-// legalization. The first index is the grid index (corresponding to row
-// height), second index is the row index, and third index is the site index.
-using Grid = std::vector<std::vector<std::vector<Pixel>>>;
 using dbMasterSeq = vector<dbMaster*>;
-// gap -> sequence of masters to fill the gap
-using GapFillers = vector<dbMasterSeq>;
-
-using InstPaddingMap = map<dbInst*, pair<int, int>>;
-using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
-
-struct Master
-{
-  bool is_multi_row = false;
-};
-
-struct GridMapKey
-{
-  int grid_index;
-  bool operator<(const GridMapKey& other) const
-  {
-    return grid_index < other.grid_index;
-  }
-  bool operator==(const GridMapKey& other) const
-  {
-    return grid_index == other.grid_index;
-  }
-};
-
-class HybridSiteInfo
-{
- public:
-  HybridSiteInfo(int index, dbSite* site) : index_(index), site_(site) {}
-  int getIndex() const { return index_; }
-  const dbSite* getSite() const { return site_; }
-
- private:
-  const int index_;
-  const dbSite* site_;
-};
-
-struct Cell
-{
-  const char* name() const;
-  bool inGroup() const { return group_ != nullptr; }
-  int64_t area() const;
-
-  dbInst* db_inst_ = nullptr;
-  int x_ = 0;  // lower left wrt core DBU
-  int y_ = 0;
-  dbOrientType orient_;
-  int width_ = 0;  // DBU
-  int height_ = 0;
-  bool is_placed_ = false;
-  bool hold_ = false;
-  Group* group_ = nullptr;
-  Rect* region_ = nullptr;  // group rect
-
-  bool isHybrid() const
-  {
-    dbSite* site = getSite();
-    return site ? site->isHybrid() : false;
-  }
-
-  bool isHybridParent() const
-  {
-    dbSite* site = getSite();
-    return site ? site->hasRowPattern() : false;
-  }
-
-  dbSite* getSite() const
-  {
-    if (!db_inst_ || !db_inst_->getMaster()) {
-      return nullptr;
-    }
-    return db_inst_->getMaster()->getSite();
-  }
-};
-
-struct Group
-{
-  string name;
-  vector<Rect> regions;
-  vector<Cell*> cells_;
-  Rect boundary;
-  double util = 0.0;
-};
-
-struct Pixel
-{
-  Cell* cell;
-  Group* group_;
-  double util;
-  dbOrientType orient_;
-  bool is_valid;     // false for dummy cells
-  bool is_hopeless;  // too far from sites for diamond search
-  dbSite* site;      // site that this pixel is
-};
-
-class GridInfo
-{
- public:
-  GridInfo(const int row_count,
-           const int site_count,
-           const int grid_index,
-           const dbSite::RowPattern& sites)
-      : row_count_(row_count),
-        site_count_(site_count),
-        grid_index_(grid_index),
-        sites_(sites)
-  {
-  }
-
-  int getRowCount() const { return row_count_; }
-
-  int getSiteCount() const { return site_count_; }
-
-  int getGridIndex() const { return grid_index_; }
-
-  int getOffset() const { return offset_; }
-
-  void setOffset(int offset) { offset_ = offset; }
-
-  const dbSite::RowPattern& getSites() const { return sites_; }
-
-  bool isHybrid() const
-  {
-    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
-  }
-  int getSitesTotalHeight() const
-  {
-    return std::accumulate(sites_.begin(),
-                           sites_.end(),
-                           0,
-                           [](int sum, const dbSite::OrientedSite& entry) {
-                             return sum + entry.site->getHeight();
-                           });
-  }
-
- private:
-  const int row_count_;
-  const int site_count_;
-  const int grid_index_;
-  int offset_ = 0;
-  // will have one site only for non-hybrid and hybrid parent cells.
-  // For hybrid children, this will have all the sites
-  const dbSite::RowPattern sites_;
-};
 
 ////////////////////////////////////////////////////////////////
-
-// Return value for grid searches.
-class PixelPt
-{
- public:
-  PixelPt() = default;
-  PixelPt(Pixel* pixel, int grid_x, int grid_y);
-  Pixel* pixel = nullptr;
-  Point pt;  // grid locataion
-};
 
 class Opendp
 {
@@ -289,11 +123,11 @@ class Opendp
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
   // Global padding.
-  int padGlobalLeft() const { return pad_left_; }
-  int padGlobalRight() const { return pad_right_; }
+  int padGlobalLeft() const;
+  int padGlobalRight() const;
   // Find instance/master/global padding value for an instance.
-  int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
+  int padRight(dbInst* inst) const;
 
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
@@ -311,6 +145,18 @@ class Opendp
   void optimizeMirroring();
 
  private:
+  using bgPoint
+      = boost::geometry::model::d2::point_xy<int,
+                                             boost::geometry::cs::cartesian>;
+  using bgBox = boost::geometry::model::box<bgPoint>;
+
+  using RtreeBox
+      = boost::geometry::index::rtree<bgBox,
+                                      boost::geometry::index::quadratic<16>>;
+
+  // gap -> sequence of masters to fill the gap
+  using GapFillers = vector<dbMasterSeq>;
+
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
@@ -318,12 +164,9 @@ class Opendp
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   const vector<Cell>& getCells() const { return cells_; }
-  Rect getCore() const { return core_; }
-  int getRowHeight() const { return row_height_; }
-  int getRowHeight(const Cell* cell) const;
-  int getSiteWidth() const { return site_width_; }
-  int getRowCount() const { return row_count_; }
-  int getRowSiteCount() const { return row_site_count_; }
+  Rect getCore() const;
+  int getRowHeight() const;
+  int getSiteWidth() const;
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
                               const std::vector<Cell*>& failures,
@@ -332,22 +175,17 @@ class Opendp
   void importClear();
   Rect getBbox(dbInst* inst);
   void makeMacros();
-  void examineRows();
   void makeCells();
   static bool isPlacedType(dbMasterType type);
   void makeGroups();
   double dbuToMicrons(int64_t dbu) const;
   double dbuAreaToMicrons(int64_t dbu_area) const;
-  bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
-  GridMapKey getGridMapKey(const Cell* cell) const;
-  GridMapKey getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
-  void initGridLayersMap();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
@@ -385,8 +223,6 @@ class Opendp
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
-  int getHybridSiteIndex(dbSite* site);
-  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
   Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
   Point legalGridPt(const Cell* cell,
@@ -411,27 +247,11 @@ class Opendp
   int anneal(Group* group);
   int anneal();
   int refine();
-  bool cellFitsInCore(Cell* cell);
   void setFixedGridCells();
-  void visitCellPixels(Cell& cell,
-                       bool padded,
-                       const std::function<void(Pixel* pixel)>& visitor) const;
-  void visitCellBoundaryPixels(
-      Cell& cell,
-      bool padded,
-      const std::function<
-          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
-      const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
-  void erasePixel(Cell* cell);
-  void paintPixel(Cell* cell, int grid_x, int grid_y);
-  int map_ycoordinates(int source_grid_coordinate,
-                       const GridMapKey& source_grid_key,
-                       const GridMapKey& target_grid_key,
-                       const bool start) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -461,44 +281,19 @@ class Opendp
                 int* x,
                 int* y) const;
   int rectDist(const Cell* cell, const Rect* rect) const;
-  bool havePadding() const;
   void checkOneSiteDbMaster();
   void deleteGrid();
-  Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
 
   int getRowCount(const Cell* cell) const;
-  int getRowCount(int row_height) const;
-  int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
-  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  int gridHeight(const Cell* cell) const;
-  GridInfo getGridInfo(const Cell* cell) const;
-  int gridX(int x) const;
-  int gridX(const Cell* cell) const;
-  int gridPaddedX(const Cell* cell) const;
-  int gridY(int y, const Cell* cell) const;
-  int gridY(const Cell* cell) const;
-  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
-  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
-  int gridPaddedEndX(const Cell* cell) const;
-  int gridEndX(int x) const;
-  int gridEndX(const Cell* cell) const;
-  int gridEndY(int y, const Cell* cell) const;
-  int gridEndY(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
-  bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
-  int paddedWidth(const Cell* cell) const;
-  bool isPaddedType(dbInst* inst) const;
-  int padLeft(const Cell* cell) const;
-  int padRight(const Cell* cell) const;
   int disp(const Cell* cell) const;
   // Place fillers
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
@@ -521,31 +316,14 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
-  int pad_left_ = 0;
-  int pad_right_ = 0;
-  InstPaddingMap inst_padding_map_;
-  MasterPaddingMap master_padding_map_;
+  std::unique_ptr<Padding> padding_;
 
   vector<Cell> cells_;
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<GridMapKey, GridInfo> grid_info_map_;
-  // This map is used to map each unqie site to a grid. The key is always
-  // unique, but the value is not unique in the case of hybrid sites
-  // (alternating rows)
-  map<const dbSite*, GridMapKey> site_to_grid_key_;
-  GridMapKey smallest_non_hybrid_grid_key_;
-  std::vector<GridInfo*> grid_info_vector_;
-  std::unordered_map<dbSite*, dbSite*> _hybrid_parent;
   map<dbInst*, Cell*> db_inst_map_;
-  bool has_hybrid_rows_ = false;
 
-  Rect core_;
-  int row_height_ = 0;  // dbu
-  int site_width_ = 0;  // dbu
-  int row_count_ = 0;
-  int row_site_count_ = 0;
   int have_multi_row_cells_ = 0;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
@@ -553,8 +331,7 @@ class Opendp
   vector<Cell*> placement_failures_;
 
   // 3D pixel grid
-  Grid grid_;
-  Cell dummy_cell_;
+  std::unique_ptr<Grid> grid_;
   RtreeBox regions_rtree;
 
   // Filler placement.

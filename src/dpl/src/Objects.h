@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2024, Precision Innovations Inc.
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,45 +29,72 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "dpl/Opendp.h"
 
-#include "Pin.h"
-#include "odb/db.h"
+namespace dpl {
 
-namespace grt {
+using odb::dbOrientType;
+using odb::dbSite;
 
-class Net
+struct Master
 {
- public:
-  Net(odb::dbNet* net, bool has_wires);
-  odb::dbNet* getDbNet() const { return net_; }
-  const std::string getName() const;
-  const char* getConstName() const;
-  odb::dbSigType getSignalType() const;
-  void addPin(Pin& pin);
-  std::vector<Pin>& getPins() { return pins_; }
-  int getNumPins() const { return pins_.size(); }
-  float getSlack() const { return slack_; }
-  void setSlack(float slack) { slack_ = slack; }
-  bool isLocal();
-  void destroyPins();
-  bool hasWires() const { return has_wires_; }
-  void setHasWires(bool has_wires) { has_wires_ = has_wires; }
-  bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
-
- private:
-  int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
-
-  odb::dbNet* net_;
-  std::vector<Pin> pins_;
-  float slack_;
-  bool has_wires_;
+  bool is_multi_row = false;
 };
 
-}  // namespace grt
+struct Cell
+{
+  const char* name() const;
+  bool inGroup() const { return group_ != nullptr; }
+  int64_t area() const;
+  bool isStdCell() const;
+  int siteWidth() const;
+  bool isFixed() const;
+
+  dbInst* db_inst_ = nullptr;
+  int x_ = 0;  // lower left wrt core DBU
+  int y_ = 0;
+  dbOrientType orient_;
+  int width_ = 0;  // DBU
+  int height_ = 0;
+  bool is_placed_ = false;
+  bool hold_ = false;
+  Group* group_ = nullptr;
+  Rect* region_ = nullptr;  // group rect
+
+  bool isHybrid() const
+  {
+    dbSite* site = getSite();
+    return site ? site->isHybrid() : false;
+  }
+
+  bool isHybridParent() const
+  {
+    dbSite* site = getSite();
+    return site ? site->hasRowPattern() : false;
+  }
+
+  dbSite* getSite() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()) {
+      return nullptr;
+    }
+    return db_inst_->getMaster()->getSite();
+  }
+
+  static Cell dummy_cell;
+};
+
+struct Group
+{
+  string name;
+  vector<Rect> regions;
+  vector<Cell*> cells_;
+  Rect boundary;
+  double util = 0.0;
+};
+
+}  // namespace dpl
