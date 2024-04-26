@@ -63,7 +63,6 @@ using std::string;
 using utl::DPL;
 
 using odb::dbMasterType;
-using odb::dbNet;
 using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
@@ -419,7 +418,7 @@ void Opendp::groupAssignCellRegions()
         }
       }
       if (cell->region_ == nullptr) {
-        cell->region_ = &group.regions[0];
+        cell->region_ = group.regions.data();
       }
     }
     group.util = static_cast<double>(cell_area) / site_area;

@@ -146,7 +146,7 @@ void Opendp::placeRowFillers(int row,
                              const char* prefix,
                              const MasterByImplant& filler_masters_by_implant,
                              int row_height,
-                             GridInfo grid_info)
+                             const GridInfo& grid_info)
 {
   int j = 0;
 
@@ -226,7 +226,7 @@ void Opendp::placeRowFillers(int row,
 const char* Opendp::gridInstName(int row,
                                  int col,
                                  int row_height,
-                                 GridInfo grid_info)
+                                 const GridInfo& grid_info)
 {
   if (col < 0) {
     return "core_left";

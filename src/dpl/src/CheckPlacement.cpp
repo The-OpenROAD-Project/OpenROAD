@@ -439,12 +439,15 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 
         int abut_x = 0;
 
-        switch (edge) {
+        switch (static_cast<Direction2D::Value>(edge)) {
           case Direction2D::West:
             abut_x = -1;
             break;
           case Direction2D::East:
             abut_x = 1;
+            break;
+          case Direction2D::North:
+          case Direction2D::South:
             break;
         }
         if (0 != abut_x) {
@@ -495,7 +498,7 @@ bool Opendp::isCrWtBlClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
+  switch (type.getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_ANTENNACELL:
     case dbMasterType::CORE_FEEDTHRU:

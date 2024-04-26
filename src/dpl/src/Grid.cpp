@@ -57,7 +57,6 @@ using std::min;
 using utl::DPL;
 
 using odb::dbBox;
-using odb::dbTransform;
 
 GridInfo::GridInfo(const int row_count,
                    const int site_count,
@@ -346,7 +345,8 @@ void Grid::initGrid(dbDatabase* db,
   }
 
   namespace gtl = boost::polygon;
-  using namespace gtl::operators;
+  using gtl::operators::operator+=;
+  using gtl::operators::operator-=;
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(getInfoMap().size());
@@ -385,13 +385,11 @@ void Grid::initGrid(dbDatabase* db,
     const int safety = 20;
     int max_row_site_count = divFloor(core.dx(), db_row_site->getWidth());
 
-    const int xl = std::max(0, x_start - max_displacement_x + safety);
-    const int xh
-        = std::min(max_row_site_count, x_end + max_displacement_x - safety);
+    const int xl = max(0, x_start - max_displacement_x + safety);
+    const int xh = min(max_row_site_count, x_end + max_displacement_x - safety);
 
-    const int yl = std::max(0, y_row - max_displacement_y + safety);
-    const int yh
-        = std::min(current_row_count, y_row + max_displacement_y - safety);
+    const int yl = max(0, y_row - max_displacement_y + safety);
+    const int yh = min(current_row_count, y_row + max_displacement_y - safety);
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
   }
@@ -837,7 +835,7 @@ int Grid::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 int Grid::gridHeight(const Cell* cell) const
 {
   int row_height = getRowHeight(cell);
-  return std::max(1, divCeil(cell->height_, row_height));
+  return max(1, divCeil(cell->height_, row_height));
 }
 
 int Grid::gridEndX(int x) const
@@ -938,11 +936,11 @@ pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
   int index = 0;
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
-    auto site = grid_sites.at(index);
-    if (cur_height + site.site->getHeight() > y) {
+    const auto site = grid_sites.at(index).site;
+    if (cur_height + site->getHeight() > y) {
       break;
     }
-    cur_height += site.site->getHeight();
+    cur_height += site->getHeight();
     index++;
   }
   return {base_height_index + index, cur_height};
@@ -963,8 +961,8 @@ pair<int, int> Grid::gridEndY(int y, const dbSite::RowPattern& grid_sites) const
   int index = 0;
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
-    auto site = grid_sites.at(index);
-    cur_height += site.site->getHeight();
+    const auto site = grid_sites.at(index).site;
+    cur_height += site->getHeight();
     index++;
   }
   return {base_height_index + index, cur_height};

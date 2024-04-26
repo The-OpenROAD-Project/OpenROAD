@@ -46,7 +46,6 @@ Graphics::Graphics(Opendp* dp,
                    const dbInst* debug_instance)
     : dp_(dp),
       debug_instance_(debug_instance),
-      block_(nullptr),
       min_displacement_(min_displacement)
 {
   gui::Gui::get()->registerRenderer(this);

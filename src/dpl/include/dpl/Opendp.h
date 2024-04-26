@@ -303,13 +303,13 @@ class Opendp
                        const char* prefix,
                        const MasterByImplant& filler_masters,
                        int row_height,
-                       GridInfo grid_info);
+                       const GridInfo& grid_info);
   bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row,
                            int col,
                            int row_height,
-                           GridInfo grid_info);
+                           const GridInfo& grid_info);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;

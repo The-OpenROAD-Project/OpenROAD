@@ -70,9 +70,9 @@ class PixelPt
 class GridInfo
 {
  public:
-  GridInfo(const int row_count,
-           const int site_count,
-           const int grid_index,
+  GridInfo(int row_count,
+           int site_count,
+           int grid_index,
            const dbSite::RowPattern& sites);
 
   bool isHybrid() const;

@@ -219,7 +219,7 @@ Rect Opendp::getBbox(dbInst* inst)
 
 static bool swapWidthHeight(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R90:
     case dbOrientType::MXR90:
     case dbOrientType::R270:
@@ -265,7 +265,7 @@ void Opendp::makeGroups()
       }
       int index = 0;
       for (auto height : unique_heights) {
-        groups_.emplace_back(Group());
+        groups_.emplace_back();
         struct Group& group = groups_.back();
         string group_name
             = string(db_group->getName()) + "_" + std::to_string(index++);

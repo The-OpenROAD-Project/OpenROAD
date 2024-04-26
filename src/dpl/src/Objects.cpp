@@ -71,7 +71,7 @@ bool Cell::isStdCell() const
   }
   dbMasterType type = db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
+  switch (type.getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_ANTENNACELL:
     case dbMasterType::CORE_FEEDTHRU:
