@@ -6454,7 +6454,7 @@ void Pusher::pushMacroClusterToCoreBoundaries(
 }
 
 void Pusher::moveMacroClusterBox(odb::Rect& cluster_box,
-                                 Boundary boundary,
+                                 const Boundary boundary,
                                  const int distance)
 {
   switch (boundary) {
@@ -6480,8 +6480,8 @@ void Pusher::moveMacroClusterBox(odb::Rect& cluster_box,
 }
 
 void Pusher::moveHardMacro(HardMacro* hard_macro,
-                           Boundary boundary,
-                           int distance)
+                           const Boundary boundary,
+                           const int distance)
 {
   switch (boundary) {
     case NONE:
@@ -6535,7 +6535,7 @@ bool Pusher::overlapsWithHardMacro(
 }
 
 bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
-                                    Boundary boundary)
+                                    const Boundary boundary)
 {
   if (boundary_to_io_blockage_.find(boundary)
       == boundary_to_io_blockage_.end()) {
