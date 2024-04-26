@@ -161,8 +161,6 @@ class Grid
   int getRowHeight() const { return row_height_; }
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
-  void setRowHeight(int height) { row_height_ = height; }
-  void setSiteWidth(int width) { site_width_ = width; }
   int map_ycoordinates(int source_grid_coordinate,
                        const GridMapKey& source_grid_key,
                        const GridMapKey& target_grid_key,
@@ -185,15 +183,9 @@ class Grid
   bool infoMapEmpty() const { return grid_info_map_.empty(); }
   const map<GridMapKey, GridInfo>& getInfoMap() const { return grid_info_map_; }
 
-  const std::unordered_map<dbSite*, dbSite*>& getHybridParent() const
-  {
-    return hybrid_parent_;
-  }
+  const std::unordered_map<dbSite*, dbSite*>& getHybridParent() const;
 
-  GridMapKey getSmallestNonHybridGridKey() const
-  {
-    return smallest_non_hybrid_grid_key_;
-  }
+  GridMapKey getSmallestNonHybridGridKey() const;
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
 

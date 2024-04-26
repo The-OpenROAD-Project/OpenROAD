@@ -158,8 +158,8 @@ void Grid::examineRows(dbBlock* block)
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
   }
-  setRowHeight(min_row_height_);
-  setSiteWidth(min_site_width_);
+  row_height_ = min_row_height_;
+  site_width_ = min_site_width_;
   row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
   row_count_ = divFloor(getCore().dy(), getRowHeight());
 }

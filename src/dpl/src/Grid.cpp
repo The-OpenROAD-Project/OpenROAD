@@ -1007,4 +1007,14 @@ void Grid::addInfoMap(const GridMapKey& key, const GridInfo& info)
   grid_info_map_.emplace(key, info);
 }
 
+const std::unordered_map<dbSite*, dbSite*>& Grid::getHybridParent() const
+{
+  return hybrid_parent_;
+}
+
+GridMapKey Grid::getSmallestNonHybridGridKey() const
+{
+  return smallest_non_hybrid_grid_key_;
+}
+
 }  // namespace dpl
