@@ -1262,13 +1262,14 @@ void PlacerBase::printInfo() const
 {
   log_->info(GPL,
              6,
-             "NumInstances: {}",
+             "{:20} {:7}",
+             "NumInstances:",
              placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
-  log_->info(GPL, 7, "NumPlaceInstances: {}", placeInsts_.size());
-  log_->info(GPL, 8, "NumFixedInstances: {}", fixedInsts_.size());
-  log_->info(GPL, 9, "NumDummyInstances: {}", dummyInsts_.size());
-  log_->info(GPL, 10, "NumNets: {}", pbCommon_->nets().size());
-  log_->info(GPL, 11, "NumPins: {}", pbCommon_->pins().size());
+  log_->info(GPL, 7, "{:20} {:7}", "NumPlaceInstances:", placeInsts_.size());
+  log_->info(GPL, 8, "{:20} {:7}", "NumFixedInstances:", fixedInsts_.size());
+  log_->info(GPL, 9, "{:20} {:7}", "NumDummyInstances:", dummyInsts_.size());
+  log_->info(GPL, 10, "{:20} {:7}", "NumNets:", pbCommon_->nets().size());
+  log_->info(GPL, 11, "{:20} {:7}", "NumPins:", pbCommon_->pins().size());
 
   log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy());
   log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy());
@@ -1279,14 +1280,15 @@ void PlacerBase::printInfo() const
   float util = static_cast<float>(placeInstsArea_)
                / (coreArea - nonPlaceInstsArea_) * 100;
 
-  log_->info(GPL, 16, "CoreArea: {}", coreArea);
-  log_->info(GPL, 17, "NonPlaceInstsArea: {}", nonPlaceInstsArea_);
+  log_->info(GPL, 16, "{:20} {:12}", "CoreArea:", coreArea);
+  log_->info(GPL, 17, "{:20} {:12}", "NonPlaceInstsArea:", nonPlaceInstsArea_);
 
-  log_->info(GPL, 18, "PlaceInstsArea: {}", placeInstsArea_);
-  log_->info(GPL, 19, "Util(%): {:.2f}", util);
+  log_->info(GPL, 18, "{:20} {:12}", "PlaceInstsArea:", placeInstsArea_);
+  log_->info(GPL, 19, "{:20} {:12.2f}", "Util(%):", util);
 
-  log_->info(GPL, 20, "StdInstsArea: {}", stdInstsArea_);
-  log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_);
+  log_->info(GPL, 20, "{:20} {:12}", "StdInstsArea:", stdInstsArea_);
+
+  log_->info(GPL, 21, "{:20} {:12}", "MacroInstsArea:", macroInstsArea_);
 
   if (util >= 100.1) {
     log_->error(GPL, 301, "Utilization {:.2f}% exceeds 100%.", util);

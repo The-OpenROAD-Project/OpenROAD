@@ -611,11 +611,12 @@ void BinGrid::initBins()
     idealBinCnt = 4;
   }
 
-  log_->info(GPL, 23, "TargetDensity: {:.2f}", targetDensity_);
-  log_->info(GPL, 24, "AveragePlaceInstArea: {}", averagePlaceInstArea);
-  log_->info(GPL, 25, "IdealBinArea: {}", idealBinArea);
-  log_->info(GPL, 26, "IdealBinCnt: {}", idealBinCnt);
-  log_->info(GPL, 27, "TotalBinArea: {}", totalBinArea);
+  log_->info(GPL, 23, "{:20} {:12.2f}", "TargetDensity:", targetDensity_);
+  log_->info(
+      GPL, 24, "{:20} {:12}", "AvrgPlaceInstArea:", averagePlaceInstArea);
+  log_->info(GPL, 25, "{:20} {:12}", "IdealBinArea:", idealBinArea);
+  log_->info(GPL, 26, "{:20} {:12}", "IdealBinCnt:", idealBinCnt);
+  log_->info(GPL, 27, "{:20} {:12}", "TotalBinArea:", totalBinArea);
 
   if (!isSetBinCnt_) {
     // Consider the apect ratio of the block when computing the number
@@ -1289,9 +1290,11 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     }
   }
 
-  log_->info(GPL, 31, "FillerInit: NumGCells: {}", gCells_.size());
-  log_->info(GPL, 32, "FillerInit: NumGNets: {}", nbc_->gNets().size());
-  log_->info(GPL, 33, "FillerInit: NumGPins: {}", nbc_->gPins().size());
+  log_->info(GPL, 31, "{:22} {:10}", "FillerInit: NumGCells:", gCells_.size());
+  log_->info(
+      GPL, 32, "{:22} {:10}", "FillerInit: NumGNets:", nbc_->gNets().size());
+  log_->info(
+      GPL, 33, "{:22} {:10}", "FillerInit: NumGPins:", nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure

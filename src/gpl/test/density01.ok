@@ -7,30 +7,30 @@
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
 [INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0006] NumInstances:            294
+[INFO GPL-0007] NumPlaceInstances:       294
+[INFO GPL-0008] NumFixedInstances:         0
+[INFO GPL-0009] NumDummyInstances:         0
+[INFO GPL-0010] NumNets:                 364
+[INFO GPL-0011] NumPins:                1122
 [INFO GPL-0012] DieAreaLxLy: 0 0
 [INFO GPL-0013] DieAreaUxUy: 61940 61600
 [INFO GPL-0014] CoreAreaLxLy: 0 0
 [INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2279088000
-[INFO GPL-0019] Util(%): 59.73
-[INFO GPL-0020] StdInstsArea: 2279088000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 507
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 1.00
-[INFO GPL-0024] AveragePlaceInstArea: 7752000
-[INFO GPL-0025] IdealBinArea: 7752000
-[INFO GPL-0026] IdealBinCnt: 492
-[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0016] CoreArea:              3815504000
+[INFO GPL-0017] NonPlaceInstsArea:              0
+[INFO GPL-0018] PlaceInstsArea:        2279088000
+[INFO GPL-0019] Util(%):                    59.73
+[INFO GPL-0020] StdInstsArea:          2279088000
+[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0031] FillerInit: NumGCells:        507
+[INFO GPL-0032] FillerInit: NumGNets:         364
+[INFO GPL-0033] FillerInit: NumGPins:        1122
+[INFO GPL-0023] TargetDensity:               1.00
+[INFO GPL-0024] AvrgPlaceInstArea:        7752000
+[INFO GPL-0025] IdealBinArea:             7752000
+[INFO GPL-0026] IdealBinCnt:                  492
+[INFO GPL-0027] TotalBinArea:          3815504000
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
@@ -39,30 +39,30 @@ pad : 0 -> 0.597
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
 [INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0006] NumInstances:            294
+[INFO GPL-0007] NumPlaceInstances:       294
+[INFO GPL-0008] NumFixedInstances:         0
+[INFO GPL-0009] NumDummyInstances:         0
+[INFO GPL-0010] NumNets:                 364
+[INFO GPL-0011] NumPins:                1122
 [INFO GPL-0012] DieAreaLxLy: 0 0
 [INFO GPL-0013] DieAreaUxUy: 61940 61600
 [INFO GPL-0014] CoreAreaLxLy: 0 0
 [INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2904720000
-[INFO GPL-0019] Util(%): 76.13
-[INFO GPL-0020] StdInstsArea: 2904720000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 391
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 1.00
-[INFO GPL-0024] AveragePlaceInstArea: 9880000
-[INFO GPL-0025] IdealBinArea: 9880000
-[INFO GPL-0026] IdealBinCnt: 386
-[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0016] CoreArea:              3815504000
+[INFO GPL-0017] NonPlaceInstsArea:              0
+[INFO GPL-0018] PlaceInstsArea:        2904720000
+[INFO GPL-0019] Util(%):                    76.13
+[INFO GPL-0020] StdInstsArea:          2904720000
+[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0031] FillerInit: NumGCells:        391
+[INFO GPL-0032] FillerInit: NumGNets:         364
+[INFO GPL-0033] FillerInit: NumGPins:        1122
+[INFO GPL-0023] TargetDensity:               1.00
+[INFO GPL-0024] AvrgPlaceInstArea:        9880000
+[INFO GPL-0025] IdealBinArea:             9880000
+[INFO GPL-0026] IdealBinCnt:                  386
+[INFO GPL-0027] TotalBinArea:          3815504000
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
@@ -71,30 +71,30 @@ pad : 1 -> 0.761
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
 [INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0006] NumInstances:            294
+[INFO GPL-0007] NumPlaceInstances:       294
+[INFO GPL-0008] NumFixedInstances:         0
+[INFO GPL-0009] NumDummyInstances:         0
+[INFO GPL-0010] NumNets:                 364
+[INFO GPL-0011] NumPins:                1122
 [INFO GPL-0012] DieAreaLxLy: 0 0
 [INFO GPL-0013] DieAreaUxUy: 61940 61600
 [INFO GPL-0014] CoreAreaLxLy: 0 0
 [INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 3530352000
-[INFO GPL-0019] Util(%): 92.53
-[INFO GPL-0020] StdInstsArea: 3530352000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 318
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 1.00
-[INFO GPL-0024] AveragePlaceInstArea: 12008000
-[INFO GPL-0025] IdealBinArea: 12008000
-[INFO GPL-0026] IdealBinCnt: 317
-[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0016] CoreArea:              3815504000
+[INFO GPL-0017] NonPlaceInstsArea:              0
+[INFO GPL-0018] PlaceInstsArea:        3530352000
+[INFO GPL-0019] Util(%):                    92.53
+[INFO GPL-0020] StdInstsArea:          3530352000
+[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0031] FillerInit: NumGCells:        318
+[INFO GPL-0032] FillerInit: NumGNets:         364
+[INFO GPL-0033] FillerInit: NumGPins:        1122
+[INFO GPL-0023] TargetDensity:               1.00
+[INFO GPL-0024] AvrgPlaceInstArea:       12008000
+[INFO GPL-0025] IdealBinArea:            12008000
+[INFO GPL-0026] IdealBinCnt:                  317
+[INFO GPL-0027] TotalBinArea:          3815504000
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256
@@ -103,30 +103,30 @@ pad : 2 -> 0.925
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 0 0
 [INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0006] NumInstances:            294
+[INFO GPL-0007] NumPlaceInstances:       294
+[INFO GPL-0008] NumFixedInstances:         0
+[INFO GPL-0009] NumDummyInstances:         0
+[INFO GPL-0010] NumNets:                 364
+[INFO GPL-0011] NumPins:                1122
 [INFO GPL-0012] DieAreaLxLy: 0 0
 [INFO GPL-0013] DieAreaUxUy: 61940 61600
 [INFO GPL-0014] CoreAreaLxLy: 0 0
 [INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2279088000
-[INFO GPL-0019] Util(%): 59.73
-[INFO GPL-0020] StdInstsArea: 2279088000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 348
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 7752000
-[INFO GPL-0025] IdealBinArea: 11074286
-[INFO GPL-0026] IdealBinCnt: 344
-[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0016] CoreArea:              3815504000
+[INFO GPL-0017] NonPlaceInstsArea:              0
+[INFO GPL-0018] PlaceInstsArea:        2279088000
+[INFO GPL-0019] Util(%):                    59.73
+[INFO GPL-0020] StdInstsArea:          2279088000
+[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0031] FillerInit: NumGCells:        348
+[INFO GPL-0032] FillerInit: NumGNets:         364
+[INFO GPL-0033] FillerInit: NumGPins:        1122
+[INFO GPL-0023] TargetDensity:               0.70
+[INFO GPL-0024] AvrgPlaceInstArea:        7752000
+[INFO GPL-0025] IdealBinArea:            11074286
+[INFO GPL-0026] IdealBinCnt:                  344
+[INFO GPL-0027] TotalBinArea:          3815504000
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 3872 3850
 [INFO GPL-0030] NumBins: 256

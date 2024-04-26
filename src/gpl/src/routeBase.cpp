@@ -510,6 +510,10 @@ std::pair<bool, bool> RouteBase::routability()
   float curRc = getRC();
 
   if (curRc < rbVars_.targetRC) {
+    log_->info(GPL,
+               77,
+               "FinalRC lower than targetRC({}), routability not needed.",
+               rbVars_.targetRC);
     resetRoutabilityResources();
     return std::make_pair(false, false);
   }
@@ -519,6 +523,8 @@ std::pair<bool, bool> RouteBase::routability()
   // I hope to get lower Rc gradually as RD goes on
   //
   if (minRc_ > curRc) {
+    log_->info(
+        GPL, 78, "FinalRC lower than minRC({}), min RC updated.", minRc_);
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
     minRcViolatedCnt_ = 0;
@@ -534,6 +540,11 @@ std::pair<bool, bool> RouteBase::routability()
     }
   } else {
     minRcViolatedCnt_++;
+    log_->info(GPL,
+               79,
+               "MinRC ({}) violation occurred, total count: {}.",
+               minRc_,
+               minRcViolatedCnt_);
   }
 
   // set inflated ratio
@@ -605,7 +616,7 @@ std::pair<bool, bool> RouteBase::routability()
     // TODO dynamic inflation procedure?
   }
 
-  log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
+  log_->info(GPL, 45, "InflatedAreaDelta: {:20}", inflatedAreaDelta_);
   log_->info(GPL, 46, "TargetDensity: {}", nbVec_[0]->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
@@ -623,7 +634,10 @@ std::pair<bool, bool> RouteBase::routability()
   //
   if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
       || minRcViolatedCnt_ >= 3) {
-    log_->report("Revert Routability Procedure");
+    log_->report(
+        "Revert Routability Procedure. Target density higher than max, or "
+        "minRC max violations.");
+    log_->info(GPL, 80, "minRcViolatedCnt: {}", minRcViolatedCnt_);
     log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
     log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
 
@@ -637,16 +651,24 @@ std::pair<bool, bool> RouteBase::routability()
     return std::make_pair(false, true);
   }
 
-  log_->info(GPL, 49, "WhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
-  log_->info(GPL, 50, "NesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
-  log_->info(GPL, 51, "TotalFillerArea: {}", nbVec_[0]->totalFillerArea());
+  log_->info(
+      GPL, 49, "{:20} {:15}", "WhiteSpaceArea:", nbVec_[0]->whiteSpaceArea());
+  log_->info(GPL,
+             50,
+             "{:20} {:15}",
+             "NesterovInstsArea:",
+             nbVec_[0]->nesterovInstsArea());
+  log_->info(
+      GPL, 51, "{:20} {:15}", "TotalFillerArea:", nbVec_[0]->totalFillerArea());
   log_->info(GPL,
              52,
-             "TotalGCellsArea: {}",
+             "{:20} {:15}",
+             "TotalGCellsArea:",
              nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
   log_->info(GPL,
              53,
-             "ExpectedTotalGCellsArea: {}",
+             "{:20} {:15}",
+             "ExpectedGCellsArea:",
              inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
                  + nbVec_[0]->totalFillerArea());
 
@@ -664,14 +686,26 @@ std::pair<bool, bool> RouteBase::routability()
   nbVec_[0]->updateAreas();
 
   log_->info(GPL, 54, "NewTargetDensity: {}", nbVec_[0]->targetDensity());
-  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
-  log_->info(GPL, 56, "MovableArea: {}", nbVec_[0]->movableArea());
-  log_->info(
-      GPL, 57, "NewNesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
-  log_->info(GPL, 58, "NewTotalFillerArea: {}", nbVec_[0]->totalFillerArea());
+  log_->info(GPL,
+             55,
+             "{:20} {:15}",
+             "NewWhiteSpaceArea:",
+             nbVec_[0]->whiteSpaceArea());
+  log_->info(GPL, 56, "{:20} {:15}", "MovableArea:", nbVec_[0]->movableArea());
+  log_->info(GPL,
+             57,
+             "{:20} {:15}",
+             "NewNesterovInstArea:",
+             nbVec_[0]->nesterovInstsArea());
+  log_->info(GPL,
+             58,
+             "{:20} {:15}",
+             "NewTotalFillerArea:",
+             nbVec_[0]->totalFillerArea());
   log_->info(GPL,
              59,
-             "NewTotalGCellsArea: {}",
+             "{:20} {:15}",
+             "NewTotalGCellsArea:",
              nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
 
   // update densitySizes for all gCell

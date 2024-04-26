@@ -7,30 +7,30 @@
 [INFO GPL-0003] SiteSize: 380 2800
 [INFO GPL-0004] CoreAreaLxLy: 2280 2240
 [INFO GPL-0005] CoreAreaUxUy: 88160 55440
-[INFO GPL-0006] NumInstances: 294
-[INFO GPL-0007] NumPlaceInstances: 294
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 364
-[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0006] NumInstances:            294
+[INFO GPL-0007] NumPlaceInstances:       294
+[INFO GPL-0008] NumFixedInstances:         0
+[INFO GPL-0009] NumDummyInstances:         0
+[INFO GPL-0010] NumNets:                 364
+[INFO GPL-0011] NumPins:                1122
 [INFO GPL-0012] DieAreaLxLy: 0 0
 [INFO GPL-0013] DieAreaUxUy: 90440 57680
 [INFO GPL-0014] CoreAreaLxLy: 2280 2240
 [INFO GPL-0015] CoreAreaUxUy: 88160 55440
-[INFO GPL-0016] CoreArea: 4568816000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2279088000
-[INFO GPL-0019] Util(%): 49.88
-[INFO GPL-0020] StdInstsArea: 2279088000
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 358
-[INFO GPL-0032] FillerInit: NumGNets: 364
-[INFO GPL-0033] FillerInit: NumGPins: 1122
-[INFO GPL-0023] TargetDensity: 0.60
-[INFO GPL-0024] AveragePlaceInstArea: 7752000
-[INFO GPL-0025] IdealBinArea: 12919999
-[INFO GPL-0026] IdealBinCnt: 353
-[INFO GPL-0027] TotalBinArea: 4568816000
+[INFO GPL-0016] CoreArea:              4568816000
+[INFO GPL-0017] NonPlaceInstsArea:              0
+[INFO GPL-0018] PlaceInstsArea:        2279088000
+[INFO GPL-0019] Util(%):                    49.88
+[INFO GPL-0020] StdInstsArea:          2279088000
+[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0031] FillerInit: NumGCells:        358
+[INFO GPL-0032] FillerInit: NumGNets:         364
+[INFO GPL-0033] FillerInit: NumGPins:        1122
+[INFO GPL-0023] TargetDensity:               0.60
+[INFO GPL-0024] AvrgPlaceInstArea:        7752000
+[INFO GPL-0025] IdealBinArea:            12919999
+[INFO GPL-0026] IdealBinCnt:                  353
+[INFO GPL-0027] TotalBinArea:          4568816000
 [INFO GPL-0028] BinCnt: 16 16
 [INFO GPL-0029] BinSize: 5368 3325
 [INFO GPL-0030] NumBins: 256
