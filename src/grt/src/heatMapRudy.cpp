@@ -66,6 +66,8 @@ bool RUDYDataSource::populateMap()
 
   for (odb::dbInst* inst : getBlock()->getInsts()) {
     if (!inst->isPlaced()) {
+      getLogger()->warn(
+          utl::GRT, 120, "Instance {} is not placed.", inst->getName());
       return false;
     }
   }
