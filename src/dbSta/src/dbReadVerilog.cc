@@ -46,7 +46,6 @@
 #include "sta/PortDirection.hh"
 #include "sta/Vector.hh"
 #include "sta/VerilogReader.hh"
-#include "tcl.h"
 #include "utl/Logger.h"
 
 namespace ord {
