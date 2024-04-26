@@ -104,11 +104,11 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  void legalCellPos(dbInst* db_inst);
-  void initMacrosAndGrid();
+  void legalCellPos(dbInst* db_inst); // call from rsz
+  void initMacrosAndGrid(); // call from rsz
 
   void init(dbDatabase* db, Logger* logger);
-  void initBlock();
+  void initBlock(); // call from dpo
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
@@ -132,14 +132,6 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
-  void writeJsonReport(const string& filename,
-                       const vector<Cell*>& placed_failures,
-                       const vector<Cell*>& in_rows_failures,
-                       const vector<Cell*>& overlap_failures,
-                       const vector<Cell*>& one_site_gap_failures,
-                       const vector<Cell*>& site_align_failures,
-                       const vector<Cell*>& region_placement_failures,
-                       const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   void optimizeMirroring();
@@ -273,6 +265,14 @@ class Opendp
       bool verbose,
       const std::function<void(Cell* cell)>& report_failure) const;
   void reportOverlapFailure(Cell* cell) const;
+  void writeJsonReport(const string& filename,
+                       const vector<Cell*>& placed_failures,
+                       const vector<Cell*>& in_rows_failures,
+                       const vector<Cell*>& overlap_failures,
+                       const vector<Cell*>& one_site_gap_failures,
+                       const vector<Cell*>& site_align_failures,
+                       const vector<Cell*>& region_placement_failures,
+                       const vector<Cell*>& placement_failures);
 
   void rectDist(const Cell* cell,
                 const Rect* rect,
