@@ -217,7 +217,7 @@ class Opendp
                     const Point& pt,
                     int row_height = -1) const;
   Point legalPt(const Cell* cell, bool padded, int row_height = -1) const;
-  Point legalGridPt(const Cell* cell, bool padded, int row_height = -1) const;
+  Point legalGridPt(const Cell* cell, bool padded) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;

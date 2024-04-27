@@ -661,8 +661,7 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 
 bool Opendp::refineMove(Cell* cell)
 {
-  int row_height = grid_->getRowHeight(cell);
-  Point grid_pt = legalGridPt(cell, true, row_height);
+  Point grid_pt = legalGridPt(cell, true);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
@@ -678,6 +677,7 @@ bool Opendp::refineMove(Cell* cell)
       return false;
     }
 
+    int row_height = grid_->getRowHeight(cell);
     int dist_change = distChange(cell,
                                  pixel_pt.pt.getX() * grid_->getSiteWidth(),
                                  pixel_pt.pt.getY() * row_height);
@@ -1377,12 +1377,10 @@ Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
   return legal_pt;
 }
 
-Point Opendp::legalGridPt(const Cell* cell, bool padded, int row_height) const
+Point Opendp::legalGridPt(const Cell* cell, bool padded) const
 {
-  if (row_height == -1) {
-    row_height = grid_->getRowHeight(cell);
-  }
-  Point pt = legalPt(cell, padded, row_height);
+  const int row_height = grid_->getRowHeight(cell);
+  const Point pt = legalPt(cell, padded, row_height);
   return Point(grid_->gridX(pt.getX()), grid_->gridY(pt.getY(), cell));
 }
 
