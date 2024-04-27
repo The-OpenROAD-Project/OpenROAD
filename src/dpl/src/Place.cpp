@@ -325,7 +325,7 @@ void Opendp::place()
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
     for (Cell* cell : sorted_cells) {
-      if (isMultiRow(cell) && grid_->cellFitsInCore(cell)) {
+      if (isMultiRow(cell)) {
         debugPrint(logger_,
                    DPL,
                    "place",
@@ -339,7 +339,7 @@ void Opendp::place()
     }
   }
   for (Cell* cell : sorted_cells) {
-    if (!isMultiRow(cell) && grid_->cellFitsInCore(cell)) {
+    if (!isMultiRow(cell)) {
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
