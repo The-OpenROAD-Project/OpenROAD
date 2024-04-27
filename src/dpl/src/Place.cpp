@@ -716,13 +716,13 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  the original code.
   //  max_displacement_y_ is in microns, and this doesn't translate directly to
   //  x and y on the grid.
-  int scaled_max_displacement_y_
+  int scaled_max_displacement_y
       = grid_->map_ycoordinates(max_displacement_y_,
                                 grid_->getSmallestNonHybridGridKey(),
                                 grid_->getGridMapKey(cell),
                                 true);
-  int y_min = y - scaled_max_displacement_y_;
-  int y_max = y + scaled_max_displacement_y_;
+  int y_min = y - scaled_max_displacement_y;
+  int y_max = y + scaled_max_displacement_y;
 
   auto [row_height, grid_info] = grid_->getRowInfo(cell);
 
@@ -767,7 +767,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_);
+  for (int i = 1; i < std::max(scaled_max_displacement_y, max_displacement_x_);
        i++) {
     PixelPt best_pt;
     int best_dist = 0;
@@ -776,7 +776,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = -((j + 1) / 2);
       int y_offset = (i * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
@@ -799,7 +799,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = (j - 1) / 2;
       int y_offset = ((i + 1) * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
