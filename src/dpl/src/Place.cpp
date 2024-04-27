@@ -345,8 +345,6 @@ void Opendp::place()
       }
     }
   }
-  // This has negligible benefit -cherry
-  // anneal();
 }
 
 void Opendp::placeGroups2()
@@ -515,22 +513,6 @@ int Opendp::anneal(Group* group)
   for (int i = 0; i < 100 * group->cells_.size(); i++) {
     Cell* cell1 = group->cells_[rand() % group->cells_.size()];
     Cell* cell2 = group->cells_[rand() % group->cells_.size()];
-    if (swapCells(cell1, cell2)) {
-      count++;
-    }
-  }
-  return count;
-}
-
-// This is NOT annealing. It is random swapping. -cherry
-int Opendp::anneal()
-{
-  srand(rand_seed_);
-  int count = 0;
-  // magic number alert
-  for (int i = 0; i < 100 * cells_.size(); i++) {
-    Cell* cell1 = &cells_[rand() % cells_.size()];
-    Cell* cell2 = &cells_[rand() % cells_.size()];
     if (swapCells(cell1, cell2)) {
       count++;
     }

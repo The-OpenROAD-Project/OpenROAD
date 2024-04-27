@@ -233,7 +233,6 @@ class Opendp
   void brickPlace2(const Group* group);
   int groupRefine(const Group* group);
   int anneal(Group* group);
-  int anneal();
   int refine();
   void setFixedGridCells();
   void setGridCell(Cell& cell, Pixel* pixel);
