@@ -1341,8 +1341,7 @@ Point Opendp::initialLocation(const Cell* cell, const bool padded) const
 //  row site
 //  not on top of a macro
 //  not in a hopeless site
-Point Opendp::legalPt(const Cell* cell,
-                      const bool padded) const
+Point Opendp::legalPt(const Cell* cell, const bool padded) const
 {
   if (cell->isFixed()) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
