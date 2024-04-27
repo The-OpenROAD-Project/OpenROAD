@@ -46,6 +46,7 @@
 #include "DplObserver.h"
 #include "Grid.h"
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -1323,6 +1324,18 @@ void Opendp::legalCellPos(dbInst* db_inst)
   db_inst->setLocation(core.xMin() + cell.x_, core.yMin() + cell.y_);
 }
 
+Point Opendp::initialLocation(const Cell* cell, bool padded) const
+{
+  int loc_x, loc_y;
+  cell->db_inst_->getLocation(loc_x, loc_y);
+  loc_x -= grid_->getCore().xMin();
+  if (padded) {
+    loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
+  }
+  loc_y -= grid_->getCore().yMin();
+  return Point(loc_x, loc_y);
+}
+
 // Legalize pt origin for cell
 //  inside the core
 //  row site
@@ -1340,9 +1353,8 @@ Point Opendp::legalPt(const Cell* cell,
   Point legal_pt = legalPt(cell, init, row_height);
   auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
-  int grid_y, height;
-  int y = legal_pt.getY() + grid_info.getOffset();
-  std::tie(grid_y, height) = grid_->gridY(y, grid_info.getSites());
+  const int y = legal_pt.getY() + grid_info.getOffset();
+  auto [grid_y, height] = grid_->gridY(y, grid_info.getSites());
   Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy

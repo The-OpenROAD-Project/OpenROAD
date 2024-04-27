@@ -245,18 +245,6 @@ void Opendp::optimizeMirroring()
   opt.run();
 }
 
-Point Opendp::initialLocation(const Cell* cell, bool padded) const
-{
-  int loc_x, loc_y;
-  cell->db_inst_->getLocation(loc_x, loc_y);
-  loc_x -= grid_->getCore().xMin();
-  if (padded) {
-    loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
-  }
-  loc_y -= grid_->getCore().yMin();
-  return Point(loc_x, loc_y);
-}
-
 int Opendp::disp(const Cell* cell) const
 {
   Point init = initialLocation(cell, false);
