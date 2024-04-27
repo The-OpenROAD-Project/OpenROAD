@@ -1328,17 +1328,15 @@ void Opendp::legalCellPos(dbInst* db_inst)
 //  row site
 //  not on top of a macro
 //  not in a hopeless site
-Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
+Point Opendp::legalPt(const Cell* cell,
+                      const bool padded,
+                      const int row_height) const
 {
   if (cell->isFixed()) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
   }
 
-  if (row_height == -1) {
-    row_height = grid_->getRowHeight(cell);
-  }
-
-  Point init = initialLocation(cell, padded);
+  const Point init = initialLocation(cell, padded);
   Point legal_pt = legalPt(cell, init, row_height);
   auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
