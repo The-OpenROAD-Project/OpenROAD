@@ -46,6 +46,7 @@
 #include "DplObserver.h"
 #include "Grid.h"
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -325,7 +326,7 @@ void Opendp::place()
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
     for (Cell* cell : sorted_cells) {
-      if (isMultiRow(cell) && grid_->cellFitsInCore(cell)) {
+      if (isMultiRow(cell)) {
         debugPrint(logger_,
                    DPL,
                    "place",
@@ -339,20 +340,12 @@ void Opendp::place()
     }
   }
   for (Cell* cell : sorted_cells) {
-    if (!isMultiRow(cell) && grid_->cellFitsInCore(cell)) {
+    if (!isMultiRow(cell)) {
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
     }
   }
-  // This has negligible benefit -cherry
-  // anneal();
-}
-
-bool Grid::cellFitsInCore(Cell* cell) const
-{
-  return gridPaddedWidth(cell) <= getRowSiteCount()
-         && gridHeight(cell) <= getRowCount();
 }
 
 void Opendp::placeGroups2()
@@ -528,22 +521,6 @@ int Opendp::anneal(Group* group)
   return count;
 }
 
-// This is NOT annealing. It is random swapping. -cherry
-int Opendp::anneal()
-{
-  srand(rand_seed_);
-  int count = 0;
-  // magic number alert
-  for (int i = 0; i < 100 * cells_.size(); i++) {
-    Cell* cell1 = &cells_[rand() % cells_.size()];
-    Cell* cell2 = &cells_[rand() % cells_.size()];
-    if (swapCells(cell1, cell2)) {
-      count++;
-    }
-  }
-  return count;
-}
-
 // Not called -cherry.
 int Opendp::refine()
 {
@@ -685,8 +662,7 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 
 bool Opendp::refineMove(Cell* cell)
 {
-  int row_height = grid_->getRowHeight(cell);
-  Point grid_pt = legalGridPt(cell, true, row_height);
+  Point grid_pt = legalGridPt(cell, true);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
@@ -702,6 +678,7 @@ bool Opendp::refineMove(Cell* cell)
       return false;
     }
 
+    int row_height = grid_->getRowHeight(cell);
     int dist_change = distChange(cell,
                                  pixel_pt.pt.getX() * grid_->getSiteWidth(),
                                  pixel_pt.pt.getY() * row_height);
@@ -740,15 +717,15 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  the original code.
   //  max_displacement_y_ is in microns, and this doesn't translate directly to
   //  x and y on the grid.
-  int scaled_max_displacement_y_
+  int scaled_max_displacement_y
       = grid_->map_ycoordinates(max_displacement_y_,
                                 grid_->getSmallestNonHybridGridKey(),
                                 grid_->getGridMapKey(cell),
                                 true);
-  int y_min = y - scaled_max_displacement_y_;
-  int y_max = y + scaled_max_displacement_y_;
+  int y_min = y - scaled_max_displacement_y;
+  int y_max = y + scaled_max_displacement_y;
 
-  auto [row_height, grid_info] = getRowInfo(cell);
+  auto [row_height, grid_info] = grid_->getRowInfo(cell);
 
   // Restrict search to group boundary.
   Group* group = cell->group_;
@@ -791,7 +768,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_);
+  for (int i = 1; i < std::max(scaled_max_displacement_y, max_displacement_x_);
        i++) {
     PixelPt best_pt;
     int best_dist = 0;
@@ -800,7 +777,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = -((j + 1) / 2);
       int y_offset = (i * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
@@ -823,7 +800,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = (j - 1) / 2;
       int y_offset = ((i + 1) * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
@@ -962,7 +939,7 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
              x_end,
              y,
              y_end);
-  auto row_info = getRowInfo(cell);
+  auto row_info = grid_->getRowInfo(cell);
   auto gmk = grid_->getGridMapKey(cell);
   int min_row_height = grid_->getRowHeight();
   const auto smallest_non_hybrid_grid_key
@@ -1004,7 +981,7 @@ bool Opendp::checkPixels(const Cell* cell,
                          int y_end) const
 {
   auto gmk = grid_->getGridMapKey(cell);
-  auto row_info = getRowInfo(cell);
+  auto row_info = grid_->getRowInfo(cell);
   if (x_end > row_info.second.getSiteCount()) {
     return false;
   }
@@ -1017,8 +994,8 @@ bool Opendp::checkPixels(const Cell* cell,
     for (int x1 = x; x1 < x_end; x1++) {
       Pixel* pixel = grid_->gridPixel(layer, x1, y1);
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
-          || (cell->inGroup() && pixel->group_ != cell->group_)
-          || (!cell->inGroup() && pixel->group_)
+          || (cell->inGroup() && pixel->group != cell->group_)
+          || (!cell->inGroup() && pixel->group)
           || (pixel->site != nullptr && pixel->site != cell_site)) {
         return false;
       }
@@ -1197,7 +1174,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int best_x = grid_x;
   int best_y = grid_y;
   int best_dist = std::numeric_limits<int>::max();
-  auto [row_height, grid_info] = getRowInfo(cell);
+  auto [row_height, grid_info] = grid_->getRowInfo(cell);
   int grid_index = grid_info.getGridIndex();
   int layer_site_count = grid_info.getSiteCount();
   int layer_row_count = grid_info.getRowCount();
@@ -1347,28 +1324,36 @@ void Opendp::legalCellPos(dbInst* db_inst)
   db_inst->setLocation(core.xMin() + cell.x_, core.yMin() + cell.y_);
 }
 
+Point Opendp::initialLocation(const Cell* cell, const bool padded) const
+{
+  int loc_x, loc_y;
+  cell->db_inst_->getLocation(loc_x, loc_y);
+  loc_x -= grid_->getCore().xMin();
+  if (padded) {
+    loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
+  }
+  loc_y -= grid_->getCore().yMin();
+  return {loc_x, loc_y};
+}
+
 // Legalize pt origin for cell
 //  inside the core
 //  row site
 //  not on top of a macro
 //  not in a hopeless site
-Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
+Point Opendp::legalPt(const Cell* cell, const bool padded) const
 {
   if (cell->isFixed()) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
   }
 
-  if (row_height == -1) {
-    row_height = grid_->getRowHeight(cell);
-  }
-
-  Point init = initialLocation(cell, padded);
+  const Point init = initialLocation(cell, padded);
+  const int row_height = grid_->getRowHeight(cell);
   Point legal_pt = legalPt(cell, init, row_height);
   auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
-  int grid_y, height;
-  int y = legal_pt.getY() + grid_info.getOffset();
-  std::tie(grid_y, height) = grid_->gridY(y, grid_info.getSites());
+  const int y = legal_pt.getY() + grid_info.getOffset();
+  auto [grid_y, height] = grid_->gridY(y, grid_info.getSites());
   Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
@@ -1401,20 +1386,10 @@ Point Opendp::legalPt(const Cell* cell, bool padded, int row_height) const
   return legal_pt;
 }
 
-Point Opendp::legalGridPt(const Cell* cell, bool padded, int row_height) const
+Point Opendp::legalGridPt(const Cell* cell, bool padded) const
 {
-  if (row_height == -1) {
-    row_height = grid_->getRowHeight(cell);
-  }
-  Point pt = legalPt(cell, padded, row_height);
+  const Point pt = legalPt(cell, padded);
   return Point(grid_->gridX(pt.getX()), grid_->gridY(pt.getY(), cell));
-}
-
-////////////////////////////////////////////////////////////////
-
-PixelPt::PixelPt(Pixel* pixel1, int grid_x, int grid_y)
-    : pixel(pixel1), pt(grid_x, grid_y)
-{
 }
 
 }  // namespace dpl
