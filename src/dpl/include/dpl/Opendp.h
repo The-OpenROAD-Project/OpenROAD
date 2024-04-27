@@ -101,8 +101,6 @@ class Opendp
 
   Opendp(const Opendp&) = delete;
   Opendp& operator=(const Opendp&) = delete;
-  Opendp(const Opendp&&) = delete;
-  Opendp& operator=(const Opendp&&) = delete;
 
   void legalCellPos(dbInst* db_inst); // call from rsz
   void initMacrosAndGrid(); // call from rsz
