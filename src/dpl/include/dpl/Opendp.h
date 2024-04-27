@@ -243,13 +243,13 @@ class Opendp
   // checkPlacement
   static bool isPlaced(const Cell* cell);
   bool checkInRows(const Cell& cell) const;
-  Cell* checkOverlap(Cell& cell) const;
+  const Cell* checkOverlap(Cell& cell) const;
   Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
   bool checkRegionPlacement(const Cell* cell) const;
-  bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
-  bool isCrWtBlClass(const Cell* cell) const;
-  bool isWellTap(const Cell* cell) const;
+  static bool isOverlapPadded(const Cell* cell1, const Cell* cell2);
+  static bool isCrWtBlClass(const Cell* cell);
+  static bool isWellTap(const Cell* cell);
   void reportFailures(const vector<Cell*>& failures,
                       int msg_id,
                       const char* msg,
