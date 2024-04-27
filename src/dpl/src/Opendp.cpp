@@ -87,7 +87,7 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
-  padding_ = std::make_unique<Padding>();
+  padding_ = std::make_shared<Padding>();
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
 }
@@ -347,7 +347,7 @@ int Opendp::padRight(dbInst* inst) const
 void Opendp::initGrid()
 {
   grid_->initGrid(
-      db_, block_, padding_.get(), max_displacement_x_, max_displacement_y_);
+      db_, block_, padding_, max_displacement_x_, max_displacement_y_);
 }
 
 void Opendp::deleteGrid()

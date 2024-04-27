@@ -119,7 +119,7 @@ class Grid
   void initBlock(dbBlock* block) { core_ = block->getCoreArea(); }
   void initGrid(dbDatabase* db,
                 dbBlock* block,
-                Padding* padding,
+                std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
   void examineRows(dbBlock* block);
@@ -205,7 +205,7 @@ class Grid
   void addInfoMap(const GridMapKey& key, const GridInfo& info);
 
   Logger* logger_ = nullptr;
-  Padding* padding_ = nullptr;
+  std::shared_ptr<Padding> padding_;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<const GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;

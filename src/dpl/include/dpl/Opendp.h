@@ -314,7 +314,7 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
-  std::unique_ptr<Padding> padding_;
+  std::shared_ptr<Padding> padding_;
 
   vector<Cell> cells_;
   vector<Group> groups_;
