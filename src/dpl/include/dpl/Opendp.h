@@ -108,7 +108,6 @@ class Opendp
   void initMacrosAndGrid(); // call from rsz
 
   void init(dbDatabase* db, Logger* logger);
-  void initBlock(); // call from dpo
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,

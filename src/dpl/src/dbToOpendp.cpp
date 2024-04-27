@@ -60,7 +60,8 @@ static bool swapWidthHeight(const dbOrientType& orient);
 
 void Opendp::importDb()
 {
-  initBlock();
+  block_ = db_->getChip()->getBlock();
+  grid_->initBlock(block_);
   have_fillers_ = false;
   have_one_site_cells_ = false;
 

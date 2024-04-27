@@ -92,12 +92,6 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   grid_->init(logger);
 }
 
-void Opendp::initBlock()
-{
-  block_ = db_->getChip()->getBlock();
-  grid_->initBlock(block_);
-}
-
 void Opendp::setPaddingGlobal(int left, int right)
 {
   padding_->setPaddingGlobal(left, right);
