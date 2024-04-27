@@ -1324,7 +1324,7 @@ void Opendp::legalCellPos(dbInst* db_inst)
   db_inst->setLocation(core.xMin() + cell.x_, core.yMin() + cell.y_);
 }
 
-Point Opendp::initialLocation(const Cell* cell, bool padded) const
+Point Opendp::initialLocation(const Cell* cell, const bool padded) const
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
@@ -1333,7 +1333,7 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
     loc_x -= padding_->padLeft(cell) * grid_->getSiteWidth();
   }
   loc_y -= grid_->getCore().yMin();
-  return Point(loc_x, loc_y);
+  return {loc_x, loc_y};
 }
 
 // Legalize pt origin for cell
@@ -1342,14 +1342,14 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
 //  not on top of a macro
 //  not in a hopeless site
 Point Opendp::legalPt(const Cell* cell,
-                      const bool padded,
-                      const int row_height) const
+                      const bool padded) const
 {
   if (cell->isFixed()) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
   }
 
   const Point init = initialLocation(cell, padded);
+  const int row_height = grid_->getRowHeight(cell);
   Point legal_pt = legalPt(cell, init, row_height);
   auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
@@ -1389,8 +1389,7 @@ Point Opendp::legalPt(const Cell* cell,
 
 Point Opendp::legalGridPt(const Cell* cell, bool padded) const
 {
-  const int row_height = grid_->getRowHeight(cell);
-  const Point pt = legalPt(cell, padded, row_height);
+  const Point pt = legalPt(cell, padded);
   return Point(grid_->gridX(pt.getX()), grid_->gridY(pt.getY(), cell));
 }
 
