@@ -491,7 +491,7 @@ bool Opendp::checkRegionPlacement(const Cell* cell) const
 bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
 {
   return isCrWtBlClass(cell1) && isCrWtBlClass(cell2)
-         && !(isWtClass(cell1) && isWtClass(cell2));
+         && !(isWellTap(cell1) && isWellTap(cell2));
 }
 
 bool Opendp::isCrWtBlClass(const Cell* cell) const
@@ -547,7 +547,7 @@ bool Opendp::isCrWtBlClass(const Cell* cell) const
   return false;
 }
 
-bool Opendp::isWtClass(const Cell* cell) const
+bool Opendp::isWellTap(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::CORE_WELLTAP;

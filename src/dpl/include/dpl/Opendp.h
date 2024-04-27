@@ -249,7 +249,7 @@ class Opendp
   bool checkRegionPlacement(const Cell* cell) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
-  bool isWtClass(const Cell* cell) const;
+  bool isWellTap(const Cell* cell) const;
   void reportFailures(const vector<Cell*>& failures,
                       int msg_id,
                       const char* msg,
