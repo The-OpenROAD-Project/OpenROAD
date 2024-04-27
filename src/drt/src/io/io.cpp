@@ -3636,6 +3636,11 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       if (db_iterm == nullptr) {
         logger_->error(DRT, 298, "iterm {} not found in db", term->getName());
       }
+
+      if (db_iterm->getNet() == nullptr) {
+        continue;
+      }
+
       auto db_pins = db_iterm->getMTerm()->getMPins();
       if (aps.size() != db_pins.size()) {
         logger_->error(
