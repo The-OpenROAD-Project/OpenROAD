@@ -94,6 +94,18 @@ bool GridInfo::isHybrid() const
 
 ////////////////////////////////////////////////////////////////
 
+void Grid::visitDbRows(dbBlock* block,
+                       const std::function<void(dbRow*)>& func) const
+{
+  for (auto row : block->getRows()) {
+    // dpl doesn't deal with pads
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    func(row);
+  }
+}
+
 int Grid::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 {
   auto row_pattern = parent_hybrid_site->getRowPattern();
@@ -135,16 +147,13 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
   grid_info_vector_.clear();
   int min_site_height = std::numeric_limits<int>::max();
   int min_row_y_coordinate = std::numeric_limits<int>::max();
-  for (auto db_row : block->getRows()) {
+  visitDbRows(block, [&](odb::dbRow* db_row) {
     auto site = db_row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
     odb::Point row_base = db_row->getOrigin();
     min_row_y_coordinate = min(min_row_y_coordinate, row_base.y());
 
     if (getSiteToGrid().find(site) != getSiteToGrid().end()) {
-      continue;
+      return;
     }
 
     if (site->isHybrid() && site->hasRowPattern()) {
@@ -194,12 +203,9 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
         setSmallestNonHybridGridKey(getSiteToGrid().at(site));
       }
     }
-  }
+  });
 
-  for (auto db_row : block->getRows()) {
-    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
+  visitDbRows(block, [&](odb::dbRow* db_row) {
     const odb::Point row_base = db_row->getOrigin();
     dbSite* working_site = db_row->getSite();
     if (row_base.y() == min_row_y_coordinate) {
@@ -219,16 +225,13 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
         }
       }
     }
-  }
+  });
   if (!hasHybridRows() && min_site_height == std::numeric_limits<int>::max()) {
     logger_->error(
         DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
 
-  for (auto db_row : block->getRows()) {
-    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
+  visitDbRows(block, [&](odb::dbRow* db_row) {
     dbSite* working_site = db_row->getSite();
     int row_height = working_site->getHeight();
     GridMapKey gmk = site_to_grid_key_.at(working_site);
@@ -286,7 +289,7 @@ void Grid::initGridLayersMap(dbDatabase* db, dbBlock* block)
         addInfoMap(gmk, grid_info);
       }
     }
-  }
+  });
   grid_info_vector_.resize(getInfoMap().size());
   int min_height(std::numeric_limits<int>::max());
   for (auto& [gmk, grid_info] : getInfoMap()) {
@@ -363,11 +366,8 @@ void Grid::initGrid(dbDatabase* db,
         0, 0, grid_info.getSiteCount(), grid_info.getRowCount()};
   }
   // Fragmented row support; mark valid sites.
-  for (auto db_row : block->getRows()) {
+  visitDbRows(block, [&](odb::dbRow* db_row) {
     const auto db_row_site = db_row->getSite();
-    if (db_row_site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
     int current_row_site_count = db_row->getSiteCount();
     auto gmk = getGridMapKey(db_row_site);
     auto entry = getInfoMap().at(gmk);
@@ -400,7 +400,7 @@ void Grid::initGrid(dbDatabase* db,
     const int yh = min(current_row_count, y_row + max_displacement_y - safety);
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
-  }
+  });
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : getInfoMap()) {
@@ -1060,24 +1060,20 @@ bool Grid::cellFitsInCore(Cell* cell) const
 void Grid::examineRows(dbBlock* block)
 {
   std::vector<dbRow*> rows;
-  auto block_rows = block->getRows();
-  rows.reserve(block_rows.size());
+  rows.reserve(block->getRows().size());
 
   has_hybrid_rows_ = false;
   bool has_non_hybrid_rows = false;
 
-  for (auto* row : block_rows) {
+  visitDbRows(block, [&](odb::dbRow* row) {
     dbSite* site = row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
     if (site->isHybrid()) {
       has_hybrid_rows_ = true;
     } else {
       has_non_hybrid_rows = true;
     }
     rows.push_back(row);
-  }
+  });
   if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
@@ -1088,13 +1084,13 @@ void Grid::examineRows(dbBlock* block)
 
   int min_row_height_ = std::numeric_limits<int>::max();
   int min_site_width_ = std::numeric_limits<int>::max();
-  for (dbRow* db_row : rows) {
+  visitDbRows(block, [&](odb::dbRow* db_row) {
     dbSite* site = db_row->getSite();
     min_site_width_
         = std::min(min_site_width_, static_cast<int>(site->getWidth()));
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
-  }
+  });
   row_height_ = min_row_height_;
   site_width_ = min_site_width_;
   row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
