@@ -222,7 +222,7 @@ class Opendp
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
 
-  void findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const;
+  void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
   bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();

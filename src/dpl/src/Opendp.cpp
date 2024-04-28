@@ -92,17 +92,17 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   grid_->init(logger);
 }
 
-void Opendp::setPaddingGlobal(int left, int right)
+void Opendp::setPaddingGlobal(const int left, const int right)
 {
   padding_->setPaddingGlobal(left, right);
 }
 
-void Opendp::setPadding(dbInst* inst, int left, int right)
+void Opendp::setPadding(dbInst* inst, const int left, const int right)
 {
   padding_->setPadding(inst, left, right);
 }
 
-void Opendp::setPadding(dbMaster* master, int left, int right)
+void Opendp::setPadding(dbMaster* master, const int left, const int right)
 {
   padding_->setPadding(master, left, right);
 }
@@ -112,10 +112,10 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
-void Opendp::detailedPlacement(int max_displacement_x,
-                               int max_displacement_y,
+void Opendp::detailedPlacement(const int max_displacement_x,
+                               const int max_displacement_y,
                                const std::string& report_file_name,
-                               bool disallow_one_site_gaps)
+                               const bool disallow_one_site_gaps)
 {
   importDb();
 
@@ -174,8 +174,8 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      int x = grid_->getCore().xMin() + cell.x_;
-      int y = grid_->getCore().yMin() + cell.y_;
+      const int x = grid_->getCore().xMin() + cell.x_;
+      const int y = grid_->getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -204,10 +204,10 @@ void Opendp::reportLegalizationStats() const
   logger_->report("original HPWL        {:10.1f} u",
                   dbuToMicrons(hpwl_before_));
   odb::WireLengthEvaluator eval(block_);
-  double hpwl_legal = eval.hpwl();
+  const double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
-  int hpwl_delta
+  const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
@@ -224,7 +224,7 @@ void Opendp::findDisplacementStats()
   displacement_max_ = 0;
 
   for (const Cell& cell : cells_) {
-    int displacement = disp(&cell);
+    const int displacement = disp(&cell);
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
       displacement_max_ = displacement;
@@ -247,15 +247,14 @@ void Opendp::optimizeMirroring()
 
 int Opendp::disp(const Cell* cell) const
 {
-  Point init = initialLocation(cell, false);
+  const Point init = initialLocation(cell, false);
   return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
 }
 
 /* static */
 bool Opendp::isBlock(const Cell* cell)
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
-  return type == dbMasterType::BLOCK;
+  return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
 }
 
 int64_t Opendp::paddedArea(const Cell* cell) const
@@ -276,19 +275,18 @@ int Opendp::gridNearestHeight(const Cell* cell, int row_height) const
 
 int Opendp::gridNearestHeight(const Cell* cell) const
 {
-  int row_height = grid_->getRowHeight(cell);
-  return divRound(cell->height_, row_height);
+  return divRound(cell->height_, grid_->getRowHeight(cell));
 }
 
-double Opendp::dbuToMicrons(int64_t dbu) const
+double Opendp::dbuToMicrons(const int64_t dbu) const
 {
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu / dbu_micron;
 }
 
-double Opendp::dbuAreaToMicrons(int64_t dbu_area) const
+double Opendp::dbuAreaToMicrons(const int64_t dbu_area) const
 {
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu_area / (dbu_micron * dbu_micron);
 }
 
@@ -337,7 +335,8 @@ void Opendp::deleteGrid()
   grid_->clear();
 }
 
-void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
+void Opendp::findOverlapInRtree(const bgBox& queryBox,
+                                vector<bgBox>& overlaps) const
 {
   overlaps.clear();
   regions_rtree.query(boost::geometry::index::intersects(queryBox),
@@ -373,22 +372,21 @@ void Opendp::groupAssignCellRegions()
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
       const Rect core = grid_->getCore();
-      int max_row_site_count = divFloor(core.dx(), site_width);
+      const int max_row_site_count = divFloor(core.dx(), site_width);
       row_height = grid_->getRowHeight(group_cell);
-      int row_count = divFloor(core.dy(), row_height);
-      auto gmk = grid_->getGridMapKey(group_cell);
-      auto grid_info = grid_->getInfoMap().at(gmk);
+      const int row_count = divFloor(core.dy(), row_height);
+      const auto gmk = grid_->getGridMapKey(group_cell);
+      const auto grid_info = grid_->getInfoMap().at(gmk);
 
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
-          Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
+          const Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
           if (pixel->is_valid && pixel->group == &group) {
             site_count++;
           }
         }
       }
     }
-    int64_t site_area = site_count * site_width * row_height;
 
     int64_t cell_area = 0;
     for (Cell* cell : group.cells_) {
@@ -403,6 +401,7 @@ void Opendp::groupAssignCellRegions()
         cell->region_ = group.regions.data();
       }
     }
+    const int64_t site_area = site_count * site_width * row_height;
     group.util = static_cast<double>(cell_area) / site_area;
   }
 }
@@ -411,20 +410,20 @@ void Opendp::groupInitPixels2()
 {
   for (auto& layer : grid_->getInfoMap()) {
     const GridInfo& grid_info = layer.second;
-    int row_count = layer.second.getRowCount();
-    int row_site_count = layer.second.getSiteCount();
-    auto grid_sites = layer.second.getSites();
+    const int row_count = layer.second.getRowCount();
+    const int row_site_count = layer.second.getSiteCount();
+    const auto grid_sites = layer.second.getSites();
     for (int x = 0; x < row_site_count; x++) {
       for (int y = 0; y < row_count; y++) {
-        int row_height = grid_sites[y % grid_sites.size()].site->getHeight();
-        Rect sub;
+        const int row_height
+            = grid_sites[y % grid_sites.size()].site->getHeight();
         // TODO: Site width here is wrong if multiple site widths are
         // supported!
         const int site_width = grid_->getSiteWidth();
-        sub.init(x * site_width,
-                 y * row_height,
-                 (x + 1) * site_width,
-                 (y + 1) * row_height);
+        const Rect sub(x * site_width,
+                       y * row_height,
+                       (x + 1) * site_width,
+                       (y + 1) * row_height);
         Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
           for (Rect& rect : group.regions) {
@@ -469,12 +468,12 @@ void Opendp::groupInitPixels()
       logger_->warn(DPL, 42, "No cells found in group {}. ", group.name);
       continue;
     }
-    int row_height = group.cells_[0]->height_;
-    GridMapKey gmk = grid_->getGridMapKey(group.cells_[0]);
+    const int row_height = group.cells_[0]->height_;
+    const GridMapKey gmk = grid_->getGridMapKey(group.cells_[0]);
     const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
-    int grid_index = grid_info.getGridIndex();
+    const int grid_index = grid_info.getGridIndex();
     const int site_width = grid_->getSiteWidth();
-    for (Rect& rect : group.regions) {
+    for (const Rect& rect : group.regions) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
@@ -485,12 +484,12 @@ void Opendp::groupInitPixels()
                  rect.yMin(),
                  rect.xMax(),
                  rect.yMax());
-      int row_start = divCeil(rect.yMin(), row_height);
-      int row_end = divFloor(rect.yMax(), row_height);
+      const int row_start = divCeil(rect.yMin(), row_height);
+      const int row_end = divFloor(rect.yMax(), row_height);
 
       for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width);
-        int col_end = divFloor(rect.xMax(), site_width);
+        const int col_start = divCeil(rect.xMin(), site_width);
+        const int col_end = divFloor(rect.xMax(), site_width);
 
         for (int l = col_start; l < col_end; l++) {
           Pixel* pixel = grid_->gridPixel(grid_index, l, k);
@@ -509,12 +508,12 @@ void Opendp::groupInitPixels()
       }
     }
     for (Rect& rect : group.regions) {
-      int row_start = divCeil(rect.yMin(), row_height);
-      int row_end = divFloor(rect.yMax(), row_height);
+      const int row_start = divCeil(rect.yMin(), row_height);
+      const int row_end = divFloor(rect.yMax(), row_height);
 
       for (int k = row_start; k < row_end; k++) {
-        int col_start = divCeil(rect.xMin(), site_width);
-        int col_end = divFloor(rect.xMax(), site_width);
+        const int col_start = divCeil(rect.xMin(), site_width);
+        const int col_end = divFloor(rect.xMax(), site_width);
 
         // Assign group to each pixel.
         for (int l = col_start; l < col_end; l++) {
@@ -534,17 +533,17 @@ void Opendp::groupInitPixels()
   }
 }
 
-int divRound(int dividend, int divisor)
+int divRound(const int dividend, const int divisor)
 {
   return round(static_cast<double>(dividend) / divisor);
 }
 
-int divCeil(int dividend, int divisor)
+int divCeil(const int dividend, const int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-int divFloor(int dividend, int divisor)
+int divFloor(const int dividend, const int divisor)
 {
   return dividend / divisor;
 }
