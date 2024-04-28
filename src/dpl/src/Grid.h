@@ -203,6 +203,8 @@ class Grid
   void setSmallestNonHybridGridKey(const GridMapKey& key);
   void addHybridParent(dbSite* child, dbSite* parent);
   void addInfoMap(const GridMapKey& key, const GridInfo& info);
+  void visitDbRows(dbBlock* block,
+                   const std::function<void(odb::dbRow*)>& func) const;
 
   Logger* logger_ = nullptr;
   std::shared_ptr<Padding> padding_;
