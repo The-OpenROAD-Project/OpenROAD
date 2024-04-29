@@ -481,7 +481,7 @@ class HierRTLMP
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
   bool design_has_io_clusters_ = true;
   bool design_has_only_macros_ = false;
-  bool no_unfixed_macros_ = false;
+  bool design_has_unfixed_macros_ = true;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
