@@ -64,6 +64,14 @@ bool RUDYDataSource::populateMap()
     return false;
   }
 
+  for (odb::dbInst* inst : getBlock()->getInsts()) {
+    if (!inst->isPlaced()) {
+      getLogger()->warn(
+          utl::GRT, 120, "Instance {} is not placed.", inst->getName());
+      return false;
+    }
+  }
+
   rudy_ = grouter_->getRudy();
 
   const auto& [x_grid_size, y_grid_size] = rudy_->getGridSize();
