@@ -101,14 +101,11 @@ class Opendp
 
   Opendp(const Opendp&) = delete;
   Opendp& operator=(const Opendp&) = delete;
-  Opendp(const Opendp&&) = delete;
-  Opendp& operator=(const Opendp&&) = delete;
 
-  void legalCellPos(dbInst* db_inst);
-  void initMacrosAndGrid();
+  void legalCellPos(dbInst* db_inst);  // call from rsz
+  void initMacrosAndGrid();            // call from rsz
 
   void init(dbDatabase* db, Logger* logger);
-  void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
@@ -132,14 +129,6 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
-  void writeJsonReport(const string& filename,
-                       const vector<Cell*>& placed_failures,
-                       const vector<Cell*>& in_rows_failures,
-                       const vector<Cell*>& overlap_failures,
-                       const vector<Cell*>& one_site_gap_failures,
-                       const vector<Cell*>& site_align_failures,
-                       const vector<Cell*>& region_placement_failures,
-                       const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   void optimizeMirroring();
@@ -163,7 +152,6 @@ class Opendp
   void findDisplacementStats();
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
-  const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const;
   int getRowHeight() const;
   int getSiteWidth() const;
@@ -228,13 +216,13 @@ class Opendp
   Point legalGridPt(const Cell* cell,
                     const Point& pt,
                     int row_height = -1) const;
-  Point legalPt(const Cell* cell, bool padded, int row_height = -1) const;
-  Point legalGridPt(const Cell* cell, bool padded, int row_height = -1) const;
+  Point legalPt(const Cell* cell, bool padded) const;
+  Point legalGridPt(const Cell* cell, bool padded) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
 
-  void findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const;
+  void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
   bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
@@ -245,7 +233,6 @@ class Opendp
   void brickPlace2(const Group* group);
   int groupRefine(const Group* group);
   int anneal(Group* group);
-  int anneal();
   int refine();
   void setFixedGridCells();
   void setGridCell(Cell& cell, Pixel* pixel);
@@ -256,13 +243,13 @@ class Opendp
   // checkPlacement
   static bool isPlaced(const Cell* cell);
   bool checkInRows(const Cell& cell) const;
-  Cell* checkOverlap(Cell& cell) const;
+  const Cell* checkOverlap(Cell& cell) const;
   Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
   bool checkRegionPlacement(const Cell* cell) const;
-  bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
-  bool isCrWtBlClass(const Cell* cell) const;
-  bool isWtClass(const Cell* cell) const;
+  static bool isOverlapPadded(const Cell* cell1, const Cell* cell2);
+  static bool isCrWtBlClass(const Cell* cell);
+  static bool isWellTap(const Cell* cell);
   void reportFailures(const vector<Cell*>& failures,
                       int msg_id,
                       const char* msg,
@@ -274,6 +261,14 @@ class Opendp
       bool verbose,
       const std::function<void(Cell* cell)>& report_failure) const;
   void reportOverlapFailure(Cell* cell) const;
+  void writeJsonReport(const string& filename,
+                       const vector<Cell*>& placed_failures,
+                       const vector<Cell*>& in_rows_failures,
+                       const vector<Cell*>& overlap_failures,
+                       const vector<Cell*>& one_site_gap_failures,
+                       const vector<Cell*>& site_align_failures,
+                       const vector<Cell*>& region_placement_failures,
+                       const vector<Cell*>& placement_failures);
 
   void rectDist(const Cell* cell,
                 const Rect* rect,
@@ -290,7 +285,6 @@ class Opendp
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);
@@ -305,18 +299,18 @@ class Opendp
                        const char* prefix,
                        const MasterByImplant& filler_masters,
                        int row_height,
-                       GridInfo grid_info);
-  bool isFiller(odb::dbInst* db_inst);
+                       const GridInfo& grid_info);
+  static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row,
                            int col,
                            int row_height,
-                           GridInfo grid_info);
+                           const GridInfo& grid_info);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
-  std::unique_ptr<Padding> padding_;
+  std::shared_ptr<Padding> padding_;
 
   vector<Cell> cells_;
   vector<Group> groups_;

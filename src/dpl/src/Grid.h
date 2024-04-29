@@ -48,13 +48,13 @@ using odb::dbSite;
 
 struct Pixel
 {
-  Cell* cell;
-  Group* group_;
-  double util;
+  Cell* cell = nullptr;
+  Group* group = nullptr;
+  double util = 0.0;
   dbOrientType orient_;
-  bool is_valid;     // false for dummy cells
-  bool is_hopeless;  // too far from sites for diamond search
-  dbSite* site;      // site that this pixel is
+  bool is_valid = false;     // false for dummy cells
+  bool is_hopeless = false;  // too far from sites for diamond search
+  dbSite* site = nullptr;    // site that this pixel is
 };
 
 // Return value for grid searches.
@@ -70,39 +70,20 @@ class PixelPt
 class GridInfo
 {
  public:
-  GridInfo(const int row_count,
-           const int site_count,
-           const int grid_index,
-           const dbSite::RowPattern& sites)
-      : row_count_(row_count),
-        site_count_(site_count),
-        grid_index_(grid_index),
-        sites_(sites)
-  {
-  }
+  GridInfo(int row_count,
+           int site_count,
+           int grid_index,
+           const dbSite::RowPattern& sites);
 
-  int getRowCount() const { return row_count_; }
-  int getSiteCount() const { return site_count_; }
+  bool isHybrid() const;
   int getGridIndex() const { return grid_index_; }
   int getOffset() const { return offset_; }
+  int getRowCount() const { return row_count_; }
+  int getSiteCount() const { return site_count_; }
+  const dbSite::RowPattern& getSites() const { return sites_; }
+  int getSitesTotalHeight() const;
 
   void setOffset(int offset) { offset_ = offset; }
-
-  const dbSite::RowPattern& getSites() const { return sites_; }
-
-  bool isHybrid() const
-  {
-    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
-  }
-  int getSitesTotalHeight() const
-  {
-    return std::accumulate(sites_.begin(),
-                           sites_.end(),
-                           0,
-                           [](int sum, const dbSite::OrientedSite& entry) {
-                             return sum + entry.site->getHeight();
-                           });
-  }
 
  private:
   const int row_count_;
@@ -138,7 +119,7 @@ class Grid
   void initBlock(dbBlock* block) { core_ = block->getCoreArea(); }
   void initGrid(dbDatabase* db,
                 dbBlock* block,
-                Padding* padding,
+                std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
   void examineRows(dbBlock* block);
@@ -180,8 +161,6 @@ class Grid
   int getRowHeight() const { return row_height_; }
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
-  void setRowHeight(int height) { row_height_ = height; }
-  void setSiteWidth(int width) { site_width_ = width; }
   int map_ycoordinates(int source_grid_coordinate,
                        const GridMapKey& source_grid_key,
                        const GridMapKey& target_grid_key,
@@ -191,15 +170,10 @@ class Grid
   Pixel& pixel(int g, int y, int x) { return pixels_[g][y][x]; }
   const Pixel& pixel(int g, int y, int x) const { return pixels_[g][y][x]; }
 
-  bool empty() const { return pixels_.empty(); }
   void resize(int size) { pixels_.resize(size); }
   void resize(int g, int size) { pixels_[g].resize(size); }
   void resize(int g, int y, int size) { pixels_[g][y].resize(size); }
   void clear() { pixels_.clear(); }
-
-  void clearInfo() { grid_info_vector_.clear(); }
-  void resizeInfo(int size) { grid_info_vector_.resize(size); }
-  void setInfo(int idx, const GridInfo* info) { grid_info_vector_[idx] = info; }
 
   GridInfo& infoMap(const GridMapKey& key) { return grid_info_map_.at(key); }
   const GridInfo& infoMap(const GridMapKey& key) const
@@ -208,47 +182,15 @@ class Grid
   }
   bool infoMapEmpty() const { return grid_info_map_.empty(); }
   const map<GridMapKey, GridInfo>& getInfoMap() const { return grid_info_map_; }
-  void addInfoMap(const GridMapKey& key, const GridInfo& info)
-  {
-    grid_info_map_.emplace(key, info);
-  }
-  void clearInfoMap() { grid_info_map_.clear(); }
 
-  void clearHybridParent() { hybrid_parent_.clear(); }
-  const std::unordered_map<dbSite*, dbSite*>& getHybridParent() const
-  {
-    return hybrid_parent_;
-  }
+  const std::unordered_map<dbSite*, dbSite*>& getHybridParent() const;
 
-  void addHybridParent(dbSite* child, dbSite* parent)
-  {
-    hybrid_parent_[child] = parent;
-  }
+  GridMapKey getSmallestNonHybridGridKey() const;
 
-  const map<const dbSite*, GridMapKey>& getSiteToGrid() const
-  {
-    return site_to_grid_key_;
-  }
-
-  void addSiteToGrid(dbSite* site, const GridMapKey& key)
-  {
-    site_to_grid_key_[site] = key;
-  }
-
-  GridMapKey getSmallestNonHybridGridKey() const
-  {
-    return smallest_non_hybrid_grid_key_;
-  }
-
-  void setSmallestNonHybridGridKey(const GridMapKey& key)
-  {
-    smallest_non_hybrid_grid_key_ = key;
-  }
-
-  bool getHasHybridRows() const { return has_hybrid_rows_; }
-  void setHasHybridRows(bool has) { has_hybrid_rows_ = has; }
+  bool hasHybridRows() const { return has_hybrid_rows_; }
 
   int getRowCount(int row_height) const;
+  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
 
   Rect getCore() const { return core_; }
   bool cellFitsInCore(Cell* cell) const;
@@ -256,9 +198,16 @@ class Grid
  private:
   int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
   void initGridLayersMap(dbDatabase* db, dbBlock* block);
+  void addSiteToGrid(dbSite* site, const GridMapKey& key);
+  const map<const dbSite*, GridMapKey>& getSiteToGrid() const;
+  void setSmallestNonHybridGridKey(const GridMapKey& key);
+  void addHybridParent(dbSite* child, dbSite* parent);
+  void addInfoMap(const GridMapKey& key, const GridInfo& info);
+  void visitDbRows(dbBlock* block,
+                   const std::function<void(odb::dbRow*)>& func) const;
 
   Logger* logger_ = nullptr;
-  Padding* padding_ = nullptr;
+  std::shared_ptr<Padding> padding_;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<const GridInfo*> grid_info_vector_;
   map<GridMapKey, GridInfo> grid_info_map_;

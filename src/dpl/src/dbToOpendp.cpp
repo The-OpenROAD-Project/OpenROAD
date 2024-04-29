@@ -54,7 +54,6 @@ using odb::dbBox;
 using odb::dbMaster;
 using odb::dbOrientType;
 using odb::dbRegion;
-using odb::dbRow;
 using odb::Rect;
 
 static bool swapWidthHeight(const dbOrientType& orient);
@@ -120,50 +119,6 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
       = (master_height != row_height && master_height % row_height == 0);
 }
 
-void Grid::examineRows(dbBlock* block)
-{
-  std::vector<dbRow*> rows;
-  auto block_rows = block->getRows();
-  rows.reserve(block_rows.size());
-
-  setHasHybridRows(false);
-  bool has_non_hybrid_rows = false;
-
-  for (auto* row : block_rows) {
-    dbSite* site = row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
-    if (site->isHybrid()) {
-      setHasHybridRows(true);
-    } else {
-      has_non_hybrid_rows = true;
-    }
-    rows.push_back(row);
-  }
-  if (rows.empty()) {
-    logger_->error(DPL, 12, "no rows found.");
-  }
-  if (getHasHybridRows() && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
-  int min_row_height_ = std::numeric_limits<int>::max();
-  int min_site_width_ = std::numeric_limits<int>::max();
-  for (dbRow* db_row : rows) {
-    dbSite* site = db_row->getSite();
-    min_site_width_
-        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
-  }
-  setRowHeight(min_row_height_);
-  setSiteWidth(min_site_width_);
-  row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
-  row_count_ = divFloor(getCore().dy(), getRowHeight());
-}
-
 void Opendp::makeCells()
 {
   auto db_insts = block_->getInsts();
@@ -219,7 +174,7 @@ Rect Opendp::getBbox(dbInst* inst)
 
 static bool swapWidthHeight(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R90:
     case dbOrientType::MXR90:
     case dbOrientType::R270:
@@ -265,7 +220,7 @@ void Opendp::makeGroups()
       }
       int index = 0;
       for (auto height : unique_heights) {
-        groups_.emplace_back(Group());
+        groups_.emplace_back();
         struct Group& group = groups_.back();
         string group_name
             = string(db_group->getName()) + "_" + std::to_string(index++);

@@ -63,7 +63,7 @@ bool Padding::isPaddedType(dbInst* inst) const
 {
   dbMasterType type = inst->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
+  switch (type.getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_ANTENNACELL:
     case dbMasterType::CORE_FEEDTHRU:
