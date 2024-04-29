@@ -128,7 +128,7 @@ void Opendp::prePlace()
     Rect* group_rect = nullptr;
     if (!cell.inGroup() && !cell.is_placed_) {
       for (Group& group : groups_) {
-        for (Rect& rect : group.regions) {
+        for (Rect& rect : group.region_boundaries) {
           if (checkOverlap(&cell, &rect)) {
             group_rect = &rect;
           }
@@ -209,7 +209,7 @@ void Opendp::prePlaceGroups()
         int dist = numeric_limits<int>::max();
         bool in_group = false;
         Rect* nearest_rect = nullptr;
-        for (Rect& rect : group.regions) {
+        for (Rect& rect : group.region_boundaries) {
           if (isInside(cell, &rect)) {
             in_group = true;
           }

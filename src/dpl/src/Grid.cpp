@@ -1077,7 +1077,7 @@ void Grid::examineRows(dbBlock* block)
       site_width_ = site->getWidth();
     } else if (site->getWidth() != site_width_) {
       logger_->error(DPL,
-                     50,
+                     51,
                      "Site widths are not equal: {}={} != {}={}",
                      first_site->getName(),
                      site_width_,
