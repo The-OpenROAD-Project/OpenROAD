@@ -713,14 +713,20 @@ EOF
         fi
         ;;
     "Red Hat Enterprise Linux")
-        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            _checkIsLocal
-            _installRHELPackages
-            _installRHELCleanUp
-        fi
-        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-            _installCommonDev
-            _installOrTools "centos" "8" "amd64"
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ "$version" == 9.* ]]; then
+            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+                _checkIsLocal
+                _installRHELPackages
+                _installRHELCleanUp
+            fi
+            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+                _installCommonDev
+                _installOrTools "centos" "8" "amd64"
+            fi
+        else
+            echo "ERROR: RHEL 9 is only supported" >&2
+            exit 1
         fi
         ;;
     "Darwin" )
