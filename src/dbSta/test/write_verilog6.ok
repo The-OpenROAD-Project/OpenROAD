@@ -10,8 +10,8 @@ module top (in1,
     VSS);
  input in1;
  output out1;
- input VDD;
- input VSS;
+ inout VDD;
+ inout VSS;
 
 
  BUF_X1 u1 (.A(in1),
