@@ -146,7 +146,7 @@ void Opendp::placeRowFillers(int row,
                              const char* prefix,
                              const MasterByImplant& filler_masters_by_implant,
                              int row_height,
-                             GridInfo grid_info)
+                             const GridInfo& grid_info)
 {
   int j = 0;
 
@@ -226,7 +226,7 @@ void Opendp::placeRowFillers(int row,
 const char* Opendp::gridInstName(int row,
                                  int col,
                                  int row_height,
-                                 GridInfo grid_info)
+                                 const GridInfo& grid_info)
 {
   if (col < 0) {
     return "core_left";
@@ -284,14 +284,15 @@ dbMasterSeq& Opendp::gapFillers(
 void Opendp::removeFillers()
 {
   block_ = db_->getChip()->getBlock();
-  for (odb::dbInst* db_inst : block_->getInsts()) {
+  for (dbInst* db_inst : block_->getInsts()) {
     if (isFiller(db_inst)) {
       odb::dbInst::destroy(db_inst);
     }
   }
 }
 
-bool Opendp::isFiller(odb::dbInst* db_inst)
+/* static */
+bool Opendp::isFiller(dbInst* db_inst)
 {
   dbMaster* db_master = db_inst->getMaster();
   return db_master->getType() == odb::dbMasterType::CORE_SPACER

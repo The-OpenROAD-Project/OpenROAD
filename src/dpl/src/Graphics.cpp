@@ -46,7 +46,6 @@ Graphics::Graphics(Opendp* dp,
                    const dbInst* debug_instance)
     : dp_(dp),
       debug_instance_(debug_instance),
-      block_(nullptr),
       min_displacement_(min_displacement)
 {
   gui::Gui::get()->registerRenderer(this);
@@ -99,7 +98,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   odb::Rect core = block_->getCoreArea();
 
-  for (const auto& cell : dp_->getCells()) {
+  for (const auto& cell : dp_->cells_) {
     if (!cell.is_placed_) {
       continue;
     }

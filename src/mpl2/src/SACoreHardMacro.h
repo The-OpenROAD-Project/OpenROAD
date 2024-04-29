@@ -72,6 +72,8 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
 
+  void setWeights(const SACoreWeights& weights);
+
   // Initialize the SA worker
   void initialize() override;
   void fillDeadSpace() override {}

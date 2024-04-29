@@ -5637,7 +5637,18 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     }
 
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);  // add SA to containers
+      sa_containers.push_back(sa);
+
+      SACoreWeights weights;
+      weights.area = area_weight_;
+      weights.outline = outline_weight_;
+      weights.wirelength = wirelength_weight_;
+      weights.guidance = guidance_weight_;
+      weights.fence = fence_weight_;
+
+      // Reset weights so we can compare the final costs.
+      sa->setWeights(weights);
+
       if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa;
@@ -5719,6 +5730,7 @@ void HierRTLMP::setArrayTilingSequencePair(Cluster* cluster,
     }
   }
 }
+
 void HierRTLMP::createClusterForEachMacro(
     const std::vector<HardMacro*>& hard_macros,
     std::vector<HardMacro>& sa_macros,
