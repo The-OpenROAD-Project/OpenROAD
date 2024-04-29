@@ -27,4 +27,4 @@
 [WARNING ANT-0009] Net _229_ requires more than 10 diodes per gate to repair violations.
 [INFO GRT-0012] Found 17 antenna violations.
 [INFO GRT-0015] Inserted 330 diodes.
-[INFO GRT-0054] Using detailed placer to place 168 diodes.
+[INFO GRT-0054] Using detailed placer to place 52 diodes.

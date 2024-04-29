@@ -3851,8 +3851,8 @@ class dbWire : public dbObject
   ////
   /// set raw data of _dbWire
   ///
-  void setRawWireData(std::vector<int> data,
-                      std::vector<unsigned char> op_codes);
+  void setRawWireData(const std::vector<int>& data,
+                      const std::vector<unsigned char>& op_codes);
 
  private:
   void addOneSeg(unsigned char op,
