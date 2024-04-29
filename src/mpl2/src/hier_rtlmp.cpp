@@ -346,7 +346,7 @@ void HierRTLMP::setDefaultThresholds()
 }
 
 // Top Level Function
-// The flow of our MacroPlacer is divided into 5 stages.
+// The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:
 //      Transform logical hierarchy into physical hierarchy.
 // 2) Coarse Shaping -> Bottom - Up:
@@ -356,10 +356,13 @@ void HierRTLMP::setDefaultThresholds()
 //      outline and location of its parent cluster.
 //      *This is executed within hierarchical placement method.
 // 4) Hierarchical Macro Placement -> Top - Down
-//      a) Placement of Cluster (one level at a time);
+//      a) Placement of Clusters (one level at a time);
 //      b) Placement of Macros (one macro cluster at a time).
-// 5) Orientation Improvement
-//      Attempts macro flipping to improve WR
+// 5) Boundary Pushing
+//      Push macro clusters to the boundaries of the design if they don't
+//      overlap with either bundled IOs' blockages or other macros.
+// 6) Orientation Improvement
+//      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
 {
   initMacroPlacer();
