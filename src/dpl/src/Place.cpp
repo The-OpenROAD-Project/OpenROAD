@@ -1087,7 +1087,7 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt) const
 {
   // Move inside core.
   const int row_height = grid_->getRowHeight(cell);
-  const auto grid_info = grid_->infoMap(grid_->getGridMapKey(cell));
+  const auto& grid_info = grid_->infoMap(grid_->getGridMapKey(cell));
   const int site_width = grid_->getSiteWidth();
   const int core_x = min(max(0, pt.getX()),
                          grid_info.getSiteCount() * site_width - cell->width_);
@@ -1341,7 +1341,7 @@ Point Opendp::legalPt(const Cell* cell, const bool padded) const
   }
 
   const Point init = initialLocation(cell, padded);
-  int row_height = grid_->getRowHeight(cell);
+  const int row_height = grid_->getRowHeight(cell);
   Point legal_pt = legalPt(cell, init);
   const auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
