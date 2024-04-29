@@ -318,8 +318,7 @@ void Verilog2db::makeDbModule(
     module = block_->getTopModule();
   } else {
     module = makeUniqueDbModule(network_->name(cell));
-    inst_module_vec.emplace_back(
-        std::pair<const Instance*, dbModule*>(inst, parent));
+    inst_module_vec.emplace_back(inst, parent);
 
     std::string module_inst_name = network_->name(inst);
     size_t last_idx = module_inst_name.find_last_of('/');
@@ -435,8 +434,7 @@ void Verilog2db::makeDbModule(
       }
       auto db_inst = dbInst::create(block_, master, child_name, false, module);
 
-      inst_module_vec.emplace_back(
-          std::pair<const Instance*, dbModule*>(child, module));
+      inst_module_vec.emplace_back(child, module);
 
       if (db_inst == nullptr) {
         logger_->warn(ORD,
