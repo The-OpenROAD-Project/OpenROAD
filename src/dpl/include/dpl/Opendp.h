@@ -213,9 +213,7 @@ class Opendp
   bool refineMove(Cell* cell);
 
   Point legalPt(const Cell* cell, const Point& pt, int row_height = -1) const;
-  Point legalGridPt(const Cell* cell,
-                    const Point& pt,
-                    int row_height = -1) const;
+  Point legalGridPt(const Cell* cell, const Point& pt) const;
   Point legalPt(const Cell* cell, bool padded) const;
   Point legalGridPt(const Cell* cell, bool padded) const;
   Point nearestBlockEdge(const Cell* cell,

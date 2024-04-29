@@ -1120,12 +1120,9 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt, int row_height) const
 }
 
 Point Opendp::legalGridPt(const Cell* cell,
-                          const Point& pt,
-                          int row_height) const
+                          const Point& pt) const
 {
-  if (row_height == -1) {
-    row_height = grid_->getRowHeight(cell);
-  }
+  const int row_height = grid_->getRowHeight(cell);
   const Point legal = legalPt(cell, pt, row_height);
   return Point(grid_->gridX(legal.getX()), grid_->gridY(legal.getY(), cell));
 }
