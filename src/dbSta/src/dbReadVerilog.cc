@@ -180,7 +180,6 @@ class Verilog2db
   std::map<Cell*, dbMaster*> master_map_;
   std::map<std::string, int> uniquify_id_;  // key: module name
  private:
-  string makePinName(const std::string& name);
   bool hierarchy_ = false;
 };
 
@@ -207,16 +206,6 @@ Verilog2db::Verilog2db(Network* network,
                        bool hierarchy)
     : network_(network), db_(db), logger_(logger), hierarchy_(hierarchy)
 {
-}
-
-std::string Verilog2db::makePinName(const std::string& port_name)
-{
-  std::string p_name = port_name;
-  size_t last_idx = p_name.find_last_of('/');
-  if (last_idx != string::npos) {
-    p_name = p_name.substr(last_idx + 1);
-  }
-  return p_name;
 }
 
 void Verilog2db::makeBlock()
@@ -389,8 +378,7 @@ void Verilog2db::makeDbModule(
       InstancePinIterator* ip_iter = network_->pinIterator(inst);
       while (ip_iter->hasNext()) {
         Pin* cur_pin = ip_iter->next();
-        std::string pin_name_string(network_->name(cur_pin));
-        pin_name_string = makePinName(pin_name_string);
+        std::string pin_name_string = network_->portName(cur_pin);
         dbModITerm* moditerm
             = dbModITerm::create(modinst, pin_name_string.c_str());
         (void) moditerm;
@@ -471,7 +459,7 @@ bool Verilog2db::staToDb(dbModule* module,
 
   const char* port_name = network_->portName(pin);
   Instance* cur_inst = network_->instance(pin);
-  std::string pin_name = network_->name(pin);
+  std::string pin_name = network_->portName(pin);
 
   //
   // cases: All the things a pin could be:
@@ -484,7 +472,6 @@ bool Verilog2db::staToDb(dbModule* module,
 
   if (module) {
     if (cur_inst) {
-      pin_name = makePinName(pin_name);
       std::string instance_name = network_->pathName(cur_inst);
       size_t last_idx = instance_name.find_last_of('/');
       if (last_idx != string::npos) {
