@@ -39,6 +39,7 @@
 #include <string>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/ConcreteNetwork.hh"
@@ -111,7 +112,8 @@ dbVerilogNetwork* makeDbVerilogNetwork()
 
 void initDbVerilogNetwork(ord::OpenRoad* openroad)
 {
-  openroad->getVerilogNetwork()->init(openroad->getDbNetwork());
+  sta::dbSta* sta = openroad->getSta();
+  openroad->getVerilogNetwork()->init(sta->getDbNetwork());
 }
 
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
