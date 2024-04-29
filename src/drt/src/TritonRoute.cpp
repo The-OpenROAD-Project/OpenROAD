@@ -590,6 +590,10 @@ void TritonRoute::initDesign()
   if (db_ != nullptr && db_->getChip() != nullptr
       && db_->getChip()->getBlock() != nullptr) {
     db_callback_->addOwner(db_->getChip()->getBlock());
+    for (auto net : db_->getChip()->getBlock()->getNets()) {
+      if (net->getWire())
+        odb::dbWire::destroy(net->getWire());
+    }
   }
 }
 

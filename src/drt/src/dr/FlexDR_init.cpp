@@ -717,7 +717,8 @@ void FlexDRWorker::initNets_searchRepair(
     std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides)
 {
   for (auto net : nets) {
-    if (getRipupMode() == RipUpMode::INCR && !net->hasInitialRouting()) {
+    if (isInitDR() && getRipupMode() == RipUpMode::INCR
+        && !net->hasInitialRouting()) {
       continue;
     }
     // build big graph;

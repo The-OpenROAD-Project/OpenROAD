@@ -473,6 +473,47 @@ void FlexDR::init()
   if (VERBOSE > 0) {
     logger_->info(DRT, 194, "Start detail routing.");
   }
+  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
+    if (net->hasInitialRouting()) {
+      for (const auto& via : net->getVias()) {
+        auto bottomBox = via->getLayer1BBox();
+        auto topBox = via->getLayer2BBox();
+        for (auto term : net->getInstTerms()) {
+          if (term->getBBox(true).intersects(bottomBox)) {
+            std::vector<frRect> shapes;
+            term->getShapes(shapes, true);
+            for (auto shape : shapes) {
+              if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
+                continue;
+              }
+              if (!shape.intersects(bottomBox)) {
+                continue;
+              }
+              via->setBottomConnected(true);
+              break;
+            }
+          }
+          if (via->isBottomConnected()) {
+            continue;
+          }
+          if (term->getBBox(true).intersects(topBox)) {
+            std::vector<frRect> shapes;
+            term->getShapes(shapes, true);
+            for (auto shape : shapes) {
+              if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
+                continue;
+              }
+              if (!shape.intersects(topBox)) {
+                continue;
+              }
+              via->setTopConnected(true);
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 void FlexDR::removeGCell2BoundaryPin()
