@@ -32,7 +32,6 @@
 
 #include "dbCCSeg.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbDatabase.h"
@@ -40,6 +39,7 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

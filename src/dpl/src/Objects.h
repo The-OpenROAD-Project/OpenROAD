@@ -1,6 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -30,16 +29,72 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <array>
+#pragma once
 
-namespace rcx {
+#include "dpl/Opendp.h"
 
-// CoupleOptions seriously needs to be rewriten to use a class with named
-// members. -cherry 05/09/2021
-using CoupleOptions = std::array<int, 21>;
-using CoupleAndCompute = void (*)(CoupleOptions&, void*);
+namespace dpl {
 
-}  // namespace rcx
+using odb::dbOrientType;
+using odb::dbSite;
+
+struct Master
+{
+  bool is_multi_row = false;
+};
+
+struct Cell
+{
+  const char* name() const;
+  bool inGroup() const { return group_ != nullptr; }
+  int64_t area() const;
+  bool isStdCell() const;
+  int siteWidth() const;
+  bool isFixed() const;
+
+  dbInst* db_inst_ = nullptr;
+  int x_ = 0;  // lower left wrt core DBU
+  int y_ = 0;
+  dbOrientType orient_;
+  int width_ = 0;  // DBU
+  int height_ = 0;
+  bool is_placed_ = false;
+  bool hold_ = false;
+  Group* group_ = nullptr;
+  Rect* region_ = nullptr;  // group rect
+
+  bool isHybrid() const
+  {
+    dbSite* site = getSite();
+    return site ? site->isHybrid() : false;
+  }
+
+  bool isHybridParent() const
+  {
+    dbSite* site = getSite();
+    return site ? site->hasRowPattern() : false;
+  }
+
+  dbSite* getSite() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()) {
+      return nullptr;
+    }
+    return db_inst_->getMaster()->getSite();
+  }
+
+  static Cell dummy_cell;
+};
+
+struct Group
+{
+  string name;
+  vector<Rect> region_boundaries;
+  vector<Cell*> cells_;
+  Rect boundary;
+  double util = 0.0;
+};
+
+}  // namespace dpl

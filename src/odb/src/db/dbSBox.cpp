@@ -32,7 +32,6 @@
 
 #include "dbSBox.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
@@ -43,6 +42,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/db.h"
 
 namespace odb {
 

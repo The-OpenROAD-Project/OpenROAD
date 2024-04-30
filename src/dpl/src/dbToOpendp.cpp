@@ -38,6 +38,8 @@
 #include <string>
 #include <unordered_set>
 
+#include "Grid.h"
+#include "Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -59,12 +61,12 @@ static bool swapWidthHeight(const dbOrientType& orient);
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
-  core_ = block_->getCoreArea();
+  grid_->initBlock(block_);
   have_fillers_ = false;
   have_one_site_cells_ = false;
 
   importClear();
-  examineRows();
+  grid_->examineRows(block_);
   checkOneSiteDbMaster();
   makeMacros();
   makeCells();
@@ -112,52 +114,9 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
+  const int row_height = grid_->getRowHeight();
   master->is_multi_row
-      = (master_height != row_height_ && master_height % row_height_ == 0);
-}
-
-void Opendp::examineRows()
-{
-  std::vector<dbRow*> rows;
-  auto block_rows = block_->getRows();
-  rows.reserve(block_rows.size());
-
-  has_hybrid_rows_ = false;
-  bool has_non_hybrid_rows = false;
-
-  for (auto* row : block_rows) {
-    dbSite* site = row->getSite();
-    if (site->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
-    if (site->isHybrid()) {
-      has_hybrid_rows_ = true;
-    } else {
-      has_non_hybrid_rows = true;
-    }
-    rows.push_back(row);
-  }
-  if (rows.empty()) {
-    logger_->error(DPL, 12, "no rows found.");
-  }
-  if (has_hybrid_rows_ && has_non_hybrid_rows) {
-    logger_->error(
-        DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
-  }
-
-  int min_row_height_ = std::numeric_limits<int>::max();
-  int min_site_width_ = std::numeric_limits<int>::max();
-  for (dbRow* db_row : rows) {
-    dbSite* site = db_row->getSite();
-    min_site_width_
-        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
-  }
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
-  row_site_count_ = divFloor(core_.dx(), site_width_);
-  row_count_ = divFloor(core_.dy(), row_height_);
+      = (master_height != row_height && master_height % row_height == 0);
 }
 
 void Opendp::makeCells()
@@ -179,7 +138,7 @@ void Opendp::makeCells()
       cell.y_ = bbox.yMin();
       cell.orient_ = db_inst->getOrient();
       // Cell is already placed if it is FIXED.
-      cell.is_placed_ = isFixed(&cell);
+      cell.is_placed_ = cell.isFixed();
 
       Master& master = db_master_map_[db_master];
       // We only want to set this if we have multi-row cells to
@@ -201,8 +160,8 @@ Rect Opendp::getBbox(dbInst* inst)
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
   // Shift by core lower left.
-  loc_x -= core_.xMin();
-  loc_y -= core_.yMin();
+  loc_x -= grid_->getCore().xMin();
+  loc_y -= grid_->getCore().yMin();
 
   int width = master->getWidth();
   int height = master->getHeight();
@@ -215,7 +174,7 @@ Rect Opendp::getBbox(dbInst* inst)
 
 static bool swapWidthHeight(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R90:
     case dbOrientType::MXR90:
     case dbOrientType::R270:
@@ -261,7 +220,7 @@ void Opendp::makeGroups()
       }
       int index = 0;
       for (auto height : unique_heights) {
-        groups_.emplace_back(Group());
+        groups_.emplace_back();
         struct Group& group = groups_.back();
         string group_name
             = string(db_group->getName()) + "_" + std::to_string(index++);
@@ -272,9 +231,10 @@ void Opendp::makeGroups()
 
         for (dbBox* boundary : boundaries) {
           Rect box = boundary->getBox();
-          box = box.intersect(core_);
+          const Rect core = grid_->getCore();
+          box = box.intersect(core);
           // offset region to core origin
-          box.moveDelta(-core_.xMin(), -core_.yMin());
+          box.moveDelta(-core.xMin(), -core.yMin());
           if (height == *(unique_heights.begin())) {
             bgBox bbox(
                 bgPoint(box.xMin(), box.yMin()),
@@ -284,7 +244,7 @@ void Opendp::makeGroups()
                                     /// where a region ends and another starts
             regions_rtree.insert(bbox);
           }
-          group.regions.push_back(box);
+          group.region_boundaries.push_back(box);
           group.boundary.merge(box);
         }
       }

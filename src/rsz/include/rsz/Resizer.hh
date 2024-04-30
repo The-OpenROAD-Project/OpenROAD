@@ -460,16 +460,16 @@ class Resizer : public StaState
                             const DcalcAnalysisPt* dcalc_ap,
                             // Return value
                             LibertyPort** swap_port);
-  void gateDelays(LibertyPort* drvr_port,
+  void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
-  ArcDelay gateDelay(LibertyPort* drvr_port,
+  ArcDelay gateDelay(const LibertyPort* drvr_port,
                      float load_cap,
                      const DcalcAnalysisPt* dcalc_ap);
-  ArcDelay gateDelay(LibertyPort* drvr_port,
+  ArcDelay gateDelay(const LibertyPort* drvr_port,
                      const RiseFall* rf,
                      float load_cap,
                      const DcalcAnalysisPt* dcalc_ap);
@@ -548,7 +548,9 @@ class Resizer : public StaState
                                 SteinerPt pt,
                                 size_t& resistor_id);
 
-  bool replaceCell(Instance* inst, LibertyCell* replacement, bool journal);
+  bool replaceCell(Instance* inst,
+                   const LibertyCell* replacement,
+                   bool journal);
 
   void findResizeSlacks1();
   bool removeBuffer(Instance* buffer);

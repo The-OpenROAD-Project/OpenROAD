@@ -71,6 +71,12 @@ have_routes()
   return getGlobalRouter()->haveRoutes();
 }
 
+bool
+have_detailed_routes()
+{
+  return getGlobalRouter()->haveDetailedRoutes();
+}
+
 void
 set_capacity_adjustment(float adjustment)
 {

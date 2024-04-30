@@ -131,7 +131,7 @@ for relation in schema["relations"]:
 
     schema["classes"][parent]["fields"].append(inParentField)
     schema["classes"][parent]["cpp_includes"].extend(
-        [f"{relation['second']}.h", "dbSet.h"]
+        [f"{relation['second']}.h", "odb/dbSet.h"]
     )
     logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
 
@@ -306,8 +306,8 @@ for klass in schema["classes"]:
     # Add required header files if they are not already expressed
     for struct in klass["structs"]:
         if "public" in struct and struct["public"]:
-            if "db.h" not in klass["h_includes"]:
-                klass["h_includes"].append("db.h")
+            if "odb/db.h" not in klass["h_includes"]:
+                klass["h_includes"].append("odb/db.h")
             break
 
     # Generating files

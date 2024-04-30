@@ -327,18 +327,6 @@ openroad_charts_compiled()
   return ord::OpenRoad::getChartsCompileOption();
 }
 
-const bool
-openroad_mpl2_compiled()
-{
-  return ord::OpenRoad::getMPL2CompileOption();
-}
-
-const bool
-openroad_par_compiled()
-{
-  return ord::OpenRoad::getPARCompileOption();
-}
-
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
@@ -437,10 +425,10 @@ read_verilog_cmd(const char *filename)
 }
 
 void
-link_design_db_cmd(const char *design_name)
+link_design_db_cmd(const char *design_name,bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(design_name);
+  ord->linkDesign(design_name,hierarchy);
 }
 
 void

@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "CallBack.h"
-#include "db.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
