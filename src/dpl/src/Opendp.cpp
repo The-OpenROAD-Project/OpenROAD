@@ -360,7 +360,7 @@ void Opendp::groupAssignCellRegions()
       const int max_row_site_count = divFloor(core.dx(), site_width);
       const int row_height = grid_->getRowHeight(group_cell);
       const int row_count = divFloor(core.dy(), row_height);
-      const int64_t site_area = row_height * site_width;
+      const int64_t site_area = row_height * static_cast<int64_t>(site_width);
       const auto gmk = grid_->getGridMapKey(group_cell);
       const auto grid_info = grid_->getInfoMap().at(gmk);
 
