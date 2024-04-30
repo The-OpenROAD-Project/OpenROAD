@@ -136,8 +136,8 @@ class Grid
   int gridY(const Cell* cell) const;
   int gridEndY(int y, const Cell* cell) const;
   int gridEndY(const Cell* cell) const;
-  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
-  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
+  pair<int, int> gridY(int y, const GridInfo& grid_info) const;
+  pair<int, int> gridEndY(int y, const GridInfo& grid_info) const;
   GridInfo getGridInfo(const Cell* cell) const;
   int gridPaddedWidth(const Cell* cell) const;
   int gridHeight(const Cell* cell) const;

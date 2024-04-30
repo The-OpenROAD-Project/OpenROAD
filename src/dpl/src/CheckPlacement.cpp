@@ -81,8 +81,7 @@ void Opendp::checkPlacement(const bool verbose,
           continue;
         }
         auto grid_info = grid_->getGridInfo(&cell);
-        auto [cell_index, cell_height]
-            = grid_->gridY(cell.y_, grid_info.getSites());
+        auto [cell_index, cell_height] = grid_->gridY(cell.y_, grid_info);
         if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
           site_align_failures.push_back(&cell);
         }

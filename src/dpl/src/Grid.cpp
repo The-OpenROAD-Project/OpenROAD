@@ -378,7 +378,7 @@ void Grid::initGrid(dbDatabase* db,
     const Rect core = getCore();
     const int x_start = (orig.x() - core.xMin()) / db_row_site->getWidth();
     const int x_end = x_start + current_row_site_count;
-    const int y_row = gridY(orig.y() - core.yMin(), entry.getSites()).first;
+    const int y_row = gridY(orig.y() - core.yMin(), entry).first;
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(current_row_grid_index, x, y_row);
       if (pixel == nullptr) {
@@ -518,7 +518,6 @@ void Grid::visitCellBoundaryPixels(
   const GridMapKey& gmk = getGridMapKey(&cell);
   GridInfo grid_info = getInfoMap().at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
-  const auto& grid_sites = grid_info.getSites();
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
@@ -533,8 +532,8 @@ void Grid::visitCellBoundaryPixels(
 
       int x_start = gridX(rect.xMin() - core.xMin());
       int x_end = gridEndX(rect.xMax() - core.xMin());
-      int y_start = gridY(rect.yMin() - core.yMin(), grid_sites).first;
-      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_sites).first;
+      int y_start = gridY(rect.yMin() - core.yMin(), grid_info).first;
+      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_info).first;
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
@@ -670,7 +669,7 @@ int Grid::map_ycoordinates(int source_grid_coordinate,
     }
     // count until we find it.
     return gridY(source_grid_coordinate * source_grid_key.grid_index,
-                 target_grid_info.getSites())
+                 target_grid_info)
         .first;
   }
   // src is hybrid
@@ -684,7 +683,7 @@ int Grid::map_ycoordinates(int source_grid_coordinate,
   }
   if (target_grid_info.isHybrid()) {
     // both are hybrids.
-    return gridY(src_height, target_grid_info.getSites()).first;
+    return gridY(src_height, target_grid_info).first;
   }
   int target_step = target_grid_info.getSites()[0].site->getHeight();
   if (start) {
@@ -826,14 +825,7 @@ int Grid::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
     auto& grid_sites = grid_info.getSites();
     const int total_height = grid_info.getSitesTotalHeight();
     int patterns_below = divFloor(y_coordinate, grid_sites.size());
-    int remaining_rows = y_coordinate % grid_sites.size();
-    int remaining_rows_height
-        = std::accumulate(grid_sites.begin(),
-                          grid_sites.begin() + remaining_rows,
-                          0,
-                          [](int sum, const dbSite::OrientedSite& entry) {
-                            return sum + entry.site->getHeight();
-                          });
+    int remaining_rows_height = grid_info.getSitesTotalHeight();
     int height = patterns_below * total_height + remaining_rows_height;
     return height;
   }
@@ -929,16 +921,10 @@ GridInfo Grid::getGridInfo(const Cell* cell) const
   return getInfoMap().at(getGridMapKey(cell));
 }
 
-pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridY(int y, const GridInfo& grid_info) const
 {
-  int sum_heights
-      = std::accumulate(grid_sites.begin(),
-                        grid_sites.end(),
-                        0,
-                        [](int sum, const dbSite::OrientedSite& entry) {
-                          return sum + entry.site->getHeight();
-                        });
-
+  const dbSite::RowPattern& grid_sites = grid_info.getSites();
+  int sum_heights = grid_info.getSitesTotalHeight();
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
   int index = 0;
@@ -954,19 +940,13 @@ pair<int, int> Grid::gridY(int y, const dbSite::RowPattern& grid_sites) const
   return {base_height_index + index, cur_height};
 }
 
-pair<int, int> Grid::gridEndY(int y, const dbSite::RowPattern& grid_sites) const
+pair<int, int> Grid::gridEndY(int y, const GridInfo& grid_info) const
 {
-  int sum_heights
-      = std::accumulate(grid_sites.begin(),
-                        grid_sites.end(),
-                        0,
-                        [](int sum, const dbSite::OrientedSite& entry) {
-                          return sum + entry.site->getHeight();
-                        });
-
+  int sum_heights = grid_info.getSitesTotalHeight();
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
   int index = 0;
+  const dbSite::RowPattern& grid_sites = grid_info.getSites();
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
     const auto site = grid_sites.at(index).site;
@@ -985,7 +965,7 @@ int Grid::gridY(const int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    return gridY(y, grid_info.getSites()).first;
+    return gridY(y, grid_info).first;
   }
 
   return y / getRowHeight(cell);
@@ -1044,8 +1024,7 @@ int Grid::gridEndY(int y, const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    const auto& grid_sites = grid_info.getSites();
-    return gridY(y, grid_sites).first;
+    return gridY(y, grid_info).first;
   }
   int row_height = getRowHeight(cell);
   return divCeil(y, row_height);
