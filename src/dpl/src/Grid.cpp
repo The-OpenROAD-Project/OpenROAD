@@ -1059,11 +1059,9 @@ bool Grid::cellFitsInCore(Cell* cell) const
 
 void Grid::examineRows(dbBlock* block)
 {
-  std::vector<dbRow*> rows;
-  rows.reserve(block->getRows().size());
-
   has_hybrid_rows_ = false;
   bool has_non_hybrid_rows = false;
+  dbSite* first_site = nullptr;
 
   visitDbRows(block, [&](odb::dbRow* row) {
     dbSite* site = row->getSite();
@@ -1072,27 +1070,36 @@ void Grid::examineRows(dbBlock* block)
     } else {
       has_non_hybrid_rows = true;
     }
-    rows.push_back(row);
+
+    // Check all sites have equal width
+    if (!first_site) {
+      first_site = site;
+      site_width_ = site->getWidth();
+    } else if (site->getWidth() != site_width_) {
+      logger_->error(DPL,
+                     51,
+                     "Site widths are not equal: {}={} != {}={}",
+                     first_site->getName(),
+                     site_width_,
+                     site->getName(),
+                     site->getWidth());
+    }
   });
-  if (rows.empty()) {
+
+  if (!hasHybridRows() && !has_non_hybrid_rows) {
     logger_->error(DPL, 12, "no rows found.");
   }
+
   if (hasHybridRows() && has_non_hybrid_rows) {
     logger_->error(
         DPL, 49, "Mixing hybrid and non-hybrid rows is unsupported.");
   }
 
-  int min_row_height_ = std::numeric_limits<int>::max();
-  int min_site_width_ = std::numeric_limits<int>::max();
+  row_height_ = std::numeric_limits<int>::max();
   visitDbRows(block, [&](odb::dbRow* db_row) {
     dbSite* site = db_row->getSite();
-    min_site_width_
-        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
-    min_row_height_
-        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
+    row_height_ = std::min(row_height_, static_cast<int>(site->getHeight()));
   });
-  row_height_ = min_row_height_;
-  site_width_ = min_site_width_;
   row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
   row_count_ = divFloor(getCore().dy(), getRowHeight());
 }

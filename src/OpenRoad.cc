@@ -513,10 +513,10 @@ void OpenRoad::readVerilog(const char* filename)
   dbReadVerilog(filename, verilog_network_);
 }
 
-void OpenRoad::linkDesign(const char* design_name)
+void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_, logger_);
+  dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
