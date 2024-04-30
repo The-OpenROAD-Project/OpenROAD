@@ -61,7 +61,7 @@ void RUDYDataSource::combineMapData(bool base_has_value,
 void RUDYDataSource::populateXYGrid()
 {
   if (getBlock() == nullptr) {
-    gui::HeatMapDataSource::populateXYGrid();
+    gui::GlobalRoutingDataSource::populateXYGrid();
     return;
   }
 
