@@ -366,15 +366,15 @@ void Opendp::setGridCell(Cell& cell, Pixel* pixel)
 void Opendp::groupAssignCellRegions()
 {
   for (Group& group : groups_) {
-    int64_t site_count = 0;
-    int row_height = grid_->getRowHeight();
+    int64_t total_site_area = 0;
     const int site_width = grid_->getSiteWidth();
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
       const Rect core = grid_->getCore();
       const int max_row_site_count = divFloor(core.dx(), site_width);
-      row_height = grid_->getRowHeight(group_cell);
+      const int row_height = grid_->getRowHeight(group_cell);
       const int row_count = divFloor(core.dy(), row_height);
+      const int64_t site_area = row_height * site_width;
       const auto gmk = grid_->getGridMapKey(group_cell);
       const auto grid_info = grid_->getInfoMap().at(gmk);
 
@@ -382,7 +382,7 @@ void Opendp::groupAssignCellRegions()
         for (int y = 0; y < row_count; y++) {
           const Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
           if (pixel->is_valid && pixel->group == &group) {
-            site_count++;
+            total_site_area += site_area;
           }
         }
       }
@@ -401,8 +401,7 @@ void Opendp::groupAssignCellRegions()
         cell->region_ = group.region_boundaries.data();
       }
     }
-    const int64_t site_area = site_count * site_width * row_height;
-    group.util = static_cast<double>(cell_area) / site_area;
+    group.util = static_cast<double>(cell_area) / total_site_area;
   }
 }
 
