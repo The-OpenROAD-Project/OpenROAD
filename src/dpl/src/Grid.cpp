@@ -557,23 +557,17 @@ void Grid::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    int y_start = gridY(&cell);
+    const int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
+    const int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
+    const int y_start = gridY(&cell);
+    const int y_end = gridEndY(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
-               "Checking cell {} isHybrid {}",
+               "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
                cell.name(),
-               cell.isHybrid());
-    int y_end = gridEndY(&cell);
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} in rows. Y start {} y end {}",
-               cell.name(),
+               cell.isHybrid(),
                y_start,
                y_end);
 
