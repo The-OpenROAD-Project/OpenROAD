@@ -91,7 +91,7 @@ struct Cell
 struct Group
 {
   string name;
-  vector<Rect> regions;
+  vector<Rect> region_boundaries;
   vector<Cell*> cells_;
   Rect boundary;
   double util = 0.0;

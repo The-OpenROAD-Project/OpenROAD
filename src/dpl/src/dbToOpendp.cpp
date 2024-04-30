@@ -244,7 +244,7 @@ void Opendp::makeGroups()
                                     /// where a region ends and another starts
             regions_rtree.insert(bbox);
           }
-          group.regions.push_back(box);
+          group.region_boundaries.push_back(box);
           group.boundary.merge(box);
         }
       }
