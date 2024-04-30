@@ -321,7 +321,9 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(getCore()));
+  sort(sorted_cells.begin(),
+       sorted_cells.end(),
+       CellPlaceOrderLess(grid_->getCore()));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -358,7 +360,9 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(getCore()));
+    sort(group_cells.begin(),
+         group_cells.end(),
+         CellPlaceOrderLess(grid_->getCore()));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -852,7 +856,7 @@ void Opendp::diamondSearchSide(const Cell* cell,
       y_dist = abs(y - avail_pt.pt.getY()) * grid_->getRowHeight(cell);
     }
     const int avail_dist
-        = abs(x - avail_pt.pt.getX()) * getSiteWidth() + y_dist;
+        = abs(x - avail_pt.pt.getX()) * grid_->getSiteWidth() + y_dist;
     if (best_pt.pixel == nullptr || avail_dist < best_dist) {
       best_pt = avail_pt;
       best_dist = avail_dist;

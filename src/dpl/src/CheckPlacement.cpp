@@ -157,7 +157,7 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
   ptree violations;
   const double dbUnits
       = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
-  const Rect core = getCore();
+  const Rect core = grid_->getCore();
   for (auto failure : failures) {
     ptree violation, shapes, source, sources, shape;
     double xMin = (failure->x_ + core.xMin()) / dbUnits;

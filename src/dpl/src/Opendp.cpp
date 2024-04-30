@@ -290,20 +290,6 @@ double Opendp::dbuAreaToMicrons(const int64_t dbu_area) const
   return dbu_area / (dbu_micron * dbu_micron);
 }
 
-Rect Opendp::getCore() const
-{
-  return grid_->getCore();
-}
-
-int Opendp::getRowHeight() const
-{
-  return grid_->getRowHeight();
-}
-
-int Opendp::getSiteWidth() const
-{
-  return grid_->getSiteWidth();
-}
 int Opendp::padGlobalLeft() const
 {
   return padding_->padGlobalLeft();

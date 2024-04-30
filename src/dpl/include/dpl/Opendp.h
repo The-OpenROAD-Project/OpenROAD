@@ -152,9 +152,6 @@ class Opendp
   void findDisplacementStats();
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
-  Rect getCore() const;
-  int getRowHeight() const;
-  int getSiteWidth() const;
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
                               const std::vector<Cell*>& failures,
