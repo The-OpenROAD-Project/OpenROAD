@@ -448,23 +448,21 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
             break;
           case Direction2D::North:
           case Direction2D::South:
-            break;
+            return;
         }
-        if (0 != abut_x) {
-          // check the abutting pixel
-          const Cell* pixel_cell = pixel->cell;
-          const Pixel* abut_pixel
-              = grid_->gridPixel(index_in_grid, x + abut_x, y);
-          const bool abuttment_exists
-              = (abut_pixel && abut_pixel->cell != pixel_cell
-                 && abut_pixel->cell);
-          if (!abuttment_exists) {
-            // check the 1 site gap pixel
-            const Pixel* gap_pixel
-                = grid_->gridPixel(index_in_grid, x + 2 * abut_x, y);
-            if (gap_pixel && gap_pixel->cell != pixel_cell) {
-              gap_cell = gap_pixel->cell;
-            }
+        // check the abutting pixel
+        const Cell* pixel_cell = pixel->cell;
+        const Pixel* abut_pixel
+            = grid_->gridPixel(index_in_grid, x + abut_x, y);
+        const bool abuttment_exists
+            = (abut_pixel && abut_pixel->cell != pixel_cell
+               && abut_pixel->cell);
+        if (!abuttment_exists) {
+          // check the 1 site gap pixel
+          const Pixel* gap_pixel
+              = grid_->gridPixel(index_in_grid, x + 2 * abut_x, y);
+          if (gap_pixel && gap_pixel->cell != pixel_cell) {
+            gap_cell = gap_pixel->cell;
           }
         }
       });
