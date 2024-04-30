@@ -1021,6 +1021,7 @@ bool Grid::cellFitsInCore(Cell* cell) const
 
 void Grid::examineRows(dbBlock* block)
 {
+  block_ = block;
   has_hybrid_rows_ = false;
   bool has_non_hybrid_rows = false;
   dbSite* first_site = nullptr;
@@ -1064,6 +1065,15 @@ void Grid::examineRows(dbBlock* block)
   });
   row_site_count_ = divFloor(getCore().dx(), getSiteWidth());
   row_count_ = divFloor(getCore().dy(), getRowHeight());
+}
+
+std::unordered_set<int> Grid::getRowCoordinates() const
+{
+  std::unordered_set<int> coords;
+  visitDbRows(block_, [&](odb::dbRow* row) {
+    coords.insert(row->getOrigin().y() - core_.yMin());
+  });
+  return coords;
 }
 
 }  // namespace dpl

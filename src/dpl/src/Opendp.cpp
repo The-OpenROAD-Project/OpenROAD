@@ -402,8 +402,6 @@ void Opendp::groupInitPixels2()
       for (int y = 0; y < row_count; y++) {
         const int row_height
             = grid_sites[y % grid_sites.size()].site->getHeight();
-        // TODO: Site width here is wrong if multiple site widths are
-        // supported!
         const int site_width = grid_->getSiteWidth();
         const Rect sub(x * site_width,
                        y * row_height,
