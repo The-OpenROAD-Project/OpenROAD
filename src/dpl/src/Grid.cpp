@@ -518,59 +518,11 @@ void Grid::visitCellBoundaryPixels(
   const GridMapKey& gmk = getGridMapKey(&cell);
   GridInfo grid_info = getInfoMap().at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
-  dbMaster* master = inst->getMaster();
-  auto obstructions = master->getObstructions();
-  bool have_obstructions = false;
-  const Rect core = getCore();
-  for (dbBox* obs : obstructions) {
-    if (obs->getTechLayer()->getType()
-        == odb::dbTechLayerType::Value::OVERLAP) {
-      have_obstructions = true;
 
-      Rect rect = obs->getBox();
-      inst->getTransform().apply(rect);
-
-      int x_start = gridX(rect.xMin() - core.xMin());
-      int x_end = gridEndX(rect.xMax() - core.xMin());
-      int y_start = gridY(rect.yMin() - core.yMin(), grid_info).first;
-      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_info).first;
-      for (int x = x_start; x < x_end; x++) {
-        Pixel* pixel = gridPixel(index_in_grid, x, y_start);
-        if (pixel) {
-          visitor(pixel, odb::Direction2D::North, x, y_start);
-        }
-        pixel = gridPixel(index_in_grid, x, y_end - 1);
-        if (pixel) {
-          visitor(pixel, odb::Direction2D::South, x, y_end - 1);
-        }
-      }
-      for (int y = y_start; y < y_end; y++) {
-        Pixel* pixel = gridPixel(index_in_grid, x_start, y);
-        if (pixel) {
-          visitor(pixel, odb::Direction2D::West, x_start, y);
-        }
-        pixel = gridPixel(index_in_grid, x_end - 1, y);
-        if (pixel) {
-          visitor(pixel, odb::Direction2D::East, x_end - 1, y);
-        }
-      }
-    }
-  }
-  if (!have_obstructions) {
-    const int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
-    const int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    const int y_start = gridY(&cell);
-    const int y_end = gridEndY(&cell);
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
-               cell.name(),
-               cell.isHybrid(),
-               y_start,
-               y_end);
-
+  auto visit = [&visitor, index_in_grid, this](const int x_start,
+                                               const int x_end,
+                                               const int y_start,
+                                               const int y_end) {
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(index_in_grid, x, y_start);
       if (pixel) {
@@ -591,6 +543,43 @@ void Grid::visitCellBoundaryPixels(
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
       }
     }
+  };
+
+  dbMaster* master = inst->getMaster();
+  auto obstructions = master->getObstructions();
+  bool have_obstructions = false;
+  const Rect core = getCore();
+  for (dbBox* obs : obstructions) {
+    if (obs->getTechLayer()->getType()
+        == odb::dbTechLayerType::Value::OVERLAP) {
+      have_obstructions = true;
+
+      Rect rect = obs->getBox();
+      inst->getTransform().apply(rect);
+
+      int x_start = gridX(rect.xMin() - core.xMin());
+      int x_end = gridEndX(rect.xMax() - core.xMin());
+      int y_start = gridY(rect.yMin() - core.yMin(), grid_info).first;
+      int y_end = gridEndY(rect.yMax() - core.yMin(), grid_info).first;
+      visit(x_start, x_end, y_start, y_end);
+    }
+  }
+  if (!have_obstructions) {
+    const int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
+    const int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
+    const int y_start = gridY(&cell);
+    const int y_end = gridEndY(&cell);
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
+               cell.name(),
+               cell.isHybrid(),
+               y_start,
+               y_end);
+
+    visit(x_start, x_end, y_start, y_end);
   }
 }
 
