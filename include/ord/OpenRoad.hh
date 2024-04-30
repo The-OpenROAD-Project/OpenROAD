@@ -229,8 +229,7 @@ class OpenRoad
                 bool includeFillers);
 
   void readVerilog(const char* filename);
-  void linkDesign(const char* design_name);
-
+  void linkDesign(const char* design_name, bool hierarchy);
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
