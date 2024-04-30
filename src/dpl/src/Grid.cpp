@@ -923,11 +923,11 @@ GridInfo Grid::getGridInfo(const Cell* cell) const
 
 pair<int, int> Grid::gridY(int y, const GridInfo& grid_info) const
 {
-  const dbSite::RowPattern& grid_sites = grid_info.getSites();
-  int sum_heights = grid_info.getSitesTotalHeight();
+  const int sum_heights = grid_info.getSitesTotalHeight();
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
   int index = 0;
+  const dbSite::RowPattern& grid_sites = grid_info.getSites();
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
     const auto site = grid_sites.at(index).site;
@@ -942,7 +942,7 @@ pair<int, int> Grid::gridY(int y, const GridInfo& grid_info) const
 
 pair<int, int> Grid::gridEndY(int y, const GridInfo& grid_info) const
 {
-  int sum_heights = grid_info.getSitesTotalHeight();
+  const int sum_heights = grid_info.getSitesTotalHeight();
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
   int index = 0;
