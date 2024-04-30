@@ -32,12 +32,10 @@
 
 #include "dbITerm.h"
 
-#include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
@@ -52,9 +50,11 @@
 #include "dbMaster.h"
 #include "dbModNet.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 namespace odb {
 

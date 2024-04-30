@@ -32,9 +32,7 @@
 
 #include "dbRegion.h"
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -44,6 +42,8 @@
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 
 namespace odb {
 

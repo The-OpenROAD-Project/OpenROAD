@@ -216,13 +216,17 @@ class HierRTLMP
                                     std::vector<Cluster*>& macro_clusters);
   void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
                             std::vector<int>& size_class);
+  void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
+                                 std::vector<int>& interconn_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
                                 const std::vector<int>& size_class,
                                 const std::vector<int>& signature_class,
+                                std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
+  void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
   void addStdCellClusterToSubTree(Cluster* parent,
                                   Cluster* mixed_leaf,
                                   std::vector<int>& virtual_conn_clusters);
@@ -234,6 +238,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
   IOSpans computeIOSpans();
   float computeIOBlockagesDepth(const IOSpans& io_spans);
@@ -285,6 +290,9 @@ class HierRTLMP
   std::vector<BundledNet> computeBundledNets(
       const std::vector<Cluster*>& macro_clusters,
       const std::map<int, int>& cluster_to_macro);
+  void setArrayTilingSequencePair(Cluster* cluster,
+                                  int macros_to_place,
+                                  SequencePair& initial_seq_pair);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);

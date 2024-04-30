@@ -49,8 +49,9 @@
 #include "odb/db.h"
 
 namespace sta {
+class Pin;
 class dbSta;
-}
+}  // namespace sta
 
 namespace gui {
 
@@ -86,6 +87,9 @@ class TimingWidget : public QDockWidget
   TimingControlsDialog* getSettings() { return settings_; }
 
   void updatePaths();
+#ifdef ENABLE_CHARTS
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
+#endif
 
  signals:
   void highlightTimingPath(TimingPath* timing_path);
@@ -129,6 +133,9 @@ class TimingWidget : public QDockWidget
  private:
   void copy();
   void addCommandsMenuActions();
+  void populateAndSortModels(const std::set<const sta::Pin*>& from,
+                             const std::vector<std::set<const sta::Pin*>>& thru,
+                             const std::set<const sta::Pin*>& to);
 
   QMenu* commands_menu_;
 

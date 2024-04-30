@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbExtControl.h"
+#include "odb/dbExtControl.h"
 
-#include "db.h"
 #include "dbDatabase.h"
+#include "odb/db.h"
 
 namespace odb {
 

@@ -62,7 +62,7 @@ class IRNetwork;
 class IRSolver
 {
  public:
-  using Voltage = float;
+  using Voltage = double;
   using Current = double;
   using Power = float;
 
@@ -187,7 +187,7 @@ class IRSolver
   bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
   bool wasNodeVisited(const Node* node) const;
 
-  std::map<Node*, std::set<Connection*>> getNodeConnectionMap(
+  std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const std::map<psm::Connection*, Connection::Conductance>& conductance)
       const;
   void buildNodeCurrentMap(sta::Corner* corner,
@@ -199,7 +199,7 @@ class IRSolver
       std::size_t start = 0) const;
   void buildCondMatrixAndVoltages(
       bool is_ground,
-      const std::map<Node*, std::set<Connection*>>& node_connections,
+      const std::map<Node*, Connection::ConnectionSet>& node_connections,
       const ValueNodeMap<Current>& currents,
       const std::map<psm::Connection*, Connection::Conductance>& conductance,
       const std::map<Node*, std::size_t>& node_index,
@@ -217,6 +217,9 @@ class IRSolver
   void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
   void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
                   const std::string& name) const;
+  void dumpConductance(
+      const std::map<Connection*, Connection::Conductance>& cond,
+      const std::string& name) const;
 
   odb::dbNet* net_;
 

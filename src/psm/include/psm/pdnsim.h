@@ -95,7 +95,7 @@ class PDNSim : public odb::dbBlockCallBackObj
             sta::dbSta* sta,
             rsz::Resizer* resizer);
 
-  void setNetVoltage(odb::dbNet* net, sta::Corner* corner, float voltage);
+  void setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage);
   void analyzePowerGrid(odb::dbNet* net,
                         sta::Corner* corner,
                         GeneratedSourceType source_type,
@@ -147,6 +147,6 @@ class PDNSim : public odb::dbBlockCallBackObj
   GeneratedSourceSettings generated_source_settings_;
 
   std::map<odb::dbNet*, std::unique_ptr<IRSolver>> solvers_;
-  std::map<odb::dbNet*, std::map<sta::Corner*, float>> user_voltages_;
+  std::map<odb::dbNet*, std::map<sta::Corner*, double>> user_voltages_;
 };
 }  // namespace psm

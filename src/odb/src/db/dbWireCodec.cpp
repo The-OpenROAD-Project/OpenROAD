@@ -30,13 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWireCodec.h"
+#include "odb/dbWireCodec.h"
 
 #include <ctype.h>
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
@@ -44,6 +42,8 @@
 #include "dbTechLayerRule.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 
 namespace odb {

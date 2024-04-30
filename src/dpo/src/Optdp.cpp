@@ -97,7 +97,6 @@ void Optdp::improvePlacement(int seed,
 {
   logger_->report("Detailed placement improvement.");
 
-  opendp_->initBlock();
   odb::WireLengthEvaluator eval(db_->getChip()->getBlock());
   hpwlBefore_ = eval.hpwl();
 

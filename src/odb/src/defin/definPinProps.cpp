@@ -38,7 +38,7 @@
 
 #include <string>
 
-#include "db.h"
+#include "odb/db.h"
 
 namespace odb {
 

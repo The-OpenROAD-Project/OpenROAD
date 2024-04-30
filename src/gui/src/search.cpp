@@ -35,7 +35,7 @@
 #include <tuple>
 #include <utility>
 
-#include "dbShape.h"
+#include "odb/dbShape.h"
 
 namespace gui {
 

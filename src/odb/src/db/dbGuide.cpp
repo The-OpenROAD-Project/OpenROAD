@@ -33,13 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
 // User Code End Includes

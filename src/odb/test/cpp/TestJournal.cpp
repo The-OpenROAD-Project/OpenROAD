@@ -3,9 +3,9 @@
 #include <iostream>
 #include <string>
 
-#include "db.h"
 #include "env.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {

@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

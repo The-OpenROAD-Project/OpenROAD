@@ -431,7 +431,6 @@ IRSolver::generateSourceNodesFromBTerms() const
 
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
 
-  std::set<Node*, Node::Compare> bterm_nodes;
   for (auto* root_node : network_->getBPinShapeNodes()) {
     src_nodes.push_back(std::make_unique<SourceNode>(root_node));
   }
@@ -741,14 +740,14 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
   }
 }
 
-std::map<Node*, std::set<Connection*>> IRSolver::getNodeConnectionMap(
+std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
     const std::map<psm::Connection*, Connection::Conductance>& conductance)
     const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/connection mapping: {}");
 
-  std::map<Node*, std::set<Connection*>> node_connections;
+  std::map<Node*, Connection::ConnectionSet> node_connections;
   for (const auto& [connection, cond] : conductance) {
     Node* node0 = connection->getNode0();
     Node* node1 = connection->getNode1();
@@ -784,7 +783,7 @@ std::map<Node*, std::size_t> IRSolver::assignNodeIDs(
 
 void IRSolver::buildCondMatrixAndVoltages(
     bool is_ground,
-    const std::map<Node*, std::set<Connection*>>& node_connections,
+    const std::map<Node*, Connection::ConnectionSet>& node_connections,
     const ValueNodeMap<Current>& currents,
     const std::map<psm::Connection*, Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
@@ -892,8 +891,11 @@ void IRSolver::solve(sta::Corner* corner,
              "Connections in conductance map: {}",
              conductance.size());
 
-  const std::map<Node*, std::set<Connection*>> node_connections
-      = getNodeConnectionMap(conductance);
+  if (logger_->debugCheck(utl::PSM, "dump", 2)) {
+    dumpConductance(conductance, "cond");
+  }
+
+  const auto node_connections = getNodeConnectionMap(conductance);
   Node::NodeSet all_nodes;
   for (const auto& [node, conns] : node_connections) {
     all_nodes.insert(node);
@@ -1025,7 +1027,7 @@ std::optional<IRSolver::Voltage> IRSolver::getSDCVoltage(sta::Corner* corner,
 
   sta::Sdc* sdc = sta_->sdc();
   bool exists;
-  Voltage sdc_voltage;
+  float sdc_voltage;
   sdc->voltage(network->dbToSta(net), max, sdc_voltage, exists);
   if (exists) {
     return sdc_voltage;
@@ -1403,13 +1405,9 @@ void IRSolver::writeEMFile(const std::string& em_file,
   report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
             "location,Node1 Y location,Current\n";
 
-  // scale and round to fA
-  const int64_t scale_current = 1e15;
-
-  std::map<Connection*, int64_t, Connection::Compare> sorted_current_map;
-  for (const auto& [connection, current] : generateCurrentMap(corner)) {
-    sorted_current_map[connection] = std::round(current * scale_current);
-  }
+  const auto current_map = generateCurrentMap(corner);
+  const std::map<Connection*, Current, Connection::Compare> sorted_current_map(
+      current_map.begin(), current_map.end());
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
   for (const auto& [connection, current] : sorted_current_map) {
@@ -1425,9 +1423,7 @@ void IRSolver::writeEMFile(const std::string& em_file,
     report << node1->getLayer()->getName() << ",";
     report << fmt::format("{:.4f}", node1_pt.getX() / dbus) << ",";
     report << fmt::format("{:.4f}", node1_pt.getY() / dbus) << ",";
-    report << fmt::format("{:.3e}",
-                          static_cast<Current>(current) / scale_current)
-           << '\n';
+    report << fmt::format("{:.3e}", current) << '\n';
   }
 }
 
@@ -1533,7 +1529,7 @@ void IRSolver::dumpVector(const Eigen::VectorXd& vector,
     return;
   }
   for (std::size_t i = 0; i < vector.size(); i++) {
-    report << fmt::format("{}[{}] = {:.6e}", name, i, vector[i]) << '\n';
+    report << fmt::format("{}[{}] = {:.15e}", name, i, vector[i]) << '\n';
   }
 }
 
@@ -1553,9 +1549,31 @@ void IRSolver::dumpMatrix(
          it;
          ++it) {
       report << fmt::format(
-          "{}[{}, {}] = {:.6e}", name, it.col(), it.row(), it.value())
+          "{}[{}, {}] = {:.15e}", name, it.col(), it.row(), it.value())
              << '\n';
     }
+  }
+}
+
+void IRSolver::dumpConductance(
+    const std::map<Connection*, Connection::Conductance>& cond,
+    const std::string& name) const
+{
+  const std::string report_file = fmt::format("psm_{}.txt", name);
+  std::ofstream report(report_file);
+  if (!report) {
+    logger_->report("Failed to open {} for {}", report_file, name);
+    return;
+  }
+  const std::map<Connection*, Connection::Conductance, Connection::Compare>
+      sorted_cond(cond.begin(), cond.end());
+
+  for (const auto& [connection, cond] : sorted_cond) {
+    const Node* node0 = connection->getNode0();
+    const Node* node1 = connection->getNode1();
+    report << fmt::format(
+        "{} -> {}: {:.15e}", node0->describe(""), node1->describe(""), cond)
+           << '\n';
   }
 }
 

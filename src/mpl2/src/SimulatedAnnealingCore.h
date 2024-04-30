@@ -49,6 +49,15 @@ struct BundledNet;
 struct Rect;
 class Graphics;
 
+struct SACoreWeights
+{
+  float area = 0.0f;
+  float outline = 0.0f;
+  float wirelength = 0.0f;
+  float guidance = 0.0f;
+  float fence = 0.0f;
+};
+
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
 // 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
@@ -94,6 +103,7 @@ class SimulatedAnnealingCore
   void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
+  void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
   bool isValid(const Rect& outline) const;
@@ -231,6 +241,7 @@ class SimulatedAnnealingCore
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
 
+  bool has_initial_sequence_pair_ = false;
   bool centralization_on_ = false;
 };
 

@@ -34,9 +34,9 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbSet.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbSet.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbHashTable.h"
 // User Code End Includes

@@ -1101,7 +1101,7 @@ Clock TritonCTS::forkRegisterClockNetwork(
     odb::dbNet*& secondNet)
 {
   // create a new clock net to drive register sinks
-  std::string newClockName = clockNet.getName() + "_" + "regs";
+  std::string newClockName = clockNet.getName() + "_regs";
   secondNet = odb::dbNet::create(block_, newClockName.c_str());
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
@@ -1167,14 +1167,18 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
+  const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
+  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
+  odb::dbNet* topNet = nullptr;
+  if (topRegBuffer) {
+    topNet = getFirstInput(topRegBuffer)->getNet();
+  }
+
   disconnectAllSinksFromNet(topClockNet);
 
   // re-connect top buffer that separates macros from registers
-  std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getName();
-  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
   if (topRegBuffer) {
-    odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
-    topRegBufferInputPin->connect(topClockNet);
+    getFirstInput(topRegBuffer)->connect(topNet);
   }
 
   createClockBuffers(clockNet);
@@ -1191,9 +1195,9 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   // create subNets
   numClkNets_ = 0;
   numFixedNets_ = 0;
-  const ClockSubNet* rootSubNet = nullptr;
-  std::unordered_set<ClockInst*> removedSinks;
-  clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
+  ClockSubNet* rootSubNet = nullptr;
+  std::set<ClockInst*> removedSinks;
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     bool outputPinFound = true;
     bool inputPinFound = true;
     bool leafLevelNet = subNet.isLeafLevel();
@@ -1281,6 +1285,8 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
           maxPath = resultsForBranch.second;
         }
       }
+    } else {
+      rootSubNet->removeSinks(removedSinks);
     }
   });
 

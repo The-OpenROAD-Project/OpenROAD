@@ -32,11 +32,9 @@
 
 #include "dbBox.h"
 
-#include "db.h"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBlockage.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
@@ -48,13 +46,15 @@
 #include "dbObstruction.h"
 #include "dbRegion.h"
 #include "dbSWire.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {

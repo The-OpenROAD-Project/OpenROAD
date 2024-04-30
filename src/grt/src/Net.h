@@ -59,6 +59,7 @@ class Net
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
+  void setHasWires(bool has_wires) { has_wires_ = has_wires; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
 
  private:

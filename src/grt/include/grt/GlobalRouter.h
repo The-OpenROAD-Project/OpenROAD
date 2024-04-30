@@ -92,13 +92,13 @@ class Pin;
 class Net;
 class Netlist;
 class RoutingTracks;
-class SteinerTree;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class GlobalRouter;
 class AbstractRoutingCongestionDataSource;
 class GRouteDbCbk;
+class Rudy;
 
 struct RegionAdjustment
 {
@@ -215,6 +215,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
+  bool haveDetailedRoutes();
   void makeNetWires() override;
   void destroyNetWires() override;
 
@@ -281,6 +282,7 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
+  Rudy* getRudy();
 
  private:
   // Net functions
@@ -357,7 +359,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                      odb::Point& pin_position,
                      odb::dbTechLayer* layer,
                      Net* net);
-  void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -387,6 +388,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  void destroyNetWire(Net* net);
+  void removeWireUsage(odb::dbWire* wire);
+  void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
+  bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
 
   // db functions
@@ -455,9 +460,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   int macro_extension_;
   bool initialized_;
 
-  // Layer adjustment variables
-  std::vector<float> adjustments_;
-
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
 
@@ -482,6 +484,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
+  Rudy* rudy_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 

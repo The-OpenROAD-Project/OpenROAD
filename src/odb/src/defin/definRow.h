@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "definBase.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
