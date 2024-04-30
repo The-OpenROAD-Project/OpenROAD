@@ -2380,22 +2380,19 @@ Rect dbBlock::getDieArea()
 
 Rect dbBlock::getCoreArea()
 {
-  // filter rows to remove those with site class PAD
-  std::vector<odb::dbRow*> rows;
+  Rect rect;
+  rect.mergeInit();
+
   for (dbRow* row : getRows()) {
     if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      rows.push_back(row);
-    }
-  }
-  if (!rows.empty()) {
-    Rect rect;
-    rect.mergeInit();
-
-    for (dbRow* row : rows) {
       rect.merge(row->getBBox());
     }
+  }
+
+  if (!rect.isInverted()) {
     return rect;
   }
+
   // Default to die area if there aren't any rows.
   return getDieArea();
 }

@@ -392,13 +392,13 @@ void Opendp::groupAssignCellRegions()
     for (Cell* cell : group.cells_) {
       cell_area += cell->area();
 
-      for (Rect& rect : group.regions) {
+      for (Rect& rect : group.region_boundaries) {
         if (isInside(cell, &rect)) {
           cell->region_ = &rect;
         }
       }
       if (cell->region_ == nullptr) {
-        cell->region_ = group.regions.data();
+        cell->region_ = group.region_boundaries.data();
       }
     }
     const int64_t site_area = site_count * site_width * row_height;
@@ -426,7 +426,7 @@ void Opendp::groupInitPixels2()
                        (y + 1) * row_height);
         Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
-          for (Rect& rect : group.regions) {
+          for (Rect& rect : group.region_boundaries) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
               pixel->util = 0.0;
               pixel->cell = &Cell::dummy_cell;
@@ -473,7 +473,7 @@ void Opendp::groupInitPixels()
     const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
     const int grid_index = grid_info.getGridIndex();
     const int site_width = grid_->getSiteWidth();
-    for (const Rect& rect : group.regions) {
+    for (const Rect& rect : group.region_boundaries) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
@@ -507,7 +507,7 @@ void Opendp::groupInitPixels()
         }
       }
     }
-    for (Rect& rect : group.regions) {
+    for (Rect& rect : group.region_boundaries) {
       const int row_start = divCeil(rect.yMin(), row_height);
       const int row_end = divFloor(rect.yMax(), row_height);
 
