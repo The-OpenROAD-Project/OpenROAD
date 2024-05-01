@@ -39,6 +39,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -123,6 +125,7 @@ class Grid
                 int max_displacement_x,
                 int max_displacement_y);
   void examineRows(dbBlock* block);
+  std::unordered_set<int> getRowCoordinates() const;
 
   GridMapKey getGridMapKey(const dbSite* site) const;
   GridMapKey getGridMapKey(const Cell* cell) const;
@@ -136,8 +139,8 @@ class Grid
   int gridY(const Cell* cell) const;
   int gridEndY(int y, const Cell* cell) const;
   int gridEndY(const Cell* cell) const;
-  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
-  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
+  pair<int, int> gridY(int y, const GridInfo& grid_info) const;
+  pair<int, int> gridEndY(int y, const GridInfo& grid_info) const;
   GridInfo getGridInfo(const Cell* cell) const;
   int gridPaddedWidth(const Cell* cell) const;
   int gridHeight(const Cell* cell) const;
@@ -207,6 +210,7 @@ class Grid
                    const std::function<void(odb::dbRow*)>& func) const;
 
   Logger* logger_ = nullptr;
+  dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   std::vector<std::vector<std::vector<Pixel>>> pixels_;
   std::vector<const GridInfo*> grid_info_vector_;

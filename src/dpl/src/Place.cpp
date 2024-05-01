@@ -321,7 +321,9 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(getCore()));
+  sort(sorted_cells.begin(),
+       sorted_cells.end(),
+       CellPlaceOrderLess(grid_->getCore()));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -358,7 +360,9 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(getCore()));
+    sort(group_cells.begin(),
+         group_cells.end(),
+         CellPlaceOrderLess(grid_->getCore()));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -852,7 +856,7 @@ void Opendp::diamondSearchSide(const Cell* cell,
       y_dist = abs(y - avail_pt.pt.getY()) * grid_->getRowHeight(cell);
     }
     const int avail_dist
-        = abs(x - avail_pt.pt.getX()) * getSiteWidth() + y_dist;
+        = abs(x - avail_pt.pt.getX()) * grid_->getSiteWidth() + y_dist;
     if (best_pt.pixel == nullptr || avail_dist < best_dist) {
       best_pt = avail_pt;
       best_dist = avail_dist;
@@ -1103,8 +1107,8 @@ Point Opendp::legalPt(const Cell* cell, const Point& pt) const
       auto parent = grid_->getHybridParent().at(cell->getSite());
       last_row_height = (grid_info.getRowCount() - 1) * parent->getHeight();
     }
-    const auto [index, height] = grid_->gridY(
-        min(max(0, pt.getY()), last_row_height), grid_info.getSites());
+    const auto [index, height]
+        = grid_->gridY(min(max(0, pt.getY()), last_row_height), grid_info);
     legal_y = height;
   } else {
     const int core_y
@@ -1346,7 +1350,7 @@ Point Opendp::legalPt(const Cell* cell, const bool padded) const
   const auto grid_info = grid_->getGridInfo(cell);
   int grid_x = grid_->gridX(legal_pt.getX());
   const int y = legal_pt.getY() + grid_info.getOffset();
-  auto [grid_y, height] = grid_->gridY(y, grid_info.getSites());
+  auto [grid_y, height] = grid_->gridY(y, grid_info);
   Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
