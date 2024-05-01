@@ -321,7 +321,7 @@ class Opendp
 
   // 3D pixel grid
   std::unique_ptr<Grid> grid_;
-  RtreeBox regions_rtree;
+  RtreeBox regions_rtree_;
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant

@@ -325,8 +325,8 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
                                 vector<bgBox>& overlaps) const
 {
   overlaps.clear();
-  regions_rtree.query(boost::geometry::index::intersects(queryBox),
-                      std::back_inserter(overlaps));
+  regions_rtree_.query(boost::geometry::index::intersects(queryBox),
+                       std::back_inserter(overlaps));
 }
 
 void Opendp::setFixedGridCells()
