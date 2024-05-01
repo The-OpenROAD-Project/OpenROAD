@@ -146,9 +146,10 @@ void TileGrid::setLy(int ly)
 
 void TileGrid::initTiles()
 {
-  log_->info(GPL, 36, "TileLxLy: {} {}", lx_, ly_);
-  log_->info(GPL, 37, "TileSize: {} {}", tileSizeX_, tileSizeY_);
-  log_->info(GPL, 38, "TileCnt: {} {}", tileCntX_, tileCntY_);
+  log_->info(GPL, 36, "{:15} {:6} {:6}", "TileLxLy(DBU):", lx_, ly_);
+  log_->info(
+      GPL, 37, "{:15} {:6} {:6}", "TileSize(DBU):", tileSizeX_, tileSizeY_);
+  log_->info(GPL, 38, "{:15} {:6} {:6}", "TileCnt:", tileCntX_, tileCntY_);
   log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
 
   // 2D tile grid structure init
@@ -616,8 +617,15 @@ std::pair<bool, bool> RouteBase::routability()
     // TODO dynamic inflation procedure?
   }
 
-  log_->info(GPL, 45, "InflatedAreaDelta: {:20}", inflatedAreaDelta_);
-  log_->info(GPL, 46, "TargetDensity: {}", nbVec_[0]->targetDensity());
+  const int dbu_per_micron = db_->getChip()->getBlock()->getDbUnitsPerMicron();
+  const float dbu_per_micron_squared = dbu_per_micron * dbu_per_micron;
+  log_->info(GPL,
+             45,
+             "{:20} {:10.2f}",
+             "InflatedAreaDelta:",
+             static_cast<float>(inflatedAreaDelta_) / dbu_per_micron_squared);
+  log_->info(
+      GPL, 46, "{:20} {:6.4f}", "TargetDensity:", nbVec_[0]->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
                            + nbVec_[0]->totalFillerArea();
@@ -638,8 +646,8 @@ std::pair<bool, bool> RouteBase::routability()
         "Revert Routability Procedure. Target density higher than max, or "
         "minRC max violations.");
     log_->info(GPL, 80, "minRcViolatedCnt: {}", minRcViolatedCnt_);
-    log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
-    log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
+    log_->info(GPL, 47, "SavedMinRC: {:.4f}", minRc_);
+    log_->info(GPL, 48, "SavedTargetDensity: {:.4f}", minRcTargetDensity_);
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
 
@@ -652,25 +660,38 @@ std::pair<bool, bool> RouteBase::routability()
   }
 
   log_->info(
-      GPL, 49, "{:20} {:15}", "WhiteSpaceArea:", nbVec_[0]->whiteSpaceArea());
+      GPL,
+      49,
+      "{:20} {:10.2f}",
+      "WhiteSpaceArea:",
+      static_cast<float>(nbVec_[0]->whiteSpaceArea()) / dbu_per_micron_squared);
   log_->info(GPL,
              50,
-             "{:20} {:15}",
+             "{:20} {:10.2f}",
              "NesterovInstsArea:",
-             nbVec_[0]->nesterovInstsArea());
-  log_->info(
-      GPL, 51, "{:20} {:15}", "TotalFillerArea:", nbVec_[0]->totalFillerArea());
+             static_cast<float>(nbVec_[0]->nesterovInstsArea())
+                 / dbu_per_micron_squared);
+  log_->info(GPL,
+             51,
+             "{:20} {:10.2f}",
+             "TotalFillerArea:",
+             static_cast<float>(nbVec_[0]->totalFillerArea())
+                 / dbu_per_micron_squared);
   log_->info(GPL,
              52,
-             "{:20} {:15}",
+             "{:20} {:10.2f}",
              "TotalGCellsArea:",
-             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
-  log_->info(GPL,
-             53,
-             "{:20} {:15}",
-             "ExpectedGCellsArea:",
-             inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                 + nbVec_[0]->totalFillerArea());
+             static_cast<float>(nbVec_[0]->nesterovInstsArea()
+                                + nbVec_[0]->totalFillerArea())
+                 / dbu_per_micron_squared);
+  log_->info(
+      GPL,
+      53,
+      "{:20} {:10.2f}",
+      "ExpectedGCellsArea:",
+      static_cast<float>(inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
+                         + nbVec_[0]->totalFillerArea())
+          / dbu_per_micron_squared);
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
@@ -685,28 +706,42 @@ std::pair<bool, bool> RouteBase::routability()
   // updateArea
   nbVec_[0]->updateAreas();
 
-  log_->info(GPL, 54, "NewTargetDensity: {}", nbVec_[0]->targetDensity());
   log_->info(GPL,
-             55,
-             "{:20} {:15}",
-             "NewWhiteSpaceArea:",
-             nbVec_[0]->whiteSpaceArea());
-  log_->info(GPL, 56, "{:20} {:15}", "MovableArea:", nbVec_[0]->movableArea());
+             54,
+             "{:20} {:6.4f}",
+             "NewTargetDensity:",
+             nbVec_[0]->targetDensity());
+  log_->info(
+      GPL,
+      55,
+      "{:20} {:10.2f}",
+      "NewWhiteSpaceArea:",
+      static_cast<float>(nbVec_[0]->whiteSpaceArea()) / dbu_per_micron_squared);
+  log_->info(
+      GPL,
+      56,
+      "{:20} {:10.2f}",
+      "MovableArea:",
+      static_cast<float>(nbVec_[0]->movableArea()) / dbu_per_micron_squared);
   log_->info(GPL,
              57,
-             "{:20} {:15}",
+             "{:20} {:10.2f}",
              "NewNesterovInstArea:",
-             nbVec_[0]->nesterovInstsArea());
+             static_cast<float>(nbVec_[0]->nesterovInstsArea())
+                 / dbu_per_micron_squared);
   log_->info(GPL,
              58,
-             "{:20} {:15}",
+             "{:20} {:10.2f}",
              "NewTotalFillerArea:",
-             nbVec_[0]->totalFillerArea());
+             static_cast<float>(nbVec_[0]->totalFillerArea())
+                 / dbu_per_micron_squared);
   log_->info(GPL,
              59,
-             "{:20} {:15}",
+             "{:20} {:10.2f}",
              "NewTotalGCellsArea:",
-             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
+             static_cast<float>(nbVec_[0]->nesterovInstsArea()
+                                + nbVec_[0]->totalFillerArea())
+                 / dbu_per_micron_squared);
 
   // update densitySizes for all gCell
   nbVec_[0]->updateDensitySize();
@@ -826,10 +861,10 @@ float RouteBase::getRC() const
   verAvg020RC /= ceil(0.020 * verArraySize);
   verAvg050RC /= ceil(0.050 * verArraySize);
 
-  log_->info(GPL, 66, "0.5%RC: {}", std::fmax(horAvg005RC, verAvg005RC));
-  log_->info(GPL, 67, "1.0%RC: {}", std::fmax(horAvg010RC, verAvg010RC));
-  log_->info(GPL, 68, "2.0%RC: {}", std::fmax(horAvg020RC, verAvg020RC));
-  log_->info(GPL, 69, "5.0%RC: {}", std::fmax(horAvg050RC, verAvg050RC));
+  log_->info(GPL, 66, "0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
+  log_->info(GPL, 67, "1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
+  log_->info(GPL, 68, "2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
+  log_->info(GPL, 69, "5.0%RC: {:.4f}", std::fmax(horAvg050RC, verAvg050RC));
 
   log_->info(GPL, 70, "0.5rcK: {}", rbVars_.rcK1);
   log_->info(GPL, 71, "1.0rcK: {}", rbVars_.rcK2);
@@ -842,7 +877,7 @@ float RouteBase::getRC() const
                    + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL, 74, "FinalRC: {}", finalRC);
+  log_->info(GPL, 74, "FinalRC: {:.4f}", finalRC);
   return finalRC;
 }
 

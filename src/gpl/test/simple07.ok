@@ -9,41 +9,41 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0132]     Created 2 special nets and 114 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO GPL-0002] DBU: 1000
-[INFO GPL-0003] SiteSize: 460 2720
-[INFO GPL-0004] CoreAreaLxLy: 5520 10880
-[INFO GPL-0005] CoreAreaUxUy: 28520 43520
-[INFO GPL-0006] NumInstances:             32
-[INFO GPL-0007] NumPlaceInstances:         1
-[INFO GPL-0008] NumFixedInstances:        31
-[INFO GPL-0009] NumDummyInstances:         0
-[INFO GPL-0010] NumNets:                   2
-[INFO GPL-0011] NumPins:                   4
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 34165 54885
-[INFO GPL-0014] CoreAreaLxLy: 5520 10880
-[INFO GPL-0015] CoreAreaUxUy: 28520 43520
-[INFO GPL-0016] CoreArea:               750720000
-[INFO GPL-0017] NonPlaceInstsArea:       98844800
-[INFO GPL-0018] PlaceInstsArea:           3753600
-[INFO GPL-0019] Util(%):                     0.58
-[INFO GPL-0020] StdInstsArea:             3753600
-[INFO GPL-0021] MacroInstsArea:                 0
+[INFO GPL-0003] SiteSize:       (  0.46,  2.72)
+[INFO GPL-0004] CoreAreaLxLy:   (  5.52, 10.88)
+[INFO GPL-0005] CoreAreaUxUy:   ( 28.52, 43.52)
+[INFO GPL-0006] NumInstances:                32
+[INFO GPL-0007] NumPlaceInstances:            1
+[INFO GPL-0008] NumFixedInstances:           31
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                      2
+[INFO GPL-0011] NumPins:                      4
+[INFO GPL-0012] DieAreaLxLy:    (  0.00,  0.00)
+[INFO GPL-0013] DieAreaUxUy:    ( 34.17, 54.88)
+[INFO GPL-0014] CoreAreaLxLy:   (  5.52, 10.88)
+[INFO GPL-0015] CoreAreaUxUy:   ( 28.52, 43.52)
+[INFO GPL-0016] CoreArea:                750.72
+[INFO GPL-0017] NonPlaceInstsArea:        98.84
+[INFO GPL-0018] PlaceInstsArea:            3.75
+[INFO GPL-0019] Util(%):                   0.58
+[INFO GPL-0020] StdInstsArea:              3.75
+[INFO GPL-0021] MacroInstsArea:            0.00
 [InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 93755
 [InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 92385
-[INFO GPL-0031] FillerInit: NumGCells:        130
-[INFO GPL-0032] FillerInit: NumGNets:           2
-[INFO GPL-0033] FillerInit: NumGPins:           4
-[INFO GPL-0023] TargetDensity:               0.75
-[INFO GPL-0024] AvrgPlaceInstArea:        3753600
-[INFO GPL-0025] IdealBinArea:             5004800
-[INFO GPL-0026] IdealBinCnt:                  150
-[INFO GPL-0027] TotalBinArea:           750720000
-[INFO GPL-0028] BinCnt: 8 8
-[INFO GPL-0029] BinSize: 2875 4080
-[INFO GPL-0030] NumBins: 64
+[INFO GPL-0031] FillerInit:NumGCells:       130
+[INFO GPL-0032] FillerInit:NumGNets:          2
+[INFO GPL-0033] FillerInit:NumGPins:          4
+[INFO GPL-0023] TargetDensity:             0.75
+[INFO GPL-0024] AvrgPlaceInstArea:         3.75
+[INFO GPL-0025] IdealBinArea:              5.00
+[INFO GPL-0026] IdealBinCnt:                150
+[INFO GPL-0027] TotalBinArea:            750.72
+[INFO GPL-0028] BinCnt:      8     8
+[INFO GPL-0029] BinSize:  2.88  4.08
+[INFO GPL-0030] NumBins:          64
 [NesterovSolve] Iter: 1 overflow: 0 HPWL: 84585
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.
