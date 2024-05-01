@@ -11,7 +11,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-load5/D                                 0.00    0.04   -0.04 (VIOLATED)
+load8/D                                 0.00    0.04   -0.04 (VIOLATED)
 
 max fanout
 

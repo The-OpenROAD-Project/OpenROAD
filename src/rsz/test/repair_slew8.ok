@@ -15,7 +15,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r0/Q                                    0.17    0.00    0.17 (MET)
+r249/Q                                  0.17    0.00    0.17 (MET)
 
 [INFO RSZ-0058] Using max wire length 2395um.
 [INFO RSZ-0034] Found 1 slew violations.
@@ -31,5 +31,5 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r0/Q                                    0.17    0.00    0.17 (MET)
+r249/Q                                  0.17    0.00    0.17 (MET)
 

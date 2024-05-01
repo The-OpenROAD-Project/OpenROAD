@@ -6,8 +6,8 @@
 [INFO ODB-0133]     Created 5 nets and 8 connections.
 Driver    length delay
 u2/Z manhtn 1500.4 steiner 1500.4 0.30
-u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
+u3/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 [INFO RSZ-0037] Found 1 long wires.
@@ -18,6 +18,6 @@ wire1/Z manhtn 858.7 steiner 858.7 0.10
 wire2/Z manhtn 857.7 steiner 857.7 0.10
 u2/Z manhtn 650.2 steiner 650.2 0.06
 max_length3/Z manhtn 648.4 steiner 648.4 0.06
-u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
+u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.8 steiner 0.8 0.00

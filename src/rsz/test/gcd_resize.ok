@@ -22,7 +22,7 @@ max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-_460_/Z                                 100     10     90 (MET)
+_763_/Z                                 100     10     90 (MET)
 
 max capacitance
 

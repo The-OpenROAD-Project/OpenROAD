@@ -60,7 +60,12 @@ using odb::dbITerm;
 using odb::dbITermObj;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
+using odb::dbModBTermObj;
 using odb::dbModInstObj;
+using odb::dbModITerm;
+using odb::dbModITermObj;
+using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -121,9 +126,12 @@ class DbInstanceChildIterator : public InstanceChildIterator
 
  private:
   const dbNetwork* network_;
+  dbModule* module_;
   bool top_;
-  dbSet<dbInst>::iterator iter_;
-  dbSet<dbInst>::iterator end_;
+  dbSet<dbInst>::iterator dbinst_iter_;
+  dbSet<dbInst>::iterator dbinst_end_;
+  dbSet<dbModInst>::iterator modinst_iter_;
+  dbSet<dbModInst>::iterator modinst_end_;
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
@@ -131,26 +139,59 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     : network_(network)
 {
   dbBlock* block = network->block();
+  module_ = block->getTopModule();
+  modinst_iter_ = ((dbModule*) module_)->getModInsts().begin();
+  modinst_end_ = modinst_iter_;
+  dbinst_iter_ = ((dbModule*) module_)->getInsts().begin();
+  dbinst_end_ = dbinst_iter_;
+
   if (instance == network->topInstance() && block) {
-    dbSet<dbInst> insts = block->getInsts();
+    module_ = block->getTopModule();
     top_ = true;
-    iter_ = insts.begin();
-    end_ = insts.end();
+    modinst_iter_ = module_->getModInsts().begin();
+    modinst_end_ = module_->getModInsts().end();
+    dbinst_iter_ = module_->getInsts().begin();
+    dbinst_end_ = module_->getInsts().end();
   } else {
     top_ = false;
+    // need to get module for instance
+    dbInst* db_inst = nullptr;
+    dbModInst* mod_inst = nullptr;
+    network->staToDb(instance, db_inst, mod_inst);
+    if (mod_inst) {
+      module_ = mod_inst->getMaster();
+      modinst_iter_ = module_->getModInsts().begin();
+      modinst_end_ = module_->getModInsts().end();
+      dbinst_iter_ = module_->getInsts().begin();
+      dbinst_end_ = module_->getInsts().end();
+#ifdef DEBUG_DBNW
+      printf("(non-top/leaf)Child iterator for instance %s\n",
+             network_->name(instance));
+      printf("Number of db instances %u\n", module_->getDbInstCount());
+      printf("Number of module instances %u\n", module_->getModInstCount());
+#endif
+    }
   }
 }
 
 bool DbInstanceChildIterator::hasNext()
 {
-  return top_ && iter_ != end_;
+  return !((dbinst_iter_ == dbinst_end_) && (modinst_iter_ == modinst_end_));
 }
 
 Instance* DbInstanceChildIterator::next()
 {
-  dbInst* child = *iter_;
-  iter_++;
-  return network_->dbToSta(child);
+  Instance* ret = nullptr;
+  if (dbinst_iter_ != dbinst_end_) {
+    dbInst* child = *dbinst_iter_;
+    dbinst_iter_++;
+    ret = network_->dbToSta(child);
+  } else if (modinst_iter_ != modinst_end_) {
+    dbModInst* child = *modinst_iter_;
+    modinst_iter_++;
+    ret = network_->dbToSta(child);
+  }
+  return ret;
 }
 
 class DbInstanceNetIterator : public InstanceNetIterator
