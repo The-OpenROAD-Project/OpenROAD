@@ -53,6 +53,9 @@ struct Cell
   bool isStdCell() const;
   int siteWidth() const;
   bool isFixed() const;
+  bool isHybrid() const;
+  bool isHybridParent() const;
+  dbSite* getSite() const;
 
   dbInst* db_inst_ = nullptr;
   int x_ = 0;  // lower left wrt core DBU
@@ -64,26 +67,6 @@ struct Cell
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
-
-  bool isHybrid() const
-  {
-    dbSite* site = getSite();
-    return site ? site->isHybrid() : false;
-  }
-
-  bool isHybridParent() const
-  {
-    dbSite* site = getSite();
-    return site ? site->hasRowPattern() : false;
-  }
-
-  dbSite* getSite() const
-  {
-    if (!db_inst_ || !db_inst_->getMaster()) {
-      return nullptr;
-    }
-    return db_inst_->getMaster()->getSite();
-  }
 
   static Cell dummy_cell;
 };

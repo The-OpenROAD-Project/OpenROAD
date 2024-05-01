@@ -65,27 +65,14 @@ void Opendp::checkPlacement(const bool verbose,
 
   initGrid();
   groupAssignCellRegions();
+  const auto& row_coords = grid_->getRowCoordinates();
   for (Cell& cell : cells_) {
     if (cell.isStdCell()) {
       // Site alignment check
-      if (!cell.isHybrid()) {
-        if (cell.x_ % grid_->getSiteWidth() != 0
-            || cell.y_ % grid_->getRowHeight() != 0) {
-          site_align_failures.push_back(&cell);
-        }
-      } else {
-        // here, the cell is hybrid, if it is a parent, then the check is
-        // quite simple
-        if (cell.x_ % grid_->getSiteWidth() != 0) {
-          site_align_failures.push_back(&cell);
-          continue;
-        }
-        auto grid_info = grid_->getGridInfo(&cell);
-        auto [cell_index, cell_height]
-            = grid_->gridY(cell.y_, grid_info.getSites());
-        if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
-          site_align_failures.push_back(&cell);
-        }
+      if (cell.x_ % grid_->getSiteWidth() != 0
+          || row_coords.find(cell.y_) == row_coords.end()) {
+        site_align_failures.push_back(&cell);
+        continue;
       }
 
       if (!checkInRows(cell)) {
@@ -158,7 +145,7 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
   ptree violations;
   const double dbUnits
       = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
-  const Rect core = getCore();
+  const Rect core = grid_->getCore();
   for (auto failure : failures) {
     ptree violation, shapes, source, sources, shape;
     double xMin = (failure->x_ + core.xMin()) / dbUnits;
@@ -435,7 +422,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   const auto row_info = grid_->getRowInfo(&cell);
-  const int index_in_grid = row_info.second.getGridIndex();
+  const int grid_index = row_info.second.getGridIndex();
   grid_->visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         int abut_x = 0;
@@ -449,23 +436,17 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
             break;
           case Direction2D::North:
           case Direction2D::South:
-            break;
+            return;
         }
-        if (0 != abut_x) {
-          // check the abutting pixel
-          const Cell* pixel_cell = pixel->cell;
-          const Pixel* abut_pixel
-              = grid_->gridPixel(index_in_grid, x + abut_x, y);
-          const bool abuttment_exists
-              = (abut_pixel && abut_pixel->cell != pixel_cell
-                 && abut_pixel->cell);
-          if (!abuttment_exists) {
-            // check the 1 site gap pixel
-            const Pixel* gap_pixel
-                = grid_->gridPixel(index_in_grid, x + 2 * abut_x, y);
-            if (gap_pixel && gap_pixel->cell != pixel_cell) {
-              gap_cell = gap_pixel->cell;
-            }
+        // check the abutting pixel
+        const Pixel* abut_pixel = grid_->gridPixel(grid_index, x + abut_x, y);
+        const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
+        if (!abuttment_exists) {
+          // check the 1 site gap pixel
+          const Pixel* gap_pixel
+              = grid_->gridPixel(grid_index, x + 2 * abut_x, y);
+          if (gap_pixel) {
+            gap_cell = gap_pixel->cell;
           }
         }
       });

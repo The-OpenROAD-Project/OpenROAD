@@ -75,10 +75,10 @@ void Graphics::binSearch(const Cell* cell, int xl, int yl, int xh, int yh)
   if (!debug_instance_ || cell->db_inst_ != debug_instance_) {
     return;
   }
-  Rect core = dp_->getCore();
-  int xl_dbu = core.xMin() + xl * dp_->getSiteWidth();
+  Rect core = dp_->grid_->getCore();
+  int xl_dbu = core.xMin() + xl * dp_->grid_->getSiteWidth();
   int yl_dbu = core.yMin() + yl * dp_->grid_->getRowHeight(cell);
-  int xh_dbu = core.xMin() + xh * dp_->getSiteWidth();
+  int xh_dbu = core.xMin() + xh * dp_->grid_->getSiteWidth();
   int yh_dbu = core.yMin() + yh * dp_->grid_->getRowHeight(cell);
   searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
