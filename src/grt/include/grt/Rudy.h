@@ -84,6 +84,7 @@ class Rudy
   const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
   int getTileSize() const { return tile_size_; }
   std::pair<int, int> getGridSize() const;
+  int getTileSize() const { return tile_size_; }
 
  private:
   /**

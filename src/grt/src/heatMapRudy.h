@@ -74,6 +74,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
   void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
 
  protected:
+  void populateXYGrid() override;
   bool populateMap() override;
   void combineMapData(bool base_has_value,
                       double& base,

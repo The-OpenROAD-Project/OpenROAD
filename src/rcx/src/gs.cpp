@@ -33,9 +33,9 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "odb/gseq.h"
+#include "rcx/gseq.h"
 
-namespace odb {
+namespace rcx {
 
 static constexpr long long PIXFILL = 0xffffffffffffffffLL;
 static constexpr long long PIXMAX = 0x8000000000000000LL;
@@ -60,7 +60,7 @@ static constexpr int GS_NONE = 3;
 static constexpr int GS_ROW = 1;
 static constexpr int GS_COLUMN = 0;
 
-gs::gs(AthPool<SEQ>* pool)
+gs::gs(odb::AthPool<SEQ>* pool)
 {
   init_ = INIT;
 
@@ -396,7 +396,7 @@ uint gs::get_seq(int* ll,
                  int* ur,
                  uint order,
                  uint plane,
-                 Ath__array1D<SEQ*>* array)
+                 odb::Ath__array1D<SEQ*>* array)
 {
   if (check_slice(plane) != 0) {
     return 0;
@@ -722,4 +722,4 @@ int gs::get_seqcol(const int x,
   return 0;
 }
 
-}  // namespace odb
+}  // namespace rcx

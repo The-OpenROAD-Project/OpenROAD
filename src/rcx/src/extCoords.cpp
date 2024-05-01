@@ -31,9 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "odb/parse.h"
-#include "odb/wire.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -138,7 +138,7 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
 }  // namespace rcx
 
-namespace odb {
+namespace rcx {
 
 void Ath__grid::dealloc()
 {
@@ -172,4 +172,4 @@ void Ath__gridTable::dealloc()
   }
 }
 
-}  // namespace odb
+}  // namespace rcx

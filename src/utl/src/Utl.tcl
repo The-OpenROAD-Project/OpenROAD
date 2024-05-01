@@ -40,10 +40,10 @@ set MAN_PATH ""
 
 sta::define_cmd_args "man" { name\
                             [-manpath manpath]\
-                            [-no_query]}
+                            [-no_pager]}
 proc man { args } {
   sta::parse_key_args "man" args \
-    keys {-manpath} flags {-no_query}
+    keys {-manpath} flags {-no_pager}
 
   set name [lindex $args 0]
 
@@ -70,9 +70,9 @@ proc man { args } {
     set MAN_PATH $DEFAULT_MAN_PATH
   }
 
-  set no_query 0
-  if { [info exists flags(-no_query) ]} {
-    set no_query 1
+  set no_pager 0
+  if { [info exists flags(-no_pager) ]} {
+    set no_pager 1
   }
 
   #set MAN_PATH [utl::get_input]
@@ -111,7 +111,7 @@ proc man { args } {
         puts [join $page "\n"]
 
         # Ask user to continue or quit
-        if {!$no_query && [llength $lines] > $page_size} {
+        if {!$no_pager && [llength $lines] > $page_size} {
           puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
           flush stdout;
           set input [gets stdin]
