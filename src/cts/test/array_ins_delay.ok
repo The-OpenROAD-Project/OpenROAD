@@ -103,10 +103,6 @@
 [INFO CTS-0015]     Created 366 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:3, 5:9, 6:5, 7:4, 8:3, 9:4, 10:230..
 [INFO CTS-0017]     Max level of the clock tree: 5.
-[INFO CTS-0121] Buffer 'clkload3' has unconnected output pin.
-[INFO CTS-0121] Buffer 'clkload2' has unconnected output pin.
-[INFO CTS-0121] Inverter 'clkload1' has unconnected output pin.
-[INFO CTS-0121] Inverter 'clkload0' has unconnected output pin.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
 [INFO CTS-0100]  Leaf buffers 0
