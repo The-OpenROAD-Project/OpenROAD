@@ -722,14 +722,21 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
   float macro_area = 0.0;
   num_std_cell += cluster->getLeafStdCells().size();
   num_macro += cluster->getLeafMacros().size();
+
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    std_cell_area += liberty_cell->area();
+    const float width = dbuToMicron(inst->getBBox()->getBox().dx(), dbu_);
+    const float height = dbuToMicron(inst->getBBox()->getBox().dy(), dbu_);
+
+    std_cell_area += (width * height);
   }
+
   for (odb::dbInst* inst : cluster->getLeafMacros()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    macro_area += liberty_cell->area();
+    const float width = dbuToMicron(inst->getBBox()->getBox().dx(), dbu_);
+    const float height = dbuToMicron(inst->getBBox()->getBox().dy(), dbu_);
+
+    macro_area += (width * height);
   }
+
   Metrics metrics(num_std_cell, num_macro, std_cell_area, macro_area);
   for (auto& module : cluster->getDbModules()) {
     metrics.addMetrics(*logical_module_map_[module]);
@@ -2082,16 +2089,22 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   }
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(macro);
-    vertex_weight.push_back(liberty_cell->area());
+
+    const float width = dbuToMicron(macro->getBBox()->getBox().dx(), dbu_);
+    const float height = dbuToMicron(macro->getBBox()->getBox().dy(), dbu_);
+
+    vertex_weight.push_back(width * height);
   }
   int num_fixed_vertices
       = vertex_id;  // we do not consider these vertices in later process
                     // They behaves like ''fixed vertices''
   for (auto& std_cell : std_cells) {
     inst_vertex_id_map[std_cell] = vertex_id++;
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(std_cell);
-    vertex_weight.push_back(liberty_cell->area());
+
+    const float width = dbuToMicron(std_cell->getBBox()->getBox().dx(), dbu_);
+    const float height = dbuToMicron(std_cell->getBBox()->getBox().dy(), dbu_);
+
+    vertex_weight.push_back(width * height);
   }
   // Traverse nets to create hyperedges
   for (odb::dbNet* net : block_->getNets()) {
