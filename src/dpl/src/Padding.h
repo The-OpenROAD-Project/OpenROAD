@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "Coordinates.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -54,7 +55,7 @@ class Padding
   int padRight(dbInst* inst) const;
   int padRight(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
-  int paddedWidth(const Cell* cell) const;
+  DbuX paddedWidth(const Cell* cell) const;
 
  private:
   using InstPaddingMap = map<dbInst*, pair<int, int>>;
