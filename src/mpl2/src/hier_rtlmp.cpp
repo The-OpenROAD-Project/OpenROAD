@@ -670,19 +670,24 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
     if (liberty_cell == nullptr) {
       continue;
     }
+
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad or a cover macro
+
     if (master->isPad() || master->isCover()) {
       continue;
     }
+
     float inst_area = dbuToMicron(master->getWidth(), dbu_)
                       * dbuToMicron(master->getHeight(), dbu_);
+
     if (master->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
+
       // add hard macro to corresponding map
       HardMacro* macro = new HardMacro(
           inst, dbu_, manufacturing_grid_, halo_width_, halo_height_);
+
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -704,7 +709,9 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
 
   Metrics* metrics
       = new Metrics(num_std_cell, num_macro, std_cell_area, macro_area);
+
   logical_module_map_[module] = metrics;
+
   return metrics;
 }
 
