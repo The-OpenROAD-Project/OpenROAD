@@ -15,7 +15,6 @@ Netlist Partitioning Parameters
 	Fence aware flag = false
 [INFO PAR-0005] Reading netlist.
 [INFO PAR-0037] Extracting timing paths.
-[WARNING PAR-0019] The traversed timing graph has 1 unconstrained hyperedges!
 [INFO PAR-0018] Read netlist has 469 vertices, 451 hyperedges and 52 timing paths.
 Display Timing Path Cuts Statistics
 	Total number of timing paths = 52

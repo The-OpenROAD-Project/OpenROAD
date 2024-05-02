@@ -34,8 +34,8 @@
 
 #include "dbCore.h"
 #include "dbTechLayer.h"
-#include "dbTypes.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 

@@ -48,11 +48,11 @@
 #include <limits>
 #include <string>
 
-#include "db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "sta/Corner.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Units.hh"
@@ -110,7 +110,7 @@ int TimingPathsModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathsModel::columnCount(const QModelIndex& parent) const
 {
-  return 6;
+  return getColumnNames().size();
 }
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
@@ -126,6 +126,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Required:
       case Arrival:
       case Slack:
+      case Skew:
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
@@ -140,6 +141,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getPathArrivalTime(), time_units);
       case Slack:
         return convertDelay(timing_path->getSlack(), time_units);
+      case Skew:
+        return convertDelay(timing_path->getSkew(), time_units);
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -154,20 +157,7 @@ QVariant TimingPathsModel::headerData(int section,
                                       int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    switch (static_cast<Column>(section)) {
-      case Clock:
-        return "Capture Clock";
-      case Required:
-        return "Required";
-      case Arrival:
-        return "Arrival";
-      case Slack:
-        return "Slack";
-      case Start:
-        return "Start";
-      case End:
-        return "End";
-    }
+    return getColumnNames().at(static_cast<Column>(section));
   }
   return QVariant();
 }
@@ -203,6 +193,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSlack() < path2->getSlack();
+    };
+  } else if (col_index == Skew) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getSkew() < path2->getSkew();
     };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
@@ -282,7 +277,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return 7;
+  return TimingPathsModel::getColumnNames().size();
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(

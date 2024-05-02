@@ -4,20 +4,27 @@
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
-[INFO PSM-0022] Using 1.100V for VDD
-[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
-[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 80.180 or core height of 79.800. Changing bump location to the center of the die at (50.160, 51.100).
-[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[WARNING PSM-0030] VSRC location at (50.160um, 51.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (68.070um, 53.115um).
-[INFO PSM-0031] Number of PDN nodes on net VDD = 604.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
 ########## IR report #################
-Corner: default
-Worstcase voltage: 1.10e+00 V
-Average IR drop  : 3.22e-04 V
-Worstcase IR drop: 5.66e-04 V
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.50e+00 V
+Worstcase voltage: 1.50e+00 V
+Average voltage  : 1.50e+00 V
+Average IR drop  : 1.69e-04 V
+Worstcase IR drop: 2.96e-04 V
+Percentage drop  : 0.02 %
+######################################
+[INFO PSM-0040] All shapes on net VSS are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VSS
+Corner           : default
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 1.34e-03 V
+Average voltage  : 8.31e-04 V
+Average IR drop  : 8.31e-04 V
+Worstcase IR drop: 1.34e-03 V
+Percentage drop  : 0.09 %
 ######################################

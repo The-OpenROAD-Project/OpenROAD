@@ -15,7 +15,7 @@ jobs:
         with:
           xcode-version: latest-stable
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
           rm -rf "${{ github.workspace }}"
           mkdir -p "${{ github.workspace }}"
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Build OpenROAD

@@ -30,13 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbStream.h"
+#include "odb/dbStream.h"
 
 #include <iostream>
 #include <sstream>
 
-#include "db.h"
 #include "dbDatabase.h"
+#include "odb/db.h"
 
 namespace odb {
 

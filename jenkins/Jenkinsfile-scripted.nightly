@@ -1,0 +1,87 @@
+@Library('utils@main') _
+
+node {
+  def COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+  def EQUIVALENCE_CHECK = 1;
+
+  stage('Checkout'){
+    checkout scm
+  }
+
+  stage('Build and Push Docker Image') {
+    if (isDependencyInstallerChanged(env.BRANCH_NAME)) {
+      def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true)
+      commitHash = commitHash.replaceAll(/[^a-zA-Z0-9-]/, '')
+
+      DOCKER_IMAGE_TAG = pushCIImage(env.BRANCH_NAME, commitHash)
+    }
+  }
+
+  try {
+    timeout(time: 9, unit: 'HOURS') {
+      docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+        sh "git config --system --add safe.directory '*'"
+        stage("Build") {
+          sh "./etc/Build.sh -no-warnings";
+          stash name: "build", includes: "build/**";
+        }
+      }
+
+      stage('Test Matrix') {
+        Map matrix_axes = [
+        ISPD_YEAR: ['18', '19'],
+        TEST_TO_RUN: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'GPL']
+        ]
+
+        Map tasks = [failFast: false]
+        for (ispd_year in matrix_axes.ISPD_YEAR) {
+          for (test_to_run in matrix_axes.TEST_TO_RUN) {
+            if (!(ispd_year == '19' && test_to_run == 'GPL')) {
+              if (test_to_run != "GPL") {
+                tasks["ISPD ${ispd_year} TEST ${test_to_run}"] = {
+                    node {
+                      checkout scm
+                      try {
+                        docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                          sh "git config --system --add safe.directory '*'"
+                          unstash "build";
+                          sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                        }
+                      } finally {
+                        archiveArtifacts "**/*.tar.gz, **/*.log";
+                      }
+                    }
+                }
+              }
+
+              if (test_to_run == "GPL") {
+                tasks["GPL Tests"] = {
+                    node {
+                      checkout scm
+                      try {
+                        docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                          sh "git config --system --add safe.directory '*'"
+                          unstash "build";
+                          sh "./src/gpl/test/regression-large";
+                        }
+                      } finally {
+                        archiveArtifacts "**/*.tar.gz, **/*.log";
+                      }
+                    }
+                }
+              }
+            }
+          }
+        }
+
+        parallel(tasks)
+      }
+    }
+  } finally {
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "", "OR")
+    }
+  }
+}
+
+

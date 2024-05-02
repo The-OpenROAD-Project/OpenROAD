@@ -94,7 +94,13 @@ def man2_translate(doc, path):
         Options: {len(func_options)},\
         Args: {len(func_args)}''')
         assert len(func_names) == len(func_descs) == len(func_synopsis) == len(func_options) == len(func_args),\
-            "Counts for all 5 categories must match up."
+            f"""Counts for all 5 categories must match up.\n
+            {func_names}\n
+            {func_descs}\n
+            {func_synopsis}\n
+            {func_options}\n
+            {func_args}\n
+            """
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()

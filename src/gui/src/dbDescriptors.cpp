@@ -42,10 +42,10 @@
 #include <sstream>
 
 #include "bufferTreeDescriptor.h"
-#include "db.h"
-#include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -2284,7 +2284,7 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
   Properties props({{"Technology", gui->makeSelected(layer->getTech())},
                     {"Direction", layer->getDirection().getString()},
-                    {"Type", layer->getType().getString()}});
+                    {"Layer type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
     props.push_back({"LEF58 type", layer->getLef58TypeString()});
   }

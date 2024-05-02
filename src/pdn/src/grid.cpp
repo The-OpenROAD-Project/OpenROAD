@@ -127,16 +127,16 @@ void Grid::addConnect(std::unique_ptr<Connect> connect)
   }
 }
 
-void Grid::makeShapes(const ShapeTreeMap& global_shapes,
-                      const ShapeTreeMap& obstructions)
+void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
+                      const Shape::ObstructionTreeMap& obstructions)
 {
   auto* logger = getLogger();
   logger->info(utl::PDN, 1, "Inserting grid: {}", getLongName());
 
   // copy obstructions
-  ShapeTreeMap local_obstructions = obstructions;
+  Shape::ObstructionTreeMap local_obstructions = obstructions;
 
-  ShapeTreeMap local_shapes = global_shapes;
+  Shape::ShapeTreeMap local_shapes = global_shapes;
   // make shapes
   for (auto* component : getGridComponents()) {
     // make initial shapes
@@ -162,7 +162,7 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     }
   } while (modified);
 
-  ShapeTreeMap all_shapes = global_shapes;
+  Shape::ShapeTreeMap all_shapes = global_shapes;
   // insert power switches
   if (switched_power_cell_ != nullptr) {
     switched_power_cell_->build();
@@ -203,7 +203,7 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     const int min_width = techlayer.getMinWidth();
     const int min_spacing = techlayer.getSpacing(0);
 
-    std::vector<ShapeValue> all_shapes;
+    std::vector<ShapePtr> all_shapes;
     for (const auto& shape_value : itr->second) {
       all_shapes.push_back(shape_value);
     }
@@ -212,13 +212,12 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
     // are non-overlapping so comparing one corner should be a total order.
     std::sort(
         all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
-          auto lc = l.first.min_corner();
-          auto rc = r.first.min_corner();
-          return std::make_tuple(bg::get<0>(lc), bg::get<1>(lc))
-                 < std::make_tuple(bg::get<0>(rc), bg::get<1>(rc));
+          auto lc = l->getRect().ll();
+          auto rc = r->getRect().ll();
+          return lc < rc;
         });
 
-    for (const auto& [box, shape] : all_shapes) {
+    for (const auto& shape : all_shapes) {
       const auto& rect = shape->getRect();
       // bloat to block routing based on spacing
       const int width = is_horizontal ? rect.dy() : rect.dx();
@@ -286,8 +285,8 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
   }
 }
 
-bool Grid::repairVias(const ShapeTreeMap& global_shapes,
-                      ShapeTreeMap& obstructions)
+bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
+                      Shape::ObstructionTreeMap& obstructions)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -298,17 +297,16 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
 
-  auto obs_filter = [this](const ShapeValue& other) -> bool {
-    const auto obs = other.second;
-    if (obs->shapeType() != Shape::GRID_OBS) {
+  auto obs_filter = [this](const ShapePtr& other) -> bool {
+    if (other->shapeType() != Shape::GRID_OBS) {
       return true;
     }
-    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
     return !shape->belongsTo(this);
   };
 
   std::map<Shape*, Shape*> replace_shapes;
-  for (const auto& [box, via] : vias_) {
+  for (const auto& via : vias_) {
     // ensure shapes belong to something
     const auto& lower_shape = via->getLowerShape();
     if (lower_shape->getGridComponent() == nullptr) {
@@ -361,7 +359,7 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
   return !replace_shapes.empty();
 }
 
-ShapeTreeMap Grid::getShapes() const
+Shape::ShapeTreeMap Grid::getShapes() const
 {
   ShapeVectorMap shapes;
 
@@ -411,7 +409,7 @@ odb::Rect Grid::getRingArea() const
   odb::Rect rect = getDomainBoundary();
   for (const auto& ring : rings_) {
     for (const auto& [layer, shapes] : ring->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         const odb::Rect& ring_shape = shape->getRect();
         if (ring_shape.dx() == ring_shape.dy()) {
           rect.merge(ring_shape);
@@ -487,7 +485,7 @@ void Grid::report() const
 }
 
 void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
-                            const ShapeTreeMap& search_shapes) const
+                            const Shape::ShapeTreeMap& search_shapes) const
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -496,7 +494,7 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
              "Getting via intersections in \"{}\" - start",
              name_);
 
-  ShapeTreeMap shapes = search_shapes;
+  Shape::ShapeTreeMap shapes = search_shapes;
   // Populate with additional shapes from grid components
   for (auto* comp : getGridComponents()) {
     comp->getConnectableShapes(shapes);
@@ -531,18 +529,18 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
                upper_shapes.size());
 
     // loop over lower layer shapes
-    for (const auto& [lower_box, lower_shape] : lower_shapes) {
+    for (const auto& lower_shape : lower_shapes) {
       auto* lower_net = lower_shape->getNet();
       // check for intersections in higher layer shapes
       for (auto it = upper_shapes.qbegin(
-               bgi::intersects(lower_box)
+               bgi::intersects(lower_shape->getRect())
                && bgi::satisfies([lower_net](const auto& other) {
                     // not the same net, so ignore
-                    return lower_net == other.second->getNet();
+                    return lower_net == other->getNet();
                   }));
            it != upper_shapes.qend();
            it++) {
-        const auto& upper_shape = it->second;
+        const auto& upper_shape = *it;
         if (!lower_shape->getRect().overlaps(upper_shape->getRect())) {
           // no overlap, so ignore
           continue;
@@ -660,19 +658,17 @@ void Grid::checkSetup() const
   }
 }
 
-void Grid::getObstructions(ShapeTreeMap& obstructions) const
+void Grid::getObstructions(Shape::ObstructionTreeMap& obstructions) const
 {
   for (const auto& [layer, shapes] : getShapes()) {
     auto& obs = obstructions[layer];
-    for (const auto& [box, shape] : shapes) {
-      obs.insert({shape->getObstructionBox(), shape});
-    }
+    obs.insert(shapes.begin(), shapes.end());
   }
 }
 
-void Grid::makeVias(const ShapeTreeMap& global_shapes,
-                    const ShapeTreeMap& obstructions,
-                    ShapeTreeMap& local_obstructions)
+void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
+                    const Shape::ObstructionTreeMap& obstructions,
+                    Shape::ObstructionTreeMap& local_obstructions)
 {
   makeVias(global_shapes, obstructions);
 
@@ -683,45 +679,42 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   }
 }
 
-void Grid::makeVias(const ShapeTreeMap& global_shapes,
-                    const ShapeTreeMap& obstructions)
+void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
+                    const Shape::ObstructionTreeMap& obstructions)
 {
   debugPrint(getLogger(), utl::PDN, "Make", 1, "Making vias in \"{}\"", name_);
-  ShapeTreeMap search_shapes = getShapes();
+  Shape::ShapeTreeMap search_shapes = getShapes();
 
   odb::Rect search_area = getDomainBoundary();
   for (const auto& [layer, shapes] : search_shapes) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       search_area.merge(shape->getRect());
     }
   }
 
   // populate shapes and obstructions
-  Box search_box(Point(search_area.xMin(), search_area.yMin()),
-                 Point(search_area.xMax(), search_area.yMax()));
   for (auto& [layer, layer_global_shape] : global_shapes) {
     auto& shapes = search_shapes[layer];
-    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_box));
+    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_area));
          it != layer_global_shape.qend();
          it++) {
       shapes.insert(*it);
     }
   }
 
-  auto obs_filter = [this](const ShapeValue& other) -> bool {
-    const auto obs = other.second;
-    if (obs->shapeType() != Shape::GRID_OBS) {
+  auto obs_filter = [this](const ShapePtr& other) -> bool {
+    if (other->shapeType() != Shape::GRID_OBS) {
       return true;
     }
-    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
     return !shape->belongsTo(this);
   };
 
-  ShapeTreeMap search_obstructions = obstructions;
+  Shape::ObstructionTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
-    for (const auto& [box, search_shape] : shapes) {
-      obs.insert({search_shape->getObstructionBox(), search_shape});
+    for (auto& search_shape : shapes) {
+      obs.insert(search_shape);
     }
   }
 
@@ -743,7 +736,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
       auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getBox())
+      if (search_obs.qbegin(bgi::intersects(via->getArea())
                             && bgi::satisfies(obs_filter))
           != search_obs.qend()) {
         remove_vias.insert(via);
@@ -761,37 +754,36 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   remove_set_of_vias(remove_vias);
 
   // Remove overlapping vias and keep largest
-  ViaTree overlapping_via_tree;
+  Via::ViaTree overlapping_via_tree;
   for (const auto& via : vias) {
-    overlapping_via_tree.insert({via->getBox(), via});
+    overlapping_via_tree.insert(via);
   }
   for (const auto& via : vias) {
     if (via->isFailed()) {
       continue;
     }
     if (overlapping_via_tree.qbegin(
-            bgi::intersects(via->getBox())
-            && bgi::satisfies([&via](const ViaValue& other) -> bool {
-                 const auto& other_via = other.second;
-                 if (via == other_via) {
+            bgi::intersects(via->getArea())
+            && bgi::satisfies([&via](const ViaPtr& other) -> bool {
+                 if (via == other) {
                    // ignore the same via
                    return false;
                  }
 
-                 if (other_via->isFailed()) {
+                 if (other->isFailed()) {
                    return false;
                  }
 
-                 if (via->getLowerLayer() != other_via->getLowerLayer()) {
+                 if (via->getLowerLayer() != other->getLowerLayer()) {
                    return false;
                  }
 
-                 if (via->getUpperLayer() != other_via->getUpperLayer()) {
+                 if (via->getUpperLayer() != other->getUpperLayer()) {
                    return false;
                  }
 
                  // Remove the smaller of the two vias
-                 return via->getArea().area() <= other_via->getArea().area();
+                 return via->getArea().area() <= other->getArea().area();
                }))
         != overlapping_via_tree.qend()) {
       remove_vias.insert(via);
@@ -809,7 +801,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
-    vias_.insert({via->getBox(), via});
+    vias_.insert(via);
     via->getLowerShape()->addVia(via);
     via->getUpperShape()->addVia(via);
   }
@@ -817,17 +809,16 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
 
 void Grid::getVias(std::vector<ViaPtr>& vias) const
 {
-  for (const auto& [box, via] : vias_) {
+  for (const auto& via : vias_) {
     vias.push_back(via);
   }
 }
 
 void Grid::removeVia(const ViaPtr& via)
 {
-  auto find
-      = std::find_if(vias_.begin(), vias_.end(), [via](const auto& other) {
-          return via == other.second;
-        });
+  auto find = std::find_if(vias_.begin(),
+                           vias_.end(),
+                           [via](const auto& other) { return via == other; });
   if (find != vias_.end()) {
     vias_.remove(*find);
   }
@@ -835,10 +826,10 @@ void Grid::removeVia(const ViaPtr& via)
 
 void Grid::removeInvalidVias()
 {
-  std::vector<ViaValue> remove_vias;
-  for (const auto& via_value : vias_) {
-    if (!via_value.second->isValid()) {
-      remove_vias.push_back(via_value);
+  std::vector<ViaPtr> remove_vias;
+  for (const auto& via : vias_) {
+    if (!via->isValid()) {
+      remove_vias.push_back(via);
     }
   }
   for (const auto& remove_via : remove_vias) {
@@ -862,7 +853,7 @@ std::vector<GridComponent*> Grid::getGridComponents() const
 
 void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                      bool do_pins,
-                     const ShapeTreeMap& obstructions) const
+                     const Shape::ObstructionTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
   std::vector<ViaPtr> vias;
@@ -933,7 +924,7 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
                "Adding obstruction on layer {} covering {}",
                layer->getName(),
                Shape::getRectText(core, getBlock()->getDbUnitsPerMicron()));
-    obstructions[layer].emplace_back(obs->getObstructionBox(), obs);
+    obstructions[layer].push_back(obs);
   }
 
   for (const auto& ring : rings_) {
@@ -956,7 +947,7 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
           "Adding obstruction on layer {} covering {}",
           layer->getName(),
           Shape::getRectText(ring_rect, getBlock()->getDbUnitsPerMicron()));
-      obstructions[layer].emplace_back(obs->getObstructionBox(), obs);
+      obstructions[layer].push_back(obs);
     }
   }
 }
@@ -982,13 +973,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
         auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
-        obs[shape->getLayer()].emplace_back(shape->getObstructionBox(), shape);
+        obs[layer].push_back(shape);
       }
     } else {
       auto shape = std::make_shared<Shape>(
           box->getTechLayer(), obs_rect, Shape::BLOCK_OBS);
-
-      obs[shape->getLayer()].emplace_back(shape->getObstructionBox(), shape);
+      obs[box->getTechLayer()].push_back(shape);
     }
   }
 
@@ -1195,7 +1185,7 @@ void CoreGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 void CoreGrid::cleanupShapes()
 {
   // remove shapes that are wholly contained inside a macro
-  ShapeTreeMap macros;
+  Shape::ShapeTreeMap macros;
   for (auto* inst : getBlock()->getInsts()) {
     if (!inst->isFixed()) {
       continue;
@@ -1204,13 +1194,18 @@ void CoreGrid::cleanupShapes()
     const odb::Rect outline = inst->getBBox()->getBox();
 
     for (auto* obs : inst->getMaster()->getObstructions()) {
-      macros[obs->getTechLayer()].insert({Shape::rectToBox(outline), nullptr});
+      auto shape = std::make_shared<Shape>(
+          obs->getTechLayer(), outline, Shape::ShapeType::MACRO_OBS);
+      shape->setObstruction(outline);
+      macros[obs->getTechLayer()].insert(shape);
     }
     for (auto* term : inst->getMaster()->getMTerms()) {
       for (auto* pin : term->getMPins()) {
         for (auto* geom : pin->getGeometry()) {
-          macros[geom->getTechLayer()].insert(
-              {Shape::rectToBox(outline), nullptr});
+          auto shape = std::make_shared<Shape>(
+              geom->getTechLayer(), outline, Shape::ShapeType::MACRO_OBS);
+          shape->setObstruction(outline);
+          macros[geom->getTechLayer()].insert(shape);
         }
       }
     }
@@ -1219,8 +1214,9 @@ void CoreGrid::cleanupShapes()
   std::set<Shape*> remove;
   for (const auto& [layer, shapes] : getShapes()) {
     const auto& layer_avoid = macros[layer];
-    for (const auto& [shape_box, shape] : shapes) {
-      if (layer_avoid.qbegin(bgi::contains(shape_box)) != layer_avoid.qend()) {
+    for (const auto& shape : shapes) {
+      if (layer_avoid.qbegin(bgi::contains(shape->getRect()))
+          != layer_avoid.qend()) {
         remove.insert(shape.get());
       }
     }
@@ -1367,7 +1363,7 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    obs[layer].emplace_back(shape->getObstructionBox(), shape);
+    obs[layer].push_back(shape);
   }
 
   // generate obstructions based on pins
@@ -1376,13 +1372,13 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
         = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const bool is_vertical
         = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-    for (const auto& [box, pin_shape] : pin_shapes) {
+    for (const auto& pin_shape : pin_shapes) {
       pin_shape->setShapeType(Shape::BLOCK_OBS);
       pin_shape->generateObstruction();
       pin_shape->setRect(applyHalo(
           pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
       pin_shape->setObstruction(pin_shape->getRect());
-      obs[layer].emplace_back(pin_shape->getObstructionBox(), pin_shape);
+      obs[layer].push_back(pin_shape);
     }
   }
 
@@ -1399,14 +1395,14 @@ void InstanceGrid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
     auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
-    local_obs[layer].emplace_back(obs->getObstructionBox(), obs);
+    local_obs[layer].push_back(obs);
   }
 
   // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
-    for (const auto& [box, shape] : shapes) {
+    for (const auto& shape : shapes) {
       auto obs = std::make_shared<GridObsShape>(layer, shape->getRect(), this);
-      local_obs[layer].emplace_back(box, obs);
+      local_obs[layer].push_back(obs);
     }
   }
 
@@ -1456,23 +1452,23 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
 
   ShapeVectorMap shapes;
   for (auto& pin : pins) {
-    shapes[pin->getLayer()].emplace_back(pin->getRectBox(), pin);
+    shapes[pin->getLayer()].push_back(pin);
   }
 
   return shapes;
 }
 
 void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
-                                    const ShapeTreeMap& shapes) const
+                                    const Shape::ShapeTreeMap& shapes) const
 {
   // add instance pins
-  ShapeTreeMap inst_shapes = shapes;
+  Shape::ShapeTreeMap inst_shapes = shapes;
   for (auto* net : getNets(false)) {
     for (const auto& [layer, shapes_on_layer] : getInstancePins(inst_)) {
       auto& layer_shapes = inst_shapes[layer];
-      for (const auto& [box, shape] : shapes_on_layer) {
+      for (const auto& shape : shapes_on_layer) {
         if (shape->getNet() == net) {
-          layer_shapes.insert({box, shape});
+          layer_shapes.insert(shape);
         }
       }
     }
@@ -1580,8 +1576,7 @@ bool BumpGrid::isRouted() const
 
           const odb::Rect rect = shape.getBox();
           const auto& layer_pins = find_layer->second;
-          if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
-              != layer_pins.qend()) {
+          if (layer_pins.qbegin(bgi::intersects(rect)) != layer_pins.qend()) {
             return true;
           }
         }
@@ -1595,8 +1590,7 @@ bool BumpGrid::isRouted() const
 
         const odb::Rect rect = sbox->getBox();
         const auto& layer_pins = find_layer->second;
-        if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
-            != layer_pins.qend()) {
+        if (layer_pins.qbegin(bgi::intersects(rect)) != layer_pins.qend()) {
           return true;
         }
       }

@@ -38,18 +38,17 @@
 #include <string>
 
 #include "clockWidget.h"
-#include "db.h"
-#include "dbShape.h"
-#include "defin.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "geom.h"
 #include "heatMapPlacementDensity.h"
-#include "heatMapRUDY.h"
 #include "inspector.h"
 #include "layoutViewer.h"
-#include "lefin.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
+#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -1266,8 +1265,6 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
-  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger);
-  rudy_heat_map_->registerHeatMap();
 }
 
 //////////////////////////////////////////////////

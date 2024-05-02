@@ -137,6 +137,7 @@ configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh
   )
 
+
 ################################################################
 
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
@@ -154,6 +155,11 @@ endif()
 
 add_subdirectory(src)
 
+# After all compiled, look for the respective flags
+target_compile_definitions(openroad PRIVATE GPU)
+target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
+target_compile_definitions(openroad PRIVATE BUILD_GUI)
+target_compile_definitions(openroad PRIVATE ENABLE_CHARTS)
 
 ####################################################################
 

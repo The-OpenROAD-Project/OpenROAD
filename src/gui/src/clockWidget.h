@@ -515,6 +515,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate(sta::Corner* corner = nullptr);
+  void fit();
 
  private slots:
   void currentClockChanged(int index);
@@ -530,6 +531,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   std::unique_ptr<STAGuiInterface> stagui_;
 
   QPushButton* update_button_;
+  QPushButton* fit_button_;
   QComboBox* corner_box_;
 
   QTabWidget* clocks_tab_;

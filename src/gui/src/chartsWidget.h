@@ -45,11 +45,44 @@
 #include "gui/gui.h"
 
 namespace sta {
+class Pin;
 class dbSta;
-}
+class Clock;
+}  // namespace sta
 #endif
 
 namespace gui {
+#ifdef ENABLE_CHARTS
+class STAGuiInterface;
+
+struct SlackHistogramData
+{
+  std::vector<const sta::Pin*> constrained_pins;
+  std::set<sta::Clock*> clocks;
+  float max_slack = 0;
+  float min_slack = 0;
+};
+
+struct Buckets
+{
+  std::deque<std::vector<const sta::Pin*>> positive;
+  std::deque<std::vector<const sta::Pin*>> negative;
+};
+
+class HistogramView : public QChartView
+{
+  Q_OBJECT
+
+ public:
+  HistogramView(QChart* chart, QWidget* parent);
+
+  virtual void mousePressEvent(QMouseEvent* event) override;
+
+ signals:
+  void barIndex(int bar_index);
+};
+
+#endif
 
 class ChartsWidget : public QDockWidget
 {
@@ -63,18 +96,20 @@ class ChartsWidget : public QDockWidget
     SELECT,
     SLACK_HISTOGRAM
   };
-  void setSTA(sta::dbSta* sta)
-  {
-    sta_ = sta;
-  }
+
+  void setSTA(sta::dbSta* sta);
   void setLogger(utl::Logger* logger)
   {
     logger_ = logger;
   }
 
+ signals:
+  void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
+
  private slots:
   void changeMode();
   void showToolTip(bool is_hovering, int bar_index);
+  void emitEndPointsInBucket(int bar_index);
 
  private:
   void setSlackMode();
@@ -93,18 +128,18 @@ class ChartsWidget : public QDockWidget
     precision_count_ = precision_count;
   }
 
-  void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
-  void populateBuckets(const std::vector<float>& all_slack,
-                       std::deque<int>& neg_buckets,
-                       std::deque<int>& pos_buckets);
+  SlackHistogramData fetchSlackHistogramData() const;
+  void populateBuckets(const SlackHistogramData& data);
+
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
   int computeNumberofBuckets(int bucket_interval,
                              float max_slack,
                              float min_slack);
 
-  void setXAxisConfig(int all_bars_count);
+  void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
   void setYAxisConfig();
+  QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
   int computeMaxYSnap();
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
@@ -114,12 +149,15 @@ class ChartsWidget : public QDockWidget
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
+  std::unique_ptr<STAGuiInterface> stagui_;
 
   QComboBox* mode_menu_;
   QChart* chart_;
-  QChartView* display_;
+  HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+
+  std::unique_ptr<Buckets> buckets_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.

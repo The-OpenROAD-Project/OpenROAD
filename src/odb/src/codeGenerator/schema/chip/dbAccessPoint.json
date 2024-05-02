@@ -72,5 +72,5 @@
     "h_includes": [
       "dbVector.h"
     ],
-    "cpp_includes": ["dbTypes.h"]
+    "cpp_includes": ["odb/dbTypes.h"]
   }

@@ -205,7 +205,7 @@ int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 // apply mirror about Y axis to orient
 static dbOrientType orientMirrorY(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R0:
       return dbOrientType::MY;
     case dbOrientType::MX:

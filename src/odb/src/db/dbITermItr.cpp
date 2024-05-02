@@ -95,8 +95,9 @@ uint dbNetITermItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbNetITermItr::begin(parent); id != dbNetITermItr::end(parent);
-       id = dbNetITermItr::next(id))
+       id = dbNetITermItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }
@@ -154,8 +155,9 @@ uint dbInstITermItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbInstITermItr::begin(parent); id != dbInstITermItr::end(parent);
-       id = dbInstITermItr::next(id))
+       id = dbInstITermItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }
@@ -164,8 +166,9 @@ uint dbInstITermItr::begin(dbObject* parent)
 {
   _dbInst* inst = (_dbInst*) parent;
 
-  if (inst->_iterms.size() == 0)
+  if (inst->_iterms.empty()) {
     return 0;
+  }
 
   return inst->_iterms[0];
 }
@@ -183,8 +186,9 @@ uint dbInstITermItr::next(uint id, ...)
   uint cnt = inst->_iterms.size();
   uint idx = iterm->_flags._mterm_idx + 1;
 
-  if (idx == cnt)
+  if (idx == cnt) {
     return 0;
+  }
 
   dbId<_dbITerm> next = inst->_iterms[idx];
   return next;

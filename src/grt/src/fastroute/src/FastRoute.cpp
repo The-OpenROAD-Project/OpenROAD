@@ -879,6 +879,55 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
+void FastRouteCore::getCapacityReductionData(
+    CapacityReductionData& cap_red_data)
+{
+  cap_red_data.resize(x_grid_);
+  for (int x = 0; x < x_grid_; x++) {
+    cap_red_data[x].resize(y_grid_);
+  }
+
+  for (int k = 0; k < num_layers_; k++) {
+    const uint8_t capH = h_capacity_3D_[k];
+    const uint8_t capV = v_capacity_3D_[k];
+    const uint8_t last_row_capH = last_row_h_capacity_3D_[k];
+    const uint8_t last_col_capV = last_col_v_capacity_3D_[k];
+    bool is_horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    for (int x = 0; x < x_grid_; x++) {
+      for (int y = 0; y < y_grid_; y++) {
+        if (is_horizontal) {
+          if (!regular_y_ && y == y_grid_ - 1) {
+            cap_red_data[x][y].capacity += last_row_capH;
+          } else if (x != x_grid_ - 1) {
+            // don't add horizontal cap in the last col because there is no
+            // usage there
+            cap_red_data[x][y].capacity += capH;
+          }
+        } else {
+          if (!regular_x_ && x == x_grid_ - 1) {
+            cap_red_data[x][y].capacity += last_col_capV;
+          } else if (y != y_grid_ - 1) {
+            // don't add vertical cap in the last row because there is no usage
+            // there
+            cap_red_data[x][y].capacity += capV;
+          }
+        }
+        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
+            && y_grid_ > 1) {
+          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+          cap_red_data[x][y].reduction += blockageH + blockageV;
+        } else {
+          uint8_t blockageH = h_edges_3D_[k][y][x].red;
+          uint8_t blockageV = v_edges_3D_[k][y][x].red;
+          cap_red_data[x][y].reduction += blockageH + blockageV;
+        }
+      }
+    }
+  }
+}
+
 NetRouteMap FastRouteCore::run()
 {
   if (netCount() == 0) {

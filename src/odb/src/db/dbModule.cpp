@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbModule.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,11 +42,10 @@
 #include "dbModInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 // User Code Begin Includes
 #include <string>
 
-#include "dbInst.h"
-#include "dbModInst.h"
 #include "dbModNet.h"
 #include "dbModuleInstItr.h"
 #include "dbModuleModBTermItr.h"
@@ -88,8 +86,9 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0)
+  if (strcmp(_name, rhs._name) >= 0) {
     return false;
+  }
   // User Code End <
   return true;
 }

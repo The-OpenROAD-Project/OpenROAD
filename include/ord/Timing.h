@@ -106,6 +106,8 @@ class Timing
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   std::vector<sta::Corner*> getCorners();
+  sta::Corner* cmdCorner();
+  sta::Corner* findCorner(const char* name);
 
  private:
   sta::dbSta* getSta();

@@ -44,10 +44,10 @@
 #include <random>
 #include <vector>
 
-#include "db.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -204,6 +204,9 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             info += QString::fromStdString(prop_find->toString());
             return true;
           };
+
+          // type
+          add_prop("Layer type", information);
 
           // direction
           add_prop("Direction", information);

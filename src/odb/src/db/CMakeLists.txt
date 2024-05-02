@@ -76,9 +76,6 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
-    dbUtil.cpp
-    gs.cpp
-    grids.cpp
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
@@ -88,6 +85,7 @@ add_library(db
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbDft.cpp
     dbGCellGrid.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp
@@ -106,6 +104,7 @@ add_library(db
     dbPowerSwitch.cpp
     dbScanChain.cpp
     dbScanInst.cpp
+    dbScanList.cpp
     dbScanPartition.cpp
     dbScanPin.cpp
     dbTechLayer.cpp

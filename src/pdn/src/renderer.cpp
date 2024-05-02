@@ -76,7 +76,7 @@ void PDNRenderer::update()
 
   ShapeVectorMap shapes;
   ShapeVectorMap obs;
-  std::vector<ViaValue> vias;
+  std::vector<ViaPtr> vias;
   for (const auto& domain : pdn_->getDomains()) {
     for (auto* net : domain->getBlock()->getNets()) {
       Shape::populateMapFromDb(net, obs);
@@ -90,11 +90,7 @@ void PDNRenderer::update()
             shapes[layer].end(), grid_shapes.begin(), grid_shapes.end());
       }
 
-      std::vector<ViaPtr> grid_vias;
-      grid->getVias(grid_vias);
-      for (auto& via : grid_vias) {
-        vias.emplace_back(via->getBox(), via);
-      }
+      grid->getVias(vias);
 
       for (const auto& repair :
            RepairChannelStraps::findRepairChannels(grid.get())) {
@@ -120,9 +116,9 @@ void PDNRenderer::update()
   }
 
   shapes_ = Shape::convertVectorToTree(shapes);
-  grid_obstructions_ = Shape::convertVectorToTree(obs);
+  grid_obstructions_ = Shape::convertVectorToObstructionTree(obs);
   shapes_ = Shape::convertVectorToTree(shapes);
-  vias_ = Shape::convertVectorToTree(vias);
+  vias_ = Via::convertVectorToTree(vias);
 
   redraw();
 }
@@ -135,17 +131,15 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const int min_shape = 1.0 / painter.getPixelsPerDBU();
 
   const odb::Rect paint_rect = painter.getBounds();
-  Box paint_box(Point(paint_rect.xMin(), paint_rect.yMin()),
-                Point(paint_rect.xMax(), paint_rect.yMax()));
 
   if (checkDisplayControl(grid_obs_text_)) {
     painter.setPen(gui::Painter::highlight, true);
     painter.setBrush(gui::Painter::transparent);
     auto& shapes = grid_obstructions_[layer];
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
       painter.drawRect(shape->getObstruction());
     }
   }
@@ -156,10 +150,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const bool show_obs = checkDisplayControl(obs_text_);
   auto& shapes = shapes_[layer];
   if (show_rings || show_followpins || show_straps) {
-    for (auto it = shapes.qbegin(bgi::intersects(paint_box));
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
          it != shapes.qend();
          it++) {
-      const auto& shape = it->second;
+      const auto& shape = *it;
 
       if (shape->getLayer() != layer) {
         continue;
@@ -236,9 +230,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (checkDisplayControl(vias_text_)) {
-    for (auto it = vias_.qbegin(bgi::intersects(paint_box)); it != vias_.qend();
+    for (auto it = vias_.qbegin(bgi::intersects(paint_rect));
+         it != vias_.qend();
          it++) {
-      const auto& via = it->second;
+      const auto& via = *it;
       if (layer->getNumber() < via->getLowerLayer()->getNumber()
           || layer->getNumber() > via->getUpperLayer()->getNumber()) {
         continue;

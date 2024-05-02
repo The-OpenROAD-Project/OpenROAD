@@ -52,7 +52,11 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-
+#ifdef ENABLE_CHARTS
+namespace sta {
+class Pin;
+}
+#endif
 namespace gui {
 
 class LayoutViewer;
@@ -255,6 +259,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showApplicationFont();
   void showGlobalConnect();
   void openDesign();
+#ifdef ENABLE_CHARTS
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
+#endif
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.

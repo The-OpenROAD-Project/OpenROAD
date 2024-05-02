@@ -71,8 +71,9 @@ uint dbModuleModBTermItr::size(dbObject* parent)
 
   for (id = dbModuleModBTermItr::begin(parent);
        id != dbModuleModBTermItr::end(parent);
-       id = dbModuleModBTermItr::next(id))
+       id = dbModuleModBTermItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

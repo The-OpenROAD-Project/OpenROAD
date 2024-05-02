@@ -49,6 +49,15 @@ struct BundledNet;
 struct Rect;
 class Graphics;
 
+struct SACoreWeights
+{
+  float area = 0.0f;
+  float outline = 0.0f;
+  float wirelength = 0.0f;
+  float guidance = 0.0f;
+  float fence = 0.0f;
+};
+
 // Class SimulatedAnnealingCore is a base class
 // It will have two derived classes:
 // 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
@@ -79,15 +88,22 @@ class SimulatedAnnealingCore
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
   };
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
+
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
+  void setInitialSequencePair(const SequencePair& sequence_pair);
 
   bool isValid() const;
   bool isValid(const Rect& outline) const;
@@ -113,6 +129,8 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void attemptCentralization(float pre_cost);
+  void moveFloorplan(const std::pair<float, float>& offset);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -222,6 +240,9 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool has_initial_sequence_pair_ = false;
+  bool centralization_on_ = false;
 };
 
 // SACore wrapper function

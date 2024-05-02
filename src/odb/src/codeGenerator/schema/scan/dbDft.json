@@ -1,0 +1,14 @@
+{
+  "name": "dbDft",
+  "type": "dbObject",
+  "description": ["Top level DFT (Design for Testing) class"],
+  "fields": [
+    {
+      "name": "scan_inserted_",
+      "type": "bool"
+    }
+  ],
+  "h_includes": [
+    "dbBlock.h"
+  ]
+}
