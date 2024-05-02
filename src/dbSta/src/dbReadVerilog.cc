@@ -269,8 +269,7 @@ void Verilog2db::recordBusPortsOrder()
       const char* cell_name = network_->name(top_cell);
       int from = network_->fromIndex(port);
       int to = network_->toIndex(port);
-      string key = "bus_msb_first ";
-      key = key + port_name + " " + cell_name;
+      string key = std::string("bus_msb_first ") + port_name + " " + cell_name;
       odb::dbBoolProperty::create(block_, key.c_str(), from > to);
     }
   }
