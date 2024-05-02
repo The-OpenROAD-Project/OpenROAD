@@ -48,7 +48,11 @@ class Graphics : public gui::Renderer, public DplObserver
   ~Graphics() override = default;
   void startPlacement(dbBlock* block) override;
   void placeInstance(dbInst* instance) override;
-  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) override;
+  void binSearch(const Cell* cell,
+                 GridX xl,
+                 GridY yl,
+                 GridX xh,
+                 GridY yh) override;
   void endPlacement() override;
 
   // From Renderer API
