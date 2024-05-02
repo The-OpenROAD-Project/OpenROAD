@@ -171,6 +171,7 @@ class HierRTLMP
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_flag);
   Metrics* computeMetrics(odb::dbModule* module);
+  float computeMicronArea(odb::dbInst* inst);
   void setClusterMetrics(Cluster* cluster);
   void calculateConnection();
   void getHardMacros(odb::dbModule* module,
