@@ -715,20 +715,9 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
   return metrics;
 }
 
-// compute the metrics for a cluster
-// Here we do not include any Pads,  Covers or Marker
-// number of standard cells
-// number of macros
-// area of standard cells
-// area of macros
 void HierRTLMP::setClusterMetrics(Cluster* cluster)
 {
-  unsigned int num_std_cell = 0;
-  unsigned int num_macro = 0;
-  float std_cell_area = 0.0;
-  float macro_area = 0.0;
-  num_std_cell += cluster->getLeafStdCells().size();
-  num_macro += cluster->getLeafMacros().size();
+  float std_cell_area = 0.0f;
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
     const float width = dbuToMicron(inst->getBBox()->getBox().dx(), dbu_);
@@ -737,6 +726,8 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
     std_cell_area += (width * height);
   }
 
+  float macro_area = 0.0f;
+
   for (odb::dbInst* inst : cluster->getLeafMacros()) {
     const float width = dbuToMicron(inst->getBBox()->getBox().dx(), dbu_);
     const float height = dbuToMicron(inst->getBBox()->getBox().dy(), dbu_);
@@ -744,7 +735,11 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
     macro_area += (width * height);
   }
 
+  const unsigned int num_std_cell = cluster->getLeafStdCells().size();
+  const unsigned int num_macro = cluster->getLeafMacros().size();
+
   Metrics metrics(num_std_cell, num_macro, std_cell_area, macro_area);
+
   for (auto& module : cluster->getDbModules()) {
     metrics.addMetrics(*logical_module_map_[module]);
   }
@@ -758,7 +753,6 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
              metrics.getNumMacro(),
              metrics.getNumStdCell());
 
-  // update metrics based on design type
   if (cluster->getClusterType() == HardMacroCluster) {
     cluster->setMetrics(
         Metrics(0, metrics.getNumMacro(), 0.0, metrics.getMacroArea()));
