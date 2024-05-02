@@ -1,5 +1,5 @@
 pipeline {
-  agent any;
+  agent {label 'ubuntu22'};
   environment {
     COVERITY_TOKEN = credentials('COVERITY_TOKEN');
   }

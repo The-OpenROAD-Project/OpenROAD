@@ -154,9 +154,9 @@ int Padding::padRight(dbInst* inst) const
   return 0;
 }
 
-int Padding::paddedWidth(const Cell* cell) const
+DbuX Padding::paddedWidth(const Cell* cell) const
 {
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * cell->siteWidth();
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * cell->siteWidth().v;
 }
 
 }  // namespace dpl
