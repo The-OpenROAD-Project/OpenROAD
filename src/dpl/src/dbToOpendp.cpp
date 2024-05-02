@@ -111,8 +111,8 @@ void Opendp::makeMacros()
 
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
-  const int master_height = db_master->getHeight();
-  const int row_height = grid_->getRowHeight();
+  const DbuY master_height{static_cast<int>(db_master->getHeight())};
+  const DbuY row_height = grid_->getRowHeight();
   master->is_multi_row
       = (master_height != row_height && master_height % row_height == 0);
 }
@@ -130,10 +130,10 @@ void Opendp::makeCells()
       db_inst_map_[db_inst] = &cell;
 
       Rect bbox = getBbox(db_inst);
-      cell.width_ = bbox.dx();
-      cell.height_ = bbox.dy();
-      cell.x_ = bbox.xMin();
-      cell.y_ = bbox.yMin();
+      cell.width_ = DbuX{bbox.dx()};
+      cell.height_ = DbuY{bbox.dy()};
+      cell.x_ = DbuX{bbox.xMin()};
+      cell.y_ = DbuY{bbox.yMin()};
       cell.orient_ = db_inst->getOrient();
       // Cell is already placed if it is FIXED.
       cell.is_placed_ = cell.isFixed();
@@ -197,7 +197,7 @@ void Opendp::makeGroups()
   int reserve_size = 0;
   for (auto db_group : db_groups) {
     if (db_group->getRegion()) {
-      std::unordered_set<int> unique_heights;
+      std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
         unique_heights.insert(db_inst_map_[db_inst]->height_);
       }
@@ -212,8 +212,8 @@ void Opendp::makeGroups()
     if (!region) {
       continue;
     }
-    std::set<int> unique_heights;
-    map<int, Group*> cell_height_to_group_map;
+    std::set<DbuY> unique_heights;
+    map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
       unique_heights.insert(db_inst_map_[db_inst]->height_);
     }
