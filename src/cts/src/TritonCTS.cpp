@@ -228,7 +228,8 @@ void TritonCTS::countSinksPostDbWrite(
     int& maxDepth,
     int depth,
     bool fullTree,
-    const std::unordered_set<odb::dbITerm*>& sinks)
+    const std::unordered_set<odb::dbITerm*>& sinks,
+    const std::unordered_set<odb::dbInst*>& dummies)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   int driverX = 0;
@@ -312,7 +313,8 @@ void TritonCTS::countSinksPostDbWrite(
                                 maxDepth,
                                 depth + 1,
                                 fullTree,
-                                sinks);
+                                sinks,
+                                dummies);
         } else {
           std::string cellType = "Complex cell";
           odb::dbInst* inst = iterm->getInst();
@@ -327,8 +329,11 @@ void TritonCTS::countSinksPostDbWrite(
               }
             }
           }
-          logger_->info(
+
+          if(dummies.find(inst) == dummies.end()) {
+            logger_->info(
               CTS, 121, "{} '{}' has unconnected output pin.", cellType, name);
+          }
         }
         if (builder->isLeafBuffer(getClockFromInst(iterm->getInst()))) {
           leafSinks++;
@@ -358,13 +363,15 @@ ClockInst* TritonCTS::getClockFromInst(odb::dbInst* inst)
 void TritonCTS::writeDataToDb()
 {
   std::set<odb::dbNet*> clkLeafNets;
+  std::unordered_set<odb::dbInst*> clkDummies;
+
   for (TreeBuilder* builder : *builders_) {
     writeClockNetsToDb(builder->getClock(), clkLeafNets);
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
     }
     if (options_->dummyLoadEnabled()) {
-      writeDummyLoadsToDb(builder->getClock());
+      writeDummyLoadsToDb(builder->getClock(), clkDummies);
     }
   }
 
@@ -398,7 +405,8 @@ void TritonCTS::writeDataToDb()
                             maxDepth,
                             0,
                             reportFullTree,
-                            sinks);
+                            sinks,
+                            clkDummies);
       logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 99, " Sinks {}", sinkCount);
       logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
@@ -1649,7 +1657,8 @@ sta::LibertyCell* findBestDummyCell(
   return bestCell;
 }
 
-void TritonCTS::writeDummyLoadsToDb(Clock& clockNet)
+void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
+                                    std::unordered_set<odb::dbInst*>& dummies)
 {
   // Traverse clock tree and compute ideal output caps for clock
   // buffers in the same level
@@ -1667,7 +1676,10 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet)
       if (inst->isClockBuffer()
           && !sta::fuzzyEqual(inst->getOutputCap(),
                               inst->getIdealOutputCap())) {
-        insertDummyCell(clockNet, inst, dummyCandidates);
+        odb::dbInst* dummyInst = insertDummyCell(clockNet, inst, dummyCandidates);
+        if(dummyInst != nullptr) {
+          dummies.insert(dummyInst);
+        }
       }
     });
   });
@@ -1830,7 +1842,7 @@ void TritonCTS::findCandidateDummyCells(
   }
 }
 
-void TritonCTS::insertDummyCell(
+odb::dbInst* TritonCTS::insertDummyCell(
     Clock& clockNet,
     ClockInst* inst,
     const std::vector<sta::LibertyCell*>& dummyCandidates)
@@ -1846,10 +1858,11 @@ void TritonCTS::insertDummyCell(
   if (driver2subnet_.find(inst) == driver2subnet_.end()) {
     logger_->error(
         CTS, 120, "Subnet was not found for clock buffer {}.", inst->getName());
-    return;
+    return nullptr;
   }
   ClockSubNet* subNet = driver2subnet_[inst];
   connectDummyCell(inst, dummyInst, *subNet, dummyClock);
+  return dummyInst;
 }
 
 ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
