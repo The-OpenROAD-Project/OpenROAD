@@ -468,11 +468,7 @@ void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
 
   std::map<std::string, dbModBTerm*> name2modbterm;
 
-  for (dbSet<dbModBTerm>::iterator modbterm_iter
-       = master->getModBTerms().begin();
-       modbterm_iter != master->getModBTerms().end();
-       modbterm_iter++) {
-    dbModBTerm* modbterm = *modbterm_iter;
+  for (auto modbterm : master->getModBTerms()) {
     const char* port_name = modbterm->getName();
     Port* port = ConcreteNetwork::makePort(local_cell, port_name);
     PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
@@ -963,7 +959,7 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
     // this is in the same fashion as the original dbInst code
     // which uses the void* staGetCell to associate a cell with
     // concrete cell. We do same for verilog hierarchical cells.
-    Library* verilog_library = makeLibrary("verilog", 0);
+    Library* verilog_library = makeLibrary("verilog", nullptr);
     dbSet<dbModInst> modinsts = block_->getModInsts();
     dbSet<dbModInst>::iterator modinst_iter_ = modinsts.begin();
     dbSet<dbModInst>::iterator modinst_end_ = modinsts.end();
