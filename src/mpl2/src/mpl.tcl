@@ -94,7 +94,7 @@ proc rtl_macro_placer { args } {
   set coarsening_ratio 10.0
   set num_bundled_ios 3
   set large_net_threshold 50
-  set signature_net_threshold 20
+  set signature_net_threshold 50
   set halo_width 0.0
   set halo_height 0.0
   set fence_lx 0.0
