@@ -261,7 +261,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
         time_table->tsense = abc::SC_TSense::sc_ts_Non;
       } else {
         logger_->error(utl::RMP,
-                       16,
+                       24,
                        "Unrecognized sta::TimingSense -> {}",
                        static_cast<int>(timing_sense));
       }
