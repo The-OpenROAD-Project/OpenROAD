@@ -502,12 +502,8 @@ void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
       }
     } else if (ccport->isBundle()) {
       ;
-      //      printf("Bundle %s\n",
-      //             reinterpret_cast<const ConcretePort*>(cport)->name());
     } else if (ccport->isBusBit()) {
       ;
-      // printf("Busbit %s\n",
-      //             reinterpret_cast<const ConcretePort*>(cport)->name());
     } else {
       dbModBTerm* modbterm = name2modbterm[port_name];
       modbterm->staSetPort(cport);
@@ -530,9 +526,6 @@ Cell* dbNetwork::cell(const Instance* instance) const
   }
   if (mod_inst) {
     dbModule* master = mod_inst->getMaster();
-#ifdef DEBUG_DBNWK
-    printf("Mod inst Master is %s\n", master->getName());
-#endif
     // look up the cell in the verilog library.
     return dbToSta(master);
   }
