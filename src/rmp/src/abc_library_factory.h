@@ -29,7 +29,7 @@ class AbcLibraryFactory
 
  private:
   void PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library);
-  int ScaleAbbreviationToExponent(std::string scale_abbreviation);
+  int ScaleAbbreviationToExponent(const std::string& scale_abbreviation);
   int StaTimeUnitToAbcInt(sta::Unit* time_unit);
   float StaCapacitanceToAbc(sta::Unit* cap_unit);
   std::vector<abc::SC_Pin*> CreateAbcOutputPins(

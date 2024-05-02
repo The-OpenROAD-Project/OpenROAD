@@ -279,7 +279,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
 
       if (!rise_gate_model || !fall_gate_model) {
         logger_->error(utl::RMP,
-                       19,
+                       23,
                        "rise/fall Gate model is empty for cell {}. Need timing "
                        "information",
                        cell->name());
@@ -393,7 +393,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
       abc_cell->leakage = power_unit->staToUser(leakage_power);
     } else {
       logger_->warn(utl::RMP,
-                    16,
+                    22,
                     "Leakage power doesn't exist for cell {}",
                     cell->name());
     }
@@ -405,7 +405,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
     abc_cell->n_inputs = input_pins.size();
     for (abc::SC_Pin* pin : input_pins) {
       abc::Vec_PtrPush(&abc_cell->vPins, pin);
-      input_pin_names.push_back(pin->pName);
+      input_pin_names.emplace_back(pin->pName);
     }
 
     std::vector<abc::SC_Pin*> output_pins
@@ -443,7 +443,7 @@ int AbcLibraryFactory::StaTimeUnitToAbcInt(sta::Unit* time_unit)
 }
 
 int AbcLibraryFactory::ScaleAbbreviationToExponent(
-    std::string scale_abbreviation)
+    const std::string& scale_abbreviation)
 {
   if (scale_abbreviation == "m") {
     return 3;
