@@ -1445,7 +1445,8 @@ Descriptor::Properties Selected::getProperties() const
     props.push_back(
         {"BBox Width, Height",
          std::string("(") + Descriptor::Property::convert_dbu(bbox.dx(), false)
-             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)});
+             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)
+             + ")"});
   }
 
   return props;
