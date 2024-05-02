@@ -330,9 +330,12 @@ void TritonCTS::countSinksPostDbWrite(
             }
           }
 
-          if(dummies.find(inst) == dummies.end()) {
-            logger_->info(
-              CTS, 121, "{} '{}' has unconnected output pin.", cellType, name);
+          if (dummies.find(inst) == dummies.end()) {
+            logger_->info(CTS,
+                          121,
+                          "{} '{}' has unconnected output pin.",
+                          cellType,
+                          name);
           }
         }
         if (builder->isLeafBuffer(getClockFromInst(iterm->getInst()))) {
@@ -1676,8 +1679,9 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
       if (inst->isClockBuffer()
           && !sta::fuzzyEqual(inst->getOutputCap(),
                               inst->getIdealOutputCap())) {
-        odb::dbInst* dummyInst = insertDummyCell(clockNet, inst, dummyCandidates);
-        if(dummyInst != nullptr) {
+        odb::dbInst* dummyInst
+            = insertDummyCell(clockNet, inst, dummyCandidates);
+        if (dummyInst != nullptr) {
           dummies.insert(dummyInst);
         }
       }

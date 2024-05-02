@@ -193,12 +193,14 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
-  void writeDummyLoadsToDb(Clock& clockNet, std::unordered_set<odb::dbInst*>& dummies);
+  void writeDummyLoadsToDb(Clock& clockNet,
+                           std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
-  odb::dbInst* insertDummyCell(Clock& clockNet,
-                       ClockInst* inst,
-                       const std::vector<sta::LibertyCell*>& dummyCandidates);
+  odb::dbInst* insertDummyCell(
+      Clock& clockNet,
+      ClockInst* inst,
+      const std::vector<sta::LibertyCell*>& dummyCandidates);
   ClockInst& placeDummyCell(Clock& clockNet,
                             const ClockInst* inst,
                             const sta::LibertyCell* dummyCell,
