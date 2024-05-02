@@ -7,17 +7,23 @@
 #include <tcl.h>
 #include <unistd.h>
 
+#include <array>
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <set>
 
 #include "abc_library_factory.h"
+#include "base/abc/abc.h"
+#include "base/io/ioAbc.h"
+#include "base/main/main.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "odb/lefin.h"
 #include "sta/FuncExpr.hh"
@@ -38,7 +44,10 @@ class AbcTest : public ::testing::Test
   {
     db_ = utl::deleted_unique_ptr<odb::dbDatabase>(odb::dbDatabase::create(),
                                                    &odb::dbDatabase::destroy);
-    std::call_once(init_sta_flag, []() { sta::initSta(); });
+    std::call_once(init_sta_flag, []() {
+      sta::initSta();
+      abc::Abc_Start();
+    });
     sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_fast.lib");
@@ -152,5 +161,70 @@ TEST_F(AbcTest, ContainsLogicCells)
   EXPECT_THAT(abc_cells, Contains("AND2_X2"));
   EXPECT_THAT(abc_cells, Contains("AND2_X4"));
   EXPECT_THAT(abc_cells, Contains("AOI21_X1"));
+}
+
+// Create standard cell library from dbsta. Then create an
+// abc network with a single and gate, and make sure that it
+// simulates correctly.
+TEST_F(AbcTest, TestLibraryInstallation)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
+
+  // When you set these params to zero they essentially turned off.
+  abc::Abc_SclInstallGenlib(
+      abc_library.get(), /*SlewInit=*/0, /*Gain=*/0, /*nGatesMin=*/0);
+  abc::Mio_LibraryTransferCellIds();
+  abc::Mio_Library_t* lib
+      = static_cast<abc::Mio_Library_t*>(abc::Abc_FrameReadLibGen());
+
+  std::map<std::string, abc::Mio_Gate_t*> gates;
+  abc::Mio_Gate_t* gate = abc::Mio_LibraryReadGates(lib);
+  while (gate) {
+    gates[abc::Mio_GateReadName(gate)] = gate;
+    gate = abc::Mio_GateReadNext(gate);
+  }
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> network(
+      abc::Abc_NtkAlloc(abc::Abc_NtkType_t::ABC_NTK_NETLIST,
+                        abc::Abc_NtkFunc_t::ABC_FUNC_MAP,
+                        /*fUseMemMan=*/1),
+      &abc::Abc_NtkDelete);
+  abc::Abc_NtkSetName(network.get(), strdup("test_module"));
+
+  abc::Abc_Obj_t* input_1 = abc::Abc_NtkCreatePi(network.get());
+  abc::Abc_Obj_t* input_1_net = abc::Abc_NtkCreateNet(network.get());
+  abc::Abc_Obj_t* input_2 = abc::Abc_NtkCreatePi(network.get());
+  abc::Abc_Obj_t* input_2_net = abc::Abc_NtkCreateNet(network.get());
+  abc::Abc_Obj_t* output = abc::Abc_NtkCreatePo(network.get());
+  abc::Abc_Obj_t* output_net = abc::Abc_NtkCreateNet(network.get());
+  abc::Abc_Obj_t* and_gate = abc::Abc_NtkCreateNode(network.get());
+
+  abc::Abc_ObjSetData(and_gate, gates["AND2_X1"]);
+
+  abc::Abc_ObjAddFanin(input_1_net, input_1);
+  abc::Abc_ObjAddFanin(input_2_net, input_2);
+
+  // Gate order is technically dependent on the order in which the port
+  // appears in the Mio_Gate_t struct. In practice you should go a build
+  // a port_name -> index map type thing to make sure the right ports
+  // are connected.
+  abc::Abc_ObjAddFanin(and_gate, input_1_net);  // A
+  abc::Abc_ObjAddFanin(and_gate, input_2_net);  // B
+
+  abc::Abc_ObjAssignName(output_net, strdup("out"), /*pSuffix=*/nullptr);
+  abc::Abc_ObjAddFanin(output_net, and_gate);
+
+  abc::Abc_ObjAddFanin(output, output_net);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+      abc::Abc_NtkToLogic(network.get()), &abc::Abc_NtkDelete);
+
+  std::array<int, 2> input_vector = {1, 1};
+  std::unique_ptr<int[]> output_vector(abc::Abc_NtkVerifySimulatePattern(
+      logic_network.get(), input_vector.data()));
+
+  EXPECT_EQ(output_vector[0], 1);  // Expect that 1 & 1 == 1
 }
 }  // namespace rmp
