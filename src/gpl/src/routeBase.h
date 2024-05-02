@@ -180,8 +180,8 @@ class RouteBase
             utl::Logger* log);
   ~RouteBase();
 
-  //  void updateRoute();
-  //  void getGlobalRouterResult();
+//    void updateRoute();
+    void getGlobalRouterResult();
   //  float getRC() const;
 
   void updateRudyRoute();
