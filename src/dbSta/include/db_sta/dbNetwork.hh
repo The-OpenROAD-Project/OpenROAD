@@ -57,7 +57,11 @@ using odb::dbIoType;
 using odb::dbITerm;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
+using odb::dbModNet;
+using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbObject;
@@ -102,7 +106,7 @@ class dbNetwork : public ConcreteNetwork
   dbBlock* block() const { return block_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
-
+  void makeVerilogCell(Library* library, dbModInst*);
   void location(const Pin* pin,
                 // Return values.
                 double& x,
@@ -143,6 +147,7 @@ class dbNetwork : public ConcreteNetwork
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
+  Cell* dbToSta(dbModule* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
@@ -263,8 +268,7 @@ class dbNetwork : public ConcreteNetwork
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
-  bool portMsbFirst(const char* port_name);
-
+  bool portMsbFirst(const char* port_name, const char* cell_name);
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
   dbBlock* block_ = nullptr;

@@ -164,12 +164,6 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
       modinst_end_ = module_->getModInsts().end();
       dbinst_iter_ = module_->getInsts().begin();
       dbinst_end_ = module_->getInsts().end();
-#ifdef DEBUG_DBNW
-      printf("(non-top/leaf)Child iterator for instance %s\n",
-             network_->name(instance));
-      printf("Number of db instances %u\n", module_->getDbInstCount());
-      printf("Number of module instances %u\n", module_->getModInstCount());
-#endif
     }
   }
 }
@@ -465,6 +459,62 @@ const char* dbNetwork::name(const Instance* instance) const
   return tmpStringCopy(mod_inst->getName());
 }
 
+void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
+{
+  dbModule* master = mod_inst->getMaster();
+  Cell* local_cell
+      = ConcreteNetwork::makeCell(library, master->getName(), false, nullptr);
+  master->staSetCell((void*) (local_cell));
+
+  std::map<std::string, dbModBTerm*> name2modbterm;
+
+  for (dbSet<dbModBTerm>::iterator modbterm_iter
+       = master->getModBTerms().begin();
+       modbterm_iter != master->getModBTerms().end();
+       modbterm_iter++) {
+    dbModBTerm* modbterm = *modbterm_iter;
+    const char* port_name = modbterm->getName();
+    Port* port = ConcreteNetwork::makePort(local_cell, port_name);
+    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
+    setDirection(port, dir);
+    name2modbterm[std::string(port_name)] = modbterm;
+  }
+
+  // make the bus ports. This will generate the bus bits.
+  groupBusPorts(local_cell, [=](const char* port_name) {
+    return portMsbFirst(port_name, master->getName());
+  });
+
+  CellPortIterator* ccport_iter = portIterator(local_cell);
+  while (ccport_iter->hasNext()) {
+    Port* cport = ccport_iter->next();
+    const ConcretePort* ccport = reinterpret_cast<const ConcretePort*>(cport);
+    std::string port_name = ccport->name();
+
+    if (ccport->isBus()) {
+      PortMemberIterator* pmi = memberIterator(cport);
+      while (pmi->hasNext()) {
+        Port* bitport = pmi->next();
+        const ConcretePort* cbitport
+            = reinterpret_cast<const ConcretePort*>(bitport);
+        dbModBTerm* modbterm = name2modbterm[std::string(cbitport->name())];
+        modbterm->staSetPort(bitport);
+      }
+    } else if (ccport->isBundle()) {
+      ;
+      //      printf("Bundle %s\n",
+      //             reinterpret_cast<const ConcretePort*>(cport)->name());
+    } else if (ccport->isBusBit()) {
+      ;
+      // printf("Busbit %s\n",
+      //             reinterpret_cast<const ConcretePort*>(cport)->name());
+    } else {
+      dbModBTerm* modbterm = name2modbterm[port_name];
+      modbterm->staSetPort(cport);
+    }
+  }
+}
+
 Cell* dbNetwork::cell(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -476,6 +526,14 @@ Cell* dbNetwork::cell(const Instance* instance) const
   staToDb(instance, db_inst, mod_inst);
   if (db_inst) {
     dbMaster* master = db_inst->getMaster();
+    return dbToSta(master);
+  }
+  if (mod_inst) {
+    dbModule* master = mod_inst->getMaster();
+#ifdef DEBUG_DBNWK
+    printf("Mod inst Master is %s\n", master->getName());
+#endif
+    // look up the cell in the verilog library.
     return dbToSta(master);
   }
   // no traversal of the hierarchy this way; we would have to split
@@ -908,6 +966,17 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
       makeLibrary(lib);
     }
     readDbNetlistAfter();
+    // we make the library for the verilog hierarchical cells
+    // this is in the same fashion as the original dbInst code
+    // which uses the void* staGetCell to associate a cell with
+    // concrete cell. We do same for verilog hierarchical cells.
+    Library* verilog_library = makeLibrary("verilog", 0);
+    dbSet<dbModInst> modinsts = block_->getModInsts();
+    dbSet<dbModInst>::iterator modinst_iter_ = modinsts.begin();
+    dbSet<dbModInst>::iterator modinst_end_ = modinsts.end();
+    for (; modinst_iter_ != modinst_end_; modinst_iter_++) {
+      makeVerilogCell(verilog_library, *modinst_iter_);
+    }
   }
 
   for (auto* observer : observers_) {
@@ -1003,12 +1072,14 @@ void dbNetwork::makeTopCell()
   }
   const char* design_name = block_->getConstName();
   Library* top_lib = makeLibrary(design_name, nullptr);
+  top_cell_ = nullptr;
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_,
-                [=](const char* port_name) { return portMsbFirst(port_name); });
+  groupBusPorts(top_cell_, [=](const char* port_name) {
+    return portMsbFirst(port_name, design_name);
+  });
 }
 
 Port* dbNetwork::makeTopPort(dbBTerm* bterm)
@@ -1029,10 +1100,11 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
-bool dbNetwork::portMsbFirst(const char* port_name)
+bool dbNetwork::portMsbFirst(const char* port_name, const char* cell_name)
 {
   string key = "bus_msb_first ";
-  key += port_name;
+  //  key += port_name;
+  key = key + port_name + " " + cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());
   if (property) {
     return property->getValue();
@@ -1484,6 +1556,11 @@ Port* dbNetwork::dbToSta(dbMTerm* mterm) const
 Cell* dbNetwork::dbToSta(dbMaster* master) const
 {
   return reinterpret_cast<Cell*>(master->staCell());
+}
+
+Cell* dbNetwork::dbToSta(dbModule* master) const
+{
+  return ((Cell*) (master->getStaCell()));
 }
 
 PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
