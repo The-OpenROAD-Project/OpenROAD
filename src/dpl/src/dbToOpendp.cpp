@@ -111,8 +111,8 @@ void Opendp::makeMacros()
 
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
-  const int master_height = db_master->getHeight();
-  const int row_height = grid_->getRowHeight();
+  const DbuY master_height{static_cast<int>(db_master->getHeight())};
+  const DbuY row_height = grid_->getRowHeight();
   master->is_multi_row
       = (master_height != row_height && master_height % row_height == 0);
 }
@@ -130,10 +130,10 @@ void Opendp::makeCells()
       db_inst_map_[db_inst] = &cell;
 
       Rect bbox = getBbox(db_inst);
-      cell.width_ = bbox.dx();
-      cell.height_ = bbox.dy();
-      cell.x_ = bbox.xMin();
-      cell.y_ = bbox.yMin();
+      cell.width_ = DbuX{bbox.dx()};
+      cell.height_ = DbuY{bbox.dy()};
+      cell.x_ = DbuX{bbox.xMin()};
+      cell.y_ = DbuY{bbox.yMin()};
       cell.orient_ = db_inst->getOrient();
       // Cell is already placed if it is FIXED.
       cell.is_placed_ = cell.isFixed();
@@ -190,15 +190,14 @@ Rect Opendp::getBbox(dbInst* inst)
 
 void Opendp::makeGroups()
 {
-  regions_rtree.clear();
+  regions_rtree_.clear();
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
   auto db_groups = block_->getGroups();
   int reserve_size = 0;
   for (auto db_group : db_groups) {
-    dbRegion* parent = db_group->getRegion();
-    std::unordered_set<int> unique_heights;
-    if (parent) {
+    if (db_group->getRegion()) {
+      std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
         unique_heights.insert(db_inst_map_[db_inst]->height_);
       }
@@ -209,50 +208,50 @@ void Opendp::makeGroups()
   groups_.reserve(reserve_size);
 
   for (auto db_group : db_groups) {
-    dbRegion* parent = db_group->getRegion();
-    if (parent) {
-      std::set<int> unique_heights;
-      map<int, Group*> cell_height_to_group_map;
-      for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->height_);
-      }
-      int index = 0;
-      for (auto height : unique_heights) {
-        groups_.emplace_back();
-        struct Group& group = groups_.back();
-        string group_name
-            = string(db_group->getName()) + "_" + std::to_string(index++);
-        group.name = group_name;
-        group.boundary.mergeInit();
-        cell_height_to_group_map[height] = &group;
-        auto boundaries = parent->getBoundaries();
+    dbRegion* region = db_group->getRegion();
+    if (!region) {
+      continue;
+    }
+    std::set<DbuY> unique_heights;
+    map<DbuY, Group*> cell_height_to_group_map;
+    for (auto db_inst : db_group->getInsts()) {
+      unique_heights.insert(db_inst_map_[db_inst]->height_);
+    }
+    int index = 0;
+    for (auto height : unique_heights) {
+      groups_.emplace_back();
+      struct Group& group = groups_.back();
+      string group_name
+          = string(db_group->getName()) + "_" + std::to_string(index++);
+      group.name = group_name;
+      group.boundary.mergeInit();
+      cell_height_to_group_map[height] = &group;
 
-        for (dbBox* boundary : boundaries) {
-          Rect box = boundary->getBox();
-          const Rect core = grid_->getCore();
-          box = box.intersect(core);
-          // offset region to core origin
-          box.moveDelta(-core.xMin(), -core.yMin());
-          if (height == *(unique_heights.begin())) {
-            bgBox bbox(
-                bgPoint(box.xMin(), box.yMin()),
-                bgPoint(box.xMax() - 1,
-                        box.yMax()
-                            - 1));  /// the -1 is to prevent imaginary overlaps
-                                    /// where a region ends and another starts
-            regions_rtree.insert(bbox);
-          }
-          group.region_boundaries.push_back(box);
-          group.boundary.merge(box);
+      for (dbBox* boundary : region->getBoundaries()) {
+        Rect box = boundary->getBox();
+        const Rect core = grid_->getCore();
+        box = box.intersect(core);
+        // offset region to core origin
+        box.moveDelta(-core.xMin(), -core.yMin());
+        if (height == *(unique_heights.begin())) {
+          bgBox bbox(
+              bgPoint(box.xMin(), box.yMin()),
+              bgPoint(
+                  box.xMax() - 1,
+                  box.yMax() - 1));  /// the -1 is to prevent imaginary overlaps
+                                     /// where a region ends and another starts
+          regions_rtree_.insert(bbox);
         }
+        group.region_boundaries.push_back(box);
+        group.boundary.merge(box);
       }
+    }
 
-      for (auto db_inst : db_group->getInsts()) {
-        Cell* cell = db_inst_map_[db_inst];
-        Group* group = cell_height_to_group_map[cell->height_];
-        group->cells_.push_back(cell);
-        cell->group_ = group;
-      }
+    for (auto db_inst : db_group->getInsts()) {
+      Cell* cell = db_inst_map_[db_inst];
+      Group* group = cell_height_to_group_map[cell->height_];
+      group->cells_.push_back(cell);
+      cell->group_ = group;
     }
   }
 }

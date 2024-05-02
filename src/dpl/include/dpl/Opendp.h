@@ -89,6 +89,24 @@ class GridInfo;
 class Padding;
 class PixelPt;
 
+template <typename T>
+struct TypedCoordinate;
+
+// These have to be defined here even though they are only used
+// in the implementation section.  C++ doesn't allow you to forward
+// declare types of this sort.
+struct GridXType;
+using GridX = TypedCoordinate<GridXType>;
+
+struct GridYType;
+using GridY = TypedCoordinate<GridYType>;
+
+struct DbuXType;
+using DbuX = TypedCoordinate<DbuXType>;
+
+struct DbuYType;
+using DbuY = TypedCoordinate<DbuYType>;
+
 using dbMasterSeq = vector<dbMaster*>;
 
 ////////////////////////////////////////////////////////////////
@@ -179,33 +197,34 @@ class Opendp
   bool checkOverlap(const Cell* cell, const Rect* rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
   bool isInside(const Cell* cell, const Rect* rect) const;
-  PixelPt diamondSearch(const Cell* cell,
-                        // grid indices
-                        int x,
-                        int y) const;
+  PixelPt diamondSearch(const Cell* cell, GridX x, GridY y) const;
   void diamondSearchSide(const Cell* cell,
-                         int x,
-                         int y,
-                         int x_min,
-                         int y_min,
-                         int x_max,
-                         int y_max,
+                         GridX x,
+                         GridY y,
+                         GridX x_min,
+                         GridY y_min,
+                         GridX x_max,
+                         GridY y_max,
                          int x_offset,
                          int y_offset,
                          // Return values
                          PixelPt& best_pt,
                          int& best_dist) const;
-  PixelPt binSearch(int x, const Cell* cell, int bin_x, int bin_y) const;
+  PixelPt binSearch(GridX x, const Cell* cell, GridX bin_x, GridY bin_y) const;
   bool checkRegionOverlap(const Cell* cell,
-                          int x,
-                          int y,
-                          int x_end,
-                          int y_end) const;
-  bool checkPixels(const Cell* cell, int x, int y, int x_end, int y_end) const;
+                          GridX x,
+                          GridY y,
+                          GridX x_end,
+                          GridY y_end) const;
+  bool checkPixels(const Cell* cell,
+                   GridX x,
+                   GridY y,
+                   GridX x_end,
+                   GridY y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
   bool mapMove(Cell* cell, const Point& grid_pt);
-  int distChange(const Cell* cell, int x, int y) const;
+  int distChange(const Cell* cell, DbuX x, DbuY y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
@@ -218,7 +237,7 @@ class Opendp
                          const Rect& block_bbox) const;
 
   void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
-  bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
+  bool moveHopeless(const Cell* cell, GridX& grid_x, GridY& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -275,11 +294,6 @@ class Opendp
   void deleteGrid();
   // Cell initial location wrt core origin.
 
-  int getRowCount(const Cell* cell) const;
-  int64_t paddedArea(const Cell* cell) const;
-  int gridNearestHeight(const Cell* cell) const;
-  int gridNearestHeight(const Cell* cell, int row_height) const;
-  int gridNearestWidth(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);
@@ -288,17 +302,17 @@ class Opendp
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
   void setGridCells();
   dbMasterSeq& gapFillers(dbTechLayer* implant,
-                          int gap,
+                          GridX gap,
                           const MasterByImplant& filler_masters_by_implant);
-  void placeRowFillers(int row,
+  void placeRowFillers(GridY row,
                        const char* prefix,
                        const MasterByImplant& filler_masters,
                        int row_height,
                        const GridInfo& grid_info);
   static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(int row,
-                           int col,
+  const char* gridInstName(GridY row,
+                           GridX col,
                            int row_height,
                            const GridInfo& grid_info);
 
@@ -321,7 +335,7 @@ class Opendp
 
   // 3D pixel grid
   std::unique_ptr<Grid> grid_;
-  RtreeBox regions_rtree;
+  RtreeBox regions_rtree_;
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant
