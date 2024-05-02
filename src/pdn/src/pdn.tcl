@@ -43,6 +43,10 @@ proc pdngen { args } {
 
   sta::check_argc_eq0 "pdngen" $args
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PDN 2 "No design block found."
+  }
+
   pdn::depricated flags -verbose
 
   if {[info exists flags(-reset)]} {

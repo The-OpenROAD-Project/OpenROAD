@@ -514,6 +514,11 @@ proc triton_part_design { args } {
           -num_vertices_threshold_ilp \
           -global_net_threshold } \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PAR 103 "No design block found."
+  }
+
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
@@ -727,7 +732,6 @@ proc triton_part_design { args } {
     set global_net_threshold $keys(-global_net_threshold)
   }
 
-
   par::triton_part_design $num_parts \
     $balance_constraint \
     $base_balance \
@@ -829,6 +833,11 @@ proc evaluate_part_design_solution { args } {
           -e_wt_factors \
           -v_wt_factors  } \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PAR 104 "No design block found."
+  }
+
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
