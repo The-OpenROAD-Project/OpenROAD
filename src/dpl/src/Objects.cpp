@@ -64,6 +64,26 @@ bool Cell::isFixed() const
   return !db_inst_ || db_inst_->isFixed();
 }
 
+bool Cell::isHybrid() const
+{
+  dbSite* site = getSite();
+  return site ? site->isHybrid() : false;
+}
+
+bool Cell::isHybridParent() const
+{
+  dbSite* site = getSite();
+  return site ? site->hasRowPattern() : false;
+}
+
+dbSite* Cell::getSite() const
+{
+  if (!db_inst_ || !db_inst_->getMaster()) {
+    return nullptr;
+  }
+  return db_inst_->getMaster()->getSite();
+}
+
 bool Cell::isStdCell() const
 {
   if (db_inst_ == nullptr) {

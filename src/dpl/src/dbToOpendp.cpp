@@ -56,8 +56,6 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::Rect;
 
-static bool swapWidthHeight(const dbOrientType& orient);
-
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
@@ -153,6 +151,24 @@ void Opendp::makeCells()
   }
 }
 
+static bool swapWidthHeight(const dbOrientType& orient)
+{
+  switch (orient.getValue()) {
+    case dbOrientType::R90:
+    case dbOrientType::MXR90:
+    case dbOrientType::R270:
+    case dbOrientType::MYR90:
+      return true;
+    case dbOrientType::R0:
+    case dbOrientType::R180:
+    case dbOrientType::MY:
+    case dbOrientType::MX:
+      return false;
+  }
+  // gcc warning
+  return false;
+}
+
 Rect Opendp::getBbox(dbInst* inst)
 {
   dbMaster* master = inst->getMaster();
@@ -170,24 +186,6 @@ Rect Opendp::getBbox(dbInst* inst)
   }
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
-}
-
-static bool swapWidthHeight(const dbOrientType& orient)
-{
-  switch (orient.getValue()) {
-    case dbOrientType::R90:
-    case dbOrientType::MXR90:
-    case dbOrientType::R270:
-    case dbOrientType::MYR90:
-      return true;
-    case dbOrientType::R0:
-    case dbOrientType::R180:
-    case dbOrientType::MY:
-    case dbOrientType::MX:
-      return false;
-  }
-  // gcc warning
-  return false;
 }
 
 void Opendp::makeGroups()
@@ -244,7 +242,7 @@ void Opendp::makeGroups()
                                     /// where a region ends and another starts
             regions_rtree.insert(bbox);
           }
-          group.regions.push_back(box);
+          group.region_boundaries.push_back(box);
           group.boundary.merge(box);
         }
       }

@@ -367,6 +367,11 @@ void HierRTLMP::run()
 {
   initMacroPlacer();
 
+  if (!design_has_unfixed_macros_) {
+    logger_->info(MPL, 17, "No unfixed macros. Skipping macro placement.");
+    return;
+  }
+
   runMultilevelAutoclustering();
   runCoarseShaping();
 
@@ -460,7 +465,7 @@ void HierRTLMP::computeMetricsForModules(float core_area)
   reportLogicalHierarchyInformation(core_area, util, core_util);
 
   if (unfixed_macros == 0) {
-    logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
+    design_has_unfixed_macros_ = false;
     return;
   }
 
