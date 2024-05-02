@@ -33,6 +33,9 @@
 
 #include <map>
 #include <unordered_set>
+#include <queue>
+
+//#include <boost/polygon/polygon.hpp>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -60,6 +63,57 @@ using utl::Logger;
 struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
+
+///////////////////////////////////////
+//namespace gtl = boost::polygon;
+struct PinType;
+struct GraphNode;
+
+struct InfoType{
+  double PAR;
+  double PSR;
+  double diff_PAR;
+  double diff_PSR;
+  double area;
+  double side_area;
+  double iterm_gate_area;
+  double iterm_diff_area;
+
+  double CAR;
+  double CSR;
+  double diff_CAR;
+  double diff_CSR;
+  InfoType& operator +=(const InfoType& a)
+  {
+    PAR += a.PAR;
+    PSR += a.PSR;
+    diff_PAR += a.diff_PAR;
+    diff_PSR += a.diff_PSR;
+    area += a.area;
+    side_area += a.side_area;
+    return *this;
+  }
+  InfoType () {
+    PAR = 0.0;
+    PSR = 0.0;
+    diff_PAR = 0.0;
+    diff_PSR = 0.0;
+
+    area = 0.0;
+    side_area = 0.0;
+    iterm_gate_area = 0.0;
+    iterm_diff_area = 0.0;
+
+    CAR = 0.0;
+    CSR = 0.0;
+    diff_CAR = 0.0;
+    diff_CSR = 0.0; 
+  }
+};
+
+typedef std::unordered_map<dbTechLayer*, InfoType> LayerInfoVector;
+typedef std::vector<GraphNode> GraphNodeVector;
+///////////////////////////////////////
 
 class GlobalRouteSource
 {
@@ -217,6 +271,40 @@ class AntennaChecker
   std::string report_file_name_;
 
   static constexpr int max_diode_count_per_gate = 10;
+
+  /////////////////////////////////////////////////////////////////////////////////
+  std::unordered_map<odb::dbTechLayer*, GraphNodeVector> node_by_layer_map_;
+  std::unordered_map<std::string, LayerInfoVector> info_;
+  int node_count_;
+  dbTechLayer *min_layer_, *max_layer_;
+  // dsu variables
+  std::vector<int> dsu_parent_, dsu_size_;
+
+  // DSU functions
+  void init_dsu();
+  int find_set(int v);
+  void union_set(int u, int v);
+  bool dsu_same(int u, int v);
+
+  bool isValidGate(dbMTerm* mterm);
+  void buildLayerMaps(dbNet* net);
+  void checkNet2(dbNet* net, bool verbose, int& net_violation_count, int& pin_violation_count);
+  void saveGates(dbNet* db_net);
+  void calculatePAR();
+  void calculateCAR();
+  int checkInfo(dbNet* db_net, bool verbose);
+  InfoType calculateViaPar(dbTechLayer* tech_layer, double via_area, double iterm_gate_area, double iterm_diff_area);
+  InfoType calculateWirePar(dbTechLayer* tech_layer, double wire_area, double side_area, double iterm_gate_area, double iterm_diff_area);
+  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
+  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
+  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
+  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
+  bool checkViolation2(const InfoType& info, dbTechLayer* layer);
+
+  vector<Violation> getAntennaViolations2(dbNet* net,
+                                         odb::dbMTerm* diode_mterm,
+                                         float ratio_margin);
+  /////////////////////////////////////////////////////////////////////////////////
 };
 
 }  // namespace ant

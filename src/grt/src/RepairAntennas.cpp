@@ -265,7 +265,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
     }
     wire_encoder.end();
 
-    odb::orderWires(logger_, db_net);
+    //odb::orderWires(logger_, db_net);
     return wire;
   } else {
     logger_->error(
