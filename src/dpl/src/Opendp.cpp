@@ -247,8 +247,8 @@ void Opendp::optimizeMirroring()
 
 int Opendp::disp(const Cell* cell) const
 {
-  const Point init = initialLocation(cell, false);
-  return abs(init.getX() - cell->x_.v) + abs(init.getY() - cell->y_.v);
+  const DbuPt init = initialLocation(cell, false);
+  return abs(init.x - cell->x_.v).v + abs(init.y - cell->y_.v).v;
 }
 
 /* static */

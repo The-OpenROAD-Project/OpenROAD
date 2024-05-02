@@ -107,6 +107,9 @@ using DbuX = TypedCoordinate<DbuXType>;
 struct DbuYType;
 using DbuY = TypedCoordinate<DbuYType>;
 
+struct GridPt;
+struct DbuPt;
+
 using dbMasterSeq = vector<dbMaster*>;
 
 ////////////////////////////////////////////////////////////////
@@ -168,7 +171,7 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
-  Point pointOffMacro(const Cell& cell);
+  DbuPt pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
@@ -191,7 +194,7 @@ class Opendp
   void initGrid();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
-  Point nearestPt(const Cell* cell, const Rect* rect) const;
+  DbuPt nearestPt(const Cell* cell, const Rect* rect) const;
   int distToRect(const Cell* cell, const Rect* rect) const;
   static bool checkOverlap(const Rect& cell, const Rect& box);
   bool checkOverlap(const Cell* cell, const Rect* rect) const;
@@ -223,17 +226,17 @@ class Opendp
                    GridY y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
-  bool mapMove(Cell* cell, const Point& grid_pt);
+  bool mapMove(Cell* cell, const GridPt& grid_pt);
   int distChange(const Cell* cell, DbuX x, DbuY y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
-  Point legalPt(const Cell* cell, const Point& pt) const;
-  Point legalGridPt(const Cell* cell, const Point& pt) const;
-  Point legalPt(const Cell* cell, bool padded) const;
-  Point legalGridPt(const Cell* cell, bool padded) const;
-  Point nearestBlockEdge(const Cell* cell,
-                         const Point& legal_pt,
+  DbuPt legalPt(const Cell* cell, const DbuPt& pt) const;
+  GridPt legalGridPt(const Cell* cell, const DbuPt& pt) const;
+  DbuPt legalPt(const Cell* cell, bool padded) const;
+  GridPt legalGridPt(const Cell* cell, bool padded) const;
+  DbuPt nearestBlockEdge(const Cell* cell,
+                         const DbuPt& legal_pt,
                          const Rect& block_bbox) const;
 
   void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
@@ -295,7 +298,7 @@ class Opendp
   // Cell initial location wrt core origin.
 
   // Lower left corner in core coordinates.
-  Point initialLocation(const Cell* cell, bool padded) const;
+  DbuPt initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);
   int disp(const Cell* cell) const;
   // Place fillers
