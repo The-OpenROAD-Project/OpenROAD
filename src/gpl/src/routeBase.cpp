@@ -314,22 +314,22 @@ void RouteBase::getRudyResult()
   updateRudyRoute();
 }
 
- void RouteBase::getGlobalRouterResult()
+void RouteBase::getGlobalRouterResult()
 {
-   // update gCells' location to DB for GR
-   nbc_->updateDbGCells();
+  // update gCells' location to DB for GR
+  nbc_->updateDbGCells();
 
-   // these two options must be on
-   grouter_->setAllowCongestion(true);
-   grouter_->setOverflowIterations(0);
+  // these two options must be on
+  grouter_->setAllowCongestion(true);
+  grouter_->setOverflowIterations(0);
 
-   // this option must be off
-   grouter_->setCriticalNetsPercentage(0);
+  // this option must be off
+  grouter_->setCriticalNetsPercentage(0);
 
-   grouter_->globalRoute();
+  grouter_->globalRoute();
 
-//   updateRoute();
- }
+  //   updateRoute();
+}
 
 int64_t RouteBase::inflatedAreaDelta() const
 {
@@ -571,9 +571,8 @@ std::pair<bool, bool> RouteBase::routability()
   tg_->setLogger(log_);
 
   // Update grt for comparison only
-  getGlobalRouterResult();
+  //  getGlobalRouterResult();
   getRudyResult();
-  
 
   // no need routing if RC is lower than targetRC val
   float curRc = getRudyRC();
