@@ -9,6 +9,10 @@ record_tests {
   two_designs
 }
 
+record_pass_fail_tests {
+  commands_without_load
+}
+
 define_test_group "non_flow" {
   error1
   get_core_die_areas
