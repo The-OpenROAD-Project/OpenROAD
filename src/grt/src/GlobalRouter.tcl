@@ -311,7 +311,7 @@ proc repair_antennas { args } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error GRT 104 "No design block found."
   }
-  
+
   if { [grt::have_routes] || [grt::have_detailed_routes] } {
 
     if { [llength $args] == 0 } {
