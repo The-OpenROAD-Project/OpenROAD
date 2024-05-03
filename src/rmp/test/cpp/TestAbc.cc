@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <tcl.h>
 #include <unistd.h>
 
 #include <filesystem>
@@ -13,14 +14,18 @@
 #include <set>
 
 #include "abc_library_factory.h"
+#include "db_sta/MakeDbSta.hh"
+#include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "map/scl/sclLib.h"
+#include "odb/lefin.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/deleter.h"
 
 namespace rmp {
 
@@ -31,20 +36,36 @@ class AbcTest : public ::testing::Test
  protected:
   void SetUp() override
   {
+    db_ = utl::deleted_unique_ptr<odb::dbDatabase>(odb::dbDatabase::create(),
+                                                   &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
-    sta_ = new sta::Sta;
-    sta_->makeComponents();
+    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_fast.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
                                  sta_->findCorner("default"),
                                  /*min_max=*/nullptr,
                                  /*infer_latches=*/false);
+
+    odb::lefin lef_reader(
+        db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+
+    auto tech_lef
+        = std::filesystem::canonical("./Nangate45/Nangate45_tech.lef");
+    auto stdcell_lef
+        = std::filesystem::canonical("./Nangate45/Nangate45_stdcell.lef");
+    odb::dbLib* lib = lef_reader.createTechAndLib(
+        "nangate45", stdcell_lef.string().c_str(), tech_lef.string().c_str());
+
+    sta_->postReadLef(/*tech=*/nullptr, lib);
+
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
   }
 
+  utl::deleted_unique_ptr<odb::dbDatabase> db_;
   sta::Unit* power_unit_;
-  sta::Sta* sta_;
+  std::unique_ptr<sta::dbSta> sta_;
   sta::LibertyLibrary* library_;
   utl::Logger logger_;
 };
@@ -52,7 +73,7 @@ class AbcTest : public ::testing::Test
 TEST_F(AbcTest, CellPropertiesMatchOpenSta)
 {
   AbcLibraryFactory factory(&logger_);
-  factory.AddStaLibrary(library_);
+  factory.AddDbSta(sta_.get());
   utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
 
   for (size_t i = 0; i < Vec_PtrSize(&abc_library->vCells); i++) {
@@ -75,7 +96,7 @@ TEST_F(AbcTest, CellPropertiesMatchOpenSta)
 TEST_F(AbcTest, DoesNotContainPhysicalCells)
 {
   AbcLibraryFactory factory(&logger_);
-  factory.AddStaLibrary(library_);
+  factory.AddDbSta(sta_.get());
   utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
 
   std::set<std::string> abc_cells;
@@ -95,7 +116,7 @@ TEST_F(AbcTest, DoesNotContainPhysicalCells)
 TEST_F(AbcTest, DoesNotContainSequentialCells)
 {
   AbcLibraryFactory factory(&logger_);
-  factory.AddStaLibrary(library_);
+  factory.AddDbSta(sta_.get());
   utl::deleted_unique_ptr<abc::SC_Lib> abc_library = factory.Build();
 
   std::set<std::string> abc_cells;

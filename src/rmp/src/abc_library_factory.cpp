@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 // Poor include definitions in ABC
 // clang-format off
 #include "misc/st/st.h"
@@ -34,7 +36,8 @@ static bool IsCombinational(sta::LibertyCell* cell)
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->hasSequentials() && !cell->isLevelShifter()
+          && !cell->isIsolationCell() && !cell->isClockGate());
 }
 
 static bool HasOutputs(sta::LibertyCell* cell)
@@ -96,11 +99,35 @@ static bool HasOnlyPowerAndGroundPorts(sta::LibertyCell* cell)
   return true;
 }
 
+static bool isCompatibleWithAbc(sta::LibertyCell* cell) {
+  if (!IsCombinational(cell)) {
+      return false;
+    }
+
+    if (IsMultiOutputCell(cell)) {
+      return false;
+    }
+
+    if (!HasOutputs(cell)) {
+      return false;
+    }
+
+    if (HasNonInputOutputPorts(cell)) {
+      return false;
+    }
+
+    if (HasOnlyPowerAndGroundPorts(cell)) {
+      return false;
+    }
+
+    return true;
+}
+
 void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
     abc::SC_Surface* abc_table,
-    const sta::TableModel* model)
+    const sta::TableModel* model,
+    sta::Units* units)
 {
-  sta::Units* units = library_->units();
   sta::Unit* time_unit = units->timeUnit();
   sta::Unit* capacitance_unit = units->capacitanceUnit();
 
@@ -156,7 +183,7 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
 std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcInputPins(
     sta::LibertyCell* cell)
 {
-  sta::Units* units = library_->units();
+  sta::Units* units = cell->libertyLibrary()->units();
   sta::Unit* capacitance_unit = units->capacitanceUnit();
 
   std::vector<abc::SC_Pin*> result;
@@ -185,7 +212,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     sta::LibertyCell* cell,
     const std::vector<std::string>& input_names)
 {
-  sta::Units* units = library_->units();
+  sta::Units* units = cell->libertyLibrary()->units();
   sta::Unit* time_unit = units->timeUnit();
   sta::Unit* cap_unit = units->capacitanceUnit();
 
@@ -284,15 +311,15 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
                        "information",
                        cell->name());
       }
-
-      AbcPopulateAbcSurfaceFromSta(&time_table->pCellRise,
-                                   rise_gate_model->delayModel());
-      AbcPopulateAbcSurfaceFromSta(&time_table->pCellFall,
-                                   fall_gate_model->delayModel());
-      AbcPopulateAbcSurfaceFromSta(&time_table->pRiseTrans,
-                                   rise_gate_model->slewModel());
-      AbcPopulateAbcSurfaceFromSta(&time_table->pFallTrans,
-                                   fall_gate_model->slewModel());
+      sta::Units* units = cell->libertyLibrary()->units();
+      AbcPopulateAbcSurfaceFromSta(
+          &time_table->pCellRise, rise_gate_model->delayModel(), units);
+      AbcPopulateAbcSurfaceFromSta(
+          &time_table->pCellFall, fall_gate_model->delayModel(), units);
+      AbcPopulateAbcSurfaceFromSta(
+          &time_table->pRiseTrans, rise_gate_model->slewModel(), units);
+      AbcPopulateAbcSurfaceFromSta(
+          &time_table->pFallTrans, fall_gate_model->slewModel(), units);
     }
 
     result.push_back(output_pin);
@@ -301,34 +328,46 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
   return result;
 }
 
-AbcLibraryFactory& AbcLibraryFactory::AddStaLibrary(
-    sta::LibertyLibrary* library)
+AbcLibraryFactory& AbcLibraryFactory::AddDbSta(sta::dbSta* db_sta)
 {
-  library_ = library;
+  db_sta_ = db_sta;
   return *this;
 }
 
 utl::deleted_unique_ptr<abc::SC_Lib> AbcLibraryFactory::Build()
 {
-  if (!library_) {
+  if (!db_sta_) {
     logger_->error(utl::RMP, 15, "Build called with null sta library");
   }
 
   abc::SC_Lib* abc_library = abc::Abc_SclLibAlloc();
-  PopulateAbcSclLibFromSta(abc_library);
+  sta::LibertyLibraryIterator* library_iter
+      = db_sta_->network()->libertyLibraryIterator();
+  while (library_iter->hasNext()) {
+    sta::LibertyLibrary* library = library_iter->next();
+    PopulateAbcSclLibFromSta(abc_library, library);
+  }
+  abc::Abc_SclLibNormalize(abc_library);
+
   return utl::deleted_unique_ptr<abc::SC_Lib>(
       abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); });
 }
 
-void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
+void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
+                                                 sta::LibertyLibrary* library)
 {
-  sta::Units* units = library_->units();
+  sta::Units* units = library->units();
   sta::Unit* time_unit = units->timeUnit();
   sta::Unit* cap_unit = units->capacitanceUnit();
   sta::Unit* power_unit = units->powerUnit();
 
-  sc_library->pName = strdup(library_->name());
-  sc_library->pFileName = strdup(library_->filename());
+  if (!sc_library->pName) {
+    sc_library->pName = strdup(library->name());
+  }
+
+  if (!sc_library->pFileName) {
+    sc_library->pFileName = strdup(library->filename());
+  }
 
   sc_library->default_wire_load = nullptr;
   sc_library->default_wire_load_sel = nullptr;
@@ -344,7 +383,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
   // defaults
   float slew = -1.0;
   bool max_slew_exists = false;
-  library_->defaultMaxSlew(slew, max_slew_exists);
+  library->defaultMaxSlew(slew, max_slew_exists);
 
   if (max_slew_exists) {
     sc_library->default_max_out_slew = time_unit->staToUser(slew);
@@ -354,27 +393,11 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
 
   // Loop through all of the cells in STA and create equivalents in
   // the ABC structure.
-  sta::LibertyCellIterator cell_iterator(library_);
+  sta::LibertyCellIterator cell_iterator(library);
   while (cell_iterator.hasNext()) {
     sta::LibertyCell* cell = cell_iterator.next();
 
-    if (!IsCombinational(cell)) {
-      continue;
-    }
-
-    if (IsMultiOutputCell(cell)) {
-      continue;
-    }
-
-    if (!HasOutputs(cell)) {
-      continue;
-    }
-
-    if (HasNonInputOutputPorts(cell)) {
-      continue;
-    }
-
-    if (HasOnlyPowerAndGroundPorts(cell)) {
+    if (!isCompatibleWithAbc(cell)) {
       continue;
     }
 
@@ -415,8 +438,6 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library)
       abc::Vec_PtrPush(&abc_cell->vPins, pin);
     }
   }
-
-  abc::Abc_SclLibNormalize(sc_library);
 }
 
 float AbcLibraryFactory::StaCapacitanceToAbc(sta::Unit* cap_unit)

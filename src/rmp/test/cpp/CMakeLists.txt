@@ -6,9 +6,16 @@ target_link_libraries(RmpGTests
         gtest
         gmock
         gtest_main
-        libabc
         rmp_abc_library
+        dbSta_lib
         utl_lib
+        libabc
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(RmpGTests
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rmp/src
 )
 
 gtest_discover_tests(RmpGTests

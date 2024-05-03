@@ -80,12 +80,14 @@ add_library(rmp_abc_library
 target_include_directories(rmp_abc_library
   PUBLIC
     ../include
+  PRIVATE
     .
 )
 
 target_link_libraries(rmp_abc_library
   PUBLIC
     OpenSTA
+    dbSta_lib
     libabc
     utl_lib
 )

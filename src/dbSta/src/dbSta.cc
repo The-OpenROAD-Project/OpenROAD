@@ -68,6 +68,16 @@
 
 ////////////////////////////////////////////////////////////////
 
+namespace ord {
+
+using sta::dbSta;
+
+dbSta* makeDbSta()
+{
+  return new dbSta;
+}
+}  // namespace ord
+
 namespace sta {
 
 using utl::Logger;
@@ -154,7 +164,9 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_ = db;
   logger_ = logger;
   makeComponents();
-  setTclInterp(tcl_interp);
+  if (tcl_interp) {
+    setTclInterp(tcl_interp);
+  }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = new dbStaCbk(this, logger);
