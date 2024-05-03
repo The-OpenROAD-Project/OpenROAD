@@ -113,7 +113,7 @@ class GridInfo
 
 struct GridMapKey
 {
-  int grid_index;
+  int grid_index{0};
   bool operator<(const GridMapKey& other) const
   {
     return grid_index < other.grid_index;

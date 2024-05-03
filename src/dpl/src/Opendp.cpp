@@ -69,9 +69,7 @@ using odb::Rect;
 
 bool Opendp::isMultiRow(const Cell* cell) const
 {
-  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
-  assert(iter != db_master_map_.end());
-  return iter->second.is_multi_row;
+  return db_master_map_.at(cell->db_inst_->getMaster()).is_multi_row;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -342,7 +340,7 @@ void Opendp::groupAssignCellRegions()
       const int64_t site_area
           = row_height.v * static_cast<int64_t>(site_width.v);
       const auto gmk = grid_->getGridMapKey(group_cell);
-      const auto grid_info = grid_->getInfoMap().at(gmk);
+      const auto& grid_info = grid_->getInfoMap().at(gmk);
 
       for (GridX x{0}; x < max_row_site_count; x++) {
         for (GridY y{0}; y < row_count; y++) {
@@ -377,7 +375,7 @@ void Opendp::groupInitPixels2()
     const GridInfo& grid_info = layer.second;
     const GridY row_count = layer.second.getRowCount();
     const GridX row_site_count = layer.second.getSiteCount();
-    const auto grid_sites = layer.second.getSites();
+    const auto& grid_sites = layer.second.getSites();
     for (GridX x{0}; x < row_site_count; x++) {
       for (GridY y{0}; y < row_count; y++) {
         const int row_height

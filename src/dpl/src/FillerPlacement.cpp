@@ -107,7 +107,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
         chosen_grid_key = grid_idx;
       }
     }
-    auto chosen_grid_info = grid_->getInfoMap().at(chosen_grid_key);
+    const auto& chosen_grid_info = grid_->getInfoMap().at(chosen_grid_key);
     GridY chosen_row_count = chosen_grid_info.getRowCount();
     if (!chosen_grid_info.isHybrid()) {
       DbuY site_height = min_height;
