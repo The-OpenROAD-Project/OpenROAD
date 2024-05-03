@@ -40,7 +40,7 @@ static bool IsCombinational(sta::LibertyCell* cell)
           && !cell->isIsolationCell() && !cell->isClockGate());
 }
 
-static bool HasOutputs(sta::LibertyCell* cell)
+static int CountOutputPins(sta::LibertyCell* cell)
 {
   sta::LibertyCellPortIterator cell_port_iterator(cell);
   int output_count = 0;
@@ -51,21 +51,7 @@ static bool HasOutputs(sta::LibertyCell* cell)
     }
   }
 
-  return output_count != 0;
-}
-
-static bool IsMultiOutputCell(sta::LibertyCell* cell)
-{
-  sta::LibertyCellPortIterator cell_port_iterator(cell);
-  int output_count = 0;
-  while (cell_port_iterator.hasNext()) {
-    sta::LibertyPort* port = cell_port_iterator.next();
-    if (port->direction()->isOutput()) {
-      output_count++;
-    }
-  }
-
-  return output_count > 1;
+  return output_count;
 }
 
 static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
@@ -105,11 +91,7 @@ static bool isCompatibleWithAbc(sta::LibertyCell* cell)
     return false;
   }
 
-  if (IsMultiOutputCell(cell)) {
-    return false;
-  }
-
-  if (!HasOutputs(cell)) {
+  if (CountOutputPins(cell) != 1) {
     return false;
   }
 
