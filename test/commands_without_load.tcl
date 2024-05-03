@@ -1,7 +1,6 @@
 # Ensure that running commands without loading a design doesn't crash.
 
 set skip {
-  set_driving_cell
   define_corners
   exit
 }
