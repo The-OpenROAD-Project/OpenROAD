@@ -601,7 +601,7 @@ void Opendp::shiftMove(Cell* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, true);
   const GridMapKey grid_key = grid_->getGridMapKey(cell);
-  const auto grid_info = grid_->infoMap(grid_key);
+  const auto& grid_info = grid_->infoMap(grid_key);
   const int grid_index = grid_info.getGridIndex();
   // magic number alert
   const GridY boundary_margin{3};
@@ -876,7 +876,7 @@ PixelPt Opendp::binSearch(GridX x,
              bin_y);
   const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
   const DbuY row_height = grid_->getRowHeight(cell);
-  const auto grid_info = grid_->infoMap(grid_->getGridMapKey(cell));
+  const auto& grid_info = grid_->infoMap(grid_->getGridMapKey(cell));
   if (bin_y >= grid_info.getRowCount()) {
     return PixelPt();
   }
