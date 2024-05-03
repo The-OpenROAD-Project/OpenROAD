@@ -41,28 +41,28 @@ namespace dpl {
 class Padding
 {
  public:
-  int padGlobalLeft() const { return pad_left_; }
-  int padGlobalRight() const { return pad_right_; }
+  GridX padGlobalLeft() const { return pad_left_; }
+  GridX padGlobalRight() const { return pad_right_; }
 
-  void setPaddingGlobal(int left, int right);
-  void setPadding(dbInst* inst, int left, int right);
-  void setPadding(dbMaster* master, int left, int right);
+  void setPaddingGlobal(GridX left, GridX right);
+  void setPadding(dbInst* inst, GridX left, GridX right);
+  void setPadding(dbMaster* master, GridX left, GridX right);
   bool havePadding() const;
 
   // Find instance/master/global padding value for an instance.
-  int padLeft(dbInst* inst) const;
-  int padLeft(const Cell* cell) const;
-  int padRight(dbInst* inst) const;
-  int padRight(const Cell* cell) const;
+  GridX padLeft(dbInst* inst) const;
+  GridX padLeft(const Cell* cell) const;
+  GridX padRight(dbInst* inst) const;
+  GridX padRight(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
   DbuX paddedWidth(const Cell* cell) const;
 
  private:
-  using InstPaddingMap = map<dbInst*, pair<int, int>>;
-  using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
+  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
+  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
 
-  int pad_left_ = 0;
-  int pad_right_ = 0;
+  GridX pad_left_{0};
+  GridX pad_right_{0};
   InstPaddingMap inst_padding_map_;
   MasterPaddingMap master_padding_map_;
 };

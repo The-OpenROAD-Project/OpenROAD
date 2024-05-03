@@ -153,6 +153,21 @@ inline bool operator==(const DbuPt& p1, const DbuPt& p2)
   return std::tie(p1.x, p1.y) == std::tie(p2.x, p2.y);
 }
 
+inline DbuX gridToDbu(GridX x, DbuX scale)
+{
+  return DbuX{x.v * scale.v};
+}
+
+inline DbuY gridToDbu(GridY y, DbuY scale)
+{
+  return DbuY{y.v * scale.v};
+}
+
+inline int sumXY(DbuX x, DbuY y)
+{
+  return x.v + y.v;
+}
+
 }  // namespace dpl
 
 // Enable use with unordered_map/set

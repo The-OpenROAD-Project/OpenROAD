@@ -94,17 +94,17 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 
 void Opendp::setPaddingGlobal(const int left, const int right)
 {
-  padding_->setPaddingGlobal(left, right);
+  padding_->setPaddingGlobal(GridX{left}, GridX{right});
 }
 
 void Opendp::setPadding(dbInst* inst, const int left, const int right)
 {
-  padding_->setPadding(inst, left, right);
+  padding_->setPadding(inst, GridX{left}, GridX{right});
 }
 
 void Opendp::setPadding(dbMaster* master, const int left, const int right)
 {
-  padding_->setPadding(master, left, right);
+  padding_->setPadding(master, GridX{left}, GridX{right});
 }
 
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
@@ -174,12 +174,12 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      const int x = grid_->getCore().xMin() + cell.x_.v;
-      const int y = grid_->getCore().yMin() + cell.y_.v;
+      const DbuX x = grid_->getCore().xMin() + cell.x_;
+      const DbuY y = grid_->getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
-        db_inst_->setLocation(x, y);
+        db_inst_->setLocation(x.v, y.v);
       }
     }
   }
@@ -248,7 +248,7 @@ void Opendp::optimizeMirroring()
 int Opendp::disp(const Cell* cell) const
 {
   const DbuPt init = initialLocation(cell, false);
-  return abs(init.x - cell->x_.v).v + abs(init.y - cell->y_.v).v;
+  return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
 }
 
 /* static */
@@ -271,22 +271,22 @@ double Opendp::dbuAreaToMicrons(const int64_t dbu_area) const
 
 int Opendp::padGlobalLeft() const
 {
-  return padding_->padGlobalLeft();
+  return padding_->padGlobalLeft().v;
 }
 
 int Opendp::padGlobalRight() const
 {
-  return padding_->padGlobalRight();
+  return padding_->padGlobalRight().v;
 }
 
 int Opendp::padLeft(dbInst* inst) const
 {
-  return padding_->padLeft(inst);
+  return padding_->padLeft(inst).v;
 }
 
 int Opendp::padRight(dbInst* inst) const
 {
-  return padding_->padRight(inst);
+  return padding_->padRight(inst).v;
 }
 
 void Opendp::initGrid()

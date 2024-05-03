@@ -254,17 +254,17 @@ int Opendp::distToRect(const Cell* cell, const Rect* rect) const
   DbuY dist_y{0};
   if (x < rect->xMin()) {
     dist_x = DbuX{rect->xMin()} - x;
-  } else if (x + cell->width_.v > rect->xMax()) {
-    dist_x = x + cell->width_.v - rect->xMax();
+  } else if (x + cell->width_ > rect->xMax()) {
+    dist_x = x + cell->width_ - rect->xMax();
   }
 
   if (y < rect->yMin()) {
     dist_y = DbuY{rect->yMin()} - y;
-  } else if (y + cell->height_.v > rect->yMax()) {
-    dist_y = y + cell->height_.v - rect->yMax();
+  } else if (y + cell->height_ > rect->yMax()) {
+    dist_y = y + cell->height_ - rect->yMax();
   }
 
-  return dist_y.v + dist_x.v;
+  return sumXY(dist_x, dist_y);
 }
 
 class CellPlaceOrderLess
@@ -288,7 +288,7 @@ CellPlaceOrderLess::CellPlaceOrderLess(const Rect& core)
 
 int CellPlaceOrderLess::centerDist(const Cell* cell) const
 {
-  return abs(cell->x_.v - center_x_) + abs(cell->y_.v - center_y_);
+  return sumXY(abs(cell->x_ - center_x_), abs(cell->y_ - center_y_));
 }
 
 bool CellPlaceOrderLess::operator()(const Cell* cell1, const Cell* cell2) const
@@ -463,7 +463,7 @@ int Opendp::rectDist(const Cell* cell, const Rect* rect) const
   int x, y;
   rectDist(cell, rect, &x, &y);
   const DbuPt init = initialLocation(cell, false);
-  return abs(init.x - x).v + abs(init.y - y).v;
+  return sumXY(abs(init.x - x), abs(init.y - y));
 }
 
 // Place group cells toward region edges.
@@ -683,8 +683,8 @@ bool Opendp::refineMove(Cell* cell)
     const DbuY row_height = grid_->getRowHeight(cell);
     const int dist_change
         = distChange(cell,
-                     DbuX{pixel_pt.x.v * grid_->getSiteWidth().v},
-                     DbuY{pixel_pt.y.v * row_height.v});
+                     gridToDbu(pixel_pt.x, grid_->getSiteWidth()),
+                     gridToDbu(pixel_pt.y, row_height));
 
     if (dist_change < 0) {
       grid_->erasePixel(cell);
@@ -698,8 +698,8 @@ bool Opendp::refineMove(Cell* cell)
 int Opendp::distChange(const Cell* cell, const DbuX x, const DbuY y) const
 {
   const DbuPt init = initialLocation(cell, false);
-  const int cell_dist = abs(cell->x_ - init.x).v + abs(cell->y_ - init.y).v;
-  const int pt_dist = abs(init.x - x).v + abs(init.y - y).v;
+  const int cell_dist = sumXY(abs(cell->x_ - init.x), abs(cell->y_ - init.y));
+  const int pt_dist = sumXY(abs(init.x - x), abs(init.y - y));
   return pt_dist - cell_dist;
 }
 
@@ -768,9 +768,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1;
-       i < std::max(scaled_max_displacement_y.v, max_displacement_x_);
-       i++) {
+  const int max_i = std::max(scaled_max_displacement_y.v, max_displacement_x_);
+  for (int i = 1; i < max_i; i++) {
     PixelPt best_pt;
     int best_dist = 0;
     // left side
@@ -849,10 +848,10 @@ void Opendp::diamondSearchSide(const Cell* cell,
       y_dist = abs(grid_->coordinateToHeight(y, gmk)
                    - grid_->coordinateToHeight(avail_pt.y, gmk));
     } else {
-      y_dist = DbuY{abs(y - avail_pt.y).v * grid_->getRowHeight(cell).v};
+      y_dist = gridToDbu(abs(y - avail_pt.y), grid_->getRowHeight(cell));
     }
     const int avail_dist
-        = abs(x - avail_pt.x).v * grid_->getSiteWidth().v + y_dist.v;
+        = sumXY(gridToDbu(abs(x - avail_pt.x), grid_->getSiteWidth()), y_dist);
     if (best_pt.pixel == nullptr || avail_dist < best_dist) {
       best_pt = avail_pt;
       best_dist = avail_dist;
@@ -1094,20 +1093,20 @@ DbuPt Opendp::legalPt(const Cell* cell, const DbuPt& pt) const
   const DbuX site_width = grid_->getSiteWidth();
   const DbuX core_x{
       min(max(DbuX{0}, pt.x),
-          DbuX{grid_info.getSiteCount().v * site_width.v} - cell->width_)};
+          gridToDbu(grid_info.getSiteCount(), site_width) - cell->width_)};
   // Align with row site.
   const GridX grid_x{divRound(core_x.v, site_width.v)};
-  const DbuX legal_x{grid_x.v * site_width.v};
+  const DbuX legal_x{gridToDbu(grid_x, site_width)};
   DbuY legal_y{0};
   if (cell->isHybrid()) {
     DbuY last_row_height{std::numeric_limits<int>::max()};
     if (cell->isHybridParent()) {
       last_row_height
-          = DbuY{grid_info.getRowCount().v * row_height.v - cell->height_.v};
+          = gridToDbu(grid_info.getRowCount(), row_height) - cell->height_;
     } else {
       auto parent = grid_->getHybridParent().at(cell->getSite());
-      last_row_height = DbuY{(grid_info.getRowCount() - 1).v
-                             * static_cast<int>(parent->getHeight())};
+      DbuY parent_height{static_cast<int>(parent->getHeight())};
+      last_row_height = gridToDbu(grid_info.getRowCount() - 1, parent_height);
     }
     const auto [index, height]
         = grid_->gridY(min(max(DbuY{0}, pt.y), last_row_height), grid_info);
@@ -1115,7 +1114,7 @@ DbuPt Opendp::legalPt(const Cell* cell, const DbuPt& pt) const
   } else {
     const DbuY core_y
         = min(max(DbuY{0}, pt.y),
-              DbuY{grid_info.getRowCount().v * row_height.v} - cell->height_);
+              gridToDbu(grid_info.getRowCount(), row_height) - cell->height_);
     const int grid_y = divRound(core_y.v, row_height.v);
     legal_y = DbuY{grid_y * row_height.v};
   }
@@ -1187,7 +1186,7 @@ bool Opendp::moveHopeless(const Cell* cell, GridX& grid_x, GridY& grid_y) const
   // method after this initialization
   for (GridX x = grid_x - 1; x >= 0; --x) {  // left
     if (grid_->pixel(grid_index, grid_y, x).is_valid) {
-      best_dist = (grid_x - x - 1).v * site_width.v;
+      best_dist = gridToDbu(grid_x - x - 1, site_width).v;
       best_x = x;
       best_y = grid_y;
       break;
@@ -1195,7 +1194,7 @@ bool Opendp::moveHopeless(const Cell* cell, GridX& grid_x, GridY& grid_y) const
   }
   for (GridX x = grid_x + 1; x < layer_site_count; ++x) {  // right
     if (grid_->pixel(grid_index, grid_y, x).is_valid) {
-      const int dist = (x - grid_x).v * site_width.v - cell->width_.v;
+      const int dist = gridToDbu(x - grid_x, site_width).v - cell->width_.v;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = x;
@@ -1206,9 +1205,8 @@ bool Opendp::moveHopeless(const Cell* cell, GridX& grid_x, GridY& grid_y) const
   }
   for (GridY y = grid_y - 1; y >= 0; --y) {  // below
     if (grid_->pixel(grid_index, y, grid_x).is_valid) {
-      const int dist
-          = (grid_y - y - 1).v
-            * row_height.v;  // FIXME(mina1460): this is wrong for hybrid sites
+      // FIXME(mina1460): this is wrong for hybrid sites
+      const int dist = gridToDbu(grid_y - y - 1, row_height).v;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = grid_x;
@@ -1219,7 +1217,7 @@ bool Opendp::moveHopeless(const Cell* cell, GridX& grid_x, GridY& grid_y) const
   }
   for (GridY y = grid_y + 1; y < layer_row_count; ++y) {  // above
     if (grid_->pixel(grid_index, y, grid_x).is_valid) {
-      const int dist = (y - grid_y).v * row_height.v - cell->height_.v;
+      const int dist = gridToDbu(y - grid_y, row_height).v - cell->height_.v;
       if (dist < best_dist) {
         best_dist = dist;
         best_x = grid_x;
@@ -1329,7 +1327,7 @@ DbuPt Opendp::initialLocation(const Cell* cell, const bool padded) const
   cell->db_inst_->getLocation(loc.x.v, loc.y.v);
   loc.x -= grid_->getCore().xMin();
   if (padded) {
-    loc.x -= padding_->padLeft(cell) * grid_->getSiteWidth().v;
+    loc.x -= gridToDbu(padding_->padLeft(cell), grid_->getSiteWidth());
   }
   loc.y -= grid_->getCore().yMin();
   return loc;
@@ -1357,8 +1355,8 @@ DbuPt Opendp::legalPt(const Cell* cell, const bool padded) const
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
-      legal_pt = DbuPt(DbuX{grid_x.v * grid_->getSiteWidth().v},
-                       DbuY{grid_y.v * row_height.v});
+      legal_pt = DbuPt(gridToDbu(grid_x, grid_->getSiteWidth()),
+                       gridToDbu(grid_y, row_height));
       pixel = grid_->gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
     }
 
