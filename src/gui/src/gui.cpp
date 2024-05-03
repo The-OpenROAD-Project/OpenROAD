@@ -1441,6 +1441,12 @@ Descriptor::Properties Selected::getProperties() const
   odb::Rect bbox;
   if (getBBox(bbox)) {
     props.push_back({"BBox", bbox});
+    // convenience; the user may want to know the dimensions
+    props.push_back(
+        {"BBox Width, Height",
+         std::string("(") + Descriptor::Property::convert_dbu(bbox.dx(), false)
+             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)
+             + ")"});
   }
 
   return props;
