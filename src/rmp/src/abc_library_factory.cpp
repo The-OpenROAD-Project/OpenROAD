@@ -99,28 +99,29 @@ static bool HasOnlyPowerAndGroundPorts(sta::LibertyCell* cell)
   return true;
 }
 
-static bool isCompatibleWithAbc(sta::LibertyCell* cell) {
+static bool isCompatibleWithAbc(sta::LibertyCell* cell)
+{
   if (!IsCombinational(cell)) {
-      return false;
-    }
+    return false;
+  }
 
-    if (IsMultiOutputCell(cell)) {
-      return false;
-    }
+  if (IsMultiOutputCell(cell)) {
+    return false;
+  }
 
-    if (!HasOutputs(cell)) {
-      return false;
-    }
+  if (!HasOutputs(cell)) {
+    return false;
+  }
 
-    if (HasNonInputOutputPorts(cell)) {
-      return false;
-    }
+  if (HasNonInputOutputPorts(cell)) {
+    return false;
+  }
 
-    if (HasOnlyPowerAndGroundPorts(cell)) {
-      return false;
-    }
+  if (HasOnlyPowerAndGroundPorts(cell)) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
