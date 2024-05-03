@@ -327,7 +327,7 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  int have_multi_row_cells_ = 0;
+  bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;
