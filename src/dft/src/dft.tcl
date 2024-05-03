@@ -38,6 +38,10 @@ proc preview_dft { args } {
 
   sta::check_argc_eq0 "preview_dft" $args
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 1 "No design block found."
+  }
+
   set verbose [info exists flags(-verbose)]
 
   dft::preview_dft $verbose
@@ -47,6 +51,10 @@ sta::define_cmd_args "insert_dft" { }
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \
     keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 8 "No design block found."
+  }
   dft::insert_dft
 }
 

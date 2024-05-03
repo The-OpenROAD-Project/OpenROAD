@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include "dpl/Opendp.h"
 #include "odb/db.h"
 
 namespace dpl {
@@ -41,7 +42,12 @@ class DplObserver
 
   virtual void startPlacement(odb::dbBlock* block) = 0;
   virtual void placeInstance(odb::dbInst* instance) = 0;
-  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) = 0;
+  virtual void binSearch(const Cell* cell,
+                         GridX xl,
+                         GridY yl,
+                         GridX xh,
+                         GridY yh)
+      = 0;
   virtual void endPlacement() = 0;
 };
 

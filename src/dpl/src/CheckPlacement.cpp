@@ -70,7 +70,7 @@ void Opendp::checkPlacement(const bool verbose,
     if (cell.isStdCell()) {
       // Site alignment check
       if (cell.x_ % grid_->getSiteWidth() != 0
-          || row_coords.find(cell.y_) == row_coords.end()) {
+          || row_coords.find(cell.y_.v) == row_coords.end()) {
         site_align_failures.push_back(&cell);
         continue;
       }
@@ -148,10 +148,10 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
   const Rect core = grid_->getCore();
   for (auto failure : failures) {
     ptree violation, shapes, source, sources, shape;
-    double xMin = (failure->x_ + core.xMin()) / dbUnits;
-    double yMin = (failure->y_ + core.yMin()) / dbUnits;
-    double xMax = (failure->x_ + failure->width_ + core.xMin()) / dbUnits;
-    double yMax = (failure->y_ + failure->height_ + core.yMin()) / dbUnits;
+    double xMin = (failure->x_ + core.xMin()).v / dbUnits;
+    double yMin = (failure->y_ + core.yMin()).v / dbUnits;
+    double xMax = (failure->x_ + failure->width_ + core.xMin()).v / dbUnits;
+    double yMax = (failure->y_ + failure->height_ + core.yMin()).v / dbUnits;
 
     if (violation_type == "overlap") {
       const Cell* o_cell = checkOverlap(*failure);
@@ -161,14 +161,14 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
                        "Could not find overlapping cell for cell {}",
                        failure->name());
       }
-      odb::Rect o_rect(o_cell->x_,
-                       o_cell->y_,
-                       o_cell->x_ + o_cell->width_,
-                       o_cell->y_ + o_cell->height_);
-      odb::Rect f_rect(failure->x_,
-                       failure->y_,
-                       failure->x_ + failure->width_,
-                       failure->y_ + failure->height_);
+      odb::Rect o_rect(o_cell->x_.v,
+                       o_cell->y_.v,
+                       o_cell->x_.v + o_cell->width_.v,
+                       o_cell->y_.v + o_cell->height_.v);
+      odb::Rect f_rect(failure->x_.v,
+                       failure->y_.v,
+                       failure->x_.v + failure->width_.v,
+                       failure->y_.v + failure->height_.v);
 
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
@@ -324,10 +324,10 @@ bool Opendp::isPlaced(const Cell* cell)
 bool Opendp::checkInRows(const Cell& cell) const
 {
   auto grid_info = grid_->getRowInfo(&cell);
-  const int x_ll = grid_->gridX(&cell);
-  const int x_ur = grid_->gridEndX(&cell);
-  const int y_ll = grid_->gridY(&cell);
-  const int y_ur = grid_->gridEndY(&cell);
+  const GridX x_ll = grid_->gridX(&cell);
+  const GridX x_ur = grid_->gridEndX(&cell);
+  const GridY y_ll = grid_->gridY(&cell);
+  const GridY y_ur = grid_->gridEndY(&cell);
   debugPrint(logger_,
              DPL,
              "hybrid",
@@ -340,8 +340,8 @@ bool Opendp::checkInRows(const Cell& cell) const
              y_ll,
              y_ur);
 
-  for (int y = y_ll; y < y_ur; y++) {
-    for (int x = x_ll; x < x_ur; x++) {
+  for (GridY y = y_ll; y < y_ur; y++) {
+    for (GridX x = x_ll; x < x_ur; x++) {
       const Pixel* pixel
           = grid_->gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
@@ -402,20 +402,17 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   }
 
   const bool padded = padding_->havePadding() && isOverlapPadded(cell1, cell2);
-  const Point ll1 = initialLocation(cell1, padded);
-  const Point ll2 = initialLocation(cell2, padded);
-  Point ur1, ur2;
+  const DbuPt ll1 = initialLocation(cell1, padded);
+  const DbuPt ll2 = initialLocation(cell2, padded);
+  DbuPt ur1, ur2;
   if (padded) {
-    ur1 = Point(ll1.getX() + padding_->paddedWidth(cell1),
-                ll1.getY() + cell1->height_);
-    ur2 = Point(ll2.getX() + padding_->paddedWidth(cell2),
-                ll2.getY() + cell2->height_);
+    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1), ll1.y + cell1->height_);
+    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2), ll2.y + cell2->height_);
   } else {
-    ur1 = Point(ll1.getX() + cell1->width_, ll1.getY() + cell1->height_);
-    ur2 = Point(ll2.getX() + cell2->width_, ll2.getY() + cell2->height_);
+    ur1 = DbuPt(ll1.x + cell1->width_.v, ll1.y + cell1->height_.v);
+    ur2 = DbuPt(ll2.x + cell2->width_.v, ll2.y + cell2->height_.v);
   }
-  return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
-         && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
+  return ll1.x < ur2.x && ur1.x > ll2.x && ll1.y < ur2.y && ur1.y > ll2.y;
 }
 
 Cell* Opendp::checkOneSiteGaps(Cell& cell) const
@@ -424,15 +421,15 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
   const auto row_info = grid_->getRowInfo(&cell);
   const int grid_index = row_info.second.getGridIndex();
   grid_->visitCellBoundaryPixels(
-      cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
-        int abut_x = 0;
+      cell, true, [&](Pixel* pixel, const Direction2D& edge, GridX x, GridY y) {
+        GridX abut_x{0};
 
         switch (static_cast<Direction2D::Value>(edge)) {
           case Direction2D::West:
-            abut_x = -1;
+            abut_x = GridX{-1};
             break;
           case Direction2D::East:
-            abut_x = 1;
+            abut_x = GridX{1};
             break;
           case Direction2D::North:
           case Direction2D::South:
@@ -444,7 +441,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         if (!abuttment_exists) {
           // check the 1 site gap pixel
           const Pixel* gap_pixel
-              = grid_->gridPixel(grid_index, x + 2 * abut_x, y);
+              = grid_->gridPixel(grid_index, x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {
             gap_cell = gap_pixel->cell;
           }
@@ -455,19 +452,20 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 
 bool Opendp::checkRegionPlacement(const Cell* cell) const
 {
-  const int x_begin = cell->x_;
-  const int x_end = x_begin + cell->width_;
-  const int y_begin = cell->y_;
-  const int y_end = y_begin + cell->height_;
+  const DbuX x_begin = cell->x_;
+  const DbuX x_end = x_begin + cell->width_;
+  const DbuY y_begin = cell->y_;
+  const DbuY y_end = y_begin + cell->height_;
 
   if (cell->region_) {
-    const int site_width = grid_->getSiteWidth();
-    return cell->region_->contains(odb::Rect(x_begin, y_begin, x_end, y_end))
+    const DbuX site_width = grid_->getSiteWidth();
+    return cell->region_->contains(
+               odb::Rect(x_begin.v, y_begin.v, x_end.v, y_end.v))
            && checkRegionOverlap(cell,
-                                 x_begin / site_width,
-                                 y_begin / cell->height_,
-                                 x_end / site_width,
-                                 y_end / cell->height_);
+                                 GridX{x_begin.v / site_width.v},
+                                 GridY{y_begin.v / cell->height_.v},
+                                 GridX{x_end.v / site_width.v},
+                                 GridY{y_end.v / cell->height_.v});
   }
   return true;
 }

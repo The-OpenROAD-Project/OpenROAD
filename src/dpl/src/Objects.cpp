@@ -48,15 +48,15 @@ int64_t Cell::area() const
   return int64_t(master->getWidth()) * master->getHeight();
 }
 
-int Cell::siteWidth() const
+DbuX Cell::siteWidth() const
 {
   if (db_inst_) {
     auto site = db_inst_->getMaster()->getSite();
     if (site) {
-      return db_inst_->getMaster()->getSite()->getWidth();
+      return DbuX{static_cast<int>(site->getWidth())};
     }
   }
-  return 0;
+  return DbuX{0};
 }
 
 bool Cell::isFixed() const
