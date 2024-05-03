@@ -95,12 +95,13 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   setGridCells();
 
   if (!grid_->infoMapEmpty()) {
-    int min_height = std::numeric_limits<int>::max();
+    DbuY min_height{std::numeric_limits<int>::max()};
     GridMapKey chosen_grid_key = {0};
     // we will first try to find the grid with min height that is non hybrid, if
     // that doesn't exist, we will pick the first hybrid grid.
     for (auto [grid_idx, itr_grid_info] : grid_->getInfoMap()) {
-      int site_height = itr_grid_info.getSites()[0].site->getHeight();
+      dbSite* site = itr_grid_info.getSites()[0].site;
+      DbuY site_height{static_cast<int>(site->getHeight())};
       if (!itr_grid_info.isHybrid() && site_height < min_height) {
         min_height = site_height;
         chosen_grid_key = grid_idx;
@@ -109,7 +110,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
     auto chosen_grid_info = grid_->getInfoMap().at(chosen_grid_key);
     GridY chosen_row_count = chosen_grid_info.getRowCount();
     if (!chosen_grid_info.isHybrid()) {
-      int site_height = min_height;
+      DbuY site_height = min_height;
       for (GridY row{0}; row < chosen_row_count; row++) {
         placeRowFillers(row,
                         prefix,
@@ -121,12 +122,14 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
       const auto& hybrid_sites_vec = chosen_grid_info.getSites();
       const int hybrid_sites_num = hybrid_sites_vec.size();
       for (GridY row{0}; row < chosen_row_count; row++) {
-        placeRowFillers(
-            row,
-            prefix,
-            filler_masters_by_implant,
-            hybrid_sites_vec[row.v % hybrid_sites_num].site->getHeight(),
-            chosen_grid_info);
+        const int index = row.v % hybrid_sites_num;
+        dbSite* site = hybrid_sites_vec[index].site;
+        DbuY row_height{static_cast<int>(site->getHeight())};
+        placeRowFillers(row,
+                        prefix,
+                        filler_masters_by_implant,
+                        row_height,
+                        chosen_grid_info);
       }
     }
   }
@@ -145,7 +148,7 @@ void Opendp::setGridCells()
 void Opendp::placeRowFillers(GridY row,
                              const char* prefix,
                              const MasterByImplant& filler_masters_by_implant,
-                             int row_height,
+                             DbuY row_height,
                              const GridInfo& grid_info)
 {
   GridX j{0};
@@ -193,8 +196,8 @@ void Opendp::placeRowFillers(GridY row,
             gap,
             x,
             y,
-            gridInstName(row, j - 1, row_height, grid_info),
-            gridInstName(row, k + 1, row_height, grid_info));
+            gridInstName(row, j - 1, grid_info),
+            gridInstName(row, k + 1, grid_info));
       } else {
         k = j;
         debugPrint(
@@ -225,7 +228,6 @@ void Opendp::placeRowFillers(GridY row,
 
 const char* Opendp::gridInstName(GridY row,
                                  GridX col,
-                                 int row_height,
                                  const GridInfo& grid_info)
 {
   if (col < 0) {

@@ -310,14 +310,11 @@ class Opendp
   void placeRowFillers(GridY row,
                        const char* prefix,
                        const MasterByImplant& filler_masters,
-                       int row_height,
+                       DbuY row_height,
                        const GridInfo& grid_info);
   static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(GridY row,
-                           GridX col,
-                           int row_height,
-                           const GridInfo& grid_info);
+  const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
