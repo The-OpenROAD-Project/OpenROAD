@@ -111,7 +111,8 @@ GridY Grid::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
   auto row_pattern = parent_hybrid_site->getRowPattern();
   DbuY site_height{static_cast<int>(parent_hybrid_site->getHeight())};
   GridY rows_count = getRowCount(site_height);
-  DbuY remaining_core_height{core_.dy() - (rows_count.v * site_height.v)};
+  DbuY remaining_core_height{DbuY{core_.dy()}
+                             - gridToDbu(rows_count, site_height)};
 
   rows_count = GridY{rows_count.v * static_cast<int>(row_pattern.size())};
 
@@ -727,7 +728,7 @@ void Grid::paintPixel(Cell* cell, GridX grid_x, GridY grid_y)
           logger_, DPL, "detailed", 1, "added 1 go layer_end {}", layer_y_end);
     }
 
-    if (layer_y_end.v > layer.second.getRowCount()) {
+    if (layer_y_end > layer.second.getRowCount()) {
       // If there's an uneven number of single row height cells, say 21.
       // The above layer mapping coordinates on double height rows will
       // round up, because they don't know if there's 11 or 10 rows of
@@ -817,11 +818,11 @@ DbuY Grid::coordinateToHeight(GridY y_coordinate, GridMapKey gmk) const
   if (grid_info.isHybrid()) {
     auto& grid_sites = grid_info.getSites();
     const DbuY total_height = grid_info.getSitesTotalHeight();
-    int patterns_below = divFloor(y_coordinate.v, grid_sites.size());
+    GridY patterns_below{divFloor(y_coordinate.v, grid_sites.size())};
     DbuY remaining_rows_height = grid_info.getSitesTotalHeight();  // BUG?
-    return DbuY{patterns_below * total_height.v + remaining_rows_height.v};
+    return gridToDbu(patterns_below, total_height) + remaining_rows_height;
   }
-  return DbuY{y_coordinate.v * grid_info.getSitesTotalHeight().v};
+  return gridToDbu(y_coordinate, grid_info.getSitesTotalHeight());
 }
 
 GridY Grid::gridHeight(const Cell* cell) const
@@ -847,7 +848,7 @@ GridX Grid::gridX(const Cell* cell) const
 
 GridX Grid::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->x_ - padding_->padLeft(cell) * getSiteWidth().v);
+  return gridX(cell->x_ - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
 GridY Grid::getRowCount(DbuY row_height) const
@@ -932,7 +933,7 @@ pair<GridY, DbuY> Grid::gridEndY(DbuY y, const GridInfo& grid_info) const
 {
   const DbuY sum_heights = grid_info.getSitesTotalHeight();
   GridY base_height_index{divFloor(y.v, sum_heights.v)};
-  DbuY cur_height{base_height_index.v * sum_heights.v};
+  DbuY cur_height{gridToDbu(base_height_index, sum_heights)};
   int index = 0;
   const dbSite::RowPattern& grid_sites = grid_info.getSites();
   base_height_index
@@ -962,7 +963,7 @@ GridY Grid::gridY(const DbuY y, const Cell* cell) const
 
 void Grid::setGridPaddedLoc(Cell* cell, GridX x, GridY y) const
 {
-  cell->x_ = DbuX{(x + padding_->padLeft(cell)).v * getSiteWidth().v};
+  cell->x_ = gridToDbu(x + padding_->padLeft(cell), getSiteWidth());
   if (cell->isHybrid()) {
     auto grid_info = getInfoMap().at(getGridMapKey(cell));
     DbuY total_sites_height = grid_info.getSitesTotalHeight();
@@ -988,15 +989,15 @@ void Grid::setGridPaddedLoc(Cell* cell, GridX x, GridY y) const
     }
     return;
   }
-  cell->y_ = DbuY{y.v * getRowHeight(cell).v};
+  cell->y_ = gridToDbu(y, getRowHeight(cell));
 }
 
 GridX Grid::gridPaddedEndX(const Cell* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  return GridX{divCeil(
-      cell->x_.v + cell->width_.v + padding_->padRight(cell) * site_width.v,
-      site_width.v)};
+  const DbuX end_x
+      = cell->xMax() + gridToDbu(padding_->padRight(cell), site_width);
+  return GridX{divCeil(end_x.v, site_width.v)};
 }
 
 GridX Grid::gridEndX(const Cell* cell) const

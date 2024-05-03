@@ -44,6 +44,8 @@
 #include <functional>
 #include <ostream>
 
+#include "dpl/Opendp.h"
+
 namespace dpl {
 
 using std::abs;
@@ -128,6 +130,42 @@ template <typename T>
 TypedCoordinate<T> abs(const TypedCoordinate<T>& val)
 {
   return TypedCoordinate<T>{std::abs(val.v)};
+}
+
+struct GridPt
+{
+  GridPt() = default;
+  GridPt(GridX x, GridY y) : x(x), y(y) {}
+  GridX x{0};
+  GridY y{0};
+};
+
+struct DbuPt
+{
+  DbuPt() = default;
+  DbuPt(DbuX x, DbuY y) : x(x), y(y) {}
+  DbuX x{0};
+  DbuY y{0};
+};
+
+inline bool operator==(const DbuPt& p1, const DbuPt& p2)
+{
+  return std::tie(p1.x, p1.y) == std::tie(p2.x, p2.y);
+}
+
+inline DbuX gridToDbu(GridX x, DbuX scale)
+{
+  return DbuX{x.v * scale.v};
+}
+
+inline DbuY gridToDbu(GridY y, DbuY scale)
+{
+  return DbuY{y.v * scale.v};
+}
+
+inline int sumXY(DbuX x, DbuY y)
+{
+  return x.v + y.v;
 }
 
 }  // namespace dpl
