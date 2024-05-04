@@ -148,6 +148,18 @@ struct DbuPt
   DbuY y{0};
 };
 
+struct DbuRect
+{
+  DbuRect(const Rect& rect)
+      : xl(rect.xMin()), yl(rect.yMin()), xh(rect.xMax()), yh(rect.yMax())
+  {
+  }
+  DbuX xl{0};
+  DbuY yl{0};
+  DbuX xh{0};
+  DbuY yh{0};
+};
+
 inline bool operator==(const DbuPt& p1, const DbuPt& p2)
 {
   return std::tie(p1.x, p1.y) == std::tie(p2.x, p2.y);
@@ -161,6 +173,26 @@ inline DbuX gridToDbu(GridX x, DbuX scale)
 inline DbuY gridToDbu(GridY y, DbuY scale)
 {
   return DbuY{y.v * scale.v};
+}
+
+inline GridX dbuToGridCeil(DbuX x, DbuX divisor)
+{
+  return GridX{divCeil(x.v, divisor.v)};
+}
+
+inline GridX dbuToGridFloor(DbuX x, DbuX divisor)
+{
+  return GridX{divFloor(x.v, divisor.v)};
+}
+
+inline GridY dbuToGridCeil(DbuY y, DbuY divisor)
+{
+  return GridY{divCeil(y.v, divisor.v)};
+}
+
+inline GridY dbuToGridFloor(DbuY y, DbuY divisor)
+{
+  return GridY{divFloor(y.v, divisor.v)};
 }
 
 inline int sumXY(DbuX x, DbuY y)

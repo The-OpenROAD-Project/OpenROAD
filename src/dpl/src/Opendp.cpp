@@ -434,47 +434,47 @@ void Opendp::groupInitPixels()
     const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
     const int grid_index = grid_info.getGridIndex();
     const DbuX site_width = grid_->getSiteWidth();
-    for (const Rect& rect : group.region_boundaries) {
+    for (const DbuRect& rect : group.region_boundaries) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
                  1,
                  "Group {} region [x{} y{}] [x{} y{}]",
                  group.name,
-                 rect.xMin(),
-                 rect.yMin(),
-                 rect.xMax(),
-                 rect.yMax());
-      const GridY row_start{divCeil(rect.yMin(), row_height.v)};
-      const GridY row_end{divFloor(rect.yMax(), row_height.v)};
+                 rect.xl,
+                 rect.yl,
+                 rect.xh,
+                 rect.yh);
+      const GridY row_start{dbuToGridCeil(rect.yl, row_height)};
+      const GridY row_end{dbuToGridFloor(rect.yh, row_height)};
 
       for (GridY k{row_start}; k < row_end; k++) {
-        const GridX col_start{divCeil(rect.xMin(), site_width.v)};
-        const GridX col_end{divFloor(rect.xMax(), site_width.v)};
+        const GridX col_start{dbuToGridCeil(rect.xl, site_width)};
+        const GridX col_end{dbuToGridFloor(rect.xh, site_width)};
 
         for (GridX l{col_start}; l < col_end; l++) {
           Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           pixel->util += 1.0;
         }
-        if (rect.xMin() % site_width.v != 0) {
+        if (rect.xl % site_width != 0) {
           Pixel* pixel = grid_->gridPixel(grid_index, col_start, k);
-          pixel->util -= (rect.xMin() % site_width.v)
-                         / static_cast<double>(site_width.v);
+          pixel->util
+              -= (rect.xl % site_width).v / static_cast<double>(site_width.v);
         }
-        if (rect.xMax() % site_width.v != 0) {
+        if (rect.xh % site_width != 0) {
           Pixel* pixel = grid_->gridPixel(grid_index, col_end - 1, k);
-          pixel->util -= ((site_width.v - rect.xMax()) % site_width.v)
+          pixel->util -= ((site_width - rect.xh) % site_width).v
                          / static_cast<double>(site_width.v);
         }
       }
     }
-    for (Rect& rect : group.region_boundaries) {
-      const GridY row_start{divCeil(rect.yMin(), row_height.v)};
-      const GridY row_end{divFloor(rect.yMax(), row_height.v)};
+    for (const DbuRect& rect : group.region_boundaries) {
+      const GridY row_start{dbuToGridCeil(rect.yl, row_height)};
+      const GridY row_end{dbuToGridFloor(rect.yh, row_height)};
 
       for (GridY k{row_start}; k < row_end; k++) {
-        const int col_start = divCeil(rect.xMin(), site_width.v);
-        const int col_end = divFloor(rect.xMax(), site_width.v);
+        const GridX col_start = dbuToGridCeil(rect.xl, site_width);
+        const GridX col_end = dbuToGridFloor(rect.xh, site_width);
 
         // Assign group to each pixel.
         for (GridX l{col_start}; l < col_end; l++) {
