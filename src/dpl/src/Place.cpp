@@ -144,16 +144,16 @@ void Opendp::prePlace()
   }
 }
 
-bool Opendp::checkOverlap(const Cell* cell, const Rect& rect) const
+bool Opendp::checkOverlap(const Cell* cell, const DbuRect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
   const DbuY y = init.y;
-  return x + cell->width_ > rect.xMin() && x < rect.xMax()
-         && y + cell->height_ > rect.yMin() && y < rect.yMax();
+  return x + cell->width_ > rect.xl && x < rect.xl
+         && y + cell->height_ > rect.yl && y < rect.yh;
 }
 
-DbuPt Opendp::nearestPt(const Cell* cell, const Rect& rect) const
+DbuPt Opendp::nearestPt(const Cell* cell, const DbuRect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
@@ -166,19 +166,19 @@ DbuPt Opendp::nearestPt(const Cell* cell, const Rect& rect) const
   if (checkOverlap(cell, rect)) {
     DbuX dist_x;
     DbuY dist_y;
-    if (abs(x + cell_width - DbuX{rect.xMin()}) > abs(DbuX{rect.xMax()} - x)) {
-      dist_x = abs(DbuX{rect.xMax()} - x);
-      temp_x = DbuX{rect.xMax()};
+    if (abs(x + cell_width - rect.xl) > abs(rect.xh - x)) {
+      dist_x = abs(rect.xh - x);
+      temp_x = rect.xh;
     } else {
-      dist_x = abs(x - rect.xMin());
-      temp_x = DbuX{rect.xMin()} - cell_width;
+      dist_x = abs(x - rect.xl);
+      temp_x = rect.xl - cell_width;
     }
-    if (abs(y + cell->height_.v - rect.yMin()) > abs(rect.yMax() - y.v)) {
-      dist_y = abs(DbuY{rect.yMax()} - y);
-      temp_y = DbuY{rect.yMax()};
+    if (abs(y + cell->height_ - rect.yl) > abs(rect.yh - y)) {
+      dist_y = abs(rect.yh - y);
+      temp_y = rect.yh;
     } else {
-      dist_y = abs(y - rect.yMin());
-      temp_y = DbuY{rect.yMin()} - cell->height_;
+      dist_y = abs(y - rect.yl);
+      temp_y = rect.yl - cell->height_;
     }
     if (dist_x.v < dist_y.v) {
       return {temp_x, y};
@@ -186,16 +186,16 @@ DbuPt Opendp::nearestPt(const Cell* cell, const Rect& rect) const
     return {x, temp_y};
   }
 
-  if (x < rect.xMin()) {
-    temp_x = DbuX{rect.xMin()};
-  } else if (x + cell_width.v > rect.xMax()) {
-    temp_x = DbuX{rect.xMax()} - cell_width;
+  if (x < rect.xl) {
+    temp_x = rect.xl;
+  } else if (x + cell_width > rect.xh) {
+    temp_x = rect.xh - cell_width;
   }
 
-  if (y < rect.yMin()) {
-    temp_y = DbuY{rect.yMin()};
-  } else if (y + cell->height_.v > rect.yMax()) {
-    temp_y = DbuY{rect.yMax()} - cell->height_;
+  if (y < rect.yl) {
+    temp_y = rect.yl;
+  } else if (y + cell->height_ > rect.yh) {
+    temp_y = rect.yh - cell->height_;
   }
 
   return {temp_x, temp_y};
@@ -893,8 +893,8 @@ PixelPt Opendp::binSearch(GridX x,
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      const Point p((bin_x + i).v * grid_->getSiteWidth().v,
-                    bin_y.v * row_height.v);
+      const Point p(gridToDbu(bin_x + i, grid_->getSiteWidth()).v,
+                    gridToDbu(bin_y, row_height).v);
       if (cell->region_ && !cell->region_->intersects(p)) {
         continue;
       }
@@ -908,8 +908,8 @@ PixelPt Opendp::binSearch(GridX x,
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
-      const Point p((bin_x + i).v * grid_->getSiteWidth().v,
-                    bin_y.v * row_height.v);
+      const Point p(gridToDbu(bin_x + i, grid_->getSiteWidth()).v,
+                    gridToDbu(bin_y, row_height).v);
       if (cell->region_) {
         if (!cell->region_->intersects(p)) {
           continue;
@@ -951,10 +951,10 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
       = grid_->getSmallestNonHybridGridKey();
   const DbuX site_width = grid_->getSiteWidth();
   const bgBox queryBox(
-      {x.v * site_width.v,
+      {gridToDbu(x, site_width).v,
        grid_->map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key, true).v
            * min_row_height.v},
-      {x_end.v * site_width.v - 1,
+      {gridToDbu(x_end, site_width - 1).v,
        grid_->map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key, false)
                    .v
                * min_row_height.v
