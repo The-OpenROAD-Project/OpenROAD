@@ -72,19 +72,6 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
   return false;
 }
 
-static bool HasOnlyPowerAndGroundPorts(sta::LibertyCell* cell)
-{
-  sta::LibertyCellPortIterator cell_port_iterator(cell);
-  while (cell_port_iterator.hasNext()) {
-    sta::LibertyPort* port = cell_port_iterator.next();
-    if (!port->direction()->isPowerGround()) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 static bool isCompatibleWithAbc(sta::LibertyCell* cell)
 {
   if (!IsCombinational(cell)) {
@@ -96,10 +83,6 @@ static bool isCompatibleWithAbc(sta::LibertyCell* cell)
   }
 
   if (HasNonInputOutputPorts(cell)) {
-    return false;
-  }
-
-  if (HasOnlyPowerAndGroundPorts(cell)) {
     return false;
   }
 
