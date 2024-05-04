@@ -128,13 +128,13 @@ void Opendp::prePlace()
     if (!cell.inGroup() && !cell.is_placed_) {
       for (Group& group : groups_) {
         for (Rect& rect : group.region_boundaries) {
-          if (checkOverlap(&cell, &rect)) {
+          if (checkOverlap(&cell, rect)) {
             group_rect = &rect;
           }
         }
       }
       if (group_rect) {
-        const DbuPt nearest = nearestPt(&cell, group_rect);
+        const DbuPt nearest = nearestPt(&cell, *group_rect);
         const GridPt legal = legalGridPt(&cell, nearest);
         if (mapMove(&cell, legal)) {
           cell.hold_ = true;
@@ -144,16 +144,16 @@ void Opendp::prePlace()
   }
 }
 
-bool Opendp::checkOverlap(const Cell* cell, const Rect* rect) const
+bool Opendp::checkOverlap(const Cell* cell, const Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
   const DbuY y = init.y;
-  return x + cell->width_ > rect->xMin() && x < rect->xMax()
-         && y + cell->height_ > rect->yMin() && y < rect->yMax();
+  return x + cell->width_ > rect.xMin() && x < rect.xMax()
+         && y + cell->height_ > rect.yMin() && y < rect.yMax();
 }
 
-DbuPt Opendp::nearestPt(const Cell* cell, const Rect* rect) const
+DbuPt Opendp::nearestPt(const Cell* cell, const Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
@@ -166,20 +166,19 @@ DbuPt Opendp::nearestPt(const Cell* cell, const Rect* rect) const
   if (checkOverlap(cell, rect)) {
     DbuX dist_x;
     DbuY dist_y;
-    if (abs(x + cell_width - DbuX{rect->xMin()})
-        > abs(DbuX{rect->xMax()} - x)) {
-      dist_x = abs(DbuX{rect->xMax()} - x);
-      temp_x = DbuX{rect->xMax()};
+    if (abs(x + cell_width - DbuX{rect.xMin()}) > abs(DbuX{rect.xMax()} - x)) {
+      dist_x = abs(DbuX{rect.xMax()} - x);
+      temp_x = DbuX{rect.xMax()};
     } else {
-      dist_x = abs(x - rect->xMin());
-      temp_x = DbuX{rect->xMin()} - cell_width;
+      dist_x = abs(x - rect.xMin());
+      temp_x = DbuX{rect.xMin()} - cell_width;
     }
-    if (abs(y + cell->height_.v - rect->yMin()) > abs(rect->yMax() - y.v)) {
-      dist_y = abs(DbuY{rect->yMax()} - y);
-      temp_y = DbuY{rect->yMax()};
+    if (abs(y + cell->height_.v - rect.yMin()) > abs(rect.yMax() - y.v)) {
+      dist_y = abs(DbuY{rect.yMax()} - y);
+      temp_y = DbuY{rect.yMax()};
     } else {
-      dist_y = abs(y - rect->yMin());
-      temp_y = DbuY{rect->yMin()} - cell->height_;
+      dist_y = abs(y - rect.yMin());
+      temp_y = DbuY{rect.yMin()} - cell->height_;
     }
     if (dist_x.v < dist_y.v) {
       return {temp_x, y};
@@ -187,16 +186,16 @@ DbuPt Opendp::nearestPt(const Cell* cell, const Rect* rect) const
     return {x, temp_y};
   }
 
-  if (x < rect->xMin()) {
-    temp_x = DbuX{rect->xMin()};
-  } else if (x + cell_width.v > rect->xMax()) {
-    temp_x = DbuX{rect->xMax()} - cell_width;
+  if (x < rect.xMin()) {
+    temp_x = DbuX{rect.xMin()};
+  } else if (x + cell_width.v > rect.xMax()) {
+    temp_x = DbuX{rect.xMax()} - cell_width;
   }
 
-  if (y < rect->yMin()) {
-    temp_y = DbuY{rect->yMin()};
-  } else if (y + cell->height_.v > rect->yMax()) {
-    temp_y = DbuY{rect->yMax()} - cell->height_;
+  if (y < rect.yMin()) {
+    temp_y = DbuY{rect.yMin()};
+  } else if (y + cell->height_.v > rect.yMax()) {
+    temp_y = DbuY{rect.yMax()} - cell->height_;
   }
 
   return {temp_x, temp_y};
@@ -211,10 +210,10 @@ void Opendp::prePlaceGroups()
         bool in_group = false;
         Rect* nearest_rect = nullptr;
         for (Rect& rect : group.region_boundaries) {
-          if (isInside(cell, &rect)) {
+          if (isInside(cell, rect)) {
             in_group = true;
           }
-          int rect_dist = distToRect(cell, &rect);
+          int rect_dist = distToRect(cell, rect);
           if (rect_dist < dist) {
             dist = rect_dist;
             nearest_rect = &rect;
@@ -224,7 +223,7 @@ void Opendp::prePlaceGroups()
           continue;  // degenerate case of empty group.regions
         }
         if (!in_group) {
-          const DbuPt nearest = nearestPt(cell, nearest_rect);
+          const DbuPt nearest = nearestPt(cell, *nearest_rect);
           const GridPt legal = legalGridPt(cell, nearest);
           if (mapMove(cell, legal)) {
             cell->hold_ = true;
@@ -235,16 +234,16 @@ void Opendp::prePlaceGroups()
   }
 }
 
-bool Opendp::isInside(const Cell* cell, const Rect* rect) const
+bool Opendp::isInside(const Cell* cell, const Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
   const DbuY y = init.y;
-  return x >= rect->xMin() && x + cell->width_ <= rect->xMax()
-         && y >= rect->yMin() && y + cell->height_ <= rect->yMax();
+  return x >= rect.xMin() && x + cell->width_ <= rect.xMax() && y >= rect.yMin()
+         && y + cell->height_ <= rect.yMax();
 }
 
-int Opendp::distToRect(const Cell* cell, const Rect* rect) const
+int Opendp::distToRect(const Cell* cell, const Rect& rect) const
 {
   const DbuPt init = initialLocation(cell, true);
   const DbuX x = init.x;
@@ -252,16 +251,16 @@ int Opendp::distToRect(const Cell* cell, const Rect* rect) const
 
   DbuX dist_x{0};
   DbuY dist_y{0};
-  if (x < rect->xMin()) {
-    dist_x = DbuX{rect->xMin()} - x;
-  } else if (x + cell->width_ > rect->xMax()) {
-    dist_x = x + cell->width_ - rect->xMax();
+  if (x < rect.xMin()) {
+    dist_x = DbuX{rect.xMin()} - x;
+  } else if (x + cell->width_ > rect.xMax()) {
+    dist_x = x + cell->width_ - rect.xMax();
   }
 
-  if (y < rect->yMin()) {
-    dist_y = DbuY{rect->yMin()} - y;
-  } else if (y + cell->height_ > rect->yMax()) {
-    dist_y = y + cell->height_ - rect->yMax();
+  if (y < rect.yMin()) {
+    dist_y = DbuY{rect.yMin()} - y;
+  } else if (y + cell->height_ > rect.yMax()) {
+    dist_y = y + cell->height_ - rect.yMax();
   }
 
   return sumXY(dist_x, dist_y);
@@ -414,7 +413,7 @@ void Opendp::placeGroups2()
 // Place cells in group toward edges.
 void Opendp::brickPlace1(const Group* group)
 {
-  const Rect* boundary = &group->boundary;
+  const Rect& boundary = group->boundary;
   vector<Cell*> sorted_cells(group->cells_);
 
   sort(sorted_cells.begin(), sorted_cells.end(), [&](Cell* cell1, Cell* cell2) {
@@ -436,7 +435,7 @@ void Opendp::brickPlace1(const Group* group)
 }
 
 void Opendp::rectDist(const Cell* cell,
-                      const Rect* rect,
+                      const Rect& rect,
                       // Return values.
                       int* x,
                       int* y) const
@@ -445,20 +444,20 @@ void Opendp::rectDist(const Cell* cell,
   const DbuX init_x = init.x;
   const DbuY init_y = init.y;
 
-  if (init_x > (rect->xMin() + rect->xMax()) / 2) {
-    *x = rect->xMax();
+  if (init_x > (rect.xMin() + rect.xMax()) / 2) {
+    *x = rect.xMax();
   } else {
-    *x = rect->xMin();
+    *x = rect.xMin();
   }
 
-  if (init_y > (rect->yMin() + rect->yMax()) / 2) {
-    *y = rect->yMax();
+  if (init_y > (rect.yMin() + rect.yMax()) / 2) {
+    *y = rect.yMax();
   } else {
-    *y = rect->yMin();
+    *y = rect.yMin();
   }
 }
 
-int Opendp::rectDist(const Cell* cell, const Rect* rect) const
+int Opendp::rectDist(const Cell* cell, const Rect& rect) const
 {
   int x, y;
   rectDist(cell, rect, &x, &y);
@@ -472,14 +471,14 @@ void Opendp::brickPlace2(const Group* group)
   vector<Cell*> sorted_cells(group->cells_);
 
   sort(sorted_cells.begin(), sorted_cells.end(), [&](Cell* cell1, Cell* cell2) {
-    return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
+    return rectDist(cell1, *cell1->region_) < rectDist(cell2, *cell2->region_);
   });
 
   for (Cell* cell : sorted_cells) {
     if (!cell->hold_) {
       DbuX x;
       DbuY y;
-      rectDist(cell, cell->region_, &x.v, &y.v);
+      rectDist(cell, *cell->region_, &x.v, &y.v);
       const GridPt legal = legalGridPt(cell, {x, y});
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point

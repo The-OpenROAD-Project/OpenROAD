@@ -333,10 +333,10 @@ void Opendp::groupAssignCellRegions()
     const DbuX site_width = grid_->getSiteWidth();
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
-      const Rect core = grid_->getCore();
-      const int max_row_site_count = divFloor(core.dx(), site_width.v);
+      const DbuRect core = grid_->getCore();
+      const GridX max_row_site_count = dbuToGridFloor(core.dx(), site_width);
       const DbuY row_height = grid_->getRowHeight(group_cell);
-      const int row_count = divFloor(core.dy(), row_height.v);
+      const GridY row_count = dbuToGridFloor(core.dy(), row_height);
       const int64_t site_area
           = row_height.v * static_cast<int64_t>(site_width.v);
       const auto gmk = grid_->getGridMapKey(group_cell);
@@ -357,7 +357,7 @@ void Opendp::groupAssignCellRegions()
       cell_area += cell->area();
 
       for (Rect& rect : group.region_boundaries) {
-        if (isInside(cell, &rect)) {
+        if (isInside(cell, rect)) {
           cell->region_ = &rect;
         }
       }

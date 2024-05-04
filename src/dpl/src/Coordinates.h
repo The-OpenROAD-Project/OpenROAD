@@ -154,6 +154,8 @@ struct DbuRect
       : xl(rect.xMin()), yl(rect.yMin()), xh(rect.xMax()), yh(rect.yMax())
   {
   }
+  DbuX dx() const { return xh - xl; }
+  DbuY dy() const { return yh - yl; }
   DbuX xl{0};
   DbuY yl{0};
   DbuX xh{0};
