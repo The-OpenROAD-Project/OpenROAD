@@ -140,6 +140,7 @@ configure_file(
 
 ################################################################
 
+link_libraries(stdc++fs)
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
