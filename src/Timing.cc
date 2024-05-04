@@ -385,4 +385,46 @@ float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
   return (power.internal() + power.switching());
 }
 
+void Timing::makeEquivCells()
+{
+  sta::Network* network = cmdLinkedNetwork();
+  sta::LibertyLibrarySeq libs;
+  sta::LibertyLibraryIterator* lib_iter = network->libertyLibraryIterator();
+  sta::dbSta* sta = getSta();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary *lib = lib_iter->next();
+    // massive kludge until makeEquivCells is fixed to only incldue link cells
+    sta::LibertyCellIterator cell_iter(lib);
+    if (cell_iter.hasNext()) {
+      sta::LibertyCell *cell = cell_iter.next();
+      if (network->findLibertyCell(cell->name()) == cell) {
+        libs.emplace_back(lib);
+      }
+    }
+  }
+  delete lib_iter;
+  sta->makeEquivCells(&libs, nullptr);
+}
+
+//std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
+std::vector<std::string> Timing::equivCells(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  std::vector<std::string> masterSeq;
+  if (cell) {
+    sta::LibertyCell* libcell = network->libertyCell(cell);
+    sta::LibertyCellSeq *equiv_cells = sta->equivCells(libcell);
+    if (equiv_cells) {
+      for (sta::LibertyCell *equiv_cell : *equiv_cells) {
+        //sta::ConcreteCell* ccell = equiv_cell;
+        //masterSeq.insert(reinterpret_cast<odb::dbMaster*>(ccell->extCell()));
+        odb::dbMaster* master = reinterpret_cast<odb::dbMaster*>(equiv_cell->extCell());
+        masterSeq.emplace_back(master->getName());
+      }
+    }
+  }
+  return masterSeq;
+}
 }  // namespace ord
