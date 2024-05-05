@@ -169,7 +169,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
-  db_cbk_ = new dbStaCbk(this, logger);
+  db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
 }
 
 void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)

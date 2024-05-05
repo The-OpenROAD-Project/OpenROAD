@@ -213,7 +213,8 @@ TEST_F(AbcTest, TestLibraryInstallation)
   abc::Abc_ObjAddFanin(and_gate, input_1_net);  // A
   abc::Abc_ObjAddFanin(and_gate, input_2_net);  // B
 
-  abc::Abc_ObjAssignName(output_net, strdup("out"), /*pSuffix=*/nullptr);
+  std::string output_name = "out";
+  abc::Abc_ObjAssignName(output_net, const_cast<char*>(output_name.c_str()), /*pSuffix=*/nullptr);
   abc::Abc_ObjAddFanin(output_net, and_gate);
 
   abc::Abc_ObjAddFanin(output, output_net);
@@ -222,9 +223,9 @@ TEST_F(AbcTest, TestLibraryInstallation)
       abc::Abc_NtkToLogic(network.get()), &abc::Abc_NtkDelete);
 
   std::array<int, 2> input_vector = {1, 1};
-  std::unique_ptr<int[]> output_vector(abc::Abc_NtkVerifySimulatePattern(
-      logic_network.get(), input_vector.data()));
+  utl::deleted_unique_ptr<int> output_vector(abc::Abc_NtkVerifySimulatePattern(
+      logic_network.get(), input_vector.data()), &free);
 
-  EXPECT_EQ(output_vector[0], 1);  // Expect that 1 & 1 == 1
+  EXPECT_EQ(output_vector.get()[0], 1);  // Expect that 1 & 1 == 1
 }
 }  // namespace rmp

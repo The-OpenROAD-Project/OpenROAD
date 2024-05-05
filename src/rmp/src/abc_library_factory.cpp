@@ -213,7 +213,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     // Get list of input ports
     abc::Vec_Ptr_t* input_names_abc = abc::Vec_PtrAlloc(input_names.size());
     for (const std::string& port_name : input_names) {
-      abc::Vec_PtrPush(input_names_abc, strdup(port_name.c_str()));
+      abc::Vec_PtrPush(input_names_abc, const_cast<char*>(port_name.c_str()));
     }
 
     // Set standard cell function
@@ -307,8 +307,8 @@ utl::deleted_unique_ptr<abc::SC_Lib> AbcLibraryFactory::Build()
   }
 
   abc::SC_Lib* abc_library = abc::Abc_SclLibAlloc();
-  sta::LibertyLibraryIterator* library_iter
-      = db_sta_->network()->libertyLibraryIterator();
+  std::unique_ptr<sta::LibertyLibraryIterator> library_iter(
+      db_sta_->network()->libertyLibraryIterator());
   while (library_iter->hasNext()) {
     sta::LibertyLibrary* library = library_iter->next();
     PopulateAbcSclLibFromSta(abc_library, library);
