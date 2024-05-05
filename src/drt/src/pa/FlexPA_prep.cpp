@@ -2241,7 +2241,7 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
   auto instClass = unique_insts_.getClass(in->getInst());
   if (instClass != nullptr) {
     for (auto& inst : *instClass) {
-      frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
+      frInstTerm* it = inst->getInstTerm(in->getIndexInOwner());
       if (!in_net) {
         if (it->getNet()) {
           return false;

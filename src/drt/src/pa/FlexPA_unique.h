@@ -97,7 +97,8 @@ class UniqueInsts
   // Mapp all instances to their representative unique instance
   std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
   // Maps all instances to the set of instances with the same unique inst
-  std::map<frInst*, std::set<frInst*, frBlockObjectComp>*> inst2Class_;
+  std::unordered_map<frInst*, std::set<frInst*, frBlockObjectComp>*>
+      inst2Class_;
   // Maps a unique instance to its pin access index
   std::map<frInst*, int, frBlockObjectComp> unique2paidx_;
   // Maps a unique instance to its index in unique_
