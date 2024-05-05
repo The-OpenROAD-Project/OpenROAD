@@ -296,10 +296,10 @@ Renderer::Settings HeatMapDataSource::getSettings() const
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto set = std::get<MapSettingBoolean>(setting);
+      auto& set = std::get<MapSettingBoolean>(setting);
       settings[set.name] = set.getter();
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto set = std::get<MapSettingMultiChoice>(setting);
+      auto& set = std::get<MapSettingMultiChoice>(setting);
       settings[set.name] = set.getter();
     }
   }
@@ -321,12 +321,12 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto set = std::get<MapSettingBoolean>(setting);
+      auto& set = std::get<MapSettingBoolean>(setting);
       bool temp_value = set.getter();
       Renderer::setSetting<bool>(settings, set.name, temp_value);
       set.setter(temp_value);
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto set = std::get<MapSettingMultiChoice>(setting);
+      auto& set = std::get<MapSettingMultiChoice>(setting);
       std::string temp_value = set.getter();
       Renderer::setSetting<std::string>(settings, set.name, temp_value);
       set.setter(temp_value);
@@ -440,7 +440,7 @@ void HeatMapDataSource::setupMap()
       map_pt->value = 0.0;
       map_pt->color = default_color;
 
-      map_[x][y] = map_pt;
+      map_[x][y] = std::move(map_pt);
     }
   }
 }
