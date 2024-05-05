@@ -434,7 +434,7 @@ void Opendp::groupInitPixels()
     const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
     const int grid_index = grid_info.getGridIndex();
     const DbuX site_width = grid_->getSiteWidth();
-    for (const DbuRect& rect : group.region_boundaries) {
+    for (const DbuRect rect : group.region_boundaries) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
@@ -468,7 +468,7 @@ void Opendp::groupInitPixels()
         }
       }
     }
-    for (const DbuRect& rect : group.region_boundaries) {
+    for (const DbuRect rect : group.region_boundaries) {
       const GridY row_start{dbuToGridCeil(rect.yl, row_height)};
       const GridY row_end{dbuToGridFloor(rect.yh, row_height)};
 
