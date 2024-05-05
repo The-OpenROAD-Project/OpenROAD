@@ -6,6 +6,7 @@
             "name":"_name",
             "type":"char *",
             "flags":["no-set"],
+            "default":"nullptr",
 	    "schema":"db_schema_update_hierarchy"	    
         },
         {
