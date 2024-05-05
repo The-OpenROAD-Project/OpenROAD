@@ -109,6 +109,7 @@ using DbuY = TypedCoordinate<DbuYType>;
 
 struct GridPt;
 struct DbuPt;
+struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
@@ -194,12 +195,12 @@ class Opendp
   void initGrid();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
-  DbuPt nearestPt(const Cell* cell, const Rect* rect) const;
-  int distToRect(const Cell* cell, const Rect* rect) const;
+  DbuPt nearestPt(const Cell* cell, const DbuRect& rect) const;
+  int distToRect(const Cell* cell, const Rect& rect) const;
   static bool checkOverlap(const Rect& cell, const Rect& box);
-  bool checkOverlap(const Cell* cell, const Rect* rect) const;
+  bool checkOverlap(const Cell* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
-  bool isInside(const Cell* cell, const Rect* rect) const;
+  bool isInside(const Cell* cell, const Rect& rect) const;
   PixelPt diamondSearch(const Cell* cell, GridX x, GridY y) const;
   void diamondSearchSide(const Cell* cell,
                          GridX x,
@@ -288,11 +289,11 @@ class Opendp
                        const vector<Cell*>& placement_failures);
 
   void rectDist(const Cell* cell,
-                const Rect* rect,
+                const Rect& rect,
                 // Return values.
                 int* x,
                 int* y) const;
-  int rectDist(const Cell* cell, const Rect* rect) const;
+  int rectDist(const Cell* cell, const Rect& rect) const;
   void checkOneSiteDbMaster();
   void deleteGrid();
   // Cell initial location wrt core origin.
