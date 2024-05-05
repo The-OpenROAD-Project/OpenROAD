@@ -174,7 +174,7 @@ TEST_F(AbcTest, TestLibraryInstallation)
 
   // When you set these params to zero they essentially turned off.
   abc::Abc_SclInstallGenlib(
-      abc_library.get(), /*SlewInit=*/0, /*Gain=*/0, /*nGatesMin=*/0);
+      abc_library.get(), /*Slew=*/0, /*Gain=*/0, /*nGatesMin=*/0);
   abc::Mio_LibraryTransferCellIds();
   abc::Mio_Library_t* lib
       = static_cast<abc::Mio_Library_t*>(abc::Abc_FrameReadLibGen());
@@ -215,7 +215,7 @@ TEST_F(AbcTest, TestLibraryInstallation)
 
   std::string output_name = "out";
   abc::Abc_ObjAssignName(
-      output_net, const_cast<char*>(output_name.c_str()), /*pSuffix=*/nullptr);
+      output_net, output_name.data(), /*pSuffix=*/nullptr);
   abc::Abc_ObjAddFanin(output_net, and_gate);
 
   abc::Abc_ObjAddFanin(output, output_net);

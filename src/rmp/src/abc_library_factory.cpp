@@ -213,7 +213,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     // Get list of input ports
     abc::Vec_Ptr_t* input_names_abc = abc::Vec_PtrAlloc(input_names.size());
     for (const std::string& port_name : input_names) {
-      abc::Vec_PtrPush(input_names_abc, const_cast<char*>(port_name.c_str()));
+      abc::Vec_PtrPush(input_names_abc, const_cast<char*>(port_name.data()));
     }
 
     // Set standard cell function
