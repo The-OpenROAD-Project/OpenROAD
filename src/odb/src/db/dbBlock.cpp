@@ -641,6 +641,9 @@ _dbBlock::~_dbBlock()
   delete _inst_tbl;
   delete _module_tbl;
   delete _modinst_tbl;
+  delete _modbterm_tbl;
+  delete _moditerm_tbl;
+  delete _modnet_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
   delete _powerswitch_tbl;
@@ -688,6 +691,13 @@ _dbBlock::~_dbBlock()
   delete _region_inst_itr;
   delete _module_inst_itr;
   delete _module_modinst_itr;
+  delete _module_modinstmoditerm_itr;
+  delete _module_modbterm_itr;
+  delete _module_modnet_itr;
+  delete _module_modnet_modbterm_itr;
+  delete _module_modnet_moditerm_itr;
+  delete _module_modnet_iterm_itr;
+  delete _module_modnet_bterm_itr;
   delete _region_group_itr;
   delete _group_itr;
   delete _guide_itr;
