@@ -406,19 +406,19 @@ void Timing::makeEquivCells()
   sta->makeEquivCells(&libs, nullptr);
 }
 
-std::vector<std::string> Timing::equivCells(odb::dbMaster* master)
+std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::Cell* cell = network->dbToSta(master);
-  std::vector<std::string> masterSeq;
+  std::vector<odb::dbMaster*> masterSeq;
   if (cell) {
     sta::LibertyCell* libcell = network->libertyCell(cell);
     sta::LibertyCellSeq *equiv_cells = sta->equivCells(libcell);
     if (equiv_cells) {
       for (sta::LibertyCell *equiv_cell : *equiv_cells) {
         odb::dbMaster* master = reinterpret_cast<odb::dbMaster*>(equiv_cell->extCell());
-        masterSeq.emplace_back(master->getName());
+        masterSeq.emplace_back(master);
       }
     }
   }

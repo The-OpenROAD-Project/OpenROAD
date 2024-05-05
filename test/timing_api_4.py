@@ -37,4 +37,4 @@ for lib in tech.getDB().getLibs():
         dbmaster = db.findMaster(master.getName())
         equicCells = timing.equivCells(dbmaster)
         for equicCell in equicCells:
-            print('  ',equicCell)
+            print('  ',equicCell.getName())

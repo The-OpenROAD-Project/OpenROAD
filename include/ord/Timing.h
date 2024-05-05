@@ -110,7 +110,7 @@ class Timing
   sta::Corner* findCorner(const char* name);
 
   void makeEquivCells();
-  std::vector<std::string> equivCells(odb::dbMaster* master);
+  std::vector<odb::dbMaster*> equivCells(odb::dbMaster* master);
 
  private:
   sta::dbSta* getSta();
