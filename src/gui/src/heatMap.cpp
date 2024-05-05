@@ -296,10 +296,10 @@ Renderer::Settings HeatMapDataSource::getSettings() const
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto& set = std::get<MapSettingBoolean>(setting);
+      const auto& set = std::get<MapSettingBoolean>(setting);
       settings[set.name] = set.getter();
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto& set = std::get<MapSettingMultiChoice>(setting);
+      const auto& set = std::get<MapSettingMultiChoice>(setting);
       settings[set.name] = set.getter();
     }
   }
@@ -321,12 +321,12 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto& set = std::get<MapSettingBoolean>(setting);
+      const auto& set = std::get<MapSettingBoolean>(setting);
       bool temp_value = set.getter();
       Renderer::setSetting<bool>(settings, set.name, temp_value);
       set.setter(temp_value);
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto& set = std::get<MapSettingMultiChoice>(setting);
+      const auto& set = std::get<MapSettingMultiChoice>(setting);
       std::string temp_value = set.getter();
       Renderer::setSetting<std::string>(settings, set.name, temp_value);
       set.setter(temp_value);
