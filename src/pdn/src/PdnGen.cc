@@ -1112,7 +1112,8 @@ bool PdnGen::importUPF(Grid* grid, PowerSwitchNetworkType type) const
       auto* pdn_switch
           = findSwitchedPowerCell(pswitch->getLibCell()->getName());
 
-      const auto& control_net = pswitch->getControlPorts()[0].net_name;
+      const auto& control_ports = pswitch->getControlPorts();
+      const auto& control_net = control_ports[0].net_name;
       if (control_net.empty()) {
         logger_->error(
             utl::PDN,
