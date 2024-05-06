@@ -2195,7 +2195,7 @@ Descriptor::Actions DbObstructionDescriptor::getActions(std::any object) const
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   return Actions(
       {{"Copy to layer",
-        [obs, &object]() {
+        [obs]() {
           odb::dbBox* box = obs->getBBox();
           odb::dbTechLayer* layer = getLayerSelection(
               obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
