@@ -520,7 +520,7 @@ void TimingWidget::selectedRowChanged(const QItemSelection& selected_row,
 
     return;
   }
-  auto top_sel_index = sel_indices.first();
+  auto& top_sel_index = sel_indices.first();
   showPathDetails(top_sel_index);
 }
 
@@ -532,7 +532,7 @@ void TimingWidget::selectedDetailRowChanged(
   if (sel_indices.isEmpty()) {
     return;
   }
-  auto top_sel_index = sel_indices.first();
+  auto& top_sel_index = sel_indices.first();
   highlightPathStage(path_details_model_, top_sel_index);
 }
 
@@ -544,7 +544,7 @@ void TimingWidget::selectedCaptureRowChanged(
   if (sel_indices.isEmpty()) {
     return;
   }
-  auto top_sel_index = sel_indices.first();
+  auto& top_sel_index = sel_indices.first();
   highlightPathStage(capture_details_model_, top_sel_index);
 }
 
@@ -558,7 +558,7 @@ void TimingWidget::copy()
 
   if (indexes.size() < 1)
     return;
-  auto sel_index = indexes.first();
+  auto& sel_index = indexes.first();
   if (focus_view == setup_timing_table_view_
       || focus_view == hold_timing_table_view_) {
     auto src_index = sel_index.sibling(sel_index.row(), 5);

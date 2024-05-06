@@ -911,7 +911,7 @@ void Gui::setHeatMapSetting(const std::string& name,
                      options.join(", ").toStdString());
     }
 
-    auto current_value = settings[option];
+    auto& current_value = settings[option];
     if (std::holds_alternative<bool>(current_value)) {
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {

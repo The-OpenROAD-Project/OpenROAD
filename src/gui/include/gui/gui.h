@@ -264,7 +264,7 @@ class Descriptor
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getShortName(std::any object) const
   {
-    return getName(object);
+    return getName(std::move(object));
   }
   virtual std::string getTypeName() const = 0;
   virtual std::string getTypeName(std::any /* object */) const

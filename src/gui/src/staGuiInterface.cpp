@@ -904,7 +904,7 @@ ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
                                           0,
                                           true,   // thru_disabled
                                           true);  // thru_constants
-  return getCone(pin, pins, false);
+  return getCone(pin, std::move(pins), false);
 }
 
 ConeDepthMapPinSet STAGuiInterface::getCone(const sta::Pin* source_pin,

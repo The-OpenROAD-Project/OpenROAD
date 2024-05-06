@@ -818,7 +818,7 @@ void DRCWidget::loadJSONReport(const QString& filename)
         shapes.emplace_back(
             DRCViolation::DRCLine(shape_points[2], shape_points[3]));
       } else if (shape_type == "polygon") {
-        shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
+        shapes.emplace_back(DRCViolation::DRCPoly(std::move(shape_points)));
       } else {
         logger_->error(
             utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);

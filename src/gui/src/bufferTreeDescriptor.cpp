@@ -260,14 +260,14 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
     is_focus &= focus_nets_.count(net) != 0;
   }
   if (!is_focus) {
-    actions.push_back(Descriptor::Action{"Focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->addFocusNet(net);
                                            }
                                            return makeSelected(bnet);
                                          }});
   } else {
-    actions.push_back(Descriptor::Action{"De-focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->removeFocusNet(net);
                                            }
