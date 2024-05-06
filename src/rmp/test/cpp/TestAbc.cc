@@ -33,9 +33,8 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-
 namespace abc {
-  void* Abc_FrameReadLibGen();
+void* Abc_FrameReadLibGen();
 }
 
 namespace rmp {
