@@ -796,6 +796,33 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
              frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
              Rect(100, 0, 350, 100));
 }
+// Check for a basic end-of-line (EOL) spacing violation with extension.
+BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
+{
+  // Setup
+  auto con = makeLef58SpacingEolConstraint(2);
+  auto endToEnd
+      = std::make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  endToEnd->setExtension(50);
+  con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
+  endToEnd->setEndToEndSpace(300);
+  con->getWithinConstraint()->setSameMask(true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {100, 50});
+  makePathseg(n1, 2, {350, 200}, {1000, 200});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             2,
+             frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint,
+             Rect(100, 100, 350, 150));
+}
 
 BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
 {
