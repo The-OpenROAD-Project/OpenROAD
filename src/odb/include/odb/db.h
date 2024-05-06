@@ -1196,7 +1196,7 @@ class dbBlock : public dbObject
   /// Convert an area from square microns to database units squared (DBU^2).
   ///
   int64_t micronsAreaToDbu(const double micronsArea);
-  
+
   ///
   /// Get the hierarchy delimeter.
   /// Returns (0) if the delimeter was not set.

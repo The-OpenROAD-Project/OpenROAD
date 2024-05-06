@@ -2337,13 +2337,13 @@ int64_t dbBlock::micronsToDbu(const double microns)
   return static_cast<int64_t>(std::round(dbu));
 }
 
-
 int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
 {
-    const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
-    const int64_t dbu_per_square_micron = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
-    double dbuArea = micronsArea * dbu_per_square_micron;
-    return static_cast<int64_t>(std::round(dbuArea));
+  const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
+  const int64_t dbu_per_square_micron
+      = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+  double dbuArea = micronsArea * dbu_per_square_micron;
+  return static_cast<int64_t>(std::round(dbuArea));
 }
 
 char dbBlock::getHierarchyDelimeter()
