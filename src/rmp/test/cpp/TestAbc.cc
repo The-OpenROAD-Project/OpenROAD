@@ -18,7 +18,7 @@
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
-#include "base/main/main.h"
+#include "base/main/abcapis.h"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
@@ -32,6 +32,11 @@
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+
+
+namespace abc {
+  void* Abc_FrameReadLibGen();
+}
 
 namespace rmp {
 
@@ -214,8 +219,7 @@ TEST_F(AbcTest, TestLibraryInstallation)
   abc::Abc_ObjAddFanin(and_gate, input_2_net);  // B
 
   std::string output_name = "out";
-  abc::Abc_ObjAssignName(
-      output_net, output_name.data(), /*pSuffix=*/nullptr);
+  abc::Abc_ObjAssignName(output_net, output_name.data(), /*pSuffix=*/nullptr);
   abc::Abc_ObjAddFanin(output_net, and_gate);
 
   abc::Abc_ObjAddFanin(output, output_net);
