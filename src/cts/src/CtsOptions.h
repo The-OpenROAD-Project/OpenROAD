@@ -293,7 +293,7 @@ class CtsOptions
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = false;
-  bool applyNDR_ = false;
+  bool applyNDR_ = true;
   bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
