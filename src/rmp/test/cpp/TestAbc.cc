@@ -33,6 +33,9 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
+// Headers have duplicate declarations so we include
+// a forward one to get at this function without angering
+// gcc.
 namespace abc {
 void* Abc_FrameReadLibGen();
 }
