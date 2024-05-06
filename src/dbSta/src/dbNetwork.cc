@@ -140,9 +140,9 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
 {
   dbBlock* block = network->block();
   module_ = block->getTopModule();
-  modinst_iter_ = ((dbModule*) module_)->getModInsts().begin();
+  modinst_iter_ = module_->getModInsts().begin();
   modinst_end_ = modinst_iter_;
-  dbinst_iter_ = ((dbModule*) module_)->getInsts().begin();
+  dbinst_iter_ = module_->getInsts().begin();
   dbinst_end_ = dbinst_iter_;
 
   if (instance == network->topInstance() && block) {
@@ -1061,7 +1061,6 @@ void dbNetwork::makeTopCell()
   }
   const char* design_name = block_->getConstName();
   Library* top_lib = makeLibrary(design_name, nullptr);
-  top_cell_ = nullptr;
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
