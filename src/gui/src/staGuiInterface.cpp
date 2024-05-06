@@ -644,7 +644,7 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
-    const auto connections = pin_map[search_pin];
+    const auto& connections = pin_map[search_pin];
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);
