@@ -33,6 +33,7 @@
 #pragma once
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDockWidget>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -147,6 +148,7 @@ class TimingWidget : public QDockWidget
   QTableView* capture_details_table_view_;
 
   QPushButton* update_button_;
+  QComboBox* columns_display_control_;
   QPushButton* settings_button_;
 
   TimingControlsDialog* settings_;

@@ -70,7 +70,7 @@ class TimingPathsModel : public QAbstractTableModel
 {
   Q_OBJECT
 
- private:
+ public:
   enum Column
   {
     Clock,
@@ -82,27 +82,15 @@ class TimingPathsModel : public QAbstractTableModel
     End
   };
 
- public:
-  static const std::map<Column, const char*>& getColumnNames()
-  {
-    static const std::map<Column, const char*> columnNames
-        = {{Clock, "Capture Clock"},
-           {Required, "Required"},
-           {Arrival, "Arrival"},
-           {Slack, "Slack"},
-           {Skew, "Skew"},
-           {Start, "Start"},
-           {End, "End"}};
-    return columnNames;
-  }
-
   TimingPathsModel(bool is_setup,
                    STAGuiInterface* sta,
                    QObject* parent = nullptr);
 
+  void setVisibleColumns();
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
                   = QModelIndex()) const Q_DECL_OVERRIDE;
+  std::set<Column> getVisibleColumns() const { return visible_columns_; }                  
 
   QVariant data(const QModelIndex& index,
                 int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
@@ -117,6 +105,8 @@ class TimingPathsModel : public QAbstractTableModel
                      const std::vector<std::set<const sta::Pin*>>& thru,
                      const std::set<const sta::Pin*>& to);
 
+  std::string columnToString(Column column) const;
+
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
@@ -128,15 +118,28 @@ class TimingPathsModel : public QAbstractTableModel
   STAGuiInterface* sta_;
   bool is_setup_;
   std::vector<std::unique_ptr<TimingPath>> timing_paths_;
+  std::set<Column> visible_columns_;
 };
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
  public:
+  enum Column
+  {
+    Pin,
+    Fanout,
+    RiseFall,
+    Time,
+    Delay,
+    Slew,
+    Load
+  };
+
   TimingPathDetailModel(bool is_capture,
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
 
+  void setVisibleColumns();
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
                   = QModelIndex()) const Q_DECL_OVERRIDE;
@@ -176,20 +179,13 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingPath* path_;
   TimingNodeList* nodes_;
 
+  std::set<Column> visible_columns_;
+
   // Unicode symbols
   static constexpr char up_down_arrows_[] = "\u21C5";
   static constexpr char up_arrow_[] = "\u2191";
   static constexpr char down_arrow_[] = "\u2193";
-  enum Column
-  {
-    Pin,
-    Fanout,
-    RiseFall,
-    Time,
-    Delay,
-    Slew,
-    Load
-  };
+
   static constexpr int clock_summary_row_ = 1;
 };
 

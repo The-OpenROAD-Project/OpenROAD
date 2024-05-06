@@ -56,6 +56,7 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
       update_button_(new QPushButton("Update", this)),
+      columns_display_control_(new QComboBox(this)),
       settings_button_(new QPushButton("Settings", this)),
       settings_(new TimingControlsDialog(this)),
       setup_timing_paths_model_(nullptr),
@@ -81,6 +82,7 @@ TimingWidget::TimingWidget(QWidget* parent)
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
   controls_layout->addWidget(settings_button_);
+  controls_layout->addWidget(columns_display_control_);
   controls_layout->addWidget(update_button_);
   controls_layout->insertStretch(1);
   control_frame->setLayout(controls_layout);
