@@ -282,6 +282,10 @@ void TimingWidget::addCommandsMenuActions()
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
 {
+  if (!focus_view_) {
+    return;
+  }
+
   timing_paths_table_index_ = focus_view_->indexAt(pos);
 
   commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
