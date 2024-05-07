@@ -82,6 +82,9 @@ void FlexPA::init()
       }
     }
   }
+  for (auto& inst : design_->getTopBlock()->getInsts()) {
+    inst->setPinAccessIdx(0);
+  }
 
   for (auto& term : design_->getTopBlock()->getTerms()) {
     for (auto& pin : term->getPins()) {

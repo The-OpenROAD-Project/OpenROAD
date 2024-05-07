@@ -80,14 +80,17 @@ class Parser
     return prefTrackPatterns_;
   }
   void buildGCellPatterns(odb::dbDatabase* db);
+  void updateDesign();
 
  private:
+  frBlock* getBlock() const { return design_->getTopBlock(); }
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
   void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
+  void setInst(odb::dbInst*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
   odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
@@ -96,6 +99,7 @@ class Parser
                                   odb::Rect bbox,
                                   frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
+  void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
@@ -237,7 +241,6 @@ class Parser
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
-  std::unique_ptr<frBlock> tmpBlock_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
@@ -250,11 +253,6 @@ class Parser
            frBlockObjectComp>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;
-  int numMasters_;
-  int numInsts_;
-  int numTerms_;      // including instterm and term
-  int numNets_;       // including snet and net
-  int numBlockages_;  // including instBlockage and blockage
 };
 
 class Writer

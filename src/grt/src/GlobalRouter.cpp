@@ -2016,7 +2016,6 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   for (odb::dbNet* db_net : block_->getNets()) {
-    db_net->clearGuides();
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
       continue;
@@ -2025,6 +2024,7 @@ void GlobalRouter::saveGuides()
     GRoute& route = iter->second;
 
     if (!route.empty()) {
+      db_net->clearGuides();
       for (GSegment& segment : route) {
         odb::Rect box = globalRoutingToBox(segment);
         box.moveDelta(offset_x, offset_y);

@@ -1254,7 +1254,7 @@ int FlexDR::main()
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
-    if (incremental && args.ripupMode == RipUpMode::ALL) {
+    if (incremental && args.ripupMode == RipUpMode::ALL && iter_ <= 2) {
       args.ripupMode = RipUpMode::INCR;
     }
     searchRepair(args);

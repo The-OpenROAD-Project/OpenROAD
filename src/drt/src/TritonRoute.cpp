@@ -543,11 +543,11 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
+  io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
-    getDesign()->getTopBlock()->removeDeletedInsts();
+    parser.updateDesign();
     return;
   }
-  io::Parser parser(db_, getDesign(), logger_);
   parser.readTechAndLibs(db_);
   processBTermsAboveTopLayer();
   parser.readDesign(db_);

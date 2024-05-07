@@ -1862,8 +1862,10 @@ void dbWire::setRawWireData(const std::vector<int>& data,
                             const std::vector<unsigned char>& op_codes)
 {
   _dbWire* wire = (_dbWire*) this;
+  _dbNet* net = (_dbNet*) getNet();
   wire->_data = data;
   wire->_opcodes = op_codes;
+  net->_flags._wire_ordered = 0;
 }
 
 }  // namespace odb

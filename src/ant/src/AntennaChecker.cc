@@ -1172,7 +1172,9 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
           if (report_file.is_open()) {
             report_file << par_report << "\n";
           }
-          logger_->report("{}", par_report);
+          if (verbose) {
+            logger_->report("{}", par_report);
+          }
         }
       } else {
         if (diff_par_violation || verbose) {
@@ -1187,7 +1189,9 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
           if (report_file.is_open()) {
             report_file << par_report << "\n";
           }
-          logger_->report("{}", par_report);
+          if (verbose) {
+            logger_->report("{}", par_report);
+          }
         }
       }
 
@@ -1204,7 +1208,9 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
           if (report_file.is_open()) {
             report_file << par_report << "\n";
           }
-          logger_->report("{}", par_report);
+          if (verbose) {
+            logger_->report("{}", par_report);
+          }
         }
       } else {
         if (diff_psr_violation || verbose) {
@@ -1219,7 +1225,9 @@ std::pair<bool, bool> AntennaChecker::checkWirePar(const ARinfo& AntennaRatio,
           if (report_file.is_open()) {
             report_file << par_report << "\n";
           }
-          logger_->report("{}", par_report);
+          if (verbose) {
+            logger_->report("{}", par_report);
+          }
         }
       }
     }
@@ -1559,10 +1567,17 @@ void AntennaChecker::checkNet(dbNet* net,
                               std::ofstream& report_file,
                               // Return values.
                               int& net_violation_count,
-                              int& pin_violation_count)
+                              int& pin_violation_count,
+                              bool use_grt_routes)
 {
   dbWire* wire = net->getWire();
   if (wire) {
+    std::vector<int> data;
+    std::vector<unsigned char> op_code;
+    if (!use_grt_routes) {
+      wire->getRawWireData(data, op_code);
+      odb::orderWires(logger_, net);
+    }
     vector<dbWireGraph::Node*> wire_roots;
     vector<dbWireGraph::Node*> gate_nodes;
     findWireRoots(wire, wire_roots, gate_nodes);
@@ -1599,7 +1614,9 @@ void AntennaChecker::checkNet(dbNet* net,
       if (report_file.is_open()) {
         report_file << net_name << "\n";
       }
-      logger_->report("{}", net_name);
+      if (verbose) {
+        logger_->report("{}", net_name);
+      }
 
       for (dbWireGraph::Node* gate : gate_nodes) {
         checkGate(gate,
@@ -1611,7 +1628,12 @@ void AntennaChecker::checkNet(dbNet* net,
                   violation,
                   violated_gates);
       }
-      logger_->report("");
+      if (verbose) {
+        logger_->report("");
+      }
+    }
+    if (!use_grt_routes) {
+      wire->setRawWireData(data, op_code);
     }
   }
 }
@@ -1656,7 +1678,9 @@ void AntennaChecker::checkGate(
             if (report_file.is_open()) {
               report_file << mterm_info << "\n";
             }
-            logger_->report("{}", mterm_info);
+            if (verbose) {
+              logger_->report("{}", mterm_info);
+            }
           }
 
           std::string layer_name = fmt::format(
@@ -1665,7 +1689,9 @@ void AntennaChecker::checkGate(
           if (report_file.is_open()) {
             report_file << layer_name << "\n";
           }
-          logger_->report("{}", layer_name);
+          if (verbose) {
+            logger_->report("{}", layer_name);
+          }
           first_pin_violation = false;
         }
         checkWirePar(ar, true, verbose, report_file);
@@ -1674,8 +1700,9 @@ void AntennaChecker::checkGate(
           if (report_file.is_open()) {
             report_file << "\n";
           }
-
-          logger_->report("");
+          if (verbose) {
+            logger_->report("");
+          }
         }
       }
     }
@@ -1709,8 +1736,9 @@ void AntennaChecker::checkGate(
           if (report_file.is_open()) {
             report_file << "\n";
           }
-
-          logger_->report("");
+          if (verbose) {
+            logger_->report("");
+          }
         }
       }
     }
@@ -1738,9 +1766,6 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 
   if (use_grt_routes) {
     global_route_source_->makeNetWires();
-  } else {
-    // detailed routes
-    odb::orderWires(logger_, block_);
   }
 
   int net_violation_count = 0;
@@ -1753,7 +1778,8 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
                verbose,
                report_file,
                net_violation_count,
-               pin_violation_count);
+               pin_violation_count,
+               use_grt_routes);
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -1766,7 +1792,8 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
                  verbose,
                  report_file,
                  net_violation_count,
-                 pin_violation_count);
+                 pin_violation_count,
+                 use_grt_routes);
       }
     }
   }

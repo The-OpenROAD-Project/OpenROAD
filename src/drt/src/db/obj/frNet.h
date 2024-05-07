@@ -169,7 +169,18 @@ class frNet : public frBlockObject
     in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
+  void clearRPins() { rpins_.clear(); }
   void clearGuides() { guides_.clear(); }
+  void clearOrigGuides() { orig_guides_.clear(); }
+  void clearConns()
+  {
+    instTerms_.clear();
+    bterms_.clear();
+    nodes_.clear();
+    root_ = nullptr;
+    rootGCellNode_ = nullptr;
+    firstNonRPinNode_ = nullptr;
+  }
   void removeShape(frShape* in) { shapes_.erase(in->getIter()); }
   void removeVia(frVia* in) { vias_.erase(in->getIter()); }
   void removePatchWire(frShape* in) { pwires_.erase(in->getIter()); }
@@ -182,6 +193,12 @@ class frNet : public frBlockObject
   void setIsFake(bool in) { isFakeNet_ = in; }
   void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
   // others
+  void clearRoutes()
+  {
+    shapes_.clear();
+    vias_.clear();
+    pwires_.clear();
+  }
   dbSigType getType() const { return type_; }
   void setType(const dbSigType& in) { type_ = in; }
   frBlockObjectEnum typeId() const override { return frcNet; }

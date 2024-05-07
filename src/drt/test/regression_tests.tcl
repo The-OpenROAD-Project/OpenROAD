@@ -1,10 +1,10 @@
 record_tests {
   ispd18_sample
+  ispd18_sample_incr
   ndr_vias1
   ndr_vias2
   obstruction
   single_step
-  single_step_incr
   ta_ap_aligned
   ta_pin_aligned
   top_level_term
