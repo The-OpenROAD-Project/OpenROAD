@@ -2005,8 +2005,7 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
     bool wire_was_oredered = net->isWireOrdered();
     std::vector<int> data;
     std::vector<unsigned char> op_code;
-    if (!wire_was_oredered)
-    {
+    if (!wire_was_oredered) {
       wire->getRawWireData(data, op_code);
       odb::orderWires(logger_, net);
     }
@@ -2043,8 +2042,7 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
         antenna_violations.push_back(antenna_violation);
       }
     }
-    if (!wire_was_oredered)
-    {
+    if (!wire_was_oredered) {
       wire->setRawWireData(data, op_code);
     }
   }
