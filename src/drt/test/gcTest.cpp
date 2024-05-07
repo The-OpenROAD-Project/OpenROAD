@@ -803,10 +803,9 @@ BOOST_AUTO_TEST_CASE(eol_endtoend_ext)
   auto con = makeLef58SpacingEolConstraint(2);
   auto endToEnd
       = std::make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+  endToEnd->setEndToEndSpace(300);
   endToEnd->setExtension(50);
   con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
-  endToEnd->setEndToEndSpace(300);
-  con->getWithinConstraint()->setSameMask(true);
 
   frNet* n1 = makeNet("n1");
 

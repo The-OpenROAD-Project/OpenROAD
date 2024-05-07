@@ -481,8 +481,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       if (withinCon->hasEndToEndConstraint()) {
         auto endToEndCon = withinCon->getEndToEndConstraint();
         eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
-        if (endToEndCon->hasExtension())
-        {
+        if (endToEndCon->hasExtension()) {
           eolWithin = endToEndCon->getExtension() * 2;
         }
       }
@@ -609,16 +608,17 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
   bool edge2isEol = checkMetalEndOfLine_eol_isEolEdge(edge2, constraint);
-  bool checkPrl = false;
   if (con->getWithinConstraint()->hasEndToEndConstraint() && edge2isEol) {
     auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
     eolSpace = endToEndCon->getEndToEndSpace();
-    if (endToEndCon->hasExtension())
-    {
-      gtl::bloat(rect1, gtl::guess_orientation(rect1), endToEndCon->getExtension());
-      gtl::bloat(rect2, gtl::guess_orientation(rect2), endToEndCon->getExtension());
+    if (endToEndCon->hasExtension()) {
+      gtl::bloat(rect1, edge1->getOrientation(), endToEndCon->getExtension());
+      gtl::bloat(rect2, edge2->getOrientation(), endToEndCon->getExtension());
     }
-    checkPrl = true;
+  } else {
+    gtl::bloat(rect1,
+               edge1->getOrientation(),
+               con->getWithinConstraint()->getEolWithin());
   }
   gtl::rectangle_data<frCoord> markerRect(rect1);
   gtl::generalized_intersect(markerRect, rect2);
@@ -626,18 +626,19 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
   auto distX = gtl::euclidean_distance(rect1, rect2, gtl::HORIZONTAL);
   auto distY = gtl::euclidean_distance(rect1, rect2, gtl::VERTICAL);
-  auto dist = gtl::euclidean_distance(rect1, rect2);
+  if (distX == 0 && distY == 0) {
+    return false;  // short handled elsewhere
+  }
   if (distX) {
     prlX = -prlX;
   }
   if (distY) {
     prlY = -prlY;
   }
-  if (checkPrl && std::max(prlX, prlY) <= 0)
-  {
+  if (std::max(prlX, prlY) <= 0) {
     return false;
   }
-  if (dist < eolSpace) {
+  if (std::max(distX, distY) < eolSpace) {
     return true;
   }
   return false;
@@ -707,9 +708,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
       }
     }
   }
-  if(!checkPrl && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
-          edge, ptr, constraint))
-  {
+  if (!checkPrl
+      && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
+          edge, ptr, constraint)) {
     return;
   }
   checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
