@@ -125,6 +125,9 @@ class TimingWidget : public QDockWidget
                               const CommandType& type);
   void showCommandsMenu(const QPoint& pos);
 
+ private slots:
+  void toggleColumn(int index, bool checked);
+
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
   void showEvent(QShowEvent* event) override;

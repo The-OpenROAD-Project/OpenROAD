@@ -137,6 +137,8 @@ TimingWidget::TimingWidget(QWidget* parent)
 
 void TimingWidget::setColumnDisplayMenu()
 {
+  int column_index = 0;
+
   // Populate with all the available columns' actions.
   for (const TimingPathsModel::Column& column :
        setup_timing_paths_model_->getVisibleColumns()) {
@@ -144,11 +146,24 @@ void TimingWidget::setColumnDisplayMenu()
 
     QAction* action = new QAction(QString::fromStdString(column_name), this);
     action->setCheckable(true);
+    action->setChecked(true);
+
+    connect(action, &QAction::triggered, this, [=](bool checked) {
+      toggleColumn(column_index, checked);
+    });
 
     columns_control_->addAction(action);
+
+    ++column_index;
   }
 
   columns_control_container_->setMenu(columns_control_);
+}
+
+void TimingWidget::toggleColumn(const int index, const bool checked)
+{
+  setup_timing_table_view_->setColumnHidden(index, !checked);
+  setup_timing_table_view_->setColumnHidden(index, !checked);
 }
 
 TimingWidget::~TimingWidget()
