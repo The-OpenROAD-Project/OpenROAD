@@ -44,7 +44,6 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-using grt::GlobalRouter;
 using odb::dbBlock;
 using std::make_pair;
 using std::pair;
@@ -161,7 +160,8 @@ void TileGrid::initTiles()
   // 2D tile grid structure init
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
-  tileStor_.resize(tileCntX_ * tileCntY_);
+  tileStor_.resize(static_cast<unsigned long>(tileCntX_)
+                   * static_cast<unsigned long>(tileCntY_));
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
