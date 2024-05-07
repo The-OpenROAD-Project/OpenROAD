@@ -67,7 +67,8 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
       network_(sta_->getDbNetwork()),
       parasitics_(sta_->parasitics()),
       arc_delay_calc_(sta_->arcDelayCalc()),
-      min_max_(sta::MinMax::max())
+      min_max_(sta::MinMax::max()),
+      resistor_id_(1)
 {
 }
 

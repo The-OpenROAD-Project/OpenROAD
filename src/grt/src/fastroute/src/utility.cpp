@@ -377,9 +377,9 @@ void FastRouteCore::getViaStackRange(int netID,
   bot_pin_l = SHRT_MAX;
   top_pin_l = -1;
 
-  const auto pin_X = net->getPinX();
-  const auto pin_Y = net->getPinY();
-  const auto pin_L = net->getPinL();
+  const auto& pin_X = net->getPinX();
+  const auto& pin_Y = net->getPinY();
+  const auto& pin_L = net->getPinL();
 
   for (int p = 0; p < pin_L.size(); p++) {
     if (pin_X[p] == node_x && pin_Y[p] == node_y) {
@@ -2634,6 +2634,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   }
 
   // config new edge
+  new_edge.assigned = false;
   new_edge.len = 0;
   new_edge.n1 = new_node_id;
   new_edge.n1a = new_node.stackAlias;
@@ -2645,6 +2646,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   new_edge.route.gridsY.push_back(n2y);
 
   // config new node
+  new_node.assigned = false;
   new_node.nbr_count = 3;
   new_node.nbr[0] = nbr;
   new_node.nbr[1] = n2;
