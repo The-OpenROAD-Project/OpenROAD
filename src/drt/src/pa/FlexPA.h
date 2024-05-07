@@ -99,6 +99,8 @@ class FlexPA
       uniqueInstPatterns_;
 
   UniqueInsts unique_insts_;
+  using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
+  std::map<UniqueMTerm, bool> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
@@ -121,6 +123,7 @@ class FlexPA
   }
   void applyPatternsFile(const char* file_path);
   void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
+  bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
 
@@ -128,6 +131,7 @@ class FlexPA
   void init();
   void initTrackCoords();
   void initViaRawPriority();
+  void initSkipInstTerm();
   // prep
   void prep();
   void prepPoint();

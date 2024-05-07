@@ -220,8 +220,8 @@ class DbNetDescriptor : public Descriptor
   const std::set<odb::dbNet*>& guide_nets_;
   const std::set<odb::dbNet*>& tracks_nets_;
 
-  odb::dbNet* getNet(std::any object) const;
-  odb::dbObject* getSink(std::any object) const;
+  odb::dbNet* getNet(const std::any& object) const;
+  odb::dbObject* getSink(const std::any& object) const;
 
   static const int max_iterms_ = 10000;
 };
@@ -660,9 +660,9 @@ class DbSiteDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
 
-  odb::dbSite* getSite(std::any object) const;
-  odb::Rect getRect(std::any object) const;
-  bool isSpecificSite(std::any object) const;
+  odb::dbSite* getSite(const std::any& object) const;
+  odb::Rect getRect(const std::any& object) const;
+  bool isSpecificSite(const std::any& object) const;
 };
 
 class DbRowDescriptor : public Descriptor

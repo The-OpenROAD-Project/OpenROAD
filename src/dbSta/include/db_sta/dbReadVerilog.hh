@@ -90,6 +90,7 @@ void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network);
 void dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
                   dbDatabase* db,
-                  utl::Logger* logger);
+                  utl::Logger* logger,
+                  bool hierarchy);
 
 }  // namespace ord

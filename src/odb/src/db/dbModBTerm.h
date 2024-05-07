@@ -71,7 +71,7 @@ class _dbModBTerm : public _dbObject
   dbId<_dbModBTerm> _next_entry;
 
   // User Code Begin Fields
-  void* _sta_port;
+  void* _sta_port = nullptr;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj);

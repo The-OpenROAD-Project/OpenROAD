@@ -69,6 +69,10 @@ proc tapcell { args } {
 
   sta::check_argc_eq0 "tapcell" $args
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 1 "No design block found."
+  }
+
   tap::clear
 
   if { [info exists keys(-endcap_cpp)] } {
@@ -233,6 +237,10 @@ proc tapcell_ripup { args } {
     keys {-tap_prefix -endcap_prefix} \
     flags {}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 2 "No design block found."
+  }
+
   sta::check_argc_eq0 "tapcell_ripup" $args
 
   set tap_prefix "TAP_"
@@ -299,6 +307,10 @@ proc place_endcaps { args } {
       -left_edge -right_edge
       -top_edge -bottom_edge} \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 6 "No design block found."
+  }
 
   sta::check_argc_eq0 "place_endcaps" $args
 

@@ -425,10 +425,10 @@ read_verilog_cmd(const char *filename)
 }
 
 void
-link_design_db_cmd(const char *design_name)
+link_design_db_cmd(const char *design_name,bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(design_name);
+  ord->linkDesign(design_name,hierarchy);
 }
 
 void

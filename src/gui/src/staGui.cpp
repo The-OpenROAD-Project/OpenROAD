@@ -110,7 +110,7 @@ int TimingPathsModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathsModel::columnCount(const QModelIndex& parent) const
 {
-  return 6;
+  return getColumnNames().size();
 }
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
@@ -157,22 +157,7 @@ QVariant TimingPathsModel::headerData(int section,
                                       int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    switch (static_cast<Column>(section)) {
-      case Clock:
-        return "Capture Clock";
-      case Required:
-        return "Required";
-      case Arrival:
-        return "Arrival";
-      case Slack:
-        return "Slack";
-      case Skew:
-        return "Skew";
-      case Start:
-        return "Start";
-      case End:
-        return "End";
-    }
+    return getColumnNames().at(static_cast<Column>(section));
   }
   return QVariant();
 }
@@ -231,9 +216,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(timing_paths_.begin(), timing_paths_.end(), sort_func);
+    std::stable_sort(
+        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
   } else {
-    std::stable_sort(timing_paths_.rbegin(), timing_paths_.rend(), sort_func);
+    std::stable_sort(
+        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
   }
 
   endResetModel();
@@ -292,7 +279,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return 7;
+  return TimingPathsModel::getColumnNames().size();
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(

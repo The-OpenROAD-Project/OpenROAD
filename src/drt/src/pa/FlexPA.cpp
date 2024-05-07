@@ -95,6 +95,7 @@ void FlexPA::init()
   initTrackCoords();
 
   unique_insts_.init();
+  initSkipInstTerm();
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)

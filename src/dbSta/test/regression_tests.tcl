@@ -1,4 +1,5 @@
 record_tests {
+  readdb_hier
   constant1
   make_port
   network_edit1

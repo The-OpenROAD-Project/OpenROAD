@@ -1181,8 +1181,9 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
     if (inst == nullptr) {
       continue;
     }
+    int iterm_index = 0;
     for (auto db_term : db_inst->getITerms()) {
-      auto term = inst->getInstTerm(db_term->getMTerm()->getName());
+      auto term = inst->getInstTerm(iterm_index++);
       if (term == nullptr) {
         continue;
       }
@@ -3677,6 +3678,11 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       if (db_iterm == nullptr) {
         logger_->error(DRT, 298, "iterm {} not found in db", term->getName());
       }
+
+      if (db_iterm->getNet() == nullptr) {
+        continue;
+      }
+
       auto db_pins = db_iterm->getMTerm()->getMPins();
       if (aps.size() != db_pins.size()) {
         logger_->error(
