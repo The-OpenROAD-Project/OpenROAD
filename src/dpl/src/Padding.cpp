@@ -37,18 +37,18 @@
 
 namespace dpl {
 
-void Padding::setPaddingGlobal(int left, int right)
+void Padding::setPaddingGlobal(GridX left, GridX right)
 {
   pad_left_ = left;
   pad_right_ = right;
 }
 
-void Padding::setPadding(dbInst* inst, int left, int right)
+void Padding::setPadding(dbInst* inst, GridX left, GridX right)
 {
   inst_padding_map_[inst] = {left, right};
 }
 
-void Padding::setPadding(dbMaster* master, int left, int right)
+void Padding::setPadding(dbMaster* master, GridX left, GridX right)
 {
   master_padding_map_[master] = {left, right};
 }
@@ -112,12 +112,12 @@ bool Padding::isPaddedType(dbInst* inst) const
   return false;
 }
 
-int Padding::padLeft(const Cell* cell) const
+GridX Padding::padLeft(const Cell* cell) const
 {
   return padLeft(cell->db_inst_);
 }
 
-int Padding::padLeft(dbInst* inst) const
+GridX Padding::padLeft(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
@@ -130,15 +130,15 @@ int Padding::padLeft(dbInst* inst) const
     }
     return pad_left_;
   }
-  return 0;
+  return GridX{0};
 }
 
-int Padding::padRight(const Cell* cell) const
+GridX Padding::padRight(const Cell* cell) const
 {
   return padRight(cell->db_inst_);
 }
 
-int Padding::padRight(dbInst* inst) const
+GridX Padding::padRight(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
@@ -151,12 +151,13 @@ int Padding::padRight(dbInst* inst) const
     }
     return pad_right_;
   }
-  return 0;
+  return GridX{0};
 }
 
-int Padding::paddedWidth(const Cell* cell) const
+DbuX Padding::paddedWidth(const Cell* cell) const
 {
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * cell->siteWidth();
+  return cell->width_
+         + gridToDbu(padLeft(cell) + padRight(cell), cell->siteWidth());
 }
 
 }  // namespace dpl

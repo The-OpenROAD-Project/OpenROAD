@@ -48,20 +48,40 @@ int64_t Cell::area() const
   return int64_t(master->getWidth()) * master->getHeight();
 }
 
-int Cell::siteWidth() const
+DbuX Cell::siteWidth() const
 {
   if (db_inst_) {
     auto site = db_inst_->getMaster()->getSite();
     if (site) {
-      return db_inst_->getMaster()->getSite()->getWidth();
+      return DbuX{static_cast<int>(site->getWidth())};
     }
   }
-  return 0;
+  return DbuX{0};
 }
 
 bool Cell::isFixed() const
 {
   return !db_inst_ || db_inst_->isFixed();
+}
+
+bool Cell::isHybrid() const
+{
+  dbSite* site = getSite();
+  return site ? site->isHybrid() : false;
+}
+
+bool Cell::isHybridParent() const
+{
+  dbSite* site = getSite();
+  return site ? site->hasRowPattern() : false;
+}
+
+dbSite* Cell::getSite() const
+{
+  if (!db_inst_ || !db_inst_->getMaster()) {
+    return nullptr;
+  }
+  return db_inst_->getMaster()->getSite();
 }
 
 bool Cell::isStdCell() const

@@ -726,7 +726,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
                              utl::Logger* logger,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
-      tree_(tree),
+      tree_(std::move(tree)),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
       renderer_state_(RendererState::OnlyShowOnActiveWidget),
       scene_(nullptr),

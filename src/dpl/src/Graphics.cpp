@@ -70,16 +70,20 @@ void Graphics::placeInstance(dbInst* instance)
   gui->pause();
 }
 
-void Graphics::binSearch(const Cell* cell, int xl, int yl, int xh, int yh)
+void Graphics::binSearch(const Cell* cell,
+                         GridX xl,
+                         GridY yl,
+                         GridX xh,
+                         GridY yh)
 {
   if (!debug_instance_ || cell->db_inst_ != debug_instance_) {
     return;
   }
-  Rect core = dp_->getCore();
-  int xl_dbu = core.xMin() + xl * dp_->getSiteWidth();
-  int yl_dbu = core.yMin() + yl * dp_->grid_->getRowHeight(cell);
-  int xh_dbu = core.xMin() + xh * dp_->getSiteWidth();
-  int yh_dbu = core.yMin() + yh * dp_->grid_->getRowHeight(cell);
+  Rect core = dp_->grid_->getCore();
+  int xl_dbu = core.xMin() + gridToDbu(xl, dp_->grid_->getSiteWidth()).v;
+  int yl_dbu = core.yMin() + gridToDbu(yl, dp_->grid_->getRowHeight(cell)).v;
+  int xh_dbu = core.xMin() + gridToDbu(xh, dp_->grid_->getSiteWidth()).v;
+  int yh_dbu = core.yMin() + gridToDbu(yh, dp_->grid_->getRowHeight(cell)).v;
   searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
 
@@ -103,15 +107,16 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
     // Compare the squared distances to save calling sqrt
-    float min_length = min_displacement_ * dp_->grid_->getRowHeight(&cell);
+    float min_length = min_displacement_ * dp_->grid_->getRowHeight(&cell).v;
     min_length *= min_length;
-    int lx = core.xMin() + cell.x_;
-    int ly = core.yMin() + cell.y_;
+    DbuX lx{core.xMin() + cell.x_};
+    DbuY ly{core.yMin() + cell.y_};
 
     auto color = cell.db_inst_ ? gui::Painter::gray : gui::Painter::red;
     painter.setPen(color);
     painter.setBrush(color);
-    painter.drawRect(Rect(lx, ly, lx + cell.width_, ly + cell.height_));
+    painter.drawRect(
+        Rect(lx.v, ly.v, lx.v + cell.width_.v, ly.v + cell.height_.v));
 
     if (!cell.db_inst_) {
       continue;
@@ -119,7 +124,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     dbBox* bbox = cell.db_inst_->getBBox();
     Point initial_location(bbox->xMin(), bbox->yMin());
-    Point final_location(lx, ly);
+    Point final_location(lx.v, ly.v);
     float len = Point::squaredDistance(initial_location, final_location);
     if (len < min_length) {
       continue;

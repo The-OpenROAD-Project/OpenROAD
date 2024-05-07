@@ -644,7 +644,7 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
-    const auto connections = pin_map[search_pin];
+    const auto& connections = pin_map[search_pin];
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);
@@ -904,7 +904,7 @@ ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
                                           0,
                                           true,   // thru_disabled
                                           true);  // thru_constants
-  return getCone(pin, pins, false);
+  return getCone(pin, std::move(pins), false);
 }
 
 ConeDepthMapPinSet STAGuiInterface::getCone(const sta::Pin* source_pin,

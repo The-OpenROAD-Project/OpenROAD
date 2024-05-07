@@ -87,6 +87,7 @@ void _dbDft::out(dbDiff& diff, char side, const char* field) const
 
 _dbDft::_dbDft(_dbDatabase* db)
 {
+  scan_inserted_ = false;
   scan_pins_ = new dbTable<_dbScanPin>(
       db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanPinObj);
   scan_chains_ = new dbTable<_dbScanChain>(

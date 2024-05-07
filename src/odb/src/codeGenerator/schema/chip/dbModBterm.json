@@ -6,12 +6,14 @@
             "name":"_name",
             "type":"char *",
             "flags":["no-set"],
+            "default":"nullptr",
 	    "schema":"db_schema_update_hierarchy"
         },
 	{
 	    "name":"_flags",
 	    "type":"uint",
 	    "flags":["private"],
+            "default":"0",
 	    "schema":"db_schema_update_hierarchy"	    
 	},
         {

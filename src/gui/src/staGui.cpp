@@ -216,9 +216,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(timing_paths_.begin(), timing_paths_.end(), sort_func);
+    std::stable_sort(
+        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
   } else {
-    std::stable_sort(timing_paths_.rbegin(), timing_paths_.rend(), sort_func);
+    std::stable_sort(
+        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
   }
 
   endResetModel();

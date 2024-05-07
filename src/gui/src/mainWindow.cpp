@@ -1551,7 +1551,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }
-  settings->setThruPin({pins});
+  settings->setThruPin({std::move(pins)});
   settings->setToPin({});
 
   timing_widget_->updatePaths();

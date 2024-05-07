@@ -114,6 +114,8 @@ void _dbModBTerm::out(dbDiff& diff, char side, const char* field) const
 
 _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 {
+  _name = nullptr;
+  _flags = 0;
 }
 
 _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
