@@ -40,6 +40,7 @@
 
 #include "nesterovBase.h"
 #include "utl/Logger.h"
+#include "gpl/Replace.h"
 
 namespace gpl {
 
@@ -803,25 +804,20 @@ void PlacerBaseCommon::init()
   siteSizeX_ = site->getWidth();
   siteSizeY_ = site->getHeight();
 
-  const int dbu_per_micron = db_->getChip()->getBlock()->getDbUnitsPerMicron();
   log_->info(GPL,
              3,
-             "{:16}({:6.2f},{:6.2f})",
+             "{:9} ( {:6.3f} {:6.3f} ) um",
              "SiteSize:",
-             static_cast<float>(siteSizeX_) / dbu_per_micron,
-             static_cast<float>(siteSizeY_) / dbu_per_micron);
-  log_->info(GPL,
+             block->dbuToMicrons(siteSizeX_),
+             block->dbuToMicrons(siteSizeY_));
+    log_->info(GPL,
              4,
-             "{:16}({:6.2f},{:6.2f})",
-             "CoreAreaLxLy:",
-             static_cast<float>(die_.coreLx()) / dbu_per_micron,
-             static_cast<float>(die_.coreLy()) / dbu_per_micron);
-  log_->info(GPL,
-             5,
-             "{:16}({:6.2f},{:6.2f})",
-             "CoreAreaUxUy:",
-             static_cast<float>(die_.coreUx()) / dbu_per_micron,
-             static_cast<float>(die_.coreUy()) / dbu_per_micron);
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "CoreBBox:",
+             block->dbuToMicrons(die_.coreLx()),
+             block->dbuToMicrons(die_.coreLy()),
+             block->dbuToMicrons(die_.coreUx()),
+             block->dbuToMicrons(die_.coreUy()));
 
   // insts fill with real instances
   dbSet<dbInst> insts = block->getInsts();
@@ -1276,9 +1272,7 @@ void PlacerBase::reset()
 
 void PlacerBase::printInfo() const
 {
-  const int dbu_per_micron = db_->getChip()->getBlock()->getDbUnitsPerMicron();
-  const float dbu_per_micron_squared = dbu_per_micron * dbu_per_micron;
-
+  dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
              6,
              "{:20} {:10}",
@@ -1292,65 +1286,57 @@ void PlacerBase::printInfo() const
 
   log_->info(GPL,
              12,
-             "{:16}({:6.2f},{:6.2f})",
-             "DieAreaLxLy:",
-             static_cast<float>(die_.dieLx()) / dbu_per_micron,
-             static_cast<float>(die_.dieLy()) / dbu_per_micron);
-  log_->info(GPL,
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "DieBBox:",
+             block->dbuToMicrons(die_.dieLx()),
+             block->dbuToMicrons(die_.dieLy()),
+             block->dbuToMicrons(die_.dieUx()),
+             block->dbuToMicrons(die_.dieUy()));
+    log_->info(GPL,
              13,
-             "{:16}({:6.2f},{:6.2f})",
-             "DieAreaUxUy:",
-             static_cast<float>(die_.dieUx()) / dbu_per_micron,
-             static_cast<float>(die_.dieUy()) / dbu_per_micron);
-  log_->info(GPL,
-             14,
-             "{:16}({:6.2f},{:6.2f})",
-             "CoreAreaLxLy:",
-             static_cast<float>(die_.coreLx()) / dbu_per_micron,
-             static_cast<float>(die_.coreLy()) / dbu_per_micron);
-  log_->info(GPL,
-             15,
-             "{:16}({:6.2f},{:6.2f})",
-             "CoreAreaUxUy:",
-             static_cast<float>(die_.coreUx()) / dbu_per_micron,
-             static_cast<float>(die_.coreUy()) / dbu_per_micron);
-
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "CoreBBox:",
+             block->dbuToMicrons(die_.coreLx()),
+             block->dbuToMicrons(die_.coreLy()),
+             block->dbuToMicrons(die_.coreUx()),
+             block->dbuToMicrons(die_.coreUy()));
+  
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
                / (coreArea - nonPlaceInstsArea_) * 100;
 
   log_->info(GPL,
              16,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "CoreArea:",
-             static_cast<float>(coreArea) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(coreArea));
   log_->info(GPL,
              17,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "NonPlaceInstsArea:",
-             static_cast<float>(nonPlaceInstsArea_) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nonPlaceInstsArea_));
 
   log_->info(GPL,
              18,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "PlaceInstsArea:",
-             static_cast<float>(placeInstsArea_) / dbu_per_micron_squared);
-  log_->info(GPL, 19, "{:20} {:10.2f}", "Util(%):", util);
+             block->dbuAreaToMicrons(placeInstsArea_));
+  log_->info(GPL, 19, "{:20} {:10.3f} %", "Util:", util);
 
   log_->info(GPL,
              20,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "StdInstsArea:",
-             static_cast<float>(stdInstsArea_) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(stdInstsArea_));
 
   log_->info(GPL,
              21,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "MacroInstsArea:",
-             static_cast<float>(macroInstsArea_) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(macroInstsArea_));
 
   if (util >= 100.1) {
-    log_->error(GPL, 301, "Utilization {:.2f}% exceeds 100%.", util);
+    log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
   }
 }
 

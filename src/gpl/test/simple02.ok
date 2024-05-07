@@ -4,36 +4,33 @@
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 [INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize:       (  0.19,  1.40)
-[INFO GPL-0004] CoreAreaLxLy:   (  0.00,  0.00)
-[INFO GPL-0005] CoreAreaUxUy:   ( 30.97, 30.80)
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
 [INFO GPL-0006] NumInstances:               295
 [INFO GPL-0007] NumPlaceInstances:          294
 [INFO GPL-0008] NumFixedInstances:            0
 [INFO GPL-0009] NumDummyInstances:            1
 [INFO GPL-0010] NumNets:                    364
 [INFO GPL-0011] NumPins:                   1122
-[INFO GPL-0012] DieAreaLxLy:    (  0.00,  0.00)
-[INFO GPL-0013] DieAreaUxUy:    ( 30.97, 30.80)
-[INFO GPL-0014] CoreAreaLxLy:   (  0.00,  0.00)
-[INFO GPL-0015] CoreAreaUxUy:   ( 30.97, 30.80)
-[INFO GPL-0016] CoreArea:                953.88
-[INFO GPL-0017] NonPlaceInstsArea:         0.27
-[INFO GPL-0018] PlaceInstsArea:          569.77
-[INFO GPL-0019] Util(%):                  59.75
-[INFO GPL-0020] StdInstsArea:            569.77
-[INFO GPL-0021] MacroInstsArea:            0.00
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] CoreArea:               953.876 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.266 um^2
+[INFO GPL-0018] PlaceInstsArea:         569.772 um^2
+[INFO GPL-0019] Util:                    59.749 %
+[INFO GPL-0020] StdInstsArea:           569.772 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
 [INFO GPL-0031] FillerInit:NumGCells:       295
 [INFO GPL-0032] FillerInit:NumGNets:        364
 [INFO GPL-0033] FillerInit:NumGPins:       1122
-[INFO GPL-0023] TargetDensity:             0.60
-[INFO GPL-0024] AvrgPlaceInstArea:         1.94
-[INFO GPL-0025] IdealBinArea:              3.23
+[INFO GPL-0023] TargetDensity:            0.600
+[INFO GPL-0024] AvrgPlaceInstArea:        1.938 um^2
+[INFO GPL-0025] IdealBinArea:             3.230 um^2
 [INFO GPL-0026] IdealBinCnt:                295
-[INFO GPL-0027] TotalBinArea:            953.88
-[INFO GPL-0028] BinCnt:     16    16
-[INFO GPL-0029] BinSize:  1.94  1.92
-[INFO GPL-0030] NumBins:         256
+[INFO GPL-0027] TotalBinArea:           953.876 um^2
+[INFO GPL-0028] BinCnt:        16     16
+[INFO GPL-0029] BinSize: (  1.936  1.925 )
+[INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter: 1 overflow: 0.865816 HPWL: 3829764
 [NesterovSolve] Iter: 10 overflow: 0.771034 HPWL: 4226642
 [NesterovSolve] Iter: 20 overflow: 0.768991 HPWL: 4211761

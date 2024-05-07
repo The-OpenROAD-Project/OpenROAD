@@ -44,6 +44,7 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+using odb::dbBlock;
 using grt::GlobalRouter;
 using std::make_pair;
 using std::pair;
@@ -146,10 +147,8 @@ void TileGrid::setLy(int ly)
 
 void TileGrid::initTiles()
 {
-  log_->info(GPL, 36, "{:15} {:6} {:6}", "TileLxLy(DBU):", lx_, ly_);
-  log_->info(
-      GPL, 37, "{:15} {:6} {:6}", "TileSize(DBU):", tileSizeX_, tileSizeY_);
-  log_->info(GPL, 38, "{:15} {:6} {:6}", "TileCnt:", tileCntX_, tileCntY_);
+  log_->info(GPL, 36, "{:9} ( {:4} {:4} ) ( {:4} {:4} ) DBU", "TileBBox:", lx_, ly_, tileSizeX_, tileSizeY_);
+  log_->info(GPL, 38, "{:9} {:6} {:4}", "TileCnt:", tileCntX_, tileCntY_);
   log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
 
   // 2D tile grid structure init
@@ -525,7 +524,7 @@ std::pair<bool, bool> RouteBase::routability()
   //
   if (minRc_ > curRc) {
     log_->info(
-        GPL, 78, "FinalRC lower than minRC({}), min RC updated.", minRc_);
+        GPL, 78, "FinalRC lower than minRC ({}), min RC updated.", minRc_);
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
     minRcViolatedCnt_ = 0;
@@ -617,15 +616,14 @@ std::pair<bool, bool> RouteBase::routability()
     // TODO dynamic inflation procedure?
   }
 
-  const int dbu_per_micron = db_->getChip()->getBlock()->getDbUnitsPerMicron();
-  const float dbu_per_micron_squared = dbu_per_micron * dbu_per_micron;
+  dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
              45,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "InflatedAreaDelta:",
-             static_cast<float>(inflatedAreaDelta_) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(inflatedAreaDelta_));
   log_->info(
-      GPL, 46, "{:20} {:6.4f}", "TargetDensity:", nbVec_[0]->targetDensity());
+      GPL, 46, "{:20} {:10.3f}", "TargetDensity:", nbVec_[0]->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
                            + nbVec_[0]->totalFillerArea();
@@ -662,36 +660,30 @@ std::pair<bool, bool> RouteBase::routability()
   log_->info(
       GPL,
       49,
-      "{:20} {:10.2f}",
+      "{:20} {:10.3f} um^2",
       "WhiteSpaceArea:",
-      static_cast<float>(nbVec_[0]->whiteSpaceArea()) / dbu_per_micron_squared);
+      block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));  
   log_->info(GPL,
              50,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "NesterovInstsArea:",
-             static_cast<float>(nbVec_[0]->nesterovInstsArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
   log_->info(GPL,
              51,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "TotalFillerArea:",
-             static_cast<float>(nbVec_[0]->totalFillerArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()));
   log_->info(GPL,
              52,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "TotalGCellsArea:",
-             static_cast<float>(nbVec_[0]->nesterovInstsArea()
-                                + nbVec_[0]->totalFillerArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
   log_->info(
       GPL,
       53,
-      "{:20} {:10.2f}",
+      "{:20} {:10.3f} um^2",
       "ExpectedGCellsArea:",
-      static_cast<float>(inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                         + nbVec_[0]->totalFillerArea())
-          / dbu_per_micron_squared);
+      block->dbuAreaToMicrons(inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
@@ -708,40 +700,36 @@ std::pair<bool, bool> RouteBase::routability()
 
   log_->info(GPL,
              54,
-             "{:20} {:6.4f}",
+             "{:20} {:10.3f}",
              "NewTargetDensity:",
              nbVec_[0]->targetDensity());
   log_->info(
       GPL,
       55,
-      "{:20} {:10.2f}",
+      "{:20} {:10.3f} um^2",
       "NewWhiteSpaceArea:",
-      static_cast<float>(nbVec_[0]->whiteSpaceArea()) / dbu_per_micron_squared);
+      block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
   log_->info(
       GPL,
       56,
-      "{:20} {:10.2f}",
+      "{:20} {:10.3f} um^2",
       "MovableArea:",
-      static_cast<float>(nbVec_[0]->movableArea()) / dbu_per_micron_squared);
+      block->dbuAreaToMicrons(nbVec_[0]->movableArea()));
   log_->info(GPL,
              57,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "NewNesterovInstArea:",
-             static_cast<float>(nbVec_[0]->nesterovInstsArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
   log_->info(GPL,
              58,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "NewTotalFillerArea:",
-             static_cast<float>(nbVec_[0]->totalFillerArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()));
   log_->info(GPL,
              59,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "NewTotalGCellsArea:",
-             static_cast<float>(nbVec_[0]->nesterovInstsArea()
-                                + nbVec_[0]->totalFillerArea())
-                 / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
 
   // update densitySizes for all gCell
   nbVec_[0]->updateDensitySize();

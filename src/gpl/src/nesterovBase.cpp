@@ -51,6 +51,7 @@
 
 namespace gpl {
 
+using odb::dbBlock;
 using utl::GPL;
 
 static int fastModulo(int input, int ceil);
@@ -611,26 +612,24 @@ void BinGrid::initBins()
     idealBinCnt = 4;
   }
 
-  const int dbu_per_micron
-      = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
-  const float dbu_per_micron_squared = dbu_per_micron * dbu_per_micron;
-  log_->info(GPL, 23, "{:20} {:10.2f}", "TargetDensity:", targetDensity_);
+  dbBlock* block = pb_->db()->getChip()->getBlock();
+  log_->info(GPL, 23, "{:20} {:10.3f}", "TargetDensity:", targetDensity_);
   log_->info(GPL,
              24,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "AvrgPlaceInstArea:",
-             static_cast<float>(averagePlaceInstArea) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "IdealBinArea:",
-             static_cast<float>(idealBinArea) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(idealBinArea));
   log_->info(GPL, 26, "{:20} {:10}", "IdealBinCnt:", idealBinCnt);
   log_->info(GPL,
              27,
-             "{:20} {:10.2f}",
+             "{:20} {:10.3f} um^2",
              "TotalBinArea:",
-             static_cast<float>(totalBinArea) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
     // Consider the apect ratio of the block when computing the number
@@ -660,18 +659,18 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 28, "{:8} {:5} {:5}", "BinCnt:", binCntX_, binCntY_);
+  log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
   log_->info(GPL,
              29,
-             "{:8} {:5.2f} {:5.2f}",
+             "{:8} ( {:6.3f} {:6.3f} )",
              "BinSize:",
-             static_cast<float>(binSizeX_) / dbu_per_micron,
-             static_cast<float>(binSizeY_) / dbu_per_micron);
-
+             block->dbuToMicrons(binSizeX_),
+             block->dbuToMicrons(binSizeY_));
+  
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
 #pragma omp parallel for num_threads(num_threads_)
@@ -687,7 +686,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "{:8} {:11}", "NumBins:", bins_.size());
+  log_->info(GPL, 30, "{:8} {}", "NumBins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -1276,7 +1275,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   macroInstsArea_ = pb_->macroInstsArea();
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
-
+  
   // update gFillerCells
   initFillerGCells();
 
@@ -1670,7 +1669,7 @@ void NesterovBase::cutFillerCells(int64_t targetFillerArea)
   std::vector<GCell*> newGCellFillers;
 
   int64_t curFillerArea = 0;
-  log_->info(GPL, 34, "{:20} {:8.2f}", "gCellFiller:", gCellFillers_.size());
+  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
 
   for (auto& gCellFiller : gCellFillers_) {
     curFillerArea += static_cast<int64_t>(gCellFiller->dx())
@@ -1688,14 +1687,12 @@ void NesterovBase::cutFillerCells(int64_t targetFillerArea)
 
   // update totalFillerArea_
   totalFillerArea_ = curFillerArea;
-  const int dbu_per_micron
-      = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
-  const float dbu_per_micron_squared = dbu_per_micron * dbu_per_micron;
+  dbBlock* block = pb_->db()->getChip()->getBlock();
   log_->info(GPL,
              35,
-             "{:20} {:8.2f}",
+             "{:20} {:10.3f} um^2",
              "NewTotalFillerArea:",
-             static_cast<float>(totalFillerArea_) / dbu_per_micron_squared);
+             block->dbuAreaToMicrons(totalFillerArea_));
 
   gCells_.swap(newGCells);
   gCellFillers_.swap(newGCellFillers);
