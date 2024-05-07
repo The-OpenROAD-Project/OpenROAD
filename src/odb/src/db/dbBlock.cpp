@@ -2318,7 +2318,7 @@ int dbBlock::getDbUnitsPerMicron()
   return block->_dbu_per_micron;
 }
 
-double dbBlock::dbuToMicrons(const int64_t dbu)
+double dbBlock::dbuToMicrons(const int dbu)
 {
   const double dbu_micron = getTech()->getDbUnitsPerMicron();
   return dbu / dbu_micron;
@@ -2330,11 +2330,11 @@ double dbBlock::dbuAreaToMicrons(const int64_t dbu_area)
   return dbu_area / (dbu_micron * dbu_micron);
 }
 
-int64_t dbBlock::micronsToDbu(const double microns)
+int dbBlock::micronsToDbu(const double microns)
 {
   const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
   double dbu = microns * dbu_per_micron;
-  return static_cast<int64_t>(std::round(dbu));
+  return static_cast<int>(std::round(dbu));
 }
 
 int64_t dbBlock::micronsAreaToDbu(const double micronsArea)

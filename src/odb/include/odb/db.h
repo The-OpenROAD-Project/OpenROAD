@@ -1180,7 +1180,7 @@ class dbBlock : public dbObject
   ///
   /// Convert a length from database units (DBUs) to microns.
   ///
-  double dbuToMicrons(const int64_t dbu);
+  double dbuToMicrons(const int dbu);
 
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.
@@ -1190,7 +1190,7 @@ class dbBlock : public dbObject
   ///
   /// Convert a length from microns to database units (DBUs).
   ///
-  int64_t micronsToDbu(const double microns);
+  int micronsToDbu(const double microns);
 
   ///
   /// Convert an area from square microns to database units squared (DBU^2).
