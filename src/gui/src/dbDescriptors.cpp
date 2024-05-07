@@ -1445,7 +1445,7 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
     }
     iterm_item = iterms;
   }
-  props.push_back({"ITerms", iterm_item});
+  props.push_back({"ITerms", std::move(iterm_item)});
   SelectionSet bterms;
   for (auto bterm : net->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
@@ -2028,7 +2028,7 @@ bool DbBlockageDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 void DbBlockageDescriptor::highlight(std::any object, Painter& painter) const
 {
   odb::Rect rect;
-  getBBox(object, rect);
+  getBBox(std::move(object), rect);
   painter.drawRect(rect);
 }
 
@@ -2167,7 +2167,7 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(
   odb::Rect rect = obs->getBBox()->getBox();
   Properties props(
       {{"Block", gui->makeSelected(obs->getBlock())},
-       {"Instance", inst_value},
+       {"Instance", std::move(inst_value)},
        {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
        {"X", Property::convert_dbu(rect.xMin(), true)},
        {"Y", Property::convert_dbu(rect.yMin(), true)},
@@ -2195,7 +2195,7 @@ Descriptor::Actions DbObstructionDescriptor::getActions(std::any object) const
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   return Actions(
       {{"Copy to layer",
-        [obs, object]() {
+        [obs]() {
           odb::dbBox* box = obs->getBBox();
           odb::dbTechLayer* layer = getLayerSelection(
               obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());

@@ -355,7 +355,7 @@ class Selected
   Selected() : object_({}), descriptor_(nullptr) {}
 
   Selected(std::any object, const Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+      : object_(std::move(object)), descriptor_(descriptor)
   {
   }
 
