@@ -2318,6 +2318,34 @@ int dbBlock::getDbUnitsPerMicron()
   return block->_dbu_per_micron;
 }
 
+double dbBlock::dbuToMicrons(const int dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuAreaToMicrons(const int64_t dbu_area)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu_area / (dbu_micron * dbu_micron);
+}
+
+int dbBlock::micronsToDbu(const double microns)
+{
+  const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
+  double dbu = microns * dbu_per_micron;
+  return static_cast<int>(std::round(dbu));
+}
+
+int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
+{
+  const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
+  const int64_t dbu_per_square_micron
+      = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+  double dbuArea = micronsArea * dbu_per_square_micron;
+  return static_cast<int64_t>(std::round(dbuArea));
+}
+
 char dbBlock::getHierarchyDelimeter()
 {
   _dbBlock* block = (_dbBlock*) this;
