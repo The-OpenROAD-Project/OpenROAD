@@ -2002,6 +2002,14 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
   dbWire* wire = net->getWire();
   dbWireGraph graph;
   if (wire) {
+    bool wire_was_oredered = net->isWireOrdered();
+    std::vector<int> data;
+    std::vector<unsigned char> op_code;
+    if (!wire_was_oredered)
+    {
+      wire->getRawWireData(data, op_code);
+      odb::orderWires(logger_, net);
+    }
     auto wire_roots = findWireRoots(wire);
 
     vector<PARinfo> PARtable = buildWireParTable(wire_roots);
@@ -2034,6 +2042,10 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
             layer->getRoutingLevel(), std::move(gates), diode_count_per_gate};
         antenna_violations.push_back(antenna_violation);
       }
+    }
+    if (!wire_was_oredered)
+    {
+      wire->setRawWireData(data, op_code);
     }
   }
   return antenna_violations;
