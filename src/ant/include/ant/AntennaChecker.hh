@@ -83,6 +83,9 @@ struct InfoType{
   double CSR;
   double diff_CAR;
   double diff_CSR;
+
+  std::vector<dbITerm*> iterms;
+
   InfoType& operator +=(const InfoType& a)
   {
     PAR += a.PAR;
@@ -275,6 +278,7 @@ class AntennaChecker
   /////////////////////////////////////////////////////////////////////////////////
   std::unordered_map<odb::dbTechLayer*, GraphNodeVector> node_by_layer_map_;
   std::unordered_map<std::string, LayerInfoVector> info_;
+  std::vector<Violation> antenna_violations_;
   int node_count_;
   dbTechLayer *min_layer_, *max_layer_;
   // dsu variables
@@ -288,17 +292,18 @@ class AntennaChecker
 
   bool isValidGate(dbMTerm* mterm);
   void buildLayerMaps(dbNet* net);
-  void checkNet2(dbNet* net, bool verbose, int& net_violation_count, int& pin_violation_count);
+  void checkNet2(dbNet* net, bool verbose, bool report, dbMTerm* diode_mterm, float ratio_margin, int& net_violation_count, int& pin_violation_count);
   void saveGates(dbNet* db_net);
   void calculatePAR();
   void calculateCAR();
   int checkInfo(dbNet* db_net, bool verbose);
+  int checkInfo2(dbNet* db_net, bool verbose, bool report, dbMTerm* diode_mterm, float ratio_margin);
   InfoType calculateViaPar(dbTechLayer* tech_layer, double via_area, double iterm_gate_area, double iterm_diff_area);
   InfoType calculateWirePar(dbTechLayer* tech_layer, double wire_area, double side_area, double iterm_gate_area, double iterm_diff_area);
-  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
-  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
-  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
-  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose);
+  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
+  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
+  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
+  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
   bool checkViolation2(const InfoType& info, dbTechLayer* layer);
 
   vector<Violation> getAntennaViolations2(dbNet* net,
