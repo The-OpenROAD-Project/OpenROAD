@@ -107,6 +107,10 @@ using DbuX = TypedCoordinate<DbuXType>;
 struct DbuYType;
 using DbuY = TypedCoordinate<DbuYType>;
 
+struct GridPt;
+struct DbuPt;
+struct DbuRect;
+
 using dbMasterSeq = vector<dbMaster*>;
 
 ////////////////////////////////////////////////////////////////
@@ -168,7 +172,7 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
-  Point pointOffMacro(const Cell& cell);
+  DbuPt pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
@@ -191,12 +195,12 @@ class Opendp
   void initGrid();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
-  Point nearestPt(const Cell* cell, const Rect* rect) const;
-  int distToRect(const Cell* cell, const Rect* rect) const;
+  DbuPt nearestPt(const Cell* cell, const DbuRect& rect) const;
+  int distToRect(const Cell* cell, const Rect& rect) const;
   static bool checkOverlap(const Rect& cell, const Rect& box);
-  bool checkOverlap(const Cell* cell, const Rect* rect) const;
+  bool checkOverlap(const Cell* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
-  bool isInside(const Cell* cell, const Rect* rect) const;
+  bool isInside(const Cell* cell, const Rect& rect) const;
   PixelPt diamondSearch(const Cell* cell, GridX x, GridY y) const;
   void diamondSearchSide(const Cell* cell,
                          GridX x,
@@ -223,17 +227,17 @@ class Opendp
                    GridY y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
-  bool mapMove(Cell* cell, const Point& grid_pt);
+  bool mapMove(Cell* cell, const GridPt& grid_pt);
   int distChange(const Cell* cell, DbuX x, DbuY y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
-  Point legalPt(const Cell* cell, const Point& pt) const;
-  Point legalGridPt(const Cell* cell, const Point& pt) const;
-  Point legalPt(const Cell* cell, bool padded) const;
-  Point legalGridPt(const Cell* cell, bool padded) const;
-  Point nearestBlockEdge(const Cell* cell,
-                         const Point& legal_pt,
+  DbuPt legalPt(const Cell* cell, const DbuPt& pt) const;
+  GridPt legalGridPt(const Cell* cell, const DbuPt& pt) const;
+  DbuPt legalPt(const Cell* cell, bool padded) const;
+  GridPt legalGridPt(const Cell* cell, bool padded) const;
+  DbuPt nearestBlockEdge(const Cell* cell,
+                         const DbuPt& legal_pt,
                          const Rect& block_bbox) const;
 
   void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
@@ -285,17 +289,17 @@ class Opendp
                        const vector<Cell*>& placement_failures);
 
   void rectDist(const Cell* cell,
-                const Rect* rect,
+                const Rect& rect,
                 // Return values.
                 int* x,
                 int* y) const;
-  int rectDist(const Cell* cell, const Rect* rect) const;
+  int rectDist(const Cell* cell, const Rect& rect) const;
   void checkOneSiteDbMaster();
   void deleteGrid();
   // Cell initial location wrt core origin.
 
   // Lower left corner in core coordinates.
-  Point initialLocation(const Cell* cell, bool padded) const;
+  DbuPt initialLocation(const Cell* cell, bool padded) const;
   static bool isBlock(const Cell* cell);
   int disp(const Cell* cell) const;
   // Place fillers
@@ -307,14 +311,11 @@ class Opendp
   void placeRowFillers(GridY row,
                        const char* prefix,
                        const MasterByImplant& filler_masters,
-                       int row_height,
+                       DbuY row_height,
                        const GridInfo& grid_info);
   static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(GridY row,
-                           GridX col,
-                           int row_height,
-                           const GridInfo& grid_info);
+  const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -327,7 +328,7 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<dbInst*, Cell*> db_inst_map_;
 
-  int have_multi_row_cells_ = 0;
+  bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;

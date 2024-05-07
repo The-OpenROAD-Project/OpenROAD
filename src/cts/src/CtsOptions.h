@@ -301,7 +301,7 @@ class CtsOptions
   bool sinkBufferMaxCapDerateSet_ = false;
   float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
-  bool dummyLoad_ = false;
+  bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
 };
 

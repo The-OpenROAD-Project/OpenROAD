@@ -496,8 +496,9 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
-      strcmp(BUILD_TYPE, "Release") == 0 ? ""
-                                         : fmt::format(" : {}", BUILD_TYPE));
+      strcasecmp(BUILD_TYPE, "release") == 0
+          ? ""
+          : fmt::format(" : {}", BUILD_TYPE));
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");

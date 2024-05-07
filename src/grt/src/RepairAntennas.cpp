@@ -756,10 +756,12 @@ odb::Rect RepairAntennas::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 
 bool RepairAntennas::diodeInRow(odb::Rect diode_rect)
 {
+  int diode_height = diode_rect.dy();
   for (odb::dbRow* row : block_->getRows()) {
     odb::Rect row_rect = row->getBBox();
+    int row_height = row_rect.dy();
 
-    if (row_rect.contains(diode_rect)) {
+    if (row_rect.contains(diode_rect) && diode_height == row_height) {
       return true;
     }
   }

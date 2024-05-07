@@ -141,6 +141,9 @@ sta::define_cmd_args "remove_fillers" {}
 proc remove_fillers { args } {
   sta::parse_key_args "remove_fillers" args keys {} flags {}
   sta::check_argc_eq0 "remove_fillers" $args
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 105 "No design block found."
+  }
   dpl::remove_fillers_cmd
 }
 
@@ -149,6 +152,11 @@ sta::define_cmd_args "check_placement" {[-verbose] \
                                         [-report_file_name file_name]}
 
 proc check_placement { args } {
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 103 "No design block found."
+  }
+
   sta::parse_key_args "check_placement" args \
     keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
   set verbose [info exists flags(-verbose)]
@@ -164,7 +172,13 @@ proc check_placement { args } {
 sta::define_cmd_args "optimize_mirroring" {}
 
 proc optimize_mirroring { args } {
+
   sta::parse_key_args "optimize_mirroring" args keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 104 "No design block found."
+  }
+
   sta::check_argc_eq0 "optimize_mirroring" $args
   dpl::optimize_mirroring_cmd
 }
