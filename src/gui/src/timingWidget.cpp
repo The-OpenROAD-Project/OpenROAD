@@ -140,11 +140,8 @@ void TimingWidget::setColumnDisplayMenu()
   int column_index = 0;
 
   // Populate with all the available columns' actions.
-  for (const TimingPathsModel::Column& column :
-       setup_timing_paths_model_->getVisibleColumns()) {
-    std::string column_name = setup_timing_paths_model_->columnToString(column);
-
-    QAction* action = new QAction(QString::fromStdString(column_name), this);
+  for (const auto& [column, name] : setup_timing_paths_model_->getColumnNames()) {
+    QAction* action = new QAction(name, this);
     action->setCheckable(true);
     action->setChecked(true);
 

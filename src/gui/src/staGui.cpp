@@ -96,18 +96,6 @@ TimingPathsModel::TimingPathsModel(bool is_setup,
                                    QObject* parent)
     : QAbstractTableModel(parent), sta_(sta), is_setup_(is_setup)
 {
-  setVisibleColumns();
-}
-
-void TimingPathsModel::setVisibleColumns()
-{
-  visible_columns_.insert(Clock);
-  visible_columns_.insert(Required);
-  visible_columns_.insert(Arrival);
-  visible_columns_.insert(Slack);
-  visible_columns_.insert(Skew);
-  visible_columns_.insert(Start);
-  visible_columns_.insert(End);
 }
 
 TimingPath* TimingPathsModel::getPathAt(const QModelIndex& index) const
@@ -122,7 +110,7 @@ int TimingPathsModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathsModel::columnCount(const QModelIndex& parent) const
 {
-  return visible_columns_.size();
+  return getColumnNames().size();
 }
 
 QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
@@ -169,7 +157,7 @@ QVariant TimingPathsModel::headerData(int section,
                                       int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    return columnToString(static_cast<Column>(section)).c_str();
+    return getColumnNames().at(static_cast<Column>(section));
   }
   return QVariant();
 }
@@ -266,28 +254,6 @@ bool TimingPathsModel::populatePaths(
   return true;
 }
 
-std::string TimingPathsModel::columnToString(const Column column) const
-{
-  switch (column) {
-    case Clock:
-      return "Clock";
-    case Required:
-      return "Required";
-    case Arrival:
-      return "Arrival";
-    case Slack:
-      return "Slack";
-    case Skew:
-      return "Skew";
-    case Start:
-      return "Start";
-    case End:
-      return "End";
-  }
-
-  return "";
-}
-
 /////////
 
 TimingPathDetailModel::TimingPathDetailModel(bool is_capture,
@@ -300,18 +266,6 @@ TimingPathDetailModel::TimingPathDetailModel(bool is_capture,
       path_(nullptr),
       nodes_(nullptr)
 {
-  setVisibleColumns();
-}
-
-void TimingPathDetailModel::setVisibleColumns()
-{
-  visible_columns_.insert(Pin);
-  visible_columns_.insert(Fanout);
-  visible_columns_.insert(RiseFall);
-  visible_columns_.insert(Time);
-  visible_columns_.insert(Delay);
-  visible_columns_.insert(Slew);
-  visible_columns_.insert(Load);
 }
 
 int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
@@ -325,7 +279,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return visible_columns_.size();
+  return TimingPathsModel::getColumnNames().size();
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(
