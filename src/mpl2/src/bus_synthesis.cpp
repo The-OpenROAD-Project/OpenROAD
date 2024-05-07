@@ -172,7 +172,7 @@ void Graph::calShortPathParentVertices(int root)
       }
     }                       // done edge traversal
   }                         // done forward propagation
-  parents_[root] = parent;  // update parents map
+  parents_[root] = std::move(parent);  // update parents map
 };
 
 // Find real paths between root vertex and target vertex
