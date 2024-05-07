@@ -44,8 +44,8 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-using odb::dbBlock;
 using grt::GlobalRouter;
+using odb::dbBlock;
 using std::make_pair;
 using std::pair;
 using std::sort;
@@ -147,7 +147,14 @@ void TileGrid::setLy(int ly)
 
 void TileGrid::initTiles()
 {
-  log_->info(GPL, 36, "{:9} ( {:4} {:4} ) ( {:4} {:4} ) DBU", "TileBBox:", lx_, ly_, tileSizeX_, tileSizeY_);
+  log_->info(GPL,
+             36,
+             "{:9} ( {:4} {:4} ) ( {:4} {:4} ) DBU",
+             "TileBBox:",
+             lx_,
+             ly_,
+             tileSizeX_,
+             tileSizeY_);
   log_->info(GPL, 38, "{:9} {:6} {:4}", "TileCnt:", tileCntX_, tileCntY_);
   log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
 
@@ -657,12 +664,11 @@ std::pair<bool, bool> RouteBase::routability()
     return std::make_pair(false, true);
   }
 
-  log_->info(
-      GPL,
-      49,
-      "{:20} {:10.3f} um^2",
-      "WhiteSpaceArea:",
-      block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));  
+  log_->info(GPL,
+             49,
+             "{:20} {:10.3f} um^2",
+             "WhiteSpaceArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
   log_->info(GPL,
              50,
              "{:20} {:10.3f} um^2",
@@ -677,13 +683,15 @@ std::pair<bool, bool> RouteBase::routability()
              52,
              "{:20} {:10.3f} um^2",
              "TotalGCellsArea:",
-             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
-  log_->info(
-      GPL,
-      53,
-      "{:20} {:10.3f} um^2",
-      "ExpectedGCellsArea:",
-      block->dbuAreaToMicrons(inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
+  log_->info(GPL,
+             53,
+             "{:20} {:10.3f} um^2",
+             "ExpectedGCellsArea:",
+             block->dbuAreaToMicrons(inflatedAreaDelta_
+                                     + nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
@@ -703,18 +711,16 @@ std::pair<bool, bool> RouteBase::routability()
              "{:20} {:10.3f}",
              "NewTargetDensity:",
              nbVec_[0]->targetDensity());
-  log_->info(
-      GPL,
-      55,
-      "{:20} {:10.3f} um^2",
-      "NewWhiteSpaceArea:",
-      block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
-  log_->info(
-      GPL,
-      56,
-      "{:20} {:10.3f} um^2",
-      "MovableArea:",
-      block->dbuAreaToMicrons(nbVec_[0]->movableArea()));
+  log_->info(GPL,
+             55,
+             "{:20} {:10.3f} um^2",
+             "NewWhiteSpaceArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
+  log_->info(GPL,
+             56,
+             "{:20} {:10.3f} um^2",
+             "MovableArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->movableArea()));
   log_->info(GPL,
              57,
              "{:20} {:10.3f} um^2",
@@ -729,7 +735,8 @@ std::pair<bool, bool> RouteBase::routability()
              59,
              "{:20} {:10.3f} um^2",
              "NewTotalGCellsArea:",
-             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()));
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
 
   // update densitySizes for all gCell
   nbVec_[0]->updateDensitySize();

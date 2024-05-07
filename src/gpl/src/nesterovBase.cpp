@@ -670,7 +670,7 @@ void BinGrid::initBins()
              "BinSize:",
              block->dbuToMicrons(binSizeX_),
              block->dbuToMicrons(binSizeY_));
-  
+
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
 #pragma omp parallel for num_threads(num_threads_)
@@ -1275,7 +1275,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   macroInstsArea_ = pb_->macroInstsArea();
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
-  
+
   // update gFillerCells
   initFillerGCells();
 

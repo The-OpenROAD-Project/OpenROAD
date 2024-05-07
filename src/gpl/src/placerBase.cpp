@@ -38,9 +38,9 @@
 #include <iostream>
 #include <utility>
 
+#include "gpl/Replace.h"
 #include "nesterovBase.h"
 #include "utl/Logger.h"
-#include "gpl/Replace.h"
 
 namespace gpl {
 
@@ -810,7 +810,7 @@ void PlacerBaseCommon::init()
              "SiteSize:",
              block->dbuToMicrons(siteSizeX_),
              block->dbuToMicrons(siteSizeY_));
-    log_->info(GPL,
+  log_->info(GPL,
              4,
              "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
              "CoreBBox:",
@@ -1292,7 +1292,7 @@ void PlacerBase::printInfo() const
              block->dbuToMicrons(die_.dieLy()),
              block->dbuToMicrons(die_.dieUx()),
              block->dbuToMicrons(die_.dieUy()));
-    log_->info(GPL,
+  log_->info(GPL,
              13,
              "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
              "CoreBBox:",
@@ -1300,7 +1300,7 @@ void PlacerBase::printInfo() const
              block->dbuToMicrons(die_.coreLy()),
              block->dbuToMicrons(die_.coreUx()),
              block->dbuToMicrons(die_.coreUy()));
-  
+
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
                / (coreArea - nonPlaceInstsArea_) * 100;
