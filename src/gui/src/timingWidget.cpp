@@ -56,7 +56,8 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
       update_button_(new QPushButton("Update", this)),
-      columns_display_control_(new QComboBox(this)),
+      columns_control_container_(new QPushButton("Columns", this)),
+      columns_control_(new QMenu("Columns", this)),
       settings_button_(new QPushButton("Settings", this)),
       settings_(new TimingControlsDialog(this)),
       setup_timing_paths_model_(nullptr),
@@ -82,9 +83,9 @@ TimingWidget::TimingWidget(QWidget* parent)
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
   controls_layout->addWidget(settings_button_);
-  controls_layout->addWidget(columns_display_control_);
+  controls_layout->addWidget(columns_control_container_);
   controls_layout->addWidget(update_button_);
-  controls_layout->insertStretch(1);
+  controls_layout->insertStretch(2);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame);
 
@@ -134,6 +135,22 @@ TimingWidget::TimingWidget(QWidget* parent)
           &TimingWidget::updateClockRows);
 }
 
+void TimingWidget::setColumnDisplayMenu()
+{
+  // Populate with all the available columns' actions.
+  for (const TimingPathsModel::Column& column :
+       setup_timing_paths_model_->getVisibleColumns()) {
+    std::string column_name = setup_timing_paths_model_->columnToString(column);
+
+    QAction* action = new QAction(QString::fromStdString(column_name), this);
+    action->setCheckable(true);
+
+    columns_control_->addAction(action);
+  }
+
+  columns_control_container_->setMenu(columns_control_);
+}
+
 TimingWidget::~TimingWidget()
 {
   dbchange_listener_->removeOwner();
@@ -172,6 +189,8 @@ void TimingWidget::init(sta::dbSta* sta)
   hold_timing_table_view_->setSortingEnabled(true);
   hold_timing_table_view_->horizontalHeader()->setSortIndicator(
       3, Qt::AscendingOrder);
+
+  setColumnDisplayMenu();
 
   connect(setup_timing_paths_model_,
           &TimingPathsModel::modelReset,

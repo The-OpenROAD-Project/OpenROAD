@@ -33,7 +33,6 @@
 #pragma once
 
 #include <QCheckBox>
-#include <QComboBox>
 #include <QDockWidget>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -133,6 +132,7 @@ class TimingWidget : public QDockWidget
 
  private:
   void copy();
+  void setColumnDisplayMenu();
   void addCommandsMenuActions();
   void populateAndSortModels(const std::set<const sta::Pin*>& from,
                              const std::vector<std::set<const sta::Pin*>>& thru,
@@ -148,7 +148,8 @@ class TimingWidget : public QDockWidget
   QTableView* capture_details_table_view_;
 
   QPushButton* update_button_;
-  QComboBox* columns_display_control_;
+  QPushButton* columns_control_container_;
+  QMenu* columns_control_;
   QPushButton* settings_button_;
 
   TimingControlsDialog* settings_;
