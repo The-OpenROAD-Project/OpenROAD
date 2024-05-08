@@ -263,7 +263,69 @@ void Resizer::removeBuffers()
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
-bool Resizer::bufferBetweenPorts(Instance* buffer)
+LibertyCell* Resizer::findSmallestEquiv(const DcalcAnalysisPt* dcalc_ap,
+                                        LibertyCell* cell)
+{
+  LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
+  if (!equiv_cells) {
+    return cell;
+  }
+
+  LibertyPort* out_port = nullptr;
+  sta::LibertyCellPortIterator it(cell);
+  while (it.hasNext()) {
+    LibertyPort* port = it.next();
+    if (port->direction()->isOutput()) {
+      if (out_port) {
+        return cell;
+      }
+      out_port = port;
+    }
+  }
+
+  if (!out_port) {
+    return cell;
+  }
+
+  sort(equiv_cells, [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+    LibertyPort* port1 = cell1->findLibertyPort(out_port->name());
+    LibertyPort* port2 = cell2->findLibertyPort(out_port->name());
+    float drive1 = port1->driveResistance();
+    float drive2 = port2->driveResistance();
+    ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+    ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+    return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
+  });
+
+  return equiv_cells->back();
+}
+
+void Resizer::downsizeAllCells()
+{
+  initBlock();
+  makeEquivCells();
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+
+  int remove_count = 0;
+  for (dbInst* db_inst : block_->getInsts()) {
+    LibertyCell* lib_cell = db_network_->libertyCell(db_inst);
+    Instance* cell = db_network_->dbToSta(db_inst);
+    if (!db_inst->isDoNotTouch() && !db_inst->isFixed() && lib_cell) {
+      // TODO: don't use tgt_slew_dcalc_ap_
+      LibertyCell* equiv = findSmallestEquiv(tgt_slew_dcalc_ap_, lib_cell);
+      if (equiv != lib_cell) {
+        replaceCell(cell, equiv, false);
+        remove_count++;
+      }
+    }
+  }
+  // TODO: message number
+  logger_->info(RSZ, 101, "Downsized {} cells.", remove_count);
+}
+
+bool Resizer::bufferBetweenPorts(Instance *buffer)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;

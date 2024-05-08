@@ -249,6 +249,10 @@ class Resizer : public dbStaState
   void bufferInputs();
   void bufferOutputs();
 
+  LibertyCell *findSmallestEquiv(const DcalcAnalysisPt *dcalc_ap,
+                                 LibertyCell *cell);
+  void downsizeAllCells();
+
   // Balance the usage of hybrid rows
   void balanceRowUsage();
 

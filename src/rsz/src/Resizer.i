@@ -363,6 +363,14 @@ remove_buffers_cmd()
 }
 
 void
+downsize_all_cells()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->downsizeAllCells();
+}
+
+void
 balance_row_usage_cmd()
 {
   ensureLinked();
