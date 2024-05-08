@@ -833,6 +833,7 @@ void RepairDesign::repairNetWire(
     // offset from instance origin to pin and detailed placement movement.
     static double length_margin = .05;
     bool split_wire = false;
+    const char *split_reason = nullptr;
     bool resize = true;
     // Distance from repeater to ref_.
     //              length
@@ -851,8 +852,8 @@ void RepairDesign::repairNetWire(
                  level,
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                  units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
+      split_reason = "max_length";
       split_length = min(max_length_, length / 2);
-
       split_wire = true;
     }
     if (wire_cap > 0.0 && load_cap > max_cap_) {
@@ -868,9 +869,13 @@ void RepairDesign::repairNetWire(
       if (ref_cap > max_cap_) {
         split_length = 0;
         split_wire = false;
-      } else {
-        split_length
-            = min(split_length, metersToDbu((max_cap_ - ref_cap) / wire_cap));
+      }
+      else {
+        int cap_length = metersToDbu((max_cap_ - ref_cap) / wire_cap);
+        if (cap_length < split_length) {
+          split_reason = "max_cap";
+        }
+        split_length = min(split_length, cap_length);
         split_wire = true;
       }
     }
@@ -900,11 +905,11 @@ void RepairDesign::repairNetWire(
                 - max_load_slew_margined / elmore_skew_factor_;
       float l = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
-        if (split_length > 0.0) {
-          split_length = min(split_length, metersToDbu(l));
-        } else {
-          split_length = metersToDbu(l);
+        int slew_length = metersToDbu(l);
+        if (slew_length < split_length) {
+          split_reason = "load_slew";
         }
+        split_length = min(split_length, slew_length);
         split_wire = true;
         resize = false;
       } else {
@@ -936,7 +941,7 @@ void RepairDesign::repairNetWire(
       int buf_x = to_x + d * dx;
       int buf_y = to_y + d * dy;
       float repeater_cap, repeater_fanout;
-      makeRepeater("wire",
+      makeRepeater(split_reason,
                    Point(buf_x, buf_y),
                    buffer_cell,
                    resize,
