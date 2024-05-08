@@ -4,40 +4,37 @@
 [INFO ODB-0131]     Created 286 components and 1624 component-terminals.
 [INFO ODB-0133]     Created 356 nets and 1052 connections.
 [INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: 380 2800
-[INFO GPL-0004] CoreAreaLxLy: 0 0
-[INFO GPL-0005] CoreAreaUxUy: 61940 61600
-[INFO GPL-0006] NumInstances: 286
-[INFO GPL-0007] NumPlaceInstances: 286
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 0
-[INFO GPL-0010] NumNets: 356
-[INFO GPL-0011] NumPins: 1106
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 61940 61600
-[INFO GPL-0014] CoreAreaLxLy: 0 0
-[INFO GPL-0015] CoreAreaUxUy: 61940 61600
-[INFO GPL-0016] CoreArea: 3815504000
-[INFO GPL-0017] NonPlaceInstsArea: 0
-[INFO GPL-0018] PlaceInstsArea: 2213120000
-[INFO GPL-0019] Util(%): 58.00
-[INFO GPL-0020] StdInstsArea: 2213120000
-[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0006] NumInstances:               286
+[INFO GPL-0007] NumPlaceInstances:          286
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                    356
+[INFO GPL-0011] NumPins:                   1106
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] CoreArea:               953.876 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:         553.280 um^2
+[INFO GPL-0019] Util:                    58.003 %
+[INFO GPL-0020] StdInstsArea:           553.280 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
 [InitialPlace]  Iter: 1 CG residual: 0.00000011 HPWL: 5614340
 [InitialPlace]  Iter: 2 CG residual: 0.00000011 HPWL: 4984546
 [InitialPlace]  Iter: 3 CG residual: 0.00000010 HPWL: 4974780
 [InitialPlace]  Iter: 4 CG residual: 0.00000010 HPWL: 4982232
 [InitialPlace]  Iter: 5 CG residual: 0.00000009 HPWL: 4985753
-[INFO GPL-0031] FillerInit: NumGCells: 349
-[INFO GPL-0032] FillerInit: NumGNets: 356
-[INFO GPL-0033] FillerInit: NumGPins: 1106
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 7738181
-[INFO GPL-0025] IdealBinArea: 11054544
-[INFO GPL-0026] IdealBinCnt: 345
-[INFO GPL-0027] TotalBinArea: 3815504000
-[INFO GPL-0028] BinCnt: 16 16
-[INFO GPL-0029] BinSize: 3872 3850
+[INFO GPL-0031] FillerInit:NumGCells:       349
+[INFO GPL-0032] FillerInit:NumGNets:        356
+[INFO GPL-0033] FillerInit:NumGPins:       1106
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        1.935 um^2
+[INFO GPL-0025] IdealBinArea:             2.764 um^2
+[INFO GPL-0026] IdealBinCnt:                345
+[INFO GPL-0027] TotalBinArea:           953.876 um^2
+[INFO GPL-0028] BinCnt:        16     16
+[INFO GPL-0029] BinSize: (  1.936  1.925 )
 [INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter: 1 overflow: 0.832414 HPWL: 3651238
 [INFO GPL-0100] worst slack 1.39e-09
