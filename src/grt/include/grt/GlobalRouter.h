@@ -219,8 +219,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeNetWires() override;
   void destroyNetWires() override;
 
-  double dbuToMicrons(int64_t dbu);
-
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
 

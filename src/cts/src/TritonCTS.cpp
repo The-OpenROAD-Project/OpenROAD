@@ -413,8 +413,10 @@ void TritonCTS::writeDataToDb()
       logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 99, " Sinks {}", sinkCount);
       logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
-      double avgWL = allSinkDistance / sinkCount;
-      logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
+      if (sinkCount > 0) {
+        double avgWL = allSinkDistance / sinkCount;
+        logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
+      }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
       if (options_->dummyLoadEnabled()) {
         logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
@@ -604,7 +606,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
                "have been found", clockBuffers.size());
     // clang-format on
     if (!clockBuffers.empty()) {
-      buffers = clockBuffers;
+      buffers = std::move(clockBuffers);
     } else {
       pattern = std::string("buf");
       clockBuffers = findMatchingSubset(pattern, buffers);
