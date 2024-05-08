@@ -192,7 +192,8 @@ void IOPlacer::randomPlacement()
           constraint, netlist_io_pins_.get(), mirrored_pins);
       pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
     }
-    randomPlacement(pin_indices, valid_slots, top_layer, false);
+    randomPlacement(
+        std::move(pin_indices), std::move(valid_slots), top_layer, false);
   }
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
@@ -215,7 +216,7 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(std::move(pin_indices), valid_slots, false, false);
+  randomPlacement(std::move(pin_indices), std::move(valid_slots), false, false);
   placeFallbackPins(true);
 }
 
