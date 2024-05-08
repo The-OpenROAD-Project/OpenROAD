@@ -45,6 +45,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "SynthesizeBuffers.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -130,6 +131,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      synthesize_buffers_(new SynthesizeBuffers(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -2763,6 +2765,7 @@ int Resizer::holdBufferCount() const
 }
 
 ////////////////////////////////////////////////////////////////
+
 void Resizer::recoverPower(float recover_power_percent)
 {
   resizePreamble();
@@ -2771,6 +2774,15 @@ void Resizer::recoverPower(float recover_power_percent)
   }
   recover_power_->recoverPower(recover_power_percent);
 }
+
+////////////////////////////////////////////////////////////////
+
+void Resizer::synthesizeBuffers(int max_fanout, float gain, float slew)
+{
+  resizePreamble();
+  synthesize_buffers_->synthesizeBuffers(max_fanout, gain, slew);
+}
+
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes (OpenDB not up to the task).
 void Resizer::journalBegin()

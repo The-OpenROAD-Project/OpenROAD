@@ -134,6 +134,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class SynthesizeBuffers;
 
 class NetHash
 {
@@ -297,6 +298,9 @@ class Resizer : public dbStaState
 
   ////////////////////////////////////////////////////////////////
   void recoverPower(float recover_power_percent);
+
+  ////////////////////////////////////////////////////////////////
+  void synthesizeBuffers(int max_fanout, float gain, float slew);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -624,6 +628,7 @@ class Resizer : public dbStaState
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  SynthesizeBuffers* synthesize_buffers_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -706,6 +711,7 @@ class Resizer : public dbStaState
   friend class RepairSetup;
   friend class RepairHold;
   friend class SteinerTree;
+  friend class SynthesizeBuffers;
 };
 
 }  // namespace rsz
