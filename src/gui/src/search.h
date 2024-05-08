@@ -243,6 +243,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
       odb::dbInst* inst,
       const odb::dbPlacementStatus& status) override;
   virtual void inDbPostMoveInst(odb::dbInst* inst) override;
+  virtual void inDbBPinCreate(odb::dbBPin* pin) override;
   virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
   virtual void inDbFillCreate(odb::dbFill* fill) override;
   virtual void inDbWireCreate(odb::dbWire* wire) override;
