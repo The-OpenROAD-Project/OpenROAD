@@ -102,7 +102,6 @@ class AntennaChecker
 
  private:
   bool haveRoutedNets();
-  double dbuToMicrons(int value);
 
   dbWireGraph::Node* findSegmentRoot(dbWireGraph::Node* node_info,
                                      int wire_level);

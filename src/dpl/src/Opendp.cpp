@@ -188,23 +188,25 @@ void Opendp::reportLegalizationStats() const
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
   logger_->report("total displacement   {:10.1f} u",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->metric("design__instance__displacement__total",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->metric("design__instance__displacement__mean",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->metric("design__instance__displacement__max",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
-                  dbuToMicrons(hpwl_before_));
+                  block_->dbuToMicrons(hpwl_before_));
   odb::WireLengthEvaluator eval(block_);
   const double hpwl_legal = eval.hpwl();
-  logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
-  logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
+  logger_->report("legalized HPWL       {:10.1f} u",
+                  block_->dbuToMicrons(hpwl_legal));
+  logger_->metric("route__wirelength__estimated",
+                  block_->dbuToMicrons(hpwl_legal));
   const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
@@ -253,18 +255,6 @@ int Opendp::disp(const Cell* cell) const
 bool Opendp::isBlock(const Cell* cell)
 {
   return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
-}
-
-double Opendp::dbuToMicrons(const int64_t dbu) const
-{
-  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu / dbu_micron;
-}
-
-double Opendp::dbuAreaToMicrons(const int64_t dbu_area) const
-{
-  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu_area / (dbu_micron * dbu_micron);
 }
 
 int Opendp::padGlobalLeft() const

@@ -76,6 +76,7 @@ void SimulatedAnnealing::run(float init_temperature,
     int64 pre_cost = 0;
     pre_cost = getAssignmentCost();
     float temperature = init_temperature_;
+    odb::dbBlock* block = db_->getChip()->getBlock();
 
     boost::random::uniform_real_distribution<float> distribution;
     for (int iter = 0; iter < max_iterations_; iter++) {
@@ -94,8 +95,8 @@ void SimulatedAnnealing::run(float init_temperature,
             "cost: {}um",
             iter,
             temperature,
-            dbuToMicrons(cost),
-            dbuToMicrons(delta_cost));
+            block->dbuToMicrons(cost),
+            block->dbuToMicrons(delta_cost));
 
         const float rand_float = distribution(generator_);
         const float accept_prob = std::exp((-1) * delta_cost / temperature);
@@ -753,11 +754,6 @@ void SimulatedAnnealing::restorePreviousAssignment()
       cnt++;
     }
   }
-}
-
-double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
-{
-  return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
 }
 
 bool SimulatedAnnealing::isFreeForGroup(int& slot_idx,

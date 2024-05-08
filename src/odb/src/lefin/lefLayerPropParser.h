@@ -129,7 +129,7 @@ class lefTechLayerCutSpacingParser
 class lefTechLayerCutSpacingTableParser
 {
  public:
-  odb::dbTechLayerCutSpacingTableDefRule* curRule;
+  odb::dbTechLayerCutSpacingTableDefRule* curRule = nullptr;
   odb::dbTechLayer* layer;
   lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly) { layer = inly; };
   bool parse(std::string,

@@ -437,6 +437,7 @@ void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
     }
     w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
   }
+  free(destid);
 }
 
 void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
