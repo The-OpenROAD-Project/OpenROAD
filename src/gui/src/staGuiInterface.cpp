@@ -42,6 +42,7 @@
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Liberty.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
@@ -178,6 +179,7 @@ TimingPath::TimingPath()
       path_delay_(0),
       arr_time_(0),
       req_time_(0),
+      logic_depth_(0),
       clk_path_end_index_(0),
       clk_capture_end_index_(0)
 {
@@ -197,6 +199,11 @@ void TimingPath::populateNodeList(sta::Path* path,
   auto* graph = sta->graph();
   auto* network = sta->network();
   auto* sdc = sta->sdc();
+
+  // Used to compute logic depth.
+  sta::Pin* previous_pin = nullptr;
+  bool inverter_pair_found = false;
+
   for (size_t i = 0; i < expand.size(); i++) {
     const auto* ref = expand.path(i);
     sta::Vertex* vertex = ref->vertex(sta);
@@ -247,6 +254,12 @@ void TimingPath::populateNodeList(sta::Path* path,
       slew = ref->slew(sta);
     }
 
+    if (!sta->isClock(pin)) {
+      // To avoid iterating the path nodes again when populating the timing
+      // paths, we set the logic depth while populating the node list.
+      updateLogicDepth(network, pin, previous_pin, inverter_pair_found);
+    }
+
     list.push_back(
         std::make_unique<TimingPathNode>(pin_object,
                                          pin,
@@ -260,6 +273,13 @@ void TimingPath::populateNodeList(sta::Path* path,
                                          cap,
                                          fanout));
     arrival_prev_stage = arrival_cur_stage;
+
+    if (inverter_pair_found) {
+      previous_pin = nullptr;
+      inverter_pair_found = false;
+    } else {
+      previous_pin = pin;
+    }
   }
 
   // populate list with source/sink nodes
@@ -290,6 +310,36 @@ void TimingPath::populateNodeList(sta::Path* path,
       instance_node = node.get();
     }
     node->setInstanceNode(instance_node);
+  }
+}
+
+void TimingPath::updateLogicDepth(sta::Network* network,
+                                  sta::Pin* pin,
+                                  sta::Pin* previous_pin,
+                                  bool& inverter_pair_found)
+{
+  sta::LibertyCell* lib_cell = network->libertyCell(network->instance(pin));
+
+  if (!lib_cell) {
+    return;
+  }
+
+  if (!lib_cell->isBuffer()) {
+    ++logic_depth_;
+  }
+
+  if (previous_pin) {
+    sta::LibertyCell* prev_pin_lib_cell
+        = network->libertyCell(network->instance(previous_pin));
+
+    if (!prev_pin_lib_cell) {
+      return;
+    }
+
+    if (prev_pin_lib_cell->isInverter() && lib_cell->isInverter()) {
+      logic_depth_ -= 2;
+      inverter_pair_found = true;
+    }
   }
 }
 

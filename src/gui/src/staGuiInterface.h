@@ -184,6 +184,7 @@ class TimingPath
   void setPathDelay(float del) { path_delay_ = del; }
   float getSkew() const { return skew_; }
   void setSkew(float skew) { skew_ = skew; }
+  int getLogicDepth() const { return logic_depth_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -217,6 +218,7 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
+  int logic_depth_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
@@ -226,6 +228,10 @@ class TimingPath
                         float offset,
                         bool clock_expanded,
                         TimingNodeList& list);
+  void updateLogicDepth(sta::Network* network,
+                        sta::Pin* pin,
+                        sta::Pin* previous_pin,
+                        bool& inverter_pair_found);
 
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
