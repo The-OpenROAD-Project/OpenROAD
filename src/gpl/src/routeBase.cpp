@@ -160,8 +160,8 @@ void TileGrid::initTiles()
   // 2D tile grid structure init
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
-  tileStor_.resize(static_cast<unsigned long>(tileCntX_)
-                   * static_cast<unsigned long>(tileCntY_));
+  tileStor_.resize(static_cast<uint64_t>(tileCntX_)
+                   * static_cast<uint64_t>(tileCntY_));
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
