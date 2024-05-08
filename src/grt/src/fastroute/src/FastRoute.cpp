@@ -899,7 +899,7 @@ void FastRouteCore::getCapacityReductionData(
         if (is_horizontal) {
           if (!regular_y_ && y == y_grid_ - 1) {
             cap_red_data[x][y].capacity += last_row_capH;
-          } else if (x != x_grid_ - 1) {
+          } else if (x != x_grid_ - 1 || y == y_grid_ - 1) {
             // don't add horizontal cap in the last col because there is no
             // usage there
             cap_red_data[x][y].capacity += capH;
@@ -907,7 +907,7 @@ void FastRouteCore::getCapacityReductionData(
         } else {
           if (!regular_x_ && x == x_grid_ - 1) {
             cap_red_data[x][y].capacity += last_col_capV;
-          } else if (y != y_grid_ - 1) {
+          } else if (y != y_grid_ - 1 || x == x_grid_ - 1) {
             // don't add vertical cap in the last row because there is no usage
             // there
             cap_red_data[x][y].capacity += capV;
