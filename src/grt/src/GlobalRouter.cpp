@@ -3907,7 +3907,7 @@ void GlobalRouter::reportLayerWireLengths()
         odb::dbTechLayer* layer = routing_layers_[i];
         logger_->report("{:5s} {:8d}um {:3d}%",
                         layer->getName(),
-                        static_cast<int64_t>(block_->dbuToMicrons(length)),
+                        block_->dbuToMicrons(length),
                         static_cast<int>((100.0 * length) / total_length));
       }
     }
