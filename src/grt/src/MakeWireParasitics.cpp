@@ -58,9 +58,11 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
                                        rsz::Resizer* resizer,
                                        sta::dbSta* sta,
                                        odb::dbTech* tech,
+                                       odb::dbBlock* block,
                                        GlobalRouter* grouter)
     : grouter_(grouter),
       tech_(tech),
+      block_(block),
       logger_(logger),
       resizer_(resizer),
       sta_(sta),
@@ -80,13 +82,13 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     for (GSegment& segment : route) {
       logger_->report(
           "({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
-          grouter_->dbuToMicrons(segment.init_x),
-          grouter_->dbuToMicrons(segment.init_y),
+          block_->dbuToMicrons(segment.init_x),
+          block_->dbuToMicrons(segment.init_y),
           segment.init_layer,
-          grouter_->dbuToMicrons(segment.final_x),
-          grouter_->dbuToMicrons(segment.final_y),
+          block_->dbuToMicrons(segment.final_x),
+          block_->dbuToMicrons(segment.final_y),
           segment.final_layer,
-          grouter_->dbuToMicrons(segment.length()));
+          block_->dbuToMicrons(segment.length()));
     }
   }
 
@@ -115,13 +117,13 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net, GRoute& route)
     for (GSegment& segment : route) {
       logger_->report(
           "({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
-          grouter_->dbuToMicrons(segment.init_x),
-          grouter_->dbuToMicrons(segment.init_y),
+          block_->dbuToMicrons(segment.init_x),
+          block_->dbuToMicrons(segment.init_y),
           segment.init_layer,
-          grouter_->dbuToMicrons(segment.final_x),
-          grouter_->dbuToMicrons(segment.final_y),
+          block_->dbuToMicrons(segment.final_x),
+          block_->dbuToMicrons(segment.final_y),
           segment.final_layer,
-          grouter_->dbuToMicrons(segment.length()));
+          block_->dbuToMicrons(segment.length()));
     }
   }
 
@@ -313,9 +315,9 @@ void MakeWireParasitics::makeParasiticsToPin(
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
         parasitics_->name(grid_node),
         parasitics_->name(pin_node),
-        grouter_->dbuToMicrons(pt.getX()),
-        grouter_->dbuToMicrons(pt.getY()),
-        grouter_->dbuToMicrons(wire_length_dbu),
+        block_->dbuToMicrons(pt.getX()),
+        block_->dbuToMicrons(pt.getY()),
+        block_->dbuToMicrons(wire_length_dbu),
         layer,
         units->resistanceUnit()->asString(res),
         units->resistanceUnit()->asString(via_res),
@@ -422,9 +424,9 @@ void MakeWireParasitics::makePartialParasiticsToPin(
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
         parasitics_->name(grid_node),
         parasitics_->name(pin_node),
-        grouter_->dbuToMicrons(pt.getX()),
-        grouter_->dbuToMicrons(pt.getY()),
-        grouter_->dbuToMicrons(wire_length_dbu),
+        block_->dbuToMicrons(pt.getX()),
+        block_->dbuToMicrons(pt.getY()),
+        block_->dbuToMicrons(wire_length_dbu),
         layer,
         units->resistanceUnit()->asString(res),
         units->resistanceUnit()->asString(via_res),
@@ -466,7 +468,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
   double cap_per_meter = 0.0;  // F/meter
   resizer_->layerRC(layer, corner, r_per_meter, cap_per_meter);
 
-  const float layer_width = grouter_->dbuToMicrons(layer->getWidth());
+  const float layer_width = block_->dbuToMicrons(layer->getWidth());
   if (r_per_meter == 0.0) {
     const float res_ohm_per_micron = layer->getResistance() / layer_width;
     r_per_meter = 1E+6 * res_ohm_per_micron;  // ohm/meter
