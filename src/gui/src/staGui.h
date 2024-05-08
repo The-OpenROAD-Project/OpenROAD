@@ -87,7 +87,7 @@ class TimingPathsModel : public QAbstractTableModel
  public:
   static const std::map<Column, const char*>& getColumnNames()
   {
-    static const std::map<Column, const char*> columnNames
+    static const std::map<Column, const char*> column_names
         = {{Clock, "Capture Clock"},
            {Required, "Required"},
            {Arrival, "Arrival"},
@@ -97,7 +97,7 @@ class TimingPathsModel : public QAbstractTableModel
            {LogicDepth, "Logic Depth"},
            {Start, "Start"},
            {End, "End"}};
-    return columnNames;
+    return column_names;
   }
 
   TimingPathsModel(bool is_setup,
@@ -136,7 +136,32 @@ class TimingPathsModel : public QAbstractTableModel
 
 class TimingPathDetailModel : public QAbstractTableModel
 {
+ private:
+  enum Column
+  {
+    Pin,
+    Fanout,
+    RiseFall,
+    Time,
+    Delay,
+    Slew,
+    Load
+  };
+
  public:
+  static const std::map<Column, const char*>& getColumnNames()
+  {
+    static const std::map<Column, const char*> column_names
+        = {{Pin, "Pin"},
+           {Fanout, "Fanout"},
+           {RiseFall, "RiseFall"},
+           {Time, "Time"},
+           {Delay, "Delay"},
+           {Slew, "Slew"},
+           {Load, "Load"}};
+    return column_names;
+  }
+
   TimingPathDetailModel(bool is_capture,
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
@@ -184,16 +209,6 @@ class TimingPathDetailModel : public QAbstractTableModel
   static constexpr char up_down_arrows_[] = "\u21C5";
   static constexpr char up_arrow_[] = "\u2191";
   static constexpr char down_arrow_[] = "\u2193";
-  enum Column
-  {
-    Pin,
-    Fanout,
-    RiseFall,
-    Time,
-    Delay,
-    Slew,
-    Load
-  };
   static constexpr int clock_summary_row_ = 1;
 };
 

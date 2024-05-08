@@ -295,7 +295,7 @@ int TimingPathDetailModel::rowCount(const QModelIndex& parent) const
 
 int TimingPathDetailModel::columnCount(const QModelIndex& parent) const
 {
-  return TimingPathsModel::getColumnNames().size();
+  return getColumnNames().size();
 }
 
 const TimingPathNode* TimingPathDetailModel::getNodeAt(
