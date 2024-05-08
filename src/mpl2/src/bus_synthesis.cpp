@@ -170,8 +170,8 @@ void Graph::calShortPathParentVertices(int root)
       } else if (dist[edge.dest] == dist[vertex_dist.vertex] + edge.weight) {
         parent[edge.dest].push_back(vertex_dist.vertex);
       }
-    }                       // done edge traversal
-  }                         // done forward propagation
+    }                                  // done edge traversal
+  }                                    // done forward propagation
   parents_[root] = std::move(parent);  // update parents map
 };
 
