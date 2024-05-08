@@ -185,8 +185,6 @@ class Opendp
   void makeCells();
   static bool isPlacedType(dbMasterType type);
   void makeGroups();
-  double dbuToMicrons(int64_t dbu) const;
-  double dbuAreaToMicrons(int64_t dbu_area) const;
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
 

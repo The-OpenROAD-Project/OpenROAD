@@ -2477,10 +2477,9 @@ odb::Rect FastRouteCore::globalRoutingToBox(const GSegment& route)
   return route_bds;
 }
 
-double FastRouteCore::dbuToMicrons(int64_t dbu)
+double FastRouteCore::dbuToMicrons(int dbu)
 {
-  auto block = db_->getChip()->getBlock();
-  return (double) dbu / (block->getDbUnitsPerMicron());
+  return db_->getChip()->getBlock()->dbuToMicrons(dbu);
 }
 
 void FastRouteCore::saveCongestion(const int iter)

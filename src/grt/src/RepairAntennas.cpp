@@ -180,10 +180,10 @@ odb::dbWire* RepairAntennas::makeNetWire(
                    "check_antennas",
                    1,
                    "invalid seg: ({}, {})um to ({}, {})um",
-                   grouter_->dbuToMicrons(seg.init_x),
-                   grouter_->dbuToMicrons(seg.init_y),
-                   grouter_->dbuToMicrons(seg.final_x),
-                   grouter_->dbuToMicrons(seg.final_y));
+                   block_->dbuToMicrons(seg.init_x),
+                   block_->dbuToMicrons(seg.init_y),
+                   block_->dbuToMicrons(seg.final_x),
+                   block_->dbuToMicrons(seg.final_y));
 
         logger_->error(GRT,
                        68,

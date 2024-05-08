@@ -141,15 +141,9 @@ void AntennaChecker::init(odb::dbDatabase* db,
   logger_ = logger;
 }
 
-double AntennaChecker::dbuToMicrons(int value)
-{
-  return static_cast<double>(value) / dbu_per_micron_;
-}
-
 void AntennaChecker::initAntennaRules()
 {
   block_ = db_->getChip()->getBlock();
-  dbu_per_micron_ = block_->getDbUnitsPerMicron();
   odb::dbTech* tech = db_->getTech();
   for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
     double metal_factor = 1.0;
@@ -371,10 +365,10 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   double wire_area = 0;
   double side_wire_area = 0;
 
-  double wire_width = dbuToMicrons(node->layer()->getWidth());
+  double wire_width = block_->dbuToMicrons(node->layer()->getWidth());
   uint wire_thickness_dbu = 0;
   node->layer()->getThickness(wire_thickness_dbu);
-  double wire_thickness = dbuToMicrons(wire_thickness_dbu);
+  double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
 
   int start_x, start_y;
   int end_x, end_y;
@@ -427,11 +421,12 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
           level_nodes.insert(node);
           edge->source()->xy(end_x, end_y);
 
-          wire_area += dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
+          wire_area += block_->dbuToMicrons(abs(end_x - start_x)
+                                            + abs(end_y - start_y))
                        * wire_width;
-          side_wire_area
-              += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y)))
-                 * wire_thickness * 2;
+          side_wire_area += (block_->dbuToMicrons(abs(end_x - start_x)
+                                                  + abs(end_y - start_y)))
+                            * wire_thickness * 2;
 
           // These are added to represent the extensions to the wire segments
           // (0.5 * wire_width)
@@ -449,14 +444,15 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->target()->xy(end_x, end_y);
-          wire_area += dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
+          wire_area += block_->dbuToMicrons(abs(end_x - start_x)
+                                            + abs(end_y - start_y))
                            * wire_width
                        + wire_width * wire_width;
-          side_wire_area
-              += (dbuToMicrons(abs(end_x - start_x) + abs(end_y - start_y))
-                  + wire_width)
-                     * wire_thickness * 2
-                 + 2 * wire_thickness * wire_width;
+          side_wire_area += (block_->dbuToMicrons(abs(end_x - start_x)
+                                                  + abs(end_y - start_y))
+                             + wire_width)
+                                * wire_thickness * 2
+                            + 2 * wire_thickness * wire_width;
         }
 
         std::pair<double, double> areas
@@ -479,7 +475,7 @@ double AntennaChecker::getViaArea(dbWireGraph::Edge* edge)
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT) {
         uint dx = box->getDX();
         uint dy = box->getDY();
-        via_area = dbuToMicrons(dx) * dbuToMicrons(dy);
+        via_area = block_->dbuToMicrons(dx) * block_->dbuToMicrons(dy);
       }
     }
   } else if (edge->type() == dbWireGraph::Edge::Type::VIA) {
@@ -489,7 +485,7 @@ double AntennaChecker::getViaArea(dbWireGraph::Edge* edge)
       if (box->getTechLayer()->getType() == dbTechLayerType::CUT) {
         uint dx = box->getDX();
         uint dy = box->getDY();
-        via_area = dbuToMicrons(dx) * dbuToMicrons(dy);
+        via_area = block_->dbuToMicrons(dx) * block_->dbuToMicrons(dy);
       }
     }
   }
@@ -783,10 +779,10 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
       = getPwlFactor(diffPSR, par_info.iterm_diff_area, 0.0);
 
   // Extract the width and thickness
-  const double wire_width = dbuToMicrons(tech_layer->getWidth());
+  const double wire_width = block_->dbuToMicrons(tech_layer->getWidth());
   uint thickness;
   tech_layer->getThickness(thickness);
-  const double wire_thickness = dbuToMicrons(thickness);
+  const double wire_thickness = block_->dbuToMicrons(thickness);
 
   // Calculate the current wire length from the area taking into consideration
   // the extensions
@@ -1852,7 +1848,7 @@ vector<std::pair<double, vector<dbITerm*>>> AntennaChecker::parMaxWireLength(
                             tech_layer->getRoutingLevel(),
                             iv,
                             nv);
-        const double wire_width = dbuToMicrons(tech_layer->getWidth());
+        const double wire_width = block_->dbuToMicrons(tech_layer->getWidth());
         const AntennaModel& am = layer_info_[tech_layer];
 
         if (iterm_gate_area != 0 && tech_layer->hasDefaultAntennaRule()) {
@@ -2068,7 +2064,7 @@ AntennaChecker::getViolatedWireLength(dbNet* net, int routing_level)
         continue;
       }
 
-      double wire_width = dbuToMicrons(tech_layer->getWidth());
+      double wire_width = block_->dbuToMicrons(tech_layer->getWidth());
 
       AntennaModel& am = layer_info_[tech_layer];
       double metal_factor = am.metal_factor;
@@ -2167,7 +2163,7 @@ void AntennaChecker::findMaxWireLength()
         edge->target()->xy(x2, y2);
         if (edge->type() == dbWireGraph::Edge::Type::SEGMENT
             || edge->type() == dbWireGraph::Edge::Type::SHORT) {
-          wire_length += dbuToMicrons((abs(x2 - x1) + abs(y2 - y1)));
+          wire_length += block_->dbuToMicrons((abs(x2 - x1) + abs(y2 - y1)));
         }
       }
 
