@@ -78,6 +78,7 @@ class TimingPathsModel : public QAbstractTableModel
     Arrival,
     Slack,
     Skew,
+    LogicDelay,
     LogicDepth,
     Start,
     End
@@ -92,6 +93,7 @@ class TimingPathsModel : public QAbstractTableModel
            {Arrival, "Arrival"},
            {Slack, "Slack"},
            {Skew, "Skew"},
+           {LogicDelay, "Logic Delay"},
            {LogicDepth, "Logic Depth"},
            {Start, "Start"},
            {End, "End"}};

@@ -125,6 +125,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return Qt::AlignLeft;
       case Required:
       case Arrival:
+      case LogicDelay:
       case LogicDepth:
       case Slack:
       case Skew:
@@ -144,6 +145,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getSlack(), time_units);
       case Skew:
         return convertDelay(timing_path->getSkew(), time_units);
+      case LogicDelay:
+        return convertDelay(timing_path->getLogicDelay(), time_units);
       case LogicDepth:
         return timing_path->getLogicDepth();
       case Start:
@@ -201,6 +204,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getSkew() < path2->getSkew();
+    };
+  } else if (col_index == LogicDelay) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getLogicDelay() < path2->getLogicDelay();
     };
   } else if (col_index == LogicDepth) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,

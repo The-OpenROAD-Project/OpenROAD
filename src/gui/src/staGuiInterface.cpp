@@ -179,6 +179,7 @@ TimingPath::TimingPath()
       path_delay_(0),
       arr_time_(0),
       req_time_(0),
+      logic_delay_(0),
       logic_depth_(0),
       clk_path_end_index_(0),
       clk_capture_end_index_(0)
@@ -200,8 +201,9 @@ void TimingPath::populateNodeList(sta::Path* path,
   auto* network = sta->network();
   auto* sdc = sta->sdc();
 
-  // Used to compute logic depth.
+  // Used to compute logic metrics.
   sta::Pin* previous_pin = nullptr;
+  float previous_delay = 0.0f;
   bool inverter_pair_found = false;
 
   for (size_t i = 0; i < expand.size(); i++) {
@@ -254,31 +256,37 @@ void TimingPath::populateNodeList(sta::Path* path,
       slew = ref->slew(sta);
     }
 
+    const float delay = arrival_cur_stage - arrival_prev_stage;
+
     if (!sta->isClock(pin)) {
-      // To avoid iterating the path nodes again when populating the timing
-      // paths, we set the logic depth while populating the node list.
-      updateLogicDepth(network, pin, previous_pin, inverter_pair_found);
+      updateLogicMetrics(network,
+                         pin,
+                         previous_pin,
+                         delay,
+                         previous_delay,
+                         inverter_pair_found);
     }
 
-    list.push_back(
-        std::make_unique<TimingPathNode>(pin_object,
-                                         pin,
-                                         pin_is_clock,
-                                         is_rising,
-                                         !is_driver,
-                                         true,
-                                         arrival_cur_stage + offset,
-                                         arrival_cur_stage - arrival_prev_stage,
-                                         slew,
-                                         cap,
-                                         fanout));
+    list.push_back(std::make_unique<TimingPathNode>(pin_object,
+                                                    pin,
+                                                    pin_is_clock,
+                                                    is_rising,
+                                                    !is_driver,
+                                                    true,
+                                                    arrival_cur_stage + offset,
+                                                    delay,
+                                                    slew,
+                                                    cap,
+                                                    fanout));
     arrival_prev_stage = arrival_cur_stage;
 
     if (inverter_pair_found) {
       previous_pin = nullptr;
+      previous_delay = 0.0f;
       inverter_pair_found = false;
     } else {
       previous_pin = pin;
+      previous_delay = delay;
     }
   }
 
@@ -313,10 +321,12 @@ void TimingPath::populateNodeList(sta::Path* path,
   }
 }
 
-void TimingPath::updateLogicDepth(sta::Network* network,
-                                  sta::Pin* pin,
-                                  sta::Pin* previous_pin,
-                                  bool& inverter_pair_found)
+void TimingPath::updateLogicMetrics(sta::Network* network,
+                                    sta::Pin* pin,
+                                    sta::Pin* previous_pin,
+                                    const float delay,
+                                    const float previous_delay,
+                                    bool& inverter_pair_found)
 {
   sta::LibertyCell* lib_cell = network->libertyCell(network->instance(pin));
 
@@ -326,6 +336,7 @@ void TimingPath::updateLogicDepth(sta::Network* network,
 
   if (!lib_cell->isBuffer()) {
     ++logic_depth_;
+    logic_delay_ += delay;
   }
 
   if (previous_pin) {
@@ -338,6 +349,7 @@ void TimingPath::updateLogicDepth(sta::Network* network,
 
     if (prev_pin_lib_cell->isInverter() && lib_cell->isInverter()) {
       logic_depth_ -= 2;
+      logic_delay_ -= (delay + previous_delay);
       inverter_pair_found = true;
     }
   }
