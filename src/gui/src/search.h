@@ -236,30 +236,31 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void clearRows();
 
   // From dbBlockCallBackObj
-  virtual void inDbNetDestroy(odb::dbNet* net) override;
-  virtual void inDbInstDestroy(odb::dbInst* inst) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
-  virtual void inDbInstPlacementStatusBefore(
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
+  void inDbInstPlacementStatusBefore(
       odb::dbInst* inst,
       const odb::dbPlacementStatus& status) override;
-  virtual void inDbPostMoveInst(odb::dbInst* inst) override;
-  virtual void inDbBPinDestroy(odb::dbBPin* pin) override;
-  virtual void inDbFillCreate(odb::dbFill* fill) override;
-  virtual void inDbWireCreate(odb::dbWire* wire) override;
-  virtual void inDbWireDestroy(odb::dbWire* wire) override;
-  virtual void inDbSWireCreate(odb::dbSWire* wire) override;
-  virtual void inDbSWireDestroy(odb::dbSWire* wire) override;
-  virtual void inDbSWireAddSBox(odb::dbSBox* box) override;
-  virtual void inDbSWireRemoveSBox(odb::dbSBox* box) override;
-  virtual void inDbBlockSetDieArea(odb::dbBlock* block) override;
-  virtual void inDbBlockageCreate(odb::dbBlockage* blockage) override;
-  virtual void inDbObstructionCreate(odb::dbObstruction* obs) override;
-  virtual void inDbObstructionDestroy(odb::dbObstruction* obs) override;
-  virtual void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
-  virtual void inDbRegionDestroy(odb::dbRegion* region) override;
-  virtual void inDbRowCreate(odb::dbRow* row) override;
-  virtual void inDbRowDestroy(odb::dbRow* row) override;
-  virtual void inDbWirePostModify(odb::dbWire* wire) override;
+  void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbBPinCreate(odb::dbBPin* pin) override;
+  void inDbBPinDestroy(odb::dbBPin* pin) override;
+  void inDbFillCreate(odb::dbFill* fill) override;
+  void inDbWireCreate(odb::dbWire* wire) override;
+  void inDbWireDestroy(odb::dbWire* wire) override;
+  void inDbSWireCreate(odb::dbSWire* wire) override;
+  void inDbSWireDestroy(odb::dbSWire* wire) override;
+  void inDbSWireAddSBox(odb::dbSBox* box) override;
+  void inDbSWireRemoveSBox(odb::dbSBox* box) override;
+  void inDbBlockSetDieArea(odb::dbBlock* block) override;
+  void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  void inDbObstructionCreate(odb::dbObstruction* obs) override;
+  void inDbObstructionDestroy(odb::dbObstruction* obs) override;
+  void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
+  void inDbRegionDestroy(odb::dbRegion* region) override;
+  void inDbRowCreate(odb::dbRow* row) override;
+  void inDbRowDestroy(odb::dbRow* row) override;
+  void inDbWirePostModify(odb::dbWire* wire) override;
 
  signals:
   void modified();
