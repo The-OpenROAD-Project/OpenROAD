@@ -92,15 +92,10 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
 
   makeNetWires(routing, max_routing_layer);
   arc_->initAntennaRules();
-  if (grouter_->haveDetailedRoutes()) {
-    for (odb::dbNet* db_net : block_->getNets()) {
-      checkNetViolations(db_net, diode_mterm, ratio_margin);
-    }
-  } else {
-    for (auto& [db_net, route] : routing) {
-      checkNetViolations(db_net, diode_mterm, ratio_margin);
-    }
+  for (odb::dbNet* db_net : block_->getNets()) {
+    checkNetViolations(db_net, diode_mterm, ratio_margin);
   }
+
   destroyNetWires();
   for (auto [net, val] : copy_wires) {
     auto wire = odb::dbWire::create(net);
