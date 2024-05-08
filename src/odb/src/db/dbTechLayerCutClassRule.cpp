@@ -118,6 +118,7 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
+  _name = nullptr;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;

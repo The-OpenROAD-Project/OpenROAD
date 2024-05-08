@@ -63,6 +63,7 @@ lefin::lefin(dbDatabase* db,
              bool ignore_non_routing_layers)
     : _db(db),
       _tech(nullptr),
+      _lib(nullptr),
       _master(nullptr),
       _logger(logger),
       _create_tech(false),
@@ -81,6 +82,7 @@ lefin::lefin(dbDatabase* db,
       _area_factor(1000000.0),
       _dbu_per_micron(1000),
       _override_lef_dbu(false),
+      _master_modified(false),
       _ignore_non_routing_layers(ignore_non_routing_layers)
 {
 }

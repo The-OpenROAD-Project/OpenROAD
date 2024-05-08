@@ -181,6 +181,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxRSegId = 0;
   _maxCCSegId = 0;
 
+  _currentCcAdjOrder = 0;
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
 

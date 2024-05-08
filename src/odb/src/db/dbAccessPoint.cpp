@@ -135,6 +135,8 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
 
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 {
+  low_type_ = dbAccessType::OnGrid;
+  high_type_ = dbAccessType::OnGrid;
   // User Code Begin Constructor
   accesses_.fill(false);
   // User Code End Constructor
