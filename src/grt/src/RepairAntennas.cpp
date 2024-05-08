@@ -136,17 +136,11 @@ void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
   std::map<int, odb::dbTechVia*> default_vias
       = grouter_->getDefaultVias(max_routing_layer);
 
-  if (grouter_->haveDetailedRoutes()) {
-    for (odb::dbNet* db_net : block_->getNets()) {
-      if (grouter_->isDetailedRouted(db_net)) {
-        odb::orderWires(logger_, db_net);
-      }
-    }
-  } else {
-    for (auto& [db_net, route] : routing) {
-      if (!grouter_->getNet(db_net)->isLocal()) {
-        makeNetWire(db_net, route, default_vias);
-      }
+  for (odb::dbNet* db_net : block_->getNets()) {
+    if (grouter_->isDetailedRouted(db_net)) {
+      odb::orderWires(logger_, db_net);
+    } else if (!db_net->isSpecial() && !grouter_->getNet(db_net)->isLocal()) {
+      makeNetWire(db_net, routing[db_net], default_vias);
     }
   }
 }
