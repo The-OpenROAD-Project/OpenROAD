@@ -901,7 +901,7 @@ void FlexDR::end(bool done)
                       totSCut,
                       totSCut * 100.0 / (totSCut + totMCut));
     }
-    logger_->report("Up-via summary (total {}):.", totSCut + totMCut);
+    logger_->report("Up-via summary (total {}):", totSCut + totMCut);
     int nameLen = 0;
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
