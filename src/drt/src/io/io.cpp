@@ -1170,8 +1170,9 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
     if (inst == nullptr) {
       continue;
     }
+    int iterm_index = 0;
     for (auto db_term : db_inst->getITerms()) {
-      auto term = inst->getInstTerm(db_term->getMTerm()->getName());
+      auto term = inst->getInstTerm(iterm_index++);
       if (term == nullptr) {
         continue;
       }

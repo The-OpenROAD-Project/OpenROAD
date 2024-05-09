@@ -214,6 +214,8 @@ class DebugGui : public gui::Renderer
   const gui::Painter::Color connection_color_;
   const gui::Painter::Color term_connection_color_;
 
+  bool found_select_;
+
   std::map<odb::dbTechLayer*, ShapeTree> shapes_;
   std::map<odb::dbTechLayer*, NodeTree> nodes_;
   std::map<odb::dbTechLayer*, ITermNodeTree> iterm_nodes_;
@@ -226,7 +228,6 @@ class DebugGui : public gui::Renderer
   std::set<const Shape*> selected_shapes_;
   std::set<const Node*> selected_nodes_;
   std::set<const Connection*> selected_connections_;
-  bool found_select_;
 
   static constexpr const char* shapes_text_ = "Shapes";
   static constexpr const char* nodes_text_ = "Nodes";

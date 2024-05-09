@@ -114,6 +114,7 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)

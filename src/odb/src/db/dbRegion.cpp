@@ -53,6 +53,7 @@ _dbRegion::_dbRegion(_dbDatabase*)
 {
   _flags._type = dbRegionType::INCLUSIVE;
   _flags._invalid = false;
+  _flags._spare_bits = false;
   _name = nullptr;
 }
 

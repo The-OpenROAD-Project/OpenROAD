@@ -1178,6 +1178,26 @@ class dbBlock : public dbObject
   int getDbUnitsPerMicron();
 
   ///
+  /// Convert a length from database units (DBUs) to microns.
+  ///
+  double dbuToMicrons(int dbu);
+
+  ///
+  /// Convert an area from database units squared (DBU^2) to square microns.
+  ///
+  double dbuAreaToMicrons(const int64_t dbu_area);
+
+  ///
+  /// Convert a length from microns to database units (DBUs).
+  ///
+  int micronsToDbu(double microns);
+
+  ///
+  /// Convert an area from square microns to database units squared (DBU^2).
+  ///
+  int64_t micronsAreaToDbu(const double micronsArea);
+
+  ///
   /// Get the hierarchy delimeter.
   /// Returns (0) if the delimeter was not set.
   /// A hierarchy delimeter can only be set at the time

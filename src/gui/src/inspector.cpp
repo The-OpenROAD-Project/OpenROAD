@@ -109,7 +109,7 @@ void SelectedItemModel::updateObject()
     // make editor if found
     auto editor_found = editors.find(prop.name);
     if (editor_found != editors.end()) {
-      auto editor = (*editor_found).second;
+      auto& editor = (*editor_found).second;
       makeItemEditor(prop.name,
                      value_item,
                      object_,
@@ -1028,7 +1028,7 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
-  auto callback = actions_[action];
+  auto& callback = actions_[action];
   Selected new_selection;
   try {
     new_selection = callback();

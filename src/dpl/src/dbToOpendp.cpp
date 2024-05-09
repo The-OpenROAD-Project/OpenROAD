@@ -223,7 +223,7 @@ void Opendp::makeGroups()
       struct Group& group = groups_.back();
       string group_name
           = string(db_group->getName()) + "_" + std::to_string(index++);
-      group.name = group_name;
+      group.name = std::move(group_name);
       group.boundary.mergeInit();
       cell_height_to_group_map[height] = &group;
 
