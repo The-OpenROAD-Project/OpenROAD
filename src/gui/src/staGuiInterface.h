@@ -186,6 +186,7 @@ class TimingPath
   void setSkew(float skew) { skew_ = skew; }
   float getLogicDelay() const { return logic_delay_; }
   int getLogicDepth() const { return logic_depth_; }
+  void setLogicDepth(int logic_depth) { logic_depth_ = logic_depth; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -229,14 +230,21 @@ class TimingPath
                         sta::DcalcAnalysisPt* dcalc_ap,
                         float offset,
                         bool clock_expanded,
+                        bool is_capture_path,
                         TimingNodeList& list);
+  bool instanceIsLogic(sta::Instance* inst, sta::Network* network);
+  bool instancesAreInverterPair(sta::Instance* curr_inst,
+                                sta::Instance* prev_inst,
+                                sta::Network* network);
   void updateLogicMetrics(sta::Network* network,
-                          sta::Pin* pin,
-                          sta::Pin* previous_pin,
-                          float delay,
-                          float previous_delay,
-                          bool& inverter_pair_found);
-
+                          sta::Instance* inst_of_curr_pin,
+                          sta::Instance* inst_of_prev_pin,
+                          sta::Instance* prev_inst,
+                          const float pin_delay,
+                          std::set<sta::Instance*>& logic_insts,
+                          float& prev_inst_delay,
+                          float& curr_inst_delay,
+                          bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
