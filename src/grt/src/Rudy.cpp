@@ -132,37 +132,37 @@ void Rudy::calculateRudy()
     }
   }
 
-  double min_rudy = std::numeric_limits<double>::max();
-  double max_observed_rudy = std::numeric_limits<double>::min();
+  // double min_rudy = std::numeric_limits<double>::max();
+  // double max_observed_rudy = std::numeric_limits<double>::min();
 
-  for (int x = 0; x < grid_.size(); x++) {
-    for (int y = 0; y < grid_[x].size(); y++) {
-      Tile& tile = getEditableTile(x, y);
-      double rudy_value = tile.getRudy();
-      if (rudy_value < min_rudy)
-        min_rudy = rudy_value;
-      if (rudy_value > max_observed_rudy)
-        max_observed_rudy = rudy_value;
-    }
-  }
+  // for (int x = 0; x < grid_.size(); x++) {
+  //   for (int y = 0; y < grid_[x].size(); y++) {
+  //     Tile& tile = getEditableTile(x, y);
+  //     double rudy_value = tile.getRudy();
+  //     if (rudy_value < min_rudy)
+  //       min_rudy = rudy_value;
+  //     if (rudy_value > max_observed_rudy)
+  //       max_observed_rudy = rudy_value;
+  //   }
+  // }
 
-  for (int x = 0; x < grid_.size(); x++) {
-    for (int y = 0; y < grid_[x].size(); y++) {
-      Tile& tile = getEditableTile(x, y);
-      float rudy_value = tile.getRudy();
-      float normalized_rudy = min_rudy;
-      if (rudy_value > min_rudy) {
-        normalized_rudy = min_rudy
-                          + (rudy_value - min_rudy)
-                                / (max_observed_rudy - min_rudy)
-                                * (130 - min_rudy);
-      }
-      if (normalized_rudy < rudy_value) {
-        tile.clearRudy();
-        tile.addRudy(normalized_rudy);
-      }
-    }
-  }
+  // for (int x = 0; x < grid_.size(); x++) {
+  //   for (int y = 0; y < grid_[x].size(); y++) {
+  //     Tile& tile = getEditableTile(x, y);
+  //     float rudy_value = tile.getRudy();
+  //     float normalized_rudy = min_rudy;
+  //     if (rudy_value > min_rudy) {
+  //       normalized_rudy = min_rudy
+  //                         + (rudy_value - min_rudy)
+  //                               / (max_observed_rudy - min_rudy)
+  //                               * (130 - min_rudy);
+  //     }
+  //     if (normalized_rudy < rudy_value) {
+  //       tile.clearRudy();
+  //       tile.addRudy(normalized_rudy);
+  //     }
+  //   }
+  // }
 }
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
