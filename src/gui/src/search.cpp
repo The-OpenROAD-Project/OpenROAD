@@ -80,6 +80,11 @@ void Search::inDbPostMoveInst(odb::dbInst* inst)
   }
 }
 
+void Search::inDbBPinCreate(odb::dbBPin* pin)
+{
+  clearShapes();
+}
+
 void Search::inDbBPinDestroy(odb::dbBPin* pin)
 {
   clearShapes();

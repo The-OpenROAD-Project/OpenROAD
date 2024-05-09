@@ -421,7 +421,7 @@ void TclCmdHighlighter::highlightBlock(const QString& text)
     command_data = new TclCmdUserData();
   }
   command_data->line_continued = true;
-  command_data->commands = matched_commands;
+  command_data->commands = std::move(matched_commands);
   if (text.size() > 0 && text.at(text.size() - 1).toLatin1() != '\\') {
     command_data->line_continued = false;
   }

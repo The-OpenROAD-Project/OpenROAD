@@ -4,14 +4,17 @@
   "fields": [
     {
       "type": "int",
+      "default": "0",
       "name": "area_"
     },
     {
       "type": "int",
+      "default": "0",
       "name": "except_min_width_"
     },
     {
       "type": "int",
+      "default": "0",
       "name": "except_edge_length_"
     },
     {
@@ -53,10 +56,12 @@
     },
     {
       "type": "int",
+      "default": "0",
       "name": "mask_"
     },
     {
       "type": "int",
+      "default": "0",
       "name": "rect_width_"
     }
   ],

@@ -90,6 +90,7 @@ void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)

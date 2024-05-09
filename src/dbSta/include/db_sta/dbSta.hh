@@ -166,7 +166,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
-  dbStaCbk* db_cbk_ = nullptr;
+  std::unique_ptr<dbStaCbk> db_cbk_;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;

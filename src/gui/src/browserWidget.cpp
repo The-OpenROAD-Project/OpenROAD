@@ -345,7 +345,7 @@ void BrowserWidget::clicked(const QModelIndex& index)
   Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
-    emit select({sel});
+    emit select({std::move(sel)});
   }
 }
 

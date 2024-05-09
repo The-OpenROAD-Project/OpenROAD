@@ -91,6 +91,10 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(std::any object) const
 
   auto gui = gui::Gui::get();
   auto solver = getSolver(node);
+  if (solver == nullptr) {
+    return props;
+  }
+
   std::vector<sta::Corner*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
@@ -296,6 +300,10 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
   auto gui = gui::Gui::get();
 
   auto solver = getSolver(conn);
+  if (solver == nullptr) {
+    return props;
+  }
+
   std::vector<sta::Corner*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
@@ -369,7 +377,8 @@ DebugGui::DebugGui(IRNetwork* network)
       iterm_node_color_(gui::Painter::red),
       bpin_node_color_(gui::Painter::blue),
       connection_color_(gui::Painter::yellow),
-      term_connection_color_(gui::Painter::red)
+      term_connection_color_(gui::Painter::red),
+      found_select_(false)
 {
   addDisplayControl(shapes_text_, true);
   addDisplayControl(nodes_text_, true);
