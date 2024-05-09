@@ -885,23 +885,11 @@ float RouteBase::getRudyRC() const
   log_->info(GPL, 67, "2.0%RC: {}", avg020RC);
   log_->info(GPL, 68, "5.0%RC: {}", avg050RC);
 
-  log_->info(GPL, 66, "0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
-  log_->info(GPL, 67, "1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
-  log_->info(GPL, 68, "2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
-  log_->info(GPL, 69, "5.0%RC: {:.4f}", std::fmax(horAvg050RC, verAvg050RC));
-
-  log_->info(GPL, 70, "0.5rcK: {}", rbVars_.rcK1);
-  log_->info(GPL, 71, "1.0rcK: {}", rbVars_.rcK2);
-  log_->info(GPL, 72, "2.0rcK: {}", rbVars_.rcK3);
-  log_->info(GPL, 73, "5.0rcK: {}", rbVars_.rcK4);
-
-  float finalRC = (rbVars_.rcK1 * std::fmax(horAvg005RC, verAvg005RC)
-                   + rbVars_.rcK2 * std::fmax(horAvg010RC, verAvg010RC)
-                   + rbVars_.rcK3 * std::fmax(horAvg020RC, verAvg020RC)
-                   + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
+  float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
+                   + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL, 74, "FinalRC: {:.4f}", finalRC);
+  log_->info(GPL, 69, "FinalRC: {}", finalRC);
   return finalRC;
 }
 
