@@ -1,16 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
-[INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
-[INFO IFP-0001] Added 39 rows of 235 site unithd with height 1.
+[INFO IFP-0001] Added 39 rows of 235 site unithd.
 [INFO GPL-0002] DBU: 1000
-[INFO GPL-0003] SiteSize: 460 2720
-[INFO GPL-0004] CoreAreaLxLy: 2300 2720
-[INFO GPL-0005] CoreAreaUxUy: 110400 108800
+[INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
+[INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
 [WARNING GPL-0001] in1 toplevel port is not placed!
        Replace will regard in1 is placed in (0, 0)
 [WARNING GPL-0001] in2 toplevel port is not placed!
@@ -21,86 +15,80 @@
        Replace will regard out2 is placed in (0, 0)
 [WARNING GPL-0001] out3 toplevel port is not placed!
        Replace will regard out3 is placed in (0, 0)
-[INFO GPL-0006] NumInstances: 40
-[INFO GPL-0007] NumPlaceInstances: 16
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 24
-[INFO GPL-0010] NumNets: 29
-[INFO GPL-0011] NumPins: 69
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 112450 112450
-[INFO GPL-0014] CoreAreaLxLy: 2300 2720
-[INFO GPL-0015] CoreAreaUxUy: 110400 108800
-[INFO GPL-0016] CoreArea: 11467248000
-[INFO GPL-0017] NonPlaceInstsArea: 4654464000
-[INFO GPL-0018] PlaceInstsArea: 105100800
-[INFO GPL-0019] Util(%): 1.54
-[INFO GPL-0020] StdInstsArea: 105100800
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0006] NumInstances: 42
-[INFO GPL-0007] NumPlaceInstances: 3
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 39
-[INFO GPL-0010] NumNets: 29
-[INFO GPL-0011] NumPins: 69
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 112450 112450
-[INFO GPL-0014] CoreAreaLxLy: 2300 2720
-[INFO GPL-0015] CoreAreaUxUy: 110400 108800
-[INFO GPL-0016] CoreArea: 11467248000
-[INFO GPL-0017] NonPlaceInstsArea: 10566384000
-[INFO GPL-0018] PlaceInstsArea: 21270400
-[INFO GPL-0019] Util(%): 2.36
-[INFO GPL-0020] StdInstsArea: 21270400
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0006] NumInstances: 45
-[INFO GPL-0007] NumPlaceInstances: 6
-[INFO GPL-0008] NumFixedInstances: 0
-[INFO GPL-0009] NumDummyInstances: 39
-[INFO GPL-0010] NumNets: 29
-[INFO GPL-0011] NumPins: 69
-[INFO GPL-0012] DieAreaLxLy: 0 0
-[INFO GPL-0013] DieAreaUxUy: 112450 112450
-[INFO GPL-0014] CoreAreaLxLy: 2300 2720
-[INFO GPL-0015] CoreAreaUxUy: 110400 108800
-[INFO GPL-0016] CoreArea: 11467248000
-[INFO GPL-0017] NonPlaceInstsArea: 10566384000
-[INFO GPL-0018] PlaceInstsArea: 40038400
-[INFO GPL-0019] Util(%): 4.44
-[INFO GPL-0020] StdInstsArea: 40038400
-[INFO GPL-0021] MacroInstsArea: 0
-[INFO GPL-0031] FillerInit: NumGCells: 742
-[INFO GPL-0032] FillerInit: NumGNets: 29
-[INFO GPL-0033] FillerInit: NumGPins: 69
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 6568800
-[INFO GPL-0025] IdealBinArea: 9384000
-[INFO GPL-0026] IdealBinCnt: 1222
-[INFO GPL-0027] TotalBinArea: 11467248000
-[INFO GPL-0028] BinCnt: 32 32
-[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0006] NumInstances:                40
+[INFO GPL-0007] NumPlaceInstances:           16
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           24
+[INFO GPL-0010] NumNets:                     29
+[INFO GPL-0011] NumPins:                     69
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:     4654.464 um^2
+[INFO GPL-0018] PlaceInstsArea:         105.101 um^2
+[INFO GPL-0019] Util:                     1.543 %
+[INFO GPL-0020] StdInstsArea:           105.101 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] NumInstances:                42
+[INFO GPL-0007] NumPlaceInstances:            3
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           39
+[INFO GPL-0010] NumNets:                     29
+[INFO GPL-0011] NumPins:                     69
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:    10566.384 um^2
+[INFO GPL-0018] PlaceInstsArea:          21.270 um^2
+[INFO GPL-0019] Util:                     2.361 %
+[INFO GPL-0020] StdInstsArea:            21.270 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] NumInstances:                45
+[INFO GPL-0007] NumPlaceInstances:            6
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           39
+[INFO GPL-0010] NumNets:                     29
+[INFO GPL-0011] NumPins:                     69
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:    10566.384 um^2
+[INFO GPL-0018] PlaceInstsArea:          40.038 um^2
+[INFO GPL-0019] Util:                     4.444 %
+[INFO GPL-0020] StdInstsArea:            40.038 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0031] FillerInit:NumGCells:       742
+[INFO GPL-0032] FillerInit:NumGNets:         29
+[INFO GPL-0033] FillerInit:NumGPins:         69
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        6.569 um^2
+[INFO GPL-0025] IdealBinArea:             9.384 um^2
+[INFO GPL-0026] IdealBinCnt:               1222
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
-[INFO GPL-0031] FillerInit: NumGCells: 91
-[INFO GPL-0032] FillerInit: NumGNets: 29
-[INFO GPL-0033] FillerInit: NumGPins: 69
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 7090133
-[INFO GPL-0025] IdealBinArea: 10128762
-[INFO GPL-0026] IdealBinCnt: 1132
-[INFO GPL-0027] TotalBinArea: 11467248000
-[INFO GPL-0028] BinCnt: 32 32
-[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0031] FillerInit:NumGCells:        91
+[INFO GPL-0032] FillerInit:NumGNets:         29
+[INFO GPL-0033] FillerInit:NumGPins:         69
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        7.090 um^2
+[INFO GPL-0025] IdealBinArea:            10.129 um^2
+[INFO GPL-0026] IdealBinCnt:               1132
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
-[INFO GPL-0031] FillerInit: NumGCells: 96
-[INFO GPL-0032] FillerInit: NumGNets: 29
-[INFO GPL-0033] FillerInit: NumGPins: 69
-[INFO GPL-0023] TargetDensity: 0.70
-[INFO GPL-0024] AveragePlaceInstArea: 6673066
-[INFO GPL-0025] IdealBinArea: 9532952
-[INFO GPL-0026] IdealBinCnt: 1202
-[INFO GPL-0027] TotalBinArea: 11467248000
-[INFO GPL-0028] BinCnt: 32 32
-[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0031] FillerInit:NumGCells:        96
+[INFO GPL-0032] FillerInit:NumGNets:         29
+[INFO GPL-0033] FillerInit:NumGPins:         69
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        6.673 um^2
+[INFO GPL-0025] IdealBinArea:             9.533 um^2
+[INFO GPL-0026] IdealBinCnt:               1202
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [NesterovSolve] Iter: 1 overflow: 0.149281 HPWL: 1097395
 [NesterovSolve] Iter: 1 overflow: 0.551384 HPWL: 1097395
