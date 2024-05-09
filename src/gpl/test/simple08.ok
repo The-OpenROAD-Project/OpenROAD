@@ -41,6 +41,6 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] BinCnt:        64     64
 [INFO GPL-0029] BinSize: (  0.360  0.510 )
 [INFO GPL-0030] NumBins: 4096
-[NesterovSolve] Iter: 1 overflow: 0.183424 HPWL: 84585
+[NesterovSolve] Iter:    1 overflow: 0.183 HPWL: 84585
 [NesterovSolve] Finished with Overflow: 0.183424
 No differences found.
