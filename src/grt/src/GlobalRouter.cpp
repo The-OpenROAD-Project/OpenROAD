@@ -4192,6 +4192,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
         add_max--;
       }
       if (fastroute_->has2Doverflow()) {
+        saveCongestion();
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "
