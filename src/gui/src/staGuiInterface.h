@@ -186,7 +186,6 @@ class TimingPath
   void setSkew(float skew) { skew_ = skew; }
   float getLogicDelay() const { return logic_delay_; }
   int getLogicDepth() const { return logic_depth_; }
-  void setLogicDepth(int logic_depth) { logic_depth_ = logic_depth; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
