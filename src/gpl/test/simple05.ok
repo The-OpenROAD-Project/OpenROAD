@@ -32,6 +32,6 @@
 [INFO GPL-0028] BinCnt:         2      2
 [INFO GPL-0029] BinSize: (  3.040  2.800 )
 [INFO GPL-0030] NumBins: 4
-[NesterovSolve] Iter: 1 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 28871
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.
