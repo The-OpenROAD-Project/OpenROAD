@@ -389,7 +389,7 @@ void Timing::makeEquivCells()
 {
   sta::Network* network = cmdLinkedNetwork();
   sta::LibertyLibrarySeq libs;
-  sta::LibertyLibraryIterator* lib_iter = network->libertyLibraryIterator();
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(network->libertyLibraryIterator()); 
   sta::dbSta* sta = getSta();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -402,7 +402,6 @@ void Timing::makeEquivCells()
       }
     }
   }
-  delete lib_iter;
   sta->makeEquivCells(&libs, nullptr);
 }
 
