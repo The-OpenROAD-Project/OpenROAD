@@ -395,9 +395,9 @@ proc add_pdn_stripe {args} {
 }
 
 sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
-                                     -layers list_of_2_layer_names \
-                                     -widths (width_value|list_of_width_values) \
-                                     -spacings (spacing_value|list_of_spacing_values) \
+                                     [-layers list_of_2_layer_names] \
+                                     [-widths (width_value|list_of_width_values)] \
+                                     [-spacings (spacing_value|list_of_spacing_values)] \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
                                      [-connect_to_pad_layers layers] \
