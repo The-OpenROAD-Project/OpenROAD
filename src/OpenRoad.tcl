@@ -281,11 +281,12 @@ proc report_global_connect {} {
   [ord::get_db_block] reportGlobalConnect
 }
 
-sta::define_cmd_args "add_global_connection" {-net <net_name> \
-                                              -inst_pattern <inst_name_pattern> \
-                                              -pin_pattern <pin_name_pattern> \
+sta::define_cmd_args "add_global_connection" {[-net net_name] \
+                                              [-inst_pattern inst_name_pattern] \
+                                              [-pin_pattern pin_name_pattern] \
                                               [(-power|-ground)] \
-                                              [-region region_name]
+                                              [-region region_name] \
+                                              [-defer_connection]
 }
 proc add_global_connection {args} {
   sta::parse_key_args "add_global_connection" args \

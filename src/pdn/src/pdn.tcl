@@ -400,14 +400,15 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      -spacings (spacing_value|list_of_spacing_values) \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
-                                     [-ground_pads list_of_gnd_pads] \
+                                     [-connect_to_pad_layers layers] \
                                      [-power_pads list_of_pwr_pads] \
+                                     [-ground_pads list_of_gnd_pads] \
+                                     [-nets list_of_nets] \
+                                     [-starts_with (POWER|GROUND)] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
-                                     [-connect_to_pads] \
-                                     [-connect_to_pad_layers layers] \
-                                     [-starts_with (POWER|GROUND)] \
-                                     [-nets list_of_nets]}
+                                     [-connect_to_pads]
+                                     }
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
