@@ -189,8 +189,8 @@ TimingPath::TimingPath()
 void TimingPath::populateNodeList(sta::Path* path,
                                   sta::dbSta* sta,
                                   sta::DcalcAnalysisPt* dcalc_ap,
-                                  float offset,
-                                  bool is_capture_path,
+                                  const float offset,
+                                  const bool is_capture_path,
                                   const bool clock_expanded,
                                   TimingNodeList& list)
 {
@@ -272,8 +272,8 @@ void TimingPath::populateNodeList(sta::Path* path,
                            prev_inst,
                            pin_delay,
                            logic_insts,
-                           prev_inst_delay,
                            curr_inst_delay,
+                           prev_inst_delay,
                            pin_belongs_to_inverter_pair_instance);
       }
 
@@ -332,8 +332,8 @@ void TimingPath::updateLogicMetrics(sta::Network* network,
                                     sta::Instance* prev_inst,
                                     const float pin_delay,
                                     std::set<sta::Instance*>& logic_insts,
-                                    float& prev_inst_delay,
                                     float& curr_inst_delay,
+                                    float& prev_inst_delay,
                                     bool& pin_belongs_to_inverter_pair_instance)
 {
   if (pin_belongs_to_inverter_pair_instance) {
@@ -384,8 +384,8 @@ bool TimingPath::instanceIsLogic(sta::Instance* inst, sta::Network* network)
   return true;
 }
 
-bool TimingPath::instancesAreInverterPair(sta::Instance* prev_inst,
-                                          sta::Instance* curr_inst,
+bool TimingPath::instancesAreInverterPair(sta::Instance* curr_inst,
+                                          sta::Instance* prev_inst,
                                           sta::Network* network)
 {
   if (!prev_inst || !curr_inst) {

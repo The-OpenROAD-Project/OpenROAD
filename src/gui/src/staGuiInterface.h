@@ -232,8 +232,8 @@ class TimingPath
                         bool is_capture_path,
                         TimingNodeList& list);
   bool instanceIsLogic(sta::Instance* inst, sta::Network* network);
-  bool instancesAreInverterPair(sta::Instance* prev_inst,
-                                sta::Instance* curr_inst,
+  bool instancesAreInverterPair(sta::Instance* curr_inst,
+                                sta::Instance* prev_inst,
                                 sta::Network* network);
   void updateLogicMetrics(sta::Network* network,
                           sta::Instance* inst_of_curr_pin,
@@ -241,8 +241,8 @@ class TimingPath
                           sta::Instance* prev_inst,
                           float pin_delay,
                           std::set<sta::Instance*>& logic_insts,
-                          float& prev_inst_delay,
                           float& curr_inst_delay,
+                          float& prev_inst_delay,
                           bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
