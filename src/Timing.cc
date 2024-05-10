@@ -389,7 +389,6 @@ void Timing::makeEquivCells()
 {
   sta::Network* network = cmdLinkedNetwork();
   sta::LibertyLibrarySeq libs;
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(network->libertyLibraryIterator()); 
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
       network->libertyLibraryIterator());
   sta::dbSta* sta = getSta();
