@@ -146,10 +146,17 @@ void TimingWidget::setColumnDisplayMenu()
     action->setChecked(true);
 
     connect(action, &QAction::triggered, this, [=](bool checked) {
-      toggleColumn(column_index, checked);
+      hideColumn(column_index, checked);
     });
 
     columns_control_->addAction(action);
+
+    // Uncheck boxes and hide columns based on settings.
+    if (!initial_columns_visibility_.isEmpty()) {
+      if (!initial_columns_visibility_[column_index]) {
+        action->trigger();
+      }
+    }
 
     ++column_index;
   }
@@ -157,10 +164,10 @@ void TimingWidget::setColumnDisplayMenu()
   columns_control_container_->setMenu(columns_control_);
 }
 
-void TimingWidget::toggleColumn(const int index, const bool checked)
+void TimingWidget::hideColumn(const int index, const bool checked)
 {
   setup_timing_table_view_->setColumnHidden(index, !checked);
-  setup_timing_table_view_->setColumnHidden(index, !checked);
+  hold_timing_table_view_->setColumnHidden(index, !checked);
 }
 
 TimingWidget::~TimingWidget()
@@ -274,7 +281,17 @@ void TimingWidget::readSettings(QSettings* settings)
       settings->value("splitter", delay_detail_splitter_->saveState())
           .toByteArray());
 
+  setInitialColumnsVisibility(settings->value("columns_visibility"));
+
   settings->endGroup();
+}
+
+void TimingWidget::setInitialColumnsVisibility(
+    const QVariant& columns_visibility)
+{
+  for (QVariant& index_visibility : columns_visibility.toList()) {
+    initial_columns_visibility_.push_back(index_visibility.toBool());
+  }
 }
 
 void TimingWidget::writeSettings(QSettings* settings)
@@ -286,8 +303,24 @@ void TimingWidget::writeSettings(QSettings* settings)
                      settings_->getOnePathPerEndpoint());
   settings->setValue("expand_clk", settings_->getExpandClock());
   settings->setValue("splitter", delay_detail_splitter_->saveState());
+  settings->setValue("columns_visibility", getColumnsVisibility());
 
   settings->endGroup();
+}
+
+QVariantList TimingWidget::getColumnsVisibility() const
+{
+  QVariantList column_visibility;
+
+  for (int column_index = 0;
+       column_index < setup_timing_paths_model_->columnCount();
+       ++column_index) {
+    // true -> visible
+    column_visibility.push_back(
+        !setup_timing_table_view_->isColumnHidden(column_index));
+  }
+
+  return column_visibility;
 }
 
 void TimingWidget::keyPressEvent(QKeyEvent* key_event)

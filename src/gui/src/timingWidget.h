@@ -126,7 +126,7 @@ class TimingWidget : public QDockWidget
   void showCommandsMenu(const QPoint& pos);
 
  private slots:
-  void toggleColumn(int index, bool checked);
+  void hideColumn(int index, bool checked);
 
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
@@ -140,6 +140,8 @@ class TimingWidget : public QDockWidget
   void populateAndSortModels(const std::set<const sta::Pin*>& from,
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to);
+  void setInitialColumnsVisibility(const QVariant& hidden_columns_indexes);
+  QVariantList getColumnsVisibility() const;
 
   QMenu* commands_menu_;
 
@@ -170,5 +172,7 @@ class TimingWidget : public QDockWidget
   QTabWidget* detail_widget_;
 
   QTableView* focus_view_;
+
+  QVector<bool> initial_columns_visibility_;  // from settings
 };
 }  // namespace gui
