@@ -140,7 +140,7 @@ class TimingWidget : public QDockWidget
   void populateAndSortModels(const std::set<const sta::Pin*>& from,
                              const std::vector<std::set<const sta::Pin*>>& thru,
                              const std::set<const sta::Pin*>& to);
-  void setInitialColumnsVisibility(const QVariant& hidden_columns_indexes);
+  void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 
   QMenu* commands_menu_;
