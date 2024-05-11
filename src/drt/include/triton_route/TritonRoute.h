@@ -223,6 +223,7 @@ class TritonRoute
                  bool has_routing);
   int countNetBTermsAboveMaxLayer(odb::dbNet* net);
   bool netHasStackedVias(odb::dbNet* net);
+  void repairPDNVias();
   friend class FlexDR;
 };
 
