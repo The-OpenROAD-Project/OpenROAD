@@ -765,6 +765,11 @@ class dbSBox : public dbBox
   bool hasViaLayerMasks();
 
   ///
+  /// Create a set of new sboxes from a via array
+  ///
+  std::vector<dbSBox*> smashVia();
+
+  ///
   /// Add a rect to a dbSWire.
   ///
   /// If direction == UNDEFINED
