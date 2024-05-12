@@ -261,7 +261,6 @@ add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
-add_subdirectory(gpl2)
 add_subdirectory(dpl)
 add_subdirectory(dpo)
 add_subdirectory(fin)
@@ -319,7 +318,6 @@ target_link_libraries(openroad
   pad
   openroad_swig
   gpl
-  gpl2
   dpl
   dpo
   fin
@@ -349,6 +347,15 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
+
+find_package(CUDAToolkit)
+if (CUDAToolkit_FOUND) 
+  target_link_libraries(openroad gpl2)
+  target_compile_definitions(openroad PRIVATE ENABLE_GPU)
+  add_subdirectory(gpl2)
+else()
+  message(STATUS "CUDA not found, disabling GPU acceleration")
+endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # mpl2 aborts with link error on darwin and par causes abseil link error at startup on apple silicon so do not link it.
@@ -414,7 +421,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     ant_py
     grt_py
     gpl_py
-    gpl2_py
     dpl_py
     mpl_py
     ppl_py

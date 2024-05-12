@@ -56,7 +56,9 @@
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
+#ifdef ENABLE_GPU
 #include "gpl2/MakeGpuReplace.h"
+#endif
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
@@ -147,7 +149,9 @@ OpenRoad::~OpenRoad()
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
+#ifdef ENABLE_GPU
   deleteGpuReplace(gpu_replace_);
+#endif
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
@@ -207,7 +211,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
+#ifdef ENABLE_GPU
   gpu_replace_ = makeGpuReplace();
+#endif
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
 #ifdef ENABLE_PAR
@@ -235,7 +241,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initReplace(this);
+#ifdef ENABLE_GPU
   initGpuReplace(this);
+#endif
   initOpendp(this);
   initOptdp(this);
   initFinale(this);
