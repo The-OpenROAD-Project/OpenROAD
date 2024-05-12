@@ -205,6 +205,9 @@ enum class frConstraintTypeEnum
   frcMetalWidthViaConstraint,
   frcLef58AreaConstraint,
   frcLef58KeepOutZoneConstraint,
+  frcLef58TwoWiresForbiddenSpcConstraint,
+  frcLef58ForbiddenSpcConstraint,
+  frcLef58EnclosureConstraint,
   frcSpacingRangeConstraint
 };
 
@@ -291,7 +294,8 @@ enum class RipUpMode
 {
   DRC = 0,
   ALL = 1,
-  NEARDRC = 2
+  NEARDRC = 2,
+  INCR = 3
 };
 
 namespace bg = boost::geometry;
