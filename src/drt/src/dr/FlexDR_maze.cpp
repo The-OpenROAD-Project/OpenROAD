@@ -1577,6 +1577,7 @@ void FlexDRWorker::route_queue()
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
+    gcWorker_->setEnableSurgicalFix(false);
     gcWorker_->main();
     setMarkers(gcWorker_->getMarkers());
   }
