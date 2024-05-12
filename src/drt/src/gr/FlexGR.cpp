@@ -127,7 +127,14 @@ void FlexGR::main(odb::dbDatabase* db)
 
   reportCong2D();
 
+  auto LAStartTimeStamp = std::chrono::high_resolution_clock::now();
+
   layerAssign();
+  
+  auto LAEndTimeStamp = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> LATime = LAEndTimeStamp - LAStartTimeStamp;
+  std::cout << "Layer assignment runtime : " << LATime.count() << " seconds" << std::endl;
+
 
   // populate region query for 3D
   getRegionQuery()->initGRObj();
@@ -1116,7 +1123,12 @@ void FlexGR::initGR_patternRoute()
   // init
   initGR_patternRoute_init(patternRoutes);
   // route
+  auto routePatternRouteStartTimeStamp = std::chrono::high_resolution_clock::now();
   initGR_patternRoute_route(patternRoutes);
+  auto routePatternRouteEndTimeStamp = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> routePatternRouteTime
+      = routePatternRouteEndTimeStamp - routePatternRouteStartTimeStamp;
+  std::cout << "Pattern Route Time: " << routePatternRouteTime.count() << " seconds" << std::endl;
 }
 
 void FlexGR::initGR_patternRoute_init(

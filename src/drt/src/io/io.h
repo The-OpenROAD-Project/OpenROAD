@@ -45,9 +45,7 @@ class dbTechLayer;
 namespace utl {
 class Logger;
 }
-namespace drt {
-class TritonRoute;
-}
+
 namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
@@ -80,17 +78,14 @@ class Parser
     return prefTrackPatterns_;
   }
   void buildGCellPatterns(odb::dbDatabase* db);
-  void updateDesign();
 
  private:
-  frBlock* getBlock() const { return design_->getTopBlock(); }
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
   void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
-  void setInst(odb::dbInst*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
   odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
@@ -99,7 +94,6 @@ class Parser
                                   odb::Rect bbox,
                                   frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
-  void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
@@ -241,6 +235,7 @@ class Parser
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
+  std::unique_ptr<frBlock> tmpBlock_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
@@ -253,19 +248,24 @@ class Parser
            frBlockObjectComp>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;
+  int numMasters_;
+  int numInsts_;
+  int numTerms_;      // including instterm and term
+  int numNets_;       // including snet and net
+  int numBlockages_;  // including instBlockage and blockage
 };
 
 class Writer
 {
  public:
   // constructors
-  Writer(drt::TritonRoute* router, Logger* loggerIn)
-      : router_(router), logger_(loggerIn)
+  Writer(frDesign* designIn, Logger* loggerIn)
+      : tech_(designIn->getTech()), design_(designIn), logger_(loggerIn)
   {
   }
   // getters
-  frTechObject* getTech() const;
-  frDesign* getDesign() const;
+  frTechObject* getTech() const { return tech_; }
+  frDesign* getDesign() const { return design_; }
   // others
   void updateDb(odb::dbDatabase* db,
                 bool pin_access = false,
@@ -290,7 +290,8 @@ class Writer
   void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
   void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
 
-  drt::TritonRoute* router_;
+  frTechObject* tech_;
+  frDesign* design_;
   Logger* logger_;
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs_;  // all connFigs ready to def

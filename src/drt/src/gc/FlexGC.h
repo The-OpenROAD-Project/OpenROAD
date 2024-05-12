@@ -89,11 +89,12 @@ struct MarkerId
   Rect box;
   frLayerNum lNum;
   frConstraint* con;
-  std::set<frBlockObject*> srcs;
+  frBlockObject* src1;
+  frBlockObject* src2;
   bool operator<(const MarkerId& rhs) const
   {
-    return std::tie(box, lNum, con, srcs)
-           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.srcs);
+    return std::tie(box, lNum, con, src1, src2)
+           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.src1, rhs.src2);
   }
 };
 }  // namespace drt

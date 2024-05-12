@@ -106,9 +106,14 @@ void frInst::updateXform(dbTransform& xform, Point& size)
   xform.setOffset(p);
 }
 
-frInstTerm* frInst::getInstTerm(const int index)
+frInstTerm* frInst::getInstTerm(const std::string& name)
 {
-  return instTerms_.at(index).get();
+  for (auto& it : instTerms_) {
+    if (it->getTerm()->getName() == name) {
+      return it.get();
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace drt

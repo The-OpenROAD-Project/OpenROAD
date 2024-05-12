@@ -135,7 +135,7 @@ class frInst : public frRef
   static void updateXform(dbTransform& xform, Point& size);
   Rect getBoundaryBBox() const;
 
-  frInstTerm* getInstTerm(int index);
+  frInstTerm* getInstTerm(const std::string& name);
 
  private:
   frString name_;

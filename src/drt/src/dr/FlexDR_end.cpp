@@ -607,7 +607,7 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
     // do not write back if current clip is worse than input
   }
-  if ((getRipupMode() == RipUpMode::DRC || getRipupMode() == RipUpMode::NEARDRC)
+  if (getRipupMode() != RipUpMode::ALL
       && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;

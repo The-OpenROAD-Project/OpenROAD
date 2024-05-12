@@ -249,9 +249,6 @@ void FlexDRWorker::initNetObjs(
     design->getRegionQuery()->queryGuide(getRouteBox(), guides);
     for (auto& guide : guides) {
       if (auto net = guide->getNet()) {
-        if (getRipupMode() == RipUpMode::INCR && net->hasInitialRouting()) {
-          continue;
-        }
         if (nets.find(net) == nets.end()) {
           nets.insert(net);
           netRouteObjs[net].clear();
@@ -354,18 +351,12 @@ void FlexDRWorker::initNets_initDR(
       default:
         logger_->error(utl::DRT, 0, "initNetTerms unsupported obj.");
     }
-    if (getRipupMode() == RipUpMode::INCR && net->hasInitialRouting()) {
-      continue;
-    }
     nets.insert(net);
     netTerms[net].insert(obj);
   }
   std::vector<std::unique_ptr<drConnFig>> vRouteObjs;
   std::vector<std::unique_ptr<drConnFig>> vExtObjs;
   for (auto net : nets) {
-    if (getRipupMode() == RipUpMode::INCR && net->hasInitialRouting()) {
-      continue;
-    }
     vRouteObjs.clear();
     vExtObjs.clear();
     vExtObjs = std::move(netExtObjs[net]);
@@ -717,10 +708,6 @@ void FlexDRWorker::initNets_searchRepair(
     std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides)
 {
   for (auto net : nets) {
-    if (isInitDR() && getRipupMode() == RipUpMode::INCR
-        && !net->hasInitialRouting()) {
-      continue;
-    }
     // build big graph;
     // node number : routeObj, pins
     std::map<frBlockObject*,
@@ -1420,10 +1407,7 @@ void FlexDRWorker::initNet_boundary(
   // location to area
   std::map<std::pair<Point, frLayerNum>, frCoord> extBounds;
   frCoord currArea = 0;
-  bool initFromExtObjs = isInitDR() ? (getRipupMode() == RipUpMode::INCR
-                                       && dNet->getFrNet()->hasInitialRouting())
-                                    : true;
-  if (initFromExtObjs) {
+  if (!isInitDR()) {
     for (auto& obj : extObjs) {
       if (obj->typeId() == drcPathSeg) {
         auto ps = static_cast<drPathSeg*>(obj.get());
@@ -1695,8 +1679,7 @@ void FlexDRWorker::initNets(const frDesign* design)
   // release lock
   if (isInitDR()) {
     initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
-  }
-  if (!isInitDR() || getRipupMode() == RipUpMode::INCR) {
+  } else {
     // find instTerm/terms using netRouteObjs;
     initNets_searchRepair(
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
@@ -2470,23 +2453,6 @@ void FlexDRWorker::route_queue_init_queue(
       routes.push_back({net, 0, true});
       initMazeCost_via_helper(net, true);
     }
-  } else if (getRipupMode() == RipUpMode::INCR) {
-    std::vector<drNet*> ripupNets;
-    ripupNets.reserve(nets_.size());
-    for (auto& net : nets_) {
-      if (!net->getFrNet()->hasInitialRouting()) {
-        ripupNets.push_back(net.get());
-      }
-    }
-    // sort nets
-    mazeIterInit_sortRerouteNets(0, ripupNets);
-    for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true});
-      // reserve via because all nets are ripped up
-      initMazeCost_via_helper(net, true);
-      // no need to clear the net because route objs are not pushed to the net
-      // (See FlexDRWorker::initNet)
-    }
   } else {
     std::cout << "Error: unsupported ripup mode\n";
   }
@@ -2736,10 +2702,7 @@ void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
 
 bool FlexDRWorker::canRipup(drNet* n)
 {
-  return !(n->getNumReroutes() >= getMazeEndIter())
-         && (getRipupMode() != RipUpMode::INCR
-             || (getRipupMode() == RipUpMode::INCR
-                 && !n->getFrNet()->hasInitialRouting()));
+  return !(n->getNumReroutes() >= getMazeEndIter());
 }
 
 void FlexDRWorker::route_queue_update_queue(
@@ -3298,9 +3261,7 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
-  if (nets_.empty()
-      && (getRipupMode() == RipUpMode::ALL
-          || getRipupMode() == RipUpMode::INCR)) {
+  if (nets_.empty() && getRipupMode() == RipUpMode::ALL) {
     skipRouting_ = true;
     return;
   }

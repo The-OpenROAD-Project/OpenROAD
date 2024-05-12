@@ -902,11 +902,6 @@ void FlexGCWorker::Impl::checkMetalSpacing()
               checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
             }
           }
-          if (currLayer->hasForbiddenSpacingConstraints()) {
-            for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-              checkForbiddenSpc_main(maxrect.get(), con);
-            }
-          }
         }
       }
       for (auto& sr : targetNet_->getSpecialSpcRects()) {
@@ -938,11 +933,6 @@ void FlexGCWorker::Impl::checkMetalSpacing()
               for (auto con :
                    currLayer->getTwoWiresForbiddenSpacingConstraints()) {
                 checkTwoWiresForbiddenSpc_main(maxrect.get(), con);
-              }
-            }
-            if (currLayer->hasForbiddenSpacingConstraints()) {
-              for (auto con : currLayer->getForbiddenSpacingConstraints()) {
-                checkForbiddenSpc_main(maxrect.get(), con);
               }
             }
           }
@@ -2158,25 +2148,25 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   if (prefDirIsVert) {
     patchBx.set_xlo(-chosenEdg->length() / 2);
     patchBx.set_xhi(chosenEdg->length() / 2);
+    patchBx.set_yhi(length);
     offset.setX((chosenEdg->low().x() + chosenEdg->high().x()) / 2);
-    offset.setY(chosenEdg->low().y());
     if (chosenEdg->getOuterDir() == frDirEnum::N) {
-      patchBx.set_yhi(length);
+      offset.setY(chosenEdg->low().y());
     } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
-      patchBx.set_ylo(-length);
+      offset.setY(chosenEdg->low().y() - length);
     } else {
       logger_->error(
           DRT, 4500, "Edge outer dir should be either North or South");
     }
   } else {
+    patchBx.set_xhi(length);
     patchBx.set_ylo(-chosenEdg->length() / 2);
     patchBx.set_yhi(chosenEdg->length() / 2);
-    offset.setX(chosenEdg->low().x());
     offset.setY((chosenEdg->low().y() + chosenEdg->high().y()) / 2);
     if (chosenEdg->getOuterDir() == frDirEnum::E) {
-      patchBx.set_xhi(length);
+      offset.setX(chosenEdg->low().x());
     } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
-      patchBx.set_xlo(-length);
+      offset.setX(chosenEdg->low().x() - length);
     } else {
       logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
     }
@@ -2208,6 +2198,8 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     return;
   }
 
+  Rect shiftedPatch = patchBx;
+  shiftedPatch.moveTo(offset.x(), offset.y());
   pwires_.push_back(std::move(patch));
 }
 
@@ -3527,7 +3519,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkCutSpacing_main(maxrect.get());
-          checkLef58Enclosure_main(maxrect.get());
         }
       }
     }
@@ -3546,7 +3537,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkCutSpacing_main(maxrect.get());
-            checkLef58Enclosure_main(maxrect.get());
           }
         }
       }
@@ -4046,7 +4036,7 @@ int FlexGCWorker::Impl::main()
   checkMetalShape(false);
   // check eolSpc based on polygon
   checkMetalEndOfLine();
-  // check CShort, cutSpc, enclosure
+  // check CShort, cutSpc
   checkCutSpacing();
   // check SpacingTable Influence
   checkMetalSpacingTableInfluence();

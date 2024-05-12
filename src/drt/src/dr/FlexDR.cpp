@@ -473,47 +473,6 @@ void FlexDR::init()
   if (VERBOSE > 0) {
     logger_->info(DRT, 194, "Start detail routing.");
   }
-  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
-    if (net->hasInitialRouting()) {
-      for (const auto& via : net->getVias()) {
-        auto bottomBox = via->getLayer1BBox();
-        auto topBox = via->getLayer2BBox();
-        for (auto term : net->getInstTerms()) {
-          if (term->getBBox(true).intersects(bottomBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
-            for (auto shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
-                continue;
-              }
-              if (!shape.intersects(bottomBox)) {
-                continue;
-              }
-              via->setBottomConnected(true);
-              break;
-            }
-          }
-          if (via->isBottomConnected()) {
-            continue;
-          }
-          if (term->getBBox(true).intersects(topBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes, true);
-            for (auto shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
-                continue;
-              }
-              if (!shape.intersects(topBox)) {
-                continue;
-              }
-              via->setTopConnected(true);
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 void FlexDR::removeGCell2BoundaryPin()
@@ -571,7 +530,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
+  if (ripupMode != RipUpMode::ALL
       && getDesign()->getTopBlock()->getMarkers().empty()) {
     return;
   }
@@ -802,7 +761,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     }
   }
   FlexDRConnectivityChecker checker(
-      router_, logger_, graphics_.get(), dist_on_);
+      getDesign(), logger_, db_, graphics_.get(), dist_on_);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
@@ -942,7 +901,7 @@ void FlexDR::end(bool done)
                       totSCut,
                       totSCut * 100.0 / (totSCut + totMCut));
     }
-    logger_->report("Up-via summary (total {}):", totSCut + totMCut);
+    logger_->report("Up-via summary (total {}):.", totSCut + totMCut);
     int nameLen = 0;
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
@@ -1236,13 +1195,7 @@ int FlexDR::main()
   ProfileTask profile("DR:main");
   init();
   frTime t;
-  bool incremental = false;
-  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
-    incremental |= net->hasInitialRouting();
-    if (incremental) {
-      break;
-    }
-  }
+
   for (auto& args : strategy()) {
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
@@ -1254,9 +1207,7 @@ int FlexDR::main()
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
-    if (incremental && args.ripupMode == RipUpMode::ALL && iter_ <= 2) {
-      args.ripupMode = RipUpMode::INCR;
-    }
+
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
@@ -1265,7 +1216,7 @@ int FlexDR::main()
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
-      io::Writer writer(router_, logger_);
+      io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, false, true);
       // insert the stack of vias for bterms above max layer again.
       // all routing is deleted in updateDb, so it is necessary to insert the

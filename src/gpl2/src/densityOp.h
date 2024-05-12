@@ -54,7 +54,8 @@
 namespace gpl2 {
 
 using utl::GPL2;
-using int64_t_cu = unsigned long long;
+
+typedef unsigned long long int int64_t_cu;
 
 class DensityOp
 {

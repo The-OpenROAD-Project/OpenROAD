@@ -70,11 +70,21 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
-  if (mapMarkers_.find({bbox, layerNum, con, in->getSrcs()})
+  std::vector<frBlockObject*> srcs(2, nullptr);
+  int i = 0;
+  for (auto& src : in->getSrcs()) {
+    srcs.at(i) = src;
+    i++;
+  }
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
       != mapMarkers_.end()) {
     return;
   }
-  mapMarkers_[{bbox, layerNum, con, in->getSrcs()}] = in.get();
+  if (mapMarkers_.find({bbox, layerNum, con, srcs[1], srcs[0]})
+      != mapMarkers_.end()) {
+    return;
+  }
+  mapMarkers_[{bbox, layerNum, con, srcs[0], srcs[1]}] = in.get();
   markers_.push_back(std::move(in));
 }
 

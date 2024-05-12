@@ -953,9 +953,6 @@ void frRegionQuery::Impl::initDRObj()
     for (auto& via : net->getVias()) {
       addDRObj(via.get(), allShapes);
     }
-    for (auto& pwire : net->getPatchWires()) {
-      addDRObj(pwire.get(), allShapes);
-    }
   }
 
   for (auto i = 0; i < numLayers; i++) {
