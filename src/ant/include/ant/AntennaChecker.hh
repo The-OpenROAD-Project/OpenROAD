@@ -180,7 +180,8 @@ class AntennaChecker
                 std::ofstream& report_file,
                 // Return values.
                 int& net_violation_count,
-                int& pin_violation_count);
+                int& pin_violation_count,
+                bool use_grt_routes);
   void checkGate(dbWireGraph::Node* gate,
                  vector<ARinfo>& CARtable,
                  vector<ARinfo>& VIA_CARtable,

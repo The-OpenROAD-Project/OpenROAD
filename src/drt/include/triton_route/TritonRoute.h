@@ -187,6 +187,7 @@ class TritonRoute
   bool initGuide();
   void prep();
   void processBTermsAboveTopLayer(bool has_routing = false);
+  odb::dbDatabase* getDb() const { return db_; }
 
  private:
   std::unique_ptr<frDesign> design_;
