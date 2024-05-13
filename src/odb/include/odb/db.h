@@ -765,6 +765,11 @@ class dbSBox : public dbBox
   bool hasViaLayerMasks();
 
   ///
+  /// Create a set of new sboxes from a via array
+  ///
+  std::vector<dbSBox*> smashVia();
+
+  ///
   /// Add a rect to a dbSWire.
   ///
   /// If direction == UNDEFINED
@@ -1176,6 +1181,26 @@ class dbBlock : public dbObject
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
+
+  ///
+  /// Convert a length from database units (DBUs) to microns.
+  ///
+  double dbuToMicrons(int dbu);
+
+  ///
+  /// Convert an area from database units squared (DBU^2) to square microns.
+  ///
+  double dbuAreaToMicrons(const int64_t dbu_area);
+
+  ///
+  /// Convert a length from microns to database units (DBUs).
+  ///
+  int micronsToDbu(double microns);
+
+  ///
+  /// Convert an area from square microns to database units squared (DBU^2).
+  ///
+  int64_t micronsAreaToDbu(const double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.

@@ -9,7 +9,7 @@ design = Design(tech)
 design.readDef("sw130_random.def")
 ack = design.getAntennaChecker()
 
-ack.checkAntennas()
+ack.checkAntennas(verbose=True)
 count = ack.antennaViolationCount()
 print(f"violation count = {count}", flush=True)
 

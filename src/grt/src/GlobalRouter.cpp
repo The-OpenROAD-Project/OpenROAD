@@ -386,7 +386,8 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-    MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+    MakeWireParasitics builder(
+        logger_, resizer_, sta_, db_->getTech(), block_, this);
     fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();
     fastroute_->setMakeWireParasiticsBuilder(nullptr);
@@ -410,7 +411,8 @@ void GlobalRouter::estimateRC()
   // Make separate parasitics for each corner.
   sta_->setParasiticAnalysisPts(true);
 
-  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(
+      logger_, resizer_, sta_, db_->getTech(), block_, this);
   for (auto& net_route : routes_) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -423,7 +425,8 @@ void GlobalRouter::estimateRC()
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(
+      logger_, resizer_, sta_, db_->getTech(), block_, this);
   auto iter = routes_.find(db_net);
   if (iter == routes_.end()) {
     return;
@@ -437,7 +440,8 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(
+      logger_, resizer_, sta_, db_->getTech(), block_, this);
   return builder.routeLayerLengths(db_net);
 }
 
@@ -2016,7 +2020,6 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   for (odb::dbNet* db_net : block_->getNets()) {
-    db_net->clearGuides();
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
       continue;
@@ -2025,6 +2028,7 @@ void GlobalRouter::saveGuides()
     GRoute& route = iter->second;
 
     if (!route.empty()) {
+      db_net->clearGuides();
       for (GSegment& segment : route) {
         odb::Rect box = globalRoutingToBox(segment);
         box.moveDelta(offset_x, offset_y);
@@ -2797,27 +2801,27 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
                  1,
                  "routing level {} : layer_width = {:.4f}",
                  layer->getName(),
-                 dbuToMicrons(layer_width));
+                 block_->dbuToMicrons(layer_width));
       debugPrint(logger_,
                  utl::GRT,
                  "l2v_pitch",
                  1,
                  "L2V_up : viaWidth = {:.4f} , prl = {:.4f} , minSpc = {:.4f} "
                  ", L2V = {:.4f} ",
-                 dbuToMicrons(width_up),
-                 dbuToMicrons(prl_up),
-                 dbuToMicrons(min_spc_up),
-                 dbuToMicrons(L2V_up));
+                 block_->dbuToMicrons(width_up),
+                 block_->dbuToMicrons(prl_up),
+                 block_->dbuToMicrons(min_spc_up),
+                 block_->dbuToMicrons(L2V_up));
       debugPrint(logger_,
                  utl::GRT,
                  "l2v_pitch",
                  1,
                  "L2V_down : viaWidth = {:.4f} , prl = {:.4f} , minSpc = "
                  "{:.4f} , L2V = {:.4f} ",
-                 dbuToMicrons(width_down),
-                 dbuToMicrons(prl_down),
-                 dbuToMicrons(min_spc_down),
-                 dbuToMicrons(L2V_down));
+                 block_->dbuToMicrons(width_down),
+                 block_->dbuToMicrons(prl_down),
+                 block_->dbuToMicrons(min_spc_down),
+                 block_->dbuToMicrons(L2V_down));
     }
     pitches[level] = {L2V_up, L2V_down};
   }
@@ -2854,8 +2858,8 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
           88,
           "Layer {:7s} Track-Pitch = {:.4f}  line-2-Via Pitch: {:.4f}",
           tech_layer->getName(),
-          dbuToMicrons(layer_tracks.getTrackPitch()),
-          dbuToMicrons(layer_tracks.getLineToViaPitch()));
+          block_->dbuToMicrons(layer_tracks.getTrackPitch()),
+          block_->dbuToMicrons(layer_tracks.getLineToViaPitch()));
   }
 }
 
@@ -3611,11 +3615,6 @@ int GlobalRouter::computeMaxRoutingLayer()
   return max_routing_layer;
 }
 
-double GlobalRouter::dbuToMicrons(int64_t dbu)
-{
-  return (double) dbu / (block_->getDbUnitsPerMicron());
-}
-
 void GlobalRouter::addNetToRoute(odb::dbNet* db_net)
 {
   nets_to_route_.push_back(db_net);
@@ -3875,11 +3874,12 @@ void GlobalRouter::reportNetLayerWirelengths(odb::dbNet* db_net,
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << dbuToMicrons(length);
+      out << " " << via_count << " " << block_->dbuToMicrons(length);
     }
     if (length > 0) {
-      logger_->report(
-          "\tLayer {:5s}: {:5.2f}um", layer->getName(), dbuToMicrons(length));
+      logger_->report("\tLayer {:5s}: {:5.2f}um",
+                      layer->getName(),
+                      block_->dbuToMicrons(length));
     }
   }
 }
@@ -3907,7 +3907,7 @@ void GlobalRouter::reportLayerWireLengths()
         odb::dbTechLayer* layer = routing_layers_[i];
         logger_->report("{:5s} {:8d}um {:3d}%",
                         layer->getName(),
-                        static_cast<int64_t>(dbuToMicrons(length)),
+                        block_->dbuToMicrons(length),
                         static_cast<int>((100.0 * length) / total_length));
       }
     }
@@ -3940,10 +3940,10 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
                   237,
                   "Net {} global route wire length: {:.2f}um",
                   net->getName(),
-                  dbuToMicrons(wl));
+                  block_->dbuToMicrons(wl));
 
     if (out.is_open()) {
-      out << "grt: " << net->getName() << " " << dbuToMicrons(wl) << " "
+      out << "grt: " << net->getName() << " " << block_->dbuToMicrons(wl) << " "
           << pin_count;
     }
 
@@ -3970,10 +3970,10 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
                   240,
                   "Net {} detailed route wire length: {:.2f}um",
                   net->getName(),
-                  dbuToMicrons(wl));
+                  block_->dbuToMicrons(wl));
 
     if (out.is_open()) {
-      out << "drt: " << net->getName() << " " << dbuToMicrons(wl) << " "
+      out << "drt: " << net->getName() << " " << block_->dbuToMicrons(wl) << " "
           << pin_count;
     }
 
@@ -4007,11 +4007,12 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
     int64_t length = lengths[i];
     odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
     if (i > 0 && out.is_open()) {
-      out << " " << via_count << " " << dbuToMicrons(length);
+      out << " " << via_count << " " << block_->dbuToMicrons(length);
     }
     if (length > 0) {
-      logger_->report(
-          "\tLayer {:5s}: {:5.2f}um", layer->getName(), dbuToMicrons(length));
+      logger_->report("\tLayer {:5s}: {:5.2f}um",
+                      layer->getName(),
+                      block_->dbuToMicrons(length));
     }
   }
 }
@@ -4191,6 +4192,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
         add_max--;
       }
       if (fastroute_->has2Doverflow()) {
+        saveCongestion();
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "

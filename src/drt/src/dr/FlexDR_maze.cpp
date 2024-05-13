@@ -1577,6 +1577,7 @@ void FlexDRWorker::route_queue()
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
+    gcWorker_->setEnableSurgicalFix(false);
     gcWorker_->main();
     setMarkers(gcWorker_->getMarkers());
   }
@@ -1790,7 +1791,9 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved
-      if (net->getNumReroutes() == 0 && getRipupMode() == RipUpMode::ALL) {
+      if (net->getNumReroutes() == 0
+          && (getRipupMode() == RipUpMode::ALL
+              || getRipupMode() == RipUpMode::INCR)) {
         initMazeCost_via_helper(net, false);
       }
       net->clear();

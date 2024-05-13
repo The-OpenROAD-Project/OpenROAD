@@ -673,6 +673,7 @@ Inspector::Inspector(const SelectionSet& selected,
           &Inspector::updateSelectedFields);
 
   connect(view_, &ObjectTree::clicked, this, &Inspector::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &Inspector::doubleClicked);
 
   connect(
       button_prev_, &QPushButton::pressed, this, &Inspector::selectPrevious);
@@ -942,10 +943,13 @@ void Inspector::clicked(const QModelIndex& index)
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
     mouse_timer_.start();
-  } else {
-    mouse_timer_.stop();
-    emit indexDoubleClicked(index);
   }
+}
+
+void Inspector::doubleClicked(const QModelIndex& index)
+{
+  mouse_timer_.stop();
+  emit indexDoubleClicked(index);
 }
 
 void Inspector::indexClicked()

@@ -413,8 +413,10 @@ void TritonCTS::writeDataToDb()
       logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 99, " Sinks {}", sinkCount);
       logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
-      double avgWL = allSinkDistance / sinkCount;
-      logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
+      if (sinkCount > 0) {
+        double avgWL = allSinkDistance / sinkCount;
+        logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
+      }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
       if (options_->dummyLoadEnabled()) {
         logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
@@ -604,7 +606,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
                "have been found", clockBuffers.size());
     // clang-format on
     if (!clockBuffers.empty()) {
-      buffers = clockBuffers;
+      buffers = std::move(clockBuffers);
     } else {
       pattern = std::string("buf");
       clockBuffers = findMatchingSubset(pattern, buffers);
@@ -1574,7 +1576,7 @@ bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
         if (insDelays.hasValue()) {
           return true;
         }
@@ -1598,7 +1600,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   if (libCell) {
     sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
     if (libPort) {
-      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+      sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
       if (insDelays.hasValue()) {
         // use average of max rise and max fall
         // TODO: do we need to look at min insertion delays?
@@ -1967,7 +1969,7 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
         if (insDelays.hasValue()) {
           ins_delay
               = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())

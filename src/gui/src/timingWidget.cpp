@@ -56,6 +56,8 @@ TimingWidget::TimingWidget(QWidget* parent)
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
       update_button_(new QPushButton("Update", this)),
+      columns_control_container_(new QPushButton("Columns", this)),
+      columns_control_(new QMenu("Columns", this)),
       settings_button_(new QPushButton("Settings", this)),
       settings_(new TimingControlsDialog(this)),
       setup_timing_paths_model_(nullptr),
@@ -81,8 +83,9 @@ TimingWidget::TimingWidget(QWidget* parent)
 
   QHBoxLayout* controls_layout = new QHBoxLayout;
   controls_layout->addWidget(settings_button_);
+  controls_layout->addWidget(columns_control_container_);
   controls_layout->addWidget(update_button_);
-  controls_layout->insertStretch(1);
+  controls_layout->insertStretch(2);
   control_frame->setLayout(controls_layout);
   layout->addWidget(control_frame);
 
@@ -132,6 +135,41 @@ TimingWidget::TimingWidget(QWidget* parent)
           &TimingWidget::updateClockRows);
 }
 
+void TimingWidget::setColumnDisplayMenu()
+{
+  int column_index = 0;
+
+  // Populate with all the available columns' actions.
+  for (const auto& [column, name] : TimingPathsModel::getColumnNames()) {
+    QAction* action = new QAction(name, this);
+    action->setCheckable(true);
+    action->setChecked(true);
+
+    connect(action, &QAction::triggered, this, [=](bool checked) {
+      hideColumn(column_index, checked);
+    });
+
+    columns_control_->addAction(action);
+
+    // Uncheck boxes and hide columns based on settings.
+    if (!initial_columns_visibility_.isEmpty()) {
+      if (!initial_columns_visibility_[column_index]) {
+        action->trigger();
+      }
+    }
+
+    ++column_index;
+  }
+
+  columns_control_container_->setMenu(columns_control_);
+}
+
+void TimingWidget::hideColumn(const int index, const bool checked)
+{
+  setup_timing_table_view_->setColumnHidden(index, !checked);
+  hold_timing_table_view_->setColumnHidden(index, !checked);
+}
+
 TimingWidget::~TimingWidget()
 {
   dbchange_listener_->removeOwner();
@@ -170,6 +208,8 @@ void TimingWidget::init(sta::dbSta* sta)
   hold_timing_table_view_->setSortingEnabled(true);
   hold_timing_table_view_->horizontalHeader()->setSortIndicator(
       3, Qt::AscendingOrder);
+
+  setColumnDisplayMenu();
 
   connect(setup_timing_paths_model_,
           &TimingPathsModel::modelReset,
@@ -241,7 +281,17 @@ void TimingWidget::readSettings(QSettings* settings)
       settings->value("splitter", delay_detail_splitter_->saveState())
           .toByteArray());
 
+  setInitialColumnsVisibility(settings->value("columns_visibility"));
+
   settings->endGroup();
+}
+
+void TimingWidget::setInitialColumnsVisibility(
+    const QVariant& columns_visibility)
+{
+  for (QVariant& index_visibility : columns_visibility.toList()) {
+    initial_columns_visibility_.push_back(index_visibility.toBool());
+  }
 }
 
 void TimingWidget::writeSettings(QSettings* settings)
@@ -253,8 +303,24 @@ void TimingWidget::writeSettings(QSettings* settings)
                      settings_->getOnePathPerEndpoint());
   settings->setValue("expand_clk", settings_->getExpandClock());
   settings->setValue("splitter", delay_detail_splitter_->saveState());
+  settings->setValue("columns_visibility", getColumnsVisibility());
 
   settings->endGroup();
+}
+
+QVariantList TimingWidget::getColumnsVisibility() const
+{
+  QVariantList column_visibility;
+
+  for (int column_index = 0;
+       column_index < setup_timing_paths_model_->columnCount();
+       ++column_index) {
+    // true -> visible
+    column_visibility.push_back(
+        !setup_timing_table_view_->isColumnHidden(column_index));
+  }
+
+  return column_visibility;
 }
 
 void TimingWidget::keyPressEvent(QKeyEvent* key_event)
@@ -282,6 +348,10 @@ void TimingWidget::addCommandsMenuActions()
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
 {
+  if (!focus_view_) {
+    return;
+  }
+
   timing_paths_table_index_ = focus_view_->indexAt(pos);
 
   commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
