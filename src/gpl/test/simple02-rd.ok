@@ -72,20 +72,15 @@
 [INFO GPL-0075] Routability numCall: 1 inflationIterCnt: 1 bloatIterCnt: 0
 [INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
 [INFO GPL-0038] TileCnt:      14   14
-[INFO GPL-0039] numRoutingLayers: 10
+[INFO GPL-0039] numRoutingLayers: 0
 [INFO GPL-0040] NumTiles: 196
-[INFO GPL-0063] TotalRouteOverflowH2: 0.0
-[INFO GPL-0064] TotalRouteOverflowV2: 0.0
-[INFO GPL-0065] OverflowTileCnt2: 0
-[INFO GPL-0066] 0.5%RC: 1.0000
-[INFO GPL-0067] 1.0%RC: 1.0000
-[INFO GPL-0068] 2.0%RC: 0.9439
-[INFO GPL-0069] 5.0%RC: 0.8037
-[INFO GPL-0070] 0.5rcK: 1.0
-[INFO GPL-0071] 1.0rcK: 1.0
-[INFO GPL-0072] 2.0rcK: 0.0
-[INFO GPL-0073] 5.0rcK: 0.0
-[INFO GPL-0074] FinalRC: 1.0000
+[INFO GPL-0081] TotalRouteOverflow: 0.0
+[INFO GPL-0082] OverflowTileCnt: 0
+[INFO GPL-0083] 0.5%RC: 0.6926459670066833
+[INFO GPL-0084] 1.0%RC: 0.6773819029331207
+[INFO GPL-0085] 2.0%RC: 0.6359037458896637
+[INFO GPL-0086] 5.0%RC: 0.595893383026123
+[INFO GPL-0087] FinalRC: 0.68501395
 [INFO GPL-0078] FinalRC lower than minRC (1e+30), min RC updated.
 [INFO GPL-0045] InflatedAreaDelta:        0.000 um^2
 [INFO GPL-0046] TargetDensity:            0.700
@@ -114,24 +109,21 @@
 [INFO GPL-0075] Routability numCall: 2 inflationIterCnt: 2 bloatIterCnt: 0
 [INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
 [INFO GPL-0038] TileCnt:      14   14
-[INFO GPL-0039] numRoutingLayers: 10
+[INFO GPL-0039] numRoutingLayers: 0
 [INFO GPL-0040] NumTiles: 196
-[INFO GPL-0063] TotalRouteOverflowH2: 0.0
-[INFO GPL-0064] TotalRouteOverflowV2: 0.0
-[INFO GPL-0065] OverflowTileCnt2: 0
-[INFO GPL-0066] 0.5%RC: 1.0000
-[INFO GPL-0067] 1.0%RC: 0.9733
-[INFO GPL-0068] 2.0%RC: 0.9333
-[INFO GPL-0069] 5.0%RC: 0.8269
-[INFO GPL-0070] 0.5rcK: 1.0
-[INFO GPL-0071] 1.0rcK: 1.0
-[INFO GPL-0072] 2.0rcK: 0.0
-[INFO GPL-0073] 5.0rcK: 0.0
-[INFO GPL-0074] FinalRC: 0.9867
-[INFO GPL-0077] FinalRC lower than targetRC(1.0), routability not needed.
+[INFO GPL-0081] TotalRouteOverflow: 0.0
+[INFO GPL-0082] OverflowTileCnt: 0
+[INFO GPL-0083] 0.5%RC: 0.6628924608230591
+[INFO GPL-0084] 1.0%RC: 0.6515778005123138
+[INFO GPL-0085] 2.0%RC: 0.638521209359169
+[INFO GPL-0086] 5.0%RC: 0.6073511302471161
+[INFO GPL-0087] FinalRC: 0.65723515
+[INFO GPL-0077] FinalRC lower than targetRC(0.67), routability not needed.
 [NesterovSolve] Iter:  420 overflow: 0.192 HPWL: 4857987
 [NesterovSolve] Iter:  430 overflow: 0.161 HPWL: 4890728
 [NesterovSolve] Iter:  440 overflow: 0.135 HPWL: 4922673
 [NesterovSolve] Iter:  450 overflow: 0.113 HPWL: 4949601
 [NesterovSolve] Finished with Overflow: 0.099315
-No differences found.
+Differences found at line 56.
+GCELLGRID X 60990 DO 2 STEP 950 ;
+GCELLGRID X 0 DO 14 STEP 4200 ;

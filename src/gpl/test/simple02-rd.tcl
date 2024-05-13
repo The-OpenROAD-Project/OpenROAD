@@ -7,7 +7,7 @@ read_def ./$test_name.def
 
 #Testing for routability with new target RC value,
 # routability should be activated.
-global_placement -routability_driven -routability_target_rc_metric 1.0
+global_placement -routability_driven -routability_target_rc_metric 0.67
 
 set def_file [make_result_file $test_name.def]
 write_def $def_file
