@@ -115,7 +115,7 @@ struct InfoType{
 };
 
 typedef std::unordered_map<dbTechLayer*, InfoType> LayerInfoVector;
-typedef std::vector<GraphNode> GraphNodeVector;
+typedef std::vector<GraphNode*> GraphNodeVector;
 ///////////////////////////////////////
 
 class GlobalRouteSource
@@ -151,6 +151,9 @@ class AntennaChecker
 
   void findMaxWireLength();
 
+  vector<Violation> getAntennaViolations2(dbNet* net,
+                                         odb::dbMTerm* diode_mterm,
+                                         float ratio_margin);
   vector<Violation> getAntennaViolations(dbNet* net,
                                          odb::dbMTerm* diode_mterm,
                                          float ratio_margin);
@@ -280,7 +283,7 @@ class AntennaChecker
   std::unordered_map<std::string, LayerInfoVector> info_;
   std::vector<Violation> antenna_violations_;
   int node_count_;
-  dbTechLayer *min_layer_, *max_layer_;
+  dbTechLayer *min_layer_;
   // dsu variables
   std::vector<int> dsu_parent_, dsu_size_;
 
@@ -292,23 +295,18 @@ class AntennaChecker
 
   bool isValidGate(dbMTerm* mterm);
   void buildLayerMaps(dbNet* net);
-  void checkNet2(dbNet* net, bool verbose, bool report, dbMTerm* diode_mterm, float ratio_margin, int& net_violation_count, int& pin_violation_count);
+  void checkNet(dbNet* net, bool verbose, bool report, std::ofstream& report_file, dbMTerm* diode_mterm, float ratio_margin, int& net_violation_count, int& pin_violation_count);
   void saveGates(dbNet* db_net);
+  void calculateAreas();
   void calculatePAR();
   void calculateCAR();
-  int checkInfo(dbNet* db_net, bool verbose);
-  int checkInfo2(dbNet* db_net, bool verbose, bool report, dbMTerm* diode_mterm, float ratio_margin);
-  InfoType calculateViaPar(dbTechLayer* tech_layer, double via_area, double iterm_gate_area, double iterm_diff_area);
-  InfoType calculateWirePar(dbTechLayer* tech_layer, double wire_area, double side_area, double iterm_gate_area, double iterm_diff_area);
-  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
-  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
-  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
-  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report);
-  bool checkViolation2(const InfoType& info, dbTechLayer* layer);
-
-  vector<Violation> getAntennaViolations2(dbNet* net,
-                                         odb::dbMTerm* diode_mterm,
-                                         float ratio_margin);
+  int checkInfo(dbNet* db_net, bool verbose, bool report, std::ofstream& report_file, dbMTerm* diode_mterm, float ratio_margin);
+  void calculateViaPar(dbTechLayer* tech_layer, InfoType& info);
+  void calculateWirePar(dbTechLayer* tech_layer, InfoType& info);
+  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
+  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
+  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
+  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file); 
   /////////////////////////////////////////////////////////////////////////////////
 };
 
