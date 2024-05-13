@@ -118,7 +118,7 @@ void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
 {
   if (!db_net->isSpecial() && db_net->getWire()) {
     std::vector<ant::Violation> net_violations
-        = arc_->getAntennaViolations(db_net, diode_mterm, ratio_margin);
+        = arc_->getAntennaViolations2(db_net, diode_mterm, ratio_margin);
     if (!net_violations.empty()) {
       antenna_violations_[db_net] = std::move(net_violations);
       debugPrint(logger_,
