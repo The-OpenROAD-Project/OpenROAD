@@ -4181,8 +4181,8 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
         // The nets that cross the congestion area are obtained and added to the
         // set
         fastroute_->getCongestionNets(congestion_nets);
-        // When every attempt to increase the congestion region failed, try legalizing
-        // the buffers inserted
+        // When every attempt to increase the congestion region failed, try
+        // legalizing the buffers inserted
         if (add_max == 0) {
           opendp_->detailedPlacement(0, 0, "");
           updateDirtyNets(dirty_nets);
