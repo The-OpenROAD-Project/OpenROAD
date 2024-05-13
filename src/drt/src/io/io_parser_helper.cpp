@@ -828,12 +828,6 @@ void io::Parser::postProcessGuide()
 
   design_->getRegionQuery()->initOrigGuide(tmpGuides_);
   int cnt = 0;
-  // for (auto &[netName, rects]:tmpGuides) {
-  //   if (design_->getTopBlock()->name2net.find(netName) ==
-  //   design_->getTopBlock()->name2net.end()) {
-  //     std::cout <<"Error: postProcessGuide cannot find net" <<std::endl;
-  //     exit(1);
-  //   }
   for (auto& [net, rects] : tmpGuides_) {
     net->setOrigGuides(rects);
     genGuides(net, rects);
@@ -1141,42 +1135,6 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
   }
 
   design_->getTopBlock()->setGCellPatterns({xgp, ygp});
-
-  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
-       layerNum += 2) {
-    for (int i = 0; i < (int) xgp.getCount(); i++) {
-      for (int j = 0; j < (int) ygp.getCount(); j++) {
-        Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(i, j));
-        bool isH = (tech_->getLayers().at(layerNum)->getDir()
-                    == dbTechLayerDir::HORIZONTAL);
-        frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
-        frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
-        for (auto& tp : design_->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
-               && tp->isHorizontal() == false)
-              || (tech_->getLayer(layerNum)->getDir()
-                      == dbTechLayerDir::VERTICAL
-                  && tp->isHorizontal() == true)) {
-            int trackNum
-                = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-            if (trackNum < 0) {
-              trackNum = 0;
-            }
-            if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                < gcLow) {
-              trackNum++;
-            }
-            for (;
-                 trackNum < (int) tp->getNumTracks()
-                 && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                        < gcHigh;
-                 trackNum++) {
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 void io::Parser::saveGuidesUpdates()

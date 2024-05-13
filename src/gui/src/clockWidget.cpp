@@ -1167,7 +1167,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
         if (insDelays.hasValue()) {
           ins_delay
               = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())

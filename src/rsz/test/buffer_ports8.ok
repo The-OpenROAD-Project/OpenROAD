@@ -37,7 +37,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] BinCnt:        16     16
 [INFO GPL-0029] BinSize: (  4.987  4.900 )
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter: 1 overflow: 0 HPWL: 565193
+[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 565193
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.

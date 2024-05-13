@@ -2160,10 +2160,15 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
 
   if (iter == 0 || (iter + 1) % 10 == 0) {
-    log_->report("[NesterovSolve] Iter: {} overflow: {:g} HPWL: {}",
+    std::string group;
+    if (pb_->group()) {
+      group = fmt::format(" ({})", pb_->group()->getName());
+    }
+    log_->report("[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {}{}",
                  iter + 1,
                  sumOverflowUnscaled_,
-                 prevHpwl_);
+                 prevHpwl_,
+                 group);
   }
 
   if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
