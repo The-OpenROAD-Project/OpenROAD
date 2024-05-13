@@ -180,9 +180,10 @@ class RouteBase
             utl::Logger* log);
   ~RouteBase();
 
-//    void updateRoute();
-    void getGlobalRouterResult();
-  //  float getRC() const;
+  // Functions using fastroute on grt are saved as backup.
+  void updateGrtRoute();
+  void getGrtResult();
+  float getGrtRC() const;
 
   void updateRudyRoute();
   void getRudyResult();
