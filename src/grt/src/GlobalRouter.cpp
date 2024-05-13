@@ -1633,8 +1633,10 @@ void GlobalRouter::initGridAndNets()
 {
   block_ = db_->getChip()->getBlock();
   routes_.clear();
-  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
+  if (max_routing_layer_ == -1) {
     max_routing_layer_ = computeMaxRoutingLayer();
+  }
+  if (routing_layers_.empty()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
 
