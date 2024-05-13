@@ -437,6 +437,7 @@ void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
     }
     w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
   }
+  free(destid);
 }
 
 void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
@@ -1862,8 +1863,10 @@ void dbWire::setRawWireData(const std::vector<int>& data,
                             const std::vector<unsigned char>& op_codes)
 {
   _dbWire* wire = (_dbWire*) this;
+  _dbNet* net = (_dbNet*) getNet();
   wire->_data = data;
   wire->_opcodes = op_codes;
+  net->_flags._wire_ordered = 0;
 }
 
 }  // namespace odb

@@ -266,8 +266,7 @@ _dbDatabase::~_dbDatabase()
   delete _chip_tbl;
   delete _prop_tbl;
   delete _name_cache;
-  // dimitri_fix
-  // delete _prop_itr;
+  delete _prop_itr;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)

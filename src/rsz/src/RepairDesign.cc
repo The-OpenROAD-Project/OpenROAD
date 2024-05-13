@@ -1644,11 +1644,6 @@ double RepairDesign::dbuToMeters(int dist) const
   return dist / (dbu_ * 1e+6);
 }
 
-double RepairDesign::dbuToMicrons(int dist) const
-{
-  return static_cast<double>(dist) / dbu_;
-}
-
 int RepairDesign::metersToDbu(double dist) const
 {
   return dist * dbu_ * 1e+6;

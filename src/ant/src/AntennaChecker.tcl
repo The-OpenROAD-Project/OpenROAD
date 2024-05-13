@@ -29,8 +29,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "check_antennas" { [-verbose]\
-                                          [-net net]
+sta::define_cmd_args "check_antennas" { [-verbose] \
+                                        [-report_violating_nets] \
+                                        [-report_file report_file] \
+                                        [-net net]
 };# checker off
 
 proc check_antennas { args } {

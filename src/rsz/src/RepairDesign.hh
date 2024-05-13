@@ -235,7 +235,6 @@ class RepairDesign : StaState
   bool hasInputPort(const Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
-  double dbuToMicrons(int dist) const;
 
   void printProgress(int iteration,
                      bool force,

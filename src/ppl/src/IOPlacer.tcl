@@ -251,7 +251,7 @@ proc set_io_pin_constraint { args } {
 
 sta::define_cmd_args "clear_io_pin_constraints" {}
 
-proc clear_io_pin_constraints {} {
+proc clear_io_pin_constraints { args } {
   sta::parse_key_args "clear_io_pin_constraints" args keys {} flags {}
   ppl::clear_constraints
 }

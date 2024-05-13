@@ -113,6 +113,7 @@ void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
 
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
+  via_cut_class_ = false;
   below_layer_width_low_ = 0;
   below_layer_width_high_ = 0;
   above_layer_width_low_ = 0;

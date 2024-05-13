@@ -39,12 +39,13 @@ class Logger;
 
 namespace drt {
 
+class TritonRoute;
+
 class FlexDRConnectivityChecker
 {
  public:
-  FlexDRConnectivityChecker(frDesign* design,
+  FlexDRConnectivityChecker(drt::TritonRoute* router,
                             Logger* logger,
-                            odb::dbDatabase* db,
                             FlexDRGraphics* graphics,
                             bool save_updates = false);
   void check(int iter = -1);
@@ -170,12 +171,11 @@ class FlexDRConnectivityChecker
               int nCnt,
               std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
 
-  frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
-  frTechObject* getTech() const { return design_->getTech(); }
-
-  frDesign* design_;
+  frRegionQuery* getRegionQuery() const;
+  frTechObject* getTech() const;
+  frDesign* getDesign() const;
+  drt::TritonRoute* router_;
   Logger* logger_;
-  odb::dbDatabase* db_;
   FlexDRGraphics* graphics_;
   bool save_updates_;
 };
