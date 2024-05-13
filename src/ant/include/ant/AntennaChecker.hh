@@ -32,8 +32,8 @@
 #pragma once
 
 #include <map>
-#include <unordered_set>
 #include <queue>
+#include <unordered_set>
 
 //#include <boost/polygon/polygon.hpp>
 
@@ -65,11 +65,12 @@ struct ARinfo;
 struct AntennaModel;
 
 ///////////////////////////////////////
-//namespace gtl = boost::polygon;
+// namespace gtl = boost::polygon;
 struct PinType;
 struct GraphNode;
 
-struct InfoType{
+struct InfoType
+{
   double PAR;
   double PSR;
   double diff_PAR;
@@ -86,7 +87,7 @@ struct InfoType{
 
   std::vector<dbITerm*> iterms;
 
-  InfoType& operator +=(const InfoType& a)
+  InfoType& operator+=(const InfoType& a)
   {
     PAR += a.PAR;
     PSR += a.PSR;
@@ -96,7 +97,8 @@ struct InfoType{
     side_area += a.side_area;
     return *this;
   }
-  InfoType () {
+  InfoType()
+  {
     PAR = 0.0;
     PSR = 0.0;
     diff_PAR = 0.0;
@@ -110,7 +112,7 @@ struct InfoType{
     CAR = 0.0;
     CSR = 0.0;
     diff_CAR = 0.0;
-    diff_CSR = 0.0; 
+    diff_CSR = 0.0;
   }
 };
 
@@ -152,8 +154,8 @@ class AntennaChecker
   void findMaxWireLength();
 
   vector<Violation> getAntennaViolations2(dbNet* net,
-                                         odb::dbMTerm* diode_mterm,
-                                         float ratio_margin);
+                                          odb::dbMTerm* diode_mterm,
+                                          float ratio_margin);
   vector<Violation> getAntennaViolations(dbNet* net,
                                          odb::dbMTerm* diode_mterm,
                                          float ratio_margin);
@@ -283,7 +285,7 @@ class AntennaChecker
   std::unordered_map<std::string, LayerInfoVector> info_;
   std::vector<Violation> antenna_violations_;
   int node_count_;
-  dbTechLayer *min_layer_;
+  dbTechLayer* min_layer_;
   // dsu variables
   std::vector<int> dsu_parent_, dsu_size_;
 
@@ -295,18 +297,46 @@ class AntennaChecker
 
   bool isValidGate(dbMTerm* mterm);
   void buildLayerMaps(dbNet* net);
-  void checkNet(dbNet* net, bool verbose, bool report, std::ofstream& report_file, dbMTerm* diode_mterm, float ratio_margin, int& net_violation_count, int& pin_violation_count);
+  void checkNet(dbNet* net,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file,
+                dbMTerm* diode_mterm,
+                float ratio_margin,
+                int& net_violation_count,
+                int& pin_violation_count);
   void saveGates(dbNet* db_net);
   void calculateAreas();
   void calculatePAR();
   void calculateCAR();
-  int checkInfo(dbNet* db_net, bool verbose, bool report, std::ofstream& report_file, dbMTerm* diode_mterm, float ratio_margin);
+  int checkInfo(dbNet* db_net,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file,
+                dbMTerm* diode_mterm,
+                float ratio_margin);
   void calculateViaPar(dbTechLayer* tech_layer, InfoType& info);
   void calculateWirePar(dbTechLayer* tech_layer, InfoType& info);
-  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
-  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
-  bool checkCAR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file);
-  bool checkCSR(dbTechLayer* tech_layer, const InfoType& info, bool verbose, bool report, std::ofstream& report_file); 
+  std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer,
+                                 const InfoType& info,
+                                 bool verbose,
+                                 bool report,
+                                 std::ofstream& report_file);
+  std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer,
+                                 const InfoType& info,
+                                 bool verbose,
+                                 bool report,
+                                 std::ofstream& report_file);
+  bool checkCAR(dbTechLayer* tech_layer,
+                const InfoType& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
+  bool checkCSR(dbTechLayer* tech_layer,
+                const InfoType& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
   /////////////////////////////////////////////////////////////////////////////////
 };
 
