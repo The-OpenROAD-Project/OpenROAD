@@ -292,7 +292,8 @@ int main(int argc, char* argv[])
     return Py_RunMain();
 #else
     initPython();
-    bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit")
+                && !findCmdLineFlag(cmd_argc, cmd_argv, "-no_exit");
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     if (!exit) {
@@ -386,7 +387,9 @@ static int tclAppInit(int& argc,
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+    bool exit_after_cmd_file
+        = findCmdLineFlag(cmd_argc, cmd_argv, "-exit")
+          && !findCmdLineFlag(cmd_argc, cmd_argv, "-no_exit");
 
     const bool gui_enabled = gui::Gui::enabled();
 
@@ -471,6 +474,8 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -threads count|max    use count threads\n");
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
+  printf(
+      "  -no_exit              do not exit after reading cmd_file (default)\n");
   printf("  -gui                  start in gui mode\n");
 #ifdef ENABLE_PYTHON3
   printf(
