@@ -78,9 +78,8 @@ RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 void RepairSetup::init()
 {
   logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
+  dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
-  copyState(sta_);
 }
 
 void RepairSetup::repairSetup(const float setup_slack_margin,
