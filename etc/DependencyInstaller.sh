@@ -725,7 +725,7 @@ EOF
                 _installOrTools "centos" "8" "amd64"
             fi
         else
-            echo "ERROR: RHEL 9 is only supported" >&2
+            echo "[ERROR] Only version 9 of RHEL supported" >&2
             exit 1
         fi
         ;;
