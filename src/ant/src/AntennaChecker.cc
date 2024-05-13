@@ -693,7 +693,6 @@ vector<PARinfo> AntennaChecker::buildWireParTable(
     par_info.side_wire_area = side_wire_area;
     par_info.iterm_gate_area = iterm_gate_area;
     par_info.iterm_diff_area = iterm_diff_area;
-    //std::cout << "Layer: " << wire_root->layer()->getName() << " wire area: " << wire_area << " side area: " << side_wire_area << "\n";
     PARtable.push_back(par_info);
   }
 
@@ -1819,7 +1818,7 @@ void AntennaChecker::calculateAreas () {
   for (const auto& it: node_by_layer_map_) {
     for (const auto& node_it: it.second) { 
       InfoType info;
-      info.area = dbuToMicrons(dbuToMicrons(gtl::area(node_it->pol)));
+      info.area = block_->dbuToMicrons(block_->dbuToMicrons(gtl::area(node_it->pol)));
       int gates_count = 0;
       vector<dbITerm*> iterms;
       for (const auto& gate: node_it->gates) {
@@ -1835,8 +1834,8 @@ void AntennaChecker::calculateAreas () {
         // Calculate side area of wire
         uint wire_thickness_dbu = 0;
         it.first->getThickness(wire_thickness_dbu);
-        double wire_thickness = dbuToMicrons(wire_thickness_dbu);
-        info.side_area = dbuToMicrons(gtl::perimeter(node_it->pol) * wire_thickness);
+        double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
+        info.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol) * wire_thickness);
       }
       // put values on struct
        for (const auto& gate: node_it->gates) {
@@ -2616,8 +2615,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
                nullptr,
                0,
                net_violation_count,
-               pin_violation_count,
-               use_grt_routes);
+               pin_violation_count);
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -2632,8 +2630,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
                  nullptr,
                  0,
                  net_violation_count,
-                 pin_violation_count,
-                 use_grt_routes);
+                 pin_violation_count);
       }
     }
   }
