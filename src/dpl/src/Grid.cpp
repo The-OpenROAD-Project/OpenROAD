@@ -368,6 +368,8 @@ void Grid::initGrid(dbDatabase* db,
     hopeless[grid_info.getGridIndex()] += gtl::rectangle_data<int>{
         0, 0, grid_info.getSiteCount().v, grid_info.getRowCount().v};
   }
+  const Rect core = getCore();
+
   // Fragmented row support; mark valid sites.
   visitDbRows(block, [&](odb::dbRow* db_row) {
     const auto db_row_site = db_row->getSite();
@@ -378,7 +380,6 @@ void Grid::initGrid(dbDatabase* db,
     int current_row_grid_index = entry.getGridIndex();
     const odb::Point orig = db_row->getOrigin();
 
-    const Rect core = getCore();
     const int site_width = db_row_site->getWidth();
     const GridX x_start{(orig.x() - core.xMin()) / site_width};
     const GridX x_end{x_start + current_row_site_count};
@@ -407,6 +408,27 @@ void Grid::initGrid(dbDatabase* db,
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl.v, yl.v, xh.v, yh.v};
   });
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (blockage->isSoft()) {
+      continue;
+    }
+    dbBox* bbox = blockage->getBBox();
+    for (auto& [gmk, grid_info] : getInfoMap()) {
+      const GridX xlo = gridX(DbuX{bbox->xMin() - core.xMin()});
+      const GridX xhi = gridEndX(DbuX{bbox->xMax() - core.xMin()});
+      const auto [ylo, ignore_x]
+          = gridY(DbuY{bbox->yMin() - core.yMin()}, grid_info);
+      const auto [yhi, ignore_y]
+          = gridEndY(DbuY{bbox->yMax() - core.yMin()}, grid_info);
+      for (GridY y = ylo; y < yhi; y++) {
+        for (GridX x = xlo; x < xhi; x++) {
+          Pixel& pixel1 = pixel(grid_info.getGridIndex(), y, x);
+          pixel1.is_valid = false;
+        }
+      }
+    }
+  }
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : getInfoMap()) {
