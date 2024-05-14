@@ -128,6 +128,7 @@ class dbNetwork : public ConcreteNetwork
                dbBTerm*& bterm) const;
   dbBTerm* staToDb(const Term* term) const;
   dbMaster* staToDb(const Cell* cell) const;
+  void staToDb(const Cell* cell, dbMaster*& master, dbModule*& module) const;
   dbMaster* staToDb(const LibertyCell* cell) const;
   dbMTerm* staToDb(const Port* port) const;
   dbMTerm* staToDb(const LibertyPort* port) const;

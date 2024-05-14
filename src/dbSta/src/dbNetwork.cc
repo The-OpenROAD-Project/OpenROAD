@@ -115,6 +115,11 @@ Library* DbLibraryIterator1::next()
   return reinterpret_cast<Library*>(iter_->next());
 }
 
+//
+// check the leaves accessible from the network
+// match those accessible from block.
+//
+
 ////////////////////////////////////////////////////////////////
 
 class DbInstanceChildIterator : public InstanceChildIterator
@@ -552,7 +557,17 @@ Instance* dbNetwork::parent(const Instance* instance) const
 
 bool dbNetwork::isLeaf(const Instance* instance) const
 {
-  return instance != top_instance_;
+  if (instance == top_instance_) {
+    return false;
+  }
+  dbMaster* db_master;
+  dbModule* db_module;
+  Cell* cur_cell = cell(instance);
+  staToDb(cur_cell, db_master, db_module);
+  if (db_module) {
+    return false;
+  }
+  return true;
 }
 
 Instance* dbNetwork::findInstance(const char* path_name) const
@@ -1449,6 +1464,24 @@ void dbNetwork::staToDb(const Pin* pin,
 dbBTerm* dbNetwork::staToDb(const Term* term) const
 {
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
+}
+
+void dbNetwork::staToDb(const Cell* cell,
+                        dbMaster*& master,
+                        dbModule*& module) const
+{
+  module = nullptr;
+  master = nullptr;
+  if (findLibertyCell(name(cell))) {
+    master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+  } else {
+    if (block_) {
+      if (block_->findModule(name(cell)))
+        module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
+      else
+        master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+    }
+  }
 }
 
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
