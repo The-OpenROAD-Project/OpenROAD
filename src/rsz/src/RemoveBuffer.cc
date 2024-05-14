@@ -52,8 +52,8 @@ using std::vector;
 using utl::RSZ;
 
 using sta::NetPinIterator;
-using sta::Port;
 using sta::Pin;
+using sta::Port;
 
 RemoveBuffer::RemoveBuffer(Resizer* resizer) : resizer_(resizer)
 {
@@ -68,12 +68,12 @@ void RemoveBuffer::init()
 }
 
 // There are two buffer removal modes: auto and manual:
-// 1) auto mode: this happens during setup fixing, power recovery, buffer removal
+// 1) auto mode: this happens during setup fixing, power recovery, buffer
+// removal
 //      Dont-touch, fixed cell and boundary buffer constraints are honored
 // 2) manual mode: this happens during manual buffer removal during ECO
 //      This ignores dont-touch, fixed cell and boundary buffer constraints
-bool RemoveBuffer::removeBuffer(Instance* buffer,
-                                bool honorDontTouchFixed)
+bool RemoveBuffer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
   init();
   LibertyCell* lib_cell = network_->libertyCell(buffer);
@@ -81,11 +81,11 @@ bool RemoveBuffer::removeBuffer(Instance* buffer,
     return false;
   }
   dbInst* db_inst = db_network_->staToDb(buffer);
-  if (honorDontTouchFixed &&
-      (db_inst->isDoNotTouch() || db_inst->isFixed() ||
-       // Do not remove buffers connected to input/output ports
-      // because verilog netlists use the net name for the port.
-       bufferBetweenPorts(buffer))) {
+  if (honorDontTouchFixed
+      && (db_inst->isDoNotTouch() || db_inst->isFixed() ||
+          // Do not remove buffers connected to input/output ports
+          // because verilog netlists use the net name for the port.
+          bufferBetweenPorts(buffer))) {
     return false;
   }
 
@@ -164,5 +164,4 @@ bool RemoveBuffer::bufferBetweenPorts(Instance* buffer)
   return hasPort(in_net) && hasPort(out_net);
 }
 
-} // namespace rsz
-
+}  // namespace rsz

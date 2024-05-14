@@ -45,34 +45,33 @@ namespace rsz {
 
 class Resizer;
 
-using utl::Logger;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
-using sta::LibertyCell;
 using sta::Instance;
+using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
 using sta::StaState;
+using utl::Logger;
 
 class RemoveBuffer : StaState
 {
-public:
+ public:
   RemoveBuffer(Resizer* resizer);
   bool removeBuffer(Instance* buffer, bool honorDontTouchFixed = true);
   bool hasPort(const Net* net);
   bool bufferBetweenPorts(Instance* buffer);
-  
-private:
+
+ private:
   void init();
-  
+
   Logger* logger_ = nullptr;
   dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
 };
 
-} // namespace rsz
-  
+}  // namespace rsz

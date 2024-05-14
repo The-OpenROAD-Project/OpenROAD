@@ -42,10 +42,10 @@
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
 #include "RecoverPower.hh"
+#include "RemoveBuffer.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
-#include "RemoveBuffer.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -241,7 +241,6 @@ void Resizer::init()
   initDesignArea();
 }
 
-  
 // remove all buffers if no buffers are specified
 void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
@@ -263,13 +262,16 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     // remove only select buffers specified by user
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
-      Instance* buffer = const_cast<Instance *>(inst_iter.next());
-      if (remove_buffer_->removeBuffer(buffer, /* don't honor dont touch */ false)) {
+      Instance* buffer = const_cast<Instance*>(inst_iter.next());
+      if (remove_buffer_->removeBuffer(buffer,
+                                       /* don't honor dont touch */ false)) {
         remove_count++;
       } else {
-	logger_->warn(RSZ, 97,
-		      "Instance {} cannot be removed because it is not a buffer",
-		      db_network_->name(buffer));
+        logger_->warn(
+            RSZ,
+            97,
+            "Instance {} cannot be removed because it is not a buffer",
+            db_network_->name(buffer));
       }
     }
   }

@@ -34,10 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
-#include "RemoveBuffer.hh"
 
 #include <sstream>
 
+#include "RemoveBuffer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -399,7 +399,7 @@ bool RepairSetup::repairPath(PathRef& path,
                    "{} load_delay = {} intrinsic_delay = {}",
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3),
-		   delayAsString(corner_arc->intrinsicDelay(), sta_, 3));
+                   delayAsString(corner_arc->intrinsicDelay(), sta_, 3));
       }
     }
 
@@ -426,14 +426,14 @@ bool RepairSetup::repairPath(PathRef& path,
                  "{} {} fanout = {} drvr_index = {}",
                  network_->pathName(drvr_pin),
                  drvr_cell ? drvr_cell->name() : "none",
-                 fanout, drvr_index);
-
+                 fanout,
+                 drvr_index);
 
       if (removeDrvr(drvr_path, drvr_cell, drvr_index, &expanded)) {
         changed = true;
         break;
       }
-      
+
       if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
