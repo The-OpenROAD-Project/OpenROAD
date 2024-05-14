@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+#include "RemoveBuffer.hh"
 
 #include <sstream>
 
@@ -97,6 +98,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   resize_count_ = 0;
   cloned_gate_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
+  remove_buffer_ = new RemoveBuffer(resizer_);
 
   // Sort failing endpoints by slack.
   const VertexSet* endpoints = sta_->endpoints();
@@ -344,10 +346,11 @@ void RepairSetup::repairSetup(const Pin* end_pin)
 }
 
 /* This is the main routine for repairing setup violations. We have
- - upsize driver (step 1)
- - rebuffer (step 2)
- - swap pin (step 3)
- - split loads
+ - remove driver (step 1)
+ - upsize driver (step 2)
+ - rebuffer (step 3)
+ - swap pin (step 4)
+ - split loads (step 5)
  And they are always done in the same order. Not clear whether
  this order is the best way at all times. Also need to worry about
  actually using global routes...
@@ -393,9 +396,10 @@ bool RepairSetup::repairPath(PathRef& path,
                    RSZ,
                    "repair_setup",
                    3,
-                   "{} load_delay = {}",
+                   "{} load_delay = {} intrinsic_delay = {}",
                    path_vertex->name(network_),
-                   delayAsString(load_delay, sta_, 3));
+                   delayAsString(load_delay, sta_, 3),
+		   delayAsString(corner_arc->intrinsicDelay(), sta_, 3));
       }
     }
 
@@ -419,11 +423,17 @@ bool RepairSetup::repairPath(PathRef& path,
                  RSZ,
                  "repair_setup",
                  3,
-                 "{} {} fanout = {}",
+                 "{} {} fanout = {} drvr_index = {}",
                  network_->pathName(drvr_pin),
                  drvr_cell ? drvr_cell->name() : "none",
-                 fanout);
+                 fanout, drvr_index);
 
+
+      if (removeDrvr(drvr_path, drvr_cell, drvr_index, &expanded)) {
+        changed = true;
+        break;
+      }
+      
       if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
@@ -567,6 +577,30 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
       }
     }
   }
+  return false;
+}
+
+// Remove driver if
+// 1) it is a buffer without attributes like dont-touch
+// 2) it improves setup slack
+// 3) it doesn't create new max fanout violations
+// 4) it doesn't create new max cap violations
+// 5) it doesn't create new max slew violations
+bool RepairSetup::removeDrvr(PathRef* drvr_path,
+                             LibertyCell* drvr_cell,
+                             const int drvr_index,
+                             PathExpanded* expanded)
+{
+  /* TODO: remove driver only if slack improves and no new violations
+  if (drvr_cell && drvr_cell->isBuffer()) {
+    Pin* drvr_pin = drvr_path->pin(this);
+    Instance* drvr = network_->instance(drvr_pin);
+    if (remove_buffer_->removeBuffer(drvr)) {
+      return true;
+    }
+  }
+  */
+
   return false;
 }
 

@@ -408,12 +408,17 @@ proc buffer_ports { args } {
   }
 }
 
-sta::define_cmd_args "remove_buffers" {}
+sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  sta::check_argc_eq0 "remove_buffers" $args
-  rsz::remove_buffers_cmd
+  set insts [ rsz::init_insts_cmd ]
+  foreach arg $args {
+    set inst [ get_cells $arg ]
+    rsz::add_to_insts_cmd $inst $insts
+  }
+  rsz::remove_buffers_cmd $insts
+  rsz::delete_insts_cmd $insts
 }
 
 sta::define_cmd_args "balance_row_usage" {}

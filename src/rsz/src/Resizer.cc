@@ -45,6 +45,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "RemoveBuffer.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -130,6 +131,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      remove_buffer_(new RemoveBuffer(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -239,7 +241,9 @@ void Resizer::init()
   initDesignArea();
 }
 
-void Resizer::removeBuffers()
+  
+// remove all buffers if no buffers are specified
+void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
   initBlock();
   // Disable incremental timing.
@@ -247,89 +251,30 @@ void Resizer::removeBuffers()
   search_->arrivalsInvalid();
 
   int remove_count = 0;
-  for (dbInst* db_inst : block_->getInsts()) {
-    LibertyCell* lib_cell = db_network_->libertyCell(db_inst);
-    Instance* buffer = db_network_->dbToSta(db_inst);
-    if (!db_inst->isDoNotTouch() && !db_inst->isFixed() && lib_cell
-        && lib_cell->isBuffer()
-        // Do not remove buffers connected to input/output ports
-        // because verilog netlists use the net name for the port.
-        && !bufferBetweenPorts(buffer)) {
-      if (removeBuffer(buffer)) {
+  if (insts.empty()) {
+    // remove all buffers
+    for (dbInst* db_inst : block_->getInsts()) {
+      Instance* buffer = db_network_->dbToSta(db_inst);
+      if (remove_buffer_->removeBuffer(buffer, /* honor dont touch */ true)) {
         remove_count++;
+      }
+    }
+  } else {
+    // remove only select buffers specified by user
+    InstanceSeq::Iterator inst_iter(insts);
+    while (inst_iter.hasNext()) {
+      Instance* buffer = const_cast<Instance *>(inst_iter.next());
+      if (remove_buffer_->removeBuffer(buffer, /* don't honor dont touch */ false)) {
+        remove_count++;
+      } else {
+	logger_->warn(RSZ, 97,
+		      "Instance {} cannot be removed because it is not a buffer",
+		      db_network_->name(buffer));
       }
     }
   }
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
-}
-
-bool Resizer::bufferBetweenPorts(Instance* buffer)
-{
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
-  LibertyPort *in_port, *out_port;
-  lib_cell->bufferPorts(in_port, out_port);
-  Pin* in_pin = db_network_->findPin(buffer, in_port);
-  Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
-  return hasPort(in_net) && hasPort(out_net);
-}
-
-bool Resizer::removeBuffer(Instance* buffer)
-{
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
-  LibertyPort *in_port, *out_port;
-  lib_cell->bufferPorts(in_port, out_port);
-  Pin* in_pin = db_network_->findPin(buffer, in_port);
-  Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
-  bool out_net_ports = hasPort(out_net);
-  Net *survivor, *removed;
-  if (out_net_ports) {
-    survivor = out_net;
-    removed = in_net;
-  } else {
-    // default or out_net_ports
-    // Default to in_net surviving so drivers (cached in dbNetwork)
-    // do not change.
-    survivor = in_net;
-    removed = out_net;
-  }
-
-  bool buffer_removed = false;
-  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "remove {}",
-               db_network_->name(buffer));
-    buffer_removed = true;
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-    sta_->deleteInstance(buffer);
-
-    if (removed) {
-      NetPinIterator* pin_iter = db_network_->pinIterator(removed);
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        Instance* pin_inst = db_network_->instance(pin);
-        if (pin_inst != buffer) {
-          Port* pin_port = db_network_->port(pin);
-          sta_->disconnectPin(const_cast<Pin*>(pin));
-          sta_->connectPin(pin_inst, pin_port, survivor);
-        }
-      }
-      delete pin_iter;
-      sta_->deleteNet(removed);
-      parasitics_invalid_.erase(removed);
-    }
-    parasiticsInvalid(survivor);
-  }
-  return buffer_removed;
 }
 
 void Resizer::ensureLevelDrvrVertices()
@@ -2899,7 +2844,8 @@ void Resizer::journalRestore(int& resize_count,
                1,
                "journal remove buffer {}",
                network_->pathName(buffer));
-    removeBuffer(const_cast<Instance*>(buffer));
+    remove_buffer_->removeBuffer(const_cast<Instance*>(buffer),
+                                 /* honor dont-touch */ true);
     inserted_buffers_.pop_back();
     inserted_buffer_count--;
   }

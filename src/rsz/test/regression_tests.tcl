@@ -26,6 +26,7 @@ record_tests {
   resize_slack3
   remove_buffers1
   remove_buffers2
+  remove_buffers3
   repair_clk_nets1
   repair_clk_inverters1
   repair_cap1

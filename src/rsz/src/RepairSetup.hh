@@ -51,6 +51,7 @@ class PathExpanded;
 namespace rsz {
 
 class Resizer;
+class RemoveBuffer;
 
 using odb::Point;
 using std::pair;
@@ -120,6 +121,10 @@ class RepairSetup : StaState
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool removeDrvr(PathRef* drvr_path,
+                  LibertyCell* drvr_cell,
+                  const int drvr_index,
+                  PathExpanded* expanded);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
@@ -180,6 +185,10 @@ class RepairSetup : StaState
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
+
+  RemoveBuffer* remove_buffer_;
+
+  friend class RemoveBuffer;
 };
 
 }  // namespace rsz

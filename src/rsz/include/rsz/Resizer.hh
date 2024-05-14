@@ -134,6 +134,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class RemoveBuffer;
 
 class NetHash
 {
@@ -244,8 +245,8 @@ class Resizer : public StaState
   bool dontTouch(const Net* net);
 
   void setMaxUtilization(double max_utilization);
-  // Remove all buffers from the netlist.
-  void removeBuffers();
+  // Remove all or selected buffers from the netlist.
+  void removeBuffers(InstanceSeq insts);
   void bufferInputs();
   void bufferOutputs();
 
@@ -503,7 +504,6 @@ class Resizer : public StaState
   string makeUniqueInstName(const char* base_name);
   string makeUniqueInstName(const char* base_name, bool underscore);
   bool overMaxArea();
-  bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
   Point location(Instance* inst);
   double area(dbMaster* master);
@@ -553,7 +553,6 @@ class Resizer : public StaState
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -620,6 +619,7 @@ class Resizer : public StaState
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  RemoveBuffer* remove_buffer_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -702,6 +702,7 @@ class Resizer : public StaState
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
+  friend class RemoveBuffer;
   friend class SteinerTree;
 };
 
