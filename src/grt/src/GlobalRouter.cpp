@@ -4177,10 +4177,19 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
+      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to the
         // set
         fastroute_->getCongestionNets(congestion_nets);
+        // When every attempt to increase the congestion region failed, try
+        // legalizing the buffers inserted
+        if (add_max == 0) {
+          opendp_->detailedPlacement(0, 0, "");
+          updateDirtyNets(dirty_nets);
+          for (auto& it : dirty_nets) {
+            congestion_nets.insert(it->getDbNet());
+          }
+        }
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
