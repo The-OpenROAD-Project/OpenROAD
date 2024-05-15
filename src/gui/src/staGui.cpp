@@ -460,9 +460,18 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
 
 void TimingPathRenderer::highlight(TimingPath* path)
 {
-  path_ = path;
-  highlight_stage_.clear();
+  {
+    std::lock_guard guard(rendering_);
+    path_ = path;
+    highlight_stage_.clear();
+  }
   redraw();
+}
+
+void TimingPathRenderer::clearHighlightNodes()
+{
+  std::lock_guard guard(rendering_);
+  highlight_stage_.clear();
 }
 
 void TimingPathRenderer::highlightNode(const TimingPathNode* node)
@@ -486,6 +495,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
+      std::lock_guard guard(rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -549,6 +559,7 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
+  std::lock_guard guard(rendering_);
   const bool capture_path = checkDisplayControl(capture_clock_label_);
   drawNodesList(&path_->getCaptureNodes(),
                 painter,

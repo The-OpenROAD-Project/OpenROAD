@@ -155,6 +155,24 @@ class dbStaCbk : public dbBlockCallBackObj
   Logger* logger_;
 };
 
+////////////////////////////////////////////////////////////////
+
+void dbStaState::init(dbSta* sta)
+{
+  sta_ = sta;
+  copyState(sta);
+  sta->registerStaState(this);
+}
+
+dbStaState::~dbStaState()
+{
+  if (sta_) {
+    sta_->unregisterStaState(this);
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
 dbSta::~dbSta() = default;
 
 void dbSta::initVars(Tcl_Interp* tcl_interp,
@@ -170,6 +188,24 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+}
+
+void dbSta::updateComponentsState()
+{
+  Sta::updateComponentsState();
+  for (auto& state : sta_states_) {
+    state->copyState(this);
+  }
+}
+
+void dbSta::registerStaState(dbStaState* state)
+{
+  sta_states_.insert(state);
+}
+
+void dbSta::unregisterStaState(dbStaState* state)
+{
+  sta_states_.erase(state);
 }
 
 void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)
