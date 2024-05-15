@@ -36,7 +36,11 @@
 
 #include <cstdio>
 
+#include <filesystem>
+
 #include "utl/Logger.h"
+
+namespace fs = std::filesystem;
 
 namespace utl {
 
@@ -65,5 +69,7 @@ class ScopedTemporaryFile
   int fd_ = -1;
   FILE* file_;
 };
+
+std::string createTmpFileName(const char* filename);
 
 }  // namespace utl

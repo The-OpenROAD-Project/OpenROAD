@@ -33,4 +33,20 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
+std::string createTmpFileName(const char* filename)
+{
+  std::time_t now = std::time(nullptr);
+  std::tm* tm = std::localtime(&now);
+  char timestamp[20];
+  std::strftime(timestamp, sizeof(timestamp), "%Y%m%d%H%M%S", tm);
+
+  fs::path filepath = filename;
+  fs::path directory = filepath.parent_path();
+  std::string base_filename = filepath.filename().string();
+  // Create temporary filename with timestamp in /tmp directory
+  std::string tmp_dir = fs::temp_directory_path();
+  std::string tmp_filename = tmp_dir + "/tmp_" + std::string(timestamp) + "_" + base_filename;
+  return tmp_filename;
+}
+
 }  // namespace utl
