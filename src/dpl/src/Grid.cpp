@@ -415,12 +415,18 @@ void Grid::initGrid(dbDatabase* db,
     }
     dbBox* bbox = blockage->getBBox();
     for (auto& [gmk, grid_info] : getInfoMap()) {
-      const GridX xlo = gridX(DbuX{bbox->xMin() - core.xMin()});
-      const GridX xhi = gridEndX(DbuX{bbox->xMax() - core.xMin()});
-      const auto [ylo, ignore_x]
-          = gridY(DbuY{bbox->yMin() - core.yMin()}, grid_info);
-      const auto [yhi, ignore_y]
+      GridX xlo = gridX(DbuX{bbox->xMin() - core.xMin()});
+      GridX xhi = gridEndX(DbuX{bbox->xMax() - core.xMin()});
+      auto [ylo, ignore_x] = gridY(DbuY{bbox->yMin() - core.yMin()}, grid_info);
+      auto [yhi, ignore_y]
           = gridEndY(DbuY{bbox->yMax() - core.yMin()}, grid_info);
+
+      // Clip to the core area
+      xlo = max(GridX{0}, xlo);
+      ylo = max(GridY{0}, ylo);
+      xhi = min(grid_info.getSiteCount(), xhi);
+      yhi = min(grid_info.getRowCount(), yhi);
+
       for (GridY y = ylo; y < yhi; y++) {
         for (GridX x = xlo; x < xhi; x++) {
           Pixel& pixel1 = pixel(grid_info.getGridIndex(), y, x);
