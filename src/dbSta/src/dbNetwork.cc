@@ -61,11 +61,7 @@ using odb::dbITermObj;
 using odb::dbLib;
 using odb::dbMaster;
 using odb::dbModBTerm;
-using odb::dbModBTermObj;
 using odb::dbModInstObj;
-using odb::dbModITerm;
-using odb::dbModITermObj;
-using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -581,9 +577,8 @@ bool dbNetwork::isLeaf(const Instance* instance) const
       return false;
     }
     return true;
-  } else {
-    return instance != top_instance_;
   }
+  return instance != top_instance_;
 }
 
 Instance* dbNetwork::findInstance(const char* path_name) const
@@ -1494,10 +1489,11 @@ void dbNetwork::staToDb(const Cell* cell,
     master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
   } else {
     if (block_) {
-      if (block_->findModule(name(cell)))
+      if (block_->findModule(name(cell))) {
         module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
-      else
+      } else {
         master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+      }
     }
   }
 }
