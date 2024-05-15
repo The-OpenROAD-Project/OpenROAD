@@ -145,7 +145,7 @@ void TileGrid::setLy(int ly)
   ly_ = ly;
 }
 
-void TileGrid::initTiles()
+void TileGrid::initTiles(bool use_rudy)
 {
   log_->info(GPL,
              36,
@@ -156,7 +156,9 @@ void TileGrid::initTiles()
              tileSizeX_,
              tileSizeY_);
   log_->info(GPL, 38, "{:9} {:6} {:4}", "TileCnt:", tileCntX_, tileCntY_);
-  log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
+  if (!use_rudy) {
+    log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
+  }
 
   // 2D tile grid structure init
   int x = lx_, y = ly_;
@@ -412,7 +414,7 @@ void RouteBase::updateRudyRoute()
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
   tg_->setTileCnt(x_grids, y_grids);
-  tg_->initTiles();
+  tg_->initTiles(rbVars_.useRudy);
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
@@ -483,7 +485,7 @@ void RouteBase::updateGrtRoute()
   tg_->setLy(gridY[0]);
   tg_->setTileSize(gridX[1] - gridX[0], gridY[1] - gridY[0]);
   tg_->setTileCnt(gridX.size(), gridY.size());
-  tg_->initTiles();
+  tg_->initTiles(rbVars_.useRudy);
 
   for (int i = 1; i <= numLayers; i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
@@ -577,13 +579,14 @@ std::pair<bool, bool> RouteBase::routability()
   tg_ = std::move(tg);
   tg_->setLogger(log_);
 
-  // Uncomment these two functions to use fastroute on routability driven.
-  // getGrtResult();
-  // float curRc = getGrtRC();
-
-  // Use this two functions for RUDY on routability driven.
-  getRudyResult();
-  float curRc = getRudyRC();
+  float curRc;
+  if (rbVars_.useRudy) {
+    getRudyResult();
+    curRc = getRudyRC();
+  } else {
+    getGrtResult();
+    curRc = getGrtRC();
+  }
 
   if (curRc < rbVars_.targetRC) {
     log_->info(GPL,

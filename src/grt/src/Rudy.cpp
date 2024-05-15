@@ -155,7 +155,7 @@ void Rudy::calculateRudy()
         normalized_rudy = min_rudy
                           + (rudy_value - min_rudy)
                                 / (max_observed_rudy - min_rudy)
-                                * (150 - min_rudy);
+                                * (130 - min_rudy);
       }
       if (normalized_rudy < rudy_value) {
         tile.clearRudy();

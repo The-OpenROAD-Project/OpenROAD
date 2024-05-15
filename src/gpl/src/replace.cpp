@@ -116,6 +116,7 @@ void Replace::reset()
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true;
+  routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
 
@@ -311,6 +312,7 @@ bool Replace::initNesterovPlace(int threads)
 
   if (!rb_) {
     RouteBaseVars rbVars;
+    rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
     rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
@@ -496,6 +498,11 @@ void Replace::setTimingDrivenMode(bool mode)
 void Replace::setRoutabilityDrivenMode(bool mode)
 {
   routabilityDrivenMode_ = mode;
+}
+
+void Replace::setRoutabilityUseGrt(bool mode)
+{
+  routabilityUseRudy_ = !mode;
 }
 
 void Replace::setRoutabilityCheckOverflow(float overflow)

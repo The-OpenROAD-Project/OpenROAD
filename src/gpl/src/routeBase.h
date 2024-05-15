@@ -130,7 +130,7 @@ class TileGrid
 
   const std::vector<Tile*>& tiles() const;
 
-  void initTiles();
+  void initTiles(bool use_rudy);
 
  private:
   // for traversing layer info!
@@ -151,10 +151,11 @@ class TileGrid
 class RouteBaseVars
 {
  public:
+  bool useRudy;
+  float targetRC;
   float inflationRatioCoef;
   float maxInflationRatio;
   float maxDensity;
-  float targetRC;
   float ignoreEdgeRatio;
   float minInflationRatio;
 

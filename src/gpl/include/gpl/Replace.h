@@ -122,6 +122,7 @@ class Replace
   void setSkipIoMode(bool mode);
 
   void setRoutabilityDrivenMode(bool mode);
+  void setRoutabilityUseGrt(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
@@ -201,6 +202,7 @@ class Replace
 
   bool timingDrivenMode_ = true;
   bool routabilityDrivenMode_ = true;
+  bool routabilityUseRudy_ = true;
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
 
