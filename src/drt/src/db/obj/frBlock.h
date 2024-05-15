@@ -300,11 +300,19 @@ class frBlock : public frBlockObject
   void addTerm(std::unique_ptr<frBTerm> in)
   {
     in->setIndexInOwner(terms_.size());
+    in->setId(upcoming_term_id_++);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
   }
   void addInst(std::unique_ptr<frInst> in)
   {
+    in->setId(upcoming_inst_id_++);
+    for (auto& iterm : in->getInstTerms()) {
+      iterm->setId(upcoming_term_id_++);
+    }
+    for (auto& iblk : in->getInstBlockages()) {
+      iblk->setId(upcoming_blkg_id_++);
+    }
     name2inst_[in->getName()] = in.get();
     insts_.push_back(std::move(in));
   }
@@ -374,6 +382,7 @@ class frBlock : public frBlockObject
   void addBlockage(std::unique_ptr<frBlockage> in)
   {
     in->setIndexInOwner(blockages_.size());
+    in->setId(upcoming_blkg_id_++);
     blockages_.push_back(std::move(in));
   }
   void setGCellPatterns(const std::vector<frGCellPattern>& gpIn)
@@ -425,6 +434,9 @@ class frBlock : public frBlockObject
       fakeSNets_;  // 0 is floating VSS, 1 is floating VDD
   Rect dieBox_;
 
+  frUInt4 upcoming_inst_id_{0};
+  frUInt4 upcoming_term_id_{0};
+  frUInt4 upcoming_blkg_id_{0};
   friend class io::Parser;
 };
 

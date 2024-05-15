@@ -167,6 +167,7 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   flags_ = {};
+  _name = nullptr;
 }
 
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)

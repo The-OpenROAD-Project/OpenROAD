@@ -109,7 +109,7 @@ void SelectedItemModel::updateObject()
     // make editor if found
     auto editor_found = editors.find(prop.name);
     if (editor_found != editors.end()) {
-      auto editor = (*editor_found).second;
+      auto& editor = (*editor_found).second;
       makeItemEditor(prop.name,
                      value_item,
                      object_,
@@ -673,6 +673,7 @@ Inspector::Inspector(const SelectionSet& selected,
           &Inspector::updateSelectedFields);
 
   connect(view_, &ObjectTree::clicked, this, &Inspector::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &Inspector::doubleClicked);
 
   connect(
       button_prev_, &QPushButton::pressed, this, &Inspector::selectPrevious);
@@ -942,10 +943,13 @@ void Inspector::clicked(const QModelIndex& index)
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
     mouse_timer_.start();
-  } else {
-    mouse_timer_.stop();
-    emit indexDoubleClicked(index);
   }
+}
+
+void Inspector::doubleClicked(const QModelIndex& index)
+{
+  mouse_timer_.stop();
+  emit indexDoubleClicked(index);
 }
 
 void Inspector::indexClicked()
@@ -1028,7 +1032,7 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
-  auto callback = actions_[action];
+  auto& callback = actions_[action];
   Selected new_selection;
   try {
     new_selection = callback();

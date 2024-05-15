@@ -14,5 +14,5 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0006] Slots increase factor     0.01
 [INFO PPL-0008] Successfully assigned pins to sections.
-[ERROR PPL-0079] Pin req_msg[19] area 0.0140um^2 is lesser than the minimum required area 0.0670um^2.
+[ERROR PPL-0079] Pin req_msg[19] area 0.0140um^2 is lesser than the minimum required area 0.0676um^2.
 PPL-0079

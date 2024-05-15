@@ -173,6 +173,7 @@ _dbSite::_dbSite(_dbDatabase*)
   _flags._y_symmetry = 0;
   _flags._R90_symmetry = 0;
   _flags._class = dbSiteClass::CORE;
+  _flags._is_hybrid = 0;
   _flags._spare_bits = 0;
 }
 

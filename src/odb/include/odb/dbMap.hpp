@@ -88,9 +88,7 @@ template <class T, class D>
 inline D& dbMap<T, D>::operator[](T* object)
 {
   if (_map) {
-    typename std::map<T*, D>::iterator itr = _map->find(object);
-    ZASSERT(itr != _map->end());
-    return (*itr).second;
+    return _map->at(object);
   }
 
   uint idx = object->getId();

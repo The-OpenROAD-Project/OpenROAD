@@ -5,7 +5,8 @@
   "fields": [
     {
       "name": "scan_inserted_",
-      "type": "bool"
+      "type": "bool",
+      "default": "false"
     }
   ],
   "h_includes": [

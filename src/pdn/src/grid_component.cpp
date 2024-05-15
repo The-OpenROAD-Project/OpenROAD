@@ -304,7 +304,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
         continue;
       }
 
-      replacement_shapes[shape.get()] = replacements;
+      replacement_shapes[shape.get()] = std::move(replacements);
     }
 
     for (const auto& [shape, replacement] : replacement_shapes) {

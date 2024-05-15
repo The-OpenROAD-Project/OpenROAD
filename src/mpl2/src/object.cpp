@@ -682,7 +682,7 @@ void Cluster::addBoundaryConnection(Boundary pin_a,
   if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
     std::map<Boundary, float> pin_map;
     pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = pin_map;
+    boundary_connection_map_[pin_a] = std::move(pin_map);
   } else {
     if (boundary_connection_map_[pin_a].find(pin_b)
         == boundary_connection_map_[pin_a].end()) {
@@ -1360,8 +1360,8 @@ void SoftMacro::setArea(float area)
     }
   }
 
-  width_list_ = width_list;
-  height_list_ = height_list;
+  width_list_ = std::move(width_list);
+  height_list_ = std::move(height_list);
   area_ = area;
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;

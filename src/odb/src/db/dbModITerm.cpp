@@ -109,6 +109,7 @@ void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
 
 _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)

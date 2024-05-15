@@ -2872,7 +2872,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
   // if there are valid tilings
   if (!new_tilings.empty()) {
-    tilings = new_tilings;
+    tilings = std::move(new_tilings);
   }
   // update parent
   parent->setMacroTilings(tilings);
@@ -3097,7 +3097,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
       new_tilings.push_back(tiling);
     }
   }
-  tilings = new_tilings;
+  tilings = std::move(new_tilings);
   // update parent
   cluster->setMacroTilings(tilings);
   if (tilings.empty()) {
@@ -4262,7 +4262,7 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
     }
   }
   nets.clear();
-  nets = merged_nets;
+  nets = std::move(merged_nets);
 
   if (graphics_) {
     graphics_->setBundledNets(nets);
