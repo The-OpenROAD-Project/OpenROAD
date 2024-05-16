@@ -3077,7 +3077,8 @@ void GlobalRouter::makeItermPins(Net* net,
 
     odb::dbInst* inst = iterm->getInst();
     if (!inst->isPlaced()) {
-      logger_->error(GRT, 10, "Instance {} is not placed.", inst->getName());
+      logger_->warn(GRT, 10, "Instance {} is not placed.", inst->getName());
+      continue;
     }
     const odb::dbTransform transform = inst->getTransform();
 
@@ -3115,12 +3116,13 @@ void GlobalRouter::makeItermPins(Net* net,
     }
 
     if (pin_layers.empty()) {
-      logger_->error(
+      logger_->warn(
           GRT,
           29,
           "Pin {} does not have geometries below the max routing layer ({}).",
           getITermName(iterm),
           getLayerName(max_routing_layer, db_));
+      continue;
     }
 
     Pin pin(iterm,
