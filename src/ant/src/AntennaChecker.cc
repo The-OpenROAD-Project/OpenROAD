@@ -1898,7 +1898,8 @@ void AntennaChecker::calculateAreas()
           continue;
         }
         // check if has another node with gate in the layer, then merge area
-        if (gate_info_[gate.name].find(it.first) != gate_info_[gate.name].end()) {
+        if (gate_info_[gate.name].find(it.first)
+            != gate_info_[gate.name].end()) {
           gate_info_[gate.name][it.first] += info;
         } else {
           gate_info_[gate.name][it.first] = info;
@@ -2172,11 +2173,11 @@ bool AntennaChecker::checkCSR(dbTechLayer* tech_layer,
 }
 
 int AntennaChecker::checkGates(dbNet* db_net,
-                              bool verbose,
-                              bool report,
-                              std::ofstream& report_file,
-                              dbMTerm* diode_mterm,
-                              float ratio_margin)
+                               bool verbose,
+                               bool report,
+                               std::ofstream& report_file,
+                               dbMTerm* diode_mterm,
+                               float ratio_margin)
 {
   ratio_margin_ = ratio_margin;
   int pin_violation_count = 0;
@@ -2250,36 +2251,36 @@ int AntennaChecker::checkGates(dbNet* db_net,
           // re-check to report violations
           if (layer_info.first->getRoutingLevel() != 0) {
             checkPAR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
             checkPSR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
             checkCAR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
             checkCSR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
           } else {
             checkPAR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
             checkCAR(layer_info.first,
-                                          layer_info.second,
-                                          verbose,
-                                          true,
-                                          report_file);
+                     layer_info.second,
+                     verbose,
+                     true,
+                     report_file);
           }
         }
 

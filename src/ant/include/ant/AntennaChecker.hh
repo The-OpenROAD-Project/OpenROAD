@@ -113,8 +113,8 @@ struct NodeInfo
   }
 };
 
-using LayerInfoMap = std::unordered_map<dbTechLayer *, NodeInfo>;
-using GraphNodeVector = std::vector<GraphNode *>;
+using LayerInfoMap = std::unordered_map<dbTechLayer*, NodeInfo>;
+using GraphNodeVector = std::vector<GraphNode*>;
 ///////////////////////////////////////
 
 class GlobalRouteSource
@@ -307,11 +307,11 @@ class AntennaChecker
   void calculatePAR();
   void calculateCAR();
   int checkGates(dbNet* db_net,
-                bool verbose,
-                bool report,
-                std::ofstream& report_file,
-                dbMTerm* diode_mterm,
-                float ratio_margin);
+                 bool verbose,
+                 bool report,
+                 std::ofstream& report_file,
+                 dbMTerm* diode_mterm,
+                 float ratio_margin);
   void calculateViaPar(dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(dbTechLayer* tech_layer, NodeInfo& info);
   std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer,
