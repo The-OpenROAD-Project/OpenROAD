@@ -219,7 +219,7 @@ class TimingPathRenderer : public gui::Renderer
   void highlight(TimingPath* path);
 
   void highlightNode(const TimingPathNode* node);
-  void clearHighlightNodes() { highlight_stage_.clear(); }
+  void clearHighlightNodes();
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
   virtual const char* getDisplayControlGroupName() override
@@ -253,6 +253,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
+  std::mutex rendering_;
 
   static const gui::Painter::Color inst_highlight_color_;
   static const gui::Painter::Color path_inst_color_;

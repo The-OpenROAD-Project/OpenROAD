@@ -74,7 +74,7 @@ enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
 
-class RecoverPower : StaState
+class RecoverPower : public sta::dbStaState
 {
  public:
   RecoverPower(Resizer* resizer);
@@ -114,7 +114,6 @@ class RecoverPower : StaState
   Slack slackPenalized(BufferedNetPtr bnet, int index);
 
   Logger* logger_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   const Corner* corner_ = nullptr;

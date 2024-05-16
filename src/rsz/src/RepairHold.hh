@@ -63,7 +63,7 @@ using sta::VertexSeq;
 
 using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
 
-class RepairHold : StaState
+class RepairHold : public sta::dbStaState
 {
  public:
   RepairHold(Resizer* resizer);
@@ -125,7 +125,6 @@ class RepairHold : StaState
   void printProgress(int iteration, bool force, bool end) const;
 
   Logger* logger_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
 

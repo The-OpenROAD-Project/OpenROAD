@@ -259,25 +259,31 @@ void GlobalRouter::globalRoute(bool save_guides,
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
   } else {
-    if (end_incremental) {
-      updateDirtyRoutes();
-      grouter_cbk_->removeOwner();
-      delete grouter_cbk_;
-      grouter_cbk_ = nullptr;
-    } else {
-      clear();
-      block_ = db_->getChip()->getBlock();
+    try {
+      if (end_incremental) {
+        updateDirtyRoutes();
+        grouter_cbk_->removeOwner();
+        delete grouter_cbk_;
+        grouter_cbk_ = nullptr;
+      } else {
+        clear();
+        block_ = db_->getChip()->getBlock();
 
-      int min_layer, max_layer;
-      getMinMaxLayer(min_layer, max_layer);
+        int min_layer, max_layer;
+        getMinMaxLayer(min_layer, max_layer);
 
-      std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+        std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-      if (verbose_) {
-        reportResources();
+        if (verbose_) {
+          reportResources();
+        }
+
+        routes_ = findRouting(nets, min_layer, max_layer);
       }
-
-      routes_ = findRouting(nets, min_layer, max_layer);
+    } catch (...) {
+      updateDbCongestion();
+      saveCongestion();
+      throw;
     }
 
     updateDbCongestion();
@@ -1631,8 +1637,10 @@ void GlobalRouter::initGridAndNets()
 {
   block_ = db_->getChip()->getBlock();
   routes_.clear();
-  if (max_routing_layer_ == -1 || routing_layers_.empty()) {
+  if (max_routing_layer_ == -1) {
     max_routing_layer_ = computeMaxRoutingLayer();
+  }
+  if (routing_layers_.empty()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
 
@@ -4173,10 +4181,19 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
+      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to the
         // set
         fastroute_->getCongestionNets(congestion_nets);
+        // When every attempt to increase the congestion region failed, try
+        // legalizing the buffers inserted
+        if (add_max == 0) {
+          opendp_->detailedPlacement(0, 0, "");
+          updateDirtyNets(dirty_nets);
+          for (auto& it : dirty_nets) {
+            congestion_nets.insert(it->getDbNet());
+          }
+        }
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
