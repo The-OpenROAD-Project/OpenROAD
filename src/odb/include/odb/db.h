@@ -1186,6 +1186,9 @@ class dbBlock : public dbObject
   /// Convert a length from database units (DBUs) to microns.
   ///
   double dbuToMicrons(int dbu);
+  double dbuToMicrons(unsigned int dbu);
+  double dbuToMicrons(int64_t dbu);
+  double dbuToMicrons(double dbu);
 
   ///
   /// Convert an area from database units squared (DBU^2) to square microns.

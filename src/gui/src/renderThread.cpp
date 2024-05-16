@@ -123,13 +123,19 @@ void RenderThread::run()
                  draw_bounds.height(),
                  QImage::Format_ARGB32_Premultiplied);
     // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+    try {
+      draw(image,
+           draw_bounds,
+           selected,
+           highlighted,
+           rulers,
+           1.0,
+           Qt::transparent);
+    } catch (const std::exception& e) {
+      logger_->warn(
+          GUI, 102, "An exception occurred during rendering: {}", e.what());
+    }
+
     if (!restart_) {
       is_rendering_ = false;
 

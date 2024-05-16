@@ -60,6 +60,7 @@ using odb::dbITerm;
 using odb::dbITermObj;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInstObj;
 using odb::dbModule;
 using odb::dbMTerm;
@@ -110,6 +111,11 @@ Library* DbLibraryIterator1::next()
   return reinterpret_cast<Library*>(iter_->next());
 }
 
+//
+// check the leaves accessible from the network
+// match those accessible from block.
+//
+
 ////////////////////////////////////////////////////////////////
 
 class DbInstanceChildIterator : public InstanceChildIterator
@@ -121,9 +127,12 @@ class DbInstanceChildIterator : public InstanceChildIterator
 
  private:
   const dbNetwork* network_;
+  dbModule* module_;
   bool top_;
-  dbSet<dbInst>::iterator iter_;
-  dbSet<dbInst>::iterator end_;
+  dbSet<dbInst>::iterator dbinst_iter_;
+  dbSet<dbInst>::iterator dbinst_end_;
+  dbSet<dbModInst>::iterator modinst_iter_;
+  dbSet<dbModInst>::iterator modinst_end_;
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
@@ -131,26 +140,65 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     : network_(network)
 {
   dbBlock* block = network->block();
-  if (instance == network->topInstance() && block) {
-    dbSet<dbInst> insts = block->getInsts();
-    top_ = true;
-    iter_ = insts.begin();
-    end_ = insts.end();
+  module_ = block->getTopModule();
+  modinst_iter_ = module_->getModInsts().begin();
+  modinst_end_ = modinst_iter_;
+  dbinst_iter_ = module_->getInsts().begin();
+  dbinst_end_ = dbinst_iter_;
+
+  // original code for non hierarchy
+  if (!network->hasHierarchy()) {
+    if (instance == network->topInstance() && block) {
+      dbSet<dbInst> insts = block->getInsts();
+      top_ = true;
+      dbinst_iter_ = insts.begin();
+      dbinst_end_ = insts.end();
+    } else {
+      top_ = false;
+    }
   } else {
-    top_ = false;
+    if (instance == network->topInstance() && block) {
+      module_ = block->getTopModule();
+      top_ = true;
+      modinst_iter_ = module_->getModInsts().begin();
+      modinst_end_ = module_->getModInsts().end();
+      dbinst_iter_ = module_->getInsts().begin();
+      dbinst_end_ = module_->getInsts().end();
+    } else {
+      top_ = false;
+      // need to get module for instance
+      dbInst* db_inst = nullptr;
+      dbModInst* mod_inst = nullptr;
+      network->staToDb(instance, db_inst, mod_inst);
+      if (mod_inst) {
+        module_ = mod_inst->getMaster();
+        modinst_iter_ = module_->getModInsts().begin();
+        modinst_end_ = module_->getModInsts().end();
+        dbinst_iter_ = module_->getInsts().begin();
+        dbinst_end_ = module_->getInsts().end();
+      }
+    }
   }
 }
 
 bool DbInstanceChildIterator::hasNext()
 {
-  return top_ && iter_ != end_;
+  return !((dbinst_iter_ == dbinst_end_) && (modinst_iter_ == modinst_end_));
 }
 
 Instance* DbInstanceChildIterator::next()
 {
-  dbInst* child = *iter_;
-  iter_++;
-  return network_->dbToSta(child);
+  Instance* ret = nullptr;
+  if (dbinst_iter_ != dbinst_end_) {
+    dbInst* child = *dbinst_iter_;
+    dbinst_iter_++;
+    ret = network_->dbToSta(child);
+  } else if (modinst_iter_ != modinst_end_) {
+    dbModInst* child = *modinst_iter_;
+    modinst_iter_++;
+    ret = network_->dbToSta(child);
+  }
+  return ret;
 }
 
 class DbInstanceNetIterator : public InstanceNetIterator
@@ -424,6 +472,54 @@ const char* dbNetwork::name(const Instance* instance) const
   return tmpStringCopy(mod_inst->getName());
 }
 
+void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
+{
+  dbModule* master = mod_inst->getMaster();
+  Cell* local_cell
+      = ConcreteNetwork::makeCell(library, master->getName(), false, nullptr);
+  master->staSetCell((void*) (local_cell));
+
+  std::map<std::string, dbModBTerm*> name2modbterm;
+
+  for (auto modbterm : master->getModBTerms()) {
+    const char* port_name = modbterm->getName();
+    Port* port = ConcreteNetwork::makePort(local_cell, port_name);
+    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
+    setDirection(port, dir);
+    name2modbterm[std::string(port_name)] = modbterm;
+  }
+
+  // make the bus ports. This will generate the bus bits.
+  groupBusPorts(local_cell, [=](const char* port_name) {
+    return portMsbFirst(port_name, master->getName());
+  });
+
+  CellPortIterator* ccport_iter = portIterator(local_cell);
+  while (ccport_iter->hasNext()) {
+    Port* cport = ccport_iter->next();
+    const ConcretePort* ccport = reinterpret_cast<const ConcretePort*>(cport);
+    std::string port_name = ccport->name();
+
+    if (ccport->isBus()) {
+      PortMemberIterator* pmi = memberIterator(cport);
+      while (pmi->hasNext()) {
+        Port* bitport = pmi->next();
+        const ConcretePort* cbitport
+            = reinterpret_cast<const ConcretePort*>(bitport);
+        dbModBTerm* modbterm = name2modbterm[std::string(cbitport->name())];
+        modbterm->staSetPort(bitport);
+      }
+    } else if (ccport->isBundle()) {
+      ;
+    } else if (ccport->isBusBit()) {
+      ;
+    } else {
+      dbModBTerm* modbterm = name2modbterm[port_name];
+      modbterm->staSetPort(cport);
+    }
+  }
+}
+
 Cell* dbNetwork::cell(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -435,6 +531,11 @@ Cell* dbNetwork::cell(const Instance* instance) const
   staToDb(instance, db_inst, mod_inst);
   if (db_inst) {
     dbMaster* master = db_inst->getMaster();
+    return dbToSta(master);
+  }
+  if (mod_inst) {
+    dbModule* master = mod_inst->getMaster();
+    // look up the cell in the verilog library.
     return dbToSta(master);
   }
   // no traversal of the hierarchy this way; we would have to split
@@ -464,6 +565,19 @@ Instance* dbNetwork::parent(const Instance* instance) const
 
 bool dbNetwork::isLeaf(const Instance* instance) const
 {
+  if (instance == top_instance_) {
+    return false;
+  }
+  if (hierarchy_) {
+    dbMaster* db_master;
+    dbModule* db_module;
+    Cell* cur_cell = cell(instance);
+    staToDb(cur_cell, db_master, db_module);
+    if (db_module) {
+      return false;
+    }
+    return true;
+  }
   return instance != top_instance_;
 }
 
@@ -867,6 +981,19 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
       makeLibrary(lib);
     }
     readDbNetlistAfter();
+    if (hierarchy_) {
+      // we make the library for the verilog hierarchical cells
+      // this is in the same fashion as the original dbInst code
+      // which uses the void* staGetCell to associate a cell with
+      // concrete cell. We do same for verilog hierarchical cells.
+      Library* verilog_library = makeLibrary("verilog", nullptr);
+      dbSet<dbModInst> modinsts = block_->getModInsts();
+      dbSet<dbModInst>::iterator modinst_iter_ = modinsts.begin();
+      dbSet<dbModInst>::iterator modinst_end_ = modinsts.end();
+      for (; modinst_iter_ != modinst_end_; modinst_iter_++) {
+        makeVerilogCell(verilog_library, *modinst_iter_);
+      }
+    }
   }
 
   for (auto* observer : observers_) {
@@ -966,8 +1093,9 @@ void dbNetwork::makeTopCell()
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_,
-                [=](const char* port_name) { return portMsbFirst(port_name); });
+  groupBusPorts(top_cell_, [=](const char* port_name) {
+    return portMsbFirst(port_name, design_name);
+  });
 }
 
 Port* dbNetwork::makeTopPort(dbBTerm* bterm)
@@ -988,10 +1116,11 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
-bool dbNetwork::portMsbFirst(const char* port_name)
+bool dbNetwork::portMsbFirst(const char* port_name, const char* cell_name)
 {
   string key = "bus_msb_first ";
-  key += port_name;
+  //  key += port_name;
+  key = key + port_name + " " + cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());
   if (property) {
     return property->getValue();
@@ -1350,6 +1479,25 @@ dbBTerm* dbNetwork::staToDb(const Term* term) const
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
 }
 
+void dbNetwork::staToDb(const Cell* cell,
+                        dbMaster*& master,
+                        dbModule*& module) const
+{
+  module = nullptr;
+  master = nullptr;
+  if (findLibertyCell(name(cell))) {
+    master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+  } else {
+    if (block_) {
+      if (block_->findModule(name(cell))) {
+        module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
+      } else {
+        master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+      }
+    }
+  }
+}
+
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
 {
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
@@ -1443,6 +1591,11 @@ Port* dbNetwork::dbToSta(dbMTerm* mterm) const
 Cell* dbNetwork::dbToSta(dbMaster* master) const
 {
   return reinterpret_cast<Cell*>(master->staCell());
+}
+
+Cell* dbNetwork::dbToSta(dbModule* master) const
+{
+  return ((Cell*) (master->getStaCell()));
 }
 
 PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,

@@ -72,6 +72,17 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTech;
 
+// Handles registering and unregistering with dbSta
+class dbStaState : public sta::StaState
+{
+ public:
+  void init(dbSta* sta);
+  ~dbStaState() override;
+
+ protected:
+  dbSta* sta_ = nullptr;
+};
+
 class dbSta : public Sta, public ord::OpenRoadObserver
 {
  public:
@@ -140,6 +151,10 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
   void disconnectPin(Pin* pin) override;
 
+  void updateComponentsState() override;
+  void registerStaState(dbStaState* state);
+  void unregisterStaState(dbStaState* state);
+
   // Highlight path in the gui.
   void highlight(PathRef* path);
 
@@ -167,6 +182,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
+  std::set<dbStaState*> sta_states_;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;

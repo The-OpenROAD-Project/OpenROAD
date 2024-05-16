@@ -77,12 +77,11 @@ RepairDesign::~RepairDesign() = default;
 void RepairDesign::init()
 {
   logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
+  dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
-  copyState(sta_);
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations

@@ -157,7 +157,7 @@ void Resizer::init(Logger* logger,
   logger_ = logger;
   db_ = db;
   block_ = nullptr;
-  sta_ = sta;
+  dbStaState::init(sta);
   stt_builder_ = stt_builder;
   global_router_ = global_router;
   incr_groute_ = nullptr;
@@ -165,7 +165,6 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
-  copyState(sta);
 }
 
 ////////////////////////////////////////////////////////////////
