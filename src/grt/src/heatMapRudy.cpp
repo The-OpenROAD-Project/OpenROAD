@@ -68,7 +68,7 @@ void RUDYDataSource::populateXYGrid()
 
   try {
     rudy_ = grouter_->getRudy();
-  } catch (...) {
+  } catch (const std::runtime_error& e) {
     gui::GlobalRoutingDataSource::populateXYGrid();
     return;
   }
