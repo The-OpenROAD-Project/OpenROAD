@@ -296,7 +296,7 @@ class AntennaChecker
   void buildLayerMaps(dbNet* net);
   void checkNet(dbNet* net,
                 bool verbose,
-                bool report,
+                bool report_if_no_violation,
                 std::ofstream& report_file,
                 dbMTerm* diode_mterm,
                 float ratio_margin,
@@ -308,7 +308,7 @@ class AntennaChecker
   void calculateCAR();
   int checkGates(dbNet* db_net,
                  bool verbose,
-                 bool report,
+                 bool report_if_no_violation,
                  std::ofstream& report_file,
                  dbMTerm* diode_mterm,
                  float ratio_margin);
