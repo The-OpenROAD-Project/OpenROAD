@@ -1631,7 +1631,7 @@ void FastRouteCore::verify2DEdgesUsage()
 
 void FastRouteCore::check2DEdgesUsage()
 {
-  const int max_usage_multiplier = 40;
+  const int max_usage_multiplier = 100;
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
