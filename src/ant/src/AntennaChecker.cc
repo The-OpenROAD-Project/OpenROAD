@@ -42,6 +42,7 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -67,9 +68,6 @@ using odb::dbTechVia;
 using odb::dbVia;
 using odb::dbWire;
 using odb::dbWireGraph;
-using odb::dbWirePath;
-using odb::dbWirePathItr;
-using odb::dbWirePathShape;
 using odb::dbWireType;
 using odb::uint;
 
@@ -1590,7 +1588,7 @@ struct PinType
   }
   PinType(std::string name_, odb::dbBTerm* bterm_)
   {
-    name = name_;
+    name = std::move(name_);
     bterm = bterm_;
     isITerm = false;
   }
@@ -1613,8 +1611,8 @@ struct GraphNode
   Polygon pol;
   std::vector<int> low_adj;
   std::unordered_set<PinType, PinTypeHash> gates;
-  GraphNode() {}
-  GraphNode(int id_, bool isVia_, Polygon pol_)
+  GraphNode() = default;
+  GraphNode(int id_, bool isVia_, const Polygon& pol_)
   {
     id = id_;
     isVia = isVia_;
@@ -1654,7 +1652,7 @@ std::vector<int> findNodesWithIntersection(const GraphNodeVector& graph_nodes,
 }
 
 // DSU functions
-void AntennaChecker::init_dsu()
+void AntennaChecker::initDsu()
 {
   dsu_parent_.resize(node_count_);
   dsu_size_.resize(node_count_);
@@ -1664,23 +1662,23 @@ void AntennaChecker::init_dsu()
   }
 }
 
-int AntennaChecker::find_set(int u)
+int AntennaChecker::findSet(int u)
 {
   if (u == dsu_parent_[u]) {
     return u;
   }
-  return dsu_parent_[u] = find_set(dsu_parent_[u]);
+  return dsu_parent_[u] = findSet(dsu_parent_[u]);
 }
 
-bool AntennaChecker::dsu_same(int u, int v)
+bool AntennaChecker::dsuSame(int u, int v)
 {
-  return find_set(u) == find_set(v);
+  return findSet(u) == findSet(v);
 }
 
-void AntennaChecker::union_set(int u, int v)
+void AntennaChecker::unionSet(int u, int v)
 {
-  u = find_set(u);
-  v = find_set(v);
+  u = findSet(u);
+  v = findSet(v);
   // union the smaller set to bigger set
   if (dsu_size_[u] < dsu_size_[v]) {
     std::swap(u, v);
@@ -1739,7 +1737,7 @@ void AntennaChecker::saveGates(dbNet* db_net)
     }
   }
   // run DSU from min_layer to max_layer
-  init_dsu();
+  initDsu();
   dbTechLayer* iter = min_layer_;
   dbTechLayer* lower_layer;
   while (iter) {
@@ -1753,8 +1751,8 @@ void AntennaChecker::saveGates(dbNet* db_net)
         for (const int& lower_it : node_it->low_adj) {
           int id_v = node_by_layer_map_[lower_layer][lower_it]->id;
           // if they are on different sets then union
-          if (!dsu_same(id_u, id_v)) {
-            union_set(id_u, id_v);
+          if (!dsuSame(id_u, id_v)) {
+            unionSet(id_u, id_v);
           }
         }
       }
@@ -1764,7 +1762,7 @@ void AntennaChecker::saveGates(dbNet* db_net)
       // check gates in same set (first Nodes x gates)
       for (const auto& gate_it : pin_nbrs) {
         for (const int& nbr_id : gate_it.second) {
-          if (dsu_same(id_u, nbr_id)) {
+          if (dsuSame(id_u, nbr_id)) {
             node_it->gates.insert(gate_it.first);
             break;
           }
@@ -1780,7 +1778,7 @@ bool AntennaChecker::isValidGate(odb::dbMTerm* mterm)
   return mterm->getIoType() == dbIoType::INPUT && gateArea(mterm) > 0.0;
 }
 
-void AntennaChecker::calculateWirePar(dbTechLayer* tech_layer, InfoType& info)
+void AntennaChecker::calculateWirePar(dbTechLayer* tech_layer, NodeInfo& info)
 {
   // get info from layer map
   const double diff_metal_factor = layer_info_[tech_layer].diff_metal_factor;
@@ -1828,7 +1826,7 @@ void AntennaChecker::calculateWirePar(dbTechLayer* tech_layer, InfoType& info)
   }
 }
 
-void AntennaChecker::calculateViaPar(dbTechLayer* tech_layer, InfoType& info)
+void AntennaChecker::calculateViaPar(dbTechLayer* tech_layer, NodeInfo& info)
 {
   // get info from layer map
   const double diff_cut_factor = layer_info_[tech_layer].diff_cut_factor;
@@ -1865,21 +1863,23 @@ void AntennaChecker::calculateAreas()
 {
   for (const auto& it : node_by_layer_map_) {
     for (const auto& node_it : it.second) {
-      InfoType info;
+      NodeInfo info;
       info.area
           = block_->dbuToMicrons(block_->dbuToMicrons(gtl::area(node_it->pol)));
       int gates_count = 0;
       vector<dbITerm*> iterms;
       for (const auto& gate : node_it->gates) {
-        if (!gate.isITerm)
+        if (!gate.isITerm) {
           continue;
+        }
         info.iterms.push_back(gate.iterm);
         info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
         info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         gates_count++;
       }
-      if (gates_count == 0)
+      if (gates_count == 0) {
         continue;
+      }
 
       if (it.first->getRoutingLevel() != 0) {
         // Calculate side area of wire
@@ -1891,15 +1891,17 @@ void AntennaChecker::calculateAreas()
       }
       // put values on struct
       for (const auto& gate : node_it->gates) {
-        if (!gate.isITerm)
+        if (!gate.isITerm) {
           continue;
-        if (!isValidGate(gate.iterm->getMTerm()))
+        }
+        if (!isValidGate(gate.iterm->getMTerm())) {
           continue;
+        }
         // check if has another node with gate in the layer, then merge area
-        if (info_[gate.name].find(it.first) != info_[gate.name].end()) {
-          info_[gate.name][it.first] += info;
+        if (gate_info_[gate.name].find(it.first) != gate_info_[gate.name].end()) {
+          gate_info_[gate.name][it.first] += info;
         } else {
-          info_[gate.name][it.first] = info;
+          gate_info_[gate.name][it.first] = info;
         }
       }
     }
@@ -1909,11 +1911,11 @@ void AntennaChecker::calculateAreas()
 // calculate PAR and PSR of wires and vias
 void AntennaChecker::calculatePAR()
 {
-  for (auto& gate_it : info_) {
+  for (auto& gate_it : gate_info_) {
     for (auto& layer_it : gate_it.second) {
-      InfoType& gate_info = layer_it.second;
+      NodeInfo& gate_info = layer_it.second;
       dbTechLayer* tech_layer = layer_it.first;
-      InfoType info;
+      NodeInfo info;
       if (tech_layer->getRoutingLevel() == 0) {
         calculateViaPar(tech_layer, gate_info);
       } else {
@@ -1926,8 +1928,8 @@ void AntennaChecker::calculatePAR()
 // calculate CAR and CSR of wires and vias
 void AntennaChecker::calculateCAR()
 {
-  for (auto& gate_it : info_) {
-    InfoType sumWire, sumVia;
+  for (auto& gate_it : gate_info_) {
+    NodeInfo sumWire, sumVia;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
     dbTechLayer* iter_layer = min_layer_;
     while (iter_layer) {
@@ -1952,7 +1954,7 @@ void AntennaChecker::calculateCAR()
 }
 
 std::pair<bool, bool> AntennaChecker::checkPAR(dbTechLayer* tech_layer,
-                                               const InfoType& info,
+                                               const NodeInfo& info,
                                                bool verbose,
                                                bool report,
                                                std::ofstream& report_file)
@@ -1964,6 +1966,7 @@ std::pair<bool, bool> AntennaChecker::checkPAR(dbTechLayer* tech_layer,
   dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
   double diff_PAR_PWL_ratio = getPwlFactor(diffPAR, info.iterm_diff_area, 0.0);
   bool checked = false;
+  bool violation = false;
 
   // apply ratio_margin
   PAR_ratio *= (1.0 - ratio_margin_ / 100.0);
@@ -1971,46 +1974,44 @@ std::pair<bool, bool> AntennaChecker::checkPAR(dbTechLayer* tech_layer,
 
   // check PAR or diff_PAR
   if (PAR_ratio != 0) {
-    bool par_violation = info.PAR > PAR_ratio;
-    if ((par_violation && report) || verbose) {
+    violation = info.PAR > PAR_ratio;
+    if ((violation && report) || verbose) {
       std::string par_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Gate area) {}",
           info.PAR,
           PAR_ratio,
-          par_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", par_report);
       if (report_file.is_open()) {
         report_file << par_report << "\n";
       }
     }
-    return {par_violation, checked};
   } else {
-    bool diff_par_violation = false;
     if (diff_PAR_PWL_ratio != 0) {
       checked = true;
-      diff_par_violation = info.diff_PAR > diff_PAR_PWL_ratio;
+      violation = info.diff_PAR > diff_PAR_PWL_ratio;
     }
-    if ((diff_par_violation && report) || verbose) {
+    if ((violation && report) || verbose) {
       std::string diff_par_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Gate area) {}",
           info.diff_PAR,
           diff_PAR_PWL_ratio,
-          diff_par_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", diff_par_report);
       if (report_file.is_open()) {
         report_file << diff_par_report << "\n";
       }
     }
-    return {diff_par_violation, checked};
   }
+  return {violation, checked};
 }
 
 std::pair<bool, bool> AntennaChecker::checkPSR(dbTechLayer* tech_layer,
-                                               const InfoType& info,
+                                               const NodeInfo& info,
                                                bool verbose,
                                                bool report,
                                                std::ofstream& report_file)
@@ -2022,6 +2023,7 @@ std::pair<bool, bool> AntennaChecker::checkPSR(dbTechLayer* tech_layer,
   const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
   double diff_PSR_PWL_ratio = getPwlFactor(diffPSR, info.iterm_diff_area, 0.0);
   bool checked = false;
+  bool violation = false;
 
   // apply ratio_margin
   PSR_ratio *= (1.0 - ratio_margin_ / 100.0);
@@ -2029,46 +2031,44 @@ std::pair<bool, bool> AntennaChecker::checkPSR(dbTechLayer* tech_layer,
 
   // check PSR or diff_PSR
   if (PSR_ratio != 0) {
-    bool psr_violation = info.PSR > PSR_ratio;
-    if ((psr_violation && report) || verbose) {
+    violation = info.PSR > PSR_ratio;
+    if ((violation && report) || verbose) {
       std::string psr_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Side area) {}",
           info.PSR,
           PSR_ratio,
-          psr_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", psr_report);
       if (report_file.is_open()) {
         report_file << psr_report << "\n";
       }
     }
-    return {psr_violation, checked};
   } else {
-    bool diff_psr_violation = false;
     if (diff_PSR_PWL_ratio != 0) {
       checked = true;
-      diff_psr_violation = info.diff_PSR > diff_PSR_PWL_ratio;
+      violation = info.diff_PSR > diff_PSR_PWL_ratio;
     }
-    if ((diff_psr_violation && report) || verbose) {
+    if ((violation && report) || verbose) {
       std::string diff_psr_report = fmt::format(
           "      Partial area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Side area) {}",
           info.diff_PSR,
           diff_PSR_PWL_ratio,
-          diff_psr_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", diff_psr_report);
       if (report_file.is_open()) {
         report_file << diff_psr_report << "\n";
       }
     }
-    return {diff_psr_violation, checked};
   }
+  return {violation, checked};
 }
 
 bool AntennaChecker::checkCAR(dbTechLayer* tech_layer,
-                              const InfoType& info,
+                              const NodeInfo& info,
                               bool verbose,
                               bool report,
                               std::ofstream& report_file)
@@ -2080,48 +2080,47 @@ bool AntennaChecker::checkCAR(dbTechLayer* tech_layer,
   const dbTechLayerAntennaRule::pwl_pair diffCAR = antenna_rule->getDiffCAR();
   const double diff_CAR_PWL_ratio
       = getPwlFactor(diffCAR, info.iterm_diff_area, 0);
+  bool violation = false;
 
   // check CAR or diff_CAR
   if (CAR_ratio != 0) {
-    bool car_violation = info.CAR > CAR_ratio;
-    if ((car_violation && report) || verbose) {
+    violation = info.CAR > CAR_ratio;
+    if ((violation && report) || verbose) {
       std::string car_report = fmt::format(
           "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Cumulative area) {}",
           info.CAR,
           CAR_ratio,
-          car_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", car_report);
       if (report_file.is_open()) {
         report_file << car_report << "\n";
       }
     }
-    return car_violation;
   } else {
-    bool diff_car_violation = false;
     if (diff_CAR_PWL_ratio != 0) {
-      diff_car_violation = info.diff_CAR > diff_CAR_PWL_ratio;
+      violation = info.diff_CAR > diff_CAR_PWL_ratio;
     }
-    if ((diff_car_violation && report) || verbose) {
+    if ((violation && report) || verbose) {
       std::string diff_car_report = fmt::format(
           "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Cumulative area) {}",
           info.diff_CAR,
           diff_CAR_PWL_ratio,
-          diff_car_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", diff_car_report);
       if (report_file.is_open()) {
         report_file << diff_car_report << "\n";
       }
     }
-    return diff_car_violation;
   }
+  return violation;
 }
 
 bool AntennaChecker::checkCSR(dbTechLayer* tech_layer,
-                              const InfoType& info,
+                              const NodeInfo& info,
                               bool verbose,
                               bool report,
                               std::ofstream& report_file)
@@ -2133,47 +2132,46 @@ bool AntennaChecker::checkCSR(dbTechLayer* tech_layer,
   const dbTechLayerAntennaRule::pwl_pair diffCSR = antenna_rule->getDiffCSR();
   const double diff_CSR_PWL_ratio
       = getPwlFactor(diffCSR, info.iterm_diff_area, 0);
+  bool violation = false;
 
   // check CSR or diff_CSR
   if (CSR_ratio != 0) {
-    bool csr_violation = info.CSR > CSR_ratio;
-    if ((csr_violation && report) || verbose) {
+    violation = info.CSR > CSR_ratio;
+    if ((violation && report) || verbose) {
       std::string csr_report = fmt::format(
           "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Cumulative side area) {}",
           info.CSR,
           CSR_ratio,
-          csr_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", csr_report);
       if (report_file.is_open()) {
         report_file << csr_report << "\n";
       }
     }
-    return csr_violation;
   } else {
-    bool diff_csr_violation = false;
     if (diff_CSR_PWL_ratio != 0) {
-      diff_csr_violation = info.diff_CSR > diff_CSR_PWL_ratio;
+      violation = info.diff_CSR > diff_CSR_PWL_ratio;
     }
-    if ((diff_csr_violation && report) || verbose) {
+    if ((violation && report) || verbose) {
       std::string diff_csr_report = fmt::format(
           "      Cumulative area ratio: {:7.2f}\n      Required ratio: "
           "{:7.2f} "
           "(Cumulative side area) {}",
           info.diff_CSR,
           diff_CSR_PWL_ratio,
-          diff_csr_violation ? "(VIOLATED)" : "");
+          violation ? "(VIOLATED)" : "");
       logger_->report("{}", diff_csr_report);
       if (report_file.is_open()) {
         report_file << diff_csr_report << "\n";
       }
     }
-    return diff_csr_violation;
   }
+  return violation;
 }
 
-int AntennaChecker::checkInfo(dbNet* db_net,
+int AntennaChecker::checkGates(dbNet* db_net,
                               bool verbose,
                               bool report,
                               std::ofstream& report_file,
@@ -2187,7 +2185,7 @@ int AntennaChecker::checkInfo(dbNet* db_net,
   std::unordered_map<dbTechLayer*, std::unordered_set<std::string>> pin_added;
 
   net_is_reported = false;
-  for (const auto& gate_info : info_) {
+  for (const auto& gate_info : gate_info_) {
     bool pin_has_violation = false;
     pin_is_reported = false;
 
@@ -2251,33 +2249,33 @@ int AntennaChecker::checkInfo(dbNet* db_net,
 
           // re-check to report violations
           if (layer_info.first->getRoutingLevel() != 0) {
-            auto par_violation = checkPAR(layer_info.first,
+            checkPAR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
                                           report_file);
-            auto psr_violation = checkPSR(layer_info.first,
+            checkPSR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
                                           report_file);
-            bool car_violation = checkCAR(layer_info.first,
+            checkCAR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
                                           report_file);
-            bool csr_violation = checkCSR(layer_info.first,
+            checkCSR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
                                           report_file);
           } else {
-            auto par_violation = checkPAR(layer_info.first,
+            checkPAR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
                                           report_file);
-            bool car_violation = checkCAR(layer_info.first,
+            checkCAR(layer_info.first,
                                           layer_info.second,
                                           verbose,
                                           true,
@@ -2295,7 +2293,7 @@ int AntennaChecker::checkInfo(dbNet* db_net,
             if (diode_mterm) {
               diode_diff_area = diffArea(diode_mterm);
             }
-            InfoType violation_info = layer_info.second;
+            NodeInfo violation_info = layer_info.second;
             std::vector<dbITerm*> gates = violation_info.iterms;
             dbTechLayer* violation_layer = layer_info.first;
             int diode_count_per_gate = 0;
@@ -2433,7 +2431,7 @@ void AntennaChecker::buildLayerMaps(dbNet* db_net)
 
   // init struct (copy polygon set information on struct to save neighbors)
   node_by_layer_map_.clear();
-  info_.clear();
+  gate_info_.clear();
   node_count_ = 0;
   odb::dbTech* tech = db_->getTech();
   min_layer_ = tech->findRoutingLayer(1);
@@ -2514,7 +2512,7 @@ void AntennaChecker::checkNet(dbNet* db_net,
     calculatePAR();
     calculateCAR();
 
-    int pin_violations = checkInfo(
+    int pin_violations = checkGates(
         db_net, verbose, report, report_file, diode_mterm, ratio_margin);
 
     if (pin_violations > 0) {

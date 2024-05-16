@@ -35,8 +35,6 @@
 #include <queue>
 #include <unordered_set>
 
-//#include <boost/polygon/polygon.hpp>
-
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
 #include "utl/Logger.h"
@@ -65,11 +63,10 @@ struct ARinfo;
 struct AntennaModel;
 
 ///////////////////////////////////////
-// namespace gtl = boost::polygon;
 struct PinType;
 struct GraphNode;
 
-struct InfoType
+struct NodeInfo
 {
   double PAR;
   double PSR;
@@ -87,7 +84,7 @@ struct InfoType
 
   std::vector<dbITerm*> iterms;
 
-  InfoType& operator+=(const InfoType& a)
+  NodeInfo& operator+=(const NodeInfo& a)
   {
     PAR += a.PAR;
     PSR += a.PSR;
@@ -97,7 +94,7 @@ struct InfoType
     side_area += a.side_area;
     return *this;
   }
-  InfoType()
+  NodeInfo()
   {
     PAR = 0.0;
     PSR = 0.0;
@@ -116,8 +113,8 @@ struct InfoType
   }
 };
 
-typedef std::unordered_map<dbTechLayer*, InfoType> LayerInfoVector;
-typedef std::vector<GraphNode*> GraphNodeVector;
+using LayerInfoMap = std::unordered_map<dbTechLayer *, NodeInfo>;
+using GraphNodeVector = std::vector<GraphNode *>;
 ///////////////////////////////////////
 
 class GlobalRouteSource
@@ -282,7 +279,7 @@ class AntennaChecker
 
   /////////////////////////////////////////////////////////////////////////////////
   std::unordered_map<odb::dbTechLayer*, GraphNodeVector> node_by_layer_map_;
-  std::unordered_map<std::string, LayerInfoVector> info_;
+  std::unordered_map<std::string, LayerInfoMap> gate_info_;
   std::vector<Violation> antenna_violations_;
   int node_count_;
   dbTechLayer* min_layer_;
@@ -290,10 +287,10 @@ class AntennaChecker
   std::vector<int> dsu_parent_, dsu_size_;
 
   // DSU functions
-  void init_dsu();
-  int find_set(int v);
-  void union_set(int u, int v);
-  bool dsu_same(int u, int v);
+  void initDsu();
+  int findSet(int u);
+  void unionSet(int u, int v);
+  bool dsuSame(int u, int v);
 
   bool isValidGate(dbMTerm* mterm);
   void buildLayerMaps(dbNet* net);
@@ -309,31 +306,31 @@ class AntennaChecker
   void calculateAreas();
   void calculatePAR();
   void calculateCAR();
-  int checkInfo(dbNet* db_net,
+  int checkGates(dbNet* db_net,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file,
                 dbMTerm* diode_mterm,
                 float ratio_margin);
-  void calculateViaPar(dbTechLayer* tech_layer, InfoType& info);
-  void calculateWirePar(dbTechLayer* tech_layer, InfoType& info);
+  void calculateViaPar(dbTechLayer* tech_layer, NodeInfo& info);
+  void calculateWirePar(dbTechLayer* tech_layer, NodeInfo& info);
   std::pair<bool, bool> checkPAR(dbTechLayer* tech_layer,
-                                 const InfoType& info,
+                                 const NodeInfo& info,
                                  bool verbose,
                                  bool report,
                                  std::ofstream& report_file);
   std::pair<bool, bool> checkPSR(dbTechLayer* tech_layer,
-                                 const InfoType& info,
+                                 const NodeInfo& info,
                                  bool verbose,
                                  bool report,
                                  std::ofstream& report_file);
   bool checkCAR(dbTechLayer* tech_layer,
-                const InfoType& info,
+                const NodeInfo& info,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
   bool checkCSR(dbTechLayer* tech_layer,
-                const InfoType& info,
+                const NodeInfo& info,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
