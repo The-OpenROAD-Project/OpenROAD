@@ -3,7 +3,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[WARNING GPL-0152] Using GRT FastRoute instead of default RUDY for congestion estimation during routability driven mode.
+[WARNING GPL-0152] Using GRT FastRoute instead of default RUDY for congestion in routability driven.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um

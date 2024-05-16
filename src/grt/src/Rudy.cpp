@@ -139,10 +139,12 @@ void Rudy::calculateRudy()
     for (int y = 0; y < grid_[x].size(); y++) {
       Tile& tile = getEditableTile(x, y);
       double rudy_value = tile.getRudy();
-      if (rudy_value < min_rudy)
+      if (rudy_value < min_rudy) {
         min_rudy = rudy_value;
-      if (rudy_value > max_observed_rudy)
+      }
+      if (rudy_value > max_observed_rudy) {
         max_observed_rudy = rudy_value;
+      }
     }
   }
 
