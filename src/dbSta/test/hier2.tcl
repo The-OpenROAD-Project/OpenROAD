@@ -1,4 +1,4 @@
-# hieararchical verilog
+# hierarchical verilog sample, for dbNetwork pr 2.
 source "helpers.tcl"
 read_lef example1.lef
 read_liberty example1_typ.lib
