@@ -66,7 +66,12 @@ void RUDYDataSource::populateXYGrid()
     return;
   }
 
-  rudy_ = grouter_->getRudy();
+  try {
+    rudy_ = grouter_->getRudy();
+  } catch (...) {
+    gui::GlobalRoutingDataSource::populateXYGrid();
+    return;
+  }
   int tile_size = rudy_->getTileSize();
 
   const odb::Rect& bounds = getBounds();
