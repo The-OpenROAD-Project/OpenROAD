@@ -231,7 +231,6 @@ class FastRouteCore
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(const int netID);
-  void initNetAuxVars();
   void clearNets();
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
