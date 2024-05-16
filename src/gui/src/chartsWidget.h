@@ -91,12 +91,6 @@ class ChartsWidget : public QDockWidget
  public:
   ChartsWidget(QWidget* parent = nullptr);
 #ifdef ENABLE_CHARTS
-  enum Mode
-  {
-    SELECT,
-    SLACK_HISTOGRAM
-  };
-
   void setSTA(sta::dbSta* sta);
   void setLogger(utl::Logger* logger)
   {
@@ -108,12 +102,31 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
+  void changeStartEndFilter();
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
 
  private:
-  void setSlackMode();
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
 
+  enum StartEndFilter
+  {
+    NoFilter,
+    RegisterToRegister,
+    RegisterToIOPin,
+    IOPinToRegister,
+    IOPinToIOPin,
+  };
+
+  static std::string toString(enum StartEndFilter);
+
+  void setSlackMode();
+  void setModeMenu();
+  void setStartEndFiltersMenu();
   void setBucketInterval(float max_slack, float min_slack);
   void setBucketInterval(float bucket_interval)
   {
@@ -152,12 +165,14 @@ class ChartsWidget : public QDockWidget
   std::unique_ptr<STAGuiInterface> stagui_;
 
   QComboBox* mode_menu_;
+  QComboBox* filters_menu_;
   QChart* chart_;
   HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
   std::unique_ptr<Buckets> buckets_;
+  Mode previous_mode_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.

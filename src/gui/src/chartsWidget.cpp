@@ -59,6 +59,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       sta_(nullptr),
       stagui_(nullptr),
       mode_menu_(new QComboBox(this)),
+      filters_menu_(new QComboBox(this)),
       chart_(new QChart),
       display_(new HistogramView(chart_, this)),
       axis_x_(new QValueAxis(this)),
@@ -77,11 +78,14 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   QVBoxLayout* layout = new QVBoxLayout;
   QFrame* controls_frame = new QFrame;
 
-  mode_menu_->addItem("Select Mode");
-  mode_menu_->addItem("Endpoint Slack");
-
   controls_layout->insertWidget(0, mode_menu_);
-  controls_layout->insertStretch(1);
+  setModeMenu();
+
+  controls_layout->insertWidget(1, filters_menu_);
+  setStartEndFiltersMenu();
+  filters_menu_->hide();
+
+  controls_layout->insertStretch(2);
 
   controls_frame->setLayout(controls_layout);
   controls_frame->setFrameShape(QFrame::StyledPanel);
@@ -95,10 +99,6 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
 
-  connect(mode_menu_,
-          qOverload<int>(&QComboBox::currentIndexChanged),
-          this,
-          &ChartsWidget::changeMode);
   connect(display_,
           &HistogramView::barIndex,
           this,
@@ -122,8 +122,34 @@ void ChartsWidget::changeMode()
   clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
+    filters_menu_->show();
     setSlackMode();
   }
+}
+
+void ChartsWidget::setModeMenu()
+{
+  mode_menu_->addItem("Select Mode");
+  mode_menu_->addItem("Endpoint Slack");
+
+  connect(mode_menu_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &ChartsWidget::changeMode);
+}
+
+void ChartsWidget::setStartEndFiltersMenu()
+{
+  filters_menu_->addItem(QString::fromStdString(toString(NoFilter)));
+  filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
+  filters_menu_->addItem(QString::fromStdString(toString(RegisterToIOPin)));
+  filters_menu_->addItem(QString::fromStdString(toString(IOPinToRegister)));
+  filters_menu_->addItem(QString::fromStdString(toString(IOPinToIOPin)));
+
+  connect(filters_menu_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &ChartsWidget::changeStartEndFilter);
 }
 
 void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
@@ -151,6 +177,10 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 
 void ChartsWidget::clearChart()
 {
+  if (filters_menu_->isVisible()) {
+    filters_menu_->hide();
+  }
+
   buckets_->positive.clear();
   buckets_->negative.clear();
 
@@ -586,6 +616,29 @@ void HistogramView::mousePressEvent(QMouseEvent* event)
   if (valid_horizontal_range && valid_vertical_range) {
     emit barIndex(static_cast<int>(index_mapped_x));
   }
+}
+
+void ChartsWidget::changeStartEndFilter()
+{
+  logger_->report("{}", filters_menu_->currentIndex());
+}
+
+std::string ChartsWidget::toString(StartEndFilter filter)
+{
+  switch (filter) {
+    case NoFilter:
+      return "No Filter";
+    case RegisterToRegister:
+      return "Register to Register";
+    case RegisterToIOPin:
+      return "Register to IO Pin";
+    case IOPinToRegister:
+      return "IO Pin to Register";
+    case IOPinToIOPin:
+      return "IO Pin to IO Pin";
+  }
+
+  return "";
 }
 
 #endif
