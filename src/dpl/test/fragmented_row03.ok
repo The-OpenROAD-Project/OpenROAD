@@ -7,8 +7,6 @@
 [INFO DPL-0035]  _277_
 [ERROR DPL-0036] Detailed placement failed.
 DPL-0036
-[WARNING DPL-0004] Placed in rows check failed (1).
- _277_
 [WARNING DPL-0006] Site aligned check failed (1).
  _277_
 [ERROR DPL-0033] detailed placement checks failed.

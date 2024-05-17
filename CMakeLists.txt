@@ -140,6 +140,11 @@ configure_file(
 
 ################################################################
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.1")
+  MESSAGE(STATUS "Older version of GCC detected. Linking against stdc++fs")
+  link_libraries(stdc++fs)
+endif()
+
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 

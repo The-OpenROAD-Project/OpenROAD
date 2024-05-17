@@ -14,6 +14,7 @@
     {
       "name": "bits_",
       "type": "uint",
+      "default": "0",
       "flags": ["private"]
     },
     {
@@ -39,6 +40,7 @@
     {
       "name": "clock_edge_",
       "type": "uint",
+      "default": "0",
       "flags": ["private"]
     }
   ],

@@ -77,12 +77,11 @@ RepairDesign::~RepairDesign() = default;
 void RepairDesign::init()
 {
   logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
+  dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
-  copyState(sta_);
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -1643,11 +1642,6 @@ LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
 double RepairDesign::dbuToMeters(int dist) const
 {
   return dist / (dbu_ * 1e+6);
-}
-
-double RepairDesign::dbuToMicrons(int dist) const
-{
-  return static_cast<double>(dist) / dbu_;
 }
 
 int RepairDesign::metersToDbu(double dist) const

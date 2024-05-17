@@ -108,21 +108,23 @@
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 9141.90 um
 [INFO CTS-0102]  Path depth 18 - 18
+[INFO CTS-0207]  Leaf load cells 4
 [INFO CTS-0098] Clock net "clk_regs"
-[INFO CTS-0099]  Sinks 2250
+[INFO CTS-0099]  Sinks 2254
 [INFO CTS-0100]  Leaf buffers 227
-[INFO CTS-0101]  Average sink wire length 4903.60 um
+[INFO CTS-0101]  Average sink wire length 4904.58 um
 [INFO CTS-0102]  Path depth 17 - 17
+[INFO CTS-0207]  Leaf load cells 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 56 long wires.
 [INFO RSZ-0048] Inserted 113 buffers in 56 nets.
 Placement Analysis
 ---------------------------------
-total displacement       3914.9 u
-average displacement        1.3 u
-max displacement          132.4 u
-original HPWL          185797.7 u
-legalized HPWL         186434.6 u
+total displacement       4567.7 u
+average displacement        1.5 u
+max displacement          153.0 u
+original HPWL          185794.9 u
+legalized HPWL         186281.3 u
 delta HPWL                    0 %
 
 Clock clk

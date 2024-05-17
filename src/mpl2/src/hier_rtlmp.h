@@ -138,7 +138,7 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
-  using IOSpans = std::map<PinAccess, std::pair<float, float>>;
+  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
@@ -270,7 +270,6 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -386,6 +385,7 @@ class HierRTLMP
   std::map<std::string, Rect> guides_;  // macro_name, guide
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
+  std::map<Boundary, Rect> boundary_to_io_blockage_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -481,7 +481,48 @@ class HierRTLMP
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
   bool design_has_io_clusters_ = true;
   bool design_has_only_macros_ = false;
+  bool design_has_unfixed_macros_ = true;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
+
+class Pusher
+{
+ public:
+  Pusher(utl::Logger* logger,
+         Cluster* root,
+         odb::dbBlock* block,
+         const std::map<Boundary, Rect>& boundary_to_io_blockage);
+
+  void pushMacrosToCoreBoundaries();
+
+ private:
+  void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  bool designHasSingleCentralizedMacroArray();
+  void pushMacroClusterToCoreBoundaries(
+      Cluster* macro_cluster,
+      const std::map<Boundary, int>& boundaries_distance);
+  void fetchMacroClusters(Cluster* parent,
+                          std::vector<Cluster*>& macro_clusters);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster);
+  void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
+  void moveMacroClusterBox(odb::Rect& cluster_box,
+                           Boundary boundary,
+                           int distance);
+  bool overlapsWithHardMacro(
+      const odb::Rect& cluster_box,
+      const std::vector<HardMacro*>& cluster_hard_macros);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
+
+  utl::Logger* logger_;
+
+  Cluster* root_;
+  odb::dbBlock* block_;
+  odb::Rect core_;
+  float dbu_;
+
+  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
+  std::vector<HardMacro*> hard_macros_;
+};
+
 }  // namespace mpl2

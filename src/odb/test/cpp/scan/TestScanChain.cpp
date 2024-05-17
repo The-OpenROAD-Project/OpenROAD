@@ -47,7 +47,7 @@ constexpr char kPartition2[] = "CHAIN_1_RISING_1";
 template <class>
 inline constexpr bool always_false_v = false;
 
-std::string_view GetName(const std::variant<dbBTerm*, dbITerm*>& pin)
+std::string GetName(const std::variant<dbBTerm*, dbITerm*>& pin)
 {
   return std::visit(
       [](auto&& pin) {

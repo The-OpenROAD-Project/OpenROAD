@@ -350,6 +350,8 @@ target_link_libraries(openroad
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
+target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
+
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
   target_compile_definitions(openroad PRIVATE ENABLE_READLINE)

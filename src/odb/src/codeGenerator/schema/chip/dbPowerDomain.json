@@ -5,6 +5,7 @@
     {
       "name":"_name",
       "type":"char *",
+      "default": "nullptr",
       "flags":["no-set"]
     },
     {
@@ -38,6 +39,7 @@
     {
       "name":"_top",
       "type":"bool",
+      "default": "false",
       "flags":[]
     },
     {
@@ -48,21 +50,26 @@
     {
       "name": "_x1",
       "type": "int",
+      "default": "0",
       "flags":["no-set","no-get"]
     },
     {
       "name": "_x2",
       "type": "int",
+      "default": "0",
       "flags":["no-set","no-get"]
     },
     {
       "name": "_y1",
       "type": "int",
+      "default": "0",
+      "default": "0",
       "flags":["no-set","no-get"]
     },
     {
       "name": "_y2",
       "type": "int",
+      "default": "0",
       "flags":["no-set","no-get"]
     },
     {
@@ -74,6 +81,7 @@
     {
       "name": "_voltage",
       "type": "float",
+      "default": "0",
       "flags":["no-serial"]
     }
   ],

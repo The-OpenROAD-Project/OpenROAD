@@ -46,6 +46,7 @@ RUDYDataSource::RUDYDataSource(utl::Logger* logger,
 {
   grouter_ = grouter;
   db_ = db;
+  rudy_ = nullptr;
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
@@ -58,13 +59,67 @@ void RUDYDataSource::combineMapData(bool base_has_value,
   base += new_data * intersection_area / rect_area;
 }
 
+void RUDYDataSource::populateXYGrid()
+{
+  if (getBlock() == nullptr) {
+    gui::GlobalRoutingDataSource::populateXYGrid();
+    return;
+  }
+
+  try {
+    rudy_ = grouter_->getRudy();
+  } catch (...) {
+    gui::GlobalRoutingDataSource::populateXYGrid();
+    return;
+  }
+  int tile_size = rudy_->getTileSize();
+
+  const odb::Rect& bounds = getBounds();
+  const int x_grid = std::floor(bounds.dx() / static_cast<double>(tile_size));
+  const int y_grid = std::floor(bounds.dy() / static_cast<double>(tile_size));
+
+  std::vector<int> x_grid_set, y_grid_set;
+  for (int x = 0; x < x_grid; x++) {
+    const int xMin = bounds.xMin() + x * tile_size;
+    const int xMax = std::min(xMin + tile_size, bounds.xMax());
+    if (x == 0) {
+      x_grid_set.push_back(xMin);
+    }
+    if (x == x_grid - 1) {
+      x_grid_set.push_back(bounds.xMax());
+    } else {
+      x_grid_set.push_back(xMax);
+    }
+  }
+  for (int y = 0; y < y_grid; y++) {
+    const int yMin = bounds.yMin() + y * tile_size;
+    const int yMax = std::min(yMin + tile_size, bounds.yMax());
+    if (y == 0) {
+      y_grid_set.push_back(yMin);
+    }
+    if (y == y_grid - 1) {
+      y_grid_set.push_back(bounds.yMax());
+    } else {
+      y_grid_set.push_back(yMax);
+    }
+  }
+
+  setXYMapGrid(x_grid_set, y_grid_set);
+}
+
 bool RUDYDataSource::populateMap()
 {
   if (!getBlock()) {
     return false;
   }
 
-  rudy_ = grouter_->getRudy();
+  for (odb::dbInst* inst : getBlock()->getInsts()) {
+    if (!inst->isPlaced()) {
+      getLogger()->warn(
+          utl::GRT, 120, "Instance {} is not placed.", inst->getName());
+      return false;
+    }
+  }
 
   const auto& [x_grid_size, y_grid_size] = rudy_->getGridSize();
   if (x_grid_size == 0 || y_grid_size == 0) {
@@ -75,8 +130,8 @@ bool RUDYDataSource::populateMap()
 
   for (int x = 0; x < x_grid_size; ++x) {
     for (int y = 0; y < y_grid_size; ++y) {
-      auto tile = rudy_->getTile(x, y);
-      auto box = tile.getRect();
+      const auto& tile = rudy_->getTile(x, y);
+      const auto& box = tile.getRect();
       const double value = tile.getRudy();
       addToMap(box, value);
     }

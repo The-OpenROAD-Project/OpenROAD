@@ -181,6 +181,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxRSegId = 0;
   _maxCCSegId = 0;
 
+  _currentCcAdjOrder = 0;
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
 
@@ -641,6 +642,9 @@ _dbBlock::~_dbBlock()
   delete _inst_tbl;
   delete _module_tbl;
   delete _modinst_tbl;
+  delete _modbterm_tbl;
+  delete _moditerm_tbl;
+  delete _modnet_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
   delete _powerswitch_tbl;
@@ -688,6 +692,13 @@ _dbBlock::~_dbBlock()
   delete _region_inst_itr;
   delete _module_inst_itr;
   delete _module_modinst_itr;
+  delete _module_modinstmoditerm_itr;
+  delete _module_modbterm_itr;
+  delete _module_modnet_itr;
+  delete _module_modnet_modbterm_itr;
+  delete _module_modnet_moditerm_itr;
+  delete _module_modnet_iterm_itr;
+  delete _module_modnet_bterm_itr;
   delete _region_group_itr;
   delete _group_itr;
   delete _guide_itr;
@@ -2308,6 +2319,52 @@ int dbBlock::getDbUnitsPerMicron()
   return block->_dbu_per_micron;
 }
 
+double dbBlock::dbuToMicrons(int dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(unsigned int dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(int64_t dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(double dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuAreaToMicrons(const int64_t dbu_area)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu_area / (dbu_micron * dbu_micron);
+}
+
+int dbBlock::micronsToDbu(const double microns)
+{
+  const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
+  double dbu = microns * dbu_per_micron;
+  return static_cast<int>(std::round(dbu));
+}
+
+int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
+{
+  const int dbu_per_micron = getTech()->getDbUnitsPerMicron();
+  const int64_t dbu_per_square_micron
+      = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+  double dbuArea = micronsArea * dbu_per_square_micron;
+  return static_cast<int64_t>(std::round(dbuArea));
+}
+
 char dbBlock::getHierarchyDelimeter()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2380,22 +2437,19 @@ Rect dbBlock::getDieArea()
 
 Rect dbBlock::getCoreArea()
 {
-  // filter rows to remove those with site class PAD
-  std::vector<odb::dbRow*> rows;
+  Rect rect;
+  rect.mergeInit();
+
   for (dbRow* row : getRows()) {
     if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      rows.push_back(row);
-    }
-  }
-  if (!rows.empty()) {
-    Rect rect;
-    rect.mergeInit();
-
-    for (dbRow* row : rows) {
       rect.merge(row->getBBox());
     }
+  }
+
+  if (!rect.isInverted()) {
     return rect;
   }
+
   // Default to die area if there aren't any rows.
   return getDieArea();
 }

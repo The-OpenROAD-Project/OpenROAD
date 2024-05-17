@@ -1577,6 +1577,7 @@ void FlexDRWorker::route_queue()
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
+    gcWorker_->setEnableSurgicalFix(false);
     gcWorker_->main();
     setMarkers(gcWorker_->getMarkers());
   }
@@ -1790,7 +1791,9 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved
-      if (net->getNumReroutes() == 0 && getRipupMode() == RipUpMode::ALL) {
+      if (net->getNumReroutes() == 0
+          && (getRipupMode() == RipUpMode::ALL
+              || getRipupMode() == RipUpMode::INCR)) {
         initMazeCost_via_helper(net, false);
       }
       net->clear();
@@ -1799,7 +1802,8 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       }
       // route
       mazeNetInit(net);
-      bool isRouted = routeNet(net);
+      std::vector<FlexMazeIdx> paths;
+      bool isRouted = routeNet(net, paths);
       if (isRouted == false) {
         if (OUT_MAZE_FILE == std::string("")) {
           if (VERBOSE > 0) {
@@ -1847,9 +1851,25 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           auto tmpPWire = std::make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
-          tmpPWire->setOrigin(origin);
           Rect box = pwire->getOffsetBox();
-          tmpPWire->setOffsetBox(box);
+          // Find closest path point
+          Point closest;
+          frCoord closestDist = INT_MAX;
+          for (auto p : paths) {
+            Point pp;
+            gridGraph_.getPoint(pp, p.x(), p.y());
+            frCoord pathLength = Point::squaredDistance(origin, pp);
+            if (pathLength < closestDist) {
+              closestDist = pathLength;
+              closest = pp;
+            }
+          }
+          tmpPWire->setOrigin(closest);
+          tmpPWire->setOffsetBox(
+              Rect(origin.getX() - closest.getX() + box.xMin(),
+                   origin.getY() - closest.getY() + box.yMin(),
+                   origin.getX() - closest.getX() + box.xMax(),
+                   origin.getY() - closest.getY() + box.yMax()));
           tmpPWire->addToNet(net);
           pwire->addToNet(net);
 
@@ -2995,7 +3015,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
   }
 }
 
-bool FlexDRWorker::routeNet(drNet* net)
+bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 {
   //  ProfileTask profile("DR:routeNet");
 
@@ -3058,6 +3078,8 @@ bool FlexDRWorker::routeNet(drNet* net)
       routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
       routeNet_AddCutSpcCost(path);
       isFirstConn = false;
+      // Add current pin path point to drNet paths
+      paths.insert(paths.end(), path.begin(), path.end());
     } else {
       searchSuccess = false;
       logger_->report("Failed to find a path between pin " + nextPin->getName()

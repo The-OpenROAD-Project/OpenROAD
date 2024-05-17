@@ -43,6 +43,10 @@ proc pdngen { args } {
 
   sta::check_argc_eq0 "pdngen" $args
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error PDN 2 "No design block found."
+  }
+
   pdn::depricated flags -verbose
 
   if {[info exists flags(-reset)]} {
@@ -391,19 +395,20 @@ proc add_pdn_stripe {args} {
 }
 
 sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
-                                     -layers list_of_2_layer_names \
-                                     -widths (width_value|list_of_width_values) \
-                                     -spacings (spacing_value|list_of_spacing_values) \
+                                     [-layers list_of_2_layer_names] \
+                                     [-widths (width_value|list_of_width_values)] \
+                                     [-spacings (spacing_value|list_of_spacing_values)] \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
-                                     [-ground_pads list_of_gnd_pads] \
+                                     [-connect_to_pad_layers layers] \
                                      [-power_pads list_of_pwr_pads] \
+                                     [-ground_pads list_of_gnd_pads] \
+                                     [-nets list_of_nets] \
+                                     [-starts_with (POWER|GROUND)] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
-                                     [-connect_to_pads] \
-                                     [-connect_to_pad_layers layers] \
-                                     [-starts_with (POWER|GROUND)] \
-                                     [-nets list_of_nets]}
+                                     [-connect_to_pads]
+                                     }
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
