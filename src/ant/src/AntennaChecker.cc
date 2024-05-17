@@ -1695,9 +1695,9 @@ void AntennaChecker::saveGates(dbNet* db_net)
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     odb::dbMTerm* mterm = iterm->getMTerm();
     std::string pin_name = fmt::format("  {}/{} ({})",
-                              iterm->getInst()->getConstName(),
-                              mterm->getConstName(),
-                              mterm->getMaster()->getConstName());
+                                       iterm->getInst()->getConstName(),
+                                       mterm->getConstName(),
+                                       mterm->getMaster()->getConstName());
     PinType pin = PinType(pin_name, iterm);
     odb::dbInst* inst = iterm->getInst();
     const odb::dbTransform transform = inst->getTransform();
@@ -2128,10 +2128,10 @@ bool AntennaChecker::checkCAR(dbTechLayer* tech_layer,
           info.diff_CAR,
           diff_CAR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-     if (verbose) {
-       logger_->report("{}", diff_car_report);
-     }
-     if (report_file.is_open() && (violation || verbose)) {
+      if (verbose) {
+        logger_->report("{}", diff_car_report);
+      }
+      if (report_file.is_open() && (violation || verbose)) {
         report_file << diff_car_report << "\n";
       }
     }
@@ -2203,9 +2203,10 @@ int AntennaChecker::checkGates(dbNet* db_net,
                                float ratio_margin)
 {
   ratio_margin_ = ratio_margin;
-  int pin_violation_count = 0; 
+  int pin_violation_count = 0;
 
-  std::unordered_map<std::string, std::unordered_set<dbTechLayer*>> gates_with_violations;
+  std::unordered_map<std::string, std::unordered_set<dbTechLayer*>>
+      gates_with_violations;
 
   for (const auto& gate_info : gate_info_) {
     bool pin_has_violation = false;
@@ -2241,7 +2242,7 @@ int AntennaChecker::checkGates(dbNet* db_net,
           pin_has_violation = true;
           gates_with_violations[gate_info.first].insert(layer_info.first);
         }
-      } 
+      }
     }
     if (pin_has_violation) {
       pin_violation_count++;
@@ -2249,7 +2250,8 @@ int AntennaChecker::checkGates(dbNet* db_net,
   }
 
   // iterate the gates with violations to report
-  if (((pin_violation_count > 0) || report_if_no_violation) && diode_mterm == nullptr) {
+  if (((pin_violation_count > 0) || report_if_no_violation)
+      && diode_mterm == nullptr) {
     std::string net_name = fmt::format("Net: {}", db_net->getConstName());
     if (verbose) {
       logger_->report("{}", net_name);
@@ -2258,7 +2260,9 @@ int AntennaChecker::checkGates(dbNet* db_net,
       report_file << net_name << "\n";
     }
     for (const auto& gate_it : gate_info_) {
-      if (!verbose && gates_with_violations.find(gate_it.first) == gates_with_violations.end()) {
+      if (!verbose
+          && gates_with_violations.find(gate_it.first)
+                 == gates_with_violations.end()) {
         continue;
       }
       std::string pin_name = fmt::format("  Pin: {}", gate_it.first);
@@ -2269,65 +2273,49 @@ int AntennaChecker::checkGates(dbNet* db_net,
         report_file << pin_name << "\n";
       }
       for (const auto& layer_info : gate_info_[gate_it.first]) {
-        if (!verbose && gates_with_violations[gate_it.first].find(layer_info.first) == gates_with_violations[gate_it.first].end()) {
+        if (!verbose
+            && gates_with_violations[gate_it.first].find(layer_info.first)
+                   == gates_with_violations[gate_it.first].end()) {
           continue;
         }
-          std::string layer_name = fmt::format(
-                "    Layer: {}", layer_info.first->getConstName());
-          if (verbose) { 
-            logger_->report("{}", layer_name);
-          }
-          if (report_file.is_open()) {
-            report_file << layer_name << "\n";
-          }
-          // re-check to report violations
-          if (layer_info.first->getRoutingLevel() != 0) {
-            checkPAR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-            checkPSR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-            checkCAR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-            checkCSR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-          } else {
-            checkPAR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-            checkCAR(layer_info.first,
-                     layer_info.second,
-                     verbose,
-                     true,
-                     report_file);
-          }
-          if (verbose) {
-            logger_->report("");
-          }
-          if (report_file.is_open()) {
-            report_file << "\n";
-          }
+        std::string layer_name
+            = fmt::format("    Layer: {}", layer_info.first->getConstName());
+        if (verbose) {
+          logger_->report("{}", layer_name);
         }
+        if (report_file.is_open()) {
+          report_file << layer_name << "\n";
+        }
+        // re-check to report violations
+        if (layer_info.first->getRoutingLevel() != 0) {
+          checkPAR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+          checkPSR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+          checkCAR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+          checkCSR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+        } else {
+          checkPAR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+          checkCAR(
+              layer_info.first, layer_info.second, verbose, true, report_file);
+        }
+        if (verbose) {
+          logger_->report("");
+        }
+        if (report_file.is_open()) {
+          report_file << "\n";
+        }
+      }
       if (verbose) {
         logger_->report("");
       }
       if (report_file.is_open()) {
         report_file << "\n";
       }
-      }
+    }
     if (verbose) {
       logger_->report("");
     }
@@ -2341,60 +2329,58 @@ int AntennaChecker::checkGates(dbNet* db_net,
   if (pin_violation_count > 0 && diode_mterm) {
     for (const auto& gate_iter : gates_with_violations) {
       for (const auto& layer_info : gate_iter.second) {
-          // when repair antenna is running, calculate number of diodes
-          if (layer_info->getRoutingLevel() != 0
-              && pin_added[layer_info].find(gate_iter.first)
-                     == pin_added[layer_info].end()) {
-            double diode_diff_area = 0.0;
-            if (diode_mterm) {
-              diode_diff_area = diffArea(diode_mterm);
-            }
-            NodeInfo violation_info = gate_info_[gate_iter.first][layer_info];
-            std::vector<dbITerm*> gates = violation_info.iterms;
-            dbTechLayer* violation_layer = layer_info;
-            int diode_count_per_gate = 0;
-            // check violations only PAR & PSR
-            auto par_violation = checkPAR(
+        // when repair antenna is running, calculate number of diodes
+        if (layer_info->getRoutingLevel() != 0
+            && pin_added[layer_info].find(gate_iter.first)
+                   == pin_added[layer_info].end()) {
+          double diode_diff_area = 0.0;
+          if (diode_mterm) {
+            diode_diff_area = diffArea(diode_mterm);
+          }
+          NodeInfo violation_info = gate_info_[gate_iter.first][layer_info];
+          std::vector<dbITerm*> gates = violation_info.iterms;
+          dbTechLayer* violation_layer = layer_info;
+          int diode_count_per_gate = 0;
+          // check violations only PAR & PSR
+          auto par_violation = checkPAR(
+              violation_layer, violation_info, false, false, report_file);
+          auto psr_violation = checkPSR(
+              violation_layer, violation_info, false, false, report_file);
+          // while it has violation, increase iterm_diff_area
+          while (par_violation.first || psr_violation.first) {
+            // increasing iterm_diff_area and count
+            violation_info.iterm_diff_area += diode_diff_area * gates.size();
+            diode_count_per_gate++;
+            // re-calculate info only PAR & PSR
+            calculateWirePar(violation_layer, violation_info);
+            // re-check violations only PAR & PSR
+            par_violation = checkPAR(
                 violation_layer, violation_info, false, false, report_file);
-            auto psr_violation = checkPSR(
+            psr_violation = checkPSR(
                 violation_layer, violation_info, false, false, report_file);
-            // while it has violation, increase iterm_diff_area
-            while (par_violation.first || psr_violation.first) {
-              // increasing iterm_diff_area and count
-              violation_info.iterm_diff_area += diode_diff_area * gates.size();
-              diode_count_per_gate++;
-              // re-calculate info only PAR & PSR
-              calculateWirePar(violation_layer, violation_info);
-              // re-check violations only PAR & PSR
-              par_violation = checkPAR(
-                  violation_layer, violation_info, false, false, report_file);
-              psr_violation = checkPSR(
-                  violation_layer, violation_info, false, false, report_file);
-              if (diode_count_per_gate > max_diode_count_per_gate) {
-                logger_->warn(ANT,
-                              15,
-                              "Net {} requires more than {} diodes per gate to "
-                              "repair violations.",
-                              db_net->getConstName(),
-                              max_diode_count_per_gate);
-                break;
-              }
+            if (diode_count_per_gate > max_diode_count_per_gate) {
+              logger_->warn(ANT,
+                            15,
+                            "Net {} requires more than {} diodes per gate to "
+                            "repair violations.",
+                            db_net->getConstName(),
+                            max_diode_count_per_gate);
+              break;
             }
-            // save the iterms of repaired node
-            for (const auto& iterm_iter : gates) {
-              pin_added[violation_layer].insert(iterm_iter->getName());
-            }
-            // save antenna violation
-            if (diode_count_per_gate > 0) {
-              antenna_violations_.push_back(
-                  {layer_info->getRoutingLevel(),
-                   gates,
-                   diode_count_per_gate});
-            }
+          }
+          // save the iterms of repaired node
+          for (const auto& iterm_iter : gates) {
+            pin_added[violation_layer].insert(iterm_iter->getName());
+          }
+          // save antenna violation
+          if (diode_count_per_gate > 0) {
+            antenna_violations_.push_back(
+                {layer_info->getRoutingLevel(), gates, diode_count_per_gate});
           }
         }
       }
     }
+  }
   return pin_violation_count;
 }
 
@@ -2550,8 +2536,12 @@ void AntennaChecker::checkNet(dbNet* db_net,
     calculatePAR();
     calculateCAR();
 
-    int pin_violations = checkGates(
-        db_net, verbose, report_if_no_violation, report_file, diode_mterm, ratio_margin);
+    int pin_violations = checkGates(db_net,
+                                    verbose,
+                                    report_if_no_violation,
+                                    report_file,
+                                    diode_mterm,
+                                    ratio_margin);
 
     if (pin_violations > 0) {
       net_violation_count++;
