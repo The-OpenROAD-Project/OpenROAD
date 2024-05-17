@@ -148,6 +148,13 @@ class ChartsWidget : public QDockWidget
 
   SlackHistogramData fetchSlackHistogramData() const;
   void populateBuckets(const SlackHistogramData& data);
+  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
+  void populateBarSets(QBarSet& neg_set,
+                       QBarSet& pos_set,
+                       const StartEndPathType path_type);
+  int getEndPointsInBucket(
+      const std::vector<HistogramEndPoint>& end_points_in_bucket,
+      StartEndPathType path_type) const;
 
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
@@ -178,7 +185,6 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_y_;
 
   std::unique_ptr<Buckets> buckets_;
-  Mode previous_mode_;
   int prev_filter_index_;
 
   const int default_number_of_buckets_ = 15;

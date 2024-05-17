@@ -65,8 +65,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
-      previous_mode_(SELECT),
-      prev_filter_index_(0),
+      prev_filter_index_(2),  // start with no filter
 #endif
       label_(new QLabel(this))
 {
@@ -117,24 +116,16 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 #ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
-  if (previous_mode_ == SELECT) {
-    filters_menu_->hide();
-    clearChart();
+  if (mode_menu_->currentIndex() == SELECT) {
+    return;
   }
 
-  Mode current_mode = static_cast<Mode>(mode_menu_->currentIndex());
+  clearChart();
 
-  switch (current_mode) {
-    case SELECT: {
-      return;
-    }
-    case SLACK_HISTOGRAM: {
-      filters_menu_->show();
-      setSlackHistogram();
-    }
+  if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
+    filters_menu_->show();
+    setSlackHistogram();
   }
-
-  previous_mode_ = current_mode;
 }
 
 void ChartsWidget::setModeMenu()
@@ -232,14 +223,7 @@ void ChartsWidget::setSlackHistogram()
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
 
-  for (int i = 0; i < buckets_->negative.size(); ++i) {
-    *neg_set << buckets_->negative[i].size();
-    *pos_set << 0;
-  }
-  for (int i = 0; i < buckets_->positive.size(); ++i) {
-    *neg_set << 0;
-    *pos_set << buckets_->positive[i].size();
-  }
+  populateBarSets(*neg_set, *pos_set);
 
   QStackedBarSeries* series = new QStackedBarSeries(this);
   series->append(neg_set);
@@ -298,8 +282,8 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
       continue;
     }
 
+    // Default filter is register to register so we don't need to check it.
     if (start_node->isPinITerm()) {
-      // Default is register to register.
       if (end_node->isPinBTerm()) {
         histogram_end_point.path_type = RegisterToIO;
       }
@@ -615,6 +599,128 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
   stagui_ = std::make_unique<STAGuiInterface>(sta_);
 }
 
+void ChartsWidget::changeStartEndFilter()
+{
+  const int filter_index = filters_menu_->currentIndex();
+
+  if (filter_index == 0) {  // "Select Filter"
+    return;
+  }
+
+  if (prev_filter_index_ != 0) {
+    clearBarSets();
+  }
+
+  QStackedBarSeries* series
+      = static_cast<QStackedBarSeries*>(chart_->series().front());
+
+  // The negative bar set is the one we appended first.
+  QBarSet* neg_set = series->barSets().front();
+  QBarSet* pos_set = series->barSets().back();
+
+  if (filter_index == 1) {  // "No Filter"
+    populateBarSets(*neg_set, *pos_set);
+  } else {
+    const int indexes_offset = 2;  // "Select Filter" + "No Filter"
+    const int path_type = filter_index - indexes_offset;
+
+    switch (path_type) {
+      case RegisterToRegister: {
+        populateBarSets(*neg_set, *pos_set, RegisterToRegister);
+        break;
+      }
+      case RegisterToIO: {
+        populateBarSets(*neg_set, *pos_set, RegisterToIO);
+        break;
+      }
+      case IOToRegister: {
+        populateBarSets(*neg_set, *pos_set, IOToRegister);
+        break;
+      }
+      case IOToIO: {
+        populateBarSets(*neg_set, *pos_set, IOToIO);
+        break;
+      }
+    }
+  }
+
+  prev_filter_index_ = filter_index;
+}
+
+void ChartsWidget::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
+{
+  for (int i = 0; i < buckets_->negative.size(); ++i) {
+    neg_set << buckets_->negative[i].size();
+    pos_set << 0;
+  }
+  for (int i = 0; i < buckets_->positive.size(); ++i) {
+    neg_set << 0;
+    pos_set << buckets_->positive[i].size();
+  }
+}
+
+void ChartsWidget::populateBarSets(QBarSet& neg_set,
+                                   QBarSet& pos_set,
+                                   const StartEndPathType path_type)
+{
+  for (const std::vector<HistogramEndPoint>& neg_bucket : buckets_->negative) {
+    neg_set << getEndPointsInBucket(neg_bucket, path_type);
+    pos_set << 0;
+  }
+
+  for (const std::vector<HistogramEndPoint>& pos_bucket : buckets_->positive) {
+    neg_set << 0;
+    pos_set << getEndPointsInBucket(pos_bucket, path_type);
+  }
+}
+
+int ChartsWidget::getEndPointsInBucket(
+    const std::vector<HistogramEndPoint>& end_points_in_bucket,
+    StartEndPathType path_type) const
+{
+  int same_path_type_end_points_count = 0;
+
+  for (const HistogramEndPoint& end_point : end_points_in_bucket) {
+    if (end_point.path_type == path_type) {
+      ++same_path_type_end_points_count;
+    }
+  }
+
+  return same_path_type_end_points_count;
+}
+
+void ChartsWidget::clearBarSets()
+{
+  const auto abstract_series = chart_->series();
+  if (abstract_series.isEmpty()) {
+    return;
+  }
+
+  QStackedBarSeries* series
+      = static_cast<QStackedBarSeries*>(abstract_series.front());
+
+  // Negative set first
+  for (QBarSet* bar_set : series->barSets()) {
+    bar_set->remove(0, bar_set->count());
+  }
+}
+
+std::string ChartsWidget::toString(StartEndPathType path_type)
+{
+  switch (path_type) {
+    case RegisterToRegister:
+      return "Register to Register";
+    case RegisterToIO:
+      return "Register to IO";
+    case IOToRegister:
+      return "IO to Register";
+    case IOToIO:
+      return "IO to IO";
+  }
+
+  return "";
+}
+
 ////// HistogramView ///////
 HistogramView::HistogramView(QChart* chart, QWidget* parent)
     : QChartView(chart, parent)
@@ -656,70 +762,6 @@ void HistogramView::mousePressEvent(QMouseEvent* event)
   if (valid_horizontal_range && valid_vertical_range) {
     emit barIndex(static_cast<int>(index_mapped_x));
   }
-}
-
-void ChartsWidget::changeStartEndFilter()
-{
-  // Select
-  if (prev_filter_index_ == 0) {
-    clearBarSets();
-  }
-
-  const int filter_index = filters_menu_->currentIndex();
-
-  // No filter
-  if (filter_index == 1) {
-    // Display Everything;
-  }
-
-  switch (filter_index) {
-    case RegisterToRegister: {
-      break;
-    }
-    case RegisterToIO: {
-      break;
-    }
-    case IOToRegister: {
-      break;
-    }
-    case IOToIO: {
-      break;
-    }
-  }
-
-  prev_filter_index_ = filter_index;
-}
-
-void ChartsWidget::clearBarSets()
-{
-  const auto abstract_series = chart_->series();
-  if (abstract_series.isEmpty()) {
-    return;
-  }
-
-  QStackedBarSeries* series
-      = static_cast<QStackedBarSeries*>(abstract_series.front());
-
-  // Negative set first
-  for (QBarSet* bar_set : series->barSets()) {
-    bar_set->remove(0, bar_set->count());
-  }
-}
-
-std::string ChartsWidget::toString(StartEndPathType path_type)
-{
-  switch (path_type) {
-    case RegisterToRegister:
-      return "Register to Register";
-    case RegisterToIO:
-      return "Register to IO";
-    case IOToRegister:
-      return "IO to Register";
-    case IOToIO:
-      return "IO to IO";
-  }
-
-  return "";
 }
 
 #endif
