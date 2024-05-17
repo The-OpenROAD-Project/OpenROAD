@@ -79,7 +79,7 @@ enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
 
-class RepairSetup : StaState
+class RepairSetup : public sta::dbStaState
 {
  public:
   RepairSetup(Resizer* resizer);
@@ -159,7 +159,6 @@ class RepairSetup : StaState
   void printProgress(int iteration, bool force, bool end) const;
 
   Logger* logger_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   const Corner* corner_ = nullptr;

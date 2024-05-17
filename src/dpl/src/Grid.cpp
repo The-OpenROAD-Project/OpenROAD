@@ -368,17 +368,18 @@ void Grid::initGrid(dbDatabase* db,
     hopeless[grid_info.getGridIndex()] += gtl::rectangle_data<int>{
         0, 0, grid_info.getSiteCount().v, grid_info.getRowCount().v};
   }
+  const Rect core = getCore();
+
   // Fragmented row support; mark valid sites.
   visitDbRows(block, [&](odb::dbRow* db_row) {
     const auto db_row_site = db_row->getSite();
     int current_row_site_count = db_row->getSiteCount();
     auto gmk = getGridMapKey(db_row_site);
-    auto entry = getInfoMap().at(gmk);
+    const auto& entry = getInfoMap().at(gmk);
     GridY current_row_count{entry.getRowCount()};
     int current_row_grid_index = entry.getGridIndex();
     const odb::Point orig = db_row->getOrigin();
 
-    const Rect core = getCore();
     const int site_width = db_row_site->getWidth();
     const GridX x_start{(orig.x() - core.xMin()) / site_width};
     const GridX x_end{x_start + current_row_site_count};
@@ -407,6 +408,33 @@ void Grid::initGrid(dbDatabase* db,
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl.v, yl.v, xh.v, yh.v};
   });
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (blockage->isSoft()) {
+      continue;
+    }
+    dbBox* bbox = blockage->getBBox();
+    for (auto& [gmk, grid_info] : getInfoMap()) {
+      GridX xlo = gridX(DbuX{bbox->xMin() - core.xMin()});
+      GridX xhi = gridEndX(DbuX{bbox->xMax() - core.xMin()});
+      auto [ylo, ignore_x] = gridY(DbuY{bbox->yMin() - core.yMin()}, grid_info);
+      auto [yhi, ignore_y]
+          = gridEndY(DbuY{bbox->yMax() - core.yMin()}, grid_info);
+
+      // Clip to the core area
+      xlo = max(GridX{0}, xlo);
+      ylo = max(GridY{0}, ylo);
+      xhi = min(grid_info.getSiteCount(), xhi);
+      yhi = min(grid_info.getRowCount(), yhi);
+
+      for (GridY y = ylo; y < yhi; y++) {
+        for (GridX x = xlo; x < xhi; x++) {
+          Pixel& pixel1 = pixel(grid_info.getGridIndex(), y, x);
+          pixel1.is_valid = false;
+        }
+      }
+    }
+  }
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : getInfoMap()) {
@@ -648,18 +676,20 @@ GridY Grid::map_ycoordinates(GridY source_grid_coordinate,
   if (source_grid_key == target_grid_key) {
     return source_grid_coordinate;
   }
-  auto src_grid_info = getInfoMap().at(source_grid_key);
-  auto target_grid_info = getInfoMap().at(target_grid_key);
+  const auto& src_grid_info = getInfoMap().at(source_grid_key);
+  const auto& target_grid_info = getInfoMap().at(target_grid_key);
   if (!src_grid_info.isHybrid()) {
     if (!target_grid_info.isHybrid()) {
-      int original_step = src_grid_info.getSites()[0].site->getHeight();
-      int target_step = target_grid_info.getSites()[0].site->getHeight();
+      dbSite* src_site = src_grid_info.getSites()[0].site;
+      DbuY original_step{static_cast<int>(src_site->getHeight())};
+      dbSite* target_site = target_grid_info.getSites()[0].site;
+      DbuY target_step{static_cast<int>(target_site->getHeight())};
       if (start) {
-        return GridY{
-            divFloor(original_step * source_grid_coordinate.v, target_step)};
+        return GridY{divFloor(
+            gridToDbu(source_grid_coordinate, original_step).v, target_step.v)};
       }
-      return GridY{
-          divCeil(original_step * source_grid_coordinate.v, target_step)};
+      return GridY{divCeil(gridToDbu(source_grid_coordinate, original_step).v,
+                           target_step.v)};
     }
     // count until we find it.  BUG?: why multiply by grid_index?
     return gridY(DbuY{source_grid_coordinate.v * source_grid_key.grid_index},
@@ -679,7 +709,8 @@ GridY Grid::map_ycoordinates(GridY source_grid_coordinate,
     // both are hybrids.
     return gridY(src_height, target_grid_info).first;
   }
-  int target_step = target_grid_info.getSites()[0].site->getHeight();
+  dbSite* target_site = target_grid_info.getSites()[0].site;
+  const int target_step = target_site->getHeight();
   if (start) {
     return GridY{divFloor(src_height.v, target_step)};
   }
@@ -814,7 +845,7 @@ DbuY Grid::coordinateToHeight(GridY y_coordinate, GridMapKey gmk) const
 {
   // gets a coordinate and its grid, and returns the height of the coordinate.
   // This is useful for hybrid sites
-  auto grid_info = infoMap(gmk);
+  const auto& grid_info = infoMap(gmk);
   if (grid_info.isHybrid()) {
     auto& grid_sites = grid_info.getSites();
     const DbuY total_height = grid_info.getSitesTotalHeight();

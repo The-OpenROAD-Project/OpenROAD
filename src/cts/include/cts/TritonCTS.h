@@ -178,7 +178,8 @@ class TritonCTS
                              int& maxDepth,
                              int depth,
                              bool fullTree,
-                             const std::unordered_set<odb::dbITerm*>& sinks);
+                             const std::unordered_set<odb::dbITerm*>& sinks,
+                             const std::unordered_set<odb::dbInst*>& dummies);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
@@ -192,12 +193,14 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
-  void writeDummyLoadsToDb(Clock& clockNet);
+  void writeDummyLoadsToDb(Clock& clockNet,
+                           std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
-  void insertDummyCell(Clock& clockNet,
-                       ClockInst* inst,
-                       const std::vector<sta::LibertyCell*>& dummyCandidates);
+  odb::dbInst* insertDummyCell(
+      Clock& clockNet,
+      ClockInst* inst,
+      const std::vector<sta::LibertyCell*>& dummyCandidates);
   ClockInst& placeDummyCell(Clock& clockNet,
                             const ClockInst* inst,
                             const sta::LibertyCell* dummyCell,

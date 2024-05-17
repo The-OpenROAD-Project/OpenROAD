@@ -550,6 +550,8 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
   flags_ = {};
+  wrong_way_width_ = 0;
+  layer_adjustment_ = 0;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,

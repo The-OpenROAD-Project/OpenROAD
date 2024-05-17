@@ -159,7 +159,7 @@ void Resizer::init(Logger* logger,
   logger_ = logger;
   db_ = db;
   block_ = nullptr;
-  sta_ = sta;
+  dbStaState::init(sta);
   stt_builder_ = stt_builder;
   global_router_ = global_router;
   incr_groute_ = nullptr;
@@ -167,7 +167,6 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
-  copyState(sta);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2056,7 +2055,6 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
                                    const DcalcAnalysisPt* dcalc_ap,
                                    LibertyPort** swap_port)
 {
-  const Pvt* pvt = dcalc_ap->operatingConditions();
   LibertyCell* cell = drvr_port->libertyCell();
   std::map<LibertyPort*, ArcDelay> port_delays;
   ArcDelay base_delay = -INF;
@@ -2067,18 +2065,18 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         float in_slew = tgt_slews_[in_rf->index()];
-        ArcDelay gate_delay;
-        Slew drvr_slew;
         LibertyPort* port = arc->from();
-        arc_delay_calc_->gateDelay(arc,
-                                   in_slew,
-                                   load_cap,
-                                   nullptr,
-                                   0.0,
-                                   pvt,
-                                   dcalc_ap,
-                                   gate_delay,
-                                   drvr_slew);
+        LoadPinIndexMap load_pin_index_map(network_);
+        ArcDcalcResult dcalc_result
+            = arc_delay_calc_->gateDelay(nullptr,
+                                         arc,
+                                         in_slew,
+                                         load_cap,
+                                         nullptr,
+                                         load_pin_index_map,
+                                         dcalc_ap);
+
+        const ArcDelay& gate_delay = dcalc_result.gateDelay();
 
         if (port == input_port) {
           base_delay = std::max(base_delay, gate_delay);
@@ -2123,7 +2121,6 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
     delays[rf_index] = -INF;
     slews[rf_index] = -INF;
   }
-  const Pvt* pvt = dcalc_ap->operatingConditions();
   LibertyCell* cell = drvr_port->libertyCell();
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
@@ -2131,17 +2128,18 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float in_slew = tgt_slews_[in_rf->index()];
-        ArcDelay gate_delay;
-        Slew drvr_slew;
-        arc_delay_calc_->gateDelay(arc,
-                                   in_slew,
-                                   load_cap,
-                                   nullptr,
-                                   0.0,
-                                   pvt,
-                                   dcalc_ap,
-                                   gate_delay,
-                                   drvr_slew);
+        LoadPinIndexMap load_pin_index_map(network_);
+        ArcDcalcResult dcalc_result
+            = arc_delay_calc_->gateDelay(nullptr,
+                                         arc,
+                                         in_slew,
+                                         load_cap,
+                                         nullptr,
+                                         load_pin_index_map,
+                                         dcalc_ap);
+
+        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
       }

@@ -369,6 +369,7 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 
   auto inst = block->findInst(name);
   if (!inst) {
+    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
     return;
   }
   SelectionSet sel_inst_set;
@@ -385,6 +386,7 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 
   auto net = block->findNet(name);
   if (!net) {
+    logger_->error(utl::GUI, 101, "No net named {} found.", name);
     return;
   }
   SelectionSet selection_set;
@@ -911,7 +913,7 @@ void Gui::setHeatMapSetting(const std::string& name,
                      options.join(", ").toStdString());
     }
 
-    auto current_value = settings[option];
+    auto& current_value = settings[option];
     if (std::holds_alternative<bool>(current_value)) {
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {

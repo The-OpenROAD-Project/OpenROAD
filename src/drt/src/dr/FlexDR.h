@@ -130,6 +130,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
+  void setIter(int iterNum) { iter_ = iterNum; }
 
  private:
   TritonRoute* router_;

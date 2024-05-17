@@ -669,7 +669,8 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     };
   }
 
-  pins.erase(std::remove_if(pins.begin(), pins.end(), remove_func), pins.end());
+  pins.erase(std::remove_if(pins.begin(), pins.end(), std::move(remove_func)),
+             pins.end());
 
   if (!pins.empty()) {
     type_ = ConnectionType::Edge;
@@ -1116,7 +1117,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     ShapePtr layer_closest_shape
         = getClosestShape(layer_shapes, pin_shape, iterm_->getNet());
     if (layer_closest_shape != nullptr) {
-      closest_shape = layer_closest_shape;
+      closest_shape = std::move(layer_closest_shape);
     }
   }
   if (closest_shape == nullptr) {

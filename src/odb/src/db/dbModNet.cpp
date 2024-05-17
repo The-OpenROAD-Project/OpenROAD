@@ -118,6 +118,7 @@ void _dbModNet::out(dbDiff& diff, char side, const char* field) const
 
 _dbModNet::_dbModNet(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)

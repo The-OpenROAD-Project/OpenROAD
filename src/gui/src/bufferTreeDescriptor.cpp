@@ -260,14 +260,14 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
     is_focus &= focus_nets_.count(net) != 0;
   }
   if (!is_focus) {
-    actions.push_back(Descriptor::Action{"Focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->addFocusNet(net);
                                            }
                                            return makeSelected(bnet);
                                          }});
   } else {
-    actions.push_back(Descriptor::Action{"De-focus", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, &bnet]() {
                                            for (auto* net : bnet.getNets()) {
                                              gui->removeFocusNet(net);
                                            }
@@ -279,7 +279,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
     has_guides |= !net->getGuides().empty();
   }
   if (has_guides) {
-    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, bnet]() {
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, &bnet]() {
                                            bool guides_on = false;
                                            for (auto* net : bnet.getNets()) {
                                              guides_on
@@ -301,7 +301,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
   }
   if (has_net_tracks) {
     actions.push_back(
-        Descriptor::Action{"Tracks", [this, gui, bnet]() {
+        Descriptor::Action{"Tracks", [this, gui, &bnet]() {
                              bool tracks_on = false;
                              for (auto* net : bnet.getNets()) {
                                tracks_on |= tracks_nets_.count(net) != 0;

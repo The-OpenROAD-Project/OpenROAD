@@ -108,7 +108,7 @@ int micronToDbu(float metric, float dbu);
 // along the corresponding { B, L, T, R } boundary
 // The size of the hard macro blockage is determined the by the
 // size of that cluster
-enum PinAccess
+enum Boundary
 {
   NONE,
   B,
@@ -117,8 +117,8 @@ enum PinAccess
   R
 };
 
-std::string toString(const PinAccess& pin_access);
-PinAccess opposite(const PinAccess& pin_access);
+std::string toString(const Boundary& pin_access);
+Boundary opposite(const Boundary& pin_access);
 
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
@@ -269,11 +269,11 @@ class Cluster
   // not have any connections outsize the parent cluster
   // All the outside connections have been converted to the connections
   // related to pin access
-  void setPinAccess(int cluster_id, PinAccess pin_access, float weight);
-  void addBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
-  const std::pair<PinAccess, float> getPinAccess(int cluster_id);
-  const std::map<int, std::pair<PinAccess, float>> getPinAccessMap() const;
-  const std::map<PinAccess, std::map<PinAccess, float>> getBoundaryConnection()
+  void setPinAccess(int cluster_id, Boundary pin_access, float weight);
+  void addBoundaryConnection(Boundary pin_a, Boundary pin_b, float num_net);
+  const std::pair<Boundary, float> getPinAccess(int cluster_id);
+  const std::map<int, std::pair<Boundary, float>> getPinAccessMap() const;
+  const std::map<Boundary, std::map<Boundary, float>> getBoundaryConnection()
       const;
 
   // virtual connections
@@ -338,8 +338,8 @@ class Cluster
   std::vector<std::pair<int, int>> virtual_connections_;
 
   // pin access for each bundled connection
-  std::map<int, std::pair<PinAccess, float>> pin_access_map_;
-  std::map<PinAccess, std::map<PinAccess, float>> boundary_connection_map_;
+  std::map<int, std::pair<Boundary, float>> pin_access_map_;
+  std::map<Boundary, std::map<Boundary, float>> boundary_connection_map_;
   utl::Logger* logger_;
 };
 

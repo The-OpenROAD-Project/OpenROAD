@@ -179,6 +179,11 @@ void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 {
+  _name = nullptr;
+  _use_functional_equivalence = false;
+  _threshold = 0;
+  _no_shift = false;
+  _force_shift = false;
 }
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)

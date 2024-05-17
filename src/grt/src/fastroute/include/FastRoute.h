@@ -233,7 +233,7 @@ class FastRouteCore
   void clearNetRoute(const int netID);
   void initNetAuxVars();
   void clearNets();
-  double dbuToMicrons(int64_t dbu);
+  double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
   NetRouteMap getPlanarRoutes();

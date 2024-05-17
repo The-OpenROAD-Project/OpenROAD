@@ -569,6 +569,11 @@ float Resizer::totalLoad(SteinerTree* tree) const
 
   SteinerPt top_pt = tree->top();
   SteinerPt drvr_pt = tree->drvrPt();
+
+  if (top_pt == SteinerNull) {
+    return 0;
+  }
+
   auto top_loc = tree->location(top_pt);
   auto drvr_loc = tree->location(drvr_pt);
   int length = tree->distance(drvr_pt, top_pt);
@@ -578,10 +583,6 @@ float Resizer::totalLoad(SteinerTree* tree) const
       = dbuToMeters(std::abs(top_loc.y() - drvr_loc.y())) / dbuToMeters(length);
 
   float load = 0.0, max_load = 0.0;
-
-  if (top_pt == SteinerNull) {
-    return 0;
-  }
 
   debugPrint(logger_, RSZ, "resizer_parasitics", 1, "Steiner totalLoad ");
   // For now we will just look at the worst corner for totalLoad
