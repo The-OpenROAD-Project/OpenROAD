@@ -127,7 +127,6 @@ class DbInstanceChildIterator : public InstanceChildIterator
 
  private:
   const dbNetwork* network_;
-  dbModule* module_;
   bool top_;
   dbSet<dbInst>::iterator dbinst_iter_;
   dbSet<dbInst>::iterator dbinst_end_;
@@ -140,11 +139,6 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     : network_(network)
 {
   dbBlock* block = network->block();
-  module_ = block->getTopModule();
-  modinst_iter_ = module_->getModInsts().begin();
-  modinst_end_ = modinst_iter_;
-  dbinst_iter_ = module_->getInsts().begin();
-  dbinst_end_ = dbinst_iter_;
 
   // original code for non hierarchy
   if (!network->hasHierarchy()) {
@@ -157,13 +151,10 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
       top_ = false;
     }
   } else {
+    dbModule* module = nullptr;
     if (instance == network->topInstance() && block) {
-      module_ = block->getTopModule();
+      module = block->getTopModule();
       top_ = true;
-      modinst_iter_ = module_->getModInsts().begin();
-      modinst_end_ = module_->getModInsts().end();
-      dbinst_iter_ = module_->getInsts().begin();
-      dbinst_end_ = module_->getInsts().end();
     } else {
       top_ = false;
       // need to get module for instance
@@ -171,12 +162,14 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
       dbModInst* mod_inst = nullptr;
       network->staToDb(instance, db_inst, mod_inst);
       if (mod_inst) {
-        module_ = mod_inst->getMaster();
-        modinst_iter_ = module_->getModInsts().begin();
-        modinst_end_ = module_->getModInsts().end();
-        dbinst_iter_ = module_->getInsts().begin();
-        dbinst_end_ = module_->getInsts().end();
+        module = mod_inst->getMaster();
       }
+    }
+    if (module) {
+      modinst_iter_ = module->getModInsts().begin();
+      modinst_end_ = module->getModInsts().end();
+      dbinst_iter_ = module->getInsts().begin();
+      dbinst_end_ = module->getInsts().end();
     }
   }
 }
@@ -271,8 +264,10 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
   top_ = (inst == network->topInstance());
   if (top_) {
     dbBlock* block = network->block();
-    bitr_ = block->getBTerms().begin();
-    bitr_end_ = block->getBTerms().end();
+    if (block) {
+      bitr_ = block->getBTerms().begin();
+      bitr_end_ = block->getBTerms().end();
+    }
   } else {
     dbInst* db_inst;
     dbModInst* mod_inst;  // has no inst pins in odb
