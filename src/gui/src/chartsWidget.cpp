@@ -65,6 +65,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
+      previous_mode_(SELECT),
+      prev_filter_index_(0),
 #endif
       label_(new QLabel(this))
 {
@@ -115,16 +117,24 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 #ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
-  if (mode_menu_->currentIndex() == SELECT) {
-    return;
+  if (previous_mode_ == SELECT) {
+    filters_menu_->hide();
+    clearChart();
   }
 
-  clearChart();
+  Mode current_mode = static_cast<Mode>(mode_menu_->currentIndex());
 
-  if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
-    filters_menu_->show();
-    setSlackMode();
+  switch (current_mode) {
+    case SELECT: {
+      return;
+    }
+    case SLACK_HISTOGRAM: {
+      filters_menu_->show();
+      setSlackHistogram();
+    }
   }
+
+  previous_mode_ = current_mode;
 }
 
 void ChartsWidget::setModeMenu()
@@ -140,7 +150,9 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::setStartEndFiltersMenu()
 {
-  filters_menu_->addItem("Filter");
+  filters_menu_->addItem("Select Filter");  // Index 0
+  filters_menu_->addItem("No Filter");      // Index 1
+
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToIO)));
   filters_menu_->addItem(QString::fromStdString(toString(IOToRegister)));
@@ -194,11 +206,11 @@ void ChartsWidget::clearChart()
   axis_y_->hide();
 }
 
-void ChartsWidget::setSlackMode()
+void ChartsWidget::setSlackHistogram()
 {
   SlackHistogramData data = fetchSlackHistogramData();
 
-  if (data.end_point_to_path_type.size() == 0) {
+  if (data.histogram_end_points.size() == 0) {
     logger_->warn(utl::GUI,
                   97,
                   "All pins are unconstrained. Cannot plot histogram. Check if "
@@ -264,11 +276,15 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
       continue;
     }
 
+    HistogramEndPoint histogram_end_point;
+
     const TimingPathNode* end_node = path->getEndStageNode();
     const sta::Pin* pin = end_node->getPinAsSTA();
     float slack = stagui_->getPinSlack(pin);
 
     if (slack != sta::INF) {
+      histogram_end_point.pin = pin;
+
       slack = time_unit->staToUser(slack);
       if (slack < data.min_slack) {
         data.min_slack = slack;
@@ -283,18 +299,19 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
     }
 
     if (start_node->isPinITerm()) {
-      if (end_node->isPinITerm()) {
-        data.end_point_to_path_type[pin] = RegisterToRegister;
-      } else {
-        data.end_point_to_path_type[pin] = RegisterToIO;
+      // Default is register to register.
+      if (end_node->isPinBTerm()) {
+        histogram_end_point.path_type = RegisterToIO;
       }
     } else {
       if (end_node->isPinITerm()) {
-        data.end_point_to_path_type[pin] = IOToRegister;
+        histogram_end_point.path_type = IOToRegister;
       } else {
-        data.end_point_to_path_type[pin] = IOToIO;
+        histogram_end_point.path_type = IOToIO;
       }
     }
+
+    data.histogram_end_points.push_back(histogram_end_point);
   }
 
   if (unconstrained_count != 0 && unconstrained_count != paths.size()) {
@@ -328,15 +345,16 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
     negative_lower = -positive_upper;
     negative_upper = -positive_lower;
 
-    std::vector<const sta::Pin*> pos_bucket, neg_bucket;
+    std::vector<HistogramEndPoint> pos_bucket, neg_bucket;
 
-    for (const auto& [pin, path_type] : data.end_point_to_path_type) {
-      const float slack = time_unit->staToUser(stagui_->getPinSlack(pin));
+    for (const HistogramEndPoint& end_point : data.histogram_end_points) {
+      const float slack
+          = time_unit->staToUser(stagui_->getPinSlack(end_point.pin));
 
       if (negative_lower <= slack && slack < negative_upper) {
-        neg_bucket.push_back(pin);
+        neg_bucket.push_back(end_point);
       } else if (positive_lower <= slack && slack < positive_upper) {
-        pos_bucket.push_back(pin);
+        pos_bucket.push_back(end_point);
       }
     }
 
@@ -364,24 +382,24 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
 
 void ChartsWidget::emitEndPointsInBucket(const int bar_index)
 {
-  std::vector<const sta::Pin*> pins;
+  std::vector<HistogramEndPoint> end_points;
 
   if (buckets_->negative.empty()) {
-    pins = buckets_->positive[bar_index];
+    end_points = buckets_->positive[bar_index];
   } else {
     const int num_of_neg_buckets = static_cast<int>(buckets_->negative.size());
 
     if (bar_index >= num_of_neg_buckets) {
-      pins = buckets_->positive[bar_index - num_of_neg_buckets];
+      end_points = buckets_->positive[bar_index - num_of_neg_buckets];
     } else {
-      pins = buckets_->negative[bar_index];
+      end_points = buckets_->negative[bar_index];
     }
   }
 
-  auto compareSlack = [=](const sta::Pin* a, const sta::Pin* b) {
-    return stagui_->getPinSlack(a) < stagui_->getPinSlack(b);
+  auto compareSlack = [=](const HistogramEndPoint& a, HistogramEndPoint& b) {
+    return stagui_->getPinSlack(a.pin) < stagui_->getPinSlack(b.pin);
   };
-  std::sort(pins.begin(), pins.end(), compareSlack);
+  std::sort(end_points.begin(), end_points.end(), compareSlack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
@@ -389,12 +407,12 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
   int pin_count = 0;
 
   std::set<const sta::Pin*> report_pins;
-  for (const sta::Pin* pin : pins) {
+  for (const HistogramEndPoint& end_point : end_points) {
     if (pin_count == max_number_of_pins) {
       break;
     }
 
-    report_pins.insert(pin);
+    report_pins.insert(end_point.pin);
     ++pin_count;
   }
 
@@ -642,12 +660,55 @@ void HistogramView::mousePressEvent(QMouseEvent* event)
 
 void ChartsWidget::changeStartEndFilter()
 {
-  logger_->report("{}", filters_menu_->currentIndex());
+  // Select
+  if (prev_filter_index_ == 0) {
+    clearBarSets();
+  }
+
+  const int filter_index = filters_menu_->currentIndex();
+
+  // No filter
+  if (filter_index == 1) {
+    // Display Everything;
+  }
+
+  switch (filter_index) {
+    case RegisterToRegister: {
+      break;
+    }
+    case RegisterToIO: {
+      break;
+    }
+    case IOToRegister: {
+      break;
+    }
+    case IOToIO: {
+      break;
+    }
+  }
+
+  prev_filter_index_ = filter_index;
 }
 
-std::string ChartsWidget::toString(StartEndPathType filter)
+void ChartsWidget::clearBarSets()
 {
-  switch (filter) {
+  const auto abstract_series = chart_->series();
+  if (abstract_series.isEmpty()) {
+    return;
+  }
+
+  QStackedBarSeries* series
+      = static_cast<QStackedBarSeries*>(abstract_series.front());
+
+  // Negative set first
+  for (QBarSet* bar_set : series->barSets()) {
+    bar_set->remove(0, bar_set->count());
+  }
+}
+
+std::string ChartsWidget::toString(StartEndPathType path_type)
+{
+  switch (path_type) {
     case RegisterToRegister:
       return "Register to Register";
     case RegisterToIO:

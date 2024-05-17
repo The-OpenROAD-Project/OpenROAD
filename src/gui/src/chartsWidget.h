@@ -63,9 +63,15 @@ enum StartEndPathType
   IOToIO,
 };
 
+struct HistogramEndPoint
+{
+  const sta::Pin* pin = nullptr;
+  StartEndPathType path_type = RegisterToRegister;
+};
+
 struct SlackHistogramData
 {
-  std::map<const sta::Pin*, StartEndPathType> end_point_to_path_type;
+  std::vector<HistogramEndPoint> histogram_end_points;
   std::set<sta::Clock*> clocks;
   float max_slack = 0;
   float min_slack = 0;
@@ -73,8 +79,8 @@ struct SlackHistogramData
 
 struct Buckets
 {
-  std::deque<std::vector<const sta::Pin*>> positive;
-  std::deque<std::vector<const sta::Pin*>> negative;
+  std::deque<std::vector<HistogramEndPoint>> positive;
+  std::deque<std::vector<HistogramEndPoint>> negative;
 };
 
 class HistogramView : public QChartView
@@ -123,7 +129,7 @@ class ChartsWidget : public QDockWidget
 
   static std::string toString(enum StartEndPathType);
 
-  void setSlackMode();
+  void setSlackHistogram();
   void setModeMenu();
   void setStartEndFiltersMenu();
   void setBucketInterval(float max_slack, float min_slack);
@@ -156,6 +162,7 @@ class ChartsWidget : public QDockWidget
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
   int computeYInterval();
+  void clearBarSets();
 
   void clearChart();
 
@@ -172,6 +179,7 @@ class ChartsWidget : public QDockWidget
 
   std::unique_ptr<Buckets> buckets_;
   Mode previous_mode_;
+  int prev_filter_index_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
