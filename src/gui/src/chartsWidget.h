@@ -55,9 +55,17 @@ namespace gui {
 #ifdef ENABLE_CHARTS
 class STAGuiInterface;
 
+enum StartEndPathType
+{
+  RegisterToRegister,
+  RegisterToIO,
+  IOToRegister,
+  IOToIO,
+};
+
 struct SlackHistogramData
 {
-  std::vector<const sta::Pin*> constrained_pins;
+  std::map<const sta::Pin*, StartEndPathType> end_point_to_path_type;
   std::set<sta::Clock*> clocks;
   float max_slack = 0;
   float min_slack = 0;
@@ -113,16 +121,7 @@ class ChartsWidget : public QDockWidget
     SLACK_HISTOGRAM
   };
 
-  enum StartEndFilter
-  {
-    NoFilter,
-    RegisterToRegister,
-    RegisterToIOPin,
-    IOPinToRegister,
-    IOPinToIOPin,
-  };
-
-  static std::string toString(enum StartEndFilter);
+  static std::string toString(enum StartEndPathType);
 
   void setSlackMode();
   void setModeMenu();

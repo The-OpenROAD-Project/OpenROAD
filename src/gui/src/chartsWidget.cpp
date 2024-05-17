@@ -140,11 +140,11 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::setStartEndFiltersMenu()
 {
-  filters_menu_->addItem(QString::fromStdString(toString(NoFilter)));
+  filters_menu_->addItem("Filter");
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
-  filters_menu_->addItem(QString::fromStdString(toString(RegisterToIOPin)));
-  filters_menu_->addItem(QString::fromStdString(toString(IOPinToRegister)));
-  filters_menu_->addItem(QString::fromStdString(toString(IOPinToIOPin)));
+  filters_menu_->addItem(QString::fromStdString(toString(RegisterToIO)));
+  filters_menu_->addItem(QString::fromStdString(toString(IOToRegister)));
+  filters_menu_->addItem(QString::fromStdString(toString(IOToIO)));
 
   connect(filters_menu_,
           qOverload<int>(&QComboBox::currentIndexChanged),
@@ -198,7 +198,7 @@ void ChartsWidget::setSlackMode()
 {
   SlackHistogramData data = fetchSlackHistogramData();
 
-  if (data.constrained_pins.size() == 0) {
+  if (data.end_point_to_path_type.size() == 0) {
     logger_->warn(utl::GUI,
                   97,
                   "All pins are unconstrained. Cannot plot histogram. Check if "
@@ -251,18 +251,25 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
   SlackHistogramData data;
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  gui::StaPins end_points = stagui_->getEndPoints();
+  TimingPathList paths
+      = stagui_->getTimingPaths({}, {}, stagui_->getEndPoints());
   int unconstrained_count = 0;
 
   data.min_slack = std::numeric_limits<float>::max();
 
-  for (const sta::Pin* pin : end_points) {
+  for (const std::unique_ptr<TimingPath>& path : paths) {
+    const TimingPathNode* start_node = path->getStartStageNode();
+
+    if (!start_node) {  // Exclude paths with only clock nodes.
+      continue;
+    }
+
+    const TimingPathNode* end_node = path->getEndStageNode();
+    const sta::Pin* pin = end_node->getPinAsSTA();
     float slack = stagui_->getPinSlack(pin);
 
     if (slack != sta::INF) {
       slack = time_unit->staToUser(slack);
-      data.constrained_pins.push_back(pin);
-
       if (slack < data.min_slack) {
         data.min_slack = slack;
       }
@@ -272,10 +279,25 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
       }
     } else {
       unconstrained_count++;
+      continue;
+    }
+
+    if (start_node->isPinITerm()) {
+      if (end_node->isPinITerm()) {
+        data.end_point_to_path_type[pin] = RegisterToRegister;
+      } else {
+        data.end_point_to_path_type[pin] = RegisterToIO;
+      }
+    } else {
+      if (end_node->isPinITerm()) {
+        data.end_point_to_path_type[pin] = IOToRegister;
+      } else {
+        data.end_point_to_path_type[pin] = IOToIO;
+      }
     }
   }
 
-  if (unconstrained_count != 0 && unconstrained_count != end_points.size()) {
+  if (unconstrained_count != 0 && unconstrained_count != paths.size()) {
     const QString label_message = "Number of unconstrained pins: ";
     QString unconstrained_number;
     unconstrained_number.setNum(unconstrained_count);
@@ -308,7 +330,7 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
 
     std::vector<const sta::Pin*> pos_bucket, neg_bucket;
 
-    for (const auto& pin : data.constrained_pins) {
+    for (const auto& [pin, path_type] : data.end_point_to_path_type) {
       const float slack = time_unit->staToUser(stagui_->getPinSlack(pin));
 
       if (negative_lower <= slack && slack < negative_upper) {
@@ -623,19 +645,17 @@ void ChartsWidget::changeStartEndFilter()
   logger_->report("{}", filters_menu_->currentIndex());
 }
 
-std::string ChartsWidget::toString(StartEndFilter filter)
+std::string ChartsWidget::toString(StartEndPathType filter)
 {
   switch (filter) {
-    case NoFilter:
-      return "No Filter";
     case RegisterToRegister:
       return "Register to Register";
-    case RegisterToIOPin:
-      return "Register to IO Pin";
-    case IOPinToRegister:
-      return "IO Pin to Register";
-    case IOPinToIOPin:
-      return "IO Pin to IO Pin";
+    case RegisterToIO:
+      return "Register to IO";
+    case IOToRegister:
+      return "IO to Register";
+    case IOToIO:
+      return "IO to IO";
   }
 
   return "";
