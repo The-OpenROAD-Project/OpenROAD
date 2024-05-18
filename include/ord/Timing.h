@@ -63,6 +63,10 @@ class Vertex;
 class Pin;
 }  // namespace sta
 
+namespace rsz {
+  class Resizer;
+}
+
 namespace ord {
 
 class Design;

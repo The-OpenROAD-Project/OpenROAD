@@ -49,6 +49,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
+#include "rsz/Resizer.hh"
 
 namespace ord {
 
@@ -387,23 +388,9 @@ float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
 
 void Timing::makeEquivCells()
 {
-  sta::Network* network = cmdLinkedNetwork();
-  sta::LibertyLibrarySeq libs;
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
-      network->libertyLibraryIterator());
-  sta::dbSta* sta = getSta();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    // massive kludge until makeEquivCells is fixed to only incldue link cells
-    sta::LibertyCellIterator cell_iter(lib);
-    if (cell_iter.hasNext()) {
-      sta::LibertyCell* cell = cell_iter.next();
-      if (network->findLibertyCell(cell->name()) == cell) {
-        libs.emplace_back(lib);
-      }
-    }
-  }
-  sta->makeEquivCells(&libs, nullptr);
+  auto app = OpenRoad::openRoad();
+  rsz::Resizer* resizer = app->getResizer();
+  resizer->makeEquivCells();
 }
 
 std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
