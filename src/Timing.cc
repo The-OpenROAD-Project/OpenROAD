@@ -41,15 +41,16 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "ord/Timing.h"
 #include "sta/Search.hh"
-//#include "ord/Tech.h"
+// #include "ord/Tech.h"
 #include "ord/Design.h"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
-#include "rsz/Resizer.hh"
 
 namespace ord {
 
