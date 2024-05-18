@@ -41,7 +41,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "ord/Timing.h"
 #include "sta/Search.hh"
 // #include "ord/Tech.h"
 #include "ord/Design.h"
