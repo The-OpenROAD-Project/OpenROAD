@@ -404,9 +404,8 @@ std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
     sta::LibertyCellSeq* equiv_cells = sta->equivCells(libcell);
     if (equiv_cells) {
       for (sta::LibertyCell* equiv_cell : *equiv_cells) {
-        odb::dbMaster* master_
-            = reinterpret_cast<odb::dbMaster*>(equiv_cell->extCell());
-        masterSeq.emplace_back(master_);
+        odb::dbMaster* equiv_master = network->staToDb(equiv_cell);
+        masterSeq.emplace_back(equiv_master);
       }
     } else {
       masterSeq.emplace_back(master);
