@@ -80,6 +80,7 @@ get_db_block();
 
 %template(Corners) std::vector<sta::Corner*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
+%template(Masters) std::vector<odb::dbMaster*>;
 
 %include "Exception-py.i"
 %include "ord/Tech.h"
