@@ -28,10 +28,10 @@
 
 #pragma once
 
-#define GRGRIDGRAPHHISTCOSTSIZE 8
-#define GRSUPPLYSIZE 8
-#define GRDEMANDSIZE 16
-#define GRFRACSIZE 1
+constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
+constexpr int GRSUPPLYSIZE = 8;
+constexpr int GRDEMANDSIZE = 16;
+constexpr int GRFRACSIZE = 1;
 
 #include <iostream>
 #include <map>

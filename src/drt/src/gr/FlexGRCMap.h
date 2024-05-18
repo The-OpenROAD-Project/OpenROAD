@@ -28,10 +28,10 @@
 
 #pragma once
 
-#define CMAPHISTSIZE 8
-#define CMAPSUPPLYSIZE 8
-#define CMAPDEMANDSIZE 16
-#define CMAPFRACSIZE 1
+constexpr int CMAPHISTSIZE = 8;
+constexpr int CMAPSUPPLYSIZE = 8;
+constexpr int CMAPDEMANDSIZE = 16;
+constexpr int CMAPFRACSIZE = 1;
 
 #include "frBaseTypes.h"
 #include "frDesign.h"
