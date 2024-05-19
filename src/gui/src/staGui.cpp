@@ -551,6 +551,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
+  std::lock_guard guard(rendering_);
   if (path_ == nullptr) {
     return;
   }
@@ -559,7 +560,6 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
-  std::lock_guard guard(rendering_);
   const bool capture_path = checkDisplayControl(capture_clock_label_);
   drawNodesList(&path_->getCaptureNodes(),
                 painter,

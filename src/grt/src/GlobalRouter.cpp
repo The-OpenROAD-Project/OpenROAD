@@ -259,25 +259,31 @@ void GlobalRouter::globalRoute(bool save_guides,
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
   } else {
-    if (end_incremental) {
-      updateDirtyRoutes();
-      grouter_cbk_->removeOwner();
-      delete grouter_cbk_;
-      grouter_cbk_ = nullptr;
-    } else {
-      clear();
-      block_ = db_->getChip()->getBlock();
+    try {
+      if (end_incremental) {
+        updateDirtyRoutes();
+        grouter_cbk_->removeOwner();
+        delete grouter_cbk_;
+        grouter_cbk_ = nullptr;
+      } else {
+        clear();
+        block_ = db_->getChip()->getBlock();
 
-      int min_layer, max_layer;
-      getMinMaxLayer(min_layer, max_layer);
+        int min_layer, max_layer;
+        getMinMaxLayer(min_layer, max_layer);
 
-      std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+        std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-      if (verbose_) {
-        reportResources();
+        if (verbose_) {
+          reportResources();
+        }
+
+        routes_ = findRouting(nets, min_layer, max_layer);
       }
-
-      routes_ = findRouting(nets, min_layer, max_layer);
+    } catch (...) {
+      updateDbCongestion();
+      saveCongestion();
+      throw;
     }
 
     updateDbCongestion();
