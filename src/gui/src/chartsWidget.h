@@ -54,6 +54,7 @@ class Clock;
 namespace gui {
 #ifdef ENABLE_CHARTS
 class STAGuiInterface;
+class TimingPathNode;
 
 enum StartEndPathType
 {
@@ -146,7 +147,11 @@ class ChartsWidget : public QDockWidget
     precision_count_ = precision_count;
   }
 
-  SlackHistogramData fetchSlackHistogramData() const;
+  SlackHistogramData fetchSlackHistogramData();
+
+  void setEndPointPathType(HistogramEndPoint& end_point,
+                           const TimingPathNode* start_node,
+                           const TimingPathNode* end_node);
   void populateBuckets(const SlackHistogramData& data);
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
   void populateBarSets(QBarSet& neg_set,

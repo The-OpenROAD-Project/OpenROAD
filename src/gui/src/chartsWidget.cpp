@@ -242,7 +242,7 @@ void ChartsWidget::setSlackHistogram()
   chart_->setTitle("Endpoint Slack");
 }
 
-SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
+SlackHistogramData ChartsWidget::fetchSlackHistogramData()
 {
   SlackHistogramData data;
 
@@ -287,18 +287,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
       continue;
     }
 
-    // Default filter is register to register so we don't need to check it.
-    if (start_node->isPinITerm()) {
-      if (end_node->isPinBTerm()) {
-        histogram_end_point.path_type = RegisterToIO;
-      }
-    } else {
-      if (end_node->isPinITerm()) {
-        histogram_end_point.path_type = IOToRegister;
-      } else {
-        histogram_end_point.path_type = IOToIO;
-      }
-    }
+    setEndPointPathType(histogram_end_point, start_node, end_node);
 
     data.histogram_end_points.push_back(histogram_end_point);
   }
@@ -315,6 +304,24 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
   }
 
   return data;
+}
+
+void ChartsWidget::setEndPointPathType(HistogramEndPoint& end_point,
+                                       const TimingPathNode* start_node,
+                                       const TimingPathNode* end_node)
+{
+  // Default filter is register to register so we don't need to check it.
+  if (start_node->isPinITerm()) {
+    if (end_node->isPinBTerm()) {
+      end_point.path_type = RegisterToIO;
+    }
+  } else {
+    if (end_node->isPinITerm()) {
+      end_point.path_type = IOToRegister;
+    } else {
+      end_point.path_type = IOToIO;
+    }
+  }
 }
 
 // We define the slack interval as being inclusive in its lower
