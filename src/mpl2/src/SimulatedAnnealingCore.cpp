@@ -642,6 +642,8 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
 
   // revert centralization
   if (calNormCost() > pre_cost) {
+    centralization_was_reverted_ = true;
+
     for (int& id : pos_seq_) {
       macros_[id].setX(clusters_locations[id].first);
       macros_[id].setY(clusters_locations[id].second);
