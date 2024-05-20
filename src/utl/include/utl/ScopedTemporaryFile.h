@@ -35,12 +35,9 @@
 #include <limits.h>
 
 #include <cstdio>
-
-#include <filesystem>
+#include <fstream>
 
 #include "utl/Logger.h"
-
-namespace fs = std::filesystem;
 
 namespace utl {
 
@@ -70,6 +67,33 @@ class ScopedTemporaryFile
   FILE* file_;
 };
 
-std::string createTmpFileName(const char* filename);
+class StreamHandler
+{
+ public:
+  StreamHandler(const char* filename,
+                std::ios_base::iostate flag,
+                std::ios_base::openmode mode = std::ios_base::out);
+  ~StreamHandler();
+  std::ofstream& getStream();
+
+ private:
+  std::string filename_;
+  std::ios_base::iostate flag_;
+  std::ios_base::openmode mode_;
+  std::ofstream os_;
+};
+
+class FileHandler
+{
+ public:
+  FileHandler(const char* filename, const char* mode = "w");
+  ~FileHandler();
+  FILE* getFile();
+
+ private:
+  std::string filename_;
+  const char* mode_;
+  FILE* file_;
+};
 
 }  // namespace utl

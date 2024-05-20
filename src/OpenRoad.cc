@@ -38,7 +38,6 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
-#include <filesystem>
 
 #include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
@@ -86,8 +85,6 @@
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/ScopedTemporaryFile.h"
-
-namespace fs = std::filesystem;
 
 namespace sta {
 extern const char* openroad_swig_tcl_inits[];
@@ -359,17 +356,15 @@ static odb::defout::Version stringToDefVersion(const string& version)
 
 void OpenRoad::writeDef(const char* filename, const string& version)
 {
-  std::string tmp_filename = utl::createTmpFileName(filename);
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
     if (block) {
       odb::defout def_writer(logger_);
       def_writer.setVersion(stringToDefVersion(version));
-      def_writer.writeBlock(block, tmp_filename.c_str());
+      def_writer.writeBlock(block, filename);
     }
   }
-  fs::rename(tmp_filename, filename);
 }
 
 void OpenRoad::writeAbstractLef(const char* filename,
@@ -384,21 +379,15 @@ void OpenRoad::writeAbstractLef(const char* filename,
   if (!block) {
     logger_->error(ORD, 53, "No block is loaded.");
   }
-  std::string tmp_filename = utl::createTmpFileName(filename);
-
-  std::ofstream os;
-  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-  os.open(tmp_filename);
-  odb::lefout writer(logger_, os);
+  utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+  odb::lefout writer(logger_, stream_handler.getStream());
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);
   writer.writeAbstractLef(block);
-  fs::rename(tmp_filename, filename);
 }
 
 void OpenRoad::writeLef(const char* filename)
 {
-  std::string tmp_filename = utl::createTmpFileName(filename);
   auto libs = db_->getLibs();
   int num_libs = libs.size();
   if (num_libs > 0) {
@@ -417,29 +406,20 @@ void OpenRoad::writeLef(const char* filename)
         } else {
           name += "_" + std::to_string(cnt);
         }
-        tmp_filename = utl::createTmpFileName(name.c_str());
-        std::ofstream os;
-        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-        os.open(tmp_filename);
-        odb::lefout lef_writer(logger_, os);
+        utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeLib(lib);
       } else {
-        std::ofstream os;
-        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-        os.open(tmp_filename);
-        odb::lefout lef_writer(logger_, os);
+        utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeTechAndLib(lib);
       }
-      fs::rename(tmp_filename, name);
       ++cnt;
     }
   } else if (db_->getTech()) {
-    std::ofstream os;
-    os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-    os.open(tmp_filename);
-    odb::lefout lef_writer(logger_, os);
+    utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+    odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeTech(db_->getTech());
-    fs::rename(tmp_filename, filename);
   }
 }
 
@@ -482,15 +462,10 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  std::string tmp_filename = utl::createTmpFileName(filename);
+  utl::StreamHandler stream_handler(
+      filename, std::ofstream::badbit | std::ios::eofbit, std::ios::binary);
 
-  std::ofstream stream;
-  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                    | std::ios::eofbit);
-  stream.open(tmp_filename, std::ios::binary);
-
-  db_->write(stream);
-  fs::rename(tmp_filename, filename);
+  db_->write(stream_handler.getStream());
 }
 
 void OpenRoad::diffDbs(const char* filename1,

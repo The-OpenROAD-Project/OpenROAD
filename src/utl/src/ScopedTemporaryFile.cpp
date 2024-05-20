@@ -2,6 +2,9 @@
 
 #include <unistd.h>
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 namespace utl {
 
 ScopedTemporaryFile::ScopedTemporaryFile(Logger* logger) : logger_(logger)
@@ -33,19 +36,61 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-std::string createTmpFileName(const char* filename)
+StreamHandler::StreamHandler(const char* filename,
+                             std::ios_base::iostate flag,
+                             std::ios_base::openmode mode)
+    : filename_(filename), flag_(flag), mode_(mode)
 {
-  std::time_t now = std::time(nullptr);
-  std::tm* tm = std::gmtime(&now);
-  char timestamp[20];
-  std::strftime(timestamp, sizeof(timestamp), "%Y%m%dT%H%M%SZ", tm);
+  if (fs::exists(filename_)) {
+    fs::remove(filename_);
+  }
+  std::string tmp_filename = filename_ + ".tmp";
+  if (fs::exists(tmp_filename)) {
+    fs::remove(tmp_filename);
+  }
+  os_.exceptions(flag | std::ofstream::failbit);
+  os_.open(tmp_filename, mode);
+}
 
-  fs::path filepath = filename;
-  fs::path directory = filepath.parent_path();
-  std::string base_filename = filepath.filename().string();
-  // Create temporary filename with timestamp in /tmp directory
-  fs::path tmp_dir = fs::temp_directory_path();
-  return  (tmp_dir / (std::string(timestamp) + "_" + base_filename)).string();
+StreamHandler::~StreamHandler()
+{
+  if (os_.is_open()) {
+    os_.close();
+  }
+  std::string tmp_filename = filename_ + ".tmp";
+  fs::rename(tmp_filename, filename_);
+}
+
+std::ofstream& StreamHandler::getStream()
+{
+  return os_;
+}
+
+FileHandler::FileHandler(const char* filename, const char* mode)
+    : filename_(filename), mode_(mode)
+{
+  if (fs::exists(filename_)) {
+    fs::remove(filename_);
+  }
+  std::string tmp_filename = filename_ + ".tmp";
+  file = fopen(tmp_filename.c_str(), mode);
+  if (!file) {
+    throw std::runtime_error("Failed to open temporary file");
+  }
+}
+
+FileHandler::~FileHandler()
+{
+  if (file_) {
+    fclose(file_);
+  }
+  std::string tmp_filename = filename_ + ".tmp";
+  fs::rename(tmp_filename, filename_);
+}
+
+FILE* FileHandler::getFile()
+{
+  return file_;
 }
 
 }  // namespace utl
