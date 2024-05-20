@@ -65,7 +65,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
-      prev_filter_index_(2),  // start with no filter
+      prev_filter_index_(1),  // start with no filter
 #endif
       label_(new QLabel(this))
 {
