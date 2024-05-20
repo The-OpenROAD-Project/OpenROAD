@@ -47,7 +47,6 @@
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
-#include "staGuiInterface.h"
 #endif
 
 namespace gui {
@@ -66,6 +65,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
       prev_filter_index_(0),  // start with no filter
+      max_slack_(0.0f),
+      min_slack_(0.0f),
 #endif
       label_(new QLabel(this))
 {
@@ -141,7 +142,7 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::setStartEndFiltersMenu()
 {
-  filters_menu_->addItem("No Filter"); // Index 0
+  filters_menu_->addItem("No Filter");  // Index 0
 
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToIO)));
@@ -200,7 +201,7 @@ void ChartsWidget::setSlackHistogram()
 {
   SlackHistogramData data = fetchSlackHistogramData();
 
-  if (data.histogram_end_points.size() == 0) {
+  if (data.constrained_pins.size() == 0) {
     logger_->warn(utl::GUI,
                   97,
                   "All pins are unconstrained. Cannot plot histogram. Check if "
@@ -208,8 +209,9 @@ void ChartsWidget::setSlackHistogram()
     return;
   }
 
-  setBucketInterval(data.max_slack, data.min_slack);
-  populateBuckets(data);
+  setBucketInterval();
+  populateBuckets(data.constrained_pins);
+
   setNegativeCountOffset(static_cast<int>(buckets_->negative.size()));
 
   QBarSet* neg_set = new QBarSet("");
@@ -245,58 +247,10 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
 {
   SlackHistogramData data;
 
-  gui::StaPins end_points = stagui_->getEndPoints();
-  const int initial_max_path_count = stagui_->getMaxPathCount();
-  stagui_->setMaxPathCount(end_points.size());
+  StaPins endpoints = stagui_->getEndPoints();
+  fetchConstrainedPins(endpoints, true);
 
-  TimingPathList paths = stagui_->getTimingPaths({}, {}, end_points);
-
-  stagui_->setMaxPathCount(initial_max_path_count);
-
-  int unconstrained_count = 0;
-  data.min_slack = std::numeric_limits<float>::max();
-  sta::Unit* time_unit = sta_->units()->timeUnit();
-
-  for (const std::unique_ptr<TimingPath>& path : paths) {
-    const TimingPathNode* start_node = path->getStartStageNode();
-
-    if (!start_node) {  // Exclude paths with only clock nodes.
-      continue;
-    }
-
-    HistogramEndPoint histogram_end_point;
-
-    const TimingPathNode* end_node = path->getEndStageNode();
-    const sta::Pin* pin = end_node->getPinAsSTA();
-    float slack = stagui_->getPinSlack(pin);
-
-    if (slack != sta::INF) {
-      histogram_end_point.pin = pin;
-
-      slack = time_unit->staToUser(slack);
-      if (slack < data.min_slack) {
-        data.min_slack = slack;
-      }
-
-      if (slack > data.max_slack) {
-        data.max_slack = slack;
-      }
-    } else {
-      unconstrained_count++;
-      continue;
-    }
-
-    setEndPointPathType(histogram_end_point, start_node, end_node);
-
-    data.histogram_end_points.push_back(histogram_end_point);
-  }
-
-  if (unconstrained_count != 0 && unconstrained_count != paths.size()) {
-    const QString label_message = "Number of unconstrained pins: ";
-    QString unconstrained_number;
-    unconstrained_number.setNum(unconstrained_count);
-    label_->setText(label_message + unconstrained_number);
-  }
+  data.constrained_pins = endpoints;
 
   for (std::unique_ptr<gui::ClockTree>& clk_tree : stagui_->getClockTrees()) {
     data.clocks.insert(clk_tree.get()->getClock());
@@ -305,27 +259,46 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
   return data;
 }
 
-void ChartsWidget::setEndPointPathType(HistogramEndPoint& end_point,
-                                       const TimingPathNode* start_node,
-                                       const TimingPathNode* end_node)
+void ChartsWidget::fetchConstrainedPins(StaPins& endpoints,
+                                        const bool set_mix_max)
 {
-  // Default filter is register to register so we don't need to check it.
-  if (start_node->isPinITerm()) {
-    if (end_node->isPinBTerm()) {
-      end_point.path_type = RegisterToIO;
-    }
-  } else {
-    if (end_node->isPinITerm()) {
-      end_point.path_type = IOToRegister;
+  const int all_endpoints_count = endpoints.size();
+
+  int unconstrained_count = 0;
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+
+  for (const sta::Pin* pin : endpoints) {
+    float slack = stagui_->getPinSlack(pin);
+
+    if (slack != sta::INF) {
+      slack = time_unit->staToUser(slack);
+
+      if (set_mix_max) {
+        if (slack < min_slack_) {
+          min_slack_ = slack;
+        }
+
+        if (slack > max_slack_) {
+          max_slack_ = slack;
+        }
+      }
     } else {
-      end_point.path_type = IOToIO;
+      endpoints.erase(pin);
+      unconstrained_count++;
     }
+  }
+
+  if (unconstrained_count != 0 && unconstrained_count != all_endpoints_count) {
+    const QString label_message = "Number of unconstrained pins: ";
+    QString unconstrained_number;
+    unconstrained_number.setNum(unconstrained_count);
+    label_->setText(label_message + unconstrained_number);
   }
 }
 
 // We define the slack interval as being inclusive in its lower
 // boundary and exclusive in upper: [lower upper)
-void ChartsWidget::populateBuckets(const SlackHistogramData& data)
+void ChartsWidget::populateBuckets(const StaPins& endpoints)
 {
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
@@ -340,22 +313,21 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
     negative_lower = -positive_upper;
     negative_upper = -positive_lower;
 
-    std::vector<HistogramEndPoint> pos_bucket, neg_bucket;
+    std::vector<const sta::Pin*> pos_bucket, neg_bucket;
 
-    for (const HistogramEndPoint& end_point : data.histogram_end_points) {
-      const float slack
-          = time_unit->staToUser(stagui_->getPinSlack(end_point.pin));
+    for (const sta::Pin* pin : endpoints) {
+      const float slack = time_unit->staToUser(stagui_->getPinSlack(pin));
 
       if (negative_lower <= slack && slack < negative_upper) {
-        neg_bucket.push_back(end_point);
+        neg_bucket.push_back(pin);
       } else if (positive_lower <= slack && slack < positive_upper) {
-        pos_bucket.push_back(end_point);
+        pos_bucket.push_back(pin);
       }
     }
 
     // Push zeros - meaning no slack values in the current range - only in
     // situations where the bucket is in a valid position of the queue.
-    if (data.min_slack < negative_upper) {
+    if (min_slack_ < negative_upper) {
       buckets_->negative.push_front(neg_bucket);
 
       if (largest_slack_count_ < neg_bucket.size()) {
@@ -363,7 +335,7 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
       }
     }
 
-    if (data.max_slack >= positive_lower) {
+    if (max_slack_ >= positive_lower) {
       buckets_->positive.push_back(pos_bucket);
 
       if (largest_slack_count_ < pos_bucket.size()) {
@@ -372,29 +344,29 @@ void ChartsWidget::populateBuckets(const SlackHistogramData& data)
     }
 
     ++bucket_index;
-  } while (data.min_slack < negative_upper || data.max_slack >= positive_upper);
+  } while (min_slack_ < negative_upper || max_slack_ >= positive_upper);
 }
 
 void ChartsWidget::emitEndPointsInBucket(const int bar_index)
 {
-  std::vector<HistogramEndPoint> end_points;
+  std::vector<const sta::Pin*> endpoints;
 
   if (buckets_->negative.empty()) {
-    end_points = buckets_->positive[bar_index];
+    endpoints = buckets_->positive[bar_index];
   } else {
     const int num_of_neg_buckets = static_cast<int>(buckets_->negative.size());
 
     if (bar_index >= num_of_neg_buckets) {
-      end_points = buckets_->positive[bar_index - num_of_neg_buckets];
+      endpoints = buckets_->positive[bar_index - num_of_neg_buckets];
     } else {
-      end_points = buckets_->negative[bar_index];
+      endpoints = buckets_->negative[bar_index];
     }
   }
 
-  auto compareSlack = [=](const HistogramEndPoint& a, HistogramEndPoint& b) {
-    return stagui_->getPinSlack(a.pin) < stagui_->getPinSlack(b.pin);
+  auto compareSlack = [=](const sta::Pin*& a, const sta::Pin*& b) {
+    return stagui_->getPinSlack(a) < stagui_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compareSlack);
+  std::sort(endpoints.begin(), endpoints.end(), compareSlack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
@@ -402,34 +374,33 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
   int pin_count = 0;
 
   std::set<const sta::Pin*> report_pins;
-  for (const HistogramEndPoint& end_point : end_points) {
+  for (const sta::Pin* pin : endpoints) {
     if (pin_count == max_number_of_pins) {
       break;
     }
 
-    report_pins.insert(end_point.pin);
+    report_pins.insert(pin);
     ++pin_count;
   }
 
   emit endPointsToReport(report_pins);
 }
 
-void ChartsWidget::setBucketInterval(const float max_slack,
-                                     const float min_slack)
+void ChartsWidget::setBucketInterval()
 {
   const float exact_interval
-      = (max_slack - min_slack) / default_number_of_buckets_;
+      = (max_slack_ - min_slack_) / default_number_of_buckets_;
 
   int snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
   const int new_number_of_buckets
-      = computeNumberofBuckets(snap_interval, max_slack, min_slack);
+      = computeNumberofBuckets(snap_interval, max_slack_, min_slack_);
   const int minimum_number_of_buckets = 8;
 
   if (new_number_of_buckets < minimum_number_of_buckets) {
     const float minimum_interval
-        = (max_slack - min_slack) / minimum_number_of_buckets;
+        = (max_slack_ - min_slack_) / minimum_number_of_buckets;
 
     float decimal_snap_interval
         = computeSnapBucketDecimalInterval(minimum_interval);
@@ -612,6 +583,9 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
 
 void ChartsWidget::changeStartEndFilter()
 {
+  buckets_->negative.clear();
+  buckets_->positive.clear();
+
   clearBarSets();
 
   QStackedBarSeries* series
@@ -623,33 +597,92 @@ void ChartsWidget::changeStartEndFilter()
 
   const int filter_index = filters_menu_->currentIndex();
 
-  if (filter_index == 0) {  // "No Filter"
-    populateBarSets(*neg_set, *pos_set);
-  } else {
-    const int no_filter_index_offset = 1;
-    const int path_type = filter_index - no_filter_index_offset;
+  StaPins endpoints = stagui_->getEndPoints();
+  fetchConstrainedPins(endpoints, false);
 
-    switch (path_type) {
-      case RegisterToRegister: {
-        populateBarSets(*neg_set, *pos_set, RegisterToRegister);
-        break;
-      }
-      case RegisterToIO: {
-        populateBarSets(*neg_set, *pos_set, RegisterToIO);
-        break;
-      }
-      case IOToRegister: {
-        populateBarSets(*neg_set, *pos_set, IOToRegister);
-        break;
-      }
-      case IOToIO: {
-        populateBarSets(*neg_set, *pos_set, IOToIO);
-        break;
-      }
+  if (filter_index > 0) {
+    const int no_filter_index_offset = 1;
+    const StartEndPathType path_type
+        = static_cast<StartEndPathType>(filter_index - no_filter_index_offset);
+
+    TimingPathList paths = fetchPathsBasedOnStartEnd(endpoints, path_type);
+    endpoints = getEndPoints(paths);
+  }
+
+  populateBuckets(endpoints);
+  populateBarSets(*neg_set, *pos_set);
+
+  prev_filter_index_ = filter_index;
+}
+
+TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
+    const StaPins& endpoints,
+    const StartEndPathType path_type)
+{
+  gui::StaPins iterms;
+  gui::StaPins bterms;
+
+  for (const sta::Pin* pin : endpoints) {
+    const std::unique_ptr<TimingPathNode>& node = stagui_->getTimingNode(pin);
+
+    if (!node) {
+      continue;
+    }
+
+    if (node->isPinBTerm()) {
+      bterms.insert(pin);
+    }
+
+    if (node->isPinITerm()) {
+      iterms.insert(pin);
     }
   }
 
-  prev_filter_index_ = filter_index;
+  const int initial_max_path_count = stagui_->getMaxPathCount();
+  const bool one_path_per_end_point = stagui_->isOnePathPerEndpoint();
+
+  // Set max path count based on the total number of registers.
+  stagui_->setMaxPathCount(iterms.size());
+  stagui_->setOnePathPerEndpoint(true);
+
+  TimingPathList paths;
+
+  // TO DO: This query is not working
+
+  switch (path_type) {
+    case RegisterToRegister: {
+      paths = stagui_->getTimingPaths(iterms, {}, iterms);
+      break;
+    }
+    case RegisterToIO: {
+      paths = stagui_->getTimingPaths(iterms, {}, bterms);
+      break;
+    }
+    case IOToRegister: {
+      paths = stagui_->getTimingPaths(bterms, {}, iterms);
+      break;
+    }
+    case IOToIO: {
+      paths = stagui_->getTimingPaths(bterms, {}, bterms);
+      break;
+    }
+  }
+
+  stagui_->setMaxPathCount(initial_max_path_count);
+  stagui_->setOnePathPerEndpoint(one_path_per_end_point);
+
+  return paths;
+}
+
+StaPins ChartsWidget::getEndPoints(const TimingPathList& paths)
+{
+  StaPins endpoints;
+
+  for (const std::unique_ptr<TimingPath>& path : paths) {
+    endpoints.insert(path->getEndStageNode()->getPinAsSTA());
+  }
+
+  return endpoints;
 }
 
 void ChartsWidget::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
@@ -662,36 +695,6 @@ void ChartsWidget::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
     neg_set << 0;
     pos_set << buckets_->positive[i].size();
   }
-}
-
-void ChartsWidget::populateBarSets(QBarSet& neg_set,
-                                   QBarSet& pos_set,
-                                   const StartEndPathType path_type)
-{
-  for (const std::vector<HistogramEndPoint>& neg_bucket : buckets_->negative) {
-    neg_set << getEndPointsInBucket(neg_bucket, path_type);
-    pos_set << 0;
-  }
-
-  for (const std::vector<HistogramEndPoint>& pos_bucket : buckets_->positive) {
-    neg_set << 0;
-    pos_set << getEndPointsInBucket(pos_bucket, path_type);
-  }
-}
-
-int ChartsWidget::getEndPointsInBucket(
-    const std::vector<HistogramEndPoint>& end_points_in_bucket,
-    StartEndPathType path_type) const
-{
-  int same_path_type_end_points_count = 0;
-
-  for (const HistogramEndPoint& end_point : end_points_in_bucket) {
-    if (end_point.path_type == path_type) {
-      ++same_path_type_end_points_count;
-    }
-  }
-
-  return same_path_type_end_points_count;
 }
 
 void ChartsWidget::clearBarSets()

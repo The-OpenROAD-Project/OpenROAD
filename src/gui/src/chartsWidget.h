@@ -43,6 +43,7 @@
 #include <memory>
 
 #include "gui/gui.h"
+#include "staGuiInterface.h"
 
 namespace sta {
 class Pin;
@@ -53,8 +54,6 @@ class Clock;
 
 namespace gui {
 #ifdef ENABLE_CHARTS
-class STAGuiInterface;
-class TimingPathNode;
 
 enum StartEndPathType
 {
@@ -64,24 +63,16 @@ enum StartEndPathType
   IOToIO,
 };
 
-struct HistogramEndPoint
-{
-  const sta::Pin* pin = nullptr;
-  StartEndPathType path_type = RegisterToRegister;
-};
-
 struct SlackHistogramData
 {
-  std::vector<HistogramEndPoint> histogram_end_points;
+  StaPins constrained_pins;
   std::set<sta::Clock*> clocks;
-  float max_slack = 0;
-  float min_slack = 0;
 };
 
 struct Buckets
 {
-  std::deque<std::vector<HistogramEndPoint>> positive;
-  std::deque<std::vector<HistogramEndPoint>> negative;
+  std::deque<std::vector<const sta::Pin*>> positive;
+  std::deque<std::vector<const sta::Pin*>> negative;
 };
 
 class HistogramView : public QChartView
@@ -133,7 +124,7 @@ class ChartsWidget : public QDockWidget
   void setSlackHistogram();
   void setModeMenu();
   void setStartEndFiltersMenu();
-  void setBucketInterval(float max_slack, float min_slack);
+  void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {
     bucket_interval_ = bucket_interval;
@@ -148,18 +139,12 @@ class ChartsWidget : public QDockWidget
   }
 
   SlackHistogramData fetchSlackHistogramData();
-
-  void setEndPointPathType(HistogramEndPoint& end_point,
-                           const TimingPathNode* start_node,
-                           const TimingPathNode* end_node);
-  void populateBuckets(const SlackHistogramData& data);
+  void fetchConstrainedPins(StaPins& endpoints, bool set_mix_max);
+  TimingPathList fetchPathsBasedOnStartEnd(const StaPins& endpoints,
+                                           const StartEndPathType path_type);
+  StaPins getEndPoints(const TimingPathList& paths);
+  void populateBuckets(const StaPins& endpoints);
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
-  void populateBarSets(QBarSet& neg_set,
-                       QBarSet& pos_set,
-                       const StartEndPathType path_type);
-  int getEndPointsInBucket(
-      const std::vector<HistogramEndPoint>& end_points_in_bucket,
-      StartEndPathType path_type) const;
 
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
@@ -191,6 +176,9 @@ class ChartsWidget : public QDockWidget
 
   std::unique_ptr<Buckets> buckets_;
   int prev_filter_index_;
+
+  float max_slack_;
+  float min_slack_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.

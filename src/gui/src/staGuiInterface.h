@@ -199,8 +199,8 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
-  const TimingPathNode* getStartStageNode() const;
-  const TimingPathNode* getEndStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,

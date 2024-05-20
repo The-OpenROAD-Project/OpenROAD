@@ -438,23 +438,19 @@ std::string TimingPath::getEndStageName() const
   return path_nodes_.back()->getNodeName();
 }
 
-const TimingPathNode* TimingPath::getStartStageNode() const
+const std::unique_ptr<TimingPathNode>& TimingPath::getStartStageNode() const
 {
   const int start_idx = getClkPathEndIndex() + 1;
   if (start_idx >= path_nodes_.size()) {
-    return nullptr;
+    return path_nodes_.front();
   }
 
-  return path_nodes_[start_idx]->getInstanceNode();
+  return path_nodes_[start_idx];
 }
 
-const TimingPathNode* TimingPath::getEndStageNode() const
+const std::unique_ptr<TimingPathNode>& TimingPath::getEndStageNode() const
 {
-  if (path_nodes_.empty()) {
-    return nullptr;
-  }
-
-  return path_nodes_.back()->getInstanceNode();
+  return path_nodes_.back();
 }
 
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
