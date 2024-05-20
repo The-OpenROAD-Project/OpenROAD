@@ -1635,31 +1635,11 @@ Polygon rectToPolygon(const odb::Rect& rect)
 std::vector<int> findNodesWithIntersection(const GraphNodeVector& graph_nodes,
                                            const Polygon& pol)
 {
-  PolygonSet objs;
-  objs += pol;
-  int last_size = 1;
-  int index = 0;
-  std::vector<int> ids;
-  for (const auto& node : graph_nodes) {
-    objs += node->pol;
-    if (last_size == objs.size()) {
-      ids.push_back(index);
-    }
-    index++;
-    last_size = objs.size();
-  }
-  return ids;
-}
-
-// used to find the indeces of the elements which intersect with the element pol
-std::vector<int> findNodesWithIntersection2(const GraphNodeVector& graph_nodes,
-                                           const Polygon& pol)
-{
   // expand object by 1
   PolygonSet obj;
   obj += pol;
   obj += 1;
-  Polygon & scaled_pol = obj[0];
+  Polygon& scaled_pol = obj[0];
   int index = 0;
   std::vector<int> ids;
   for (const auto& node : graph_nodes) {
@@ -1736,14 +1716,14 @@ void AntennaChecker::saveGates(dbNet* db_net)
         // convert rect -> polygon
         Polygon pin_pol = rectToPolygon(pin_rect);
         // if has wire on same layer connect to pin
-        ids = findNodesWithIntersection2(node_by_layer_map_[tech_layer],
+        ids = findNodesWithIntersection(node_by_layer_map_[tech_layer],
                                         pin_pol);
         for (const int& index : ids) {
           pin_nbrs[pin].push_back(node_by_layer_map_[tech_layer][index]->id);
         }
         // if has via on upper layer connected to pin
         if (upper_layer) {
-          ids = findNodesWithIntersection2(node_by_layer_map_[upper_layer],
+          ids = findNodesWithIntersection(node_by_layer_map_[upper_layer],
                                           pin_pol);
           for (const int& index : ids) {
             pin_nbrs[pin].push_back(node_by_layer_map_[upper_layer][index]->id);
@@ -1751,7 +1731,7 @@ void AntennaChecker::saveGates(dbNet* db_net)
         }
         // if has via on lower layer connected to pin
         if (lower_layer) {
-          ids = findNodesWithIntersection2(node_by_layer_map_[lower_layer],
+          ids = findNodesWithIntersection(node_by_layer_map_[lower_layer],
                                           pin_pol);
           for (const int& index : ids) {
             pin_nbrs[pin].push_back(node_by_layer_map_[lower_layer][index]->id);
@@ -2496,9 +2476,9 @@ void AntennaChecker::buildLayerMaps(dbNet* db_net)
     if (layer_it.first->getRoutingLevel() == 0) {
       int via_index = 0;
       for (const auto& via_it : layer_it.second) {
-        lower_index = findNodesWithIntersection2(
+        lower_index = findNodesWithIntersection(
             node_by_layer_map_[layer_it.first->getLowerLayer()], via_it);
-        upper_index = findNodesWithIntersection2(
+        upper_index = findNodesWithIntersection(
             node_by_layer_map_[layer_it.first->getUpperLayer()], via_it);
 
         if (upper_index.size() <= 2) {
