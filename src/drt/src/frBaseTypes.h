@@ -250,7 +250,7 @@ enum class frMinstepTypeEnum
 
 std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type);
 
-#define OPPOSITEDIR 7  // used in FlexGC_main.cpp
+constexpr int OPPOSITEDIR = 7;  // used in FlexGC_main.cpp
 enum class frDirEnum
 {
   UNKNOWN = 0,

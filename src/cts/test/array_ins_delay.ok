@@ -129,9 +129,7 @@ delta HPWL                    0 %
 
 Clock clk
    1.24 source latency inst_8_12/clk ^
-   0.00 source clock tree delay
   -1.09 target latency inst_10_12/clk ^
-  -0.00 target clock tree delay
    0.00 CRPR
 --------------
    0.15 setup skew
