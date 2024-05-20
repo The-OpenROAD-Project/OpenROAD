@@ -3926,8 +3926,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
     logger_->error(MPL, 5, "Failed on cluster {}", parent->getName());
   }
-  best_sa->alignMacroClusters();
+
+  if (best_sa->centralizationWasReverted()) {
+    best_sa->alignMacroClusters();
+  }
   best_sa->fillDeadSpace();
+
   // update the clusters and do bus planning
   std::vector<SoftMacro> shaped_macros;
   best_sa->getMacros(shaped_macros);
@@ -4179,8 +4183,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
       logger_->error(MPL, 6, "Failed on cluster {}", parent->getName());
     }
-    best_sa->alignMacroClusters();
+
+    if (best_sa->centralizationWasReverted()) {
+      best_sa->alignMacroClusters();
+    }
     best_sa->fillDeadSpace();
+
     // update the clusters and do bus planning
     best_sa->getMacros(shaped_macros);
   }
@@ -4715,7 +4723,9 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
     runEnhancedHierarchicalMacroPlacement(parent);
   } else {
-    best_sa->alignMacroClusters();
+    if (best_sa->centralizationWasReverted()) {
+      best_sa->alignMacroClusters();
+    }
     best_sa->fillDeadSpace();
 
     std::vector<SoftMacro> shaped_macros;
@@ -5198,8 +5208,12 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
     logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
   }
-  best_sa->alignMacroClusters();
+
+  if (best_sa->centralizationWasReverted()) {
+    best_sa->alignMacroClusters();
+  }
   best_sa->fillDeadSpace();
+
   // update the clusters and do bus planning
   std::vector<SoftMacro> shaped_macros;
   best_sa->getMacros(shaped_macros);
