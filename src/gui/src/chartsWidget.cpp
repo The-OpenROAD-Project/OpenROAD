@@ -246,12 +246,17 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
 {
   SlackHistogramData data;
 
-  sta::Unit* time_unit = sta_->units()->timeUnit();
-  TimingPathList paths
-      = stagui_->getTimingPaths({}, {}, stagui_->getEndPoints());
-  int unconstrained_count = 0;
+  gui::StaPins end_points = stagui_->getEndPoints();
+  const int initial_max_path_count = stagui_->getMaxPathCount();
+  stagui_->setMaxPathCount(end_points.size());
 
+  TimingPathList paths = stagui_->getTimingPaths({}, {}, end_points);
+
+  stagui_->setMaxPathCount(initial_max_path_count);
+
+  int unconstrained_count = 0;
   data.min_slack = std::numeric_limits<float>::max();
+  sta::Unit* time_unit = sta_->units()->timeUnit();
 
   for (const std::unique_ptr<TimingPath>& path : paths) {
     const TimingPathNode* start_node = path->getStartStageNode();
