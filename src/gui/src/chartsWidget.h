@@ -98,7 +98,10 @@ class ChartsWidget : public QDockWidget
   };
 
   void setSTA(sta::dbSta* sta);
-  void setLogger(utl::Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger)
+  {
+    logger_ = logger;
+  }
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
