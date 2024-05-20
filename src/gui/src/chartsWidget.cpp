@@ -65,7 +65,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
-      prev_filter_index_(1),  // start with no filter
+      prev_filter_index_(0),  // start with no filter
 #endif
       label_(new QLabel(this))
 {
@@ -141,8 +141,7 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::setStartEndFiltersMenu()
 {
-  filters_menu_->addItem("Select Filter");  // Index 0
-  filters_menu_->addItem("No Filter");      // Index 1
+  filters_menu_->addItem("No Filter"); // Index 0
 
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
   filters_menu_->addItem(QString::fromStdString(toString(RegisterToIO)));
@@ -613,15 +612,7 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
 
 void ChartsWidget::changeStartEndFilter()
 {
-  const int filter_index = filters_menu_->currentIndex();
-
-  if (filter_index == 0) {  // "Select Filter"
-    return;
-  }
-
-  if (prev_filter_index_ != 0) {
-    clearBarSets();
-  }
+  clearBarSets();
 
   QStackedBarSeries* series
       = static_cast<QStackedBarSeries*>(chart_->series().front());
@@ -630,11 +621,13 @@ void ChartsWidget::changeStartEndFilter()
   QBarSet* neg_set = series->barSets().front();
   QBarSet* pos_set = series->barSets().back();
 
-  if (filter_index == 1) {  // "No Filter"
+  const int filter_index = filters_menu_->currentIndex();
+
+  if (filter_index == 0) {  // "No Filter"
     populateBarSets(*neg_set, *pos_set);
   } else {
-    const int indexes_offset = 2;  // "Select Filter" + "No Filter"
-    const int path_type = filter_index - indexes_offset;
+    const int no_filter_index_offset = 1;
+    const int path_type = filter_index - no_filter_index_offset;
 
     switch (path_type) {
       case RegisterToRegister: {
