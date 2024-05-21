@@ -141,13 +141,13 @@ class ChartsWidget : public QDockWidget
   }
 
   SlackHistogramData fetchSlackHistogramData();
-  void fetchConstrainedPins(StaPins& endpoints, bool set_mix_max);
-  TimingPathList fetchPathsBasedOnStartEnd(const StaPins& endpoints,
+  void fetchConstrainedPins(StaPins& end_points, bool set_mix_max);
+  TimingPathList fetchPathsBasedOnStartEnd(const StaPins& end_points,
                                            const StartEndPathType path_type);
   StaPins getEndPointsFromPaths(const TimingPathList& paths);
   ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
 
-  void populateBuckets(const StaPins& endpoints);
+  void populateBuckets(const StaPins& end_points);
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
   int computeSnapBucketInterval(float exact_interval);
