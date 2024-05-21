@@ -66,7 +66,8 @@ using sta::Edge;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
-RecoverPower::RecoverPower(Resizer* resizer) : resizer_(resizer)
+RecoverPower::RecoverPower(Resizer* resizer)
+    : resizer_(resizer), bad_vertices_(resizer->graph_)
 {
 }
 
@@ -142,7 +143,7 @@ void RecoverPower::recoverPower(const float recover_power_percent)
     //=====================================================================
     resizer_->journalBegin();
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-    const bool changed = recoverPower(end_path, end_slack_before);
+    Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
       resizer_->updateParasitics(true);
       sta_->findRequireds();
@@ -179,6 +180,8 @@ void RecoverPower::recoverPower(const float recover_power_percent)
                    worst_slack_before,
                    worst_slack_after);
       } else {
+        // Save the vertex to avoid trying it again.
+        bad_vertices_.insert(changed);
         // Undo the change here.
         ++failed_move_threshold;
         if (failed_move_threshold > failed_move_threshold_limit_) {
@@ -223,10 +226,11 @@ void RecoverPower::recoverPower(const float recover_power_percent)
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
+  bad_vertices_.clear();
 }
 
 // For testing.
-void RecoverPower::recoverPower(const Pin* end_pin)
+Vertex* RecoverPower::recoverPower(const Pin* end_pin)
 {
   init();
   resize_count_ = 0;
@@ -235,7 +239,7 @@ void RecoverPower::recoverPower(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   const PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  recoverPower(path, slack);
+  Vertex* drvr_vertex = recoverPower(path, slack);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -243,13 +247,14 @@ void RecoverPower::recoverPower(const Pin* end_pin)
   if (resize_count_ > 0) {
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);
   }
+  return drvr_vertex;
 }
 
 // This is the main routine for recovering power.
-bool RecoverPower::recoverPower(const PathRef& path, const Slack path_slack)
+Vertex* RecoverPower::recoverPower(const PathRef& path, const Slack path_slack)
 {
   PathExpanded expanded(&path, sta_);
-  bool changed = false;
+  Vertex* changed = nullptr;
 
   if (expanded.size() > 1) {
     const int path_length = expanded.size();
@@ -295,6 +300,10 @@ bool RecoverPower::recoverPower(const PathRef& path, const Slack path_slack)
     for (const auto& [drvr_index, ignored] : load_delays) {
       PathRef* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
+      // If we already tried this vertex and got a worse result, skip it.
+      if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {
+        continue;
+      }
       const Pin* drvr_pin = drvr_vertex->pin();
       const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       const LibertyCell* drvr_cell
@@ -309,7 +318,7 @@ bool RecoverPower::recoverPower(const PathRef& path, const Slack path_slack)
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
       if (downsizeDrvr(drvr_path, drvr_index, &expanded, true, path_slack)) {
-        changed = true;
+        changed = drvr_vertex;
         break;
       }
     }
