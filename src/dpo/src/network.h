@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "architecture.h"
+#include "odb/geom.h"
 #include "orientation.h"
 
 namespace dpo {
@@ -290,6 +291,9 @@ class Network
 
   int getNumPins() const { return (int) pins_.size(); }
 
+  int getNumBlockages() const { return (int) blockages_.size(); }
+  odb::Rect getBlockage(int i) const { return blockages_[i]; }
+
   // For creating and adding pins.
   Pin* createAndAddPin(Node* nd, Edge* ed);
 
@@ -303,6 +307,8 @@ class Network
   // For creating and adding edges.
   Edge* createAndAddEdge();
 
+  void createAndAddBlockage(const odb::Rect& bounds);
+
  private:
   Pin* createAndAddPin();
 
@@ -310,7 +316,8 @@ class Network
   std::unordered_map<int, std::string> edgeNames_;  // Names of edges...
   std::vector<Node*> nodes_;  // The nodes in the netlist...
   std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
-  std::vector<Pin*> pins_;  // The pins in the network...
+  std::vector<Pin*> pins_;            // The pins in the network...
+  std::vector<odb::Rect> blockages_;  // The placement blockages ...
 };
 
 }  // namespace dpo

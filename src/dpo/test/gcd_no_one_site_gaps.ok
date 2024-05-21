@@ -5,7 +5,7 @@
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 549 cells, 54 terminals, 364 edges and 1122 pins.
+[INFO DPO-0100] Creating network with 549 cells, 54 terminals, 364 edges, 1122 pins, and 0 blockages.
 [INFO DPO-0109] Network stats: inst 603, edges 364, pins 1122
 [INFO DPO-0110] Number of regions is 1
 [INFO DPO-0401] Setting random seed to 1.
