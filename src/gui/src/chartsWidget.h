@@ -55,6 +55,8 @@ class Clock;
 namespace gui {
 #ifdef ENABLE_CHARTS
 
+using ITermBTermPinsLists = std::pair<StaPins, StaPins>;
+
 enum StartEndPathType
 {
   RegisterToRegister,
@@ -142,7 +144,9 @@ class ChartsWidget : public QDockWidget
   void fetchConstrainedPins(StaPins& endpoints, bool set_mix_max);
   TimingPathList fetchPathsBasedOnStartEnd(const StaPins& endpoints,
                                            const StartEndPathType path_type);
-  StaPins getEndPoints(const TimingPathList& paths);
+  StaPins getEndPointsFromPaths(const TimingPathList& paths);
+  ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
+
   void populateBuckets(const StaPins& endpoints);
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 

@@ -371,6 +371,7 @@ class STAGuiInterface
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
 

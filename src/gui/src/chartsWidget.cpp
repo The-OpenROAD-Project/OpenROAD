@@ -585,7 +585,6 @@ void ChartsWidget::changeStartEndFilter()
 {
   buckets_->negative.clear();
   buckets_->positive.clear();
-
   clearBarSets();
 
   QStackedBarSeries* series
@@ -606,7 +605,7 @@ void ChartsWidget::changeStartEndFilter()
         = static_cast<StartEndPathType>(filter_index - no_filter_index_offset);
 
     TimingPathList paths = fetchPathsBasedOnStartEnd(endpoints, path_type);
-    endpoints = getEndPoints(paths);
+    endpoints = getEndPointsFromPaths(paths);
   }
 
   populateBuckets(endpoints);
@@ -619,51 +618,42 @@ TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
     const StaPins& endpoints,
     const StartEndPathType path_type)
 {
-  gui::StaPins iterms;
-  gui::StaPins bterms;
+  ITermBTermPinsLists start_points
+      = separatePinsIntoBTermsAndITerms(stagui_->getStartPoints());
 
-  for (const sta::Pin* pin : endpoints) {
-    const std::unique_ptr<TimingPathNode>& node = stagui_->getTimingNode(pin);
+  ITermBTermPinsLists end_points
+      = separatePinsIntoBTermsAndITerms(stagui_->getEndPoints());
 
-    if (!node) {
-      continue;
-    }
-
-    if (node->isPinBTerm()) {
-      bterms.insert(pin);
-    }
-
-    if (node->isPinITerm()) {
-      iterms.insert(pin);
-    }
-  }
-
+  // Copy current values to reset after fetching.
   const int initial_max_path_count = stagui_->getMaxPathCount();
   const bool one_path_per_end_point = stagui_->isOnePathPerEndpoint();
 
-  // Set max path count based on the total number of registers.
-  stagui_->setMaxPathCount(iterms.size());
+  const int new_max_path_count = static_cast<int>(end_points.first.size())
+                                 + static_cast<int>(end_points.second.size());
+
+  stagui_->setMaxPathCount(new_max_path_count);
   stagui_->setOnePathPerEndpoint(true);
 
   TimingPathList paths;
 
-  // TO DO: This query is not working
-
   switch (path_type) {
     case RegisterToRegister: {
-      paths = stagui_->getTimingPaths(iterms, {}, iterms);
+      paths = stagui_->getTimingPaths(start_points.first, {}, end_points.first);
       break;
     }
     case RegisterToIO: {
-      paths = stagui_->getTimingPaths(iterms, {}, bterms);
+      paths
+          = stagui_->getTimingPaths(start_points.first, {}, end_points.second);
       break;
     }
     case IOToRegister: {
-      paths = stagui_->getTimingPaths(bterms, {}, iterms);
+      paths
+          = stagui_->getTimingPaths(start_points.second, {}, end_points.first);
       break;
     }
     case IOToIO: {
-      paths = stagui_->getTimingPaths(bterms, {}, bterms);
+      paths
+          = stagui_->getTimingPaths(start_points.second, {}, end_points.second);
       break;
     }
   }
@@ -674,7 +664,31 @@ TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
   return paths;
 }
 
-StaPins ChartsWidget::getEndPoints(const TimingPathList& paths)
+ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
+    const StaPins& pins)
+{
+  ITermBTermPinsLists pins_lists; /* < ITerms , BTerms > */
+
+  for (const sta::Pin* pin : pins) {
+    const std::unique_ptr<TimingPathNode>& node = stagui_->getTimingNode(pin);
+
+    if (!node) {
+      continue;
+    }
+
+    if (node->isPinITerm()) {
+      pins_lists.first.insert(pin);
+    }
+
+    if (node->isPinBTerm()) {
+      pins_lists.second.insert(pin);
+    }
+  }
+
+  return pins_lists;
+}
+
+StaPins ChartsWidget::getEndPointsFromPaths(const TimingPathList& paths)
 {
   StaPins endpoints;
 

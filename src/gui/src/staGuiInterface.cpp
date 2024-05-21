@@ -832,6 +832,15 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
+StaPins STAGuiInterface::getStartPoints() const
+{
+  StaPins pins;
+  for (auto end : sta_->startpointPins()) {
+    pins.insert(end);
+  }
+  return pins;
+}
+
 StaPins STAGuiInterface::getEndPoints() const
 {
   StaPins pins;
