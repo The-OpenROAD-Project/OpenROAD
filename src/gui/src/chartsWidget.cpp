@@ -267,8 +267,9 @@ void ChartsWidget::fetchConstrainedPins(StaPins& endpoints,
   int unconstrained_count = 0;
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
-  for (const sta::Pin* pin : endpoints) {
-    float slack = stagui_->getPinSlack(pin);
+  for (StaPins::iterator pin_iter = endpoints.begin();
+       pin_iter != endpoints.end();) {
+    float slack = stagui_->getPinSlack(*pin_iter);
 
     if (slack != sta::INF) {
       slack = time_unit->staToUser(slack);
@@ -282,9 +283,11 @@ void ChartsWidget::fetchConstrainedPins(StaPins& endpoints,
           max_slack_ = slack;
         }
       }
+
+      ++pin_iter;
     } else {
-      endpoints.erase(pin);
       unconstrained_count++;
+      pin_iter = endpoints.erase(pin_iter);
     }
   }
 
