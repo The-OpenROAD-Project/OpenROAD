@@ -134,6 +134,8 @@ void RenderThread::run()
     } catch (const std::exception& e) {
       logger_->warn(
           GUI, 102, "An exception occurred during rendering: {}", e.what());
+    } catch (...) {
+      logger_->warn(GUI, 103, "An unknown exception occurred during rendering");
     }
 
     if (!restart_) {

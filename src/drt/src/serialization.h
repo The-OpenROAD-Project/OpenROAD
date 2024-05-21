@@ -800,7 +800,6 @@ void serializeGlobals(Archive& ar)
   (ar) & TAPERBOX_RADIUS;
   (ar) & NDR_NETS_ABS_PRIORITY;
   (ar) & CLOCK_NETS_ABS_PRIORITY;
-  (ar) & TAVIACOST;
   (ar) & TAPINCOST;
   (ar) & TAALIGNCOST;
   (ar) & TADRCCOST;
@@ -813,7 +812,6 @@ void serializeGlobals(Archive& ar)
   (ar) & BLOCKCOST;
   (ar) & GUIDECOST;
   (ar) & SHAPEBLOATWIDTH;
-  (ar) & MISALIGNMENTCOST;
   (ar) & HISTCOST;
   (ar) & CONGCOST;
 }

@@ -381,6 +381,7 @@ class Resizer : public dbStaState
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  void makeEquivCells();
 
  protected:
   void init();
@@ -391,7 +392,6 @@ class Resizer : public dbStaState
   void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
-  void makeEquivCells();
   void checkLibertyForAllCorners();
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
