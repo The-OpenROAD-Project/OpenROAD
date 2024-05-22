@@ -80,7 +80,7 @@ class _dbModule : public _dbObject
   dbId<_dbModBTerm> _modbterms;
 
   // User Code Begin Fields
-  void* _sta_cell;
+  void* _sta_cell = nullptr;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj);

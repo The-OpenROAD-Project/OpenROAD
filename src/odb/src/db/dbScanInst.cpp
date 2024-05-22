@@ -99,6 +99,8 @@ void _dbScanInst::out(dbDiff& diff, char side, const char* field) const
 
 _dbScanInst::_dbScanInst(_dbDatabase* db)
 {
+  bits_ = 0;
+  clock_edge_ = 0;
 }
 
 _dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)

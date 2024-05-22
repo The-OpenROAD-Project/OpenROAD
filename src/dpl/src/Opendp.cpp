@@ -69,9 +69,7 @@ using odb::Rect;
 
 bool Opendp::isMultiRow(const Cell* cell) const
 {
-  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
-  assert(iter != db_master_map_.end());
-  return iter->second.is_multi_row;
+  return db_master_map_.at(cell->db_inst_->getMaster()).is_multi_row;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -94,17 +92,17 @@ void Opendp::init(dbDatabase* db, Logger* logger)
 
 void Opendp::setPaddingGlobal(const int left, const int right)
 {
-  padding_->setPaddingGlobal(left, right);
+  padding_->setPaddingGlobal(GridX{left}, GridX{right});
 }
 
 void Opendp::setPadding(dbInst* inst, const int left, const int right)
 {
-  padding_->setPadding(inst, left, right);
+  padding_->setPadding(inst, GridX{left}, GridX{right});
 }
 
 void Opendp::setPadding(dbMaster* master, const int left, const int right)
 {
-  padding_->setPadding(master, left, right);
+  padding_->setPadding(master, GridX{left}, GridX{right});
 }
 
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
@@ -174,12 +172,12 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
       }
-      const int x = grid_->getCore().xMin() + cell.x_;
-      const int y = grid_->getCore().yMin() + cell.y_;
+      const DbuX x = grid_->getCore().xMin() + cell.x_;
+      const DbuY y = grid_->getCore().yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
-        db_inst_->setLocation(x, y);
+        db_inst_->setLocation(x.v, y.v);
       }
     }
   }
@@ -190,23 +188,25 @@ void Opendp::reportLegalizationStats() const
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
   logger_->report("total displacement   {:10.1f} u",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->metric("design__instance__displacement__total",
-                  dbuToMicrons(displacement_sum_));
+                  block_->dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->metric("design__instance__displacement__mean",
-                  dbuToMicrons(displacement_avg_));
+                  block_->dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->metric("design__instance__displacement__max",
-                  dbuToMicrons(displacement_max_));
+                  block_->dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
-                  dbuToMicrons(hpwl_before_));
+                  block_->dbuToMicrons(hpwl_before_));
   odb::WireLengthEvaluator eval(block_);
   const double hpwl_legal = eval.hpwl();
-  logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
-  logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
+  logger_->report("legalized HPWL       {:10.1f} u",
+                  block_->dbuToMicrons(hpwl_legal));
+  logger_->metric("route__wirelength__estimated",
+                  block_->dbuToMicrons(hpwl_legal));
   const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
@@ -247,8 +247,8 @@ void Opendp::optimizeMirroring()
 
 int Opendp::disp(const Cell* cell) const
 {
-  const Point init = initialLocation(cell, false);
-  return abs(init.getX() - cell->x_) + abs(init.getY() - cell->y_);
+  const DbuPt init = initialLocation(cell, false);
+  return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
 }
 
 /* static */
@@ -257,57 +257,24 @@ bool Opendp::isBlock(const Cell* cell)
   return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
 }
 
-int64_t Opendp::paddedArea(const Cell* cell) const
-{
-  return int64_t(padding_->paddedWidth(cell)) * cell->height_;
-}
-
-int Opendp::gridNearestWidth(const Cell* cell) const
-{
-  return divRound(padding_->paddedWidth(cell), grid_->getSiteWidth());
-}
-
-// Callers should probably be using gridHeight.
-int Opendp::gridNearestHeight(const Cell* cell, int row_height) const
-{
-  return divRound(cell->height_, row_height);
-}
-
-int Opendp::gridNearestHeight(const Cell* cell) const
-{
-  return divRound(cell->height_, grid_->getRowHeight(cell));
-}
-
-double Opendp::dbuToMicrons(const int64_t dbu) const
-{
-  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu / dbu_micron;
-}
-
-double Opendp::dbuAreaToMicrons(const int64_t dbu_area) const
-{
-  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu_area / (dbu_micron * dbu_micron);
-}
-
 int Opendp::padGlobalLeft() const
 {
-  return padding_->padGlobalLeft();
+  return padding_->padGlobalLeft().v;
 }
 
 int Opendp::padGlobalRight() const
 {
-  return padding_->padGlobalRight();
+  return padding_->padGlobalRight().v;
 }
 
 int Opendp::padLeft(dbInst* inst) const
 {
-  return padding_->padLeft(inst);
+  return padding_->padLeft(inst).v;
 }
 
 int Opendp::padRight(dbInst* inst) const
 {
-  return padding_->padRight(inst);
+  return padding_->padRight(inst).v;
 }
 
 void Opendp::initGrid()
@@ -325,8 +292,8 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
                                 vector<bgBox>& overlaps) const
 {
   overlaps.clear();
-  regions_rtree.query(boost::geometry::index::intersects(queryBox),
-                      std::back_inserter(overlaps));
+  regions_rtree_.query(boost::geometry::index::intersects(queryBox),
+                       std::back_inserter(overlaps));
 }
 
 void Opendp::setFixedGridCells()
@@ -353,19 +320,20 @@ void Opendp::groupAssignCellRegions()
 {
   for (Group& group : groups_) {
     int64_t total_site_area = 0;
-    const int site_width = grid_->getSiteWidth();
+    const DbuX site_width = grid_->getSiteWidth();
     if (!group.cells_.empty()) {
       auto group_cell = group.cells_.at(0);
-      const Rect core = grid_->getCore();
-      const int max_row_site_count = divFloor(core.dx(), site_width);
-      const int row_height = grid_->getRowHeight(group_cell);
-      const int row_count = divFloor(core.dy(), row_height);
-      const int64_t site_area = row_height * static_cast<int64_t>(site_width);
+      const DbuRect core = grid_->getCore();
+      const GridX max_row_site_count = dbuToGridFloor(core.dx(), site_width);
+      const DbuY row_height = grid_->getRowHeight(group_cell);
+      const GridY row_count = dbuToGridFloor(core.dy(), row_height);
+      const int64_t site_area
+          = row_height.v * static_cast<int64_t>(site_width.v);
       const auto gmk = grid_->getGridMapKey(group_cell);
-      const auto grid_info = grid_->getInfoMap().at(gmk);
+      const auto& grid_info = grid_->getInfoMap().at(gmk);
 
-      for (int x = 0; x < max_row_site_count; x++) {
-        for (int y = 0; y < row_count; y++) {
+      for (GridX x{0}; x < max_row_site_count; x++) {
+        for (GridY y{0}; y < row_count; y++) {
           const Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
           if (pixel->is_valid && pixel->group == &group) {
             total_site_area += site_area;
@@ -379,7 +347,7 @@ void Opendp::groupAssignCellRegions()
       cell_area += cell->area();
 
       for (Rect& rect : group.region_boundaries) {
-        if (isInside(cell, &rect)) {
+        if (isInside(cell, rect)) {
           cell->region_ = &rect;
         }
       }
@@ -395,18 +363,18 @@ void Opendp::groupInitPixels2()
 {
   for (auto& layer : grid_->getInfoMap()) {
     const GridInfo& grid_info = layer.second;
-    const int row_count = layer.second.getRowCount();
-    const int row_site_count = layer.second.getSiteCount();
-    const auto grid_sites = layer.second.getSites();
-    for (int x = 0; x < row_site_count; x++) {
-      for (int y = 0; y < row_count; y++) {
+    const GridY row_count = layer.second.getRowCount();
+    const GridX row_site_count = layer.second.getSiteCount();
+    const auto& grid_sites = layer.second.getSites();
+    for (GridX x{0}; x < row_site_count; x++) {
+      for (GridY y{0}; y < row_count; y++) {
         const int row_height
-            = grid_sites[y % grid_sites.size()].site->getHeight();
-        const int site_width = grid_->getSiteWidth();
-        const Rect sub(x * site_width,
-                       y * row_height,
-                       (x + 1) * site_width,
-                       (y + 1) * row_height);
+            = grid_sites[y.v % grid_sites.size()].site->getHeight();
+        const DbuX site_width = grid_->getSiteWidth();
+        const Rect sub(x.v * site_width.v,
+                       y.v * row_height,
+                       (x + 1).v * site_width.v,
+                       (y + 1).v * row_height);
         Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
           for (Rect& rect : group.region_boundaries) {
@@ -439,8 +407,8 @@ void Opendp::groupInitPixels()
 {
   for (const auto& layer : grid_->getInfoMap()) {
     const GridInfo& grid_info = layer.second;
-    for (int x = 0; x < grid_info.getSiteCount(); x++) {
-      for (int y = 0; y < grid_info.getRowCount(); y++) {
+    for (GridX x{0}; x < grid_info.getSiteCount(); x++) {
+      for (GridY y{0}; y < grid_info.getRowCount(); y++) {
         Pixel* pixel = grid_->gridPixel(grid_info.getGridIndex(), x, y);
         pixel->util = 0.0;
       }
@@ -451,55 +419,55 @@ void Opendp::groupInitPixels()
       logger_->warn(DPL, 42, "No cells found in group {}. ", group.name);
       continue;
     }
-    const int row_height = group.cells_[0]->height_;
+    const DbuY row_height = group.cells_[0]->height_;
     const GridMapKey gmk = grid_->getGridMapKey(group.cells_[0]);
     const GridInfo& grid_info = grid_->getInfoMap().at(gmk);
     const int grid_index = grid_info.getGridIndex();
-    const int site_width = grid_->getSiteWidth();
-    for (const Rect& rect : group.region_boundaries) {
+    const DbuX site_width = grid_->getSiteWidth();
+    for (const DbuRect rect : group.region_boundaries) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
                  1,
                  "Group {} region [x{} y{}] [x{} y{}]",
                  group.name,
-                 rect.xMin(),
-                 rect.yMin(),
-                 rect.xMax(),
-                 rect.yMax());
-      const int row_start = divCeil(rect.yMin(), row_height);
-      const int row_end = divFloor(rect.yMax(), row_height);
+                 rect.xl,
+                 rect.yl,
+                 rect.xh,
+                 rect.yh);
+      const GridY row_start{dbuToGridCeil(rect.yl, row_height)};
+      const GridY row_end{dbuToGridFloor(rect.yh, row_height)};
 
-      for (int k = row_start; k < row_end; k++) {
-        const int col_start = divCeil(rect.xMin(), site_width);
-        const int col_end = divFloor(rect.xMax(), site_width);
+      for (GridY k{row_start}; k < row_end; k++) {
+        const GridX col_start{dbuToGridCeil(rect.xl, site_width)};
+        const GridX col_end{dbuToGridFloor(rect.xh, site_width)};
 
-        for (int l = col_start; l < col_end; l++) {
+        for (GridX l{col_start}; l < col_end; l++) {
           Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           pixel->util += 1.0;
         }
-        if (rect.xMin() % site_width != 0) {
+        if (rect.xl % site_width != 0) {
           Pixel* pixel = grid_->gridPixel(grid_index, col_start, k);
           pixel->util
-              -= (rect.xMin() % site_width) / static_cast<double>(site_width);
+              -= (rect.xl % site_width).v / static_cast<double>(site_width.v);
         }
-        if (rect.xMax() % site_width != 0) {
+        if (rect.xh % site_width != 0) {
           Pixel* pixel = grid_->gridPixel(grid_index, col_end - 1, k);
-          pixel->util -= ((site_width - rect.xMax()) % site_width)
-                         / static_cast<double>(site_width);
+          pixel->util -= ((site_width - rect.xh) % site_width).v
+                         / static_cast<double>(site_width.v);
         }
       }
     }
-    for (Rect& rect : group.region_boundaries) {
-      const int row_start = divCeil(rect.yMin(), row_height);
-      const int row_end = divFloor(rect.yMax(), row_height);
+    for (const DbuRect rect : group.region_boundaries) {
+      const GridY row_start{dbuToGridCeil(rect.yl, row_height)};
+      const GridY row_end{dbuToGridFloor(rect.yh, row_height)};
 
-      for (int k = row_start; k < row_end; k++) {
-        const int col_start = divCeil(rect.xMin(), site_width);
-        const int col_end = divFloor(rect.xMax(), site_width);
+      for (GridY k{row_start}; k < row_end; k++) {
+        const GridX col_start = dbuToGridCeil(rect.xl, site_width);
+        const GridX col_end = dbuToGridFloor(rect.xh, site_width);
 
         // Assign group to each pixel.
-        for (int l = col_start; l < col_end; l++) {
+        for (GridX l{col_start}; l < col_end; l++) {
           Pixel* pixel = grid_->gridPixel(grid_index, l, k);
           if (pixel->util == 1.0) {
             pixel->group = &group;

@@ -42,18 +42,18 @@ class dbInst;
 
 class definBlockage : public definBase
 {
-  dbTechLayer* _layer;
-  dbInst* _inst;
-  bool _slots;
-  bool _fills;
-  bool _except_pg_nets;
-  bool _pushdown;
-  bool _soft;
-  bool _has_min_spacing;
-  bool _has_effective_width;
-  int _min_spacing;
-  int _effective_width;
-  float _max_density;
+  dbTechLayer* _layer = nullptr;
+  dbInst* _inst = nullptr;
+  bool _slots = false;
+  bool _fills = false;
+  bool _except_pg_nets = false;
+  bool _pushdown = false;
+  bool _soft = false;
+  bool _has_min_spacing = false;
+  bool _has_effective_width = false;
+  int _min_spacing = 0;
+  int _effective_width = 0;
+  float _max_density = 0;
 
  public:
   // Routing Blockage interface methods

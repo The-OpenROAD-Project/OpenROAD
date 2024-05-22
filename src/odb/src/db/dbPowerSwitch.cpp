@@ -101,6 +101,7 @@ void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
 
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)

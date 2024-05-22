@@ -81,6 +81,7 @@ using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
+using sta::dbStaState;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::GateTimingModel;
@@ -109,7 +110,6 @@ using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
-using sta::StaState;
 using sta::TimingArc;
 using sta::UnorderedSet;
 using sta::Vector;
@@ -163,7 +163,7 @@ struct ParasiticsCapacitance
   double v_cap;
 };
 
-class Resizer : public StaState
+class Resizer : public dbStaState
 {
  public:
   Resizer();
@@ -380,6 +380,7 @@ class Resizer : public StaState
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  void makeEquivCells();
 
  protected:
   void init();
@@ -390,7 +391,6 @@ class Resizer : public StaState
   void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
-  void makeEquivCells();
   void checkLibertyForAllCorners();
   void findBuffers();
   bool isLinkCell(LibertyCell* cell);
@@ -638,7 +638,6 @@ class Resizer : public StaState
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;

@@ -57,7 +57,7 @@ int micronToDbu(float metric, float dbu)
   return std::round(metric * dbu);
 }
 
-std::string toString(const PinAccess& pin_access)
+std::string toString(const Boundary& pin_access)
 {
   switch (pin_access) {
     case L:
@@ -73,7 +73,7 @@ std::string toString(const PinAccess& pin_access)
   }
 }
 
-PinAccess opposite(const PinAccess& pin_access)
+Boundary opposite(const Boundary& pin_access)
 {
   switch (pin_access) {
     case L:
@@ -646,7 +646,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
 
 // Pin Access Support
 void Cluster::setPinAccess(int cluster_id,
-                           PinAccess pin_access,
+                           Boundary pin_access,
                            float net_weight)
 {
   if (cluster_id < 0) {
@@ -656,34 +656,33 @@ void Cluster::setPinAccess(int cluster_id,
                    toString(pin_access));
   }
   pin_access_map_[cluster_id]
-      = std::pair<PinAccess, float>(pin_access, net_weight);
+      = std::pair<Boundary, float>(pin_access, net_weight);
 }
 
-const std::pair<PinAccess, float> Cluster::getPinAccess(int cluster_id)
+const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
 {
   return pin_access_map_[cluster_id];
 }
 
-const std::map<int, std::pair<PinAccess, float>> Cluster::getPinAccessMap()
-    const
+const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
 {
   return pin_access_map_;
 }
 
-const std::map<PinAccess, std::map<PinAccess, float>>
+const std::map<Boundary, std::map<Boundary, float>>
 Cluster::getBoundaryConnection() const
 {
   return boundary_connection_map_;
 }
 
-void Cluster::addBoundaryConnection(PinAccess pin_a,
-                                    PinAccess pin_b,
+void Cluster::addBoundaryConnection(Boundary pin_a,
+                                    Boundary pin_b,
                                     float num_net)
 {
   if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
-    std::map<PinAccess, float> pin_map;
+    std::map<Boundary, float> pin_map;
     pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = pin_map;
+    boundary_connection_map_[pin_a] = std::move(pin_map);
   } else {
     if (boundary_connection_map_[pin_a].find(pin_b)
         == boundary_connection_map_[pin_a].end()) {
@@ -1361,8 +1360,8 @@ void SoftMacro::setArea(float area)
     }
   }
 
-  width_list_ = width_list;
-  height_list_ = height_list;
+  width_list_ = std::move(width_list);
+  height_list_ = std::move(height_list);
   area_ = area;
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;

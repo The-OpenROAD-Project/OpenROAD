@@ -27,7 +27,3 @@ check_placement
 set def_file [make_result_file upf_aes.def]
 write_def $def_file
 diff_file $def_file upf_aes.defok
-
-
-
-

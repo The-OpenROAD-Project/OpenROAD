@@ -46,6 +46,7 @@ RUDYDataSource::RUDYDataSource(utl::Logger* logger,
 {
   grouter_ = grouter;
   db_ = db;
+  rudy_ = nullptr;
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
@@ -65,7 +66,12 @@ void RUDYDataSource::populateXYGrid()
     return;
   }
 
-  rudy_ = grouter_->getRudy();
+  try {
+    rudy_ = grouter_->getRudy();
+  } catch (const std::runtime_error& e) {
+    gui::GlobalRoutingDataSource::populateXYGrid();
+    return;
+  }
   int tile_size = rudy_->getTileSize();
 
   const odb::Rect& bounds = getBounds();
@@ -124,8 +130,8 @@ bool RUDYDataSource::populateMap()
 
   for (int x = 0; x < x_grid_size; ++x) {
     for (int y = 0; y < y_grid_size; ++y) {
-      auto tile = rudy_->getTile(x, y);
-      auto box = tile.getRect();
+      const auto& tile = rudy_->getTile(x, y);
+      const auto& box = tile.getRect();
       const double value = tile.getRudy();
       addToMap(box, value);
     }

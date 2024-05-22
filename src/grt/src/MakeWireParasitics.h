@@ -76,6 +76,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                      rsz::Resizer* resizer,
                      sta::dbSta* sta,
                      odb::dbTech* tech,
+                     odb::dbBlock* block,
                      GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
@@ -142,6 +143,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   // Variables common to all nets.
   GlobalRouter* grouter_;
   odb::dbTech* tech_;
+  odb::dbBlock* block_;
   utl::Logger* logger_;
   rsz::Resizer* resizer_;
   sta::dbSta* sta_;

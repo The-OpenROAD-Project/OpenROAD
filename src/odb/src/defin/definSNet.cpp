@@ -141,9 +141,9 @@ void definSNet::begin(const char* name)
         dbSWire* swire = *itr;
         dbSWire::destroy(swire);
       }
-    }
 
-    _cur_net->setSpecial();
+      _cur_net->setSpecial();
+    }
   }
 
   _snet_cnt++;

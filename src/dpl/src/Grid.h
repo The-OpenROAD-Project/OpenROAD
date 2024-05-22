@@ -41,12 +41,25 @@
 
 #include <unordered_set>
 
+#include "Coordinates.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
 
 using odb::dbOrientType;
 using odb::dbSite;
+
+struct PixelPoint
+{
+  GridX x;
+  GridY y;
+};
+
+struct DbuPoint
+{
+  DbuX x;
+  DbuY y;
+};
 
 struct Pixel
 {
@@ -64,34 +77,35 @@ class PixelPt
 {
  public:
   PixelPt() = default;
-  PixelPt(Pixel* pixel, int grid_x, int grid_y);
+  PixelPt(Pixel* pixel, GridX grid_x, GridY grid_y);
   Pixel* pixel = nullptr;
-  Point pt;  // grid locataion
+  GridX x{0};
+  GridY y{0};
 };
 
 class GridInfo
 {
  public:
-  GridInfo(int row_count,
-           int site_count,
+  GridInfo(GridY row_count,
+           GridX site_count,
            int grid_index,
            const dbSite::RowPattern& sites);
 
   bool isHybrid() const;
   int getGridIndex() const { return grid_index_; }
-  int getOffset() const { return offset_; }
-  int getRowCount() const { return row_count_; }
-  int getSiteCount() const { return site_count_; }
+  DbuY getOffset() const { return offset_; }
+  GridY getRowCount() const { return row_count_; }
+  GridX getSiteCount() const { return site_count_; }
   const dbSite::RowPattern& getSites() const { return sites_; }
-  int getSitesTotalHeight() const;
+  DbuY getSitesTotalHeight() const;
 
-  void setOffset(int offset) { offset_ = offset; }
+  void setOffset(DbuY offset) { offset_ = offset; }
 
  private:
-  const int row_count_;
-  const int site_count_;
+  const GridY row_count_;
+  const GridX site_count_;
   const int grid_index_;
-  int offset_ = 0;
+  DbuY offset_{0};
   // will have one site only for non-hybrid and hybrid parent cells.
   // For hybrid children, this will have all the sites
   const dbSite::RowPattern sites_;
@@ -99,7 +113,7 @@ class GridInfo
 
 struct GridMapKey
 {
-  int grid_index;
+  int grid_index{0};
   bool operator<(const GridMapKey& other) const
   {
     return grid_index < other.grid_index;
@@ -129,25 +143,25 @@ class Grid
 
   GridMapKey getGridMapKey(const dbSite* site) const;
   GridMapKey getGridMapKey(const Cell* cell) const;
-  int gridX(int x) const;
-  int gridX(const Cell* cell) const;
-  int gridEndX(int x) const;
-  int gridEndX(const Cell* cell) const;
-  int gridPaddedX(const Cell* cell) const;
-  int gridPaddedEndX(const Cell* cell) const;
-  int gridY(int y, const Cell* cell) const;
-  int gridY(const Cell* cell) const;
-  int gridEndY(int y, const Cell* cell) const;
-  int gridEndY(const Cell* cell) const;
-  pair<int, int> gridY(int y, const GridInfo& grid_info) const;
-  pair<int, int> gridEndY(int y, const GridInfo& grid_info) const;
+  GridX gridX(DbuX x) const;
+  GridX gridX(const Cell* cell) const;
+  GridX gridEndX(DbuX x) const;
+  GridX gridEndX(const Cell* cell) const;
+  GridX gridPaddedX(const Cell* cell) const;
+  GridX gridPaddedEndX(const Cell* cell) const;
+  GridY gridY(DbuY y, const Cell* cell) const;
+  GridY gridY(const Cell* cell) const;
+  GridY gridEndY(DbuY y, const Cell* cell) const;
+  GridY gridEndY(const Cell* cell) const;
+  pair<GridY, DbuY> gridY(DbuY y, const GridInfo& grid_info) const;
+  pair<GridY, DbuY> gridEndY(DbuY y, const GridInfo& grid_info) const;
   GridInfo getGridInfo(const Cell* cell) const;
-  int gridPaddedWidth(const Cell* cell) const;
-  int gridHeight(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y) const;
-  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
+  GridX gridPaddedWidth(const Cell* cell) const;
+  GridY gridHeight(const Cell* cell) const;
+  void setGridPaddedLoc(Cell* cell, GridX x, GridY y) const;
+  DbuY coordinateToHeight(GridY y_coordinate, GridMapKey gmk) const;
 
-  void paintPixel(Cell* cell, int grid_x, int grid_y);
+  void paintPixel(Cell* cell, GridX grid_x, GridY grid_y);
   void erasePixel(Cell* cell);
   void visitCellPixels(Cell& cell,
                        bool padded,
@@ -156,26 +170,29 @@ class Grid
       Cell& cell,
       bool padded,
       const std::function<
-          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
+          void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
       const;
 
-  int getRowCount() const { return row_count_; }
-  int getRowSiteCount() const { return row_site_count_; }
-  int getRowHeight() const { return row_height_; }
-  int getRowHeight(const Cell* cell) const;
-  int getSiteWidth() const { return site_width_; }
-  int map_ycoordinates(int source_grid_coordinate,
-                       const GridMapKey& source_grid_key,
-                       const GridMapKey& target_grid_key,
-                       bool start) const;
+  GridY getRowCount() const { return row_count_; }
+  GridX getRowSiteCount() const { return row_site_count_; }
+  DbuY getRowHeight() const { return row_height_; }
+  DbuY getRowHeight(const Cell* cell) const;
+  DbuX getSiteWidth() const { return site_width_; }
+  GridY map_ycoordinates(GridY source_grid_coordinate,
+                         const GridMapKey& source_grid_key,
+                         const GridMapKey& target_grid_key,
+                         bool start) const;
 
-  Pixel* gridPixel(int grid_idx, int x, int y) const;
-  Pixel& pixel(int g, int y, int x) { return pixels_[g][y][x]; }
-  const Pixel& pixel(int g, int y, int x) const { return pixels_[g][y][x]; }
+  Pixel* gridPixel(int grid_idx, GridX x, GridY y) const;
+  Pixel& pixel(int g, GridY y, GridX x) { return pixels_[g][y.v][x.v]; }
+  const Pixel& pixel(int g, GridY y, GridX x) const
+  {
+    return pixels_[g][y.v][x.v];
+  }
 
   void resize(int size) { pixels_.resize(size); }
-  void resize(int g, int size) { pixels_[g].resize(size); }
-  void resize(int g, int y, int size) { pixels_[g][y].resize(size); }
+  void resize(int g, GridY size) { pixels_[g].resize(size.v); }
+  void resize(int g, GridY y, GridX size) { pixels_[g][y.v].resize(size.v); }
   void clear() { pixels_.clear(); }
 
   GridInfo& infoMap(const GridMapKey& key) { return grid_info_map_.at(key); }
@@ -192,14 +209,14 @@ class Grid
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
 
-  int getRowCount(int row_height) const;
-  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
+  GridY getRowCount(DbuY row_height) const;
+  std::pair<DbuY, GridInfo> getRowInfo(const Cell* cell) const;
 
   Rect getCore() const { return core_; }
   bool cellFitsInCore(Cell* cell) const;
 
  private:
-  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
+  GridY calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
   void initGridLayersMap(dbDatabase* db, dbBlock* block);
   void addSiteToGrid(dbSite* site, const GridMapKey& key);
   const map<const dbSite*, GridMapKey>& getSiteToGrid() const;
@@ -225,11 +242,11 @@ class Grid
   bool has_hybrid_rows_ = false;
   Rect core_;
 
-  int row_height_ = 0;  // dbu
-  int site_width_ = 0;  // dbu
+  DbuY row_height_{0};
+  DbuX site_width_{0};
 
-  int row_count_ = 0;
-  int row_site_count_ = 0;
+  GridY row_count_{0};
+  GridX row_site_count_{0};
 };
 
 }  // namespace dpl

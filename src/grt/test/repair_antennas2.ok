@@ -5,20 +5,6 @@
 [INFO ODB-0131]     Created 1277 components and 6322 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2554 connections.
 [INFO ODB-0133]     Created 437 nets and 1214 connections.
-Net: clk
-  Pin: clkbuf_0_clk/A (sky130_fd_sc_hs__buf_1)
-    Layer: met1
-      Partial area ratio:  411.05
-      Required ratio:  400.00 (Side area) (VIOLATED)
-
-
-Net: _224_
-  Pin: _511_/B1 (sky130_fd_sc_hs__o21a_1)
-    Layer: met1
-      Partial area ratio:  452.83
-      Required ratio:  400.00 (Side area) (VIOLATED)
-
-
 [INFO ANT-0002] Found 2 net violations.
 [INFO ANT-0001] Found 2 pin violations.
 [INFO GRT-0012] Found 2 antenna violations.
