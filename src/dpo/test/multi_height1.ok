@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 6 nets and 0 connections.
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 5 cells, 6 terminals, 6 edges and 6 pins.
+[INFO DPO-0100] Creating network with 5 cells, 6 terminals, 6 edges, 6 pins, and 0 blockages.
 [INFO DPO-0109] Network stats: inst 11, edges 6, pins 6
 [WARNING DPO-0108] Skipping all the rows with sites [DoubleHeightSite] as their height is 5600 and the single-height is 2800.
 [WARNING DPO-0108] Skipping all the rows with sites [TripleHeightSite] as their height is 8400 and the single-height is 2800.
