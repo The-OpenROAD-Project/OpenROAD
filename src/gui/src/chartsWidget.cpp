@@ -670,17 +670,18 @@ ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
   ITermBTermPinsLists pins_lists; /* < ITerms , BTerms > */
 
   for (const sta::Pin* pin : pins) {
-    const std::unique_ptr<TimingPathNode>& node = stagui_->getTimingNode(pin);
+    sta::dbNetwork* dbnetwork = sta_->getDbNetwork();
 
-    if (!node) {
-      continue;
-    }
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
 
-    if (node->isPinITerm()) {
+    dbnetwork->staToDb(pin, iterm, bterm);
+
+    if (iterm) {
       pins_lists.first.insert(pin);
     }
 
-    if (node->isPinBTerm()) {
+    if (bterm) {
       pins_lists.second.insert(pin);
     }
   }
