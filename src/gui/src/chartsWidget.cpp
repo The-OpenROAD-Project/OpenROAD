@@ -248,7 +248,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
   SlackHistogramData data;
 
   StaPins end_points = stagui_->getEndPoints();
-  fetchConstrainedPins(end_points, true);
+  removeUnconstrainedPins(end_points);
 
   data.constrained_pins = end_points;
 
@@ -259,8 +259,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
   return data;
 }
 
-void ChartsWidget::fetchConstrainedPins(StaPins& end_points,
-                                        const bool set_slack_min_max)
+void ChartsWidget::removeUnconstrainedPins(StaPins& end_points)
 {
   const int all_endpoints_count = end_points.size();
 
@@ -274,14 +273,12 @@ void ChartsWidget::fetchConstrainedPins(StaPins& end_points,
     if (slack != sta::INF) {
       slack = time_unit->staToUser(slack);
 
-      if (set_slack_min_max) {
-        if (slack < min_slack_) {
-          min_slack_ = slack;
-        }
+      if (slack < min_slack_) {
+        min_slack_ = slack;
+      }
 
-        if (slack > max_slack_) {
-          max_slack_ = slack;
-        }
+      if (slack > max_slack_) {
+        max_slack_ = slack;
       }
 
       ++pin_iter;
@@ -551,7 +548,7 @@ int ChartsWidget::computeYInterval()
   }
 
   // We ceil to deal with the cases in which we have less than
-  // 10 end_points in the largest bucket.
+  // 10 endpoints in the largest bucket.
   return static_cast<int>(std::ceil(static_cast<float>(total) / 10));
 }
 
@@ -597,18 +594,21 @@ void ChartsWidget::changeStartEndFilter()
   QBarSet* neg_set = series->barSets().front();
   QBarSet* pos_set = series->barSets().back();
 
+  StaPins end_points;
   const int filter_index = filters_menu_->currentIndex();
-
-  StaPins end_points = stagui_->getEndPoints();
-  fetchConstrainedPins(end_points, false);
 
   if (filter_index > 0) {
     const int no_filter_index_offset = 1;
     const StartEndPathType path_type
         = static_cast<StartEndPathType>(filter_index - no_filter_index_offset);
 
-    TimingPathList paths = fetchPathsBasedOnStartEnd(end_points, path_type);
+    // No need to remove unconstrained pins. They'll be filtered when fetching
+    // paths.
+    TimingPathList paths = fetchPathsBasedOnStartEnd(path_type);
     end_points = getEndPointsFromPaths(paths);
+  } else {
+    end_points = stagui_->getEndPoints();
+    removeUnconstrainedPins(end_points);
   }
 
   populateBuckets(end_points);
@@ -618,7 +618,6 @@ void ChartsWidget::changeStartEndFilter()
 }
 
 TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
-    const StaPins& end_points,
     const StartEndPathType path_type)
 {
   ITermBTermPinsLists start_pins

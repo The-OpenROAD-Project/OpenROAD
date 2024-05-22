@@ -141,9 +141,8 @@ class ChartsWidget : public QDockWidget
   }
 
   SlackHistogramData fetchSlackHistogramData();
-  void fetchConstrainedPins(StaPins& end_points, bool set_slack_min_max);
-  TimingPathList fetchPathsBasedOnStartEnd(const StaPins& end_points,
-                                           const StartEndPathType path_type);
+  void removeUnconstrainedPins(StaPins& end_points);
+  TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
   StaPins getEndPointsFromPaths(const TimingPathList& paths);
   ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
 
