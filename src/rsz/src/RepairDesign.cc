@@ -833,7 +833,7 @@ void RepairDesign::repairNetWire(
     // offset from instance origin to pin and detailed placement movement.
     static double length_margin = .05;
     bool split_wire = false;
-    const char *split_reason = nullptr;
+    const char* split_reason = nullptr;
     bool resize = true;
     // Distance from repeater to ref_.
     //              length
@@ -869,8 +869,7 @@ void RepairDesign::repairNetWire(
       if (ref_cap > max_cap_) {
         split_length = 0;
         split_wire = false;
-      }
-      else {
+      } else {
         int cap_length = metersToDbu((max_cap_ - ref_cap) / wire_cap);
         if (cap_length < split_length) {
           split_reason = "max_cap";
