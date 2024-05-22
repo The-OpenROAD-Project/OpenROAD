@@ -102,11 +102,11 @@ const char* defOrient(dbOrientType orient)
   return "N";
 }
 
-const char* defSigType(dbSigType type)
+const char* defSigType(const dbSigType& type)
 {
   return type.getString();
 }
-const char* defIoType(dbIoType type)
+const char* defIoType(const dbIoType& type)
 {
   return type.getString();
 }
