@@ -113,3 +113,7 @@ record_tests {
   #rsz_man_tcl_check
   #rsz_readme_msgs_check
 }
+
+record_pass_fail_tests {
+  cpp_tests
+}

@@ -587,7 +587,7 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 // 5) it doesn't create new max slew violations
 bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              LibertyCell* drvr_cell,
-                             const int drvr_index,
+                             int drvr_index,
                              PathExpanded* expanded)
 {
   /* TODO: remove driver only if slack improves and no new violations

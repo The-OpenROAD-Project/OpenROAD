@@ -145,6 +145,7 @@ Resizer::~Resizer()
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;
+  delete remove_buffer_;
 }
 
 void Resizer::init(Logger* logger,

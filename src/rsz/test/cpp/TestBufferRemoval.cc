@@ -75,6 +75,8 @@ class BufRemTest : public ::testing::Test
     odb::dbBlock* block = odb::dbBlock::create(chip, "top");
     db_network_->setBlock(block);
     block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+    // register proper callbacks for timer like read_def
+    sta_->postReadDef(block);
     odb::dbModule* module = odb::dbModule::create(block, "top");
     odb::dbMaster* bufx1 = db_->findMaster("BUF_X1");
     odb::dbMaster* bufx2 = db_->findMaster("BUF_X2");
@@ -165,7 +167,7 @@ class BufRemTest : public ::testing::Test
         = corner->findPathAnalysisPt(sta::MinMax::max())->index();
     sta::Corners* corners = sta_->search()->corners();
     pathAnalysisPt_ = corners->findPathAnalysisPt(pathAPIndex);
-    sta::Graph* graph = sta_.get()->ensureGraph();
+    sta::Graph* graph = sta_->ensureGraph();
     sta::Pin* outStaPin = db_network_->dbToSta(outPort);
     outVertex_ = graph->pinLoadVertex(outStaPin);
 
@@ -201,8 +203,8 @@ class BufRemTest : public ::testing::Test
 
 TEST_F(BufRemTest, SlackImproves)
 {
-  float origArrival = sta_.get()->vertexArrival(
-      outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  float origArrival
+      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
   // Remove one buffer 'b3' from the buffer chain
   odb::dbChip* chip = db_->getChip();
@@ -214,10 +216,10 @@ TEST_F(BufRemTest, SlackImproves)
   resizer_->removeBuffers(*insts);
   delete insts;
 
-  float newArrival = sta_.get()->vertexArrival(
-      outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  float newArrival
+      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
-  EXPECT_LE(origArrival, newArrival);
+  EXPECT_LE(newArrival, origArrival);
 }
 
 }  // namespace rsz

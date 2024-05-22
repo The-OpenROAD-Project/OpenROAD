@@ -123,7 +123,7 @@ class RepairSetup : public sta::dbStaState
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   bool removeDrvr(PathRef* drvr_path,
                   LibertyCell* drvr_cell,
-                  const int drvr_index,
+                  int drvr_index,
                   PathExpanded* expanded);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(

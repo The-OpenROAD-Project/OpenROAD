@@ -45,14 +45,9 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
-using sta::DcalcAnalysisPt;
 using sta::Instance;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::MinMax;
 using sta::Net;
 using sta::StaState;
 using utl::Logger;

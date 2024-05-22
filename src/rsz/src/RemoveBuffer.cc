@@ -48,7 +48,6 @@
 namespace rsz {
 
 using std::string;
-using std::vector;
 using utl::RSZ;
 
 using sta::NetPinIterator;
@@ -118,6 +117,7 @@ bool RemoveBuffer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
                "remove {}",
                db_network_->name(buffer));
     buffer_removed = true;
+    resizer_->incrementalParasiticsBegin();
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
@@ -138,6 +138,8 @@ bool RemoveBuffer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
       resizer_->parasitics_invalid_.erase(removed);
     }
     resizer_->parasiticsInvalid(survivor);
+    resizer_->updateParasitics();
+    resizer_->incrementalParasiticsEnd();
   }
   return buffer_removed;
 }
