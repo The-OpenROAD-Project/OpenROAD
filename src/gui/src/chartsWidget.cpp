@@ -260,7 +260,7 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
 }
 
 void ChartsWidget::fetchConstrainedPins(StaPins& end_points,
-                                        const bool set_mix_max)
+                                        const bool set_slack_min_max)
 {
   const int all_endpoints_count = end_points.size();
 
@@ -274,7 +274,7 @@ void ChartsWidget::fetchConstrainedPins(StaPins& end_points,
     if (slack != sta::INF) {
       slack = time_unit->staToUser(slack);
 
-      if (set_mix_max) {
+      if (set_slack_min_max) {
         if (slack < min_slack_) {
           min_slack_ = slack;
         }
