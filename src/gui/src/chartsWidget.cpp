@@ -66,7 +66,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       buckets_(std::make_unique<Buckets>()),
       prev_filter_index_(0),  // start with no filter
       max_slack_(0.0f),
-      min_slack_(0.0f),
+      min_slack_(std::numeric_limits<float>::max()),
 #endif
       label_(new QLabel(this))
 {
@@ -366,7 +366,7 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
     }
   }
 
-  auto compareSlack = [=](const sta::Pin*& a, const sta::Pin*& b) {
+  auto compareSlack = [=](const sta::Pin* a, const sta::Pin* b) {
     return stagui_->getPinSlack(a) < stagui_->getPinSlack(b);
   };
   std::sort(end_points.begin(), end_points.end(), compareSlack);
