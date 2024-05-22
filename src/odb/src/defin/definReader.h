@@ -194,8 +194,12 @@ class definReader : public definBase
                          defiRow* row,
                          defiUserData data);
 
-  static int scanchainsCallback(defrCallbackType_e type,
-                                int count,
+  static int scanchainsStartCallback(defrCallbackType_e type,
+                                     int count,
+                                     defiUserData data);
+
+  static int scanchainsCallback(defrCallbackType_e,
+                                LefDefParser::defiScanchain* scan_chain,
                                 defiUserData data);
 
   static int slotsCallback(defrCallbackType_e type,
