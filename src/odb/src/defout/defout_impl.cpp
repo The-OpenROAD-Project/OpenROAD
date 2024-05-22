@@ -71,7 +71,7 @@ std::vector<T*> sortedSet(dbSet<T>& to_sort)
   return sorted;
 }
 
-const char* defOrient(dbOrientType orient)
+const char* defOrient(const dbOrientType& orient)
 {
   switch (orient.getValue()) {
     case dbOrientType::R0:
