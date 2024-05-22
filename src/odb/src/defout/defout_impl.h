@@ -131,7 +131,7 @@ class defout_impl
     _logger = logger;
   }
 
-  ~defout_impl() {}
+  ~defout_impl() = default;
 
   void setUseLayerAlias(bool value) { _use_alias = value; }
 

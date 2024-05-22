@@ -32,10 +32,9 @@
 
 #include "definReader.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -81,19 +80,17 @@ int calculateBitsForCellInScandef(int bits, dbInst* inst)
   // -1 is no bits were provided in the scandef
   if (bits != -1) {
     return bits;
-  } else {
-    // -1 means that the bits are not set in the scandef
-    // We need to check if the inst is sequential to decide what is a
-    // reasonable default value
-    dbMaster* master = inst->getMaster();
-    if (master->isSequential()) {
-      // the default number of bits for sequential elements is 1
-      return 1;
-    } else {
-      // the default number of bits for combinational logic is 0
-      return 0;
-    }
   }
+  // -1 means that the bits are not set in the scandef
+  // We need to check if the inst is sequential to decide what is a
+  // reasonable default value
+  dbMaster* master = inst->getMaster();
+  if (master->isSequential()) {
+    // the default number of bits for sequential elements is 1
+    return 1;
+  }
+  // the default number of bits for combinational logic is 0
+  return 0;
 }
 
 dbITerm* findScanITerm(definReader* reader,
@@ -109,10 +106,9 @@ dbITerm* findScanITerm(definReader* reader,
                              "COMMONSCANPINS for instance {}",
                              inst->getName());
       return nullptr;
-    } else {
-      // using the common pin name
-      return inst->findITerm(common_pin);
     }
+    // using the common pin name
+    return inst->findITerm(common_pin);
   }
   return inst->findITerm(pin_name);
 }
@@ -1436,11 +1432,9 @@ int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
   scan_chain->start(&unused, &start_pin_name);
   scan_chain->stop(&unused, &stop_pin_name);
 
-  std::visit([db_scan_chain, reader, block, start_pin_name](
-                 auto&& pin) { db_scan_chain->setScanIn(pin); },
+  std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanIn(pin); },
              findScanTerm(reader, block, start_pin_name));
-  std::visit([db_scan_chain, reader, block, stop_pin_name](
-                 auto&& pin) { db_scan_chain->setScanOut(pin); },
+  std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanOut(pin); },
              findScanTerm(reader, block, stop_pin_name));
 
   // Get floating elements, each floating element is in its own dbScanList
@@ -1882,10 +1876,10 @@ void definReader::error(const char* msg)
   ++_errors;
 }
 
-void definReader::setLibs(std::vector<dbLib*>& libs)
+void definReader::setLibs(std::vector<dbLib*>& lib_names)
 {
-  _componentR->setLibs(libs);
-  _rowR->setLibs(libs);
+  _componentR->setLibs(lib_names);
+  _rowR->setLibs(lib_names);
 }
 
 dbChip* definReader::createChip(std::vector<dbLib*>& libs,
