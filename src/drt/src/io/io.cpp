@@ -605,8 +605,10 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       netIn->addNode(instTermNode);
     }
   }
-  bool db_net_routed
-      = net->getWire() && net->getWireType() == odb::dbWireType::ROUTED;
+  netIn->setFixed(net->getWireType() == odb::dbWireType::FIXED);
+  bool db_net_routed = net->getWire()
+                       && (net->getWireType() == odb::dbWireType::ROUTED
+                           || net->getWireType() == odb::dbWireType::FIXED);
   bool fr_net_routed = !netIn->getShapes().empty() || !netIn->getVias().empty()
                        || !netIn->getPatchWires().empty();
   netIn->setHasInitialRouting(false);
