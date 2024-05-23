@@ -273,8 +273,12 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
 
   if (top_) {
     dbBlock* block = network->block();
-    bitr_ = block->getBTerms().begin();
-    bitr_end_ = block->getBTerms().end();
+    // it is possible that a block might not have been created if no design
+    // has been read in.
+    if (block) {
+      bitr_ = block->getBTerms().begin();
+      bitr_end_ = block->getBTerms().end();
+    }
   } else {
     dbInst* db_inst;
     dbModInst* mod_inst;
@@ -427,9 +431,7 @@ DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
 
 bool DbNetTermIterator::hasNext()
 {
-  if (mod_iter_ != mod_end_ || iter_ != end_)
-    return true;
-  return false;
+  return (mod_iter_ != mod_end_ || iter_ != end_);
 }
 
 Term* DbNetTermIterator::next()
@@ -508,6 +510,17 @@ ObjectId dbNetwork::id(const Instance* instance) const
   if (instance == top_instance_) {
     return 0;
   }
+  if (hierarchy_) {
+    dbInst* db_inst;
+    dbModInst* mod_inst;
+    staToDb(instance, db_inst, mod_inst);
+    if (db_inst) {
+      return db_inst->getId() >> 2;
+    }
+    if (mod_inst) {
+      return (mod_inst->getId() >> 2) + 1;
+    }
+  }
   return staToDb(instance)->getId();
 }
 
@@ -574,7 +587,6 @@ void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
   }
 }
 
-// upto here.
 Cell* dbNetwork::cell(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -754,20 +766,36 @@ ObjectId dbNetwork::id(const Pin* pin) const
   dbModITerm* moditerm = nullptr;
   dbModBTerm* modbterm = nullptr;
 
+  static std::map<ObjectId, void*> id_ptr_map;
+
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
-  if (iterm != nullptr) {
-    return iterm->getId() << 1;
-  }
-  if (bterm != nullptr) {
-    return (bterm->getId() << 1) + 1;
-  }
-
-  if (moditerm != nullptr) {
-    return (moditerm->getId());
-  }
-  if (modbterm != nullptr) {
-    return (modbterm->getId());
+  if (hierarchy_) {
+    // The id is used by the STA traversers to accumulate visited.
+    // lower bits used to encode type
+    // id,00 <- iterm
+    // id,01 <- bterm
+    // id,10 <- moditerm
+    // id,11 <- modbterm
+    if (iterm != nullptr) {
+      return iterm->getId() << 2;
+    }
+    if (bterm != nullptr) {
+      return (bterm->getId() << 2) | 1;
+    }
+    if (moditerm != nullptr) {
+      return (moditerm->getId() << 2) | 2;
+    }
+    if (modbterm != nullptr) {
+      return (modbterm->getId() << 2) | 3;
+    }
+  } else {
+    if (iterm != nullptr) {
+      return iterm->getId() << 1;
+    }
+    if (bterm != nullptr) {
+      return (bterm->getId() << 1) + 1;
+    }
   }
   return 0;
 }
@@ -775,6 +803,7 @@ ObjectId dbNetwork::id(const Pin* pin) const
 Instance* dbNetwork::instance(const Pin* pin) const
 {
   dbITerm* iterm;
+
   dbBTerm* bterm;
   dbModITerm* moditerm = nullptr;
   dbModBTerm* modbterm = nullptr;
@@ -814,9 +843,6 @@ Net* dbNetwork::net(const Pin* pin) const
     // that we have both a mod net and a dbinst net.
     // In the case of writing out a hierachical network we always
     // choose the mnet.
-    if (dnet && mnet) {
-      return dbToSta(mnet);
-    }
     if (mnet)
       return dbToSta(mnet);
     if (dnet)
@@ -937,7 +963,7 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     // get the direction off the modbterm
     std::string pin_name = moditerm->getName();
     dbModInst* mod_inst = moditerm->getParent();
-    dbModule* module = mod_inst->getParent();
+    dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
@@ -969,6 +995,7 @@ void dbNetwork::setVertexId(Pin* pin, VertexId id)
   dbModITerm* moditerm = nullptr;
   dbModBTerm* modbterm = nullptr;
   staToDb(pin, iterm, bterm, moditerm, modbterm);
+  // timing arcs only set on leaf level iterm/bterm.
   if (iterm) {
     iterm->staSetVertexId(id);
   } else if (bterm) {
@@ -1041,7 +1068,20 @@ bool dbNetwork::isPlaced(const Pin* pin) const
 
 ObjectId dbNetwork::id(const Net* net) const
 {
-  return staToDb(net)->getId();
+  dbModNet* modnet = nullptr;
+  dbNet* dnet = nullptr;
+  staToDb(net, dnet, modnet);
+  if (hierarchy_) {
+    if (dnet) {
+      return dnet->getId() << 2;
+    }
+    if (modnet) {
+      return (modnet->getId() << 2) + 1;
+    }
+  } else {
+    return dnet->getId();
+  }
+  return 0;
 }
 
 const char* dbNetwork::name(const Net* net) const
@@ -1758,6 +1798,7 @@ void dbNetwork::staToDb(const Pin* pin,
                         dbITerm*& iterm,
                         dbBTerm*& bterm,
                         dbModITerm*& moditerm,
+                        // axiom never see a modbterm...
                         dbModBTerm*& modbterm) const
 {
   iterm = nullptr;
