@@ -2319,7 +2319,25 @@ int dbBlock::getDbUnitsPerMicron()
   return block->_dbu_per_micron;
 }
 
-double dbBlock::dbuToMicrons(const int dbu)
+double dbBlock::dbuToMicrons(int dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(unsigned int dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(int64_t dbu)
+{
+  const double dbu_micron = getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double dbBlock::dbuToMicrons(double dbu)
 {
   const double dbu_micron = getTech()->getDbUnitsPerMicron();
   return dbu / dbu_micron;

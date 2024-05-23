@@ -140,7 +140,8 @@ configure_file(
 
 ################################################################
 
-if (NOT APPLE)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.1")
+  MESSAGE(STATUS "Older version of GCC detected. Linking against stdc++fs")
   link_libraries(stdc++fs)
 endif()
 

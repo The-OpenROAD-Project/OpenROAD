@@ -77,12 +77,11 @@ RepairDesign::~RepairDesign() = default;
 void RepairDesign::init()
 {
   logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
+  dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
-  copyState(sta_);
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -852,7 +851,8 @@ void RepairDesign::repairNetWire(
                  level,
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                  units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
-      split_length = min(split_length, max(max_length_ - wire_length_ref, 0));
+      split_length = min(max_length_, length / 2);
+
       split_wire = true;
     }
     if (wire_cap > 0.0 && load_cap > max_cap_) {

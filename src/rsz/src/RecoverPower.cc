@@ -73,9 +73,8 @@ RecoverPower::RecoverPower(Resizer* resizer) : resizer_(resizer)
 void RecoverPower::init()
 {
   logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
+  dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
-  copyState(sta_);
 }
 
 void RecoverPower::recoverPower(const float recover_power_percent)
