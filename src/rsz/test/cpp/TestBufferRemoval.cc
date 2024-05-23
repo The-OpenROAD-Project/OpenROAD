@@ -127,8 +127,6 @@ class BufRemTest : public ::testing::Test
     odb::dbTechLayer* layer = block->getTech()->findRoutingLayer(0);
     odb::dbBox::create(inPin, layer, 0, 0, 10, 10);
     inPin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-    // this is needed to create top level STA port object
-    sta_->makePortPin("in1", "input");
 
     odb::dbBTerm* outPort = odb::dbBTerm::create(out1, "out1");
     outPort->setIoType(odb::dbIoType::OUTPUT);
@@ -136,9 +134,6 @@ class BufRemTest : public ::testing::Test
     layer = block->getTech()->findRoutingLayer(0);
     odb::dbBox::create(outPin, layer, 990, 990, 1000, 1000);
     outPin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-    // why is this step of creating STA port object not automatic after creating
-    // bterm and bpin?
-    sta_->makePortPin("out1", "output");
 
     odb::dbITerm* inTerm = getFirstInput(b1);
     inTerm->connect(in1);
@@ -211,10 +206,9 @@ TEST_F(BufRemTest, SlackImproves)
   odb::dbBlock* block = chip->getBlock();
   odb::dbInst* inst = block->findInst("b2");
   sta::Instance* sta_inst = db_network_->dbToSta(inst);
-  sta::InstanceSeq* insts = new sta::InstanceSeq;
+  auto insts = std::make_unique<sta::InstanceSeq>();
   insts->emplace_back(sta_inst);
   resizer_->removeBuffers(*insts);
-  delete insts;
 
   float newArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);

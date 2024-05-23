@@ -20,5 +20,13 @@ target_include_directories(TestBufRem1
       ${PROJECT_SOURCE_DIR}/src/rsz/src
 )
 
+# This somehow causes an error in regression harness:
+# sh: 1: /home/cmoon/OR/OpenROAD/build/src/rsz/test/cpp/TestBufRem1[1]_include.cmake: Permission denied
+# ERROR: test returned exit code 126
+#gtest_discover_tests(TestBufRem1
+#    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+#)
+
 add_dependencies(build_and_test TestBufRem1
 )
+

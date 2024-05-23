@@ -590,16 +590,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              int drvr_index,
                              PathExpanded* expanded)
 {
-  /* TODO: remove driver only if slack improves and no new violations
-  if (drvr_cell && drvr_cell->isBuffer()) {
-    Pin* drvr_pin = drvr_path->pin(this);
-    Instance* drvr = network_->instance(drvr_pin);
-    if (remove_buffer_->removeBuffer(drvr)) {
-      return true;
-    }
-  }
-  */
-
+  /* TODO: remove driver only if slack improves and no new violations */
   return false;
 }
 
