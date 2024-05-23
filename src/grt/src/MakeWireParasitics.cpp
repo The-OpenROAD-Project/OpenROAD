@@ -369,14 +369,6 @@ void MakeWireParasitics::makePartialParasiticsToPin(
   odb::Point pt = pin.getPosition();
   odb::Point grid_pt = pin.getOnGridPosition();
 
-  std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
-  bool has_access_points
-      = grouter_->findPinAccessPointPositions(pin, ap_positions);
-  if (has_access_points) {
-    auto ap_position = ap_positions.front();
-    pt = ap_position.first;
-    grid_pt = ap_position.second;
-  }
   if (pin.isConnectedToPadOrMacro() || pin.isPort()) {
     grid_pt = grouter_->findFakePinPosition(pin, net);
   }
