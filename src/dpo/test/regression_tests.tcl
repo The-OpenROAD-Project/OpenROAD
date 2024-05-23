@@ -1,5 +1,6 @@
 record_tests {
     aes
+    blockage1
     gcd
     ibex
     multi_height1

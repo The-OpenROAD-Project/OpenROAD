@@ -440,7 +440,8 @@ Term* DbNetTermIterator::next()
     dbBTerm* bterm = *iter_;
     iter_++;
     return network_->dbToStaTerm(bterm);
-  } else if (mod_iter_ != mod_end_ && (network_->hasHierarchy())) {
+  }
+  if (mod_iter_ != mod_end_ && (network_->hasHierarchy())) {
     dbModBTerm* modbterm = *mod_iter_;
     mod_iter_++;
     return network_->dbToStaTerm(modbterm);
@@ -843,10 +844,12 @@ Net* dbNetwork::net(const Pin* pin) const
     // that we have both a mod net and a dbinst net.
     // In the case of writing out a hierachical network we always
     // choose the mnet.
-    if (mnet)
+    if (mnet) {
       return dbToSta(mnet);
-    if (dnet)
+    }
+    if (dnet) {
       return dbToSta(dnet);
+    }
   }
   // only pins which act as bterms are top levels and have no net
   if (bterm) {
@@ -1092,7 +1095,8 @@ const char* dbNetwork::name(const Net* net) const
   if (dnet) {
     const char* name = dnet->getConstName();
     return tmpStringCopy(name);
-  } else if (modnet) {
+  }
+  if (modnet) {
     std::string net_name = modnet->getName();
     return tmpStringCopy(net_name.c_str());
   }
@@ -1134,8 +1138,9 @@ void dbNetwork::visitConnectedPins(const Net* net,
   dbModNet* mod_net = nullptr;
   dbNet* db_net = nullptr;
 
-  if (visited_nets.hasKey(net))
+  if (visited_nets.hasKey(net)) {
     return;
+  }
 
   visited_nets.insert(net);
   staToDb(net, db_net, mod_net);
@@ -1230,7 +1235,8 @@ Pin* dbNetwork::pin(const Term* term) const
   staToDb(term, iterm, bterm, moditerm, modbterm);
   if (bterm) {
     return dbToSta(bterm);
-  } else if (modbterm) {
+  }
+  if (modbterm) {
     // get the moditerm
     dbModule* cur_module = modbterm->getParent();
     dbModInst* cur_mod_inst = cur_module->getModInst();
@@ -1257,11 +1263,13 @@ Net* dbNetwork::net(const Term* term) const
   }
   if (bterm) {
     dbModNet* mod_net = bterm->getModNet();
-    if (mod_net)
+    if (mod_net) {
       return dbToSta(mod_net);
+    }
     dbNet* dnet = bterm->getNet();
-    if (dnet)
+    if (dnet) {
       return dbToSta(dnet);
+    }
   }
   return nullptr;
 }

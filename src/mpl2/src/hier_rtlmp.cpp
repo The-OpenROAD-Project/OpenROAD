@@ -46,6 +46,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/util.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -3926,8 +3927,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
     logger_->error(MPL, 5, "Failed on cluster {}", parent->getName());
   }
-  best_sa->alignMacroClusters();
+
+  if (best_sa->centralizationWasReverted()) {
+    best_sa->alignMacroClusters();
+  }
   best_sa->fillDeadSpace();
+
   // update the clusters and do bus planning
   std::vector<SoftMacro> shaped_macros;
   best_sa->getMacros(shaped_macros);
@@ -4179,8 +4184,12 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
       logger_->error(MPL, 6, "Failed on cluster {}", parent->getName());
     }
-    best_sa->alignMacroClusters();
+
+    if (best_sa->centralizationWasReverted()) {
+      best_sa->alignMacroClusters();
+    }
     best_sa->fillDeadSpace();
+
     // update the clusters and do bus planning
     best_sa->getMacros(shaped_macros);
   }
@@ -4715,7 +4724,9 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
     runEnhancedHierarchicalMacroPlacement(parent);
   } else {
-    best_sa->alignMacroClusters();
+    if (best_sa->centralizationWasReverted()) {
+      best_sa->alignMacroClusters();
+    }
     best_sa->fillDeadSpace();
 
     std::vector<SoftMacro> shaped_macros;
@@ -5198,8 +5209,12 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
     logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
   }
-  best_sa->alignMacroClusters();
+
+  if (best_sa->centralizationWasReverted()) {
+    best_sa->alignMacroClusters();
+  }
   best_sa->fillDeadSpace();
+
   // update the clusters and do bus planning
   std::vector<SoftMacro> shaped_macros;
   best_sa->getMacros(shaped_macros);
@@ -6196,26 +6211,13 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
     return;
   }
 
-  logger_->warn(MPL,
-                39,
-                "The flag -write_macro_placement is deprecated. Use the .tcl "
-                "command write_macro_placement instead.");
-
   std::ofstream out(file_name);
 
   if (!out) {
     logger_->error(MPL, 11, "Cannot open file {}.", file_name);
   }
 
-  // Use only insts that were placed by mpl2
-  for (auto& [inst, hard_macro] : hard_macro_map_) {
-    const float x = dbuToMicron(inst->getLocation().x(), dbu_);
-    const float y = dbuToMicron(inst->getLocation().y(), dbu_);
-
-    out << "place_macro -macro_name " << inst->getName() << " -location {" << x
-        << " " << y << "} -orientation " << inst->getOrient().getString()
-        << '\n';
-  }
+  out << odb::generateMacroPlacementString(block_);
 }
 
 void HierRTLMP::clear()

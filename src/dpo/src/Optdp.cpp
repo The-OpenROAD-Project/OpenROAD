@@ -61,6 +61,7 @@ namespace dpo {
 using utl::DPO;
 
 using odb::dbBlock;
+using odb::dbBlockage;
 using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbInst;
@@ -376,11 +377,6 @@ void Optdp::setupMasterPowers()
 ////////////////////////////////////////////////////////////////
 void Optdp::createNetwork()
 {
-  std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  std::unordered_map<odb::dbNet*, Edge*>::iterator it_e;
-  std::unordered_map<odb::dbBTerm*, Node*>::iterator it_p;
-  std::unordered_map<dbMaster*, std::pair<int, int>>::iterator it_m;
-
   dbBlock* block = db_->getChip()->getBlock();
 
   pwrLayers_.clear();
@@ -388,21 +384,13 @@ void Optdp::createNetwork()
 
   // I allocate things statically, so I need to do some counting.
 
-  std::vector<dbInst*> insts;
-  for (dbInst* inst : block->getInsts()) {
-    insts.push_back(inst);
-  }
+  auto block_insts = block->getInsts();
+  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
   std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
     return a->getName() < b->getName();
   });
-  dbSet<dbNet> nets = block->getNets();
-  dbSet<dbBTerm> bterms = block->getBTerms();
 
-  // Number of this and that.
-  int nTerminals = bterms.size();
   int nNodes = 0;
-  int nEdges = 0;
-  int nPins = 0;
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
@@ -411,6 +399,9 @@ void Optdp::createNetwork()
     ++nNodes;
   }
 
+  dbSet<dbNet> nets = block->getNets();
+  int nEdges = 0;
+  int nPins = 0;
   for (dbNet* net : nets) {
     // Skip supply nets.
     if (net->getSigType().isSupply()) {
@@ -429,14 +420,26 @@ void Optdp::createNetwork()
     nPins += net->getBTerms().size();
   }
 
+  dbSet<dbBTerm> bterms = block->getBTerms();
+  const int nTerminals = bterms.size();
+
+  int nBlockages = 0;
+  for (dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      network_->createAndAddBlockage(blockage->getBBox()->getBox());
+      ++nBlockages;
+    }
+  }
+
   logger_->info(DPO,
                 100,
                 "Creating network with {:d} cells, {:d} terminals, "
-                "{:d} edges and {:d} pins.",
+                "{:d} edges, {:d} pins, and {:d} blockages.",
                 nNodes,
                 nTerminals,
                 nEdges,
-                nPins);
+                nPins,
+                nBlockages);
 
   // Create and allocate the nodes.  I require nodes for
   // placeable instances as well as terminals.
@@ -504,7 +507,7 @@ void Optdp::createNetwork()
     ndi->setLeftEdgeType(EDGETYPE_DEFAULT);
 
     // Set the top and bottom power.
-    it_m = masterPwrs_.find(inst->getMaster());
+    auto it_m = masterPwrs_.find(inst->getMaster());
     if (masterPwrs_.end() == it_m) {
       ndi->setBottomPower(Architecture::Row::Power_UNK);
       ndi->setTopPower(Architecture::Row::Power_UNK);
@@ -586,7 +589,7 @@ void Optdp::createNetwork()
         continue;
       }
 
-      it_n = instMap_.find(iTerm->getInst());
+      auto it_n = instMap_.find(iTerm->getInst());
       if (instMap_.end() != it_n) {
         n = it_n->second->getId();  // The node id.
 
@@ -627,7 +630,7 @@ void Optdp::createNetwork()
       }
     }
     for (dbBTerm* bTerm : net->getBTerms()) {
-      it_p = termMap_.find(bTerm);
+      auto it_p = termMap_.find(bTerm);
       if (termMap_.end() != it_p) {
         n = it_p->second->getId();  // The node id.
 
