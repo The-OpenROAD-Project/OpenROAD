@@ -3,13 +3,15 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_verilog hierclock_gate.v
-link_design hierclock
+link_design hierclock -hier
 
-create_clock -name sys_clk -period 1.0 -waveform {0.0 1.0} [get_port clk_i]
-create_clock -name clk1 -period 4.0 -waveform {0.0 3.0} [get_pins U1/clk1_o]
-create_clock -name clk2 -period 8.0 -waveform {0.0 7.0} [get_pins U1/clk2_o]
+#make some hierarchical clocks.
+create_clock -name clk1 -period 2.0 -waveform {0.0 1.0} [get_pins U2/clk_i]
+create_clock -name clk2 -period 4.0 -waveform {0.0 2.0} [get_pins U3/clk_i]
 
-report_checks -path_delay max -fields {slew cap input nets fanout} -format full_clock_expanded
+
+report_checks -path_delay min -fields {slew cap input nets fanout} -format full_clock_expanded
 
 write_verilog hierclock_out.v
+diff_files hierclock_out.v hierclock_out.vok
 
