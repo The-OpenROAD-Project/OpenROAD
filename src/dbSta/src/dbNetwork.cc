@@ -516,10 +516,10 @@ ObjectId dbNetwork::id(const Instance* instance) const
     dbModInst* mod_inst;
     staToDb(instance, db_inst, mod_inst);
     if (db_inst) {
-      return db_inst->getId() >> 2;
+      return db_inst->getId() << 1;
     }
     if (mod_inst) {
-      return (mod_inst->getId() >> 2) + 1;
+      return (mod_inst->getId() << 1) + 1;
     }
   }
   return staToDb(instance)->getId();
@@ -782,13 +782,13 @@ ObjectId dbNetwork::id(const Pin* pin) const
       return iterm->getId() << 2;
     }
     if (bterm != nullptr) {
-      return (bterm->getId() << 2) | 1;
+      return (bterm->getId() << 2) | 0x1;
     }
     if (moditerm != nullptr) {
-      return (moditerm->getId() << 2) | 2;
+      return (moditerm->getId() << 2) | 0x2;
     }
     if (modbterm != nullptr) {
-      return (modbterm->getId() << 2) | 3;
+      return (modbterm->getId() << 2) | 0x3;
     }
   } else {
     if (iterm != nullptr) {
@@ -1076,10 +1076,10 @@ ObjectId dbNetwork::id(const Net* net) const
   staToDb(net, dnet, modnet);
   if (hierarchy_) {
     if (dnet) {
-      return dnet->getId() << 2;
+      return dnet->getId() << 1;
     }
     if (modnet) {
-      return (modnet->getId() << 2) + 1;
+      return (modnet->getId() << 1) + 1;
     }
   } else {
     return dnet->getId();
