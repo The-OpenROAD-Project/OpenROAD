@@ -45,15 +45,13 @@ StreamHandler::StreamHandler(const char* filename, bool binary)
   }
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   try {
-    if (binary) {
-      os_.open(tmp_filename, std::ios::binary | std::ios_base::out);
-    } else {
-      os_.open(tmp_filename, std::ios_base::out);
-    }
+    os_.open(tmp_filename,
+             (binary ? (std::ios::binary | std::ios_base::out)
+                     : std::ios_base::out));
   } catch (std::ios_base::failure& e) {
     std::string error = e.what();
-    throw std::ios_base::failure(error + " (failed to open '" + tmp_filename
-                                 + "')");
+    std::throw_with_nested(std::ios_base::failure(error + " (failed to open '"
+                                                  + tmp_filename + "')"));
   }
 }
 
@@ -63,8 +61,8 @@ StreamHandler::~StreamHandler()
     os_.close();
   }
   std::string tmp_filename = filename_ + ".tmp";
-  fs::rename(tmp_filename,
-             filename_);  // If filename_ exists it will be overwritten
+  // If filename_ exists it will be overwritten
+  fs::rename(tmp_filename, filename_);
 }
 
 std::ofstream& StreamHandler::getStream()
@@ -76,11 +74,7 @@ FileHandler::FileHandler(const char* filename, bool binary)
     : filename_(filename)
 {
   std::string tmp_filename = filename_ + ".tmp";
-  if (binary) {
-    file_ = fopen(tmp_filename.c_str(), "wb");
-  } else {
-    file_ = fopen(tmp_filename.c_str(), "w");
-  }
+  file_ = fopen(tmp_filename.c_str(), (binary ? "wb" : "w"));
   if (!file_) {
     std::string error = strerror(errno);
     throw std::runtime_error(error + ": " + tmp_filename);
@@ -93,8 +87,8 @@ FileHandler::~FileHandler()
     fclose(file_);
   }
   std::string tmp_filename = filename_ + ".tmp";
-  fs::rename(tmp_filename,
-             filename_);  // If filename_ exists it will be overwritten
+  // If filename_ exists it will be overwritten
+  fs::rename(tmp_filename, filename_);
 }
 
 FILE* FileHandler::getFile()
