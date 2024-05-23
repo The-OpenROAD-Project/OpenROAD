@@ -379,7 +379,7 @@ void OpenRoad::writeAbstractLef(const char* filename,
   if (!block) {
     logger_->error(ORD, 53, "No block is loaded.");
   }
-  utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+  utl::StreamHandler stream_handler(filename);
   odb::lefout writer(logger_, stream_handler.getStream());
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);
@@ -406,18 +406,18 @@ void OpenRoad::writeLef(const char* filename)
         } else {
           name += "_" + std::to_string(cnt);
         }
-        utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+        utl::StreamHandler stream_handler(filename);
         odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeLib(lib);
       } else {
-        utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+        utl::StreamHandler stream_handler(filename);
         odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeTechAndLib(lib);
       }
       ++cnt;
     }
   } else if (db_->getTech()) {
-    utl::StreamHandler stream_handler(filename, std::ofstream::badbit);
+    utl::StreamHandler stream_handler(filename);
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeTech(db_->getTech());
   }
@@ -462,8 +462,7 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  utl::StreamHandler stream_handler(
-      filename, std::ofstream::badbit | std::ios::eofbit, std::ios::binary);
+  utl::StreamHandler stream_handler(filename, true);
 
   db_->write(stream_handler.getStream());
 }

@@ -153,7 +153,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   _dist_factor
       = (double) block->getDefUnits() / (double) block->getDbUnitsPerMicron();
-  utl::FileHandler fileHandler(def_file, "w");
+  utl::FileHandler fileHandler(def_file);
   _out = fileHandler.getFile();
 
   if (_out == nullptr) {

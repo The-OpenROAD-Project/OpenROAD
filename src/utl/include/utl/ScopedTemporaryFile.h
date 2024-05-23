@@ -71,28 +71,26 @@ class StreamHandler
 {
  public:
   StreamHandler(const char* filename,
-                std::ios_base::iostate flag,
-                std::ios_base::openmode mode = std::ios_base::out);
+                bool binary
+                = false);  // Set binary_ true to open in binary mode
   ~StreamHandler();
   std::ofstream& getStream();
 
  private:
   std::string filename_;
-  std::ios_base::iostate flag_;
-  std::ios_base::openmode mode_;
   std::ofstream os_;
 };
 
 class FileHandler
 {
  public:
-  FileHandler(const char* filename, const char* mode = "w");
+  FileHandler(const char* filename,
+              bool binary = false);  // Set binary_ true to open in binary mode
   ~FileHandler();
   FILE* getFile();
 
  private:
   std::string filename_;
-  const char* mode_;
   FILE* file_;
 };
 

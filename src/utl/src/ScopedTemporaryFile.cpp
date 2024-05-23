@@ -36,20 +36,25 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-StreamHandler::StreamHandler(const char* filename,
-                             std::ios_base::iostate flag,
-                             std::ios_base::openmode mode)
-    : filename_(filename), flag_(flag), mode_(mode)
+StreamHandler::StreamHandler(const char* filename, bool binary)
+    : filename_(filename)
 {
-  if (fs::exists(filename_)) {
-    fs::remove(filename_);
-  }
   std::string tmp_filename = filename_ + ".tmp";
   if (fs::exists(tmp_filename)) {
     fs::remove(tmp_filename);
   }
-  os_.exceptions(flag | std::ofstream::failbit);
-  os_.open(tmp_filename, mode);
+  os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  try {
+    if (binary) {
+      os_.open(tmp_filename, std::ios::binary | std::ios_base::out);
+    } else {
+      os_.open(tmp_filename, std::ios_base::out);
+    }
+  } catch (std::ios_base::failure& e) {
+    std::string error = e.what();
+    throw std::ios_base::failure(error + " (failed to open '" + tmp_filename
+                                 + "')");
+  }
 }
 
 StreamHandler::~StreamHandler()
@@ -58,7 +63,8 @@ StreamHandler::~StreamHandler()
     os_.close();
   }
   std::string tmp_filename = filename_ + ".tmp";
-  fs::rename(tmp_filename, filename_);
+  fs::rename(tmp_filename,
+             filename_);  // If filename_ exists it will be overwritten
 }
 
 std::ofstream& StreamHandler::getStream()
@@ -66,16 +72,18 @@ std::ofstream& StreamHandler::getStream()
   return os_;
 }
 
-FileHandler::FileHandler(const char* filename, const char* mode)
-    : filename_(filename), mode_(mode)
+FileHandler::FileHandler(const char* filename, bool binary)
+    : filename_(filename)
 {
-  if (fs::exists(filename_)) {
-    fs::remove(filename_);
-  }
   std::string tmp_filename = filename_ + ".tmp";
-  file = fopen(tmp_filename.c_str(), mode);
-  if (!file) {
-    throw std::runtime_error("Failed to open temporary file");
+  if (binary) {
+    file_ = fopen(tmp_filename.c_str(), "wb");
+  } else {
+    file_ = fopen(tmp_filename.c_str(), "w");
+  }
+  if (!file_) {
+    std::string error = strerror(errno);
+    throw std::runtime_error(error + ": " + tmp_filename);
   }
 }
 
@@ -85,7 +93,8 @@ FileHandler::~FileHandler()
     fclose(file_);
   }
   std::string tmp_filename = filename_ + ".tmp";
-  fs::rename(tmp_filename, filename_);
+  fs::rename(tmp_filename,
+             filename_);  // If filename_ exists it will be overwritten
 }
 
 FILE* FileHandler::getFile()

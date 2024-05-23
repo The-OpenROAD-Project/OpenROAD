@@ -188,7 +188,7 @@ bool cdl::writeCdl(utl::Logger* logger,
     mtermMap.insert(submtermMap.begin(), submtermMap.end());
   }
   int unconnectedNets = 0;
-  utl::FileHandler fileHandler(outFileName, "w");
+  utl::FileHandler fileHandler(outFileName);
   FILE* f = fileHandler.getFile();
 
   if (f == nullptr) {
