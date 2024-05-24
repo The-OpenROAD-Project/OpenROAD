@@ -112,6 +112,7 @@ class Timing
   void makeEquivCells();
   std::vector<odb::dbMaster*> equivCells(odb::dbMaster* master);
 
+  float getMaxSlewLimit(odb::dbMTerm* pin);
  private:
   sta::dbSta* getSta();
   sta::MinMax* getMinMax(MinMax type);

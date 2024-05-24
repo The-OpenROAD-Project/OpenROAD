@@ -37,6 +37,8 @@
 
 #include <tcl.h>
 
+#include <limits>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -412,5 +414,19 @@ std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
     }
   }
   return masterSeq;
+}
+
+float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  float maxSlew = std::numeric_limits<float>::infinity();
+  bool maxSlewExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
+  }
+  return maxSlew;
 }
 }  // namespace ord
