@@ -76,6 +76,12 @@ class Rings : public GridComponent
 
   void checkLayerSpecifications() const override;
 
+ protected:
+  bool areIntersectionsAllowed() const override
+  {
+    return layers_[0].layer == layers_[1].layer;
+  }
+
  private:
   std::array<Layer, 2> layers_;
   std::array<int, 4> offset_ = {0, 0, 0, 0};

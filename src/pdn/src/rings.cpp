@@ -58,14 +58,6 @@ void Rings::checkLayerSpecifications() const
       techlayer.checkIfManufacturingGrid(off, getLogger(), "Core offset");
     }
   }
-
-  if (layers_[0].layer->getDirection() == layers_[1].layer->getDirection()) {
-    getLogger()->error(
-        utl::PDN,
-        180,
-        "Ring cannot be build with layers following the same direction: {}",
-        layers_[0].layer->getDirection().getString());
-  }
 }
 
 void Rings::setOffset(const std::array<int, 4>& offset)
@@ -195,11 +187,21 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   core.set_xhi(core.xMax() + offset_[2]);
   core.set_yhi(core.yMax() + offset_[3]);
 
+  bool single_layer_ring = false;
+  if (layers_[0].layer == layers_[1].layer) {
+    single_layer_ring = true;
+  }
+
+  bool processed_horizontal = false;
   for (const auto& layer_def : layers_) {
     auto* layer = layer_def.layer;
     const int width = layer_def.width;
     const int pitch = layer_def.spacing + width;
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    if ((single_layer_ring && !processed_horizontal)
+        || (!single_layer_ring
+            && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)) {
+      processed_horizontal = true;
+
       // bottom
       int x_start = core.xMin() - width;
       int x_end = core.xMax() + width;
@@ -280,6 +282,14 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
           y_start -= pitch;
           y_end += pitch;
         }
+      }
+    }
+  }
+
+  if (single_layer_ring) {
+    for (const auto& [layer, shapes] : getShapes()) {
+      for (const auto& shape : shapes) {
+        shape->setLocked();
       }
     }
   }
