@@ -37,6 +37,8 @@
 
 #include <tcl.h>
 
+#include <limits>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -358,6 +360,20 @@ float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
   sta::Pin* sta_pin = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
   return sta->capacitance(lib_port, corner, getMinMax(minmax));
+}
+
+float Timing::getMaxCapLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  float maxCap = std::numeric_limits<float>::infinity();
+  bool maxCapExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+  }
+  return maxCap;
 }
 
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
