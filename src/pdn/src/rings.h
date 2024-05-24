@@ -86,6 +86,10 @@ class Rings : public GridComponent
   std::array<Layer, 2> layers_;
   std::array<int, 4> offset_ = {0, 0, 0, 0};
   bool extend_to_boundary_ = false;
+
+  void checkDieArea() const;
+
+  odb::Rect getInnerRingOutline() const;
 };
 
 }  // namespace pdn

@@ -58,6 +58,26 @@ void Rings::checkLayerSpecifications() const
       techlayer.checkIfManufacturingGrid(off, getLogger(), "Core offset");
     }
   }
+
+  checkDieArea();
+}
+
+void Rings::checkDieArea() const
+{
+  int hor_width;
+  int ver_width;
+  getTotalWidth(hor_width, ver_width);
+
+  odb::Rect ring_outline = getInnerRingOutline();
+  ring_outline.set_xlo(ring_outline.xMin() - hor_width);
+  ring_outline.set_xhi(ring_outline.xMax() + hor_width);
+  ring_outline.set_ylo(ring_outline.yMin() - ver_width);
+  ring_outline.set_yhi(ring_outline.yMax() + ver_width);
+
+  if (ring_outline.contains(getBlock()->getDieArea())) {
+    getLogger()->warn(
+        utl::PDN, 239, "Core ring shape falls outside the die bounds.");
+  }
 }
 
 void Rings::setOffset(const std::array<int, 4>& offset)
@@ -161,6 +181,18 @@ void Rings::setExtendToBoundary(bool value)
   extend_to_boundary_ = value;
 }
 
+odb::Rect Rings::getInnerRingOutline() const
+{
+  auto* grid = getGrid();
+  odb::Rect core = grid->getDomainArea();
+  core.set_xlo(core.xMin() - offset_[0]);
+  core.set_ylo(core.yMin() - offset_[1]);
+  core.set_xhi(core.xMax() + offset_[2]);
+  core.set_yhi(core.yMax() + offset_[3]);
+
+  return core;
+}
+
 void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
@@ -181,11 +213,7 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     boundary = grid->getGridBoundary();
   }
 
-  odb::Rect core = grid->getDomainArea();
-  core.set_xlo(core.xMin() - offset_[0]);
-  core.set_ylo(core.yMin() - offset_[1]);
-  core.set_xhi(core.xMax() + offset_[2]);
-  core.set_yhi(core.yMax() + offset_[3]);
+  const odb::Rect core = getInnerRingOutline();
 
   bool single_layer_ring = false;
   if (layers_[0].layer == layers_[1].layer) {
