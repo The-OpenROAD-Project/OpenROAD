@@ -74,6 +74,7 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
+class Snapper;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -175,6 +176,9 @@ class HierRTLMP
   void calculateConnection();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
+  void updateMacrosOnDb();
+  void updateMacroOnDb(const HardMacro* hard_macro);
+  void commitMacroPlacementToDb();
   void clear();
 
   void printConnection();
@@ -523,6 +527,41 @@ class Pusher
 
   std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
   std::vector<HardMacro*> hard_macros_;
+};
+
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct SnapParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int lower_left_to_first_pin = 0;
+};
+
+class Snapper
+{
+ public:
+  Snapper();
+  Snapper(odb::dbInst* inst);
+
+  void setMacro(odb::dbInst* inst) { inst_ = inst; }
+  void snapMacro();
+
+ private:
+  odb::Point computeSnapOrigin();
+  SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
+                                       odb::dbBox* box,
+                                       bool vertical_layer);
+  void getTrackGrid(odb::dbTrackGrid* track_grid,
+                    std::vector<int>& coordinate_grid,
+                    bool vertical_layer);
+  int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
+  int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
+  int getPinWidth(odb::dbBox* box, bool vertical_layer);
+  int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
+
+  odb::dbInst* inst_;
 };
 
 }  // namespace mpl2
