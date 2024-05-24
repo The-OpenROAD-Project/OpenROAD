@@ -6206,8 +6206,8 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
   const int x = block_->micronsToDbu(hard_macro->getRealX());
   const int y = block_->micronsToDbu(hard_macro->getRealY());
 
-  inst->setLocation(x, y);
   inst->setOrient(hard_macro->getOrientation());
+  inst->setLocation(x, y);
 
   // We don't lock the macros here, because we'll attempt to improve
   // orientation next.
