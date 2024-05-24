@@ -37,8 +37,6 @@
 
 #include <tcl.h>
 
-#include <limits>
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -368,12 +366,32 @@ float Timing::getMaxCapLimit(odb::dbMTerm* pin)
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::Port* port = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(port);
-  float maxCap = std::numeric_limits<float>::infinity();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxCap = 0.0;
   bool maxCapExists = false;
   if (!pin->getSigType().isSupply()) {
     lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (!maxCapExists)
+      lib->defaultMaxCapacitance(maxCap, maxCapExists);
   }
   return maxCap;
+}
+
+float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxSlew = 0.0;
+  bool maxSlewExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
+    if (!maxSlewExists)
+      lib->defaultMaxSlew(maxSlew, maxSlewExists);
+  }
+  return maxSlew;
 }
 
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
