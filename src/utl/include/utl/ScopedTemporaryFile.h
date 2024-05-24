@@ -78,6 +78,7 @@ class StreamHandler
 
  private:
   std::string filename_;
+  std::string tmp_filename_;
   std::ofstream os_;
 };
 
@@ -91,6 +92,7 @@ class FileHandler
 
  private:
   std::string filename_;
+  std::string tmp_filename_;
   FILE* file_;
 };
 

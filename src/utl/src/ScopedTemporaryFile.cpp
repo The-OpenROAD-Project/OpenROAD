@@ -37,32 +37,30 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 }
 
 StreamHandler::StreamHandler(const char* filename, bool binary)
-    : filename_(filename)
+    : filename_(filename), tmp_filename_(filename_ + ".tmp")
 {
-  std::string tmp_filename = filename_ + ".tmp";
-  if (fs::exists(tmp_filename)) {
-    fs::remove(tmp_filename);
-  }
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  std::ios_base::openmode mode = std::ios_base::out | std::ios::trunc;
+  if (binary) {
+    mode |= std::ios::binary;
+  }
   try {
-    os_.open(tmp_filename,
-             (binary ? (std::ios::binary | std::ios_base::out)
-                     : std::ios_base::out));
+    os_.open(tmp_filename_, mode);
   } catch (std::ios_base::failure& e) {
     std::string error = e.what();
     std::throw_with_nested(std::ios_base::failure(error + " (failed to open '"
-                                                  + tmp_filename + "')"));
+                                                  + tmp_filename_ + "')"));
   }
 }
 
 StreamHandler::~StreamHandler()
 {
   if (os_.is_open()) {
+    // Any pending output sequence is written to the file.
     os_.close();
   }
-  std::string tmp_filename = filename_ + ".tmp";
   // If filename_ exists it will be overwritten
-  fs::rename(tmp_filename, filename_);
+  fs::rename(tmp_filename_, filename_);
 }
 
 std::ofstream& StreamHandler::getStream()
@@ -71,24 +69,23 @@ std::ofstream& StreamHandler::getStream()
 }
 
 FileHandler::FileHandler(const char* filename, bool binary)
-    : filename_(filename)
+    : filename_(filename), tmp_filename_(filename_ + ".tmp")
 {
-  std::string tmp_filename = filename_ + ".tmp";
-  file_ = fopen(tmp_filename.c_str(), (binary ? "wb" : "w"));
+  file_ = fopen(tmp_filename_.c_str(), (binary ? "wb" : "w"));
   if (!file_) {
     std::string error = strerror(errno);
-    throw std::runtime_error(error + ": " + tmp_filename);
+    throw std::runtime_error(error + ": " + tmp_filename_);
   }
 }
 
 FileHandler::~FileHandler()
 {
   if (file_) {
-    fclose(file_);
+    // Any unwritten buffered data are flushed to the OS.
+    std::fclose(file_);
   }
-  std::string tmp_filename = filename_ + ".tmp";
-  // If filename_ exists it will be overwritten
-  fs::rename(tmp_filename, filename_);
+  // If filename_ exists it will be overwritten.
+  fs::rename(tmp_filename_, filename_);
 }
 
 FILE* FileHandler::getFile()
