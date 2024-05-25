@@ -148,6 +148,8 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                    "place macro outside of the core.");
   }
 
+  // Orientation must be set before location so we don't end up flipping
+  // and misplacing the macro.
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 

@@ -6195,6 +6195,8 @@ void HierRTLMP::updateMacrosOnDb()
   }
 }
 
+// We don't lock the macros here, because we'll attempt to improve
+// orientation next.
 void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
 {
   odb::dbInst* inst = hard_macro->getInst();
@@ -6206,11 +6208,10 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
   const int x = block_->micronsToDbu(hard_macro->getRealX());
   const int y = block_->micronsToDbu(hard_macro->getRealY());
 
+  // Orientation must be set before location so we don't end up flipping
+  // and misplacing the macro.
   inst->setOrient(hard_macro->getOrientation());
   inst->setLocation(x, y);
-
-  // We don't lock the macros here, because we'll attempt to improve
-  // orientation next.
   inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
