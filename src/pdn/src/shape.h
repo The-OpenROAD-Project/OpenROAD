@@ -140,6 +140,10 @@ class Shape
   ShapeType shapeType() const { return shape_type_; }
   void setShapeType(ShapeType type) { shape_type_ = type; }
 
+  void setLocked() { is_locked_ = true; }
+  void clearLocked() { is_locked_ = false; }
+  bool isLocked() const { return is_locked_; }
+
   int getLength() const { return rect_.maxDXDY(); }
   int getWidth() const { return rect_.minDXDY(); }
   // true if the shape is aligned against the preferred direction of the layer
@@ -266,6 +270,7 @@ class Shape
   odb::dbWireShapeType type_;
   ShapeType shape_type_;
   bool allow_non_preferred_change_;
+  bool is_locked_;
 
   odb::Rect obs_;
 

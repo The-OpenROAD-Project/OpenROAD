@@ -3,6 +3,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
-[WARNING PDN-0239] Core ring shape falls outside the die bounds.
 [INFO PDN-0001] Inserting grid: Core
 No differences found.
