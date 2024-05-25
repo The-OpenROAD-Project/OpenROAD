@@ -68,6 +68,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       type_(odb::dbWireShapeType::NONE),
       shape_type_(shape_type),
       allow_non_preferred_change_(false),
+      is_locked_(false),
       obs_(rect_),
       grid_component_(nullptr)
 {
