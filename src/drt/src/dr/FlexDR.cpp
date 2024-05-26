@@ -41,6 +41,7 @@
 #include <numeric>
 #include <sstream>
 
+#include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
@@ -1231,6 +1232,86 @@ void FlexDR::reportGuideCoverage()
   file.close();
 }
 
+void FlexDR::fixMaxSpacing(frLayer* layer, int max_spc, int cut_class)
+{
+  if (layer->getSecondaryViaDef() == nullptr) {
+    return;
+  }
+  auto vias = getRegionQuery()->getVias(layer->getLayerNum());
+  std::vector<std::pair<int, int>> via_positions;
+  for (auto [obj, box] : vias) {
+    via_positions.push_back({box.xCenter(), box.yCenter()});
+  }
+  KDTree tree(via_positions);
+  std::vector<bool> visited(via_positions.size(), false);
+  std::vector<int> isolated_via_nodes;
+  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < via_positions.size(); i++) {
+    bool getOut = false;
+#pragma omp critical
+    {
+      if (visited[i]) {
+        getOut = true;
+      }
+      visited[i] = true;
+    }
+    if (getOut)
+      continue;
+    std::vector<int> neighbors = tree.radiusSearch(via_positions[i], max_spc);
+
+// Check if there are neighbors other than the point itself
+#pragma omp critical
+    {
+      bool is_isolated = true;
+      for (const auto& neighbor : neighbors) {
+        if (neighbor != i) {
+          visited[neighbor] = true;
+          is_isolated = false;
+        }
+      }
+      if (is_isolated) {
+        isolated_via_nodes.push_back(i);
+      }
+    }
+  }
+  for (auto i : isolated_via_nodes) {
+    auto box = vias[i].second;
+    auto obj = vias[i].first;
+    if (layer->getCutClassIdx(box.minDXDY(), box.maxDXDY()) != cut_class) {
+      continue;
+    }
+    if (obj->typeId() != frcVia) {
+      continue;
+    }
+    auto via = static_cast<frVia*>(obj);
+    auto net = via->getNet();
+    if (net == nullptr || net->isFake() || net->isSpecial()) {
+      continue;
+    }
+    std::unique_ptr<frVia> new_via = std::make_unique<frVia>(*via);
+    new_via->setViaDef(layer->getSecondaryViaDef());
+    auto rptr = new_via.get();
+    getRegionQuery()->removeDRObj(via);  // delete rq
+    net->removeVia(via);
+
+    net->addVia(std::move(new_via));
+    getRegionQuery()->addDRObj(rptr);
+    auto marker = std::make_unique<frMarker>();
+
+    marker->setBBox(rptr->getBBox());
+    marker->setLayerNum(layer->getLayerNum());
+    marker->setConstraint(layer->getRecheckConstraint());
+    marker->addSrc(net);
+    marker->addVictim(
+        net, std::make_tuple(layer->getLayerNum(), rptr->getBBox(), false));
+    marker->addAggressor(
+        net, std::make_tuple(layer->getLayerNum(), rptr->getBBox(), false));
+    getRegionQuery()->addMarker(marker.get());
+    getDesign()->getTopBlock()->addMarker(std::move(marker));
+  }
+}
+
 int FlexDR::main()
 {
   ProfileTask profile("DR:main");
@@ -1259,7 +1340,20 @@ int FlexDR::main()
     }
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
-      break;
+      for (const auto& layer : getTech()->getLayers()) {
+        if (layer->getType() == odb::dbTechLayerType::CUT) {
+          if (!layer->hasLef58MaxSpacingConstraints()) {
+            continue;
+          }
+          for (const auto& rule : layer->getLef58MaxSpacingConstraints()) {
+            fixMaxSpacing(
+                layer.get(), rule->getMaxSpacing(), rule->getCutClassIdx());
+          }
+        }
+      }
+      if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
+        break;
+      }
     }
     if (iter_ > END_ITERATION) {
       break;

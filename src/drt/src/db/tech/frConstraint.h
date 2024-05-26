@@ -2261,6 +2261,35 @@ class frLef58EnclosureConstraint : public frConstraint
   int cut_class_idx_;
 };
 
+// LEF58_MAXSPACING rule
+class frLef58MaxSpacingConstraint : public frConstraint
+{
+ public:
+  frLef58MaxSpacingConstraint(odb::dbTechLayerMaxSpacingRule* ruleIn)
+      : db_rule_(ruleIn)
+  {
+  }
+  void setCutClassIdx(int in) { cut_class_idx_ = in; }
+  int getCutClassIdx() const { return cut_class_idx_; }
+  frCoord getMaxSpacing() const { return db_rule_->getMaxSpacing(); }
+  std::string getCutClass() const { return db_rule_->getCutClass(); }
+  bool hasCutClass() const { return db_rule_->hasCutClass(); }
+
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_MAXSPACING");
+  }
+  // typeId
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58MaxSpacingConstraint;
+  }
+
+ private:
+  odb::dbTechLayerMaxSpacingRule* db_rule_{nullptr};
+  int cut_class_idx_{-1};
+};
+
 class frNonDefaultRule
 {
  public:

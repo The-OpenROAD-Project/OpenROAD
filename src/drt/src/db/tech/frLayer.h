@@ -56,6 +56,7 @@ class frLayer
   void setWidth(frUInt4 widthIn) { width_ = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth_ = minWidthIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef_ = in; }
+  void setSecondaryViaDef(frViaDef* in) { secondaryViaDef_ = in; }
   void addConstraint(frConstraint* consIn) { constraints_.push_back(consIn); }
   void addViaDef(frViaDef* viaDefIn) { viaDefs_.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol_ = in; }
@@ -124,6 +125,7 @@ class frLayer
     return style;
   }
   frViaDef* getDefaultViaDef() const { return defaultViaDef_; }
+  frViaDef* getSecondaryViaDef() const { return secondaryViaDef_; }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs_; }
   dbTechLayerType getType() const
@@ -581,6 +583,22 @@ class frLayer
     return !lef58EolKeepOutConstraints_.empty();
   }
 
+  void addLef58MaxSpacingConstraint(frLef58MaxSpacingConstraint* in)
+  {
+    maxSpacingConstraints_.push_back(in);
+  }
+
+  const std::vector<frLef58MaxSpacingConstraint*>&
+  getLef58MaxSpacingConstraints() const
+  {
+    return maxSpacingConstraints_;
+  }
+
+  bool hasLef58MaxSpacingConstraints() const
+  {
+    return !maxSpacingConstraints_.empty();
+  }
+
   void addMetalWidthViaConstraint(frMetalWidthViaConstraint* in)
   {
     metalWidthViaConstraints_.push_back(in);
@@ -792,6 +810,7 @@ class frLayer
   frUInt4 wrongDirWidth_{0};
   frUInt4 minWidth_{0};
   frViaDef* defaultViaDef_{nullptr};
+  frViaDef* secondaryViaDef_{nullptr};
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
   std::set<frViaDef*> viaDefs_;
@@ -866,6 +885,8 @@ class frLayer
       aboveLef58EncConstraints_;
   std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
       belowLef58EncConstraints_;
+  // vector of maxspacing constraints
+  std::vector<frLef58MaxSpacingConstraint*> maxSpacingConstraints_;
   drEolSpacingConstraint drEolCon_;
 
   friend class io::Parser;

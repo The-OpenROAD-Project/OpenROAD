@@ -460,6 +460,10 @@ proc detailed_route_set_unidirectional_layer { args } {
   drt::detailed_route_set_unidirectional_layer $args
 }
 
+proc fix_max_spacing { args } {
+  sta::check_argc_eq0 "detailed_route_set_unidirectional_layer" $args
+  drt::fix_max_spacing
+}
 namespace eval drt {
 
 proc step_dr { args } {

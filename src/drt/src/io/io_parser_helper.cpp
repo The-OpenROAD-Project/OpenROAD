@@ -127,6 +127,16 @@ void io::Parser::initDefaultVias()
                        "{} does not have single-cut via.",
                        tech_->getLayer(layerNum)->getName());
       }
+      // set secondary viadef
+      for (auto [cuts, viadefs] : cuts2ViaDefs) {
+        if (cuts <= 1) {
+          continue;
+        }
+        if (viadefs.empty()) {
+          continue;
+        }
+        tech_->getLayer(layerNum)->setSecondaryViaDef(viadefs.begin()->second);
+      }
     } else {
       if (layerNum >= BOTTOM_ROUTING_LAYER
           && (layerNum <= std::max(TOP_ROUTING_LAYER, topPinLayer))) {

@@ -1965,6 +1965,21 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
+  for (auto rule : layer->getTechLayerMaxSpacingRules()) {
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58MaxSpacingConstraint>(rule);
+    auto rptr = static_cast<frLef58MaxSpacingConstraint*>(uCon.get());
+    if (rule->hasCutClass()) {
+      auto cutClassIdx = tmpLayer->getCutClassIdx(rule->getCutClass());
+      if (cutClassIdx != -1) {
+        rptr->setCutClassIdx(cutClassIdx);
+      } else {
+        continue;
+      }
+    }
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58MaxSpacingConstraint(rptr);
+  }
 }
 
 void io::Parser::addDefaultMasterSliceLayer()

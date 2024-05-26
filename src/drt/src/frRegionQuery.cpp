@@ -38,6 +38,8 @@
 
 namespace drt {
 
+class FlexDR;
+
 using utl::enumerate;
 namespace gtl = boost::polygon;
 
@@ -159,6 +161,16 @@ void frRegionQuery::removeDRObj(frShape* shape)
   } else {
     impl_->logger_->error(DRT, 31, "Unsupported region query add.");
   }
+}
+
+std::vector<std::pair<frBlockObject*, Rect>> frRegionQuery::getVias(
+    frLayerNum layerNum)
+{
+  std::vector<std::pair<frBlockObject*, Rect>> result;
+  for (auto [box, obj] : impl_->shapes_.at(layerNum)) {
+    result.push_back({obj, box});
+  }
+  return result;
 }
 
 void frRegionQuery::addBlockObj(frBlockObject* obj)

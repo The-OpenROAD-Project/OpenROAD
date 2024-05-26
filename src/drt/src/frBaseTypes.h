@@ -208,7 +208,8 @@ enum class frConstraintTypeEnum
   frcLef58TwoWiresForbiddenSpcConstraint,
   frcLef58ForbiddenSpcConstraint,
   frcLef58EnclosureConstraint,
-  frcSpacingRangeConstraint
+  frcSpacingRangeConstraint,
+  frcLef58MaxSpacingConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);

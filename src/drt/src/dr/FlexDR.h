@@ -131,6 +131,8 @@ class FlexDR
 
   void reportGuideCoverage();
   void setIter(int iterNum) { iter_ = iterNum; }
+  // maxSpacing fix
+  void fixMaxSpacing(frLayer* layer, int max_spc, int cut_class);
 
  private:
   TritonRoute* router_;

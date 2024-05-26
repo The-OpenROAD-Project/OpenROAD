@@ -1020,6 +1020,25 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, true);
 }
 
+void TritonRoute::fixMaxSpacing()
+{
+  initDesign();
+  initGuide();
+  prep();
+  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
+  for (const auto& layer : getDesign()->getTech()->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      if (!layer->hasLef58MaxSpacingConstraints()) {
+        continue;
+      }
+      for (const auto& rule : layer->getLef58MaxSpacingConstraints()) {
+        dr_->fixMaxSpacing(
+            layer.get(), rule->getMaxSpacing(), rule->getCutClassIdx());
+      }
+    }
+  }
+}
+
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const Rect& requiredDrcBox)
 {
