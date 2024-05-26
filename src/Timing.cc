@@ -37,6 +37,8 @@
 
 #include <tcl.h>
 
+#include <limits>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -371,8 +373,9 @@ float Timing::getMaxCapLimit(odb::dbMTerm* pin)
   bool maxCapExists = false;
   if (!pin->getSigType().isSupply()) {
     lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
-    if (!maxCapExists)
+    if (!maxCapExists) {
       lib->defaultMaxCapacitance(maxCap, maxCapExists);
+    }
   }
   return maxCap;
 }
@@ -388,8 +391,9 @@ float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
   bool maxSlewExists = false;
   if (!pin->getSigType().isSupply()) {
     lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
-    if (!maxSlewExists)
+    if (!maxSlewExists) {
       lib->defaultMaxSlew(maxSlew, maxSlewExists);
+    }
   }
   return maxSlew;
 }
