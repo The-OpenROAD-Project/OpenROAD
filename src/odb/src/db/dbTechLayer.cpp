@@ -868,7 +868,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
-  stream >> *obj.max_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+    stream >> *obj.max_spacing_rules_tbl_;
+  }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
@@ -966,7 +968,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
-  stream << *obj.max_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+    stream << *obj.max_spacing_rules_tbl_;
+  }
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
