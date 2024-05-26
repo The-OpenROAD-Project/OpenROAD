@@ -25,6 +25,7 @@ add_library(lefin
     MinCutParser.cpp
     MetalWidthViaMapParser.cpp
     KeepOutZoneParser.cpp
+    MaxSpacingParser.cpp
 )
 
 target_include_directories(lefin
