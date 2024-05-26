@@ -37,8 +37,6 @@
 
 #include <tcl.h>
 
-#include <limits>
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
