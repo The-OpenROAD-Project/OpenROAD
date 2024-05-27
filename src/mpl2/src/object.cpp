@@ -776,7 +776,6 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
 
 HardMacro::HardMacro(odb::dbInst* inst,
                      float dbu,
-                     int manufacturing_grid,
                      float halo_width,
                      float halo_height)
 {

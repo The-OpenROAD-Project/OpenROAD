@@ -409,12 +409,6 @@ void HierRTLMP::initMacroPlacer()
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
-  if (db_->getTech()->hasManufacturingGrid()) {
-    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
-  } else {
-    manufacturing_grid_ = 1;
-  }
-
   odb::Rect die = block_->getDieArea();
   odb::Rect core_box = block_->getCoreArea();
 
@@ -503,7 +497,7 @@ void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
       core_area,
       util,
       core_util,
-      manufacturing_grid_);
+      block_->getTech()->getManufacturingGrid());
 }
 
 void HierRTLMP::initPhysicalHierarchy()
@@ -688,7 +682,7 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       macro_area += inst_area;
       // add hard macro to corresponding map
       HardMacro* macro = new HardMacro(
-          inst, dbu_, manufacturing_grid_, halo_width_, halo_height_);
+          inst, dbu_, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;

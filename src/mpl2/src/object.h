@@ -350,7 +350,6 @@ class HardMacro
   // dbu is needed to convert the database unit to real size
   HardMacro(odb::dbInst* inst,
             float dbu,
-            int manufacturing_grid,
             float halo_width = 0.0,
             float halo_height = 0.0);
 
