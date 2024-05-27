@@ -215,6 +215,7 @@ void RecoverPower::recoverPower(const float recover_power_percent)
       }
     }
   }
+  bad_vertices_.clear();
 
   resizer_->incrementalParasiticsEnd();
   // TODO: Add the appropriate metric here
@@ -226,7 +227,6 @@ void RecoverPower::recoverPower(const float recover_power_percent)
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
-  bad_vertices_.clear();
 }
 
 // For testing.
