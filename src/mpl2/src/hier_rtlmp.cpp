@@ -681,8 +681,7 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(
-          inst, dbu_, halo_width_, halo_height_);
+      HardMacro* macro = new HardMacro(inst, dbu_, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
