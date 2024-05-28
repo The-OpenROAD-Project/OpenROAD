@@ -93,8 +93,7 @@ uint dbModuleModInstITermItr::end(dbObject* /* unused: parent */)
 uint dbModuleModInstITermItr::next(uint id, ...)
 {
   // User Code Begin next
-  _dbModITerm* moditerm = _moditerm_tbl->getPtr(id);
-  return moditerm->_next_entry;
+  return _moditerm_tbl->getPtr(id)->_next_entry;
   // User Code End next
 }
 

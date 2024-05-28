@@ -34,6 +34,9 @@
 #include "dbModuleBTermItr.h"
 
 #include "dbModBTerm.h"
+#include "dbModITerm.h"
+#include "dbModule.h"
+#include "dbObject.h"
 #include "dbTable.h"
 
 namespace odb {
@@ -80,7 +83,7 @@ uint dbModuleBTermItr::begin(dbObject* parent)
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  _dbModBTerm* _modbterm = _module->_modbterms;
+  return _module->_modbterms.id();
   // User Code End begin
 }
 
@@ -92,8 +95,7 @@ uint dbModuleBTermItr::end(dbObject* /* unused: parent */)
 uint dbModuleBTermItr::next(uint id, ...)
 {
   // User Code Begin next
-  _dbModITerm* modbterm = _modbterm_tbl->getPtr(id);
-  return modbterm->_next_entry;
+  return _modbterm_tbl->getPtr(id)->_next_net_modbterm;
   // User Code End next
 }
 
