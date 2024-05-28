@@ -248,9 +248,10 @@ T* dbArrayTable<T>::create()
   }
 
   _dbFreeObject* o = popQ(_free_list);
-  o->_oid |= DB_ALLOC_BIT;
+  const uint oid = o->_oid;
   new (o) T(_db);
   T* t = (T*) o;
+  t->_oid = oid | DB_ALLOC_BIT;
 
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
   page->_alloccnt++;
@@ -302,8 +303,9 @@ void dbArrayTable<T>::destroy(T* t)
   _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
+  const uint oid = t->_oid;
   t->~T();  // call destructor
-  o->_oid &= ~DB_ALLOC_BIT;
+  o->_oid = oid & ~DB_ALLOC_BIT;
 
   // Add to freelist
   pushQ(_free_list, o);
@@ -395,8 +397,8 @@ void dbArrayTable<T>::copy_page(uint page_id, dbArrayTablePage* page)
 
   for (; t < e; t++, o++) {
     if (t->_oid & DB_ALLOC_BIT) {
-      o->_oid = t->_oid;
       new (o) T(_db, *t);
+      o->_oid = t->_oid;
     } else {
       *((_dbFreeObject*) o) = *((_dbFreeObject*) t);
     }
