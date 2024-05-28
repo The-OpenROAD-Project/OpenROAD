@@ -303,7 +303,7 @@ void RouteBase::resetRoutabilityResources()
 {
   inflatedAreaDelta_ = 0;
 
-  if(!rbVars_.useRudy)
+  if (!rbVars_.useRudy)
     grouter_->clear();
   tg_.reset();
 }
