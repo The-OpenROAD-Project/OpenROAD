@@ -130,7 +130,6 @@ class dbNetwork : public ConcreteNetwork
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
 
-  void staToDb(const Pin* pin, dbITerm*& iterm, dbBTerm*& bterm) const;
   dbBTerm* staToDb(const Term* term) const;
   void staToDb(const Term* term,
                dbITerm*& iterm,
