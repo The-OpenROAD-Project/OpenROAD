@@ -113,7 +113,7 @@ struct NodeInfo
   }
 };
 
-using LayerInfoMap = std::unordered_map<dbTechLayer*, NodeInfo>;
+using LayerInfoMap = std::map<dbTechLayer*, NodeInfo>;
 using GraphNodeVector = std::vector<GraphNode*>;
 ///////////////////////////////////////
 
@@ -279,7 +279,7 @@ class AntennaChecker
 
   /////////////////////////////////////////////////////////////////////////////////
   std::unordered_map<odb::dbTechLayer*, GraphNodeVector> node_by_layer_map_;
-  std::unordered_map<std::string, LayerInfoMap> gate_info_;
+  std::map<std::string, LayerInfoMap> gate_info_;
   std::vector<Violation> antenna_violations_;
   int node_count_;
   dbTechLayer* min_layer_;
