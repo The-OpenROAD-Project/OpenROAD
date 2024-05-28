@@ -1037,6 +1037,8 @@ void TritonRoute::fixMaxSpacing()
       }
     }
   }
+  io::Writer writer(this, logger_);
+  writer.updateDb(db_);
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,

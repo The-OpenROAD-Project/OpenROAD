@@ -170,6 +170,9 @@ std::vector<std::pair<frBlockObject*, Rect>> frRegionQuery::getVias(
   for (auto [box, obj] : impl_->shapes_.at(layerNum)) {
     result.push_back({obj, box});
   }
+  for (auto [box, obj] : impl_->drObjs_.at(layerNum)) {
+    result.push_back({obj, box});
+  }
   return result;
 }
 

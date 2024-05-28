@@ -1276,17 +1276,16 @@ void FlexDR::fixMaxSpacing(frLayer* layer, int max_spc, int cut_class)
     }
   }
   for (auto i : isolated_via_nodes) {
-    auto box = vias[i].second;
     auto obj = vias[i].first;
-    if (layer->getCutClassIdx(box.minDXDY(), box.maxDXDY()) != cut_class) {
-      continue;
-    }
     if (obj->typeId() != frcVia) {
       continue;
     }
     auto via = static_cast<frVia*>(obj);
     auto net = via->getNet();
     if (net == nullptr || net->isFake() || net->isSpecial()) {
+      continue;
+    }
+    if (via->getViaDef()->getCutClassIdx() != cut_class) {
       continue;
     }
     std::unique_ptr<frVia> new_via = std::make_unique<frVia>(*via);

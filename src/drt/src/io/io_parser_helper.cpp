@@ -136,6 +136,7 @@ void io::Parser::initDefaultVias()
           continue;
         }
         tech_->getLayer(layerNum)->setSecondaryViaDef(viadefs.begin()->second);
+        break;
       }
     } else {
       if (layerNum >= BOTTOM_ROUTING_LAYER
