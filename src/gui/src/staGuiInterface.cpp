@@ -438,6 +438,21 @@ std::string TimingPath::getEndStageName() const
   return path_nodes_.back()->getNodeName();
 }
 
+const std::unique_ptr<TimingPathNode>& TimingPath::getStartStageNode() const
+{
+  const int start_idx = getClkPathEndIndex() + 1;
+  if (start_idx >= path_nodes_.size()) {
+    return path_nodes_.front();
+  }
+
+  return path_nodes_[start_idx];
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getEndStageNode() const
+{
+  return path_nodes_.back();
+}
+
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
 {
   for (int i = 0; i < nodes.size(); i++) {
@@ -815,6 +830,15 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       include_unconstrained_(false),
       include_capture_path_(false)
 {
+}
+
+StaPins STAGuiInterface::getStartPoints() const
+{
+  StaPins pins;
+  for (auto end : sta_->startpointPins()) {
+    pins.insert(end);
+  }
+  return pins;
 }
 
 StaPins STAGuiInterface::getEndPoints() const

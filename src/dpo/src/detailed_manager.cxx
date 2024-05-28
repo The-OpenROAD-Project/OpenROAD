@@ -213,6 +213,23 @@ void DetailedMgr::findBlockages(bool includeRouteBlockages)
     }
   }
 
+  for (int i = 0; i < network_->getNumBlockages(); i++) {
+    const odb::Rect& blockage = network_->getBlockage(i);
+    const int xmin = std::max(arch_->getMinX(), blockage.xMin());
+    const int xmax = std::min(arch_->getMaxX(), blockage.xMax());
+    const int ymin = std::max(arch_->getMinY(), blockage.yMin());
+    const int ymax = std::min(arch_->getMaxY(), blockage.yMax());
+
+    for (int r = 0; r < numSingleHeightRows_; r++) {
+      int yb = arch_->getRow(r)->getBottom();
+      int yt = arch_->getRow(r)->getTop();
+
+      if (!(ymin >= yt || ymax <= yb)) {
+        blockages_[r].push_back(std::pair<double, double>(xmin, xmax));
+      }
+    }
+  }
+
   if (includeRouteBlockages && rt_ != nullptr) {
     // Turn M1 and M2 routing blockages into placement blockages.  The idea
     // here is to be quite conservative and prevent the possibility of pin

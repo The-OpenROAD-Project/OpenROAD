@@ -117,7 +117,6 @@ void PDNRenderer::update()
 
   shapes_ = Shape::convertVectorToTree(shapes);
   grid_obstructions_ = Shape::convertVectorToObstructionTree(obs);
-  shapes_ = Shape::convertVectorToTree(shapes);
   vias_ = Via::convertVectorToTree(vias);
 
   redraw();

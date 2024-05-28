@@ -1019,7 +1019,7 @@ delta HPWL                    7 %
 
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 51385 cells, 391 terminals, 51670 edges and 199030 pins.
+[INFO DPO-0100] Creating network with 51385 cells, 391 terminals, 51670 edges, 199030 pins, and 0 blockages.
 [INFO DPO-0109] Network stats: inst 51776, edges 51670, pins 199030
 [INFO DPO-0110] Number of regions is 3
 [INFO DPO-0401] Setting random seed to 1.

@@ -7,5 +7,5 @@
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 2 buffers in 2 nets.
+[INFO RSZ-0038] Inserted 3 buffers in 2 nets.
 [INFO RSZ-0039] Resized 2 instances.
