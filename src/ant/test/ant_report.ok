@@ -6,4 +6,4 @@
 [INFO ANT-0001] Found 2 pin violations.
 Differences found at line 2.
   Pin: _264_/B2 (sky130_fd_sc_ms__a222oi_1)
-  Pin:   output50/A (sky130_fd_sc_ms__buf_1)
+  Pin:   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
