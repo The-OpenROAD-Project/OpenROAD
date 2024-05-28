@@ -57,7 +57,10 @@ using odb::dbIoType;
 using odb::dbITerm;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
+using odb::dbModNet;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -114,26 +117,32 @@ class dbNetwork : public ConcreteNetwork
 
   LibertyCell* libertyCell(dbInst* inst);
 
-  // Use the this if you know you are dealing with a leaf instance
   dbInst* staToDb(const Instance* instance) const;
-  // Use the this if you might have a hierarchical instance
   void staToDb(const Instance* instance,
-               // Return values.
                dbInst*& db_inst,
                dbModInst*& mod_inst) const;
-  dbNet* staToDb(const Net* net) const;
   void staToDb(const Pin* pin,
-               // Return values.
                dbITerm*& iterm,
-               dbBTerm*& bterm) const;
+               dbBTerm*& bterm,
+               dbModITerm*& moditerm,
+               dbModBTerm*& modbterm) const;
+
+  dbNet* staToDb(const Net* net) const;
+  void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
+
+  void staToDb(const Pin* pin, dbITerm*& iterm, dbBTerm*& bterm) const;
   dbBTerm* staToDb(const Term* term) const;
+  void staToDb(const Term* term,
+               dbITerm*& iterm,
+               dbBTerm*& bterm,
+               dbModITerm*& moditerm,
+               dbModBTerm*& modbterm) const;
   dbMaster* staToDb(const Cell* cell) const;
   void staToDb(const Cell* cell, dbMaster*& master, dbModule*& module) const;
   dbMaster* staToDb(const LibertyCell* cell) const;
   dbMTerm* staToDb(const Port* port) const;
   dbMTerm* staToDb(const LibertyPort* port) const;
   void staToDb(PortDirection* dir,
-               // Return values.
                dbSigType& sig_type,
                dbIoType& io_type) const;
 
@@ -141,12 +150,20 @@ class dbNetwork : public ConcreteNetwork
   Term* dbToStaTerm(dbBTerm* bterm) const;
   Pin* dbToSta(dbITerm* iterm) const;
   Instance* dbToSta(dbInst* inst) const;
-  Instance* dbToSta(dbModInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
-  Cell* dbToSta(dbModule* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
+
+  Instance* dbToSta(dbModInst* inst) const;
+  Cell* dbToSta(dbModule* master) const;
+  Pin* dbToSta(dbModITerm* mod_iterm) const;
+  Pin* dbToStaPin(dbModBTerm* mod_bterm) const;
+  Net* dbToSta(dbModNet* net) const;
+  Port* dbToSta(dbModBTerm* modbterm) const;
+  Term* dbToStaTerm(dbModITerm* moditerm) const;
+  Term* dbToStaTerm(dbModBTerm* modbterm) const;
+
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
