@@ -1883,7 +1883,7 @@ void HTreeBuilder::createClockSubNets()
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
-            = leafTopology.getBranchSinksLocations(idx);
+            = leafTopology.getBranchSinksLocations(idx);  
         for (const Point<double>& loc : sinkLocs) {
           if (mapLocationToSink_.find(loc) == mapLocationToSink_.end()) {
             logger_->error(CTS, 80, "Sink not found.");
@@ -1891,6 +1891,9 @@ void HTreeBuilder::createClockSubNets()
 
           subNet->addInst(*mapLocationToSink_[loc]);
           ++numSinks;
+        }
+        if(sinkLocs.empty()){
+          logger_->report("No sinks near this subnet: {}", subNet->getName());
         }
       });
 
