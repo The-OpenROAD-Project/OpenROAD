@@ -34,6 +34,7 @@
 #include "dbModInstITermItr.h"
 
 #include "dbModITerm.h"
+#include "dbModInst.h"
 #include "dbTable.h"
 
 namespace odb {
@@ -92,8 +93,7 @@ uint dbModInstITermItr::end(dbObject* /* unused: parent */)
 uint dbModInstITermItr::next(uint id, ...)
 {
   // User Code Begin next
-  _dbModInstITerm* iterm = _moditerm_tbl->getPtr(id);
-  return iterm->_next_entry;
+  return _moditerm_tbl->getPtr(id)->_next_entry;
   // User Code End next
 }
 
