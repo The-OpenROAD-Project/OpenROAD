@@ -310,18 +310,16 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (db_inst->isDoNotTouch()) {
     if (honorDontTouchFixed) {
       return false;
-    } else {
-      /* remove dont touch */
-      db_inst->setDoNotTouch(false);
     }
+    /* remove dont touch */
+    db_inst->setDoNotTouch(false);
   }
   if (db_inst->isFixed()) {
     if (honorDontTouchFixed) {
       return false;
-    } else {
-      /* change fixed to placed */
-      db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
+    /* change FIXED to PLACED */
+    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
