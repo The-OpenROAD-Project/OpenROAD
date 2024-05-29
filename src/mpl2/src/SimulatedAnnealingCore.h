@@ -97,6 +97,7 @@ class SimulatedAnnealingCore
   {
     centralization_on_ = centralization_on;
   };
+  bool centralizationWasReverted() { return centralization_was_reverted_; }
 
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
@@ -243,6 +244,7 @@ class SimulatedAnnealingCore
 
   bool has_initial_sequence_pair_ = false;
   bool centralization_on_ = false;
+  bool centralization_was_reverted_ = false;
 };
 
 // SACore wrapper function
