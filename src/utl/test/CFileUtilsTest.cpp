@@ -112,21 +112,18 @@ BOOST_AUTO_TEST_CASE(read_all_of_file_exactly_1025B)
 BOOST_AUTO_TEST_CASE(stream_handler_write_and_read)
 {
   const char* filename = "test_write_and_read.txt";
-  const std::vector<uint8_t> kTestData = {0x01, 0x02, 0x03, 0x04};
+  const std::string kTestData = "\x1\x2\x3\x4";
 
   {
     StreamHandler sh(filename);
     std::ofstream& os = sh.getStream();
-    os.write(reinterpret_cast<const char*>(kTestData.data()), kTestData.size());
+    os.write(kTestData.c_str(), kTestData.size());
   }
 
   std::ifstream is(filename, std::ios_base::binary);
   std::string contents((std::istreambuf_iterator<char>(is)),
                        std::istreambuf_iterator<char>());
-  BOOST_TEST(contents.size() == kTestData.size());
-  for (size_t i = 0; i < contents.size(); ++i) {
-    BOOST_TEST(static_cast<uint8_t>(contents.at(i)) == kTestData.at(i));
-  }
+  BOOST_TEST(contents == kTestData);
 }
 
 BOOST_AUTO_TEST_CASE(stream_handler_temp_file_handling)
@@ -155,10 +152,10 @@ BOOST_AUTO_TEST_CASE(stream_handler_exception_handling)
     throw std::runtime_error("Simulated exception");
   } catch (...) {
     std::string tmp_filename = std::string(filename) + ".tmp";
-    BOOST_TEST(!std::filesystem::exists(
-        tmp_filename));  // Ensure temporary file is cleaned up
-    BOOST_TEST(std::filesystem::exists(
-        filename));  // Original file should exist either
+    // Ensure temporary file is cleaned up
+    BOOST_TEST(!std::filesystem::exists(tmp_filename));
+    // Original file should exist
+    BOOST_TEST(std::filesystem::exists(filename));
   }
 }
 
@@ -166,20 +163,17 @@ BOOST_AUTO_TEST_CASE(stream_handler_exception_handling)
 BOOST_AUTO_TEST_CASE(file_handler_write_and_read)
 {
   const char* filename = "test_write_and_read_file.txt";
-  const std::vector<uint8_t> kTestData = {0x01, 0x02, 0x03, 0x04};
+  const std::string kTestData = "\x1\x2\x3\x4";
   {
     FileHandler fh(filename, true);  // binary mode
     FILE* file = fh.getFile();
-    fwrite(kTestData.data(), sizeof(uint8_t), kTestData.size(), file);
+    fwrite(kTestData.c_str(), sizeof(uint8_t), kTestData.size(), file);
   }
 
   std::ifstream is(filename, std::ios_base::binary);
   std::string contents((std::istreambuf_iterator<char>(is)),
                        std::istreambuf_iterator<char>());
-  BOOST_TEST(contents.size() == kTestData.size());
-  for (size_t i = 0; i < contents.size(); ++i) {
-    BOOST_TEST(static_cast<uint8_t>(contents.at(i)) == kTestData.at(i));
-  }
+  BOOST_TEST(contents == kTestData);
 }
 
 BOOST_AUTO_TEST_CASE(file_handler_temp_file_handling)
@@ -208,10 +202,10 @@ BOOST_AUTO_TEST_CASE(file_handler_exception_handling)
     throw std::runtime_error("Simulated exception");
   } catch (...) {
     std::string tmp_filename = std::string(filename) + ".tmp";
-    BOOST_TEST(!std::filesystem::exists(
-        tmp_filename));  // Ensure temporary file is cleaned up
-    BOOST_TEST(
-        std::filesystem::exists(filename));  // Original file should exist
+    // Ensure temporary file is cleaned up
+    BOOST_TEST(!std::filesystem::exists(tmp_filename));
+    // Original file should exist
+    BOOST_TEST(std::filesystem::exists(filename));
   }
 }
 
