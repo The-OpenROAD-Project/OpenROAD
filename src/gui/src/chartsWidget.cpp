@@ -673,8 +673,10 @@ ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
 
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
 
-    dbnetwork->staToDb(pin, iterm, bterm);
+    dbnetwork->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
     if (iterm) {
       pins_lists.first.insert(pin);

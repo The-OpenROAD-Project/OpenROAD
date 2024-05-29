@@ -48,9 +48,6 @@ namespace dpo {
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture;
-class DetailedMisParams;
-class DetailedMis;
-class DetailedSeg;
 class DetailedMgr;
 class Network;
 class Node;
@@ -116,7 +113,7 @@ class DetailedMis
  public:
   /* DetailedMisParams _params; */
 
-  DetailedMgr* mgrPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
 
   Architecture* arch_;
   Network* network_;
@@ -129,22 +126,22 @@ class DetailedMis
 
   // Grid used for binning and locating cells.
   std::vector<std::vector<Bucket*>> grid_;
-  int dimW_;
-  int dimH_;
-  double stepX_;
-  double stepY_;
+  int dimW_ = 0;
+  int dimH_ = 0;
+  double stepX_ = 0;
+  double stepY_ = 0;
   std::map<Node*, Bucket*> cellToBinMap_;
 
   std::vector<int> timesUsed_;
 
   // Other.
-  int skipEdgesLargerThanThis_;
-  int maxProblemSize_;
-  int traversal_;
-  bool useSameSize_;
-  bool useSameColor_;
-  int maxTimesUsed_;
-  Objective obj_;
+  int skipEdgesLargerThanThis_ = 100;
+  int maxProblemSize_ = 25;
+  int traversal_ = 0;
+  bool useSameSize_ = true;
+  bool useSameColor_ = true;
+  int maxTimesUsed_ = 2;
+  Objective obj_ = DetailedMis::Hpwl;
 };
 
 }  // namespace dpo

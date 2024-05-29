@@ -30,64 +30,65 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+#include "color.h"
 
-#include <vector>
-
-#include "detailed_generator.h"
-#include "rectangle.h"
+#include <algorithm>
 
 namespace dpo {
 
-class Architecture;
-class DetailedMgr;
-class Edge;
-class Network;
-class RoutingParams;
-
-// CLASSES ===================================================================
-class DetailedVerticalSwap : public DetailedGenerator
+Graph::Graph(const int num_nodes)
 {
- public:
-  DetailedVerticalSwap(Architecture* arch, Network* network, RoutingParams* rt);
-  DetailedVerticalSwap();
+  adj_.resize(num_nodes);
 
-  // Intefaces for scripting.
-  void run(DetailedMgr* mgrPtr, const std::string& command);
-  void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
+  color_.resize(num_nodes);
+  std::fill(color_.begin(), color_.end(), -1);
+  num_colors_ = 0;
+}
 
-  // Interface for move generation.
-  bool generate(DetailedMgr* mgr, std::vector<Node*>& candidates) override;
-  void stats() override;
-  void init(DetailedMgr* mgr) override;
+void Graph::addEdge(const int u, const int v)
+{
+  adj_[u].push_back(v);
+  adj_[v].push_back(u);
+}
 
- private:
-  void verticalSwap();  // tries to avoid overlap.
-  bool calculateEdgeBB(const Edge* ed, const Node* nd, Rectangle& bbox);
-  bool getRange(Node*, Rectangle&);
-  double delta(Node* ndi, double new_x, double new_y);
-  double delta(Node* ndi, Node* ndj);
+void Graph::removeDuplicateEdges()
+{
+  for (auto& adj : adj_) {
+    std::sort(adj.begin(), adj.end());
+    adj.erase(std::unique(adj.begin(), adj.end()), adj.end());
+  }
+}
 
-  bool generate(Node* ndi);
+void Graph::greedyColoring()
+{
+  removeDuplicateEdges();
+  std::fill(color_.begin(), color_.end(), -1);
+  color_[0] = 0;  // first node gets first color.
 
-  // Standard stuff.
-  DetailedMgr* mgr_;
-  Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
+  num_colors_ = 1;
 
-  // Other.
-  int skipNetsLargerThanThis_;
-  std::vector<int> edgeMask_;
-  int traversal_;
+  std::vector<int> avail(getNumNodes(), -1);
 
-  std::vector<double> xpts_;
-  std::vector<double> ypts_;
+  // Do subsequent nodes.
+  for (int v = 1; v < getNumNodes(); v++) {
+    // Determine which colors cannot be used.  Pick the smallest
+    // color which can be used.
+    for (const int u : adj_[v]) {
+      if (color_[u] != -1) {
+        // Node "u" has a color.  So, it is not available to "v".
+        avail[color_[u]] = v;  // Marking "avail[color]" with a "v" means it
+                               // is not available for node v.
+      }
+    }
 
-  // For use as a move generator.
-  int attempts_;
-  int moves_;
-  int swaps_;
-};
+    for (int cr = 0; cr < getNumNodes(); cr++) {
+      if (avail[cr] != v) {
+        color_[v] = cr;
+        num_colors_ = std::max(num_colors_, cr + 1);
+        break;
+      }
+    }
+  }
+}
 
 }  // namespace dpo
