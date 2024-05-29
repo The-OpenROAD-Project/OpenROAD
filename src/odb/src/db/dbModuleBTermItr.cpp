@@ -95,7 +95,7 @@ uint dbModuleBTermItr::end(dbObject* /* unused: parent */)
 uint dbModuleBTermItr::next(uint id, ...)
 {
   // User Code Begin next
-  return _modbterm_tbl->getPtr(id)->_next_net_modbterm;
+  return _modbterm_tbl->getPtr(id)->_next_entry;
   // User Code End next
 }
 
