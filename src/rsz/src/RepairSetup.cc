@@ -37,7 +37,6 @@
 
 #include <sstream>
 
-#include "RemoveBuffer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -97,7 +96,6 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   resize_count_ = 0;
   cloned_gate_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
-  remove_buffer_ = new RemoveBuffer(resizer_);
 
   // Sort failing endpoints by slack.
   const VertexSet* endpoints = sta_->endpoints();

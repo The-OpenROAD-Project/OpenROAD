@@ -4,10 +4,11 @@
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def remove_buffers1.def
+read_def remove_buffers3.def
 
 # make sure sta works before/after removal
 report_checks -unconstrained
+set_dont_touch b1
 remove_buffers b1 b3
 report_checks -unconstrained
 
