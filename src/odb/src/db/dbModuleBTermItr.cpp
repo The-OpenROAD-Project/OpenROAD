@@ -83,7 +83,7 @@ uint dbModuleBTermItr::begin(dbObject* parent)
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms.id();
+  return _module->_modbterms;
   // User Code End begin
 }
 
