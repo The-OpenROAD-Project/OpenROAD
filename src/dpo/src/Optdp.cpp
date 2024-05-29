@@ -29,7 +29,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
 #include "dpo/Optdp.h"
 
 #include <odb/db.h>
@@ -129,17 +128,17 @@ void Optdp::improvePlacement(int seed,
 
     dpo::DetailedParams dtParams;
     dtParams.script_ = "";
-    // Maximum independent set matching.
-    dtParams.script_ += "mis -p 10 -t 0.005;";
-    // Global swaps.
-    dtParams.script_ += "gs -p 10 -t 0.005;";
-    // Vertical swaps.
-    dtParams.script_ += "vs -p 10 -t 0.005;";
-    // Small reordering.
-    dtParams.script_ += "ro -p 10 -t 0.005;";
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
-    dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+    dtParams.script_ += "default -p 5 -f 100 -gen rng -obj hpwl -cost (hpwl);";
+    // Global swaps.
+    dtParams.script_ += "gs -p 10 -t 0.005;";
+    // Small reordering.
+    dtParams.script_ += "ro -p 10 -t 0.005;";
+    // Vertical swaps.
+    dtParams.script_ += "vs -p 10 -t 0.005;";
+    // Maximum independent set matching.
+    dtParams.script_ += "mis -p 10 -t 0.005;";
 
     if (disallow_one_site_gaps) {
       dtParams.script_ += "disallow_one_site_gaps;";
