@@ -208,8 +208,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computePinOffsetAdjustments();
 
   for (RegionAdjustment region_adjustment : region_adjustments_) {
-    odb::dbTechLayer* layer = routing_layers_[region_adjustment.getLayer()];
-    logger_->report("Adjusting region on layer {}", layer->getName());
     computeRegionAdjustments(region_adjustment.getRegion(),
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
@@ -1403,18 +1401,27 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   int last_tile_reduce = grid_->computeTileReduce(
       region, last_tile_box, track_space, false, routing_layer->getDirection());
 
-  // If preferred direction is horizontal, only first and the last line will
-  // have specific adjustments
-  if (!vertical) {
-    // Setting capacities of edges completely contains the adjust region
-    // according the percentage of reduction
-    fastroute_->applyHorizontalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
-  } else {
-    // If preferred direction is vertical, only first and last columns will have
-    // specific adjustments
-    fastroute_->applyVerticalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+    for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+      double edge_cap
+          = vertical ? fastroute_->getEdgeCapacity(x, y, x, y + 1, layer)
+                     : fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+      int new_cap = std::floor(edge_cap * (1 - reduction_percentage));
+
+      if (x == first_tile.getX() || y == first_tile.getY()) {
+        new_cap = edge_cap - (first_tile_reduce * (1 - reduction_percentage));
+      } else if (x == last_tile.getX() || y == last_tile.getY()) {
+        new_cap = edge_cap - (last_tile_reduce * (1 - reduction_percentage));
+      }
+
+      new_cap = edge_cap > 0 && reduction_percentage != 1 ? std::max(new_cap, 1)
+                                                          : new_cap;
+      if (vertical) {
+        fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
+      } else {
+        fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
+      }
+    }
   }
 }
 
