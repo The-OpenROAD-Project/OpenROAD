@@ -350,7 +350,6 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
                "remove {}",
                db_network_->name(buffer));
     buffer_removed = true;
-    incrementalParasiticsBegin();
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
@@ -372,7 +371,6 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
     }
     parasiticsInvalid(survivor);
     updateParasitics();
-    incrementalParasiticsEnd();
   }
   return buffer_removed;
 }
