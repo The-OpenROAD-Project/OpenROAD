@@ -41,7 +41,7 @@ namespace dpo {
 Node::Node() = default;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool Node::adjustCurrOrient(unsigned newOri)
+bool Node::adjustCurrOrient(const unsigned newOri)
 {
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
@@ -57,8 +57,8 @@ bool Node::adjustCurrOrient(unsigned newOri)
         || curOri == Orientation_FS || curOri == Orientation_S) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
-        double dx = pin->getOffsetX();
-        double dy = pin->getOffsetY();
+        const double dx = pin->getOffsetX();
+        const double dy = pin->getOffsetY();
         pin->setOffsetX(-dy);
         pin->setOffsetY(dx);
       }
@@ -78,8 +78,8 @@ bool Node::adjustCurrOrient(unsigned newOri)
         || curOri == Orientation_FW || curOri == Orientation_W) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
-        double dx = pin->getOffsetX();
-        double dy = pin->getOffsetY();
+        const double dx = pin->getOffsetX();
+        const double dy = pin->getOffsetY();
         pin->setOffsetX(dy);
         pin->setOffsetY(-dx);
       }
@@ -198,10 +198,10 @@ void Network::createAndAddBlockage(const odb::Rect& bounds)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddFillerNode(int left,
-                                      int bottom,
-                                      int width,
-                                      int height)
+Node* Network::createAndAddFillerNode(const int left,
+                                      const int bottom,
+                                      const int width,
+                                      const int height)
 {
   Node* ndi = new Node();
   const int id = (int) nodes_.size();

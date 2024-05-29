@@ -60,14 +60,7 @@ struct DetailedParams
 class Detailed
 {
  public:
-  explicit Detailed(DetailedParams& params)
-      : params_(params),
-        mgr_(nullptr),
-        arch_(nullptr),
-        network_(nullptr),
-        rt_(nullptr)
-  {
-  }
+  explicit Detailed(DetailedParams& params) : params_(params) {}
 
   bool improve(DetailedMgr& mgr);
 
@@ -75,11 +68,11 @@ class Detailed
   void doDetailedCommand(std::vector<std::string>& args);
 
   DetailedParams& params_;
-  DetailedMgr* mgr_;
+  DetailedMgr* mgr_ = nullptr;
 
-  Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
+  Architecture* arch_ = nullptr;
+  Network* network_ = nullptr;
+  RoutingParams* rt_ = nullptr;
 };
 
 }  // namespace dpo
