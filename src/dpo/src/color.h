@@ -39,7 +39,7 @@ namespace dpo {
 class Graph
 {
  public:
-  explicit Graph(int v) : v_(v)
+  explicit Graph(const int v) : v_(v)
   {
     adj_.resize(v_);
 
@@ -48,7 +48,7 @@ class Graph
     ncolors_ = 0;
   }
 
-  void addEdge(int u, int v)
+  void addEdge(const int u, const int v)
   {
     adj_[u].push_back(v);
     adj_[v].push_back(u);
@@ -77,7 +77,7 @@ class Graph
       // Determine which colors cannot be used.  Pick the smallest
       // color which can be used.
       for (int i = 0; i < adj_[v].size(); i++) {
-        int u = adj_[v][i];
+        const int u = adj_[v][i];
         if (color_[u] != -1) {
           // Node "u" has a color.  So, it is not available to "v".
           avail[color_[u]] = v;  // Marking "avail[color]" with a "v" means it

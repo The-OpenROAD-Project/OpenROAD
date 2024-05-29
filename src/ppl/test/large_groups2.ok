@@ -5,7 +5,6 @@
 [INFO ODB-0133]     Created 1 nets and 1 connections.
 [INFO PPL-0044] Pin group: [ pin0 pin1 pin2 pin3 pin4 ... ]
 Found 0 macro blocks.
-[WARNING PPL-0092] Pin group of size 400 does not fit any section. Adding to fallback mode.
 [INFO PPL-0100] Group of size 400 placed during fallback mode.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots           2494

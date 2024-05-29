@@ -38,11 +38,9 @@
 namespace dpo {
 
 class Architecture;
-class DetailedSeg;
 class DetailedMgr;
 class Network;
 class Node;
-class RoutingParams;
 
 // CLASSES ===================================================================
 class DetailedReorderer
@@ -69,13 +67,13 @@ class DetailedReorderer
   Network* network_;
 
   // For segments.
-  DetailedMgr* mgrPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
 
   // Other.
-  int skipNetsLargerThanThis_;
+  int skipNetsLargerThanThis_ = 100;
   std::vector<int> edgeMask_;
-  int traversal_;
-  int windowSize_;
+  int traversal_ = 0;
+  int windowSize_ = 3;
 };
 
 }  // namespace dpo
