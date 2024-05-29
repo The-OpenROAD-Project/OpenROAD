@@ -36,7 +36,6 @@
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModule.h"
-#include "dbObject.h"
 #include "dbTable.h"
 
 namespace odb {
