@@ -1,4 +1,6 @@
 record_tests {
+  hierclock    
+  hier2
   readdb_hier
   constant1
   make_port

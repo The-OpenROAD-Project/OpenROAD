@@ -587,7 +587,9 @@ bool Resizer::hasTristateOrDontTouchDriver(const Net* net)
       }
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      db_network_->staToDb(pin, iterm, bterm);
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
+      db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
       if (iterm && iterm->getInst()->isDoNotTouch()) {
         logger_->warn(RSZ,
                       84,

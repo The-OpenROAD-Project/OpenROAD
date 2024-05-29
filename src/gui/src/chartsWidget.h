@@ -43,6 +43,7 @@
 #include <memory>
 
 #include "gui/gui.h"
+#include "staGuiInterface.h"
 
 namespace sta {
 class Pin;
@@ -53,14 +54,21 @@ class Clock;
 
 namespace gui {
 #ifdef ENABLE_CHARTS
-class STAGuiInterface;
+
+using ITermBTermPinsLists = std::pair<StaPins, StaPins>;
+
+enum StartEndPathType
+{
+  RegisterToRegister,
+  RegisterToIO,
+  IOToRegister,
+  IOToIO,
+};
 
 struct SlackHistogramData
 {
-  std::vector<const sta::Pin*> constrained_pins;
+  StaPins constrained_pins;
   std::set<sta::Clock*> clocks;
-  float max_slack = 0;
-  float min_slack = 0;
 };
 
 struct Buckets
@@ -91,12 +99,6 @@ class ChartsWidget : public QDockWidget
  public:
   ChartsWidget(QWidget* parent = nullptr);
 #ifdef ENABLE_CHARTS
-  enum Mode
-  {
-    SELECT,
-    SLACK_HISTOGRAM
-  };
-
   void setSTA(sta::dbSta* sta);
   void setLogger(utl::Logger* logger)
   {
@@ -108,13 +110,23 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
+  void changeStartEndFilter();
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
 
  private:
-  void setSlackMode();
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
 
-  void setBucketInterval(float max_slack, float min_slack);
+  static std::string toString(enum StartEndPathType);
+
+  void setSlackHistogram();
+  void setModeMenu();
+  void setStartEndFiltersMenu();
+  void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {
     bucket_interval_ = bucket_interval;
@@ -128,8 +140,14 @@ class ChartsWidget : public QDockWidget
     precision_count_ = precision_count;
   }
 
-  SlackHistogramData fetchSlackHistogramData() const;
-  void populateBuckets(const SlackHistogramData& data);
+  SlackHistogramData fetchSlackHistogramData();
+  void removeUnconstrainedPins(StaPins& end_points);
+  TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
+  StaPins getEndPointsFromPaths(const TimingPathList& paths);
+  ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
+
+  void populateBuckets(const StaPins& end_points);
+  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
@@ -144,6 +162,7 @@ class ChartsWidget : public QDockWidget
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
   int computeYInterval();
+  void clearBarSets();
 
   void clearChart();
 
@@ -152,12 +171,17 @@ class ChartsWidget : public QDockWidget
   std::unique_ptr<STAGuiInterface> stagui_;
 
   QComboBox* mode_menu_;
+  QComboBox* filters_menu_;
   QChart* chart_;
   HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
   std::unique_ptr<Buckets> buckets_;
+  int prev_filter_index_;
+
+  float max_slack_;
+  float min_slack_;
 
   const int default_number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
