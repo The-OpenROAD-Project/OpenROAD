@@ -315,7 +315,6 @@ void DetailedMis::colorCells()
   }
 
   // The actual coloring.
-  gr.removeDuplicates();
   gr.greedyColoring();
 
   std::vector<int> hist;
@@ -323,7 +322,7 @@ void DetailedMis::colorCells()
     const Node* ndi = network_->getNode(i);
 
     const int color = gr.getColor(i);
-    if (color < 0 || color >= gr.getNColors()) {
+    if (color < 0 || color >= gr.getNumColors()) {
       mgrPtr_->internalError("Unable to color cells during matching");
     }
     if (movable_[ndi->getId()]) {
