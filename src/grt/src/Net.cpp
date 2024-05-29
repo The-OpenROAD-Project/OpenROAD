@@ -66,6 +66,9 @@ void Net::addPin(Pin& pin)
 
 bool Net::isLocal()
 {
+  if (pins_.empty()) {
+    return true;
+  }
   odb::Point position = pins_[0].getOnGridPosition();
   for (Pin& pin : pins_) {
     odb::Point pinPos = pin.getOnGridPosition();
