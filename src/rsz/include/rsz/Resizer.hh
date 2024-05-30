@@ -714,4 +714,14 @@ class Resizer : public dbStaState
   friend class SynthesizeBuffers;
 };
 
+class VertexLevelLess
+{
+ public:
+  VertexLevelLess(const sta::Network* network);
+  bool operator()(const Vertex* vertex1, const Vertex* vertex2) const;
+
+ protected:
+  const sta::Network* network_;
+};
+
 }  // namespace rsz

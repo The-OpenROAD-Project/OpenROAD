@@ -194,16 +194,6 @@ double Resizer::maxArea() const
 
 ////////////////////////////////////////////////////////////////
 
-class VertexLevelLess
-{
- public:
-  VertexLevelLess(const Network* network);
-  bool operator()(const Vertex* vertex1, const Vertex* vertex2) const;
-
- protected:
-  const Network* network_;
-};
-
 VertexLevelLess::VertexLevelLess(const Network* network) : network_(network)
 {
 }

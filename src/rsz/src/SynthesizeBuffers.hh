@@ -3,6 +3,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Sta.hh"
+#include "sta/Search.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -14,8 +15,11 @@ using sta::dbSta;
 using sta::Pin;
 using sta::Net;
 using sta::StaState;
+using sta::LibertyCell;
 using utl::Logger;
 using sta::Vertex;
+using sta::ArrivalVisitor;
+using sta::RequiredVisitor;
 
 class SynthesizeBuffers : StaState
 {
@@ -32,6 +36,10 @@ class SynthesizeBuffers : StaState
   float loadCapacitance(std::vector<Pin *> &loads);
   void synthesizeBuffers(Net* net, Pin* drvr_pin, int max_fanout, float gain);
   void clearSlewAnnotation(Vertex *vertex);
+
+  std::vector<LibertyCell *> buffer_sizes;
+  RequiredVisitor *req_visitor;
+  ArrivalVisitor *arrival_visitor;
 
   Logger* logger_ = nullptr;
   dbSta* sta_ = nullptr;
