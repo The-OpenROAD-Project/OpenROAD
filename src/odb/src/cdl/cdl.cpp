@@ -45,6 +45,7 @@
 #include <vector>
 
 #include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace odb {
 
@@ -187,7 +188,8 @@ bool cdl::writeCdl(utl::Logger* logger,
     mtermMap.insert(submtermMap.begin(), submtermMap.end());
   }
   int unconnectedNets = 0;
-  FILE* f = fopen(outFileName, "w");
+  utl::FileHandler fileHandler(outFileName);
+  FILE* f = fileHandler.getFile();
 
   if (f == nullptr) {
     logger->error(utl::ODB, 358, "cannot open file {}", outFileName);
@@ -239,7 +241,6 @@ bool cdl::writeCdl(utl::Logger* logger,
 
   writeLine(f, ".ENDS " + block->getName());
 
-  fclose(f);
   return true;
 }
 
