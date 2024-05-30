@@ -75,7 +75,7 @@ namespace odb {
 namespace {
 
 // Helper function to get the correct number of bits of a cell for scandef.
-int calculateBitsForCellInScandef(int bits, dbInst* inst)
+int calculateBitsForCellInScandef(const int bits, dbInst* inst)
 {
   // -1 is no bits were provided in the scandef
   if (bits != -1) {
@@ -137,7 +137,7 @@ void populateScanInst(definReader* reader,
                       const char* inst_name,
                       const char* in_pin_name,
                       const char* out_pin_name,
-                      int bits)
+                      const int bits)
 {
   dbInst* inst = block->findInst(inst_name);
   if (!inst) {
@@ -2088,6 +2088,7 @@ bool definReader::createBlock(const char* file)
     defrSetHistoryCbk(historyCallback);
 
     defrSetRegionCbk(regionCallback);
+    defrSetSlotStartCbk(slotsCallback);
 
     defrSetStartPinsCbk(pinsStartCallback);
     defrSetStylesStartCbk(stylesCallback);
@@ -2097,7 +2098,6 @@ bool definReader::createBlock(const char* file)
   if (_mode == defin::INCREMENTAL || _mode == defin::DEFAULT) {
     defrSetScanchainsStartCbk(scanchainsStartCallback);
     defrSetScanchainCbk(scanchainsCallback);
-    defrSetSlotStartCbk(slotsCallback);
   }
 
   bool isZipped = hasSuffix(file, ".gz");
