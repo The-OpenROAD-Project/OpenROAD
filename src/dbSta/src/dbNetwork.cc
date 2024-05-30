@@ -347,10 +347,10 @@ DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
   dbModNet* modnet = nullptr;
   network_ = network;
   network->staToDb(net, dnet, modnet);
+  next_ = nullptr;
   if (dnet) {
     iitr_ = dnet->getITerms().begin();
     iitr_end_ = dnet->getITerms().end();
-    next_ = nullptr;
   }
   if (modnet) {
     iitr_ = modnet->getITerms().begin();
