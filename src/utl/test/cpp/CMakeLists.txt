@@ -6,14 +6,14 @@ set(TEST_LIBS
   utl
 )
 
-add_executable(CFileUtilsTest CFileUtilsTest.cpp)
+add_executable(TestCFileUtils TestCFileUtils.cpp)
 
-target_link_libraries(CFileUtilsTest ${TEST_LIBS})
+target_link_libraries(TestCFileUtils ${TEST_LIBS})
 
-gtest_discover_tests(CFileUtilsTest
+gtest_discover_tests(TestCFileUtils
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_dependencies(build_and_test
-  CFileUtilsTest
+  TestCFileUtils
 )
