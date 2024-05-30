@@ -133,16 +133,6 @@ enum ClusterType
   MixedCluster
 };
 
-// The parameters necessary to compute one coordinate of the new
-// origin for aligning the macros' pins to the track-grid
-struct SnapParameters
-{
-  int offset = 0;
-  int pitch = 0;
-  int pin_width = 0;
-  int pin_to_origin = 0;
-};
-
 // Metrics class for logical modules and clusters
 class Metrics
 {
@@ -360,7 +350,6 @@ class HardMacro
   // dbu is needed to convert the database unit to real size
   HardMacro(odb::dbInst* inst,
             float dbu,
-            int manufacturing_grid,
             float halo_width = 0.0,
             float halo_height = 0.0);
 
@@ -409,11 +398,6 @@ class HardMacro
   const std::string getName() const;
   const std::string getMasterName() const;
 
-  void updateDb(odb::dbBlock* block);
-  odb::Point computeSnapOrigin(const odb::Rect& macro_box,
-                               const odb::dbOrientType& orientation,
-                               odb::dbBlock* block);
-
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
   int getYDBU() const { return micronToDbu(getY(), dbu_); }
@@ -443,18 +427,6 @@ class HardMacro
   void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
 
  private:
-  SnapParameters computeSnapParameters(odb::dbBlock* block,
-                                       odb::dbTechLayer* layer,
-                                       odb::dbBox* box,
-                                       bool is_vertical_direction);
-  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
-                             std::vector<int>& coordinate_grid,
-                             bool is_vertical_direction);
-  int getDirectionPitch(odb::dbTechLayer* layer, bool is_vertical_direction);
-  int getDirectionOffset(odb::dbTechLayer* layer, bool is_vertical_direction);
-  int getDirectionPinWidth(odb::dbBox* box, bool is_vertical_direction);
-  int getPinToOriginDistance(odb::dbBox* box, bool is_vertical_direction);
-
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
@@ -477,7 +449,6 @@ class HardMacro
   // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
   float dbu_ = 0.0;  // DbuPerMicro
-  int manufacturing_grid_ = 10;
 };
 
 // We have three types of SoftMacros
