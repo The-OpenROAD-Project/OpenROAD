@@ -15,6 +15,7 @@ using sta::Pin;
 using sta::Net;
 using sta::StaState;
 using utl::Logger;
+using sta::Vertex;
 
 class SynthesizeBuffers : StaState
 {
@@ -26,8 +27,11 @@ class SynthesizeBuffers : StaState
 
  private:
   bool getCin(Pin* drvr, float& cin);
-  float requiredTime(const Pin* load);
-  void synthesizeBuffers(Net* net, Pin* drvr_pin, int max_fanout, float gain, float slew);
+  float requiredTime(Pin* load);
+  bool collectLoads(Net *net, Pin *drvr_pin, std::vector<Pin *> &loads);
+  float loadCapacitance(std::vector<Pin *> &loads);
+  void synthesizeBuffers(Net* net, Pin* drvr_pin, int max_fanout, float gain);
+  void clearSlewAnnotation(Vertex *vertex);
 
   Logger* logger_ = nullptr;
   dbSta* sta_ = nullptr;
