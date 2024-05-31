@@ -1651,7 +1651,7 @@ bool DisplayControls::areSelectedVisible()
 
 bool DisplayControls::isDetailedVisibility()
 {
-  return isModelRowVisible(&misc_.detailed);
+  return isModelRowVisible(&misc_.detailed) || isModelRowVisible(&misc_.module);
 }
 
 bool DisplayControls::arePrefTracksVisible()
