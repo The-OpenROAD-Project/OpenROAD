@@ -432,13 +432,11 @@ int dbDatabase::removeUnusedMasters()
   std::vector<dbMaster*> unused_masters;
   dbSet<dbLib> libs = getLibs();
 
-  for (auto it = libs.begin(); it != libs.end(); ++it) {
-    dbLib* lib = *it;
+  for (auto lib : libs) {
     dbSet<dbMaster> masters = lib->getMasters();
     // Collect all dbMasters for later comparision
-    for (auto masterIt = masters.begin(); masterIt != masters.end();
-         ++masterIt) {
-      unused_masters.push_back(*masterIt);
+    for (auto master : masters) {
+      unused_masters.push_back(master);
     }
   }
   // Get instances from this Database
@@ -446,8 +444,8 @@ int dbDatabase::removeUnusedMasters()
   dbBlock* block = chip->getBlock();
   dbSet<dbInst> insts = block->getInsts();
 
-  for (auto instIt = insts.begin(); instIt != insts.end(); ++instIt) {
-    dbMaster* master = instIt->getMaster();
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
     // Filter out the master that matches inst_master
     auto masterIt
         = std::find(unused_masters.begin(), unused_masters.end(), master);
