@@ -63,7 +63,6 @@ struct ARinfo;
 struct AntennaModel;
 
 ///////////////////////////////////////
-struct PinType;
 struct GraphNode;
 
 struct NodeInfo
