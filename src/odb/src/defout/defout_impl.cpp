@@ -45,6 +45,7 @@
 #include "odb/dbMap.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 namespace odb {
 
 static const int max_name_length = 256;
@@ -152,7 +153,8 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   _dist_factor
       = (double) block->getDefUnits() / (double) block->getDbUnitsPerMicron();
-  _out = fopen(def_file, "w");
+  utl::FileHandler fileHandler(def_file);
+  _out = fileHandler.getFile();
 
   if (_out == nullptr) {
     _logger->warn(
@@ -241,7 +243,6 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   writeGroups(block);
 
   fprintf(_out, "END DESIGN\n");
-  fclose(_out);
   {
     delete _select_net_map;
   }
