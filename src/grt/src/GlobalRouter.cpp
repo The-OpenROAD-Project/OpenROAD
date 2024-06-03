@@ -342,12 +342,17 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
   bool violations = true;
   int itr = 0;
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
     }
     violations = repair_antennas_->checkAntennaViolations(
-        routes_, max_routing_layer_, diode_mterm, ratio_margin);
+        routes_, nets_to_repair, max_routing_layer_, diode_mterm, ratio_margin);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -362,7 +367,10 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                       illegal_diode_placement_count);
       }
       repair_antennas_->legalizePlacedCells();
-      incr_groute.updateRoutes();
+      nets_to_repair.clear();
+      for (const Net* net : incr_groute.updateRoutes()) {
+        nets_to_repair.push_back(net->getDbNet());
+      }
     }
     repair_antennas_->clearViolations();
     itr++;
@@ -372,16 +380,26 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
 void GlobalRouter::makeNetWires()
 {
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
   if (repair_antennas_ == nullptr) {
     repair_antennas_
         = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
   }
-  repair_antennas_->makeNetWires(routes_, max_routing_layer_);
+  repair_antennas_->makeNetWires(routes_, nets_to_repair, max_routing_layer_);
 }
 
 void GlobalRouter::destroyNetWires()
 {
-  repair_antennas_->destroyNetWires();
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
+  repair_antennas_->destroyNetWires(nets_to_repair);
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
@@ -1040,9 +1058,7 @@ void GlobalRouter::computeTrackConsumption(
 
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = 2
-                      * (std::ceil(ndr_width / 2 + ndr_spacing
-                                   + default_width / 2 - default_pitch));
+      int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
@@ -4124,9 +4140,9 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-void IncrementalGRoute::updateRoutes(bool save_guides)
+std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  groute_->updateDirtyRoutes(save_guides);
+  return groute_->updateDirtyRoutes(save_guides);
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -4149,8 +4165,9 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes(bool save_guides)
+std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
+  std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     if (verbose_)
@@ -4161,11 +4178,10 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
 
-    std::vector<Net*> dirty_nets;
     updateDirtyNets(dirty_nets);
 
     if (dirty_nets.empty()) {
-      return;
+      return dirty_nets;
     }
 
     const float old_critical_nets_percentage
@@ -4229,6 +4245,8 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       saveGuides();
     }
   }
+
+  return dirty_nets;
 }
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
