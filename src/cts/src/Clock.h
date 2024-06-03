@@ -218,6 +218,36 @@ class Clock
     return subNets_.back();
   }
 
+  void removeSubNet(ClockSubNet sub_net)
+  {
+    std::set<ClockInst*> sinksToRemove;
+    sinksToRemove.insert(sub_net.getDriver());
+    for (auto it = subNets_.begin(); it != subNets_.end();)
+    {
+      if(it->getName() == sub_net.getName()) {
+        it = subNets_.erase(it);
+        break;
+      } else {
+        it->removeSinks(sinksToRemove);
+        ++it;
+      }
+    }
+    removeClockBuffer(sub_net.getDriver());
+  }
+
+  void removeClockBuffer(ClockInst* clock_buffer)
+  {
+    for (auto it = clockBuffers_.begin(); it != clockBuffers_.end();)
+    {
+      if(it->getName() == clock_buffer->getName()) {
+        it = clockBuffers_.erase(it);
+        break;
+      } else {
+        ++it;
+      }
+    }
+  }
+
   void addSink(const std::string& name, int x, int y)
   {
     sinks_.emplace_back(name, "", CLOCK_SINK, x, y);

@@ -1893,7 +1893,8 @@ void HTreeBuilder::createClockSubNets()
           ++numSinks;
         }
         if(sinkLocs.empty()){
-          logger_->report("No sinks near this subnet: {}", subNet->getName());
+          // If a leaf subnet has no sinks connected remove the subnet
+          clock_.removeSubNet(*subNet);
         }
       });
 
