@@ -192,12 +192,14 @@ class ChartsWidget : public QDockWidget
   float max_slack_;
   float min_slack_;
 
-  const int default_number_of_buckets_ = 15;
-  int largest_slack_count_ = 0;  // Used to configure the y axis.
-  int precision_count_ = 0;      // Used to configure the x labels.
+  bool resetting_menu_;
 
-  float bucket_interval_ = 0;
-  int neg_count_offset_ = 0;
+  const int default_number_of_buckets_;
+  int largest_slack_count_;  // Used to configure the y axis.
+  int precision_count_;      // Used to configure the x labels.
+
+  float bucket_interval_;
+  int neg_count_offset_;
 #endif
   QLabel* label_;
 };

@@ -67,6 +67,12 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       prev_filter_index_(0),  // start with no filter
       max_slack_(0.0f),
       min_slack_(std::numeric_limits<float>::max()),
+      resetting_menu_(false),
+      default_number_of_buckets_(15),
+      largest_slack_count_(0),
+      precision_count_(0),
+      bucket_interval_(0.0f),
+      neg_count_offset_(0),
 #endif
       label_(new QLabel(this))
 {
@@ -124,7 +130,11 @@ void ChartsWidget::changeMode()
   clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
-    filters_menu_->setCurrentIndex(0);
+    if (filters_menu_->currentIndex() != 0) {
+      resetting_menu_ = true;
+      filters_menu_->setCurrentIndex(0);
+    }
+
     filters_menu_->show();
     setSlackHistogram();
   }
@@ -187,6 +197,8 @@ void ChartsWidget::clearChart()
   // reset limits
   max_slack_ = 0;
   min_slack_ = std::numeric_limits<float>::max();
+
+  largest_slack_count_ = 0;
 
   chart_->setTitle("");
   chart_->removeAllSeries();
@@ -617,6 +629,11 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
 
 void ChartsWidget::changeStartEndFilter()
 {
+  if (resetting_menu_) {
+    resetting_menu_ = false;
+    return;
+  }
+
   clearChart();
 
   StaPins end_points;
