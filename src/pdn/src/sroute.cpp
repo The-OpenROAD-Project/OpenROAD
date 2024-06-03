@@ -668,8 +668,8 @@ void SRoute::createSrouteWires(
     // collect the the SWires from the block
     ShapeVectorMap obstructions_vec;
     Shape::populateMapFromDb(net, obstructions_vec);
-    const ShapeTreeMap obstructions
-        = Shape::convertVectorToTree(obstructions_vec);
+    const Shape::ObstructionTreeMap obstructions
+        = Shape::convertVectorToObstructionTree(obstructions_vec);
 
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {

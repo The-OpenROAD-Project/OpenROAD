@@ -93,7 +93,6 @@ int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
 bool AUTO_TAPER_NDR_NETS = true;
 int TAPERBOX_RADIUS = 3;
 
-frUInt4 TAVIACOST = 1;
 frUInt4 TAPINCOST = 4;
 frUInt4 TAALIGNCOST = 4;
 frUInt4 TADRCCOST = 32;
@@ -108,12 +107,12 @@ frUInt4 MARKERBLOATWIDTH = 1;
 frUInt4 BLOCKCOST = 32;
 frUInt4 GUIDECOST = 1;  // disabled change getNextPathCost to enable
 float SHAPEBLOATWIDTH = 3;
-int MISALIGNMENTCOST = 8;
 
 int CONGCOST = 8;
 int HISTCOST = 32;
 std::string REPAIR_PDN_LAYER_NAME;
-frLayerNum GC_IGNORE_PDN_LAYER = -1;
+frLayerNum REPAIR_PDN_LAYER_NUM = -1;
+frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
 
 std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
 {

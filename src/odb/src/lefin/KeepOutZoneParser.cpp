@@ -30,9 +30,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 using namespace odb;
 
@@ -49,15 +49,17 @@ void KeepOutZoneParser::parse(const std::string& s)
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     rule += " ; ";
-    if (!parseSubRule(rule))
+    if (!parseSubRule(rule)) {
       lefin_->warning(388,
                       "parse mismatch in layer propery LEF58_KEEPOUTZONE for "
                       "layer {} :\"{}\"",
                       layer_->getName(),
                       rule);
+    }
   }
 }
 
@@ -128,7 +130,8 @@ bool KeepOutZoneParser::parseSubRule(std::string s)
   bool valid = qi::phrase_parse(first, last, LEF58_KEEPOUTZONE, space)
                && first == last;
 
-  if (!valid && rule_ != nullptr)  // fail if we did not get a full match
+  if (!valid && rule_ != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerKeepOutZoneRule::destroy(rule_);
+  }
   return valid;
 }

@@ -130,6 +130,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
+  void setIter(int iterNum) { iter_ = iterNum; }
 
  private:
   TritonRoute* router_;
@@ -827,7 +828,7 @@ class FlexDRWorker
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
-  bool routeNet(drNet* net);
+  bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
   void routeNet_prep(drNet* net,
                      std::set<drPin*, frBlockObjectComp>& unConnPins,
                      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&

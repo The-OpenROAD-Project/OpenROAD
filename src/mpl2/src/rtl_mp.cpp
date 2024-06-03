@@ -47,6 +47,8 @@ using utl::MPL;
 MacroPlacer2::MacroPlacer2() = default;
 MacroPlacer2::~MacroPlacer2() = default;
 
+class Snapper;
+
 void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
@@ -146,32 +148,14 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                    "place macro outside of the core.");
   }
 
-  // As HardMacro is created from inst, the latter must be placed before
-  // we actually snap the macro to align the pins with the grids. Also,
-  // orientation must be set before location so we don't end up flipping
+  // Orientation must be set before location so we don't end up flipping
   // and misplacing the macro.
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
   if (!orientation.isRightAngleRotation()) {
-    int manufacturing_grid = db_->getTech()->getManufacturingGrid();
-
-    HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
-
-    mpl2::Rect macro_new_bbox_micron(
-        x_origin,
-        y_origin,
-        dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
-        dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
-
-    float pitch_x = 0.0;
-    float pitch_y = 0.0;
-
-    odb::Point snap_origin = macro.computeSnapOrigin(
-        macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
-
-    // Orientation is already set, so now we set the origin to snap macro.
-    inst->setOrigin(snap_origin.x(), snap_origin.y());
+    Snapper snapper(inst);
+    snapper.snapMacro();
   } else {
     logger_->warn(
         MPL,

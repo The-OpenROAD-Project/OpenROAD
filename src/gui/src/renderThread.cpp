@@ -123,13 +123,21 @@ void RenderThread::run()
                  draw_bounds.height(),
                  QImage::Format_ARGB32_Premultiplied);
     // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+    try {
+      draw(image,
+           draw_bounds,
+           selected,
+           highlighted,
+           rulers,
+           1.0,
+           Qt::transparent);
+    } catch (const std::exception& e) {
+      logger_->warn(
+          GUI, 102, "An exception occurred during rendering: {}", e.what());
+    } catch (...) {
+      logger_->warn(GUI, 103, "An unknown exception occurred during rendering");
+    }
+
     if (!restart_) {
       is_rendering_ = false;
 
@@ -540,7 +548,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
                                                      instance_limit);
       child_insts.clear();
       child_insts.reserve(10000);
-      for (auto& [box, inst] : inst_range) {
+      for (auto* inst : inst_range) {
         if (viewer_->options_->isInstanceVisible(inst)) {
           child_insts.push_back(inst);
         }
@@ -611,7 +619,8 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     QString name = inst->getName().c_str();
     auto master = inst->getMaster();
     auto center = master->isBlock() || master->isPad();
-    drawTextInBBox(text_color, text_font, instance_box, name, painter, center);
+    drawTextInBBox(
+        text_color, text_font, instance_box, std::move(name), painter, center);
   }
   painter->setFont(initial_font);
 }
@@ -788,7 +797,7 @@ void RenderThread::drawBlockages(QPainter* painter,
                                          bounds.yMax(),
                                          viewer_->shapeSizeLimit());
 
-  for (auto& [box, blockage] : blockage_range) {
+  for (auto* blockage : blockage_range) {
     if (restart_) {
       break;
     }
@@ -821,7 +830,7 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
                                             bounds.yMax(),
                                             viewer_->shapeSizeLimit());
 
-  for (auto& [box, obs] : obstructions_range) {
+  for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
     }
@@ -846,7 +855,7 @@ void RenderThread::drawViaShapes(QPainter* painter,
                                                             shape_limit);
 
   std::vector<odb::dbShape> via_shapes;
-  for (auto& [box, sbox, net] : via_sbox_iter) {
+  for (const auto& [sbox, net] : via_sbox_iter) {
     if (restart_) {
       break;
     }
@@ -884,6 +893,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const bool draw_shapes
       = !(layer->getType() == dbTechLayerType::CUT
           && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
+                                || layer->getType() == dbTechLayerType::ROUTING;
 
   if (draw_shapes) {
     drawInstanceShapes(layer, painter, insts, bounds, gui_painter);
@@ -891,8 +902,10 @@ void RenderThread::drawLayer(QPainter* painter,
 
   drawObstructions(block, layer, painter, bounds);
 
-  const bool draw_routing = viewer_->options_->areRoutingSegmentsVisible();
-  const bool draw_vias = viewer_->options_->areRoutingViasVisible();
+  const bool draw_routing
+      = viewer_->options_->areRoutingSegmentsVisible() && layer_is_routing;
+  const bool draw_vias
+      = viewer_->options_->areRoutingViasVisible() && layer_is_routing;
   // Now draw the shapes
   QColor color = getColor(layer);
   Qt::BrushStyle brush_pattern = getPattern(layer);
@@ -923,14 +936,12 @@ void RenderThread::drawLayer(QPainter* painter,
         if (!viewer_->isNetVisible(net)) {
           continue;
         }
-        const auto& ll = box.min_corner();
-        const auto& ur = box.max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
 
-    if (viewer_->options_->areSpecialRoutingViasVisible()) {
+    if (viewer_->options_->areSpecialRoutingViasVisible() && layer_is_routing) {
       if (layer->getType() == dbTechLayerType::CUT) {
         drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
       } else {
@@ -951,7 +962,8 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
 
-    if (viewer_->options_->areSpecialRoutingSegmentsVisible()) {
+    if (viewer_->options_->areSpecialRoutingSegmentsVisible()
+        && layer_is_routing) {
       auto polygon_iter = viewer_->search_.searchSNetShapes(block,
                                                             layer,
                                                             bounds.xMin(),
@@ -990,14 +1002,14 @@ void RenderThread::drawLayer(QPainter* painter,
                                                bounds.yMax(),
                                                shape_limit);
 
-      for (auto& i : iter) {
+      for (auto* fill : iter) {
         if (restart_) {
           break;
         }
-        const auto& ll = std::get<0>(i).min_corner();
-        const auto& ur = std::get<0>(i).max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        odb::Rect box;
+        fill->getRect(box);
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
   }
@@ -1083,7 +1095,7 @@ void RenderThread::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (restart_) {
       break;
     }
@@ -1401,7 +1413,7 @@ void RenderThread::drawModuleView(QPainter* painter,
       continue;
     }
 
-    const auto setting = viewer_->modules_.at(module);
+    const auto& setting = viewer_->modules_.at(module);
 
     if (!setting.visible) {
       continue;
@@ -1446,7 +1458,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
     QString current_text = QString::fromStdString(pin->getName());
     if (font_metrics.boundingRect(current_text).width()
         > font_metrics.boundingRect(largest_text).width()) {
-      largest_text = current_text;
+      largest_text = std::move(current_text);
     }
   }
 
@@ -1546,10 +1558,10 @@ void RenderThread::drawIOPins(Painter& painter,
 
   // RTree used to search for overlapping shapes and decide if rotation of
   // text is needed.
-  bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
+  bgi::rtree<odb::Rect, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText
   {
-    Search::Box rect;
+    odb::Rect rect;
     bool can_rotate;
     std::string text;
     odb::Point pt;
@@ -1652,12 +1664,10 @@ void RenderThread::drawIOPins(Painter& painter,
                                                        pin_specs.anchor,
                                                        pin_specs.text);
         text_rect.bloat(text_margin, text_rect);
-        pin_specs.rect
-            = Search::Box(Search::Point(text_rect.xMin(), text_rect.yMin()),
-                          Search::Point(text_rect.xMax(), text_rect.yMax()));
+        pin_specs.rect = text_rect;
         pin_text_spec_shapes.insert(pin_specs.rect);
       } else {
-        pin_specs.rect = Search::Box();
+        pin_specs.rect = odb::Rect();
       }
       pin_text_spec.push_back(pin_specs);
     }

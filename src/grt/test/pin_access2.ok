@@ -5,6 +5,16 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
 [INFO DRT-0167] List of default vias:
   Layer via
     default via: M1M2_PR
@@ -52,31 +62,31 @@ Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
 met1       Horizontal      32472          3480          89.28%
-met2       Vertical        25584          6614          74.15%
-met3       Horizontal      15416          6680          56.67%
+met2       Vertical        25584          6589          74.25%
+met3       Horizontal      15416          6670          56.73%
 met4       Vertical        10332          4572          55.75%
 met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2450
-[INFO GRT-0198] Via related Steiner nodes: 71
+[INFO GRT-0197] Via related to pin nodes: 2445
+[INFO GRT-0198] Via related Steiner nodes: 76
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3277
-[INFO GRT-0112] Final usage 3D: 12788
+[INFO GRT-0111] Final number of vias: 3279
+[INFO GRT-0112] Final usage 3D: 12797
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              3480           928           26.67%             0 /  0 /  0
-met2              6614          1281           19.37%             0 /  0 /  0
-met3              6680           550            8.23%             0 /  0 /  0
-met4              4572           198            4.33%             0 /  0 /  0
+met1              3480           934           26.84%             0 /  0 /  0
+met2              6589          1318           20.00%             0 /  0 /  0
+met3              6670           536            8.04%             0 /  0 /  0
+met4              4572           172            3.76%             0 /  0 /  0
 met5              1640             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            22986          2957           12.86%             0 /  0 /  0
+Total            22951          2960           12.90%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 30679 um
+[INFO GRT-0018] Total wirelength: 30744 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

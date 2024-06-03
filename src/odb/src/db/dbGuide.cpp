@@ -33,13 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
 // User Code End Includes
@@ -181,10 +181,11 @@ void dbGuide::destroy(dbGuide* guide)
   while (cur) {
     _dbGuide* c = block->_guide_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
-      else
+      } else {
         prev->guide_next_ = _guide->guide_next_;
+      }
       break;
     }
     prev = c;

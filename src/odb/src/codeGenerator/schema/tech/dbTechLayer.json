@@ -132,7 +132,16 @@
     },
     {
       "type": "uint",
+      "default": "0",
       "name": "wrong_way_width_",
+      "flags":[
+        "no-serial"
+      ]
+    },
+    {
+      "name":"layer_adjustment_",
+      "default": "0",
+      "type":"float",
       "flags":[
         "no-serial"
       ]
@@ -167,8 +176,8 @@
     }
   ],
   "h_includes": [
-    "dbMatrix.h",
-    "dbTypes.h",
+    "odb/dbMatrix.h",
+    "odb/dbTypes.h",
     "dbVector.h"
   ]
 }

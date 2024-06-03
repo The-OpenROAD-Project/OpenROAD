@@ -208,8 +208,12 @@ void io::Parser::initDefaultVias()
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
-        tech_->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
-        tech_->addVia(std::move(viaDef));
+        auto vdfPtr = tech_->addVia(std::move(viaDef));
+        if (vdfPtr == nullptr) {
+          logger_->error(
+              utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
+        }
+        tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
       }
     }
   }
@@ -329,21 +333,6 @@ void io::Parser::initCutLayerWidth()
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
-        if (viaDef->getNumCut() == 1) {
-          if (cutRect->width() != cutRect->length()) {
-            logger_->warn(DRT,
-                          240,
-                          "CUT layer {} does not have square single-cut via, "
-                          "cut layer width may be set incorrectly.",
-                          layer->getName());
-          }
-        } else {
-          logger_->warn(DRT,
-                        241,
-                        "CUT layer {} does not have single-cut via, cut layer "
-                        "width may be set incorrectly.",
-                        layer->getName());
-        }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
@@ -354,21 +343,10 @@ void io::Parser::initCutLayerWidth()
       }
     } else {
       auto viaDef = layer->getDefaultViaDef();
-      int cutLayerWidth = layer->getWidth();
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
           logger_->error(DRT, 243, "Non-rectangular shape in via definition.");
-        }
-        auto cutRect = static_cast<frRect*>(cutFig);
-        int viaWidth = cutRect->width();
-        if (cutLayerWidth < viaWidth) {
-          logger_->warn(
-              DRT,
-              244,
-              "CUT layer {} has smaller width defined in LEF compared "
-              "to default via.",
-              layer->getName());
         }
       }
     }
@@ -850,12 +828,6 @@ void io::Parser::postProcessGuide()
 
   design_->getRegionQuery()->initOrigGuide(tmpGuides_);
   int cnt = 0;
-  // for (auto &[netName, rects]:tmpGuides) {
-  //   if (design_->getTopBlock()->name2net.find(netName) ==
-  //   design_->getTopBlock()->name2net.end()) {
-  //     std::cout <<"Error: postProcessGuide cannot find net" <<std::endl;
-  //     exit(1);
-  //   }
   for (auto& [net, rects] : tmpGuides_) {
     net->setOrigGuides(rects);
     genGuides(net, rects);
@@ -1163,42 +1135,6 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
   }
 
   design_->getTopBlock()->setGCellPatterns({xgp, ygp});
-
-  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
-       layerNum += 2) {
-    for (int i = 0; i < (int) xgp.getCount(); i++) {
-      for (int j = 0; j < (int) ygp.getCount(); j++) {
-        Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(i, j));
-        bool isH = (tech_->getLayers().at(layerNum)->getDir()
-                    == dbTechLayerDir::HORIZONTAL);
-        frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
-        frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
-        for (auto& tp : design_->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
-               && tp->isHorizontal() == false)
-              || (tech_->getLayer(layerNum)->getDir()
-                      == dbTechLayerDir::VERTICAL
-                  && tp->isHorizontal() == true)) {
-            int trackNum
-                = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-            if (trackNum < 0) {
-              trackNum = 0;
-            }
-            if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                < gcLow) {
-              trackNum++;
-            }
-            for (;
-                 trackNum < (int) tp->getNumTracks()
-                 && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                        < gcHigh;
-                 trackNum++) {
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 void io::Parser::saveGuidesUpdates()

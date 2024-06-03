@@ -73,7 +73,6 @@ extern bool CLEAN_PATCHES;
 extern bool DO_PA;
 extern bool SINGLE_STEP_DR;
 extern bool SAVE_GUIDE_UPDATES;
-// extern int TEST;
 extern std::string VIAINPIN_BOTTOMLAYER_NAME;
 extern std::string VIAINPIN_TOPLAYER_NAME;
 extern frLayerNum VIAINPIN_BOTTOMLAYERNUM;
@@ -97,7 +96,6 @@ extern int TAPERBOX_RADIUS;
 extern int NDR_NETS_ABS_PRIORITY;
 extern int CLOCK_NETS_ABS_PRIORITY;
 
-extern frUInt4 TAVIACOST;
 extern frUInt4 TAPINCOST;
 extern frUInt4 TAALIGNCOST;
 extern frUInt4 TADRCCOST;
@@ -112,52 +110,47 @@ extern frUInt4 MARKERBLOATWIDTH;
 extern frUInt4 BLOCKCOST;
 extern frUInt4 GUIDECOST;
 extern float SHAPEBLOATWIDTH;
-extern int MISALIGNMENTCOST;
 
 // GR
 extern int HISTCOST;
 extern int CONGCOST;
 
 extern std::string REPAIR_PDN_LAYER_NAME;
-extern frLayerNum GC_IGNORE_PDN_LAYER;
+extern frLayerNum REPAIR_PDN_LAYER_NUM;
+extern frLayerNum GC_IGNORE_PDN_LAYER_NUM;
 
-#define DIRBITSIZE 3
-#define WAVEFRONTBUFFERSIZE 2
-#define WAVEFRONTBITSIZE (WAVEFRONTBUFFERSIZE * DIRBITSIZE)
-#define WAVEFRONTBUFFERHIGHMASK \
-  (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
+constexpr int DIRBITSIZE = 3;
+constexpr int WAVEFRONTBUFFERSIZE = 2;
+constexpr int WAVEFRONTBITSIZE = (WAVEFRONTBUFFERSIZE * DIRBITSIZE);
+constexpr int WAVEFRONTBUFFERHIGHMASK
+    = (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
 
 // GR
-#define GRWAVEFRONTBUFFERSIZE 2
-#define GRWAVEFRONTBITSIZE (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE)
-#define GRWAVEFRONTBUFFERHIGHMASK \
-  (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
+constexpr int GRWAVEFRONTBUFFERSIZE = 2;
+constexpr int GRWAVEFRONTBITSIZE = (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE);
+constexpr int GRWAVEFRONTBUFFERHIGHMASK
+    = (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
 
-frCoord getGCELLGRIDX();
-frCoord getGCELLGRIDY();
-frCoord getGCELLOFFSETX();
-frCoord getGCELLOFFSETY();
-
-class frViaDef;
+class drConnFig;
+class drNet;
+class frBPin;
+class frBTerm;
 class frBlock;
-class frMaster;
+class frBlockObject;
+class frConnFig;
+class frGuide;
 class frInst;
 class frInstTerm;
-class frTerm;
-class frBTerm;
 class frMTerm;
-class frPin;
-class frBPin;
-class frRect;
-class frPolygon;
+class frMaster;
 class frNet;
-class drNet;
-class drConnFig;
-class frShape;
-class frConnFig;
 class frPathSeg;
-class frGuide;
-class frBlockObject;
+class frPin;
+class frPolygon;
+class frRect;
+class frShape;
+class frTerm;
+class frViaDef;
 
 // These need to be in the fr namespace to support argument-dependent
 // lookup

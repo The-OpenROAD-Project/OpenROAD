@@ -51,6 +51,9 @@ add_library(rcx_lib
   netRC.cpp
   extmeasure_res.cpp
   name.cpp
+  grids.cpp
+  gs.cpp
+  dbUtil.cpp
 )
 
 target_include_directories(rcx_lib

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "lefin.h"
+#include "odb/lefin.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -42,15 +42,15 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "dbTransform.h"
-#include "geom.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
-#include "poly_decomp.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "odb/poly_decomp.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -63,6 +63,7 @@ lefin::lefin(dbDatabase* db,
              bool ignore_non_routing_layers)
     : _db(db),
       _tech(nullptr),
+      _lib(nullptr),
       _master(nullptr),
       _logger(logger),
       _create_tech(false),
@@ -81,6 +82,7 @@ lefin::lefin(dbDatabase* db,
       _area_factor(1000000.0),
       _dbu_per_micron(1000),
       _override_lef_dbu(false),
+      _master_modified(false),
       _ignore_non_routing_layers(ignore_non_routing_layers)
 {
 }
@@ -381,15 +383,18 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       case lefiGeomPolygonIterE: {
         lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
         lefiGeomPolygon p;
-        double x;
-        double y;
 
         p.numPoints = pItr->numPoints;
         p.x = pItr->x;
         p.y = pItr->y;
 
-        for (y = 0; y < pItr->yStart; y++)
-          for (x = 0; x < pItr->xStart; x++)
+        // An oddity of the LEF parser is that the count is stored
+        // in the start field.
+        int num_x = lround(pItr->xStart);
+        int num_y = lround(pItr->yStart);
+
+        for (int y = 0; y < num_y; y++) {
+          for (int x = 0; x < num_x; x++) {
             createPolygon(object,
                           is_pin,
                           layer,
@@ -397,6 +402,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
                           designRuleWidth,
                           x * pItr->xStep,
                           y * pItr->yStep);
+          }
+        }
         break;
       }
       case lefiGeomViaE: {
@@ -717,6 +724,10 @@ void lefin::layer(lefiLayer* layer)
         parser.parse(layer->propValue(iii), l, _incomplete_props);
       } else if (!strcmp(layer->propName(iii), "LEF58_FORBIDDENSPACING")) {
         lefTechLayerForbiddenSpacingRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii),
+                         "LEF58_TWOWIRESFORBIDDENSPACING")) {
+        lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
       } else
         supported = false;

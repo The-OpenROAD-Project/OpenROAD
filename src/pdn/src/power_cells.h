@@ -128,7 +128,7 @@ class GridSwitchedPower
   void build();
   void ripup();
 
-  ShapeTreeMap getShapes() const;
+  Shape::ShapeTreeMap getShapes() const;
 
  private:
   Grid* grid_;
@@ -150,17 +150,30 @@ class GridSwitchedPower
                                  int site_width,
                                  const odb::Rect& corearea) const;
 
-  using InstValue = std::pair<Box, odb::dbInst*>;
-  using InstTree = bgi::rtree<InstValue, bgi::quadratic<16>>;
+  struct InstIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbInst* inst) const
+    {
+      return inst->getBBox()->getBox();
+    }
+  };
+  using InstTree
+      = bgi::rtree<odb::dbInst*, bgi::quadratic<16>, InstIndexableGetter>;
   InstTree buildInstanceSearchTree() const;
   odb::dbInst* checkOverlappingInst(odb::dbInst* cell,
                                     const InstTree& insts) const;
   void checkAndFixOverlappingInsts(const InstTree& insts);
 
-  ShapeTree buildStrapTargetList(Straps* target) const;
+  Shape::ShapeTree buildStrapTargetList(Straps* target) const;
 
-  using RowValue = std::pair<Box, odb::dbRow*>;
-  using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;
+  struct RowIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(odb::dbRow* row) const { return row->getBBox(); }
+  };
+  using RowTree
+      = bgi::rtree<odb::dbRow*, bgi::quadratic<16>, RowIndexableGetter>;
   RowTree buildRowTree() const;
   std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
                                         const RowTree& row_search) const;

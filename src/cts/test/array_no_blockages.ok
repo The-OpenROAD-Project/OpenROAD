@@ -58,26 +58,27 @@
 [INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 5:1, 6:1, 7:6, 8:11, 9:7, 10:8, 11:3, 12:2, 14:2, 15:1, 19:1, 20:3, 21:36, 30:45..
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 2475
+[INFO CTS-0099]  Sinks 2537
 [INFO CTS-0100]  Leaf buffers 96
-[INFO CTS-0101]  Average sink wire length 9250.04 um
+[INFO CTS-0101]  Average sink wire length 9247.95 um
 [INFO CTS-0102]  Path depth 18 - 19
+[INFO CTS-0207]  Leaf load cells 62
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 88 buffers in 33 nets.
+[INFO RSZ-0048] Inserted 93 buffers in 33 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1829.5 u
-average displacement        0.7 u
-max displacement           84.5 u
-original HPWL          133339.3 u
-legalized HPWL         133583.9 u
+total displacement       2318.0 u
+average displacement        0.8 u
+max displacement           80.9 u
+original HPWL          133115.2 u
+legalized HPWL         133434.3 u
 delta HPWL                    0 %
 
 Clock clk
-   1.24 source latency inst_8_14/clk ^
-  -1.10 target latency inst_10_14/clk ^
+   1.18 source latency inst_1_11/clk ^
+  -1.06 target latency inst_2_11/clk ^
    0.00 CRPR
 --------------
-   0.14 setup skew
+   0.12 setup skew
 

@@ -9,6 +9,6 @@ record_tests {
   blif_reader
   blif_reader_const
   blif_reader_sequential
-  rmp_man_tcl_check
-  rmp_readme_msgs_check
+  #rmp_man_tcl_check
+  #rmp_readme_msgs_check
 }

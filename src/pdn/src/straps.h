@@ -66,7 +66,7 @@ class Straps : public GridComponent
   int getStrapStart() const { return strap_start_; }
   int getStrapEnd() const { return strap_end_; }
 
-  void makeShapes(const ShapeTreeMap& other_shapes) override;
+  void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 
   odb::dbTechLayer* getLayer() const { return layer_; }
   void setLayer(odb::dbTechLayer* layer) { layer_ = layer; }
@@ -118,7 +118,7 @@ class Straps : public GridComponent
                   int y_end,
                   bool is_delta_x,
                   const TechLayer& layer,
-                  const ShapeTree& avoid);
+                  const Shape::ObstructionTree& avoid);
 };
 
 class FollowPins : public Straps
@@ -126,7 +126,7 @@ class FollowPins : public Straps
  public:
   FollowPins(Grid* grid, odb::dbTechLayer* layer, int width);
 
-  void makeShapes(const ShapeTreeMap& other_shapes) override;
+  void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 
   Type type() const override { return GridComponent::Followpin; }
 
@@ -149,9 +149,9 @@ class PadDirectConnectionStraps : public Straps
   // true if the iterm can be connected to a ring
   bool canConnect() const;
 
-  void makeShapes(const ShapeTreeMap& other_shapes) override;
-  bool refineShapes(ShapeTreeMap& all_shapes,
-                    ShapeTreeMap& all_obstructions) override;
+  void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
+  bool refineShapes(Shape::ShapeTreeMap& all_shapes,
+                    Shape::ObstructionTreeMap& all_obstructions) override;
 
   void report() const override;
   Type type() const override { return GridComponent::PadConnect; }
@@ -161,10 +161,10 @@ class PadDirectConnectionStraps : public Straps
 
   odb::dbITerm* getITerm() const { return iterm_; }
 
-  void getConnectableShapes(ShapeTreeMap& shapes) const override;
+  void getConnectableShapes(Shape::ShapeTreeMap& shapes) const override;
 
   // cut shapes and remove if connection to ring is not possible
-  void cutShapes(const ShapeTreeMap& obstructions) override;
+  void cutShapes(const Shape::ObstructionTreeMap& obstructions) override;
 
   static void unifyConnectionTypes(
       const std::set<PadDirectConnectionStraps*>& straps);
@@ -198,13 +198,13 @@ class PadDirectConnectionStraps : public Straps
   std::vector<odb::dbBox*> getPinsFormingRing();
   std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> getPinsByLayer() const;
 
-  void makeShapesFacingCore(const ShapeTreeMap& other_shapes);
-  void makeShapesOverPads(const ShapeTreeMap& other_shapes);
+  void makeShapesFacingCore(const Shape::ShapeTreeMap& other_shapes);
+  void makeShapesOverPads(const Shape::ShapeTreeMap& other_shapes);
 
   std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
   const std::vector<odb::dbBox*>& getPins() const { return pins_; }
 
-  ShapePtr getClosestShape(const ShapeTree& search_shapes,
+  ShapePtr getClosestShape(const Shape::ShapeTree& search_shapes,
                            const odb::Rect& pin_shape,
                            odb::dbNet* net) const;
   bool snapRectToClosestShape(const ShapePtr& closest_shape,
@@ -212,8 +212,8 @@ class PadDirectConnectionStraps : public Straps
                               odb::Rect& new_shape) const;
 
   bool strapViaIsObstructed(Shape* shape,
-                            const ShapeTreeMap& other_shapes,
-                            const ShapeTreeMap& other_obstructions,
+                            const Shape::ShapeTreeMap& other_shapes,
+                            const Shape::ObstructionTreeMap& other_obstructions,
                             bool recheck) const;
 
   void setConnectionType(ConnectionType type);
@@ -221,8 +221,8 @@ class PadDirectConnectionStraps : public Straps
 
   bool refineShape(Shape* shape,
                    const odb::Rect& pin_shape,
-                   ShapeTreeMap& all_shapes,
-                   ShapeTreeMap& all_obstructions);
+                   Shape::ShapeTreeMap& all_shapes,
+                   Shape::ObstructionTreeMap& all_obstructions);
 };
 
 class RepairChannelStraps : public Straps
@@ -231,7 +231,7 @@ class RepairChannelStraps : public Straps
   RepairChannelStraps(Grid* grid,
                       Straps* target,
                       odb::dbTechLayer* connect_to,
-                      const ShapeTreeMap& other_shapes,
+                      const Shape::ObstructionTreeMap& other_shapes,
                       const std::set<odb::dbNet*>& nets,
                       const odb::Rect& area,
                       const odb::Rect& obs_check_area);
@@ -244,14 +244,14 @@ class RepairChannelStraps : public Straps
   std::vector<odb::dbNet*> getNets() const override;
 
   // cut shapes and remove any segments outside of the area
-  void cutShapes(const ShapeTreeMap& obstructions) override;
+  void cutShapes(const Shape::ObstructionTreeMap& obstructions) override;
 
   bool isRepairValid() const { return !invalid_; }
 
   bool isAtEndOfRepairOptions() const;
-  void continueRepairs(const ShapeTreeMap& other_shapes);
-  bool testBuild(const ShapeTreeMap& local_shapes,
-                 const ShapeTreeMap& obstructions);
+  void continueRepairs(const Shape::ObstructionTreeMap& other_shapes);
+  bool testBuild(const Shape::ShapeTreeMap& local_shapes,
+                 const Shape::ObstructionTreeMap& obstructions);
   bool isEmpty() const;
 
   void addNets(const std::set<odb::dbNet*>& nets)
@@ -263,8 +263,8 @@ class RepairChannelStraps : public Straps
   // static functions to help build repair channels
   // repair unconnected straps by adding repair channel straps
   static void repairGridChannels(Grid* grid,
-                                 const ShapeTreeMap& global_shapes,
-                                 ShapeTreeMap& obstructions,
+                                 const Shape::ShapeTreeMap& global_shapes,
+                                 Shape::ObstructionTreeMap& obstructions,
                                  bool allow);
 
   struct RepairChannelArea
@@ -287,8 +287,8 @@ class RepairChannelStraps : public Straps
   bool invalid_ = false;
 
   // search for the right width, spacing, and offset to connect to the channel
-  void determineParameters(const ShapeTreeMap& obstructions);
-  bool determineOffset(const ShapeTreeMap& obstructions,
+  void determineParameters(const Shape::ObstructionTreeMap& obstructions);
+  bool determineOffset(const Shape::ObstructionTreeMap& obstructions,
                        int extra_offset = 0,
                        int bisect_dist = 0,
                        int level = 0);
@@ -297,7 +297,7 @@ class RepairChannelStraps : public Straps
 
   static std::vector<RepairChannelArea> findRepairChannels(
       Grid* grid,
-      const ShapeTree& shapes,
+      const Shape::ShapeTree& shapes,
       odb::dbTechLayer* layer);
   static Straps* getTargetStrap(Grid* grid, odb::dbTechLayer* layer);
   static odb::dbTechLayer* getHighestStrapLayer(Grid* grid);

@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbMetalWidthViaMap.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbTech.h"
 // User Code End Includes
@@ -113,6 +113,7 @@ void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
 
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
+  via_cut_class_ = false;
   below_layer_width_low_ = 0;
   below_layer_width_high_ = 0;
   above_layer_width_low_ = 0;

@@ -5,12 +5,4 @@
 [INFO ODB-0131]     Created 1143 components and 3273 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2286 connections.
 [INFO ODB-0133]     Created 306 nets and 987 connections.
-[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
-[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
-[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[WARNING PSM-0030] VSRC location at (139.840um, 140.080um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (132.250um, 133.040um).
-[INFO PSM-0031] Number of PDN nodes on net VDD = 2666.
-[INFO PSM-0064] Number of voltage sources = 1.
-[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0040] All shapes on net VDD are connected.

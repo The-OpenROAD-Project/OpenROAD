@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,6 +43,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbLogicPort>;
 
@@ -90,6 +90,7 @@ void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
@@ -147,8 +148,9 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
                                  const std::string& direction)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_logicport_hash.hasMember(name))
+  if (_block->_logicport_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbLogicPort* lp = _block->_logicport_tbl->create();
   lp->_name = strdup(name);
   ZALLOCATED(lp->_name);

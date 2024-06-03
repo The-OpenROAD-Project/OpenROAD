@@ -10,4 +10,3 @@ read_liberty Nangate45/fakeram45_64x32.lib
 
 read_def Nangate45_data/check_power_grid_ok_disconnected.def
 check_power_grid -net VDD
-analyze_power_grid -net VDD

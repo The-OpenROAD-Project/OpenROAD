@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbIsolation>;
 
@@ -114,6 +114,7 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
@@ -226,8 +227,9 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name))
+  if (_block->_isolation_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbIsolation* iso = _block->_isolation_tbl->create();
   iso->_name = strdup(name);
   ZALLOCATED(iso->_name);

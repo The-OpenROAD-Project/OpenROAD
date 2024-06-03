@@ -242,11 +242,28 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
 %typemap(in, numinputs=1) std::vector<odb::dbShape> &OUTPUT (std::vector<odb::dbShape> temp) {
    $1 = new std::vector<odb::dbShape>(temp);
 }
+
+%typemap(in, numinputs=0) std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT (std::vector<std::pair<double, odb::dbTechLayer*>> temp) {
+   $1 = new std::vector<std::pair<double, dbTechLayer*>>(temp);
+}
+
 %typemap(argout) std::vector<odb::dbShape> &OUTPUT {
   swig_type_info *tf = SWIG_TypeQuery("odb::dbShape" "*");
   for(std::vector<odb::dbShape>::iterator it = $1->begin(); it != $1->end(); it++) {
     PyObject *o = SWIG_NewInstanceObj(&(*it), tf, 0);
     $result = SWIG_Python_AppendOutput($result, o);
+  }
+}
+
+%typemap(argout) std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT {
+  $result = PyList_New(0);
+  swig_type_info *tf = SWIG_TypeQuery("odb::dbTechLayer" "*");
+  for(auto it = $1->begin(); it != $1->end(); it++) {
+    auto value = it->first;
+    auto layer = it->second;
+    PyObject *layer_swig = SWIG_NewInstanceObj(layer, tf, 0);
+    PyObject *tuple = PyTuple_Pack(2, PyFloat_FromDouble(value), layer_swig);
+    $result = SWIG_Python_AppendOutput($result, tuple);
   }
 }
 
@@ -258,5 +275,6 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
 }
 
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
+%apply std::vector<std::pair<double, odb::dbTechLayer*>> &OUTPUT { std::vector<std::pair<double, odb::dbTechLayer*>> & data };
 
 %include containers.i

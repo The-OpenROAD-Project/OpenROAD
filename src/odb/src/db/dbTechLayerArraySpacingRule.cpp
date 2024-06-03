@@ -36,13 +36,13 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerArraySpacingRule>;
 
@@ -318,8 +318,9 @@ const std::map<int, int>& dbTechLayerArraySpacingRule::getCutsArraySpacing()
 dbTechLayerCutClassRule* dbTechLayerArraySpacingRule::getCutClass() const
 {
   _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
-  if (!obj->cut_class_.isValid())
+  if (!obj->cut_class_.isValid()) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) obj->getOwner();
   return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);

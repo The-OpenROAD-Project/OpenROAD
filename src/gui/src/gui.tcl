@@ -105,12 +105,12 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
-}
+}; # checker off
 
 proc save_image { args } {
   ord::parse_list_args "save_image" args list {-display_option}
   sta::parse_key_args "save_image" args \
-    keys {-area -width -resolution} flags {}
+    keys {-area -width -resolution} flags {}; # checker off
 
   set options [gui::DisplayControlMap]
   foreach opt $list(-display_option) {

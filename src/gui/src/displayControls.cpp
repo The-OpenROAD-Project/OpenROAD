@@ -44,10 +44,10 @@
 #include <random>
 #include <vector>
 
-#include "db.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -192,7 +192,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
           QString information;
 
           auto add_prop
-              = [props](const std::string& prop, QString& info) -> bool {
+              = [&props](const std::string& prop, QString& info) -> bool {
             auto prop_find = std::find_if(
                 props.begin(), props.end(), [prop](const auto& p) {
                   return p.name == prop;
@@ -204,6 +204,9 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
             info += QString::fromStdString(prop_find->toString());
             return true;
           };
+
+          // type
+          add_prop("Layer type", information);
 
           // direction
           add_prop("Direction", information);
@@ -1064,7 +1067,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
           cut_color_item->setIcon(makeSwatchIcon(chosen_color));
         }
       }
-      *item_color = chosen_color;
+      *item_color = std::move(chosen_color);
       if (item_pattern != nullptr) {
         *item_pattern = display_dialog->getSelectedPattern();
       }
@@ -1203,7 +1206,8 @@ void DisplayControls::addTech(odb::dbTech* tech)
 
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
-    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT) {
+    if (type == dbTechLayerType::ROUTING || type == dbTechLayerType::CUT
+        || type == dbTechLayerType::IMPLANT) {
       auto& row = layer_controls_[layer];
       makeLeafItem(row,
                    QString::fromStdString(layer->getName()),
@@ -1915,11 +1919,17 @@ void DisplayControls::techInit(odb::dbTech* tech)
                        50 + gen_color() % 200,
                        50 + gen_color() % 200);
       }
+    } else if (type == dbTechLayerType::IMPLANT) {
+      // Do not draw from the existing palette so the metal layers can claim
+      // those colors.
+      color = QColor(50 + gen_color() % 200,
+                     50 + gen_color() % 200,
+                     50 + gen_color() % 200);
     } else {
       continue;
     }
     color.setAlpha(180);
-    layer_color_[layer] = color;
+    layer_color_[layer] = std::move(color);
     layer_pattern_[layer] = Qt::SolidPattern;  // Default pattern is fill solid
   }
   techs_.insert(tech);

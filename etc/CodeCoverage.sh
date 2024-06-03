@@ -30,6 +30,7 @@ _lcov() {
         --exclude "*build*" \
         --exclude "*/third-party/*" \
         --exclude "*/sta/*" \
+        --exclude "*/test/*" \
         --exclude "*/mpl/*" \
         --exclude "*/drt/src/gr/*" \
         --exclude "*/drt/src/db/grObj/*" \

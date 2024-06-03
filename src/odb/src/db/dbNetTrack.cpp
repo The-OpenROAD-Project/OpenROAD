@@ -33,13 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbNetTrack.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
 // User Code End Includes
@@ -181,10 +181,11 @@ void dbNetTrack::destroy(dbNetTrack* track)
   while (cur) {
     _dbNetTrack* c = block->_net_tracks_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->tracks_ = _track->track_next_;
-      else
+      } else {
         prev->track_next_ = _track->track_next_;
+      }
       break;
     }
     prev = c;
