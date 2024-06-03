@@ -73,7 +73,6 @@ clock_tree_synthesis
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
-| `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` automatically looks for the clock roots automatically. |
 | `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
