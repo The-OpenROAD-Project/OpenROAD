@@ -559,18 +559,12 @@ void ChartsWidget::setYAxisConfig()
 
   for (const std::vector<const sta::Pin*>& bucket : buckets_->negative) {
     const int bucket_slack_count = static_cast<int>(bucket.size());
-
-    if (bucket_slack_count > largest_slack_count) {
-      largest_slack_count = bucket_slack_count;
-    }
+    largest_slack_count = std::max(bucket_slack_count, largest_slack_count);
   }
 
   for (const std::vector<const sta::Pin*>& bucket : buckets_->positive) {
     const int bucket_slack_count = static_cast<int>(bucket.size());
-
-    if (bucket_slack_count > largest_slack_count) {
-      largest_slack_count = bucket_slack_count;
-    }
+    largest_slack_count = std::max(bucket_slack_count, largest_slack_count);
   }
 
   int y_interval = computeYInterval(largest_slack_count);
@@ -679,13 +673,8 @@ void ChartsWidget::setLimits(const TimingPathList& paths)
   for (const std::unique_ptr<TimingPath>& path : paths) {
     const float slack = time_unit->staToUser(path->getSlack());
 
-    if (slack < min_slack_) {
-      min_slack_ = slack;
-    }
-
-    if (slack > max_slack_) {
-      max_slack_ = slack;
-    }
+    min_slack_ = std::min(slack, min_slack_);
+    max_slack_ = std::max(slack, max_slack_);
   }
 }
 
