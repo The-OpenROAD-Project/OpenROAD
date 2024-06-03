@@ -278,14 +278,8 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(StaPins& end_points)
 
     if (slack != sta::INF) {
       slack = time_unit->staToUser(slack);
-
-      if (slack < min_slack_) {
-        min_slack_ = slack;
-      }
-
-      if (slack > max_slack_) {
-        max_slack_ = slack;
-      }
+      min_slack_ = std::min(slack, min_slack_);
+      max_slack_ = std::max(slack, max_slack_);
 
       ++pin_iter;
     } else {
