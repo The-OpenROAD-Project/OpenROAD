@@ -124,6 +124,7 @@ void ChartsWidget::changeMode()
   clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
+    filters_menu_->setCurrentIndex(0);
     filters_menu_->show();
     setSlackHistogram();
   }
@@ -180,10 +181,6 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 
 void ChartsWidget::clearChart()
 {
-  if (filters_menu_->isVisible()) {
-    filters_menu_->hide();
-  }
-
   buckets_->positive.clear();
   buckets_->negative.clear();
 
@@ -639,7 +636,13 @@ void ChartsWidget::changeStartEndFilter()
   }
 
   setBucketInterval();
-  populateBuckets(nullptr, &paths);
+
+  if (!end_points.empty()) {
+    populateBuckets(&end_points, nullptr);
+  } else if (!paths.empty()) {
+    populateBuckets(nullptr, &paths);
+  }
+
   setVisualConfig();
 
   prev_filter_index_ = filter_index;
