@@ -334,12 +334,12 @@ void ChartsWidget::populateBuckets(StaPins* end_points, TimingPathList* paths)
     } else if (paths) {
       for (const std::unique_ptr<TimingPath>& path : *paths) {
         const float slack = time_unit->staToUser(path->getSlack());
-        const sta::Pin* pin = path->getEndStageNode()->getPinAsSTA();
+        const sta::Pin* end_point = path->getEndStageNode()->getPinAsSTA();
 
         if (negative_lower <= slack && slack < negative_upper) {
-          neg_bucket.push_back(pin);
+          neg_bucket.push_back(end_point);
         } else if (positive_lower <= slack && slack < positive_upper) {
-          pos_bucket.push_back(pin);
+          pos_bucket.push_back(end_point);
         }
       }
     }
@@ -565,7 +565,7 @@ void ChartsWidget::setYAxisConfig()
     }
   }
 
-  for (const std::vector<const sta::Pin *>& bucket : buckets_->positive) {
+  for (const std::vector<const sta::Pin*>& bucket : buckets_->positive) {
     const int bucket_slack_count = static_cast<int>(bucket.size());
 
     if (bucket_slack_count > largest_slack_count) {

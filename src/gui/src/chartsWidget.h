@@ -191,7 +191,7 @@ class ChartsWidget : public QDockWidget
   float min_slack_;
   float bucket_interval_;
 
-  int precision_count_; // Used to configure the x labels.
+  int precision_count_;  // Used to configure the x labels.
 #endif
   QLabel* label_;
 };
