@@ -131,10 +131,6 @@ class ChartsWidget : public QDockWidget
   {
     bucket_interval_ = bucket_interval;
   }
-  void setNegativeCountOffset(int neg_count_offset)
-  {
-    neg_count_offset_ = neg_count_offset;
-  }
   void setDecimalPrecision(int precision_count)
   {
     precision_count_ = precision_count;
@@ -166,11 +162,10 @@ class ChartsWidget : public QDockWidget
   void setXAxisConfig(int all_bars_count);
   void setXAxisTitle();
   void setYAxisConfig();
-
-  int computeMaxYSnap();
+  int computeYInterval(int largest_slack_count);
+  int computeMaxYSnap(int largest_slack_count);
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
-  int computeYInterval();
 
   void clearChart();
 
@@ -187,19 +182,16 @@ class ChartsWidget : public QDockWidget
 
   std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
+
   int prev_filter_index_;
-
-  float max_slack_;
-  float min_slack_;
-
   bool resetting_menu_;
 
   const int default_number_of_buckets_;
-  int largest_slack_count_;  // Used to configure the y axis.
-  int precision_count_;      // Used to configure the x labels.
-
+  float max_slack_;
+  float min_slack_;
   float bucket_interval_;
-  int neg_count_offset_;
+
+  int precision_count_; // Used to configure the x labels.
 #endif
   QLabel* label_;
 };

@@ -65,14 +65,12 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       axis_y_(new QValueAxis(this)),
       buckets_(std::make_unique<Buckets>()),
       prev_filter_index_(0),  // start with no filter
-      max_slack_(0.0f),
-      min_slack_(std::numeric_limits<float>::max()),
       resetting_menu_(false),
       default_number_of_buckets_(15),
-      largest_slack_count_(0),
-      precision_count_(0),
+      max_slack_(0.0f),
+      min_slack_(std::numeric_limits<float>::max()),
       bucket_interval_(0.0f),
-      neg_count_offset_(0),
+      precision_count_(0),
 #endif
       label_(new QLabel(this))
 {
@@ -175,7 +173,9 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 
     QString scaled_suffix = sta_->units()->timeUnit()->scaledSuffix();
 
-    const float lower = (bar_index - neg_count_offset_) * bucket_interval_;
+    const int neg_count_offset = static_cast<int>(buckets_->negative.size());
+
+    const float lower = (bar_index - neg_count_offset) * bucket_interval_;
     const float upper = lower + bucket_interval_;
 
     QString time_info
@@ -197,8 +197,6 @@ void ChartsWidget::clearChart()
   // reset limits
   max_slack_ = 0;
   min_slack_ = std::numeric_limits<float>::max();
-
-  largest_slack_count_ = 0;
 
   chart_->setTitle("");
   chart_->removeAllSeries();
@@ -231,7 +229,6 @@ void ChartsWidget::setSlackHistogram()
 
 void ChartsWidget::setVisualConfig()
 {
-  setNegativeCountOffset(static_cast<int>(buckets_->negative.size()));
   std::pair<QBarSet*, QBarSet*> bar_sets = createBarSets(); /* <neg, pos> */
   populateBarSets(*bar_sets.first, *bar_sets.second);
 
@@ -351,18 +348,10 @@ void ChartsWidget::populateBuckets(StaPins* end_points, TimingPathList* paths)
     // situations where the bucket is in a valid position of the queue.
     if (min_slack_ < negative_upper) {
       buckets_->negative.push_front(neg_bucket);
-
-      if (largest_slack_count_ < neg_bucket.size()) {
-        largest_slack_count_ = neg_bucket.size();
-      }
     }
 
     if (max_slack_ >= positive_lower) {
       buckets_->positive.push_back(pos_bucket);
-
-      if (largest_slack_count_ < pos_bucket.size()) {
-        largest_slack_count_ = pos_bucket.size();
-      }
     }
 
     ++bucket_index;
@@ -512,8 +501,9 @@ void ChartsWidget::setXAxisConfig(const int all_bars_count)
   const QString format = "%." + QString::number(precision_count_) + "f";
   axis_x_->setLabelFormat(format);
 
-  const int pos_bars_count = all_bars_count - neg_count_offset_;
-  const float min = -(static_cast<float>(neg_count_offset_)) * bucket_interval_;
+  const int neg_count_offset = static_cast<int>(buckets_->negative.size());
+  const int pos_bars_count = all_bars_count - neg_count_offset;
+  const float min = -(static_cast<float>(neg_count_offset)) * bucket_interval_;
   const float max = static_cast<float>(pos_bars_count) * bucket_interval_;
   axis_x_->setRange(min, max);
 
@@ -565,13 +555,31 @@ void ChartsWidget::setXAxisTitle()
 
 void ChartsWidget::setYAxisConfig()
 {
-  int y_interval = computeYInterval();
+  int largest_slack_count = 0;
+
+  for (const std::vector<const sta::Pin*>& bucket : buckets_->negative) {
+    const int bucket_slack_count = static_cast<int>(bucket.size());
+
+    if (bucket_slack_count > largest_slack_count) {
+      largest_slack_count = bucket_slack_count;
+    }
+  }
+
+  for (const std::vector<const sta::Pin *>& bucket : buckets_->positive) {
+    const int bucket_slack_count = static_cast<int>(bucket.size());
+
+    if (bucket_slack_count > largest_slack_count) {
+      largest_slack_count = bucket_slack_count;
+    }
+  }
+
+  int y_interval = computeYInterval(largest_slack_count);
   int max_y = 0;
   int tick_count = 1;
 
   // Do this instead of just using the return value of computeMaxYSnap()
   // so we don't get an empty range at the end of the axis.
-  while (max_y < largest_slack_count_) {
+  while (max_y < largest_slack_count) {
     max_y += y_interval;
     ++tick_count;
   }
@@ -583,9 +591,9 @@ void ChartsWidget::setYAxisConfig()
   axis_y_->setVisible(true);
 }
 
-int ChartsWidget::computeYInterval()
+int ChartsWidget::computeYInterval(const int largest_slack_count)
 {
-  int snap_max = computeMaxYSnap();
+  int snap_max = computeMaxYSnap(largest_slack_count);
   int digits = computeNumberOfDigits(snap_max);
   int total = std::pow(10, digits);
 
@@ -599,14 +607,14 @@ int ChartsWidget::computeYInterval()
 }
 
 // Snap to an upper value based on the first digit
-int ChartsWidget::computeMaxYSnap()
+int ChartsWidget::computeMaxYSnap(const int largest_slack_count)
 {
-  if (largest_slack_count_ <= 10) {
-    return largest_slack_count_;
+  if (largest_slack_count <= 10) {
+    return largest_slack_count;
   }
 
-  int digits = computeNumberOfDigits(largest_slack_count_);
-  int first_digit = computeFirstDigit(largest_slack_count_, digits);
+  int digits = computeNumberOfDigits(largest_slack_count);
+  int first_digit = computeFirstDigit(largest_slack_count, digits);
 
   return (first_digit + 1) * std::pow(10, digits - 1);
 }
