@@ -39,70 +39,23 @@ namespace dpo {
 class Graph
 {
  public:
-  explicit Graph(int v) : v_(v)
-  {
-    adj_.resize(v_);
+  explicit Graph(int num_nodes);
+  void addEdge(int u, int v);
+  void greedyColoring();
 
-    color_.resize(v_);
-    std::fill(color_.begin(), color_.end(), -1);
-    ncolors_ = 0;
-  }
-
-  void addEdge(int u, int v)
-  {
-    adj_[u].push_back(v);
-    adj_[v].push_back(u);
-  }
-
-  void removeDuplicates()
-  {
-    for (int i = 0; i < v_; i++) {
-      std::sort(adj_[i].begin(), adj_[i].end());
-      adj_[i].erase(std::unique(adj_[i].begin(), adj_[i].end()), adj_[i].end());
-    }
-  }
-
-  void greedyColoring()
-  {
-    color_.resize(v_);
-    std::fill(color_.begin(), color_.end(), -1);
-    color_[0] = 0;  // first node gets first color.
-
-    ncolors_ = 1;
-
-    std::vector<int> avail(v_, -1);
-
-    // Do subsequent nodes.
-    for (int v = 1; v < v_; v++) {
-      // Determine which colors cannot be used.  Pick the smallest
-      // color which can be used.
-      for (int i = 0; i < adj_[v].size(); i++) {
-        int u = adj_[v][i];
-        if (color_[u] != -1) {
-          // Node "u" has a color.  So, it is not available to "v".
-          avail[color_[u]] = v;  // Marking "avail[color]" with a "v" means it
-                                 // is not available for node v.
-        }
-      }
-
-      for (int cr = 0; cr < v_; cr++) {
-        if (avail[cr] != v) {
-          color_[v] = cr;
-          ncolors_ = std::max(ncolors_, cr + 1);
-          break;
-        }
-      }
-    }
-  }
-
-  int getColor(int i) const { return color_[i]; }
-  int getNColors() const { return ncolors_; }
+  int getColor(const int node_id) const { return color_[node_id]; }
+  int getNumColors() const { return num_colors_; }
 
  private:
-  int v_;
+  void removeDuplicateEdges();
+  int getNumNodes() const { return adj_.size(); }
+
+  // An adjacency matrix: node id -> adjacent node ids
   std::vector<std::vector<int>> adj_;
+  // Computed color for each node id
   std::vector<int> color_;
-  int ncolors_;
+  // The total number of colors needed to color the graph
+  int num_colors_;
 };
 
 }  // namespace dpo

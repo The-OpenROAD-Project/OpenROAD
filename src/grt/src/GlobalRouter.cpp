@@ -208,8 +208,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computePinOffsetAdjustments();
 
   for (RegionAdjustment region_adjustment : region_adjustments_) {
-    odb::dbTechLayer* layer = routing_layers_[region_adjustment.getLayer()];
-    logger_->report("Adjusting region on layer {}", layer->getName());
     computeRegionAdjustments(region_adjustment.getRegion(),
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
@@ -344,12 +342,17 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
   bool violations = true;
   int itr = 0;
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
     }
     violations = repair_antennas_->checkAntennaViolations(
-        routes_, max_routing_layer_, diode_mterm, ratio_margin);
+        routes_, nets_to_repair, max_routing_layer_, diode_mterm, ratio_margin);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -364,7 +367,10 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                       illegal_diode_placement_count);
       }
       repair_antennas_->legalizePlacedCells();
-      incr_groute.updateRoutes();
+      nets_to_repair.clear();
+      for (const Net* net : incr_groute.updateRoutes()) {
+        nets_to_repair.push_back(net->getDbNet());
+      }
     }
     repair_antennas_->clearViolations();
     itr++;
@@ -374,16 +380,26 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
 void GlobalRouter::makeNetWires()
 {
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
   if (repair_antennas_ == nullptr) {
     repair_antennas_
         = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
   }
-  repair_antennas_->makeNetWires(routes_, max_routing_layer_);
+  repair_antennas_->makeNetWires(routes_, nets_to_repair, max_routing_layer_);
 }
 
 void GlobalRouter::destroyNetWires()
 {
-  repair_antennas_->destroyNetWires();
+  std::vector<odb::dbNet*> nets_to_repair;
+  for (odb::dbNet* db_net : block_->getNets()) {
+    nets_to_repair.push_back(db_net);
+  }
+
+  repair_antennas_->destroyNetWires(nets_to_repair);
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
@@ -1042,9 +1058,7 @@ void GlobalRouter::computeTrackConsumption(
 
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = 2
-                      * (std::ceil(ndr_width / 2 + ndr_spacing
-                                   + default_width / 2 - default_pitch));
+      int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
 
       int consumption = std::ceil((float) ndr_pitch / default_pitch);
       (*edge_costs_per_layer)[layerIdx - 1] = consumption;
@@ -1403,18 +1417,27 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   int last_tile_reduce = grid_->computeTileReduce(
       region, last_tile_box, track_space, false, routing_layer->getDirection());
 
-  // If preferred direction is horizontal, only first and the last line will
-  // have specific adjustments
-  if (!vertical) {
-    // Setting capacities of edges completely contains the adjust region
-    // according the percentage of reduction
-    fastroute_->applyHorizontalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
-  } else {
-    // If preferred direction is vertical, only first and last columns will have
-    // specific adjustments
-    fastroute_->applyVerticalAdjustments(
-        first_tile, last_tile, layer, first_tile_reduce, last_tile_reduce);
+  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+    for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
+      double edge_cap
+          = vertical ? fastroute_->getEdgeCapacity(x, y, x, y + 1, layer)
+                     : fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+      int new_cap = std::floor(edge_cap * (1 - reduction_percentage));
+
+      if (x == first_tile.getX() || y == first_tile.getY()) {
+        new_cap = edge_cap - (first_tile_reduce * (1 - reduction_percentage));
+      } else if (x == last_tile.getX() || y == last_tile.getY()) {
+        new_cap = edge_cap - (last_tile_reduce * (1 - reduction_percentage));
+      }
+
+      new_cap = edge_cap > 0 && reduction_percentage != 1 ? std::max(new_cap, 1)
+                                                          : new_cap;
+      if (vertical) {
+        fastroute_->addAdjustment(x, y, x, y + 1, layer, new_cap, true);
+      } else {
+        fastroute_->addAdjustment(x, y, x + 1, y, layer, new_cap, true);
+      }
+    }
   }
 }
 
@@ -4117,9 +4140,9 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-void IncrementalGRoute::updateRoutes(bool save_guides)
+std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  groute_->updateDirtyRoutes(save_guides);
+  return groute_->updateDirtyRoutes(save_guides);
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -4142,8 +4165,9 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes(bool save_guides)
+std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
+  std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     if (verbose_)
@@ -4154,11 +4178,10 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
 
-    std::vector<Net*> dirty_nets;
     updateDirtyNets(dirty_nets);
 
     if (dirty_nets.empty()) {
-      return;
+      return dirty_nets;
     }
 
     const float old_critical_nets_percentage
@@ -4222,6 +4245,8 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       saveGuides();
     }
   }
+
+  return dirty_nets;
 }
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)

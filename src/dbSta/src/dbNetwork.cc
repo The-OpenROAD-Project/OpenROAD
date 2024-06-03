@@ -208,7 +208,6 @@ class DbInstanceNetIterator : public InstanceNetIterator
   const dbNetwork* network_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
-  Net* next_ = nullptr;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
@@ -224,21 +223,14 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 
 bool DbInstanceNetIterator::hasNext()
 {
-  while (iter_ != end_) {
-    dbNet* net = *iter_;
-    if (!net->getSigType().isSupply() || !net->isSpecial()) {
-      next_ = network_->dbToSta(*iter_);
-      ++iter_;
-      return true;
-    }
-    iter_++;
-  }
-  return false;
+  return iter_ != end_;
 }
 
 Net* DbInstanceNetIterator::next()
 {
-  return next_;
+  dbNet* net = *iter_;
+  iter_++;
+  return network_->dbToSta(net);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -355,10 +347,10 @@ DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
   dbModNet* modnet = nullptr;
   network_ = network;
   network->staToDb(net, dnet, modnet);
+  next_ = nullptr;
   if (dnet) {
     iitr_ = dnet->getITerms().begin();
     iitr_end_ = dnet->getITerms().end();
-    next_ = nullptr;
   }
   if (modnet) {
     iitr_ = modnet->getITerms().begin();
