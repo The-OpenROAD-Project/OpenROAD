@@ -1,0 +1,22 @@
+{
+    "name":"dbGDSSRef",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_sName",
+        "type":"std::string",
+        "flags":["no-set","no-get"]
+      },
+      {
+        "name":"_sTrans",
+        "type":"dbGDSSTrans",
+        "flags":["no-set","no-get"]
+      }
+    ],
+    "h_includes": [
+      "dbVector.h",
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+  }
+  

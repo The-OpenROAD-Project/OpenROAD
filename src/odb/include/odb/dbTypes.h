@@ -124,6 +124,33 @@ class dbOrientType
   Value _value;
 };
 
+
+class dbGDSSTrans
+{
+ public:
+  bool _flipX;
+  bool _absMag, _absAngle;
+  double _mag, _angle;
+
+  dbGDSSTrans()
+  {
+    _flipX = false;
+    _absMag = false;
+    _absAngle = false;
+    _mag = 1.0;
+    _angle = 0.0;
+  }
+
+  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle)
+  {
+    _flipX = flipX;
+    _absMag = absMag;
+    _absAngle = absAngle;
+    _mag = mag;
+    _angle = angle;
+  }
+};
+
 ///
 /// The dbGroup's basis.
 ///

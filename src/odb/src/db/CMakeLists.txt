@@ -87,6 +87,12 @@ add_library(db
     dbAccessPoint.cpp
     dbDft.cpp
     dbGCellGrid.cpp
+    dbGDSBoundary.cpp
+    dbGDSElement.cpp
+    dbGDSLib.cpp
+    dbGDSPath.cpp
+    dbGDSSRef.cpp
+    dbGDSStructure.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp
     dbGuide.cpp

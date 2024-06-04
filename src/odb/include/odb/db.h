@@ -130,6 +130,12 @@ class dbViaParams;
 class dbAccessPoint;
 class dbDft;
 class dbGCellGrid;
+class dbGDSBoundary;
+class dbGDSElement;
+class dbGDSLib;
+class dbGDSPath;
+class dbGDSSRef;
+class dbGDSStructure;
 class dbGlobalConnect;
 class dbGroup;
 class dbGuide;
@@ -7238,6 +7244,36 @@ class dbGCellGrid : public dbObject
   dbMatrix<dbGCellGrid::GCellData> getDirectionCongestionMap(
       const dbTechLayerDir& direction);
   // User Code End dbGCellGrid
+};
+
+class dbGDSBoundary : public dbObject
+{
+ public:
+};
+
+class dbGDSElement : public dbObject
+{
+ public:
+};
+
+class dbGDSLib : public dbObject
+{
+ public:
+};
+
+class dbGDSPath : public dbObject
+{
+ public:
+};
+
+class dbGDSSRef : public dbObject
+{
+ public:
+};
+
+class dbGDSStructure : public dbObject
+{
+ public:
 };
 
 class dbGlobalConnect : public dbObject
