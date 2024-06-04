@@ -65,14 +65,14 @@
 [INFO CTS-0207]  Leaf load cells 62
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 93 buffers in 33 nets.
+[INFO RSZ-0048] Inserted 94 buffers in 33 nets.
 Placement Analysis
 ---------------------------------
-total displacement       2318.0 u
+total displacement       2308.2 u
 average displacement        0.8 u
 max displacement           80.9 u
-original HPWL          133115.2 u
-legalized HPWL         133434.3 u
+original HPWL          133284.2 u
+legalized HPWL         133611.6 u
 delta HPWL                    0 %
 
 Clock clk
