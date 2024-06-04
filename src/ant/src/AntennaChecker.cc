@@ -897,7 +897,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   std::unordered_map<odb::dbTechLayer*, std::unordered_set<std::string>>
       pin_added;
   // if checkGates is used by repair antennas
-  if (pin_violation_count > 0 && diode_mterm) {
+  if (pin_violation_count > 0) {
     for (const auto& gate_iter : gates_with_violations) {
       for (const auto& layer_info : gate_iter.second) {
         // when repair antenna is running, calculate number of diodes
@@ -917,26 +917,29 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               violation_layer, violation_info, false, false, report_file);
           auto psr_violation = checkPSR(
               violation_layer, violation_info, false, false, report_file);
+          bool violated = par_violation.first || psr_violation.first;
           // while it has violation, increase iterm_diff_area
-          while (par_violation.first || psr_violation.first) {
-            // increasing iterm_diff_area and count
-            violation_info.iterm_diff_area += diode_diff_area * gates.size();
-            diode_count_per_gate++;
-            // re-calculate info only PAR & PSR
-            calculateWirePar(violation_layer, violation_info);
-            // re-check violations only PAR & PSR
-            par_violation = checkPAR(
-                violation_layer, violation_info, false, false, report_file);
-            psr_violation = checkPSR(
-                violation_layer, violation_info, false, false, report_file);
-            if (diode_count_per_gate > max_diode_count_per_gate) {
-              logger_->warn(ANT,
-                            15,
-                            "Net {} requires more than {} diodes per gate to "
-                            "repair violations.",
-                            db_net->getConstName(),
-                            max_diode_count_per_gate);
-              break;
+          if (diode_mterm) {
+            while (par_violation.first || psr_violation.first) {
+              // increasing iterm_diff_area and count
+              violation_info.iterm_diff_area += diode_diff_area * gates.size();
+              diode_count_per_gate++;
+              // re-calculate info only PAR & PSR
+              calculateWirePar(violation_layer, violation_info);
+              // re-check violations only PAR & PSR
+              par_violation = checkPAR(
+                  violation_layer, violation_info, false, false, report_file);
+              psr_violation = checkPSR(
+                  violation_layer, violation_info, false, false, report_file);
+              if (diode_count_per_gate > max_diode_count_per_gate) {
+                logger_->warn(ANT,
+                              15,
+                              "Net {} requires more than {} diodes per gate to "
+                              "repair violations.",
+                              db_net->getConstName(),
+                              max_diode_count_per_gate);
+                break;
+              }
             }
           }
           // save the iterms of repaired node
@@ -944,7 +947,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             pin_added[violation_layer].insert(iterm_iter->getName());
           }
           // save antenna violation
-          if (diode_count_per_gate > 0) {
+          if (violated) {
             antenna_violations_.push_back(
                 {layer_info->getRoutingLevel(), gates, diode_count_per_gate});
           }
