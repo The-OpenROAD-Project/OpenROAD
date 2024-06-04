@@ -66,10 +66,10 @@ Polygon rectToPolygon(const odb::Rect& rect);
 std::vector<int> findNodesWithIntersection(const GraphNodeVector& graph_nodes,
                                            const Polygon& pol);
 void wiresToPolygonSetMap(
-    dbWire* wires,
+    odb::dbWire* wires,
     std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
 void avoidPinIntersection(
-    dbNet* db_net,
+    odb::dbNet* db_net,
     std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
 
 }  // namespace ant
