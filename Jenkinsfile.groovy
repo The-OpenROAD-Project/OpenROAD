@@ -22,6 +22,10 @@ node {
   try {
       timeout(time: 9, unit: 'HOURS') {  
         stage('Build and test') {
+          stage('Check message IDs') {
+              sh 'cd src && ../etc/find_messages.py > messages.txt';
+          }
+
           Map tasks = [failFast: false]
 
           Map matrix_axes_tests = [
@@ -46,13 +50,10 @@ node {
                 node {
                     checkout scm
                       try {
-                        stage('Build centos7 gcc') {
+                        stage("Build centos7 gcc ${currentSlug}") {
                             sh './etc/Build.sh -no-warnings';
                         }
-                        stage('Check message IDs') {
-                            sh 'cd src && ../etc/find_messages.py > messages.txt';
-                        }
-                        stage('Test centos7 gcc') {
+                        stage("Test centos7 gcc ${currentSlug}") {
                             if ("${currentSlug}" == 'Unit tests') {
                               sh './test/regression'
                             }
@@ -112,7 +113,7 @@ node {
                 node {
                   checkout scm
                   docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
-                    stage("Pull ${os}") {
+                    stage("Pull ${os} ${compiler}") {
                       sh "git config --system --add safe.directory '*'"
                       retry(3) {
                         try {
@@ -124,10 +125,10 @@ node {
                         }
                       }
                     }
-                    stage("Build docker ${os}") {
+                    stage("Build docker ${os} ${compiler}") {
                       sh "./etc/DockerHelper.sh create -os=${os} -target=builder -compiler=${compiler}"
                     }
-                    stage("Test docker ${os}") {
+                    stage("Test docker ${os} ${compiler}") {
                       sh "./etc/DockerHelper.sh test -os=${os} -target=builder -compiler=${compiler}"
                     }
                   }
