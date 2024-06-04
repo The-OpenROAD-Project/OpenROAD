@@ -136,8 +136,8 @@ class AntennaChecker
   int checkAntennas(odb::dbNet* net = nullptr, bool verbose = false);
   int antennaViolationCount() const;
   std::vector<Violation> getAntennaViolations(odb::dbNet* net,
-                                         odb::dbMTerm* diode_mterm,
-                                         float ratio_margin);
+                                              odb::dbMTerm* diode_mterm,
+                                              float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
 
@@ -148,11 +148,11 @@ class AntennaChecker
                       double def);
   double diffArea(odb::dbMTerm* mterm);
   double gateArea(odb::dbMTerm* mterm);
-  std::vector<std::pair<double, std::vector<odb::dbITerm*>>> parMaxWireLength(odb::dbNet* net,
-                                                               int layer);
-  std::vector<std::pair<double, std::vector<odb::dbITerm*>>> getViolatedWireLength(
+  std::vector<std::pair<double, std::vector<odb::dbITerm*>>> parMaxWireLength(
       odb::dbNet* net,
-      int routing_level);
+      int layer);
+  std::vector<std::pair<double, std::vector<odb::dbITerm*>>>
+  getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net);
   void checkNet(odb::dbNet* net,
@@ -200,7 +200,7 @@ class AntennaChecker
   int findSet(int u);
   void unionSet(int u, int v);
   bool dsuSame(int u, int v);
-  
+
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   int dbu_per_micron_{0};
