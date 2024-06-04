@@ -602,12 +602,21 @@ void BinGrid::initBins()
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 
-  int64_t averagePlaceInstArea
-      = pb_->placeInstsArea() / pb_->placeInsts().size();
+  int64_t averagePlaceInstArea = 0;
+  if (!pb_->placeInsts().empty()) {
+    averagePlaceInstArea = pb_->placeInstsArea() / pb_->placeInsts().size();
+  }
 
-  int64_t idealBinArea
-      = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
-  int idealBinCnt = totalBinArea / idealBinArea;
+  int64_t idealBinArea = 0;
+  if (targetDensity_ != 0) {
+    idealBinArea
+        = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
+  }
+
+  int idealBinCnt = 0;
+  if (idealBinArea != 0) {
+    idealBinCnt = totalBinArea / idealBinArea;
+  }
   if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
     idealBinCnt = 4;
   }
