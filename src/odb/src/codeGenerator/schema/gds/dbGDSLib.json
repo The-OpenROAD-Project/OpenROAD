@@ -5,38 +5,38 @@
       {
         "name":"_name",
         "type": "std::string",
-        "flags": ["no-set","no-get"]
+        "flags": []
       },
       
       {
         "name":"_lastAccessed",
         "type": "std::vector<int16_t>",
-        "flags": ["no-set","no-get"]
+        "flags": []
       },
       {
         "name":"_lastModified",
         "type": "std::vector<int16_t>",
-        "flags": ["no-set","no-get"]
+        "flags": []
       },
       {
         "name":"_libDirSize",
         "type":"int16_t",
-        "flags": ["no-set","no-get"]
+        "flags": []
       },
       {
         "name":"_srfName",
         "type":"std::string",
-        "flags": ["no-set","no-get"]
+        "flags": []
       },
       {
         "name":"_units",
-        "type": "std::pair<double,double>",
-        "flags": ["no-set","no-get","no-template"]
+        "type": "std::pair<double, double>",
+        "flags": ["no-template"]
       },
       {
         "name":"_structures",
-        "type": "dbVector<dbId<dbGDSStructure>>",
-        "flags": ["no-set","no-get"]
+        "type": "std::unordered_map<std::string,dbGDSStructure*>",
+        "flags": ["no-template"]
       }
 
     ],

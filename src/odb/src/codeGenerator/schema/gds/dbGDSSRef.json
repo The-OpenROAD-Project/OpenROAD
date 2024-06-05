@@ -5,17 +5,17 @@
       {
         "name":"_sName",
         "type":"std::string",
-        "flags":["no-set","no-get"]
+        "flags":[]
       },
       {
         "name":"_sTrans",
         "type":"dbGDSSTrans",
-        "flags":["no-set","no-get"]
+        "flags":[]
       },
       {
         "name":"_colRow",
         "type":"std::pair<int,int>",
-        "flags":["no-set","no-get","no-template"]
+        "flags":["no-template"]
       }
     ],
     "h_includes": [

@@ -11,7 +11,7 @@ class {{klass.name}};
     // {{ line }}
   {% endfor %}
 {% endif %}
-class {{klass.name}} : public dbObject
+class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
 {
  public:
   {% for _struct in klass.structs %}

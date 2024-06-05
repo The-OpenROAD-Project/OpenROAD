@@ -61,6 +61,15 @@ class _dbGDSPath : public _dbGDSElement
 
   int _width;
   int16_t _pathType;
+
+  // User Code Begin General
+
+  std::string to_string() {
+    return "PATH" + _dbGDSElement::to_string() + " WIDTH " + std::to_string(_width) + " PATHTYPE " + std::to_string(_pathType);
+  }
+
+  // User Code End General
+
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj);

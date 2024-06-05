@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbGDSStructure.h"
+#include "dbGDSElement.h"
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -40,91 +40,140 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace odb {
-template class dbTable<_dbGDSStructure>;
+template class dbTable<_dbGDSElement>;
 
-bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
+bool _dbGDSElement::operator==(const _dbGDSElement& rhs) const
 {
-  if (_strname != rhs._strname) {
+  if (_layer != rhs._layer) {
+    return false;
+  }
+  if (_datatype != rhs._datatype) {
     return false;
   }
 
   return true;
 }
 
-bool _dbGDSStructure::operator<(const _dbGDSStructure& rhs) const
+bool _dbGDSElement::operator<(const _dbGDSElement& rhs) const
 {
   return true;
 }
 
-void _dbGDSStructure::differences(dbDiff& diff,
-                                  const char* field,
-                                  const _dbGDSStructure& rhs) const
+void _dbGDSElement::differences(dbDiff& diff,
+                                const char* field,
+                                const _dbGDSElement& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_strname);
+  DIFF_FIELD(_layer);
+  DIFF_FIELD(_datatype);
   DIFF_END
 }
 
-void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
+void _dbGDSElement::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_strname);
+  DIFF_OUT_FIELD(_layer);
+  DIFF_OUT_FIELD(_datatype);
 
   DIFF_END
 }
 
-_dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
+_dbGDSElement::_dbGDSElement(_dbDatabase* db)
 {
 }
 
-_dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
+_dbGDSElement::_dbGDSElement(_dbDatabase* db, const _dbGDSElement& r)
 {
-  _strname = r._strname;
+  _layer = r._layer;
+  _datatype = r._datatype;
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement& obj)
 {
-  stream >> obj._strname;
+  stream >> obj._layer;
+  stream >> obj._datatype;
+  stream >> obj._xy;
+  stream >> obj._propattr;
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement& obj)
 {
-  stream << obj._strname;
+  stream << obj._layer;
+  stream << obj._datatype;
+  stream << obj._xy;
+  stream << obj._propattr;
   return stream;
 }
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbGDSStructure - Methods
+// dbGDSElement - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSStructure::setStrname(std::string strname)
+void dbGDSElement::setLayer(int16_t layer)
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSElement* obj = (_dbGDSElement*) this;
 
-  obj->_strname = strname;
+  obj->_layer = layer;
 }
 
-std::string dbGDSStructure::getStrname() const
+int16_t dbGDSElement::getLayer() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->_strname;
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+  return obj->_layer;
 }
 
-std::vector<dbGDSElement*> dbGDSStructure::getElements() const
+void dbGDSElement::setDatatype(int16_t datatype)
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->_elements;
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+
+  obj->_datatype = datatype;
+}
+
+int16_t dbGDSElement::getDatatype() const
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+  return obj->_datatype;
+}
+
+void dbGDSElement::setXy(std::vector<Point> xy)
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+
+  obj->_xy = xy;
+}
+
+std::vector<Point>& dbGDSElement::getXy() const
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+  return obj->_xy;
+}
+
+void dbGDSElement::setPropattr(
+    std::vector<std::pair<std::int16_t, std::string>> propattr)
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+
+  obj->_propattr = propattr;
+}
+
+std::vector<std::pair<std::int16_t, std::string>> dbGDSElement::getPropattr()
+    const
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
+  return obj->_propattr;
 }
 
 // User Code Begin General
 
-std::string dbGDSStructure::to_string() const{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+std::string dbGDSElement::to_string() const
+{
+  _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->to_string();
 }
+
 // User Code End General
 
 }  // namespace odb

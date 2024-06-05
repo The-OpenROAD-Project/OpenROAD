@@ -102,7 +102,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj)
   stream >> obj._libDirSize;
   stream >> obj._srfName;
   stream >> obj._units;
-  stream >> obj._structures;
   return stream;
 }
 
@@ -114,7 +113,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj)
   stream << obj._libDirSize;
   stream << obj._srfName;
   stream << obj._units;
-  stream << obj._structures;
   return stream;
 }
 
@@ -127,6 +125,98 @@ _dbGDSLib::~_dbGDSLib()
 // dbGDSLib - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void dbGDSLib::setName(std::string name)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_name = name;
+}
+
+std::string dbGDSLib::getName() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_name;
+}
+
+void dbGDSLib::set_lastAccessed(std::vector<int16_t> lastAccessed)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_lastAccessed = lastAccessed;
+}
+
+std::vector<int16_t> dbGDSLib::get_lastAccessed() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_lastAccessed;
+}
+
+void dbGDSLib::set_lastModified(std::vector<int16_t> lastModified)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_lastModified = lastModified;
+}
+
+std::vector<int16_t> dbGDSLib::get_lastModified() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_lastModified;
+}
+
+void dbGDSLib::set_libDirSize(int16_t libDirSize)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_libDirSize = libDirSize;
+}
+
+int16_t dbGDSLib::get_libDirSize() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_libDirSize;
+}
+
+void dbGDSLib::set_srfName(std::string srfName)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_srfName = srfName;
+}
+
+std::string dbGDSLib::get_srfName() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_srfName;
+}
+
+void dbGDSLib::setUnits(std::pair<double, double> units)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_units = units;
+}
+
+std::pair<double, double> dbGDSLib::getUnits() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_units;
+}
+
+void dbGDSLib::setStructures(
+    std::unordered_map<std::string, dbGDSStructure*> structures)
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+
+  obj->_structures = structures;
+}
+
+std::unordered_map<std::string, dbGDSStructure*> dbGDSLib::getStructures() const
+{
+  _dbGDSLib* obj = (_dbGDSLib*) this;
+  return obj->_structures;
+}
 
 }  // namespace odb
    // Generator Code End Cpp

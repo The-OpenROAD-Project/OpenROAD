@@ -131,6 +131,7 @@ class dbAccessPoint;
 class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
+class dbGDSElement;
 class dbGDSLib;
 class dbGDSPath;
 class dbGDSSRef;
@@ -7245,7 +7246,29 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
-class dbGDSBoundary : public dbObject
+class dbGDSElement : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  void setXy(std::vector<Point> xy);
+
+  std::vector<Point>& getXy() const;
+
+  void setPropattr(std::vector<std::pair<std::int16_t, std::string>> propattr);
+
+  std::vector<std::pair<std::int16_t, std::string>> getPropattr() const;
+
+  virtual std::string to_string() const;
+};
+
+class dbGDSBoundary : public dbGDSElement
 {
  public:
 };
@@ -7253,21 +7276,74 @@ class dbGDSBoundary : public dbObject
 class dbGDSLib : public dbObject
 {
  public:
+  void setName(std::string name);
+
+  std::string getName() const;
+
+  void set_lastAccessed(std::vector<int16_t> lastAccessed);
+
+  std::vector<int16_t> get_lastAccessed() const;
+
+  void set_lastModified(std::vector<int16_t> lastModified);
+
+  std::vector<int16_t> get_lastModified() const;
+
+  void set_libDirSize(int16_t libDirSize);
+
+  int16_t get_libDirSize() const;
+
+  void set_srfName(std::string srfName);
+
+  std::string get_srfName() const;
+
+  void setUnits(std::pair<double, double> units);
+
+  std::pair<double, double> getUnits() const;
+
+  void setStructures(
+      std::unordered_map<std::string, dbGDSStructure*> structures);
+
+  std::unordered_map<std::string, dbGDSStructure*> getStructures() const;
 };
 
-class dbGDSPath : public dbObject
+class dbGDSPath : public dbGDSElement
 {
  public:
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
 };
 
-class dbGDSSRef : public dbObject
+class dbGDSSRef : public dbGDSElement
 {
  public:
+  void set_sName(std::string sName);
+
+  std::string get_sName() const;
+
+  void set_sTrans(dbGDSSTrans sTrans);
+
+  dbGDSSTrans get_sTrans() const;
+
+  void set_colRow(std::pair<int, int> colRow);
+
+  std::pair<int, int> get_colRow() const;
 };
 
 class dbGDSStructure : public dbObject
 {
  public:
+  void setStrname(std::string strname);
+
+  std::string getStrname() const;
+
+  std::vector<dbGDSElement*> getElements() const;
+
+  std::string to_string() const;
 };
 
 class dbGlobalConnect : public dbObject

@@ -37,6 +37,7 @@
 #include "dbGDSElement.h"
 #include "dbVector.h"
 #include "odb/odb.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbIStream;
@@ -62,7 +63,19 @@ class _dbGDSStructure : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   std::string _strname;
-  dbVector<dbId<dbGDSElement>> _elements;
+  std::vector<dbGDSElement*> _elements;
+
+   // User Code Begin General
+
+  std::string to_string() {
+    std::string str = "STRUCTURE " + _strname + "\n";
+    for (auto& e : _elements) {
+      str += e->to_string() + "\n";
+    }
+    return str;
+  }
+
+  // User Code End General
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);

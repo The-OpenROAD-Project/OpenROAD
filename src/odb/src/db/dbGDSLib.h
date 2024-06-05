@@ -37,6 +37,7 @@
 #include "dbGDSStructure.h"
 #include "dbVector.h"
 #include "odb/odb.h"
+
 // User Code Begin Includes
 #include <ctime>
 // User Code End Includes
@@ -68,7 +69,7 @@ class _dbGDSLib : public _dbObject
   int16_t _libDirSize;
   std::string _srfName;
   std::pair<double, double> _units;
-  dbVector<dbId<dbGDSStructure>> _structures;
+  std::unordered_map<std::string, dbGDSStructure*> _structures;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj);

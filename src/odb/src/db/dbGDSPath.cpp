@@ -109,5 +109,31 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+void dbGDSPath::setWidth(int width)
+{
+  _dbGDSPath* obj = (_dbGDSPath*) this;
+
+  obj->_width = width;
+}
+
+int dbGDSPath::getWidth() const
+{
+  _dbGDSPath* obj = (_dbGDSPath*) this;
+  return obj->_width;
+}
+
+void dbGDSPath::set_pathType(int16_t pathType)
+{
+  _dbGDSPath* obj = (_dbGDSPath*) this;
+
+  obj->_pathType = pathType;
+}
+
+int16_t dbGDSPath::get_pathType() const
+{
+  _dbGDSPath* obj = (_dbGDSPath*) this;
+  return obj->_pathType;
+}
+
 }  // namespace odb
    // Generator Code End Cpp

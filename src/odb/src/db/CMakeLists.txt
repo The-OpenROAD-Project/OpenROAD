@@ -88,6 +88,7 @@ add_library(db
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSBoundary.cpp
+    dbGDSElement.cpp
     dbGDSLib.cpp
     dbGDSPath.cpp
     dbGDSSRef.cpp

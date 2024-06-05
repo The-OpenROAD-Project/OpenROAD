@@ -5,12 +5,12 @@
       {
         "name":"_width",
         "type":"int",
-        "flags":["no-set","no-get"]
+        "flags":[]
       },
       {
         "name":"_pathType",
         "type":"int16_t",
-        "flags":["no-set","no-get"]
+        "flags":[]
       }
     ],
     "h_includes": [
