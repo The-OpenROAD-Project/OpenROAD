@@ -131,10 +131,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& y_origin,
                               const odb::dbOrientType& orientation)
 {
-  float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
+  odb::dbBlock* block = inst->getBlock();
 
-  const int x1 = micronToDbu(x_origin, dbu_per_micron);
-  const int y1 = micronToDbu(y_origin, dbu_per_micron);
+  const int x1 = block->micronsToDbu(x_origin);
+  const int y1 = block->micronsToDbu(y_origin);
   const int x2 = x1 + inst->getBBox()->getDX();
   const int y2 = y1 + inst->getBBox()->getDY();
 
@@ -172,10 +172,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
                 "({:.3f}um, {:.3f}um). Orientation {}",
                 inst->getName(),
-                dbuToMicron(inst->getBBox()->xMin(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->yMin(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->xMax(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->yMax(), dbu_per_micron),
+                block->dbuToMicrons(inst->getBBox()->xMin()),
+                block->dbuToMicrons(inst->getBBox()->yMin()),
+                block->dbuToMicrons(inst->getBBox()->xMax()),
+                block->dbuToMicrons(inst->getBBox()->yMax()),
                 orientation.getString());
 }
 
