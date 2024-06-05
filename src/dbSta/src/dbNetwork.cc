@@ -65,9 +65,12 @@ using odb::dbModBTermObj;
 using odb::dbModInstObj;
 using odb::dbModITerm;
 using odb::dbModITermObj;
+using odb::dbModNetObj;
 using odb::dbModule;
+using odb::dbModuleObj;
 using odb::dbMTerm;
 using odb::dbNet;
+using odb::dbNetObj;
 using odb::dbObject;
 using odb::dbObjectType;
 using odb::dbPlacementStatus;
@@ -80,6 +83,71 @@ char* tmpStringCopy(const char* str)
   char* tmp = makeTmpString(strlen(str) + 1);
   strcpy(tmp, str);
   return tmp;
+}
+
+//
+// Handling of object ids (Hierachy Mode)
+//--------------------------------------
+//
+// The database assigns a number to each object. These numbers
+// are scoped based on the type. Eg dbModInst 1..N or dbInst 1..N.
+// The timer requires a unique id for each object for its visit
+// pattern, so we uniquify the numbers by suffixing a discriminating
+// address pattern to the lower bits and shifting.
+// Everytime a new type of timing related object is added, we
+// must update this code, so it is isolated and marked up here.
+//
+// The id is used by the STA traversers to accumulate visited.
+// lower 4  bits used to encode type
+//
+
+#define DBITERM_ID 0x0
+#define DBBTERM_ID 0x1
+#define DBINST_ID 0x2
+#define DBNET_ID 0x3
+#define DBMODITERM_ID 0x4
+#define DBMODBTERM_ID 0x5
+#define DBMODINST_ID 0x6
+#define DBMODNET_ID 0x7
+#define DBMODULE_ID 0x8
+// Number of lower bits used
+#define DBIDTAG_WIDTH 0x4
+
+ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id)
+{
+  switch (typ) {
+    case dbITermObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBITERM_ID);
+    } break;
+    case dbBTermObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBBTERM_ID);
+    } break;
+    case dbInstObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBINST_ID);
+    } break;
+    case dbNetObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBNET_ID);
+    } break;
+    case dbModITermObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBMODITERM_ID);
+    } break;
+    case dbModBTermObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBMODBTERM_ID);
+    } break;
+    case dbModInstObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBMODINST_ID);
+    } break;
+    case dbModNetObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBMODNET_ID);
+    } break;
+    case dbModuleObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBMODULE_ID);
+    } break;
+    default:
+      return 0;
+      break;
+  }
+  return 0;
 }
 
 class DbLibraryIterator1 : public Iterator<Library*>
@@ -489,6 +557,11 @@ int dbNetwork::metersToDbu(double dist) const
 
 ObjectId dbNetwork::id(const Port* port) const
 {
+  if (hierarchy_) {
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
+  }
   if (!port) {
     // should not match anything else
     return std::numeric_limits<ObjectId>::max();
@@ -504,15 +577,10 @@ ObjectId dbNetwork::id(const Instance* instance) const
     return 0;
   }
   if (hierarchy_) {
-    dbInst* db_inst;
-    dbModInst* mod_inst;
-    staToDb(instance, db_inst, mod_inst);
-    if (db_inst) {
-      return db_inst->getId() << 1;
-    }
-    if (mod_inst) {
-      return (mod_inst->getId() << 1) + 1;
-    }
+    dbObject* obj
+        = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
   }
   return staToDb(instance)->getId();
 }
@@ -760,28 +828,12 @@ ObjectId dbNetwork::id(const Pin* pin) const
   dbModBTerm* modbterm = nullptr;
 
   static std::map<ObjectId, void*> id_ptr_map;
-
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
   if (hierarchy_) {
-    // The id is used by the STA traversers to accumulate visited.
-    // lower bits used to encode type
-    // id,00 <- iterm
-    // id,01 <- bterm
-    // id,10 <- moditerm
-    // id,11 <- modbterm
-    if (iterm != nullptr) {
-      return iterm->getId() << 2;
-    }
-    if (bterm != nullptr) {
-      return (bterm->getId() << 2) | 0x1;
-    }
-    if (moditerm != nullptr) {
-      return (moditerm->getId() << 2) | 0x2;
-    }
-    if (modbterm != nullptr) {
-      return (modbterm->getId() << 2) | 0x3;
-    }
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
   } else {
     if (iterm != nullptr) {
       return iterm->getId() << 1;
@@ -1067,12 +1119,9 @@ ObjectId dbNetwork::id(const Net* net) const
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   if (hierarchy_) {
-    if (dnet) {
-      return dnet->getId() << 1;
-    }
-    if (modnet) {
-      return (modnet->getId() << 1) + 1;
-    }
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
   } else {
     return dnet->getId();
   }
@@ -1208,6 +1257,11 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 
 ObjectId dbNetwork::id(const Term* term) const
 {
+  if (hierarchy_) {
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Term*>(term));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
+  }
   return staToDb(term)->getId();
 }
 
@@ -1886,6 +1940,8 @@ dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 
 dbMTerm* dbNetwork::staToDb(const Port* port) const
 {
+  // Todo fix to use modbterm
+
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
