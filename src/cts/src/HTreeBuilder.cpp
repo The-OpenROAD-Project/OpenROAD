@@ -1815,6 +1815,7 @@ void HTreeBuilder::createClockSubNets()
       treeBufLevels_ += builder.getNumBufferLevels();
       isFirstPoint = false;
     }
+    builder.getDrivingSubNet()->setParentSubNet(&rootClockSubNet);
     topLevelTopology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
   });
 
@@ -1871,6 +1872,7 @@ void HTreeBuilder::createClockSubNets()
         treeBufLevels_ += builder.getNumBufferLevels();
         isFirstPoint = false;
       }
+      builder.getDrivingSubNet()->setParentSubNet(parentTopology.getBranchDrivingSubNet(parentIdx));
       topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
     });
   }

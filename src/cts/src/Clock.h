@@ -41,6 +41,7 @@
 #include <functional>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "Util.h"
 #include "odb/db.h"
@@ -122,6 +123,7 @@ class ClockSubNet
   std::string name_;
   std::deque<ClockInst*> instances_;
   std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
+  ClockSubNet* parent_ = nullptr;
   bool leafLevel_ = false;
 
  public:
@@ -129,6 +131,9 @@ class ClockSubNet
 
   void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
   bool isLeafLevel() const { return leafLevel_; }
+  
+  void setParentSubNet(ClockSubNet* parent) { parent_ = parent; }
+  ClockSubNet* getParentSubNet() { return parent_; }
 
   void addInst(ClockInst& inst)
   {
@@ -225,10 +230,19 @@ class Clock
     for (auto it = subNets_.begin(); it != subNets_.end();)
     {
       if(it->getName() == sub_net.getName()) {
+        auto parent_net = it->getParentSubNet();
         it = subNets_.erase(it);
+        if(parent_net == nullptr) {
+          break;
+        }
+        //    If the parent subnet is dangling after removing the driving buffer,
+        //  also remove the parent subnet 
+        parent_net->removeSinks(sinksToRemove);
+        if(parent_net->getNumSinks() == 0) {
+          removeSubNet(*parent_net);
+        }
         break;
       } else {
-        it->removeSinks(sinksToRemove);
         ++it;
       }
     }
