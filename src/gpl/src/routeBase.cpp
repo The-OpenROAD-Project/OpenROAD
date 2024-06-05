@@ -887,7 +887,8 @@ void RouteBase::increaseCounter()
 
   log_->info(GPL,
              75,
-             "Routability numCall: {} inflationIterCnt: {} bloatIterCnt: {}",
+             "To speed up, remove '-routability_driven' option, numCall: {} "
+             "inflationIterCnt: {} bloatIterCnt: {}",
              numCall_,
              inflationIterCnt_,
              bloatIterCnt_);
