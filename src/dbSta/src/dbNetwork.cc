@@ -101,19 +101,19 @@ char* tmpStringCopy(const char* str)
 // lower 4  bits used to encode type
 //
 
-#define DBITERM_ID 0x0
-#define DBBTERM_ID 0x1
-#define DBINST_ID 0x2
-#define DBNET_ID 0x3
-#define DBMODITERM_ID 0x4
-#define DBMODBTERM_ID 0x5
-#define DBMODINST_ID 0x6
-#define DBMODNET_ID 0x7
-#define DBMODULE_ID 0x8
+static constexpr unsigned DBITERM_ID = 0x0;
+static constexpr unsigned DBBTERM_ID = 0x1;
+static constexpr unsigned DBINST_ID = 0x2;
+static constexpr unsigned DBNET_ID = 0x3;
+static constexpr unsigned DBMODITERM_ID = 0x4;
+static constexpr unsigned DBMODBTERM_ID = 0x5;
+static constexpr unsigned DBMODINST_ID = 0x6;
+static constexpr unsigned DBMODNET_ID = 0x7;
+static constexpr unsigned DBMODULE_ID = 0x8;
 // Number of lower bits used
-#define DBIDTAG_WIDTH 0x4
+static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
-ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id)
+ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
 {
   switch (typ) {
     case dbITermObj: {
@@ -144,6 +144,12 @@ ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id)
       return ((db_id << DBIDTAG_WIDTH) | DBMODULE_ID);
     } break;
     default:
+      logger_->error(
+          ORD,
+          2017,
+          "Error: unknown database type passed into unique id generation");
+      // note the default "exception undefined case" in database is 0.
+      // so we reasonably expect upstream tools to handle this.
       return 0;
       break;
   }

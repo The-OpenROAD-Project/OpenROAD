@@ -65,6 +65,7 @@ using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbObject;
+using odb::dbObjectType;
 using odb::dbSet;
 using odb::dbSigType;
 using odb::Point;
@@ -103,6 +104,7 @@ class dbNetwork : public ConcreteNetwork
   void addObserver(dbNetworkObserver* observer);
   void removeObserver(dbNetworkObserver* observer);
 
+  ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const;
   dbBlock* block() const { return block_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
