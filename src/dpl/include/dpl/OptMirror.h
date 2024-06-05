@@ -89,7 +89,6 @@ class OptimizeMirroring
   void restoreNetBoxes(dbInst* inst);
 
   int64_t hpwl(dbInst* inst);  // Sum of ITerm hpwl's.
-  double dbuToMicrons(int64_t dbu) const;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

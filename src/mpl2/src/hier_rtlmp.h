@@ -74,6 +74,7 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
+class Snapper;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -138,7 +139,7 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
-  using IOSpans = std::map<PinAccess, std::pair<float, float>>;
+  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
@@ -175,6 +176,9 @@ class HierRTLMP
   void calculateConnection();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
+  void updateMacrosOnDb();
+  void updateMacroOnDb(const HardMacro* hard_macro);
+  void commitMacroPlacementToDb();
   void clear();
 
   void printConnection();
@@ -270,7 +274,6 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -324,11 +327,6 @@ class HierRTLMP
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
-
-  // technology-related variables
-  float dbu_ = 0.0;
-  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
-                                // will be over written by the tech lef value
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
@@ -386,6 +384,7 @@ class HierRTLMP
   std::map<std::string, Rect> guides_;  // macro_name, guide
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
+  std::map<Boundary, Rect> boundary_to_io_blockage_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -485,4 +484,78 @@ class HierRTLMP
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
+
+class Pusher
+{
+ public:
+  Pusher(utl::Logger* logger,
+         Cluster* root,
+         odb::dbBlock* block,
+         const std::map<Boundary, Rect>& boundary_to_io_blockage);
+
+  void pushMacrosToCoreBoundaries();
+
+ private:
+  void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  bool designHasSingleCentralizedMacroArray();
+  void pushMacroClusterToCoreBoundaries(
+      Cluster* macro_cluster,
+      const std::map<Boundary, int>& boundaries_distance);
+  void fetchMacroClusters(Cluster* parent,
+                          std::vector<Cluster*>& macro_clusters);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster);
+  void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
+  void moveMacroClusterBox(odb::Rect& cluster_box,
+                           Boundary boundary,
+                           int distance);
+  bool overlapsWithHardMacro(
+      const odb::Rect& cluster_box,
+      const std::vector<HardMacro*>& cluster_hard_macros);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
+
+  utl::Logger* logger_;
+
+  Cluster* root_;
+  odb::dbBlock* block_;
+  odb::Rect core_;
+
+  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
+  std::vector<HardMacro*> hard_macros_;
+};
+
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct SnapParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int lower_left_to_first_pin = 0;
+};
+
+class Snapper
+{
+ public:
+  Snapper();
+  Snapper(odb::dbInst* inst);
+
+  void setMacro(odb::dbInst* inst) { inst_ = inst; }
+  void snapMacro();
+
+ private:
+  odb::Point computeSnapOrigin();
+  SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
+                                       odb::dbBox* box,
+                                       bool vertical_layer);
+  void getTrackGrid(odb::dbTrackGrid* track_grid,
+                    std::vector<int>& coordinate_grid,
+                    bool vertical_layer);
+  int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
+  int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
+  int getPinWidth(odb::dbBox* box, bool vertical_layer);
+  int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
+
+  odb::dbInst* inst_;
+};
+
 }  // namespace mpl2

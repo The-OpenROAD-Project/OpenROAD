@@ -142,7 +142,7 @@ class PDNSim : public odb::dbBlockCallBackObj
 
   std::unique_ptr<IRDropDataSource> heatmap_;
 
-  bool debug_gui_enabled_;
+  bool debug_gui_enabled_ = false;
 
   GeneratedSourceSettings generated_source_settings_;
 

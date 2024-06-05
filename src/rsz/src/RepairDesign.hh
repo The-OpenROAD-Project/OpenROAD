@@ -80,7 +80,7 @@ class LoadRegion
   vector<LoadRegion> regions_;
 };
 
-class RepairDesign : StaState
+class RepairDesign : dbStaState
 {
  public:
   explicit RepairDesign(Resizer* resizer);
@@ -235,7 +235,6 @@ class RepairDesign : StaState
   bool hasInputPort(const Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
-  double dbuToMicrons(int dist) const;
 
   void printProgress(int iteration,
                      bool force,
@@ -243,7 +242,6 @@ class RepairDesign : StaState
                      int repaired_net_count) const;
 
   Logger* logger_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;

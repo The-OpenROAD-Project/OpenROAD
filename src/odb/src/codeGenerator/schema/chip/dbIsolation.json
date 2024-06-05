@@ -5,6 +5,7 @@
     {
       "name":"_name",
       "type":"char *",
+      "default": "nullptr",
       "flags":["no-set"]
     },
     {

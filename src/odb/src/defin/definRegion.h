@@ -41,7 +41,7 @@ class dbRegion;
 
 class definRegion : public definBase
 {
-  dbRegion* _cur_region;
+  dbRegion* _cur_region = nullptr;
 
  public:
   definRegion();

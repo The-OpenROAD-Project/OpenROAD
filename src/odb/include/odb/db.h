@@ -347,6 +347,12 @@ class dbDatabase : public dbObject
   dbMaster* findMaster(const char* name);
 
   ///
+  /// This function is used to delete unused master-cells.
+  /// Returns the number of unused master-cells that have been deleted.
+  ///
+  int removeUnusedMasters();
+
+  ///
   /// Get the chip of this database.
   /// Returns nullptr if no chip has been created.
   ///
@@ -765,6 +771,11 @@ class dbSBox : public dbBox
   bool hasViaLayerMasks();
 
   ///
+  /// Create a set of new sboxes from a via array
+  ///
+  std::vector<dbSBox*> smashVia();
+
+  ///
   /// Add a rect to a dbSWire.
   ///
   /// If direction == UNDEFINED
@@ -1176,6 +1187,29 @@ class dbBlock : public dbObject
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
+
+  ///
+  /// Convert a length from database units (DBUs) to microns.
+  ///
+  double dbuToMicrons(int dbu);
+  double dbuToMicrons(unsigned int dbu);
+  double dbuToMicrons(int64_t dbu);
+  double dbuToMicrons(double dbu);
+
+  ///
+  /// Convert an area from database units squared (DBU^2) to square microns.
+  ///
+  double dbuAreaToMicrons(const int64_t dbu_area);
+
+  ///
+  /// Convert a length from microns to database units (DBUs).
+  ///
+  int micronsToDbu(double microns);
+
+  ///
+  /// Convert an area from square microns to database units squared (DBU^2).
+  ///
+  int64_t micronsAreaToDbu(const double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.

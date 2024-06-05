@@ -57,6 +57,7 @@ struct Cell
   bool isHybrid() const;
   bool isHybridParent() const;
   dbSite* getSite() const;
+  DbuX xMax() const { return x_ + width_; }
 
   dbInst* db_inst_ = nullptr;
   DbuX x_{0};  // lower left wrt core DBU

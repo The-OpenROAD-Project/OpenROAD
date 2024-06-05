@@ -123,13 +123,21 @@ void RenderThread::run()
                  draw_bounds.height(),
                  QImage::Format_ARGB32_Premultiplied);
     // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+    try {
+      draw(image,
+           draw_bounds,
+           selected,
+           highlighted,
+           rulers,
+           1.0,
+           Qt::transparent);
+    } catch (const std::exception& e) {
+      logger_->warn(
+          GUI, 102, "An exception occurred during rendering: {}", e.what());
+    } catch (...) {
+      logger_->warn(GUI, 103, "An unknown exception occurred during rendering");
+    }
+
     if (!restart_) {
       is_rendering_ = false;
 
@@ -611,7 +619,8 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     QString name = inst->getName().c_str();
     auto master = inst->getMaster();
     auto center = master->isBlock() || master->isPad();
-    drawTextInBBox(text_color, text_font, instance_box, name, painter, center);
+    drawTextInBBox(
+        text_color, text_font, instance_box, std::move(name), painter, center);
   }
   painter->setFont(initial_font);
 }
@@ -1404,7 +1413,7 @@ void RenderThread::drawModuleView(QPainter* painter,
       continue;
     }
 
-    const auto setting = viewer_->modules_.at(module);
+    const auto& setting = viewer_->modules_.at(module);
 
     if (!setting.visible) {
       continue;
@@ -1449,7 +1458,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
     QString current_text = QString::fromStdString(pin->getName());
     if (font_metrics.boundingRect(current_text).width()
         > font_metrics.boundingRect(largest_text).width()) {
-      largest_text = current_text;
+      largest_text = std::move(current_text);
     }
   }
 

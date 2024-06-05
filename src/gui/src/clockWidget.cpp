@@ -101,7 +101,10 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
       sta::Net* net = network->net(output_pin);
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      network->staToDb(output_pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+
+      network->staToDb(output_pin, iterm, bterm, moditerm, modbterm);
       descriptor->highlight(
           DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
     }
@@ -726,7 +729,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
                              utl::Logger* logger,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
-      tree_(tree),
+      tree_(std::move(tree)),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
       renderer_state_(RendererState::OnlyShowOnActiveWidget),
       scene_(nullptr),
@@ -1129,7 +1132,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(output_pin.pin, iterm, bterm);
+  odb::dbModBTerm* modbterm;
+  odb::dbModITerm* moditerm;
+
+  network->staToDb(output_pin.pin, iterm, bterm, moditerm, modbterm);
 
   ClockNodeGraphicsViewItem* node = nullptr;
   if (iterm != nullptr) {
@@ -1153,7 +1159,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(input_pin.pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+
+  network->staToDb(input_pin.pin, iterm, bterm, moditerm, modbterm);
 
   // distinguish between registers and macros
   ClockLeafNodeGraphicsViewItem* node;
@@ -1167,7 +1176,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
         if (insDelays.hasValue()) {
           ins_delay
               = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
@@ -1214,7 +1223,9 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
   auto convert_pin = [&network](const sta::Pin* pin) -> odb::dbITerm* {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    network->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
     return iterm;
   };
 

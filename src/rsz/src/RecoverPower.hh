@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
 #include "sta/MinMax.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
@@ -74,17 +75,17 @@ enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
 
-class RecoverPower : StaState
+class RecoverPower : public sta::dbStaState
 {
  public:
   RecoverPower(Resizer* resizer);
   void recoverPower(float recover_power_percent);
   // For testing.
-  void recoverPower(const Pin* end_pin);
+  Vertex* recoverPower(const Pin* end_pin);
 
  private:
   void init();
-  bool recoverPower(const PathRef& path, Slack path_slack);
+  Vertex* recoverPower(const PathRef& path, Slack path_slack);
   bool meetsSizeCriteria(const LibertyCell* cell,
                          const LibertyCell* equiv,
                          bool match_size);
@@ -114,7 +115,6 @@ class RecoverPower : StaState
   Slack slackPenalized(BufferedNetPtr bnet, int index);
 
   Logger* logger_ = nullptr;
-  dbSta* sta_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   const Corner* corner_ = nullptr;
@@ -130,7 +130,7 @@ class RecoverPower : StaState
   // trying
   static constexpr int failed_move_threshold_limit_ = 500;
 
-  sta::UnorderedMap<LibertyCell*, sta::LibertyPortSet> equiv_pin_map_;
+  sta::VertexSet bad_vertices_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;

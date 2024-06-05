@@ -125,6 +125,10 @@ ShapePtr GridComponent::addShape(Shape* shape)
       return nullptr;
     }
 
+    if (areIntersectionsAllowed()) {
+      continue;
+    }
+
     const odb::Rect& other_rect = intersecting_shape->getRect();
     const bool is_x_overlap = shape_rect.xMin() == other_rect.xMin()
                               && shape_rect.xMax() == other_rect.xMax();
@@ -304,7 +308,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
         continue;
       }
 
-      replacement_shapes[shape.get()] = replacements;
+      replacement_shapes[shape.get()] = std::move(replacements);
     }
 
     for (const auto& [shape, replacement] : replacement_shapes) {

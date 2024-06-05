@@ -62,7 +62,6 @@ void PDNSim::init(utl::Logger* logger,
   sta_ = sta;
   resizer_ = resizer;
   logger_ = logger;
-  debug_gui_enabled_ = false;
   heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
   heatmap_->registerHeatMap();
 }

@@ -84,6 +84,7 @@
 #include "triton_route/MakeTritonRoute.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace sta {
 extern const char* openroad_swig_tcl_inits[];
@@ -378,10 +379,8 @@ void OpenRoad::writeAbstractLef(const char* filename,
   if (!block) {
     logger_->error(ORD, 53, "No block is loaded.");
   }
-  std::ofstream os;
-  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-  os.open(filename);
-  odb::lefout writer(logger_, os);
+  utl::StreamHandler stream_handler(filename);
+  odb::lefout writer(logger_, stream_handler.getStream());
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);
   writer.writeAbstractLef(block);
@@ -407,25 +406,19 @@ void OpenRoad::writeLef(const char* filename)
         } else {
           name += "_" + std::to_string(cnt);
         }
-        std::ofstream os;
-        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-        os.open(name);
-        odb::lefout lef_writer(logger_, os);
+        utl::StreamHandler stream_handler(filename);
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeLib(lib);
       } else {
-        std::ofstream os;
-        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-        os.open(name);
-        odb::lefout lef_writer(logger_, os);
+        utl::StreamHandler stream_handler(filename);
+        odb::lefout lef_writer(logger_, stream_handler.getStream());
         lef_writer.writeTechAndLib(lib);
       }
       ++cnt;
     }
   } else if (db_->getTech()) {
-    std::ofstream os;
-    os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-    os.open(filename);
-    odb::lefout lef_writer(logger_, os);
+    utl::StreamHandler stream_handler(filename);
+    odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeTech(db_->getTech());
   }
 }
@@ -469,12 +462,9 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  std::ofstream stream;
-  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                    | std::ios::eofbit);
-  stream.open(filename, std::ios::binary);
+  utl::StreamHandler stream_handler(filename, true);
 
-  db_->write(stream);
+  db_->write(stream_handler.getStream());
 }
 
 void OpenRoad::diffDbs(const char* filename1,
@@ -517,6 +507,10 @@ void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
   dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  if (hierarchy) {
+    sta::dbSta* sta = getSta();
+    sta->getDbNetwork()->setHierarchy();
+  }
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }

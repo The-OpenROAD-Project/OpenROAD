@@ -71,16 +71,18 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
   }
 }
 
-bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
-                                            int max_routing_layer,
-                                            odb::dbMTerm* diode_mterm,
-                                            float ratio_margin)
+bool RepairAntennas::checkAntennaViolations(
+    NetRouteMap& routing,
+    const std::vector<odb::dbNet*>& nets_to_repair,
+    int max_routing_layer,
+    odb::dbMTerm* diode_mterm,
+    float ratio_margin)
 {
   // safe copy net wires before orderWires calls
   // TODO: remove this copy when antenna checker update is done
   std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
       copy_wires;
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : nets_to_repair) {
     if (db_net->getWire() == nullptr) {
       continue;
     }
@@ -90,18 +92,13 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
     copy_wires[db_net] = {data, op_codes};
   }
 
-  makeNetWires(routing, max_routing_layer);
+  makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
-  if (grouter_->haveDetailedRoutes()) {
-    for (odb::dbNet* db_net : block_->getNets()) {
-      checkNetViolations(db_net, diode_mterm, ratio_margin);
-    }
-  } else {
-    for (auto& [db_net, route] : routing) {
-      checkNetViolations(db_net, diode_mterm, ratio_margin);
-    }
+  for (odb::dbNet* db_net : nets_to_repair) {
+    checkNetViolations(db_net, diode_mterm, ratio_margin);
   }
-  destroyNetWires();
+
+  destroyNetWires(nets_to_repair);
   for (auto [net, val] : copy_wires) {
     auto wire = odb::dbWire::create(net);
     wire->setRawWireData(val.first, val.second);
@@ -131,22 +128,20 @@ void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
   }
 }
 
-void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
+void RepairAntennas::makeNetWires(
+    NetRouteMap& routing,
+    const std::vector<odb::dbNet*>& nets_to_repair,
+    int max_routing_layer)
 {
   std::map<int, odb::dbTechVia*> default_vias
       = grouter_->getDefaultVias(max_routing_layer);
 
-  if (grouter_->haveDetailedRoutes()) {
-    for (odb::dbNet* db_net : block_->getNets()) {
-      if (grouter_->isDetailedRouted(db_net)) {
-        odb::orderWires(logger_, db_net);
-      }
-    }
-  } else {
-    for (auto& [db_net, route] : routing) {
-      if (!grouter_->getNet(db_net)->isLocal()) {
-        makeNetWire(db_net, route, default_vias);
-      }
+  for (odb::dbNet* db_net : nets_to_repair) {
+    if (grouter_->isDetailedRouted(db_net)) {
+      odb::orderWires(logger_, db_net);
+    } else if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
+               && !grouter_->getNet(db_net)->isLocal()) {
+      makeNetWire(db_net, routing[db_net], default_vias);
     }
   }
 }
@@ -180,10 +175,10 @@ odb::dbWire* RepairAntennas::makeNetWire(
                    "check_antennas",
                    1,
                    "invalid seg: ({}, {})um to ({}, {})um",
-                   grouter_->dbuToMicrons(seg.init_x),
-                   grouter_->dbuToMicrons(seg.init_y),
-                   grouter_->dbuToMicrons(seg.final_x),
-                   grouter_->dbuToMicrons(seg.final_y));
+                   block_->dbuToMicrons(seg.init_x),
+                   block_->dbuToMicrons(seg.init_y),
+                   block_->dbuToMicrons(seg.final_x),
+                   block_->dbuToMicrons(seg.final_y));
 
         logger_->error(GRT,
                        68,
@@ -265,7 +260,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
     }
     wire_encoder.end();
 
-    odb::orderWires(logger_, db_net);
     return wire;
   } else {
     logger_->error(
@@ -429,9 +423,10 @@ bool RepairAntennas::pinOverlapsGSegment(
   return false;
 }
 
-void RepairAntennas::destroyNetWires()
+void RepairAntennas::destroyNetWires(
+    const std::vector<odb::dbNet*>& nets_to_repair)
 {
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
     if (wire)
       odb::dbWire::destroy(wire);
