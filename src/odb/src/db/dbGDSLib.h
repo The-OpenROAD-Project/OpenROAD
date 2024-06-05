@@ -37,6 +37,9 @@
 #include "dbGDSStructure.h"
 #include "dbVector.h"
 #include "odb/odb.h"
+// User Code Begin Includes
+#include <ctime>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -60,8 +63,8 @@ class _dbGDSLib : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   std::string _name;
-  std::tm _lastAccessed;
-  std::tm _lastModified;
+  std::vector<int16_t> _lastAccessed;
+  std::vector<int16_t> _lastModified;
   int16_t _libDirSize;
   std::string _srfName;
   std::pair<double, double> _units;

@@ -35,7 +35,6 @@
 
 #include "dbCore.h"
 #include "dbGDSElement.h"
-#include "dbVector.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -62,6 +61,7 @@ class _dbGDSSRef : public _dbGDSElement
 
   std::string _sName;
   dbGDSSTrans _sTrans;
+  std::optional<std::pair<int, int>> _colRow;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);

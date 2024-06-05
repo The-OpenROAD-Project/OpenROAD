@@ -38,35 +38,18 @@
 #include "odb/geom.h"
 #include "odb/odb.h"
 
+#include <vector>
+
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class Point;
 
 class _dbGDSElement : public _dbObject
 {
  public:
-  _dbGDSElement(_dbDatabase*, const _dbGDSElement& r);
-  _dbGDSElement(_dbDatabase*);
-
-  ~_dbGDSElement() = default;
-
-  bool operator==(const _dbGDSElement& rhs) const;
-  bool operator!=(const _dbGDSElement& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSElement& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSElement& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-
   int16_t _layer;
   int16_t _datatype;
-  dbVector<Point> _xy;
-  dbVector<std::pair<std::int16_t, std::string>> _propattr;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
 };
-dbIStream& operator>>(dbIStream& stream, _dbGDSElement& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSElement& obj);
-}  // namespace odb
-   // Generator Code End Header
+}

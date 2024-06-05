@@ -11,10 +11,14 @@
         "name":"_sTrans",
         "type":"dbGDSSTrans",
         "flags":["no-set","no-get"]
+      },
+      {
+        "name":"_colRow",
+        "type":"std::pair<int,int>",
+        "flags":["no-set","no-get","no-template"]
       }
     ],
     "h_includes": [
-      "dbVector.h",
       "dbGDSElement.h"
     ],
     "cpp_includes": ["odb/dbTypes.h"]

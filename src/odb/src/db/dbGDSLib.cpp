@@ -120,9 +120,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj)
 
 _dbGDSLib::~_dbGDSLib()
 {
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////

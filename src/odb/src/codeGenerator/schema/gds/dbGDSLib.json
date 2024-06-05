@@ -10,12 +10,12 @@
       
       {
         "name":"_lastAccessed",
-        "type": "std::tm",
+        "type": "std::vector<int16_t>",
         "flags": ["no-set","no-get"]
       },
       {
         "name":"_lastModified",
-        "type": "std::tm",
+        "type": "std::vector<int16_t>",
         "flags": ["no-set","no-get"]
       },
       {
@@ -39,10 +39,6 @@
         "flags": ["no-set","no-get"]
       }
 
-    ],
-    "h_includes": [
-      "dbVector.h",
-      "dbGDSStructure.h"
     ],
     "cpp_includes": ["odb/dbTypes.h"]
   }

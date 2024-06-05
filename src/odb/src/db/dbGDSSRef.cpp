@@ -85,14 +85,12 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db, const _dbGDSSRef& r)
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
   stream >> obj._sName;
-  stream >> obj._sTrans;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 {
   stream << obj._sName;
-  stream << obj._sTrans;
   return stream;
 }
 

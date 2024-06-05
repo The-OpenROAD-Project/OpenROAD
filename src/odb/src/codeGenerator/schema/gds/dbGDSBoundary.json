@@ -2,9 +2,8 @@
     "name":"dbGDSBoundary",
     "type":"dbGDSElement",
     "fields":[
-    ] ,
+    ],
     "h_includes": [
-      "dbVector.h",
       "dbGDSElement.h"
     ],
     "cpp_includes": ["odb/dbTypes.h"]

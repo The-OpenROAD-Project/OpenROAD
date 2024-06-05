@@ -12,9 +12,8 @@
         "type":"int16_t",
         "flags":["no-set","no-get"]
       }
-    ] ,
+    ],
     "h_includes": [
-      "dbVector.h",
       "dbGDSElement.h"
     ],
     "cpp_includes": ["odb/dbTypes.h", "odb/geom.h"]

@@ -35,7 +35,6 @@
 
 #include "dbCore.h"
 #include "dbGDSElement.h"
-#include "dbVector.h"
 #include "odb/odb.h"
 
 namespace odb {

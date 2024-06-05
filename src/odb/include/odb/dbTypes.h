@@ -149,6 +149,11 @@ class dbGDSSTrans
     _mag = mag;
     _angle = angle;
   }
+
+  bool operator==(const dbGDSSTrans& t) const
+  {
+    return (_flipX == t._flipX) && (_absMag == t._absMag) && (_absAngle == t._absAngle) && (_mag == t._mag) && (_angle == t._angle);
+  }
 };
 
 ///

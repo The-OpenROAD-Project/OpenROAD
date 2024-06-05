@@ -131,7 +131,6 @@ class dbAccessPoint;
 class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
-class dbGDSElement;
 class dbGDSLib;
 class dbGDSPath;
 class dbGDSSRef;
@@ -7247,11 +7246,6 @@ class dbGCellGrid : public dbObject
 };
 
 class dbGDSBoundary : public dbObject
-{
- public:
-};
-
-class dbGDSElement : public dbObject
 {
  public:
 };
