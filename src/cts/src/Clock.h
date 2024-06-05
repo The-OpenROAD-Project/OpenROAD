@@ -39,9 +39,9 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <iostream>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 
 #include "Util.h"
 #include "odb/db.h"
@@ -131,7 +131,7 @@ class ClockSubNet
 
   void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
   bool isLeafLevel() const { return leafLevel_; }
-  
+
   void setParentSubNet(ClockSubNet* parent) { parent_ = parent; }
   ClockSubNet* getParentSubNet() { return parent_; }
 
@@ -227,18 +227,18 @@ class Clock
   {
     std::set<ClockInst*> sinksToRemove;
     sinksToRemove.insert(sub_net.getDriver());
-    for (auto it = subNets_.begin(); it != subNets_.end();)
-    {
-      if(it->getName() == sub_net.getName()) {
+    for (auto it = subNets_.begin(); it != subNets_.end();) {
+      if (it->getName() == sub_net.getName()) {
         auto parent_net = it->getParentSubNet();
         it = subNets_.erase(it);
-        if(parent_net == nullptr) {
+        if (parent_net == nullptr) {
           break;
         }
-        //    If the parent subnet is dangling after removing the driving buffer,
-        //  also remove the parent subnet 
+        //    If the parent subnet is dangling after removing the driving
+        //    buffer,
+        //  also remove the parent subnet
         parent_net->removeSinks(sinksToRemove);
-        if(parent_net->getNumSinks() == 0) {
+        if (parent_net->getNumSinks() == 0) {
           removeSubNet(*parent_net);
         }
         break;
@@ -251,9 +251,8 @@ class Clock
 
   void removeClockBuffer(ClockInst* clock_buffer)
   {
-    for (auto it = clockBuffers_.begin(); it != clockBuffers_.end();)
-    {
-      if(it->getName() == clock_buffer->getName()) {
+    for (auto it = clockBuffers_.begin(); it != clockBuffers_.end();) {
+      if (it->getName() == clock_buffer->getName()) {
         it = clockBuffers_.erase(it);
         break;
       } else {

@@ -1872,7 +1872,8 @@ void HTreeBuilder::createClockSubNets()
         treeBufLevels_ += builder.getNumBufferLevels();
         isFirstPoint = false;
       }
-      builder.getDrivingSubNet()->setParentSubNet(parentTopology.getBranchDrivingSubNet(parentIdx));
+      builder.getDrivingSubNet()->setParentSubNet(
+          parentTopology.getBranchDrivingSubNet(parentIdx));
       topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());
     });
   }
@@ -1885,7 +1886,7 @@ void HTreeBuilder::createClockSubNets()
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
-            = leafTopology.getBranchSinksLocations(idx);  
+            = leafTopology.getBranchSinksLocations(idx);
         for (const Point<double>& loc : sinkLocs) {
           if (mapLocationToSink_.find(loc) == mapLocationToSink_.end()) {
             logger_->error(CTS, 80, "Sink not found.");
@@ -1894,7 +1895,7 @@ void HTreeBuilder::createClockSubNets()
           subNet->addInst(*mapLocationToSink_[loc]);
           ++numSinks;
         }
-        if(sinkLocs.empty()){
+        if (sinkLocs.empty()) {
           // If a leaf subnet has no sinks connected remove the subnet
           clock_.removeSubNet(*subNet);
         }
