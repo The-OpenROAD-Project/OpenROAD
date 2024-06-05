@@ -603,7 +603,7 @@ std::pair<bool, bool> RouteBase::routability()
   // saving solutions when minRc happen.
   // I hope to get lower Rc gradually as RD goes on
   //
-  if (minRc_ > curRc) {
+  if ((minRc_ - curRc) > 0.001) {
     log_->info(
         GPL, 78, "FinalRC lower than minRC ({}), min RC updated.", minRc_);
     minRc_ = curRc;
