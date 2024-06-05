@@ -163,7 +163,7 @@ void populateScanInst(definReader* reader,
     reader->_logger->error(utl::ODB,
                            257,
                            "SCANDEF OUT pin {} does not exist in cell {}",
-                           in_pin_name,
+                           out_pin_name,
                            inst_name);
   }
 
