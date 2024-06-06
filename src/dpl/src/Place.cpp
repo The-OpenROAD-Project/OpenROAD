@@ -1364,7 +1364,7 @@ DbuPt Opendp::legalPt(const Cell* cell, const bool padded) const
     // If that didn't do the job fall back on the old move to nearest
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
-    if (block && isBlock(block)) {
+    if (block && block->db_inst_ && isBlock(block)) {
       const Rect block_bbox(block->x_.v,
                             block->y_.v,
                             block->x_.v + block->width_.v,
