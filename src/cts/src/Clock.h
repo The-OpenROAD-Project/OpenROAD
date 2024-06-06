@@ -101,6 +101,8 @@ class ClockInst
   void setIdealOutputCap(float cap) { idealOutputCap_ = cap; }
   float getIdealOutputCap() const { return idealOutputCap_; }
 
+  bool operator==(const ClockInst& ci) { return name_ == ci.getName(); }
+
  private:
   std::string name_;
   std::string master_;
@@ -185,6 +187,8 @@ class ClockSubNet
       func(instances_[inst]);
     }
   }
+
+  bool operator==(const ClockSubNet& n) { return name_ == n.getName(); }
 };
 
 class Clock
@@ -222,42 +226,39 @@ class Clock
     return subNets_.back();
   }
 
-  void removeSubNet(ClockSubNet sub_net)
+  void removeSubNet(ClockSubNet subNet)
   {
     std::set<ClockInst*> sinksToRemove;
-    sinksToRemove.insert(sub_net.getDriver());
-    for (auto it = subNets_.begin(); it != subNets_.end();) {
-      if (it->getName() == sub_net.getName()) {
-        auto parent_net = it->getParentSubNet();
-        it = subNets_.erase(it);
-        if (parent_net == nullptr) {
-          break;
-        }
-        //    If the parent subnet is dangling after removing the driving
-        //    buffer,
-        //  also remove the parent subnet
-        parent_net->removeSinks(sinksToRemove);
-        if (parent_net->getNumSinks() == 0) {
-          removeSubNet(*parent_net);
-        }
-        break;
-      } else {
-        ++it;
+    sinksToRemove.insert(subNet.getDriver());
+
+    auto subNet_iter = std::find(subNets_.begin(), subNets_.end(), subNet);
+    if (subNet_iter == subNets_.end()) {
+      return;
+    }
+    subNets_.erase(subNet_iter);
+
+    auto parent_subNet = subNet.getParentSubNet();
+    if (parent_subNet != nullptr) {
+      //    If the parent subnet is dangling after removing the driving
+      //    buffer,
+      //  also remove the parent subnet
+      parent_subNet->removeSinks(sinksToRemove);
+      if (parent_subNet->getNumSinks() == 0) {
+        removeSubNet(*parent_subNet);
       }
     }
-    removeClockBuffer(sub_net.getDriver());
+
+    removeClockBuffer(*subNet.getDriver());
   }
 
-  void removeClockBuffer(ClockInst* clock_buffer)
+  void removeClockBuffer(const ClockInst& clock_buffer)
   {
-    for (auto it = clockBuffers_.begin(); it != clockBuffers_.end();) {
-      if (it->getName() == clock_buffer->getName()) {
-        it = clockBuffers_.erase(it);
-        break;
-      } else {
-        ++it;
-      }
+    auto clk_buf_iter
+        = std::find(clockBuffers_.begin(), clockBuffers_.end(), clock_buffer);
+    if (clk_buf_iter == clockBuffers_.end()) {
+      return;
     }
+    clockBuffers_.erase(clk_buf_iter);
   }
 
   void addSink(const std::string& name, int x, int y)
