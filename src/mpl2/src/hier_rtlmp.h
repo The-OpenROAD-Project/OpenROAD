@@ -328,9 +328,6 @@ class HierRTLMP
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
 
-  // technology-related variables
-  float dbu_ = 0.0;
-
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
 
@@ -521,7 +518,6 @@ class Pusher
   Cluster* root_;
   odb::dbBlock* block_;
   odb::Rect core_;
-  float dbu_;
 
   std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
   std::vector<HardMacro*> hard_macros_;

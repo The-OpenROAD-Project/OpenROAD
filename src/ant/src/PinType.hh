@@ -29,71 +29,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%{
+#pragma once
 
-#include "ant/AntennaChecker.hh"
-#include "ord/OpenRoad.hh"
+#include <string>
 
-ant::AntennaChecker *
-getAntennaChecker()
-{
-  return ord::OpenRoad::openRoad()->getAntennaChecker();
-}
-
-namespace ord {
-// Defined in OpenRoad.i
-odb::dbDatabase *getDb();
-}
-
-%}
-
-%include "../../Exception.i"
-
-%inline %{
+#include "odb/db.h"
 
 namespace ant {
 
-int
-check_antennas(const char *net_name, bool verbose)
+struct PinType
 {
-  auto app = ord::OpenRoad::openRoad();
-  auto block = app->getDb()->getChip()->getBlock();
-  odb::dbNet* net = nullptr;
-  if (strlen(net_name) > 0) {
-    net = block->findNet(net_name);
-    if (!net) {
-      auto logger = app->getLogger();
-      logger->error(utl::ANT, 12, "Net {} not found.", net_name);
-    }
+  bool isITerm;
+  std::string name;
+  union
+  {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+  };
+  PinType(std::string name_, odb::dbITerm* iterm_)
+  {
+    name = std::move(name_);
+    iterm = iterm_;
+    isITerm = true;
   }
-  return getAntennaChecker()->checkAntennas(net, verbose);
-}
-
-int
-antenna_violation_count()
-{
-  return getAntennaChecker()->antennaViolationCount();
-}
-
-// check a net for antenna violations
-bool
-check_net_violation(char* net_name)
-{ 
-  odb::dbNet* net = ord::getDb()->getChip()->getBlock()->findNet(net_name);
-  if (net) {
-    auto vios = getAntennaChecker()->getAntennaViolations(net, nullptr, 0);
-    return !vios.empty();
+  PinType(std::string name_, odb::dbBTerm* bterm_)
+  {
+    name = std::move(name_);
+    bterm = bterm_;
+    isITerm = false;
   }
-  else
-    return false;
-}
+  bool operator==(const PinType& t) const { return (this->name == t.name); }
+};
 
-void
-set_report_file_name(char* file_name)
+class PinTypeHash
 {
-  getAntennaChecker()->setReportFileName(file_name);
-}
+ public:
+  size_t operator()(const PinType& t) const
+  {
+    return std::hash<std::string>{}(t.name);
+  }
+};
 
-} // namespace
-
-%} // inline
+}  // namespace ant

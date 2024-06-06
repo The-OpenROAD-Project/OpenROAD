@@ -407,22 +407,21 @@ void HierRTLMP::run()
 void HierRTLMP::initMacroPlacer()
 {
   block_ = db_->getChip()->getBlock();
-  dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
   odb::Rect die = block_->getDieArea();
   odb::Rect core_box = block_->getCoreArea();
 
-  float core_lx = dbuToMicron(core_box.xMin(), dbu_);
-  float core_ly = dbuToMicron(core_box.yMin(), dbu_);
-  float core_ux = dbuToMicron(core_box.xMax(), dbu_);
-  float core_uy = dbuToMicron(core_box.yMax(), dbu_);
+  float core_lx = block_->dbuToMicrons(core_box.xMin());
+  float core_ly = block_->dbuToMicrons(core_box.yMin());
+  float core_ux = block_->dbuToMicrons(core_box.xMax());
+  float core_uy = block_->dbuToMicrons(core_box.yMax());
 
   logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      dbuToMicron(die.xMin(), dbu_),
-      dbuToMicron(die.yMin(), dbu_),
-      dbuToMicron(die.xMax(), dbu_),
-      dbuToMicron(die.yMax(), dbu_),
+      block_->dbuToMicrons(die.xMin()),
+      block_->dbuToMicrons(die.yMin()),
+      block_->dbuToMicrons(die.xMax()),
+      block_->dbuToMicrons(die.yMax()),
       core_lx,
       core_ly,
       core_ux,
@@ -449,9 +448,9 @@ void HierRTLMP::computeMetricsForModules(float core_area)
     auto master = inst->getMaster();
     if (master->isBlock()) {
       const auto width
-          = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
+          = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width_;
       const auto height
-          = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
+          = block_->dbuToMicrons(master->getHeight()) + 2 * halo_width_;
       macro_with_halo_area_ += width * height;
       unfixed_macros += !inst->getPlacementStatus().isFixed();
     }
@@ -633,14 +632,21 @@ void HierRTLMP::setRootShapes()
 {
   SoftMacro* root_soft_macro = new SoftMacro(root_cluster_);
 
-  const float root_lx = std::max(
-      dbuToMicron(block_->getCoreArea().xMin(), dbu_), global_fence_lx_);
-  const float root_ly = std::max(
-      dbuToMicron(block_->getCoreArea().yMin(), dbu_), global_fence_ly_);
-  const float root_ux = std::min(
-      dbuToMicron(block_->getCoreArea().xMax(), dbu_), global_fence_ux_);
-  const float root_uy = std::min(
-      dbuToMicron(block_->getCoreArea().yMax(), dbu_), global_fence_uy_);
+  const float core_lx
+      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
+  const float root_lx = std::max(core_lx, global_fence_lx_);
+
+  const float core_ly
+      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMin()));
+  const float root_ly = std::max(core_ly, global_fence_ly_);
+
+  const float core_ux
+      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMax()));
+  const float root_ux = std::min(core_ux, global_fence_ux_);
+
+  const float core_uy
+      = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().yMax()));
+  const float root_uy = std::min(core_uy, global_fence_uy_);
 
   const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
   const float root_width = root_ux - root_lx;
@@ -675,13 +681,13 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
     if (master->isPad() || master->isCover()) {
       continue;
     }
-    float inst_area = dbuToMicron(master->getWidth(), dbu_)
-                      * dbuToMicron(master->getHeight(), dbu_);
+    float inst_area = block_->dbuToMicrons(master->getWidth())
+                      * block_->dbuToMicrons(master->getHeight());
     if (master->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, dbu_, halo_width_, halo_height_);
+      HardMacro* macro = new HardMacro(inst, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -854,10 +860,10 @@ void HierRTLMP::createIOClusters()
       }
 
       // set the cluster to a IO cluster
-      cluster->setAsIOCluster(
-          std::pair<float, float>(dbuToMicron(x, dbu_), dbuToMicron(y, dbu_)),
-          dbuToMicron(width, dbu_),
-          dbuToMicron(height, dbu_));
+      cluster->setAsIOCluster(std::pair<float, float>(block_->dbuToMicrons(x),
+                                                      block_->dbuToMicrons(y)),
+                              block_->dbuToMicrons(width),
+                              block_->dbuToMicrons(height));
     }
   }
 
@@ -3200,8 +3206,10 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
   odb::Rect die = block_->getDieArea();
 
   // Initialize spans based on the dimensions of the die area.
-  io_spans[L] = {dbuToMicron(die.yMax(), dbu_), dbuToMicron(die.yMin(), dbu_)};
-  io_spans[T] = {dbuToMicron(die.xMax(), dbu_), dbuToMicron(die.xMin(), dbu_)};
+  io_spans[L]
+      = {block_->dbuToMicrons(die.yMax()), block_->dbuToMicrons(die.yMin())};
+  io_spans[T]
+      = {block_->dbuToMicrons(die.xMax()), block_->dbuToMicrons(die.xMin())};
   io_spans[R] = io_spans[L];
   io_spans[B] = io_spans[T];
 
@@ -3226,17 +3234,25 @@ HierRTLMP::IOSpans HierRTLMP::computeIOSpans()
 
     // Modify ranges based on the position of the IO pins.
     if (lx <= die.xMin()) {
-      io_spans[L].first = std::min(io_spans[L].first, dbuToMicron(ly, dbu_));
-      io_spans[L].second = std::max(io_spans[L].second, dbuToMicron(uy, dbu_));
+      io_spans[L].first = std::min(
+          io_spans[L].first, static_cast<float>(block_->dbuToMicrons(ly)));
+      io_spans[L].second = std::max(
+          io_spans[L].second, static_cast<float>(block_->dbuToMicrons(uy)));
     } else if (uy >= die.yMax()) {
-      io_spans[T].first = std::min(io_spans[T].first, dbuToMicron(lx, dbu_));
-      io_spans[T].second = std::max(io_spans[T].second, dbuToMicron(ux, dbu_));
+      io_spans[T].first = std::min(
+          io_spans[T].first, static_cast<float>(block_->dbuToMicrons(lx)));
+      io_spans[T].second = std::max(
+          io_spans[T].second, static_cast<float>(block_->dbuToMicrons(ux)));
     } else if (ux >= die.xMax()) {
-      io_spans[R].first = std::min(io_spans[R].first, dbuToMicron(ly, dbu_));
-      io_spans[R].second = std::max(io_spans[R].second, dbuToMicron(uy, dbu_));
+      io_spans[R].first = std::min(
+          io_spans[R].first, static_cast<float>(block_->dbuToMicrons(ly)));
+      io_spans[R].second = std::max(
+          io_spans[R].second, static_cast<float>(block_->dbuToMicrons(uy)));
     } else {
-      io_spans[B].first = std::min(io_spans[B].first, dbuToMicron(lx, dbu_));
-      io_spans[B].second = std::max(io_spans[B].second, dbuToMicron(ux, dbu_));
+      io_spans[B].first = std::min(
+          io_spans[B].first, static_cast<float>(block_->dbuToMicrons(lx)));
+      io_spans[B].second = std::max(
+          io_spans[B].second, static_cast<float>(block_->dbuToMicrons(ux)));
     }
   }
 
@@ -3292,10 +3308,10 @@ void HierRTLMP::setPlacementBlockages()
   for (odb::dbBlockage* blockage : block_->getBlockages()) {
     odb::Rect bbox = blockage->getBBox()->getBox();
 
-    Rect bbox_micron(bbox.xMin() / dbu_,
-                     bbox.yMin() / dbu_,
-                     bbox.xMax() / dbu_,
-                     bbox.yMax() / dbu_);
+    Rect bbox_micron(block_->dbuToMicrons(bbox.xMin()),
+                     block_->dbuToMicrons(bbox.yMin()),
+                     block_->dbuToMicrons(bbox.xMax()),
+                     block_->dbuToMicrons(bbox.yMax()));
 
     placement_blockages_.push_back(bbox_micron);
   }
@@ -5260,10 +5276,10 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
   }
 
   if (graphics_) {
-    odb::Rect dbu_outline(dbu_ * outline.xMin(),
-                          dbu_ * outline.yMin(),
-                          dbu_ * outline.xMax(),
-                          dbu_ * outline.yMax());
+    odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
+                          block_->micronsToDbu(outline.yMin()),
+                          block_->micronsToDbu(outline.xMax()),
+                          block_->micronsToDbu(outline.yMax()));
 
     graphics_->setOutline(dbu_outline);
     graphics_->setMacroBlockages(macro_blockages);
@@ -5597,10 +5613,10 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (int i = 0; i < run_thread; i++) {
       if (graphics_) {
-        odb::Rect dbu_outline(dbu_ * outline.xMin(),
-                              dbu_ * outline.yMin(),
-                              dbu_ * outline.xMax(),
-                              dbu_ * outline.yMax());
+        odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
+                              block_->micronsToDbu(outline.yMin()),
+                              block_->micronsToDbu(outline.xMax()),
+                              block_->micronsToDbu(outline.yMax()));
         graphics_->setOutline(dbu_outline);
       }
 
@@ -6064,8 +6080,10 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
     return;
   }
 
-  const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
-  const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);
+  const int soft_macro_center_x_dbu
+      = block_->micronsToDbu(soft_macro->getPinX());
+  const int soft_macro_center_y_dbu
+      = block_->micronsToDbu(soft_macro->getPinY());
 
   // Std cells are placed in the center of the cluster they belong to
   std_cell->setLocation(
@@ -6122,7 +6140,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
     odb::dbNet* net = iterm->getNet();
     if (net != nullptr) {
       const odb::Rect bbox = net->getTermBBox();
-      wirelength += dbuToMicron(bbox.dx() + bbox.dy(), dbu_);
+      wirelength += block_->dbuToMicrons(bbox.dx() + bbox.dy());
     }
   }
 
@@ -6296,8 +6314,6 @@ Pusher::Pusher(utl::Logger* logger,
     : logger_(logger), root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
-  dbu_ = block_->getTech()->getDbUnitsPerMicron();
-
   setIOBlockages(boundary_to_io_blockage);
 }
 
@@ -6306,10 +6322,10 @@ void Pusher::setIOBlockages(
 {
   for (const auto& [boundary, box] : boundary_to_io_blockage) {
     boundary_to_io_blockage_[boundary]
-        = odb::Rect(micronToDbu(box.getX(), dbu_),
-                    micronToDbu(box.getY(), dbu_),
-                    micronToDbu(box.getX() + box.getWidth(), dbu_),
-                    micronToDbu(box.getY() + box.getHeight(), dbu_));
+        = odb::Rect(block_->micronsToDbu(box.getX()),
+                    block_->micronsToDbu(box.getY()),
+                    block_->micronsToDbu(box.getX() + box.getWidth()),
+                    block_->micronsToDbu(box.getY() + box.getHeight()));
   }
 }
 
@@ -6406,10 +6422,10 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
   std::map<Boundary, int> boundaries_distance;
 
   const odb::Rect cluster_box(
-      micronToDbu(macro_cluster->getX(), dbu_),
-      micronToDbu(macro_cluster->getY(), dbu_),
-      micronToDbu(macro_cluster->getX() + macro_cluster->getWidth(), dbu_),
-      micronToDbu(macro_cluster->getY() + macro_cluster->getHeight(), dbu_));
+      block_->micronsToDbu(macro_cluster->getX()),
+      block_->micronsToDbu(macro_cluster->getY()),
+      block_->micronsToDbu(macro_cluster->getX() + macro_cluster->getWidth()),
+      block_->micronsToDbu(macro_cluster->getY() + macro_cluster->getHeight()));
 
   HardMacro* hard_macro = macro_cluster->getHardMacros().front();
 
@@ -6472,10 +6488,11 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     }
 
     odb::Rect cluster_box(
-        micronToDbu(macro_cluster->getX(), dbu_),
-        micronToDbu(macro_cluster->getY(), dbu_),
-        micronToDbu(macro_cluster->getX() + macro_cluster->getWidth(), dbu_),
-        micronToDbu(macro_cluster->getY() + macro_cluster->getHeight(), dbu_));
+        block_->micronsToDbu(macro_cluster->getX()),
+        block_->micronsToDbu(macro_cluster->getY()),
+        block_->micronsToDbu(macro_cluster->getX() + macro_cluster->getWidth()),
+        block_->micronsToDbu(macro_cluster->getY()
+                             + macro_cluster->getHeight()));
 
     moveMacroClusterBox(cluster_box, boundary, distance);
 
