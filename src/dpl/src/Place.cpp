@@ -501,7 +501,7 @@ int Opendp::groupRefine(const Group* group)
   int count = 0;
   for (int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
     Cell* cell = sort_by_disp[i];
-    if (!cell->hold_) {
+    if (!cell->hold_ && !cell->isFixed()) {
       if (refineMove(cell)) {
         count++;
       }
@@ -1340,7 +1340,8 @@ DbuPt Opendp::initialLocation(const Cell* cell, const bool padded) const
 DbuPt Opendp::legalPt(const Cell* cell, const bool padded) const
 {
   if (cell->isFixed()) {
-    logger_->critical(DPL, 26, "legalPt called on fixed cell.");
+    logger_->critical(
+        DPL, 26, "legalPt called on fixed cell {}.", cell->name());
   }
 
   const DbuPt init = initialLocation(cell, padded);
