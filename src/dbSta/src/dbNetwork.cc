@@ -115,6 +115,10 @@ static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
 ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
 {
+  if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
+    logger_->error(ORD, 2019, "Error: database id exceeds capacity");
+  }
+
   switch (typ) {
     case dbITermObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBITERM_ID);
