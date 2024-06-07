@@ -69,7 +69,7 @@ class _dbGDSElement : public _dbObject
   // User Code Begin General
 
   virtual std::string to_string(){
-    std::string str = "LAYER " + std::to_string(_layer) + " DATATYPE " + std::to_string(_datatype) + "\n  XY[";
+    std::string str = "LAYER " + std::to_string(_layer) + " DATATYPE " + std::to_string(_datatype) + " XY [";
     for(int i = 0; i < _xy.size() ; i++){
       str += std::to_string(_xy[i].x()) + "," + std::to_string(_xy[i].y());
       if(i != _xy.size() - 1)
