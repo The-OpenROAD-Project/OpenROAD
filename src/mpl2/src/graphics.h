@@ -48,7 +48,7 @@ class HardMacro;
 class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
-  Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger);
+  Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
 
   ~Graphics() override = default;
 
@@ -108,7 +108,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   bool coarse_;
   bool fine_;
   bool show_bundled_nets_;
-  int dbu_ = 0;
+  odb::dbBlock* block_;
   utl::Logger* logger_;
   std::optional<float> outline_penalty_;
   std::optional<float> fence_penalty_;
