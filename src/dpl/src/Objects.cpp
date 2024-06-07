@@ -140,4 +140,9 @@ bool Cell::isStdCell() const
   return false;
 }
 
+bool Cell::isBlock() const
+{
+  return db_inst_ && db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
+}
+
 }  // namespace dpl

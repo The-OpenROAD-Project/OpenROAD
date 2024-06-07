@@ -1271,20 +1271,20 @@ DbuPt Opendp::pointOffMacro(const Cell& cell)
                                    grid_->gridY(init.y + cell.height_, &cell));
 
   Cell* block = nullptr;
-  if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) {
+  if (pixel1 && pixel1->cell && pixel1->cell->isBlock()) {
     block = pixel1->cell;
   }
-  if (pixel2 && pixel2->cell && isBlock(pixel2->cell)) {
+  if (pixel2 && pixel2->cell && pixel2->cell->isBlock()) {
     block = pixel2->cell;
   }
-  if (pixel3 && pixel3->cell && isBlock(pixel3->cell)) {
+  if (pixel3 && pixel3->cell && pixel3->cell->isBlock()) {
     block = pixel3->cell;
   }
-  if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) {
+  if (pixel4 && pixel4->cell && pixel4->cell->isBlock()) {
     block = pixel4->cell;
   }
 
-  if (block && isBlock(block)) {
+  if (block && block->isBlock()) {
     // Get new legal position
     const Rect block_bbox(block->x_.v,
                           block->y_.v,
@@ -1364,7 +1364,7 @@ DbuPt Opendp::legalPt(const Cell* cell, const bool padded) const
     // If that didn't do the job fall back on the old move to nearest
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
-    if (block && block->db_inst_ && isBlock(block)) {
+    if (block && block->isBlock()) {
       const Rect block_bbox(block->x_.v,
                             block->y_.v,
                             block->x_.v + block->width_.v,
