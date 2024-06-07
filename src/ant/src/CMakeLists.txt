@@ -39,6 +39,7 @@ swig_lib(NAME      ant
 
 add_library(ant_lib
     AntennaChecker.cc
+    Polygon.cc
 )
 
 target_sources(ant

@@ -35,9 +35,6 @@
 
 #include "object.h"
 
-#include <iostream>
-
-#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -45,17 +42,6 @@ using utl::MPL;
 
 ///////////////////////////////////////////////////////////////////////
 // Basic utility functions
-
-// conversion between dbu and microns
-float dbuToMicron(int metric, float dbu)
-{
-  return metric / dbu;
-}
-
-int micronToDbu(float metric, float dbu)
-{
-  return std::round(metric * dbu);
-}
 
 std::string toString(const Boundary& pin_access)
 {
@@ -774,24 +760,20 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
   pin_y_ = height / 2.0;
 }
 
-HardMacro::HardMacro(odb::dbInst* inst,
-                     float dbu,
-                     float halo_width,
-                     float halo_height)
+HardMacro::HardMacro(odb::dbInst* inst, float halo_width, float halo_height)
 {
   inst_ = inst;
-  dbu_ = dbu;
+  block_ = inst->getBlock();
+  name_ = inst->getName();
+
   halo_width_ = halo_width;
   halo_height_ = halo_height;
 
-  // set name
-  name_ = inst->getName();
   odb::dbMaster* master = inst->getMaster();
-  // set the width and height
-  width_ = dbuToMicron(master->getWidth(), dbu) + 2 * halo_width;
-  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_height;
+  width_ = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width;
+  height_ = block_->dbuToMicrons(master->getHeight()) + 2 * halo_height;
+
   // Set the position of virtual pins
-  // Here we only consider signal pins
   odb::Rect bbox;
   bbox.mergeInit();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -804,8 +786,10 @@ HardMacro::HardMacro(odb::dbInst* inst,
       }
     }
   }
-  pin_x_ = dbuToMicron((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
-  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_height_;
+  pin_x_
+      = block_->dbuToMicrons((bbox.xMin() + bbox.xMax()) / 2.0) + halo_width_;
+  pin_y_
+      = block_->dbuToMicrons((bbox.yMin() + bbox.yMax()) / 2.0) + halo_height_;
 }
 
 // overload the comparison operators

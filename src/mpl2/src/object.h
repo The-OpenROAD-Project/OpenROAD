@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 
@@ -51,7 +52,6 @@ class Rect;
 class Point;
 class dbInst;
 class dbModule;
-class dbBlock;
 class dbDatabase;
 class dbITerm;
 class dbTechLayer;
@@ -95,12 +95,6 @@ class SoftMacro;
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
-
-// Basic utility functions
-
-// converion between dbu and microns
-float dbuToMicron(int metric, float dbu);
-int micronToDbu(float metric, float dbu);
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
@@ -336,7 +330,8 @@ class Cluster
 // A hard macro have fixed width and height
 // User can specify a halo width for each macro
 // We specify the position of macros in terms (x, y, width, height)
-// Here (x, y) is the lower left corner of the macro
+// Except for the fake hard macros (pin access blockage or other blockage),
+// each HardMacro cooresponds to one macro
 class HardMacro
 {
  public:
@@ -346,12 +341,9 @@ class HardMacro
 
   // In this case, we model the pin position at the center of the macro
   HardMacro(float width, float height, const std::string& name);
+
   // create a macro from dbInst
-  // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst,
-            float dbu,
-            float halo_width = 0.0,
-            float halo_height = 0.0);
+  HardMacro(odb::dbInst* inst, float halo_width = 0.0, float halo_height = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -398,21 +390,21 @@ class HardMacro
   const std::string getName() const;
   const std::string getMasterName() const;
 
-  int getXDBU() const { return micronToDbu(getX(), dbu_); }
+  int getXDBU() const { return block_->micronsToDbu(getX()); }
 
-  int getYDBU() const { return micronToDbu(getY(), dbu_); }
+  int getYDBU() const { return block_->micronsToDbu(getY()); }
 
-  int getRealXDBU() const { return micronToDbu(getRealX(), dbu_); }
+  int getRealXDBU() const { return block_->micronsToDbu(getRealX()); }
 
-  int getRealYDBU() const { return micronToDbu(getRealY(), dbu_); }
+  int getRealYDBU() const { return block_->micronsToDbu(getRealY()); }
 
-  int getWidthDBU() const { return micronToDbu(getWidth(), dbu_); }
+  int getWidthDBU() const { return block_->micronsToDbu(getWidth()); }
 
-  int getHeightDBU() const { return micronToDbu(getHeight(), dbu_); }
+  int getHeightDBU() const { return block_->micronsToDbu(getHeight()); }
 
-  int getRealWidthDBU() const { return micronToDbu(getRealWidth(), dbu_); }
+  int getRealWidthDBU() const { return block_->micronsToDbu(getRealWidth()); }
 
-  int getRealHeightDBU() const { return micronToDbu(getRealHeight(), dbu_); }
+  int getRealHeightDBU() const { return block_->micronsToDbu(getRealHeight()); }
 
   int getUXDBU() const { return getXDBU() + getWidthDBU(); }
 
@@ -422,9 +414,9 @@ class HardMacro
 
   int getRealUYDBU() const { return getRealYDBU() + getRealHeightDBU(); }
 
-  void setXDBU(int x) { setX(dbuToMicron(x, dbu_)); }
+  void setXDBU(int x) { setX(block_->dbuToMicrons(x)); }
 
-  void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
+  void setYDBU(int y) { setY(block_->dbuToMicrons(y)); }
 
  private:
   // We define x_, y_ and orientation_ here
@@ -444,11 +436,8 @@ class HardMacro
   float pin_x_ = 0.0;
   float pin_y_ = 0.0;
 
-  // Interface for OpenDB
-  // Except for the fake hard macros (pin access blockage or other blockage),
-  // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
-  float dbu_ = 0.0;  // DbuPerMicro
+  odb::dbBlock* block_ = nullptr;
 };
 
 // We have three types of SoftMacros
