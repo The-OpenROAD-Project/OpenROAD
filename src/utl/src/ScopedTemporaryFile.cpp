@@ -9,30 +9,12 @@ namespace fs = std::filesystem;
 namespace utl {
 
 namespace {
-std::string generate_unused_filename(const std::string& prefix,
-                                     const int length = 8)
+std::string generate_unused_filename(const std::string& prefix)
 {
-  static const char alphanum[]
-      = "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-  static const size_t alphanum_len = sizeof(alphanum) - 1;
-
-  std::random_device rd;
-  std::mt19937 generator(rd());
-  std::uniform_int_distribution<> dist(0, alphanum_len - 1);
-
+  int counter = 1;
   std::string filename;
   do {
-    std::ostringstream filename_stream;
-    filename_stream << prefix;
-    filename_stream << "--";
-
-    for (size_t i = 0; i < length; ++i) {
-      filename_stream << alphanum[dist(generator)];
-    }
-
-    filename = filename_stream.str();
+    filename = fmt::format("{}.{}", prefix, counter++);
   } while (std::filesystem::exists(filename));
 
   return filename;

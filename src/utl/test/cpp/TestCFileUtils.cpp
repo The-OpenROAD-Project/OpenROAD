@@ -116,12 +116,13 @@ TEST(Utl, stream_handler_write_and_read)
   std::string contents((std::istreambuf_iterator<char>(is)),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
+  std::filesystem::remove(filename);
 }
 
 TEST(Utl, stream_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling.txt";
-  std::string tmp_filename = std::string(filename) + ".tmp";
+  std::string tmp_filename = std::string(filename) + ".1";
 
   // Check that the temp file is created
   {
@@ -132,6 +133,7 @@ TEST(Utl, stream_handler_temp_file_handling)
   // Check that the temp file is renamed to the original filename
   EXPECT_TRUE(!std::filesystem::exists(tmp_filename));
   EXPECT_TRUE(std::filesystem::exists(filename));
+  std::filesystem::remove(filename);
 }
 
 TEST(Utl, stream_handler_exception_handling)
@@ -143,11 +145,12 @@ TEST(Utl, stream_handler_exception_handling)
     StreamHandler sh(filename);
     throw std::runtime_error("Simulated exception");
   } catch (...) {
-    std::string tmp_filename = std::string(filename) + ".tmp";
+    std::string tmp_filename = std::string(filename) + ".1";
     // Ensure temporary file is cleaned up
     EXPECT_TRUE(!std::filesystem::exists(tmp_filename));
     // Original file should exist
     EXPECT_TRUE(std::filesystem::exists(filename));
+    std::filesystem::remove(filename);
   }
 }
 
@@ -166,12 +169,13 @@ TEST(Utl, file_handler_write_and_read)
   std::string contents((std::istreambuf_iterator<char>(is)),
                        std::istreambuf_iterator<char>());
   EXPECT_EQ(contents, kTestData);
+  std::filesystem::remove(filename);
 }
 
 TEST(Utl, file_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling_file.txt";
-  std::string tmp_filename = std::string(filename) + ".tmp";
+  std::string tmp_filename = std::string(filename) + ".1";
 
   // Check that the temp file is created
   {
@@ -182,6 +186,7 @@ TEST(Utl, file_handler_temp_file_handling)
   // Check that the temp file is renamed to the original filename
   EXPECT_TRUE(!std::filesystem::exists(tmp_filename));
   EXPECT_TRUE(std::filesystem::exists(filename));
+  std::filesystem::remove(filename);
 }
 
 TEST(Utl, file_handler_exception_handling)
@@ -193,11 +198,12 @@ TEST(Utl, file_handler_exception_handling)
     FileHandler fh(filename, true);  // binary mode
     throw std::runtime_error("Simulated exception");
   } catch (...) {
-    std::string tmp_filename = std::string(filename) + ".tmp";
+    std::string tmp_filename = std::string(filename) + ".1";
     // Ensure temporary file is cleaned up
     EXPECT_TRUE(!std::filesystem::exists(tmp_filename));
     // Original file should exist
     EXPECT_TRUE(std::filesystem::exists(filename));
+    std::filesystem::remove(filename);
   }
 }
 
