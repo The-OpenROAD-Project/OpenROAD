@@ -19,8 +19,10 @@
 ################################
 
 import odb
+import re
 from openroad import Design
 import os
+import glob
 import sys
 import signal
 import subprocess
@@ -72,11 +74,16 @@ parser.add_argument(
     help=
     'Exit early on unrelated errors to speed things up, but risks exiting on false negatives.'
 )
+parser.add_argument('--lib_path',
+    type=str,
+    help='Path to the library files (.lib)')
+parser.add_argument('--lef_path',
+    type=str,
+    help='Path to the macro files (.lef)')
 parser.add_argument(
     '--dump_def',
     action='store_true',
     help='Determines whether to dumb def at each step in addition to the odb')
-
 
 class cutLevel(enum.Enum):
     Nets = 0
@@ -93,6 +100,11 @@ class deltaDebugger:
         base_db_directory = os.path.dirname(opt.base_db_path)
         base_db_name = os.path.basename(opt.base_db_path)
         self.base_db_file = opt.base_db_path
+
+        self.lib_directory = opt.lib_path
+        self.lef_directory = opt.lef_path
+        self.reduced_lib = False
+        self.reduced_lef = False
 
         self.error_string = opt.error_string
         self.use_stdout = opt.use_stdout
@@ -114,10 +126,14 @@ class deltaDebugger:
             base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
 
         # The name of the result file after running deltaDebug
+        self.deltaDebug_result_def_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_result_def_{base_db_name}")
+
+        # # The name of the result file after running deltaDebug
         self.deltaDebug_result_base_file = os.path.join(
             base_db_directory, f"deltaDebug_base_result_{base_db_name}")
 
-        # This determines whether design def shall be dumped or not
+        # # This determines whether design def shall be dumped or not
         self.dump_def = opt.dump_def
         if (self.dump_def != 0):
             self.base_def_file = self.base_db_file[:-3] + "def"
@@ -196,6 +212,7 @@ class deltaDebugger:
 
         # Change deltaDebug resultant base_db file name to a representative name
         if os.path.exists(self.temp_base_db_file):
+            self.write_final_def()
             os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
 
         # Restoring the original base_db file
@@ -203,7 +220,8 @@ class deltaDebugger:
             os.rename(self.original_base_db_file, self.base_db_file)
 
         print("___________________________________")
-        print(f"Resultant file is {self.deltaDebug_result_base_file}")
+        print(f"Resultant odb file is {self.deltaDebug_result_base_file}")
+        print(f"Resultant def file is {self.deltaDebug_result_def_file}")
         print("Delta Debugging Done!")
 
     # A function that do a cut in the db, writes the base db to disk
@@ -212,6 +230,12 @@ class deltaDebugger:
         # read base db in memory
         self.base_db = Design.createDetachedDb()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
+
+        # reduce .lib and .lef files
+        if (not self.reduced_lib):
+            self.reduce_lib_files()
+        if (not self.reduced_lef):
+            self.reduce_lef_files()
 
         # Cut the block with the given step index.
         # if cut index of -1 is provided it means
@@ -223,8 +247,7 @@ class deltaDebugger:
         odb.write_db(self.base_db, self.base_db_file)
         if (self.dump_def != 0):
             print("Writing def file")
-            odb.write_def(self.base_db.getChip().getBlock(),
-                          self.base_def_file)
+            self.write_dump_def(self.base_def_file)
 
         cuts = self.get_cuts() if cut_index != -1 else None
 
@@ -406,13 +429,194 @@ class deltaDebugger:
 
         if (self.dump_def != 0):
             print("Writing def file")
-            odb.write_def(self.base_db.getChip().getBlock(),
-                          self.temp_base_db_file[:-3] + "def")
+            self.write_dump_def(self.temp_base_db_file[:-3] + "def")
 
         if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
             self.base_db = None
 
+    def reduce_lib_files(self):
+        print("Attempt to reduce lib files in", self.lib_directory)
+        if not os.path.exists(self.lib_directory):
+            return
+        for lib_file in glob.glob(os.path.join( self.lib_directory, "*.lib")):
+            used_cells = self.get_used_cells()
+            with open(lib_file, 'r') as f:
+                lines = f.readlines()
+
+            with open(lib_file, 'w') as f:
+                write_lines = False
+                for line in lines:
+                    if any(cell in line for cell in used_cells):
+                        write_lines = True
+                    if 'cell (' in line and not any(cell in line for cell in used_cells):
+                        write_lines = False
+                    if write_lines:
+                        f.write(line)
+                self.reduced_lib = True
+
+    def reduce_lef_files(self):
+        print("Attempt to reduce lef files in", self.lef_directory)
+        if not os.path.exists(self.lef_directory):
+            return
+        
+        for lef_file in glob.glob(os.path.join( self.lef_directory, "*.lef")):
+            with open(lef_file, 'r') as infile:
+                lines = infile.readlines()
+            
+            in_layer_block = False
+            essential_lines = []
+            
+            for line in lines:
+                if re.match(r'\s*LAYER\s+\w+', line):
+                    in_layer_block = True
+                    essential_lines.append(line)
+                elif in_layer_block and re.match(r'\s*END\s+\w+', line):
+                    essential_lines.append(line)
+                    in_layer_block = False
+                elif in_layer_block:
+                    essential_lines.append(line)
+            
+            with open(lef_file, 'w') as outfile:
+                outfile.writelines(essential_lines)
+            
+            self.reduced_lef = True
+
+    def get_used_cells(self):
+        block = self.base_db.getChip().getBlock()
+        used_cells = set()
+        for inst in block.getInsts():
+            master = inst.getMaster()
+            if master:
+                used_cells.add(master.getName())
+        return used_cells
+
+    def get_used_macros(self):
+        block = self.base_db.getChip().getBlock()
+        used_macros = set()
+        for inst in block.getInsts():
+            master = inst.getMaster()
+            if master and master.isMacro():
+                used_macros.add(master.getName())
+        return used_macros    
+
+    def write_dump_def(self, output_file):
+        if self.base_db is None:
+            raise ValueError("Database is not loaded.")
+
+        block = self.base_db.getChip().getBlock()
+        if block is None:
+            raise ValueError("Block is not present in the database.")
+        odb.write_def(block, output_file)
+        mangled_file = "mangled_" + output_file
+        self.mangle_def_file(output_file, mangled_file)
+
+    def write_final_def(self):
+        self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
+        if self.base_db is None:
+            raise ValueError("Database is not loaded.")
+        
+        block = self.base_db.getChip().getBlock()
+        if block is None:
+            raise ValueError("Block is not present in the database.")
+
+        odb.write_def(block, self.deltaDebug_result_def_file)
+        mangled_file = "mangled_" + self.deltaDebug_result_def_file
+        self.mangle_def_file(self.deltaDebug_result_def_file, mangled_file)
+
+        if (self.base_db is not None):
+            self.base_db.destroy(self.base_db)
+            self.base_db = None
+        
+
+    def mangle_def_file(self, input_def_file, output_def_file):
+        # if self.base_db is None:
+        #     raise ValueError("Database is not loaded.")
+        
+        # block = self.base_db.getChip().getBlock()
+        # if block is None:
+        #     raise ValueError("Block is not present in the database.")
+
+        # with open(input_def_file, 'r') as infile:
+        #     def_contents = infile.readlines()
+
+        # net_pattern = re.compile(r'^-\s+(\S+)')
+        # port_pattern = re.compile(r'^\+\s+PORT\s+(\S+)')
+        # net_count = 1
+        # port_count = 1
+        # net_mapping = {}
+        # port_mapping = {}
+
+        # mangled_def_contents = []
+
+        # for line in def_contents:
+        #     net_match = net_pattern.match(line)
+        #     if net_match:
+        #         original_net_name = net_match.group(1)
+        #         if original_net_name not in net_mapping:
+        #             net_mapping[original_net_name] = f"net{net_count}"
+        #             net_count += 1
+        #         mangled_line = line.replace(original_net_name, net_mapping[original_net_name])
+        #         mangled_def_contents.append(mangled_line)
+        #     else:
+        #         port_match = port_pattern.match(line)
+        #         if port_match:
+        #             original_port_name = port_match.group(1)
+        #             if original_port_name not in port_mapping:
+        #                 port_mapping[original_port_name] = f"port{port_count}"
+        #                 port_count += 1
+        #             mangled_line = line.replace(original_port_name, port_mapping[original_port_name])
+        #             mangled_def_contents.append(mangled_line)
+        #         else:
+        #             mangled_def_contents.append(line)
+
+        # with open(output_def_file, 'w') as outfile:
+        #     outfile.writelines(mangled_def_contents)
+
+        # print(f"Mangled .def file written to {output_def_file}")
+        # Patterns to identify different elements in the DEF file
+        patterns = {
+            'nets': r'(-\s+\S+\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)',
+            'components': r'(-\s+\S+\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)'
+        }
+        
+        # Counters for renaming
+        net_count = 1
+        element_count = 1
+        
+        def rename_nets(text):
+            nonlocal net_count
+            def repl(match):
+                nonlocal net_count
+                new_name = f"net{net_count}"
+                net_count += 1
+                return f"- {new_name} "
+            return re.sub(r'-\s+\S+', repl, text)
+        
+        def rename_elements(text):
+            nonlocal element_count
+            def repl(match):
+                nonlocal element_count
+                new_name = f"element{element_count}"
+                element_count += 1
+                return f"- {new_name} "
+            return re.sub(r'-\s+\S+', repl, text)
+        
+        # Read the DEF file
+        with open(input_def_file, 'r') as file:
+            content = file.read()
+        
+        # Rename nets
+        content = rename_nets(content)
+        
+        # Rename elements
+        content = rename_elements(content)
+        
+        # Write the mangled content to the output file
+        with open(output_def_file, 'w') as file:
+            file.write(content)
+        
+        print(f"Mangled DEF file has been written to {output_def_file}")
 
 if __name__ == '__main__':
     opt = parser.parse_args()
