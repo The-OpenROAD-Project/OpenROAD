@@ -531,7 +531,7 @@ proc repair_timing { args } {
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
             -recover_power -repair_tns -max_passes} \
-   flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
+    flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
             -skip_buffer_removal -verbose}
 
   set setup [info exists flags(-setup)]
