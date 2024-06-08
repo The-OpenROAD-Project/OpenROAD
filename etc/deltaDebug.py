@@ -127,7 +127,7 @@ class deltaDebugger:
 
         # The name of the result file after running deltaDebug
         self.deltaDebug_result_def_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_result_def_{base_db_name}")
+            base_db_directory, f"deltaDebug_base_result_def.def")
 
         # # The name of the result file after running deltaDebug
         self.deltaDebug_result_base_file = os.path.join(
@@ -508,8 +508,7 @@ class deltaDebugger:
         if block is None:
             raise ValueError("Block is not present in the database.")
         odb.write_def(block, output_file)
-        mangled_file = "mangled_" + output_file
-        self.mangle_def_file(output_file, mangled_file)
+        self.mangle_def_file(output_file)
 
     def write_final_def(self):
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
@@ -521,66 +520,19 @@ class deltaDebugger:
             raise ValueError("Block is not present in the database.")
 
         odb.write_def(block, self.deltaDebug_result_def_file)
-        mangled_file = "mangled_" + self.deltaDebug_result_def_file
-        self.mangle_def_file(self.deltaDebug_result_def_file, mangled_file)
+        self.mangle_def_file(self.deltaDebug_result_def_file)
 
         if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
             self.base_db = None
         
 
-    def mangle_def_file(self, input_def_file, output_def_file):
-        # if self.base_db is None:
-        #     raise ValueError("Database is not loaded.")
-        
-        # block = self.base_db.getChip().getBlock()
-        # if block is None:
-        #     raise ValueError("Block is not present in the database.")
-
-        # with open(input_def_file, 'r') as infile:
-        #     def_contents = infile.readlines()
-
-        # net_pattern = re.compile(r'^-\s+(\S+)')
-        # port_pattern = re.compile(r'^\+\s+PORT\s+(\S+)')
-        # net_count = 1
-        # port_count = 1
-        # net_mapping = {}
-        # port_mapping = {}
-
-        # mangled_def_contents = []
-
-        # for line in def_contents:
-        #     net_match = net_pattern.match(line)
-        #     if net_match:
-        #         original_net_name = net_match.group(1)
-        #         if original_net_name not in net_mapping:
-        #             net_mapping[original_net_name] = f"net{net_count}"
-        #             net_count += 1
-        #         mangled_line = line.replace(original_net_name, net_mapping[original_net_name])
-        #         mangled_def_contents.append(mangled_line)
-        #     else:
-        #         port_match = port_pattern.match(line)
-        #         if port_match:
-        #             original_port_name = port_match.group(1)
-        #             if original_port_name not in port_mapping:
-        #                 port_mapping[original_port_name] = f"port{port_count}"
-        #                 port_count += 1
-        #             mangled_line = line.replace(original_port_name, port_mapping[original_port_name])
-        #             mangled_def_contents.append(mangled_line)
-        #         else:
-        #             mangled_def_contents.append(line)
-
-        # with open(output_def_file, 'w') as outfile:
-        #     outfile.writelines(mangled_def_contents)
-
-        # print(f"Mangled .def file written to {output_def_file}")
-        # Patterns to identify different elements in the DEF file
+    def mangle_def_file(self, input_def_file):
         patterns = {
             'nets': r'(-\s+\S+\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)',
             'components': r'(-\s+\S+\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)'
         }
         
-        # Counters for renaming
         net_count = 1
         element_count = 1
         
@@ -602,17 +554,16 @@ class deltaDebugger:
                 return f"- {new_name} "
             return re.sub(r'-\s+\S+', repl, text)
         
-        # Read the DEF file
         with open(input_def_file, 'r') as file:
             content = file.read()
         
-        # Rename nets
         content = rename_nets(content)
         
-        # Rename elements
         content = rename_elements(content)
+
+        base_name = os.path.splitext(input_def_file)[0]
+        output_def_file = f"{base_name}_mangled.def"
         
-        # Write the mangled content to the output file
         with open(output_def_file, 'w') as file:
             file.write(content)
         
