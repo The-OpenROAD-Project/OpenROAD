@@ -3,7 +3,7 @@ include("openroad")
 set(TEST_LIBS
   gtest
   gtest_main
-  utl
+  utl_lib
 )
 
 add_executable(TestCFileUtils TestCFileUtils.cpp)
