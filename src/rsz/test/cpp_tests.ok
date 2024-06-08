@@ -1,0 +1,19 @@
+Running test: TestBufRem1
+**********
+0
+Running main() from /home/cmoon/OR/OpenROAD/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from BufRemTest
+[ RUN      ] BufRemTest.SlackImproves
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RSZ-0026] Removed 1 buffers.
+[       OK ] BufRemTest.SlackImproves (216 ms)
+[----------] 1 test from BufRemTest (216 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (216 ms total)
+[  PASSED  ] 1 test.
+TestBufRem1 passed
+******************
+pass

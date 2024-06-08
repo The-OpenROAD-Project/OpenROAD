@@ -90,7 +90,8 @@ class RepairSetup : public sta::dbStaState
                    int max_passes,
                    bool verbose,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool skip_gate_cloning,
+                   bool skip_buffer_removal);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -104,7 +105,8 @@ class RepairSetup : public sta::dbStaState
   bool repairPath(PathRef& path,
                   Slack path_slack,
                   bool skip_pin_swap,
-                  bool skip_gate_cloning);
+                  bool skip_gate_cloning,
+                  bool skip_buffer_removal);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -170,6 +172,7 @@ class RepairSetup : public sta::dbStaState
   int rebuffer_net_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
+  int removed_buffer_count_ = 0;
   // Map to block pins from being swapped more than twice for the
   // same instance.
   std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
@@ -184,10 +187,7 @@ class RepairSetup : public sta::dbStaState
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
-
-  RemoveBuffer* remove_buffer_;
-
-  friend class RemoveBuffer;
+  static constexpr int buffer_removal_max_fanout_ = 10;
 };
 
 }  // namespace rsz

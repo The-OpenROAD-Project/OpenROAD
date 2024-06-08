@@ -165,6 +165,10 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
+  all_sized_inst_set_ = InstanceSet(db_network_);
+  all_inserted_buffer_set_ = InstanceSet(db_network_);
+  all_swapped_pin_inst_set_ = InstanceSet(db_network_);
+  all_cloned_inst_set_ = InstanceSet(db_network_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -350,7 +354,6 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
                "remove {}",
                db_network_->name(buffer));
     buffer_removed = true;
-    incrementalParasiticsBegin();
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
@@ -372,7 +375,6 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
     }
     parasiticsInvalid(survivor);
     updateParasitics();
-    incrementalParasiticsEnd();
   }
   return buffer_removed;
 }
@@ -2667,7 +2669,8 @@ void Resizer::repairSetup(double setup_margin,
                           int max_passes,
                           bool verbose,
                           bool skip_pin_swap,
-                          bool skip_gate_cloning)
+                          bool skip_gate_cloning,
+                          bool skip_buffer_removal)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2678,7 +2681,8 @@ void Resizer::repairSetup(double setup_margin,
                              max_passes,
                              verbose,
                              skip_pin_swap,
-                             skip_gate_cloning);
+                             skip_gate_cloning,
+                             skip_buffer_removal);
 }
 
 void Resizer::reportSwappablePins()
@@ -2789,6 +2793,7 @@ void Resizer::journalSwapPins(Instance* inst,
              port1->name(),
              port2->name());
   swapped_pins_[inst] = std::make_tuple(port1, port2);
+  all_swapped_pin_inst_set_.insert(inst);
 }
 
 void Resizer::journalInstReplaceCellBefore(Instance* inst)
@@ -2804,6 +2809,7 @@ void Resizer::journalInstReplaceCellBefore(Instance* inst)
   // Do not clobber an existing checkpoint cell.
   if (!resized_inst_map_.hasKey(inst)) {
     resized_inst_map_[inst] = lib_cell;
+    all_sized_inst_set_.insert(inst);
   }
 }
 
@@ -2817,6 +2823,7 @@ void Resizer::journalMakeBuffer(Instance* buffer)
              network_->pathName(buffer));
   inserted_buffers_.emplace_back(buffer);
   inserted_buffer_set_.insert(buffer);
+  all_inserted_buffer_set_.insert(buffer);
 }
 
 Instance* Resizer::journalCloneInstance(LibertyCell* cell,
@@ -2828,6 +2835,7 @@ Instance* Resizer::journalCloneInstance(LibertyCell* cell,
   Instance* clone_inst = makeInstance(cell, name, parent, loc);
   cloned_gates_.emplace(original_inst, clone_inst);
   cloned_inst_set_.insert(clone_inst);
+  all_cloned_inst_set_.insert(clone_inst);
   return clone_inst;
 }
 
