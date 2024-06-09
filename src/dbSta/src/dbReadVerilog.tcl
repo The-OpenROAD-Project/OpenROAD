@@ -41,23 +41,16 @@ proc read_verilog { filename } {
   ord::read_verilog_cmd [file nativename $filename]
 }
 
-sta::define_cmd_args "link_design" {[top_cell_name][hier]}
-proc link_design { {top_cell_name ""} {hier ""}} {
-  variable current_design_name
-  if {$hier == "-hier"} {
-    set hierarchy true
-  } else {
-    set hierarchy false
-  }
-  if {$top_cell_name == ""} {
-    if {$current_design_name == ""} {
-      utl::error ORD 2009 "missing top_cell_name argument\
-  and no current_design."
-      return 0
-    } else {
-      set top_cell_name $current_design_name
-    }
-  }
+sta::define_cmd_args "link_design" {[-hier] top_cell_name}
+
+proc link_design { args } {
+  sta::parse_key_args "link_design" args keys {} \
+    flags {-hier}
+
+  set hierarchy [info exists flags(-hier)]
+  sta::check_argc_eq1 "link_design" $args
+  set top_cell_name [lindex $args 0]
+
   if {![ord::db_has_tech]} {
     utl::error ORD 2010 "no technology has been read."
   }
