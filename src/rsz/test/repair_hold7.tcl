@@ -13,7 +13,7 @@ report_design_area
 report_worst_slack -min
 report_worst_slack -max
 
-catch {repair_timing -hold -hold_margin .4 -max_utilization 13} error
+catch {repair_timing -max_buffer_percent 80 -hold -hold_margin .4 -max_utilization 13} error
 puts $error
 
 report_design_area

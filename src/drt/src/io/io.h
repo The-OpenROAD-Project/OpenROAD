@@ -45,8 +45,10 @@ class dbTechLayer;
 namespace utl {
 class Logger;
 }
-
-namespace fr::io {
+namespace drt {
+class TritonRoute;
+}
+namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
                                        frCoord,       // upperWidth
@@ -78,14 +80,17 @@ class Parser
     return prefTrackPatterns_;
   }
   void buildGCellPatterns(odb::dbDatabase* db);
+  void updateDesign();
 
  private:
+  frBlock* getBlock() const { return design_->getTopBlock(); }
   void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
   void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
+  void setInst(odb::dbInst*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
   odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
@@ -94,6 +99,7 @@ class Parser
                                   odb::Rect bbox,
                                   frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
+  void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
@@ -133,7 +139,7 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
-  void initDefaultVias_GF14(const std::string& in);
+  void initDefaultVias_GF14(const std::string& node);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
@@ -149,12 +155,12 @@ class Parser
                                       frInst* inst,
                                       dbTransform& shiftXform,
                                       std::vector<frRect>& rects);
-  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& guides);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,
                               const Point3D& p,
                               Point3D& result);
-  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
   void checkPinForGuideEnclosure(frBlockObject* pin,
                                  frNet* net,
                                  std::vector<frRect>& guides);
@@ -179,7 +185,8 @@ class Parser
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       T* term,
-      frBlockObject* origTerm);
+      frBlockObject* origTerm,
+      const dbTransform& xform);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
@@ -234,7 +241,6 @@ class Parser
   frDesign* design_;
   frTechObject* tech_;
   Logger* logger_;
-  std::unique_ptr<frBlock> tmpBlock_;
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
@@ -247,24 +253,19 @@ class Parser
            frBlockObjectComp>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;
-  int numMasters_;
-  int numInsts_;
-  int numTerms_;      // including instterm and term
-  int numNets_;       // including snet and net
-  int numBlockages_;  // including instBlockage and blockage
 };
 
 class Writer
 {
  public:
   // constructors
-  Writer(frDesign* designIn, Logger* loggerIn)
-      : tech_(designIn->getTech()), design_(designIn), logger_(loggerIn)
+  Writer(drt::TritonRoute* router, Logger* loggerIn)
+      : router_(router), logger_(loggerIn)
   {
   }
   // getters
-  frTechObject* getTech() const { return tech_; }
-  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const;
+  frDesign* getDesign() const;
   // others
   void updateDb(odb::dbDatabase* db,
                 bool pin_access = false,
@@ -289,12 +290,11 @@ class Writer
   void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
   void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
 
-  frTechObject* tech_;
-  frDesign* design_;
+  drt::TritonRoute* router_;
   Logger* logger_;
   std::map<frString, std::list<std::shared_ptr<frConnFig>>>
       connFigs_;  // all connFigs ready to def
   std::vector<frViaDef*> viaDefs_;
 };
 
-}  // namespace fr::io
+}  // namespace drt::io

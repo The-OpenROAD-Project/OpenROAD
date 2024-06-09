@@ -11,11 +11,26 @@ Tapcell and endcap insertion.
 
 ### Add Tapcell/Endcap
 
+This command inserts tapcells or endcaps.
+
+The figures below show two examples of tapcell insertion. When only the 
+`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
+is similar to Figure 1. When the remaining masters are give, the tapcell
+placement is similar to Figure 2.
+
+| <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
+|:--:|:--:|
+| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
+
+
 ```tcl
 tapcell 
     [-tapcell_master tapcell_master]
+    [-tap_prefix tap_prefix]
     [-endcap_master endcap_master]
+    [-endcap_prefix endcap_prefix]
     [-distance dist]
+    [-disallow_one_site_gaps]
     [-halo_width_x halo_x]
     [-halo_width_y halo_y]
     [-tap_nwin2_master tap_nwin2_master]
@@ -28,9 +43,8 @@ tapcell
     [-cnrcap_nwout_master cnrcap_nwout_master]
     [-incnrcap_nwin_master incnrcap_nwin_master]
     [-incnrcap_nwout_master incnrcap_nwout_master]
-    [-tap_prefix tap_prefix]
-    [-endcap_prefix endcap_prefix]
     [-tbtie_cpp tbtie_cpp]
+    [-endcap_cpp endcap_cpp]
     [-no_cell_at_top_bottom]
 ```
 
@@ -39,8 +53,11 @@ tapcell
 | Switch Name | Description |
 | ----- | ----- |
 | `-tapcell_master` | Master used as a tapcell. |
+| `-tap_prefix` | Prefix for the tapcell instances. The default value is `TAP_`. |
 | `-endcap_master` | Master used as an endcap. |
+| `-endcap_prefix` | Prefix for the endcaps instances. The default value is `PHY_`. |
 | `-distance` | Distance (in microns) between each tapcell in the checkerboard. |
+| `-disallow_one_site_gaps` | KIV. |
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
 | `-tap_nwintie_master` | Master cell placed at the top and bottom of|macros and the core area according the row orientation. |
@@ -53,21 +70,13 @@ tapcell
 | `-incnrcap_nwout_master` | Master cell placed at the corners of macros, according the row orientation. |
 | `-cnrcap_nwin_master` | Macro cell placed at the corners the core area according the row orientation. |
 | `-cnrcap_nwout_master` | Macro cell placed at the corners the core area according the row orientation. |
-| `-tap_prefix` | Prefix for the tapcell instances. The default value is `TAP_`. |
-| `-endcap_prefix` | Prefix for the endcaps instances. The default value is `PHY_`. |
 | `-tbtie_cpp` | Option is deprecated. |
+| `-endcap_cpp` | Option is deprecated. |
 | `-no_cell_at_top_bottom` | Option is deprecated. |
 
-The figures below show two examples of tapcell insertion. When only the 
-`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
-is similar to Figure 1. When the remaining masters are give, the tapcell
-placement is similar to Figure 2.
+### Cut Rows
 
-| <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
-|:--:|:--:|
-| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
-
-### Only cutting rows
+This command cuts rows.
 
 ```tcl
 cut_rows 
@@ -134,7 +143,9 @@ place_endcaps
 | `-top_edge` | List of masters for the top row endcaps. (overrides `-endcap_horizontal`). |
 | `-bottom_edge` | List of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 
-### Only adding tapcells cells
+### Only adding Tapcells
+
+This command is used for tapcell placement only.
 
 ```tcl
 place_tapcells
@@ -151,6 +162,8 @@ place_tapcells
 
 
 ### Remove Tapcells/Endcaps
+
+This command is used for removing tapcells or endcaps based on their prefix.
 
 ```tcl
 tapcell_ripup
@@ -169,7 +182,7 @@ tapcell_ripup
 
 You can find script examples for both 45nm and 14nm in `./etc/scripts`
 
-```tcl
+```
 ./etc/scripts/example_14nm.tcl
 ./etc/scripts/example_45nm.tcl
 ```

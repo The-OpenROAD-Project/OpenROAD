@@ -58,7 +58,7 @@ check_antennas(const char *net_name, bool verbose)
 {
   auto app = ord::OpenRoad::openRoad();
   auto block = app->getDb()->getChip()->getBlock();
-  dbNet* net = nullptr;
+  odb::dbNet* net = nullptr;
   if (strlen(net_name) > 0) {
     net = block->findNet(net_name);
     if (!net) {

@@ -18,5 +18,5 @@ set_layer_rc -corner corner1 -layer metal4 -resistance 4 -capacitance 2
 set_routing_layers -signal metal2-metal10
 estimate_parasitics -global_routing
 
-report_net -corner corner0 -connections -verbose -digits 3 clk
-report_net -corner corner1 -connections -verbose -digits 3 clk
+report_net -corner corner0 -digits 3 clk
+report_net -corner corner1 -digits 3 clk

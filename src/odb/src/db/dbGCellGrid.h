@@ -34,14 +34,13 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
-
+#include "odb/db.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
 
-#include "db.h"
-#include "dbMatrix.h"
 #include "dbVector.h"
+#include "odb/dbMatrix.h"
 // User Code End Includes
 
 namespace odb {
@@ -78,6 +77,7 @@ class _dbGCellGrid : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
+  dbTechLayer* getLayer(const dbId<_dbTechLayer>& lid) const;
   // User Code End Methods
 
   dbGCellGridFlags flags_;

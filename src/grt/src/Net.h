@@ -56,6 +56,7 @@ class Net
   int getNumPins() const { return pins_.size(); }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
+  void setHasWires(bool in) { has_wires_ = in; }
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }

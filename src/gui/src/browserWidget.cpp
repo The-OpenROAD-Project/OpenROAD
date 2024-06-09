@@ -345,7 +345,7 @@ void BrowserWidget::clicked(const QModelIndex& index)
   Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
-    emit select({sel});
+    emit select({std::move(sel)});
   }
 }
 
@@ -410,7 +410,7 @@ void BrowserWidget::updateModel()
 
     insts.push_back(inst);
   }
-  addInstanceItems(insts, "Physical only", root, true);
+  addInstanceItems(insts, "Physical only", root);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
   model_modified_ = false;
@@ -438,7 +438,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
   for (auto* inst : module->getInsts()) {
     insts.push_back(inst);
   }
-  stats += addInstanceItems(insts, "Leaf instances", parent, false);
+  stats += addInstanceItems(insts, "Leaf instances", parent);
 
   return stats;
 }
@@ -446,8 +446,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     const std::vector<odb::dbInst*>& insts,
     const std::string& title,
-    QStandardItem* parent,
-    bool check_instance_limits)
+    QStandardItem* parent)
 {
   auto make_leaf_item = [](const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
@@ -461,16 +460,14 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
-  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
+  std::map<sta::dbSta::InstType, Leaf> leaf_types;
   for (auto* inst : insts) {
-    auto type = inst_descriptor_->getInstanceType(inst);
+    auto type = sta_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
-      leaf_parent.item
-          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+      leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    const bool create_row = !check_instance_limits
-                            || leaf_parent.stats.insts < max_visible_leafs_;
+    const bool create_row = type == sta::dbSta::InstType::BLOCK;
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 

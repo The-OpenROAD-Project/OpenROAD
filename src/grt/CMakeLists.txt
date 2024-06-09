@@ -51,6 +51,7 @@ add_library(grt_lib
     src/Pin.cpp
     src/MakeWireParasitics.cpp
     src/RepairAntennas.cpp
+    src/Rudy.cpp
     src/GlobalRouter.cpp
 )
 
@@ -58,6 +59,7 @@ target_sources(grt
   PRIVATE
     src/MakeGlobalRouter.cpp
     src/heatMap.cpp
+    src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
 )
@@ -134,3 +136,5 @@ endif()
 messages(
   TARGET grt
 )
+
+add_subdirectory(test)

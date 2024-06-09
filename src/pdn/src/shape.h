@@ -40,7 +40,7 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "via.h"
+#include "odb/geom_boost.h"
 
 namespace odb {
 class dbBlock;
@@ -67,16 +67,12 @@ namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 class Shape;
+class Via;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
 using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ShapeValue = std::pair<Box, ShapePtr>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+
+using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
 
 class Grid;
 class GridComponent;
@@ -99,9 +95,32 @@ class Shape
     SHAPE,
     GRID_OBS,
     BLOCK_OBS,
+    MACRO_OBS,
     OBS,
     FIXED
   };
+  struct RectIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ShapePtr& t) const { return t->getRect(); }
+  };
+  struct ObstructionIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ShapePtr& t) const
+    {
+      return t->getObstruction();
+    }
+  };
+
+  using ShapeTree
+      = bgi::rtree<ShapePtr, bgi::quadratic<16>, Shape::RectIndexableGetter>;
+  using ObstructionTree = bgi::
+      rtree<ShapePtr, bgi::quadratic<16>, Shape::ObstructionIndexableGetter>;
+
+  using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+  using ObstructionTreeMap = std::map<odb::dbTechLayer*, ObstructionTree>;
+
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
         const odb::Rect& rect,
@@ -114,13 +133,16 @@ class Shape
   void setNet(odb::dbNet* net) { net_ = net; }
   void setRect(const odb::Rect& rect) { rect_ = rect; }
   const odb::Rect& getRect() const { return rect_; }
-  Box getRectBox() const;
   odb::dbWireShapeType getType() const { return type_; }
 
   utl::Logger* getLogger() const;
 
   ShapeType shapeType() const { return shape_type_; }
   void setShapeType(ShapeType type) { shape_type_ = type; }
+
+  void setLocked() { is_locked_ = true; }
+  void clearLocked() { is_locked_ = false; }
+  bool isLocked() const { return is_locked_; }
 
   int getLength() const { return rect_.maxDXDY(); }
   int getWidth() const { return rect_.minDXDY(); }
@@ -131,7 +153,6 @@ class Shape
   bool isValid() const;
 
   const odb::Rect& getObstruction() const { return obs_; }
-  Box getObstructionBox() const;
   // generates the obstruction box needed to avoid DRC violations with
   // surrounding shapes
   void generateObstruction();
@@ -183,6 +204,8 @@ class Shape
   // connected
   virtual void updateTermConnections();
   bool hasTermConnections() const;
+  bool hasITermConnections() const { return !iterm_connections_.empty(); }
+  bool hasBTermConnections() const { return !bterm_connections_.empty(); };
 
   // returns the smallest shape possible when attempting to trim
   virtual odb::Rect getMinimumRect() const;
@@ -192,11 +215,11 @@ class Shape
 
   Shape* extendTo(
       const odb::Rect& rect,
-      const ShapeTree& obstructions,
-      const std::function<bool(const ShapeValue&)>& obs_filter
-      = [](const ShapeValue&) { return true; }) const;
+      const ObstructionTree& obstructions,
+      const std::function<bool(const ShapePtr&)>& obs_filter
+      = [](const ShapePtr&) { return true; }) const;
 
-  virtual bool cut(const ShapeTree& obstructions,
+  virtual bool cut(const ObstructionTree& obstructions,
                    const Grid* ignore_grid,
                    std::vector<Shape*>& replacements) const;
 
@@ -221,9 +244,7 @@ class Shape
                  bool add_pins,
                  bool make_rect_as_pin) const;
   // copy existing shapes into the map
-  static void populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map);
-
-  static Box rectToBox(const odb::Rect& rect);
+  static void populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map);
 
   bool allowsNonPreferredDirectionChange() const
   {
@@ -234,10 +255,13 @@ class Shape
     allow_non_preferred_change_ = true;
   }
 
+  static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
+  static ObstructionTreeMap convertVectorToObstructionTree(ShapeVectorMap& vec);
+
  protected:
-  bool cut(const ShapeTree& obstructions,
+  bool cut(const ObstructionTree& obstructions,
            std::vector<Shape*>& replacements,
-           const std::function<bool(const ShapeValue&)>& obs_filter) const;
+           const std::function<bool(const ShapePtr&)>& obs_filter) const;
 
  private:
   odb::dbTechLayer* layer_;
@@ -246,6 +270,7 @@ class Shape
   odb::dbWireShapeType type_;
   ShapeType shape_type_;
   bool allow_non_preferred_change_;
+  bool is_locked_;
 
   odb::Rect obs_;
 
@@ -259,6 +284,8 @@ class Shape
   void addBPinToDb(const odb::Rect& rect) const;
 
   void updateIBTermConnections(std::set<odb::Rect>& terms);
+
+  bool hasDBConnectivity() const;
 };
 
 class FollowPinShape : public Shape
@@ -280,7 +307,7 @@ class FollowPinShape : public Shape
 
   void setAllowsNonPreferredDirectionChange() override {}
 
-  bool cut(const ShapeTree& obstructions,
+  bool cut(const ObstructionTree& obstructions,
            const Grid* ignore_grid,
            std::vector<Shape*>& replacements) const override;
 

@@ -30,8 +30,10 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
-namespace fr {
+namespace drt {
+
 class frNet;
+
 class drUpdate
 {
  public:
@@ -45,18 +47,8 @@ class drUpdate
     UPDATE_SHAPE,
     ADD_SHAPE_NET_ONLY
   };
-  drUpdate(UpdateType type = ADD_SHAPE)
-      : net_(nullptr),
-        index_in_owner_(0),
-        type_(type),
-        layer_(0),
-        bottomConnected_(false),
-        topConnected_(false),
-        tapered_(false),
-        viaDef_(nullptr),
-        obj_type_(frcBlock)
-  {
-  }
+  drUpdate(UpdateType type = ADD_SHAPE) : type_(type) {}
+
   void setNet(frNet* net) { net_ = net; }
   void setIndexInOwner(int value) { index_in_owner_ = value; }
   void setUpdateType(UpdateType value) { type_ = value; }
@@ -74,24 +66,25 @@ class drUpdate
   frMarker getMarker() const { return marker_; }
 
  private:
-  frNet* net_;
-  int index_in_owner_;
+  frNet* net_{nullptr};
+  int index_in_owner_{0};
   UpdateType type_;
   Point begin_;
   Point end_;
   frSegStyle style_;
   Rect offsetBox_;
-  frLayerNum layer_;
-  bool bottomConnected_ : 1;
-  bool topConnected_ : 1;
-  bool tapered_ : 1;
-  frViaDef* viaDef_;
-  frBlockObjectEnum obj_type_;
+  frLayerNum layer_{0};
+  bool bottomConnected_{false};
+  bool topConnected_{false};
+  bool tapered_{false};
+  frViaDef* viaDef_{nullptr};
+  frBlockObjectEnum obj_type_{frcBlock};
   frMarker marker_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+
+}  // namespace drt

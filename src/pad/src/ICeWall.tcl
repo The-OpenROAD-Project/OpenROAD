@@ -28,6 +28,7 @@
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# tclint-disable
 sta::define_cmd_args "set_bump_options" {[-pitch pitch] \
                                            [-bump_pin_name pin_name] \
                                            [-spacing_to_edge spacing] \
@@ -3292,7 +3293,7 @@ namespace eval ICeWall {
       MX    {set new_point [transform_point $x $y [list 0 0] "MX"]}
       MY    {set new_point [transform_point $x $y [list 0 0] "MY"]}
       MXR90 {set new_point [transform_point $x $y [list 0 0] "MYR90"]}
-      MYR90 {set new_point [transform_point $x $y [list 0 0] "MXR90"}
+      MYR90 {set new_point [transform_point $x $y [list 0 0] "MXR90"]}
       default {utl::error PAD 9028 "Illegal orientation $orientation specified."}
     }
 
@@ -4961,7 +4962,7 @@ namespace eval ICeWall {
 
     set cell_masters [get_library_cell_masters]
 
-    if {[lsearch $cell_masters [[$inst getMaster] getName] > -1} {
+    if {[lsearch $cell_masters [[$inst getMaster] getName]] > -1} {
       return 1
     }
     return 0
@@ -6681,3 +6682,4 @@ proc place_cell {args} {
   $inst setOrient $orient
   $inst setPlacementStatus $placement_status
 }
+# tclint-enable

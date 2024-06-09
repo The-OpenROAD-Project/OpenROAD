@@ -29,7 +29,7 @@
 
 #include "distributed/frArchive.h"
 
-namespace fr {
+namespace drt {
 
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
@@ -317,4 +317,4 @@ frInst* UniqueInsts::getUnique(int idx) const
   return unique_[idx];
 }
 
-}  // namespace fr
+}  // namespace drt

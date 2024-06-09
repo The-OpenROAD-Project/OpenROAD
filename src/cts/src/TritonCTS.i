@@ -249,6 +249,12 @@ set_dummy_load(bool dummyLoad)
 }
 
 void
+set_delay_buffer_derate(float derate)
+{
+  getTritonCts()->getParms()->setDelayBufferDerate(derate);
+}
+
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();

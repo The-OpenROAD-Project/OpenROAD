@@ -134,7 +134,7 @@ void pin_access_cmd(const char* dbProcessNode,
                     int minAccessPoints)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  triton_route::ParamStruct params;
+  drt::ParamStruct params;
   params.dbProcessNode = dbProcessNode;
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;

@@ -34,33 +34,15 @@
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class drVia;
 class frVia : public frRef
 {
  public:
   // constructors
-  frVia()
-      : viaDef_(nullptr),
-        owner_(nullptr),
-        tapered_(false),
-        bottomConnected_(false),
-        topConnected_(false),
-        index_in_owner_(0)
-  {
-  }
-  frVia(frViaDef* in)
-      : frRef(),
-        origin_(),
-        viaDef_(in),
-        owner_(nullptr),
-        tapered_(false),
-        bottomConnected_(false),
-        topConnected_(false),
-        index_in_owner_(0)
-  {
-  }
+  frVia() = default;
+  frVia(frViaDef* in) : viaDef_(in) {}
   frVia(const frVia& in)
       : frRef(in),
         origin_(in.origin_),
@@ -68,8 +50,7 @@ class frVia : public frRef
         owner_(in.owner_),
         tapered_(in.tapered_),
         bottomConnected_(in.bottomConnected_),
-        topConnected_(in.topConnected_),
-        index_in_owner_(0)
+        topConnected_(in.topConnected_)
   {
   }
   frVia(const drVia& in);
@@ -250,17 +231,17 @@ class frVia : public frRef
 
  private:
   Point origin_;
-  frViaDef* viaDef_;
-  frBlockObject* owner_;
-  bool tapered_ : 1;
-  bool bottomConnected_ : 1;
-  bool topConnected_ : 1;
+  frViaDef* viaDef_{nullptr};
+  frBlockObject* owner_{nullptr};
   frListIter<std::unique_ptr<frVia>> iter_;
-  int index_in_owner_;
+  int index_in_owner_{0};
+  bool tapered_{false};
+  bool bottomConnected_{false};
+  bool topConnected_{false};
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

@@ -34,8 +34,9 @@
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
+
 namespace utl {
 class Logger;
 }
@@ -62,11 +63,14 @@ class lefTechLayerMinStepParser
   void createSubRule(odb::dbTechLayer* layer);
   void setMinAdjacentLength1(double length, odb::lefin* l);
   void setMinAdjacentLength2(double length, odb::lefin* l);
-  void minBetweenLngthParser(double length, odb::lefin* l);
+  void minBetweenLengthParser(double length, odb::lefin* l);
   void noBetweenEolParser(double width, odb::lefin* l);
+  void noAdjacentEolParser(double width, odb::lefin* l);
   void minStepLengthParser(double length, odb::lefin* l);
   void maxEdgesParser(int edges, odb::lefin* l);
   void setConvexCorner();
+  void setConcaveCorner();
+  void setExceptRectangle();
   void setExceptSameCorners();
 };
 
@@ -125,7 +129,7 @@ class lefTechLayerCutSpacingParser
 class lefTechLayerCutSpacingTableParser
 {
  public:
-  odb::dbTechLayerCutSpacingTableDefRule* curRule;
+  odb::dbTechLayerCutSpacingTableDefRule* curRule = nullptr;
   odb::dbTechLayer* layer;
   lefTechLayerCutSpacingTableParser(odb::dbTechLayer* inly) { layer = inly; };
   bool parse(std::string,
@@ -242,6 +246,22 @@ class lefTechLayerForbiddenSpacingRuleParser
               void (odb::dbTechLayerForbiddenSpacingRule::*func)(int));
   void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
                            odb::dbTechLayerForbiddenSpacingRule* rule);
+};
+
+class lefTechLayerTwoWiresForbiddenSpcRuleParser
+{
+ public:
+  lefTechLayerTwoWiresForbiddenSpcRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerTwoWiresForbiddenSpcRule* rule,
+              void (odb::dbTechLayerTwoWiresForbiddenSpcRule::*func)(int));
+  void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
+                           odb::dbTechLayerTwoWiresForbiddenSpcRule* rule);
 };
 
 class ArraySpacingParser

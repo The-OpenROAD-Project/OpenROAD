@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbPowerDomain.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,6 +43,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
 
@@ -131,6 +131,13 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 {
+  _name = nullptr;
+  _top = false;
+  _x1 = 0;
+  _x2 = 0;
+  _y1 = 0;
+  _y2 = 0;
+  _voltage = 0;
 }
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
@@ -270,8 +277,9 @@ float dbPowerDomain::getVoltage() const
 dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_powerdomain_hash.hasMember(name))
+  if (_block->_powerdomain_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbPowerDomain* pd = _block->_powerdomain_tbl->create();
   pd->_name = strdup(name);
   pd->_x1 = -1;  // used as flag to determine whether area has been set before

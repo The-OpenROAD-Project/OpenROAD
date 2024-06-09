@@ -72,10 +72,51 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTech;
 
+// Handles registering and unregistering with dbSta
+class dbStaState : public sta::StaState
+{
+ public:
+  void init(dbSta* sta);
+  ~dbStaState() override;
+
+ protected:
+  dbSta* sta_ = nullptr;
+};
+
 class dbSta : public Sta, public ord::OpenRoadObserver
 {
  public:
   ~dbSta() override;
+
+  enum InstType
+  {
+    BLOCK,
+    PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
+    PAD_SPACER,
+    PAD_AREAIO,
+    ENDCAP,
+    FILL,
+    TAPCELL,
+    BUMP,
+    COVER,
+    ANTENNA,
+    TIE,
+    LEF_OTHER,
+    STD_CELL,
+    STD_BUFINV,
+    STD_BUFINV_CLK_TREE,
+    STD_BUFINV_TIMING_REPAIR,
+    STD_CLOCK_GATE,
+    STD_LEVEL_SHIFT,
+    STD_SEQUENTIAL,
+    STD_PHYSICAL,
+    STD_COMBINATIONAL,
+    STD_OTHER
+  };
 
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
@@ -110,8 +151,18 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
   void disconnectPin(Pin* pin) override;
 
+  void updateComponentsState() override;
+  void registerStaState(dbStaState* state);
+  void unregisterStaState(dbStaState* state);
+
   // Highlight path in the gui.
   void highlight(PathRef* path);
+
+  // Report Instances Type
+  std::map<InstType, int> countInstancesByType();
+  std::string getInstanceTypeText(InstType type);
+  InstType getInstanceType(odb::dbInst* inst);
+  void report_cell_usage();
 
   using Sta::netSlack;
   using Sta::replaceCell;
@@ -130,7 +181,8 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
-  dbStaCbk* db_cbk_ = nullptr;
+  std::unique_ptr<dbStaCbk> db_cbk_;
+  std::set<dbStaState*> sta_states_;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;

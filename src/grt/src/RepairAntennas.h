@@ -71,9 +71,16 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>
-    AntennaViolations;
-typedef std::map<RoutePt, std::vector<Pin*>> RoutePtPins;
+using AntennaViolations
+    = std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>;
+
+struct RoutePtPins
+{
+  std::vector<Pin*> pins;
+  bool connected;
+};
+
+using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
 
 class RepairAntennas
 {
@@ -85,9 +92,13 @@ class RepairAntennas
                  utl::Logger* logger);
 
   bool checkAntennaViolations(NetRouteMap& routing,
+                              const std::vector<odb::dbNet*>& nets_to_repair,
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm,
                               float ratio_margin);
+  void checkNetViolations(odb::dbNet* db_net,
+                          odb::dbMTerm* diode_mterm,
+                          float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
   int illegalDiodePlacementCount() const
   {
@@ -101,8 +112,10 @@ class RepairAntennas
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void makeNetWires(NetRouteMap& routing, int max_routing_layer);
-  void destroyNetWires();
+  void makeNetWires(NetRouteMap& routing,
+                    const std::vector<odb::dbNet*>& nets_to_repair,
+                    int max_routing_layer);
+  void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
 
@@ -116,29 +129,59 @@ class RepairAntennas
 
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diode_mterm,
-                   odb::dbInst* sink_inst,
                    odb::dbITerm* sink_iterm,
                    int site_width,
-                   r_tree& fixed_insts);
+                   r_tree& fixed_insts,
+                   odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
+  bool setDiodeLoc(odb::dbInst* diode_inst,
+                   odb::dbITerm* gate,
+                   int site_width,
+                   bool place_vertically,
+                   r_tree& fixed_insts);
+  void getInstancePlacementData(odb::dbITerm* gate,
+                                int& inst_loc_x,
+                                int& inst_loc_y,
+                                int& inst_width,
+                                int& inst_height,
+                                odb::dbOrientType& inst_orient);
+  bool checkDiodeLoc(odb::dbInst* diode_inst,
+                     int site_width,
+                     r_tree& fixed_insts);
+  void computeHorizontalOffset(int diode_width,
+                               int inst_width,
+                               int site_width,
+                               int& left_offset,
+                               int& right_offset,
+                               bool& place_at_left,
+                               int& offset);
+  void computeVerticalOffset(int inst_height,
+                             int& top_offset,
+                             int& bottom_offset,
+                             bool& place_at_top,
+                             int& offset);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
   odb::dbOrientType getRowOrient(const odb::Point& point);
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*>& default_vias);
-  RoutePtPins findRoutePtPins(Net* net);
+  RoutePtPinsMap findRoutePtPins(Net* net);
   void addWireTerms(Net* net,
                     GRoute& route,
                     int grid_x,
                     int grid_y,
                     int layer,
                     odb::dbTechLayer* tech_layer,
-                    RoutePtPins& route_pt_pins,
+                    RoutePtPinsMap& route_pt_pins,
                     odb::dbWireEncoder& wire_encoder,
                     std::map<int, odb::dbTechVia*>& default_vias,
                     bool connect_to_segment);
+  void makeWire(odb::dbWireEncoder& wire_encoder,
+                odb::dbTechLayer* layer,
+                const odb::Point& start,
+                const odb::Point& end);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,

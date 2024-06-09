@@ -169,8 +169,7 @@ class BrowserWidget : public QDockWidget,
                               bool create_row);
   ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
                                const std::string& title,
-                               QStandardItem* parent,
-                               bool check_instance_limits);
+                               QStandardItem* parent);
   ModuleStats addModuleItem(odb::dbModule* module,
                             QStandardItem* parent,
                             bool expand);

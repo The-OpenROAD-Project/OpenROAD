@@ -36,12 +36,12 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerEolExtensionRule>;
 
@@ -62,8 +62,9 @@ bool _dbTechLayerEolExtensionRule::operator<(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
   // User Code Begin <
-  if (spacing_ >= rhs.spacing_)
+  if (spacing_ >= rhs.spacing_) {
     return false;
+  }
   // User Code End <
   return true;
 }

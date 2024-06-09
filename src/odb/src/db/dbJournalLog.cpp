@@ -137,14 +137,15 @@ void dbJournalLog::push(double value)
 void dbJournalLog::push(const char* value)
 {
   SET_TYPE(LOG_STRING);
-  if (value == nullptr)
+  if (value == nullptr) {
     push(-1);
-  else {
+  } else {
     int len = strlen(value);
     push(len);
 
-    for (; *value != '\0'; ++value)
+    for (; *value != '\0'; ++value) {
       _data.push_back(*value);
+    }
   }
 }
 
@@ -224,8 +225,9 @@ void dbJournalLog::pop(char*& value)
   value = (char*) malloc(len + 1);
 
   int i;
-  for (i = 0; i < len; ++i)
+  for (i = 0; i < len; ++i) {
     value[i] = next();
+  }
 
   value[i] = '\0';
 }
@@ -245,8 +247,9 @@ void dbJournalLog::pop(std::string& value)
   value = "";
 
   int i;
-  for (i = 0; i < len; ++i)
+  for (i = 0; i < len; ++i) {
     value.push_back(next());
+  }
 }
 
 dbIStream& operator>>(dbIStream& stream, dbJournalLog& log)

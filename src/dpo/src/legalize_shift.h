@@ -49,7 +49,6 @@ namespace dpo {
 // Forward declarations.
 //////////////////////////////////////////////////////////////////////////////
 class Architecture;
-class DetailedSeg;
 class DetailedMgr;
 class Node;
 class Network;

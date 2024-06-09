@@ -44,7 +44,7 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-using grt::GlobalRouter;
+using odb::dbBlock;
 using std::make_pair;
 using std::pair;
 using std::sort;
@@ -146,15 +146,22 @@ void TileGrid::setLy(int ly)
 
 void TileGrid::initTiles()
 {
-  log_->info(GPL, 36, "TileLxLy: {} {}", lx_, ly_);
-  log_->info(GPL, 37, "TileSize: {} {}", tileSizeX_, tileSizeY_);
-  log_->info(GPL, 38, "TileCnt: {} {}", tileCntX_, tileCntY_);
+  log_->info(GPL,
+             36,
+             "{:9} ( {:4} {:4} ) ( {:4} {:4} ) DBU",
+             "TileBBox:",
+             lx_,
+             ly_,
+             tileSizeX_,
+             tileSizeY_);
+  log_->info(GPL, 38, "{:9} {:6} {:4}", "TileCnt:", tileCntX_, tileCntY_);
   log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
 
   // 2D tile grid structure init
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
-  tileStor_.resize(tileCntX_ * tileCntY_);
+  tileStor_.resize(static_cast<uint64_t>(tileCntX_)
+                   * static_cast<uint64_t>(tileCntY_));
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
@@ -237,7 +244,7 @@ void RouteBaseVars::reset()
   inflationRatioCoef = 2.5;
   maxInflationRatio = 2.5;
   maxDensity = 0.90;
-  targetRC = 1.25;
+  targetRC = 1.0;
   ignoreEdgeRatio = 0.8;
   minInflationRatio = 1.01;
   rcK1 = rcK2 = 1.0;
@@ -314,7 +321,7 @@ void RouteBase::getGlobalRouterResult()
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
-  grouter_->setOverflowIterations(1);
+  grouter_->setOverflowIterations(0);
 
   // this option must be off
   grouter_->setCriticalNetsPercentage(0);
@@ -347,14 +354,11 @@ int RouteBase::inflationIterCnt() const
 static float getUsageCapacityRatio(Tile* tile,
                                    odb::dbTechLayer* layer,
                                    odb::dbGCellGrid* gGrid,
+                                   grt::GlobalRouter* grouter,
                                    float ignoreEdgeRatio)
 {
-  unsigned int capH = 0, capV = 0, capU = 0;
-  unsigned int useH = 0, useV = 0, useU = 0;
-  unsigned int blockH = 0, blockV = 0, blockU = 0;
-  gGrid->getCapacity(layer, tile->x(), tile->y(), capH, capV, capU);
-  gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
-  gGrid->getBlockage(layer, tile->x(), tile->y(), blockH, blockV, blockU);
+  uint8_t blockH = 0, blockV = 0;
+  grouter->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 
   bool isHorizontal
       = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
@@ -369,9 +373,9 @@ static float getUsageCapacityRatio(Tile* tile,
   // RePlAce/RC metric need 'blockage' because
   // if blockage ratio is larger than certain ratio,
   // need to skip.
-  unsigned int curCap = (isHorizontal) ? capH : capV;
-  unsigned int curUse = (isHorizontal) ? useH : useV;
-  unsigned int blockage = (isHorizontal) ? blockH : blockV;
+  uint8_t curCap = gGrid->getCapacity(layer, tile->x(), tile->y());
+  uint8_t curUse = gGrid->getUsage(layer, tile->x(), tile->y());
+  uint8_t blockage = (isHorizontal) ? blockH : blockV;
 
   // escape tile ratio cals when capacity = 0
   if (curCap == 0) {
@@ -425,8 +429,8 @@ void RouteBase::updateRoute()
       // TileGrid setup.
 
       // first extract current tiles' usage
-      float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+      float ratio = getUsageCapacityRatio(
+          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // if horizontal layer (i.e., vertical edges)
       // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
@@ -435,7 +439,7 @@ void RouteBase::updateRoute()
         Tile* leftTile
             = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
         float leftRatio = getUsageCapacityRatio(
-            leftTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+            leftTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
         ratio = std::fmax(leftRatio, ratio);
       }
 
@@ -446,7 +450,7 @@ void RouteBase::updateRoute()
         Tile* downTile
             = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
         float downRatio = getUsageCapacityRatio(
-            downTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+            downTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
         ratio = std::fmax(downRatio, ratio);
       }
 
@@ -513,6 +517,10 @@ std::pair<bool, bool> RouteBase::routability()
   float curRc = getRC();
 
   if (curRc < rbVars_.targetRC) {
+    log_->info(GPL,
+               77,
+               "FinalRC lower than targetRC({}), routability not needed.",
+               rbVars_.targetRC);
     resetRoutabilityResources();
     return std::make_pair(false, false);
   }
@@ -522,6 +530,8 @@ std::pair<bool, bool> RouteBase::routability()
   // I hope to get lower Rc gradually as RD goes on
   //
   if (minRc_ > curRc) {
+    log_->info(
+        GPL, 78, "FinalRC lower than minRC ({}), min RC updated.", minRc_);
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
     minRcViolatedCnt_ = 0;
@@ -537,6 +547,11 @@ std::pair<bool, bool> RouteBase::routability()
     }
   } else {
     minRcViolatedCnt_++;
+    log_->info(GPL,
+               79,
+               "MinRC ({}) violation occurred, total count: {}.",
+               minRc_,
+               minRcViolatedCnt_);
   }
 
   // set inflated ratio
@@ -557,10 +572,16 @@ std::pair<bool, bool> RouteBase::routability()
       continue;
     }
 
-    int idxX = (gCell->dCx() - tg_->lx()) / tg_->tileSizeX();
-    int idxY = (gCell->dCy() - tg_->ly()) / tg_->tileSizeY();
+    int idxX = std::min((gCell->dCx() - tg_->lx()) / tg_->tileSizeX(),
+                        tg_->tileCntX() - 1);
+    int idxY = std::min((gCell->dCy() - tg_->ly()) / tg_->tileSizeY(),
+                        tg_->tileCntY() - 1);
 
-    Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
+    size_t index = idxY * tg_->tileCntX() + idxX;
+    if (index >= tg_->tiles().size()) {
+      continue;
+    }
+    Tile* tile = tg_->tiles()[index];
 
     // Don't care when inflRatio <= 1
     if (tile->inflatedRatio() <= 1.0) {
@@ -602,8 +623,14 @@ std::pair<bool, bool> RouteBase::routability()
     // TODO dynamic inflation procedure?
   }
 
-  log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
-  log_->info(GPL, 46, "TargetDensity: {}", nbVec_[0]->targetDensity());
+  dbBlock* block = db_->getChip()->getBlock();
+  log_->info(GPL,
+             45,
+             "{:20} {:10.3f} um^2",
+             "InflatedAreaDelta:",
+             block->dbuAreaToMicrons(inflatedAreaDelta_));
+  log_->info(
+      GPL, 46, "{:20} {:10.3f}", "TargetDensity:", nbVec_[0]->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
                            + nbVec_[0]->totalFillerArea();
@@ -620,9 +647,12 @@ std::pair<bool, bool> RouteBase::routability()
   //
   if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
       || minRcViolatedCnt_ >= 3) {
-    log_->report("Revert Routability Procedure");
-    log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
-    log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
+    log_->report(
+        "Revert Routability Procedure. Target density higher than max, or "
+        "minRC max violations.");
+    log_->info(GPL, 80, "minRcViolatedCnt: {}", minRcViolatedCnt_);
+    log_->info(GPL, 47, "SavedMinRC: {:.4f}", minRc_);
+    log_->info(GPL, 48, "SavedTargetDensity: {:.4f}", minRcTargetDensity_);
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
 
@@ -634,18 +664,34 @@ std::pair<bool, bool> RouteBase::routability()
     return std::make_pair(false, true);
   }
 
-  log_->info(GPL, 49, "WhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
-  log_->info(GPL, 50, "NesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
-  log_->info(GPL, 51, "TotalFillerArea: {}", nbVec_[0]->totalFillerArea());
+  log_->info(GPL,
+             49,
+             "{:20} {:10.3f} um^2",
+             "WhiteSpaceArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
+  log_->info(GPL,
+             50,
+             "{:20} {:10.3f} um^2",
+             "NesterovInstsArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
+  log_->info(GPL,
+             51,
+             "{:20} {:10.3f} um^2",
+             "TotalFillerArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()));
   log_->info(GPL,
              52,
-             "TotalGCellsArea: {}",
-             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
+             "{:20} {:10.3f} um^2",
+             "TotalGCellsArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
   log_->info(GPL,
              53,
-             "ExpectedTotalGCellsArea: {}",
-             inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                 + nbVec_[0]->totalFillerArea());
+             "{:20} {:10.3f} um^2",
+             "ExpectedGCellsArea:",
+             block->dbuAreaToMicrons(inflatedAreaDelta_
+                                     + nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
@@ -660,16 +706,37 @@ std::pair<bool, bool> RouteBase::routability()
   // updateArea
   nbVec_[0]->updateAreas();
 
-  log_->info(GPL, 54, "NewTargetDensity: {}", nbVec_[0]->targetDensity());
-  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
-  log_->info(GPL, 56, "MovableArea: {}", nbVec_[0]->movableArea());
-  log_->info(
-      GPL, 57, "NewNesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
-  log_->info(GPL, 58, "NewTotalFillerArea: {}", nbVec_[0]->totalFillerArea());
+  log_->info(GPL,
+             54,
+             "{:20} {:10.3f}",
+             "NewTargetDensity:",
+             nbVec_[0]->targetDensity());
+  log_->info(GPL,
+             55,
+             "{:20} {:10.3f} um^2",
+             "NewWhiteSpaceArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->whiteSpaceArea()));
+  log_->info(GPL,
+             56,
+             "{:20} {:10.3f} um^2",
+             "MovableArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->movableArea()));
+  log_->info(GPL,
+             57,
+             "{:20} {:10.3f} um^2",
+             "NewNesterovInstArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()));
+  log_->info(GPL,
+             58,
+             "{:20} {:10.3f} um^2",
+             "NewTotalFillerArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()));
   log_->info(GPL,
              59,
-             "NewTotalGCellsArea: {}",
-             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
+             "{:20} {:10.3f} um^2",
+             "NewTotalGCellsArea:",
+             block->dbuAreaToMicrons(nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()));
 
   // update densitySizes for all gCell
   nbVec_[0]->updateDensitySize();
@@ -712,8 +779,8 @@ float RouteBase::getRC() const
           = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
       // extract the ratio in the same way as inflation ratio cals
-      float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+      float ratio = getUsageCapacityRatio(
+          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // escape the case when blockageRatio is too huge
       if (ratio >= 0.0f) {
@@ -789,10 +856,10 @@ float RouteBase::getRC() const
   verAvg020RC /= ceil(0.020 * verArraySize);
   verAvg050RC /= ceil(0.050 * verArraySize);
 
-  log_->info(GPL, 66, "0.5%RC: {}", std::fmax(horAvg005RC, verAvg005RC));
-  log_->info(GPL, 67, "1.0%RC: {}", std::fmax(horAvg010RC, verAvg010RC));
-  log_->info(GPL, 68, "2.0%RC: {}", std::fmax(horAvg020RC, verAvg020RC));
-  log_->info(GPL, 69, "5.0%RC: {}", std::fmax(horAvg050RC, verAvg050RC));
+  log_->info(GPL, 66, "0.5%RC: {:.4f}", std::fmax(horAvg005RC, verAvg005RC));
+  log_->info(GPL, 67, "1.0%RC: {:.4f}", std::fmax(horAvg010RC, verAvg010RC));
+  log_->info(GPL, 68, "2.0%RC: {:.4f}", std::fmax(horAvg020RC, verAvg020RC));
+  log_->info(GPL, 69, "5.0%RC: {:.4f}", std::fmax(horAvg050RC, verAvg050RC));
 
   log_->info(GPL, 70, "0.5rcK: {}", rbVars_.rcK1);
   log_->info(GPL, 71, "1.0rcK: {}", rbVars_.rcK2);
@@ -805,7 +872,7 @@ float RouteBase::getRC() const
                    + rbVars_.rcK4 * std::fmax(horAvg050RC, verAvg050RC))
                   / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->info(GPL, 74, "FinalRC: {}", finalRC);
+  log_->info(GPL, 74, "FinalRC: {:.4f}", finalRC);
   return finalRC;
 }
 

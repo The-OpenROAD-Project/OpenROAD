@@ -35,9 +35,9 @@
 #include <map>
 #include <string>
 
-#include "dbWireCodec.h"
 #include "definBase.h"
-#include "odb.h"
+#include "odb/dbWireCodec.h"
+#include "odb/odb.h"
 
 namespace odb {
 

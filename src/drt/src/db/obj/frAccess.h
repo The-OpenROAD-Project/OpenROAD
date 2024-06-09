@@ -34,7 +34,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frShape.h"
 
-namespace fr {
+namespace drt {
 class frViaDef;
 class frPinAccess;
 class frMTerm;
@@ -43,18 +43,10 @@ class frAccessPoint : public frBlockObject
  public:
   // constructors
   frAccessPoint(const Point& point, frLayerNum layerNum)
-      : frBlockObject(),
-        point_(point),
-        layerNum_(layerNum),
-        accesses_(std::vector<bool>(6, false)),
-        viaDefs_(),
-        typeL_(frAccessPointEnum::OnGrid),
-        typeH_(frAccessPointEnum::OnGrid),
-        aps_(nullptr),
-        pathSegs_()
+      : point_(point), layerNum_(layerNum)
   {
   }
-  frAccessPoint() : frAccessPoint({0, 0}, 0) {}
+  frAccessPoint() = default;
   frAccessPoint(const frAccessPoint& rhs)
       : frBlockObject(rhs),
         point_(rhs.point_),
@@ -63,10 +55,10 @@ class frAccessPoint : public frBlockObject
         viaDefs_(rhs.viaDefs_),
         typeL_(rhs.typeL_),
         typeH_(rhs.typeH_),
-        aps_(nullptr),
         pathSegs_(rhs.pathSegs_)
   {
   }
+  frAccessPoint& operator=(const frAccessPoint&) = delete;
   // getters
   const Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
@@ -113,9 +105,8 @@ class frAccessPoint : public frBlockObject
     // then check idx
     if (idx >= 0 && idx < (int) (viaDefs_[numCutIdx].size())) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
   // e.g., getViaDefs()     --> get all one-cut viadefs
   // e.g., getViaDefs(1)    --> get all one-cut viadefs
@@ -146,9 +137,8 @@ class frAccessPoint : public frBlockObject
   {
     if (isL) {
       return typeL_;
-    } else {
-      return typeH_;
     }
+    return typeH_;
   }
   bool isViaAllowed() const { return allow_via_; }
   // setters
@@ -195,29 +185,30 @@ class frAccessPoint : public frBlockObject
   frCoord x() const { return point_.x(); }
   frCoord y() const { return point_.y(); }
 
-  void addPathSeg(frPathSeg ps) { pathSegs_.push_back(std::move(ps)); }
+  void addPathSeg(const frPathSeg& ps) { pathSegs_.emplace_back(ps); }
   std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
 
  private:
   Point point_;
-  frLayerNum layerNum_;
-  std::vector<bool> accesses_;  // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
-  std::vector<std::vector<frViaDef*>>
-      viaDefs_;  // cut number -> up-via access map
-  frAccessPointEnum typeL_;
-  frAccessPointEnum typeH_;
-  frPinAccess* aps_;
+  frLayerNum layerNum_{0};
+  // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
+  std::vector<bool> accesses_ = std::vector<bool>(6, false);
+  // cut number -> up-via access map
+  std::vector<std::vector<frViaDef*>> viaDefs_;
+  frAccessPointEnum typeL_{frAccessPointEnum::OnGrid};
+  frAccessPointEnum typeH_{frAccessPointEnum::OnGrid};
+  frPinAccess* aps_{nullptr};
   std::vector<frPathSeg> pathSegs_;
   bool allow_via_{false};
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
 
 class frPinAccess : public frBlockObject
 {
  public:
-  frPinAccess() : frBlockObject(), aps_(), pin_(nullptr) {}
+  frPinAccess() = default;
   frPinAccess(const frPinAccess& rhs) : frBlockObject(rhs), pin_(rhs.pin_)
   {
     aps_.clear();
@@ -248,9 +239,9 @@ class frPinAccess : public frBlockObject
 
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
-  frPin* pin_;
+  frPin* pin_{nullptr};
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

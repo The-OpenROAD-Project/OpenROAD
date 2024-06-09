@@ -39,6 +39,7 @@
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"
+#include "defiPath.hpp"
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
@@ -741,7 +742,7 @@ int defrData::sublex(YYSTYPE* pYylval)
     }
 
     if (orient_is_keyword) {
-      int result;
+      int result = K_N;
       uc_array(deftoken, uc_token);
 
       if (defGetKeyword(uc_token, &result)) {
@@ -1652,7 +1653,6 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
     // defrPath->reverseOrder();
     (*callbacks->PathCbk)(defrPathCbkType, &PathObj, session->UserData);
     PathObj.Destroy();
-    free((char*) &PathObj);
   }
 
   PathObj.Init();

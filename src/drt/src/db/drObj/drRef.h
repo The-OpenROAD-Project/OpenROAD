@@ -31,7 +31,8 @@
 #include "db/drObj/drFig.h"
 #include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
+
 class drRef : public drPinFig
 {
  public:
@@ -45,9 +46,6 @@ class drRef : public drPinFig
   virtual void setTransform(const dbTransform& xform) = 0;
 
  protected:
-  // constructors
-  drRef() : drPinFig() {}
-
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -56,4 +54,5 @@ class drRef : public drPinFig
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+
+}  // namespace drt

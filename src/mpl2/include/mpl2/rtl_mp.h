@@ -110,6 +110,7 @@ class MacroPlacer2
   void setMacroPlacementFile(const std::string& file_name);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebugShowBundledNets(bool show_bundled_nets);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;

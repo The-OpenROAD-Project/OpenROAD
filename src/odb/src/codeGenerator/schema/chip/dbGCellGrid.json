@@ -86,61 +86,22 @@
       "name": "GCellData",
       "fields": [
         {
-          "name": "horizontal_usage",
-          "type": "uint",
+          "name": "usage",
+          "type": "uint8_t",
           "flags": [],
           "default": 0
         },
         {
-          "name": "vertical_usage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_usage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "horizontal_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "vertical_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_capacity",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "horizontal_blockage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "vertical_blockage",
-          "type": "uint",
-          "flags": [],
-          "default": 0
-        },
-        {
-          "name": "up_blockage",
-          "type": "uint",
+          "name": "capacity",
+          "type": "uint8_t",
           "flags": [],
           "default": 0
         }
       ],
-      "public": true
+      "public": true,
+      "flags": [
+        "no-serializer-in"
+      ]
     }
   ],
   "cpp_includes": [

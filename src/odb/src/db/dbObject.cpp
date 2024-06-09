@@ -32,11 +32,11 @@
 
 #include <cstring>
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -91,6 +91,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbAccessPoint",
+                                 "dbDft",
                                  "dbGCellGrid",
                                  "dbGlobalConnect",
                                  "dbGroup",
@@ -99,13 +100,17 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbLevelShifter",
                                  "dbLogicPort",
                                  "dbMetalWidthViaMap",
+                                 "dbModBTerm",
                                  "dbModInst",
+                                 "dbModITerm",
+                                 "dbModNet",
                                  "dbModule",
                                  "dbNetTrack",
                                  "dbPowerDomain",
                                  "dbPowerSwitch",
                                  "dbScanChain",
                                  "dbScanInst",
+                                 "dbScanList",
                                  "dbScanPartition",
                                  "dbScanPin",
                                  "dbTechLayer",
@@ -125,6 +130,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerMinStepRule",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerTwoWiresForbiddenSpcRule",
                                  "dbTechLayerWidthTableRule",
                                  "dbTechLayerWrongDirSpacingRule",
                                  // Generator Code End ObjectNames

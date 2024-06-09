@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <set>
 #include <vector>
@@ -115,6 +116,14 @@ struct CongestionInformation
   TileCongestion congestion;
   std::set<odb::dbNet*, cmpById> sources;
 };
+
+struct CapacityReduction
+{
+  uint8_t capacity = 0;
+  uint8_t reduction = 0;
+};
+
+using CapacityReductionData = std::vector<std::vector<CapacityReduction>>;
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;

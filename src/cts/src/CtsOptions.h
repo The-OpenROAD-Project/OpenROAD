@@ -44,7 +44,7 @@
 
 #include "CtsObserver.h"
 #include "Util.h"
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace stt {
@@ -242,6 +242,8 @@ class CtsOptions
   {
     return sinkBufferMaxCapDerateSet_;
   }
+  void setDelayBufferDerate(float derate) { delayBufferDerate_ = derate; }
+  float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
 
@@ -292,14 +294,15 @@ class CtsOptions
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = false;
   bool applyNDR_ = false;
-  bool insertionDelay_ = false;
+  bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
   float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
-  bool dummyLoad_ = false;
+  bool dummyLoad_ = true;
+  float delayBufferDerate_ = 1.0;  // no derate
 };
 
 }  // namespace cts

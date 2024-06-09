@@ -45,6 +45,8 @@ add_library(dpl_lib
   src/dbToOpendp.cpp
   src/Grid.cpp
   src/CheckPlacement.cpp
+  src/Objects.cpp
+  src/Padding.cpp
   src/Place.cpp
   src/FillerPlacement.cpp
   src/OptMirror.cpp

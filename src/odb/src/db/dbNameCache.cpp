@@ -33,13 +33,13 @@
 #include "dbNameCache.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbName.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/dbDiff.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
@@ -66,20 +66,24 @@ _dbName::_dbName(_dbDatabase*)
 
 _dbName::~_dbName()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 bool _dbName::operator==(const _dbName& rhs) const
 {
-  if (strcmp(_name, rhs._name) != 0)
+  if (strcmp(_name, rhs._name) != 0) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_ref_cnt != rhs._ref_cnt)
+  if (_ref_cnt != rhs._ref_cnt) {
     return false;
+  }
 
   return true;
 }
@@ -155,11 +159,13 @@ _dbNameCache::~_dbNameCache()
 
 bool _dbNameCache::operator==(const _dbNameCache& rhs) const
 {
-  if (_name_hash != rhs._name_hash)
+  if (_name_hash != rhs._name_hash) {
     return false;
+  }
 
-  if (*_name_tbl != *rhs._name_tbl)
+  if (*_name_tbl != *rhs._name_tbl) {
     return false;
+  }
 
   return true;
 }
@@ -194,8 +200,9 @@ uint _dbNameCache::findName(const char* name)
 {
   _dbName* n = _name_hash.find(name);
 
-  if (n)
+  if (n) {
     return n->getOID();
+  }
 
   return 0U;
 }

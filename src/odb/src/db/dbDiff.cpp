@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbDiff.h"
+#include "odb/dbDiff.h"
 
 #include <cstdarg>
 
@@ -47,8 +47,9 @@ dbDiff::dbDiff(FILE* f)
 
 dbDiff::~dbDiff()
 {
-  if (_f)
+  if (_f) {
     fflush(_f);
+  }
 }
 
 void dbDiff::indent()
@@ -58,8 +59,9 @@ void dbDiff::indent()
   char c = ' ';
 
   if (_f) {
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < n; ++i) {
       fwrite(&c, 1, 1, _f);
+    }
   }
 }
 
@@ -77,8 +79,9 @@ void dbDiff::report(const char* fmt, ...)
   vsnprintf(p, 16384 - 1, fmt, args);
   va_end(args);
 
-  if (_f)
+  if (_f) {
     fwrite(buffer, 1, strlen(buffer), _f);
+  }
 
   _has_differences = true;
 }
@@ -86,15 +89,17 @@ void dbDiff::report(const char* fmt, ...)
 void dbDiff::begin(const char* field, const char* objname, uint oid)
 {
   if (field) {
-    if (!deepDiff())
+    if (!deepDiff()) {
       begin_object("<> %s (%s[%u])\n", field, objname, oid);
-    else
+    } else {
       begin_object("<> %s (%s)\n", field, objname);
+    }
   } else {
-    if (!deepDiff())
+    if (!deepDiff()) {
       begin_object("<> %s[%u]\n", objname, oid);
-    else
+    } else {
       begin_object("<> %s\n", objname);
+    }
   }
 }
 
@@ -104,26 +109,29 @@ void dbDiff::begin(const char side,
                    uint oid)
 {
   if (field) {
-    if (!deepDiff())
+    if (!deepDiff()) {
       begin_object("%c %s (%s[%u])\n", side, field, objname, oid);
-    else
+    } else {
       begin_object("%c %s (%s)\n", side, field, objname);
+    }
   } else {
-    if (!deepDiff())
+    if (!deepDiff()) {
       begin_object("%c %s[%u]\n", side, objname, oid);
-    else
+    } else {
       begin_object("%c %s\n", side, objname);
+    }
   }
 }
 
 void dbDiff::begin_object(const char* fmt, ...)
 {
-  std::string s("");
+  std::string s;
 
   int i;
   int n = _indent_level * _indent_per_level;
-  for (i = 0; i < n; ++i)
+  for (i = 0; i < n; ++i) {
     s += " ";
+  }
 
   char buffer[16384];
   buffer[16384 - 1] = 0;
@@ -139,8 +147,9 @@ void dbDiff::begin_object(const char* fmt, ...)
 
 void dbDiff::end_object()
 {
-  if (!_headers.empty())
+  if (!_headers.empty()) {
     _headers.pop_back();
+  }
   decrement();
 }
 
@@ -151,8 +160,9 @@ void dbDiff::write_headers()
   for (itr = _headers.begin(); itr != _headers.end(); ++itr) {
     const char* buffer = (*itr).c_str();
 
-    if (_f)
+    if (_f) {
       fwrite(buffer, 1, strlen(buffer), _f);
+    }
 
     _has_differences = true;
   }
@@ -162,10 +172,11 @@ void dbDiff::write_headers()
 
 dbDiff& dbDiff::operator<<(bool c)
 {
-  if (c)
+  if (c) {
     *this << "true";
-  else
+  } else {
     *this << "false";
+  }
 
   return *this;
 }
@@ -174,8 +185,9 @@ dbDiff& dbDiff::operator<<(char c)
 {
   int v = c;
 
-  if (_f)
+  if (_f) {
     fprintf(_f, "%d", v);
+  }
 
   _has_differences = true;
   return *this;
@@ -185,8 +197,9 @@ dbDiff& dbDiff::operator<<(unsigned char c)
 {
   unsigned int v = c;
 
-  if (_f)
+  if (_f) {
     fprintf(_f, "%u", v);
+  }
 
   _has_differences = true;
   return *this;
@@ -196,8 +209,9 @@ dbDiff& dbDiff::operator<<(int16_t c)
 {
   int v = c;
 
-  if (_f)
+  if (_f) {
     fprintf(_f, "%d", v);
+  }
 
   _has_differences = true;
   return *this;
@@ -207,8 +221,9 @@ dbDiff& dbDiff::operator<<(uint16_t c)
 {
   unsigned int v = c;
 
-  if (_f)
+  if (_f) {
     fprintf(_f, "%u", v);
+  }
 
   _has_differences = true;
   return *this;
@@ -216,8 +231,9 @@ dbDiff& dbDiff::operator<<(uint16_t c)
 
 dbDiff& dbDiff::operator<<(int c)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f, "%d", c);
+  }
 
   _has_differences = true;
   return *this;
@@ -225,8 +241,9 @@ dbDiff& dbDiff::operator<<(int c)
 
 dbDiff& dbDiff::operator<<(unsigned int c)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f, "%u", c);
+  }
 
   _has_differences = true;
   return *this;
@@ -236,8 +253,9 @@ dbDiff& dbDiff::operator<<(float c)
 {
   double e = c;
 
-  if (_f)
+  if (_f) {
     fprintf(_f, "%g", e);
+  }
 
   _has_differences = true;
   return *this;
@@ -245,8 +263,9 @@ dbDiff& dbDiff::operator<<(float c)
 
 dbDiff& dbDiff::operator<<(double c)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f, "%g", c);
+  }
 
   _has_differences = true;
   return *this;
@@ -254,8 +273,9 @@ dbDiff& dbDiff::operator<<(double c)
 
 dbDiff& dbDiff::operator<<(long double c)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f, "%Lg", c);
+  }
 
   _has_differences = true;
   return *this;
@@ -264,11 +284,13 @@ dbDiff& dbDiff::operator<<(long double c)
 dbDiff& dbDiff::operator<<(const char* s)
 {
   if (s == nullptr) {
-    if (_f)
+    if (_f) {
       fprintf(_f, "\"\"");
+    }
   } else {
-    if (_f)
+    if (_f) {
       fprintf(_f, "%s", s);
+    }
   }
 
   _has_differences = true;
@@ -277,8 +299,9 @@ dbDiff& dbDiff::operator<<(const char* s)
 
 dbDiff& dbDiff::operator<<(const Point& p)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f, "( %d %d )", p.getX(), p.getY());
+  }
 
   _has_differences = true;
   return *this;
@@ -286,13 +309,14 @@ dbDiff& dbDiff::operator<<(const Point& p)
 
 dbDiff& dbDiff::operator<<(const Rect& r)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f,
             "[( %d %d ) ( %d %d )]",
             r.ll().getX(),
             r.ll().getY(),
             r.ur().getX(),
             r.ur().getY());
+  }
 
   _has_differences = true;
   return *this;
@@ -300,7 +324,7 @@ dbDiff& dbDiff::operator<<(const Rect& r)
 
 dbDiff& dbDiff::operator<<(const Oct& o)
 {
-  if (_f)
+  if (_f) {
     fprintf(_f,
             "[( %d %d ) %d ( %d %d )]",
             o.getCenterLow().getX(),
@@ -308,6 +332,7 @@ dbDiff& dbDiff::operator<<(const Oct& o)
             o.getWidth(),
             o.getCenterHigh().getX(),
             o.getCenterHigh().getY());
+  }
 
   _has_differences = true;
   return *this;

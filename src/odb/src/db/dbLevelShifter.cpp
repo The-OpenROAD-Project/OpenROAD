@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbLevelShifter>;
 
@@ -179,6 +179,11 @@ void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 {
+  _name = nullptr;
+  _use_functional_equivalence = false;
+  _threshold = 0;
+  _no_shift = false;
+  _force_shift = false;
 }
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)

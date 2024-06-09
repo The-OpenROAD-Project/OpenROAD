@@ -31,7 +31,7 @@
 #include <boost/io/ios_state.hpp>
 #include <iomanip>
 
-using namespace fr;
+namespace drt {
 
 void frTime::print(Logger* logger)
 {
@@ -59,8 +59,6 @@ void frTime::print(Logger* logger)
                getPeakRSS() / (1024.0 * 1024.0));
 }
 
-namespace fr {
-
 std::ostream& operator<<(std::ostream& os, const frTime& t)
 {
   boost::io::ios_all_saver guard(std::cout);
@@ -82,4 +80,4 @@ std::ostream& operator<<(std::ostream& os, const frTime& t)
   return os;
 }
 
-}  // end namespace fr
+}  // end namespace drt

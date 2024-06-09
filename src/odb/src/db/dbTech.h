@@ -34,10 +34,10 @@
 
 #include "dbCore.h"
 #include "dbHashTable.hpp"
-#include "dbMatrix.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
