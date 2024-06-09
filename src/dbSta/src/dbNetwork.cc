@@ -101,18 +101,6 @@ char* tmpStringCopy(const char* str)
 // lower 4  bits used to encode type
 //
 
-static constexpr unsigned DBITERM_ID = 0x0;
-static constexpr unsigned DBBTERM_ID = 0x1;
-static constexpr unsigned DBINST_ID = 0x2;
-static constexpr unsigned DBNET_ID = 0x3;
-static constexpr unsigned DBMODITERM_ID = 0x4;
-static constexpr unsigned DBMODBTERM_ID = 0x5;
-static constexpr unsigned DBMODINST_ID = 0x6;
-static constexpr unsigned DBMODNET_ID = 0x7;
-static constexpr unsigned DBMODULE_ID = 0x8;
-// Number of lower bits used
-static constexpr unsigned DBIDTAG_WIDTH = 0x4;
-
 ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
 {
   if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
