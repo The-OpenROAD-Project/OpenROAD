@@ -298,7 +298,6 @@ class Opendp
 
   // Lower left corner in core coordinates.
   DbuPt initialLocation(const Cell* cell, bool padded) const;
-  static bool isBlock(const Cell* cell);
   int disp(const Cell* cell) const;
   // Place fillers
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);

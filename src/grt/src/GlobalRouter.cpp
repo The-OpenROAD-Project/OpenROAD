@@ -509,6 +509,15 @@ void GlobalRouter::initRoutingLayers(int min_routing_layer,
                        "Layer {} does not have a valid direction.",
                        tech_layer->getName());
       }
+      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+      if (track_grid == nullptr
+          && tech_layer->getRoutingLevel() >= min_routing_layer
+          && tech_layer->getRoutingLevel() <= max_routing_layer) {
+        logger_->error(GRT,
+                       70,
+                       "Layer {} does not have track grid.",
+                       tech_layer->getName());
+      }
       routing_layers_[valid_layers] = tech_layer;
       valid_layers++;
     }

@@ -334,6 +334,9 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
+    if (hasPort(in_net)) {
+      return false;
+    }
     survivor = out_net;
     removed = in_net;
   } else {

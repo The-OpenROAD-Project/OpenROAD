@@ -8,6 +8,10 @@ record_tests {
     #test_error_exception
 }
 
+record_pass_fail_tests {
+  cpp_tests
+}
+
 # future_tests 
 #     # test_clear_metrics_stage
 #     # test_critical

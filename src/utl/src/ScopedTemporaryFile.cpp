@@ -7,6 +7,19 @@ namespace fs = std::filesystem;
 
 namespace utl {
 
+namespace {
+std::string generate_unused_filename(const std::string& prefix)
+{
+  int counter = 1;
+  std::string filename;
+  do {
+    filename = fmt::format("{}.{}", prefix, counter++);
+  } while (std::filesystem::exists(filename));
+
+  return filename;
+}
+}  // namespace
+
 ScopedTemporaryFile::ScopedTemporaryFile(Logger* logger) : logger_(logger)
 {
   strncpy(path_, "/tmp/openroad_CFileUtilsTest_XXXXXX", sizeof(path_) - 1);
@@ -37,8 +50,10 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 }
 
 StreamHandler::StreamHandler(const char* filename, bool binary)
-    : filename_(filename), tmp_filename_(filename_ + ".tmp")
+    : filename_(filename)
 {
+  tmp_filename_ = generate_unused_filename(filename_);
+
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   std::ios_base::openmode mode = std::ios_base::out | std::ios::trunc;
   if (binary) {
@@ -69,8 +84,9 @@ std::ofstream& StreamHandler::getStream()
 }
 
 FileHandler::FileHandler(const char* filename, bool binary)
-    : filename_(filename), tmp_filename_(filename_ + ".tmp")
+    : filename_(filename)
 {
+  tmp_filename_ = generate_unused_filename(filename_);
   file_ = fopen(tmp_filename_.c_str(), (binary ? "wb" : "w"));
   if (!file_) {
     std::string error = strerror(errno);
