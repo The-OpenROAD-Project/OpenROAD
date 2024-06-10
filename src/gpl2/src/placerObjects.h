@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,24 +36,11 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
+#include "Kokkos_Core.hpp"
 #include <odb/db.h>
-#include <thrust/copy.h>
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
-#include <thrust/fill.h>
-#include <thrust/for_each.h>
-#include <thrust/host_vector.h>
-#include <thrust/sequence.h>
 
-#include <iomanip>
-#include <memory>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
-
-#include "util.h"
 
 namespace odb {
 class dbDatabase;
@@ -451,9 +439,9 @@ class Die
 {
  public:
   Die();
-  Die(const odb::Rect& dieBox, const odb::Rect& coreRect);
-  void setDieBox(const odb::Rect& dieBox);
-  void setCoreBox(const odb::Rect& coreBox);
+  Die(const odb::Rect& dieRect, const odb::Rect& coreRect);
+  void setDieBox(const odb::Rect& dieRect);
+  void setCoreBox(const odb::Rect& coreRect);
 
   int dieLx() const { return dieLx_; }
   int dieLy() const { return dieLy_; }
@@ -496,29 +484,29 @@ struct IntPoint
 {
   int x;
   int y;
-  __host__ __device__ IntPoint() : x(0), y(0) {}
-  __host__ __device__ IntPoint(int _x, int _y) : x(_x), y(_y) {}
+  KOKKOS_FUNCTION IntPoint() : x(0), y(0) {}
+  KOKKOS_FUNCTION IntPoint(int _x, int _y) : x(_x), y(_y) {}
 };
 
 struct FloatPoint
 {
   float x;
   float y;
-  __host__ __device__ FloatPoint() : x(0), y(0) {}
-  __host__ __device__ FloatPoint(float _x, float _y) : x(_x), y(_y) {}
+  KOKKOS_FUNCTION FloatPoint() : x(0), y(0) {}
+  KOKKOS_FUNCTION FloatPoint(float _x, float _y) : x(_x), y(_y) {}
 };
 
 struct Int64Point
 {
   int64_t x;
   int64_t y;
-  __host__ __device__ Int64Point() : x(0), y(0) {}
-  __host__ __device__ Int64Point(int64_t _x, int64_t _y) : x(_x), y(_y) {}
+  KOKKOS_FUNCTION Int64Point() : x(0), y(0) {}
+  KOKKOS_FUNCTION Int64Point(int64_t _x, int64_t _y) : x(_x), y(_y) {}
 };
 
 struct IntRect
 {
-  __host__ __device__ IntRect()
+  KOKKOS_FUNCTION IntRect()
   {
     lx = 0;
     ly = 0;
@@ -526,7 +514,7 @@ struct IntRect
     uy = 0;
   }
 
-  __host__ __device__ IntRect(int _lx, int _ly, int _ux, int _uy)
+  KOKKOS_FUNCTION IntRect(int _lx, int _ly, int _ux, int _uy)
       : lx(_lx), ly(_ly), ux(_ux), uy(_uy)
   {
   }
@@ -659,6 +647,6 @@ int calculateBiVariateNormalCDF(biNormalParameters i);
 
 // numeric operators
 
-__host__ __device__ int fastModulo(const int input, const int ceil);
+KOKKOS_FUNCTION int fastModulo(const int input, const int ceil);
 
 }  // namespace gpl2

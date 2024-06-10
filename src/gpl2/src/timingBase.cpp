@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,67 +34,33 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
-#include <memory>
-#include <vector>
-
-namespace odb {
-class dbDatabase;
-}
-
-namespace grt {
-class GlobalRouter;
-}
-
-namespace utl {
-class Logger;
-}
+#include "timingBase.h"
+#include "placerBase.h"
+#include "rsz/Resizer.hh"
+#include "sta/Fuzzy.hh"
+#include "utl/Logger.h"
 
 namespace gpl2 {
 
-class PlacerBaseCommon;
-class PlacerBase;
+using utl::GPL;
 
-class RouteBaseVars
+// TimingBase
+TimingBase::TimingBase() : rs_(nullptr), log_(nullptr), nbc_(nullptr)
 {
- public:
-  float inflationRatioCoef;
-  float maxInflationRatio;
-  float maxDensity;
-  float targetRC;
-  float ignoreEdgeRatio;
-  float minInflationRatio;
+}
 
-  // targetRC metric coefficients.
-  float rcK1, rcK2, rcK3, rcK4;
-
-  int maxBloatIter;
-  int maxInflationIter;
-
-  RouteBaseVars();
-  void reset();
-};
-
-class GpuRouteBase
+TimingBase::TimingBase(const std::shared_ptr<PlacerBaseCommon>& nbc,
+                             rsz::Resizer* rs,
+                             utl::Logger* log)
+    : TimingBase()
 {
- public:
-  GpuRouteBase();
-  GpuRouteBase(RouteBaseVars rbVars,
-               odb::dbDatabase* db,
-               grt::GlobalRouter* grouter,
-               std::shared_ptr<PlacerBaseCommon> nbc,
-               std::vector<std::shared_ptr<PlacerBase>> nbVec,
-               utl::Logger* log);
-  ~GpuRouteBase();
+  rs_ = rs;
+  nbc_ = std::move(nbc);
+  log_ = log;
+}
 
- private:
-  RouteBaseVars rbVars_;
-  odb::dbDatabase* db_;
-  grt::GlobalRouter* grouter_;
-
-  std::shared_ptr<PlacerBaseCommon> nbc_;
-  std::vector<std::shared_ptr<PlacerBase>> nbVec_;
-  utl::Logger* log_;
-};
 }  // namespace gpl2

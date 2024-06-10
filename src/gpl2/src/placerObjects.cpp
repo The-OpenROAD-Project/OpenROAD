@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,34 +36,13 @@
 
 #include "placerObjects.h"
 
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <odb/db.h>
 
-#include <chrono>
 #include <cmath>
 #include <iostream>
-#include <memory>
-#include <numeric>
 
-#include "util.h"
 #include "utl/Logger.h"
 // basic vectors
-#include <thrust/device_free.h>
-#include <thrust/device_malloc.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/reduce.h>
-#include <thrust/sequence.h>
-// memory related
-#include <thrust/copy.h>
-#include <thrust/fill.h>
-// algorithm related
-#include <thrust/execution_policy.h>
-#include <thrust/for_each.h>
-#include <thrust/functional.h>
-#include <thrust/replace.h>
-#include <thrust/transform.h>
 
 namespace gpl2 {
 
@@ -395,15 +375,10 @@ void Pin::updateLocation(Instance* inst)
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Net
 Net::Net()
-    : net_(nullptr),
-      netId_(-1),
-      lx_(0),
+    : lx_(0),
       ly_(0),
       ux_(0),
-      uy_(0),
-      isDontCare_(false),
-      virtualWeight_(0.0),
-      weight_(1.0)
+      uy_(0)
 {
 }
 
@@ -629,7 +604,7 @@ int calculateBiVariateNormalCDF(biNormalParameters i)
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
-__host__ __device__ int fastModulo(const int input, const int ceil)
+KOKKOS_FUNCTION int fastModulo(const int input, const int ceil)
 {
   return input >= ceil ? input % ceil : input;
 }

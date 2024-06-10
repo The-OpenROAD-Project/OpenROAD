@@ -4,3 +4,6 @@
 [submodule "src/abc"]
 	path = third-party/abc
 	url = ../../The-OpenROAD-Project/abc.git
+[submodule "src/gpl2/kokkos-fft"]
+	path = src/gpl2/kokkos-fft
+	url = https://github.com/kokkos/kokkos-fft.git
