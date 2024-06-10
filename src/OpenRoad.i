@@ -145,6 +145,13 @@ getReplace()
   return openroad->getReplace();
 }
 
+gpl2::GpuReplace*
+getGpuReplace()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getGpuReplace();
+}
+
 rcx::Ext *
 getOpenRCX()
 {
