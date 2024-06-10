@@ -32,34 +32,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-
-#include <algorithm>
-#include <cmath>
-#include <utility>
-
-#include "gpuTimingBase.h"
-#include "placerBase.h"
-#include "rsz/Resizer.hh"
-#include "sta/Fuzzy.hh"
-#include "utl/Logger.h"
+#pragma once
 
 namespace gpl2 {
-
-using utl::GPL;
-
-// GpuTimingBase
-GpuTimingBase::GpuTimingBase() : rs_(nullptr), log_(nullptr), nbc_(nullptr)
-{
+class DgReplace;
 }
 
-GpuTimingBase::GpuTimingBase(std::shared_ptr<PlacerBaseCommon> nbc,
-                             rsz::Resizer* rs,
-                             utl::Logger* log)
-    : GpuTimingBase()
-{
-  rs_ = rs;
-  nbc_ = std::move(nbc);
-  log_ = log;
-}
+namespace ord {
 
-}  // namespace gpl2
+class OpenRoad;
+
+gpl2::DgReplace* makeDgReplace();
+
+void initDgReplace(OpenRoad* openroad);
+
+void deleteDgReplace(gpl2::DgReplace* dg_replace);
+
+}  // namespace ord

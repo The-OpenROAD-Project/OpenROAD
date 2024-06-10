@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,37 +43,12 @@
 
 #include "initialPlace.h"
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cusparse.h>
-
 #include <chrono>
-#include <filesystem>
 #include <thread>
 #include <utility>
 
 #include "placerBase.h"
 #include "utl/Logger.h"
-// basic vectors
-#include <thrust/device_free.h>
-#include <thrust/device_malloc.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/reduce.h>
-#include <thrust/sequence.h>
-// memory related
-#include <thrust/copy.h>
-#include <thrust/fill.h>
-// algorithm related
-#include <thrust/execution_policy.h>
-#include <thrust/for_each.h>
-#include <thrust/functional.h>
-#include <thrust/inner_product.h>
-#include <thrust/iterator/zip_iterator.h>
-#include <thrust/reduce.h>
-#include <thrust/replace.h>
-#include <thrust/sort.h>
-#include <thrust/transform.h>
 
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/SparseCore>

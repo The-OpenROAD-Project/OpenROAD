@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,20 +36,8 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
-#include <thrust/functional.h>
-#include <thrust/host_vector.h>
-#include <thrust/iterator/counting_iterator.h>
-#include <thrust/iterator/transform_iterator.h>
-
-#include <ctime>
-#include <memory>
-
-#include "cudaUtil.h"
 #include "placerBase.h"
 #include "placerObjects.h"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace gpl2 {
@@ -58,18 +47,18 @@ class WirelengthOp
  public:
   WirelengthOp();
   WirelengthOp(PlacerBaseCommon* pbc);
-  ~WirelengthOp();
+  ~WirelengthOp() = default;
 
   void computeWireLengthForce(float wlCoeffX,
                               float wlCoeffY,
                               float virtualWeightFactor,
-                              float* wirelengthForceX,
-                              float* wirelengthForceY);
+                              const Kokkos::View<float*>& wirelengthForceX,
+                              const Kokkos::View<float*>& wirelengthForceY);
 
   int64_t computeHPWL();
   int64_t computeWeightedHPWL(float virtualWeightFactor);
 
-  void updatePinLocation(const int* instDCx, const int* instDCy);
+  void updatePinLocation(const Kokkos::View<const int*>& instDCx, const Kokkos::View<const int*>& instDCy);
 
  private:
   PlacerBaseCommon* pbc_;
@@ -83,91 +72,54 @@ class WirelengthOp
 
   // refer to hMETIS or TritonPart for this structure
   // map inst to pins
-  thrust::device_vector<int> dInstPinIdx_;
-  thrust::device_vector<int>
+  Kokkos::View<int*> dInstPinIdx_;
+  Kokkos::View<int*>
       dInstPinPos_;  // start - end position of pins of each inst
-  thrust::device_vector<int> dPinInstId_;  // inst id of each pin
-  int* dInstPinIdxPtr_;
-  int* dInstPinPosPtr_;
-  int* dPinInstIdPtr_;
+  Kokkos::View<int*> dPinInstId_;  // inst id of each pin
   // map net to pins
-  thrust::device_vector<int> dNetPinIdx_;
-  thrust::device_vector<int>
+  Kokkos::View<int*> dNetPinIdx_;
+  Kokkos::View<int*>
       dNetPinPos_;  // start - end position of pins of each net
-  thrust::device_vector<int> dPinNetId_;  // net id of each pin
-  int* dNetPinIdxPtr_;
-  int* dNetPinPosPtr_;
-  int* dPinNetIdPtr_;
+  Kokkos::View<int*> dPinNetId_;  // net id of each pin
 
   // Pin information
-  thrust::device_vector<int> dPinX_;
-  thrust::device_vector<int> dPinY_;
-  thrust::device_vector<int> dPinOffsetX_;
-  thrust::device_vector<int> dPinOffsetY_;
-  thrust::device_vector<float> dPinGradX_;
-  thrust::device_vector<float> dPinGradY_;
+  Kokkos::View<int*> dPinX_;
+  Kokkos::View<int*> dPinY_;
+  Kokkos::View<int*> dPinOffsetX_;
+  Kokkos::View<int*> dPinOffsetY_;
+  Kokkos::View<float*> dPinGradX_;
+  Kokkos::View<float*> dPinGradY_;
 
   // For each pin, we have
   // aPosX, aPosY, aNegX, aNegY,
   // bPosX, bPosY, bNegX, bNegY,
   // cPosX, cPosY, cNegX, cNegY
-  thrust::device_vector<float> dPinAPosX_;
-  thrust::device_vector<float> dPinAPosY_;
-  thrust::device_vector<float> dPinANegX_;
-  thrust::device_vector<float> dPinANegY_;
-  thrust::device_vector<float> dNetBPosX_;
-
-  int* dPinXPtr_;
-  int* dPinYPtr_;
-  int* dPinOffsetXPtr_;
-  int* dPinOffsetYPtr_;
-  float* dPinGradXPtr_;
-  float* dPinGradYPtr_;
-
-  float* dPinAPosXPtr_;
-  float* dPinAPosYPtr_;
-  float* dPinANegXPtr_;
-  float* dPinANegYPtr_;
+  Kokkos::View<float*> dPinAPosX_;
+  Kokkos::View<float*> dPinAPosY_;
+  Kokkos::View<float*> dPinANegX_;
+  Kokkos::View<float*> dPinANegY_;
+  Kokkos::View<float*> dNetBPosX_;
 
   // Net information
-  thrust::device_vector<int> dNetWidth_;
-  thrust::device_vector<int> dNetHeight_;
-  thrust::device_vector<int> dNetLx_;
-  thrust::device_vector<int> dNetLy_;
-  thrust::device_vector<int> dNetUx_;
-  thrust::device_vector<int> dNetUy_;
-  thrust::device_vector<float> dNetWeight_;
-  thrust::device_vector<float> dNetVirtualWeight_;
+  Kokkos::View<int*> dNetWidth_;
+  Kokkos::View<int*> dNetHeight_;
+  Kokkos::View<int*> dNetLx_;
+  Kokkos::View<int*> dNetLy_;
+  Kokkos::View<int*> dNetUx_;
+  Kokkos::View<int*> dNetUy_;
+  Kokkos::View<float*> dNetWeight_;
+  Kokkos::View<float*> dNetVirtualWeight_;
 
-  thrust::device_vector<float> dNetBPosY_;
-  thrust::device_vector<float> dNetBNegX_;
-  thrust::device_vector<float> dNetBNegY_;
-  thrust::device_vector<float> dNetCPosX_;
-  thrust::device_vector<float> dNetCPosY_;
-  thrust::device_vector<float> dNetCNegX_;
-  thrust::device_vector<float> dNetCNegY_;
-
-  int* dNetWidthPtr_;
-  int* dNetHeightPtr_;
-  int* dNetLxPtr_;
-  int* dNetLyPtr_;
-  int* dNetUxPtr_;
-  int* dNetUyPtr_;
-  float* dNetWeightPtr_;
-  float* dNetVirtualWeightPtr_;
-
-  float* dNetBPosXPtr_;
-  float* dNetBPosYPtr_;
-  float* dNetBNegXPtr_;
-  float* dNetBNegYPtr_;
-  float* dNetCPosXPtr_;
-  float* dNetCPosYPtr_;
-  float* dNetCNegXPtr_;
-  float* dNetCNegYPtr_;
+  Kokkos::View<float*> dNetBPosY_;
+  Kokkos::View<float*> dNetBNegX_;
+  Kokkos::View<float*> dNetBNegY_;
+  Kokkos::View<float*> dNetCPosX_;
+  Kokkos::View<float*> dNetCPosY_;
+  Kokkos::View<float*> dNetCNegX_;
+  Kokkos::View<float*> dNetCNegY_;
 
   // device memory management
-  void initCUDAKernel();
-  void freeCUDAKernel();
+  void initBackend();
 };
 
 }  // namespace gpl2

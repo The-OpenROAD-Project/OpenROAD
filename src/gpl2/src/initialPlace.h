@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,25 +36,14 @@
 
 #pragma once
 
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <odb/db.h>
-#include <thrust/copy.h>
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
-#include <thrust/fill.h>
-#include <thrust/for_each.h>
-#include <thrust/host_vector.h>
-#include <thrust/iterator/zip_iterator.h>
-#include <thrust/sequence.h>
-#include <thrust/transform.h>
 
 #include <Eigen/SparseCore>
 #include <iostream>
 #include <memory>
 
-#include "gpuRouteBase.h"
-#include "gpuTimingBase.h"
+#include "routeBase.h"
+#include "timingBase.h"
 #include "nesterovPlace.h"
 #include "placerBase.h"
 #include "placerObjects.h"
@@ -114,8 +104,8 @@ class InitialPlace
   utl::Logger* log_;
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;
-  std::shared_ptr<GpuRouteBase> rb_;
-  std::shared_ptr<GpuTimingBase> tb_;
+  std::shared_ptr<RouteBase> rb_;
+  std::shared_ptr<TimingBase> tb_;
 
   // Nesterov placement
   PlacerBaseVars pbVars_;

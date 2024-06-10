@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,25 +35,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-#include <cmath>
-#include <iostream>
 #include <string>
 #include <utility>
 
-#include "gpuRouteBase.h"
+#include "routeBase.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 
-using grt::GlobalRouter;
-using std::make_pair;
-using std::pair;
-using std::sort;
 using std::string;
 using std::vector;
-
-using utl::GPL2;
 
 namespace gpl2 {
 
@@ -79,20 +72,20 @@ void RouteBaseVars::reset()
 }
 
 /////////////////////////////////////////////
-// GpuRouteBase
+// RouteBase
 
-GpuRouteBase::GpuRouteBase()
-    : rbVars_(), db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
+RouteBase::RouteBase()
+    : db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
 {
 }
 
-GpuRouteBase::GpuRouteBase(RouteBaseVars rbVars,
+RouteBase::RouteBase(RouteBaseVars rbVars,
                            odb::dbDatabase* db,
                            grt::GlobalRouter* grouter,
-                           std::shared_ptr<PlacerBaseCommon> nbc,
+                           const std::shared_ptr<PlacerBaseCommon>& nbc,
                            std::vector<std::shared_ptr<PlacerBase>> nbVec,
                            utl::Logger* log)
-    : GpuRouteBase()
+    : RouteBase()
 {
   rbVars_ = rbVars;
   db_ = db;
@@ -102,8 +95,6 @@ GpuRouteBase::GpuRouteBase(RouteBaseVars rbVars,
   nbVec_ = std::move(nbVec);
 }
 
-GpuRouteBase::~GpuRouteBase()
-{
-}
+RouteBase::~RouteBase() = default;
 
 }  // namespace gpl2

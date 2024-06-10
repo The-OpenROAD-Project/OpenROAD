@@ -59,7 +59,9 @@
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
-#include "gpl2/MakeGpuReplace.h"
+#ifdef ENABLE_KOKKOS
+#include "gpl2/MakeDgReplace.h"
+#endif
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
 #include "ifp//MakeInitFloorplan.hh"
@@ -138,7 +140,9 @@ OpenRoad::~OpenRoad()
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
-  deleteGpuReplace(gpu_replace_);
+#ifdef ENABLE_KOKKOS
+  deleteDgReplace(dg_replace_);
+#endif
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
@@ -206,7 +210,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   extractor_ = makeOpenRCX();
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
-  gpu_replace_ = makeGpuReplace();
+#ifdef ENABLE_KOKKOS
+  dg_replace_ = makeDgReplace();
+#endif
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
@@ -232,7 +238,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initReplace(this);
-  initGpuReplace(this);
+#ifdef ENABLE_KOKKOS
+  initDgReplace(this);
+#endif
   initOpendp(this);
   initOptdp(this);
   initFinale(this);
