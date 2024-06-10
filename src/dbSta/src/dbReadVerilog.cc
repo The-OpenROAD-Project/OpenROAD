@@ -444,7 +444,7 @@ void Verilog2db::makeDbModule(
       }
       auto db_inst = dbInst::create(block_, master, child_name, false, module);
 
-      // Yosys writes an src attribute on sequential instances to give the
+      // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
       const auto src = network_->getAttribute(child, "src");
       if (!src.empty()) {
