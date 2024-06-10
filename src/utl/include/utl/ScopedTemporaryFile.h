@@ -70,9 +70,8 @@ class ScopedTemporaryFile
 class StreamHandler
 {
  public:
-  StreamHandler(const char* filename,
-                bool binary
-                = false);  // Set binary_ true to open in binary mode
+  // Set binary to true to open in binary mode
+  StreamHandler(const char* filename, bool binary = false);
   ~StreamHandler();
   std::ofstream& getStream();
 
@@ -85,8 +84,8 @@ class StreamHandler
 class FileHandler
 {
  public:
-  FileHandler(const char* filename,
-              bool binary = false);  // Set binary_ true to open in binary mode
+  // Set binary to true to open in binary mode
+  FileHandler(const char* filename, bool binary = false);
   ~FileHandler();
   FILE* getFile();
 
