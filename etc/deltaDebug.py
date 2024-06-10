@@ -529,45 +529,61 @@ class deltaDebugger:
 
     def mangle_def_file(self, input_def_file):
         patterns = {
-            'nets': r'(-\s+\S+\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)',
-            'components': r'(-\s+\S+\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)'
+            'nets': r'(-\s+(\S+)\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)',
+            'components': r'(-\s+(\S+)\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)'
         }
-        
+
         net_count = 1
         element_count = 1
-        
+        net_mapping = {}
+        element_mapping = {}
+
         def rename_nets(text):
             nonlocal net_count
             def repl(match):
                 nonlocal net_count
-                new_name = f"net{net_count}"
-                net_count += 1
-                return f"- {new_name} "
-            return re.sub(r'-\s+\S+', repl, text)
-        
+                original_name = match.group(2)
+                if original_name not in net_mapping:
+                    new_name = f"net{net_count}"
+                    net_mapping[original_name] = new_name
+                    net_count += 1
+                return match.group(1).replace(original_name, net_mapping[original_name])
+            return re.sub(patterns['nets'], repl, text)
+
         def rename_elements(text):
             nonlocal element_count
             def repl(match):
                 nonlocal element_count
-                new_name = f"element{element_count}"
-                element_count += 1
-                return f"- {new_name} "
-            return re.sub(r'-\s+\S+', repl, text)
-        
+                original_name = match.group(2)
+                if original_name not in element_mapping:
+                    new_name = f"element{element_count}"
+                    element_mapping[original_name] = new_name
+                    element_count += 1
+                return match.group(1).replace(original_name, element_mapping[original_name])
+            return re.sub(patterns['components'], repl, text)
+
         with open(input_def_file, 'r') as file:
             content = file.read()
-        
+
         content = rename_nets(content)
-        
         content = rename_elements(content)
+
+        def replace_all(text, mapping):
+            for original, new in mapping.items():
+                text = re.sub(rf'\b{re.escape(original)}\b', new, text)
+            return text
+
+        content = replace_all(content, net_mapping)
+        content = replace_all(content, element_mapping)
 
         base_name = os.path.splitext(input_def_file)[0]
         output_def_file = f"{base_name}_mangled.def"
-        
+
         with open(output_def_file, 'w') as file:
             file.write(content)
-        
+
         print(f"Mangled DEF file has been written to {output_def_file}")
+        
 
 if __name__ == '__main__':
     opt = parser.parse_args()
