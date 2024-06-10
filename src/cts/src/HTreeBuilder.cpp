@@ -1776,10 +1776,10 @@ void HTreeBuilder::createClockSubNets()
   bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
-    
-    // If the branch point is a leaf and has no sinks that will be connected to it
-    //don't create a clock sub net for it
-    if(topologyForEachLevel_.size() == 1
+    // If the branch point is a leaf and has no sinks that will be connected to
+    // it
+    // don't create a clock sub net for it
+    if (topologyForEachLevel_.size() == 1
         && topLevelTopology.getBranchSinksLocations(idx).empty()) {
       return;
     }
@@ -1831,10 +1831,10 @@ void HTreeBuilder::createClockSubNets()
     isFirstPoint = true;
     topology.forEachBranchingPoint([&](unsigned idx,
                                        Point<double> branchPoint) {
-
-      // If the branch point is a leaf and has no sinks that will be connected to it
-      //don't create a clock sub net for it
-      if((levelIdx == topologyForEachLevel_.size() -1)
+      // If the branch point is a leaf and has no sinks that will be connected
+      // to it
+      // don't create a clock sub net for it
+      if ((levelIdx == topologyForEachLevel_.size() - 1)
           && topology.getBranchSinksLocations(idx).empty()) {
         return;
       }
@@ -1895,11 +1895,11 @@ void HTreeBuilder::createClockSubNets()
       [&](unsigned idx, Point<double> branchPoint) {
         ClockSubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
         // If no clock sub net was created for a leaf branch point no sinks
-        //connect to it, so just skip.
-        if(subNet == nullptr) {
+        // connect to it, so just skip.
+        if (subNet == nullptr) {
           return;
         }
-        
+
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
