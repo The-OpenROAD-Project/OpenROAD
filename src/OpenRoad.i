@@ -145,11 +145,11 @@ getReplace()
   return openroad->getReplace();
 }
 
-gpl2::GpuReplace*
-getGpuReplace()
+gpl2::DgReplace*
+getDgReplace()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getGpuReplace();
+  return openroad->getDgReplace();
 }
 
 rcx::Ext *
@@ -304,7 +304,7 @@ openroad_git_describe()
 }
 
 const bool 
-openroad_gpu_compiled()
+openroad_dg_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();
 }

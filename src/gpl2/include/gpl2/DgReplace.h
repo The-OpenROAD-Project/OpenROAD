@@ -63,16 +63,16 @@ namespace gpl2 {
 
 class PlacerBaseCommon;
 class PlacerBase;
-class GpuRouteBase;
-class GpuTimingBase;
+class RouteBase;
+class TimingBase;
 class InitialPlace;
 class NesterovPlace;
 
-class GpuReplace
+class DgReplace
 {
  public:
-  GpuReplace();
-  ~GpuReplace();
+  DgReplace();
+  ~DgReplace();
 
   void init(sta::dbNetwork* network,
             odb::dbDatabase* odb,
@@ -81,7 +81,7 @@ class GpuReplace
             utl::Logger* logger);
   void reset();
 
-  // The three main functions
+  // The two main functions
   void doInitialPlace();
   int doNesterovPlace(int start_iter = 0);
 
@@ -147,15 +147,15 @@ class GpuReplace
   grt::GlobalRouter* fr_;
   utl::Logger* log_;
 
-  // We should only have one placerBaseCommon, timingBase and routeBase
-  // But we need multiple placerBases to handle fences and multiple domains
   float haloWidth_ = 0.0f;
   int virtualIter_ = 0;
   int numHops_ = 0;
 
+  // We should only have one placerBaseCommon, timingBase and routeBase
+  // But we need multiple placerBases to handle fences and multiple domains
   std::shared_ptr<PlacerBaseCommon> pbc_;
-  std::shared_ptr<GpuRouteBase> rb_;
-  std::shared_ptr<GpuTimingBase> tb_;
+  std::shared_ptr<RouteBase> rb_;
+  std::shared_ptr<TimingBase> tb_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
 
   std::unique_ptr<InitialPlace> ip_;

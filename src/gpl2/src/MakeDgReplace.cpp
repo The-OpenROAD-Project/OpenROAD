@@ -2,6 +2,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2018-2020, The Regents of the University of California
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,52 +32,45 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include "gpl2/MakeDgReplace.h"
 
-#include <chrono>
-#include <cmath>
-#include <iostream>
-#include <memory>
-#include <numeric>
+#include <tcl.h>
 
-#include "util.h"
-// basic vectors
-#include <thrust/device_free.h>
-#include <thrust/device_malloc.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/reduce.h>
-#include <thrust/sequence.h>
-// memory related
-#include <thrust/copy.h>
-#include <thrust/fill.h>
-// algorithm related
-#include <thrust/execution_policy.h>
-#include <thrust/for_each.h>
-#include <thrust/functional.h>
-#include <thrust/replace.h>
-#include <thrust/transform.h>
+#include <Kokkos_Core.hpp>
+#include "gpl2/DgReplace.h"
+#include "ord/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
-namespace gpl2 {
-
-// utilities function
-void freeCUDA(void* cuda_pointer)
-{
-  cudaError_t err = cudaFree(cuda_pointer);
-  if (err != cudaSuccess) {
-    std::cerr << "Failed to free the pointer (error code ";
-    std::cerr << cudaGetErrorString(err) << ")!\n";
-  }
+namespace sta {
+extern const char* gpl2_tcl_inits[];
 }
 
-void getLastCUDAErr()
-{
-  // Check for any errors launching the kernel
-  cudaError_t cudaerr = cudaGetLastError();
-  if (cudaerr != cudaSuccess) {
-    std::cerr << "CUDA failed with error: " << cudaGetErrorString(cudaerr);
-  }
+extern "C" {
+extern int Gpl2_Init(Tcl_Interp* interp);
 }
 
-}  // namespace gpl2
+namespace ord {
+
+gpl2::DgReplace* makeDgReplace()
+{
+  return new gpl2::DgReplace();
+}
+
+void initDgReplace(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  Gpl2_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::gpl2_tcl_inits);
+  openroad->getDgReplace()->init(openroad->getDbNetwork(),
+                                  openroad->getDb(),
+                                  openroad->getResizer(),
+                                  openroad->getGlobalRouter(),
+                                  openroad->getLogger());
+}
+
+void deleteDgReplace(gpl2::DgReplace* replace)
+{
+  delete replace;
+}
+
+}  // namespace ord

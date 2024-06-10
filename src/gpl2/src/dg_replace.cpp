@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,26 +34,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "gpl2/GpuReplace.h"
+#include "gpl2/DgReplace.h"
 
-// for test only
-#include <iostream>
-
-#include "gpuRouteBase.h"
-#include "gpuTimingBase.h"
+#include "routeBase.h"
+#include "timingBase.h"
 #include "initialPlace.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace gpl2 {
 
 using utl::GPL2;
 
-GpuReplace::GpuReplace()
+DgReplace::DgReplace()
     : db_(nullptr),
       rs_(nullptr),
       fr_(nullptr),
@@ -99,11 +96,11 @@ GpuReplace::GpuReplace()
       padLeft_(0),
       padRight_(0){};
 
-GpuReplace::~GpuReplace()
+DgReplace::~DgReplace()
 {
 }
 
-void GpuReplace::init(sta::dbNetwork* network,
+void DgReplace::init(sta::dbNetwork* network,
                       odb::dbDatabase* odb,
                       rsz::Resizer* resizer,
                       grt::GlobalRouter* router,
@@ -116,7 +113,7 @@ void GpuReplace::init(sta::dbNetwork* network,
   log_ = logger;
 }
 
-void GpuReplace::reset()
+void DgReplace::reset()
 {
   ip_.reset();
   np_.reset();
@@ -166,7 +163,7 @@ void GpuReplace::reset()
   timingNetWeightMax_ = 1.9;
 }
 
-void GpuReplace::doInitialPlace()
+void DgReplace::doInitialPlace()
 {
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
@@ -205,7 +202,7 @@ void GpuReplace::doInitialPlace()
   ip_->doInitialPlace();
 }
 
-bool GpuReplace::initNesterovPlace()
+bool DgReplace::initNesterovPlace()
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -293,7 +290,7 @@ bool GpuReplace::initNesterovPlace()
   return true;
 }
 
-int GpuReplace::doNesterovPlace(int start_iter)
+int DgReplace::doNesterovPlace(int start_iter)
 {
   if (!initNesterovPlace()) {
     return 0;
@@ -309,139 +306,139 @@ int GpuReplace::doNesterovPlace(int start_iter)
   return val;
 }
 
-void GpuReplace::setInitialPlaceMaxIter(int iter)
+void DgReplace::setInitialPlaceMaxIter(int iter)
 {
   initialPlaceMaxIter_ = iter;
 }
 
-void GpuReplace::setInitialPlaceMinDiffLength(int length)
+void DgReplace::setInitialPlaceMinDiffLength(int length)
 {
   initialPlaceMinDiffLength_ = length;
 }
 
-void GpuReplace::setInitialPlaceMaxSolverIter(int iter)
+void DgReplace::setInitialPlaceMaxSolverIter(int iter)
 {
   initialPlaceMaxSolverIter_ = iter;
 }
 
-void GpuReplace::setInitialPlaceMaxFanout(int fanout)
+void DgReplace::setInitialPlaceMaxFanout(int fanout)
 {
   initialPlaceMaxFanout_ = fanout;
 }
 
-void GpuReplace::setInitialPlaceNetWeightScale(float scale)
+void DgReplace::setInitialPlaceNetWeightScale(float scale)
 {
   initialPlaceNetWeightScale_ = scale;
 }
 
-void GpuReplace::setNesterovPlaceMaxIter(int iter)
+void DgReplace::setNesterovPlaceMaxIter(int iter)
 {
   nesterovPlaceMaxIter_ = iter;
 }
 
-void GpuReplace::setBinGridCnt(int binGridCntX, int binGridCntY)
+void DgReplace::setBinGridCnt(int binGridCntX, int binGridCntY)
 {
   binGridCntX_ = binGridCntX;
   binGridCntY_ = binGridCntY;
 }
 
-void GpuReplace::setTargetOverflow(float overflow)
+void DgReplace::setTargetOverflow(float overflow)
 {
   overflow_ = overflow;
 }
 
-void GpuReplace::setTargetDensity(float density)
+void DgReplace::setTargetDensity(float density)
 {
   density_ = density;
 }
 
-void GpuReplace::setUniformTargetDensityMode(bool mode)
+void DgReplace::setUniformTargetDensityMode(bool mode)
 {
   uniformTargetDensityMode_ = mode;
 }
 
 // TODO: update to be compatible with multiple target densities
-float GpuReplace::getUniformTargetDensity()
+float DgReplace::getUniformTargetDensity()
 {
   return 0.0;
 }
 
-void GpuReplace::setInitDensityPenalityFactor(float penaltyFactor)
+void DgReplace::setInitDensityPenalityFactor(float penaltyFactor)
 {
   initDensityPenalityFactor_ = penaltyFactor;
 }
 
-void GpuReplace::setInitWireLengthCoef(float coef)
+void DgReplace::setInitWireLengthCoef(float coef)
 {
   initWireLengthCoef_ = coef;
 }
 
-void GpuReplace::setMinPhiCoef(float minPhiCoef)
+void DgReplace::setMinPhiCoef(float minPhiCoef)
 {
   minPhiCoef_ = minPhiCoef;
 }
 
-void GpuReplace::setMaxPhiCoef(float maxPhiCoef)
+void DgReplace::setMaxPhiCoef(float maxPhiCoef)
 {
   maxPhiCoef_ = maxPhiCoef;
 }
 
-void GpuReplace::setReferenceHpwl(float refHpwl)
+void DgReplace::setReferenceHpwl(float refHpwl)
 {
   referenceHpwl_ = refHpwl;
 }
 
-void GpuReplace::setSkipIoMode(bool mode)
+void DgReplace::setSkipIoMode(bool mode)
 {
   skipIoMode_ = mode;
 }
 
-void GpuReplace::setTimingDrivenMode(bool mode)
+void DgReplace::setTimingDrivenMode(bool mode)
 {
   timingDrivenMode_ = mode;
 }
 
-void GpuReplace::setRoutabilityDrivenMode(bool mode)
+void DgReplace::setRoutabilityDrivenMode(bool mode)
 {
   routabilityDrivenMode_ = mode;
 }
 
-void GpuReplace::setRoutabilityCheckOverflow(float overflow)
+void DgReplace::setRoutabilityCheckOverflow(float overflow)
 {
   routabilityCheckOverflow_ = overflow;
 }
 
-void GpuReplace::setRoutabilityMaxDensity(float density)
+void DgReplace::setRoutabilityMaxDensity(float density)
 {
   routabilityMaxDensity_ = density;
 }
 
-void GpuReplace::setRoutabilityMaxBloatIter(int iter)
+void DgReplace::setRoutabilityMaxBloatIter(int iter)
 {
   routabilityMaxBloatIter_ = iter;
 }
 
-void GpuReplace::setRoutabilityMaxInflationIter(int iter)
+void DgReplace::setRoutabilityMaxInflationIter(int iter)
 {
   routabilityMaxInflationIter_ = iter;
 }
 
-void GpuReplace::setRoutabilityTargetRcMetric(float rc)
+void DgReplace::setRoutabilityTargetRcMetric(float rc)
 {
   routabilityTargetRcMetric_ = rc;
 }
 
-void GpuReplace::setRoutabilityInflationRatioCoef(float coef)
+void DgReplace::setRoutabilityInflationRatioCoef(float coef)
 {
   routabilityInflationRatioCoef_ = coef;
 }
 
-void GpuReplace::setRoutabilityMaxInflationRatio(float ratio)
+void DgReplace::setRoutabilityMaxInflationRatio(float ratio)
 {
   routabilityMaxInflationRatio_ = ratio;
 }
 
-void GpuReplace::setRoutabilityRcCoefficients(float k1,
+void DgReplace::setRoutabilityRcCoefficients(float k1,
                                               float k2,
                                               float k3,
                                               float k4)
@@ -452,52 +449,52 @@ void GpuReplace::setRoutabilityRcCoefficients(float k1,
   routabilityRcK4_ = k4;
 }
 
-void GpuReplace::setPadLeft(int pad)
+void DgReplace::setPadLeft(int pad)
 {
   padLeft_ = pad;
 }
 
-void GpuReplace::setPadRight(int pad)
+void DgReplace::setPadRight(int pad)
 {
   padRight_ = pad;
 }
 
-void GpuReplace::setHaloWidth(float haloWidth)
+void DgReplace::setHaloWidth(float haloWidth)
 {
   haloWidth_ = haloWidth;
 }
 
-void GpuReplace::setVirtualIter(int iter)
+void DgReplace::setVirtualIter(int iter)
 {
   virtualIter_ = iter;
 }
 
-void GpuReplace::setNumHops(int numHops)
+void DgReplace::setNumHops(int numHops)
 {
   numHops_ = numHops;
 }
 
-void GpuReplace::setDataflowFlag(bool flag)
+void DgReplace::setDataflowFlag(bool flag)
 {
   dataflowFlag_ = flag;
 }
 
-void GpuReplace::setDatapathFlag(bool flag)
+void DgReplace::setDatapathFlag(bool flag)
 {
   datapathFlag_ = flag;
 }
 
-void GpuReplace::setClusterConstraintFlag(bool flag)
+void DgReplace::setClusterConstraintFlag(bool flag)
 {
   clusterConstraintFlag_ = flag;
 }
 
-void GpuReplace::addTimingNetWeightOverflow(int overflow)
+void DgReplace::addTimingNetWeightOverflow(int overflow)
 {
   timingNetWeightOverflows_.push_back(overflow);
 }
 
-void GpuReplace::setTimingNetWeightMax(float max)
+void DgReplace::setTimingNetWeightMax(float max)
 {
   timingNetWeightMax_ = max;
 }

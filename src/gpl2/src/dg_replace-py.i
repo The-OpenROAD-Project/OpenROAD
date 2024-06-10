@@ -1,22 +1,22 @@
 %{
 #include "ord/OpenRoad.hh"
-#include "gpl2/GpuReplace.h"
+#include "gpl2/DgReplace.h"
 #include "odb/db.h"
 
 namespace ord {
 OpenRoad*
 getOpenRoad();
 
-gpl2::GpuReplace*
-getGpuReplace();
+gpl2::DgReplace*
+getDgReplace();
 
 }
 
 using ord::getOpenRoad;
-using ord::getGpuReplace;
-using gpl2::GpuReplace;
+using ord::getDgReplace;
+using gpl2::DgReplace;
 
 %}
 
 %include "../../Exception-py.i"
-%include "gpl2/GpuReplace.h"
+%include "gpl2/DgReplace.h"
