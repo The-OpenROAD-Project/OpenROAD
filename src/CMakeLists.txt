@@ -250,6 +250,7 @@ add_subdirectory(dbSta)
 add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
+add_subdirectory(gpl2)
 add_subdirectory(dpl)
 add_subdirectory(fin)
 add_subdirectory(ppl)
@@ -305,6 +306,7 @@ target_link_libraries(openroad
   pad
   ord
   gpl
+  gpl2
   dpl
   fin
   rsz
@@ -391,6 +393,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     ant_py
     grt_py
     gpl_py
+    gpl2_py
     dpl_py
     ppl_py
     tap_py
