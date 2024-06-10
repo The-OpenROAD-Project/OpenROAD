@@ -33,7 +33,7 @@
 ##
 ###############################################################################
 
-sta::define_cmd_args "gpu_global_placement" { \
+sta::define_cmd_args "dg_global_placement" { \
     [-skip_initial_place] \
     [-skip_nesterov_place] \
     [-timing_driven] \
@@ -73,8 +73,8 @@ sta::define_cmd_args "gpu_global_placement" { \
     [-pad_right pad_right] \
 }
 
-proc gpu_global_placement { args } {
-  sta::parse_key_args "gpu_global_placement" args \
+proc dg_global_placement { args } {
+  sta::parse_key_args "dg_global_placement" args \
     keys {-bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
@@ -107,30 +107,30 @@ proc gpu_global_placement { args } {
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
-    gpl2::gpu_set_initial_place_max_iter_cmd 0
+    gpl2::dg_set_initial_place_max_iter_cmd 0
   } elseif { [info exists keys(-initial_place_max_iter)] } { 
     set initial_place_max_iter $keys(-initial_place_max_iter)
     sta::check_positive_integer "-initial_place_max_iter" $initial_place_max_iter
-    gpl2::gpu_set_initial_place_max_iter_cmd $initial_place_max_iter
+    gpl2::dg_set_initial_place_max_iter_cmd $initial_place_max_iter
   }
 
   set skip_io [info exists flags(-skip_io)]
-  gpl2::gpu_set_skip_io_mode_cmd $skip_io
+  gpl2::dg_set_skip_io_mode_cmd $skip_io
   if { $skip_io } {
-    gpl2::gpu_set_initial_place_max_iter_cmd 0
+    gpl2::dg_set_initial_place_max_iter_cmd 0
   }
 
   set dataflow_flag [info exists flags(-dataflow_flag)]
-  gpl2::gpu_set_dataflow_flag_cmd $dataflow_flag
+  gpl2::dg_set_dataflow_flag_cmd $dataflow_flag
 
   set datapath_flag [info exists flags(-datapath_flag)]
-  gpl2::gpu_set_datapath_flag_cmd $datapath_flag
+  gpl2::dg_set_datapath_flag_cmd $datapath_flag
 
   set cluster_constraint_flag [info exists flags(-cluster_constraint_flag)]
-  gpl2::gpu_set_cluster_constraint_flag_cmd $cluster_constraint_flag
+  gpl2::dg_set_cluster_constraint_flag_cmd $cluster_constraint_flag
 
   set timing_driven [info exists flags(-timing_driven)]
-  gpl2::gpu_set_timing_driven_mode $timing_driven
+  gpl2::dg_set_timing_driven_mode $timing_driven
   if { $timing_driven } {
     if { [get_libs -quiet "*"] == {} } {
       utl::error GPL2 121 "No liberty libraries found."
@@ -138,7 +138,7 @@ proc gpu_global_placement { args } {
 
     if { $skip_io } {
       utl::warn "GPL2" 150 "-skip_io will disable timing driven mode."
-      gpl2::gpu_set_timing_driven_mode 0 
+      gpl2::dg_set_timing_driven_mode 0 
     }
 
     if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
@@ -148,15 +148,15 @@ proc gpu_global_placement { args } {
     }
 
     foreach overflow $overflow_list {
-      gpl2::add_timing_net_reweight_overflow_cmd $overflow
+      gpl2::dg_add_timing_net_reweight_overflow_cmd $overflow
     }
 
     if { [info exists keys(-timing_driven_net_weight_max)] } {
-      gpl2::gpu_set_timing_driven_net_weight_max_cmd $keys(-timing_driven_net_weight_max)
+      gpl2::dg_set_timing_driven_net_weight_max_cmd $keys(-timing_driven_net_weight_max)
     }
 
     if { [info exists keys(-timing_driven_nets_percentage)] } {
-      rsz::gpu_set_worst_slack_nets_percent $keys(-timing_driven_nets_percentage)
+      rsz::dg_set_worst_slack_nets_percent $keys(-timing_driven_nets_percentage)
     }
   }
 
@@ -165,11 +165,11 @@ proc gpu_global_placement { args } {
   }
 
   set routability_driven [info exists flags(-routability_driven)]
-  gpl2::gpu_set_routability_driven_mode $routability_driven
+  gpl2::dg_set_routability_driven_mode $routability_driven
   if { $routability_driven } {
     if { $skip_io } {
       utl::warn "GPL2" 151 "-skip_io will disable routability driven mode."
-      gpl2::gpu_set_routability_driven_mode 0 
+      gpl2::dg_set_routability_driven_mode 0 
     }
   }
   if { [info exists flags(-disable_routability_driven)] } {
@@ -179,7 +179,7 @@ proc gpu_global_placement { args } {
   if { [info exists keys(-initial_place_max_fanout)] } { 
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
     sta::check_positive_integer "-initial_place_max_fanout" $initial_place_max_fanout
-    gpl2::gpu_set_initial_place_max_fanout_cmd $initial_place_max_fanout
+    gpl2::dg_set_initial_place_max_fanout_cmd $initial_place_max_fanout
   }
   
   # density settings    
@@ -197,102 +197,102 @@ proc gpu_global_placement { args } {
     if {$target_density > 1.0} {
       utl::error GPL2 135 "Target density must be in \[0, 1\]."
     }
-    gpl2::gpu_set_density_cmd $target_density
+    gpl2::dg_set_density_cmd $target_density
   } 
     
-  gpl2::gpu_set_uniform_target_density_mode_cmd $uniform_mode 
+  gpl2::dg_set_uniform_target_density_mode_cmd $uniform_mode 
     
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
     sta::check_positive_float "-routability_max_density" $routability_max_density
-    gpl2::gpu_set_routability_max_density_cmd $routability_max_density
+    gpl2::dg_set_routability_max_density_cmd $routability_max_density
   }
 
   # parameter to control the RePlAce divergence
   if { [info exists keys(-min_phi_coef)] } { 
     set min_phi_coef $keys(-min_phi_coef)
     sta::check_positive_float "-min_phi_coef" $min_phi_coef
-    gpl2::gpu_set_min_phi_coef_cmd $min_phi_coef
+    gpl2::dg_set_min_phi_coef_cmd $min_phi_coef
   } 
 
   if { [info exists keys(-max_phi_coef)] } { 
     set max_phi_coef $keys(-max_phi_coef)
     sta::check_positive_float "-max_phi_coef" $max_phi_coef
-    gpl2::gpu_set_max_phi_coef_cmd $max_phi_coef  
+    gpl2::dg_set_max_phi_coef_cmd $max_phi_coef  
   }
 
   if { [info exists keys(-init_density_penalty)] } {
     set density_penalty $keys(-init_density_penalty)
     sta::check_positive_float "-init_density_penalty" $density_penalty
-    gpl2::gpu_set_init_density_penalty_factor_cmd $density_penalty
+    gpl2::dg_set_init_density_penalty_factor_cmd $density_penalty
   }
   
   if { [info exists keys(-init_wirelength_coef)] } {
     set coef $keys(-init_wirelength_coef)
     sta::check_positive_float "-init_wirelength_coef" $coef
-    gpl2::gpu_set_init_wirelength_coef_cmd $coef
+    gpl2::dg_set_init_wirelength_coef_cmd $coef
   }
 
   if { [info exists keys(-reference_hpwl)] } {
     set reference_hpwl $keys(-reference_hpwl)
     sta::check_positive_float "-reference_hpwl" $reference_hpwl
-    gpl2::gpu_set_reference_hpwl_cmd $reference_hpwl
+    gpl2::dg_set_reference_hpwl_cmd $reference_hpwl
   }
 
   
   if { [info exists keys(-bin_grid_count)] } {
     set bin_grid_count  $keys(-bin_grid_count)
     sta::check_positive_integer "-bin_grid_count" $bin_grid_count
-    gpl2::gpu_set_bin_grid_cnt_cmd $bin_grid_count $bin_grid_count
+    gpl2::dg_set_bin_grid_cnt_cmd $bin_grid_count $bin_grid_count
   }
  
   # overflow 
   if { [info exists keys(-overflow)] } {
     set overflow $keys(-overflow)
     sta::check_positive_float "-overflow" $overflow
-    gpl2::gpu_set_overflow_cmd $overflow
+    gpl2::dg_set_overflow_cmd $overflow
   }
 
   # routability check overflow
   if { [info exists keys(-routability_check_overflow)] } {
     set routability_check_overflow $keys(-routability_check_overflow)
     sta::check_positive_float "-routability_check_overflow" $routability_check_overflow
-    gpl2::gpu_set_routability_check_overflow_cmd $routability_check_overflow
+    gpl2::dg_set_routability_check_overflow_cmd $routability_check_overflow
   }
   
   # routability bloat iter
   if { [info exists keys(-routability_max_bloat_iter)] } {
     set routability_max_bloat_iter $keys(-routability_max_bloat_iter)
     sta::check_positive_float "-routability_max_bloat_iter" $routability_max_bloat_iter
-    gpl2::gpu_set_routability_max_bloat_iter_cmd $routability_max_bloat_iter
+    gpl2::dg_set_routability_max_bloat_iter_cmd $routability_max_bloat_iter
   }
   
   # routability inflation iter
   if { [info exists keys(-routability_max_inflation_iter)] } {
     set routability_max_inflation_iter $keys(-routability_max_inflation_iter)
     sta::check_positive_float "-routability_max_inflation_iter" $routability_max_inflation_iter
-    gpl2::gpu_set_routability_max_inflation_iter_cmd $routability_max_inflation_iter
+    gpl2::dg_set_routability_max_inflation_iter_cmd $routability_max_inflation_iter
   }
   
   # routability inflation iter
   if { [info exists keys(-routability_target_rc_metric)] } {
     set target_rc_metric $keys(-routability_target_rc_metric)
     sta::check_positive_float "-routability_target_rc_metric" $target_rc_metric
-    gpl2::gpu_set_routability_target_rc_metric_cmd $target_rc_metric
+    gpl2::dg_set_routability_target_rc_metric_cmd $target_rc_metric
   }
   
   # routability inflation ratio coef 
   if { [info exists keys(-routability_inflation_ratio_coef)] } {
     set ratio_coef $keys(-routability_inflation_ratio_coef)
     sta::check_positive_float "-routability_inflation_ratio_coef" $ratio_coef
-    gpl2::gpu_set_routability_inflation_ratio_coef_cmd $ratio_coef
+    gpl2::dg_set_routability_inflation_ratio_coef_cmd $ratio_coef
   }
   
   # routability max inflation ratio
   if { [info exists keys(-routability_max_inflation_ratio)] } {
     set max_inflation_ratio $keys(-routability_max_inflation_ratio)
     sta::check_positive_float "-routability_max_inflation_ratio" $max_inflation_ratio
-    gpl2::gpu_set_routability_max_inflation_ratio_cmd $max_inflation_ratio
+    gpl2::dg_set_routability_max_inflation_ratio_cmd $max_inflation_ratio
   }
   
   # routability rc coefficients control
@@ -302,36 +302,36 @@ proc gpu_global_placement { args } {
     set k2 [lindex $rc_coefficients 1]
     set k3 [lindex $rc_coefficients 2]
     set k4 [lindex $rc_coefficients 3]
-    gpl2::gpu_set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
+    gpl2::dg_set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
 
   # temp code. 
   if { [info exists keys(-pad_left)] } {
     set pad_left $keys(-pad_left)
     sta::check_positive_integer "-pad_left" $pad_left
-    gpl2::gpu_set_pad_left_cmd $pad_left
+    gpl2::dg_set_pad_left_cmd $pad_left
   }
   if { [info exists keys(-pad_right)] } {
     set pad_right $keys(-pad_right)
     sta::check_positive_integer "-pad_right" $pad_right
-    gpl2::gpu_set_pad_right_cmd $pad_right
+    gpl2::dg_set_pad_right_cmd $pad_right
   }
 
   # halo width
   if { [info exists keys(-halo_width)] } {
     set halo_width $keys(-halo_width)
-    gpl2::gpu_set_halo_width_cmd $halo_width
+    gpl2::dg_set_halo_width_cmd $halo_width
   }
 
   # virtual iteration
   if { [info exists keys(-virtualIter)] } {
     set virtualIter $keys(-virtualIter)
-    gpl2::gpu_set_virtual_iter_cmd $virtualIter
+    gpl2::dg_set_virtual_iter_cmd $virtualIter
   }
 
   if { [info exists keys(-numHops)] } {
     set numHops $keys(-numHops)
-    gpl2::gpu_set_num_hops_cmd $numHops
+    gpl2::dg_set_num_hops_cmd $numHops
   }
 
   if { [ord::db_has_rows] } {
@@ -341,13 +341,13 @@ proc gpu_global_placement { args } {
     if { [info exists flags(-incremental)] } {
       puts "Sorry, we do not support incremental placement yet."
     } else {
-      gpl2::gpu_replace_initial_place_cmd
+      gpl2::dg_replace_initial_place_cmd
 
       if { ![info exists flags(-skip_nesterov_place)] } {
-        gpl2::gpu_replace_nesterov_place_cmd
+        gpl2::dg_replace_nesterov_place_cmd
       }
     }
-    gpl2::gpu_replace_reset_cmd
+    gpl2::dg_replace_reset_cmd
   } else {
     utl::error GPL2 130 "No rows defined in design. Use initialize_floorplan to add rows."
   }

@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,12 +36,8 @@
 
 #include "nesterovPlace.h"
 
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-
-#include "gpuRouteBase.h"
-#include "gpuTimingBase.h"
+#include "routeBase.h"
+#include "timingBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
@@ -68,12 +65,11 @@ NesterovPlace::NesterovPlace()
       recursionCntInitSLPCoef_(0)
 {
 }
-
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              const std::shared_ptr<PlacerBaseCommon>& pbc,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
-                             std::shared_ptr<GpuRouteBase> rb,
-                             std::shared_ptr<GpuTimingBase> tb,
+                             std::shared_ptr<RouteBase> rb,
+                             std::shared_ptr<TimingBase> tb,
                              utl::Logger* log)
     : NesterovPlace()
 {
@@ -93,9 +89,9 @@ NesterovPlace::~NesterovPlace()
 
 void NesterovPlace::init()
 {
-  pbc_->initCUDAKernel();
+  pbc_->initBackend();
   for (auto& pb : pbVec_) {
-    pb->initCUDAKernel();
+    pb->initBackend();
   }
 
   // for_each nesterovbase call init
@@ -103,7 +99,7 @@ void NesterovPlace::init()
   float totalBaseWireLengthCoeff = 0;
   for (auto& pb : pbVec_) {
     pb->setNpVars(npVars_);
-    pb->initDensity1();  // update the density cooridinates of instances
+    pb->initDensity1();  // update the density coordinates of instances
     totalSumOverflow_ += pb->getSumOverflow();
     totalBaseWireLengthCoeff += pb->getBaseWireLengthCoef();
   }
@@ -136,8 +132,8 @@ void NesterovPlace::init()
 
   for (auto& pb : pbVec_) {
     float stepL = pb->initDensity2();
-    if ((isnan(stepL) || isinf(stepL))
-        && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef) {
+    if ((Kokkos::isnan(stepL) || Kokkos::isinf(stepL))
+        && recursionCntInitSLPCoef_ < NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
       std::string msg = "steplength = 0 detected. Rerunning Nesterov::init() ";
       msg += "with initPrevSLPCoef ";
@@ -148,7 +144,7 @@ void NesterovPlace::init()
       break;
     }
 
-    if (isnan(stepL) || isinf(stepL)) {
+    if (Kokkos::isnan(stepL) || Kokkos::isinf(stepL)) {
       std::string msg
           = "RePlAce diverged at initial iteration with steplength being "
             + std::to_string(stepL) + ". ";
@@ -375,7 +371,7 @@ void NesterovPlace::updatePrevGradient(std::shared_ptr<PlacerBase> pb)
   float densityGradSum = pb->getDensityGradSum();
 
   if (wireLengthGradSum == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -396,8 +392,8 @@ void NesterovPlace::updatePrevGradient(std::shared_ptr<PlacerBase> pb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum) || isinf(wireLengthGradSum)
-      || isnan(densityGradSum) || isinf(densityGradSum)) {
+  if (Kokkos::isnan(wireLengthGradSum) || Kokkos::isinf(wireLengthGradSum)
+      || Kokkos::isnan(densityGradSum) || Kokkos::isinf(densityGradSum)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -412,7 +408,7 @@ void NesterovPlace::updateCurGradient(std::shared_ptr<PlacerBase> pb)
   float densityGradSum = pb->getDensityGradSum();
 
   if (wireLengthGradSum == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -433,8 +429,8 @@ void NesterovPlace::updateCurGradient(std::shared_ptr<PlacerBase> pb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum) || isinf(wireLengthGradSum)
-      || isnan(densityGradSum) || isinf(densityGradSum)) {
+  if (Kokkos::isnan(wireLengthGradSum) || Kokkos::isinf(wireLengthGradSum)
+      || Kokkos::isnan(densityGradSum) || Kokkos::isinf(densityGradSum)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -448,7 +444,7 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<PlacerBase> pb)
   float densityGradSum = pb->getDensityGradSum();
 
   if (wireLengthGradSum == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -469,8 +465,8 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<PlacerBase> pb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum) || isinf(wireLengthGradSum)
-      || isnan(densityGradSum) || isinf(densityGradSum)) {
+  if (Kokkos::isnan(wireLengthGradSum) || Kokkos::isinf(wireLengthGradSum)
+      || Kokkos::isnan(densityGradSum) || Kokkos::isinf(densityGradSum)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;

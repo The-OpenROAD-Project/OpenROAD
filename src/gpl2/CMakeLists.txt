@@ -34,57 +34,37 @@
 ###############################################################################
 
 include("openroad")
-set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-constexpr -Wno-redundant-decls")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wno-redundant-decls")
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" --expt-relaxed-constexpr)
+add_subdirectory(kokkos-fft)
 find_package(Eigen3 REQUIRED)
-set(CMAKE_C_COMPILER "g++")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb -O3 -DIL_STD -ldl")
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb -O3 -DIL_STD -ldl")
-set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-set(CMAKE_HAVE_THREADS_LIBRARY 1)
-set(CMAKE_USE_PTHREADS_INIT 1)
-set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+find_package(OpenMP REQUIRED)
+find_package(fmt REQUIRED)
+find_package(Kokkos REQUIRED)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEIGEN_NO_CUDA")
 
 swig_lib(NAME      gpl2
          NAMESPACE gpl2
-         I_FILE    src/gpu_replace.i
-         SCRIPTS   src/gpu_replace.tcl
+         I_FILE    src/dg_replace.i
+         SCRIPTS   src/dg_replace.tcl
 )
 
 target_sources(gpl2
   PRIVATE
-    src/MakeGpuReplace.cpp
-    src/gpu_replace.cpp
-    src/util.cu
-    src/wirelengthOp.cu
+    src/MakeDgReplace.cpp
+    src/dg_replace.cpp
     src/wirelengthOp.cpp
-    src/densityOp.cu
     src/densityOp.cpp
-    src/initialPlace.cpp    
+    src/initialPlace.cpp
     src/nesterovPlace.cpp
-    src/cudaDCT.cu
+    src/dct.cpp
     src/poissonSolver.cpp
-    src/poissonSolver.cu
     src/placerObjects.cpp
-    src/placerBase.cu
-    src/cudaPlacerBase.cu
-    src/gpuRouteBase.cu
-    src/gpuTimingBase.cu
+    src/placerBase.cpp
+    src/routeBase.cpp
+    src/timingBase.cpp
   )
 
 messages(TARGET gpl2)
-
-set_property(TARGET gpl2 
-             PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-set_target_properties(gpl2 PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-set_target_properties(gpl2 PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-set_target_properties(gpl2 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(gpl2
   PUBLIC
@@ -100,39 +80,16 @@ target_link_libraries(gpl2
     OpenSTA
     rsz
     grt
+    Kokkos::kokkos
+    KokkosFFT::fft
+    fmt::fmt-header-only
 )
-
-# Set CUDA host compiler and link executable
-set(CMAKE_CUDA_HOST_COMPILER /home/tool/gcc/gcc-10.3.0/bin/g++) # replace with your host compiler
-set(CMAKE_CUDA_LINK_EXECUTABLE "<CMAKE_CUDA_COMPILER> <FLAGS> <CMAKE_CUDA_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-
-
-message(STATUS "GPU is enabled") 
-# find_package(CUDA) should be replaced by "FindCUDAToolkit" for CMAKE verison >= 3.17. 
-# See https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html. 
-# find_package(CUDA) or FindCUDA is deprecated since vision 3.10.
-find_package(CUDAToolkit)
-if (CUDAToolkit_FOUND)
-  message(STATUS "CUDA is found")
-  enable_language(CUDA)
-  target_link_libraries(gpl2
-    PRIVATE
-      CUDA::cudart
-      CUDA::cublas
-      CUDA::cusparse
-      CUDA::cusolver
-      CUDA::cufft
-  )  
-else()
-  message(STATUS "CUDA is not found")
-endif()
-
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          gpl2_py
            NAMESPACE     gpl2
            LANGUAGE      python
-           I_FILE        src/gpu_replace-py.i
+           I_FILE        src/dg_replace-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/gpl2
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/gpl2_py.py
   )

@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,7 +38,7 @@
 #include <cmath>
 #include <utility>
 
-#include "gpuTimingBase.h"
+#include "timingBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
@@ -47,15 +48,15 @@ namespace gpl2 {
 
 using utl::GPL;
 
-// GpuTimingBase
-GpuTimingBase::GpuTimingBase() : rs_(nullptr), log_(nullptr), nbc_(nullptr)
+// TimingBase
+TimingBase::TimingBase() : rs_(nullptr), log_(nullptr), nbc_(nullptr)
 {
 }
 
-GpuTimingBase::GpuTimingBase(std::shared_ptr<PlacerBaseCommon> nbc,
+TimingBase::TimingBase(const std::shared_ptr<PlacerBaseCommon>& nbc,
                              rsz::Resizer* rs,
                              utl::Logger* log)
-    : GpuTimingBase()
+    : TimingBase()
 {
   rs_ = rs;
   nbc_ = std::move(nbc);

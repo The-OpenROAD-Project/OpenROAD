@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,14 +43,9 @@
 
 #pragma once
 
-#include <cufft.h>
-#include <stdio.h>
+#include <Kokkos_Core.hpp>
 
-#include <memory>
-
-#include "cudaDCT.h"
-#include "cudaUtil.h"
-#include "util.h"
+#include "dct.h"
 
 #define FFT_PI 3.141592653589793238462L
 
@@ -60,16 +56,19 @@ class PoissonSolver
  public:
   PoissonSolver();
   PoissonSolver(int binCntX, int binCntY, int binSizeX, int binSizeY);
-  ~PoissonSolver();
+  ~PoissonSolver() = default;
 
   // Compute Potential and Electric Force in the row-major order
-  void solvePoisson(const float* binDensity,
-                    float* potential,
-                    float* electroForceX,
-                    float* electroForceY);
+  void solvePoisson(Kokkos::View<float*> binDensity,
+                    Kokkos::View<float*> potential,
+                    Kokkos::View<float*> electroForceX,
+                    Kokkos::View<float*> electroForceY);
 
   // Compute Potential Only (not Electric Force) the row-major order
-  void solvePoissonPotential(const float* binDensity, float* potential);
+  void solvePoissonPotential(Kokkos::View<float*> binDensity, Kokkos::View<float*> potential);
+
+  // device memory management
+  void initBackend();
 
  private:
   int binCntX_;
@@ -77,37 +76,25 @@ class PoissonSolver
   int binSizeX_;
   int binSizeY_;
 
-  // device memory management
-  void initCUDAKernel();
-  void freeCUDAKernel();
+  Kokkos::View<Kokkos::complex<float>*> d_expkN_;
+  Kokkos::View<Kokkos::complex<float>*> d_expkM_;
 
-  cufftHandle plan_;
-  cufftHandle planInverse_;
+  Kokkos::View<Kokkos::complex<float>*> d_expkNForInverse_;
+  Kokkos::View<Kokkos::complex<float>*> d_expkMForInverse_;
 
-  cufftComplex* d_expkN_;
-  cufftComplex* d_expkM_;
+  Kokkos::View<Kokkos::complex<float>*> d_expkMN1_;
+  Kokkos::View<Kokkos::complex<float>*> d_expkMN2_;
 
-  cufftComplex* d_expkNForInverse_;
-  cufftComplex* d_expkMForInverse_;
+  Kokkos::View<float*> d_auv_;
 
-  cufftComplex* d_expkMN1_;
-  cufftComplex* d_expkMN2_;
+  Kokkos::View<float*> d_workSpaceReal1_;
+  Kokkos::View<float*> d_workSpaceReal2_;
+  Kokkos::View<float*> d_workSpaceReal3_;
 
-  cufftReal* d_binDensity_;
-  cufftReal* d_auv_;
-  cufftReal* d_potential_;
+  Kokkos::View<Kokkos::complex<float>*> d_workSpaceComplex_;
 
-  cufftReal* d_efX_;
-  cufftReal* d_efY_;
-
-  cufftReal* d_workSpaceReal1_;
-  cufftReal* d_workSpaceReal2_;
-  cufftReal* d_workSpaceReal3_;
-
-  cufftComplex* d_workSpaceComplex_;
-
-  cufftReal* d_inputForX_;
-  cufftReal* d_inputForY_;
+  Kokkos::View<float*> d_inputForX_;
+  Kokkos::View<float*> d_inputForY_;
 };
 
 };  // namespace gpl2

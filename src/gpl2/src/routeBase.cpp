@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,20 +33,68 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#pragma once
 
+#include <algorithm>
+#include <string>
+#include <utility>
 
-namespace ord {
-class OpenRoad;
-}
+#include "routeBase.h"
+#include "grt/GlobalRouter.h"
+#include "odb/db.h"
+#include "placerBase.h"
+#include "utl/Logger.h"
+
+using std::string;
+using std::vector;
 
 namespace gpl2 {
-class GpuReplace;
 
-gpl2::GpuReplace* makeGpuReplace();
+/////////////////////////////////////////////
+// RouteBaseVars
 
-void initGpuReplace(ord::OpenRoad* openroad);
+RouteBaseVars::RouteBaseVars()
+{
+  reset();
+}
 
-void deleteGpuReplace(gpl2::GpuReplace* gpu_replace);
+void RouteBaseVars::reset()
+{
+  inflationRatioCoef = 2.5;
+  maxInflationRatio = 2.5;
+  maxDensity = 0.90;
+  targetRC = 1.25;
+  ignoreEdgeRatio = 0.8;
+  minInflationRatio = 1.01;
+  rcK1 = rcK2 = 1.0;
+  rcK3 = rcK4 = 0.0;
+  maxBloatIter = 1;
+  maxInflationIter = 4;
+}
+
+/////////////////////////////////////////////
+// RouteBase
+
+RouteBase::RouteBase()
+    : db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
+{
+}
+
+RouteBase::RouteBase(RouteBaseVars rbVars,
+                           odb::dbDatabase* db,
+                           grt::GlobalRouter* grouter,
+                           const std::shared_ptr<PlacerBaseCommon>& nbc,
+                           std::vector<std::shared_ptr<PlacerBase>> nbVec,
+                           utl::Logger* log)
+    : RouteBase()
+{
+  rbVars_ = rbVars;
+  db_ = db;
+  grouter_ = grouter;
+  nbc_ = std::move(nbc);
+  log_ = log;
+  nbVec_ = std::move(nbVec);
+}
+
+RouteBase::~RouteBase() = default;
 
 }  // namespace gpl2

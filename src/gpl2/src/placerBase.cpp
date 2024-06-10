@@ -2,6 +2,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2018-2023, The Regents of the University of California
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,29 +35,35 @@
 #include "placerBase.h"
 
 #include <odb/db.h>
-#include <stdio.h>
 
-#include <chrono>
+#include <Kokkos_Core.hpp>
+
+#include <cstdio>
 #include <cmath>
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <random>
 #include <sstream>
 #include <unordered_set>
 
 #include "db_sta/dbNetwork.hh"
 #include "placerObjects.h"
-#include "poissonSolver.h"
 #include "sta/Liberty.hh"
-#include "util.h"
 #include "utl/Logger.h"
 
 namespace gpl2 {
 
-using namespace std;
 using utl::GPL2;
 
 #define REPLACE_SQRT2 1.414213562373095048801L
+
+#ifdef KOKKOS_ENABLE_CUDA
+  #define BACKEND_DEPENDENT_FUNCTION __host__
+#else
+  #define BACKEND_DEPENDENT_FUNCTION KOKKOS_FUNCTION
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////////
 // PlacerBaseVars
@@ -123,34 +130,6 @@ void NesterovPlaceVars::reset()
 // PlacerBaseCommon
 /////////////////////////////////////////////////////////////////////////////////////
 
-PlacerBaseCommon::PlacerBaseCommon()
-    : network_(nullptr),
-      db_(nullptr),
-      log_(nullptr),
-      pbVars_(),
-      wlGradOp_(nullptr),
-      die_(),
-      siteSizeX_(0),
-      siteSizeY_(0),
-      numInsts_(0),
-      haloWidth_(0),
-      virtualIter_(0),
-      clusterFlag_(false),
-      numPlaceInsts_(0),
-      numFixedInsts_(0),
-      numDummyInsts_(0),
-      placeInstsArea_(0),
-      nonPlaceInstsArea_(0),
-      macroInstsArea_(0),
-      stdCellInstsArea_(0),
-      virtualWeightFactor_(0.0),
-      dInstDCxPtr_(nullptr),
-      dInstDCyPtr_(nullptr),
-      dWLGradXPtr_(nullptr),
-      dWLGradYPtr_(nullptr)
-{
-}
-
 PlacerBaseCommon::PlacerBaseCommon(sta::dbNetwork* network,
                                    odb::dbDatabase* db,
                                    PlacerBaseVars pbVars,
@@ -163,7 +142,6 @@ PlacerBaseCommon::PlacerBaseCommon(sta::dbNetwork* network,
                                    bool dataflowFlag,
                                    bool datapathFlag,
                                    bool clusterConstraintFlag)
-    : PlacerBaseCommon()
 {
   network_ = network;
   db_ = db;
@@ -399,7 +377,6 @@ void PlacerBaseCommon::initClusterNetlist()
   // we assign inst_id property to each inst
   // So we do not use inst_map_
   int placeInstId = -1;
-  int fixedInstId = -1;
   const float cluster_ratio
       = 1.0;  // We assume the aspect ratio of the cluster is 1.0
   for (int clusterId = 0; clusterId < numClusters; clusterId++) {
@@ -575,6 +552,658 @@ void PlacerBaseCommon::initClusterNetlist()
   printInfo();
 }
 
+void PlacerBaseCommon::initBackend()
+{
+  // calculate the information on the host side
+  hInstDCx_ = Kokkos::View<int*, Kokkos::HostSpace>("hInstDCx", numPlaceInsts_);
+  hInstDCy_ = Kokkos::View<int*, Kokkos::HostSpace>("hInstDCy", numPlaceInsts_);
+  int instIdx = 0;
+  for (auto& inst : placeInsts_) {
+    hInstDCx_[instIdx] = inst->cx();
+    hInstDCy_[instIdx] = inst->cy();
+    instIdx++;
+  }
+
+  // allocate the objects on host side
+  dInstDCx_ = Kokkos::View<int*>("dInstDCx", numPlaceInsts_);
+  dInstDCy_ = Kokkos::View<int*>("dInstDCy", numPlaceInsts_);
+
+  // copy from host to device
+  Kokkos::deep_copy(dInstDCx_, hInstDCx_);
+  Kokkos::deep_copy(dInstDCy_, hInstDCy_);
+
+  // allocate memory on device side
+  dWLGradX_ = Kokkos::View<float*>("dWLGradX", numPlaceInsts_);
+  dWLGradY_ = Kokkos::View<float*>("dWLGradY", numPlaceInsts_);
+
+  // create the wlGradOp
+  wlGradOp_ = new WirelengthOp(this);
+}
+
+// Update the database information
+void PlacerBaseCommon::updateDB()
+{
+  if (clusterFlag_ == true) {
+    updateDBCluster();
+    return;
+  }
+
+  Kokkos::deep_copy(hInstDCx_, dInstDCx_);
+  Kokkos::deep_copy(hInstDCy_, dInstDCy_);
+
+  int manufactureGird = db_->getTech()->getManufacturingGrid();
+
+  for (auto inst : placeInsts_) {
+    const int instId = inst->instId();
+    inst->setCenterLocation(
+        static_cast<int>(hInstDCx_[instId]) / manufactureGird * manufactureGird,
+        static_cast<int>(hInstDCy_[instId]) / manufactureGird
+            * manufactureGird);
+    inst->dbSetLocation();
+    inst->dbSetPlaced();
+  }
+}
+
+void PlacerBaseCommon::updateDBCluster()
+{
+  Kokkos::deep_copy(hInstDCx_, dInstDCx_);
+  Kokkos::deep_copy(hInstDCy_, dInstDCy_);
+
+  int manufactureGird = db_->getTech()->getManufacturingGrid();
+  odb::dbBlock* block = getBlock();
+  // insts fill with real instances
+  // update the clusters
+  odb::dbSet<odb::dbInst> insts = block->getInsts();
+  for (odb::dbInst* inst : insts) {
+    auto type = inst->getMaster()->getType();
+    if (!type.isCore() && !type.isBlock()) {
+      continue;
+    }
+    const int clusterId
+        = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
+    const int cx = hInstDCx_[clusterId];
+    const int cy = hInstDCy_[clusterId];
+    odb::dbBox* bbox = inst->getBBox();
+    int width = bbox->getDX();
+    int height = bbox->getDY();
+    int lx = cx - width / 2;
+    int ly = cy - height / 2;
+    if (lx < die().coreLx()) {
+      lx = die().coreLx();
+    }
+
+    if (ly < die().coreLy()) {
+      ly = die().coreLy();
+    }
+
+    if (lx + width > die().coreUx()) {
+      lx = die().coreUx() - width;
+    }
+
+    if (ly + height > die().coreUy()) {
+      ly = die().coreUy() - height;
+    }
+
+    lx = lx / manufactureGird * manufactureGird;
+    ly = ly / manufactureGird * manufactureGird;
+
+    inst->setLocation(lx, ly);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+// PlacerBase
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void PlacerBase::initBackend()
+{
+  // calculate the information on the host side
+  Kokkos::View<int*, Kokkos::HostSpace> hPlaceInstIds("hPlaceInstIds", numPlaceInsts_);
+  int instIdx = 0;
+  for (auto& inst : placeInsts_) {
+    hPlaceInstIds[instIdx] = inst->instId();
+    instIdx++;
+  }
+
+  // allocate the objects on host side
+  dPlaceInstIds_ = Kokkos::View<int*>("dPlaceInstIds", numPlaceInsts_);
+
+  // copy from host to device
+  Kokkos::deep_copy(dPlaceInstIds_, hPlaceInstIds);
+
+  Kokkos::View<int*, Kokkos::HostSpace> hInstDDx("hInstDDx", numInsts_);
+  Kokkos::View<int*, Kokkos::HostSpace> hInstDDy("hInstDDy", numInsts_);
+  Kokkos::View<int*, Kokkos::HostSpace> hInstDCx("hInstDCx", numInsts_);
+  Kokkos::View<int*, Kokkos::HostSpace> hInstDCy("hInstDCy", numInsts_);
+  Kokkos::View<float*, Kokkos::HostSpace> hWireLengthPrecondi("hWireLengthPrecondi", numInsts_);
+  Kokkos::View<float*, Kokkos::HostSpace> hDensityPrecondi("hDensityPrecondi", numInsts_);
+
+  // calculate the information on the host side
+  instIdx = 0;
+  for (auto& inst : insts_) {
+    hInstDDx[instIdx] = inst->dDx();
+    hInstDDy[instIdx] = inst->dDy();
+    hInstDCx[instIdx] = inst->cx();
+    hInstDCy[instIdx] = inst->cy();
+    hWireLengthPrecondi[instIdx] = inst->wireLengthPreconditioner();
+    hDensityPrecondi[instIdx] = inst->densityPreconditioner();
+    instIdx++;
+  }
+
+  dInstDDx_ = Kokkos::View<int*>("dInstDDx", numInsts_);
+  dInstDDy_ = Kokkos::View<int*>("dInstDDy", numInsts_);
+  dInstDCx_ = Kokkos::View<int*>("dInstDCx", numInsts_);
+  dInstDCy_ = Kokkos::View<int*>("dInstDCy", numInsts_);
+
+  dWireLengthPrecondi_ = Kokkos::View<float*>("dWireLengthPrecondi", numInsts_);
+  dDensityPrecondi_ = Kokkos::View<float*>("dDensityPrecondi", numInsts_);
+
+  Kokkos::deep_copy(dInstDDx_, hInstDDx);
+  Kokkos::deep_copy(dInstDDy_, hInstDDy);
+  Kokkos::deep_copy(dInstDCx_, hInstDCx);
+  Kokkos::deep_copy(dInstDCy_, hInstDCy);
+  Kokkos::deep_copy(dWireLengthPrecondi_, hWireLengthPrecondi);
+  Kokkos::deep_copy(dDensityPrecondi_, hDensityPrecondi);
+
+  dDensityGradX_ = Kokkos::View<float*>("dDensityGradX", numInsts_);
+  dDensityGradY_ = Kokkos::View<float*>("dDensityGradY", numInsts_);
+
+  dCurSLPCoordi_ = Kokkos::View<FloatPoint*>("dCurSLPCoordi", numInsts_);
+  dCurSLPWireLengthGradX_ = Kokkos::View<float*>("dCurSLPWireLengthGradX", numInsts_);
+  dCurSLPWireLengthGradY_ = Kokkos::View<float*>("dCurSLPWireLengthGradY", numInsts_);
+  dCurSLPDensityGradX_ = Kokkos::View<float*>("dCurSLPDensityGradX", numInsts_);
+  dCurSLPDensityGradY_ = Kokkos::View<float*>("dCurSLPDensityGradY", numInsts_);
+  dCurSLPSumGrads_ = Kokkos::View<FloatPoint*>("dCurSLPSumGrads", numInsts_);
+
+  dPrevSLPCoordi_ = Kokkos::View<FloatPoint*>("dPrevSLPCoordi", numInsts_);
+  dPrevSLPWireLengthGradX_ = Kokkos::View<float*>("dPrevSLPWireLengthGradX", numInsts_);
+  dPrevSLPWireLengthGradY_ = Kokkos::View<float*>("dPrevSLPWireLengthGradY", numInsts_);
+  dPrevSLPDensityGradX_ = Kokkos::View<float*>("dPrevSLPDensityGradX", numInsts_);
+  dPrevSLPDensityGradY_ = Kokkos::View<float*>("dPrevSLPDensityGradY", numInsts_);
+  dPrevSLPSumGrads_ = Kokkos::View<FloatPoint*>("dPrevSLPSumGrads", numInsts_);
+
+  dNextSLPCoordi_ = Kokkos::View<FloatPoint*>("dNextSLPCoordi", numInsts_);
+  dNextSLPWireLengthGradX_ = Kokkos::View<float*>("dNextSLPWireLengthGradX", numInsts_);
+  dNextSLPWireLengthGradY_ = Kokkos::View<float*>("dNextSLPWireLengthGradY", numInsts_);
+  dNextSLPDensityGradX_ = Kokkos::View<float*>("dNextSLPDensityGradX", numInsts_);
+  dNextSLPDensityGradY_ = Kokkos::View<float*>("dNextSLPDensityGradY", numInsts_);
+  dNextSLPSumGrads_ = Kokkos::View<FloatPoint*>("dNextSLPSumGrads", numInsts_);
+
+  dCurCoordi_ = Kokkos::View<FloatPoint*>("dCurCoordi", numInsts_);
+  dNextCoordi_ = Kokkos::View<FloatPoint*>("dNextCoordi", numInsts_);
+
+  dSumGradsX_ = Kokkos::View<float*>("dSumGradsX", numInsts_);
+  dSumGradsY_ = Kokkos::View<float*>("dSumGradsY", numInsts_);
+
+  densityOp_ = new DensityOp(this);
+}
+
+void PlacerBase::freeBackend()
+{
+  delete densityOp_;
+  densityOp_ = nullptr;
+}
+
+// Make sure the instances are within the region
+KOKKOS_FUNCTION float getDensityCoordiLayoutInside(int instWidth,
+                                              float cx,
+                                              int coreLx,
+                                              int coreUx)
+{
+  float adjVal = cx;
+  if (cx - (float)instWidth / 2 < coreLx) {
+    adjVal = coreLx + (float)instWidth / 2;
+  }
+
+  if (cx + (float)instWidth / 2 > coreUx) {
+    adjVal = coreUx - (float)instWidth / 2;
+  }
+
+  return adjVal;
+}
+
+void updateDensityCoordiLayoutInsideKernel(const int numInsts,
+                                                      const int coreLx,
+                                                      const int coreLy,
+                                                      const int coreUx,
+                                                      const int coreUy,
+                                                      const Kokkos::View<const int*>& instDDx,
+                                                      const Kokkos::View<const int*>& instDDy,
+                                                      const Kokkos::View<int*>& instDCx,
+                                                      const Kokkos::View<int*>& instDCy)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    instDCx[instIdx] = getDensityCoordiLayoutInside(
+        instDDx[instIdx], instDCx[instIdx], coreLx, coreUx);
+    instDCy[instIdx] = getDensityCoordiLayoutInside(
+        instDDy[instIdx], instDCy[instIdx], coreLy, coreUy);
+  });
+}
+
+void initDensityCoordiKernel(int numInsts,
+                                        const Kokkos::View<const int*>& instDCx,
+                                        const Kokkos::View<const int*>& instDCy,
+                                        const Kokkos::View<FloatPoint*>& dCurCoordi,
+                                        const Kokkos::View<FloatPoint*>& dCurSLPCoordi,
+                                        const Kokkos::View<FloatPoint*>& dPrevSLPCoordi)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    const FloatPoint loc(instDCx[instIdx], instDCy[instIdx]);
+    dCurCoordi[instIdx] = loc;
+    dCurSLPCoordi[instIdx] = loc;
+    dPrevSLPCoordi[instIdx] = loc;
+  });
+}
+
+void PlacerBase::initDensity1()
+{
+  // update density coordinate for each instance
+  updateDensityCoordiLayoutInsideKernel(
+      numInsts_,
+      bg_.lx(),
+      bg_.ly(),
+      bg_.ux(),
+      bg_.uy(),
+      dInstDDx_,
+      dInstDDy_,
+      dInstDCx_,
+      dInstDCy_);
+
+  // initialize the dCurSLPCoordi_, dPrevSLPCoordi_
+  // and dCurCoordi_
+
+  initDensityCoordiKernel(numInsts_,
+                                                     dInstDCx_,
+                                                     dInstDCy_,
+                                                     dCurCoordi_,
+                                                     dCurSLPCoordi_,
+                                                     dPrevSLPCoordi_);
+
+  // We need to sync up bewteen pb and pbCommon
+  updateGCellDensityCenterLocation(dCurSLPCoordi_);
+  pbCommon_->updatePinLocation();
+  // calculate the previous hpwl
+  // update the location of instances within this region
+  // while the instances in other regions will not change
+  prevHpwl_ = pbCommon_->hpwl();
+
+  // FFT update
+  updateDensityForceBin();
+
+  // update parameters
+  baseWireLengthCoef_ = npVars_.initWireLengthCoef
+                        / (static_cast<float>(binSizeX() + binSizeY()) * 0.5);
+
+  sumOverflow_ = static_cast<float>(overflowArea())
+                 / static_cast<float>(nesterovInstsArea());
+
+  sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
+                         / static_cast<float>(nesterovInstsArea());
+}
+
+// (a)  // (a) define the get distance method
+// getDistance is only defined on the host side
+BACKEND_DEPENDENT_FUNCTION float getDistance(const Kokkos::View<const FloatPoint*>& a,
+                           const Kokkos::View<const FloatPoint*>& b,
+                           const int numInsts)
+{
+  if (numInsts <= 0) {
+    return 0.0;
+  }
+
+  float sumDistance = 0.0;
+  Kokkos::parallel_reduce(numInsts, KOKKOS_LAMBDA (const int instIdx, float& sum) {
+    const FloatPoint& aPoint = a[instIdx];
+    const FloatPoint& bPoint = b[instIdx];
+    sum += (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
+    sum += (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
+  }, sumDistance);
+
+  return std::sqrt(sumDistance / (2.0 * numInsts));
+}
+
+template <typename T>
+struct myAbs
+{
+  KOKKOS_FUNCTION double operator()(const T& x) const
+  {
+    return x >= 0 ? x : -x;
+  }
+};
+
+BACKEND_DEPENDENT_FUNCTION float getAbsGradSum(const Kokkos::View<const float*>& a, const int numInsts)
+{
+  double sumAbs = 0.0;
+  Kokkos::parallel_reduce(numInsts, KOKKOS_LAMBDA (const int instIdx, double& sum) {
+    double x = a[instIdx];
+    sum += x >= 0 ? x : -x;
+  }, sumAbs);
+  return sumAbs;
+}
+
+float PlacerBase::getStepLength(const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
+                                const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
+                                const Kokkos::View<const FloatPoint*>& curSLPCoordi,
+                                const Kokkos::View<const FloatPoint*>& curSLPSumGrads) const
+{
+  float coordiDistance = getDistance(prevSLPCoordi, curSLPCoordi, numInsts_);
+  float gradDistance = getDistance(prevSLPSumGrads, curSLPSumGrads, numInsts_);
+  return coordiDistance / gradDistance;
+}
+
+// Function: initDensity2
+float PlacerBase::initDensity2()
+{
+  // the wirelength force on each instance is zero
+  if (wireLengthGradSum_ == 0) {
+    densityPenalty_ = npVars_.initDensityPenalty;
+    updatePrevGradient();
+  }
+
+  if (wireLengthGradSum_ != 0) {
+    densityPenalty_
+        = (wireLengthGradSum_ / densityGradSum_) * npVars_.initDensityPenalty;
+  }
+
+  sumOverflow_ = static_cast<float>(overflowArea())
+                 / static_cast<float>(nesterovInstsArea());
+
+  sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
+                         / static_cast<float>(nesterovInstsArea());
+
+  stepLength_ = getStepLength(dPrevSLPCoordi_,
+                              dPrevSLPSumGrads_,
+                              dCurSLPCoordi_,
+                              dCurSLPSumGrads_);
+
+  return stepLength_;
+}
+
+void sumGradientKernel(const int numInsts,
+                                  const float densityPenalty,
+                                  const float minPrecondi,
+                                  const Kokkos::View<const float*>& wireLengthPrecondi,
+                                  const Kokkos::View<const float*>& densityPrecondi,
+                                  const Kokkos::View<const float*>& wireLengthGradientsX,
+                                  const Kokkos::View<const float*>& wireLengthGradientsY,
+                                  const Kokkos::View<const float*>& densityGradientsX,
+                                  const Kokkos::View<const float*>& densityGradientsY,
+                                  const Kokkos::View<FloatPoint*>& sumGrads)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    sumGrads[instIdx].x = wireLengthGradientsX[instIdx]
+                          + densityPenalty * densityGradientsX[instIdx];
+    sumGrads[instIdx].y = wireLengthGradientsY[instIdx]
+                          + densityPenalty * densityGradientsY[instIdx];
+    FloatPoint sumPrecondi(
+        wireLengthPrecondi[instIdx] + densityPenalty * densityPrecondi[instIdx],
+        wireLengthPrecondi[instIdx]
+            + densityPenalty * densityPrecondi[instIdx]);
+
+    if (sumPrecondi.x < minPrecondi) {
+      sumPrecondi.x = minPrecondi;
+    }
+
+    if (sumPrecondi.y < minPrecondi) {
+      sumPrecondi.y = minPrecondi;
+    }
+
+    sumGrads[instIdx].x /= sumPrecondi.x;
+    sumGrads[instIdx].y /= sumPrecondi.y;
+  });
+}
+
+void PlacerBase::updatePrevGradient()
+{
+  updateGradients(dPrevSLPWireLengthGradX_,
+                  dPrevSLPWireLengthGradY_,
+                  dPrevSLPDensityGradX_,
+                  dPrevSLPDensityGradY_,
+                  dPrevSLPSumGrads_);
+}
+
+void PlacerBase::updateCurGradient()
+{
+  updateGradients(dCurSLPWireLengthGradX_,
+                  dCurSLPWireLengthGradY_,
+                  dCurSLPDensityGradX_,
+                  dCurSLPDensityGradY_,
+                  dCurSLPSumGrads_);
+}
+
+void PlacerBase::updateNextGradient()
+{
+  updateGradients(dNextSLPWireLengthGradX_,
+                  dNextSLPWireLengthGradY_,
+                  dNextSLPDensityGradX_,
+                  dNextSLPDensityGradY_,
+                  dNextSLPSumGrads_);
+}
+
+void PlacerBase::updateGradients(const Kokkos::View<float*>& wireLengthGradientsX,
+                                 const Kokkos::View<float*>& wireLengthGradientsY,
+                                 const Kokkos::View<float*>& densityGradientsX,
+                                 const Kokkos::View<float*>& densityGradientsY,
+                                 const Kokkos::View<FloatPoint*>& sumGrads)
+{
+  if (isConverged_) {
+    return;
+  }
+
+  wireLengthGradSum_ = 0;
+  densityGradSum_ = 0;
+
+  // get the forces on each instance
+  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY);
+  getDensityGradient(densityGradientsX, densityGradientsY);
+
+  wireLengthGradSum_ += getAbsGradSum(wireLengthGradientsX, numInsts_);
+  wireLengthGradSum_ += getAbsGradSum(wireLengthGradientsY, numInsts_);
+  densityGradSum_ += getAbsGradSum(densityGradientsX, numInsts_);
+  densityGradSum_ += getAbsGradSum(densityGradientsY, numInsts_);
+
+  sumGradientKernel(numInsts_,
+                                               densityPenalty_,
+                                               npVars_.minPreconditioner,
+                                               dWireLengthPrecondi_,
+                                               dDensityPrecondi_,
+                                               wireLengthGradientsX,
+                                               wireLengthGradientsY,
+                                               densityGradientsX,
+                                               densityGradientsY,
+                                               sumGrads);
+}
+
+// sync up the instances location based on the corrodinates
+void updateGCellDensityCenterLocationKernel(
+    const int numInsts,
+    const Kokkos::View<const FloatPoint*>& coordis,
+    const Kokkos::View<int*>& instDCx,
+    const Kokkos::View<int*>& instDCy)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    instDCx[instIdx] = coordis[instIdx].x;
+    instDCy[instIdx] = coordis[instIdx].y;
+  });
+}
+
+// sync up the instances between pbCommon and current pb
+void syncPlaceInstsCommonKernel(const int numPlaceInsts,
+                                           const Kokkos::View<const int*>& placeInstIds,
+                                           const Kokkos::View<const int*>& placeInstDCx,
+                                           const Kokkos::View<const int*>& placeInstDCy,
+                                           const Kokkos::View<int*>& instDCxCommon,
+                                           const Kokkos::View<int*>& instDCyCommon)
+{
+  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instIdx) {
+
+    int instId = placeInstIds[instIdx];
+    instDCxCommon[instId] = placeInstDCx[instIdx];
+    instDCyCommon[instId] = placeInstDCy[instIdx];
+  });
+}
+void PlacerBase::updateGCellDensityCenterLocation(const Kokkos::View<const FloatPoint*>& coordis)
+{
+  updateGCellDensityCenterLocationKernel(
+      numInsts_, coordis, dInstDCx_, dInstDCy_);
+
+  syncPlaceInstsCommonKernel(
+      numPlaceInsts_,
+      dPlaceInstIds_,
+      dInstDCx_,
+      dInstDCy_,
+      pbCommon_->dInstDCx(),
+      pbCommon_->dInstDCy());
+
+  densityOp_->updateGCellLocation(dInstDCx_, dInstDCy_);
+}
+
+void getWireLengthGradientWAKernel(const int numPlaceInsts,
+                                              const Kokkos::View<const int*>& dPlaceInstIds,
+                                              const Kokkos::View<const float*>& dWLGradXCommon,
+                                              const Kokkos::View<const float*>& dWLGradYCommon,
+                                              const Kokkos::View<float*>& dWireLengthGradX,
+                                              const Kokkos::View<float*>& dWireLengthGradY)
+{
+  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instIdx) {
+    int instId = dPlaceInstIds[instIdx];
+    dWireLengthGradX[instIdx] = dWLGradXCommon[instId];
+    dWireLengthGradY[instIdx] = dWLGradYCommon[instId];
+  });
+}
+
+void PlacerBase::getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthGradientsX,
+                                         const Kokkos::View<float*>& wireLengthGradientsY)
+{
+  getWireLengthGradientWAKernel(
+      numPlaceInsts_,
+      dPlaceInstIds_,
+      pbCommon_->dWLGradX(),
+      pbCommon_->dWLGradY(),
+      wireLengthGradientsX,
+      wireLengthGradientsY);
+}
+
+void PlacerBase::getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
+                                    const Kokkos::View<float*>& densityGradientsY)
+{
+  densityOp_->getDensityGradient(densityGradientsX, densityGradientsY);
+}
+
+// calculate the next state based on current state
+void nesterovUpdateCooridnatesKernel(
+    const int numInsts,
+    const int coreLx,
+    const int coreLy,
+    const int coreUx,
+    const int coreUy,
+    const float stepLength,
+    const float coeff,
+    const Kokkos::View<const int*>& instDDx,
+    const Kokkos::View<const int*>& instDDy,
+    const Kokkos::View<const FloatPoint*>& curCoordi,
+    const Kokkos::View<const FloatPoint*>& curSLPCoordi,
+    const Kokkos::View<const FloatPoint*>& curSLPSumGrads,
+    const Kokkos::View<FloatPoint*>& nextCoordiPtr,
+    const Kokkos::View<FloatPoint*>& nextSLPCoordiPtr)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    FloatPoint nextCoordi(
+        curSLPCoordi[instIdx].x + stepLength * curSLPSumGrads[instIdx].x,
+        curSLPCoordi[instIdx].y + stepLength * curSLPSumGrads[instIdx].y);
+
+    FloatPoint nextSLPCoordi(
+        nextCoordi.x + coeff * (nextCoordi.x - curCoordi[instIdx].x),
+        nextCoordi.y + coeff * (nextCoordi.y - curCoordi[instIdx].y));
+
+    // check the boundary
+    nextCoordiPtr[instIdx]
+        = FloatPoint(getDensityCoordiLayoutInside(
+                         instDDx[instIdx], nextCoordi.x, coreLx, coreUx),
+                     getDensityCoordiLayoutInside(
+                         instDDy[instIdx], nextCoordi.y, coreLy, coreUy));
+
+    nextSLPCoordiPtr[instIdx]
+        = FloatPoint(getDensityCoordiLayoutInside(
+                         instDDx[instIdx], nextSLPCoordi.x, coreLx, coreUx),
+                     getDensityCoordiLayoutInside(
+                         instDDy[instIdx], nextSLPCoordi.y, coreLy, coreUy));
+  });
+}
+
+void PlacerBase::nesterovUpdateCoordinates(float coeff)
+{
+  if (isConverged_) {
+    return;
+  }
+
+  nesterovUpdateCooridnatesKernel(
+      numInsts_,
+      bg_.lx(),
+      bg_.ly(),
+      bg_.ux(),
+      bg_.uy(),
+      stepLength_,
+      coeff,
+      dInstDDx_,
+      dInstDDy_,
+      dCurCoordi_,
+      dCurSLPCoordi_,
+      dCurSLPSumGrads_,
+      dNextCoordi_,
+      dNextSLPCoordi_);
+
+  // update density
+  updateGCellDensityCenterLocation(dNextSLPCoordi_);
+  updateDensityForceBin();
+}
+
+void updateInitialPrevSLPCoordiKernel(
+    const int numInsts,
+    const int coreLx,
+    const int coreLy,
+    const int coreUx,
+    const int coreUy,
+    const Kokkos::View<const int*>& instDDx,
+    const Kokkos::View<const int*>& instDDy,
+    const float initialPrevCoordiUpdateCoef,
+    const Kokkos::View<const FloatPoint*>& dCurSLPCoordi,
+    const Kokkos::View<const FloatPoint*>& dCurSLPSumGrads,
+    const Kokkos::View<FloatPoint*>& dPrevSLPCoordi)
+{
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
+    const float preCoordiX
+        = dCurSLPCoordi[instIdx].x
+          - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].x;
+    const float preCoordiY
+        = dCurSLPCoordi[instIdx].y
+          - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].y;
+    const FloatPoint newCoordi(
+        getDensityCoordiLayoutInside(
+            instDDx[instIdx], preCoordiX, coreLx, coreUx),
+        getDensityCoordiLayoutInside(
+            instDDy[instIdx], preCoordiY, coreLy, coreUy));
+    dPrevSLPCoordi[instIdx] = newCoordi;
+  });
+}
+
+void PlacerBase::updateInitialPrevSLPCoordi()
+{
+  updateInitialPrevSLPCoordiKernel(
+      numInsts_,
+      bg_.lx(),
+      bg_.ly(),
+      bg_.ux(),
+      bg_.uy(),
+      dInstDDx_,
+      dInstDDy_,
+      npVars_.initialPrevCoordiUpdateCoef,
+      dCurSLPCoordi_,
+      dCurSLPSumGrads_,
+      dPrevSLPCoordi_);
+}
+
 void splitString(std::string& inputString)
 {
   if (inputString.back() != '_') {
@@ -708,9 +1337,8 @@ void addDataflowEdge(DVertex& dVertex,
         std::cout << "instName = " << instVertex[sink.first]->getName()
                   << std::endl;
         continue;
-      } else {
-        sinkDVertexId = prop->getValue();
       }
+      sinkDVertexId = prop->getValue();
     } else {
       auto prop
           = odb::dbIntProperty::find(ioPinVertex[sink.first], "dVertexId");
@@ -718,9 +1346,8 @@ void addDataflowEdge(DVertex& dVertex,
         std::cout << "ioName = " << ioPinVertex[sink.first]->getName()
                   << std::endl;
         continue;
-      } else {
-        sinkDVertexId = prop->getValue();
       }
+      sinkDVertexId = prop->getValue();
     }
     dVertex.addSink(sinkDVertexId, weight);
   }
@@ -779,12 +1406,10 @@ void PlacerBaseCommon::createDataFlow()
   }
 
   int maxFFBits = 0;
-  int64_t hashId = 0;
   for (auto& inst : instMap) {
     if (inst.second >= busLimit_) {
       multiFFMap[inst.first] = inst.second;
       if (maxFFBits < inst.second) {
-        hashId = inst.first;
         maxFFBits = inst.second;
       }
     }
@@ -894,7 +1519,7 @@ void PlacerBaseCommon::createDataFlow()
   for (auto& vertex : seqVertices) {
     totalFanouts += vertex.sinks.size();
     for (auto& sink : vertex.sinks) {
-      maxDist = max(maxDist, sink.second);
+      maxDist = std::max(maxDist, sink.second);
     }
   }
 
@@ -1248,7 +1873,7 @@ void PlacerBaseCommon::createSeqGraph(
     //
     // Skip high fanout nets or nets that do not have valid driver or loads
     //
-    if (driverId < 0 || loadsId.size() < 1
+    if (driverId < 0 || loadsId.empty()
         || loadsId.size() > largeNetThreshold_) {
       continue;
     }
@@ -1325,7 +1950,7 @@ void PlacerBaseCommon::init()
     auto clusterIdProp = odb::dbIntProperty::find(inst, "cluster_id");
     if (clusterIdProp != nullptr) {
       const int clusterId = clusterIdProp->getValue();
-      numClusters = max(numClusters, clusterId + 1);
+      numClusters = std::max(numClusters, clusterId + 1);
     }
   }
 
@@ -1442,8 +2067,8 @@ void PlacerBaseCommon::init()
         int lx = 0;
         int ly = 0;
         inst->getLocation(lx, ly);
-        lx += floor(inst->getBBox()->getDX() / 2);
-        ly += floor(inst->getBBox()->getDY() / 2);
+        lx += floor(inst->getBBox()->getDX() / 2.f);
+        ly += floor(inst->getBBox()->getDY() / 2.f);
         cx += lx;
         cy += ly;
       }
@@ -1474,7 +2099,6 @@ void PlacerBaseCommon::init()
   dbPinStor_.reserve(nets.size() * 100);
   int netId = -1;
   int pinId = -1;
-  int ignoreNet = 0;
   for (odb::dbNet* net : nets) {
     odb::dbSigType netType = net->getSigType();
     odb::dbIntProperty* prop = odb::dbIntProperty::find(net, "netId");
@@ -1489,7 +2113,6 @@ void PlacerBaseCommon::init()
       const int num_fanouts = net->getITerms().size() + net->getBTerms().size();
       // We can enable this to further improve the runtime
       if (num_fanouts <= 1 || num_fanouts > 10000000) {
-        ignoreNet++;
         continue;
       }
 
@@ -1694,8 +2317,6 @@ void PlacerBaseCommon::reset()
   if (clusterFlag_ == false) {
     clearInstProperty();
   }
-
-  freeCUDAKernel();
 }
 
 // basic information
@@ -1791,18 +2412,13 @@ void PlacerBaseCommon::printInfo() const
 
 int64_t PlacerBaseCommon::hpwl() const
 {
-  if (wlGradOp_ != nullptr) {
-    // return wlGradOp_->computeHPWL();
-    return wlGradOp_->computeWeightedHPWL(virtualWeightFactor_);
-  } else {
-    return 0;
-  }
+  return wlGradOp_ == nullptr ? 0 : wlGradOp_->computeWeightedHPWL(virtualWeightFactor_);
 }
 
 void PlacerBaseCommon::updatePinLocation()
 {
   if (wlGradOp_ != nullptr) {
-    wlGradOp_->updatePinLocation(dInstDCxPtr_, dInstDCyPtr_);
+    wlGradOp_->updatePinLocation(dInstDCx_, dInstDCy_);
   }
 }
 
@@ -1813,7 +2429,7 @@ void PlacerBaseCommon::updateWireLengthForce(const float wlCoeffX,
 {
   if (wlGradOp_ != nullptr) {
     wlGradOp_->computeWireLengthForce(
-        wlCoeffX, wlCoeffY, virtualWeightFactor_, dWLGradXPtr_, dWLGradYPtr_);
+        wlCoeffX, wlCoeffY, virtualWeightFactor_, dWLGradX_, dWLGradY_);
   }
 }
 
@@ -1821,90 +2437,12 @@ void PlacerBaseCommon::updateWireLengthForce(const float wlCoeffX,
 // Class PlacerBase
 ////////////////////////////////////////////////////////////////////////////////
 
-PlacerBase::PlacerBase()
-    : db_(nullptr),
-      log_(nullptr),
-      pbCommon_(nullptr),
-      group_(nullptr),
-      densityOp_(nullptr),
-      bg_(),
-      die_(),
-      siteSizeX_(0),
-      siteSizeY_(0),
-      nbVars_(),
-      npVars_(),
-      fillerDx_(0),
-      fillerDy_(0),
-      whiteSpaceArea_(0),
-      movableArea_(0),
-      totalFillerArea_(0),
-      placeInstsArea_(0),
-      nonPlaceInstsArea_(0),
-      macroInstsArea_(0),
-      stdInstsArea_(0),
-      numInsts_(0),
-      numNonPlaceInsts_(0),
-      numPlaceInsts_(0),
-      numFixedInsts_(0),
-      numDummyInsts_(0),
-      numFillerInsts_(0),
-      dInstDDxPtr_(nullptr),
-      dInstDDyPtr_(nullptr),
-      dInstDCxPtr_(nullptr),
-      dInstDCyPtr_(nullptr),
-      dWireLengthPrecondiPtr_(nullptr),
-      dDensityPrecondiPtr_(nullptr),
-      sumPhi_(0.0),
-      targetDensity_(0.0),
-      uniformTargetDensity_(0.0),
-      densityPenalty_(0.0),
-      baseWireLengthCoef_(0.0),
-      sumOverflow_(0.0),
-      sumOverflowUnscaled_(0.0),
-      prevHpwl_(0),
-      isDiverged_(false),
-      isMaxPhiCoefChanged_(false),
-      minSumOverflow_(1e30),
-      hpwlWithMinSumOverflow_(1e30),
-      iter_(0),
-      isConverged_(false),
-      stepLength_(0.0),
-      wireLengthGradSum_(0.0),
-      densityGradSum_(0.0),
-      dDensityGradXPtr_(nullptr),
-      dDensityGradYPtr_(nullptr),
-      dWireLengthGradXPtr_(nullptr),
-      dWireLengthGradYPtr_(nullptr),
-      dCurSLPCoordiPtr_(nullptr),
-      dCurSLPWireLengthGradXPtr_(nullptr),
-      dCurSLPWireLengthGradYPtr_(nullptr),
-      dCurSLPDensityGradXPtr_(nullptr),
-      dCurSLPDensityGradYPtr_(nullptr),
-      dCurSLPSumGradsPtr_(nullptr),
-      dPrevSLPCoordiPtr_(nullptr),
-      dPrevSLPWireLengthGradXPtr_(nullptr),
-      dPrevSLPWireLengthGradYPtr_(nullptr),
-      dPrevSLPDensityGradXPtr_(nullptr),
-      dPrevSLPDensityGradYPtr_(nullptr),
-      dPrevSLPSumGradsPtr_(nullptr),
-      dNextSLPCoordiPtr_(nullptr),
-      dNextSLPWireLengthGradXPtr_(nullptr),
-      dNextSLPWireLengthGradYPtr_(nullptr),
-      dNextSLPDensityGradXPtr_(nullptr),
-      dNextSLPDensityGradYPtr_(nullptr),
-      dNextSLPSumGradsPtr_(nullptr),
-      dCurCoordiPtr_(nullptr),
-      dNextCoordiPtr_(nullptr)
-{
-}
-
 // Constructor
 PlacerBase::PlacerBase(NesterovBaseVars nbVars,
                        odb::dbDatabase* db,
                        std::shared_ptr<PlacerBaseCommon> pbCommon,
                        utl::Logger* log,
                        odb::dbGroup* group)
-    : PlacerBase()
 {
   nbVars_ = nbVars;
   db_ = db;
@@ -1921,7 +2459,7 @@ PlacerBase::~PlacerBase()
 
 void PlacerBase::reset()
 {
-  freeCUDAKernel();
+  freeBackend();
 }
 
 void PlacerBase::init()
@@ -2267,7 +2805,7 @@ void PlacerBase::initFillerGCells()
   // mt19937 supports huge range of random values.
   // rand()'s RAND_MAX is only 32767.
   //
-  mt19937 randVal(0);
+  std::mt19937 randVal(0);
   for (int i = 0; i < numFillerInsts_; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();
@@ -2286,7 +2824,6 @@ void PlacerBase::initFillerGCells()
 // This is not the bottleneck currently
 void PlacerBase::updateDensitySize()
 {
-  int instId = 0;
   for (auto& inst : insts_) {
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
@@ -2318,12 +2855,12 @@ bool PlacerBase::nesterovUpdateStepLength()
     return true;
   }
 
-  float newStepLength = getStepLength(dCurSLPCoordiPtr_,
-                                      dCurSLPSumGradsPtr_,
-                                      dNextSLPCoordiPtr_,
-                                      dNextSLPSumGradsPtr_);
+  float newStepLength = getStepLength(dCurSLPCoordi_,
+                                      dCurSLPSumGrads_,
+                                      dNextSLPCoordi_,
+                                      dNextSLPSumGrads_);
 
-  if (isnan(newStepLength) || isinf(newStepLength)) {
+  if (Kokkos::isnan(newStepLength) || Kokkos::isinf(newStepLength)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at newStepLength.";
     divergeCode_ = 305;
@@ -2348,22 +2885,22 @@ bool PlacerBase::nesterovUpdateStepLength()
 // NestrovePlace related functions
 void PlacerBase::updateDensityCenterCur()
 {
-  updateGCellDensityCenterLocation(dCurCoordiPtr_);
+  updateGCellDensityCenterLocation(dCurCoordi_);
 }
 
 void PlacerBase::updateDensityCenterCurSLP()
 {
-  updateGCellDensityCenterLocation(dCurSLPCoordiPtr_);
+  updateGCellDensityCenterLocation(dCurSLPCoordi_);
 }
 
 void PlacerBase::updateDensityCenterPrevSLP()
 {
-  updateGCellDensityCenterLocation(dPrevSLPCoordiPtr_);
+  updateGCellDensityCenterLocation(dPrevSLPCoordi_);
 }
 
 void PlacerBase::updateDensityCenterNextSLP()
 {
-  updateGCellDensityCenterLocation(dNextSLPCoordiPtr_);
+  updateGCellDensityCenterLocation(dNextSLPCoordi_);
 }
 
 void PlacerBase::updateDensityForceBin()
@@ -2444,22 +2981,22 @@ void PlacerBase::updateNextIter(int iter)
   }
 
   // Previous <= Current
-  std::swap(dCurSLPCoordiPtr_, dPrevSLPCoordiPtr_);
-  std::swap(dCurSLPSumGradsPtr_, dPrevSLPSumGradsPtr_);
-  std::swap(dCurSLPWireLengthGradXPtr_, dPrevSLPWireLengthGradXPtr_);
-  std::swap(dCurSLPWireLengthGradYPtr_, dPrevSLPWireLengthGradYPtr_);
-  std::swap(dCurSLPDensityGradXPtr_, dPrevSLPDensityGradXPtr_);
-  std::swap(dCurSLPDensityGradYPtr_, dPrevSLPDensityGradYPtr_);
+  std::swap(dCurSLPCoordi_, dPrevSLPCoordi_);
+  std::swap(dCurSLPSumGrads_, dPrevSLPSumGrads_);
+  std::swap(dCurSLPWireLengthGradX_, dPrevSLPWireLengthGradX_);
+  std::swap(dCurSLPWireLengthGradY_, dPrevSLPWireLengthGradY_);
+  std::swap(dCurSLPDensityGradX_, dPrevSLPDensityGradX_);
+  std::swap(dCurSLPDensityGradY_, dPrevSLPDensityGradY_);
 
   // Current <= Next
-  std::swap(dCurSLPCoordiPtr_, dNextSLPCoordiPtr_);
-  std::swap(dCurSLPSumGradsPtr_, dNextSLPSumGradsPtr_);
-  std::swap(dCurSLPWireLengthGradXPtr_, dNextSLPWireLengthGradXPtr_);
-  std::swap(dCurSLPWireLengthGradYPtr_, dNextSLPWireLengthGradYPtr_);
-  std::swap(dCurSLPDensityGradXPtr_, dNextSLPDensityGradXPtr_);
-  std::swap(dCurSLPDensityGradYPtr_, dNextSLPDensityGradYPtr_);
+  std::swap(dCurSLPCoordi_, dNextSLPCoordi_);
+  std::swap(dCurSLPSumGrads_, dNextSLPSumGrads_);
+  std::swap(dCurSLPWireLengthGradX_, dNextSLPWireLengthGradX_);
+  std::swap(dCurSLPWireLengthGradY_, dNextSLPWireLengthGradY_);
+  std::swap(dCurSLPDensityGradX_, dNextSLPDensityGradX_);
+  std::swap(dCurSLPDensityGradY_, dNextSLPDensityGradY_);
 
-  std::swap(dCurCoordiPtr_, dNextCoordiPtr_);
+  std::swap(dCurCoordi_, dNextCoordi_);
 
   // In a macro dominated design like mock-array-big you may be placing
   // very few std cells in a sea of fixed macros. The overflow denominator
@@ -2502,38 +3039,9 @@ void PlacerBase::updateNextIter(int iter)
 ////////////////////////////////////////////////////////////////////////////
 // class BinGrid
 ////////////////////////////////////////////////////////////////////////////
-BinGrid::BinGrid()
-    : log_(nullptr),
-      pb_(nullptr),
-      numBins_(0),
-      lx_(0),
-      ly_(0),
-      ux_(0),
-      uy_(0),
-      binCntX_(0),
-      binCntY_(0),
-      binSizeX_(0),
-      binSizeY_(0),
-      targetDensity_(0),
-      isSetBinCnt_(0)
-{
-}
-
-BinGrid::BinGrid(Die* die) : BinGrid()
+BinGrid::BinGrid(Die* die)
 {
   setCorePoints(die);
-}
-
-BinGrid::~BinGrid()
-{
-  log_ = nullptr;
-  pb_ = nullptr;
-  binStor_.clear();
-  bins_.clear();
-  numBins_ = 0;
-  binCntX_ = binCntY_ = 0;
-  binSizeX_ = binSizeY_ = 0;
-  isSetBinCnt_ = 0;
 }
 
 void BinGrid::setCorePoints(const Die* die)
@@ -2644,8 +3152,8 @@ static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron)
 {
-  int rectLx = max(bin->lx(), inst->lx()), rectLy = max(bin->ly(), inst->ly()),
-      rectUx = min(bin->ux(), inst->ux()), rectUy = min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -2659,14 +3167,14 @@ static int64_t getOverlapArea(const Bin* bin,
     // the shifted means of X and Y.
     // Sigma is used as the mean/4 for both dimensions
     const biNormalParameters i
-        = {meanX,
-           meanY,
-           meanX / 4,
-           meanY / 4,
-           (rectLx - inst->lx()) / (float) dbu_per_micron,
-           (rectLy - inst->ly()) / (float) dbu_per_micron,
-           (rectUx - inst->lx()) / (float) dbu_per_micron,
-           (rectUy - inst->ly()) / (float) dbu_per_micron};
+        = {static_cast<int>(meanX),
+           static_cast<int>(meanY),
+           static_cast<int>(meanX / 4),
+           static_cast<int>(meanY / 4),
+           static_cast<int>((rectLx - inst->lx()) / (float) dbu_per_micron),
+           static_cast<int>((rectLy - inst->ly()) / (float) dbu_per_micron),
+           static_cast<int>((rectUx - inst->lx()) / (float) dbu_per_micron),
+           static_cast<int>((rectUy - inst->ly()) / (float) dbu_per_micron)};
 
     const float original = static_cast<float>(rectUx - rectLx)
                            * static_cast<float>(rectUy - rectLy);
@@ -2678,19 +3186,16 @@ static int64_t getOverlapArea(const Bin* bin,
     // we are using an upper limit of 1.15*(overlap) between the macro
     // and the bin.
     if (scaled >= original) {
-      return min<float>(scaled, original * 1.15);
+      return std::min<float>(scaled, original * 1.15);
     }
     // If the scaled value is smaller than the actual overlap
     // then use the original overlap value instead.
     // This is implemented to prevent cells from being placed
     // at the outer sides of the macro.
-    else {
-      return original;
-    }
-  } else {
-    return static_cast<float>(rectUx - rectLx)
-           * static_cast<float>(rectUy - rectLy);
+    return original;
   }
+  return static_cast<float>(rectUx - rectLx)
+         * static_cast<float>(rectUy - rectLy);
 }
 
 void BinGrid::updateBinsNonPlaceArea()

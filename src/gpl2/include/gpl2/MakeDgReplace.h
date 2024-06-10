@@ -32,68 +32,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include <memory>
-#include <vector>
 
-namespace odb {
-class dbDatabase;
-}
-
-namespace grt {
-class GlobalRouter;
-}
-
-namespace utl {
-class Logger;
+namespace ord {
+class OpenRoad;
 }
 
 namespace gpl2 {
+class DgReplace;
 
-class PlacerBaseCommon;
-class PlacerBase;
+gpl2::DgReplace* makeDgReplace();
 
-class RouteBaseVars
-{
- public:
-  float inflationRatioCoef;
-  float maxInflationRatio;
-  float maxDensity;
-  float targetRC;
-  float ignoreEdgeRatio;
-  float minInflationRatio;
+void initDgReplace(ord::OpenRoad* openroad);
 
-  // targetRC metric coefficients.
-  float rcK1, rcK2, rcK3, rcK4;
+void deleteDgReplace(gpl2::DgReplace* dg_replace);
 
-  int maxBloatIter;
-  int maxInflationIter;
-
-  RouteBaseVars();
-  void reset();
-};
-
-class GpuRouteBase
-{
- public:
-  GpuRouteBase();
-  GpuRouteBase(RouteBaseVars rbVars,
-               odb::dbDatabase* db,
-               grt::GlobalRouter* grouter,
-               std::shared_ptr<PlacerBaseCommon> nbc,
-               std::vector<std::shared_ptr<PlacerBase>> nbVec,
-               utl::Logger* log);
-  ~GpuRouteBase();
-
- private:
-  RouteBaseVars rbVars_;
-  odb::dbDatabase* db_;
-  grt::GlobalRouter* grouter_;
-
-  std::shared_ptr<PlacerBaseCommon> nbc_;
-  std::vector<std::shared_ptr<PlacerBase>> nbVec_;
-  utl::Logger* log_;
-};
 }  // namespace gpl2

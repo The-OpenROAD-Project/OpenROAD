@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,77 +34,67 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <string>
-#include <utility>
+#pragma once
 
-#include "gpuRouteBase.h"
-#include "grt/GlobalRouter.h"
-#include "odb/db.h"
-#include "placerBase.h"
-#include "utl/Logger.h"
+#include <memory>
+#include <vector>
 
-using grt::GlobalRouter;
-using std::make_pair;
-using std::pair;
-using std::sort;
-using std::string;
-using std::vector;
+namespace odb {
+class dbDatabase;
+}
 
-using utl::GPL2;
+namespace grt {
+class GlobalRouter;
+}
+
+namespace utl {
+class Logger;
+}
 
 namespace gpl2 {
 
-/////////////////////////////////////////////
-// RouteBaseVars
+class PlacerBaseCommon;
+class PlacerBase;
 
-RouteBaseVars::RouteBaseVars()
+class RouteBaseVars
 {
-  reset();
-}
+ public:
+  float inflationRatioCoef;
+  float maxInflationRatio;
+  float maxDensity;
+  float targetRC;
+  float ignoreEdgeRatio;
+  float minInflationRatio;
 
-void RouteBaseVars::reset()
+  // targetRC metric coefficients.
+  float rcK1, rcK2, rcK3, rcK4;
+
+  int maxBloatIter;
+  int maxInflationIter;
+
+  RouteBaseVars();
+  void reset();
+};
+
+class RouteBase
 {
-  inflationRatioCoef = 2.5;
-  maxInflationRatio = 2.5;
-  maxDensity = 0.90;
-  targetRC = 1.25;
-  ignoreEdgeRatio = 0.8;
-  minInflationRatio = 1.01;
-  rcK1 = rcK2 = 1.0;
-  rcK3 = rcK4 = 0.0;
-  maxBloatIter = 1;
-  maxInflationIter = 4;
-}
+ public:
+  RouteBase();
+  RouteBase(RouteBaseVars rbVars,
+               odb::dbDatabase* db,
+               grt::GlobalRouter* grouter,
+               const std::shared_ptr<PlacerBaseCommon>& nbc,
+               std::vector<std::shared_ptr<PlacerBase>> nbVec,
+               utl::Logger* log);
+  ~RouteBase();
 
-/////////////////////////////////////////////
-// GpuRouteBase
+ private:
+  RouteBaseVars rbVars_;
+  odb::dbDatabase* db_;
+  grt::GlobalRouter* grouter_;
 
-GpuRouteBase::GpuRouteBase()
-    : rbVars_(), db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
-{
-}
-
-GpuRouteBase::GpuRouteBase(RouteBaseVars rbVars,
-                           odb::dbDatabase* db,
-                           grt::GlobalRouter* grouter,
-                           std::shared_ptr<PlacerBaseCommon> nbc,
-                           std::vector<std::shared_ptr<PlacerBase>> nbVec,
-                           utl::Logger* log)
-    : GpuRouteBase()
-{
-  rbVars_ = rbVars;
-  db_ = db;
-  grouter_ = grouter;
-  nbc_ = std::move(nbc);
-  log_ = log;
-  nbVec_ = std::move(nbVec);
-}
-
-GpuRouteBase::~GpuRouteBase()
-{
-}
-
+  std::shared_ptr<PlacerBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> nbVec_;
+  utl::Logger* log_;
+};
 }  // namespace gpl2

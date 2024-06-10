@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,7 +37,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 namespace rsz {
 class Resizer;
@@ -50,11 +50,11 @@ namespace gpl2 {
 
 class PlacerBaseCommon;
 
-class GpuTimingBase
+class TimingBase
 {
  public:
-  GpuTimingBase();
-  GpuTimingBase(std::shared_ptr<PlacerBaseCommon> nbc,
+  TimingBase();
+  TimingBase(const std::shared_ptr<PlacerBaseCommon>& nbc,
                 rsz::Resizer* rs,
                 utl::Logger* log);
 

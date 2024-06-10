@@ -3,6 +3,7 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,57 +40,50 @@
 //
 //
 ///////////////////////////////////////////////////////////////////////////////
-
-#include <cufft.h>
-
-#include "cudaUtil.h"
+#include <Kokkos_Core.hpp>
 
 void dct_2d_fft(const int M,
                 const int N,
-                cufftHandle& plan,
-                const cufftComplex* expkM,
-                const cufftComplex* expkN,
-                const cufftReal* input,
-                cufftReal* pre,
-                cufftComplex* fft,
-                cufftReal* post);
+                const Kokkos::View<const Kokkos::complex<float>*>& expkM,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkN,
+                const Kokkos::View<const float*>& input,
+                const Kokkos::View<float*>& pre,
+                const Kokkos::View<Kokkos::complex<float>*>& fft,
+                const Kokkos::View<float*>& post);
 
 void idct_2d_fft(const int M,
                  const int N,
-                 cufftHandle& plan,
-                 const cufftComplex* expkM,
-                 const cufftComplex* expkN,
-                 const cufftComplex* expkMN1,
-                 const cufftComplex* expkMN2,
-                 const cufftReal* input,
-                 cufftComplex* pre,
-                 cufftReal* ifft,
-                 cufftReal* post);
+                 const Kokkos::View<const Kokkos::complex<float>*>& expkM,
+                 const Kokkos::View<const Kokkos::complex<float>*>& expkN,
+                 const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
+                 const Kokkos::View<const Kokkos::complex<float>*>& expkMN2,
+                 const Kokkos::View<const float*>& input,
+                 const Kokkos::View<Kokkos::complex<float>*>& pre,
+                 const Kokkos::View<float*>& ifft,
+                 const Kokkos::View<float*>& post);
 
 void idxst_idct(const int M,
                 const int N,
-                cufftHandle& plan,
-                const cufftComplex* expkM,
-                const cufftComplex* expkN,
-                const cufftComplex* expkMN1,
-                const cufftComplex* expkMN2,
-                const cufftReal* input,
-                cufftReal* workSpaceReal1,
-                cufftComplex* workSpaceComplex,
-                cufftReal* workSpaceReal2,
-                cufftReal* workSpaceReal3,
-                cufftReal* output);
+                const Kokkos::View<const Kokkos::complex<float>*>& expkM,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkN,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkMN2,
+                const Kokkos::View<const float*>& input,
+                const Kokkos::View<float*>& workSpaceReal1,
+                const Kokkos::View<Kokkos::complex<float>*>& workSpaceComplex,
+                const Kokkos::View<float*>& workSpaceReal2,
+                const Kokkos::View<float*>& workSpaceReal3,
+                const Kokkos::View<float*>& output);
 
 void idct_idxst(const int M,
                 const int N,
-                cufftHandle& plan,
-                const cufftComplex* expkM,
-                const cufftComplex* expkN,
-                const cufftComplex* expkMN1,
-                const cufftComplex* expkMN2,
-                const cufftReal* input,
-                cufftReal* workSpaceReal1,
-                cufftComplex* workSpaceComplex,
-                cufftReal* workSpaceReal2,
-                cufftReal* workSpaceReal3,
-                cufftReal* output);
+                const Kokkos::View<const Kokkos::complex<float>*>& expkM,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkN,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
+                const Kokkos::View<const Kokkos::complex<float>*>& expkMN2,
+                const Kokkos::View<const float*>& input,
+                const Kokkos::View<float*>& workSpaceReal1,
+                const Kokkos::View<Kokkos::complex<float>*>& workSpaceComplex,
+                const Kokkos::View<float*>& workSpaceReal2,
+                const Kokkos::View<float*>& workSpaceReal3,
+                const Kokkos::View<float*>& output);
