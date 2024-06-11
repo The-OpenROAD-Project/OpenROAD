@@ -101,13 +101,6 @@ struct NodeInfo
   }
 };
 
-using LayerInfoMap = std::map<odb::dbTechLayer*, NodeInfo>;
-using GraphNodeVector = std::vector<GraphNode*>;
-using GraphNodeVectorMap
-    = std::unordered_map<odb::dbTechLayer*, GraphNodeVector>;
-using GateInfoMap = std::map<std::string, LayerInfoMap>;
-///////////////////////////////////////
-
 class GlobalRouteSource
 {
  public:
@@ -125,6 +118,13 @@ struct Violation
   int diode_count_per_gate;
 };
 
+using LayerInfoMap = std::map<odb::dbTechLayer*, NodeInfo>;
+using GraphNodeVector = std::vector<GraphNode*>;
+using GraphNodeVectorMap
+    = std::unordered_map<odb::dbTechLayer*, GraphNodeVector>;
+using GateInfoMap = std::map<std::string, LayerInfoMap>;
+using ViolationList = std::vector<Violation>;
+
 class AntennaChecker
 {
  public:
@@ -140,7 +140,7 @@ class AntennaChecker
                     const int num_threads = 1,
                     bool verbose = false);
   int antennaViolationCount() const;
-  std::vector<Violation> getAntennaViolations(odb::dbNet* net,
+  ViolationList getAntennaViolations(odb::dbNet* net,
                                               odb::dbMTerm* diode_mterm,
                                               float ratio_margin);
   void initAntennaRules();
@@ -169,7 +169,8 @@ class AntennaChecker
                 odb::dbMTerm* diode_mterm,
                 float ratio_margin,
                 int& net_violation_count,
-                int& pin_violation_count);
+                int& pin_violation_count,
+                ViolationList& antenna_violations);
   void saveGates(odb::dbNet* db_net,
                  GraphNodeVectorMap& node_by_layer_map,
                  const int node_count);
@@ -183,7 +184,8 @@ class AntennaChecker
                  std::ofstream& report_file,
                  odb::dbMTerm* diode_mterm,
                  float ratio_margin,
-                 GateInfoMap& gate_info);
+                 GateInfoMap& gate_info,
+                 ViolationList& antenna_violations);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   std::pair<bool, bool> checkPAR(odb::dbTechLayer* tech_layer,
@@ -216,7 +218,6 @@ class AntennaChecker
   int net_violation_count_{0};
   float ratio_margin_{0};
   std::string report_file_name_;
-  std::vector<Violation> antenna_violations_;
   odb::dbTechLayer* min_layer_;
   std::vector<odb::dbNet*> nets_;
   // consts

@@ -739,7 +739,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                std::ofstream& report_file,
                                odb::dbMTerm* diode_mterm,
                                float ratio_margin,
-                               GateInfoMap& gate_info)
+                               GateInfoMap& gate_info,
+                               ViolationList& antenna_violations)
 {
   ratio_margin_ = ratio_margin;
   int pin_violation_count = 0;
@@ -917,7 +918,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           }
           // save antenna violation
           if (violated) {
-            antenna_violations_.push_back(
+            antenna_violations.push_back(
                 {layer_info->getRoutingLevel(), gates, diode_count_per_gate});
           }
         }
@@ -1008,7 +1009,8 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
                               odb::dbMTerm* diode_mterm,
                               float ratio_margin,
                               int& net_violation_count,
-                              int& pin_violation_count)
+                              int& pin_violation_count,
+                              ViolationList& antenna_violations)
 {
   odb::dbWire* wire = db_net->getWire();
   if (wire) {
@@ -1027,7 +1029,8 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
                                     report_file,
                                     diode_mterm,
                                     ratio_margin,
-                                    gate_info);
+                                    gate_info,
+                                    antenna_violations);
 
     if (pin_violations > 0) {
       net_violation_count++;
@@ -1036,14 +1039,14 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
   }
 }
 
-std::vector<Violation> AntennaChecker::getAntennaViolations(
+ViolationList AntennaChecker::getAntennaViolations(
     odb::dbNet* net,
     odb::dbMTerm* diode_mterm,
     float ratio_margin)
 {
-  antenna_violations_.clear();
+  ViolationList antenna_violations;
   if (net->isSpecial()) {
-    return antenna_violations_;
+    return antenna_violations;
   }
 
   int net_violation_count, pin_violation_count;
@@ -1057,9 +1060,10 @@ std::vector<Violation> AntennaChecker::getAntennaViolations(
            diode_mterm,
            ratio_margin,
            net_violation_count,
-           pin_violation_count);
+           pin_violation_count,
+           antenna_violations);
 
-  return antenna_violations_;
+  return antenna_violations;
 }
 
 int AntennaChecker::checkAntennas(odb::dbNet* net,
@@ -1091,6 +1095,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   int pin_violation_count = 0;
 
   if (net) {
+    ViolationList antenna_violations;
     if (!net->isSpecial()) {
       checkNet(net,
                verbose,
@@ -1099,7 +1104,8 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                nullptr,
                0,
                net_violation_count,
-               pin_violation_count);
+               pin_violation_count,
+               antenna_violations);
     } else {
       logger_->error(
           ANT, 14, "Skipped net {} because it is special.", net->getName());
@@ -1114,6 +1120,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
     for (odb::dbNet* net : nets_) {
+      ViolationList antenna_violations;
       checkNet(net,
                verbose,
                false,
@@ -1121,7 +1128,8 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                nullptr,
                0,
                net_violation_count,
-               pin_violation_count);
+               pin_violation_count,
+               antenna_violations);
     }
   }
 
