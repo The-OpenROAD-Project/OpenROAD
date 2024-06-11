@@ -621,40 +621,26 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
 
     // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
     // cloning because such removal may lead to an inifinte loop or long runtime
+    std::string reason;
     if (resizer_->all_sized_inst_set_.count(drvr)) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 4,
-                 "buffer {} is not removed because it has been resized",
-                 db_network_->name(drvr));
-      return false;
+      reason = "it has been resized";
     }
     if (resizer_->all_swapped_pin_inst_set_.count(drvr)) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 4,
-                 "buffer {} is not removed because its pins have been swapped",
-                 db_network_->name(drvr));
-      return false;
+      reason = "its pins have been swapped";
     }
     if (resizer_->all_inserted_buffer_set_.count(drvr)) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 4,
-                 "buffer {} is not removed because it was from rebuffering",
-                 db_network_->name(drvr));
-      return false;
+      reason = "it was from rebuffering";
     }
     if (resizer_->all_cloned_inst_set_.count(drvr)) {
+      reason = "it has been cloned";
+    }
+    if (!reason.empty()) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
                  4,
-                 "buffer {} is not removed because it has been cloned",
-                 db_network_->name(drvr));
+                 "buffer {} is not removed because {}",
+                 db_network_->name(drvr), reason);
       return false;
     }
 

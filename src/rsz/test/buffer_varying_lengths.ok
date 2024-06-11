@@ -10,6 +10,4 @@ worst slack -0.27
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 worst slack -0.26
-Differences found at line 6.
-COMPONENTS 562 ;
-COMPONENTS 561 ;
+No differences found.
