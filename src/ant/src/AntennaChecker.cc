@@ -1118,8 +1118,8 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     }
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
-    for (auto it = nets_.begin(); it != nets_.end(); ++it) {
-      odb::dbNet* net = *it;
+    for (int i = 0; i < nets_.size(); i++) {
+      odb::dbNet* net = nets_[i];
       ViolationList antenna_violations;
       checkNet(net,
                verbose,
