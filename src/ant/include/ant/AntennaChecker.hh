@@ -136,7 +136,9 @@ class AntennaChecker
             utl::Logger* logger);
 
   // net nullptr -> check all nets
-  int checkAntennas(odb::dbNet* net = nullptr, bool verbose = false);
+  int checkAntennas(odb::dbNet* net = nullptr,
+                    const int num_threads = 1,
+                    bool verbose = false);
   int antennaViolationCount() const;
   std::vector<Violation> getAntennaViolations(odb::dbNet* net,
                                               odb::dbMTerm* diode_mterm,

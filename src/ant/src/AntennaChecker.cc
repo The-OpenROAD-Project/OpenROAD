@@ -31,6 +31,7 @@
 
 #include "ant/AntennaChecker.hh"
 
+#include <omp.h>
 #include <tcl.h>
 
 #include <cstdio>
@@ -1061,7 +1062,9 @@ std::vector<Violation> AntennaChecker::getAntennaViolations(
   return antenna_violations_;
 }
 
-int AntennaChecker::checkAntennas(odb::dbNet* net, bool verbose)
+int AntennaChecker::checkAntennas(odb::dbNet* net,
+                                  const int num_threads,
+                                  bool verbose)
 {
   initAntennaRules();
 
@@ -1102,17 +1105,23 @@ int AntennaChecker::checkAntennas(odb::dbNet* net, bool verbose)
           ANT, 14, "Skipped net {} because it is special.", net->getName());
     }
   } else {
+    nets_.clear();
     for (odb::dbNet* net : block_->getNets()) {
       if (!net->isSpecial()) {
-        checkNet(net,
-                 verbose,
-                 false,
-                 report_file,
-                 nullptr,
-                 0,
-                 net_violation_count,
-                 pin_violation_count);
+        nets_.push_back(net);
       }
+    }
+    omp_set_num_threads(num_threads);
+#pragma omp parallel for schedule(dynamic)
+    for (odb::dbNet* net : nets_) {
+      checkNet(net,
+               verbose,
+               false,
+               report_file,
+               nullptr,
+               0,
+               net_violation_count,
+               pin_violation_count);
     }
   }
 
