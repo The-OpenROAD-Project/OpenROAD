@@ -137,7 +137,7 @@ class AntennaChecker
 
   // net nullptr -> check all nets
   int checkAntennas(odb::dbNet* net = nullptr,
-                    const int num_threads = 1,
+                    int num_threads = 1,
                     bool verbose = false);
   int antennaViolationCount() const;
   ViolationList getAntennaViolations(odb::dbNet* net,
@@ -173,7 +173,7 @@ class AntennaChecker
                 ViolationList& antenna_violations);
   void saveGates(odb::dbNet* db_net,
                  GraphNodeVectorMap& node_by_layer_map,
-                 const int node_count);
+                 int node_count);
   void calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
                       GateInfoMap& gate_info);
   void calculatePAR(GateInfoMap& gate_info);

@@ -40,7 +40,7 @@ class DSU
  public:
   DSU();
   ~DSU();
-  void initDsu(const int node_count);
+  void initDsu(int node_count);
   void unionSet(int u, int v);
   bool dsuSame(int u, int v);
 
