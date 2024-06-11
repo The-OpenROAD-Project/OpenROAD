@@ -1039,10 +1039,9 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
   }
 }
 
-ViolationList AntennaChecker::getAntennaViolations(
-    odb::dbNet* net,
-    odb::dbMTerm* diode_mterm,
-    float ratio_margin)
+ViolationList AntennaChecker::getAntennaViolations(odb::dbNet* net,
+                                                   odb::dbMTerm* diode_mterm,
+                                                   float ratio_margin)
 {
   ViolationList antenna_violations;
   if (net->isSpecial()) {
@@ -1119,7 +1118,8 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     }
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
-    for (odb::dbNet* net : nets_) {
+    for (auto it = nets_.begin(); it != nets_.end(); ++it) {
+      odb::dbNet* net = *it;
       ViolationList antenna_violations;
       checkNet(net,
                verbose,

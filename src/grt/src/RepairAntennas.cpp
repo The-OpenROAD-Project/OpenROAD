@@ -99,7 +99,8 @@ bool RepairAntennas::checkAntennaViolations(
   arc_->initAntennaRules();
   omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
-  for (odb::dbNet* db_net : nets_to_repair) {
+  for (auto it = nets_to_repair.begin(); it != nets_to_repair.end(); ++it) {
+    odb::dbNet* db_net = *it;
     checkNetViolations(db_net, diode_mterm, ratio_margin);
   }
 
