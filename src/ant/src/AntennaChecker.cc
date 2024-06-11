@@ -42,6 +42,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "DSU.hh"
 #include "Polygon.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -216,43 +217,9 @@ double AntennaChecker::getPwlFactor(
   return default_value;
 }
 
-// DSU functions
-void AntennaChecker::initDsu()
-{
-  dsu_parent_.resize(node_count_);
-  dsu_size_.resize(node_count_);
-  for (int i = 0; i < node_count_; i++) {
-    dsu_size_[i] = 1;
-    dsu_parent_[i] = i;
-  }
-}
-
-int AntennaChecker::findSet(int u)
-{
-  if (u == dsu_parent_[u]) {
-    return u;
-  }
-  return dsu_parent_[u] = findSet(dsu_parent_[u]);
-}
-
-bool AntennaChecker::dsuSame(int u, int v)
-{
-  return findSet(u) == findSet(v);
-}
-
-void AntennaChecker::unionSet(int u, int v)
-{
-  u = findSet(u);
-  v = findSet(v);
-  // union the smaller set to bigger set
-  if (dsu_size_[u] < dsu_size_[v]) {
-    std::swap(u, v);
-  }
-  dsu_parent_[v] = u;
-  dsu_size_[u] += dsu_size_[v];
-}
-
-void AntennaChecker::saveGates(odb::dbNet* db_net)
+void AntennaChecker::saveGates(odb::dbNet* db_net,
+                               GraphNodeVectorMap& node_by_layer_map,
+                               const int node_count)
 {
   std::unordered_map<PinType, std::vector<int>, PinTypeHash> pin_nbrs;
   std::vector<int> ids;
@@ -281,57 +248,57 @@ void AntennaChecker::saveGates(odb::dbNet* db_net)
         // convert rect -> polygon
         Polygon pin_pol = rectToPolygon(pin_rect);
         // if has wire on same layer connect to pin
-        ids = findNodesWithIntersection(node_by_layer_map_[tech_layer],
-                                        pin_pol);
+        ids = findNodesWithIntersection(node_by_layer_map[tech_layer], pin_pol);
         for (const int& index : ids) {
-          pin_nbrs[pin].push_back(node_by_layer_map_[tech_layer][index]->id);
+          pin_nbrs[pin].push_back(node_by_layer_map[tech_layer][index]->id);
         }
         // if has via on upper layer connected to pin
         if (upper_layer) {
-          ids = findNodesWithIntersection(node_by_layer_map_[upper_layer],
+          ids = findNodesWithIntersection(node_by_layer_map[upper_layer],
                                           pin_pol);
           for (const int& index : ids) {
-            pin_nbrs[pin].push_back(node_by_layer_map_[upper_layer][index]->id);
+            pin_nbrs[pin].push_back(node_by_layer_map[upper_layer][index]->id);
           }
         }
         // if has via on lower layer connected to pin
         if (lower_layer) {
-          ids = findNodesWithIntersection(node_by_layer_map_[lower_layer],
+          ids = findNodesWithIntersection(node_by_layer_map[lower_layer],
                                           pin_pol);
           for (const int& index : ids) {
-            pin_nbrs[pin].push_back(node_by_layer_map_[lower_layer][index]->id);
+            pin_nbrs[pin].push_back(node_by_layer_map[lower_layer][index]->id);
           }
         }
       }
     }
   }
   // run DSU from min_layer to max_layer
-  initDsu();
+  DSU dsu;
+  dsu.initDsu(node_count);
   odb::dbTechLayer* iter = min_layer_;
   odb::dbTechLayer* lower_layer;
   while (iter) {
     // iterate each node of this layer to union set
-    for (auto& node_it : node_by_layer_map_[iter]) {
+    for (auto& node_it : node_by_layer_map[iter]) {
       int id_u = node_it->id;
       // if has lower layer
       lower_layer = iter->getLowerLayer();
       if (lower_layer) {
         // get lower neighbors and union
         for (const int& lower_it : node_it->low_adj) {
-          int id_v = node_by_layer_map_[lower_layer][lower_it]->id;
+          int id_v = node_by_layer_map[lower_layer][lower_it]->id;
           // if they are on different sets then union
-          if (!dsuSame(id_u, id_v)) {
-            unionSet(id_u, id_v);
+          if (!dsu.dsuSame(id_u, id_v)) {
+            dsu.unionSet(id_u, id_v);
           }
         }
       }
     }
-    for (auto& node_it : node_by_layer_map_[iter]) {
+    for (auto& node_it : node_by_layer_map[iter]) {
       int id_u = node_it->id;
       // check gates in same set (first Nodes x gates)
       for (const auto& gate_it : pin_nbrs) {
         for (const int& nbr_id : gate_it.second) {
-          if (dsuSame(id_u, nbr_id)) {
+          if (dsu.dsuSame(id_u, nbr_id)) {
             node_it->gates.insert(gate_it.first);
             break;
           }
@@ -430,9 +397,10 @@ void AntennaChecker::calculateViaPar(odb::dbTechLayer* tech_layer,
   }
 }
 
-void AntennaChecker::calculateAreas()
+void AntennaChecker::calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
+                                    GateInfoMap& gate_info)
 {
-  for (const auto& it : node_by_layer_map_) {
+  for (const auto& it : node_by_layer_map) {
     for (const auto& node_it : it.second) {
       NodeInfo info;
       double area = gtl::area(node_it->pol);
@@ -472,11 +440,10 @@ void AntennaChecker::calculateAreas()
           continue;
         }
         // check if has another node with gate in the layer, then merge area
-        if (gate_info_[gate.name].find(it.first)
-            != gate_info_[gate.name].end()) {
-          gate_info_[gate.name][it.first] += info;
+        if (gate_info[gate.name].find(it.first) != gate_info[gate.name].end()) {
+          gate_info[gate.name][it.first] += info;
         } else {
-          gate_info_[gate.name][it.first] = info;
+          gate_info[gate.name][it.first] = info;
         }
       }
     }
@@ -484,9 +451,9 @@ void AntennaChecker::calculateAreas()
 }
 
 // calculate PAR and PSR of wires and vias
-void AntennaChecker::calculatePAR()
+void AntennaChecker::calculatePAR(GateInfoMap& gate_info)
 {
-  for (auto& gate_it : gate_info_) {
+  for (auto& gate_it : gate_info) {
     for (auto& layer_it : gate_it.second) {
       NodeInfo& gate_info = layer_it.second;
       odb::dbTechLayer* tech_layer = layer_it.first;
@@ -501,9 +468,9 @@ void AntennaChecker::calculatePAR()
 }
 
 // calculate CAR and CSR of wires and vias
-void AntennaChecker::calculateCAR()
+void AntennaChecker::calculateCAR(GateInfoMap& gate_info)
 {
-  for (auto& gate_it : gate_info_) {
+  for (auto& gate_it : gate_info) {
     NodeInfo sumWire, sumVia;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
     odb::dbTechLayer* iter_layer = min_layer_;
@@ -770,7 +737,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                bool report_if_no_violation,
                                std::ofstream& report_file,
                                odb::dbMTerm* diode_mterm,
-                               float ratio_margin)
+                               float ratio_margin,
+                               GateInfoMap& gate_info)
 {
   ratio_margin_ = ratio_margin;
   int pin_violation_count = 0;
@@ -778,7 +746,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>
       gates_with_violations;
 
-  for (const auto& gate_info : gate_info_) {
+  for (const auto& gate_info : gate_info) {
     bool pin_has_violation = false;
 
     for (const auto& layer_info : gate_info.second) {
@@ -829,7 +797,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     if (report_file.is_open()) {
       report_file << net_name << "\n";
     }
-    for (const auto& gate_it : gate_info_) {
+    for (const auto& gate_it : gate_info) {
       if (!verbose
           && gates_with_violations.find(gate_it.first)
                  == gates_with_violations.end()) {
@@ -842,7 +810,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
       if (report_file.is_open()) {
         report_file << pin_name << "\n";
       }
-      for (const auto& layer_info : gate_info_[gate_it.first]) {
+      for (const auto& layer_info : gate_info[gate_it.first]) {
         if (!verbose
             && gates_with_violations[gate_it.first].find(layer_info.first)
                    == gates_with_violations[gate_it.first].end()) {
@@ -908,7 +876,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           if (diode_mterm) {
             diode_diff_area = diffArea(diode_mterm);
           }
-          NodeInfo violation_info = gate_info_[gate_iter.first][layer_info];
+          NodeInfo violation_info = gate_info[gate_iter.first][layer_info];
           std::vector<odb::dbITerm*> gates = violation_info.iterms;
           odb::dbTechLayer* violation_layer = layer_info;
           int diode_count_per_gate = 0;
@@ -958,7 +926,9 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   return pin_violation_count;
 }
 
-void AntennaChecker::buildLayerMaps(odb::dbNet* db_net)
+void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
+                                    GraphNodeVectorMap& node_by_layer_map,
+                                    GateInfoMap& gate_info)
 {
   odb::dbWire* wires = db_net->getWire();
 
@@ -968,18 +938,16 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net)
   avoidPinIntersection(db_net, set_by_layer);
 
   // init struct (copy polygon set information on struct to save neighbors)
-  node_by_layer_map_.clear();
-  gate_info_.clear();
-  node_count_ = 0;
   odb::dbTech* tech = db_->getTech();
   min_layer_ = tech->findRoutingLayer(1);
 
+  int node_count = 0;
   for (const auto& layer_it : set_by_layer) {
     for (const auto& pol_it : layer_it.second) {
       bool isVia = layer_it.first->getRoutingLevel() == 0;
-      node_by_layer_map_[layer_it.first].push_back(
-          new GraphNode(node_count_, isVia, pol_it));
-      node_count_++;
+      node_by_layer_map[layer_it.first].push_back(
+          new GraphNode(node_count, isVia, pol_it));
+      node_count++;
     }
   }
 
@@ -991,14 +959,14 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net)
       int via_index = 0;
       for (const auto& via_it : layer_it.second) {
         lower_index = findNodesWithIntersection(
-            node_by_layer_map_[layer_it.first->getLowerLayer()], via_it);
+            node_by_layer_map[layer_it.first->getLowerLayer()], via_it);
         upper_index = findNodesWithIntersection(
-            node_by_layer_map_[layer_it.first->getUpperLayer()], via_it);
+            node_by_layer_map[layer_it.first->getUpperLayer()], via_it);
 
         if (upper_index.size() <= 2) {
           // connect upper -> via
           for (int& up_index : upper_index) {
-            node_by_layer_map_[layer_it.first->getUpperLayer()][up_index]
+            node_by_layer_map[layer_it.first->getUpperLayer()][up_index]
                 ->low_adj.push_back(via_index);
           }
         } else if (upper_index.size() > 2) {
@@ -1013,7 +981,7 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net)
         if (lower_index.size() == 1) {
           // connect via -> lower
           for (int& low_index : lower_index) {
-            node_by_layer_map_[layer_it.first][via_index]->low_adj.push_back(
+            node_by_layer_map[layer_it.first][via_index]->low_adj.push_back(
                 low_index);
           }
         } else if (lower_index.size() > 2) {
@@ -1029,7 +997,7 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net)
       }
     }
   }
-  saveGates(db_net);
+  saveGates(db_net, node_by_layer_map, node_count);
 }
 
 void AntennaChecker::checkNet(odb::dbNet* db_net,
@@ -1043,19 +1011,22 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
 {
   odb::dbWire* wire = db_net->getWire();
   if (wire) {
-    buildLayerMaps(db_net);
+    GraphNodeVectorMap node_by_layer_map;
+    GateInfoMap gate_info;
+    buildLayerMaps(db_net, node_by_layer_map, gate_info);
 
-    calculateAreas();
+    calculateAreas(node_by_layer_map, gate_info);
 
-    calculatePAR();
-    calculateCAR();
+    calculatePAR(gate_info);
+    calculateCAR(gate_info);
 
     int pin_violations = checkGates(db_net,
                                     verbose,
                                     report_if_no_violation,
                                     report_file,
                                     diode_mterm,
-                                    ratio_margin);
+                                    ratio_margin,
+                                    gate_info);
 
     if (pin_violations > 0) {
       net_violation_count++;

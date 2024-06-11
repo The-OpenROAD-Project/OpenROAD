@@ -103,6 +103,9 @@ struct NodeInfo
 
 using LayerInfoMap = std::map<odb::dbTechLayer*, NodeInfo>;
 using GraphNodeVector = std::vector<GraphNode*>;
+using GraphNodeVectorMap
+    = std::unordered_map<odb::dbTechLayer*, GraphNodeVector>;
+using GateInfoMap = std::map<std::string, LayerInfoMap>;
 ///////////////////////////////////////
 
 class GlobalRouteSource
@@ -154,7 +157,9 @@ class AntennaChecker
   std::vector<std::pair<double, std::vector<odb::dbITerm*>>>
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
-  void buildLayerMaps(odb::dbNet* net);
+  void buildLayerMaps(odb::dbNet* net,
+                      GraphNodeVectorMap& node_by_layer_map,
+                      GateInfoMap& gate_info);
   void checkNet(odb::dbNet* net,
                 bool verbose,
                 bool report_if_no_violation,
@@ -163,16 +168,20 @@ class AntennaChecker
                 float ratio_margin,
                 int& net_violation_count,
                 int& pin_violation_count);
-  void saveGates(odb::dbNet* db_net);
-  void calculateAreas();
-  void calculatePAR();
-  void calculateCAR();
+  void saveGates(odb::dbNet* db_net,
+                 GraphNodeVectorMap& node_by_layer_map,
+                 const int node_count);
+  void calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
+                      GateInfoMap& gate_info);
+  void calculatePAR(GateInfoMap& gate_info);
+  void calculateCAR(GateInfoMap& gate_info);
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool report_if_no_violation,
                  std::ofstream& report_file,
                  odb::dbMTerm* diode_mterm,
-                 float ratio_margin);
+                 float ratio_margin,
+                 GateInfoMap& gate_info);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   std::pair<bool, bool> checkPAR(odb::dbTechLayer* tech_layer,
@@ -195,11 +204,6 @@ class AntennaChecker
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
-  // DSU functions
-  void initDsu();
-  int findSet(int u);
-  void unionSet(int u, int v);
-  bool dsuSame(int u, int v);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
@@ -210,13 +214,9 @@ class AntennaChecker
   int net_violation_count_{0};
   float ratio_margin_{0};
   std::string report_file_name_;
-  std::unordered_map<odb::dbTechLayer*, GraphNodeVector> node_by_layer_map_;
-  std::map<std::string, LayerInfoMap> gate_info_;
   std::vector<Violation> antenna_violations_;
-  int node_count_;
   odb::dbTechLayer* min_layer_;
-  // dsu variables
-  std::vector<int> dsu_parent_, dsu_size_;
+  std::vector<odb::dbNet*> nets_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };
