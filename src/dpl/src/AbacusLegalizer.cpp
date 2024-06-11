@@ -38,6 +38,8 @@
 //    https://github.com/limbo018/DREAMPlace/tree/master/dreamplace/ops/abacus_legalize
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "AbacusLegalizer.h"
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -48,7 +50,9 @@ namespace dpl {
 
 void Opendp::runAbacus()
 {
-  abacusLegalizer_.runAbacus(db_->getChip()->getBlock());
+  AbacusLegalizer abacusLegalizer;
+
+  abacusLegalizer.runAbacus(db_->getChip()->getBlock());
 }
 
 // clang-format off
