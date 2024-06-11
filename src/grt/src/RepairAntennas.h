@@ -95,7 +95,8 @@ class RepairAntennas
                               const std::vector<odb::dbNet*>& nets_to_repair,
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm,
-                              float ratio_margin);
+                              float ratio_margin,
+                              int num_threads);
   void checkNetViolations(odb::dbNet* db_net,
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);

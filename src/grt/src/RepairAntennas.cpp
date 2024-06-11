@@ -35,6 +35,8 @@
 
 #include "RepairAntennas.h"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -76,7 +78,8 @@ bool RepairAntennas::checkAntennaViolations(
     const std::vector<odb::dbNet*>& nets_to_repair,
     int max_routing_layer,
     odb::dbMTerm* diode_mterm,
-    float ratio_margin)
+    float ratio_margin,
+    const int num_threads)
 {
   // safe copy net wires before orderWires calls
   // TODO: remove this copy when antenna checker update is done
@@ -94,6 +97,8 @@ bool RepairAntennas::checkAntennaViolations(
 
   makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
+  omp_set_num_threads(num_threads);
+#pragma omp parallel for schedule(dynamic)
   for (odb::dbNet* db_net : nets_to_repair) {
     checkNetViolations(db_net, diode_mterm, ratio_margin);
   }

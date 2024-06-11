@@ -312,7 +312,8 @@ void GlobalRouter::updateDbCongestion()
 
 void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations,
-                                  float ratio_margin)
+                                  float ratio_margin,
+                                  const int num_threads)
 {
   if (!initialized_) {
     int min_layer, max_layer;
@@ -351,8 +352,12 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
     }
-    violations = repair_antennas_->checkAntennaViolations(
-        routes_, nets_to_repair, max_routing_layer_, diode_mterm, ratio_margin);
+    violations = repair_antennas_->checkAntennaViolations(routes_,
+                                                          nets_to_repair,
+                                                          max_routing_layer_,
+                                                          diode_mterm,
+                                                          ratio_margin,
+                                                          num_threads);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
