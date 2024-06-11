@@ -640,7 +640,8 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
                  "repair_setup",
                  4,
                  "buffer {} is not removed because {}",
-                 db_network_->name(drvr), reason);
+                 db_network_->name(drvr),
+                 reason);
       return false;
     }
 
