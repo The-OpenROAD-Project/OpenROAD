@@ -31,7 +31,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 
-using namespace fr;
+namespace drt {
 
 Rect frRPin::getBBox()
 {
@@ -62,3 +62,5 @@ frLayerNum frRPin::getLayerNum()
 {
   return accessPoint->getLayerNum();
 }
+
+}  // namespace drt

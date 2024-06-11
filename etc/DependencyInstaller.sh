@@ -14,7 +14,7 @@ _equivalenceDeps() {
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then (
+    if [[ ! $(command -v yosys) || ! $(command -v yosys-config)  ]]; then (
         if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
             source /opt/rh/llvm-toolset-7.0/enable
         fi
@@ -178,7 +178,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
@@ -246,6 +246,7 @@ _installUbuntuPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libffi-dev \
         libgomp1 \
@@ -254,6 +255,7 @@ _installUbuntuPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl \
@@ -285,9 +287,6 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qt5-default
     fi
-
-    # need the strip "hack" above to run on docker
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
 
 _installRHELCleanUp() {
@@ -296,6 +295,9 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
+    arch=amd64
+    version=3.1.11.1
+
     yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
@@ -344,6 +346,10 @@ _installRHELPackages() {
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+
+    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
+    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
 _installCentosCleanUp() {
@@ -368,11 +374,13 @@ _installCentosPackages() {
     yum install -y \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
+        groff \
         libffi-devel \
         libgomp \
         libstdc++ \
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python-devel \
@@ -414,6 +422,7 @@ _installOpenSusePackages() {
         gcc \
         gcc11-c++ \
         git \
+        groff \
         gzip \
         lcov \
         libffi-devel \
@@ -425,6 +434,7 @@ _installOpenSusePackages() {
         libqt5-qtstyleplugins \
         libstdc++6-devel-gcc8 \
         llvm \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python3-devel \
@@ -443,7 +453,8 @@ _installOpenSusePackages() {
 _installHomebrewPackage() {
     package=$1
     commit=$2
-    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
+    dir=$3
+    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${dir}${package}.rb
     curl -L ${url} > ${package}.rb
 
     if brew list "${package}" &> /dev/null; then
@@ -477,7 +488,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex groff libomp or-tools pandoc pyqt5 python tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -486,9 +497,11 @@ EOF
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
     # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
+    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b" ""
     # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0" ""
+    # Install swig 4.1.1
+    _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
 
 _installDebianCleanUp() {
@@ -513,6 +526,7 @@ _installDebianPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libgomp1 \
         libomp-dev \
@@ -520,6 +534,7 @@ _installDebianPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl-dev \
@@ -712,7 +727,6 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:

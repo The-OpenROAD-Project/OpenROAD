@@ -57,7 +57,6 @@ class Architecture;
 class DetailedMgr;
 class Network;
 class Node;
-class RoutingParams;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -88,10 +87,10 @@ class DetailedOrient
   Architecture* arch_;
   Network* network_;
 
-  DetailedMgr* mgrPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
 
-  int skipNetsLargerThanThis_;
-  int traversal_;
+  int skipNetsLargerThanThis_ = 100;
+  int traversal_ = 0;
   std::vector<int> edgeMask_;
 };
 

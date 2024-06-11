@@ -41,7 +41,7 @@ namespace bgi = boost::geometry::index;
 
 // Enable Point & Rect to be used with boost geometry
 BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
-                                         fr::frCoord,
+                                         drt::frCoord,
                                          cs::cartesian,
                                          x,
                                          y,
@@ -50,9 +50,9 @@ BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
 
 BOOST_GEOMETRY_REGISTER_BOX(odb::Rect, odb::Point, ll(), ur())
 
-namespace fr {
+namespace drt {
 
 template <typename T, typename Key = Rect>
 using RTree = bgi::rtree<std::pair<Key, T>, bgi::quadratic<16>>;
 
-}  // namespace fr
+}  // namespace drt

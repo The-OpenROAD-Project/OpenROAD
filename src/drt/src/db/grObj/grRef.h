@@ -31,12 +31,11 @@
 #include "db/grObj/grFig.h"
 #include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
+
 class grRef : public grPinFig
 {
  public:
-  // constructors
-  grRef() : grPinFig() {}
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual Point getOrigin() const = 0;
@@ -47,4 +46,5 @@ class grRef : public grPinFig
   virtual void setTransform(const dbTransform& xform) = 0;
   frBlockObjectEnum typeId() const override { return grcRef; }
 };
-}  // namespace fr
+
+}  // namespace drt

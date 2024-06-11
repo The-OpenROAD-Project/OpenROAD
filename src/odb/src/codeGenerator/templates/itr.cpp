@@ -76,8 +76,9 @@ uint {{itr.name}}::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = {{itr.name}}::begin(parent); id != {{itr.name}}::end(parent);
-       id = {{itr.name}}::next(id))
+       id = {{itr.name}}::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

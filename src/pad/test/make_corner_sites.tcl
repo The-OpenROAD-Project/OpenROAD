@@ -8,7 +8,12 @@ read_lef Nangate45_io/dummy_pads.lef
 read_def Nangate45_blackparrot/floorplan.def
 
 # Test make_io_sites
-make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE -offset 15  -rotation_corner R270
+make_io_sites \
+  -horizontal_site IOSITE \
+  -vertical_site IOSITE \
+  -corner_site IOSITE \
+  -offset 15 \
+  -rotation_corner R270
 
 set def_file [make_result_file "make_corner_sites.def"]
 write_def $def_file

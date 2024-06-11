@@ -43,20 +43,4 @@ class OpendpTest : public ::testing::Test
   OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
 };
 
-TEST_F(OpendpTest, IsPlaced)
-{
-  odb::dbMaster* and_gate = lib_->findMaster("sky130_fd_sc_hd__and2_1");
-  auto and_placed = OdbUniquePtr<odb::dbInst>(
-      odb::dbInst::create(block_.get(), and_gate, "and_1"),
-      &odb::dbInst::destroy);
-
-  and_placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-  Cell placed;
-  placed.db_inst_ = and_placed.get();
-
-  // Act & Assert
-  ASSERT_TRUE(Opendp::isPlaced(&placed));
-}
-
 }  // namespace dpl

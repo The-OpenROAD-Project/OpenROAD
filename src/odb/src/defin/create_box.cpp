@@ -65,31 +65,36 @@ void create_box(dbSWire* wire,
                  cur_x,
                  cur_y);
     return;
-  } else if (cur_x == prev_x)  // vert. path
+  }
+  if (cur_x == prev_x)  // vert. path
   {
     x1 = cur_x - dw;
     x2 = cur_x + dw;
 
     if (cur_y > prev_y) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y1 = prev_y - prev_ext;
-      else
+      } else {
         y1 = prev_y;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y2 = cur_y + cur_ext;
-      else
+      } else {
         y2 = cur_y;
+      }
     } else {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y1 = cur_y - cur_ext;
-      else
+      } else {
         y1 = cur_y;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y2 = prev_y + prev_ext;
-      else
+      } else {
         y2 = prev_y;
+      }
     }
 
     odb::dbSBox* box
@@ -101,25 +106,29 @@ void create_box(dbSWire* wire,
     y2 = cur_y + dw;
 
     if (cur_x > prev_x) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x1 = prev_x - prev_ext;
-      else
+      } else {
         x1 = prev_x;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x2 = cur_x + cur_ext;
-      else
+      } else {
         x2 = cur_x;
+      }
     } else {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x1 = cur_x - cur_ext;
-      else
+      } else {
         x1 = cur_x;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x2 = prev_x + prev_ext;
-      else
+      } else {
         x2 = prev_x;
+      }
     }
     odb::dbSBox* box
         = dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::HORIZONTAL);
@@ -202,11 +211,12 @@ dbTechLayer* create_via_array(dbSWire* wire,
     return nullptr;
   }
 
-  if (top != layer)
+  if (top != layer) {
     layer = top;
 
-  else if (bottom != layer)
+  } else if (bottom != layer) {
     layer = bottom;
+  }
 
   return layer;
 }
@@ -272,11 +282,12 @@ dbTechLayer* create_via_array(dbSWire* wire,
     return nullptr;
   }
 
-  if (top != layer)
+  if (top != layer) {
     layer = top;
 
-  else if (bottom != layer)
+  } else if (bottom != layer) {
     layer = bottom;
+  }
 
   return layer;
 }

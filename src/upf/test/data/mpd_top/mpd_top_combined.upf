@@ -1,0 +1,87 @@
+create_power_domain PD_TOP \
+  -elements {.}  \
+
+create_power_domain PD_AES_1 \
+  -elements {u_aes_1} \
+
+create_power_domain PD_AES_2 \
+  -elements {u_aes_2} \
+
+create_logic_port power_down_aes_1 -direction in
+
+create_power_switch psw_aes_1 \
+  -domain PD_AES_1 \
+  -output_supply_port vout \
+  -input_supply_port {vin vin2} \
+  -control_port {sleep power_down_aes_1} \
+  -on_state {ON vin {!sleep}}
+
+create_power_switch psw_aes_2 \
+  -domain PD_AES_2 \
+  -output_supply_port vout \
+  -input_supply_port {vin1 vin2} \
+  -control_port {sleep power_down_aes_2} \
+  -on_state {ON vin {!sleep}}
+
+create_logic_port isolaten_aes_1
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -update \
+  -isolation_signal isolaten_aes_1 \
+  -isolation_sense low
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -update \
+  -isolation_signal u_pwr_control/isolaten \
+  -isolation_sense low
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -update \
+  -location parent
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -update \
+  -location parent
+
+map_power_switch {psw_aes_1 psw_aes_2} \
+-lib_cells {sky130_fd_sc_hd__and2_0 sky130_fd_sc_hd__and2_0} \
+-port_map {{vin1 A} {vin2 B} {vout X}}
+
+set_level_shifter ls_1 \
+  -domain "PD_AES_1" \
+  -elements {"Element1" "Element2"} \
+  -exclude_elements {"ExcludeElement1"} \
+  -source "SourceDomain" \
+  -sink "SinkDomain" \
+  -use_functional_equivalence TRUE \
+  -applies_to "inputs" \
+  -applies_to_boundary "lower" \
+  -rule "low_to_high" \
+  -threshold 2.6 \
+  -no_shift \
+  -location "self" \
+  -input_supply "VDD" \
+  -output_supply "VDD2" \
+  -internal_supply "VDD_internal" \
+  -name_prefix "LS_" \
+  -name_suffix "_01" \
+  -instance {"Instance1 Port1" "Instance2 Port2"}
+
+set_level_shifter ls_1 \
+  -update \
+  -domain "PD_AES_1" \
+  -threshold 2.1 

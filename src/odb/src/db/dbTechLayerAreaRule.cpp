@@ -36,12 +36,12 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerAreaRule>;
 
@@ -114,6 +114,11 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 {
   flags_ = {};
+  area_ = 0;
+  except_min_width_ = 0;
+  except_edge_length_ = 0;
+  mask_ = 0;
+  rect_width_ = 0;
 }
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,

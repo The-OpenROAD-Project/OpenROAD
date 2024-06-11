@@ -280,7 +280,7 @@ class ClockLeafNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   QMenu menu_;
   QAction* highlight_path_;
 
-  QRectF getOutlineRect() const;
+  virtual QRectF getOutlineRect() const;
   QPolygonF getClockInputPolygon() const;
 };
 
@@ -303,13 +303,20 @@ class ClockMacroNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
 {
  public:
   ClockMacroNodeGraphicsViewItem(odb::dbITerm* iterm,
+                                 qreal insertion_delay_as_height,
                                  QGraphicsItem* parent = nullptr)
-      : ClockLeafNodeGraphicsViewItem(iterm, parent)
+      : ClockLeafNodeGraphicsViewItem(iterm, parent),
+        insertion_delay_as_height_(insertion_delay_as_height)
   {
   }
   ~ClockMacroNodeGraphicsViewItem() override = default;
   QString getType() const override { return "Macro"; }
   QColor getColor() const override { return leaf_macro_color_; }
+
+ protected:
+  QRectF getOutlineRect() const override;
+
+  const qreal insertion_delay_as_height_;
 };
 
 // Handles drawing the clock gate and non-inverter/buffers nodes in the tree
@@ -508,6 +515,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate(sta::Corner* corner = nullptr);
+  void fit();
 
  private slots:
   void currentClockChanged(int index);
@@ -523,6 +531,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   std::unique_ptr<STAGuiInterface> stagui_;
 
   QPushButton* update_button_;
+  QPushButton* fit_button_;
   QComboBox* corner_box_;
 
   QTabWidget* clocks_tab_;

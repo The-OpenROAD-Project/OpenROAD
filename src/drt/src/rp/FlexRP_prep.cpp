@@ -38,7 +38,7 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
-namespace fr {
+namespace drt {
 
 void FlexRP::prep()
 {
@@ -50,7 +50,7 @@ void FlexRP::prep()
   prep_eolForbiddenLen();
   prep_cutSpcTbl();
   prep_viaForbiddenThrough();
-  for (auto& ndr : tech_->nonDefaultRules) {
+  for (auto& ndr : tech_->nonDefaultRules_) {
     prep_via2viaForbiddenLen(ndr.get());
     prep_viaForbiddenTurnLen(ndr.get());
   }
@@ -193,7 +193,7 @@ void FlexRP::prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
     isThroughAllowed = false;
   }
 
-  tech_->viaForbiddenThrough[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
+  tech_->viaForbiddenThrough_[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
 }
 
 bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
@@ -429,7 +429,7 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->line2LineForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum& lNum,
@@ -520,7 +520,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->viaForbiddenPlanarLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_viaForbiddenPlanarLen_minStep(
@@ -598,9 +598,9 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr) {
-    ndr->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   } else {
-    tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
 }
 
@@ -742,15 +742,15 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord, endCoord));
   }
   if (ndr) {
-    ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   } else {
-    tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
 
   if (!ndr) {
     frCoord prl = 0;
     prep_via2viaPRL(lNum, viaDef1, viaDef2, isHorizontal, prl);
-    tech->via2ViaPrlLen[tableLayerIdx][tableEntryIdx] = prl;
+    tech->via2ViaPrlLen_[tableLayerIdx][tableEntryIdx] = prl;
   }
 }
 
@@ -1716,4 +1716,4 @@ void FlexRP::prep_via2viaPRL(frLayerNum lNum,
   }
 }
 
-}  // namespace fr
+}  // namespace drt

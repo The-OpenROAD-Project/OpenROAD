@@ -61,42 +61,12 @@ pipeline {
             }
           }
         }
-        stage('Docker centos7 gcc') {
+        stage('Local centos7 cmake configure no tests') {
           agent any;
-          stages{
-            stage('Pull centos7') {
+          stages {
+            stage('Configure centos7 cmake without tests') {
               steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/centos7-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
-              }
-            }
-            stage('Build docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
-                      'build clang': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker centos7') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
-                      'test clang': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
-                      )
-                }
+                sh 'cmake -B build_no_tests -D ENABLE_TESTS=OFF';
               }
             }
           }

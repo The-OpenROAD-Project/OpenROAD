@@ -16,6 +16,7 @@ record_tests {
   make_parasitics4
   make_parasitics5
   make_parasitics6
+  pin_swap1
   resize1
   resize4
   resize5
@@ -108,4 +109,6 @@ record_tests {
   repair_hold9_verbose
   set_dont_touch1
   set_dont_use1
+  #rsz_man_tcl_check
+  #rsz_readme_msgs_check
 }

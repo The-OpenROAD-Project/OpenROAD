@@ -28,7 +28,7 @@
 
 #include "dr/FlexDR.h"
 
-using namespace fr;
+namespace drt {
 
 void FlexDRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
 {
@@ -68,8 +68,9 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
       if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
           || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle)
+          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
         return;
+      }
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
@@ -150,8 +151,9 @@ void FlexDRWorker::endRemoveNets_pathSeg(
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
       if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
           || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle)
+          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
         return;
+      }
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
@@ -605,7 +607,7 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
     // do not write back if current clip is worse than input
   }
-  if (getRipupMode() != RipUpMode::ALL
+  if ((getRipupMode() == RipUpMode::DRC || getRipupMode() == RipUpMode::NEARDRC)
       && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
@@ -630,3 +632,5 @@ bool FlexDRWorker::end(frDesign* design)
   // release lock
   return true;
 }
+
+}  // namespace drt

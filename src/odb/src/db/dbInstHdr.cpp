@@ -32,7 +32,6 @@
 
 #include "dbInstHdr.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -40,6 +39,7 @@
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 
 namespace odb {
 
@@ -47,26 +47,33 @@ template class dbTable<_dbInstHdr>;
 
 bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
 {
-  if (_mterm_cnt != rhs._mterm_cnt)
+  if (_mterm_cnt != rhs._mterm_cnt) {
     return false;
+  }
 
-  if (_id != rhs._id)
+  if (_id != rhs._id) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_lib != rhs._lib)
+  if (_lib != rhs._lib) {
     return false;
+  }
 
-  if (_master != rhs._master)
+  if (_master != rhs._master) {
     return false;
+  }
 
-  if (_mterms != rhs._mterms)
+  if (_mterms != rhs._mterms) {
     return false;
+  }
 
-  if (_inst_cnt != rhs._inst_cnt)
+  if (_inst_cnt != rhs._inst_cnt) {
     return false;
+  }
 
   return true;
 }
@@ -183,11 +190,13 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   _dbMaster* master = (_dbMaster*) master_;
   _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (!master->_flags._frozen)
+  if (!master->_flags._frozen) {
     return nullptr;
+  }
 
-  if (block->_inst_hdr_hash.hasMember(master->_id))
+  if (block->_inst_hdr_hash.hasMember(master->_id)) {
     return nullptr;
+  }
 
   _dbInstHdr* inst_hdr;
   // initialize the inst_hdr structure

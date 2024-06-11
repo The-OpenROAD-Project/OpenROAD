@@ -6,6 +6,11 @@ class {{klass.name}};
 //Generator Code Begin ClassDefinition
 {% for klass in schema.classes|sort(attribute='name') %}
 
+{% if klass.description %}
+  {% for line in klass.description %}
+    // {{ line }}
+  {% endfor %}
+{% endif %}
 class {{klass.name}} : public dbObject
 {
  public:

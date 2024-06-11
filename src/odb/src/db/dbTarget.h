@@ -33,9 +33,9 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 

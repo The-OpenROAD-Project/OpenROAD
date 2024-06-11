@@ -34,29 +34,34 @@
 
 #include <algorithm>
 
-#include "poly_decomp.h"
+#include "odb/poly_decomp.h"
 
 namespace odb {
 
 definPolygon::definPolygon(const std::vector<Point>& points) : _points(points)
 {
-  if (_points.size() < 4)
+  if (_points.size() < 4) {
     return;
+  }
 
-  if (_points[0] == _points[_points.size() - 1])
+  if (_points[0] == _points[_points.size() - 1]) {
     _points.pop_back();
+  }
 
-  if (_points.size() < 4)
+  if (_points.size() < 4) {
     return;
+  }
 
-  if (!polygon_is_clockwise(_points))
+  if (!polygon_is_clockwise(_points)) {
     std::reverse(_points.begin(), _points.end());
+  }
 }
 
 void definPolygon::decompose(std::vector<Rect>& rects)
 {
-  if (_points.size() < 4)
+  if (_points.size() < 4) {
     return;
+  }
 
   decompose_polygon(_points, rects);
 }

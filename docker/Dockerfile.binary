@@ -4,8 +4,8 @@
 # instead use etc/DockerHelper.sh
 
 # https://github.com/moby/moby/issues/38379#issuecomment-448445652
-ARG copyImage=openroad/centos7-builder:latest
-ARG fromImage=openroad/centos7-dev:latest
+ARG copyImage=openroad/ubuntu22.04-builder:latest
+ARG fromImage=openroad/ubuntu22.04-dev:latest
 
 # need to use the line below as the "COPY --from" does not accept an ARG
 FROM $copyImage AS copyfrom
