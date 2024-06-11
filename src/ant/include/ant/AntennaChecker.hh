@@ -211,7 +211,6 @@ class AntennaChecker
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
-  int dbu_per_micron_{0};
   GlobalRouteSource* global_route_source_{nullptr};
   utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
