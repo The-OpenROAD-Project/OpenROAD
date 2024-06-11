@@ -66,21 +66,21 @@
 [NesterovSolve] Iter:  260 overflow: 0.378 HPWL: 4685878
 [NesterovSolve] Iter:  270 overflow: 0.326 HPWL: 4688054
 [NesterovSolve] Iter:  280 overflow: 0.302 HPWL: 4738039
-[NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
-[NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713
-[NesterovSolve] Iter:  310 overflow: 0.202 HPWL: 4848299
 [INFO GPL-0075] Routability numCall: 1 inflationIterCnt: 1 bloatIterCnt: 0
 [INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
 [INFO GPL-0038] TileCnt:      14   14
 [INFO GPL-0040] NumTiles: 196
 [INFO GPL-0081] TotalRouteOverflow: 0.0
 [INFO GPL-0082] OverflowTileCnt: 0
-[INFO GPL-0083] 0.5%RC: 0.6926459670066833
-[INFO GPL-0084] 1.0%RC: 0.6773819029331207
-[INFO GPL-0085] 2.0%RC: 0.6359037458896637
-[INFO GPL-0086] 5.0%RC: 0.595893383026123
-[INFO GPL-0087] FinalRC: 0.68501395
+[INFO GPL-0083] 0.5%RC: 0.8663694858551025
+[INFO GPL-0084] 1.0%RC: 0.7915560305118561
+[INFO GPL-0085] 2.0%RC: 0.7390100508928299
+[INFO GPL-0086] 5.0%RC: 0.6729927897453308
+[INFO GPL-0087] FinalRC: 0.82896274
 [INFO GPL-0077] FinalRC lower than targetRC(1.25), routability not needed.
+[NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
+[NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713
+[NesterovSolve] Iter:  310 overflow: 0.202 HPWL: 4848299
 [NesterovSolve] Iter:  320 overflow: 0.171 HPWL: 4881515
 [NesterovSolve] Iter:  330 overflow: 0.143 HPWL: 4916941
 [NesterovSolve] Iter:  340 overflow: 0.123 HPWL: 4942028
