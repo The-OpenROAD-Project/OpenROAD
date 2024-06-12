@@ -254,6 +254,7 @@ void RouteBaseVars::reset()
   rcK3 = rcK4 = 0.0;
   maxBloatIter = 1;
   maxInflationIter = 4;
+  useRudy = true;
 }
 
 /////////////////////////////////////////////
