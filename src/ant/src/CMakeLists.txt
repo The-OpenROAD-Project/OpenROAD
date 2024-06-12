@@ -31,6 +31,8 @@
 
 include("openroad")
 
+find_package(OpenMP REQUIRED)
+
 swig_lib(NAME      ant
          NAMESPACE ant
          I_FILE    AntennaChecker.i
@@ -57,6 +59,7 @@ target_link_libraries(ant_lib
     odb
     OpenSTA
     utl_lib
+    OpenMP::OpenMP_CXX
 )
 
 target_link_libraries(ant
@@ -64,6 +67,7 @@ target_link_libraries(ant
     ant_lib
     grt_lib
     utl
+    OpenMP::OpenMP_CXX
 )
 
 messages(

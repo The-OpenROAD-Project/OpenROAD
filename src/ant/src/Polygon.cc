@@ -47,7 +47,7 @@ Polygon rectToPolygon(const odb::Rect& rect)
 }
 
 // used to find the indeces of the elements which intersect with the element pol
-std::vector<int> findNodesWithIntersection(const GraphNodeVector& graph_nodes,
+std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
                                            const Polygon& pol)
 {
   // expand object by 1
