@@ -85,6 +85,8 @@ bool RepairAntennas::checkAntennaViolations(
     antenna_violations_[db_net];
   }
 
+  bool destroy_wires = !grouter_->haveDetailedRoutes();
+
   makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
   omp_set_num_threads(num_threads);
@@ -94,7 +96,9 @@ bool RepairAntennas::checkAntennaViolations(
     checkNetViolations(db_net, diode_mterm, ratio_margin);
   }
 
-  destroyNetWires(nets_to_repair);
+  if (destroy_wires) {
+    destroyNetWires(nets_to_repair);
+  }
 
   // remove nets with zero violations
   for (auto it = antenna_violations_.begin();
@@ -139,10 +143,9 @@ void RepairAntennas::makeNetWires(
       = grouter_->getDefaultVias(max_routing_layer);
 
   for (odb::dbNet* db_net : nets_to_repair) {
-    if (grouter_->isDetailedRouted(db_net)) {
-      odb::orderWires(logger_, db_net);
-    } else if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-               && !grouter_->getNet(db_net)->isLocal()) {
+    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
+        && !grouter_->getNet(db_net)->isLocal()
+        && !grouter_->isDetailedRouted(db_net)) {
       makeNetWire(db_net, routing[db_net], default_vias);
     }
   }
@@ -430,8 +433,7 @@ void RepairAntennas::destroyNetWires(
 {
   for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
-    // don't destroy wires created by DRT
-    if (wire && !grouter_->isDetailedRouted(db_net)) {
+    if (wire) {
       odb::dbWire::destroy(wire);
     }
   }
