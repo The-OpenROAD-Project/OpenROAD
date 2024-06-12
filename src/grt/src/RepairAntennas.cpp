@@ -81,19 +81,8 @@ bool RepairAntennas::checkAntennaViolations(
     float ratio_margin,
     const int num_threads)
 {
-  // safe copy net wires before orderWires calls
-  // TODO: remove this copy when antenna checker update is done
-  std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
-      copy_wires;
   for (odb::dbNet* db_net : nets_to_repair) {
     antenna_violations_[db_net];
-    if (db_net->getWire() == nullptr) {
-      continue;
-    }
-    std::vector<int> data;
-    std::vector<unsigned char> op_codes;
-    db_net->getWire()->getRawWireData(data, op_codes);
-    copy_wires[db_net] = {data, op_codes};
   }
 
   makeNetWires(routing, nets_to_repair, max_routing_layer);
@@ -106,10 +95,6 @@ bool RepairAntennas::checkAntennaViolations(
   }
 
   destroyNetWires(nets_to_repair);
-  for (auto [net, val] : copy_wires) {
-    auto wire = odb::dbWire::create(net);
-    wire->setRawWireData(val.first, val.second);
-  }
 
   // remove nets with zero violations
   for (auto it = antenna_violations_.begin();
@@ -445,8 +430,10 @@ void RepairAntennas::destroyNetWires(
 {
   for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
-    if (wire)
+    // don't destroy wires created by DRT
+    if (wire && !grouter_->isDetailedRouted(db_net)) {
       odb::dbWire::destroy(wire);
+    }
   }
 }
 
