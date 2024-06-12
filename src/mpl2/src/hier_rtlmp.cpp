@@ -720,8 +720,10 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
 
 float HierRTLMP::computeMicronArea(odb::dbInst* inst)
 {
-  const float width = dbuToMicron(inst->getBBox()->getBox().dx(), dbu_);
-  const float height = dbuToMicron(inst->getBBox()->getBox().dy(), dbu_);
+  const float width = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dx()));
+  const float height = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dy()));
 
   return width * height;
 }
@@ -729,13 +731,11 @@ float HierRTLMP::computeMicronArea(odb::dbInst* inst)
 void HierRTLMP::setClusterMetrics(Cluster* cluster)
 {
   float std_cell_area = 0.0f;
-
   for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
     std_cell_area += computeMicronArea(std_cell);
   }
 
   float macro_area = 0.0f;
-
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
     macro_area += computeMicronArea(macro);
   }

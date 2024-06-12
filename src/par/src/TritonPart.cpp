@@ -2092,10 +2092,10 @@ void TritonPart::informFiles(const std::string& fixed_file,
 
 float TritonPart::computeMicronArea(odb::dbInst* inst)
 {
-  const float dbu = static_cast<float>(block_->getDbUnitsPerMicron());
-
-  const float width = (inst->getBBox()->getBox().dx()) / dbu;
-  const float height = (inst->getBBox()->getBox().dy()) / dbu;
+  const float width = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dx()));
+  const float height = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dy()));
 
   return width * height;
 }
