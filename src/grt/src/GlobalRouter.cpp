@@ -4295,7 +4295,9 @@ void GRouteDbCbk::instItermsDirty(odb::dbInst* inst)
 
 void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 {
-  grouter_->addNet(net);
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addNet(net);
+  }
 }
 
 void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
@@ -4306,25 +4308,37 @@ void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(iterm->getNet());
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(iterm->getNet());
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(bterm->getNet());
+  odb::dbNet* net = bterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(bterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(bterm->getNet());
+  odb::dbNet* net = bterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(bterm->getNet());
+  }
 }
 
 ////////////////////////////////////////////////////////////////
