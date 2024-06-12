@@ -41,7 +41,6 @@ swig_lib(NAME      ant
 
 add_library(ant_lib
     AntennaChecker.cc
-    DSU.cc
     Polygon.cc
 )
 

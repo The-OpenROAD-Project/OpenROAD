@@ -42,8 +42,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <boost/pending/disjoint_sets.hpp>
 
-#include "DSU.hh"
 #include "Polygon.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -273,8 +273,15 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
     }
   }
   // run DSU from min_layer to max_layer
-  DSU dsu;
-  dsu.initDsu(node_count);
+  std::vector<int> dsu_parent(node_count);
+  std::vector<int> dsu_size(node_count);
+  for (int i = 0; i < node_count; i++) {
+    dsu_size[i] = 1;
+    dsu_parent[i] = i;
+  }
+
+  boost::disjoint_sets<int*, int*> dsu(&dsu_size[0], &dsu_parent[0]);
+
   odb::dbTechLayer* iter = min_layer_;
   odb::dbTechLayer* lower_layer;
   while (iter) {
@@ -288,8 +295,8 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
         for (const int& lower_it : node_it->low_adj) {
           int id_v = node_by_layer_map[lower_layer][lower_it]->id;
           // if they are on different sets then union
-          if (!dsu.dsuSame(id_u, id_v)) {
-            dsu.unionSet(id_u, id_v);
+          if (dsu.find_set(id_u) != dsu.find_set(id_v)) {
+            dsu.union_set(id_u, id_v);
           }
         }
       }
@@ -299,7 +306,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
       // check gates in same set (first Nodes x gates)
       for (const auto& gate_it : pin_nbrs) {
         for (const int& nbr_id : gate_it.second) {
-          if (dsu.dsuSame(id_u, nbr_id)) {
+          if (dsu.find_set(id_u) == dsu.find_set(nbr_id)) {
             node_it->gates.insert(gate_it.first);
             break;
           }
