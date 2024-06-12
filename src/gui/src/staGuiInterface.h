@@ -199,6 +199,9 @@ class TimingPath
   std::string getStartStageName() const;
   std::string getEndStageName() const;
 
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
+
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,
                     sta::DcalcAnalysisPt* dcalc_ap,
@@ -368,6 +371,7 @@ class STAGuiInterface
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
 

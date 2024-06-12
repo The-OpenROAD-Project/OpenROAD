@@ -26,10 +26,10 @@ for lib in tech.getDB().getLibs():
     for master in lib.getMasters():
         print(master.getName())
         for mterm in master.getMTerms():
-            print('  ', mterm.getName())
+            print(f'{mterm.getName()}  {timing.getMaxCapLimit(mterm):12.5e} {timing.getMaxSlewLimit(mterm):12.5e}')
             for m in timing.getTimingFanoutFrom(mterm):
                 print('    ', m.getName())
-        
+
 timing.makeEquivCells()
 for lib in tech.getDB().getLibs():
     for master in lib.getMasters():

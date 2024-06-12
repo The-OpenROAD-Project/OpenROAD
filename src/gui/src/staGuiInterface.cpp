@@ -247,7 +247,9 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     odb::dbITerm* term;
     odb::dbBTerm* port;
-    sta->getDbNetwork()->staToDb(pin, term, port);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
     odb::dbObject* pin_object = term;
     if (term == nullptr) {
       pin_object = port;
@@ -436,6 +438,21 @@ std::string TimingPath::getStartStageName() const
 std::string TimingPath::getEndStageName() const
 {
   return path_nodes_.back()->getNodeName();
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getStartStageNode() const
+{
+  const int start_idx = getClkPathEndIndex() + 1;
+  if (start_idx >= path_nodes_.size()) {
+    return path_nodes_.front();
+  }
+
+  return path_nodes_[start_idx];
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getEndStageNode() const
+{
+  return path_nodes_.back();
 }
 
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
@@ -817,6 +834,15 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
+StaPins STAGuiInterface::getStartPoints() const
+{
+  StaPins pins;
+  for (auto end : sta_->startpointPins()) {
+    pins.insert(end);
+  }
+  return pins;
+}
+
 StaPins STAGuiInterface::getEndPoints() const
 {
   StaPins pins;
@@ -1105,7 +1131,9 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
       odb::dbBTerm* bterm;
       odb::dbITerm* iterm;
-      network->staToDb(pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+      network->staToDb(pin, iterm, bterm, moditerm, modbterm);
       if (bterm != nullptr) {
         dbpin = bterm;
       } else {

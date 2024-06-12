@@ -52,10 +52,7 @@ class Node;
 class DetailedGenerator
 {
  public:
-  explicit DetailedGenerator(const char* name = "unknown generator")
-      : name_(name)
-  {
-  }
+  explicit DetailedGenerator(const char* name) : name_(name) {}
   virtual ~DetailedGenerator() = default;
 
   virtual const std::string& getName() const { return name_; }

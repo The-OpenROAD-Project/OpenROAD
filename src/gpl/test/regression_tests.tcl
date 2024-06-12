@@ -8,6 +8,8 @@ record_tests {
   simple01-skip-io
   simple01-rd
   simple02-rd
+  simple03-rd
+  simple04-rd
   simple02
   simple03
   simple04

@@ -71,7 +71,7 @@ class DetailedABU : public DetailedObjective
   double calculateABU(bool print = false);
   double measureABU(bool print = false);
 
-  void updateBins(Node* nd, double x, double y, int addSub);
+  void updateBins(const Node* nd, double x, double y, int addSub);
   void acceptBins();
   void rejectBins();
   void clearBins();
@@ -102,26 +102,26 @@ class DetailedABU : public DetailedObjective
     double free_space;  // bin's freespace area
   };
 
-  DetailedMgr* mgrPtr_;
-  DetailedOrient* orientPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
+  DetailedOrient* orientPtr_ = nullptr;
 
   Architecture* arch_;
   Network* network_;
 
   // Utilization monitoring for ABU (if paying attention to ABU).
   std::vector<DensityBin> abuBins_;
-  double abuGridUnit_;
-  int abuGridNumX_;
-  int abuGridNumY_;
-  int abuNumBins_;
+  double abuGridUnit_ = 0;
+  int abuGridNumX_ = 0;
+  int abuGridNumY_ = 0;
+  int abuNumBins_ = 0;
 
-  double abuTargUt_;
-  double abuTargUt02_;
-  double abuTargUt05_;
-  double abuTargUt10_;
-  double abuTargUt20_;
+  double abuTargUt_ = 0;
+  double abuTargUt02_ = 0;
+  double abuTargUt05_ = 0;
+  double abuTargUt10_ = 0;
+  double abuTargUt20_ = 0;
 
-  int abuChangedBinsCounter_;
+  int abuChangedBinsCounter_ = 0;
   std::vector<int> abuChangedBins_;
   std::vector<int> abuChangedBinsMask_;
 
