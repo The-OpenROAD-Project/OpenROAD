@@ -237,12 +237,22 @@ void SynthesizeBuffers::synthesizeBuffers(Net *net, Pin* drvr_pin,
       }
 
       Pin *new_input_pin = network_->findPin(inst, size_in);
-      Pin *new_output_pin = network_->findPin(inst, size_in);
+      Pin *new_output_pin = network_->findPin(inst, size_out);
 
-      graph_delay_calc_->findDelays(graph_->pinDrvrVertex(new_output_pin));
+      // HACK: override the level of the newly added vertices to be non-zero
+      // because a zero value trips up the delay calculation code
+      // (the underlying mechanism is vertex->isRoot() ends up true)
+      //
+      // we can't afford levelize_->ensureLevelized(), which would set the actual
+      // level value, as that's too costly  to do with every buffer insertion
+      graph_->pinLoadVertex(new_input_pin)->setLevel(1);
+      graph_->pinDrvrVertex(new_output_pin)->setLevel(1);
+
+      graph_delay_calc_->findDelays(graph_->pinLoadVertex(new_input_pin));
       arrival_visitor->visit(graph_->pinLoadVertex(new_input_pin));
-      arrival_visitor->visit(graph_->pinLoadVertex(new_output_pin));
-      req_visitor->visit(graph_->pinLoadVertex(new_output_pin));
+      graph_delay_calc_->findDelays(graph_->pinDrvrVertex(new_output_pin));
+      arrival_visitor->visit(graph_->pinDrvrVertex(new_output_pin));
+      req_visitor->visit(graph_->pinDrvrVertex(new_output_pin));
       req_visitor->visit(graph_->pinLoadVertex(new_input_pin));
 
       loads.erase(loads.begin(), group_end);
