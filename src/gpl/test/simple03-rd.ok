@@ -3,7 +3,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[WARNING GPL-0152] Using GRT FastRoute instead of default RUDY for congestion in routability driven.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
@@ -70,20 +69,14 @@
 [INFO GPL-0075] Routability numCall: 1 inflationIterCnt: 1 bloatIterCnt: 0
 [INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
 [INFO GPL-0038] TileCnt:      14   14
-[INFO GPL-0039] numRoutingLayers: 10
 [INFO GPL-0040] NumTiles: 196
-[INFO GPL-0063] TotalRouteOverflowH2: 0.0
-[INFO GPL-0064] TotalRouteOverflowV2: 0.0
-[INFO GPL-0065] OverflowTileCnt2: 0
-[INFO GPL-0066] 0.5%RC: 1.0
-[INFO GPL-0067] 1.0%RC: 0.9866666674613953
-[INFO GPL-0068] 2.0%RC: 0.9263157938656054
-[INFO GPL-0069] 5.0%RC: 0.7713475316128833
-[INFO GPL-0070] 0.5rcK: 1.0
-[INFO GPL-0071] 1.0rcK: 1.0
-[INFO GPL-0072] 2.0rcK: 0.0
-[INFO GPL-0073] 5.0rcK: 0.0
-[INFO GPL-0074] FinalRC: 0.99333334
+[INFO GPL-0081] TotalRouteOverflow: 0.0
+[INFO GPL-0082] OverflowTileCnt: 0
+[INFO GPL-0083] 0.5%RC: 0.8663694858551025
+[INFO GPL-0084] 1.0%RC: 0.7915560305118561
+[INFO GPL-0085] 2.0%RC: 0.7390100508928299
+[INFO GPL-0086] 5.0%RC: 0.6729927897453308
+[INFO GPL-0087] FinalRC: 0.82896274
 [INFO GPL-0077] FinalRC lower than targetRC(1.25), routability not needed.
 [NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
 [NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713
