@@ -141,8 +141,8 @@ class AntennaChecker
                     bool verbose = false);
   int antennaViolationCount() const;
   ViolationList getAntennaViolations(odb::dbNet* net,
-                                              odb::dbMTerm* diode_mterm,
-                                              float ratio_margin);
+                                     odb::dbMTerm* diode_mterm,
+                                     float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
 
