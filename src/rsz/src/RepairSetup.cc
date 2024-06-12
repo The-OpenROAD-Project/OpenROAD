@@ -661,7 +661,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
                    RSZ,
                    "repair_setup",
                    2,
-                   "buffer {} is not removed because of max famout limit "
+                   "buffer {} is not removed because of max fanout limit "
                    "of {} at {}",
                    db_network_->name(drvr),
                    max_fanout,
@@ -675,7 +675,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
                    RSZ,
                    "repair_setup",
                    2,
-                   "buffer {} is not removed because of default famout "
+                   "buffer {} is not removed because of default fanout "
                    "limit of {} at "
                    "{}",
                    db_network_->name(drvr),

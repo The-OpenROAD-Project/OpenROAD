@@ -41,6 +41,4 @@ Path Type: max
 (Path is unconstrained)
 
 
-Differences found at line 8.
-    - b2 BUF_X2 ;
-    - b2 BUF_X2 + PLACED ( 200 200 ) N ;
+No differences found.
