@@ -86,6 +86,7 @@ bool RepairAntennas::checkAntennaViolations(
   std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
       copy_wires;
   for (odb::dbNet* db_net : nets_to_repair) {
+    antenna_violations_[db_net];
     if (db_net->getWire() == nullptr) {
       continue;
     }
@@ -108,6 +109,16 @@ bool RepairAntennas::checkAntennaViolations(
   for (auto [net, val] : copy_wires) {
     auto wire = odb::dbWire::create(net);
     wire->setRawWireData(val.first, val.second);
+  }
+
+  // remove nets with zero violations
+  for (auto it = antenna_violations_.begin();
+       it != antenna_violations_.end();) {
+    if (it->second.empty()) {
+      it = antenna_violations_.erase(it);
+    } else {
+      ++it;
+    }
   }
 
   logger_->info(
