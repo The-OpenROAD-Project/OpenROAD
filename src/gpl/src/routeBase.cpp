@@ -430,36 +430,17 @@ void RouteBase::updateRudyRoute()
     }
   }
 
-  // debug print
-  for (auto& tile : tg_->tiles()) {
-    if (tile->inflationRatio() > 1.0) {
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "xy: {} {}",
-                 tile->x(),
-                 tile->y());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "minxy: {} {}",
-                 tile->lx(),
-                 tile->ly());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "maxxy: {} {}",
-                 tile->ux(),
-                 tile->uy());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "calcInflationRatio: {}",
-                 tile->inflationRatio());
+  if (log_->debugCheck(GPL, "updateInflationRatio", 1)) {
+    auto log = [this](auto... param) {
+      log_->debug(GPL, "updateInflationRatio", param...);
+    };
+    for (auto& tile : tg_->tiles()) {
+      if (tile->inflationRatio() > 1.0) {
+        log("xy: {} {}", tile->x(), tile->y());
+        log("minxy: {} {}", tile->lx(), tile->ly());
+        log("maxxy: {} {}", tile->ux(), tile->uy());
+        log("calcInflationRatio: {}", tile->inflationRatio());
+      }
     }
   }
 }
