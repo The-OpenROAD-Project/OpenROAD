@@ -78,7 +78,7 @@ struct pinSetComp
 {
   bool operator()(const odb::dbBTerm* lhs, const odb::dbBTerm* rhs) const
   {
-    return lhs->getId() < rhs->getId();
+    return lhs->getObjName() < rhs->getObjName();
   }
 };
 
