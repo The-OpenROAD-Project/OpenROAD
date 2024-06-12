@@ -156,8 +156,6 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   }
   for (const auto& end_original_slack : violating_ends) {
     Vertex* end = end_original_slack.first;
-    resizer_->updateParasitics();
-    sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
     Vertex* worst_vertex;
@@ -193,15 +191,19 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       }
 
       if (end_slack > setup_slack_margin) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "Restoring best slack end slack {} worst slack {}",
-                   delayAsString(prev_end_slack, sta_, digits),
-                   delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(
-            resize_count_, inserted_buffer_count_, cloned_gate_count_);
+        if (pass != 1) {
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_setup",
+                     2,
+                     "Restoring best slack end slack {} worst slack {}",
+                     delayAsString(prev_end_slack, sta_, digits),
+                     delayAsString(prev_worst_slack, sta_, digits));
+          resizer_->journalRestore(
+              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->updateParasitics();
+          sta_->findRequireds();
+        }
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -211,21 +213,25 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                       skip_gate_cloning,
                                       skip_buffer_removal);
       if (!changed) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "No change after {} decreasing slack passes.",
-                   decreasing_slack_passes);
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "Restoring best slack end slack {} worst slack {}",
-                   delayAsString(prev_end_slack, sta_, digits),
-                   delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(
-            resize_count_, inserted_buffer_count_, cloned_gate_count_);
+        if (pass != 1) {
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_setup",
+                     2,
+                     "No change after {} decreasing slack passes.",
+                     decreasing_slack_passes);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_setup",
+                     2,
+                     "Restoring best slack end slack {} worst slack {}",
+                     delayAsString(prev_end_slack, sta_, digits),
+                     delayAsString(prev_worst_slack, sta_, digits));
+          resizer_->journalRestore(
+              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->updateParasitics();
+          sta_->findRequireds();
+        }
         break;
       }
       resizer_->updateParasitics();
@@ -272,6 +278,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                      delayAsString(prev_worst_slack, sta_, digits));
           resizer_->journalRestore(
               resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->updateParasitics();
+          sta_->findRequireds();
           break;
         }
       }
