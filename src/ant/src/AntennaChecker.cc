@@ -34,6 +34,7 @@
 #include <omp.h>
 #include <tcl.h>
 
+#include <boost/pending/disjoint_sets.hpp>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -42,7 +43,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <boost/pending/disjoint_sets.hpp>
 
 #include "Polygon.hh"
 #include "odb/db.h"
