@@ -118,12 +118,11 @@ struct Violation
   int diode_count_per_gate;
 };
 
-using LayerInfoMap = std::map<odb::dbTechLayer*, NodeInfo>;
-using GraphNodeVector = std::vector<GraphNode*>;
-using GraphNodeVectorMap
-    = std::unordered_map<odb::dbTechLayer*, GraphNodeVector>;
-using GateInfoMap = std::map<std::string, LayerInfoMap>;
-using ViolationList = std::vector<Violation>;
+using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
+using GraphNodes = std::vector<GraphNode*>;
+using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
+using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
+using Violations = std::vector<Violation>;
 
 class AntennaChecker
 {
@@ -140,9 +139,9 @@ class AntennaChecker
                     int num_threads = 1,
                     bool verbose = false);
   int antennaViolationCount() const;
-  ViolationList getAntennaViolations(odb::dbNet* net,
-                                     odb::dbMTerm* diode_mterm,
-                                     float ratio_margin);
+  Violations getAntennaViolations(odb::dbNet* net,
+                                  odb::dbMTerm* diode_mterm,
+                                  float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
 
@@ -160,8 +159,8 @@ class AntennaChecker
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net,
-                      GraphNodeVectorMap& node_by_layer_map,
-                      GateInfoMap& gate_info);
+                      LayerToGraphNodes& node_by_layer_map,
+                      GateToLayerToNodeInfo& gate_info);
   void checkNet(odb::dbNet* net,
                 bool verbose,
                 bool report_if_no_violation,
@@ -170,22 +169,22 @@ class AntennaChecker
                 float ratio_margin,
                 int& net_violation_count,
                 int& pin_violation_count,
-                ViolationList& antenna_violations);
+                Violations& antenna_violations);
   void saveGates(odb::dbNet* db_net,
-                 GraphNodeVectorMap& node_by_layer_map,
+                 LayerToGraphNodes& node_by_layer_map,
                  int node_count);
-  void calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
-                      GateInfoMap& gate_info);
-  void calculatePAR(GateInfoMap& gate_info);
-  void calculateCAR(GateInfoMap& gate_info);
+  void calculateAreas(const LayerToGraphNodes& node_by_layer_map,
+                      GateToLayerToNodeInfo& gate_info);
+  void calculatePAR(GateToLayerToNodeInfo& gate_info);
+  void calculateCAR(GateToLayerToNodeInfo& gate_info);
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool report_if_no_violation,
                  std::ofstream& report_file,
                  odb::dbMTerm* diode_mterm,
                  float ratio_margin,
-                 GateInfoMap& gate_info,
-                 ViolationList& antenna_violations);
+                 GateToLayerToNodeInfo& gate_info,
+                 Violations& antenna_violations);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   std::pair<bool, bool> checkPAR(odb::dbTechLayer* tech_layer,

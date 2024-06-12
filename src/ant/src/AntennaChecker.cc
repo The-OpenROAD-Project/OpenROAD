@@ -219,7 +219,7 @@ double AntennaChecker::getPwlFactor(
 }
 
 void AntennaChecker::saveGates(odb::dbNet* db_net,
-                               GraphNodeVectorMap& node_by_layer_map,
+                               LayerToGraphNodes& node_by_layer_map,
                                const int node_count)
 {
   std::unordered_map<PinType, std::vector<int>, PinTypeHash> pin_nbrs;
@@ -405,8 +405,8 @@ void AntennaChecker::calculateViaPar(odb::dbTechLayer* tech_layer,
   }
 }
 
-void AntennaChecker::calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
-                                    GateInfoMap& gate_info)
+void AntennaChecker::calculateAreas(const LayerToGraphNodes& node_by_layer_map,
+                                    GateToLayerToNodeInfo& gate_info)
 {
   for (const auto& it : node_by_layer_map) {
     for (const auto& node_it : it.second) {
@@ -459,7 +459,7 @@ void AntennaChecker::calculateAreas(const GraphNodeVectorMap& node_by_layer_map,
 }
 
 // calculate PAR and PSR of wires and vias
-void AntennaChecker::calculatePAR(GateInfoMap& gate_info)
+void AntennaChecker::calculatePAR(GateToLayerToNodeInfo& gate_info)
 {
   for (auto& gate_it : gate_info) {
     for (auto& layer_it : gate_it.second) {
@@ -476,7 +476,7 @@ void AntennaChecker::calculatePAR(GateInfoMap& gate_info)
 }
 
 // calculate CAR and CSR of wires and vias
-void AntennaChecker::calculateCAR(GateInfoMap& gate_info)
+void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
 {
   for (auto& gate_it : gate_info) {
     NodeInfo sumWire, sumVia;
@@ -746,8 +746,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                std::ofstream& report_file,
                                odb::dbMTerm* diode_mterm,
                                float ratio_margin,
-                               GateInfoMap& gate_info,
-                               ViolationList& antenna_violations)
+                               GateToLayerToNodeInfo& gate_info,
+                               Violations& antenna_violations)
 {
   ratio_margin_ = ratio_margin;
   int pin_violation_count = 0;
@@ -936,8 +936,8 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
 }
 
 void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
-                                    GraphNodeVectorMap& node_by_layer_map,
-                                    GateInfoMap& gate_info)
+                                    LayerToGraphNodes& node_by_layer_map,
+                                    GateToLayerToNodeInfo& gate_info)
 {
   odb::dbWire* wires = db_net->getWire();
 
@@ -1017,12 +1017,12 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
                               float ratio_margin,
                               int& net_violation_count,
                               int& pin_violation_count,
-                              ViolationList& antenna_violations)
+                              Violations& antenna_violations)
 {
   odb::dbWire* wire = db_net->getWire();
   if (wire) {
-    GraphNodeVectorMap node_by_layer_map;
-    GateInfoMap gate_info;
+    LayerToGraphNodes node_by_layer_map;
+    GateToLayerToNodeInfo gate_info;
     buildLayerMaps(db_net, node_by_layer_map, gate_info);
 
     calculateAreas(node_by_layer_map, gate_info);
@@ -1046,11 +1046,11 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
   }
 }
 
-ViolationList AntennaChecker::getAntennaViolations(odb::dbNet* net,
-                                                   odb::dbMTerm* diode_mterm,
-                                                   float ratio_margin)
+Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
+                                                odb::dbMTerm* diode_mterm,
+                                                float ratio_margin)
 {
-  ViolationList antenna_violations;
+  Violations antenna_violations;
   if (net->isSpecial()) {
     return antenna_violations;
   }
@@ -1101,7 +1101,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   int pin_violation_count = 0;
 
   if (net) {
-    ViolationList antenna_violations;
+    Violations antenna_violations;
     if (!net->isSpecial()) {
       checkNet(net,
                verbose,
@@ -1127,7 +1127,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < nets_.size(); i++) {
       odb::dbNet* net = nets_[i];
-      ViolationList antenna_violations;
+      Violations antenna_violations;
       checkNet(net,
                verbose,
                false,
