@@ -630,17 +630,14 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
     // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
     // cloning because such removal may lead to an inifinte loop or long runtime
     std::string reason;
-    if (resizer_->all_sized_inst_set_.count(drvr)) {
-      reason = "it has been resized";
-    }
     if (resizer_->all_swapped_pin_inst_set_.count(drvr)) {
       reason = "its pins have been swapped";
-    }
-    if (resizer_->all_inserted_buffer_set_.count(drvr)) {
-      reason = "it was from rebuffering";
-    }
-    if (resizer_->all_cloned_inst_set_.count(drvr)) {
+    } else if (resizer_->all_cloned_inst_set_.count(drvr)) {
       reason = "it has been cloned";
+    } else if (resizer_->all_inserted_buffer_set_.count(drvr)) {
+      reason = "it was from rebuffering";
+    } else if (resizer_->all_sized_inst_set_.count(drvr)) {
+      reason = "it has been resized";
     }
     if (!reason.empty()) {
       debugPrint(logger_,
