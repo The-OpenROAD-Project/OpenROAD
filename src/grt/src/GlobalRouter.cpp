@@ -584,7 +584,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   getMinMaxLayer(min_layer, max_layer);
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
-    logger_->report("{}", db_net->getName());
     Net* net = db_net_map_[db_net];
     // get last pin positions
     std::vector<odb::Point> last_pos;
