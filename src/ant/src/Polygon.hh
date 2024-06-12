@@ -63,7 +63,7 @@ struct GraphNode
 };
 
 Polygon rectToPolygon(const odb::Rect& rect);
-std::vector<int> findNodesWithIntersection(const GraphNodeVector& graph_nodes,
+std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
                                            const Polygon& pol);
 void wiresToPolygonSetMap(
     odb::dbWire* wires,
