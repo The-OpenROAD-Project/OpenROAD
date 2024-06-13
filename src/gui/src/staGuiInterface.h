@@ -186,6 +186,7 @@ class TimingPath
   void setSkew(float skew) { skew_ = skew; }
   float getLogicDelay() const { return logic_delay_; }
   int getLogicDepth() const { return logic_depth_; }
+  int getFanout() const { return fanout_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -224,6 +225,7 @@ class TimingPath
   float req_time_;
   float logic_delay_;
   int logic_depth_;
+  int fanout_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
