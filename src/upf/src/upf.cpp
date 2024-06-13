@@ -64,12 +64,11 @@ bool update_power_domain(utl::Logger* logger,
   if (pd != nullptr) {
     pd->addElement(elements);
   } else {
-    logger->warn(
-        utl::UPF,
-        2,
-        "Couldn't retrieve power domain {} while adding element {}",
-        name,
-        elements);
+    logger->warn(utl::UPF,
+                 2,
+                 "Couldn't retrieve power domain {} while adding element {}",
+                 name,
+                 elements);
     return false;
   }
   return true;
@@ -166,12 +165,11 @@ bool update_power_switch_on(utl::Logger* logger,
 {
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
-    logger->warn(
-        utl::UPF,
-        7,
-        "Couldn't retrieve power switch {} while adding on state {}",
-        name,
-        on_state);
+    logger->warn(utl::UPF,
+                 7,
+                 "Couldn't retrieve power switch {} while adding on state {}",
+                 name,
+                 on_state);
     return false;
   }
   ps->addOnState(on_state, port_name, boolean);
@@ -186,12 +184,11 @@ bool update_power_switch_input(utl::Logger* logger,
 {
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name.c_str());
   if (ps == nullptr) {
-    logger->warn(
-        utl::UPF,
-        8,
-        "Couldn't retrieve power switch {} while adding input port {}",
-        name,
-        in_port);
+    logger->warn(utl::UPF,
+                 8,
+                 "Couldn't retrieve power switch {} while adding input port {}",
+                 name,
+                 in_port);
     return false;
   }
   ps->addInSupplyPort(in_port, net);
