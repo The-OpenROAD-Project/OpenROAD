@@ -234,8 +234,6 @@ void Replace::doInitialPlace()
       pbVec_.erase(pbVec_.begin());
     }
 
-
-
     total_placeable_insts_ = 0;
     for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();

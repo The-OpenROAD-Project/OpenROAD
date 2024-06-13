@@ -605,10 +605,9 @@ void BinGrid::initBins()
   int64_t averagePlaceInstArea = 0;
   if (!pb_->placeInsts().empty()) {
     averagePlaceInstArea = pb_->placeInstsArea() / pb_->placeInsts().size();
-  }
-  else{
+  } else {
     log_->warn(GPL, 306, "GPL component has no placed instances.");
-  }    
+  }
 
   int64_t idealBinArea = 0;
   if (targetDensity_ != 0) {
