@@ -5,9 +5,8 @@
 [INFO RSZ-0039] Resized 183 instances.
 worst slack -0.27
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
-[INFO RSZ-0059] Removed 1 buffers.
-[INFO RSZ-0041] Resized 1 instances.
+[INFO RSZ-0041] Resized 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
-worst slack -0.26
+worst slack -0.27
 No differences found.
