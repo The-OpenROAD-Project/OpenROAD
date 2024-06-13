@@ -5711,8 +5711,6 @@ class dbGDSLib : public dbObject
 
   std::pair<double, double> getUnits() const;
 
-  dbTable<dbGDSStructure> getStructureTable() const;
-
   dbGDSStructure* findGDSStructure(const char* name) const;
 
   dbSet<dbGDSStructure> getGDSStructures();
@@ -7280,11 +7278,6 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
-class dbGDSBoundary : public dbGDSElement
-{
- public:
-};
-
 class dbGDSElement : public dbObject
 {
  public:
@@ -7342,10 +7335,6 @@ class dbGDSStructure : public dbObject
 {
  public:
   char* getName() const;
-
-  void setElements(std::vector<dbGDSElement> elements);
-
-  std::vector<dbGDSElement> getElements() const;
 
   // User Code Begin dbGDSStructure
 

@@ -9,14 +9,15 @@
       },
       {
         "name":"_elements",
-        "type":"std::vector<dbGDSElement>",
-        "flags":["no-template"]
+        "type":"dbVector<_dbGDSElement>",
+        "flags":["no-set", "no-get"]
       }
     ],
     "h_includes": [
       "dbVector.h",
       "dbGDSElement.h",
-      "odb/db.h"
+      "odb/db.h",
+      "dbTable.h"
     ],
     "cpp_includes": ["odb/dbTypes.h", "dbGDSLib.h"]
   }

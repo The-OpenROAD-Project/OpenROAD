@@ -116,19 +116,6 @@ char* dbGDSStructure::getName() const
   return obj->_name;
 }
 
-void dbGDSStructure::setElements(std::vector<dbGDSElement> elements)
-{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-
-  obj->_elements = elements;
-}
-
-std::vector<dbGDSElement> dbGDSStructure::getElements() const
-{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->_elements;
-}
-
 // User Code Begin dbGDSStructurePublicMethods
 
 dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
@@ -138,7 +125,6 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   }
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
-  _dbDatabase* db = lib->getDatabase();
   _dbGDSStructure* structure = lib->_structure_tbl->create();
   structure->_name = strdup(name_);
   ZALLOCATED(structure->_name);
@@ -146,11 +132,11 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   // TODO: ID for structure
 
   lib->_structure_hash.insert(structure);
+  return (dbGDSStructure*) structure;
 }
 
 void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
-  auto db = structure->getDb();
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
   lib->_structure_hash.remove(str_impl);

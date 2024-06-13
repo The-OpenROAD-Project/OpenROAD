@@ -21,24 +21,34 @@ bool GDSReader::processLib(){
     throw std::runtime_error("Corrupted GDS, BGNLIB record length is not 28 bytes");
   }
 
-  std::vector<int16_t> lastMod;
-  for(int i = 0; i < 6; i++){
-    lib->get_lastModified().push_back(r.data16[i]);
-  }
+  std::tm lastMT;
+  lastMT.tm_year = r.data16[0];
+  lastMT.tm_mon = r.data16[1];
+  lastMT.tm_mday = r.data16[2];
+  lastMT.tm_hour = r.data16[3];
+  lastMT.tm_min = r.data16[4];
+  lastMT.tm_sec = r.data16[5];
 
-  std::vector<int16_t> lastAccessed;
-  for(int i = 6; i < 12; i++){
-    lib->get_lastAccessed().push_back(r.data16[i]);
-  }
+  lib->set_lastModified(lastMT);
+
+  std::tm lastAT;
+  lastAT.tm_year = r.data16[6];
+  lastAT.tm_mon = r.data16[7];
+  lastAT.tm_mday = r.data16[8];
+  lastAT.tm_hour = r.data16[9];
+  lastAT.tm_min = r.data16[10];
+  lastAT.tm_sec = r.data16[11];
+
+  lib->set_lastAccessed(lastAT);
 
   readRecord();
   checkRType(RecordType::LIBNAME);
-  lib->setName(r.data8);
+  lib->setLibname(r.data8);
 
   readRecord();
   checkRType(RecordType::UNITS);
 
-  lib->setUnits({r.data64[0], r.data64[1]});
+  lib->setUnits(r.data64[0], r.data64[1]);
 
   while(readRecord()){
     if(r.type == RecordType::ENDLIB){
@@ -62,17 +72,15 @@ bool GDSReader::processStruct(){
   
   std::string name = std::string(r.data8.begin(), r.data8.end());
   
-  if(lib->getStructures().find(name) != lib->getStructures().end()){
-        throw std::runtime_error("Corrupted GDS, Duplicate structure name");
+  if(lib->findGDSStructure(name.c_str()) != nullptr){
+    throw std::runtime_error("Corrupted GDS, Duplicate structure name");
   }
 
-  dbGDSStructure* str =(dbGDSStructure*)new _dbGDSStructure((_dbDatabase*)db);
-  str->setStrname(name);
+  dbGDSStructure* str = dbGDSStructure::create(lib, name.c_str());
 
   while(readRecord()){
     if(r.type == RecordType::ENDSTR){
-      lib->getStructures().insert({name, str});
-      std::cout << str->to_string() << std::endl;
+      std::cout << ((_dbGDSStructure*)str)->to_string() << std::endl;
       return true;
     }
     else{
@@ -100,21 +108,21 @@ bool GDSReader::processElement(dbGDSStructure& str){
 
 bool GDSReader::processBoundary(dbGDSStructure& str){
   
-  dbGDSBoundary* bdy = (dbGDSBoundary*)new _dbGDSBoundary((_dbDatabase*)db);
+  _dbGDSBoundary bdy((_dbDatabase*)db);
 
   readRecord();
   checkRType(RecordType::LAYER);
-  bdy->setLayer(r.data16[0]);
+  bdy._layer = r.data16[0];
 
   readRecord();
   checkRType(RecordType::DATATYPE);
-  bdy->setDatatype(r.data16[0]);
+  bdy._datatype = r.data16[0];
 
   readRecord();
   checkRType(RecordType::XY);
-  printf("r.data32.size(): %d\n", r.data32.size());
+
   for(int i = 0; i < r.data32.size(); i+=2){
-    bdy->getXy().push_back({r.data32[i], r.data32[i + 1]});
+    bdy._xy.push_back({r.data32[i], r.data32[i + 1]});
   }
 
   readRecord();

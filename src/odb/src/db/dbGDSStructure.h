@@ -35,6 +35,7 @@
 
 #include "dbCore.h"
 #include "dbGDSElement.h"
+#include "dbTable.h"
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/odb.h"
@@ -44,6 +45,7 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+class _dbGDSElement;
 
 class _dbGDSStructure : public _dbObject
 {
@@ -67,7 +69,7 @@ class _dbGDSStructure : public _dbObject
   // User Code End Methods
 
   char* _name;
-  std::vector<dbGDSElement> _elements;
+  dbVector<_dbGDSElement> _elements;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);

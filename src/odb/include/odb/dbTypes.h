@@ -168,7 +168,7 @@ dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, dbGDSSTrans& t)
+dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
 {
   stream << t._flipX;
   stream << t._absMag;
