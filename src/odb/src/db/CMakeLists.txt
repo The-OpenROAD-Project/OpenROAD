@@ -83,13 +83,13 @@ add_library(db
     wOrder.cpp
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
+    dbGDSLib.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSBoundary.cpp
     dbGDSElement.cpp
-    dbGDSLib.cpp
     dbGDSPath.cpp
     dbGDSSRef.cpp
     dbGDSStructure.cpp

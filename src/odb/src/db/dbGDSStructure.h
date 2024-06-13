@@ -51,7 +51,7 @@ class _dbGDSStructure : public _dbObject
   _dbGDSStructure(_dbDatabase*, const _dbGDSStructure& r);
   _dbGDSStructure(_dbDatabase*);
 
-  ~_dbGDSStructure() = default;
+  ~_dbGDSStructure();
 
   bool operator==(const _dbGDSStructure& rhs) const;
   bool operator!=(const _dbGDSStructure& rhs) const { return !operator==(rhs); }
@@ -60,7 +60,6 @@ class _dbGDSStructure : public _dbObject
                    const char* field,
                    const _dbGDSStructure& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
   // User Code Begin Methods
 
   std::string to_string();
@@ -72,10 +71,5 @@ class _dbGDSStructure : public _dbObject
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
-
-
-
-
 }  // namespace odb
    // Generator Code End Header
-

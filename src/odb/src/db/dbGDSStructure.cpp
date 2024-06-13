@@ -32,9 +32,10 @@
 
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
-#include "dbGDSLib.h"
+
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
+#include "dbGDSLib.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -44,7 +45,7 @@ template class dbTable<_dbGDSStructure>;
 
 bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
 {
-  if (_strname != rhs._strname) {
+  if (_name != rhs._name) {
     return false;
   }
 
@@ -61,14 +62,14 @@ void _dbGDSStructure::differences(dbDiff& diff,
                                   const _dbGDSStructure& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_strname);
+  DIFF_FIELD(_name);
   DIFF_END
 }
 
 void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_strname);
+  DIFF_OUT_FIELD(_name);
 
   DIFF_END
 }
@@ -79,21 +80,28 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 {
-  _strname = r._name;
+  _name = r._name;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
-  stream >> obj._strname;
+  stream >> obj._name;
   stream >> obj._elements;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
-  stream << obj._strname;
+  stream << obj._name;
   stream << obj._elements;
   return stream;
+}
+
+_dbGDSStructure::~_dbGDSStructure()
+{
+  if (_name) {
+    free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -102,7 +110,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbGDSStructure::getStrname() const
+char* dbGDSStructure::getName() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return obj->_name;
@@ -144,13 +152,11 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
   auto db = structure->getDb();
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
-  _dbGDSLib* lib = (_dbGDSLib*)structure->getGDSLib();
+  _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
   lib->_structure_hash.remove(str_impl);
   lib->_structure_tbl->destroy(str_impl);
 }
 
 // User Code End dbGDSStructurePublicMethods
-
-
 }  // namespace odb
    // Generator Code End Cpp
