@@ -453,10 +453,7 @@ bool RepairSetup::repairPath(PathRef& path,
                  fanout,
                  drvr_index);
 
-      if (!skip_buffer_removal
-          // Skip buffer removal for global routed designs for now
-          // because this leads to a fatal during GR update
-          && resizer_->parasitics_src_ != ParasiticsSrc::global_routing) {
+      if (!skip_buffer_removal) {
         if (removeDrvr(drvr_path, drvr_cell, drvr_index, &expanded)) {
           changed = true;
           break;
