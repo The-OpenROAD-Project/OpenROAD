@@ -1032,7 +1032,9 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
-  auto& callback = actions_[action];
+  // Copy the callback as the action may be deleted from within the
+  // callback.
+  auto callback = actions_[action];
   Selected new_selection;
   try {
     new_selection = callback();
