@@ -123,6 +123,8 @@ using GraphNodes = std::vector<GraphNode*>;
 using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
 using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
+using GateToViolationLayers
+    = std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>;
 
 class AntennaChecker
 {
@@ -177,6 +179,16 @@ class AntennaChecker
                       GateToLayerToNodeInfo& gate_info);
   void calculatePAR(GateToLayerToNodeInfo& gate_info);
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
+  bool checkRatioViolations(odb::dbTechLayer* layer,
+                            const NodeInfo& node_info,
+                            bool verbose,
+                            bool report,
+                            std::ofstream& report_file);
+  void reportNet(odb::dbNet* db_net,
+                 GateToLayerToNodeInfo& gate_info,
+                 GateToViolationLayers& gates_with_violations,
+                 bool verbose,
+                 std::ofstream& report_file);
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool report_if_no_violation,
