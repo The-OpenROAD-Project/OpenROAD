@@ -145,7 +145,7 @@ void dbGDSElement::setXy(std::vector<Point> xy)
   obj->_xy = xy;
 }
 
-std::vector<Point>& dbGDSElement::getXy() const
+std::vector<Point> dbGDSElement::getXy() const
 {
   _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->_xy;
@@ -165,16 +165,6 @@ std::vector<std::pair<std::int16_t, std::string>> dbGDSElement::getPropattr()
   _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->_propattr;
 }
-
-// User Code Begin General
-
-std::string dbGDSElement::to_string() const
-{
-  _dbGDSElement* obj = (_dbGDSElement*) this;
-  return obj->to_string();
-}
-
-// User Code End General
 
 }  // namespace odb
    // Generator Code End Cpp

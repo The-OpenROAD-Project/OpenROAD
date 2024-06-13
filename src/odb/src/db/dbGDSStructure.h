@@ -36,15 +36,14 @@
 #include "dbCore.h"
 #include "dbGDSElement.h"
 #include "dbVector.h"
-#include "odb/odb.h"
 #include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbGDSElement;
 
 class _dbGDSStructure : public _dbObject
 {
@@ -62,22 +61,21 @@ class _dbGDSStructure : public _dbObject
                    const _dbGDSStructure& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  std::string _strname;
-  std::vector<dbGDSElement*> _elements;
+  // User Code Begin Methods
 
-   // User Code Begin General
+  std::string to_string();
 
-  std::string to_string() {
-    std::string str = "STRUCTURE " + _strname + "\n";
-    for (auto& e : _elements) {
-      str += e->to_string() + "\n";
-    }
-    return str;
-  }
+  // User Code End Methods
 
-  // User Code End General
+  char* _name;
+  std::vector<dbGDSElement> _elements;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
+
+
+
+
 }  // namespace odb
    // Generator Code End Header
+

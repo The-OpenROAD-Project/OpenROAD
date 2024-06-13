@@ -58,17 +58,13 @@ class _dbGDSBoundary : public _dbGDSElement
                    const char* field,
                    const _dbGDSBoundary& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
 
-  // User Code begin general
+  std::string to_string() { return "BOUNDARY " + _dbGDSElement::to_string(); }
 
-  std::string to_string() {
-      return "BOUNDARY " + _dbGDSElement::to_string();
-  }
-
-  // User Code End general
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj);
-
 }  // namespace odb
    // Generator Code End Header

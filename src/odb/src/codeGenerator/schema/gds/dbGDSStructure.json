@@ -3,9 +3,9 @@
     "type":"dbObject",
     "fields":[
       {
-        "name":"_strname",
-        "type":"std::string",
-        "flags":[]
+        "name":"_name",
+        "type":"char*",
+        "flags":["no-set"]
       },
       {
         "name":"_elements",
@@ -15,8 +15,9 @@
     ],
     "h_includes": [
       "dbVector.h",
-      "dbGDSElement.h"
+      "dbGDSElement.h",
+      "odb/db.h"
     ],
-    "cpp_includes": ["odb/dbTypes.h"]
+    "cpp_includes": ["odb/dbTypes.h", "dbGDSLib.h"]
   }
   

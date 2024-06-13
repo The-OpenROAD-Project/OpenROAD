@@ -49,9 +49,8 @@ class _dbGDSElement : public _dbObject
  public:
   _dbGDSElement(_dbDatabase*, const _dbGDSElement& r);
   _dbGDSElement(_dbDatabase*);
-  _dbGDSElement() {};
 
-  ~_dbGDSElement() {};
+  ~_dbGDSElement() = default;
 
   bool operator==(const _dbGDSElement& rhs) const;
   bool operator!=(const _dbGDSElement& rhs) const { return !operator==(rhs); }
@@ -60,29 +59,30 @@ class _dbGDSElement : public _dbObject
                    const char* field,
                    const _dbGDSElement& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
 
-  int16_t _layer;
-  int16_t _datatype;
-  std::vector<Point> _xy;
-  std::vector<std::pair<std::int16_t, std::string>> _propattr;
-
-  // User Code Begin General
-
-  virtual std::string to_string(){
-    std::string str = "LAYER " + std::to_string(_layer) + " DATATYPE " + std::to_string(_datatype) + " XY [";
-    for(int i = 0; i < _xy.size() ; i++){
+  virtual std::string to_string()
+  {
+    std::string str = "LAYER " + std::to_string(_layer) + " DATATYPE "
+                      + std::to_string(_datatype) + " XY [";
+    for (int i = 0; i < _xy.size(); i++) {
       str += std::to_string(_xy[i].x()) + "," + std::to_string(_xy[i].y());
-      if(i != _xy.size() - 1)
+      if (i != _xy.size() - 1)
         str += ",";
     }
     return str + "]";
   }
 
-  // User Code End General
+  _dbGDSElement(){};
+
+  // User Code End Methods
+
+  int16_t _layer;
+  int16_t _datatype;
+  std::vector<Point> _xy;
+  std::vector<std::pair<std::int16_t, std::string>> _propattr;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSElement& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSElement& obj);
-
-
 }  // namespace odb
    // Generator Code End Header

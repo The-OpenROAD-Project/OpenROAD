@@ -7259,13 +7259,11 @@ class dbGDSElement : public dbObject
 
   void setXy(std::vector<Point> xy);
 
-  std::vector<Point>& getXy() const;
+  std::vector<Point> getXy() const;
 
   void setPropattr(std::vector<std::pair<std::int16_t, std::string>> propattr);
 
   std::vector<std::pair<std::int16_t, std::string>> getPropattr() const;
-
-  virtual std::string to_string() const;
 };
 
 class dbGDSBoundary : public dbGDSElement
@@ -7276,17 +7274,17 @@ class dbGDSBoundary : public dbGDSElement
 class dbGDSLib : public dbObject
 {
  public:
-  void setName(std::string name);
+  void setLibname(std::string libname);
 
-  std::string getName() const;
+  std::string getLibname() const;
 
-  void set_lastAccessed(std::vector<int16_t> lastAccessed);
+  void set_lastAccessed(std::tm lastAccessed);
 
-  std::vector<int16_t> get_lastAccessed() const;
+  std::tm get_lastAccessed() const;
 
-  void set_lastModified(std::vector<int16_t> lastModified);
+  void set_lastModified(std::tm lastModified);
 
-  std::vector<int16_t> get_lastModified() const;
+  std::tm get_lastModified() const;
 
   void set_libDirSize(int16_t libDirSize);
 
@@ -7296,14 +7294,15 @@ class dbGDSLib : public dbObject
 
   std::string get_srfName() const;
 
-  void setUnits(std::pair<double, double> units);
+  void setUnits(double uu_per_dbu, double dbu_per_uu);
 
   std::pair<double, double> getUnits() const;
 
-  void setStructures(
-      std::unordered_map<std::string, dbGDSStructure*> structures);
+  dbTable<dbGDSStructure> getStructureTable() const;
 
-  std::unordered_map<std::string, dbGDSStructure*> getStructures() const;
+  dbGDSStructure* findGDSStructure(const char* name) const;
+
+  dbSet<dbGDSStructure> getGDSStructures();
 };
 
 class dbGDSPath : public dbGDSElement
@@ -7337,13 +7336,24 @@ class dbGDSSRef : public dbGDSElement
 class dbGDSStructure : public dbObject
 {
  public:
-  void setStrname(std::string strname);
 
   std::string getStrname() const;
 
-  std::vector<dbGDSElement*> getElements() const;
+  void setElements(std::vector<dbGDSElement> elements);
 
-  std::string to_string() const;
+  std::vector<dbGDSElement> getElements() const;
+
+  // User Code Begin dbGDSStructure
+
+  dbGDSLib* getGDSLib();
+
+  static dbGDSStructure* create(dbGDSLib* lib, const char* name);
+
+  static void destroy(dbGDSStructure* structure);
+
+  static dbGDSStructure* getGDSStructure(dbGDSLib* lib, uint dbid);
+
+  // User Code End dbGDSStructure
 };
 
 class dbGlobalConnect : public dbObject

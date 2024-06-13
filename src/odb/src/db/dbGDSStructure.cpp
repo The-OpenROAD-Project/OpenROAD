@@ -32,7 +32,7 @@
 
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
-
+#include "dbGDSLib.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
@@ -79,18 +79,20 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 {
-  _strname = r._strname;
+  _strname = r._name;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._strname;
+  stream >> obj._elements;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
   stream << obj._strname;
+  stream << obj._elements;
   return stream;
 }
 
@@ -100,32 +102,55 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSStructure::setStrname(std::string strname)
-{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-
-  obj->_strname = strname;
-}
-
 std::string dbGDSStructure::getStrname() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->_strname;
+  return obj->_name;
 }
 
-std::vector<dbGDSElement*> dbGDSStructure::getElements() const
+void dbGDSStructure::setElements(std::vector<dbGDSElement> elements)
+{
+  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+
+  obj->_elements = elements;
+}
+
+std::vector<dbGDSElement> dbGDSStructure::getElements() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return obj->_elements;
 }
 
-// User Code Begin General
+// User Code Begin dbGDSStructurePublicMethods
 
-std::string dbGDSStructure::to_string() const{
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->to_string();
+dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
+{
+  if (lib_->findGDSStructure(name_)) {
+    return nullptr;
+  }
+
+  _dbGDSLib* lib = (_dbGDSLib*) lib_;
+  _dbDatabase* db = lib->getDatabase();
+  _dbGDSStructure* structure = lib->_structure_tbl->create();
+  structure->_name = strdup(name_);
+  ZALLOCATED(structure->_name);
+
+  // TODO: ID for structure
+
+  lib->_structure_hash.insert(structure);
 }
-// User Code End General
+
+void dbGDSStructure::destroy(dbGDSStructure* structure)
+{
+  auto db = structure->getDb();
+  _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
+  _dbGDSLib* lib = (_dbGDSLib*)structure->getGDSLib();
+  lib->_structure_hash.remove(str_impl);
+  lib->_structure_tbl->destroy(str_impl);
+}
+
+// User Code End dbGDSStructurePublicMethods
+
 
 }  // namespace odb
    // Generator Code End Cpp

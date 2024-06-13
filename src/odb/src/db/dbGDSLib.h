@@ -35,9 +35,10 @@
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
-#include "dbVector.h"
+#include "dbHashTable.h"
+#include "dbTable.h"
+#include "odb/db.h"
 #include "odb/odb.h"
-
 // User Code Begin Includes
 #include <ctime>
 // User Code End Includes
@@ -47,31 +48,38 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbGDSStructure;
+class _dbGDSStructure;
 
 class _dbGDSLib : public _dbObject
 {
  public:
+  std::string _libname;
+  std::tm _lastAccessed;
+  std::tm _lastModified;
+  int16_t _libDirSize;
+  std::string _srfName;
+  double _uu_per_dbu, _dbu_per_meter;
+  dbHashTable<_dbGDSStructure> _structure_hash;
+
+  dbTable<_dbGDSStructure>* _structure_tbl;
+
   _dbGDSLib(_dbDatabase*, const _dbGDSLib& r);
   _dbGDSLib(_dbDatabase*);
-
   ~_dbGDSLib();
 
   bool operator==(const _dbGDSLib& rhs) const;
   bool operator!=(const _dbGDSLib& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSLib& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbGDSLib& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
 
-  std::string _name;
-  std::vector<int16_t> _lastAccessed;
-  std::vector<int16_t> _lastModified;
-  int16_t _libDirSize;
-  std::string _srfName;
-  std::pair<double, double> _units;
-  std::unordered_map<std::string, dbGDSStructure*> _structures;
+  _dbGDSStructure* findStructure(const char* name);
+  
 };
+
+dbIStream& operator>>(dbIStream& stream, std::tm& tm);
+dbOStream& operator<<(dbOStream& stream, const std::tm& tm);
+
 dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj);
-}  // namespace odb
-   // Generator Code End Header
+} // namespace odb

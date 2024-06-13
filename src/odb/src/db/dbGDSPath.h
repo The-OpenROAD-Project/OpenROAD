@@ -58,18 +58,18 @@ class _dbGDSPath : public _dbGDSElement
                    const char* field,
                    const _dbGDSPath& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+
+  std::string to_string()
+  {
+    return "PATH" + _dbGDSElement::to_string() + " WIDTH "
+           + std::to_string(_width) + " PATHTYPE " + std::to_string(_pathType);
+  }
+
+  // User Code End Methods
 
   int _width;
   int16_t _pathType;
-
-  // User Code Begin General
-
-  std::string to_string() {
-    return "PATH" + _dbGDSElement::to_string() + " WIDTH " + std::to_string(_width) + " PATHTYPE " + std::to_string(_pathType);
-  }
-
-  // User Code End General
-
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj);

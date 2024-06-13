@@ -35,6 +35,8 @@
 #include <optional>
 
 #include "odb.h"
+#include "geom.h"
+#include "dbStream.h"
 
 namespace odb {
 
@@ -155,6 +157,26 @@ class dbGDSSTrans
     return (_flipX == t._flipX) && (_absMag == t._absMag) && (_absAngle == t._absAngle) && (_mag == t._mag) && (_angle == t._angle);
   }
 };
+
+dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
+{
+  stream >> t._flipX;
+  stream >> t._absMag;
+  stream >> t._absAngle;
+  stream >> t._mag;
+  stream >> t._angle;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, dbGDSSTrans& t)
+{
+  stream << t._flipX;
+  stream << t._absMag;
+  stream << t._absAngle;
+  stream << t._mag;
+  stream << t._angle;
+  return stream;
+}
 
 ///
 /// The dbGroup's basis.
