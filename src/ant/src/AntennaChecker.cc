@@ -503,11 +503,11 @@ void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
   }
 }
 
-std::pair<bool, bool> AntennaChecker::checkPAR(odb::dbTechLayer* tech_layer,
-                                               const NodeInfo& info,
-                                               bool verbose,
-                                               bool report,
-                                               std::ofstream& report_file)
+bool AntennaChecker::checkPAR(odb::dbTechLayer* tech_layer,
+                              const NodeInfo& info,
+                              bool verbose,
+                              bool report,
+                              std::ofstream& report_file)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -515,7 +515,6 @@ std::pair<bool, bool> AntennaChecker::checkPAR(odb::dbTechLayer* tech_layer,
   double PAR_ratio = antenna_rule->getPAR();
   odb::dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
   double diff_PAR_PWL_ratio = getPwlFactor(diffPAR, info.iterm_diff_area, 0.0);
-  bool checked = false;
   bool violation = false;
 
   // apply ratio_margin
@@ -542,7 +541,6 @@ std::pair<bool, bool> AntennaChecker::checkPAR(odb::dbTechLayer* tech_layer,
     }
   } else {
     if (diff_PAR_PWL_ratio != 0) {
-      checked = true;
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
     }
     if (report) {
@@ -561,14 +559,14 @@ std::pair<bool, bool> AntennaChecker::checkPAR(odb::dbTechLayer* tech_layer,
       }
     }
   }
-  return {violation, checked};
+  return violation;
 }
 
-std::pair<bool, bool> AntennaChecker::checkPSR(odb::dbTechLayer* tech_layer,
-                                               const NodeInfo& info,
-                                               bool verbose,
-                                               bool report,
-                                               std::ofstream& report_file)
+bool AntennaChecker::checkPSR(odb::dbTechLayer* tech_layer,
+                              const NodeInfo& info,
+                              bool verbose,
+                              bool report,
+                              std::ofstream& report_file)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
@@ -577,7 +575,6 @@ std::pair<bool, bool> AntennaChecker::checkPSR(odb::dbTechLayer* tech_layer,
   const odb::dbTechLayerAntennaRule::pwl_pair diffPSR
       = antenna_rule->getDiffPSR();
   double diff_PSR_PWL_ratio = getPwlFactor(diffPSR, info.iterm_diff_area, 0.0);
-  bool checked = false;
   bool violation = false;
 
   // apply ratio_margin
@@ -604,7 +601,6 @@ std::pair<bool, bool> AntennaChecker::checkPSR(odb::dbTechLayer* tech_layer,
     }
   } else {
     if (diff_PSR_PWL_ratio != 0) {
-      checked = true;
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
     }
     if (report) {
@@ -623,7 +619,7 @@ std::pair<bool, bool> AntennaChecker::checkPSR(odb::dbTechLayer* tech_layer,
       }
     }
   }
-  return {violation, checked};
+  return violation;
 }
 
 bool AntennaChecker::checkCAR(odb::dbTechLayer* tech_layer,
@@ -746,18 +742,15 @@ bool AntennaChecker::checkRatioViolations(odb::dbTechLayer* layer,
                                           bool report,
                                           std::ofstream& report_file)
 {
-  bool node_has_violation = false;
-  auto par_violation = checkPAR(layer, node_info, verbose, report, report_file);
-  bool car_violation = checkCAR(layer, node_info, verbose, report, report_file);
-  node_has_violation = par_violation.first || car_violation;
-
+  bool node_has_violation
+      = checkPAR(layer, node_info, verbose, report, report_file)
+        || checkCAR(layer, node_info, verbose, report, report_file);
   if (layer->getRoutingLevel() != 0) {
-    auto psr_violation
+    bool psr_violation
         = checkPSR(layer, node_info, verbose, report, report_file);
     bool csr_violation
         = checkCSR(layer, node_info, verbose, report, report_file);
-    node_has_violation
-        = node_has_violation || psr_violation.first || csr_violation;
+    node_has_violation = node_has_violation || psr_violation || csr_violation;
   }
 
   return node_has_violation;
@@ -883,14 +876,14 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           odb::dbTechLayer* violation_layer = layer;
           int diode_count_per_gate = 0;
           // check violations only PAR & PSR
-          auto par_violation = checkPAR(
+          bool par_violation = checkPAR(
               violation_layer, violation_info, false, false, report_file);
-          auto psr_violation = checkPSR(
+          bool psr_violation = checkPSR(
               violation_layer, violation_info, false, false, report_file);
-          bool violated = par_violation.first || psr_violation.first;
+          bool violated = par_violation || psr_violation;
           // while it has violation, increase iterm_diff_area
           if (diode_mterm) {
-            while (par_violation.first || psr_violation.first) {
+            while (par_violation || psr_violation) {
               // increasing iterm_diff_area and count
               violation_info.iterm_diff_area += diode_diff_area * gates.size();
               diode_count_per_gate++;

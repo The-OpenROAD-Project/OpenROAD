@@ -197,16 +197,16 @@ class AntennaChecker
                  Violations& antenna_violations);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
-  std::pair<bool, bool> checkPAR(odb::dbTechLayer* tech_layer,
-                                 const NodeInfo& info,
-                                 bool verbose,
-                                 bool report,
-                                 std::ofstream& report_file);
-  std::pair<bool, bool> checkPSR(odb::dbTechLayer* tech_layer,
-                                 const NodeInfo& info,
-                                 bool verbose,
-                                 bool report,
-                                 std::ofstream& report_file);
+  bool checkPAR(odb::dbTechLayer* tech_layer,
+                const NodeInfo& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
+  bool checkPSR(odb::dbTechLayer* tech_layer,
+                const NodeInfo& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
   bool checkCAR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
