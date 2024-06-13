@@ -251,12 +251,6 @@ int Opendp::disp(const Cell* cell) const
   return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
 }
 
-/* static */
-bool Opendp::isBlock(const Cell* cell)
-{
-  return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
-}
-
 int Opendp::padGlobalLeft() const
 {
   return padding_->padGlobalLeft().v;
@@ -310,7 +304,7 @@ void Opendp::setGridCell(Cell& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
-  if (isBlock(&cell)) {
+  if ((&cell)->isBlock()) {
     // Try the is_hopeless strategy to get off of a block
     pixel->is_hopeless = true;
   }
