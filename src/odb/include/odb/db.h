@@ -7344,8 +7344,6 @@ class dbGDSStructure : public dbObject
 
   static void destroy(dbGDSStructure* structure);
 
-  static dbGDSStructure* getGDSStructure(dbGDSLib* lib, uint dbid);
-
   // User Code End dbGDSStructure
 };
 

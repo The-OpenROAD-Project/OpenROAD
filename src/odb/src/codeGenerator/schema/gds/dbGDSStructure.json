@@ -11,6 +11,11 @@
         "name":"_elements",
         "type":"dbVector<_dbGDSElement>",
         "flags":["no-set", "no-get"]
+      },
+      {
+        "name":"_next_entry",
+        "type":"dbId<_dbGDSStructure>",
+        "flags":["no-set", "no-get"]
       }
     ],
     "h_includes": [
@@ -19,6 +24,6 @@
       "odb/db.h",
       "dbTable.h"
     ],
-    "cpp_includes": ["odb/dbTypes.h", "dbGDSLib.h"]
+    "cpp_includes": ["odb/dbTypes.h", "dbGDSLib.h","dbHashTable.hpp"]
   }
   

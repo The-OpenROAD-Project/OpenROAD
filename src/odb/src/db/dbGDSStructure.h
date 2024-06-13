@@ -64,12 +64,19 @@ class _dbGDSStructure : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
 
-  std::string to_string();
-
+  std::string to_string()
+  {
+    std::string str = "STRUCTURE " + std::string(_name) + "\n";
+    for (auto& e : _elements) {
+      str += e.to_string() + "\n";
+    }
+    return str;
+  }
   // User Code End Methods
 
   char* _name;
   dbVector<_dbGDSElement> _elements;
+  dbId<_dbGDSStructure> _next_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);

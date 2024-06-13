@@ -158,26 +158,8 @@ class dbGDSSTrans
   }
 };
 
-dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
-{
-  stream >> t._flipX;
-  stream >> t._absMag;
-  stream >> t._absAngle;
-  stream >> t._mag;
-  stream >> t._angle;
-  return stream;
-}
-
-dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
-{
-  stream << t._flipX;
-  stream << t._absMag;
-  stream << t._absAngle;
-  stream << t._mag;
-  stream << t._angle;
-  return stream;
-}
-
+dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
+dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t);
 ///
 /// The dbGroup's basis.
 ///

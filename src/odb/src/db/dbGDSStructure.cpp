@@ -38,6 +38,8 @@
 #include "dbGDSLib.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbHashTable.h"
+#include "dbHashTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace odb {
@@ -46,6 +48,9 @@ template class dbTable<_dbGDSStructure>;
 bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
 {
   if (_name != rhs._name) {
+    return false;
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
   }
 
@@ -63,6 +68,7 @@ void _dbGDSStructure::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(_name);
+  DIFF_FIELD(_next_entry);
   DIFF_END
 }
 
@@ -70,6 +76,7 @@ void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
+  DIFF_OUT_FIELD(_next_entry);
 
   DIFF_END
 }
@@ -81,12 +88,14 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 {
   _name = r._name;
+  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._name;
   stream >> obj._elements;
+  stream >> obj._next_entry;
   return stream;
 }
 
@@ -94,6 +103,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
   stream << obj._name;
   stream << obj._elements;
+  stream << obj._next_entry;
   return stream;
 }
 
@@ -141,6 +151,11 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
   lib->_structure_hash.remove(str_impl);
   lib->_structure_tbl->destroy(str_impl);
+}
+
+dbGDSLib* dbGDSStructure::getGDSLib()
+{
+  return (dbGDSLib*) getImpl()->getOwner();
 }
 
 // User Code End dbGDSStructurePublicMethods

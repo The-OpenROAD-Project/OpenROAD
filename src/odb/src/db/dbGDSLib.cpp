@@ -39,6 +39,10 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "dbHashTable.hpp"
+#include "dbTable.h"
+#include "dbTable.hpp"
+
 namespace odb {
 template class dbTable<_dbGDSLib>;
 
@@ -136,6 +140,10 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
       _uu_per_dbu(r._uu_per_dbu),
       _dbu_per_meter(r._dbu_per_meter),
       _structure_hash(r._structure_hash) {}
+
+_dbGDSLib::~_dbGDSLib(){
+  delete _structure_tbl;
+}
 
 
 dbIStream& operator>>(dbIStream& stream, std::tm& tm)
