@@ -109,6 +109,7 @@ class dbMaster;
 class dbMTerm;
 class dbMPin;
 class dbTarget;
+class dbGDSLib;
 
 // Tech objects
 class dbTech;
@@ -132,7 +133,6 @@ class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
 class dbGDSElement;
-class dbGDSLib;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
@@ -5684,6 +5684,40 @@ class dbMaster : public dbObject
   void staSetCell(void* cell);
 };
 
+class dbGDSLib : public dbObject
+{
+ public:
+  void setLibname(std::string libname);
+
+  std::string getLibname() const;
+
+  void set_lastAccessed(std::tm lastAccessed);
+
+  std::tm get_lastAccessed() const;
+
+  void set_lastModified(std::tm lastModified);
+
+  std::tm get_lastModified() const;
+
+  void set_libDirSize(int16_t libDirSize);
+
+  int16_t get_libDirSize() const;
+
+  void set_srfName(std::string srfName);
+
+  std::string get_srfName() const;
+
+  void setUnits(double uu_per_dbu, double dbu_per_uu);
+
+  std::pair<double, double> getUnits() const;
+
+  dbTable<dbGDSStructure> getStructureTable() const;
+
+  dbGDSStructure* findGDSStructure(const char* name) const;
+
+  dbSet<dbGDSStructure> getGDSStructures();
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// A MTerm is the element that represents a terminal on a Master.
@@ -7246,6 +7280,11 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+class dbGDSBoundary : public dbGDSElement
+{
+ public:
+};
+
 class dbGDSElement : public dbObject
 {
  public:
@@ -7269,40 +7308,6 @@ class dbGDSElement : public dbObject
 class dbGDSBoundary : public dbGDSElement
 {
  public:
-};
-
-class dbGDSLib : public dbObject
-{
- public:
-  void setLibname(std::string libname);
-
-  std::string getLibname() const;
-
-  void set_lastAccessed(std::tm lastAccessed);
-
-  std::tm get_lastAccessed() const;
-
-  void set_lastModified(std::tm lastModified);
-
-  std::tm get_lastModified() const;
-
-  void set_libDirSize(int16_t libDirSize);
-
-  int16_t get_libDirSize() const;
-
-  void set_srfName(std::string srfName);
-
-  std::string get_srfName() const;
-
-  void setUnits(double uu_per_dbu, double dbu_per_uu);
-
-  std::pair<double, double> getUnits() const;
-
-  dbTable<dbGDSStructure> getStructureTable() const;
-
-  dbGDSStructure* findGDSStructure(const char* name) const;
-
-  dbSet<dbGDSStructure> getGDSStructures();
 };
 
 class dbGDSPath : public dbGDSElement
@@ -7336,8 +7341,7 @@ class dbGDSSRef : public dbGDSElement
 class dbGDSStructure : public dbObject
 {
  public:
-
-  std::string getStrname() const;
+  char* getName() const;
 
   void setElements(std::vector<dbGDSElement> elements);
 

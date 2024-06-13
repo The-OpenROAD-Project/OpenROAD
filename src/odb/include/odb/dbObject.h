@@ -91,7 +91,6 @@ enum dbObjectType
   dbGCellGridObj,
   dbGDSBoundaryObj,
   dbGDSElementObj,
-  dbGDSLibObj,
   dbGDSPathObj,
   dbGDSSRefObj,
   dbGDSStructureObj,
@@ -139,6 +138,7 @@ enum dbObjectType
 
   // Lib Objects
   dbLibObj,
+  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,
