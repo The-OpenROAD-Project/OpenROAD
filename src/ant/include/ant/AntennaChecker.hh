@@ -160,9 +160,7 @@ class AntennaChecker
   std::vector<std::pair<double, std::vector<odb::dbITerm*>>>
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
-  void buildLayerMaps(odb::dbNet* net,
-                      LayerToGraphNodes& node_by_layer_map,
-                      GateToLayerToNodeInfo& gate_info);
+  void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
   void checkNet(odb::dbNet* net,
                 bool verbose,
                 bool report_if_no_violation,

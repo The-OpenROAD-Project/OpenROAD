@@ -921,6 +921,22 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             antenna_violations.push_back(
                 {layer->getRoutingLevel(), gates, diode_count_per_gate});
           }
+
+          bool car_violation = checkCAR(
+              violation_layer, violation_info, false, false, report_file);
+          bool csr_violation = checkCSR(
+              violation_layer, violation_info, false, false, report_file);
+
+          // naive approach for cumulative area violations. here, all the pins
+          // of the net are included, and placing one diode per pin is not the
+          // best approach. as a first implementation, insert one diode per net.
+          // TODO: implement a proper approach for CAR violations
+          if (car_violation || csr_violation) {
+            std::vector<odb::dbITerm*> gates_for_violation;
+            gates_for_violation.push_back(gates[0]);
+            antenna_violations.push_back(
+                {layer->getRoutingLevel(), gates_for_violation, 1});
+          }
         }
       }
     }
@@ -929,8 +945,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
 }
 
 void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
-                                    LayerToGraphNodes& node_by_layer_map,
-                                    GateToLayerToNodeInfo& gate_info)
+                                    LayerToGraphNodes& node_by_layer_map)
 {
   odb::dbWire* wires = db_net->getWire();
 
@@ -1016,7 +1031,7 @@ void AntennaChecker::checkNet(odb::dbNet* db_net,
   if (wire) {
     LayerToGraphNodes node_by_layer_map;
     GateToLayerToNodeInfo gate_info;
-    buildLayerMaps(db_net, node_by_layer_map, gate_info);
+    buildLayerMaps(db_net, node_by_layer_map);
 
     calculateAreas(node_by_layer_map, gate_info);
 
