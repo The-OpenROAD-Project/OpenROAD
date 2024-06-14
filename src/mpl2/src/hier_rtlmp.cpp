@@ -676,16 +676,19 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
     if (liberty_cell == nullptr) {
       continue;
     }
+
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad or a cover macro
+
     if (master->isPad() || master->isCover()) {
       continue;
     }
-    float inst_area = block_->dbuToMicrons(master->getWidth())
-                      * block_->dbuToMicrons(master->getHeight());
+
+    float inst_area = computeMicronArea(inst);
+
     if (master->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
+
       // add hard macro to corresponding map
       HardMacro* macro = new HardMacro(inst, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
@@ -709,33 +712,39 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
 
   Metrics* metrics
       = new Metrics(num_std_cell, num_macro, std_cell_area, macro_area);
+
   logical_module_map_[module] = metrics;
+
   return metrics;
 }
 
-// compute the metrics for a cluster
-// Here we do not include any Pads,  Covers or Marker
-// number of standard cells
-// number of macros
-// area of standard cells
-// area of macros
+float HierRTLMP::computeMicronArea(odb::dbInst* inst)
+{
+  const float width = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dx()));
+  const float height = static_cast<float>(
+      block_->dbuToMicrons(inst->getBBox()->getBox().dy()));
+
+  return width * height;
+}
+
 void HierRTLMP::setClusterMetrics(Cluster* cluster)
 {
-  unsigned int num_std_cell = 0;
-  unsigned int num_macro = 0;
-  float std_cell_area = 0.0;
-  float macro_area = 0.0;
-  num_std_cell += cluster->getLeafStdCells().size();
-  num_macro += cluster->getLeafMacros().size();
-  for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    std_cell_area += liberty_cell->area();
+  float std_cell_area = 0.0f;
+  for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
+    std_cell_area += computeMicronArea(std_cell);
   }
-  for (odb::dbInst* inst : cluster->getLeafMacros()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    macro_area += liberty_cell->area();
+
+  float macro_area = 0.0f;
+  for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    macro_area += computeMicronArea(macro);
   }
+
+  const unsigned int num_std_cell = cluster->getLeafStdCells().size();
+  const unsigned int num_macro = cluster->getLeafMacros().size();
+
   Metrics metrics(num_std_cell, num_macro, std_cell_area, macro_area);
+
   for (auto& module : cluster->getDbModules()) {
     metrics.addMetrics(*logical_module_map_[module]);
   }
@@ -749,7 +758,6 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
              metrics.getNumMacro(),
              metrics.getNumStdCell());
 
-  // update metrics based on design type
   if (cluster->getClusterType() == HardMacroCluster) {
     cluster->setMetrics(
         Metrics(0, metrics.getNumMacro(), 0.0, metrics.getMacroArea()));
@@ -2087,16 +2095,14 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   }
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(macro);
-    vertex_weight.push_back(liberty_cell->area());
+    vertex_weight.push_back(computeMicronArea(macro));
   }
   int num_fixed_vertices
       = vertex_id;  // we do not consider these vertices in later process
                     // They behaves like ''fixed vertices''
   for (auto& std_cell : std_cells) {
     inst_vertex_id_map[std_cell] = vertex_id++;
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(std_cell);
-    vertex_weight.push_back(liberty_cell->area());
+    vertex_weight.push_back(computeMicronArea(std_cell));
   }
   // Traverse nets to create hyperedges
   for (odb::dbNet* net : block_->getNets()) {
