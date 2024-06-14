@@ -379,7 +379,7 @@ remove_buffers_cmd(InstanceSeq insts)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers(insts);
+  resizer->removeBuffers(std::move(insts));
 }
 
 void
