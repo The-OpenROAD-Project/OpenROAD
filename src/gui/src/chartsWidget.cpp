@@ -45,6 +45,7 @@
 #include <vector>
 
 #include "sta/Clock.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #endif
@@ -675,11 +676,10 @@ void ChartsWidget::setLimits(const TimingPathList& paths)
 TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
     const StartEndPathType path_type)
 {
-  ITermBTermPinsLists start_pins
-      = separatePinsIntoBTermsAndITerms(stagui_->getStartPoints());
-
-  ITermBTermPinsLists end_pins
-      = separatePinsIntoBTermsAndITerms(stagui_->getEndPoints());
+  RegisterPinsAndPorts start_pins
+      = getRegisterPinsAndPorts(stagui_->getStartPoints());
+  RegisterPinsAndPorts end_pins
+      = getRegisterPinsAndPorts(stagui_->getEndPoints());
 
   // Copy current values to reset after fetching.
   const int initial_max_path_count = stagui_->getMaxPathCount();
@@ -718,10 +718,9 @@ TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
   return paths;
 }
 
-ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
-    const StaPins& pins)
+RegisterPinsAndPorts ChartsWidget::getRegisterPinsAndPorts(const StaPins& pins)
 {
-  ITermBTermPinsLists pins_lists; /* < ITerms , BTerms > */
+  RegisterPinsAndPorts pins_lists;  // <Register Pins, Ports>
 
   for (const sta::Pin* pin : pins) {
     sta::dbNetwork* dbnetwork = sta_->getDbNetwork();
@@ -734,7 +733,10 @@ ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
     dbnetwork->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
     if (iterm) {
-      pins_lists.first.insert(pin);
+      sta::LibertyCell* lib_cell = dbnetwork->libertyCell(iterm->getInst());
+      if (lib_cell && lib_cell->hasSequentials()) {
+        pins_lists.first.insert(pin);
+      }
     }
 
     if (bterm) {
