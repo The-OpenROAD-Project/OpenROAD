@@ -77,6 +77,7 @@ global_placement
     [-force_cpu]
     [-skip_io]
     [-skip_nesterov_place]
+    [-routability_use_grt]
     [-routability_target_rc_metric routability_target_rc_metric]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
