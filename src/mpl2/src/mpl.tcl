@@ -317,8 +317,9 @@ proc mpl_debug { args } {
     set coarse true
     set fine true
   }
+  set block [ord::get_db_block]
 
-  mpl2::set_debug_cmd $coarse $fine [info exists flags(-show_bundled_nets)]
+  mpl2::set_debug_cmd $block $coarse $fine [info exists flags(-show_bundled_nets)]
 }
 
 }

@@ -181,6 +181,7 @@ TimingPath::TimingPath()
       req_time_(0),
       logic_delay_(0),
       logic_depth_(0),
+      fanout_(0),
       clk_path_end_index_(0),
       clk_capture_end_index_(0)
 {
@@ -221,7 +222,7 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     // based on:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
-    int fanout = 0;
+    int node_fanout = 0;
     sta::VertexOutEdgeIterator iter(vertex, graph);
     while (iter.hasNext()) {
       sta::Edge* edge = iter.next();
@@ -230,11 +231,11 @@ void TimingPath::populateNodeList(sta::Path* path,
         if (network->isTopLevelPort(pin)) {
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
-          fanout += sdc->portExtFanout(
-                        port, dcalc_ap->corner(), sta::MinMax::max())
-                    + 1;
+          node_fanout += sdc->portExtFanout(
+                             port, dcalc_ap->corner(), sta::MinMax::max())
+                         + 1;
         } else {
-          fanout++;
+          node_fanout++;
         }
       }
     }
@@ -247,7 +248,9 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     odb::dbITerm* term;
     odb::dbBTerm* port;
-    sta->getDbNetwork()->staToDb(pin, term, port);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
     odb::dbObject* pin_object = term;
     if (term == nullptr) {
       pin_object = port;
@@ -281,6 +284,10 @@ void TimingPath::populateNodeList(sta::Path* path,
       inst_of_prev_pin = inst_of_curr_pin;
     }
 
+    if (!sta->isClock(pin)) {
+      fanout_ += node_fanout;
+    }
+
     list.push_back(std::make_unique<TimingPathNode>(pin_object,
                                                     pin,
                                                     pin_is_clock,
@@ -291,7 +298,7 @@ void TimingPath::populateNodeList(sta::Path* path,
                                                     pin_delay,
                                                     slew,
                                                     cap,
-                                                    fanout));
+                                                    node_fanout));
     arrival_prev_stage = arrival_cur_stage;
   }
 
@@ -436,6 +443,21 @@ std::string TimingPath::getStartStageName() const
 std::string TimingPath::getEndStageName() const
 {
   return path_nodes_.back()->getNodeName();
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getStartStageNode() const
+{
+  const int start_idx = getClkPathEndIndex() + 1;
+  if (start_idx >= path_nodes_.size()) {
+    return path_nodes_.front();
+  }
+
+  return path_nodes_[start_idx];
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getEndStageNode() const
+{
+  return path_nodes_.back();
 }
 
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
@@ -817,6 +839,15 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
+StaPins STAGuiInterface::getStartPoints() const
+{
+  StaPins pins;
+  for (auto end : sta_->startpointPins()) {
+    pins.insert(end);
+  }
+  return pins;
+}
+
 StaPins STAGuiInterface::getEndPoints() const
 {
   StaPins pins;
@@ -1105,7 +1136,9 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
       odb::dbBTerm* bterm;
       odb::dbITerm* iterm;
-      network->staToDb(pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+      network->staToDb(pin, iterm, bterm, moditerm, modbterm);
       if (bterm != nullptr) {
         dbpin = bterm;
       } else {

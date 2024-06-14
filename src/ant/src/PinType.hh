@@ -1,7 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,69 +29,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Cpp
-#include "dbModInstModITermItr.h"
+#pragma once
 
-#include "dbModITerm.h"
-#include "dbTable.h"
+#include <string>
 
-namespace odb {
+#include "odb/db.h"
 
-////////////////////////////////////////////////////////////////////
-//
-// dbModInstModITermItr - Methods
-//
-////////////////////////////////////////////////////////////////////
+namespace ant {
 
-bool dbModInstModITermItr::reversible()
+struct PinType
 {
-  return true;
-}
-
-bool dbModInstModITermItr::orderReversed()
-{
-  return true;
-}
-
-void dbModInstModITermItr::reverse(dbObject* parent)
-{
-}
-
-uint dbModInstModITermItr::sequential()
-{
-  return 0;
-}
-
-uint dbModInstModITermItr::size(dbObject* parent)
-{
-  uint id;
-  uint cnt = 0;
-
-  for (id = dbModInstModITermItr::begin(parent);
-       id != dbModInstModITermItr::end(parent);
-       id = dbModInstModITermItr::next(id)) {
-    ++cnt;
+  bool isITerm;
+  std::string name;
+  union
+  {
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+  };
+  PinType(std::string name_, odb::dbITerm* iterm_)
+  {
+    name = std::move(name_);
+    iterm = iterm_;
+    isITerm = true;
   }
+  PinType(std::string name_, odb::dbBTerm* bterm_)
+  {
+    name = std::move(name_);
+    bterm = bterm_;
+    isITerm = false;
+  }
+  bool operator==(const PinType& t) const { return (this->name == t.name); }
+};
 
-  return cnt;
-}
-
-uint dbModInstModITermItr::begin(dbObject* parent)
+class PinTypeHash
 {
-}
+ public:
+  size_t operator()(const PinType& t) const
+  {
+    return std::hash<std::string>{}(t.name);
+  }
+};
 
-uint dbModInstModITermItr::end(dbObject* /* unused: parent */)
-{
-  return 0;
-}
-
-uint dbModInstModITermItr::next(uint id, ...)
-{
-}
-
-dbObject* dbModInstModITermItr::getObject(uint id, ...)
-{
-  return _moditerm_tbl->getPtr(id);
-}
-}  // namespace odb
-   // Generator Code End Cpp
+}  // namespace ant

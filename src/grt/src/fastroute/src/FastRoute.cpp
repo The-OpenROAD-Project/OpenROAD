@@ -816,6 +816,9 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
 
 void FastRouteCore::updateDbCongestion()
 {
+  if (h_edges_3D_.num_elements() == 0) {  // no information
+    return;
+  }
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
   if (db_gcell)

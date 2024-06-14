@@ -10,6 +10,7 @@
 [INFO TAP-0005] Inserted 309 tapcells.
 [WARNING ORD-0044] Net created for VIN_SW, if intended as power or ground net add the -power/-ground switch as appropriate.
 [WARNING PDN-0209] Power switch for PS_0 already exists
+[WARNING PDN-0239] Core ring shape falls outside the die bounds.
 [WARNING PDN-0209] Power switch for PS_1 already exists
 [INFO PDN-0001] Inserting grid: Core
 [WARNING PDN-0223] Unable to insert power switch (PSW_ROW_59_0) at (26.6800, 160.4800), due to lack of available rows.

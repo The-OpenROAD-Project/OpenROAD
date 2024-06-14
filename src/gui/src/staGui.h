@@ -80,6 +80,7 @@ class TimingPathsModel : public QAbstractTableModel
     Skew,
     LogicDelay,
     LogicDepth,
+    Fanout,
     Start,
     End
   };
@@ -95,6 +96,7 @@ class TimingPathsModel : public QAbstractTableModel
            {Skew, "Skew"},
            {LogicDelay, "Logic Delay"},
            {LogicDepth, "Logic Depth"},
+           {Fanout, "Fanout"},
            {Start, "Start"},
            {End, "End"}};
     return column_names;

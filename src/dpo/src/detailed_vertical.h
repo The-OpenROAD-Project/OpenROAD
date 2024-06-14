@@ -40,7 +40,6 @@
 namespace dpo {
 
 class Architecture;
-class DetailedSeg;
 class DetailedMgr;
 class Edge;
 class Network;
