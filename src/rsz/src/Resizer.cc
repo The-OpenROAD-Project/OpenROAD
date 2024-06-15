@@ -2839,6 +2839,7 @@ Instance* Resizer::journalCloneInstance(LibertyCell* cell,
   cloned_gates_.emplace(original_inst, clone_inst);
   cloned_inst_set_.insert(clone_inst);
   all_cloned_inst_set_.insert(clone_inst);
+  all_cloned_inst_set_.insert(original_inst);
   return clone_inst;
 }
 
