@@ -19,7 +19,12 @@ The following commands are used to read and write design data.
 
    .. code-tab:: python
    
-      WIP
+      # read_verilog, write_verilog and write_abstract_lef are not supported in Python.
+      read_lef(db: odb.dbDatabase, path: str) -> odb.dbLib
+      read_def(tech: odb.dbTech, path: str) -> odb.dbChip
+      write_def(block: dbBlock, path: str, version: Optional[odb.defout.Version]) -> int
+      read_db(db: odb.dbDatabase, db_path: str) -> odb.dbDatabase
+      write_db(db: odb.dbDatabase, db_path: str) -> int
 
 ````
 
@@ -35,7 +40,9 @@ Use the Tcl `source` command to read commands from a file.
 
    .. code-tab:: py
 
-      WIP
+      # Source is not supported in Python.
+      # Instead run this at the start:
+      openroad -python script.py
 ````
 
 If an error is encountered in a command while reading the command file,
@@ -69,8 +76,14 @@ technology exists in the database.
 
 
    .. code-tab:: py
+      from openroad import Design, Tech
+      tech = Tech()
+      tech.readLef("liberty1.lef")
+      design = Design(tech)
+      design.readDef("reg1.def")
 
-      WIP
+      # Write the db for future runs.
+      design.writedb("reg1.db")
 ````
 
 The `read_verilog` command is used to build an OpenDB database as shown
@@ -92,13 +105,13 @@ The `link_design` command is used to flatten the design and make a database.
 
    .. code-tab:: py
 
-      WIP
+      # Not supported in Python
 ````
 
 ## Example scripts
 
 Example scripts demonstrating how to run OpenROAD on sample designs can
-be found in /test. Flow tests taking sample designs from synthesizable RTL Verilog
+be found in `/test`. Flow tests taking sample designs from synthesizable RTL Verilog
 to detail-routed final layout in the open-source technologies Nangate45 and Sky130HD are
 shown below.
 
