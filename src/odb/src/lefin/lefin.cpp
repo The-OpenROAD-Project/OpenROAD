@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "lefin.h"
+#include "odb/lefin.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -38,20 +38,20 @@
 
 #include <algorithm>
 #include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
-#include "db.h"
-#include "dbTransform.h"
-#include "geom.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
-#include "poly_decomp.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "odb/poly_decomp.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 using LefDefParser::lefrSetRelaxMode;
@@ -63,6 +63,7 @@ lefin::lefin(dbDatabase* db,
              bool ignore_non_routing_layers)
     : _db(db),
       _tech(nullptr),
+      _lib(nullptr),
       _master(nullptr),
       _logger(logger),
       _create_tech(false),
@@ -81,6 +82,7 @@ lefin::lefin(dbDatabase* db,
       _area_factor(1000000.0),
       _dbu_per_micron(1000),
       _override_lef_dbu(false),
+      _master_modified(false),
       _ignore_non_routing_layers(ignore_non_routing_layers)
 {
 }
@@ -110,6 +112,23 @@ void lefin::init()
 
 lefin::~lefin()
 {
+}
+
+dbSite* lefin::findSite(const char* name)
+{
+  dbSite* site = _lib->findSite(name);
+
+  if (site == nullptr) {
+    // look in the other libs
+    for (dbLib* lib : _db->getLibs()) {
+      site = lib->findSite(name);
+      if (site) {
+        break;
+      }
+    }
+  }
+
+  return site;
 }
 
 void lefin::createLibrary()
@@ -364,15 +383,18 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
       case lefiGeomPolygonIterE: {
         lefiGeomPolygonIter* pItr = geometry->getPolygonIter(i);
         lefiGeomPolygon p;
-        double x;
-        double y;
 
         p.numPoints = pItr->numPoints;
         p.x = pItr->x;
         p.y = pItr->y;
 
-        for (y = 0; y < pItr->yStart; y++)
-          for (x = 0; x < pItr->xStart; x++)
+        // An oddity of the LEF parser is that the count is stored
+        // in the start field.
+        int num_x = lround(pItr->xStart);
+        int num_y = lround(pItr->yStart);
+
+        for (int y = 0; y < num_y; y++) {
+          for (int x = 0; x < num_x; x++) {
             createPolygon(object,
                           is_pin,
                           layer,
@@ -380,6 +402,8 @@ bool lefin::addGeoms(dbObject* object, bool is_pin, lefiGeometries* geometry)
                           designRuleWidth,
                           x * pItr->xStep,
                           y * pItr->yStep);
+          }
+        }
         break;
       }
       case lefiGeomViaE: {
@@ -645,10 +669,16 @@ void lefin::layer(lefiLayer* layer)
     bool valid = true;
     bool supported = true;
     if (type.getValue() == dbTechLayerType::ROUTING) {
-      if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
-        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
-               || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
+      if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
+        if (std::string(layer->propValue(iii)).find("WRONGDIRECTION")
+            != std::string::npos) {
+          lefTechLayerWrongDirSpacingParser::parse(
+              layer->propValue(iii), l, this);
+        } else {
+          lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+        }
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
+                 || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
@@ -694,6 +724,10 @@ void lefin::layer(lefiLayer* layer)
         parser.parse(layer->propValue(iii), l, _incomplete_props);
       } else if (!strcmp(layer->propName(iii), "LEF58_FORBIDDENSPACING")) {
         lefTechLayerForbiddenSpacingRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii),
+                         "LEF58_TWOWIRESFORBIDDENSPACING")) {
+        lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
       } else
         supported = false;
@@ -1222,38 +1256,17 @@ void lefin::macro(lefiMacro* macro)
   }
 
   if (macro->hasSiteName()) {
-    dbSite* site = _lib->findSite(macro->siteName());
+    dbSite* site = findSite(macro->siteName());
 
     if (site == nullptr) {
-      // look in the other libs
-      for (dbLib* lib : _db->getLibs()) {
-        site = lib->findSite(macro->siteName());
-        if (site) {
-          // replicating site in the master's lib
-          auto temp = odb::dbSite::create(_lib, site->getName().c_str());
-          temp->setWidth(site->getWidth());
-          temp->setHeight(site->getHeight());
-          if (site->getSymmetryX())
-            temp->setSymmetryX();
-          if (site->getSymmetryY())
-            temp->setSymmetryY();
-          if (site->getSymmetryR90())
-            temp->setSymmetryR90();
-          temp->setClass(site->getClass());
-          site = temp;
-          break;
-        }
-      }
-    }
-
-    if (site == nullptr)
       _logger->warn(utl::ODB,
                     186,
                     "macro {} references unknown site {}",
                     macro->name(),
                     macro->siteName());
-    else
+    } else {
       _master->setSite(site);
+    }
   }
 
   if (macro->hasXSymmetry())
@@ -1672,6 +1685,18 @@ void lefin::site(lefiSite* lefsite)
   if (site)
     return;
 
+  for (dbLib* lib : _db->getLibs()) {
+    if ((site = lib->findSite(lefsite->name()))) {
+      _logger->info(utl::ODB,
+                    394,
+                    "Duplicate site {} in {} already seen in {}",
+                    lefsite->name(),
+                    _lib->getName(),
+                    lib->getName());
+      return;
+    }
+  }
+
   site = dbSite::create(_lib, lefsite->name());
 
   if (lefsite->hasSize()) {
@@ -1690,6 +1715,24 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasClass())
     site->setClass(dbSiteClass(lefsite->siteClass()));
+
+  if (lefsite->hasRowPattern()) {
+    auto row_pattern = lefsite->getRowPatterns();
+    std::vector<dbSite::OrientedSite> converted_row_pattern;
+    converted_row_pattern.reserve(row_pattern.size());
+    for (auto& row : row_pattern) {
+      dbOrientType orient(row.second.c_str());
+      auto child_site = findSite(row.first.c_str());
+      if (!child_site) {
+        ++_errors;
+        _logger->warn(
+            utl::ODB, 208, "Row pattern site {} can't be found", row.first);
+        continue;
+      }
+      converted_row_pattern.push_back({child_site, orient});
+    }
+    site->setRowPattern(converted_row_pattern);
+  }
 }
 
 void lefin::spacingBegin(void* /* unused: ptr */)
@@ -1813,12 +1856,17 @@ void lefin::version(double num)
 
 void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
 {
-  if (!_create_tech)
+  if (!_create_tech && !via->hasViaRule()) {
     return;
+  }
 
   if (_tech->findVia(via->name())) {
-    _logger->warn(
-        utl::ODB, 208, "VIA: duplicate VIA ({}) ignored...", via->name());
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "VIA: duplicate VIA ({}) ignored...",
+               via->name());
     return;
   }
 
@@ -2109,8 +2157,16 @@ void lefin::lineNumber(int lineNo)
 
 bool lefin::readLef(const char* lef_file)
 {
-  _logger->info(utl::ODB, 222, "Reading LEF file: {}", lef_file);
+  try {
+    return readLefInner(lef_file);
+  } catch (...) {
+    _logger->info(utl::ODB, 222, "While reading LEF file: {}", lef_file);
+    throw;
+  }
+}
 
+bool lefin::readLefInner(const char* lef_file)
+{
   bool r = lefin_parse(this, _logger, lef_file);
   for (auto& [obj, name] : _incomplete_props) {
     auto layer = _tech->findLayer(name.c_str());
@@ -2185,17 +2241,40 @@ bool lefin::readLef(const char* lef_file)
     }
   }
   _incomplete_props.clear();
-  if (_layer_cnt)
-    _logger->info(
-        utl::ODB, 223, "    Created {} technology layers", _layer_cnt);
 
-  if (_via_cnt)
-    _logger->info(utl::ODB, 224, "    Created {} technology vias", _via_cnt);
-  if (_master_cnt)
-    _logger->info(utl::ODB, 225, "    Created {} library cells", _master_cnt);
+  std::string p = lef_file;
+  std::vector<std::string> parts;
 
-  _logger->info(utl::ODB, 226, "Finished LEF file:  {}", lef_file);
+  if (_layer_cnt > 0) {
+    std::ostringstream ss;
+    ss << _layer_cnt << " layers";
+    parts.push_back(ss.str());
+  }
 
+  if (_via_cnt > 0) {
+    std::ostringstream ss;
+    ss << _via_cnt << " vias";
+    parts.push_back(ss.str());
+  }
+
+  if (_master_cnt > 0) {
+    std::ostringstream ss;
+    ss << _master_cnt << " library cells";
+    parts.push_back(ss.str());
+  }
+
+  std::string message = "LEF file: " + p;
+  if (!parts.empty()) {
+    message += ", created ";
+    for (size_t i = 0; i < parts.size(); ++i) {
+      message += parts[i];
+      if (i != parts.size() - 1) {
+        message += ", ";
+      }
+    }
+  }
+
+  _logger->info(utl::ODB, 227, message);
   return r;
 }
 
@@ -2207,12 +2286,7 @@ dbTech* lefin::createTech(const char* name, const char* lef_file)
   _tech = dbTech::create(_db, name, _dbu_per_micron);
   _create_tech = true;
 
-  if (!readLef(lef_file)) {
-    dbTech::destroy(_tech);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
+  if (!readLef(lef_file) || _errors != 0) {
     dbTech::destroy(_tech);
     _logger->error(
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
@@ -2242,15 +2316,10 @@ dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
   _lib_name = name;
   _create_lib = true;
 
-  if (!readLef(lef_file)) {
-    if (_lib)
+  if (!readLef(lef_file) || _errors != 0) {
+    if (_lib) {
       dbLib::destroy(_lib);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
-    if (_lib)
-      dbLib::destroy(_lib);
+    }
     _logger->error(
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
@@ -2283,16 +2352,10 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
   _create_lib = true;
   _create_tech = true;
 
-  if (!readLef(lef_file)) {
-    if (_lib)
+  if (!readLef(lef_file) || _errors != 0) {
+    if (_lib) {
       dbLib::destroy(_lib);
-    dbTech::destroy(_tech);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
-    if (_lib)
-      dbLib::destroy(_lib);
+    }
     dbTech::destroy(_tech);
     _logger->error(
         utl::ODB, 289, "LEF data from {} is discarded due to errors", lef_file);

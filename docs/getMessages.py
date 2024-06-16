@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 
 command = "python ../etc/find_messages.py -d ../src"
 output = os.popen(command).read()
@@ -22,7 +23,17 @@ with open('user/MessagesFinal.md', 'w') as f:
         msgType = columns[-2]
         tool = columns[0].lower()
         try:
-            message = open(f"../src/{tool}/doc/messages/{num}.md").read().strip()
+            # aim is to match all level1 header and their corresponding text.
+            message = open(f"../src/{tool}/doc/messages/{num}.md").read()
+            pattern = re.compile(r'#\s*(?P<header1>[^\n]+)\n*(?P<body_text>.*?)(?=\n#|$)', re.DOTALL)
+            matches = pattern.finditer(message)
+            m = []
+            for match in matches:
+                header1 = match.group('header1')
+                body_text = match.group('body_text').strip()
+                m.append(f"{header1}-{body_text}")
+            message = " ".join(x for x in m)
+
         except OSError as e:
             message = "-"
         if not message: message = "-"

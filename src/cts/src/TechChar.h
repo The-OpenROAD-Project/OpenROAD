@@ -37,6 +37,8 @@
 
 #include <algorithm>
 #include <bitset>
+#include <boost/functional/hash.hpp>
+#include <boost/unordered/unordered_map.hpp>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -60,6 +62,23 @@ class Logger;
 namespace cts {
 
 using utl::Logger;
+
+struct PairHash
+{
+  std::size_t operator()(const std::pair<size_t, size_t>& iPair) const
+  {
+    return boost::hash_value(iPair);
+  }
+};
+
+struct PairEqual
+{
+  bool operator()(const std::pair<size_t, size_t>& p1,
+                  const std::pair<size_t, size_t>& p2) const
+  {
+    return ((p1.first == p2.first) && (p1.second == p2.second));
+  }
+};
 
 class WireSegment
 {
@@ -251,6 +270,18 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  void finalizeRootSinkBuffers();
+  void trimSortBufferList(std::vector<std::string>& buffers);
+  float getMaxCapLimit(const std::string& buf);
+  void collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
+                                      sta::LibertyPort* input,
+                                      sta::LibertyPort* output,
+                                      std::vector<float>& axisSlews,
+                                      std::vector<float>& axisLoads);
+  void sortAndUniquify(std::vector<float>& values, const std::string& name);
+  void reduceOrExpand(std::vector<float>& values, unsigned limit);
+  std::vector<float>::iterator smallestDiffIter(std::vector<float>& values);
+  std::vector<float>::iterator largestDiffIter(std::vector<float>& values);
   std::vector<SolutionData> createPatterns(unsigned setupWirelength);
   void createStaInstance();
   void setParasitics(const std::vector<SolutionData>& topologiesVector,
@@ -261,12 +292,23 @@ class TechChar
                                     float inSlew,
                                     unsigned setupWirelength);
   void updateBufferTopologies(SolutionData& solution);
+  void updateBufferTopologiesOld(TechChar::SolutionData& solution);
+  size_t cellNameToID(const std::string& masterName);
+  std::vector<size_t> getCurrConfig(const SolutionData& solution);
+  std::vector<size_t> getNextConfig(const std::vector<size_t>& currConfig);
+  odb::dbMaster* getMasterFromConfig(std::vector<size_t> nextConfig,
+                                     unsigned nodeIndex);
+  void swapTopologyBuffer(SolutionData& solution,
+                          unsigned nodeIndex,
+                          const std::string& newMasterName);
   std::vector<ResultData> characterizationPostProcess();
   unsigned normalizeCharResults(float value,
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
   void initClockLayerResCap(float dbUnitsPerMicron);
+  unsigned getBufferingCombo(size_t numBuffers, size_t numNodes);
+  bool isTopologyMonotonic(const std::vector<size_t>& row);
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
@@ -303,12 +345,15 @@ class TechChar
   double capPerDBU_;  // farads/dbu
   float charSlewStepSize_ = 0.0;
   float charCapStepSize_ = 0.0;
-  std::set<std::string> masterNames_;
+  std::vector<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;
   std::vector<float> slewsToTest_;
 
   std::map<CharKey, std::vector<ResultData>> solutionMap_;
+  // keep track of acceptable buffering combinations in topology
+  boost::unordered_map<std::pair<size_t, size_t>, unsigned, PairHash, PairEqual>
+      bufferingComboTable_;
 };
 
 }  // namespace cts

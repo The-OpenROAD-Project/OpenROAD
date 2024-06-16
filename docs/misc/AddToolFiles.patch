@@ -1,0 +1,502 @@
+diff --git a/src/tool/.gitignore b/src/tool/.gitignore
+new file mode 100644
+index 000000000..f820cf945
+--- /dev/null
++++ b/src/tool/.gitignore
+@@ -0,0 +1 @@
++test/results
+diff --git a/src/tool/CMakeLists.txt b/src/tool/CMakeLists.txt
+new file mode 100644
+index 000000000..c8396ce39
+--- /dev/null
++++ b/src/tool/CMakeLists.txt
+@@ -0,0 +1,45 @@
++# Copyright (c) 2021, The Regents of the University of California
++# All rights reserved.
++# 
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++# 
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++include("openroad")
++
++project(tool)
++
++swig_lib(NAME      tool
++         NAMESPACE tool
++         I_FILE    src/Tool.i
++         SCRIPTS   src/Tool.tcl
++)
++
++target_sources(tool
++  PRIVATE
++  src/MakeTool.cc
++  src/Tool.cc
++)
++
++target_include_directories(tool
++  PUBLIC
++    include
++)
++
++target_link_libraries(tool
++    OpenSTA
++    odb
++)
++
++messages(
++  TARGET tool
++)
+diff --git a/src/tool/include/tool/MakeTool.hh b/src/tool/include/tool/MakeTool.hh
+new file mode 100644
+index 000000000..0c4aeaac4
+--- /dev/null
++++ b/src/tool/include/tool/MakeTool.hh
+@@ -0,0 +1,38 @@
++// Copyright (c) 2021, The Regents of the University of California
++// All rights reserved.
++//
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++// 
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++// 
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#ifndef MAKE_TOOL_H
++#define MAKE_TOOL_H
++
++namespace tool {
++class Tool;
++}
++
++namespace ord {
++
++class OpenRoad;
++
++tool::Tool *
++makeTool();
++
++void
++deleteTool(tool::Tool *tool);
++
++void
++initTool(OpenRoad *openroad);
++
++} // namespace
++#endif
+diff --git a/src/tool/include/tool/Tool.hh b/src/tool/include/tool/Tool.hh
+new file mode 100644
+index 000000000..dc575d1fb
+--- /dev/null
++++ b/src/tool/include/tool/Tool.hh
+@@ -0,0 +1,39 @@
++// Copyright (c) 2021, The Regents of the University of California
++// All rights reserved.
++// 
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++// 
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++// 
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#include <tcl.h>
++#include "odb/db.h"
++
++namespace tool {
++
++class Tool
++{
++public:
++  Tool();
++  ~Tool();
++  void init(Tcl_Interp *tcl_interp,
++	    odb::dbDatabase *db);
++  void toolize(const char *pos_arg1);
++  void setParam1(double param1);
++  void setFlag1(bool flag1);
++
++private:
++  odb::dbDatabase *db_;
++  double param1_;
++  bool flag1_;
++};
++
++}
+diff --git a/src/tool/src/MakeTool.cc b/src/tool/src/MakeTool.cc
+new file mode 100644
+index 000000000..350c25eae
+--- /dev/null
++++ b/src/tool/src/MakeTool.cc
+@@ -0,0 +1,42 @@
++// Copyright (c) 2021, The Regents of the University of California
++// All rights reserved.
++// 
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++// 
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++// 
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#include "ord/OpenRoad.hh"
++#include "tool/Tool.hh"
++#include "tool/MakeTool.hh"
++
++namespace ord {
++
++tool::Tool *
++makeTool()
++{
++  return new tool::Tool;
++}
++
++void
++deleteTool(tool::Tool *tool)
++{
++  delete tool;
++}
++
++void
++initTool(OpenRoad *openroad)
++{
++  openroad->getTool()->init(openroad->tclInterp(),
++			    openroad->getDb());
++}
++
++}
+diff --git a/src/tool/src/Tool.cc b/src/tool/src/Tool.cc
+new file mode 100644
+index 000000000..ea232dc50
+--- /dev/null
++++ b/src/tool/src/Tool.cc
+@@ -0,0 +1,73 @@
++// Copyright (c) 2021, The Regents of the University of California
++// All rights reserved.
++// 
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++// 
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++// 
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#include "tool/Tool.hh"
++#include "sta/StaMain.hh"
++
++namespace sta {
++// Tcl files encoded into strings.
++extern const char *tool_tcl_inits[];
++}
++
++namespace tool {
++
++extern "C" {
++extern int Tool_Init(Tcl_Interp *interp);
++}
++
++Tool::Tool() :
++  param1_(0.0),
++  flag1_(false)
++{
++}
++
++Tool::~Tool()
++{
++}
++
++void
++Tool::init(Tcl_Interp *tcl_interp,
++	   odb::dbDatabase *db)
++{
++  db_ = db;
++
++  // Define swig TCL commands.
++  Tool_Init(tcl_interp);
++  // Eval encoded sta TCL sources.
++  sta::evalTclInit(tcl_interp, sta::tool_tcl_inits);
++}
++
++void
++Tool::toolize(const char *pos_arg1)
++{
++  printf("Gotta pos_arg1 %s\n", pos_arg1);
++  printf("Gotta param1 %f\n", param1_);
++  printf("Gotta flag1 %s\n", flag1_ ? "true" : "false");
++}
++
++void
++Tool::setParam1(double param1)
++{
++  param1_ = param1;
++}
++
++void
++Tool::setFlag1(bool flag1)
++{
++  flag1_ = flag1;
++}
++
++}
+diff --git a/src/tool/src/Tool.i b/src/tool/src/Tool.i
+new file mode 100644
+index 000000000..4daaac5da
+--- /dev/null
++++ b/src/tool/src/Tool.i
+@@ -0,0 +1,52 @@
++// Copyright (c) 2021, The Regents of the University of California
++// All rights reserved.
++// 
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++// 
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++// 
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++%module tool
++
++%{
++
++#include "tool/Tool.hh"
++#include "ord/OpenRoad.hh"
++
++tool::Tool *
++getTool()
++{
++  return ord::OpenRoad::openRoad()->getTool();
++}
++
++%}
++
++%inline %{
++
++void
++tool_set_param1(double param1)
++{
++  getTool()->setParam1(param1);
++}
++
++void
++tool_set_flag1(bool flag1)
++{
++  getTool()->setFlag1(flag1);
++}
++
++void
++toolize(const char *pos_arg1)
++{
++  getTool()->toolize(pos_arg1);
++}
++
++%} // inline
+diff --git a/src/tool/src/Tool.tcl b/src/tool/src/Tool.tcl
+new file mode 100644
+index 000000000..16830d000
+--- /dev/null
++++ b/src/tool/src/Tool.tcl
+@@ -0,0 +1,48 @@
++# Copyright (c) 2021, The Regents of the University of California
++# All rights reserved.
++# 
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++# 
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++sta::define_cmd_args "run_tool" {[-key1 key1] [-flag1] pos_arg1}
++
++# Put helper functions in a separate namespace so they are not visible
++# too users in the global namespace.
++namespace eval tool {
++
++proc tool_helper { } {
++  puts "Helping 23/6"
++}
++
++}
++
++# Example usage:
++#  toolize foo
++#  toolize -flag1 -key1 2.0 bar
++#  help toolize
++proc toolize { args } {
++  sta::parse_key_args "toolize" args \
++    keys {-key1} flags {-flag1}
++
++  if { [info exists keys(-key1)] } {
++    set param1 $keys(-key1)
++    sta::check_positive_float "-key1" $param1
++    tool::tool_set_param1 $param1
++  }
++
++  tool::tool_set_flag1 [info exists flags(-flag1)]
++
++  sta::check_argc_eq1 "toolize" $args
++  tool::tool_helper
++  tool::toolize [lindex $args 0]
++}
+diff --git a/src/tool/test/regression b/src/tool/test/regression
+new file mode 100755
+index 000000000..8bb4aeb27
+--- /dev/null
++++ b/src/tool/test/regression
+@@ -0,0 +1,36 @@
++#!/bin/sh
++# The next line is executed by /bin/sh, but not Tcl \
++exec tclsh $0 ${1+"$@"}
++
++# Copyright (c) 2021, The Regents of the University of California
++# All rights reserved.
++#
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++# 
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++# Usage: regression [test1 [test2...]]
++# Where test1 is all or the name of a tcl script in /test
++# Wildcard matching with '*' and '?' in test names is supported.
++
++# Directory containing tests.
++set test_dir [file dirname [file normalize [info script]]]
++set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
++
++source [file join $openroad_dir "test" "regression.tcl"]
++source [file join $test_dir "regression_tests.tcl"]
++
++regression_main
++
++# Local Variables:
++# mode:tcl
++# End:
+diff --git a/src/tool/test/regression.tcl b/src/tool/test/regression.tcl
+new file mode 120000
+index 000000000..58d7f3fa9
+--- /dev/null
++++ b/src/tool/test/regression.tcl
+@@ -0,0 +1 @@
++../../../test/regression.tcl
+\ No newline at end of file
+diff --git a/src/tool/test/regression_tests.tcl b/src/tool/test/regression_tests.tcl
+new file mode 100644
+index 000000000..775d384be
+--- /dev/null
++++ b/src/tool/test/regression_tests.tcl
+@@ -0,0 +1,3 @@
++record_tests {
++  toolize1
++}
+diff --git a/src/tool/test/save_ok b/src/tool/test/save_ok
+new file mode 100644
+index 000000000..a529cf787
+--- /dev/null
++++ b/src/tool/test/save_ok
+@@ -0,0 +1,34 @@
++#!/bin/sh
++# The next line is executed by /bin/sh, but not Tcl \
++exec tclsh $0 ${1+"$@"}
++
++# Copyright (c) 2021, The Regents of the University of California
++# All rights reserved.
++# 
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++# 
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++# 
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++# Usage: save_ok | test1 [test2...] | failures
++
++# Directory containing tests.
++set test_dir [file dirname [file normalize [info script]]]
++set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
++
++source [file join $test_dir "regression_vars.tcl"]
++source [file join $openroad_dir "test" "regression.tcl"]
++
++save_ok_main
++
++# Local Variables:
++# mode:tcl
++# End:
+diff --git a/src/tool/test/toolize1.ok b/src/tool/test/toolize1.ok
+new file mode 100644
+index 000000000..05857f023
+--- /dev/null
++++ b/src/tool/test/toolize1.ok
+@@ -0,0 +1,4 @@
++Helping 23/6
++Gotta pos_arg1 frob
++Gotta param1 22.000000
++Gotta flag1 true
+diff --git a/src/tool/test/toolize1.tcl b/src/tool/test/toolize1.tcl
+new file mode 100644
+index 000000000..815688f93
+--- /dev/null
++++ b/src/tool/test/toolize1.tcl
+@@ -0,0 +1 @@
++toolize -flag1 -key1 22 frob

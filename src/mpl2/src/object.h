@@ -43,14 +43,15 @@
 #include <string>
 #include <vector>
 
-#include "odb.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
+class Rect;
 class Point;
 class dbInst;
 class dbModule;
-class dbBlock;
 class dbDatabase;
 class dbITerm;
 class dbTechLayer;
@@ -95,19 +96,13 @@ class SoftMacro;
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
 
-// Basic utility functions
-
-// converion between dbu and microns
-float dbuToMicron(int metric, float dbu);
-int micronToDbu(float metric, float dbu);
-
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
 // Each pin access blockage is modeled by a movable hard macro
 // along the corresponding { B, L, T, R } boundary
 // The size of the hard macro blockage is determined the by the
 // size of that cluster
-enum PinAccess
+enum Boundary
 {
   NONE,
   B,
@@ -116,8 +111,8 @@ enum PinAccess
   R
 };
 
-std::string toString(const PinAccess& pin_access);
-PinAccess opposite(const PinAccess& pin_access);
+std::string toString(const Boundary& pin_access);
+Boundary opposite(const Boundary& pin_access);
 
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
@@ -183,6 +178,7 @@ class Cluster
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
+  std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
   void addDbModule(odb::dbModule* db_module);
@@ -199,13 +195,13 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // IO cluster
-  // When you specify the io cluster, you must specify the postion
-  // of this IO cluster
-  void setIOClusterFlag(const std::pair<float, float> pos,
-                        const float width,
-                        const float height);
-  bool getIOClusterFlag() const;
+  // Position must be specified when setting an IO cluster
+  void setAsIOCluster(const std::pair<float, float>& pos,
+                      float width,
+                      float height);
+  bool isIOCluster() const;
+  void setAsArrayOfInterconnectedMacros();
+  bool isArrayOfInterconnectedMacros() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -235,6 +231,7 @@ class Cluster
   std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
+  std::string getIsLeafString() const;
   bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
@@ -243,6 +240,7 @@ class Cluster
   void addConnection(int cluster_id, float weight);
   const std::map<int, float> getConnection() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
+  bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
   // Get closely-connected cluster if such cluster exists
   // For example, if a small cluster A is closely connected to a
   // well-formed cluster B, (there are also other well-formed clusters
@@ -255,11 +253,11 @@ class Cluster
   // not have any connections outsize the parent cluster
   // All the outside connections have been converted to the connections
   // related to pin access
-  void setPinAccess(int cluster_id, PinAccess pin_access, float weight);
-  void addBoundaryConnection(PinAccess pin_a, PinAccess pin_b, float num_net);
-  const std::pair<PinAccess, float> getPinAccess(int cluster_id);
-  const std::map<int, std::pair<PinAccess, float>> getPinAccessMap() const;
-  const std::map<PinAccess, std::map<PinAccess, float>> getBoundaryConnection()
+  void setPinAccess(int cluster_id, Boundary pin_access, float weight);
+  void addBoundaryConnection(Boundary pin_a, Boundary pin_b, float num_net);
+  const std::pair<Boundary, float> getPinAccess(int cluster_id);
+  const std::map<int, std::pair<Boundary, float>> getPinAccessMap() const;
+  const std::map<Boundary, std::map<Boundary, float>> getBoundaryConnection()
       const;
 
   // virtual connections
@@ -295,7 +293,8 @@ class Cluster
 
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
-  bool io_cluster_flag_ = false;
+  bool is_io_cluster_ = false;
+  bool is_array_of_interconnected_macros = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -323,15 +322,16 @@ class Cluster
   std::vector<std::pair<int, int>> virtual_connections_;
 
   // pin access for each bundled connection
-  std::map<int, std::pair<PinAccess, float>> pin_access_map_;
-  std::map<PinAccess, std::map<PinAccess, float>> boundary_connection_map_;
+  std::map<int, std::pair<Boundary, float>> pin_access_map_;
+  std::map<Boundary, std::map<Boundary, float>> boundary_connection_map_;
   utl::Logger* logger_;
 };
 
 // A hard macro have fixed width and height
 // User can specify a halo width for each macro
 // We specify the position of macros in terms (x, y, width, height)
-// Here (x, y) is the lower left corner of the macro
+// Except for the fake hard macros (pin access blockage or other blockage),
+// each HardMacro cooresponds to one macro
 class HardMacro
 {
  public:
@@ -341,13 +341,9 @@ class HardMacro
 
   // In this case, we model the pin position at the center of the macro
   HardMacro(float width, float height, const std::string& name);
+
   // create a macro from dbInst
-  // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst,
-            float dbu,
-            int manufacturing_grid,
-            float halo_width = 0.0,
-            float halo_height = 0.0);
+  HardMacro(odb::dbInst* inst, float halo_width = 0.0, float halo_height = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -360,17 +356,17 @@ class HardMacro
   void setX(float x);
   void setY(float y);
   const std::pair<float, float> getLocation() const;
-  float getX() const;
-  float getY() const;
+  float getX() const { return x_; }
+  float getY() const { return y_; }
   // The position of pins relative to the lower left of the instance
-  float getPinX() const;
-  float getPinY() const;
+  float getPinX() const { return x_ + pin_x_; }
+  float getPinY() const { return y_ + pin_y_; }
   // The position of pins relative to the origin of the canvas;
-  float getAbsPinX() const;
-  float getAbsPinY() const;
+  float getAbsPinX() const { return pin_x_; }
+  float getAbsPinY() const { return pin_y_; }
   // width, height (include halo_width)
-  float getWidth() const;
-  float getHeight() const;
+  float getWidth() const { return width_; }
+  float getHeight() const { return height_; }
 
   // Note that the real X and Y does NOT include halo_width
   void setRealLocation(const std::pair<float, float>& location);
@@ -393,47 +389,22 @@ class HardMacro
   odb::dbInst* getInst() const;
   const std::string getName() const;
   const std::string getMasterName() const;
-  // update the location and orientation of the macro inst in OpenDB
-  // The macro should be snaped to placement grids
-  void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
-  odb::Point computeSnapOrigin(const Rect& macro_box,
-                               const odb::dbOrientType& orientation,
-                               float& pitch_x,
-                               float& pitch_y,
-                               odb::dbBlock* block);
 
-  void computeDirectionSpacingParameters(odb::dbBlock* block,
-                                         odb::dbTechLayer* layer,
-                                         odb::dbBox* box,
-                                         float& offset,
-                                         float& pitch,
-                                         float& pin_width,
-                                         const bool& is_vertical_direction);
-  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
-                             std::vector<int>& coordinate_grid,
-                             const bool& is_vertical_direction);
-  float getDirectionPitch(odb::dbTechLayer* layer,
-                          const bool& is_vertical_direction);
-  float getDirectionOffset(odb::dbTechLayer* layer,
-                           const bool& is_vertical_direction);
-  float getDirectionPinWidth(odb::dbBox* box,
-                             const bool& is_vertical_direction);
+  int getXDBU() const { return block_->micronsToDbu(getX()); }
 
-  int getXDBU() const { return micronToDbu(getX(), dbu_); }
+  int getYDBU() const { return block_->micronsToDbu(getY()); }
 
-  int getYDBU() const { return micronToDbu(getY(), dbu_); }
+  int getRealXDBU() const { return block_->micronsToDbu(getRealX()); }
 
-  int getRealXDBU() const { return micronToDbu(getRealX(), dbu_); }
+  int getRealYDBU() const { return block_->micronsToDbu(getRealY()); }
 
-  int getRealYDBU() const { return micronToDbu(getRealY(), dbu_); }
+  int getWidthDBU() const { return block_->micronsToDbu(getWidth()); }
 
-  int getWidthDBU() const { return micronToDbu(getWidth(), dbu_); }
+  int getHeightDBU() const { return block_->micronsToDbu(getHeight()); }
 
-  int getHeightDBU() const { return micronToDbu(getHeight(), dbu_); }
+  int getRealWidthDBU() const { return block_->micronsToDbu(getRealWidth()); }
 
-  int getRealWidthDBU() const { return micronToDbu(getRealWidth(), dbu_); }
-
-  int getRealHeightDBU() const { return micronToDbu(getRealHeight(), dbu_); }
+  int getRealHeightDBU() const { return block_->micronsToDbu(getRealHeight()); }
 
   int getUXDBU() const { return getXDBU() + getWidthDBU(); }
 
@@ -443,9 +414,9 @@ class HardMacro
 
   int getRealUYDBU() const { return getRealYDBU() + getRealHeightDBU(); }
 
-  void setXDBU(int x) { setX(dbuToMicron(x, dbu_)); }
+  void setXDBU(int x) { setX(block_->dbuToMicrons(x)); }
 
-  void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
+  void setYDBU(int y) { setY(block_->dbuToMicrons(y)); }
 
  private:
   // We define x_, y_ and orientation_ here
@@ -465,12 +436,8 @@ class HardMacro
   float pin_x_ = 0.0;
   float pin_y_ = 0.0;
 
-  // Interface for OpenDB
-  // Except for the fake hard macros (pin access blockage or other blockage),
-  // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
-  float dbu_ = 0.0;  // DbuPerMicro
-  int manufacturing_grid_ = 10;
+  odb::dbBlock* block_ = nullptr;
 };
 
 // We have three types of SoftMacros
@@ -520,14 +487,7 @@ class SoftMacro
 
   // name
   const std::string getName() const;
-  // Physical Information
-  void setReference(float refer_lx, float refer_ly)
-  {
-    refer_lx_ = refer_lx;
-    refer_ly_ = refer_ly;
-    x_ = refer_lx;
-    y_ = refer_ly;
-  }
+
   void setX(float x);
   void setY(float y);
   void setLocation(const std::pair<float, float>& location);
@@ -546,13 +506,19 @@ class SoftMacro
   // for StdCellCluster and MixedCluster
   void setShapes(const std::vector<std::pair<float, float>>& width_list,
                  float area);
-  float getX() const;
-  float getY() const;
-  float getPinX() const;
-  float getPinY() const;
-  const std::pair<float, float> getLocation() const;
-  float getWidth() const;
-  float getHeight() const;
+  float getX() const { return x_; }
+  float getY() const { return y_; }
+
+  // The position of pins relative to the lower left of the instance
+  float getPinX() const { return x_ + 0.5f * width_; }
+  float getPinY() const { return y_ + 0.5f * height_; }
+
+  std::pair<float, float> getLocation() const
+  {
+    return std::pair<float, float>(x_, y_);
+  }
+  float getWidth() const { return width_; }
+  float getHeight() const { return height_; }
   float getArea() const;
   // Num Macros
   bool isMacroCluster() const;
@@ -590,8 +556,6 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
-  float refer_lx_ = -1.0;
-  float refer_ly_ = -1.0;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or
@@ -647,7 +611,7 @@ struct BundledNet
 // Rect class use float type for Micron unit
 struct Rect
 {
-  Rect() {}
+  Rect() = default;
   Rect(const float lx,
        const float ly,
        const float ux,
@@ -666,9 +630,9 @@ struct Rect
 
   float getY() const { return (ly + uy) / 2.0; }
 
-  inline float getWidth() const { return ux - lx; }
+  float getWidth() const { return ux - lx; }
 
-  inline float getHeight() const { return uy - ly; }
+  float getHeight() const { return uy - ly; }
 
   void setLoc(float x,
               float y,
@@ -677,8 +641,9 @@ struct Rect
               float core_ux,
               float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
 
     const float width = ux - lx;
     const float height = uy - ly;
@@ -707,27 +672,28 @@ struct Rect
     }
   }
 
-  inline void moveHor(float dist)
+  void moveHor(float dist)
   {
     lx = lx + dist;
     ux = ux + dist;
   }
 
-  inline void moveVer(float dist)
+  void moveVer(float dist)
   {
     ly = ly + dist;
     uy = uy + dist;
   }
 
-  inline void move(float x_dist,
-                   float y_dist,
-                   float core_lx,
-                   float core_ly,
-                   float core_ux,
-                   float core_uy)
+  void move(float x_dist,
+            float y_dist,
+            float core_lx,
+            float core_ly,
+            float core_ux,
+            float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     moveHor(x_dist);
     moveVer(y_dist);
     const float width = getWidth();
@@ -753,15 +719,16 @@ struct Rect
     }
 
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0)
+        || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
                 << "core_lx =  " << core_lx << "  "
                 << "core_ly =  " << core_ly << "  "
                 << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
+    }
   }
 
-  inline void resetForce()
+  void resetForce()
   {
     f_x_a = 0.0;
     f_y_a = 0.0;
@@ -771,10 +738,11 @@ struct Rect
     f_y = 0.0;
   }
 
-  inline void makeSquare(float ar = 1.0)
+  void makeSquare(float ar = 1.0)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     const float x = getX();
     const float y = getY();
     const float height = std::sqrt(getWidth() * getHeight() * ar);
@@ -785,19 +753,19 @@ struct Rect
     uy = y + height / 2.0;
   }
 
-  inline void addAttractiveForce(float f_x, float f_y)
+  void addAttractiveForce(float f_x, float f_y)
   {
     f_x_a += f_x;
     f_y_a += f_y;
   }
 
-  inline void addRepulsiveForce(float f_x, float f_y)
+  void addRepulsiveForce(float f_x, float f_y)
   {
     f_x_r += f_x;
     f_y_r += f_y;
   }
 
-  inline void setForce(float f_x_, float f_y_)
+  void setForce(float f_x_, float f_y_)
   {
     f_x = f_x_;
     f_y = f_y_;
@@ -810,8 +778,9 @@ struct Rect
 
   void merge(const Rect& rect)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
@@ -824,8 +793,9 @@ struct Rect
                 float outline_ux,
                 float outline_uy)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::max(lx, outline_lx);
     ly = std::max(ly, outline_ly);
@@ -856,6 +826,12 @@ struct Rect
   float f_y = 0.0;
 
   bool fixed_flag = false;
+};
+
+struct SequencePair
+{
+  std::vector<int> pos_sequence;
+  std::vector<int> neg_sequence;
 };
 
 }  // namespace mpl2

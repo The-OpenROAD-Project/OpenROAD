@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbTechLayer.h"
 // User Code End Includes
@@ -98,10 +98,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerCutSpacingTableOrthRule::~_dbTechLayerCutSpacingTableOrthRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableOrthRule - Methods
@@ -154,4 +150,4 @@ void dbTechLayerCutSpacingTableOrthRule::destroy(
 
 // User Code End dbTechLayerCutSpacingTableOrthRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

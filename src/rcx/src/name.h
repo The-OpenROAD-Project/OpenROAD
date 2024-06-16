@@ -32,10 +32,11 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
+#include "odb/util.h"
 #include "util.h"
 
 namespace rcx {
@@ -45,23 +46,23 @@ using uint = unsigned int;
 class NameTable
 {
  public:
-  NameTable(uint n, char* zero = NULL);
+  NameTable(uint n, char* zero = nullptr);
   ~NameTable();
 
-  uint addNewName(char* name, uint dataId);
-  char* getName(uint poolId);
-  uint getDataId(char* name,
+  uint addNewName(const char* name, uint dataId);
+  const char* getName(uint poolId);
+  uint getDataId(const char* name,
                  uint ignoreFlag = 0,
                  uint exitFlag = 0,
-                 int* nn = 0);
+                 int* nn = nullptr);
 
  private:
   class NameBucket;
 
-  uint addName(char* name, uint dataId);
+  uint addName(const char* name, uint dataId);
   uint getDataId(int poolId);
 
-  odb::AthHash<int>* _hashTable;
+  rcx::AthHash<int>* _hashTable;
   odb::AthPool<NameBucket>* _bucketPool;
 };
 

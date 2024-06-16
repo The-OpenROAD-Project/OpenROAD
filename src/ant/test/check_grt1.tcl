@@ -9,4 +9,4 @@ set_global_routing_layer_adjustment met2-met5 0.15
 set_routing_layers -signal met1-met5
 global_route
 
-check_antennas
+check_antennas -verbose

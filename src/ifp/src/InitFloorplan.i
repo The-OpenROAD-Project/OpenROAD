@@ -53,6 +53,10 @@ sta::dbSta *
 getSta();
 }
 
+static utl::Logger* getLogger() {
+  return ord::OpenRoad::openRoad()->getLogger();
+}
+ 
 static ifp::InitFloorplan get_floorplan()
 {
   auto app = ord::getOpenRoad();
@@ -74,6 +78,7 @@ static ifp::InitFloorplan get_floorplan()
 //
 ////////////////////////////////////////////////////////////////
 
+%import <std_string.i>
 %import <std_vector.i>
 %import "dbtypes.i"
 %include "../../Exception.i"
@@ -91,11 +96,12 @@ init_floorplan_core(int die_lx,
 		    int core_ly,
 		    int core_ux,
 		    int core_uy,
-		    const std::vector<odb::dbSite*>& sites)
+		    odb::dbSite* site,
+		    const std::vector<odb::dbSite*>& additional_sites)
 {
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                sites);
+                                site, additional_sites);
 }
 
 void
@@ -105,12 +111,13 @@ init_floorplan_util(double util,
                      int core_space_top,
                     int core_space_left,
                     int core_space_right,
-                    const std::vector<odb::dbSite*>& sites)
+		    odb::dbSite* site,
+		    const std::vector<odb::dbSite*>& additional_sites)
 {
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
-                                sites);
+                                site, additional_sites);
 }
 
 void
@@ -137,7 +144,11 @@ make_layer_tracks(odb::dbTechLayer* layer,
 
 odb::dbSite* find_site(const char* site_name)
 {
-  return get_floorplan().findSite(site_name);
+  auto site = get_floorplan().findSite(site_name);
+  if (!site) {
+    getLogger()->error(utl::IFP, 18, "Unable to find site: {}", site_name);
+  }
+  return site;
 }
 
 } // namespace

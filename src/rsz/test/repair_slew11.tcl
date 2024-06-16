@@ -15,4 +15,4 @@ repair_design
 
 report_check_types -max_slew -max_capacitance
 # make sure an input buffer was not inserted
-report_net in1 -connections
+report_net in1

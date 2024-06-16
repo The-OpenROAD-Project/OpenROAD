@@ -1,0 +1,67 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 1 components and 5 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 1 connections.
+Detailed placement improvement.
+Importing netlist into detailed improver.
+[INFO DPO-0100] Creating network with 1 cells, 1 terminals, 2 edges, 2 pins, and 1 blockages.
+[INFO DPO-0109] Network stats: inst 2, edges 2, pins 2
+[INFO DPO-0110] Number of regions is 1
+[INFO DPO-0401] Setting random seed to 1.
+[INFO DPO-0402] Setting maximum displacement 5 1 to 13600 2720 units.
+[INFO DPO-0320] Collected 1 fixed cells.
+[INFO DPO-0318] Collected 1 single height cells.
+[INFO DPO-0321] Collected 0 wide cells.
+[INFO DPO-0322] Image (1380, 2720) - (85560, 84320)
+[INFO DPO-0310] Assigned 1 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+[INFO DPO-0303] Running algorithm for independent set matching.
+[INFO DPO-0300] Set matching objective is wirelength.
+[INFO DPO-0301] Pass   1 of matching; objective is 5.887000e+04.
+[INFO DPO-0302] End of matching; objective is 5.887000e+04, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for global swaps.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 5.887000e+04.
+[INFO DPO-0307] End of global swaps; objective is 5.887000e+04, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for vertical swaps.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 5.887000e+04.
+[INFO DPO-0309] End of vertical swaps; objective is 5.887000e+04, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for reordering.
+[INFO DPO-0304] Pass   1 of reordering; objective is 5.887000e+04.
+[INFO DPO-0305] End of reordering; objective is 5.887000e+04, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for random improvement.
+[INFO DPO-0324] Random improver is using displacement generator.
+[INFO DPO-0325] Random improver is using hpwl objective.
+[INFO DPO-0326] Random improver cost string is (a).
+[INFO DPO-0332] End of pass, Generator displacement called 20 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 20, swaps 0, moves    17 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 5.887000e+04, Scratch cost 5.661000e+04, Incremental cost 5.661000e+04, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 5.661000e+04.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 3.84 percent.
+[INFO DPO-0332] End of pass, Generator displacement called 20 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 40, swaps 0, moves    32 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 5.661000e+04, Scratch cost 5.661000e+04, Incremental cost 5.661000e+04, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 5.661000e+04.
+[INFO DPO-0327] Pass   2 of random improver; improvement in cost is 0.00 percent.
+[INFO DPO-0328] End of random improver; improvement is 3.838967 percent.
+[INFO DPO-0380] Cell flipping.
+[INFO DPO-0382] Changed 1 cell orientations for row compatibility.
+[INFO DPO-0383] Performed 0 cell flips.
+[INFO DPO-0384] End of flipping; objective is 5.714000e+04, improvement is -0.94 percent.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+Detailed Improvement Results
+------------------------------------------
+Original HPWL               59.3 u
+Final HPWL                  57.0 u
+Delta HPWL                  -4.0 %
+
+No differences found.

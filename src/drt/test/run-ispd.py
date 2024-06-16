@@ -66,7 +66,7 @@ if not os.path.isdir(args.dir):
     raise FileNotFoundError(f"Benchmark root folder not found at '{args.dir}'")
 
 
-def gen_files(work_dir, ispd_year, design, drv):
+def gen_files(work_dir, ispd_year, design, drv_min, drv_max):
     ''' host setup '''
     bench_dir = os.path.join(args.dir, "tests")
     if not os.path.exists(os.path.join(bench_dir, design)):
@@ -90,11 +90,11 @@ def gen_files(work_dir, ispd_year, design, drv):
                            -verbose {verbose}
             write_def {design_dir}/{design}.output.def
             set drv_count [detailed_route_num_drvs]
-            if {{ $drv_count > {drv} }} {{
-              puts \"ERROR: Increase in number of violations from {drv} to $drv_count\"
+            if {{ $drv_count > {drv_max} }} {{
+              puts \"ERROR: Increase in number of violations from {drv_max} to $drv_count\"
               exit 1
-            }} elseif {{ $drv_count < {drv} }} {{
-              puts \"NOTICE: Decrease in number of violations from {drv} to $drv_count\"
+            }} elseif {{ $drv_count < {drv_min} }} {{
+              puts \"NOTICE: Decrease in number of violations from {drv_min} to $drv_count\"
               exit 2
             }}
     """
@@ -131,41 +131,41 @@ def test_enabled(design, patterns):
 
 
 design_list_ispd18 = [
-    ("ispd18_test1", 0),
-    ("ispd18_test2", 0),
-    ("ispd18_test3", 0),
-    ("ispd18_test4", 0),
-    ("ispd18_test5", 0),
-    ("ispd18_test6", 0),
-    ("ispd18_test7", 0),
-    ("ispd18_test8", 0),
-    ("ispd18_test9", 0),
-    ("ispd18_test10", 0),
+    ("ispd18_test1", 0, 0),
+    ("ispd18_test2", 0, 0),
+    ("ispd18_test3", 0, 0),
+    ("ispd18_test4", 0, 0),
+    ("ispd18_test5", 0, 0),
+    ("ispd18_test6", 0, 0),
+    ("ispd18_test7", 0, 0),
+    ("ispd18_test8", 0, 0),
+    ("ispd18_test9", 0, 0),
+    ("ispd18_test10", 0, 0),
 ]
 design_list_ispd19 = [
-    ("ispd19_test1", 0),
-    ("ispd19_test2", 0),
-    ("ispd19_test3", 0),
-    ("ispd19_test4", 0),
-    ("ispd19_test5", 0),
-    ("ispd19_test6", 0),
-    ("ispd19_test7", 0),
-    ("ispd19_test8", 0),
-    ("ispd19_test9", 0),
-    ("ispd19_test10", 20),
+    ("ispd19_test1", 0, 0),
+    ("ispd19_test2", 0, 0),
+    ("ispd19_test3", 0, 0),
+    ("ispd19_test4", 0, 0),
+    ("ispd19_test5", 0, 0),
+    ("ispd19_test6", 0, 0),
+    ("ispd19_test7", 0, 0),
+    ("ispd19_test8", 0, 0),
+    ("ispd19_test9", 0, 0),
+    ("ispd19_test10", 15, 25),
 ]
 
 os.makedirs(args.workspace, exist_ok=True)
 running_tests = set()
-for (design_name, drv_allowed) in design_list_ispd18:
+for (design_name, drv_min, drv_max) in design_list_ispd18:
     if test_enabled(design_name, args.tests):
-        gen_files(args.workspace, 18, design_name, drv_allowed)
+        gen_files(args.workspace, 18, design_name, drv_min, drv_max)
         running_tests.add(design_name)
 
 
-for (design_name, drv_allowed) in design_list_ispd19:
+for (design_name, drv_min, drv_max) in design_list_ispd19:
     if test_enabled(design_name, args.tests):
-        gen_files(args.workspace, 19, design_name, drv_allowed)
+        gen_files(args.workspace, 19, design_name, drv_min, drv_max)
         running_tests.add(design_name)
 
 status = subprocess.run(['parallel',

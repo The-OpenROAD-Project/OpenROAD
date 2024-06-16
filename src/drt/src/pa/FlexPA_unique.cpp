@@ -29,7 +29,7 @@
 
 #include "distributed/frArchive.h"
 
-namespace fr {
+namespace drt {
 
 UniqueInsts::UniqueInsts(frDesign* design,
                          const frCollection<odb::dbInst*>& target_insts,
@@ -39,7 +39,7 @@ UniqueInsts::UniqueInsts(frDesign* design,
 }
 
 void UniqueInsts::getPrefTrackPatterns(
-    vector<frTrackPattern*>& prefTrackPatterns)
+    std::vector<frTrackPattern*>& prefTrackPatterns)
 {
   for (const auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     const bool isVerticalTrack = trackPattern->isHorizontal();
@@ -131,15 +131,15 @@ bool UniqueInsts::isNDRInst(frInst& inst)
 // pinAccessIdx is active
 void UniqueInsts::computeUnique(
     const MasterLayerRange& master2PinLayerRange,
-    const vector<frTrackPattern*>& prefTrackPatterns)
+    const std::vector<frTrackPattern*>& prefTrackPatterns)
 {
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
     target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
   }
 
-  vector<frInst*> ndrInsts;
-  vector<frCoord> offset;
+  std::vector<frInst*> ndrInsts;
+  std::vector<frCoord> offset;
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     if (!target_insts_.empty()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
@@ -201,7 +201,7 @@ void UniqueInsts::computeUnique(
 
 void UniqueInsts::initUniqueInstance()
 {
-  vector<frTrackPattern*> prefTrackPatterns;
+  std::vector<frTrackPattern*> prefTrackPatterns;
   getPrefTrackPatterns(prefTrackPatterns);
 
   MasterLayerRange master2PinLayerRange;
@@ -253,7 +253,7 @@ void UniqueInsts::initPinAccess()
           logger_->error(DRT, 69, "initPinAccess error.");
         }
         checkFigsOnGrid(pin.get());
-        auto pa = make_unique<frPinAccess>();
+        auto pa = std::make_unique<frPinAccess>();
         pin->addPinAccess(std::move(pa));
       }
     }
@@ -267,7 +267,7 @@ void UniqueInsts::initPinAccess()
   if (target_insts_.empty()) {
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = make_unique<frPinAccess>();
+        auto pa = std::make_unique<frPinAccess>();
         pin->addPinAccess(std::move(pa));
       }
     }
@@ -286,7 +286,7 @@ void UniqueInsts::report() const
   logger_->report("#unique  instances     = {}", unique_.size());
 }
 
-set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
+std::set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
 {
   return inst2Class_.at(inst);
 }
@@ -317,4 +317,4 @@ frInst* UniqueInsts::getUnique(int idx) const
   return unique_[idx];
 }
 
-}  // namespace fr
+}  // namespace drt

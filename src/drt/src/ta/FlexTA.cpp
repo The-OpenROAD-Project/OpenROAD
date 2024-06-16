@@ -41,16 +41,16 @@
 #include "global.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 int FlexTAWorker::main_mt()
 {
   ProfileTask profile("TA:main_mt");
-  using namespace std::chrono;
+  using std::chrono::high_resolution_clock;
   auto t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
-    stringstream ss;
-    ss << endl
+    std::stringstream ss;
+    ss << std::endl
        << "start TA worker (BOX) ("
        << routeBox_.xMin() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU()
        << ", "
@@ -65,8 +65,8 @@ int FlexTAWorker::main_mt()
     } else {
       ss << "V";
     }
-    ss << endl;
-    cout << ss.str();
+    ss << std::endl;
+    std::cout << ss.str();
   }
 
   init();
@@ -83,15 +83,17 @@ int FlexTAWorker::main_mt()
   // end();
   auto t3 = high_resolution_clock::now();
 
+  using std::chrono::duration;
+  using std::chrono::duration_cast;
   auto time_span0 = duration_cast<duration<double>>(t1 - t0);
   auto time_span1 = duration_cast<duration<double>>(t2 - t1);
   auto time_span2 = duration_cast<duration<double>>(t3 - t2);
 
   if (VERBOSE > 1) {
-    stringstream ss;
+    std::stringstream ss;
     ss << "time (INIT/ASSIGN/POST) " << time_span0.count() << " "
-       << time_span1.count() << " " << time_span2.count() << " " << endl;
-    cout << ss.str() << flush;
+       << time_span1.count() << " " << time_span2.count() << " " << std::endl;
+    std::cout << ss.str() << std::flush;
   }
   return 0;
 }
@@ -117,16 +119,16 @@ int FlexTA::initTA_helper(int iter,
   auto& ygp = gCellPatterns.at(1);
   int sol = 0;
   numPanels = 0;
-  vector<vector<unique_ptr<FlexTAWorker>>> workers;
+  std::vector<std::vector<std::unique_ptr<FlexTAWorker>>> workers;
   if (isH) {
     for (int i = offset; i < (int) ygp.getCount(); i += size) {
       auto uworker
-          = make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
+          = std::make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
           Point((int) xgp.getCount() - 1,
-                min(i + size - 1, (int) ygp.getCount() - 1)));
+                std::min(i + size - 1, (int) ygp.getCount() - 1)));
       Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
       Rect extBox;
@@ -136,18 +138,18 @@ int FlexTA::initTA_helper(int iter,
       worker.setDir(dbTechLayerDir::HORIZONTAL);
       worker.setTAIter(iter);
       if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-        workers.emplace_back(vector<unique_ptr<FlexTAWorker>>());
+        workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().emplace_back(std::move(uworker));
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
       auto uworker
-          = make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
+          = std::make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          Point(min(i + size - 1, (int) xgp.getCount() - 1),
+          Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
                 (int) ygp.getCount() - 1));
       Rect routeBox(
           beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
@@ -158,13 +160,13 @@ int FlexTA::initTA_helper(int iter,
       worker.setDir(dbTechLayerDir::VERTICAL);
       worker.setTAIter(iter);
       if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-        workers.emplace_back(vector<unique_ptr<FlexTAWorker>>());
+        workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
       }
       workers.back().push_back(std::move(uworker));
     }
   }
 
-  omp_set_num_threads(min(8, MAX_THREADS));
+  omp_set_num_threads(std::min(8, MAX_THREADS));
   // parallel execution
   // multi thread
   for (auto& workerBatch : workers) {
@@ -198,7 +200,7 @@ void FlexTA::initTA(int size)
   frTime t;
 
   if (VERBOSE > 1) {
-    cout << endl << "start initial track assignment ..." << endl;
+    std::cout << std::endl << "start initial track assignment ..." << std::endl;
   }
 
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
@@ -254,8 +256,8 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   frTime t;
 
   if (VERBOSE > 1) {
-    cout << endl << "start " << iter;
-    string suffix;
+    std::cout << std::endl << "start " << iter;
+    std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
       suffix = "st";
     } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
@@ -265,7 +267,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     } else {
       suffix = "th";
     }
-    cout << suffix << " optimization iteration ..." << endl;
+    std::cout << suffix << " optimization iteration ..." << std::endl;
   }
   auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
   auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
@@ -349,4 +351,4 @@ int FlexTA::main()
   return 0;
 }
 
-}  // namespace fr
+}  // namespace drt

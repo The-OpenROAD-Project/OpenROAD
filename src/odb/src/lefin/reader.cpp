@@ -39,9 +39,9 @@
 
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
-#include "lefin.h"
 #include "lefrReader.hpp"
 #include "lefzlib.hpp"
+#include "odb/lefin.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -562,8 +562,9 @@ bool lefin_parse(lefin* lef, utl::Logger* logger, const char* file_name)
   }
   lefrClear();
 
-  if (res)
+  if (res) {
     return false;
+  }
 
   return true;
 }

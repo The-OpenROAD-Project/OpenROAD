@@ -40,7 +40,6 @@
 #include "gpuSolver.h"
 
 namespace gpl {
-using namespace std;
 using utl::GPL;
 
 void GpuSolver::cudaerror(cudaError_t code)
@@ -85,8 +84,8 @@ GpuSolver::GpuSolver(SMatrix& placeInstForceMatrix,
   // {cooRowIndex_, cooColIndex_, cooVal_} are the host vectors used to store
   // the sparse format of placeInstForceMatrix.
   nnz_ = placeInstForceMatrix.nonZeros();
-  vector<int> cooRowIndex, cooColIndex;
-  vector<float> cooVal;
+  std::vector<int> cooRowIndex, cooColIndex;
+  std::vector<float> cooVal;
   cooRowIndex.reserve(nnz_);
   cooColIndex.reserve(nnz_);
   cooVal.reserve(nnz_);

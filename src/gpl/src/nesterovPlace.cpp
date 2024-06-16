@@ -48,29 +48,9 @@
 #include "utl/Logger.h"
 
 namespace gpl {
-using namespace std;
-
-using namespace std;
 using utl::GPL;
 
-NesterovPlace::NesterovPlace()
-    : pbc_(nullptr),
-      nbc_(nullptr),
-      log_(nullptr),
-      rb_(nullptr),
-      tb_(nullptr),
-      npVars_(),
-      baseWireLengthCoef_(0),
-      wireLengthCoefX_(0),
-      wireLengthCoefY_(0),
-      prevHpwl_(0),
-      isDiverged_(false),
-      isRoutabilityNeed_(true),
-      divergeCode_(0),
-      recursionCntWlCoef_(0),
-      recursionCntInitSLPCoef_(0)
-{
-}
+NesterovPlace::NesterovPlace() = default;
 
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              const std::shared_ptr<PlacerBaseCommon>& pbc,
@@ -87,19 +67,19 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   nbc_ = nbc;
   pbVec_ = pbVec;
   nbVec_ = nbVec;
-  rb_ = rb;
-  tb_ = tb;
+  rb_ = std::move(rb);
+  tb_ = std::move(tb);
   log_ = log;
 
   if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = make_unique<Graphics>(log_,
-                                      this,
-                                      pbc,
-                                      nbc,
-                                      pbVec,
-                                      nbVec,
-                                      npVars_.debug_draw_bins,
-                                      npVars.debug_inst);
+    graphics_ = std::make_unique<Graphics>(log_,
+                                           this,
+                                           pbc,
+                                           nbc,
+                                           pbVec,
+                                           nbVec,
+                                           npVars_.debug_draw_bins,
+                                           npVars.debug_inst);
   }
   init();
 }
@@ -140,8 +120,8 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -179,8 +159,8 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -219,8 +199,8 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -267,7 +247,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     auto stepL = nb->initDensity2(wireLengthCoefX_, wireLengthCoefY_);
-    if ((isnan(stepL) || isinf(stepL))
+    if ((std::isnan(stepL) || std::isinf(stepL))
         && recursionCntInitSLPCoef_
                < gpl::NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
@@ -283,7 +263,7 @@ void NesterovPlace::init()
       break;
     }
 
-    if (isnan(stepL) || isinf(stepL)) {
+    if (std::isnan(stepL) || std::isinf(stepL)) {
       log_->error(
           GPL,
           304,

@@ -32,17 +32,17 @@
 
 #include "dbObstruction.h"
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbInst.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
@@ -61,6 +61,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
 {
   _flags._slot_obs = 0;
   _flags._fill_obs = 0;
+  _flags._except_pg_nets = 0;
   _flags._pushed_down = 0;
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
@@ -93,31 +94,48 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   stream >> obs._min_spacing;
   stream >> obs._effective_width;
 
+  _dbDatabase* db = obs.getImpl()->getDatabase();
+  if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
+    // assume false for older databases
+    obs._flags._except_pg_nets = false;
+  }
+
   return stream;
 }
 
 bool _dbObstruction::operator==(const _dbObstruction& rhs) const
 {
-  if (_flags._slot_obs != rhs._flags._slot_obs)
+  if (_flags._slot_obs != rhs._flags._slot_obs) {
     return false;
+  }
 
-  if (_flags._fill_obs != rhs._flags._fill_obs)
+  if (_flags._fill_obs != rhs._flags._fill_obs) {
     return false;
+  }
 
-  if (_flags._pushed_down != rhs._flags._pushed_down)
+  if (_flags._except_pg_nets != rhs._flags._except_pg_nets) {
     return false;
+  }
 
-  if (_flags._has_min_spacing != rhs._flags._has_min_spacing)
+  if (_flags._pushed_down != rhs._flags._pushed_down) {
     return false;
+  }
 
-  if (_flags._has_effective_width != rhs._flags._has_effective_width)
+  if (_flags._has_min_spacing != rhs._flags._has_min_spacing) {
     return false;
+  }
 
-  if (_inst != rhs._inst)
+  if (_flags._has_effective_width != rhs._flags._has_effective_width) {
     return false;
+  }
 
-  if (_bbox != rhs._bbox)
+  if (_inst != rhs._inst) {
     return false;
+  }
+
+  if (_bbox != rhs._bbox) {
+    return false;
+  }
 
   return true;
 }
@@ -132,6 +150,7 @@ void _dbObstruction::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_flags._slot_obs);
   DIFF_FIELD(_flags._fill_obs);
+  DIFF_FIELD(_flags._except_pg_nets);
   DIFF_FIELD(_flags._pushed_down);
   DIFF_FIELD(_flags._has_min_spacing);
   DIFF_FIELD(_flags._has_effective_width);
@@ -169,6 +188,7 @@ void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._slot_obs);
   DIFF_OUT_FIELD(_flags._fill_obs);
+  DIFF_OUT_FIELD(_flags._except_pg_nets);
   DIFF_OUT_FIELD(_flags._pushed_down);
   DIFF_OUT_FIELD(_flags._has_min_spacing);
   DIFF_OUT_FIELD(_flags._has_effective_width);
@@ -198,8 +218,9 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
   _dbBox* lhs_box = lhs_block->_box_tbl->getPtr(_bbox);
   _dbBox* rhs_box = rhs_block->_box_tbl->getPtr(rhs._bbox);
 
-  if (*lhs_box < *rhs_box)
+  if (*lhs_box < *rhs_box) {
     return true;
+  }
 
   if (lhs_box->equal(*rhs_box)) {
     if (_inst && rhs._inst) {
@@ -209,58 +230,82 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
       _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
       int r = strcmp(lhs_inst->_name, rhs_inst->_name);
 
-      if (r < 0)
+      if (r < 0) {
         return true;
+      }
 
-      if (r > 0)
+      if (r > 0) {
         return false;
+      }
     } else if (_inst) {
       return false;
     } else if (rhs._inst) {
       return true;
     }
 
-    if (_flags._slot_obs < rhs._flags._slot_obs)
+    if (_flags._slot_obs < rhs._flags._slot_obs) {
       return true;
+    }
 
-    if (_flags._slot_obs > rhs._flags._slot_obs)
+    if (_flags._slot_obs > rhs._flags._slot_obs) {
       return false;
+    }
 
-    if (_flags._fill_obs < rhs._flags._fill_obs)
+    if (_flags._fill_obs < rhs._flags._fill_obs) {
       return true;
+    }
 
-    if (_flags._fill_obs > rhs._flags._fill_obs)
+    if (_flags._fill_obs > rhs._flags._fill_obs) {
       return false;
+    }
 
-    if (_flags._pushed_down < rhs._flags._pushed_down)
+    if (_flags._except_pg_nets < rhs._flags._except_pg_nets) {
       return true;
+    }
 
-    if (_flags._pushed_down > rhs._flags._pushed_down)
+    if (_flags._except_pg_nets > rhs._flags._except_pg_nets) {
       return false;
+    }
 
-    if (_flags._has_min_spacing < rhs._flags._has_min_spacing)
+    if (_flags._pushed_down < rhs._flags._pushed_down) {
       return true;
+    }
 
-    if (_flags._has_min_spacing > rhs._flags._has_min_spacing)
+    if (_flags._pushed_down > rhs._flags._pushed_down) {
       return false;
+    }
 
-    if (_flags._has_effective_width < rhs._flags._has_effective_width)
+    if (_flags._has_min_spacing < rhs._flags._has_min_spacing) {
       return true;
+    }
 
-    if (_flags._has_effective_width > rhs._flags._has_effective_width)
+    if (_flags._has_min_spacing > rhs._flags._has_min_spacing) {
       return false;
+    }
 
-    if (_min_spacing < rhs._min_spacing)
+    if (_flags._has_effective_width < rhs._flags._has_effective_width) {
       return true;
+    }
 
-    if (_min_spacing > rhs._min_spacing)
+    if (_flags._has_effective_width > rhs._flags._has_effective_width) {
       return false;
+    }
 
-    if (_effective_width < rhs._effective_width)
+    if (_min_spacing < rhs._min_spacing) {
       return true;
+    }
 
-    if (_effective_width > rhs._effective_width)
+    if (_min_spacing > rhs._min_spacing) {
       return false;
+    }
+
+    if (_effective_width < rhs._effective_width) {
+      return true;
+    }
+
+    if (_effective_width > rhs._effective_width) {
+      return false;
+    }
   }
 
   return false;
@@ -283,8 +328,9 @@ dbInst* dbObstruction::getInstance()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
 
-  if (obs->_inst == 0)
+  if (obs->_inst == 0) {
     return nullptr;
+  }
 
   _dbBlock* block = (_dbBlock*) obs->getOwner();
   return (dbInst*) block->_inst_tbl->getPtr(obs->_inst);
@@ -312,6 +358,18 @@ bool dbObstruction::isFillObstruction()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
   return obs->_flags._fill_obs == 1;
+}
+
+void dbObstruction::setExceptPGNetsObstruction()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._except_pg_nets = 1;
+}
+
+bool dbObstruction::isExceptPGNetsObstruction()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._except_pg_nets == 1;
 }
 
 void dbObstruction::setPushedDown()
@@ -383,8 +441,9 @@ dbObstruction* dbObstruction::create(dbBlock* block_,
 
   _dbObstruction* obs = block->_obstruction_tbl->create();
 
-  if (inst)
+  if (inst) {
     obs->_inst = inst->getOID();
+  }
 
   _dbBox* box = block->_box_tbl->create();
   box->_shape._rect.init(x1, y1, x2, y2);
@@ -395,8 +454,9 @@ dbObstruction* dbObstruction::create(dbBlock* block_,
 
   // Update bounding box of block
   block->add_rect(box->_shape._rect);
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbObstructionCreate((dbObstruction*) obs);
+  }
   return (dbObstruction*) obs;
 }
 
@@ -404,8 +464,9 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
-  for (auto callback : block->_callbacks)
+  for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
+  }
   dbProperty::destroyProperties(obs);
   block->_obstruction_tbl->destroy(obs);
 }

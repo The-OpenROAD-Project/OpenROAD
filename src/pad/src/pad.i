@@ -128,9 +128,10 @@ void place_bondpads(odb::dbMaster* master, const std::vector<odb::dbInst*>& pads
   ord::getICeWall()->placeBondPads(master, pads, rotation, {x_offset, y_offset}, prefix);
 }
 
-void place_terminals(const std::vector<odb::dbITerm*>& iterms)
+void place_terminals(const std::vector<odb::dbITerm*>& iterms,
+                     const bool allow_non_top_layer)
 {
-  ord::getICeWall()->placeTerminals(iterms);
+  ord::getICeWall()->placeTerminals(iterms, allow_non_top_layer);
 }
 
 void connect_by_abutment()

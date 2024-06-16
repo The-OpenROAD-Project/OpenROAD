@@ -170,14 +170,19 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
                   | std::ios::eofbit);
   file.open(db_path, std::ios::binary);
 
-  db->read(file);
+  try {
+    db->read(file);
+  } catch (const std::ios_base::failure& f) {
+    auto msg = fmt::format("odb file {} is invalid: {}", db_path, f.what());
+    throw std::ios_base::failure(msg);
+  }
 
   return db;
 }
 
 int write_db(odb::dbDatabase* db, const char* db_path)
 {
-  FILE* fp = fopen(db_path, "wb");
+  std::ofstream fp(db_path, std::ios::binary);
   if (!fp) {
     int errnum = errno;
     fprintf(stderr, "Error opening file: %s\n", strerror(errnum));
@@ -185,7 +190,6 @@ int write_db(odb::dbDatabase* db, const char* db_path)
     return errno;
   }
   db->write(fp);
-  fclose(fp);
   return 1;
 }
 

@@ -66,6 +66,9 @@ void Net::addPin(Pin& pin)
 
 bool Net::isLocal()
 {
+  if (pins_.empty()) {
+    return true;
+  }
   odb::Point position = pins_[0].getOnGridPosition();
   for (Pin& pin : pins_) {
     odb::Point pinPos = pin.getOnGridPosition();
@@ -104,7 +107,7 @@ int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
 bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
 {
   int bterms_above_max_layer = getNumBTermsAboveMaxLayer(max_routing_layer);
-  uint wire_cnt = 0, via_cnt = 0;
+  odb::uint wire_cnt = 0, via_cnt = 0;
   net_->getWireCount(wire_cnt, via_cnt);
 
   if (wire_cnt != 0 || via_cnt == 0) {

@@ -130,6 +130,8 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
+#set_debug_level CTS clustering 1
+
 clock_tree_synthesis  -root_buf $cts_buffer \
     -buf_list $cts_buffer \
     -sink_clustering_enable \
@@ -147,3 +149,8 @@ detailed_placement
 estimate_parasitics -placement
 report_clock_skew
 
+# max latency path
+report_checks -through inst_1_1/clk -format full_clock_expanded
+
+# min latency path
+report_checks -through inst_2_1/clk -format full_clock_expanded

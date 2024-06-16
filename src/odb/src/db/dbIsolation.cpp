@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,27 +42,36 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_applies_to != rhs._applies_to)
+  }
+  if (_applies_to != rhs._applies_to) {
     return false;
-  if (_clamp_value != rhs._clamp_value)
+  }
+  if (_clamp_value != rhs._clamp_value) {
     return false;
-  if (_isolation_signal != rhs._isolation_signal)
+  }
+  if (_isolation_signal != rhs._isolation_signal) {
     return false;
-  if (_isolation_sense != rhs._isolation_sense)
+  }
+  if (_isolation_sense != rhs._isolation_sense) {
     return false;
-  if (_location != rhs._location)
+  }
+  if (_location != rhs._location) {
     return false;
-  if (_power_domain != rhs._power_domain)
+  }
+  if (_power_domain != rhs._power_domain) {
     return false;
+  }
 
   return true;
 }
@@ -106,6 +114,7 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
@@ -150,8 +159,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 
 _dbIsolation::~_dbIsolation()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -206,8 +216,9 @@ void dbIsolation::setPowerDomain(dbPowerDomain* power_domain)
 dbPowerDomain* dbIsolation::getPowerDomain() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  if (obj->_power_domain == 0)
+  if (obj->_power_domain == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }
@@ -216,8 +227,9 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name))
+  if (_block->_isolation_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbIsolation* iso = _block->_isolation_tbl->create();
   iso->_name = strdup(name);
   ZALLOCATED(iso->_name);

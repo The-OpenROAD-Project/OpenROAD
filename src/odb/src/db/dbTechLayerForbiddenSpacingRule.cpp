@@ -33,26 +33,30 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerForbiddenSpacingRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerForbiddenSpacingRule>;
 
 bool _dbTechLayerForbiddenSpacingRule::operator==(
     const _dbTechLayerForbiddenSpacingRule& rhs) const
 {
-  if (width_ != rhs.width_)
+  if (width_ != rhs.width_) {
     return false;
-  if (within_ != rhs.within_)
+  }
+  if (within_ != rhs.within_) {
     return false;
-  if (prl_ != rhs.prl_)
+  }
+  if (prl_ != rhs.prl_) {
     return false;
-  if (two_edges_ != rhs.two_edges_)
+  }
+  if (two_edges_ != rhs.two_edges_) {
     return false;
+  }
 
   return true;
 }
@@ -127,10 +131,6 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.prl_;
   stream << obj.two_edges_;
   return stream;
-}
-
-_dbTechLayerForbiddenSpacingRule::~_dbTechLayerForbiddenSpacingRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -265,4 +265,4 @@ void dbTechLayerForbiddenSpacingRule::destroy(
 
 // User Code End dbTechLayerForbiddenSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

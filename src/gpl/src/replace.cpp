@@ -35,84 +35,37 @@
 
 #include <iostream>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "initialPlace.h"
 #include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/StaMain.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 
 namespace gpl {
 
-using namespace std;
 using utl::GPL;
 
-Replace::Replace()
-    : db_(nullptr),
-      rs_(nullptr),
-      fr_(nullptr),
-      log_(nullptr),
-      pbc_(nullptr),
-      nbc_(nullptr),
-      rb_(nullptr),
-      tb_(nullptr),
-      ip_(nullptr),
-      np_(nullptr),
-      initialPlaceMaxIter_(20),
-      initialPlaceMinDiffLength_(1500),
-      initialPlaceMaxSolverIter_(100),
-      initialPlaceMaxFanout_(200),
-      initialPlaceNetWeightScale_(800),
-      forceCPU_(false),
-      nesterovPlaceMaxIter_(5000),
-      binGridCntX_(0),
-      binGridCntY_(0),
-      overflow_(0.1),
-      density_(1.0),
-      initDensityPenalityFactor_(0.00008),
-      initWireLengthCoef_(0.25),
-      minPhiCoef_(0.95),
-      maxPhiCoef_(1.05),
-      referenceHpwl_(446000000),
-      routabilityCheckOverflow_(0.20),
-      routabilityMaxDensity_(0.99),
-      routabilityTargetRcMetric_(1.25),
-      routabilityInflationRatioCoef_(2.5),
-      routabilityMaxInflationRatio_(2.5),
-      routabilityRcK1_(1.0),
-      routabilityRcK2_(1.0),
-      routabilityRcK3_(0.0),
-      routabilityRcK4_(0.0),
-      routabilityMaxBloatIter_(1),
-      routabilityMaxInflationIter_(4),
-      timingNetWeightMax_(1.9),
-      timingDrivenMode_(true),
-      routabilityDrivenMode_(true),
-      uniformTargetDensityMode_(false),
-      skipIoMode_(false),
-      padLeft_(0),
-      padRight_(0),
-      gui_debug_(false),
-      gui_debug_pause_iterations_(10),
-      gui_debug_update_iterations_(10),
-      gui_debug_draw_bins_(false),
-      gui_debug_initial_(false),
-      gui_debug_inst_(nullptr){};
+Replace::Replace() = default;
 
-Replace::~Replace()
-{
-}
+Replace::~Replace() = default;
 
 void Replace::init(odb::dbDatabase* odb,
+                   sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    grt::GlobalRouter* router,
                    utl::Logger* logger)
 {
   db_ = odb;
+  sta_ = sta;
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
@@ -151,11 +104,11 @@ void Replace::reset()
   maxPhiCoef_ = 1.05;
   referenceHpwl_ = 446000000;
 
-  routabilityCheckOverflow_ = 0.20;
+  routabilityCheckOverflow_ = 0.3;
   routabilityMaxDensity_ = 0.99;
-  routabilityTargetRcMetric_ = 1.25;
-  routabilityInflationRatioCoef_ = 2.5;
-  routabilityMaxInflationRatio_ = 2.5;
+  routabilityTargetRcMetric_ = 1.01;
+  routabilityInflationRatioCoef_ = 5;
+  routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
   routabilityMaxBloatIter_ = 1;
@@ -163,6 +116,7 @@ void Replace::reset()
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true;
+  routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
 
@@ -179,7 +133,7 @@ void Replace::reset()
   gui_debug_initial_ = false;
 }
 
-void Replace::doIncrementalPlace()
+void Replace::doIncrementalPlace(int threads)
 {
   if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
@@ -225,7 +179,7 @@ void Replace::doIncrementalPlace()
       pb->unlockAll();
     }
     // pbc_->unlockAll();
-    doNesterovPlace();
+    doNesterovPlace(threads);
     return;
   }
 
@@ -240,9 +194,9 @@ void Replace::doIncrementalPlace()
   doInitialPlace();
 
   int previous_max_iter = nesterovPlaceMaxIter_;
-  initNesterovPlace();
+  initNesterovPlace(threads);
   setNesterovPlaceMaxIter(300);
-  int iter = doNesterovPlace();
+  int iter = doNesterovPlace(threads);
   setNesterovPlaceMaxIter(previous_max_iter);
 
   // Finish the overflow resolution from the rough placement
@@ -253,7 +207,7 @@ void Replace::doIncrementalPlace()
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
-    doNesterovPlace(iter + 1);
+    doNesterovPlace(threads, iter + 1);
   }
 }
 
@@ -274,6 +228,10 @@ void Replace::doInitialPlace()
         pbVec_.push_back(
             std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
       }
+    }
+
+    if (pbVec_.front()->placeInsts().empty()) {
+      pbVec_.erase(pbVec_.begin());
     }
 
     total_placeable_insts_ = 0;
@@ -297,29 +255,17 @@ void Replace::doInitialPlace()
   ip_->doBicgstabPlace();
 }
 
-void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+void Replace::runMBFF(int max_sz,
+                      float alpha,
+                      float beta,
+                      int threads,
+                      int num_paths)
 {
-  int num_flops = 0;
-  int num_paths = 0;
-  vector<odb::Point> points;
-  vector<Path> paths;
-
-  auto block = db_->getChip()->getBlock();
-  for (const auto& inst : block->getInsts()) {
-    if (inst->getMaster()->isSequential()) {
-      int x_i, y_i;
-      inst->getOrigin(x_i, y_i);
-      odb::Point pt(x_i, y_i);
-      points.push_back(pt);
-      num_flops++;
-    }
-  }
-
-  MBFF pntset(num_flops, num_paths, points, paths, threads, 4, 10, log_);
-  pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, num_paths, gui_debug_);
+  pntset.Run(max_sz, alpha, beta);
 }
 
-bool Replace::initNesterovPlace()
+bool Replace::initNesterovPlace(int threads)
 {
   if (!pbc_) {
     PlacerBaseVars pbVars;
@@ -354,14 +300,14 @@ bool Replace::initNesterovPlace()
     nbVars.targetDensity = density_;
 
     if (binGridCntX_ != 0 && binGridCntY_ != 0) {
-      nbVars.isSetBinCnt = 1;
+      nbVars.isSetBinCnt = true;
       nbVars.binCntX = binGridCntX_;
       nbVars.binCntY = binGridCntY_;
     }
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
+    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, threads);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
@@ -370,6 +316,7 @@ bool Replace::initNesterovPlace()
 
   if (!rb_) {
     RouteBaseVars rbVars;
+    rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
     rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
@@ -421,13 +368,14 @@ bool Replace::initNesterovPlace()
   return true;
 }
 
-int Replace::doNesterovPlace(int start_iter)
+int Replace::doNesterovPlace(int threads, int start_iter)
 {
-  if (!initNesterovPlace()) {
+  if (!initNesterovPlace(threads)) {
     return 0;
   }
-  if (timingDrivenMode_)
+  if (timingDrivenMode_) {
     rs_->resizeSlackPreamble();
+  }
   return np_->doNesterovPlace(start_iter);
 }
 
@@ -488,11 +436,13 @@ void Replace::setUniformTargetDensityMode(bool mode)
   uniformTargetDensityMode_ = mode;
 }
 
-float Replace::getUniformTargetDensity()
+float Replace::getUniformTargetDensity(int threads)
 {
   // TODO: update to be compatible with multiple target densities
-  initNesterovPlace();
-  return nbVec_[0]->uniformTargetDensity();
+  if (initNesterovPlace(threads)) {
+    return nbVec_[0]->uniformTargetDensity();
+  }
+  return 1;
 }
 
 void Replace::setInitDensityPenalityFactor(float penaltyFactor)
@@ -552,6 +502,11 @@ void Replace::setTimingDrivenMode(bool mode)
 void Replace::setRoutabilityDrivenMode(bool mode)
 {
   routabilityDrivenMode_ = mode;
+}
+
+void Replace::setRoutabilityUseGrt(bool mode)
+{
+  routabilityUseRudy_ = !mode;
 }
 
 void Replace::setRoutabilityCheckOverflow(float overflow)

@@ -29,9 +29,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace odb {
 
@@ -49,15 +49,17 @@ void lefTechLayerAreaRuleParser::parse(
   boost::split(rules, s, boost::is_any_of(";"));
   for (auto& rule : rules) {
     boost::algorithm::trim(rule);
-    if (rule.empty())
+    if (rule.empty()) {
       continue;
+    }
     rule += " ; ";
-    if (!parseSubRule(rule, layer, incomplete_props))
+    if (!parseSubRule(rule, layer, incomplete_props)) {
       lefin_->warning(278,
                       "parse mismatch in layer propery LEF58_AREA for "
                       "layer {} :\"{}\"",
                       layer->getName(),
                       rule);
+    }
   }
 }
 
@@ -175,8 +177,9 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
   auto last = s.end();
   bool valid = qi::phrase_parse(first, last, AREA, space) && first == last;
   if (!valid) {
-    if (!incomplete_props.empty() && incomplete_props.back().first == rule)
+    if (!incomplete_props.empty() && incomplete_props.back().first == rule) {
       incomplete_props.pop_back();
+    }
     odb::dbTechLayerAreaRule::destroy(rule);
   }
   return valid;

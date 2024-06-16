@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,17 +43,21 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbLogicPort>;
 
 bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (direction != rhs.direction)
+  }
+  if (direction != rhs.direction) {
     return false;
+  }
 
   return true;
 }
@@ -87,6 +90,7 @@ void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
@@ -114,8 +118,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
 
 _dbLogicPort::~_dbLogicPort()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -143,13 +148,18 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
                                  const std::string& direction)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_logicport_hash.hasMember(name))
+  if (_block->_logicport_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbLogicPort* lp = _block->_logicport_tbl->create();
   lp->_name = strdup(name);
   ZALLOCATED(lp->_name);
 
-  lp->direction = direction;
+  if (direction.empty()) {
+    lp->direction = "in";
+  } else {
+    lp->direction = direction;
+  }
 
   _block->_logicport_hash.insert(lp);
   return (dbLogicPort*) lp;

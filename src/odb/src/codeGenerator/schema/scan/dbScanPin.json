@@ -1,0 +1,31 @@
+{
+  "name": "dbScanPin",
+  "type": "dbObject",
+  "description": [
+    "This is a helper class to contain dbBTerms and dbITerms in the same field. We",
+    "need this difference because some pins may need to be conected to top level",
+    "ports or cell's pins.  For example: a scan chain may be connected to a top level",
+    "design port (dbBTerm) or to an output/input pin of a cell that is part of a",
+    "decompressor/compressor"
+  ],
+  "fields": [
+    {
+      "name": "pin_",
+      "type": "std::variant<dbId<_dbBTerm>, dbId<_dbITerm>>",
+      "flags": ["private", "no-template"]
+    }
+  ],
+  "h_includes": [
+    "dbBTerm.h",
+    "dbITerm.h"
+  ],
+  "cpp_includes": [
+    "dbBlock.h",
+    "dbDft.h"
+  ],
+  "classes": [
+    "dbScanPin",
+    "dbBTerm",
+    "dbITerm"
+  ]
+}

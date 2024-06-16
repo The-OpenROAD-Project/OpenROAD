@@ -1,12 +1,12 @@
 pipeline {
-  agent any;
+  agent {label 'ubuntu22'};
   environment {
     COVERITY_TOKEN = credentials('COVERITY_TOKEN');
   }
   stages {
     stage('Run Coverity') {
       steps {
-        sh './etc/CodeCoverage.sh static';
+        sh 'bash -ic "./etc/CodeCoverage.sh static"';
       }
     }
   }

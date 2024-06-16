@@ -42,9 +42,26 @@
 #include <limits>
 #include <sstream>
 
+#include "sta/ParseBus.hh"
 #include "utl/Logger.h"
 
 namespace cts {
+
+Clock::Clock(const std::string& netName,
+             const std::string& clockPin,
+             const std::string& sdcClockName,
+             int clockPinX,
+             int clockPinY)
+    : clockPin_(clockPin),
+      sdcClockName_(sdcClockName),
+      clockPinX_(clockPinX),
+      clockPinY_(clockPinY)
+{
+  // Hierarchy delimiters in the net name must be escape.  We use
+  // the name to construct buffer names later and the delimiters
+  // will confuse downstream tools like read_spef.
+  netName_ = sta::escapeChars(netName.c_str(), '/', '\0', '\\');
+}
 
 void Clock::report(utl::Logger* logger) const
 {

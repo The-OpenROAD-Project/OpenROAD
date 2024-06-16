@@ -57,10 +57,15 @@ using odb::dbIoType;
 using odb::dbITerm;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
+using odb::dbModNet;
+using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbObject;
+using odb::dbObjectType;
 using odb::dbSet;
 using odb::dbSigType;
 using odb::Point;
@@ -87,6 +92,7 @@ class dbNetwork : public ConcreteNetwork
  public:
   dbNetwork();
   ~dbNetwork() override;
+
   void init(dbDatabase* db, Logger* logger);
   void setBlock(dbBlock* block);
   void clear() override;
@@ -102,7 +108,7 @@ class dbNetwork : public ConcreteNetwork
   dbBlock* block() const { return block_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
-
+  void makeVerilogCell(Library* library, dbModInst*);
   void location(const Pin* pin,
                 // Return values.
                 double& x,
@@ -113,25 +119,31 @@ class dbNetwork : public ConcreteNetwork
 
   LibertyCell* libertyCell(dbInst* inst);
 
-  // Use the this if you know you are dealing with a leaf instance
   dbInst* staToDb(const Instance* instance) const;
-  // Use the this if you might have a hierarchical instance
   void staToDb(const Instance* instance,
-               // Return values.
                dbInst*& db_inst,
                dbModInst*& mod_inst) const;
-  dbNet* staToDb(const Net* net) const;
   void staToDb(const Pin* pin,
-               // Return values.
                dbITerm*& iterm,
-               dbBTerm*& bterm) const;
+               dbBTerm*& bterm,
+               dbModITerm*& moditerm,
+               dbModBTerm*& modbterm) const;
+
+  dbNet* staToDb(const Net* net) const;
+  void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
+
   dbBTerm* staToDb(const Term* term) const;
+  void staToDb(const Term* term,
+               dbITerm*& iterm,
+               dbBTerm*& bterm,
+               dbModITerm*& moditerm,
+               dbModBTerm*& modbterm) const;
   dbMaster* staToDb(const Cell* cell) const;
+  void staToDb(const Cell* cell, dbMaster*& master, dbModule*& module) const;
   dbMaster* staToDb(const LibertyCell* cell) const;
   dbMTerm* staToDb(const Port* port) const;
   dbMTerm* staToDb(const LibertyPort* port) const;
   void staToDb(PortDirection* dir,
-               // Return values.
                dbSigType& sig_type,
                dbIoType& io_type) const;
 
@@ -139,15 +151,24 @@ class dbNetwork : public ConcreteNetwork
   Term* dbToStaTerm(dbBTerm* bterm) const;
   Pin* dbToSta(dbITerm* iterm) const;
   Instance* dbToSta(dbInst* inst) const;
-  Instance* dbToSta(dbModInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
+
+  Instance* dbToSta(dbModInst* inst) const;
+  Cell* dbToSta(dbModule* master) const;
+  Pin* dbToSta(dbModITerm* mod_iterm) const;
+  Pin* dbToStaPin(dbModBTerm* mod_bterm) const;
+  Net* dbToSta(dbModNet* net) const;
+  Port* dbToSta(dbModBTerm* modbterm) const;
+  Term* dbToStaTerm(dbModITerm* moditerm) const;
+  Term* dbToStaTerm(dbModBTerm* modbterm) const;
+
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
-  void makeTopPort(dbBTerm* bterm);
+  Port* makeTopPort(dbBTerm* bterm);
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
@@ -231,12 +252,18 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;
+  Pin* makePin(Instance* inst, Port* port, Net* net) override;
+  Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;
   void deleteNetBefore(const Net* net);
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+
+  // hierarchy handler, set in openroad tested in network child traverserser
+  void setHierarchy() { hierarchy_ = true; }
+  bool hasHierarchy() const { return hierarchy_; }
 
   using Network::cell;
   using Network::direction;
@@ -261,15 +288,31 @@ class dbNetwork : public ConcreteNetwork
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
-  bool portMsbFirst(const char* port_name);
+  bool portMsbFirst(const char* port_name, const char* cell_name);
+  ObjectId getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const;
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;
   dbBlock* block_ = nullptr;
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
-
   std::set<dbNetworkObserver*> observers_;
+
+  // unique addresses for the db objects
+  static constexpr unsigned DBITERM_ID = 0x0;
+  static constexpr unsigned DBBTERM_ID = 0x1;
+  static constexpr unsigned DBINST_ID = 0x2;
+  static constexpr unsigned DBNET_ID = 0x3;
+  static constexpr unsigned DBMODITERM_ID = 0x4;
+  static constexpr unsigned DBMODBTERM_ID = 0x5;
+  static constexpr unsigned DBMODINST_ID = 0x6;
+  static constexpr unsigned DBMODNET_ID = 0x7;
+  static constexpr unsigned DBMODULE_ID = 0x8;
+  // Number of lower bits used
+  static constexpr unsigned DBIDTAG_WIDTH = 0x4;
+
+ private:
+  bool hierarchy_ = false;
 };
 
 }  // namespace sta

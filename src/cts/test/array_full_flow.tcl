@@ -157,4 +157,4 @@ report_clock_skew
 
 set_thread_count 40
 detailed_route -verbose 1
-
+report_clock_skew

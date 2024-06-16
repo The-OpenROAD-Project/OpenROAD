@@ -46,7 +46,7 @@ class Ath__parser
  public:
   Ath__parser(utl::Logger* logger);
   ~Ath__parser();
-  void openFile(char* name = nullptr);
+  void openFile(const char* name = nullptr);
   void setInputFP(FILE* fp);
   int mkWords(const char* word, const char* sep = nullptr);
   int readLineAndBreak(int prevWordCnt = -1);

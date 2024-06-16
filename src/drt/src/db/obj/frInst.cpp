@@ -30,7 +30,7 @@
 
 #include "frBlock.h"
 #include "frMaster.h"
-using namespace fr;
+namespace drt {
 
 Rect frInst::getBBox() const
 {
@@ -106,11 +106,9 @@ void frInst::updateXform(dbTransform& xform, Point& size)
   xform.setOffset(p);
 }
 
-frInstTerm* frInst::getInstTerm(const std::string& name)
+frInstTerm* frInst::getInstTerm(const int index)
 {
-  for (auto& it : instTerms_) {
-    if (it->getTerm()->getName() == name)
-      return it.get();
-  }
-  return nullptr;
+  return instTerms_.at(index).get();
 }
+
+}  // namespace drt

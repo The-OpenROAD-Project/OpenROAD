@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -55,7 +55,8 @@ class _dbTechLayerAreaRule : public _dbObject
  public:
   _dbTechLayerAreaRule(_dbDatabase*, const _dbTechLayerAreaRule& r);
   _dbTechLayerAreaRule(_dbDatabase*);
-  ~_dbTechLayerAreaRule();
+
+  ~_dbTechLayerAreaRule() = default;
 
   bool operator==(const _dbTechLayerAreaRule& rhs) const;
   bool operator!=(const _dbTechLayerAreaRule& rhs) const

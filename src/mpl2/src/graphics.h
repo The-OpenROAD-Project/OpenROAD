@@ -48,7 +48,7 @@ class HardMacro;
 class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
-  Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger);
+  Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
 
   ~Graphics() override = default;
 
@@ -63,9 +63,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void finishedClustering(Cluster* root) override;
 
   void setAreaPenalty(float area) override;
-  void setOutlinePenalty(float outline_penalty,
-                         float outline_width,
-                         float outline_height) override;
+  void setOutlinePenalty(float outline_penalty) override;
   void setWirelength(float wirelength) override;
   void setFencePenalty(float fence_penalty) override;
   void setGuidancePenalty(float guidance_penalty) override;
@@ -76,19 +74,41 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void drawObjects(gui::Painter& painter) override;
 
+  void setMacroBlockages(
+      const std::vector<mpl2::Rect>& macro_blockages) override;
+  void setPlacementBlockages(
+      const std::vector<mpl2::Rect>& placement_blockages) override;
+  void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
+  void setShowBundledNets(bool show_bundled_nets) override;
+
+  void setOutline(const odb::Rect& outline) override;
+
+  void eraseDrawing() override;
+
  private:
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawAllBlockages(gui::Painter& painter);
+  void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  template <typename T>
+  void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
+  std::vector<mpl2::Rect> macro_blockages_;
+  std::vector<mpl2::Rect> placement_blockages_;
+  std::vector<BundledNet> bundled_nets_;
+  odb::Rect outline_;
+
   bool active_ = true;
   bool coarse_;
   bool fine_;
-  int dbu_ = 0;
+  bool show_bundled_nets_;
+  odb::dbBlock* block_;
   utl::Logger* logger_;
   std::optional<float> outline_penalty_;
   std::optional<float> fence_penalty_;
@@ -99,8 +119,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::optional<float> notch_penalty_;
   std::optional<float> area_penalty_;
 
-  std::optional<float> outline_width_;
-  std::optional<float> outline_height_;
   float best_norm_cost_ = 0;
   int skipped_ = 0;
 

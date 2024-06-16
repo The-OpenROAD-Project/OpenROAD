@@ -111,7 +111,7 @@ class BTree
   void move(int index, int target, bool leftChild);  // target = 0..n
 
   const int NUM_BLOCKS;
-  static const int Undefined;  // = basepacking_h::Dimension::Undefined;
+  static constexpr int Undefined = basepacking_h::Dimension::Undefined;
 
   class BTreeNode
   {

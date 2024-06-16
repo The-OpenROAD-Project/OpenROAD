@@ -30,12 +30,12 @@ proc make_array { sinks { width 200000 } { height 200000 } \
 
   if {$clock_gate >= 0} {
     set clock_master [$db findMaster "BUF_X1"]
-    set clock_gate_inst [odb::dbInst_create $block $clock_master "CKGATE"]
+    set clock_gate_inst [odb::dbInst_create $block $clock_master "CELL/CKGATE"]
     $clock_gate_inst setOrigin [expr $width / 2] [expr $height / 2]
     $clock_gate_inst setPlacementStatus PLACED
     [$clock_gate_inst findITerm "A"] connect $clk
 
-    set clk2 [odb::dbNet_create $block "clk2"]
+    set clk2 [odb::dbNet_create $block "CELL/clk2"]
     [$clock_gate_inst findITerm "Z"] connect $clk2
   }
 

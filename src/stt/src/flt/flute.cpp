@@ -50,8 +50,8 @@
 #define LUT_VAR_CHECK 3
 
 // Set this to LUT_FILE, LUT_VAR, or LUT_VAR_CHECK.
-//#define LUT_SOURCE LUT_FILE
-//#define LUT_SOURCE LUT_VAR_CHECK
+// #define LUT_SOURCE LUT_FILE
+// #define LUT_SOURCE LUT_VAR_CHECK
 #define LUT_SOURCE LUT_VAR
 
 namespace stt {
@@ -281,6 +281,24 @@ static unsigned char charNum(unsigned char c)
   return 0;
 }
 
+inline const char* readDecimalInt(const char* s, int& value)
+{
+  value = 0;
+  bool negative = (*s == '-');
+  if (negative || *s == '+') {
+    ++s;
+  }
+  constexpr int zero_code = int('0');
+  while (*s >= '0' && *s <= '9') {
+    value = 10 * value + (int(*s) - zero_code);
+    ++s;
+  }
+  if (negative) {
+    value = -value;
+  }
+  return s;
+}
+
 // Init LUTs from base64 encoded string variables.
 static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
@@ -293,19 +311,21 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 #endif
 
   for (int d = 4; d <= to_d; d++) {
-    int char_cnt;
-    sscanf(pwv, "d=%d%n", &d, &char_cnt);
-    pwv += char_cnt + 1;
+    if (pwv[0] == 'd' && pwv[1] == '=') {
+      pwv = readDecimalInt(pwv + 2, d);
+    }
+    ++pwv;
 #if FLUTE_ROUTING == 1
-    sscanf(prt, "d=%d%n", &d, &char_cnt);
-    prt += char_cnt + 1;
+    if (prt[0] == 'd' && prt[1] == '=') {
+      prt = readDecimalInt(prt + 2, d);
+    }
+    ++prt;
 #endif
     for (int k = 0; k < numgrp[d]; k++) {
       int ns = charNum(*pwv++);
       if (ns == 0) {  // same as some previous group
         int kk;
-        sscanf(pwv, "%d%n", &kk, &char_cnt);
-        pwv += char_cnt + 1;
+        pwv = readDecimalInt(pwv, kk) + 1;
         numsoln[d][k] = numsoln[d][kk];
         LUT[d][k] = LUT[d][kk];
       } else {
@@ -840,9 +860,9 @@ int flutes_wl_MD(int d,
   for (r = d / 2 - 1, pnlty = dy; r >= 0; r--, pnlty += dy) {
     penalty[s[r]] += pnlty, penalty[s[d - 1 - r]] += pnlty;
   }
-  //#define CCWL 0.16
-  //    for (r=0; r<d; r++)
-  //        penalty[r] = abs(d-1-r-r)*dx + abs(d-1-si[r]-si[r])*dy;
+  // #define CCWL 0.16
+  //     for (r=0; r<d; r++)
+  //         penalty[r] = abs(d-1-r-r)*dx + abs(d-1-si[r]-si[r])*dy;
 
   // Compute distx[], disty[]
   xydiff = (xs[d - 1] - xs[0]) - (ys[d - 1] - ys[0]);
@@ -1471,10 +1491,10 @@ Tree flutes_MD(int d,
   }
   penalty[s[1]] += pnlty, penalty[s[d - 2]] += pnlty;
   penalty[s[0]] += pnlty, penalty[s[d - 1]] += pnlty;
-  //#define CC 0.16
-  //#define v(r) ((r==0||r==1||r==d-2||r==d-1) ? d-3 : abs(d-1-r-r))
-  //    for (r=0; r<d; r++)
-  //        penalty[r] = v(r)*dx + v(si[r])*dy;
+  // #define CC 0.16
+  // #define v(r) ((r==0||r==1||r==d-2||r==d-1) ? d-3 : abs(d-1-r-r))
+  //     for (r=0; r<d; r++)
+  //         penalty[r] = v(r)*dx + v(si[r])*dy;
 
   // Compute distx[], disty[]
   xydiff = (xs[d - 1] - xs[0]) - (ys[d - 1] - ys[0]);
@@ -1657,10 +1677,10 @@ Tree flutes_MD(int d,
 
 #if FLUTE_LOCAL_REFINEMENT == 1
   if (BreakInX(bestbp)) {
-    t = hmergetree(bestt1, bestt2, s);
+    t = hmergetree(std::move(bestt1), std::move(bestt2), s);
     local_refinement(degree, &t, si[BreakPt(bestbp)]);
   } else {
-    t = vmergetree(bestt1, bestt2);
+    t = vmergetree(std::move(bestt1), std::move(bestt2));
     local_refinement(degree, &t, BreakPt(bestbp));
   }
 #else

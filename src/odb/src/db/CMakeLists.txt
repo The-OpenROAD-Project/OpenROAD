@@ -76,9 +76,6 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
-    dbUtil.cpp
-    gs.cpp
-    grids.cpp
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
@@ -88,18 +85,28 @@ add_library(db
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbDft.cpp
     dbGCellGrid.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp
     dbGuide.cpp
     dbIsolation.cpp
+    dbLevelShifter.cpp
     dbLogicPort.cpp
     dbMetalWidthViaMap.cpp
+    dbModBTerm.cpp
     dbModInst.cpp
+    dbModITerm.cpp
+    dbModNet.cpp
     dbModule.cpp
     dbNetTrack.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
+    dbScanChain.cpp
+    dbScanInst.cpp
+    dbScanList.cpp
+    dbScanPartition.cpp
+    dbScanPin.cpp
     dbTechLayer.cpp
     dbTechLayerAreaRule.cpp
     dbTechLayerArraySpacingRule.cpp
@@ -117,13 +124,22 @@ add_library(db
     dbTechLayerMinStepRule.cpp
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
+    dbTechLayerTwoWiresForbiddenSpcRule.cpp
     dbTechLayerWidthTableRule.cpp
+    dbTechLayerWrongDirSpacingRule.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
     dbGroupModInstItr.cpp
     dbGuideItr.cpp
     dbModuleInstItr.cpp
+    dbModuleModBTermItr.cpp
     dbModuleModInstItr.cpp
+    dbModuleModInstModITermItr.cpp
+    dbModuleModNetBTermItr.cpp
+    dbModuleModNetITermItr.cpp
+    dbModuleModNetItr.cpp
+    dbModuleModNetModBTermItr.cpp
+    dbModuleModNetModITermItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     # Generator Code End cpp

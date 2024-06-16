@@ -53,9 +53,7 @@
 
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
-#ifdef ENABLE_CHARTS
 #include "chartsWidget.h"
-#endif
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -105,9 +103,7 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
-#ifdef ENABLE_CHARTS
       charts_widget_(new ChartsWidget(this)),
-#endif
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
@@ -129,9 +125,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
-#ifdef ENABLE_CHARTS
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
-#endif
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -140,6 +134,7 @@ MainWindow::MainWindow(QWidget* parent)
   tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
+  tabifyDockWidget(inspector_, charts_widget_);
   drc_viewer_->hide();
   clock_viewer_->hide();
 
@@ -249,6 +244,8 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_,
           &Inspector::addHighlight,
           [=](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(
+      inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
@@ -332,6 +329,12 @@ MainWindow::MainWindow(QWidget* parent)
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
+#ifdef ENABLE_CHARTS
+  connect(charts_widget_,
+          &ChartsWidget::endPointsToReport,
+          this,
+          &MainWindow::reportSlackHistogramPaths);
+#endif
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
@@ -396,7 +399,7 @@ MainWindow::MainWindow(QWidget* parent)
   // load resources and set window icon and title
   loadQTResources();
   setWindowIcon(QIcon(":/icon.png"));
-  setWindowTitle("OpenROAD");
+  setWindowTitle(window_title_);
 
   Descriptor::Property::convert_dbu
       = [this](int value, bool add_units) -> std::string {
@@ -425,6 +428,11 @@ void MainWindow::setDatabase(odb::dbDatabase* db)
 
 void MainWindow::setBlock(odb::dbBlock* block)
 {
+  if (block != nullptr) {
+    const std::string title
+        = fmt::format("{} - {}", window_title_, block->getName());
+    setWindowTitle(QString::fromStdString(title));
+  }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
   }
@@ -466,8 +474,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbObstruction*>(
       new DbObstructionDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayer*>(new DbTechLayerDescriptor(db_));
-  gui->registerDescriptor<DbItermAccessPoint>(
-      new DbItermAccessPointDescriptor(db_));
+  gui->registerDescriptor<DbTermAccessPoint>(
+      new DbTermAccessPointDescriptor(db_));
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
@@ -682,9 +690,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
-#ifdef ENABLE_CHARTS
   windows_menu_->addAction(charts_widget_->toggleViewAction());
-#endif
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
@@ -1386,6 +1392,9 @@ void MainWindow::setLogger(utl::Logger* logger)
   viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
+#ifdef ENABLE_CHARTS
+  charts_widget_->setLogger(logger);
+#endif
 }
 
 void MainWindow::fit()
@@ -1542,7 +1551,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }
-  settings->setThruPin({pins});
+  settings->setThruPin({std::move(pins)});
   settings->setToPin({});
 
   timing_widget_->updatePaths();
@@ -1605,4 +1614,21 @@ void MainWindow::openDesign()
   }
 }
 
+#ifdef ENABLE_CHARTS
+void MainWindow::reportSlackHistogramPaths(
+    const std::set<const sta::Pin*>& report_pins)
+{
+  if (!timing_widget_->isVisible()) {
+    timing_widget_->show();
+  }
+
+  // In Qt, an enabled tabified widget is visible, so
+  // we need to make it the active tab.
+  if (timing_widget_->visibleRegion().isEmpty()) {
+    timing_widget_->raise();
+  }
+
+  timing_widget_->reportSlackHistogramPaths(report_pins);
+}
+#endif
 }  // namespace gui

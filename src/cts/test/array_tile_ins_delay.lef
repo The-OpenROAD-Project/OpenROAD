@@ -1,0 +1,64 @@
+VERSION 5.7 ;
+BUSBITCHARS "[]" ;
+MACRO array_tile
+  FOREIGN array_tile 0 0 ;
+  SYMMETRY X Y R90 ;
+  SIZE 10 BY 10 ;
+  CLASS BLOCK ;
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+      RECT 0.000 9.9995 0.000467 10.00 ;
+    END
+  END clk
+  PIN e_in
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+      RECT 9.9977 3.3333 10.00 3.33567 ;
+    END
+  END e_in
+  PIN e_out
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+      RECT 9.9977 3.338 10.00 3.3403 ;
+    END
+  END e_out
+  PIN w_in
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+      RECT 0.000 3.338 0.00233 3.3403 ;
+    END
+  END w_in
+  PIN w_out
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+      RECT 0.000 3.3333 0.00233 3.33567 ;
+    END
+  END w_out
+  OBS
+    LAYER metal1 ;
+    RECT 0 0 10 10 ;
+    LAYER metal2 ;
+    RECT 0 0 10 10 ;
+    LAYER metal3 ;
+    RECT 0 0 10 10 ;
+    LAYER metal4 ;
+    RECT 0 0 10 10 ;
+    LAYER metal5 ;
+    RECT 0 0 10 10 ;
+    LAYER OVERLAP ;
+    RECT 0 0 10 10 ;
+  END
+END array_tile
+
+END LIBRARY

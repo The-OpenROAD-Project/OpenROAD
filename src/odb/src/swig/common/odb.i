@@ -44,6 +44,7 @@
 #include "dbTypes.h"
 #include "geom.h"
 #include "wOrder.h"
+#include "util.h"
 
 using namespace odb;
 %}
@@ -97,3 +98,5 @@ using namespace odb;
 %include "odb/dbNetSet.h"
 %include "odb/dbCCSegSet.h"
 %include "odb/wOrder.h"
+
+std::string generateMacroPlacementString(odb::dbBlock* block);

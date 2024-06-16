@@ -1,4 +1,4 @@
-from openroad import Tech, Design
+from openroad import Tech, Design, Timing
 
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
@@ -7,12 +7,13 @@ tech.readLef("Nangate45/Nangate45_stdcell.lef")
 
 design = Design(tech)
 design.readDef("get_core_die_areas.def")
+timing = Timing(design)
 
-for corner in design.getCorners():
+for corner in timing.getCorners():
     for net in design.getBlock().getNets():
         print(net.getName(),
-              design.getNetCap(net, corner, Design.Max),
-              design.getNetCap(net, corner, Design.Min))
+              timing.getNetCap(net, corner, Timing.Max),
+              timing.getNetCap(net, corner, Timing.Min))
 
 for inst in design.getBlock().getInsts():
     print(inst.getName(), inst.getMaster().getName(),
@@ -23,5 +24,5 @@ for lib in tech.getDB().getLibs():
         print(master.getName())
         for mterm in master.getMTerms():
             print('  ', mterm.getName())
-            for m in design.getTimingFanoutFrom(mterm):
+            for m in timing.getTimingFanoutFrom(mterm):
                 print('    ', m.getName())

@@ -33,13 +33,13 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
 // User Code End Includes
@@ -48,14 +48,18 @@ template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
-  if (net_ != rhs.net_)
+  if (net_ != rhs.net_) {
     return false;
-  if (box_ != rhs.box_)
+  }
+  if (box_ != rhs.box_) {
     return false;
-  if (layer_ != rhs.layer_)
+  }
+  if (layer_ != rhs.layer_) {
     return false;
-  if (guide_next_ != rhs.guide_next_)
+  }
+  if (guide_next_ != rhs.guide_next_) {
     return false;
+  }
 
   return true;
 }
@@ -118,10 +122,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   return stream;
 }
 
-_dbGuide::~_dbGuide()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbGuide - Methods
@@ -181,10 +181,11 @@ void dbGuide::destroy(dbGuide* guide)
   while (cur) {
     _dbGuide* c = block->_guide_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == nullptr)
+      if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
-      else
+      } else {
         prev->guide_next_ = _guide->guide_next_;
+      }
       break;
     }
     prev = c;

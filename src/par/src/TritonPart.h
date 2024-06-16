@@ -256,6 +256,14 @@ class TritonPart
                    const std::string& group_file);
   void BuildTimingPaths();  // Find all the critical timing paths
 
+  void informFiles(const std::string& fixed_file,
+                   const std::string& community_file,
+                   const std::string& group_file,
+                   const std::string& placement_file,
+                   const std::string& hypergraph_file,
+                   const std::string& hypergraph_int_weight_file,
+                   const std::string& solution_file);
+
   // private member functions
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

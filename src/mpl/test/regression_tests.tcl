@@ -4,4 +4,6 @@ record_tests {
   east_west1
   east_west2
   snap_layer1
+  #mpl_man_tcl_check
+  #mpl_readme_msgs_check
 }

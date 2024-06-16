@@ -16,7 +16,8 @@ set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
 
-add_pdn_ring -grid "Core" -layers {metal8 metal9} -widths 5.0 -spacings 2.0 -pad_offsets 4.5 -connect_to_pads
+add_pdn_ring -grid "Core" -layers {metal8 metal9} -widths 5.0 \
+  -spacings 2.0 -pad_offsets 4.5 -connect_to_pads
 
 add_pdn_connect -layers {metal7 metal8}
 add_pdn_connect -layers {metal8 metal9}

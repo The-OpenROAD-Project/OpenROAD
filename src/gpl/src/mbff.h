@@ -32,117 +32,250 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <fstream>
+#include <map>
+#include <memory>
 #include <set>
-#include <tuple>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"
-#include "utl/Logger.h"
+#include "sta/Corner.hh"
 
 namespace utl {
 class Logger;
 }
 
+namespace sta {
+class dbNetwork;
+class dbSta;
+class FuncExpr;
+class LibertyPort;
+}  // namespace sta
+
 namespace gpl {
 
-struct Tray
+struct Point;
+struct Tray;
+struct Flop;
+class Graphics;
+enum PortName
 {
-  odb::Point pt;
-  std::vector<odb::Point> slots;
-  std::vector<int> cand;
-};
-
-struct Flop
-{
-  odb::Point pt;
-  int idx;
-  float prob;
-
-  bool operator<(const Flop& a) const
-  {
-    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
-  }
-};
-
-struct Path
-{
-  int start_point;
-  int end_point;
+  d,
+  si,
+  se,
+  preset,
+  clear,
+  q,
+  qn,
+  vss,
+  vdd,
+  func,
+  ifunc
 };
 
 class MBFF
 {
  public:
-  MBFF(int num_flops,
-       int num_paths,
-       const std::vector<odb::Point>& points,
-       const std::vector<Path>& paths,
+  MBFF(odb::dbDatabase* db,
+       sta::dbSta* sta,
+       utl::Logger* log,
        int threads,
        int knn,
        int multistart,
-       utl::Logger* log);
+       int num_paths,
+       bool debug_graphics = false);
   ~MBFF();
-
   void Run(int mx_sz, float alpha, float beta);
 
  private:
-  int GetRows(int slot_cnt);
-  int GetBitCnt(int bit_idx);
-  float GetDist(const odb::Point& a, const odb::Point& b);
+  // get the respective q/qn pins for a d pin
+  struct FlopOutputs
+  {
+    sta::LibertyPort* q;
+    sta::LibertyPort* qn;
+  };
+  using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
+  DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
-  void GetSlots(const odb::Point& tray,
+  // MBFF functions
+  float GetDist(const Point& a, const Point& b);
+  int GetRows(int slot_cnt, std::vector<int> array_mask);
+  int GetBitCnt(int bit_idx);
+  int GetBitIdx(int bit_cnt);
+
+  // clock pin functions
+  bool IsClockPin(odb::dbITerm* iterm);
+  bool ClockOn(odb::dbInst* inst);
+
+  // d pin functions
+  bool IsDPin(odb::dbITerm* iterm);
+  int GetNumD(odb::dbInst* inst);
+
+  // q(n) pin functions
+  bool IsQPin(odb::dbITerm* iterm);
+  bool IsInvertingQPin(odb::dbITerm* iterm);
+  int GetNumQ(odb::dbInst* inst);
+
+  // clear/preset pin functions
+  bool HasClear(odb::dbInst* inst);
+  bool IsClearPin(odb::dbITerm* iterm);
+  bool HasPreset(odb::dbInst* inst);
+  bool IsPresetPin(odb::dbITerm* iterm);
+
+  // scan cell/pin functions
+  bool IsScanCell(odb::dbInst* inst);
+  bool IsScanIn(odb::dbITerm* iterm);
+  odb::dbITerm* GetScanIn(odb::dbInst* inst);
+  bool IsScanEnable(odb::dbITerm* iterm);
+  odb::dbITerm* GetScanEnable(odb::dbInst* inst);
+
+  // supply pin functions
+  bool IsSupplyPin(odb::dbITerm* iterm);
+
+  bool IsValidFlop(odb::dbInst* FF);
+  bool IsValidTray(odb::dbInst* tray);
+
+  // (MB)FF funcs
+  PortName PortType(sta::LibertyPort* lib_port, odb::dbInst* inst);
+  bool IsSame(sta::FuncExpr* expr1,
+              odb::dbInst* inst1,
+              sta::FuncExpr* expr2,
+              odb::dbInst* inst2);
+  int GetMatchingFunc(sta::FuncExpr* expr, odb::dbInst* inst, bool create_new);
+  std::vector<int> GetArrayMask(odb::dbInst* inst, bool isTray);
+
+  Tray GetOneBit(const Point& pt);
+  Point GetTrayCenter(std::vector<int> array_mask, int idx);
+  // get slots w.r.t. tray center
+  void GetSlots(const Point& tray,
                 int rows,
                 int cols,
-                std::vector<odb::Point>& slots);
+                std::vector<Point>& slots,
+                std::vector<int> array_mask);
+
+  // one iteration of K-Means++ for starting tray generation
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
                      int num_trays,
                      float AR,
                      std::vector<Tray>& trays);
-  Tray GetOneBit(const odb::Point& pt);
+
+  // multistart for starting tray locations
+  void RunMultistart(std::vector<std::vector<Tray>>& trays,
+                     const std::vector<Flop>& flops,
+                     std::vector<std::vector<std::vector<Tray>>>& start_trays,
+                     std::vector<int> array_mask);
+
+  // get silhouette metric for a run of multistart
+  float GetSilh(const std::vector<Flop>& flops,
+                const std::vector<Tray>& trays,
+                const std::vector<std::pair<int, int>>& clusters);
+
+  // K-Means++ for pointset decomposition (fixed K=4 for now)
+  void KMeans(const std::vector<Flop>& flops,
+              std::vector<std::vector<Flop>>& clusters);
+  void KMeansDecomp(const std::vector<Flop>& flops,
+                    int max_sz,
+                    std::vector<std::vector<Flop>>& pointsets);
 
   void MinCostFlow(const std::vector<Flop>& flops,
                    std::vector<Tray>& trays,
                    int sz,
                    std::vector<std::pair<int, int>>& clusters);
-
-  float GetSilh(const std::vector<Flop>& flops,
-                const std::vector<Tray>& trays,
-                const std::vector<std::pair<int, int>>& clusters);
-
-  void KMeans(const std::vector<Flop>& flops,
-              std::vector<std::vector<Flop>>& clusters);
-  void KMeansDecomp(const std::vector<Flop>& flops,
-                    int MAX_SZ,
-                    std::vector<std::vector<Flop>>& pointsets);
-
+  float RunLP(const std::vector<Flop>& flops,
+              std::vector<Tray>& trays,
+              const std::vector<std::pair<int, int>>& clusters);
+  // iterate between MCF and LP until convergence or #iterations = iter
   void RunCapacitatedKMeans(const std::vector<Flop>& flops,
                             std::vector<Tray>& trays,
                             int sz,
                             int iter,
-                            std::vector<std::pair<int, int>>& cluster);
+                            std::vector<std::pair<int, int>>& cluster,
+                            std::vector<int> array_mask);
 
-  std::vector<std::vector<Tray>>& RunSilh(
-      const std::vector<Flop>& pointset,
-      std::vector<std::vector<std::vector<Tray>>>& start_trays);
+  /* MODIFIED ILP for fast MBFF clustering (compliments pointset decomposition
+  results) minimize sum(alpha * tray_costs + occ(i) * (slot_disp_x(i) +
+  slot_disp_y(i))) where occ(i) = max(1, sum(i in launch-caputre FF-pair j)) */
+  double RunILP(const std::vector<Flop>& flops,
+                const std::vector<Tray>& trays,
+                std::vector<std::pair<int, int>>& final_flop_to_slot,
+                float alpha,
+                std::vector<int> array_mask);
+  // calculate beta (1.00) * sum(relative displacements)
+  float GetPairDisplacements();
+  // place trays and modify nets
+  void ModifyPinConnections(const std::vector<Flop>& flops,
+                            const std::vector<Tray>& trays,
+                            const std::vector<std::pair<int, int>>& mapping,
+                            std::vector<int> array_mask);
 
-  float RunLP(const std::vector<Flop>& flops,
-              std::vector<Tray>& trays,
-              const std::vector<std::pair<int, int>>& clusters);
-  float RunILP(const std::vector<Flop>& flops,
-               const std::vector<std::vector<Tray>>& all_trays,
-               float alpha);
+  // seperate flops by clock net and ArrayMask
+  void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
+  void SetVars(const std::vector<Flop>& flops);
+  void SetRatios(std::vector<int> array_mask);
+  float RunClustering(const std::vector<Flop>& flops,
+                      int mx_sz,
+                      float alpha,
+                      float beta,
+                      std::vector<int> array_mask);
 
-  double GetTCPDisplacement(float beta);
+  void ReadFFs();
+  void ReadPaths();
+  void ReadLibs();
+  void SetTrayNames();
 
-  std::vector<Flop> flops_;
-  std::vector<Path> paths_;
-  std::set<int> flops_in_path_;
-  std::vector<int> slot_disp_x_;
-  std::vector<int> slot_disp_y_;
+  // OpenROAD vars
+  odb::dbDatabase* db_;
+  odb::dbBlock* block_;
+  sta::dbSta* sta_;
+  sta::dbNetwork* network_;
+  sta::Corner* corner_;
+  utl::Logger* log_;
+  std::unique_ptr<Graphics> graphics_;
   int num_threads_;
   int knn_;
   int multistart_;
-  utl::Logger* log_;
+  int num_paths_;
+  float multiplier_;
+
+  // single-bit FF vars
+  std::vector<Flop> flops_;
+  std::vector<odb::dbInst*> insts_;
+  std::vector<float> slot_disp_x_;
+  std::vector<float> slot_disp_y_;
+  float single_bit_height_;
+  float single_bit_width_;
+  float single_bit_power_;
+
+  // launch-capture FF-pair vars
+  std::map<std::string, int> name_to_idx_;
+  std::map<int, int> tray_sizes_used_;
+  std::vector<std::vector<int>> paths_;
+  std::set<int> path_points_;
+  std::vector<int> occs_;
+
+  // MBFF vars
+  template <typename T>
+  /* ArrayMaskVector[i] = a vector for a certain (MB)FF structure.
+  See GetArrayMask for details on how the structure of an instance is described.
+*/
+  using ArrayMaskVector = std::map<std::vector<int>, std::vector<T>>;
+  ArrayMaskVector<odb::dbMaster*> best_master_;
+  ArrayMaskVector<DataToOutputsMap> pin_mappings_;
+  ArrayMaskVector<float> tray_area_;
+  ArrayMaskVector<float> tray_power_;
+  ArrayMaskVector<float> tray_width_;
+  ArrayMaskVector<std::vector<float>> slot_to_tray_x_;
+  ArrayMaskVector<std::vector<float>> slot_to_tray_y_;
+  std::vector<float> norm_area_;
+  std::vector<float> norm_power_;
+  std::vector<int> unused_;
+  // max tray size: 1 << (7 - 1) = 64 bits
+  int num_sizes_ = 7;
+  // ind of last test tray
+  int test_idx_;
+  // all MBFF next_states
+  std::vector<std::pair<sta::FuncExpr*, odb::dbInst*>> funcs_;
 };
 }  // namespace gpl

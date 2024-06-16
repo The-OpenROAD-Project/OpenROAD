@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
@@ -34,14 +30,14 @@ in1 manhtn 2000.7 steiner 2000.7 0.54
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 u2/Z manhtn 0.4 steiner 0.4 0.00
-[WARNING RSZ-0065] max wire length less than 720u increases wire delays.
+[WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 Driver    length delay
-wire3/Z manhtn 568.4 steiner 568.4 0.04
 wire2/Z manhtn 567.0 steiner 567.0 0.04
 wire1/Z manhtn 566.9 steiner 566.9 0.04
-in1 manhtn 291.4 steiner 291.4 0.01
+in1 manhtn 452.6 steiner 452.6 0.03
+wire3/Z manhtn 407.3 steiner 407.3 0.02
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -50,21 +46,21 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-  28.486    0.000    0.000    0.000 ^ in1 (in)
-            0.015    0.013    0.013 ^ wire3/A (BUF_X8)
-  55.135    0.011    0.028    0.040 ^ wire3/Z (BUF_X8)
-            0.065    0.052    0.092 ^ wire2/A (BUF_X16)
-  55.028    0.009    0.031    0.123 ^ wire2/Z (BUF_X16)
-            0.061    0.050    0.173 ^ wire1/A (BUF_X16)
-  43.586    0.009    0.030    0.203 ^ wire1/Z (BUF_X16)
-            0.040    0.033    0.236 ^ u1/A (BUF_X1)
-   1.008    0.007    0.028    0.264 ^ u1/Z (BUF_X1)
-            0.007    0.000    0.264 ^ u2/A (BUF_X1)
-   1.008    0.006    0.019    0.283 ^ u2/Z (BUF_X1)
-            0.006    0.000    0.283 ^ u3/A (BUF_X1)
-   0.083    0.004    0.016    0.299 ^ u3/Z (BUF_X1)
-            0.004    0.000    0.299 ^ out1 (out)
-                              0.299   data arrival time
+  40.601    0.000    0.000    0.000 ^ in1 (in)
+            0.032    0.026    0.026 ^ wire3/A (BUF_X8)
+  43.020    0.010    0.029    0.056 ^ wire3/Z (BUF_X8)
+            0.040    0.031    0.087 ^ wire2/A (BUF_X16)
+  55.028    0.008    0.029    0.116 ^ wire2/Z (BUF_X16)
+            0.061    0.050    0.165 ^ wire1/A (BUF_X16)
+  43.586    0.009    0.030    0.196 ^ wire1/Z (BUF_X16)
+            0.040    0.033    0.229 ^ u1/A (BUF_X1)
+   1.008    0.007    0.028    0.257 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.257 ^ u2/A (BUF_X1)
+   1.008    0.006    0.019    0.276 ^ u2/Z (BUF_X1)
+            0.006    0.000    0.276 ^ u3/A (BUF_X1)
+   0.083    0.004    0.016    0.292 ^ u3/Z (BUF_X1)
+            0.004    0.000    0.292 ^ out1 (out)
+                              0.292   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

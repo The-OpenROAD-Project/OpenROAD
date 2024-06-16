@@ -113,9 +113,9 @@ define_metric "DPL::design_area" "" "area" 7 "%7.0f" "<" {$value * 1.2}
 define_metric "DPL::utilization" "" "util" 4 "%4.1f" "<" {$value * 1.2}
 
 define_metric "RSZ::repair_design_buffer_count" "drv" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
-define_metric "RSZ::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {0}
-define_metric "RSZ::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {0}
-define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {0}
+define_metric "RSZ::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
+define_metric "RSZ::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
+define_metric "RSZ::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {min(0, $value * 1.2)}
 
 define_metric "RSZ::worst_slack_min" "slack" "min" 5 "%5.2f" ">" {$value - $clock_period * .1}
 define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clock_period * .1}

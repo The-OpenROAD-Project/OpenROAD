@@ -118,11 +118,14 @@ class defout_impl
  public:
   defout_impl(utl::Logger* logger)
   {
+    _dist_factor = 0;
+    _out = nullptr;
     _use_net_inst_ids = false;
     _use_master_ids = false;
     _use_alias = false;
     _select_net_map = nullptr;
     _select_inst_map = nullptr;
+    _non_default_rule = nullptr;
     _version = defout::DEF_5_8;
     _logger = logger;
   }

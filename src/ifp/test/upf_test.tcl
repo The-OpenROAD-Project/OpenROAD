@@ -48,7 +48,9 @@ foreach inst $insts {
 }
 
 
-initialize_floorplan -die_area { 0 0 500 500 } -core_area { 100 100 400 400 }
+initialize_floorplan -die_area { 0 0 500 500 } \
+    -core_area { 100 100 400 400 } \
+    -site unithd
 
 
 set insts [$block getInsts]

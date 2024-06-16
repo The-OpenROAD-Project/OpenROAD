@@ -32,7 +32,6 @@
 
 #include "dbMaster.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
@@ -48,7 +47,8 @@
 #include "dbTarget.h"
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -60,77 +60,105 @@ template class dbTable<_dbMaster>;
 
 bool _dbMaster::operator==(const _dbMaster& rhs) const
 {
-  if (_flags._frozen != rhs._flags._frozen)
+  if (_flags._frozen != rhs._flags._frozen) {
     return false;
+  }
 
-  if (_flags._x_symmetry != rhs._flags._x_symmetry)
+  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
     return false;
+  }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry)
+  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
     return false;
+  }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry)
+  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
     return false;
+  }
 
-  if (_flags._type != rhs._flags._type)
+  if (_flags._type != rhs._flags._type) {
     return false;
+  }
 
-  if (_x != rhs._x)
+  if (_x != rhs._x) {
     return false;
+  }
 
-  if (_y != rhs._y)
+  if (_y != rhs._y) {
     return false;
+  }
 
-  if (_height != rhs._height)
+  if (_height != rhs._height) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_mterm_cnt != rhs._mterm_cnt)
+  if (_mterm_cnt != rhs._mterm_cnt) {
     return false;
+  }
 
-  if (_id != rhs._id)
+  if (_id != rhs._id) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_leq != rhs._leq)
+  if (_leq != rhs._leq) {
     return false;
+  }
 
-  if (_eeq != rhs._eeq)
+  if (_eeq != rhs._eeq) {
     return false;
+  }
 
-  if (_obstructions != rhs._obstructions)
+  if (_obstructions != rhs._obstructions) {
     return false;
+  }
 
-  if (_site != rhs._site)
+  if (_lib_for_site != rhs._lib_for_site) {
     return false;
+  }
 
-  if (_mterm_hash != rhs._mterm_hash)
+  if (_site != rhs._site) {
     return false;
+  }
 
-  if (*_mterm_tbl != *rhs._mterm_tbl)
+  if (_mterm_hash != rhs._mterm_hash) {
     return false;
+  }
 
-  if (*_mpin_tbl != *rhs._mpin_tbl)
+  if (*_mterm_tbl != *rhs._mterm_tbl) {
     return false;
+  }
 
-  if (*_target_tbl != *rhs._target_tbl)
+  if (*_mpin_tbl != *rhs._mpin_tbl) {
     return false;
+  }
 
-  if (*_box_tbl != *rhs._box_tbl)
+  if (*_target_tbl != *rhs._target_tbl) {
     return false;
+  }
 
-  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl)
+  if (*_box_tbl != *rhs._box_tbl) {
     return false;
+  }
+
+  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl) {
+    return false;
+  }
 
   return true;
 }
@@ -156,6 +184,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_FIELD(_leq);
   DIFF_FIELD(_eeq);
   DIFF_FIELD(_obstructions);
+  DIFF_FIELD(_lib_for_site);
   DIFF_FIELD(_site);
   DIFF_HASH_TABLE(_mterm_hash);
   DIFF_TABLE_NO_DEEP(_mterm_tbl);
@@ -185,6 +214,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_leq);
   DIFF_OUT_FIELD(_eeq);
   DIFF_OUT_FIELD(_obstructions);
+  DIFF_OUT_FIELD(_lib_for_site);
   DIFF_OUT_FIELD(_site);
   DIFF_OUT_HASH_TABLE(_mterm_hash);
   DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
@@ -264,6 +294,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _leq(m._leq),
       _eeq(m._eeq),
       _obstructions(m._obstructions),
+      _lib_for_site(m._lib_for_site),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
       _sta_cell(m._sta_cell)
@@ -304,8 +335,9 @@ _dbMaster::~_dbMaster()
   delete _mpin_itr;
   delete _target_itr;
 
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
@@ -323,6 +355,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
   stream << *master._mterm_tbl;
@@ -348,6 +381,13 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
+  _dbDatabase* db = master.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
+    stream >> master._lib_for_site;
+  } else {
+    // The site was copied into the same dbLib previously
+    master._lib_for_site = master.getOwner()->getId();
+  }
   stream >> master._site;
   stream >> master._mterm_hash;
   stream >> *master._mterm_tbl;
@@ -384,7 +424,7 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbMaster::getName()
+std::string dbMaster::getName() const
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->_name;
@@ -396,11 +436,10 @@ const char* dbMaster::getConstName()
   return master->_name;
 }
 
-void dbMaster::getOrigin(int& x, int& y)
+Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  x = master->_x;
-  y = master->_y;
+  return {master->_x, master->_y};
 }
 
 void dbMaster::setOrigin(int x, int y)
@@ -462,8 +501,9 @@ dbMaster* dbMaster::getLEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_leq == 0)
+  if (master->_leq == 0) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
@@ -479,8 +519,9 @@ dbMaster* dbMaster::getEEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_eeq == 0)
+  if (master->_eeq == 0) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
@@ -564,16 +605,20 @@ int dbMaster::getMTermCount()
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
+  master->_lib_for_site = site->getLib()->getImpl()->getOID();
   master->_site = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
-  _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (master->_site == 0)
+  if (master->_site == 0) {
     return nullptr;
+  }
+
+  _dbDatabase* db = (_dbDatabase*) getDb();
+  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }
@@ -618,8 +663,9 @@ void dbMaster::setFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_flags._frozen == 1)
+  if (master->_flags._frozen == 1) {
     return;
+  }
 
   master->_flags._frozen = 1;
 
@@ -719,8 +765,9 @@ int dbMaster::getMasterId()
 
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 {
-  if (lib_->findMaster(name_))
+  if (lib_->findMaster(name_)) {
     return nullptr;
+  }
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();

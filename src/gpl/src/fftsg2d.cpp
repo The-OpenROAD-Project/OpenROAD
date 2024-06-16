@@ -366,8 +366,8 @@ macro definitions
         .
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #define fft2d_alloc_error_check(p)                        \
   {                                                       \
     if ((p) == NULL) {                                    \
@@ -453,7 +453,7 @@ void cdft2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makewt(n >> 2, ip, w);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS
@@ -516,7 +516,7 @@ void rdft2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makect(nc, ip, w + nw);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS
@@ -638,7 +638,7 @@ void ddcst2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makect(nc, ip, w + nw);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS
@@ -713,7 +713,7 @@ void ddsct2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makect(nc, ip, w + nw);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS
@@ -787,7 +787,7 @@ void ddct2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makect(nc, ip, w + nw);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS
@@ -861,7 +861,7 @@ void ddst2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
     makect(nc, ip, w + nw);
   }
   itnull = 0;
-  if (t == NULL) {
+  if (t == nullptr) {
     itnull = 1;
     nthread = 1;
 #ifdef USE_FFT2D_THREADS

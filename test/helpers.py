@@ -1,6 +1,7 @@
 import odb
 import os
 import utl
+import re
 
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
@@ -18,7 +19,10 @@ def make_result_file(filename):
     filename = "{}-py{}".format(*root_ext)
     return os.path.join(result_dir, filename)
 
-def diff_files(file1, file2):
+def diff_files(file1, file2, ignore=None):
+    if ignore:
+        ignore = re.compile(ignore)
+
     with open(file1, 'r') as f:
         lines1 = f.readlines()
 
@@ -28,6 +32,8 @@ def diff_files(file1, file2):
     num_lines1 = len(lines1)
     num_lines2 = len(lines2)
     for i in range(min(num_lines1, num_lines2)):
+        if ignore and (ignore.search(lines1[i]) or ignore.search(lines2[i])):
+            continue
         if lines1[i] != lines2[i]:
             utl.report(f"Differences found at line {i+1}.")
             utl.report(lines1[i][:-1])
@@ -66,9 +72,9 @@ utl.suppress_message(utl.PPL, 60)
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
 
+# suppress par messages with files' names
+utl.suppress_message(utl.PAR, 6)
+utl.suppress_message(utl.PAR, 38)
 
-# suppress par messages with runtime
-utl.suppress_message(utl.PAR, 1)
-utl.suppress_message(utl.PAR, 30)
-utl.suppress_message(utl.PAR, 109)
-utl.suppress_message(utl.PAR, 110)
+# suppress ord message with number of threads
+utl.suppress_message(utl.ORD, 30)

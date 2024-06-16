@@ -11,6 +11,8 @@ entries:
     title: Tutorials
   - file: contrib/GitGuide
     title: Git Quickstart
+  - file: main/src/utl/README
+    title: Man pages
 
 - file: main/README2
   title: OpenROAD User Guide
@@ -56,9 +58,8 @@ entries:
         title: VSRC Description
   - file: main/src/gpl/README
     title: Global Placement
-    entries:
-    - file: main/src/gpl/doc/TclCommands
-      title: Tcl Commands
+  - file: main/src/sta/README
+    title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizing
   - file: main/src/dpl/README
@@ -81,8 +82,6 @@ entries:
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
-  - file: main/src/sta/README
-    title: Static Timing Analyzer (external)
   - file: user/MessagesFinal.md
     title: Messages Glossary
 
@@ -97,6 +96,12 @@ entries:
     title: Logger
   - file: contrib/CI
     title: CI
+  - file: contrib/ReadmeFormat
+    title: README Format
+  - file: contrib/TclFormat
+    title: Tcl Format
+  - file: src/test/README
+    title: Man pages Test Framework
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   

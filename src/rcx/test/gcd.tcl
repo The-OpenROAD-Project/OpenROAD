@@ -20,4 +20,4 @@ write_spef $spef_file -nets $test_nets
 
 read_spef $spef_file
 
-diff_files gcd.spefok $spef_file
+diff_files gcd.spefok $spef_file "^\\*(DATE|VERSION)"

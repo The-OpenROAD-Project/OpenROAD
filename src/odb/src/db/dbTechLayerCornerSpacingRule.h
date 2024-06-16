@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 // User Code Begin Includes
 #include "dbVector.h"
@@ -70,7 +70,8 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
-  ~_dbTechLayerCornerSpacingRule();
+
+  ~_dbTechLayerCornerSpacingRule() = default;
 
   bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const

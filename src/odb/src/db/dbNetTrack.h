@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -49,7 +49,8 @@ class _dbNetTrack : public _dbObject
  public:
   _dbNetTrack(_dbDatabase*, const _dbNetTrack& r);
   _dbNetTrack(_dbDatabase*);
-  ~_dbNetTrack();
+
+  ~_dbNetTrack() = default;
 
   bool operator==(const _dbNetTrack& rhs) const;
   bool operator!=(const _dbNetTrack& rhs) const { return !operator==(rhs); }

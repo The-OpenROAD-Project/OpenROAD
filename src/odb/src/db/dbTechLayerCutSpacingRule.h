@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -93,7 +93,8 @@ class _dbTechLayerCutSpacingRule : public _dbObject
  public:
   _dbTechLayerCutSpacingRule(_dbDatabase*, const _dbTechLayerCutSpacingRule& r);
   _dbTechLayerCutSpacingRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingRule();
+
+  ~_dbTechLayerCutSpacingRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingRule& rhs) const

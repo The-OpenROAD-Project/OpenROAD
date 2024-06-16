@@ -29,11 +29,6 @@ namespace ord {
 
 using sta::dbSta;
 
-dbSta* makeDbSta()
-{
-  return new dbSta;
-}
-
 void deleteDbSta(sta::dbSta* sta)
 {
   delete sta;

@@ -54,7 +54,7 @@ class SegmentBuilder
                  const Point<double>& target,
                  const std::vector<unsigned>& techCharWires,
                  Clock& clock,
-                 Clock::SubNet& drivingSubNet,
+                 ClockSubNet& drivingSubNet,
                  const TechChar& techChar,
                  const unsigned techCharDistUnit,
                  TreeBuilder* tree);
@@ -62,7 +62,7 @@ class SegmentBuilder
   void build(const std::string& forceBuffer = "");
   void forceBufferInSegment(const std::string& master);
 
-  Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
+  ClockSubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
   TreeBuilder* getTree() const { return tree_; }
 
@@ -75,7 +75,7 @@ class SegmentBuilder
   const TechChar* techChar_;
   const unsigned techCharDistUnit_;
   Clock* clock_;
-  Clock::SubNet* drivingSubNet_;
+  ClockSubNet* drivingSubNet_;
   TreeBuilder* tree_;
   unsigned numBufferLevels_ = 0;
 };
@@ -129,12 +129,12 @@ class HTreeBuilder : public TreeBuilder
       }
     }
 
-    Clock::SubNet* getBranchDrivingSubNet(unsigned idx) const
+    ClockSubNet* getBranchDrivingSubNet(unsigned idx) const
     {
       return branchDrivingSubNet_[idx];
     }
 
-    void setBranchDrivingSubNet(unsigned idx, Clock::SubNet& subNet)
+    void setBranchDrivingSubNet(unsigned idx, ClockSubNet& subNet)
     {
       branchDrivingSubNet_[idx] = &subNet;
     }
@@ -165,7 +165,7 @@ class HTreeBuilder : public TreeBuilder
     std::vector<unsigned> wireSegments_;
     std::vector<Point<double>> branchPointLoc_;
     std::vector<unsigned> parents_;
-    std::vector<Clock::SubNet*> branchDrivingSubNet_;
+    std::vector<ClockSubNet*> branchDrivingSubNet_;
     std::vector<std::vector<Point<double>>> branchSinkLocs_;
   };
 
@@ -180,14 +180,93 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
-  bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
-                                 Point<double>& branchPoint,
-                                 double x1,
-                                 double y1,
-                                 double x2,
-                                 double y2);
+  void findLegalLocations(const Point<double>& parentPoint,
+                          const Point<double>& branchPoint,
+                          double x1,
+                          double y1,
+                          double x2,
+                          double y2,
+                          std::vector<Point<double>>& points);
+  void addCandidateLoc(double x,
+                       double y,
+                       const Point<double>& parentPoint,
+                       double x1,
+                       double y1,
+                       double x2,
+                       double y2,
+                       std::vector<Point<double>>& points)
+  {
+    Point<double> candidate(x, y);
+    if ((candidate != parentPoint) && isAlongBbox(x, y, x1, y1, x2, y2)) {
+      points.emplace_back(x, y);
+    }
+  }
+  void addCandidatePointsAlongBlockage(const Point<double>& point,
+                                       const Point<double>& parentPoint,
+                                       double targetDist,
+                                       int scalingFactor,
+                                       std::vector<Point<double>>& candidates,
+                                       odb::Direction2D direction);
+  Point<double> findBestLegalLocation(
+      double targetDist,
+      const Point<double>& branchPoint,
+      const Point<double>& parentPoint,
+      const std::vector<Point<double>>& legalLocations,
+      const std::vector<Point<double>>& sinks,
+      double x1,
+      double y1,
+      double x2,
+      double y2,
+      int scalingFactor);
+  Point<double> adjustBestLegalLocation(double targetDist,
+                                        const Point<double>& currLoc,
+                                        const Point<double>& parentPoint,
+                                        const std::vector<Point<double>>& sinks,
+                                        double x1,
+                                        double y1,
+                                        double x2,
+                                        double y2,
+                                        int scalingFactor);
+  void checkLegalityAndCostSpecial(const Point<double>& oldLoc,
+                                   const Point<double>& newLoc,
+                                   const Point<double>& parentPoint,
+                                   double targetDist,
+                                   const std::vector<Point<double>>& sinks,
+                                   int scalingFactor,
+                                   double x1,
+                                   double y1,
+                                   double x2,
+                                   double y2,
+                                   Point<double>& bestLoc,
+                                   double& sinkDist,
+                                   double& bestSinkDist);
+  bool adjustAlongBlockage(double targetDist,
+                           const Point<double>& currLoc,
+                           const Point<double>& parentPoint,
+                           const std::vector<Point<double>>& sinks,
+                           double x1,
+                           double y1,
+                           double x2,
+                           double y2,
+                           int scalingFactor,
+                           Point<double>& bestLoc);
+  Point<double> adjustBeyondBlockage(const Point<double>& branchPoint,
+                                     const Point<double>& parentPoint,
+                                     double targetDist,
+                                     const std::vector<Point<double>>& sinks,
+                                     int scalingFactor);
+  void checkLegalityAndCost(const Point<double>& oldLoc,
+                            const Point<double>& newLoc,
+                            const Point<double>& parentPoint,
+                            double targetDist,
+                            const std::vector<Point<double>>& sinks,
+                            int scalingFactor,
+                            Point<double>& bestLoc,
+                            double& sinkDist,
+                            double& bestSinkDist);
   void legalize();
   void legalizeDummy();
+  void printHTree();
   void plotSolution();
   std::string plotHTree();
   unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
@@ -295,6 +374,19 @@ class HTreeBuilder : public TreeBuilder
     return numSinksPerSubRegion < numMaxLeafSinks_;
   }
 
+  double weightedDistance(const Point<double>& newLoc,
+                          const Point<double>& oldLoc,
+                          const std::vector<Point<double>>& sinks);
+  void scalePosition(Point<double>& loc,
+                     const Point<double>& parLoc,
+                     double leng,
+                     double scale);
+  void adjustToplevelTopology(Point<double>& a,
+                              Point<double>& b,
+                              const Point<double>& parLoc);
+  std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
+  std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
+
  private:
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
@@ -307,6 +399,8 @@ class HTreeBuilder : public TreeBuilder
   unsigned minLengthSinkRegion_ = 0;
   unsigned clockTreeMaxDepth_ = 0;
   static constexpr int min_clustering_sinks_ = 200;
+  std::vector<unsigned> clusterDiameters_ = {50, 100, 200};
+  std::vector<unsigned> clusterSizes_ = {10, 20, 30};
 };
 
 }  // namespace cts

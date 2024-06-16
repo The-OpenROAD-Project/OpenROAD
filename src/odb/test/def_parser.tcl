@@ -10,13 +10,10 @@ if {$chip == "NULL"} {
 }
 
 set block [$chip getBlock]
-set out_def "results/parser_test_out.def"
+set out_def [make_result_file "def_parser.def"]
 write_def $out_def
 
-set isDiff [diff_files $out_def "parser_test.defok"]
-if {$isDiff != 0} {
-    exit 1
-}
+diff_files $out_def "def_parser.defok"
 
 puts "pass"
 exit 0

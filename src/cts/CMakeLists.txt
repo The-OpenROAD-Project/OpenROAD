@@ -33,6 +33,8 @@
 ##
 ###############################################################################
 
+find_package(Boost REQUIRED)
+
 add_subdirectory(src)
 if (ENABLE_TESTS)
     add_subdirectory(test)

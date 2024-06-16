@@ -217,7 +217,6 @@ class DisplayControls : public QDockWidget,
   bool areInstancePinsSelectable() override;
   bool areInstancePinNamesVisible() override;
   bool areInstanceBlockagesVisible() override;
-  bool areFillsVisible() override;
   bool areBlockagesVisible() override;
   bool areBlockagesSelectable() override;
   bool areObstructionsVisible() override;
@@ -229,6 +228,14 @@ class DisplayControls : public QDockWidget,
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
+  bool areIOPinsVisible() const override;
+  bool areRoutingSegmentsVisible() const override;
+  bool areRoutingViasVisible() const override;
+  bool areSpecialRoutingSegmentsVisible() const override;
+  bool areSpecialRoutingViasVisible() const override;
+  bool areFillsVisible() const override;
+  QFont pinMarkersFont() const override;
+
   QColor rulerColor() override;
   QFont rulerFont() override;
   bool areRulersVisible() override;
@@ -239,8 +246,6 @@ class DisplayControls : public QDockWidget,
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool areIOPinsVisible() const override;
-  QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
   bool areRegionsSelectable() const override;
@@ -375,7 +380,6 @@ class DisplayControls : public QDockWidget,
   {
     ModelRow instances;
     ModelRow scale_bar;
-    ModelRow fills;
     ModelRow access_points;
     ModelRow regions;
     ModelRow detailed;
@@ -391,6 +395,22 @@ class DisplayControls : public QDockWidget,
     ModelRow pins;
     ModelRow iterm_labels;
     ModelRow blockages;
+  };
+
+  struct RoutingModels
+  {
+    ModelRow segments;
+    ModelRow vias;
+  };
+
+  struct ShapeTypeModels
+  {
+    ModelRow routing_group;
+    RoutingModels routing;
+    ModelRow special_routing_group;
+    RoutingModels special_routing;
+    ModelRow pins;
+    ModelRow fill;
   };
 
   void techInit(odb::dbTech* tech);
@@ -491,6 +511,7 @@ class DisplayControls : public QDockWidget,
   ModelRow blockage_group_;
   ModelRow misc_group_;
   ModelRow site_group_;
+  ModelRow shape_type_group_;
 
   // instances
   InstanceModels instances_;
@@ -501,10 +522,10 @@ class DisplayControls : public QDockWidget,
   PhysicalModels physical_instances_;
 
   InstanceShapeModels instance_shapes_;
+  ShapeTypeModels shape_types_;
 
   // Object controls
   NetModels nets_;
-  ModelRow io_pins_;
   ModelRow rulers_;
   BlockageModels blockages_;
   TrackModels tracks_;

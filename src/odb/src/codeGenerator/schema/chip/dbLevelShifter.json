@@ -1,0 +1,142 @@
+{
+  "name": "dbLevelShifter",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "_name",
+      "type": "char *",
+      "default": "nullptr",
+      "flags": ["no-set"]
+    },
+    {
+      "name": "_next_entry",
+      "type": "dbId<_dbLevelShifter>",
+      "flags": ["no-set", "no-get"]
+    },
+    {
+      "name": "_domain",
+      "type": "dbId<_dbPowerDomain>",
+      "flags": ["no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name": "_elements",
+      "type": "dbVector<std::string>",
+      "flags": ["no-set","no-template", "no-get"]
+    },
+    {
+      "name": "_exclude_elements",
+      "type": "dbVector<std::string>",
+      "flags": ["no-set","no-template", "no-get"]
+    },
+    {
+      "name": "_source",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_sink",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_use_functional_equivalence",
+      "type": "bool",
+      "default": "false",
+      "flags": []
+    },
+    {
+      "name": "_applies_to",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_applies_to_boundary",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_rule",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_threshold",
+      "type": "float",
+      "default": "0",
+      "flags": []
+    },
+    {
+      "name": "_no_shift",
+      "type": "bool",
+      "default": "false",
+      "flags": []
+    },
+    {
+      "name": "_force_shift",
+      "type": "bool",
+      "default": "false",
+      "flags": []
+    },
+    {
+      "name": "_location",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_input_supply",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_output_supply",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_internal_supply",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_name_prefix",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_name_suffix",
+      "type": "std::string",
+      "flags": []
+    },
+    {
+      "name": "_instances", 
+      "type": "dbVector<std::pair<std::string, std::string>>",
+      "flags": ["no-set", "no-get","no-template"]
+    },
+    {
+      "name" : "_cell_name",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name" : "_cell_input",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name": "_cell_output",
+      "type": "std::string",
+      "flags": ["no-serial"]
+    }
+  ],
+  "cpp_includes": [
+    "dbBlock.h",
+    "dbHashTable.hpp",
+    "dbPowerDomain.h",
+    "dbNet.h",
+    "dbMaster.h"
+  ],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

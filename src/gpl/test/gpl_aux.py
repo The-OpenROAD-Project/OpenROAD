@@ -157,11 +157,11 @@ def global_placement(design, *,
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
         if incremental:
-            gpl.doIncrementalPlace()
+            gpl.doIncrementalPlace(1)
         else:
             gpl.doInitialPlace()
             if not skip_nesterov_place:
-                gpl.doNesterovPlace()
+                gpl.doNesterovPlace(1)
         gpl.reset()
     else:
         utl.error(utl.GPL, 506, "No rows defined in design. Use initialize_floorplan to add rows.")

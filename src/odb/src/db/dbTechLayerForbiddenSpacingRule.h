@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -48,7 +48,8 @@ class _dbTechLayerForbiddenSpacingRule : public _dbObject
   _dbTechLayerForbiddenSpacingRule(_dbDatabase*,
                                    const _dbTechLayerForbiddenSpacingRule& r);
   _dbTechLayerForbiddenSpacingRule(_dbDatabase*);
-  ~_dbTechLayerForbiddenSpacingRule();
+
+  ~_dbTechLayerForbiddenSpacingRule() = default;
 
   bool operator==(const _dbTechLayerForbiddenSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerForbiddenSpacingRule& rhs) const

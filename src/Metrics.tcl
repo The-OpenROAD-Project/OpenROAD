@@ -103,42 +103,41 @@ proc report_worst_negative_slack_metric { args } {
 
 # From https://wiki.tcl-lang.org/page/Inf
 proc ::tcl::mathfunc::finite {x} {
-    expr {[string is double -strict $x] && $x == $x && $x + 1 != $x}
+  expr {[string is double -strict $x] && $x == $x && $x + 1 != $x}
 }
 
 define_cmd_args "report_erc_metrics" {}
 proc report_erc_metrics { } {
+  # Avoid tcl errors from division involving Inf
+  if {[::tcl::mathfunc::finite [sta::max_slew_check_limit]]} {
+    set max_slew_limit [sta::max_slew_check_slack_limit]
+  } else {
+    set max_slew_limit 0
+  }
+  if {[::tcl::mathfunc::finite [sta::max_capacitance_check_limit]]} {
+    set max_cap_limit [sta::max_capacitance_check_slack_limit]
+  } else {
+    set max_cap_limit 0
+  }
+  if {[::tcl::mathfunc::finite [sta::max_fanout_check_limit]]} {
+    set max_fanout_limit [sta::max_fanout_check_limit]
+  } else {
+    set max_fanout_limit 0
+  }
+  set max_slew_violation [sta::max_slew_violation_count]
+  set max_cap_violation [sta::max_capacitance_violation_count]
+  set max_fanout_violation [sta::max_fanout_violation_count]
+  set setup_violation [sta::endpoint_violation_count max]
+  set hold_violation [sta::endpoint_violation_count min]
 
-    # Avoid tcl errors from division involving Inf
-    if {[::tcl::mathfunc::finite [sta::max_slew_check_limit]]} {
-      set max_slew_limit [sta::max_slew_check_slack_limit]
-    } else {
-      set max_slew_limit 0
-    }
-    if {[::tcl::mathfunc::finite [sta::max_capacitance_check_limit]]} {
-      set max_cap_limit [sta::max_capacitance_check_slack_limit]
-    } else {
-      set max_cap_limit 0
-    }
-    if {[::tcl::mathfunc::finite [sta::max_fanout_check_limit]]} {
-      set max_fanout_limit [sta::max_fanout_check_limit]
-    } else {
-      set max_fanout_limit 0
-    }
-    set max_slew_violation [sta::max_slew_violation_count]
-    set max_cap_violation [sta::max_capacitance_violation_count]
-    set max_fanout_violation [sta::max_fanout_violation_count]
-    set setup_violation [sta::endpoint_violation_count max]
-    set hold_violation [sta::endpoint_violation_count min]
-
-    utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
-    utl::metric_int "timing__drv__max_slew" $max_slew_violation
-    utl::metric_float "timing__drv__max_cap_limit" $max_cap_limit
-    utl::metric_int "timing__drv__max_cap" $max_cap_violation
-    utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
-    utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
-    utl::metric_int "timing__drv__setup_violation_count" $setup_violation
-    utl::metric_int "timing__drv__hold_violation_count" $hold_violation
+  utl::metric_float "timing__drv__max_slew_limit" $max_slew_limit
+  utl::metric_int "timing__drv__max_slew" $max_slew_violation
+  utl::metric_float "timing__drv__max_cap_limit" $max_cap_limit
+  utl::metric_int "timing__drv__max_cap" $max_cap_violation
+  utl::metric_float "timing__drv__max_fanout_limit" $max_fanout_limit
+  utl::metric_int "timing__drv__max_fanout" $max_fanout_violation
+  utl::metric_int "timing__drv__setup_violation_count" $setup_violation
+  utl::metric_int "timing__drv__hold_violation_count" $hold_violation
 }
 
 
@@ -147,7 +146,7 @@ proc report_power_metric { args } {
   parse_key_args "report_power_metric" args keys {-corner} flags {}
   set corner [sta::parse_corner keys]
   set power_result [design_power $corner]
-  set totals       [lrange $power_result  0  3]
+  set totals [lrange $power_result 0 3]
   lassign $totals design_internal design_switching design_leakage design_total
 
   utl::metric_float "power__internal__total" $design_internal
@@ -201,7 +200,7 @@ proc report_design_area_metrics {args} {
     }
     set wid [$inst_master getWidth]
     set ht [$inst_master getHeight]
-    set inst_area  [expr $wid * $ht]
+    set inst_area [expr $wid * $ht]
     set total_area [expr $total_area + $inst_area]
     set num_insts [expr $num_insts + 1]
 

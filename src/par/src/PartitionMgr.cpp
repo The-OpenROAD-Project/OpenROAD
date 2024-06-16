@@ -78,6 +78,13 @@ using utl::PAR;
 
 namespace par {
 
+bool CompareInstancePtr::operator()(const sta::Instance* lhs,
+                                    const sta::Instance* rhs) const
+{
+  return db_network_->staToDb(lhs)->getName()
+         < db_network_->staToDb(rhs)->getName();
+}
+
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
                         sta::dbSta* sta,
@@ -223,7 +230,7 @@ void PartitionMgr::evaluateHypergraphSolution(
 }
 
 // Top level interface
-// The function for partitioning a hypergraph
+// The function for partitioning a netlist
 // This is the main API for TritonPart
 // Key supports:
 // (1) fixed vertices constraint in fixed_file
@@ -427,9 +434,10 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
 }
 
 // determine the required direction of a port.
-static PortDirection* determinePortDirection(const Net* net,
-                                             const std::set<Instance*>* insts,
-                                             const dbNetwork* db_network)
+static PortDirection* determinePortDirection(
+    const Net* net,
+    const std::set<Instance*, CompareInstancePtr>* insts,
+    const dbNetwork* db_network)
 {
   bool local_only = true;
   bool locally_driven = false;
@@ -507,7 +515,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     sta::Library* library,
     sta::NetworkReader* network,
     sta::Instance* parent,
-    const std::set<Instance*>* insts,
+    const std::set<Instance*, CompareInstancePtr>* insts,
     std::map<Net*, Port*>* port_map)
 {
   // build cell
@@ -759,12 +767,12 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
     return;
   }
 
-  logger_->report("Writing partition to verilog.");
+  logger_->info(PAR, 1, "Writing partition to verilog.");
   // get top module name
   const std::string top_name = db_network_->name(db_network_->topInstance());
 
   // build partition instance map
-  std::map<int, std::set<Instance*>> instance_map;
+  std::map<int, std::set<Instance*, CompareInstancePtr>> instance_map;
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
@@ -774,6 +782,10 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
                     inst->getName());
     } else {
       const int partition = prop_id->getValue();
+      if (instance_map.find(partition) == instance_map.end()) {
+        instance_map.insert(
+            {partition, std::set<Instance*, CompareInstancePtr>(db_network_)});
+      }
       instance_map[partition].insert(db_network_->dbToSta(inst));
     }
   }
@@ -835,7 +847,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
   if (!instance_map_file.empty()) {
     std::ifstream map_file(instance_map_file);
     if (!map_file) {
-      logger_->error(PAR, 72, "Unable to open file {}.", instance_map_file);
+      logger_->error(PAR, 25, "Unable to open file {}.", instance_map_file);
     }
     std::string line;
     while (getline(map_file, line)) {
@@ -844,7 +856,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
       }
       auto inst = block->findInst(line.c_str());
       if (!inst) {
-        logger_->error(PAR, 73, "Unable to find instance {}.", line);
+        logger_->error(PAR, 26, "Unable to find instance {}.", line);
       }
       instance_order.push_back(inst);
     }
@@ -857,7 +869,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
   {
     std::ifstream file(filename);
     if (!file) {
-      logger_->error(PAR, 22, "Unable to open file {}.", filename);
+      logger_->error(PAR, 36, "Unable to open file {}.", filename);
     }
     std::string line;
     while (getline(file, line)) {
@@ -869,7 +881,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
       } catch (const std::logic_error&) {
         logger_->error(
             PAR,
-            71,
+            27,
             "Unable to convert line \"{}\" to an integer in file: {}",
             line,
             filename);
@@ -879,7 +891,7 @@ void PartitionMgr::readPartitioningFile(const std::string& filename,
 
   if (inst_partitions.size() != instance_order.size()) {
     logger_->error(PAR,
-                   74,
+                   28,
                    "Instances in partitioning ({}) does not match instances in "
                    "netlist ({}).",
                    inst_partitions.size(),

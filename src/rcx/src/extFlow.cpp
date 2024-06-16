@@ -33,16 +33,31 @@
 #include <map>
 #include <vector>
 
-#include "dbUtil.h"
+#include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 #include "wire.h"
 
 namespace rcx {
 
+using odb::dbInst;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSBox;
+using odb::dbSet;
+using odb::dbShape;
+using odb::dbSigType;
+using odb::dbSWire;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbTrackGrid;
+using odb::dbWire;
+using odb::dbWireShapeItr;
+using odb::MAX_INT;
+using odb::MIN_INT;
+using odb::Rect;
 using utl::RCX;
-
-using namespace odb;
 
 uint extMain::getBucketNum(int base, int max, uint step, int xy)
 {
@@ -363,8 +378,7 @@ uint extMain::initSearchForNets(int* X1,
   }
   uint layerCnt = n + 1;
 
-  _search = new odb::Ath__gridTable(
-      &maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
   return layerCnt;
 }
@@ -682,73 +696,48 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
       if (netUtil != nullptr) {
         netUtil->createNetSingleWire(r, level, net->getId(), shapeId);
       } else {
-        int dx = r.xMax() - r.xMin();
-        int dy = r.yMax() - r.yMin();
-        int via_ext = 32;
-
-        uint trackNum = 0;
-        if (trackNum > 0) {
-          if (dy > dx) {
-            trackNum = _search->addBox(r.xMin(),
-                                       r.yMin() - via_ext,
-                                       r.xMax(),
-                                       r.yMax() + via_ext,
-                                       level,
-                                       net->getId(),
-                                       shapeId,
-                                       wtype);
-          } else {
-            trackNum = _search->addBox(r.xMin() - via_ext,
-                                       r.yMin(),
-                                       r.xMax() + via_ext,
-                                       r.yMax(),
-                                       level,
-                                       net->getId(),
-                                       shapeId,
-                                       wtype);
-          }
+        if (USE_DB_UNITS) {
+          _search->addBox(GetDBcoords2(r.xMin()),
+                          GetDBcoords2(r.yMin()),
+                          GetDBcoords2(r.xMax()),
+                          GetDBcoords2(r.yMax()),
+                          level,
+                          net->getId(),
+                          shapeId,
+                          wtype);
         } else {
-          if (USE_DB_UNITS) {
-            trackNum = _search->addBox(GetDBcoords2(r.xMin()),
-                                       GetDBcoords2(r.yMin()),
-                                       GetDBcoords2(r.xMax()),
-                                       GetDBcoords2(r.yMax()),
-                                       level,
-                                       net->getId(),
-                                       shapeId,
-                                       wtype);
-          } else {
-            trackNum = _search->addBox(r.xMin(),
-                                       r.yMin(),
-                                       r.xMax(),
-                                       r.yMax(),
-                                       level,
-                                       net->getId(),
-                                       shapeId,
-                                       wtype);
-            if (net->getId() == _debug_net_id) {
-              debugPrint(
-                  logger_,
-                  RCX,
-                  "debug_net",
-                  1,
-                  "\t[Search:W]"
-                  "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
-                  "{:.3f}  {:.3f} {:.3f} net {}",
-                  trackNum,
-                  level,
-                  dx,
-                  dy,
-                  r.xMin(),
-                  r.yMin(),
-                  r.xMax(),
-                  r.yMax(),
-                  GetDBcoords1(r.xMin()),
-                  GetDBcoords1(r.yMin()),
-                  GetDBcoords1(r.xMax()),
-                  GetDBcoords1(r.yMax()),
-                  net->getId());
-            }
+          const uint trackNum = _search->addBox(r.xMin(),
+                                                r.yMin(),
+                                                r.xMax(),
+                                                r.yMax(),
+                                                level,
+                                                net->getId(),
+                                                shapeId,
+                                                wtype);
+          if (net->getId() == _debug_net_id) {
+            const int dx = r.xMax() - r.xMin();
+            const int dy = r.yMax() - r.yMin();
+            debugPrint(
+                logger_,
+                RCX,
+                "debug_net",
+                1,
+                "\t[Search:W]"
+                "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
+                "{:.3f}  {:.3f} {:.3f} net {}",
+                trackNum,
+                level,
+                dx,
+                dy,
+                r.xMin(),
+                r.yMin(),
+                r.xMax(),
+                r.yMax(),
+                GetDBcoords1(r.xMin()),
+                GetDBcoords1(r.yMin()),
+                GetDBcoords1(r.xMax()),
+                GetDBcoords1(r.yMax()),
+                net->getId());
           }
         }
       }
@@ -1287,7 +1276,6 @@ uint extMain::couplingFlow(Rect& extRect,
     lo_sdb[!dir] = ll[!dir];
     hi_sdb[!dir] = ur[!dir];
 
-    int minExtracted = ll[dir];
     int gs_limit = ll[dir];
 
     _search->initCouplingCapLoops(dir, ccFlag, coupleAndCompute, m);
@@ -1329,14 +1317,14 @@ uint extMain::couplingFlow(Rect& extRect,
 
       uint extractedWireCnt = 0;
       int extractLimit = hiXY - ccDist * maxPitch;
-      minExtracted = _search->couplingCaps(extractLimit,
-                                           ccFlag,
-                                           dir,
-                                           extractedWireCnt,
-                                           coupleAndCompute,
-                                           m,
-                                           _getBandWire,
-                                           limitArray);
+      const int minExtracted = _search->couplingCaps(extractLimit,
+                                                     ccFlag,
+                                                     dir,
+                                                     extractedWireCnt,
+                                                     coupleAndCompute,
+                                                     m,
+                                                     _getBandWire,
+                                                     limitArray);
 
       int deallocLimit = minExtracted - (ccDist + 1) * maxPitch;
       if (_printBandInfo) {

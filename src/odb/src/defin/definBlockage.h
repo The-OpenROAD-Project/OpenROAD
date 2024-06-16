@@ -33,7 +33,7 @@
 #pragma once
 
 #include "definBase.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -42,17 +42,18 @@ class dbInst;
 
 class definBlockage : public definBase
 {
-  dbTechLayer* _layer;
-  dbInst* _inst;
-  bool _slots;
-  bool _fills;
-  bool _pushdown;
-  bool _soft;
-  bool _has_min_spacing;
-  bool _has_effective_width;
-  int _min_spacing;
-  int _effective_width;
-  float _max_density;
+  dbTechLayer* _layer = nullptr;
+  dbInst* _inst = nullptr;
+  bool _slots = false;
+  bool _fills = false;
+  bool _except_pg_nets = false;
+  bool _pushdown = false;
+  bool _soft = false;
+  bool _has_min_spacing = false;
+  bool _has_effective_width = false;
+  int _min_spacing = 0;
+  int _effective_width = 0;
+  float _max_density = 0;
 
  public:
   // Routing Blockage interface methods
@@ -60,6 +61,7 @@ class definBlockage : public definBase
   virtual void blockageRoutingComponent(const char* comp);
   virtual void blockageRoutingSlots();
   virtual void blockageRoutingFills();
+  virtual void blockageRoutingExceptPGNets();
   virtual void blockageRoutingPushdown();
   virtual void blockageRoutingMinSpacing(int spacing);
   virtual void blockageRoutingEffectiveWidth(int width);

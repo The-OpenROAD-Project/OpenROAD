@@ -1,0 +1,39 @@
+{
+  "name": "dbTechLayerWrongDirSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "wrongdir_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "noneol_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "noneol_width_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "prl_length_",
+      "default": 0
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

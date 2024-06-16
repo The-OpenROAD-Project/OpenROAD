@@ -35,7 +35,7 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -55,7 +55,8 @@ class _dbTechLayerWidthTableRule : public _dbObject
  public:
   _dbTechLayerWidthTableRule(_dbDatabase*, const _dbTechLayerWidthTableRule& r);
   _dbTechLayerWidthTableRule(_dbDatabase*);
-  ~_dbTechLayerWidthTableRule();
+
+  ~_dbTechLayerWidthTableRule() = default;
 
   bool operator==(const _dbTechLayerWidthTableRule& rhs) const;
   bool operator!=(const _dbTechLayerWidthTableRule& rhs) const

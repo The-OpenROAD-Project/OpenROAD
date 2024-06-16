@@ -33,8 +33,7 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 frPathSeg::frPathSeg(const drPathSeg& in)
 {
@@ -75,3 +74,5 @@ template void frShape::serialize<frIArchive>(frIArchive& ar,
 
 template void frShape::serialize<frOArchive>(frOArchive& ar,
                                              const unsigned int file_version);
+
+}  // namespace drt
