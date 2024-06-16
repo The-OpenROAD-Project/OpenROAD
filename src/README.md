@@ -76,6 +76,7 @@ technology exists in the database.
 
 
    .. code-tab:: py
+
       from openroad import Design, Tech
       tech = Tech()
       tech.readLef("liberty1.lef")
