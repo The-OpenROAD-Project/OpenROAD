@@ -45,6 +45,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <unordered_set>
+
 // We have had too many problems with this std::filesytem on various platforms
 // so it is disabled but kept for future reference
 #ifdef USE_STD_FILESYSTEM
@@ -333,6 +335,105 @@ static int tclReadlineInit(Tcl_Interp* interp)
 }
 #endif
 
+// get OpenROAD registered commands
+static void getRegisteredCommands(
+    Tcl_Interp* interp,
+    std::unordered_set<std::string>& openroad_commands)
+{
+  if (Tcl_Eval(interp, "array names sta::cmd_args") == TCL_OK) {
+    Tcl_Obj* cmd_names = Tcl_GetObjResult(interp);
+    int cmd_size;
+    Tcl_Obj** cmds_objs;
+    if (Tcl_ListObjGetElements(interp, cmd_names, &cmd_size, &cmds_objs)
+        == TCL_OK) {
+      for (int i = 0; i < cmd_size; i++) {
+        std::string cmd_name = Tcl_GetString(cmds_objs[i]);
+        openroad_commands.insert(cmd_name);
+      }
+    }
+  }
+}
+
+//  tracing tcl commands
+int tclCmdCommandTracing(ClientData,
+                         Tcl_Interp* interp,
+                         int,
+                         const char*,
+                         Tcl_Command,
+                         int objc,
+                         Tcl_Obj* const objv[])
+{
+  static std::unordered_set<std::string> openroad_commands;
+
+  static bool is_help = false;
+  static bool skip_trace = true;
+  static std::string last_command;
+
+  if (openroad_commands.empty()) {
+    getRegisteredCommands(interp, openroad_commands);
+  }
+
+  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  const char* open_road_command = Tcl_GetStringFromObj(objv[0], nullptr);
+  if (skip_trace) {
+    if (strcmp(open_road_command, "parse_redirect_args") == 0
+        || strcmp(open_road_command, "::tcl::info::commands") == 0) {
+      skip_trace = false;
+    }
+    return TCL_OK;
+  }
+
+  // skip tracing for help
+  if (strcmp(open_road_command, "help") == 0
+      || (objc > 1
+          && strcmp(Tcl_GetStringFromObj(objv[1], nullptr), "help") == 0)) {
+    is_help = true;
+  }
+
+  // skip tracing while printing help
+  if (is_help) {
+    if (objc > 1
+        && strcmp(Tcl_GetStringFromObj(objv[1], nullptr),
+                  "::tclreadline::readline")
+               == 0) {
+      is_help = false;
+    }
+    return TCL_OK;
+  }
+
+  // find is the name exist in OpenROAD commands
+  if (openroad_commands.find(open_road_command) != openroad_commands.end()) {
+    std::string log_repot_str;
+    log_repot_str += std::string(open_road_command);
+    if (objc > 1) {
+      log_repot_str
+          += " " + std::string(Tcl_GetStringFromObj(objv[1], nullptr)) + " ";
+      // printing the arguments of the procedure
+      for (int i = 2; i < objc; i++) {
+        const char* arg = Tcl_GetStringFromObj(objv[i], nullptr);
+        if (strcmp(arg, "args") == 0) {
+          Tcl_Obj* varValue
+              = Tcl_GetVar2Ex(interp, arg, nullptr, TCL_LEAVE_ERR_MSG);
+          log_repot_str += std::string(Tcl_GetString(varValue)) + " ";
+        } else {
+          if ((strcmp(arg, "keys") != 0) && (strcmp(arg, "flags") != 0)) {
+            log_repot_str += std::string(arg) + " ";
+          }
+        }
+      }
+    }
+
+    if (log_repot_str == last_command) {
+      return TCL_OK;
+    }
+    last_command = log_repot_str;
+    logger->report("OpenROAD> {}", log_repot_str);
+    return TCL_OK;
+  }
+  last_command = open_road_command;
+  return TCL_OK;
+}
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -372,6 +473,12 @@ static int tclAppInit(int& argc,
 #endif
 
     ord::initOpenRoad(interp);
+    Tcl_CreateObjTrace(interp,
+                       0,
+                       TCL_ALLOW_INLINE_COMPILATION,
+                       tclCmdCommandTracing,
+                       nullptr,
+                       nullptr);
 
     if (!findCmdLineFlag(argc, argv, "-no_splash")) {
       showSplash();

@@ -6,6 +6,9 @@ record_tests {
     #utl_man_tcl_check
     #utl_readme_msgs_check
     #test_error_exception
+    test_logged_commands_interactive.py
+    test_logged_commands_batch.py
+    test_logged_commands_gui.py
 }
 
 record_pass_fail_tests {
