@@ -586,9 +586,9 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
-    std::vector<odb::Point> last_pos;
+    std::set<odb::Point> last_pos;
     for (const Pin& pin : net->getPins()) {
-      last_pos.push_back(pin.getOnGridPosition());
+      last_pos.insert(pin.getOnGridPosition());
     }
     net->destroyPins();
     // update pin positions
@@ -597,7 +597,8 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     findPins(net);
     destroyNetWire(net);
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos)) {
+    // check if pins that changed positions are new positions
+    if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)) {
       dirty_nets.push_back(db_net_map_[db_net]);
     }
   }
@@ -903,8 +904,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::pinPositionsChanged(Net* net,
-                                       std::vector<odb::Point>& last_pos)
+bool GlobalRouter::pinPositionsChanged(Net* net, std::set<odb::Point>& last_pos)
 {
   bool is_diferent = false;
   std::map<odb::Point, int> cnt_pos;
@@ -921,6 +921,17 @@ bool GlobalRouter::pinPositionsChanged(Net* net,
     }
   }
   return is_diferent;
+}
+
+bool GlobalRouter::newPinOnGrid(Net* net, std::set<odb::Point>& last_pos)
+{
+  for (const Pin& pin : net->getPins()) {
+    if (last_pos.find(pin.getOnGridPosition()) == last_pos.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool GlobalRouter::makeFastrouteNet(Net* net)
