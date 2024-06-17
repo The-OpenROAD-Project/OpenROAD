@@ -1568,14 +1568,14 @@ void HierRTLMP::createDataFlow()
       continue;
     }
 
-    // mark sequential instances
-    odb::dbIntProperty::create(inst, "vertex_id", stop_flag_vec.size());
-    std_cell_vertex[stop_flag_vec.size()] = inst;
-
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
     if (!liberty_cell) {
       continue;
     }
+
+    // Mark registers
+    odb::dbIntProperty::create(inst, "vertex_id", stop_flag_vec.size());
+    std_cell_vertex[stop_flag_vec.size()] = inst;
 
     if (liberty_cell->hasSequentials()) {
       stop_flag_vec.push_back(true);
