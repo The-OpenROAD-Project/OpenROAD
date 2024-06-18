@@ -55,6 +55,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace rsz {
 
@@ -93,6 +94,7 @@ void RepairHold::repairHold(
     const bool verbose)
 {
   init();
+  utl::ScopedStatistics stat(logger_);
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell* buffer_cell = findHoldBuffer();
@@ -132,6 +134,7 @@ void RepairHold::repairHold(const Pin* end_pin,
                             const int max_passes)
 {
   init();
+  utl::ScopedStatistics stat(logger_);
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell* buffer_cell = findHoldBuffer();

@@ -46,6 +46,7 @@
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace gpl {
 using utl::GPL;
@@ -62,6 +63,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              utl::Logger* log)
     : NesterovPlace()
 {
+  utl::ScopedStatistics stat(log);
   npVars_ = npVars;
   pbc_ = pbc;
   nbc_ = nbc;

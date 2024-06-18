@@ -35,6 +35,8 @@
 
 #include "utl/timer.h"
 
+#include <sys/resource.h>
+
 namespace utl {
 
 void Timer::reset()
@@ -72,6 +74,25 @@ DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
 DebugScopedTimer::~DebugScopedTimer()
 {
   debugPrint(logger_, tool_, group_.c_str(), level_, msg_, *this);
+}
+
+ScopedStatistics::ScopedStatistics(utl::Logger* logger)
+    : Timer(), logger_(logger)
+{
+}
+
+size_t ScopedStatistics::getPeakMemoryUsage()
+{
+  struct rusage rusage;
+  getrusage(RUSAGE_SELF, &rusage);
+  return (size_t) (rusage.ru_maxrss * 1024L);
+}
+
+ScopedStatistics::~ScopedStatistics()
+{
+  logger_->report("Runtime {} seconds, memory used {} KB.",
+                  Timer::elapsed(),
+                  getPeakMemoryUsage());
 }
 
 }  // namespace utl

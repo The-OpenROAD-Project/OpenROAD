@@ -230,14 +230,30 @@ proc run_test_lang { test lang } {
             set tmp_file [file join $result_dir $test.tmp]
             exec tr -d "\r" < $log_file > $tmp_file
             file rename -force $tmp_file $log_file
-            if [catch [concat exec diff $diff_options $ok_file $log_file \
-                         >> $diff_file]] {
-              puts " *FAIL*$error_msg"
-              append_failure $test
-              incr errors(fail)
+
+            # Create a temporary filtered log file that ignores lines with the specific pattern
+            set tmp_log_file [file join $result_dir "${test}_log.tmp"]
+
+            set sed_result [catch {exec sed {/Runtime.*seconds.*memory.*used.*KB.*/d} \
+		    $log_file > $tmp_log_file} sed_error]
+            if {$sed_result != 0} {
+                puts "Error running sed"
+                puts "Error message: $sed_error"
+                incr errors(fail)
             } else {
-              puts " pass$error_msg"
+              # Proceed with the diff operation
+              set result [catch {exec diff $diff_options $ok_file $tmp_log_file >> $diff_file}]
+              if {$result != 0} {
+                exec cat $diff_file
+                puts " *FAIL*$error_msg"
+                append_failure $test
+                incr errors(fail)
+              } else {
+                puts " pass$error_msg"
+              }
             }
+            # Clean up the temporary filtered log file.
+            file delete -force $tmp_log_file
           } else {
             puts " *NO OK FILE*$error_msg"
             append_failure $test
