@@ -194,8 +194,7 @@ void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
       logger_->error(utl::GUI, 70, result.toStdString());
     } catch (const std::runtime_error& e) {
       if (!is_interactive_) {
-        // rethrow error
-        throw e;
+        throw;
       }
     }
   }
