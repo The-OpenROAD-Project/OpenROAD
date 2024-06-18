@@ -558,10 +558,6 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
 {
   auto module = block_->getTopModule();
   for (odb::dbInst* inst : module->getInsts()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell == nullptr) {
-      continue;
-    }
     odb::dbMaster* master = inst->getMaster();
 
     if (master->isPad() || master->isCover()) {
@@ -672,11 +668,6 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
   float macro_area = 0.0;
 
   for (odb::dbInst* inst : module->getInsts()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell == nullptr) {
-      continue;
-    }
-
     odb::dbMaster* master = inst->getMaster();
 
     if (master->isPad() || master->isCover()) {
@@ -1153,16 +1144,12 @@ void HierRTLMP::breakCluster(Cluster* parent)
             = std::string("(") + parent->getName() + ")_glue_logic";
         Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
         for (odb::dbInst* inst : module->getInsts()) {
-          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-          if (liberty_cell == nullptr) {
-            continue;
-          }
           odb::dbMaster* master = inst->getMaster();
-          // check if the instance is a Pad, Cover or empty block (such as
-          // marker)
+
           if (master->isPad() || master->isCover()) {
             continue;
           }
+
           if (master->isBlock()) {
             cluster->addLeafMacro(inst);
           } else {
@@ -1183,10 +1170,6 @@ void HierRTLMP::breakCluster(Cluster* parent)
         }
       } else {
         for (odb::dbInst* inst : module->getInsts()) {
-          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-          if (liberty_cell == nullptr) {
-            continue;
-          }
           odb::dbMaster* master = inst->getMaster();
           // check if the instance is a Pad, Cover or empty block (such as
           // marker)
@@ -1222,10 +1205,6 @@ void HierRTLMP::breakCluster(Cluster* parent)
         = std::string("(") + parent->getName() + ")_glue_logic";
     Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
     for (odb::dbInst* inst : module->getInsts()) {
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;
-      }
       odb::dbMaster* master = inst->getMaster();
       // check if the instance is a Pad, Cover or empty block (such as marker)
       if (master->isPad() || master->isCover()) {
@@ -1510,12 +1489,6 @@ void HierRTLMP::calculateConnection()
 
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-
-      if (liberty_cell == nullptr) {
-        continue;
-      }
-
       odb::dbMaster* master = inst->getMaster();
 
       if (master->isPad() || master->isCover()) {
@@ -1587,23 +1560,23 @@ void HierRTLMP::createDataFlow()
     io_pin_vertex[stop_flag_vec.size()] = term;
     stop_flag_vec.push_back(true);
   }
+
   // assign vertex_id property of each instance
   for (auto inst : block_->getInsts()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell == nullptr) {
-      continue;
-    }
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a Pad, Cover or a block
-    // We ignore nets connecting Pads, Covers
-    // for blocks, we iterate over the block pins
     if (master->isPad() || master->isCover() || master->isBlock()) {
       continue;
     }
 
-    // mark sequential instances
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (!liberty_cell) {
+      continue;
+    }
+
+    // Mark registers
     odb::dbIntProperty::create(inst, "vertex_id", stop_flag_vec.size());
     std_cell_vertex[stop_flag_vec.size()] = inst;
+
     if (liberty_cell->hasSequentials()) {
       stop_flag_vec.push_back(true);
     } else {
@@ -1650,10 +1623,6 @@ void HierRTLMP::createDataFlow()
     // check the connected instances
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;
-      }
       odb::dbMaster* master = inst->getMaster();
       // check if the instance is a Pad, Cover or empty block (such as marker)
       // We ignore nets connecting Pads, Covers, or markers
@@ -2116,10 +2085,6 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     // check the connected instances
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;
-      }
       odb::dbMaster* master = inst->getMaster();
       // check if the instance is a Pad, Cover or empty block (such as marker)
       // if the nets connects to such pad, cover or empty block,
@@ -2366,15 +2331,12 @@ void HierRTLMP::getHardMacros(odb::dbModule* module,
                               std::vector<HardMacro*>& hard_macros)
 {
   for (odb::dbInst* inst : module->getInsts()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell == nullptr) {
-      continue;
-    }
     odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad or empty block (such as marker)
+
     if (master->isPad() || master->isCover()) {
       continue;
     }
+
     if (master->isBlock()) {
       hard_macros.push_back(hard_macro_map_[inst]);
     }
