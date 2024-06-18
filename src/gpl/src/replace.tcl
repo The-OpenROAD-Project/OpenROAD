@@ -51,11 +51,12 @@ sta::define_cmd_args "global_placement" {\
     [-overflow overflow]\
     [-initial_place_max_iter initial_place_max_iter]\
     [-initial_place_max_fanout initial_place_max_fanout]\
+    [-routability_use_grt]\
+    [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
     [-routability_max_density routability_max_density]\
     [-routability_max_bloat_iter routability_max_bloat_iter]\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
-    [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
@@ -87,6 +88,7 @@ proc global_placement { args } {
       -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
+      -routability_use_grt \
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
@@ -156,6 +158,15 @@ proc global_placement { args } {
   }
   if { [info exists flags(-disable_routability_driven)] } {
     utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
+  }
+
+  set routability_use_grt [info exists flags(-routability_use_grt)]
+  gpl::set_routability_use_grt $routability_use_grt
+  if { $routability_driven } {
+    if { $routability_use_grt } {
+      utl::warn "GPL" 152\
+        "Using GRT FastRoute instead of default RUDY for congestion in routability driven."
+    }
   }
 
   if { [info exists keys(-initial_place_max_fanout)] } {

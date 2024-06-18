@@ -54,7 +54,6 @@
 #include "detailed_hpwl.h"
 #include "detailed_objective.h"
 #include "detailed_vertical.h"
-#include "utility.h"
 
 using utl::DPO;
 
@@ -91,7 +90,7 @@ bool DetailedRandom::isNumber(char ch) const
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedRandom::DetailedRandom(Architecture* arch, Network* network)
-    : mgrPtr_(nullptr), arch_(arch), network_(network), movesPerCandidate_(3.0)
+    : arch_(arch), network_(network)
 {
 }
 
@@ -104,11 +103,8 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
-    args.push_back(*it);
+  for (const auto& token : tokens) {
+    args.push_back(token);
   }
   run(mgrPtr, args);
 }
@@ -160,11 +156,8 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     boost::tokenizer<boost::char_separator<char>> tokens(generatorStr,
                                                          separators);
     std::vector<std::string> gens;
-    for (boost::tokenizer<boost::char_separator<char>>::iterator it
-         = tokens.begin();
-         it != tokens.end();
-         it++) {
-      gens.push_back(*it);
+    for (const auto& token : tokens) {
+      gens.push_back(token);
     }
 
     for (const auto& gen : gens) {
@@ -269,7 +262,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
          ++it) {
       if (*it == '(' || *it == ')') {
       } else if (isOperator(*it) || isObjective(*it)) {
-        expr_.emplace_back(std::string(1, *it));
+        expr_.emplace_back(1, *it);
       } else {
         std::string val;
         while (!isOperator(*it) && !isObjective(*it) && it != costStr.end()
@@ -283,10 +276,10 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     }
   } else {
     expr_.clear();
-    expr_.emplace_back(std::string(1, 'a'));
+    expr_.emplace_back(1, 'a');
     for (size_t i = 1; i < objectives_.size(); i++) {
-      expr_.emplace_back(std::string(1, (char) ('a' + i)));
-      expr_.emplace_back(std::string(1, '+'));
+      expr_.emplace_back(1, (char) ('a' + i));
+      expr_.emplace_back(1, '+');
     }
   }
 
@@ -402,8 +395,7 @@ double DetailedRandom::go()
   // Try to improve.
   int maxAttempts
       = (int) std::ceil(movesPerCandidate_ * (double) candidates_.size());
-  Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
+  mgrPtr_->shuffle(candidates_);
 
   deltaCost_.resize(objectives_.size());
   initCost_.resize(objectives_.size());

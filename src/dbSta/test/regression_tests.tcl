@@ -1,4 +1,6 @@
 record_tests {
+  hierclock    
+  hier2
   readdb_hier
   constant1
   make_port
@@ -29,6 +31,7 @@ record_tests {
   read_verilog8
   read_verilog9
   read_verilog10
+  read_verilog11
 
   report_cell_usage
 

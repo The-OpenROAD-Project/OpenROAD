@@ -94,12 +94,12 @@ class DetailedHPWL : public DetailedObjective
  private:
   Network* network_;
 
-  DetailedMgr* mgrPtr_;
-  DetailedOrient* orientPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
+  DetailedOrient* orientPtr_ = nullptr;
 
   // Other.
-  int skipNetsLargerThanThis_;
-  int traversal_;
+  int skipNetsLargerThanThis_ = 100;
+  int traversal_ = 0;
   std::vector<int> edgeMask_;
 };
 

@@ -2066,11 +2066,13 @@ void IOPlacer::run(bool random_mode)
     // add groups to fallback
     for (const auto& io_group : netlist_io_pins_->getIOGroups()) {
       if (io_group.pin_indices.size() > slots_per_section_) {
-        logger_->warn(PPL,
-                      92,
-                      "Pin group of size {} does not fit any section. Adding "
-                      "to fallback mode.",
-                      io_group.pin_indices.size());
+        debugPrint(logger_,
+                   utl::PPL,
+                   "pin_groups",
+                   1,
+                   "Pin group of size {} does not fit any section. Adding "
+                   "to fallback mode.",
+                   io_group.pin_indices.size());
         addGroupToFallback(io_group.pin_indices, io_group.order);
       }
     }

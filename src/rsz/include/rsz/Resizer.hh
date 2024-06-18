@@ -244,8 +244,8 @@ class Resizer : public dbStaState
   bool dontTouch(const Net* net);
 
   void setMaxUtilization(double max_utilization);
-  // Remove all buffers from the netlist.
-  void removeBuffers();
+  // Remove all or selected buffers from the netlist.
+  void removeBuffers(InstanceSeq insts);
   void bufferInputs();
   void bufferOutputs();
 
@@ -265,7 +265,8 @@ class Resizer : public dbStaState
                    int max_passes,
                    bool verbose,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool skip_gate_cloning,
+                   bool skip_buffer_removal);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -553,7 +554,7 @@ class Resizer : public dbStaState
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer);
+  bool removeBuffer(Instance* buffer, bool honorDontTouchFixed = true);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -686,6 +687,12 @@ class Resizer : public dbStaState
   Map<Instance*, LibertyPortTuple> swapped_pins_;
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
+
+  // Need to track all changes for buffer removal
+  InstanceSet all_sized_inst_set_;
+  InstanceSet all_inserted_buffer_set_;
+  InstanceSet all_swapped_pin_inst_set_;
+  InstanceSet all_cloned_inst_set_;
 
   dpl::Opendp* opendp_ = nullptr;
 

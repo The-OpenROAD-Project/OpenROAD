@@ -432,9 +432,13 @@ proc add_pdn_ring {args} {
   }
 
   set layers_len [llength $keys(-layers)]
-  if {$layers_len != 2} {
-    utl::error PDN 1012 "Expecting a list of 2 elements for -layers option of add_pdn_ring\
+  if {$layers_len > 2} {
+    utl::error PDN 1012 "Expecting a list of 1 or 2 elements for -layers option of add_pdn_ring\
       command, found ${layers_len}."
+  }
+  set layers $keys(-layers)
+  if {$layers_len == 1} {
+    set layers "$layers $layers"
   }
 
   if {![info exists keys(-widths)]} {
@@ -490,8 +494,8 @@ proc add_pdn_ring {args} {
     set start_with_power [pdn::get_starts_with $keys(-starts_with)]
   }
 
-  set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
-  set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
+  set l0 [pdn::get_layer [lindex $layers 0]]
+  set l1 [pdn::get_layer [lindex $layers 1]]
   set widths [list \
     [ord::microns_to_dbu [lindex $widths 0]] \
     [ord::microns_to_dbu [lindex $widths 1]]

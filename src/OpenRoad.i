@@ -428,7 +428,7 @@ void
 link_design_db_cmd(const char *design_name,bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(design_name,hierarchy);
+  ord->linkDesign(design_name, hierarchy);
 }
 
 void

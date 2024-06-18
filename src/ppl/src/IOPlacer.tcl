@@ -737,7 +737,7 @@ proc parse_pin_names {cmd names} {
   }
 
   if {[llength $pin_list] == 0} {
-    utl::error PPL 61 "Pins for $cmd command were not found."
+    utl::error PPL 61 "Pins {$names} for $cmd command were not found."
   }
 
   return $pin_list
