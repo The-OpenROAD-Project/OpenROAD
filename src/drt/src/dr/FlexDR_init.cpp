@@ -2736,7 +2736,8 @@ void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
 
 bool FlexDRWorker::canRipup(drNet* n)
 {
-  return !(n->getNumReroutes() >= getMazeEndIter())
+  return !(n->getNumReroutes() >= getMazeEndIter()) && !n->getFrNet()->isFixed()
+         && n->getFrNet()->hasGuides()
          && (getRipupMode() != RipUpMode::INCR
              || (getRipupMode() == RipUpMode::INCR
                  && !n->getFrNet()->hasInitialRouting()));

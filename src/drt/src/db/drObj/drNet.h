@@ -86,6 +86,7 @@ class drNet : public drBlockObject
   bool isRouted() const { return routed_; }
   const std::vector<frRect>& getOrigGuides() const { return origGuides_; }
   uint16_t getPriority() const { return priority_; }
+  bool isFixed() const;
   // setters
   void incPriority()
   {
