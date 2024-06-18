@@ -69,6 +69,7 @@ using sta::fuzzyGreater;
 using sta::fuzzyLess;
 using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
+using sta::NetConnectedPinIterator;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
@@ -211,7 +212,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                       end_slack,
                                       skip_pin_swap,
                                       skip_gate_cloning,
-                                      skip_buffer_removal);
+                                      skip_buffer_removal,
+                                      setup_slack_margin);
       if (!changed) {
         if (pass != 1) {
           debugPrint(logger_,
@@ -349,7 +351,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairPath(path, slack, false, false, false);
+  repairPath(path, slack, false, false, false, 0.0);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -390,7 +392,8 @@ bool RepairSetup::repairPath(PathRef& path,
                              const Slack path_slack,
                              const bool skip_pin_swap,
                              const bool skip_gate_cloning,
-                             const bool skip_buffer_removal)
+                             const bool skip_buffer_removal,
+                             const float setup_slack_margin)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -454,7 +457,11 @@ bool RepairSetup::repairPath(PathRef& path,
                  drvr_index);
 
       if (!skip_buffer_removal) {
-        if (removeDrvr(drvr_path, drvr_cell, drvr_index, &expanded)) {
+        if (removeDrvr(drvr_path,
+                       drvr_cell,
+                       drvr_index,
+                       &expanded,
+                       setup_slack_margin)) {
           changed = true;
           break;
         }
@@ -614,7 +621,8 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              LibertyCell* drvr_cell,
                              int drvr_index,
-                             PathExpanded* expanded)
+                             PathExpanded* expanded,
+                             const float setup_slack_margin)
 {
   // TODO:
   // 1. add setup slack check (based on Elmore delay?)
@@ -718,6 +726,42 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
             db_network_->name(drvr),
             max_cap,
             network_->pathName(prev_drvr_pin));
+        return false;
+      }
+    }
+
+    // Estimate slack impact on side paths not driven by the current driver.
+    // If slack is already violating, there is no hope of improving this side
+    // path by driver removal.
+    //
+    //  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+    //               |
+    //               ------>  (side_input_pin1  side_out_pin1) ----->
+    //               |
+    //               ------>  (side_input_pin2  side_out_pin2) ----->
+    //
+    PathRef* drvr_input_path = expanded->path(drvr_index - 1);
+    Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
+    Pin* drvr_input_pin = drvr_input_vertex->pin();
+    Net* prev_net = network_->net(prev_drvr_pin);
+    NetConnectedPinIterator* pin_iter
+        = network_->connectedPinIterator(prev_net);
+    while (pin_iter->hasNext()) {
+      const Pin* side_input_pin = pin_iter->next();
+      if (side_input_pin == prev_drvr_pin || side_input_pin == drvr_input_pin) {
+        continue;
+      }
+      float pin_slack = sta_->pinSlack(side_input_pin, max_);
+      if (pin_slack < setup_slack_margin) {
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   2,
+                   "buffer {} is not removed because side input pin {} has "
+                   "a violating slack of {}",
+                   db_network_->name(drvr),
+                   db_network_->name(side_input_pin),
+                   pin_slack);
         return false;
       }
     }

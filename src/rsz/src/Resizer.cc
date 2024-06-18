@@ -315,14 +315,14 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
     if (honorDontTouchFixed) {
       return false;
     }
-    /* remove dont touch */
+    //  remove instance dont touch
     db_inst->setDoNotTouch(false);
   }
   if (db_inst->isFixed()) {
     if (honorDontTouchFixed) {
       return false;
     }
-    /* change FIXED to PLACED */
+    // change FIXED to PLACED just in case
     db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
   LibertyPort *in_port, *out_port;
@@ -331,6 +331,18 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
+  dbNet* in_db_net = db_network_->staToDb(in_net);
+  dbNet* out_db_net = db_network_->staToDb(out_net);
+  // honor net dont-touch on input net or output net
+  if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
+    if (honorDontTouchFixed) {
+      return false;
+    } else {
+      // remove net dont touch for manual ECO
+      in_db_net->setDoNotTouch(false);
+      out_db_net->setDoNotTouch(false);
+    }
+  }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
