@@ -183,11 +183,11 @@ class Replace
   float maxPhiCoef_ = 1.05;
   float referenceHpwl_ = 446000000;
 
-  float routabilityCheckOverflow_ = 0.3;
+  float routabilityCheckOverflow_ = 0.2;
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
-  float routabilityInflationRatioCoef_ = 5;
-  float routabilityMaxInflationRatio_ = 8;
+  float routabilityInflationRatioCoef_ = 2.5;
+  float routabilityMaxInflationRatio_ = 2.5;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
