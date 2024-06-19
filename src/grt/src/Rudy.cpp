@@ -36,6 +36,7 @@
 #include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+#include <iostream>
 
 namespace grt {
 
@@ -47,11 +48,18 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     return;
   }
 
+  if (!grouter_->isInitialized()) {
+    int min_layer, max_layer;
+    grouter_->setDbBlock(block);
+    grouter_->getMinMaxLayer(min_layer, max_layer);
+    grouter_->initFastRoute(min_layer, max_layer);
+  }
+
   // The wire width is the average ptich divided by the number of
   // routing layers.
   wire_width_ = 0;
-  const int min_routing_layer = grouter->getMinRoutingLayer();
-  const int max_routing_layer = grouter->getMaxRoutingLayer();
+  const int min_routing_layer = grouter_->getMinRoutingLayer();
+  const int max_routing_layer = grouter_->getMaxRoutingLayer();
   const auto tech = block_->getTech();
   for (int layer_idx = min_routing_layer; layer_idx <= max_routing_layer;
        ++layer_idx) {
@@ -65,14 +73,7 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
   const int num_routing_layers = (max_routing_layer - min_routing_layer + 1);
   wire_width_ /= num_routing_layers;  // convert to average
   wire_width_ /= num_routing_layers;  // reduce to account for multiple layers
-
-  if (!grouter_->isInitialized()) {
-    int min_layer, max_layer;
-    grouter_->setDbBlock(block);
-    grouter_->getMinMaxLayer(min_layer, max_layer);
-    grouter_->initFastRoute(min_layer, max_layer);
-  }
-
+  
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
   tile_size_ = grouter_->getGridTileSize();
