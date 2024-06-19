@@ -63,7 +63,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              utl::Logger* log)
     : NesterovPlace()
 {
-  utl::ScopedStatistics stat(log);
+  utl::ScopedStatistics stat(log, "global_place");
   npVars_ = npVars;
   pbc_ = pbc;
   nbc_ = nbc;

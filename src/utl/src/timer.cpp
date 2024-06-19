@@ -33,9 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#define _GNU_SOURCE
 #include "utl/timer.h"
 
 #include <sys/resource.h>
+
+#include <fstream>
 
 namespace utl {
 
@@ -76,23 +79,70 @@ DebugScopedTimer::~DebugScopedTimer()
   debugPrint(logger_, tool_, group_.c_str(), level_, msg_, *this);
 }
 
-ScopedStatistics::ScopedStatistics(utl::Logger* logger)
-    : Timer(), logger_(logger)
+ScopedStatistics::ScopedStatistics(utl::Logger* logger, std::string msg)
+    : Timer(),
+      msg_(msg),
+      start_rsz_(getStartRSZ()),
+      start_vsz_(getStartVSZ()),
+      logger_(logger)
 {
 }
 
-size_t ScopedStatistics::getPeakMemoryUsage()
+size_t ScopedStatistics::getMemoryUsage(const char* tag)
 {
-  struct rusage rusage;
-  getrusage(RUSAGE_SELF, &rusage);
-  return (size_t) (rusage.ru_maxrss * 1024L);
+  FILE* file = fopen("/proc/self/status", "r");
+  if (file == NULL) {
+    perror("Failed to open /proc/self/status");
+    exit(EXIT_FAILURE);
+  }
+
+  size_t result = (size_t) -1;
+  char line[128];
+  size_t tagLength = strlen(tag);
+
+  while (fgets(line, sizeof(line), file) != NULL) {
+    if (strncmp(line, tag, tagLength) == 0) {
+      const char* p = line;
+      while (*p < '0' || *p > '9')
+        p++;
+      result = (size_t) atoi(p);
+      break;
+    }
+  }
+
+  fclose(file);
+  if (result == (size_t) -1) {
+    fprintf(stderr, "%s not found in /proc/self/status\n", tag);
+    exit(EXIT_FAILURE);
+  }
+
+  return result / 1024;
+}
+
+size_t ScopedStatistics::getStartVSZ()
+{
+  return getMemoryUsage("VmSize:");
+}
+
+size_t ScopedStatistics::getPeakVSZ()
+{
+  return getMemoryUsage("VmPeak:");
+}
+
+size_t ScopedStatistics::getStartRSZ()
+{
+  return getMemoryUsage("VmRSS:");
+}
+
+size_t ScopedStatistics::getPeakRSZ()
+{
+  return getMemoryUsage("VmHWM:");
 }
 
 ScopedStatistics::~ScopedStatistics()
 {
-  logger_->report("Runtime {} seconds, memory used {} KB.",
-                  Timer::elapsed(),
-                  getPeakMemoryUsage());
+  logger_->report(msg_ + ": runtime {} seconds, usage: rsz = {} MB, vsz = {} MB, peak: rsz = {} MB, vsz = {} MB", static_cast<int>(Timer::elapsed()), (getPeakRSZ() - start_rsz_),
+    (getPeakVSZ() - start_vsz_), (getPeakRSZ()), (getPeakVSZ()));
 }
 
 }  // namespace utl

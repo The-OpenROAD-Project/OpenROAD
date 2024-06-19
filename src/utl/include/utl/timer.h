@@ -83,11 +83,19 @@ std::ostream& operator<<(std::ostream& os, const Timer& t);
 class ScopedStatistics : public Timer
 {
  public:
-  ScopedStatistics(utl::Logger* logger);
+  ScopedStatistics(utl::Logger* logger, std::string msg);
   ~ScopedStatistics() override;
 
  private:
-  size_t getPeakMemoryUsage();
+  size_t getMemoryUsage(const char* tag);
+  size_t getStartRSZ();
+  size_t getPeakRSZ();
+  size_t getStartVSZ();
+  size_t getPeakVSZ();
+
+  std::string msg_;
+  size_t start_rsz_;
+  size_t start_vsz_;
   utl::Logger* logger_;
 };
 

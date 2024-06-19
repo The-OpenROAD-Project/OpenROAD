@@ -249,7 +249,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
 {
-  utl::ScopedStatistics stat(logger_);
+  utl::ScopedStatistics stat(logger_, "global_route");
   if (start_incremental && end_incremental) {
     logger_->error(GRT,
                    251,

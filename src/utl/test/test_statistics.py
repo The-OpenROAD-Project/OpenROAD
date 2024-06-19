@@ -11,7 +11,7 @@ def run_regression_script(regression_script_path, argument):
     return True
 
 def check_log_file(log_path):
-    pattern = re.compile(r"Runtime\s+\d+\.\d+\s+seconds,\s+memory used\s+\d+\s+KB")
+    pattern = re.compile(r"repair_design: runtime.*seconds.*usage.*rsz.*MB.*vsz.*MB.*peak.*rsz.*vsz.*")
     runtime_count = 0
 
     with open(log_path, 'r') as log_file:
