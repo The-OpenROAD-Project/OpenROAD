@@ -91,7 +91,8 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0)
+      _sta_vertex_id(0),
+      _constraint_region(Point(-1, -1), Point(-1, -1))
 {
   if (b._name) {
     _name = strdup(b._name);
@@ -919,6 +920,19 @@ void dbBTerm::staSetVertexId(uint32_t id)
 {
   _dbBTerm* iterm = (_dbBTerm*) this;
   iterm->_sta_vertex_id = id;
+}
+
+void dbBTerm::setConstraintRegion(
+    const std::pair<Point, Point>& constraint_region)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region = constraint_region;
+}
+
+std::pair<Point, Point> dbBTerm::getConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_constraint_region;
 }
 
 }  // namespace odb
