@@ -2802,6 +2802,40 @@ void IOPlacer::initNetlist()
   }
 }
 
+void IOPlacer::commitConstraintsToDB()
+{
+  for (Constraint& constraint : constraints_) {
+    std::vector<int> pin_indices
+        = findPinsForConstraint(constraint, netlist_io_pins_.get(), false);
+
+    const Rect& die_bounds = core_->getBoundary();
+    odb::Point pt1, pt2;
+    for (int idx : pin_indices) {
+      IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
+      odb::dbBTerm* bterm = getBlock()->findBTerm(io_pin.getName().c_str());
+      const Interval& interval = constraint.interval;
+      if (interval.getEdge() == Edge::bottom) {
+        pt1 = Point(interval.getBegin(), die_bounds.yMin());
+        pt2 = Point(interval.getEnd(), die_bounds.yMin());
+      } else if (interval.getEdge() == Edge::top) {
+        pt1 = Point(interval.getBegin(), die_bounds.yMax());
+        pt2 = Point(interval.getEnd(), die_bounds.yMax());
+      } else if (interval.getEdge() == Edge::left) {
+        pt1 = Point(die_bounds.xMin(), interval.getBegin());
+        pt2 = Point(die_bounds.xMin(), interval.getEnd());
+      } else if (interval.getEdge() == Edge::right) {
+        pt1 = Point(die_bounds.xMax(), interval.getBegin());
+        pt2 = Point(die_bounds.xMax(), interval.getEnd());
+      } else {
+        pt1 = constraint.box.ll();
+        pt2 = constraint.box.ur();
+      }
+      std::pair<odb::Point, odb::Point> constraint_region(pt1, pt2);
+      bterm->setConstraintRegion(constraint_region);
+    }
+  }
+}
+
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   for (const IOPin& pin : assignment) {
