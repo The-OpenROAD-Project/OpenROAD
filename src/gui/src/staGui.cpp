@@ -165,9 +165,35 @@ QVariant TimingPathsModel::headerData(int section,
                                       Qt::Orientation orientation,
                                       int role) const
 {
-  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    return getColumnNames().at(static_cast<Column>(section));
+  Column column = static_cast<Column>(section);
+
+  if (role == Qt::ToolTipRole) {
+    switch (column) {
+      case Clock:
+      case Required:
+      case Arrival:
+      case Slack:
+      case Fanout:
+      case Start:
+      case End:
+        // return empty string so that the tooltip goes away
+        // when switching from a header item that has a tooltip
+        // to a header item that doesn't.
+        return "";
+      case Skew:
+        return "Path clock skew (crpr corrected).";
+      case LogicDelay:
+        return "Non-buffer gate delays with no wire delay.";
+      case LogicDepth:
+        return "Number of instances apart from buffers and back-to-back "
+               "inverters.";
+    }
   }
+
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    return getColumnNames().at(column);
+  }
+
   return QVariant();
 }
 
