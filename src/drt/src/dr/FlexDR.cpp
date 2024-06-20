@@ -1289,7 +1289,11 @@ void FlexDR::fixMaxSpacing(frLayer* layer, int max_spc, int cut_class)
       continue;
     }
     std::unique_ptr<frVia> new_via = std::make_unique<frVia>(*via);
+    int dx = layer->getSecondaryViaDef()->getCutShapeBox().xCenter();
+    int dy = layer->getSecondaryViaDef()->getCutShapeBox().yCenter();
     new_via->setViaDef(layer->getSecondaryViaDef());
+    new_via->setOrigin(
+        {new_via->getOrigin().x() - dx, new_via->getOrigin().y() - dy});
     auto rptr = new_via.get();
     getRegionQuery()->removeDRObj(via);  // delete rq
     net->removeVia(via);
@@ -1299,13 +1303,19 @@ void FlexDR::fixMaxSpacing(frLayer* layer, int max_spc, int cut_class)
     auto marker = std::make_unique<frMarker>();
 
     marker->setBBox(rptr->getBBox());
-    marker->setLayerNum(layer->getLayerNum());
-    marker->setConstraint(layer->getRecheckConstraint());
+    marker->setLayerNum(rptr->getViaDef()->getLayer1Num());
+    marker->setConstraint(getTech()
+                              ->getLayer(rptr->getViaDef()->getLayer1Num())
+                              ->getRecheckConstraint());
     marker->addSrc(net);
     marker->addVictim(
-        net, std::make_tuple(layer->getLayerNum(), rptr->getBBox(), false));
+        net,
+        std::make_tuple(
+            rptr->getViaDef()->getLayer1Num(), rptr->getBBox(), false));
     marker->addAggressor(
-        net, std::make_tuple(layer->getLayerNum(), rptr->getBBox(), false));
+        net,
+        std::make_tuple(
+            rptr->getViaDef()->getLayer1Num(), rptr->getBBox(), false));
     getRegionQuery()->addMarker(marker.get());
     getDesign()->getTopBlock()->addMarker(std::move(marker));
   }

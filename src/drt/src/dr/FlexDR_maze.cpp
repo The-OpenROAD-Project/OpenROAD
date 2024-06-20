@@ -1577,8 +1577,27 @@ void FlexDRWorker::route_queue()
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
-    gcWorker_->setEnableSurgicalFix(false);
+    gcWorker_->setEnableSurgicalFix(true);
     gcWorker_->main();
+    for (auto& pwire : gcWorker_->getPWires()) {
+      auto net = pwire->getNet();
+      if (!net) {
+        std::cout << "Error: pwire with no net\n";
+        exit(1);
+      }
+      net->setModified(true);
+      auto tmpPWire = std::make_unique<drPatchWire>();
+      tmpPWire->setLayerNum(pwire->getLayerNum());
+      Point origin = pwire->getOrigin();
+      tmpPWire->setOrigin(origin);
+      Rect box = pwire->getOffsetBox();
+      tmpPWire->setOffsetBox(box);
+      tmpPWire->addToNet(net);
+      std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
+      auto& workerRegionQuery = getWorkerRegionQuery();
+      workerRegionQuery.add(tmp.get());
+      net->addRoute(std::move(tmp));
+    }
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {

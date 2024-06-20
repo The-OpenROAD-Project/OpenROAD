@@ -3677,7 +3677,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     }
     auto lNum = marker->getLayerNum();
     auto layer = tech_->getLayer(lNum);
-    if (!layer->hasVia2ViaMinStepViol()) {
+    if (!layer->hasVia2ViaMinStepViol()
+        && !tech_->getLayer(lNum - 1)->hasLef58MaxSpacingConstraints()
+        && !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints()) {
       continue;
     }
 
@@ -3717,9 +3719,56 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
         } else {
           downViaFound = true;
         }
-        if (upViaFound && downViaFound) {
+        if (upViaFound && downViaFound && layer->hasVia2ViaMinStepViol()) {
           net = obj->getNet();
           origin = tmpOrigin;
+          break;
+        }
+        if (obj->getViaDef()
+            == getTech()
+                   ->getLayer(obj->getViaDef()->getCutLayerNum())
+                   ->getSecondaryViaDef()) {
+          Rect encBox;
+          if (obj->getViaDef()->getLayer1Num() == lNum) {
+            encBox = obj->getLayer1BBox();
+          } else {
+            encBox = obj->getLayer2BBox();
+          }
+          int minStepLength = 0;
+          if (layer->getMinStepConstraint()) {
+            minStepLength = layer->getMinStepConstraint()->getMinStepLength();
+          } else {
+            continue;
+          }
+          if (encBox.getDir() == 1 && markerBBox.yMin() == encBox.yMin()
+              && markerBBox.yMax() == encBox.yMax()) {
+            int bloatingDist = std::max(0, minStepLength - markerBBox.dx());
+            if (markerBBox.xMin() >= encBox.xMin()
+                && markerBBox.xMax() == encBox.xMax()) {
+              markerBBox.set_xhi(markerBBox.xMax() + bloatingDist);
+            } else if (markerBBox.xMin() == encBox.xMin()
+                       && markerBBox.xMax() <= encBox.xMax()) {
+              markerBBox.set_xlo(markerBBox.xMin() - bloatingDist);
+            } else {
+              continue;
+            }
+          } else if (encBox.getDir() == 0 && markerBBox.xMin() == encBox.xMin()
+                     && markerBBox.xMax() == encBox.xMax()) {
+            int bloatingDist = std::max(0, minStepLength - markerBBox.dy());
+            if (markerBBox.yMin() >= encBox.yMin()
+                && markerBBox.yMax() == encBox.yMax()) {
+              markerBBox.set_yhi(markerBBox.yMax() + bloatingDist);
+            } else if (markerBBox.yMin() == encBox.yMin()
+                       && markerBBox.yMax() <= encBox.yMax()) {
+              markerBBox.set_ylo(markerBBox.yMin() - bloatingDist);
+            } else {
+              continue;
+            }
+          } else {
+            continue;
+          }
+          origin = tmpOrigin;
+          net = obj->getNet();
           break;
         }
       }

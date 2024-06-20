@@ -112,8 +112,9 @@ void io::Parser::initDefaultVias()
         cuts2ViaDefs[cutNum][priority] = viaDef;
       }
       auto iter_1cut = cuts2ViaDefs.find(1);
+      frViaDef* defaultSingleCutVia = nullptr;
       if (iter_1cut != cuts2ViaDefs.end() && !iter_1cut->second.empty()) {
-        auto defaultSingleCutVia = iter_1cut->second.begin()->second;
+        defaultSingleCutVia = iter_1cut->second.begin()->second;
         tech_->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
       } else if (layerNum > TOP_ROUTING_LAYER) {
         // We may need vias here to stack up to bumps.  However there
@@ -128,15 +129,19 @@ void io::Parser::initDefaultVias()
                        tech_->getLayer(layerNum)->getName());
       }
       // set secondary viadef
-      for (auto [cuts, viadefs] : cuts2ViaDefs) {
-        if (cuts <= 1) {
-          continue;
+      if (defaultSingleCutVia) {
+        for (auto [cuts, viadefs] : cuts2ViaDefs) {
+          for (auto [priority, viadef] : viadefs) {
+            if (viadef->getCutClassIdx()
+                != defaultSingleCutVia->getCutClassIdx()) {
+              tech_->getLayer(layerNum)->setSecondaryViaDef(viadef);
+              break;
+            }
+          }
+          if (tech_->getLayer(layerNum)->getSecondaryViaDef()) {
+            break;
+          }
         }
-        if (viadefs.empty()) {
-          continue;
-        }
-        tech_->getLayer(layerNum)->setSecondaryViaDef(viadefs.begin()->second);
-        break;
       }
     } else {
       if (layerNum >= BOTTOM_ROUTING_LAYER
