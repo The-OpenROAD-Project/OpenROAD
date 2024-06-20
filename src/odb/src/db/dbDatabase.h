@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 84;  // Current revision number
+const uint db_schema_minor = 85;  // Current revision number
+
+// Revision where constraint region was added to dbBTerm 
+const uint db_schema_bterm_constraint_region = 85;
 
 // Revision where GRT layer adjustment was relocated to dbTechLayer
 const uint db_schema_layer_adjustment = 84;
