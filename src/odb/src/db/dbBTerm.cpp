@@ -76,6 +76,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _ext_id = 0;
   _name = nullptr;
   _sta_vertex_id = 0;
+  _constraint_region = std::make_pair(Point(-1, -1), Point(-1, -1));
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -275,7 +276,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
-  if (db->getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream << bterm._constraint_region;
   }
   return stream;
@@ -303,7 +304,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._bpins;
   stream >> bterm._ground_pin;
   stream >> bterm._supply_pin;
-  if (db->getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream >> bterm._constraint_region;
   }
 
