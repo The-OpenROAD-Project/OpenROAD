@@ -2829,12 +2829,9 @@ void IOPlacer::findConstraintRegion(const Interval& interval,
 void IOPlacer::commitConstraintsToDB()
 {
   for (Constraint& constraint : constraints_) {
-    std::vector<int> pin_indices
-        = findPinsForConstraint(constraint, netlist_io_pins_.get(), false);
-
-    for (int idx : pin_indices) {
-      IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
-      odb::dbBTerm* bterm = getBlock()->findBTerm(io_pin.getName().c_str());
+    for (odb::dbBTerm* bterm : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
       odb::Point pt1, pt2;
       const Interval& interval = constraint.interval;
       findConstraintRegion(interval, constraint.box, pt1, pt2);
