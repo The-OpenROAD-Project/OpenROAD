@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#define _GNU_SOURCE
 #include "utl/timer.h"
 
 #include <sys/resource.h>
@@ -81,7 +80,7 @@ DebugScopedTimer::~DebugScopedTimer()
 
 ScopedStatistics::ScopedStatistics(utl::Logger* logger, std::string msg)
     : Timer(),
-      msg_(msg),
+      msg_(std::move(msg)),
       start_rsz_(getStartRSZ()),
       start_vsz_(getStartVSZ()),
       logger_(logger)
@@ -91,7 +90,7 @@ ScopedStatistics::ScopedStatistics(utl::Logger* logger, std::string msg)
 size_t ScopedStatistics::getMemoryUsage(const char* tag)
 {
   FILE* file = fopen("/proc/self/status", "r");
-  if (file == NULL) {
+  if (file == nullptr) {
     perror("Failed to open /proc/self/status");
     exit(EXIT_FAILURE);
   }
@@ -100,11 +99,12 @@ size_t ScopedStatistics::getMemoryUsage(const char* tag)
   char line[128];
   size_t tagLength = strlen(tag);
 
-  while (fgets(line, sizeof(line), file) != NULL) {
+  while (fgets(line, sizeof(line), file) != nullptr) {
     if (strncmp(line, tag, tagLength) == 0) {
       const char* p = line;
-      while (*p < '0' || *p > '9')
+      while (*p < '0' || *p > '9') {
         p++;
+      }
       result = (size_t) atoi(p);
       break;
     }
