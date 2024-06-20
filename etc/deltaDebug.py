@@ -191,6 +191,9 @@ class deltaDebugger:
                 if err is None or cuts == 0:
                     break
 
+        # Delete unused master-cells from design
+        self.remove_unused_masters()
+
         # Change deltaDebug resultant base_db file name to a representative name
         if os.path.exists(self.temp_base_db_file):
             os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
@@ -390,6 +393,25 @@ class deltaDebugger:
             elif self.cut_level == cutLevel.Nets:
                 self.clear_dont_touch_net(elm)
             elm.destroy(elm)
+
+    def remove_unused_masters(self):
+        # Create new clean dbDatabase
+        self.base_db = Design.createDetachedDb()
+        print(f"Reading {self.temp_base_db_file}  file ")
+        self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
+        print("Removing unused masters...")
+        unused = self.base_db.removeUnusedMasters()
+        print(f"Removed {unused} masters.")
+        odb.write_db(self.base_db, self.temp_base_db_file)
+
+        if (self.dump_def != 0):
+            print("Writing def file")
+            odb.write_def(self.base_db.getChip().getBlock(),
+                          self.temp_base_db_file[:-3] + "def")
+
+        if (self.base_db is not None):
+            self.base_db.destroy(self.base_db)
+            self.base_db = None
 
 
 if __name__ == '__main__':

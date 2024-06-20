@@ -628,10 +628,13 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   LocPinMap loc_pin_map;
   bool found_drvr_grid_pt = false;
   Point drvr_grid_pt;
+  bool is_local = true;
+  Point first_pin_loc = pin_grid_locs[0].pt_;
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
     Pin* pin = pin_loc.iterm_ ? db_network_->dbToSta(pin_loc.iterm_)
                               : db_network_->dbToSta(pin_loc.bterm_);
     Point& loc = pin_loc.pt_;
+    is_local = is_local && loc == first_pin_loc;
     debugPrint(logger_,
                RSZ,
                "groute_bnet",
@@ -655,7 +658,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
     grt::GRoute& route = route_map[db_network_->staToDb(net)];
     GRoutePtAdjacents adjacents(route.size());
     for (grt::GSegment& seg : route) {
-      if (!seg.isVia()) {
+      if (!seg.isVia() || is_local) {
         RoutePt from(seg.init_x, seg.init_y, seg.init_layer);
         RoutePt to(seg.final_x, seg.final_y, seg.final_layer);
         debugPrint(logger_,

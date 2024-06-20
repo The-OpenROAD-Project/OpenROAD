@@ -1,23 +1,26 @@
 Net: net50
-  Pin: _264_/B2 (sky130_fd_sc_ms__a222oi_1)
-    Layer: met3
-      Partial area ratio:   43.13
-      Required ratio:   15.15 (Side area) (VIOLATED)
-
+  Pin:   _264_/B2 (sky130_fd_sc_ms__a222oi_1)
     Layer: met2
-      Partial area ratio:  208.38
+      Partial area ratio:  209.46
       Required ratio:   10.00 (Side area) (VIOLATED)
 
-  Pin: output50/A (sky130_fd_sc_ms__buf_1)
     Layer: met3
-      Partial area ratio:   43.13
+      Partial area ratio:   43.22
       Required ratio:   15.15 (Side area) (VIOLATED)
 
-    Layer: met2
-      Partial area ratio:  208.38
-      Required ratio:   10.00 (Side area) (VIOLATED)
 
+  Pin:   output50/A (sky130_fd_sc_ms__buf_1)
     Layer: met1
-      Partial area ratio:  273.94
+      Partial area ratio:  275.20
       Required ratio:   10.00 (Side area) (VIOLATED)
+
+    Layer: met2
+      Partial area ratio:  209.46
+      Required ratio:   10.00 (Side area) (VIOLATED)
+
+    Layer: met3
+      Partial area ratio:   43.22
+      Required ratio:   15.15 (Side area) (VIOLATED)
+
+
 

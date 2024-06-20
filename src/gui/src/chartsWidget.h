@@ -131,23 +131,27 @@ class ChartsWidget : public QDockWidget
   {
     bucket_interval_ = bucket_interval;
   }
-  void setNegativeCountOffset(int neg_count_offset)
-  {
-    neg_count_offset_ = neg_count_offset;
-  }
   void setDecimalPrecision(int precision_count)
   {
     precision_count_ = precision_count;
   }
+  void setClocks(const std::set<sta::Clock*>& clocks)
+  {
+    clocks_ = clocks;
+  }
 
   SlackHistogramData fetchSlackHistogramData();
-  void removeUnconstrainedPins(StaPins& end_points);
+  void removeUnconstrainedPinsAndSetLimits(StaPins& end_points);
   TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
   StaPins getEndPointsFromPaths(const TimingPathList& paths);
   ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
+  void setLimits(const TimingPathList& paths);
 
-  void populateBuckets(const StaPins& end_points);
+  void populateBuckets(StaPins* end_points, TimingPathList* paths);
+  std::pair<QBarSet*, QBarSet*> createBarSets();
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
+
+  void setVisualConfig();
 
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
@@ -155,14 +159,13 @@ class ChartsWidget : public QDockWidget
                              float max_slack,
                              float min_slack);
 
-  void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
+  void setXAxisConfig(int all_bars_count);
+  void setXAxisTitle();
   void setYAxisConfig();
-  QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
-  int computeMaxYSnap();
+  int computeYInterval(int largest_slack_count);
+  int computeMaxYSnap(int largest_slack_count);
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
-  int computeYInterval();
-  void clearBarSets();
 
   void clearChart();
 
@@ -177,18 +180,18 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
+  std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
-  int prev_filter_index_;
 
+  int prev_filter_index_;
+  bool resetting_menu_;
+
+  const int default_number_of_buckets_;
   float max_slack_;
   float min_slack_;
+  float bucket_interval_;
 
-  const int default_number_of_buckets_ = 15;
-  int largest_slack_count_ = 0;  // Used to configure the y axis.
-  int precision_count_ = 0;      // Used to configure the x labels.
-
-  float bucket_interval_ = 0;
-  int neg_count_offset_ = 0;
+  int precision_count_;  // Used to configure the x labels.
 #endif
   QLabel* label_;
 };

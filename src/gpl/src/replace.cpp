@@ -104,11 +104,11 @@ void Replace::reset()
   maxPhiCoef_ = 1.05;
   referenceHpwl_ = 446000000;
 
-  routabilityCheckOverflow_ = 0.20;
+  routabilityCheckOverflow_ = 0.3;
   routabilityMaxDensity_ = 0.99;
-  routabilityTargetRcMetric_ = 1.0;
-  routabilityInflationRatioCoef_ = 2.5;
-  routabilityMaxInflationRatio_ = 2.5;
+  routabilityTargetRcMetric_ = 1.01;
+  routabilityInflationRatioCoef_ = 5;
+  routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
   routabilityMaxBloatIter_ = 1;
@@ -116,6 +116,7 @@ void Replace::reset()
 
   timingDrivenMode_ = true;
   routabilityDrivenMode_ = true;
+  routabilityUseRudy_ = true;
   uniformTargetDensityMode_ = false;
   skipIoMode_ = false;
 
@@ -229,6 +230,10 @@ void Replace::doInitialPlace()
       }
     }
 
+    if (pbVec_.front()->placeInsts().empty()) {
+      pbVec_.erase(pbVec_.begin());
+    }
+
     total_placeable_insts_ = 0;
     for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();
@@ -311,6 +316,7 @@ bool Replace::initNesterovPlace(int threads)
 
   if (!rb_) {
     RouteBaseVars rbVars;
+    rbVars.useRudy = routabilityUseRudy_;
     rbVars.maxDensity = routabilityMaxDensity_;
     rbVars.maxBloatIter = routabilityMaxBloatIter_;
     rbVars.maxInflationIter = routabilityMaxInflationIter_;
@@ -496,6 +502,11 @@ void Replace::setTimingDrivenMode(bool mode)
 void Replace::setRoutabilityDrivenMode(bool mode)
 {
   routabilityDrivenMode_ = mode;
+}
+
+void Replace::setRoutabilityUseGrt(bool mode)
+{
+  routabilityUseRudy_ = !mode;
 }
 
 void Replace::setRoutabilityCheckOverflow(float overflow)
