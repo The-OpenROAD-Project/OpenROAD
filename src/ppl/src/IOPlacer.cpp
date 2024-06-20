@@ -2802,11 +2802,11 @@ void IOPlacer::initNetlist()
   }
 }
 
-void IOPlacer::findConstraintRegion(const Constraint& constraint,
+void IOPlacer::findConstraintRegion(const Interval& interval,
+                                    const Rect& constraint_box,
                                     Point& pt1,
                                     Point& pt2)
 {
-  const Interval& interval = constraint.interval;
   const Rect& die_bounds = core_->getBoundary();
   if (interval.getEdge() == Edge::bottom) {
     pt1 = Point(interval.getBegin(), die_bounds.yMin());
@@ -2821,8 +2821,8 @@ void IOPlacer::findConstraintRegion(const Constraint& constraint,
     pt1 = Point(die_bounds.xMax(), interval.getBegin());
     pt2 = Point(die_bounds.xMax(), interval.getEnd());
   } else {
-    pt1 = constraint.box.ll();
-    pt2 = constraint.box.ur();
+    pt1 = constraint_box.ll();
+    pt2 = constraint_box.ur();
   }
 }
 
@@ -2836,9 +2836,25 @@ void IOPlacer::commitConstraintsToDB()
       IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
       odb::dbBTerm* bterm = getBlock()->findBTerm(io_pin.getName().c_str());
       odb::Point pt1, pt2;
-      findConstraintRegion(constraint, pt1, pt2);
+      const Interval& interval = constraint.interval;
+      findConstraintRegion(interval, constraint.box, pt1, pt2);
       std::pair<odb::Point, odb::Point> constraint_region(pt1, pt2);
       bterm->setConstraintRegion(constraint_region);
+
+      if (io_pin.isMirrored()) {
+        IOPin& mirrored_pin
+            = netlist_io_pins_->getIoPin(io_pin.getMirrorPinIdx());
+        odb::dbBTerm* mirrored_bterm
+            = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+        Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+        Interval mirrored_interval(mirrored_edge,
+                                   interval.getBegin(),
+                                   interval.getEnd(),
+                                   interval.getLayer());
+        findConstraintRegion(mirrored_interval, constraint.box, pt1, pt2);
+        std::pair<odb::Point, odb::Point> mirrored_constraint_region(pt1, pt2);
+        mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
+      }
     }
   }
 }
