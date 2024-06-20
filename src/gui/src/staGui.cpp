@@ -183,7 +183,8 @@ QVariant TimingPathsModel::headerData(int section,
       case Skew:
         return "Path clock skew (crpr corrected).";
       case LogicDelay:
-        return "Non-buffer gate delays with no wire delay.";
+        return "Delay from instances apart from buffers and back-to-back "
+               "inverters.";
       case LogicDepth:
         return "Number of instances apart from buffers and back-to-back "
                "inverters.";
