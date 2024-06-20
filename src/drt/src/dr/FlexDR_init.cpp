@@ -322,6 +322,271 @@ void FlexDRWorker::initNets_segmentTerms(
   }
 }
 
+void dfs(int start,
+         std::map<int, std::vector<int>> adj_list,
+         std::vector<bool>& visited,
+         std::vector<int>& component)
+{
+  std::stack<int> stack;
+  stack.push(start);
+  while (!stack.empty()) {
+    int node = stack.top();
+    stack.pop();
+    if (!visited[node]) {
+      visited[node] = true;
+      component.push_back(node);
+      for (int neighbor : adj_list[node]) {
+        if (!visited[neighbor]) {
+          stack.push(neighbor);
+        }
+      }
+    }
+  }
+}
+
+int FlexDRWorker::initNets_initDR_helper_getObjComponent(
+    drConnFig* obj,
+    std::vector<std::vector<int>> connectedComponents,
+    std::vector<frRect>& netOrigGuides)
+{
+  switch (obj->typeId()) {
+    case drcPathSeg: {
+      auto pathSeg = static_cast<drPathSeg*>(obj);
+      auto lNum = pathSeg->getLayerNum();
+      auto rect = pathSeg->getBBox();
+      frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
+      int minIndex = -1;
+      for (int j = 0; j < connectedComponents.size(); j++) {
+        // component index is j
+        for (auto idx : connectedComponents[j]) {
+          if (netOrigGuides[idx].getLayerNum() == lNum
+              && netOrigGuides[idx].intersects(rect)) {
+            return j;
+          } else {
+            frSquaredDistance dist = gtl::square_euclidean_distance(
+                gtl::rectangle_data<frCoord>(
+                    netOrigGuides[idx].getBBox().xMin(),
+                    netOrigGuides[idx].getBBox().yMin(),
+                    netOrigGuides[idx].getBBox().xMax(),
+                    netOrigGuides[idx].getBBox().yMax()),
+                gtl::rectangle_data<frCoord>(
+                    rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()));
+            if (dist < minDist) {
+              minDist = dist;
+              minIndex = j;
+            }
+          }
+        }
+      }
+      return minIndex;
+    }
+    case drcVia: {
+      auto via = static_cast<drVia*>(obj);
+      auto rect = via->getBBox();
+      frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
+      int minIndex = -1;
+      for (int j = 0; j < connectedComponents.size(); j++) {
+        // component index is j
+        for (auto idx : connectedComponents[j]) {
+          frSquaredDistance dist = gtl::square_euclidean_distance(
+              gtl::rectangle_data<frCoord>(netOrigGuides[idx].getBBox().xMin(),
+                                           netOrigGuides[idx].getBBox().yMin(),
+                                           netOrigGuides[idx].getBBox().xMax(),
+                                           netOrigGuides[idx].getBBox().yMax()),
+              gtl::rectangle_data<frCoord>(
+                  rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()));
+          if (dist < minDist) {
+            if (dist == 0) {
+              return j;
+            }
+            minDist = dist;
+            minIndex = j;
+          }
+        }
+      }
+      return minIndex;
+    }
+    case drcPatchWire: {
+      auto wire = static_cast<drPatchWire*>(obj);
+      auto lNum = wire->getLayerNum();
+      auto rect = wire->getBBox();
+      frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
+      int minIndex = -1;
+      for (int j = 0; j < connectedComponents.size(); j++) {
+        // component index is j
+        for (auto idx : connectedComponents[j]) {
+          if (netOrigGuides[idx].getLayerNum() == lNum
+              && netOrigGuides[idx].intersects(rect)) {
+            return j;
+          } else {
+            frSquaredDistance dist = gtl::square_euclidean_distance(
+                gtl::rectangle_data<frCoord>(
+                    netOrigGuides[idx].getBBox().xMin(),
+                    netOrigGuides[idx].getBBox().yMin(),
+                    netOrigGuides[idx].getBBox().xMax(),
+                    netOrigGuides[idx].getBBox().yMax()),
+                gtl::rectangle_data<frCoord>(
+                    rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()));
+            if (dist < minDist) {
+              minDist = dist;
+              minIndex = j;
+            }
+          }
+        }
+      }
+      return minIndex;
+    }
+    default:
+      return -1;
+  }
+}
+
+void FlexDRWorker::initNets_initDR_helper(
+    frNet* net,
+    std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+    std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
+    std::vector<frBlockObject*> netTerms,
+    std::vector<frRect>& netOrigGuides)
+{
+  std::map<int, std::vector<int>> nodeMap;
+  for (int i = 0; i < netOrigGuides.size(); i++) {
+    for (int j = i + 1; j < netOrigGuides.size(); j++) {
+      if (netOrigGuides[i].getLayerNum() == netOrigGuides[j].getLayerNum()
+          || netOrigGuides[i].getLayerNum() - 2
+                 == netOrigGuides[j].getLayerNum()
+          || netOrigGuides[i].getLayerNum() + 2
+                 == netOrigGuides[j].getLayerNum()) {
+        if (netOrigGuides[i].intersects(netOrigGuides[j].getBBox())) {
+          nodeMap[i].push_back(j);
+          nodeMap[j].push_back(i);
+        }
+      }
+    }
+  }
+  std::vector<bool> visited(netOrigGuides.size(), false);
+  std::vector<std::vector<int>> connectedComponents;
+  for (int i = 0; i < netOrigGuides.size(); i++) {
+    if (visited[i]) {
+      continue;
+    }
+    std::vector<int> component;
+    dfs(i, nodeMap, visited, component);
+    connectedComponents.push_back(component);
+  }
+  if (connectedComponents.size() <= 1) {
+    std::vector<std::pair<Point, frLayerNum>> bounds;
+    auto it = boundaryPin_.find(net);
+    if (it != boundaryPin_.end()) {
+      std::transform(it->second.begin(),
+                     it->second.end(),
+                     inserter(bounds, bounds.end()),
+                     [](const std::pair<Point, frLayerNum>& pr) { return pr; });
+    }
+    initNet(design_,
+            net,
+            netRouteObjs,
+            netExtObjs,
+            netOrigGuides,
+            netTerms,
+            bounds);
+    return;
+  }
+  std::vector<std::vector<std::unique_ptr<drConnFig>>> routeObjs(
+      connectedComponents.size());
+  std::vector<std::vector<std::unique_ptr<drConnFig>>> extObjs(
+      connectedComponents.size());
+  std::vector<std::vector<frBlockObject*>> terms(connectedComponents.size());
+  std::vector<std::vector<std::pair<Point, frLayerNum>>> bounds(
+      connectedComponents.size());
+  for (auto& obj : netRouteObjs) {
+    auto compIdx = initNets_initDR_helper_getObjComponent(
+        obj.get(), connectedComponents, netOrigGuides);
+    routeObjs[compIdx].push_back(std::move(obj));
+  }
+  for (auto& obj : netExtObjs) {
+    auto compIdx = initNets_initDR_helper_getObjComponent(
+        obj.get(), connectedComponents, netOrigGuides);
+    extObjs[compIdx].push_back(std::move(obj));
+  }
+  for (auto term : netTerms) {
+    Rect rect;
+    if (term->typeId() == frcInstTerm) {
+      auto iterm = static_cast<frInstTerm*>(term);
+      rect = iterm->getBBox(true);
+    } else {
+      auto bterm = static_cast<frBTerm*>(term);
+      rect = bterm->getBBox();
+    }
+    frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
+    frCoord maxArea = 0;
+    int bestIndex = -1;
+    for (int j = 0; j < connectedComponents.size(); j++) {
+      // component index is j
+      for (auto idx : connectedComponents[j]) {
+        frSquaredDistance dist = gtl::square_euclidean_distance(
+            gtl::rectangle_data<frCoord>(netOrigGuides[idx].getBBox().xMin(),
+                                         netOrigGuides[idx].getBBox().yMin(),
+                                         netOrigGuides[idx].getBBox().xMax(),
+                                         netOrigGuides[idx].getBBox().yMax()),
+            gtl::rectangle_data<frCoord>(
+                rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()));
+
+        if (dist < minDist) {
+          minDist = dist;
+          bestIndex = j;
+        }
+        if (minDist == 0 && dist == 0) {
+          Rect result;
+          netOrigGuides[idx].getBBox().intersection(rect, result);
+          frCoord area = result.area();
+          if (area > maxArea) {
+            maxArea = area;
+            bestIndex = j;
+          }
+        }
+      }
+    }
+    terms[bestIndex].push_back(term);
+  }
+  const auto it = boundaryPin_.find(net);
+  if (it != boundaryPin_.end()) {
+    for (auto [point, lNum] : (*it).second) {
+      frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
+      int bestIndex = -1;
+      for (int j = 0; j < connectedComponents.size(); j++) {
+        for (auto idx : connectedComponents[j]) {
+          gtl::rectangle_data<frCoord> guide(
+              netOrigGuides[idx].getBBox().xMin(),
+              netOrigGuides[idx].getBBox().yMin(),
+              netOrigGuides[idx].getBBox().xMax(),
+              netOrigGuides[idx].getBBox().yMax());
+          frSquaredDistance dist = gtl::square_euclidean_distance(
+              guide, gtl::point_data<frCoord>(point.x(), point.y()));
+          dist += std::abs(netOrigGuides[idx].getLayerNum() - lNum);
+          if (dist < minDist) {
+            minDist = dist;
+            bestIndex = j;
+          }
+        }
+      }
+      bounds[bestIndex].push_back({point, lNum});
+    }
+  }
+  for (int i = 0; i < connectedComponents.size(); i++) {
+    std::vector<frRect> origGuides;
+    for (auto idx : connectedComponents[i]) {
+      origGuides.push_back(netOrigGuides[idx]);
+    }
+    initNet(design_,
+            net,
+            routeObjs[i],
+            extObjs[i],
+            origGuides,
+            terms[i],
+            bounds[i]);
+  }
+}
+
 // inits nets based on the pins
 void FlexDRWorker::initNets_initDR(
     const frDesign* design,
@@ -397,7 +662,8 @@ void FlexDRWorker::initNets_initDR(
     }
     std::vector<frBlockObject*> tmpTerms;
     tmpTerms.assign(netTerms[net].begin(), netTerms[net].end());
-    initNet(design, net, vRouteObjs, vExtObjs, netOrigGuides[net], tmpTerms);
+    initNets_initDR_helper(
+        net, vRouteObjs, vExtObjs, tmpTerms, netOrigGuides[net]);
   }
 }
 
@@ -1414,7 +1680,8 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
 
 void FlexDRWorker::initNet_boundary(
     drNet* dNet,
-    const std::vector<std::unique_ptr<drConnFig>>& extObjs)
+    const std::vector<std::unique_ptr<drConnFig>>& extObjs,
+    std::vector<std::pair<Point, frLayerNum>> bounds)
 {
   const auto gridBBox = getRouteBox();
   // location to area
@@ -1452,15 +1719,12 @@ void FlexDRWorker::initNet_boundary(
     }
     // initDR
   } else {
-    const auto it = boundaryPin_.find(dNet->getFrNet());
-    if (it != boundaryPin_.end()) {
-      transform(it->second.begin(),
-                it->second.end(),
-                inserter(extBounds, extBounds.end()),
-                [](const std::pair<Point, frLayerNum>& pr) {
-                  return std::make_pair(pr, 0);
-                });
-    }
+    transform(bounds.begin(),
+              bounds.end(),
+              inserter(extBounds, extBounds.end()),
+              [](const std::pair<Point, frLayerNum>& pr) {
+                return std::make_pair(pr, 0);
+              });
   }
   for (auto& [pr, area] : extBounds) {
     auto& [pt, lNum] = pr;
@@ -1487,13 +1751,14 @@ void FlexDRWorker::initNet(const frDesign* design,
                            std::vector<std::unique_ptr<drConnFig>>& routeObjs,
                            std::vector<std::unique_ptr<drConnFig>>& extObjs,
                            std::vector<frRect>& origGuides,
-                           std::vector<frBlockObject*>& terms)
+                           std::vector<frBlockObject*>& terms,
+                           std::vector<std::pair<Point, frLayerNum>> bounds)
 {
   auto dNet = std::make_unique<drNet>(net);
   // true pin
   initNet_term(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
-  initNet_boundary(dNet.get(), extObjs);
+  initNet_boundary(dNet.get(), extObjs, bounds);
   // no ext routes in initDR to avoid weird TA shapes
   for (auto& obj : extObjs) {
     dNet->addRoute(std::move(obj), true);
