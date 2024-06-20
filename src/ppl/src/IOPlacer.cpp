@@ -2864,6 +2864,8 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
   for (const IOPin& pin : assignment) {
     commitIOPinToDB(pin);
   }
+
+  commitConstraintsToDB();
 }
 
 void IOPlacer::commitIOPinToDB(const IOPin& pin)
