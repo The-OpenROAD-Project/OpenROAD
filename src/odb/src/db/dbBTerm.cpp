@@ -276,7 +276,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
   if (db->getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
-
+    stream << bterm._constraint_region;    
   }
   return stream;
 }
