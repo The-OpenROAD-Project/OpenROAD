@@ -200,6 +200,7 @@ class HierRTLMP
   void treatEachMacroAsSingleCluster();
   void resetSAParameters();
   void multilevelAutocluster(Cluster* parent);
+  void updateSizeThresholds();
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   void updateInstancesAssociation(Cluster* cluster);
   void updateInstancesAssociation(odb::dbModule* module,

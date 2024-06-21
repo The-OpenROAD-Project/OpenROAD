@@ -976,70 +976,48 @@ void HierRTLMP::createIOClusters()
 // Recursive call for creating the physical hierarchy tree
 void HierRTLMP::multilevelAutocluster(Cluster* parent)
 {
-  bool force_split = false;
+  bool force_split_root = false;
   if (level_ == 0) {
-    // check if root cluster is below the max size of a leaf cluster
-    // Force create child clusters in this case
-    const int leaf_cluster_size
+    const int leaf_max_std_cell
         = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1)
           * (1 + tolerance_);
-    if (parent->getNumStdCell() < leaf_cluster_size) {
-      force_split = true;
+    if (parent->getNumStdCell() < leaf_max_std_cell) {
+      force_split_root = true;
+      debugPrint(logger_,
+                 MPL,
+                 "multilevel_autoclustering",
+                 1,
+                 "Root number of std cells ({}) is below leaf cluster max "
+                 "({}). Root will be force split.",
+                 parent->getNumStdCell(),
+                 leaf_max_std_cell);
     }
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "Force Split: root cluster size: {}, leaf cluster size: {}",
-               parent->getNumStdCell(),
-               leaf_cluster_size);
   }
 
   if (level_ >= max_num_level_) {
     return;
   }
-  level_++;
   debugPrint(logger_,
              MPL,
              "multilevel_autoclustering",
              1,
-             "Parent: {}, level: {}, num macros: {}, num std cells: {}",
+             "Current cluster: {} - Level: {} - Macros: {} - Std Cells: {}",
              parent->getName(),
              level_,
              parent->getNumMacro(),
              parent->getNumStdCell());
 
-  // a large coarsening_ratio_ helps the clustering process converge fast
-  max_num_macro_
-      = max_num_macro_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  min_num_macro_
-      = min_num_macro_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  max_num_inst_ = max_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  min_num_inst_ = min_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  // We define the tolerance to improve the robustness of our hierarchical
-  // clustering
-  max_num_inst_ = max_num_inst_ * (1 + tolerance_);
-  min_num_inst_ = min_num_inst_ * (1 - tolerance_);
-  max_num_macro_ = max_num_macro_ * (1 + tolerance_);
-  min_num_macro_ = min_num_macro_ * (1 - tolerance_);
-  if (min_num_macro_ <= 0) {
-    min_num_macro_ = 1;
-    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
-    // max_num_macro_ = min_num_macro_;
-  }
+  level_++;
+  updateSizeThresholds();
 
-  if (min_num_inst_ <= 0) {
-    min_num_inst_ = 100;
-    max_num_inst_ = min_num_inst_ * coarsening_ratio_ / 2.0;
-  }
+  if (force_split_root || (parent->getNumStdCell() > max_num_inst_)) {
+    breakCluster(parent);
+    updateSubTree(parent);
 
-  if (force_split || (parent->getNumStdCell() > max_num_inst_)) {
-    breakCluster(parent);   // Break the parent cluster into children clusters
-    updateSubTree(parent);  // update the subtree to the physical hierarchy tree
     for (auto& child : parent->getChildren()) {
       updateInstancesAssociation(child);
     }
-    // print the basic information of the children cluster
+
     for (auto& child : parent->getChildren()) {
       debugPrint(logger_,
                  MPL,
@@ -1055,6 +1033,34 @@ void HierRTLMP::multilevelAutocluster(Cluster* parent)
 
   updateInstancesAssociation(parent);
   level_--;
+}
+
+void HierRTLMP::updateSizeThresholds()
+{
+  const double coarse_factor = std::pow(coarsening_ratio_, level_ - 1);
+
+  // a large coarsening_ratio_ helps the clustering process converge fast
+  max_num_macro_ = max_num_macro_base_ / coarse_factor;
+  min_num_macro_ = min_num_macro_base_ / coarse_factor;
+  max_num_inst_ = max_num_inst_base_ / coarse_factor;
+  min_num_inst_ = min_num_inst_base_ / coarse_factor;
+
+  // We define the tolerance to improve the robustness of our hierarchical
+  // clustering
+  max_num_inst_ *= (1 + tolerance_);
+  min_num_inst_ *= (1 - tolerance_);
+  max_num_macro_ *= (1 + tolerance_);
+  min_num_macro_ *= (1 - tolerance_);
+
+  if (min_num_macro_ <= 0) {
+    min_num_macro_ = 1;
+    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
+  }
+
+  if (min_num_inst_ <= 0) {
+    min_num_inst_ = 100;
+    max_num_inst_ = min_num_inst_ * coarsening_ratio_ / 2.0;
+  }
 }
 
 void HierRTLMP::updateInstancesAssociation(Cluster* cluster)
