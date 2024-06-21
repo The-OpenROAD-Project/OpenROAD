@@ -108,6 +108,9 @@ includes GlobalFoundries shuttles, design contests and IC design
 workshops. The OpenROAD flow has been successfully used to date
 in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
+There is a [Matrix](https://matrix.org/) channel for discussion at 
+[#openroad:matrix.org](https://matrix.to/#/%23openroad:matrix.org).
+
 ## Getting Started with OpenROAD-flow-scripts
 
 OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
