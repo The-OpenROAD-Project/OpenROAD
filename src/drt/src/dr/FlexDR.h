@@ -516,7 +516,8 @@ class FlexDRWorker
       std::map<frNet*,
                std::vector<std::unique_ptr<drConnFig>>,
                frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
   void initNetObjs_pathSeg(frPathSeg* pathSeg,
                            std::set<frNet*, frBlockObjectComp>& nets,
                            std::map<frNet*,
@@ -555,7 +556,8 @@ class FlexDRWorker
       std::map<frNet*,
                std::vector<std::unique_ptr<drConnFig>>,
                frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
   int initNets_initDR_helper_getObjComponent(
       drConnFig* obj,
       std::vector<std::vector<int>> connectedComponents,
@@ -565,7 +567,8 @@ class FlexDRWorker
       std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
       std::vector<frBlockObject*> netTerms,
-      std::vector<frRect>& netOrigGuides);
+      std::vector<frRect>& netOrigGuides,
+      std::vector<frRect>& netGuides);
 
   void initNets_searchRepair(
       const frDesign* design,

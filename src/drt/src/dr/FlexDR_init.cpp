@@ -213,7 +213,8 @@ void FlexDRWorker::initNetObjs(
     std::map<frNet*,
              std::vector<std::unique_ptr<drConnFig>>,
              frBlockObjectComp>& netExtObjs,
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides)
+    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides)
 {
   std::vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
@@ -263,6 +264,7 @@ void FlexDRWorker::initNetObjs(
 
   if (isFollowGuide()) {
     frRegionQuery::Objects<frNet> origGuides;
+    frRegionQuery::Objects<frGuide> guides;
     frRect rect;
     for (auto lNum = getTech()->getBottomLayerNum();
          lNum <= getTech()->getTopLayerNum();
@@ -276,6 +278,25 @@ void FlexDRWorker::initNetObjs(
         rect.setBBox(box);
         rect.setLayerNum(lNum);
         netOrigGuides[net].push_back(rect);
+      }
+      design->getRegionQuery()->queryGuide(getRouteBox(), lNum, guides);
+      for (auto& [box, guide] : guides) {
+        if (nets.find(guide->getNet()) == nets.end()) {
+          continue;
+        }
+        auto [bp, ep] = guide->getPoints();
+        Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
+        Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
+        Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
+        Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
+        frLayerNum bNum = guide->getBeginLayerNum();
+        frLayerNum eNum = guide->getEndLayerNum();
+        rect.setBBox({bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
+        for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
+             lNum += 2) {
+          rect.setLayerNum(lNum);
+          netGuides[guide->getNet()].push_back(rect);
+        }
       }
     }
   }
@@ -446,26 +467,24 @@ void FlexDRWorker::initNets_initDR_helper(
     std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
     std::vector<frBlockObject*> netTerms,
-    std::vector<frRect>& netOrigGuides)
+    std::vector<frRect>& netOrigGuides,
+    std::vector<frRect>& netGuides)
 {
   std::map<int, std::vector<int>> nodeMap;
-  for (int i = 0; i < netOrigGuides.size(); i++) {
-    for (int j = i + 1; j < netOrigGuides.size(); j++) {
-      if (netOrigGuides[i].getLayerNum() == netOrigGuides[j].getLayerNum()
-          || netOrigGuides[i].getLayerNum() - 2
-                 == netOrigGuides[j].getLayerNum()
-          || netOrigGuides[i].getLayerNum() + 2
-                 == netOrigGuides[j].getLayerNum()) {
-        if (netOrigGuides[i].intersects(netOrigGuides[j].getBBox())) {
+  for (int i = 0; i < netGuides.size(); i++) {
+    for (int j = i + 1; j < netGuides.size(); j++) {
+      if (std::abs(netGuides[i].getLayerNum() - netGuides[j].getLayerNum())
+          <= 2) {
+        if (netGuides[i].intersects(netGuides[j].getBBox())) {
           nodeMap[i].push_back(j);
           nodeMap[j].push_back(i);
         }
       }
     }
   }
-  std::vector<bool> visited(netOrigGuides.size(), false);
+  std::vector<bool> visited(netGuides.size(), false);
   std::vector<std::vector<int>> connectedComponents;
-  for (int i = 0; i < netOrigGuides.size(); i++) {
+  for (int i = 0; i < netGuides.size(); i++) {
     if (visited[i]) {
       continue;
     }
@@ -500,12 +519,12 @@ void FlexDRWorker::initNets_initDR_helper(
       connectedComponents.size());
   for (auto& obj : netRouteObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
-        obj.get(), connectedComponents, netOrigGuides);
+        obj.get(), connectedComponents, netGuides);
     routeObjs[compIdx].push_back(std::move(obj));
   }
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
-        obj.get(), connectedComponents, netOrigGuides);
+        obj.get(), connectedComponents, netGuides);
     extObjs[compIdx].push_back(std::move(obj));
   }
   for (auto term : netTerms) {
@@ -524,10 +543,10 @@ void FlexDRWorker::initNets_initDR_helper(
       // component index is j
       for (auto idx : connectedComponents[j]) {
         frSquaredDistance dist = gtl::square_euclidean_distance(
-            gtl::rectangle_data<frCoord>(netOrigGuides[idx].getBBox().xMin(),
-                                         netOrigGuides[idx].getBBox().yMin(),
-                                         netOrigGuides[idx].getBBox().xMax(),
-                                         netOrigGuides[idx].getBBox().yMax()),
+            gtl::rectangle_data<frCoord>(netGuides[idx].getBBox().xMin(),
+                                         netGuides[idx].getBBox().yMin(),
+                                         netGuides[idx].getBBox().xMax(),
+                                         netGuides[idx].getBBox().yMax()),
             gtl::rectangle_data<frCoord>(
                 rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()));
 
@@ -537,7 +556,7 @@ void FlexDRWorker::initNets_initDR_helper(
         }
         if (minDist == 0 && dist == 0) {
           Rect result;
-          netOrigGuides[idx].getBBox().intersection(rect, result);
+          netGuides[idx].getBBox().intersection(rect, result);
           frCoord area = result.area();
           if (area > maxArea) {
             maxArea = area;
@@ -555,14 +574,13 @@ void FlexDRWorker::initNets_initDR_helper(
       int bestIndex = -1;
       for (int j = 0; j < connectedComponents.size(); j++) {
         for (auto idx : connectedComponents[j]) {
-          gtl::rectangle_data<frCoord> guide(
-              netOrigGuides[idx].getBBox().xMin(),
-              netOrigGuides[idx].getBBox().yMin(),
-              netOrigGuides[idx].getBBox().xMax(),
-              netOrigGuides[idx].getBBox().yMax());
+          gtl::rectangle_data<frCoord> guide(netGuides[idx].getBBox().xMin(),
+                                             netGuides[idx].getBBox().yMin(),
+                                             netGuides[idx].getBBox().xMax(),
+                                             netGuides[idx].getBBox().yMax());
           frSquaredDistance dist = gtl::square_euclidean_distance(
               guide, gtl::point_data<frCoord>(point.x(), point.y()));
-          dist += std::abs(netOrigGuides[idx].getLayerNum() - lNum);
+          dist += std::abs(netGuides[idx].getLayerNum() - lNum);
           if (dist < minDist) {
             minDist = dist;
             bestIndex = j;
@@ -573,15 +591,11 @@ void FlexDRWorker::initNets_initDR_helper(
     }
   }
   for (int i = 0; i < connectedComponents.size(); i++) {
-    std::vector<frRect> origGuides;
-    for (auto idx : connectedComponents[i]) {
-      origGuides.push_back(netOrigGuides[idx]);
-    }
     initNet(design_,
             net,
             routeObjs[i],
             extObjs[i],
-            origGuides,
+            netOrigGuides,
             terms[i],
             bounds[i]);
   }
@@ -597,7 +611,8 @@ void FlexDRWorker::initNets_initDR(
     std::map<frNet*,
              std::vector<std::unique_ptr<drConnFig>>,
              frBlockObjectComp>& netExtObjs,
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides)
+    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides)
 {
   std::map<frNet*,
            std::set<frBlockObject*, frBlockObjectComp>,
@@ -662,8 +677,12 @@ void FlexDRWorker::initNets_initDR(
     }
     std::vector<frBlockObject*> tmpTerms;
     tmpTerms.assign(netTerms[net].begin(), netTerms[net].end());
-    initNets_initDR_helper(
-        net, vRouteObjs, vExtObjs, tmpTerms, netOrigGuides[net]);
+    initNets_initDR_helper(net,
+                           vRouteObjs,
+                           vExtObjs,
+                           tmpTerms,
+                           netOrigGuides[net],
+                           netGuides[net]);
   }
 }
 
@@ -1955,11 +1974,13 @@ void FlexDRWorker::initNets(const frDesign* design)
   std::map<frNet*, std::vector<std::unique_ptr<drConnFig>>, frBlockObjectComp>
       netExtObjs;
   std::map<frNet*, std::vector<frRect>, frBlockObjectComp> netOrigGuides;
+  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> netGuides;
   // get lock
-  initNetObjs(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
+  initNetObjs(design, nets, netRouteObjs, netExtObjs, netOrigGuides, netGuides);
   // release lock
   if (isInitDR()) {
-    initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
+    initNets_initDR(
+        design, nets, netRouteObjs, netExtObjs, netOrigGuides, netGuides);
   }
   if (!isInitDR() || getRipupMode() == RipUpMode::INCR) {
     // find instTerm/terms using netRouteObjs;
