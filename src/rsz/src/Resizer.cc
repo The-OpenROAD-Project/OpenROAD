@@ -337,11 +337,10 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
     if (honorDontTouchFixed) {
       return false;
-    } else {
-      // remove net dont touch for manual ECO
-      in_db_net->setDoNotTouch(false);
-      out_db_net->setDoNotTouch(false);
-    }
+    } 
+    // remove net dont touch for manual ECO
+    in_db_net->setDoNotTouch(false);
+    out_db_net->setDoNotTouch(false);
   }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;

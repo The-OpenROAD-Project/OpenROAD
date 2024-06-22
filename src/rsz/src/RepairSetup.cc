@@ -393,7 +393,7 @@ bool RepairSetup::repairPath(PathRef& path,
                              const bool skip_pin_swap,
                              const bool skip_gate_cloning,
                              const bool skip_buffer_removal,
-                             const float setup_slack_margin)
+                             float setup_slack_margin)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -622,12 +622,10 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              LibertyCell* drvr_cell,
                              int drvr_index,
                              PathExpanded* expanded,
-                             const float setup_slack_margin)
+                             float setup_slack_margin)
 {
   // TODO:
-  // 1. add setup slack check (based on Elmore delay?)
-  // 2. check dont-touch on nets
-  // 3. add slew check
+  // 1. add max slew check
   if (drvr_cell && drvr_cell->isBuffer()) {
     Pin* drvr_pin = drvr_path->pin(this);
     Instance* drvr = network_->instance(drvr_pin);
@@ -817,15 +815,14 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
                    db_network_->name(params->prev_driver_pin), delay_imp);
         // clang-format on
         return false;
-      } else {
-        // clang-format off
-        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
-                   "because delay degradation of {} at previous driver {} "
-                   "is less than delay improvement of {}",
-                   db_network_->name(params->driver), delay_degrad,
-                   db_network_->name(params->prev_driver_pin), delay_imp);
-        // clang-format on
       }
+      // clang-format off
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                 "because delay degradation of {} at previous driver {} "
+                 "is less than delay improvement of {}",
+                 db_network_->name(params->driver), delay_degrad,
+                 db_network_->name(params->prev_driver_pin), delay_imp);
+      // clang-format on
     } else {
       // side input pin is not driver input pin
       float old_slack = sta_->pinSlack(side_input_pin, max_);
@@ -840,16 +837,15 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
                    params->setup_slack_margin, delay_degrad);
         // clang-format on
         return false;
-      } else {
-        // clang-format off
-        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
-                   "because side input pin {} will have a positive slack of {}:"
-                   " old slack={}, slack margin={}, delay_degrad={}",
-                   db_network_->name(params->driver),
-                   db_network_->name(side_input_pin), new_slack, old_slack, 
-                   params->setup_slack_margin, delay_degrad);
-        // clang-format on
       }
+      // clang-format off
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                 "because side input pin {} will have a positive slack of {}:"
+                 " old slack={}, slack margin={}, delay_degrad={}",
+                 db_network_->name(params->driver),
+                 db_network_->name(side_input_pin), new_slack, old_slack, 
+                 params->setup_slack_margin, delay_degrad);
+      // clang-format on
 
       // Consider secondary degradation at side out pin due to degraded input
       // slew. Include all output pins in case of multi-output gate (MOG).
@@ -892,16 +888,15 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
                      params->setup_slack_margin, delay_degrad + delay_diff);
           // clang-format on
           return false;
-        } else {
-          // clang-format off
-          debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed"
-                     "because side output pin {} will have a positive slack of "
-                     "{}: old slack={}, slack margin={}, delay_degrad={}",
-                     db_network_->name(params->driver),
-                     db_network_->name(side_out_pin), new_slack, old_slack, 
-                     params->setup_slack_margin, delay_degrad + delay_diff);
-          // clang-format on
         }
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed"
+                   "because side output pin {} will have a positive slack of "
+                   "{}: old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params->driver),
+                   db_network_->name(side_out_pin), new_slack, old_slack, 
+                   params->setup_slack_margin, delay_degrad + delay_diff);
+        // clang-format on
       }  // for each side_out_pin of side inst
     }
   }  // for each side_input_pin of prev_net
