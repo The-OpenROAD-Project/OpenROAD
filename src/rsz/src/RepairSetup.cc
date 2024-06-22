@@ -730,40 +730,18 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
       }
     }
 
-    // Estimate slack impact on side paths not driven by the current driver.
-    // If slack is already violating, there is no hope of improving this side
-    // path by driver removal.
-    //
-    //  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
-    //               |
-    //               ------>  (side_input_pin1  side_out_pin1) ----->
-    //               |
-    //               ------>  (side_input_pin2  side_out_pin2) ----->
-    //
     PathRef* drvr_input_path = expanded->path(drvr_index - 1);
     Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
-    Pin* drvr_input_pin = drvr_input_vertex->pin();
-    Net* prev_net = network_->net(prev_drvr_pin);
-    NetConnectedPinIterator* pin_iter
-        = network_->connectedPinIterator(prev_net);
-    while (pin_iter->hasNext()) {
-      const Pin* side_input_pin = pin_iter->next();
-      if (side_input_pin == prev_drvr_pin || side_input_pin == drvr_input_pin) {
-        continue;
-      }
-      float pin_slack = sta_->pinSlack(side_input_pin, max_);
-      if (pin_slack < setup_slack_margin) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "buffer {} is not removed because side input pin {} has "
-                   "a violating slack of {}",
-                   db_network_->name(drvr),
-                   db_network_->name(side_input_pin),
-                   pin_slack);
-        return false;
-      }
+    slackEstimatorParams params(setup_slack_margin, corner);
+    params.driver_pin = drvr_pin;
+    params.prev_driver_pin = prev_drvr_pin;
+    params.driver_input_pin = drvr_input_vertex->pin();
+    params.driver = drvr;
+    params.driver_path = drvr_path;
+    params.prev_driver_path = prev_drvr_path;
+    params.driver_cell = drvr_cell;
+    if (!estimatedSlackOK(&params)) {
+      return false;
     }
 
     if (resizer_->removeBuffer(drvr, /* honorDontTouch */ true)) {
@@ -773,6 +751,162 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
   }
 
   return false;
+}
+
+// Estimate slack impact from driver removal.
+// Delay improvement from removed driver should be greater than
+// delay degradation from prev driver for driver input pin path.
+// Side input paths should absorb delay and slew degradation from prev driver.
+// Delay degradation for side input paths comes from two sources:
+// 1) delay degradation at prev driver due to increased load cap
+// 2) delay degradation at side out pin due to degraded slew from prev driver
+//
+//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+//               |
+//               ------>  (side_input_pin1  side_out_pin1) ----->
+//               |
+//               ------>  (side_input_pin2  side_out_pin2) ----->
+//
+bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
+{
+  if (params->corner == nullptr) {
+    // can't do any estimation without a corner
+    return true;
+  }
+
+  // Prep for delay calc
+  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+  const DcalcAnalysisPt* dcalc_ap = params->corner->findDcalcAnalysisPt(max_);
+  LibertyPort* prev_drvr_port = network_->libertyPort(params->prev_driver_pin);
+  LibertyPort *buffer_input_port, *buffer_output_port;
+  params->driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  const RiseFall* prev_driver_rf = params->prev_driver_path->transition(sta_);
+
+  // Compute delay degradation at prev driver due to increased load cap
+  ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
+  Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
+  float old_cap = dcalc->loadCap(params->prev_driver_pin, dcalc_ap);
+  resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
+  float new_cap
+      = old_cap + dcalc->loadCap(params->driver_pin, dcalc_ap)
+        - resizer_->portCapacitance(buffer_input_port, params->corner);
+  resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
+  float delay_degrad
+      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
+  float delay_imp
+      = resizer_->bufferDelay(params->driver_cell,
+                              params->driver_path->transition(sta_),
+                              dcalc->loadCap(params->driver_pin, dcalc_ap),
+                              dcalc_ap);
+
+  Net* prev_net = network_->net(params->prev_driver_pin);
+  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(prev_net);
+  while (pin_iter->hasNext()) {
+    const Pin* side_input_pin = pin_iter->next();
+    if (side_input_pin == params->prev_driver_pin) {
+      continue;
+    }
+    // Check if degraded delay can be absorbed
+    if (side_input_pin == params->driver_input_pin) {
+      if (delay_imp < delay_degrad) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because delay degradation of {} at previous driver {} "
+                   "is greater than delay improvement of {}",
+                   db_network_->name(params->driver), delay_degrad,
+                   db_network_->name(params->prev_driver_pin), delay_imp);
+        // clang-format on
+        return false;
+      } else {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                   "because delay degradation of {} at previous driver {} "
+                   "is less than delay improvement of {}",
+                   db_network_->name(params->driver), delay_degrad,
+                   db_network_->name(params->prev_driver_pin), delay_imp);
+        // clang-format on
+      }
+    } else {
+      // side input pin is not driver input pin
+      float old_slack = sta_->pinSlack(side_input_pin, max_);
+      float new_slack = old_slack - params->setup_slack_margin - delay_degrad;
+      if (new_slack < 0) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because side input pin {} will have a violating slack of {}:"
+                   " old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params->driver),
+                   db_network_->name(side_input_pin), new_slack, old_slack, 
+                   params->setup_slack_margin, delay_degrad);
+        // clang-format on
+        return false;
+      } else {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                   "because side input pin {} will have a positive slack of {}:"
+                   " old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params->driver),
+                   db_network_->name(side_input_pin), new_slack, old_slack, 
+                   params->setup_slack_margin, delay_degrad);
+        // clang-format on
+      }
+
+      // Consider secondary degradation at side out pin due to degraded input
+      // slew. Include all output pins in case of multi-output gate (MOG).
+      Instance* side_inst = network_->instance(side_input_pin);
+      InstancePinIterator* side_pin_iter = network_->pinIterator(side_inst);
+      while (side_pin_iter->hasNext()) {
+        const Pin* side_out_pin = side_pin_iter->next();
+        if (!network_->direction(side_out_pin)->isOutput()) {
+          continue;
+        }
+        LibertyPort* side_out_port = network_->libertyPort(side_out_pin);
+        float side_load_cap = dcalc->loadCap(side_out_pin, dcalc_ap);
+        ArcDelay old_delay2[RiseFall::index_count],
+            new_delay2[RiseFall::index_count];
+        Slew old_slew2[RiseFall::index_count], new_slew2[RiseFall::index_count];
+        resizer_->gateDelays(side_out_port,
+                             side_load_cap,
+                             old_slew,  // old input slew from prev_driver
+                             dcalc_ap,
+                             old_delay2,
+                             old_slew2);
+        resizer_->gateDelays(side_out_port,
+                             side_load_cap,
+                             new_slew,  // new input slew from prev_driver
+                             dcalc_ap,
+                             new_delay2,
+                             new_slew2);
+        float delay_diff = max(new_delay2[RiseFall::riseIndex()]
+                                   - old_delay2[RiseFall::riseIndex()],
+                               new_delay2[RiseFall::fallIndex()]
+                                   - old_delay2[RiseFall::fallIndex()]);
+        new_slack -= delay_diff;
+        if (new_slack < 0) {
+          // clang-format off
+          debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+                     "because side output pin {} will have a violating slack of "
+                     "{}: old slack={}, slack margin={}, delay_degrad={}",
+                     db_network_->name(params->driver),
+                     db_network_->name(side_out_pin), new_slack, old_slack, 
+                     params->setup_slack_margin, delay_degrad + delay_diff);
+          // clang-format on
+          return false;
+        } else {
+          // clang-format off
+          debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed"
+                     "because side output pin {} will have a positive slack of "
+                     "{}: old slack={}, slack margin={}, delay_degrad={}",
+                     db_network_->name(params->driver),
+                     db_network_->name(side_out_pin), new_slack, old_slack, 
+                     params->setup_slack_margin, delay_degrad + delay_diff);
+          // clang-format on
+        }
+      }  // for each side_out_pin of side inst
+    }
+  }  // for each side_input_pin of prev_net
+
+  return true;
 }
 
 bool RepairSetup::upsizeDrvr(PathRef* drvr_path,

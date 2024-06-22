@@ -2265,6 +2265,45 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
   }
 }
 
+// Rise/fall delays across all timing arcs into drvr_port.
+// Takes input slews and load cap
+void Resizer::gateDelays(const LibertyPort* drvr_port,
+                         const float load_cap,
+                         const Slew in_slews[RiseFall::index_count],
+                         const DcalcAnalysisPt* dcalc_ap,
+                         // Return values.
+                         ArcDelay delays[RiseFall::index_count],
+                         Slew out_slews[RiseFall::index_count])
+{
+  for (int rf_index : RiseFall::rangeIndex()) {
+    delays[rf_index] = -INF;
+    out_slews[rf_index] = -INF;
+  }
+  LibertyCell* cell = drvr_port->libertyCell();
+  for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
+        LoadPinIndexMap load_pin_index_map(network_);
+        ArcDcalcResult dcalc_result
+            = arc_delay_calc_->gateDelay(nullptr,
+                                         arc,
+                                         in_slews[in_rf->index()],
+                                         load_cap,
+                                         nullptr,
+                                         load_pin_index_map,
+                                         dcalc_ap);
+
+        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const Slew& drvr_slew = dcalc_result.drvrSlew();
+        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
+        out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
+      }
+    }
+  }
+}
+
 ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
                             const RiseFall* rf,
                             const float load_cap,
