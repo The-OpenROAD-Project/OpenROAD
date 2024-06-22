@@ -76,7 +76,6 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _ext_id = 0;
   _name = nullptr;
   _sta_vertex_id = 0;
-  _constraint_region = std::make_pair(Point(-1, -1), Point(-1, -1));
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -92,8 +91,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0),
-      _constraint_region(Point(-1, -1), Point(-1, -1))
+      _sta_vertex_id(0)
 {
   if (b._name) {
     _name = strdup(b._name);
@@ -936,7 +934,7 @@ void dbBTerm::setConstraintRegion(
   bterm->_constraint_region = constraint_region;
 }
 
-std::pair<Point, Point> dbBTerm::getConstraintRegion()
+std::optional<std::pair<Point, Point>> dbBTerm::getConstraintRegion()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->_constraint_region;
