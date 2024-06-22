@@ -123,6 +123,8 @@ using GraphNodes = std::vector<GraphNode*>;
 using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
 using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
+using GateToViolationLayers
+    = std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>;
 
 class AntennaChecker
 {
@@ -158,9 +160,7 @@ class AntennaChecker
   std::vector<std::pair<double, std::vector<odb::dbITerm*>>>
   getViolatedWireLength(odb::dbNet* net, int routing_level);
   bool isValidGate(odb::dbMTerm* mterm);
-  void buildLayerMaps(odb::dbNet* net,
-                      LayerToGraphNodes& node_by_layer_map,
-                      GateToLayerToNodeInfo& gate_info);
+  void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
   void checkNet(odb::dbNet* net,
                 bool verbose,
                 bool report_if_no_violation,
@@ -177,6 +177,16 @@ class AntennaChecker
                       GateToLayerToNodeInfo& gate_info);
   void calculatePAR(GateToLayerToNodeInfo& gate_info);
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
+  bool checkRatioViolations(odb::dbTechLayer* layer,
+                            const NodeInfo& node_info,
+                            bool verbose,
+                            bool report,
+                            std::ofstream& report_file);
+  void reportNet(odb::dbNet* db_net,
+                 GateToLayerToNodeInfo& gate_info,
+                 GateToViolationLayers& gates_with_violations,
+                 bool verbose,
+                 std::ofstream& report_file);
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool report_if_no_violation,
@@ -187,16 +197,16 @@ class AntennaChecker
                  Violations& antenna_violations);
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
-  std::pair<bool, bool> checkPAR(odb::dbTechLayer* tech_layer,
-                                 const NodeInfo& info,
-                                 bool verbose,
-                                 bool report,
-                                 std::ofstream& report_file);
-  std::pair<bool, bool> checkPSR(odb::dbTechLayer* tech_layer,
-                                 const NodeInfo& info,
-                                 bool verbose,
-                                 bool report,
-                                 std::ofstream& report_file);
+  bool checkPAR(odb::dbTechLayer* tech_layer,
+                const NodeInfo& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
+  bool checkPSR(odb::dbTechLayer* tech_layer,
+                const NodeInfo& info,
+                bool verbose,
+                bool report,
+                std::ofstream& report_file);
   bool checkCAR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
                 bool verbose,
