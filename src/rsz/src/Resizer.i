@@ -57,15 +57,7 @@ ensureLinked();
 
 namespace sta {
 
-// Defined in StaTcl.i
-LibertyCellSeq *
-tclListSeqLibertyCell(Tcl_Obj *const source,
-                      Tcl_Interp *interp);
-PinSet *
-tclListSetPin(Tcl_Obj *source,
-              Tcl_Interp *interp);
-
-using TmpNetSeq = NetSeq ;
+using TmpNetSeq = NetSeq;
 using TmpPinSet = PinSet;
 
 } // namespace
@@ -84,8 +76,6 @@ using sta::Pin;
 using sta::PinSet;
 using sta::TmpPinSet;
 using sta::RiseFall;
-using sta::tclListSeqLibertyCell;
-using sta::tclListSetPin;
 using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
