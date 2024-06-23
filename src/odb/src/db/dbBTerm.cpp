@@ -940,7 +940,7 @@ std::optional<std::pair<Point, Point>> dbBTerm::getConstraintRegion()
   const auto& constraint_region = bterm->_constraint_region;
   if (constraint_region.first == Point(0, 0)
       && constraint_region.second == Point(0, 0)) {
-    return nullptr;
+    return std::nullopt;
   }
 
   return bterm->_constraint_region;
