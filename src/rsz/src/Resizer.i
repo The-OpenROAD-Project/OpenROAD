@@ -96,30 +96,6 @@ using sta::stringEq;
 
 using rsz::Resizer;
 using rsz::ParasiticsSrc;
-
-template <class SET_TYPE, class OBJECT_TYPE>
-SET_TYPE *
-tclListNetworkSet(Tcl_Obj *const source,
-                  swig_type_info *swig_type,
-                  Tcl_Interp *interp,
-                  const Network *network)
-{
-  int argc;
-  Tcl_Obj **argv;
-  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
-      && argc > 0) {
-    SET_TYPE *set = new SET_TYPE(network);
-    for (int i = 0; i < argc; i++) {
-      void *obj;
-      // Ignore returned TCL_ERROR because can't get swig_type_info.
-      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
-      set->insert(reinterpret_cast<OBJECT_TYPE*>(obj));
-    }
-    return set;
-  }
-  else
-    return nullptr;
-}
 %}
 
 // OpenSTA swig files
@@ -128,84 +104,19 @@ tclListNetworkSet(Tcl_Obj *const source,
 ////////////////////////////////////////////////////////////////
 //
 // SWIG type definitions.
-// (copied from StaTcl.i because I don't see how to share them.
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) RiseFall* {
-  int length;
-  const char *arg = Tcl_GetStringFromObj($input, &length);
-  RiseFall *tr = RiseFall::find(arg);
-  if (tr == nullptr) {
-    Tcl_SetResult(interp,const_cast<char*>("Error: unknown transition name."),
-                  TCL_STATIC);
-    return TCL_ERROR;
-  }
-  $1 = tr;
-}
-
-%typemap(in) LibertyCellSeq* {
-  $1 = tclListSeqLibertyCell($input, interp);
-}
-
 %typemap(out) TmpNetSeq* {
-  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   NetSeq *nets = $1;
-  NetSeq::Iterator net_iter(nets);
-  while (net_iter.hasNext()) {
-    const Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
-    Tcl_ListObjAppendElement(interp, list, obj);
-  }
+  seqPtrTclList<NetSeq, Net>(nets, SWIGTYPE_p_Net, interp);
   delete nets;
-  Tcl_SetObjResult(interp, list);
 }
 
 %typemap(out) TmpPinSet* {
-  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   PinSet *pins = $1;
-  PinSet::Iterator pin_iter(pins);
-  while (pin_iter.hasNext()) {
-    const Pin *pin = pin_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
-    Tcl_ListObjAppendElement(interp, list, obj);
-  }
+  setPtrTclList<PinSet, Pin>(pins, SWIGTYPE_p_Pin, interp);
   delete pins;
-  Tcl_SetObjResult(interp, list);
-}
-
-%typemap(out) NetSeq* {
-  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
-  NetSeq *nets = $1;
-  NetSeq::Iterator net_iter(nets);
-  while (net_iter.hasNext()) {
-    const Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
-    Tcl_ListObjAppendElement(interp, list, obj);
-  }
-  Tcl_SetObjResult(interp, list);
-}
-
-%typemap(out) LibertyPort* {
-  Tcl_Obj *obj = SWIG_NewInstanceObj($1, $1_descriptor, false);
-  Tcl_SetObjResult(interp, obj);
-}
-
-%typemap(in) PinSet* {
-  Resizer *resizer = getResizer();
-  dbNetwork *network = resizer->getDbNetwork();
-  $1 = tclListNetworkSet<PinSet, Pin>($input, SWIGTYPE_p_Pin, interp, network);
-}
-
-%typemap(out) PinSet {
-  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
-  PinSet::Iterator pin_iter($1);
-  while (pin_iter.hasNext()) {
-    const Pin *pin = pin_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
-    Tcl_ListObjAppendElement(interp, list, obj);
-  }
-  Tcl_SetObjResult(interp, list);
 }
 
 %typemap(in) ParasiticsSrc {
