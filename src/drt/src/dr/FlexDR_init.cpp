@@ -463,24 +463,69 @@ void FlexDRWorker::initNets_initDR_helper(
     std::vector<frRect>& netOrigGuides,
     std::vector<frRect>& netGuides)
 {
-  std::map<int, std::vector<int>> nodeMap;
+  struct Node
+  {
+    enum Type
+    {
+      TERM,
+      GUIDE
+    };
+    Type type;
+    int idx;
+    Rect rect;
+    Node(Type typeIn, int idxIn, Rect rectIn)
+        : type(typeIn), idx(idxIn), rect(rectIn)
+    {
+    }
+  };
+  std::vector<Node> nodes;
   for (int i = 0; i < netGuides.size(); i++) {
-    for (int j = i + 1; j < netGuides.size(); j++) {
-      if (netGuides[i].intersects(netGuides[j].getBBox())) {
+    nodes.push_back(Node(Node::GUIDE, i, netGuides[i].getBBox()));
+  }
+  for (int i = 0; i < netTerms.size(); i++) {
+    Rect rect;
+    if (netTerms[i]->typeId() == frcInstTerm) {
+      auto iterm = static_cast<frInstTerm*>(netTerms[i]);
+      rect = iterm->getBBox(true);
+    } else {
+      auto bterm = static_cast<frBTerm*>(netTerms[i]);
+      rect = bterm->getBBox();
+    }
+    nodes.push_back(Node(Node::TERM, i, rect));
+  }
+  std::map<int, std::vector<int>> nodeMap;
+  for (int i = 0; i < nodes.size(); i++) {
+    for (int j = i + 1; j < nodes.size(); j++) {
+      if (nodes[i].rect.intersects(nodes[j].rect)) {
         nodeMap[i].push_back(j);
         nodeMap[j].push_back(i);
       }
     }
   }
-  std::vector<bool> visited(netGuides.size(), false);
+  std::vector<bool> visited(nodes.size(), false);
   std::vector<std::vector<int>> connectedComponents;
-  for (int i = 0; i < netGuides.size(); i++) {
+  for (int i = 0; i < nodes.size(); i++) {
     if (visited[i]) {
       continue;
     }
     std::vector<int> component;
     dfs(i, nodeMap, visited, component);
     connectedComponents.push_back(component);
+  }
+  auto compIt = connectedComponents.begin();
+  while (compIt != connectedComponents.end()) {
+    bool foundGuide = false;
+    for (auto nodeIdx : (*compIt)) {
+      if (nodes[nodeIdx].type == Node::GUIDE) {
+        foundGuide = true;
+        break;
+      }
+    }
+    if (!foundGuide) {
+      compIt = connectedComponents.erase(compIt);
+    } else {
+      compIt++;
+    }
   }
   if (connectedComponents.size() <= 1) {
     std::vector<std::pair<Point, frLayerNum>> bounds;
@@ -507,38 +552,32 @@ void FlexDRWorker::initNets_initDR_helper(
   std::vector<std::vector<frBlockObject*>> terms(connectedComponents.size());
   std::vector<std::vector<std::pair<Point, frLayerNum>>> bounds(
       connectedComponents.size());
-  for (auto term : netTerms) {
+  for (int i = 0; i < netTerms.size(); i++) {
     Rect rect;
-    if (term->typeId() == frcInstTerm) {
-      auto iterm = static_cast<frInstTerm*>(term);
+    if (netTerms[i]->typeId() == frcInstTerm) {
+      auto iterm = static_cast<frInstTerm*>(netTerms[i]);
       rect = iterm->getBBox(true);
     } else {
-      auto bterm = static_cast<frBTerm*>(term);
+      auto bterm = static_cast<frBTerm*>(netTerms[i]);
       rect = bterm->getBBox();
     }
     frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
-    frCoord maxArea = 0;
     int bestIndex = -1;
     for (int j = 0; j < connectedComponents.size(); j++) {
       // component index is j
       for (auto idx : connectedComponents[j]) {
-        frSquaredDistance dist = getSqrdDist(netGuides[idx].getBBox(), rect);
+        frSquaredDistance dist = getSqrdDist(nodes[idx].rect, rect);
         if (dist < minDist) {
           minDist = dist;
           bestIndex = j;
         }
-        if (minDist == 0 && dist == 0) {
-          Rect result;
-          netGuides[idx].getBBox().intersection(rect, result);
-          frCoord area = result.area();
-          if (area > maxArea) {
-            maxArea = area;
-            bestIndex = j;
-          }
+        if (nodes[idx].type == Node::TERM && nodes[idx].idx == i) {
+          bestIndex = j;
+          break;
         }
       }
     }
-    terms[bestIndex].push_back(term);
+    terms[bestIndex].push_back(netTerms[i]);
   }
   const auto it = boundaryPin_.find(net);
   if (it != boundaryPin_.end()) {
@@ -547,9 +586,11 @@ void FlexDRWorker::initNets_initDR_helper(
       int bestIndex = -1;
       for (int j = 0; j < connectedComponents.size(); j++) {
         for (auto idx : connectedComponents[j]) {
-          frSquaredDistance dist
-              = getSqrdDist(netGuides[idx].getBBox(), {point, point});
-          dist += std::abs(netGuides[idx].getLayerNum() - lNum);
+          if (nodes[idx].type == Node::TERM) {
+            continue;
+          }
+          frSquaredDistance dist = getSqrdDist(nodes[idx].rect, {point, point});
+          dist += std::abs(netGuides[nodes[idx].idx].getLayerNum() - lNum);
           if (dist < minDist) {
             minDist = dist;
             bestIndex = j;
@@ -557,6 +598,17 @@ void FlexDRWorker::initNets_initDR_helper(
         }
       }
       bounds[bestIndex].push_back({point, lNum});
+    }
+  }
+  for (auto& component : connectedComponents) {
+    auto itr = component.begin();
+    while (itr != component.end()) {
+      if (nodes[*itr].type == Node::TERM) {
+        itr = component.erase(itr);
+      } else {
+        *itr = nodes[*itr].idx;
+        itr++;
+      }
     }
   }
   for (auto& obj : netRouteObjs) {
