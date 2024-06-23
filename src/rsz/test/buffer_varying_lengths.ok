@@ -9,4 +9,6 @@ worst slack -0.27
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 worst slack -0.27
-No differences found.
+Differences found at line 407.
+    - wire1 BUF_X8 + SOURCE TIMING + PLACED ( 1041175 1981285 ) N ;
+    - max_length1 BUF_X8 + SOURCE TIMING + PLACED ( 1041175 1981285 ) N ;

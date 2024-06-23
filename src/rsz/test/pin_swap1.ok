@@ -767,9 +767,9 @@ sky130_fd_sc_hd__nor4_1/A -> B C D
 sky130_fd_sc_hd__nor4_1/B -> A C D
 sky130_fd_sc_hd__nor4_1/C -> A B D
 sky130_fd_sc_hd__nor4_1/D -> A B C
-sky130_fd_sc_hd__nor4_2/A -> B C D
-sky130_fd_sc_hd__nor4_2/B -> A C D
-sky130_fd_sc_hd__nor4_2/C -> A B D
+sky130_fd_sc_hd__nor4_2/A -> D B C
+sky130_fd_sc_hd__nor4_2/B -> D A C
+sky130_fd_sc_hd__nor4_2/C -> D A B
 sky130_fd_sc_hd__nor4_2/D -> A B C
 sky130_fd_sc_hd__nor4_4/A -> B C D
 sky130_fd_sc_hd__nor4_4/B -> A C D

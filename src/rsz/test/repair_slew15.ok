@@ -29,5 +29,5 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-wire1/Z                                60.65   12.91   47.74 (MET)
+load_slew1/Z                           60.65   12.91   47.74 (MET)
 
