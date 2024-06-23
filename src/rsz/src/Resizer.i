@@ -72,8 +72,6 @@ using sta::Pin;
 using sta::PinSet;
 using sta::TmpPinSet;
 using sta::RiseFall;
-using sta::tclListSeqLibertyCell;
-using sta::tclListSetPin;
 using sta::TmpNetSeq;
 using sta::LibertyPort;
 using sta::Delay;
