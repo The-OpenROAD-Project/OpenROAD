@@ -61,6 +61,16 @@ pipeline {
             }
           }
         }
+        stage('Local centos7 cmake configure no tests') {
+          agent any;
+          stages {
+            stage('Configure centos7 cmake without tests') {
+              steps {
+                sh 'cmake -B build_no_tests -D ENABLE_TESTS=OFF';
+              }
+            }
+          }
+        }
         stage('Docker Ubuntu 20.04 gcc') {
           agent any;
           stages{

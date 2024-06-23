@@ -186,6 +186,7 @@ class TimingPath
   void setSkew(float skew) { skew_ = skew; }
   float getLogicDelay() const { return logic_delay_; }
   int getLogicDepth() const { return logic_depth_; }
+  int getFanout() const { return fanout_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -198,6 +199,9 @@ class TimingPath
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
+
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,
@@ -221,6 +225,7 @@ class TimingPath
   float req_time_;
   float logic_delay_;
   int logic_depth_;
+  int fanout_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
@@ -368,6 +373,7 @@ class STAGuiInterface
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
 

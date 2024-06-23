@@ -35,6 +35,8 @@
 
 #include "RepairAntennas.h"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -71,35 +73,41 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
   }
 }
 
-bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
-                                            int max_routing_layer,
-                                            odb::dbMTerm* diode_mterm,
-                                            float ratio_margin)
+bool RepairAntennas::checkAntennaViolations(
+    NetRouteMap& routing,
+    const std::vector<odb::dbNet*>& nets_to_repair,
+    int max_routing_layer,
+    odb::dbMTerm* diode_mterm,
+    float ratio_margin,
+    const int num_threads)
 {
-  // safe copy net wires before orderWires calls
-  // TODO: remove this copy when antenna checker update is done
-  std::map<odb::dbNet*, std::pair<std::vector<int>, std::vector<unsigned char>>>
-      copy_wires;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    if (db_net->getWire() == nullptr) {
-      continue;
-    }
-    std::vector<int> data;
-    std::vector<unsigned char> op_codes;
-    db_net->getWire()->getRawWireData(data, op_codes);
-    copy_wires[db_net] = {data, op_codes};
+  for (odb::dbNet* db_net : nets_to_repair) {
+    antenna_violations_[db_net];
   }
 
-  makeNetWires(routing, max_routing_layer);
+  bool destroy_wires = !grouter_->haveDetailedRoutes();
+
+  makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
-  for (odb::dbNet* db_net : block_->getNets()) {
+  omp_set_num_threads(num_threads);
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < nets_to_repair.size(); i++) {
+    odb::dbNet* db_net = nets_to_repair[i];
     checkNetViolations(db_net, diode_mterm, ratio_margin);
   }
 
-  destroyNetWires();
-  for (auto [net, val] : copy_wires) {
-    auto wire = odb::dbWire::create(net);
-    wire->setRawWireData(val.first, val.second);
+  if (destroy_wires) {
+    destroyNetWires(nets_to_repair);
+  }
+
+  // remove nets with zero violations
+  for (auto it = antenna_violations_.begin();
+       it != antenna_violations_.end();) {
+    if (it->second.empty()) {
+      it = antenna_violations_.erase(it);
+    } else {
+      ++it;
+    }
   }
 
   logger_->info(
@@ -126,16 +134,18 @@ void RepairAntennas::checkNetViolations(odb::dbNet* db_net,
   }
 }
 
-void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
+void RepairAntennas::makeNetWires(
+    NetRouteMap& routing,
+    const std::vector<odb::dbNet*>& nets_to_repair,
+    int max_routing_layer)
 {
   std::map<int, odb::dbTechVia*> default_vias
       = grouter_->getDefaultVias(max_routing_layer);
 
-  for (odb::dbNet* db_net : block_->getNets()) {
-    if (grouter_->isDetailedRouted(db_net)) {
-      odb::orderWires(logger_, db_net);
-    } else if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
-               && !grouter_->getNet(db_net)->isLocal()) {
+  for (odb::dbNet* db_net : nets_to_repair) {
+    if (!db_net->isSpecial() && !db_net->isConnectedByAbutment()
+        && !grouter_->getNet(db_net)->isLocal()
+        && !grouter_->isDetailedRouted(db_net)) {
       makeNetWire(db_net, routing[db_net], default_vias);
     }
   }
@@ -255,7 +265,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
     }
     wire_encoder.end();
 
-    odb::orderWires(logger_, db_net);
     return wire;
   } else {
     logger_->error(
@@ -419,12 +428,14 @@ bool RepairAntennas::pinOverlapsGSegment(
   return false;
 }
 
-void RepairAntennas::destroyNetWires()
+void RepairAntennas::destroyNetWires(
+    const std::vector<odb::dbNet*>& nets_to_repair)
 {
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
-    if (wire)
+    if (wire) {
       odb::dbWire::destroy(wire);
+    }
   }
 }
 

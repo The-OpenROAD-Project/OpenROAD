@@ -35,12 +35,13 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
 
@@ -73,8 +74,16 @@ using odb::Rect;
 
 using utl::Logger;
 
+struct pinSetComp
+{
+  bool operator()(const odb::dbBTerm* lhs, const odb::dbBTerm* rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+
 // A list of pins that will be placed together in the die boundary
-using PinSet = std::set<odb::dbBTerm*>;
+using PinSet = std::set<odb::dbBTerm*, pinSetComp>;
 using PinList = std::vector<odb::dbBTerm*>;
 using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
 

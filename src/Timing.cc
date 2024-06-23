@@ -69,7 +69,9 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
   sta::dbNetwork* db_network = openroad->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return std::make_pair(iterm, bterm);
 }
 
@@ -358,6 +360,42 @@ float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
   sta::Pin* sta_pin = network->dbToSta(pin);
   sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
   return sta->capacitance(lib_port, corner, getMinMax(minmax));
+}
+
+float Timing::getMaxCapLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxCap = 0.0;
+  bool maxCapExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (!maxCapExists) {
+      lib->defaultMaxCapacitance(maxCap, maxCapExists);
+    }
+  }
+  return maxCap;
+}
+
+float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxSlew = 0.0;
+  bool maxSlewExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
+    if (!maxSlewExists) {
+      lib->defaultMaxSlew(maxSlew, maxSlewExists);
+    }
+  }
+  return maxSlew;
 }
 
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)

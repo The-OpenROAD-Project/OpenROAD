@@ -127,6 +127,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Arrival:
       case LogicDelay:
       case LogicDepth:
+      case Fanout:
       case Slack:
       case Skew:
         return Qt::AlignRight;
@@ -149,6 +150,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getLogicDelay(), time_units);
       case LogicDepth:
         return timing_path->getLogicDepth();
+      case Fanout:
+        return timing_path->getFanout();
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -214,6 +217,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getLogicDepth() < path2->getLogicDepth();
+    };
+  } else if (col_index == Fanout) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getFanout() < path2->getFanout();
     };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
@@ -717,7 +725,9 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   auto* network = sta_->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm != nullptr) {
     if (iterm->getSigType().isSupply()) {
       return true;
@@ -1077,7 +1087,9 @@ void PinSetWidget::showMenu(const QPoint& point)
     auto* gui = Gui::get();
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm, modbterm);
     if (iterm != nullptr) {
       emit inspect(gui->makeSelected(iterm));
     } else {

@@ -47,6 +47,8 @@ using utl::MPL;
 MacroPlacer2::MacroPlacer2() = default;
 MacroPlacer2::~MacroPlacer2() = default;
 
+class Snapper;
+
 void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
@@ -129,10 +131,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& y_origin,
                               const odb::dbOrientType& orientation)
 {
-  float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
+  odb::dbBlock* block = inst->getBlock();
 
-  const int x1 = micronToDbu(x_origin, dbu_per_micron);
-  const int y1 = micronToDbu(y_origin, dbu_per_micron);
+  const int x1 = block->micronsToDbu(x_origin);
+  const int y1 = block->micronsToDbu(y_origin);
   const int x2 = x1 + inst->getBBox()->getDX();
   const int y2 = y1 + inst->getBBox()->getDY();
 
@@ -146,23 +148,14 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                    "place macro outside of the core.");
   }
 
-  // As HardMacro is created from inst, the latter must be placed before
-  // we actually snap the macro to align the pins with the grids. Also,
-  // orientation must be set before location so we don't end up flipping
+  // Orientation must be set before location so we don't end up flipping
   // and misplacing the macro.
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
   if (!orientation.isRightAngleRotation()) {
-    int manufacturing_grid = db_->getTech()->getManufacturingGrid();
-
-    HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
-
-    odb::Point snap_origin = macro.computeSnapOrigin(
-        macro_new_bbox, orientation, inst->getBlock());
-
-    // Orientation is already set, so now we set the origin to snap macro.
-    inst->setOrigin(snap_origin.x(), snap_origin.y());
+    Snapper snapper(inst);
+    snapper.snapMacro();
   } else {
     logger_->warn(
         MPL,
@@ -179,10 +172,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
                 "({:.3f}um, {:.3f}um). Orientation {}",
                 inst->getName(),
-                dbuToMicron(inst->getBBox()->xMin(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->yMin(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->xMax(), dbu_per_micron),
-                dbuToMicron(inst->getBBox()->yMax(), dbu_per_micron),
+                block->dbuToMicrons(inst->getBBox()->xMin()),
+                block->dbuToMicrons(inst->getBBox()->yMin()),
+                block->dbuToMicrons(inst->getBBox()->xMax()),
+                block->dbuToMicrons(inst->getBBox()->yMax()),
                 orientation.getString());
 }
 

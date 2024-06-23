@@ -397,7 +397,7 @@ const Cell* Opendp::checkOverlap(Cell& cell) const
 bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 {
   // BLOCK/BLOCK overlaps allowed
-  if (isBlock(cell1) && isBlock(cell2)) {
+  if (cell1->isBlock() && cell2->isBlock()) {
     return false;
   }
 

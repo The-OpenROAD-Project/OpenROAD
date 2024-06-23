@@ -46,6 +46,7 @@ target_sources(dpo
     src/Optdp.cpp
     src/MakeOptdp.cpp
     src/architecture.cxx
+    src/color.cxx
     src/network.cxx
     src/router.cxx
     src/utility.cxx

@@ -264,6 +264,8 @@ class TritonPart
                    const std::string& hypergraph_int_weight_file,
                    const std::string& solution_file);
 
+  float computeMicronArea(odb::dbInst* inst);
+
   // private member functions
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
