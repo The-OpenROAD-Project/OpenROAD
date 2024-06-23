@@ -43,7 +43,6 @@
 #include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/Liberty.hh"
 #include "db_sta/dbNetwork.hh"
 
 namespace ord {
