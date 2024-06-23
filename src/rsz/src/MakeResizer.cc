@@ -42,11 +42,11 @@
 #include "sta/StaMain.hh"
 
 extern "C" {
-extern int Rsz_Init(Tcl_Interp* interp);
+extern int Rsz_swig_Init(Tcl_Interp* interp);
 }
 
 namespace sta {
-extern const char* rsz_tcl_inits[];
+extern const char* rsz_swig_tcl_inits[];
 }
 
 namespace ord {
@@ -76,9 +76,9 @@ void initResizer(OpenRoad* openroad)
                                openroad->getOpendp(),
                                std::move(steiner_renderer));
   // Define swig TCL commands.
-  Rsz_Init(interp);
+  Rsz_swig_Init(interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::rsz_tcl_inits);
+  sta::evalTclInit(interp, sta::rsz_swig_tcl_inits);
 }
 
 }  // namespace ord
