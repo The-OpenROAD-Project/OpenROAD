@@ -118,6 +118,9 @@ tclListNetworkSet(Tcl_Obj *const source,
 }
 %}
 
+// OpenSTA swig files
+%include "tcl/StaTclTypes.i"
+
 ////////////////////////////////////////////////////////////////
 //
 // SWIG type definitions.
