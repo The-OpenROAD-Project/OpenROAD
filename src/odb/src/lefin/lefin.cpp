@@ -2236,7 +2236,7 @@ bool lefin::readLefInner(const char* lef_file)
         _logger->error(utl::ODB,
                        246,
                        "unknown incomplete layer prop of type {}",
-                       obj->getObjName());
+                       obj->getTypeName());
         break;
     }
   }

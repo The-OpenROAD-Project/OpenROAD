@@ -555,6 +555,10 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
     }
   }
 
+  if (neighbors.empty()) {
+    return false;
+  }
+
   for (auto& [cluster_id, weight] : cluster.connection_map_) {
     if ((cluster_id != id_) && (cluster_id != cluster.id_)
         && (weight >= net_threshold)) {
