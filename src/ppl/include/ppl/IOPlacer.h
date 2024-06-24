@@ -282,6 +282,11 @@ class IOPlacer
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
                         const std::set<int>& ver_layer_idx);
+  void findConstraintRegion(const Interval& interval,
+                            const Rect& constraint_box,
+                            Point& pt1,
+                            Point& pt2);
+  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
