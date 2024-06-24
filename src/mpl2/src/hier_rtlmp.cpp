@@ -2125,12 +2125,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
-
-  updateInstancesAssociation(cluster_part_1);
-  setClusterMetrics(cluster_part_1);
-  cluster_map_[cluster_id_++] = cluster_part_1;
-  cluster_part_1->setParent(parent->getParent());
-  parent->getParent()->addChild(cluster_part_1);
+  incorporateNewClusterToTree(cluster_part_1, parent->getParent());
 
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
@@ -2315,17 +2310,9 @@ void HierRTLMP::createOneClusterForEachMacro(
     std::string cluster_name = hard_macro->getName();
     Cluster* single_macro_cluster
         = new Cluster(cluster_id_, cluster_name, logger_);
-
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
+    incorporateNewClusterToTree(single_macro_cluster, parent);
 
-    updateInstancesAssociation(single_macro_cluster);
-    setClusterMetrics(single_macro_cluster);
-
-    cluster_map_[cluster_id_++] = single_macro_cluster;
-
-    // modify the physical hierachy tree
-    single_macro_cluster->setParent(parent);
-    parent->addChild(single_macro_cluster);
     macro_clusters.push_back(single_macro_cluster);
   }
 }
