@@ -2167,6 +2167,30 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     }
   }
 
+  std::map<odb::dbInst*, int> parent_macro_to_iterm_count
+      = getMacroToStdCellPinsCountMap(parent);
+  std::map<odb::dbInst*, int> partition_macro_to_iterm_count
+      = getMacroToStdCellPinsCountMap(cluster_part_1);
+
+  std::vector<odb::dbInst*> kept_macros, macros_to_move;
+  for (const auto& macro : parent->getLeafMacros()) {
+    if (parent_macro_to_iterm_count.at(macro)
+        > partition_macro_to_iterm_count.at(macro)) {
+      kept_macros.push_back(macro);
+    } else {
+      macros_to_move.push_back(macro);
+    }
+  }
+
+  parent->clearLeafMacros();
+
+  for (const auto& macro : kept_macros) {
+    parent->addLeafMacro(macro);
+  }
+  for (const auto& macro : macros_to_move) {
+    cluster_part_1->addLeafMacro(macro);
+  }
+
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
 
@@ -2180,6 +2204,46 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
   breakLargeFlatCluster(cluster_part_1);
+}
+
+std::map<odb::dbInst*, int> HierRTLMP::getMacroToStdCellPinsCountMap(
+    Cluster* cluster)
+{
+  std::map<odb::dbInst*, int> macro_to_iterms_count;
+
+  auto getNonSupplyNets
+      = [](std::set<odb::dbNet*>& non_supply_nets, odb::dbInst* inst) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            odb::dbNet* net = iterm->getNet();
+            if (net->getSigType().isSupply()) {
+              continue;
+            }
+            non_supply_nets.insert(net);
+          }
+        };
+
+  std::set<odb::dbNet*> cluster_nets;
+  for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
+    getNonSupplyNets(cluster_nets, std_cell);
+  }
+  for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    getNonSupplyNets(cluster_nets, macro);
+  }
+
+  for (odb::dbNet* net : cluster_nets) {
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      odb::dbMaster* master = inst->getMaster();
+      if (isIgnoredMaster(master)) {
+        break;
+      }
+      if (inst->isBlock()) {
+        macro_to_iterms_count[inst]++;
+      }
+    }
+  }
+
+  return macro_to_iterms_count;
 }
 
 // Traverse the physical hierarchy tree in a DFS manner (post-order)
