@@ -162,12 +162,12 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbProperty",
                                  "dbName"};
 
-const char* dbObject::getObjName() const
+const char* dbObject::getTypeName() const
 {
   return name_tbl[getImpl()->getType()];
 }
 
-const char* dbObject::getObjName(dbObjectType type)
+const char* dbObject::getTypeName(dbObjectType type)
 {
   return name_tbl[type];
 }
