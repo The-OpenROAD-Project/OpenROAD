@@ -244,8 +244,8 @@ RouteBaseVars::RouteBaseVars()
 
 void RouteBaseVars::reset()
 {
-  inflationRatioCoef = 2.5;
-  maxInflationRatio = 2.5;
+  inflationRatioCoef = 5;
+  maxInflationRatio = 8;
   maxDensity = 0.90;
   targetRC = 1.01;
   ignoreEdgeRatio = 0.8;

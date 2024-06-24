@@ -104,11 +104,11 @@ void Replace::reset()
   maxPhiCoef_ = 1.05;
   referenceHpwl_ = 446000000;
 
-  routabilityCheckOverflow_ = 0.2;
+  routabilityCheckOverflow_ = 0.3;
   routabilityMaxDensity_ = 0.99;
   routabilityTargetRcMetric_ = 1.01;
-  routabilityInflationRatioCoef_ = 2.5;
-  routabilityMaxInflationRatio_ = 2.5;
+  routabilityInflationRatioCoef_ = 5;
+  routabilityMaxInflationRatio_ = 8;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
   routabilityMaxBloatIter_ = 1;
