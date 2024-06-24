@@ -172,6 +172,7 @@ class HierRTLMP
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_flag);
   Metrics* computeMetrics(odb::dbModule* module);
+  float computeMicronArea(odb::dbInst* inst);
   void setClusterMetrics(Cluster* cluster);
   void calculateConnection();
   void getHardMacros(odb::dbModule* module,
@@ -311,6 +312,8 @@ class HierRTLMP
   void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                        std::vector<BundledNet>& nets_old);
 
+  static bool isIgnoredMaster(odb::dbMaster* master);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -327,9 +330,6 @@ class HierRTLMP
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
-
-  // technology-related variables
-  float dbu_ = 0.0;
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
@@ -521,7 +521,6 @@ class Pusher
   Cluster* root_;
   odb::dbBlock* block_;
   odb::Rect core_;
-  float dbu_;
 
   std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
   std::vector<HardMacro*> hard_macros_;

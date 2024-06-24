@@ -58,10 +58,10 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
-#include "Rudy.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
+#include "grt/Rudy.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
@@ -312,7 +312,8 @@ void GlobalRouter::updateDbCongestion()
 
 void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   int iterations,
-                                  float ratio_margin)
+                                  float ratio_margin,
+                                  const int num_threads)
 {
   if (!initialized_) {
     int min_layer, max_layer;
@@ -351,8 +352,12 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
     }
-    violations = repair_antennas_->checkAntennaViolations(
-        routes_, nets_to_repair, max_routing_layer_, diode_mterm, ratio_margin);
+    violations = repair_antennas_->checkAntennaViolations(routes_,
+                                                          nets_to_repair,
+                                                          max_routing_layer_,
+                                                          diode_mterm,
+                                                          ratio_margin,
+                                                          num_threads);
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
@@ -507,6 +512,15 @@ void GlobalRouter::initRoutingLayers(int min_routing_layer,
         logger_->error(GRT,
                        84,
                        "Layer {} does not have a valid direction.",
+                       tech_layer->getName());
+      }
+      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+      if (track_grid == nullptr
+          && tech_layer->getRoutingLevel() >= min_routing_layer
+          && tech_layer->getRoutingLevel() <= max_routing_layer) {
+        logger_->error(GRT,
+                       70,
+                       "Layer {} does not have track grid.",
                        tech_layer->getName());
       }
       routing_layers_[valid_layers] = tech_layer;
@@ -3630,17 +3644,13 @@ int GlobalRouter::computeMaxRoutingLayer()
 
   odb::dbTech* tech = db_->getTech();
 
-  int valid_layers = 1;
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(valid_layers);
-    if (tech_layer->getRoutingLevel() != 0) {
-      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-      if (track_grid == nullptr) {
-        break;
-      }
-      max_routing_layer = valid_layers;
-      valid_layers++;
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+    if (track_grid == nullptr) {
+      break;
     }
+    max_routing_layer = layer;
   }
 
   return max_routing_layer;
@@ -4281,7 +4291,9 @@ void GRouteDbCbk::instItermsDirty(odb::dbInst* inst)
 
 void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 {
-  grouter_->addNet(net);
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addNet(net);
+  }
 }
 
 void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
@@ -4292,25 +4304,37 @@ void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(iterm->getNet());
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(iterm->getNet());
+  odb::dbNet* net = iterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(iterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(bterm->getNet());
+  odb::dbNet* net = bterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(bterm->getNet());
+  }
 }
 
 void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   // missing net pin update
-  grouter_->addDirtyNet(bterm->getNet());
+  odb::dbNet* net = bterm->getNet();
+  if (net != nullptr && !net->isSpecial()) {
+    grouter_->addDirtyNet(bterm->getNet());
+  }
 }
 
 ////////////////////////////////////////////////////////////////

@@ -772,7 +772,7 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
   uint rhs_max = rhs._page_cnt * page_sz;
 
   uint i;
-  const char* name = dbObject::getObjName(_type);
+  const char* name = dbObject::getTypeName(_type);
 
   for (i = 1; (i < lhs_max) && (i < rhs_max); ++i) {
     bool lhs_valid_o = lhs.validId(i);
