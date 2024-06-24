@@ -132,6 +132,8 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbSWireRemoveSBox(odb::dbSBox*) override;
   void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
 
+  void getIRDropForLayer2(odb::dbNet* net, odb::dbTechLayer* layer, IRDropByPoint& ir_drop) const;
+
  private:
   IRSolver* getIRSolver(odb::dbNet* net, bool floorplanning);
 
@@ -148,5 +150,7 @@ class PDNSim : public odb::dbBlockCallBackObj
 
   std::map<odb::dbNet*, std::unique_ptr<IRSolver>> solvers_;
   std::map<odb::dbNet*, std::map<sta::Corner*, double>> user_voltages_;
+
+  sta::Corner* last_corner_ = nullptr;
 };
 }  // namespace psm

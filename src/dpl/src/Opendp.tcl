@@ -136,6 +136,49 @@ proc filler_placement { args } {
   dpl::filler_placement_cmd $filler_masters $prefix
 }
 
+sta::define_cmd_args "insert_decap" { [-cap target] [-cells cell_info] }
+
+proc insert_decap { args } {
+  sta::parse_key_args "insert_decap" args \
+    keys {-cap -cells} flags {}
+
+  set target 0.0
+  if { [info exists keys(-cap)] } {
+    set target $keys(-cap)
+  }
+
+  #sta::check_argc_eq1 "insert_decap" $args
+  #
+  set decap_name ""
+  set db [ord::get_db]
+  foreach capcell_info $keys(-cells) {
+    if { [string is double -strict $capcell_info] && $decap_name != "" } {
+      set cap [format "%.2f" $capcell_info]
+      puts $decap_name
+      puts $capcell_info
+      puts $cap
+      set matched 0
+      foreach lib [$db getLibs] {
+        foreach master [$lib getMasters] {
+          set master_name [$master getConstName]
+          if { [string match $decap_name $master_name] } {
+            dpl::set_decap_master $master $cap
+            set matched 1
+          }
+        }
+      }
+      if { !$matched } {
+        utl::warn "DPL" 280 "$decap_name did not match any masters."
+      }
+      set decap_name ""
+    } else {
+      set decap_name $capcell_info
+    }
+  }
+  #
+  dpl::insert_decap_cmd $target
+}
+
 sta::define_cmd_args "remove_fillers" {}
 
 proc remove_fillers { args } {

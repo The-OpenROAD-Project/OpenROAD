@@ -102,6 +102,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
     return;
   }
 
+  last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
   solver->solve(corner, source_type, voltage_source_file);
   solver->report(corner);
@@ -169,6 +170,15 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
   }
 
   return solver.get();
+}
+
+void PDNSim::getIRDropForLayer2(odb::dbNet* net, odb::dbTechLayer* layer, IRDropByPoint& ir_drop) const
+{
+  auto find_solver = solvers_.find(net);
+  if (last_corner_ == nullptr || find_solver == solvers_.end()) {
+    return;
+  }
+  ir_drop = find_solver->second->getIRDrop(layer, last_corner_);
 }
 
 void PDNSim::getIRDropForLayer(odb::dbNet* net,

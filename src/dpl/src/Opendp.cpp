@@ -81,13 +81,14 @@ Opendp::Opendp()
 
 Opendp::~Opendp() = default;
 
-void Opendp::init(dbDatabase* db, Logger* logger)
+void Opendp::init(dbDatabase* db, Logger* logger, psm::PDNSim* psm)
 {
   db_ = db;
   logger_ = logger;
   padding_ = std::make_shared<Padding>();
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
+  psm_ = psm;
 }
 
 void Opendp::setPaddingGlobal(const int left, const int right)

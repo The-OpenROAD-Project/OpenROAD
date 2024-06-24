@@ -49,6 +49,7 @@ add_library(dpl_lib
   src/Padding.cpp
   src/Place.cpp
   src/FillerPlacement.cpp
+  src/DecapPlacement.cpp
   src/OptMirror.cpp
 )
 
@@ -56,6 +57,7 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
+    psm
   PRIVATE
     utl_lib
 )
@@ -93,6 +95,7 @@ target_link_libraries(dpl
     dpl_lib
     OpenSTA
     gui
+    psm
 )
 
 messages(
@@ -124,6 +127,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       gui
       odb
+      psm
   )
 
 endif()

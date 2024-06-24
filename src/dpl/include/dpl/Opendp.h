@@ -54,6 +54,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "psm/pdnsim.h"
 
 namespace utl {
 class Logger;
@@ -113,6 +114,23 @@ struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
+struct GapX {
+  int x;
+  odb::dbOrientType orient;
+  int width;
+  int height;
+  bool is_filled;
+  GapX (int _x, odb::dbOrientType _orient, int _width, int _height) {
+    x = _x;
+    orient = _orient;
+    width = _width;
+    height = _height;
+    is_filled = false;
+  }
+};
+
+using gapMap = map<int,vector<GapX>>;
+
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -127,7 +145,7 @@ class Opendp
   void legalCellPos(dbInst* db_inst);  // call from rsz
   void initMacrosAndGrid();            // call from rsz
 
-  void init(dbDatabase* db, Logger* logger);
+  void init(dbDatabase* db, Logger* logger, psm::PDNSim* psm);
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
@@ -154,6 +172,10 @@ class Opendp
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   void optimizeMirroring();
+
+  // Place decap cells
+  void setDecapMaster(dbMaster* decap_master, double decap_cap);
+  void insertDecapCells(const double target);
 
  private:
   using bgPoint
@@ -314,6 +336,13 @@ class Opendp
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
 
+  // Place decaps
+  vector<int> getDecapCell(const int &gap_width, const double &current, const double &target);
+  void insertDecapInPos(dbMaster* master, const odb::dbOrientType &orient, const int &pos_x, const int &pos_y);
+  void insertDecapInRow(const vector<GapX> &gaps, const int gap_y, const int irdrop_x, const int irdrop_y, double &total, const double &target);
+  void findGaps();
+  void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
+ 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
@@ -341,6 +370,12 @@ class Opendp
   int filler_count_ = 0;
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
+
+  // Decap placement.
+  psm::PDNSim* psm_;
+  vector<std::pair<dbMaster*, double>> decap_masters_;
+  int decap_count_ = 0;
+  gapMap gaps_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_ = 0;
