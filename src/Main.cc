@@ -358,7 +358,7 @@ static void getRegisteredCommands(
   }
 }
 
-static std::stack<std::string> command_stack;
+static int command_track = 0;
 static bool is_enabled = false;
 // Tracing Tcl commands enter step
 static int tclCmdCommandTracingEnter(ClientData,
@@ -377,7 +377,7 @@ static int tclCmdCommandTracingEnter(ClientData,
   utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
   const char* open_road_command = Tcl_GetStringFromObj(objv[0], nullptr);
 
-  if (command_stack.empty()) {
+  if (!command_track) {
     // find if the name exists in OpenROAD commands
     if (openroad_commands.find(open_road_command) != openroad_commands.end()) {
       std::string log_report_str = open_road_command;
@@ -388,13 +388,13 @@ static int tclCmdCommandTracingEnter(ClientData,
       }
       logger->report("OpenROAD> {}", log_report_str);
       is_enabled = true;
-      command_stack.push(open_road_command);
+      ++command_track;
 
       return TCL_OK;
     }
   }
   if (is_enabled) {
-    command_stack.push(open_road_command);
+    ++command_track;
   }
   return TCL_OK;
 }
@@ -408,13 +408,12 @@ static int tclCmdCommandTracingLeave(ClientData,
                                      int,
                                      Tcl_Obj* const[])
 {
-  if (!command_stack.empty()) {
-    command_stack.pop();
-    if (command_stack.empty()) {
+  if (command_track) {
+    --command_track;
+    if (!command_track) {
       is_enabled = false;
     }
   }
-
   return TCL_OK;
 }
 
