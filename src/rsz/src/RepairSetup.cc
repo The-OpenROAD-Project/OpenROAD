@@ -769,13 +769,16 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
 {
   if (params->corner == nullptr) {
     // can't do any estimation without a corner
-    return true;
+    return false;
   }
 
   // Prep for delay calc
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
   const DcalcAnalysisPt* dcalc_ap = params->corner->findDcalcAnalysisPt(max_);
   LibertyPort* prev_drvr_port = network_->libertyPort(params->prev_driver_pin);
+  if (prev_drvr_port == nullptr) {
+    return false;
+  }
   LibertyPort *buffer_input_port, *buffer_output_port;
   params->driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
   const RiseFall* prev_driver_rf = params->prev_driver_path->transition(sta_);
@@ -857,6 +860,9 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
           continue;
         }
         LibertyPort* side_out_port = network_->libertyPort(side_out_pin);
+        if (side_out_port == nullptr) {
+          return false;
+        }
         float side_load_cap = dcalc->loadCap(side_out_pin, dcalc_ap);
         ArcDelay old_delay2[RiseFall::index_count],
             new_delay2[RiseFall::index_count];
