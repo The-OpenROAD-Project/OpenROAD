@@ -264,8 +264,6 @@ void FlexDRWorker::initNetObjs(
 
   if (isFollowGuide()) {
     frRegionQuery::Objects<frNet> origGuides;
-    std::vector<frGuide*> guides;
-    frRect rect;
     for (auto lNum = getTech()->getBottomLayerNum();
          lNum <= getTech()->getTopLayerNum();
          lNum++) {
@@ -275,11 +273,13 @@ void FlexDRWorker::initNetObjs(
         if (nets.find(net) == nets.end()) {
           continue;
         }
+        frRect rect;
         rect.setBBox(box);
         rect.setLayerNum(lNum);
         netOrigGuides[net].push_back(rect);
       }
     }
+    std::vector<frGuide*> guides;
     design->getRegionQuery()->queryGuide(getRouteBox(), guides);
     for (auto& guide : guides) {
       if (nets.find(guide->getNet()) == nets.end()) {
@@ -292,6 +292,7 @@ void FlexDRWorker::initNetObjs(
       Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
       frLayerNum eNum = guide->getEndLayerNum();
+      frRect rect;
       rect.setBBox({bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
       for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
            lNum += 2) {
@@ -343,20 +344,25 @@ void FlexDRWorker::initNets_segmentTerms(
   }
 }
 
-void dfs(int start,
-         std::map<int, std::vector<int>> adj_list,
+namespace {
+void dfs(const int start,
+         const std::map<int, std::vector<int>>& adj_list,
          std::vector<bool>& visited,
          std::vector<int>& component)
 {
   std::stack<int> stack;
   stack.push(start);
   while (!stack.empty()) {
-    int node = stack.top();
+    const int node = stack.top();
     stack.pop();
     if (!visited[node]) {
       visited[node] = true;
       component.push_back(node);
-      for (int neighbor : adj_list[node]) {
+      auto it = adj_list.find(node);
+      if (it == adj_list.end()) {
+        continue;
+      }
+      for (int neighbor : (*it).second) {
         if (!visited[neighbor]) {
           stack.push(neighbor);
         }
@@ -365,7 +371,7 @@ void dfs(int start,
   }
 }
 
-inline frSquaredDistance getSqrdDist(const Rect& rect1, const Rect& rect2)
+frSquaredDistance getSqrdDist(const Rect& rect1, const Rect& rect2)
 {
   frSquaredDistance dist = gtl::square_euclidean_distance(
       gtl::rectangle_data<frCoord>(
@@ -374,32 +380,31 @@ inline frSquaredDistance getSqrdDist(const Rect& rect1, const Rect& rect2)
           rect2.xMin(), rect2.yMin(), rect2.xMax(), rect2.yMax()));
   return dist;
 }
-
+}  // namespace
 int FlexDRWorker::initNets_initDR_helper_getObjComponent(
     drConnFig* obj,
-    std::vector<std::vector<int>> connectedComponents,
-    std::vector<frRect>& netOrigGuides)
+    const std::vector<std::vector<int>>& connectedComponents,
+    const std::vector<frRect>& netGuides)
 {
   switch (obj->typeId()) {
     case drcPathSeg: {
       auto pathSeg = static_cast<drPathSeg*>(obj);
-      auto lNum = pathSeg->getLayerNum();
-      auto rect = pathSeg->getBBox();
+      const auto lNum = pathSeg->getLayerNum();
+      const auto rect = pathSeg->getBBox();
       frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
       int minIndex = -1;
       for (int j = 0; j < connectedComponents.size(); j++) {
         // component index is j
-        for (auto idx : connectedComponents[j]) {
-          if (netOrigGuides[idx].getLayerNum() == lNum
-              && netOrigGuides[idx].intersects(rect)) {
+        for (const int idx : connectedComponents.at(j)) {
+          if (netGuides.at(idx).getLayerNum() == lNum
+              && netGuides.at(idx).intersects(rect)) {
             return j;
-          } else {
-            frSquaredDistance dist
-                = getSqrdDist(netOrigGuides[idx].getBBox(), rect);
-            if (dist < minDist) {
-              minDist = dist;
-              minIndex = j;
-            }
+          }
+          frSquaredDistance dist
+              = getSqrdDist(netGuides.at(idx).getBBox(), rect);
+          if (dist < minDist) {
+            minDist = dist;
+            minIndex = j;
           }
         }
       }
@@ -407,14 +412,14 @@ int FlexDRWorker::initNets_initDR_helper_getObjComponent(
     }
     case drcVia: {
       auto via = static_cast<drVia*>(obj);
-      auto rect = via->getBBox();
+      const auto rect = via->getBBox();
       frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
       int minIndex = -1;
       for (int j = 0; j < connectedComponents.size(); j++) {
         // component index is j
-        for (auto idx : connectedComponents[j]) {
+        for (const int idx : connectedComponents.at(j)) {
           frSquaredDistance dist
-              = getSqrdDist(netOrigGuides[idx].getBBox(), rect);
+              = getSqrdDist(netGuides.at(idx).getBBox(), rect);
           if (dist < minDist) {
             if (dist == 0) {
               return j;
@@ -428,23 +433,22 @@ int FlexDRWorker::initNets_initDR_helper_getObjComponent(
     }
     case drcPatchWire: {
       auto wire = static_cast<drPatchWire*>(obj);
-      auto lNum = wire->getLayerNum();
-      auto rect = wire->getBBox();
+      const auto lNum = wire->getLayerNum();
+      const auto rect = wire->getBBox();
       frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
       int minIndex = -1;
       for (int j = 0; j < connectedComponents.size(); j++) {
         // component index is j
-        for (auto idx : connectedComponents[j]) {
-          if (netOrigGuides[idx].getLayerNum() == lNum
-              && netOrigGuides[idx].intersects(rect)) {
+        for (const int idx : connectedComponents.at(j)) {
+          if (netGuides.at(idx).getLayerNum() == lNum
+              && netGuides.at(idx).intersects(rect)) {
             return j;
-          } else {
-            frSquaredDistance dist
-                = getSqrdDist(netOrigGuides[idx].getBBox(), rect);
-            if (dist < minDist) {
-              minDist = dist;
-              minIndex = j;
-            }
+          }
+          frSquaredDistance dist
+              = getSqrdDist(netGuides.at(idx).getBBox(), rect);
+          if (dist < minDist) {
+            minDist = dist;
+            minIndex = j;
           }
         }
       }
@@ -459,9 +463,9 @@ void FlexDRWorker::initNets_initDR_helper(
     frNet* net,
     std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
-    std::vector<frBlockObject*> netTerms,
-    std::vector<frRect>& netOrigGuides,
-    std::vector<frRect>& netGuides)
+    const std::vector<frBlockObject*>& netTerms,
+    const std::vector<frRect>& netOrigGuides,
+    const std::vector<frRect>& netGuides)
 {
   struct Node
   {
@@ -479,26 +483,27 @@ void FlexDRWorker::initNets_initDR_helper(
     }
   };
   std::vector<Node> nodes;
+  nodes.reserve(netGuides.size() + netTerms.size());
   for (int i = 0; i < netGuides.size(); i++) {
-    nodes.push_back(Node(Node::GUIDE, i, netGuides[i].getBBox()));
+    nodes.emplace_back(Node::GUIDE, i, netGuides.at(i).getBBox());
   }
   for (int i = 0; i < netTerms.size(); i++) {
     Rect rect;
-    if (netTerms[i]->typeId() == frcInstTerm) {
-      auto iterm = static_cast<frInstTerm*>(netTerms[i]);
+    if (netTerms.at(i)->typeId() == frcInstTerm) {
+      auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
       rect = iterm->getBBox(true);
     } else {
-      auto bterm = static_cast<frBTerm*>(netTerms[i]);
+      auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
     }
-    nodes.push_back(Node(Node::TERM, i, rect));
+    nodes.emplace_back(Node::TERM, i, rect);
   }
   std::map<int, std::vector<int>> nodeMap;
   for (int i = 0; i < nodes.size(); i++) {
     for (int j = i + 1; j < nodes.size(); j++) {
       if (nodes[i].rect.intersects(nodes[j].rect)) {
-        nodeMap[i].push_back(j);
-        nodeMap[j].push_back(i);
+        nodeMap[i].emplace_back(j);
+        nodeMap[j].emplace_back(i);
       }
     }
   }
@@ -510,7 +515,7 @@ void FlexDRWorker::initNets_initDR_helper(
     }
     std::vector<int> component;
     dfs(i, nodeMap, visited, component);
-    connectedComponents.push_back(component);
+    connectedComponents.emplace_back(std::move(component));
   }
   auto compIt = connectedComponents.begin();
   while (compIt != connectedComponents.end()) {
@@ -554,11 +559,11 @@ void FlexDRWorker::initNets_initDR_helper(
       connectedComponents.size());
   for (int i = 0; i < netTerms.size(); i++) {
     Rect rect;
-    if (netTerms[i]->typeId() == frcInstTerm) {
-      auto iterm = static_cast<frInstTerm*>(netTerms[i]);
+    if (netTerms.at(i)->typeId() == frcInstTerm) {
+      auto iterm = static_cast<frInstTerm*>(netTerms.at(i));
       rect = iterm->getBBox(true);
     } else {
-      auto bterm = static_cast<frBTerm*>(netTerms[i]);
+      auto bterm = static_cast<frBTerm*>(netTerms.at(i));
       rect = bterm->getBBox();
     }
     frSquaredDistance minDist = std::numeric_limits<frSquaredDistance>::max();
@@ -577,7 +582,7 @@ void FlexDRWorker::initNets_initDR_helper(
         }
       }
     }
-    terms[bestIndex].push_back(netTerms[i]);
+    terms[bestIndex].emplace_back(netTerms.at(i));
   }
   const auto it = boundaryPin_.find(net);
   if (it != boundaryPin_.end()) {
@@ -590,16 +595,17 @@ void FlexDRWorker::initNets_initDR_helper(
             continue;
           }
           frSquaredDistance dist = getSqrdDist(nodes[idx].rect, {point, point});
-          dist += std::abs(netGuides[nodes[idx].idx].getLayerNum() - lNum);
+          dist += std::abs(netGuides.at(nodes[idx].idx).getLayerNum() - lNum);
           if (dist < minDist) {
             minDist = dist;
             bestIndex = j;
           }
         }
       }
-      bounds[bestIndex].push_back({point, lNum});
+      bounds[bestIndex].emplace_back(point, lNum);
     }
   }
+  // Remove pins from graph for routeObjs/extObjs net resolution
   for (auto& component : connectedComponents) {
     auto itr = component.begin();
     while (itr != component.end()) {
@@ -614,12 +620,12 @@ void FlexDRWorker::initNets_initDR_helper(
   for (auto& obj : netRouteObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    routeObjs[compIdx].push_back(std::move(obj));
+    routeObjs[compIdx].emplace_back(std::move(obj));
   }
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    extObjs[compIdx].push_back(std::move(obj));
+    extObjs[compIdx].emplace_back(std::move(obj));
   }
   for (int i = 0; i < connectedComponents.size(); i++) {
     initNet(design_,
@@ -1800,15 +1806,15 @@ void FlexDRWorker::initNet(const frDesign* design,
                            frNet* net,
                            std::vector<std::unique_ptr<drConnFig>>& routeObjs,
                            std::vector<std::unique_ptr<drConnFig>>& extObjs,
-                           std::vector<frRect>& origGuides,
-                           std::vector<frBlockObject*>& terms,
+                           const std::vector<frRect>& origGuides,
+                           const std::vector<frBlockObject*>& terms,
                            std::vector<std::pair<Point, frLayerNum>> bounds)
 {
   auto dNet = std::make_unique<drNet>(net);
   // true pin
   initNet_term(design, dNet.get(), terms);
   // boundary pin, could overlap with any of true pins
-  initNet_boundary(dNet.get(), extObjs, bounds);
+  initNet_boundary(dNet.get(), extObjs, std::move(bounds));
   // no ext routes in initDR to avoid weird TA shapes
   for (auto& obj : extObjs) {
     dNet->addRoute(std::move(obj), true);

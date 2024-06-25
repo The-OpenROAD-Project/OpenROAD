@@ -560,15 +560,15 @@ class FlexDRWorker
       std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
   int initNets_initDR_helper_getObjComponent(
       drConnFig* obj,
-      std::vector<std::vector<int>> connectedComponents,
-      std::vector<frRect>& netOrigGuides);
+      const std::vector<std::vector<int>>& connectedComponents,
+      const std::vector<frRect>& netGuides);
   void initNets_initDR_helper(
       frNet* net,
       std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
-      std::vector<frBlockObject*> netTerms,
-      std::vector<frRect>& netOrigGuides,
-      std::vector<frRect>& netGuides);
+      const std::vector<frBlockObject*>& netTerms,
+      const std::vector<frRect>& netOrigGuides,
+      const std::vector<frRect>& netGuides);
 
   void initNets_searchRepair(
       const frDesign* design,
@@ -635,8 +635,8 @@ class FlexDRWorker
                frNet* net,
                std::vector<std::unique_ptr<drConnFig>>& routeObjs,
                std::vector<std::unique_ptr<drConnFig>>& extObjs,
-               std::vector<frRect>& origGuides,
-               std::vector<frBlockObject*>& terms,
+               const std::vector<frRect>& origGuides,
+               const std::vector<frBlockObject*>& terms,
                std::vector<std::pair<Point, frLayerNum>> bounds = {});
   void initNet_term(const frDesign* design,
                     drNet* dNet,
