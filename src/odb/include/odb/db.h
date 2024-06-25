@@ -1887,6 +1887,16 @@ class dbBTerm : public dbObject
 
   uint32_t staVertexId();
   void staSetVertexId(uint32_t id);
+
+  ///
+  /// Set the region where the BTerm is constrained
+  ///
+  void setConstraintRegion(const std::pair<Point, Point>& constraint_region);
+
+  ///
+  /// Get the region where the BTerm is constrained
+  ///
+  std::optional<std::pair<Point, Point>> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
