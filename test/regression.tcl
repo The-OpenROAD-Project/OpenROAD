@@ -192,7 +192,7 @@ proc log_comparer {test log_file ok_file diff_file diff_options error_msg} {
     set tmp_log_file [file join $result_dir "${test}_log.tmp"]
 
     set sed_result [catch \
-	    {exec sed {/.*runtime.*seconds.*usage.*rsz.*MB.*vsz.*MB.*peak.*rsz.*vsz.*/d} \
+	    {exec sed {/.*cpu.*time.*.*elapsed.*time.*memory.*peak.*/d} \
             $log_file > $tmp_log_file} sed_error]
     if {$sed_result != 0} {
         puts "Error running sed"

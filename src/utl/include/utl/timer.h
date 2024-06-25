@@ -35,7 +35,8 @@
 
 #pragma once
 
-#include <unistd.h>
+#include <math.h>
+#include <time.h>
 
 #include <chrono>
 #include <iostream>
@@ -87,16 +88,14 @@ class ScopedStatistics : public Timer
   ~ScopedStatistics() override;
 
  private:
-  size_t getMemoryUsage(const char* tag);
   size_t getStartRSZ();
   size_t getPeakRSZ();
-  size_t getStartVSZ();
-  size_t getPeakVSZ();
 
   std::string msg_;
   size_t start_rsz_;
   size_t start_vsz_;
   utl::Logger* logger_;
+  clock_t cpu_start_;
 };
 
 }  // namespace utl

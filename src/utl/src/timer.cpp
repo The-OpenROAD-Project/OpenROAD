@@ -35,9 +35,21 @@
 
 #include "utl/timer.h"
 
+#if defined(__unix__) || defined(__unix) || defined(unix) \
+    || (defined(__APPLE__) && defined(__MACH__))
 #include <sys/resource.h>
+#include <unistd.h>
 
-#include <fstream>
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+
+#elif defined(__linux__) || defined(__linux) || defined(linux) \
+    || defined(__gnu_linux__)
+#include <cstdint>
+#include <cstdio>
+#endif
+
+#endif
 
 namespace utl {
 
@@ -82,67 +94,69 @@ ScopedStatistics::ScopedStatistics(utl::Logger* logger, std::string msg)
     : Timer(),
       msg_(std::move(msg)),
       start_rsz_(getStartRSZ()),
-      start_vsz_(getStartVSZ()),
-      logger_(logger)
+      logger_(logger),
+      cpu_start_(clock())
 {
-}
-
-size_t ScopedStatistics::getMemoryUsage(const char* tag)
-{
-  FILE* file = fopen("/proc/self/status", "r");
-  if (file == nullptr) {
-    perror("Failed to open /proc/self/status");
-    exit(EXIT_FAILURE);
-  }
-
-  size_t result = (size_t) -1;
-  char line[128];
-  size_t tagLength = strlen(tag);
-
-  while (fgets(line, sizeof(line), file) != nullptr) {
-    if (strncmp(line, tag, tagLength) == 0) {
-      const char* p = line;
-      while (*p < '0' || *p > '9') {
-        p++;
-      }
-      result = (size_t) atoi(p);
-      break;
-    }
-  }
-
-  fclose(file);
-  if (result == (size_t) -1) {
-    fprintf(stderr, "%s not found in /proc/self/status\n", tag);
-    exit(EXIT_FAILURE);
-  }
-
-  return result / 1024;
-}
-
-size_t ScopedStatistics::getStartVSZ()
-{
-  return getMemoryUsage("VmSize:");
-}
-
-size_t ScopedStatistics::getPeakVSZ()
-{
-  return getMemoryUsage("VmPeak:");
 }
 
 size_t ScopedStatistics::getStartRSZ()
 {
-  return getMemoryUsage("VmRSS:");
+#if defined(__APPLE) && defined(__MACH__)
+  struct mach_task_basic_info info;
+  mach_msg_type_number_t info_count = MACH_TASK_BASIC_INFO_COUNT;
+  if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                (task_info_t) &info, &info_count) {
+    return (size_t) 0L;
+  }
+  return (size_t) info.resident_size / 1024;
+#elif defined(__linux) || defined(__linux) || defined(linux) \
+    || defined(__gnu_linux__)
+  int64_t rss = 0L;
+  FILE* fp = fopen("/proc/self/statm", "r");
+  if (fp == nullptr) {
+    return (size_t) 0L;
+  }
+  if (fscanf(fp, "%*s%ld", &rss) != 1) {
+    fclose(fp);
+    return (size_t) 0L;
+  }
+  fclose(fp);
+  return ((size_t) rss * (size_t) sysconf(_SC_PAGESIZE)) / (1024 * 1024);
+#else
+  return (size_t) 0L; /* Unsupported. */
+#endif
 }
 
 size_t ScopedStatistics::getPeakRSZ()
 {
-  return getMemoryUsage("VmHWM:");
+#if defined(__unix__) || defined(__unix) || defined(unix) \
+    || (defined(__APPLE__) && defined(__MACH__))
+  struct rusage rsg;
+  if (getrusage(RUSAGE_SELF, &rsg) != 0) {
+    return (size_t) 0L;
+  }
+#if defined(__APPLE__) && defined(__MACH__)
+  return ((size_t) rsg.ru_maxrss) / (1024 * 1024);
+#else
+  return (size_t) rsg.ru_maxrss / 1024;
+#endif
+#endif
 }
 
 ScopedStatistics::~ScopedStatistics()
 {
-  logger_->report(msg_ + ": runtime {} seconds, usage: rsz = {} MB, vsz = {} MB, peak: rsz = {} MB, vsz = {} MB", static_cast<int>(Timer::elapsed()), (getPeakRSZ() - start_rsz_),
-    (getPeakVSZ() - start_vsz_), (getPeakRSZ()), (getPeakVSZ()));
+  auto ts_elapsed = Timer::elapsed();
+  int hour = ts_elapsed / 3600;
+  int min = (((int) ts_elapsed % 3600) / 60);
+  int sec = (int) ts_elapsed % 60;
+
+  auto ts_cpu = (clock() - cpu_start_) / CLOCKS_PER_SEC;
+  int chour = ts_cpu / 3600;
+  int cmin = (ts_cpu % 3600) / 60;
+  int csec = ts_cpu % 60;
+
+  logger_->report(msg_ + ": cpu time = {:02}:{:02}:{:02}, elapsed time = {:02}:{:02}:{:02}, memory = {} MB, peak = {} MB",
+      chour, cmin, csec, hour, min, sec, start_rsz_, getPeakRSZ());
 }
 
 }  // namespace utl

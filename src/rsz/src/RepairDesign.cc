@@ -51,7 +51,6 @@
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Units.hh"
-#include "utl/timer.h"
 
 namespace rsz {
 
@@ -94,7 +93,6 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 bool verbose)
 {
   init();
-  utl::ScopedStatistics stat(logger_, "repair_design");
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length,

@@ -63,7 +63,6 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              utl::Logger* log)
     : NesterovPlace()
 {
-  utl::ScopedStatistics stat(log, "global_place");
   npVars_ = npVars;
   pbc_ = pbc;
   nbc_ = nbc;
@@ -301,6 +300,7 @@ void NesterovPlace::reset()
 
 int NesterovPlace::doNesterovPlace(int start_iter)
 {
+  utl::ScopedStatistics stat(log_, "global_place");
   // if replace diverged in init() function,
   // replace must be skipped.
   if (isDiverged_) {

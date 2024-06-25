@@ -55,7 +55,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
-#include "utl/timer.h"
 
 namespace rsz {
 
@@ -80,8 +79,10 @@ RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
 void RepairHold::init()
 {
   logger_ = resizer_->logger_;
-  dbStaState::init(resizer_->sta_);
+  sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
+
+  copyState(sta_);
 }
 
 void RepairHold::repairHold(
@@ -94,7 +95,6 @@ void RepairHold::repairHold(
     const bool verbose)
 {
   init();
-  utl::ScopedStatistics stat(logger_, "repair_timing");
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell* buffer_cell = findHoldBuffer();
@@ -134,7 +134,6 @@ void RepairHold::repairHold(const Pin* end_pin,
                             const int max_passes)
 {
   init();
-  utl::ScopedStatistics stat(logger_, "repair_timing");
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   LibertyCell* buffer_cell = findHoldBuffer();
