@@ -312,6 +312,8 @@ class HierRTLMP
   void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                        std::vector<BundledNet>& nets_old);
 
+  static bool isIgnoredMaster(odb::dbMaster* master);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
