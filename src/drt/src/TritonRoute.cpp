@@ -279,6 +279,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   if (graphics_) {
     graphics_->startIter(worker->getDRIter());
   }
+  logger_->report("{} {}", worker->getRouteBox(), worker->getDrcBox());
   std::string result = worker->reloadedMain();
   bool updated = worker->end(design_.get());
   debugPrint(logger_,
@@ -546,60 +547,51 @@ void TritonRoute::initDesign()
   io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
-    return;
-  }
-  parser.readTechAndLibs(db_);
-  processBTermsAboveTopLayer();
-  parser.readDesign(db_);
-  auto tech = getDesign()->getTech();
+  } else {
+    parser.readTechAndLibs(db_);
+    processBTermsAboveTopLayer();
+    parser.readDesign(db_);
+    auto tech = getDesign()->getTech();
 
-  if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
-    if (layer) {
-      VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    606,
-                    "via in pin bottom layer {} not found.",
-                    VIAINPIN_BOTTOMLAYER_NAME);
+    if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
+      frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
+      if (layer) {
+        VIAINPIN_BOTTOMLAYERNUM = layer->getLayerNum();
+      } else {
+        logger_->warn(utl::DRT,
+                      606,
+                      "via in pin bottom layer {} not found.",
+                      VIAINPIN_BOTTOMLAYER_NAME);
+      }
     }
-  }
 
-  if (!VIAINPIN_TOPLAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
-    if (layer) {
-      VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    607,
-                    "via in pin top layer {} not found.",
-                    VIAINPIN_TOPLAYER_NAME);
+    if (!VIAINPIN_TOPLAYER_NAME.empty()) {
+      frLayer* layer = tech->getLayer(VIAINPIN_TOPLAYER_NAME);
+      if (layer) {
+        VIAINPIN_TOPLAYERNUM = layer->getLayerNum();
+      } else {
+        logger_->warn(utl::DRT,
+                      607,
+                      "via in pin top layer {} not found.",
+                      VIAINPIN_TOPLAYER_NAME);
+      }
     }
-  }
 
-  if (!REPAIR_PDN_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(REPAIR_PDN_LAYER_NAME);
-    if (layer) {
-      GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
-    } else {
-      logger_->warn(
-          utl::DRT, 617, "PDN layer {} not found.", REPAIR_PDN_LAYER_NAME);
+    if (!REPAIR_PDN_LAYER_NAME.empty()) {
+      frLayer* layer = tech->getLayer(REPAIR_PDN_LAYER_NAME);
+      if (layer) {
+        GC_IGNORE_PDN_LAYER_NUM = layer->getLayerNum();
+      } else {
+        logger_->warn(
+            utl::DRT, 617, "PDN layer {} not found.", REPAIR_PDN_LAYER_NAME);
+      }
     }
+    parser.postProcess();
   }
-  parser.postProcess();
   if (db_ != nullptr && db_->getChip() != nullptr
       && db_->getChip()->getBlock() != nullptr) {
-    db_callback_->addOwner(db_->getChip()->getBlock());
-    for (auto net : db_->getChip()->getBlock()->getNets()) {
-      if (net->getWire()) {
-        odb::dbWireDecoder decoder;
-        decoder.begin(net->getWire());
-        decoder.next();
-        if (decoder.getWireType() == odb::dbWireType::FIXED) {
-          continue;
-        }
-        odb::dbWire::destroy(net->getWire());
-      }
+    if (!db_callback_->hasOwner()) {
+      db_callback_->addOwner(db_->getChip()->getBlock());
     }
   }
 }
@@ -953,6 +945,17 @@ int TritonRoute::main()
     }
   }
   initDesign();
+  for (auto net : db_->getChip()->getBlock()->getNets()) {
+    if (net->getWire()) {
+      odb::dbWireDecoder decoder;
+      decoder.begin(net->getWire());
+      decoder.next();
+      if (decoder.getWireType() == odb::dbWireType::FIXED) {
+        continue;
+      }
+      odb::dbWire::destroy(net->getWire());
+    }
+  }
   if (DO_PA) {
     FlexPA pa(getDesign(), logger_, dist_);
     pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
