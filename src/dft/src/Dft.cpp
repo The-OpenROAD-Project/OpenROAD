@@ -75,16 +75,13 @@ void Dft::pre_dft()
   need_to_run_pre_dft_ = false;
 }
 
-void Dft::preview_dft(bool verbose)
+void Dft::previewDft(bool verbose)
 {
   if (need_to_run_pre_dft_) {
     pre_dft();
   }
-  // preview_dft should not modify the original design, we do this with a fork.
-  // All design modifications are in the child, we collect the results of the
-  // Scan Architect from the parent and we let the child to exit.
 
-  std::vector<std::unique_ptr<ScanChain>> scan_chains = replaceAndArchitect();
+  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
 
   logger_->report("***************************");
   logger_->report("Preview DFT Report");
@@ -97,18 +94,22 @@ void Dft::preview_dft(bool verbose)
     scan_chain->report(logger_, verbose);
   }
   logger_->report("");
-
-  // Go to original state because preview_dft should not modify anything
-  scan_replace_->rollbackScanReplace();
 }
 
-void Dft::insert_dft()
+void Dft::scanReplace()
 {
   if (need_to_run_pre_dft_) {
     pre_dft();
   }
+  scan_replace_->scanReplace();
+}
 
-  std::vector<std::unique_ptr<ScanChain>> scan_chains = replaceAndArchitect();
+void Dft::insertDft()
+{
+  if (need_to_run_pre_dft_) {
+    pre_dft();
+  }
+  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
 
   ScanStitch stitch(db_);
   stitch.Stitch(scan_chains);
@@ -130,10 +131,8 @@ void Dft::reportDftConfig() const
   dft_config_->report(logger_);
 }
 
-std::vector<std::unique_ptr<ScanChain>> Dft::replaceAndArchitect()
+std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
 {
-  // Scan replace
-  scan_replace_->scanReplace();
   std::vector<std::unique_ptr<ScanCell>> scan_cells
       = CollectScanCells(db_, sta_, logger_);
 
@@ -144,7 +143,9 @@ std::vector<std::unique_ptr<ScanChain>> Dft::replaceAndArchitect()
 
   std::unique_ptr<ScanArchitect> scan_architect
       = ScanArchitect::ConstructScanScanArchitect(
-          dft_config_->getScanArchitectConfig(), std::move(scan_cells_bucket));
+          dft_config_->getScanArchitectConfig(),
+          std::move(scan_cells_bucket),
+          logger_);
   scan_architect->init();
   scan_architect->architect();
 

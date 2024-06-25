@@ -47,17 +47,27 @@ proc preview_dft { args } {
   dft::preview_dft $verbose
 }
 
+sta::define_cmd_args "scan_replace" { }
+proc scan_replace { args } {
+  sta::parse_key_args "scan_replace" args \
+    keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 8 "No design block found."
+  }
+  dft::scan_replace
+}
+
 sta::define_cmd_args "insert_dft" { }
 proc insert_dft { args } {
   sta::parse_key_args "insert_dft" args \
     keys {} flags {}
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error DFT 8 "No design block found."
+    utl::error DFT 9 "No design block found."
   }
   dft::insert_dft
 }
-
 
 sta::define_cmd_args "set_dft_config" { [-max_length max_length] \
                                         [-clock_mixing clock_mixing]}
