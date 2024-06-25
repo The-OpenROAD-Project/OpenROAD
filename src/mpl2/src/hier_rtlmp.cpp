@@ -2167,28 +2167,8 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     }
   }
 
-  std::map<odb::dbInst*, int> parent_macro_to_iterm_count
-      = getMacroToStdCellPinsCountMap(parent);
-  std::map<odb::dbInst*, int> partition_macro_to_iterm_count
-      = getMacroToStdCellPinsCountMap(cluster_part_1);
-
-  std::vector<odb::dbInst*> kept_macros, macros_to_move;
-  for (const auto& macro : parent->getLeafMacros()) {
-    if (parent_macro_to_iterm_count.at(macro)
-        > partition_macro_to_iterm_count.at(macro)) {
-      kept_macros.push_back(macro);
-    } else {
-      macros_to_move.push_back(macro);
-    }
-  }
-
-  parent->clearLeafMacros();
-
-  for (const auto& macro : kept_macros) {
-    parent->addLeafMacro(macro);
-  }
-  for (const auto& macro : macros_to_move) {
-    cluster_part_1->addLeafMacro(macro);
+  if (!parent->getLeafMacros().empty()) {
+    splitMacrosBetweenPartitions(parent, cluster_part_1);
   }
 
   updateInstancesAssociation(parent);
@@ -2206,37 +2186,63 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   breakLargeFlatCluster(cluster_part_1);
 }
 
+void HierRTLMP::splitMacrosBetweenPartitions(Cluster* parent,
+                                             Cluster* new_cluster)
+{
+  std::map<odb::dbInst*, int> parent_macro_to_iterm_count
+      = getMacroToStdCellPinsCountMap(parent);
+  std::map<odb::dbInst*, int> partition_macro_to_iterm_count
+      = getMacroToStdCellPinsCountMap(new_cluster);
+
+  std::vector<odb::dbInst*> macros_to_keep, macros_to_move;
+  for (odb::dbInst* macro : parent->getLeafMacros()) {
+    if (parent_macro_to_iterm_count.at(macro)
+        > partition_macro_to_iterm_count.at(macro)) {
+      macros_to_keep.push_back(macro);
+    } else {
+      macros_to_move.push_back(macro);
+    }
+  }
+
+  parent->clearLeafMacros();
+  for (odb::dbInst* macro : macros_to_keep) {
+    parent->addLeafMacro(macro);
+  }
+
+  for (odb::dbInst* macro : macros_to_move) {
+    new_cluster->addLeafMacro(macro);
+  }
+}
+
 std::map<odb::dbInst*, int> HierRTLMP::getMacroToStdCellPinsCountMap(
     Cluster* cluster)
 {
   std::map<odb::dbInst*, int> macro_to_iterms_count;
 
-  auto getNonSupplyNets
-      = [](std::set<odb::dbNet*>& non_supply_nets, odb::dbInst* inst) {
-          for (odb::dbITerm* iterm : inst->getITerms()) {
-            odb::dbNet* net = iterm->getNet();
-            if (net->getSigType().isSupply()) {
-              continue;
-            }
-            non_supply_nets.insert(net);
-          }
-        };
-
-  std::set<odb::dbNet*> cluster_nets;
+  std::set<odb::dbNet*> non_supply_nets;
   for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
-    getNonSupplyNets(cluster_nets, std_cell);
-  }
-  for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    getNonSupplyNets(cluster_nets, macro);
+    for (odb::dbITerm* iterm : std_cell->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (!net) {
+        continue;
+      }
+
+      if (net->getSigType().isSupply()) {
+        continue;
+      }
+
+      non_supply_nets.insert(net);
+    }
   }
 
-  for (odb::dbNet* net : cluster_nets) {
+  for (odb::dbNet* net : non_supply_nets) {
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
       odb::dbMaster* master = inst->getMaster();
       if (isIgnoredMaster(master)) {
         break;
       }
+
       if (inst->isBlock()) {
         macro_to_iterms_count[inst]++;
       }

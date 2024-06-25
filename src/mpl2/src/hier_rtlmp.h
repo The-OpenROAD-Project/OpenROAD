@@ -209,6 +209,7 @@ class HierRTLMP
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
+  void splitMacrosBetweenPartitions(Cluster* parent, Cluster* new_cluster);
   std::map<odb::dbInst*, int> getMacroToStdCellPinsCountMap(Cluster* cluster);
 
   void fetchMixedLeaves(Cluster* parent,
