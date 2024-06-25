@@ -36,14 +36,16 @@
 #include <sstream>
 
 #include "ClockDomain.hh"
+#include "Opt.hh"
 #include "ScanArchitect.hh"
 
 namespace dft {
 
 ScanArchitectHeuristic::ScanArchitectHeuristic(
     const ScanArchitectConfig& config,
-    std::unique_ptr<ScanCellsBucket> scan_cells_bucket)
-    : ScanArchitect(config, std::move(scan_cells_bucket))
+    std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
+    utl::Logger* logger)
+    : ScanArchitect(config, std::move(scan_cells_bucket)), logger_(logger)
 {
 }
 
@@ -61,12 +63,14 @@ void ScanArchitectHeuristic::architect()
         current_chain->add(std::move(scan_cell));
       }
 
-      // TODO: Perform an actual sorting to reduce the wire length
       current_chain->sortScanCells(
-          [](std::vector<std::unique_ptr<ScanCell>>& falling,
-             std::vector<std::unique_ptr<ScanCell>>& rising,
-             std::vector<std::unique_ptr<ScanCell>>& sorted) {
+          [this](std::vector<std::unique_ptr<ScanCell>>& falling,
+                 std::vector<std::unique_ptr<ScanCell>>& rising,
+                 std::vector<std::unique_ptr<ScanCell>>& sorted) {
             sorted.reserve(falling.size() + rising.size());
+            // Sort to reduce wire length
+            OptimizeScanWirelength(falling, logger_);
+            OptimizeScanWirelength(rising, logger_);
             // Falling edge first
             std::move(
                 falling.begin(), falling.end(), std::back_inserter(sorted));
