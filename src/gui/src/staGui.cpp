@@ -181,13 +181,13 @@ QVariant TimingPathsModel::headerData(int section,
         // to a header item that doesn't.
         return "";
       case Skew:
-        return "Path clock skew (crpr corrected).";
+        return "Path clock skew (crpr corrected)";
       case LogicDelay:
-        return "Delay from instances apart from buffers and back-to-back "
-               "inverters.";
+        return "Path delay from instances (excluding buffers and consecutive "
+               "inverter pairs)";
       case LogicDepth:
-        return "Number of instances apart from buffers and back-to-back "
-               "inverters.";
+        return "Path instances (excluding buffers and consecutive inverter "
+               "pairs)";
     }
   }
 
