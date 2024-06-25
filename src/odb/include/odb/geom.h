@@ -50,7 +50,7 @@ class Point
 {
  public:
   Point() = default;
-  Point(const Point& p);
+  Point(const Point& p) = default;
   Point(int x, int y);
   ~Point() = default;
   Point& operator=(const Point& rhs) = default;
@@ -316,10 +316,6 @@ class Rect
 };
 
 std::ostream& operator<<(std::ostream& os, const Rect& box);
-
-inline Point::Point(const Point& p) : Point(p.x_, p.y_)
-{
-}
 
 inline Point::Point(int x, int y)
 {
