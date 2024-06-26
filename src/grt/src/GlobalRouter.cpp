@@ -2159,7 +2159,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       // If the net is not local, FR core result is invalid
       if (pin_pos1.x() != pin_pos0.x() || pin_pos1.y() != pin_pos0.y()) {
         logger_->error(
-            GRT, 76, "Net {} not properly covered.", db_net->getConstName());
+            GRT, 76, "Net {} does not have route guides.", db_net->getConstName());
       }
     }
 
