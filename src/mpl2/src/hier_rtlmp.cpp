@@ -2046,7 +2046,7 @@ void HierRTLMP::updateSubTree(Cluster* parent)
 // Binary coding method to differentiate partitions:
 // cluster -> cluster_0, cluster_1
 // cluster_0 -> cluster_0_0, cluster_0_1
-// cluster_1 -> cluster_1_0, cluster_1_1
+// cluster_1 -> cluster_1_0, cluster_1_1 [...]
 void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 {
   // Check if the cluster is a large flat cluster
@@ -2056,7 +2056,6 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   }
   updateInstancesAssociation(parent);
 
-  // Model other clusters as fixed vertices.
   std::map<int, int> cluster_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
@@ -2064,7 +2063,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     cluster_vertex_id_map[cluster_id] = vertex_id++;
     vertex_weight.push_back(0.0f);
   }
-  const int num_fixed_vertices = vertex_id;
+  const int num_other_cluster_vertices = vertex_id;
 
   std::vector<odb::dbInst*> insts;
   std::map<odb::dbInst*, int> inst_vertex_id_map;
@@ -2142,28 +2141,19 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
                                              hyperedge_weights);
 
   parent->clearLeafStdCells();
+  parent->clearLeafMacros();
 
   const std::string cluster_name = parent->getName();
   parent->setName(cluster_name + std::string("_0"));
   Cluster* cluster_part_1
       = new Cluster(cluster_id_, cluster_name + std::string("_1"), logger_);
 
-  // We don't touch fixed vertices here.
-  for (int i = num_fixed_vertices; i < num_vertices; i++) {
+  for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
+    odb::dbInst* inst = insts[i - num_other_cluster_vertices];
     if (part[i] == 0) {
-      odb::dbInst* inst = insts[i - num_fixed_vertices];
-      if (inst->isBlock()) {
-        parent->addLeafMacro(inst);
-      } else {
-        parent->addLeafStdCell(inst);
-      }
+      parent->addLeafInst(inst);
     } else {
-      odb::dbInst* inst = insts[i - num_fixed_vertices];
-      if (inst->isBlock()) {
-        cluster_part_1->addLeafMacro(inst);
-      } else {
-        cluster_part_1->addLeafStdCell(inst);
-      }
+      cluster_part_1->addLeafInst(inst);
     }
   }
 
