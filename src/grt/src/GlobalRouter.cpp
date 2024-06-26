@@ -1165,7 +1165,8 @@ void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce,
 void GlobalRouter::computeGridAdjustments(int min_routing_layer,
                                           int max_routing_layer)
 {
-  odb::Point upper_die_bounds(grid_->getXMax(), grid_->getYMax());
+  const odb::Rect& die_area = grid_->getGridArea();
+  odb::Point upper_die_bounds(die_area.dx(), die_area.dy());
   int h_space;
   int v_space;
 
@@ -2720,16 +2721,16 @@ void GlobalRouter::initGrid(int max_layer)
 
   odb::Rect rect = block_->getDieArea();
 
-  int upper_rightX = rect.xMax();
-  int upper_rightY = rect.yMax();
+  int dx = rect.dx();
+  int dy = rect.dy();
 
   int tile_size = grid_->getPitchesInTile() * track_spacing;
 
-  int x_grids = std::max(1, upper_rightX / tile_size);
-  int y_grids = std::max(1, upper_rightY / tile_size);
+  int x_grids = std::max(1, dx / tile_size);
+  int y_grids = std::max(1, dy / tile_size);
 
-  bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
-  bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
+  bool perfect_regular_x = (x_grids * tile_size) == dx;
+  bool perfect_regular_y = (y_grids * tile_size) == dy;
 
   fastroute_->setRegularX(perfect_regular_x);
   fastroute_->setRegularY(perfect_regular_y);
