@@ -60,7 +60,10 @@ class _dbGDSBoundary : public _dbGDSElement
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
 
-  std::string to_string() { return "BOUNDARY " + _dbGDSElement::to_string(); }
+  std::string to_string() override
+  {
+    return "BOUNDARY " + _dbGDSElement::to_string();
+  }
 
   // User Code End Methods
 };

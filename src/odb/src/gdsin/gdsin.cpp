@@ -108,21 +108,21 @@ bool GDSReader::processElement(dbGDSStructure& str){
 
 bool GDSReader::processBoundary(dbGDSStructure& str){
   
-  _dbGDSBoundary bdy((_dbDatabase*)db);
+  _dbGDSBoundary* bdy = new _dbGDSBoundary((_dbDatabase*)db);
 
   readRecord();
   checkRType(RecordType::LAYER);
-  bdy._layer = r.data16[0];
+  bdy->_layer = r.data16[0];
 
   readRecord();
   checkRType(RecordType::DATATYPE);
-  bdy._datatype = r.data16[0];
+  bdy->_datatype = r.data16[0];
 
   readRecord();
   checkRType(RecordType::XY);
 
   for(int i = 0; i < r.data32.size(); i+=2){
-    bdy._xy.push_back({r.data32[i], r.data32[i + 1]});
+    bdy->_xy.push_back({r.data32[i], r.data32[i + 1]});
   }
 
   readRecord();

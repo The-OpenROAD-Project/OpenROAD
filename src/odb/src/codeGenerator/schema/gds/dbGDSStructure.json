@@ -9,8 +9,8 @@
       },
       {
         "name":"_elements",
-        "type":"dbVector<_dbGDSElement>",
-        "flags":["no-set", "no-get"]
+        "type":"dbVector<_dbGDSElement*>",
+        "flags":["no-set", "no-get", "no-template"]
       },
       {
         "name":"_next_entry",

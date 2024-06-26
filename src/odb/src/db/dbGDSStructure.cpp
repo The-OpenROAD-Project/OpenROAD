@@ -36,10 +36,9 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbGDSLib.h"
+#include "dbHashTable.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbHashTable.h"
-#include "dbHashTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace odb {
@@ -89,6 +88,16 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 {
   _name = r._name;
   _next_entry = r._next_entry;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj)
+{
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj)
+{
+  return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
