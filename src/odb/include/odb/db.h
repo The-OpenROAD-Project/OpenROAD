@@ -2815,7 +2815,8 @@ class dbInst : public dbObject
   /// There are seven methods used to get/set the placement.
   ///
   ///     getOrigin           - Get the origin of this instance (Where the
-  ///     master is setOrigin           - Set the origin of this instance
+  ///                           master is 
+  ///     setOrigin           - Set the origin of this instance
   ///     getOrient           - Get orient of this instance
   ///     setOrient           - Set orient of this instance
   ///     getLocation         - Get the lower-left corner of this instance
