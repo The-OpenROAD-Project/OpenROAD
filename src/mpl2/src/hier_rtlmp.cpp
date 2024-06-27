@@ -1230,12 +1230,7 @@ void HierRTLMP::addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module)
     if (isIgnoredMaster(master)) {
       continue;
     }
-
-    if (master->isBlock()) {
-      cluster->addLeafMacro(inst);
-    } else {
-      cluster->addLeafStdCell(inst);
-    }
+    cluster->addLeafInst(inst);
   }
 
   if (cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty()) {
