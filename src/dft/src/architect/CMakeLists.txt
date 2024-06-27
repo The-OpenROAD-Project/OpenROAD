@@ -1,5 +1,6 @@
 add_library(dft_architect_lib
   # Keep sorted
+  Opt.cpp
   ScanArchitect.cpp
   ScanArchitectHeuristic.cpp
   ScanChain.cpp

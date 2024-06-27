@@ -46,8 +46,6 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
   if (grid_block_.area() == 0) {
     return;
   }
-  // TODO: Match the wire width with the paper definition
-  wire_width_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
   if (!grouter_->isInitialized()) {
     int min_layer, max_layer;
@@ -55,6 +53,23 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     grouter_->getMinMaxLayer(min_layer, max_layer);
     grouter_->initFastRoute(min_layer, max_layer);
   }
+
+  // The wire width is the harmonic average pitch divided by the number of
+  // routing layers.
+  double pitch_terms = 0;
+  const int min_routing_layer = grouter->getMinRoutingLayer();
+  const int max_routing_layer = grouter->getMaxRoutingLayer();
+  const auto tech = block_->getTech();
+  for (int layer_idx = min_routing_layer; layer_idx <= max_routing_layer;
+       ++layer_idx) {
+    const auto layer = tech->findRoutingLayer(layer_idx);
+    int pitch = layer->getPitch();
+    if (pitch == 0) {
+      pitch = layer->getWidth() + layer->getSpacing();
+    }
+    pitch_terms += 1.0 / pitch;
+  }
+  wire_width_ = 1 / pitch_terms;  // = harm. mean / num_routing_layers
 
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
@@ -129,36 +144,6 @@ void Rudy::calculateRudy()
     if (!net->getSigType().isSupply()) {
       const auto net_rect = net->getTermBBox();
       processIntersectionSignalNet(net_rect);
-    }
-  }
-
-  double min_rudy = std::numeric_limits<double>::max();
-  double max_observed_rudy = std::numeric_limits<double>::lowest();
-
-  for (int x = 0; x < grid_.size(); x++) {
-    for (int y = 0; y < grid_[x].size(); y++) {
-      const Tile& tile = getEditableTile(x, y);
-      const double rudy_value = tile.getRudy();
-      min_rudy = std::min(min_rudy, rudy_value);
-      max_observed_rudy = std::max(max_observed_rudy, rudy_value);
-    }
-  }
-
-  for (int x = 0; x < grid_.size(); x++) {
-    for (int y = 0; y < grid_[x].size(); y++) {
-      Tile& tile = getEditableTile(x, y);
-      const float rudy_value = tile.getRudy();
-      float normalized_rudy = min_rudy;
-      if (rudy_value > min_rudy) {
-        normalized_rudy = min_rudy
-                          + (rudy_value - min_rudy)
-                                / (max_observed_rudy - min_rudy)
-                                * (140 - min_rudy);
-      }
-      if (normalized_rudy < rudy_value) {
-        tile.clearRudy();
-        tile.addRudy(normalized_rudy);
-      }
     }
   }
 }

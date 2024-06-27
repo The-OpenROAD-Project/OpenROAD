@@ -12,6 +12,8 @@ create_clock -name main_clock -period 2.0000 -waveform {0.0000 1.0000} [get_port
 set_dft_config -max_length 10
 
 report_instance ff1
+scan_replace
+report_instance ff1
 preview_dft -verbose
 report_instance ff1
 insert_dft
