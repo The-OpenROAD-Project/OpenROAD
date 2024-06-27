@@ -575,13 +575,9 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
       std::string cluster_name = inst->getName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierarchy tree
-      cluster->setParent(root_cluster_);
+      incorporateNewClusterToTree(cluster, root_cluster_);
       cluster->setClusterType(HardMacroCluster);
-      root_cluster_->addChild(cluster);
+
       debugPrint(logger_,
                  MPL,
                  "multilevel_autoclustering",
