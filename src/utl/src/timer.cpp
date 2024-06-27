@@ -43,7 +43,7 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
 
-#elif defined(__linux__) || defined(__linux) || defined(linux) \
+#elif defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
 #include <cstdint>
 #include <cstdio>
@@ -109,7 +109,7 @@ size_t ScopedStatistics::getStartRSZ()
     return (size_t) 0L;
   }
   return (size_t) info.resident_size / 1024;
-#elif defined(__linux) || defined(__linux) || defined(linux) \
+#elif defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
   int64_t rss = 0L;
   FILE* fp = fopen("/proc/self/statm", "r");
@@ -121,7 +121,7 @@ size_t ScopedStatistics::getStartRSZ()
     return (size_t) 0L;
   }
   fclose(fp);
-  return ((size_t) rss * (size_t) sysconf(_SC_PAGESIZE)) / (1024 * 1024);
+  return static_cast<size_t>(rss) * static_cast<size_t>(sysconf(_SC_PAGESIZE)) / (1024 * 1024);
 #else
   return (size_t) 0L; /* Unsupported. */
 #endif

@@ -35,8 +35,8 @@
 
 #pragma once
 
-#include <math.h>
-#include <time.h>
+#include <cmath>
+#include <ctime>
 
 #include <chrono>
 #include <iostream>
