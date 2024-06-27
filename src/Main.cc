@@ -47,9 +47,6 @@
 #include <string>
 #include <unordered_set>
 
-#define TCL_TRACE_LEAVE_EXEC 2
-#define TCL_TRACE_ENTER_DURING_EXEC 4
-
 // We have had too many problems with this std::filesytem on various platforms
 // so it is disabled but kept for future reference
 #ifdef USE_STD_FILESYSTEM
@@ -360,6 +357,7 @@ static void getRegisteredCommands(
 
 static int command_track = 0;
 static bool is_enabled = false;
+
 // Tracing Tcl commands enter step
 static int tclCmdCommandTracingEnter(ClientData,
                                      Tcl_Interp* interp,
@@ -456,6 +454,9 @@ static int tclAppInit(int& argc,
 #endif
 
     ord::initOpenRoad(interp);
+
+    const int TCL_TRACE_LEAVE_EXEC = 2;
+    const int TCL_TRACE_ENTER_DURING_EXEC = 4;
     Tcl_CreateObjTrace(interp,
                        0,
                        TCL_TRACE_ENTER_DURING_EXEC,
