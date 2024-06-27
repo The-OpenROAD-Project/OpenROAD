@@ -1245,22 +1245,22 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
     if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       /* bottom most obstruction */
       const int yh = track_location - track_space;
-      if (yh > 0) {
-        odb::Rect init_track_obs(0, 0, grid_->getXMax(), yh);
+      if (yh > grid_->getYMin()) {
+        odb::Rect init_track_obs(grid_->getXMin(), grid_->getYMin(), grid_->getXMax(), yh);
         applyObstructionAdjustment(init_track_obs, layer);
       }
 
       /* top most obstruction */
       const int yl = final_track_location + track_space;
       if (yl < grid_->getYMax()) {
-        odb::Rect final_track_obs(0, yl, grid_->getXMax(), grid_->getYMax());
+        odb::Rect final_track_obs(grid_->getXMin(), yl, grid_->getXMax(), grid_->getYMax());
         applyObstructionAdjustment(final_track_obs, layer);
       }
     } else {
       /* left most obstruction */
       const int xh = track_location - track_space;
-      if (xh > 0) {
-        const odb::Rect init_track_obs(0, 0, xh, grid_->getYMax());
+      if (xh > grid_->getXMin()) {
+        const odb::Rect init_track_obs(grid_->getXMin(), grid_->getYMin(), xh, grid_->getYMax());
         applyObstructionAdjustment(init_track_obs, layer);
       }
 
@@ -1268,7 +1268,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
       const int xl = final_track_location + track_space;
       if (xl < grid_->getXMax()) {
         const odb::Rect final_track_obs(
-            xl, 0, grid_->getXMax(), grid_->getYMax());
+            xl, grid_->getYMin(), grid_->getXMax(), grid_->getYMax());
         applyObstructionAdjustment(final_track_obs, layer);
       }
     }
