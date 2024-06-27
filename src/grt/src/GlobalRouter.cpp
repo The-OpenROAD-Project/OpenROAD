@@ -1246,21 +1246,24 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
       /* bottom most obstruction */
       const int yh = track_location - track_space;
       if (yh > grid_->getYMin()) {
-        odb::Rect init_track_obs(grid_->getXMin(), grid_->getYMin(), grid_->getXMax(), yh);
+        odb::Rect init_track_obs(
+            grid_->getXMin(), grid_->getYMin(), grid_->getXMax(), yh);
         applyObstructionAdjustment(init_track_obs, layer);
       }
 
       /* top most obstruction */
       const int yl = final_track_location + track_space;
       if (yl < grid_->getYMax()) {
-        odb::Rect final_track_obs(grid_->getXMin(), yl, grid_->getXMax(), grid_->getYMax());
+        odb::Rect final_track_obs(
+            grid_->getXMin(), yl, grid_->getXMax(), grid_->getYMax());
         applyObstructionAdjustment(final_track_obs, layer);
       }
     } else {
       /* left most obstruction */
       const int xh = track_location - track_space;
       if (xh > grid_->getXMin()) {
-        const odb::Rect init_track_obs(grid_->getXMin(), grid_->getYMin(), xh, grid_->getYMax());
+        const odb::Rect init_track_obs(
+            grid_->getXMin(), grid_->getYMin(), xh, grid_->getYMax());
         applyObstructionAdjustment(init_track_obs, layer);
       }
 
