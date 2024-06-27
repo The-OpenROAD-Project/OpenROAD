@@ -22,12 +22,22 @@ class GDSReader
  private:
   enum RecordType
   {
-    HEADER = 0, BGNLIB, LIBNAME, UNITS, ENDLIB, BGNSTR, STRNAME, 
-    ENDSTR, BOUNDARY, PATH, SREF, AREF, TEXT, LAYER, DATATYPE, WIDTH,    
-    XY, ENDEL, SNAME, COLROW, NODE, TEXTTYPE, PRESENTATION, STRING,
-    STRANS, MAG, ANGLE, REFLIBS, FONTS, PATHTYPE, GENERATIONS, ATTRTABLE,
-    ELFLAGS, NODETYPE, PROPATTR, PROPVALUE, BOX, BOXTYPE, PLEX, TAPENUM, 
-    TAPECODE, FORMAT, MASK, ENDMASKS, INVALID_RT
+    HEADER = 0,     BGNLIB = 1,     LIBNAME = 2,      UNITS = 3, 
+    ENDLIB = 4,     BGNSTR = 5,     STRNAME = 6 ,     ENDSTR = 7,
+    BOUNDARY = 8,   PATH = 9,       SREF = 10,        AREF = 11,
+    TEXT = 12,      LAYER = 13,     DATATYPE = 14,    WIDTH = 15,
+    XY = 16,        ENDEL = 17,     SNAME = 18,       COLROW = 19,
+    TEXTNODE = 20,  NODE = 21,      TEXTTYPE = 22,    PRESENTATION = 23,
+    SPACING = 24,   STRING = 25,    STRANS = 26,      MAG = 27,
+    ANGLE = 28,     UINTEGER = 29,  USTRING = 30,     REFLIBS = 31,
+    FONTS = 32,     PATHTYPE = 33,  GENERATIONS = 34, ATTRTABLE = 35,
+    STYPTABLE = 36, STRTYPE = 37,   ELFLAGS = 38,     ELKEY = 39,
+    LINKTYPE = 40,  LINKKEYS = 41,  NODETYPE = 42,    PROPATTR = 43,
+    PROPVALUE = 44, BOX = 45,       BOXTYPE = 46,     PLEX = 47,
+    BGNEXTN = 48,   ENDEXTN = 49,   TAPENUM = 50,     TAPECODE = 51,
+    STRCLASS = 52,  RESERVED = 53,  FORMAT = 54,      MASK = 55,
+    ENDMASKS = 56,  LIBDIRSIZE = 57, SRFNAME = 58,    LIBSECUR = 59,
+    INVALID_RT = 60
   };
 
   inline RecordType toRecordType(uint8_t recordType)
@@ -39,15 +49,22 @@ class GDSReader
   }
 
   const char* recordNames[RecordType::INVALID_RT] = {
-      "HEADER",       "BGNLIB",     "LIBNAME",     "UNITS",     "ENDLIB",
-      "BGNSTR",       "STRNAME",    "ENDSTR",      "BOUNDARY",  "PATH",
-      "SREF",         "AREF",       "TEXT",        "LAYER",     "DATATYPE",
-      "WIDTH",        "XY",         "ENDEL",       "SNAME",     "COLROW",
-      "NODE",         "TEXTTYPE",   "PRESENTATION", "STRING",   "STRANS",
-      "MAG",          "ANGLE",      "REFLIBS",     "FONTS",     "PATHTYPE",
-      "GENERATIONS",  "ATTRTABLE",  "ELFLAGS",     "NODETYPE",  "PROPATTR",
-      "PROPVALUE",    "BOX",        "BOXTYPE",     "PLEX",      "TAPENUM",
-      "TAPECODE",     "FORMAT",     "MASK",        "ENDMASKS"};
+      "HEADER",       "BGNLIB",     "LIBNAME",     "UNITS",  
+      "ENDLIB",       "BGNSTR",     "STRNAME",     "ENDSTR",
+      "BOUNDARY",     "PATH",       "SREF",        "AREF",
+      "TEXT",         "LAYER",      "DATATYPE",    "WIDTH",
+      "XY",           "ENDEL",      "SNAME",       "COLROW",
+      "TEXTNODE",     "NODE",       "TEXTTYPE",    "PRESENTATION",
+      "SPACING",      "STRING",     "STRANS",      "MAG",
+      "ANGLE",        "UINTEGER",   "USTRING",     "REFLIBS",
+      "FONTS",        "PATHTYPE",   "GENERATIONS", "ATTRTABLE",
+      "STYPTABLE",    "STRTYPE",    "ELFLAGS",     "ELKEY",
+      "LINKTYPE",     "LINKKEYS",   "NODETYPE",    "PROPATTR",
+      "PROPVALUE",    "BOX",        "BOXTYPE",     "PLEX",
+      "BGNEXTN",      "ENDEXTN",    "TAPENUM",     "TAPECODE",
+      "STRCLASS",     "RESERVED",   "FORMAT",      "MASK",
+      "ENDMASKS",     "LIBDIRSIZE", "SRFNAME",     "LIBSECUR"
+  };
 
   enum DataType
   {
@@ -128,11 +145,35 @@ class GDSReader
     }
   }
 
+  double real8_to_double(uint64_t real) {
+    int64_t exponent = ((real & 0x7F00000000000000) >> 54) - 256;
+    double mantissa = ((double)(real & 0x00FFFFFFFFFFFFFF)) / 72057594037927936.0;
+    double result = mantissa * exp2((double)exponent);
+    return result;
+  }
+
+  uint64_t double_to_real8(double value) {
+      if (value == 0) return 0;
+      uint8_t u8_1 = 0;
+      if (value < 0) {
+          u8_1 = 0x80;
+          value = -value;
+      }
+      const double fexp = 0.25 * log2(value);
+      double exponent = ceil(fexp);
+      if (exponent == fexp) exponent++;
+      const uint64_t mantissa = (uint64_t)(value * pow(16, 14 - exponent));
+      u8_1 += (uint8_t)(64 + exponent);
+      const uint64_t result = ((uint64_t)u8_1 << 56) | (mantissa & 0x00FFFFFFFFFFFFFF);
+      return result;
+  }
+
+
   double readDouble()
   {
-    double value;
+    uint64_t value;
     file.read(reinterpret_cast<char*>(&value), 8);
-    return htobe64(value);
+    return real8_to_double(htobe64(value));
   }
 
   uint32_t readInt32()
@@ -192,7 +233,7 @@ class GDSReader
         r.data64.push_back(readDouble());
       }
     }
-    else if(dataType == DataType::ASCII_STRING){
+    else if(dataType == DataType::ASCII_STRING || dataType == DataType::BIT_ARRAY){
       r.data8.clear();
       for(int i = 0; i < length; i++){
         r.data8.push_back(readInt8());
@@ -209,6 +250,9 @@ class GDSReader
   bool processStruct();
   bool processElement(dbGDSStructure& str);
   bool processBoundary(dbGDSStructure& str);
+  bool processSRef(dbGDSStructure& str);
+
+  dbGDSSTrans processSTrans();
 };
 
 }  // namespace odb

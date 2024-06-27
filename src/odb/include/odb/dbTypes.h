@@ -156,6 +156,17 @@ class dbGDSSTrans
   {
     return (_flipX == t._flipX) && (_absMag == t._absMag) && (_absAngle == t._absAngle) && (_mag == t._mag) && (_angle == t._angle);
   }
+
+  std::string to_string() const {
+    std::string s("");
+    if(_flipX)
+      s += std::string("FLIP_X ");
+    s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
+    s += std::to_string(_mag) + " ";
+    s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
+    s += std::to_string(_angle);
+    return s;
+  }
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);

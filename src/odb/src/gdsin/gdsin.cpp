@@ -48,6 +48,8 @@ bool GDSReader::processLib(){
   readRecord();
   checkRType(RecordType::UNITS);
 
+  printf("UNITS: %f %f\n", r.data64[0], r.data64[1]);
+  printf("UNITS HEX: %016llX %016llX\n", r.data64[0], r.data64[1]);
   lib->setUnits(r.data64[0], r.data64[1]);
 
   while(readRecord()){
@@ -99,6 +101,10 @@ bool GDSReader::processElement(dbGDSStructure& str){
     case RecordType::BOUNDARY:
       processBoundary(str);
       break;
+    case RecordType::SREF:
+    case RecordType::AREF:
+      processSRef(str);
+      break;
     default:
       throw std::runtime_error("Unimplemented GDS Record Type");
       break;
@@ -130,6 +136,64 @@ bool GDSReader::processBoundary(dbGDSStructure& str){
 
   ((_dbGDSStructure*)&str)->_elements.push_back(bdy);
   return true;
+}
+
+bool GDSReader::processSRef(dbGDSStructure& str){
+
+  _dbGDSSRef* sref = new _dbGDSSRef((_dbDatabase*)db);
+
+  readRecord();
+  checkRType(RecordType::SNAME);
+  sref->_sName = std::string(r.data8.begin(), r.data8.end());
+
+  readRecord();
+  if(r.type == RecordType::STRANS){
+    sref->_sTrans = processSTrans();
+  }
+
+  checkRType(RecordType::XY);
+  for(int i = 0; i < r.data32.size(); i+=2){
+    sref->_xy.push_back({r.data32[i], r.data32[i + 1]});
+  }
+
+  readRecord();
+  if(r.type == RecordType::COLROW){
+    sref->_colRow = {r.data16[0], r.data16[1]};
+    readRecord();
+  }
+  else{
+    sref->_colRow = {1, 1};
+  }
+  
+  checkRType(RecordType::ENDEL);
+
+  ((_dbGDSStructure*)&str)->_elements.push_back(sref);
+  return true;
+}
+
+dbGDSSTrans GDSReader::processSTrans(){
+  checkRType(RecordType::STRANS);
+  printf("STRANS: %x\n", r.data8[0]);
+  printf("STRANS: %x\n", r.data8[1]);
+
+  bool flipX = r.data8[0] & 0x80;
+  bool absMag = r.data8[1] & 0x04;
+  bool absAngle = r.data8[1] & 0x02;
+
+  readRecord();
+
+  double mag = 1.0;
+  if(r.type == RecordType::MAG){
+    mag = r.data64[0];
+    readRecord();
+  }
+  double angle = 0.0;
+  if(r.type == RecordType::ANGLE){
+    angle = r.data64[0];
+    readRecord();
+  }
+  
+  return dbGDSSTrans(flipX, absMag, absAngle, mag, angle);
 }
 
 

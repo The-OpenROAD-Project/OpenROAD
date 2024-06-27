@@ -14,4 +14,6 @@ int main(int argc, char* argv[])
   }
   odb::GDSReader reader(argv[1]);
   odb::dbGDSLib* lib = reader.read_gds();
+  std::cout << "Library: " << lib->getLibname() << std::endl;
+  std::cout << "Units: " << lib->getUnits().first << " " << lib->getUnits().second << std::endl;
 }
