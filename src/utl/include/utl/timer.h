@@ -35,10 +35,9 @@
 
 #pragma once
 
+#include <chrono>
 #include <cmath>
 #include <ctime>
-
-#include <chrono>
 #include <iostream>
 
 #include "utl/Logger.h"
