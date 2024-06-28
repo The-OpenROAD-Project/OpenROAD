@@ -2043,7 +2043,10 @@ void HierRTLMP::updateSubTree(Cluster* parent)
 }
 
 // Break large flat clusters with TritonPart
-// A flat cluster does not have a logical module
+// Binary coding method to differentiate partitions:
+// cluster -> cluster_0, cluster_1
+// cluster_0 -> cluster_0_0, cluster_0_1
+// cluster_1 -> cluster_1_0, cluster_1_1 [...]
 void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 {
   // Check if the cluster is a large flat cluster
@@ -2051,53 +2054,49 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
       || parent->getLeafStdCells().size() < max_num_inst_) {
     return;
   }
-
   updateInstancesAssociation(parent);
+
   std::map<int, int> cluster_vertex_id_map;
-  std::map<odb::dbInst*, int> inst_vertex_id_map;
-  const int parent_cluster_id = parent->getId();
-  std::vector<odb::dbInst*> std_cells = parent->getLeafStdCells();
-  std::vector<std::vector<int>> hyperedges;
   std::vector<float> vertex_weight;
-  // vertices
-  // other clusters behaves like fixed vertices
-  // We do not consider vertices only between fixed vertices
   int vertex_id = 0;
   for (auto& [cluster_id, cluster] : cluster_map_) {
     cluster_vertex_id_map[cluster_id] = vertex_id++;
     vertex_weight.push_back(0.0f);
   }
+  const int num_other_cluster_vertices = vertex_id;
+
+  std::vector<odb::dbInst*> insts;
+  std::map<odb::dbInst*, int> inst_vertex_id_map;
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
     vertex_weight.push_back(computeMicronArea(macro));
+    insts.push_back(macro);
   }
-  int num_fixed_vertices
-      = vertex_id;  // we do not consider these vertices in later process
-                    // They behaves like ''fixed vertices''
-  for (auto& std_cell : std_cells) {
+  for (auto& std_cell : parent->getLeafStdCells()) {
     inst_vertex_id_map[std_cell] = vertex_id++;
     vertex_weight.push_back(computeMicronArea(std_cell));
+    insts.push_back(std_cell);
   }
-  // Traverse nets to create hyperedges
+
+  std::vector<std::vector<int>> hyperedges;
   for (odb::dbNet* net : block_->getNets()) {
-    // ignore all the power net
     if (net->getSigType().isSupply()) {
       continue;
     }
-    int driver_id = -1;      // vertex id of the driver instance
-    std::set<int> loads_id;  // vertex id of the sink instances
+
+    int driver_id = -1;
+    std::set<int> loads_id;
     bool ignore = false;
-    // check the connected instances
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
       odb::dbMaster* master = inst->getMaster();
-      // We ignore nets connecting ignored masters
       if (isIgnoredMaster(master)) {
         ignore = true;
-        break;  // here CAN NOT be continue
+        break;
       }
+
       const int cluster_id = inst_to_cluster_.at(inst);
-      int vertex_id = (cluster_id != parent_cluster_id)
+      int vertex_id = (cluster_id != parent->getId())
                           ? cluster_vertex_id_map[cluster_id]
                           : inst_vertex_id_map[inst];
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -2106,14 +2105,13 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
         loads_id.insert(vertex_id);
       }
     }
-    // ignore the nets with IO pads
+
     if (ignore) {
       continue;
     }
-    // check the connected IO pins
+
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int cluster_id = bterm_to_cluster_.at(bterm);
-
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_vertex_id_map[cluster_id];
       } else {
@@ -2121,7 +2119,6 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
       }
     }
     loads_id.insert(driver_id);
-    // add the net as a hyperedge
     if (driver_id != -1 && loads_id.size() > 1
         && loads_id.size() < large_net_threshold_) {
       std::vector<int> hyperedge;
@@ -2143,27 +2140,20 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
                                              vertex_weight,
                                              hyperedge_weights);
 
-  // create cluster based on partitioning solutions
-  // Note that all the std cells are stored in the leaf_std_cells_ for a flat
-  // cluster
   parent->clearLeafStdCells();
-  // we follow binary coding method to differentiate different parts
-  // of the cluster
-  // cluster_name_0, cluster_name_1
-  // cluster_name_0_0, cluster_name_0_1, cluster_name_1_0, cluster_name_1_1
+  parent->clearLeafMacros();
+
   const std::string cluster_name = parent->getName();
-  // set the parent cluster for part 0
-  // update the name of parent cluster
   parent->setName(cluster_name + std::string("_0"));
-  // create a new cluster for part 1
   Cluster* cluster_part_1
       = new Cluster(cluster_id_, cluster_name + std::string("_1"), logger_);
-  // we do not need to touch the fixed vertices (they have been assigned before)
-  for (int i = num_fixed_vertices; i < num_vertices; i++) {
+
+  for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
+    odb::dbInst* inst = insts[i - num_other_cluster_vertices];
     if (part[i] == 0) {
-      parent->addLeafStdCell(std_cells[i - num_fixed_vertices]);
+      parent->addLeafInst(inst);
     } else {
-      cluster_part_1->addLeafStdCell(std_cells[i - num_fixed_vertices]);
+      cluster_part_1->addLeafInst(inst);
     }
   }
 
