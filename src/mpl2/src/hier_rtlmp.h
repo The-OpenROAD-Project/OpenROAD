@@ -208,6 +208,7 @@ class HierRTLMP
                                   bool include_macro);
   void breakCluster(Cluster* parent);
   void createFlatCluster(odb::dbModule* module, Cluster* parent);
+  void createCluster(Cluster* parent);
   void createCluster(odb::dbModule* module, Cluster* parent);
   void addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module);
   void incorporateNewClusterToTree(Cluster* cluster, Cluster* parent);

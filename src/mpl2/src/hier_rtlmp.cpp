@@ -1157,16 +1157,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
 
     if (!parent->getLeafStdCells().empty()
         || !parent->getLeafMacros().empty()) {
-      std::string cluster_name
-          = std::string("(") + parent->getName() + ")_glue_logic";
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      for (auto& inst : parent->getLeafStdCells()) {
-        cluster->addLeafStdCell(inst);
-      }
-      for (auto& inst : parent->getLeafMacros()) {
-        cluster->addLeafMacro(inst);
-      }
-      incorporateNewClusterToTree(cluster, parent);
+      createCluster(parent);
     }
   }
 
@@ -1211,6 +1202,21 @@ void HierRTLMP::createFlatCluster(odb::dbModule* module, Cluster* parent)
   } else {
     incorporateNewClusterToTree(cluster, parent);
   }
+}
+
+void HierRTLMP::createCluster(Cluster* parent)
+{
+  std::string cluster_name
+      = std::string("(") + parent->getName() + ")_glue_logic";
+  Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+  for (auto& inst : parent->getLeafStdCells()) {
+    cluster->addLeafStdCell(inst);
+  }
+  for (auto& inst : parent->getLeafMacros()) {
+    cluster->addLeafMacro(inst);
+  }
+
+  incorporateNewClusterToTree(cluster, parent);
 }
 
 void HierRTLMP::createCluster(odb::dbModule* module, Cluster* parent)
