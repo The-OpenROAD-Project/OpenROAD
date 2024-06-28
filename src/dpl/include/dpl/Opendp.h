@@ -342,6 +342,7 @@ class Opendp
   void insertDecapInRow(const vector<GapX> &gaps, const int gap_y, const int irdrop_x, const int irdrop_y, double &total, const double &target);
   void findGaps();
   void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
+  odb::dbTechLayer* getLowestLayer(odb::dbNet * db_net);
  
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;

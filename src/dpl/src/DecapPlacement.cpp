@@ -38,6 +38,7 @@
 #include "Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
+#include "odb/dbShape.h"
 
 namespace dpl {
 
@@ -71,9 +72,38 @@ vector<int> Opendp::getDecapCell(const int &gap_width, const double &current, co
   return id_masters;
 }
 
+odb::dbTechLayer* Opendp::getLowestLayer(odb::dbNet * db_net)
+{
+  int min_layer_level = std::numeric_limits<int>::max();
+  std::vector<odb::dbShape> via_boxes;
+  for (odb::dbSWire* swire : db_net->getSWires()) {
+    for (odb::dbSBox* s : swire->getWires()) {
+      if (s->isVia()) {
+        s->getViaBoxes(via_boxes);
+        for (const odb::dbShape& box : via_boxes) {
+          odb::dbTechLayer* tech_layer = box.getTechLayer();
+          if (tech_layer->getRoutingLevel() == 0) {
+            continue;
+          }
+          if (min_layer_level == -1 || min_layer_level > tech_layer->getRoutingLevel()) {
+            min_layer_level = tech_layer->getRoutingLevel();
+          }
+        }
+      } else {
+        odb::dbTechLayer* tech_layer = s->getTechLayer();
+        if (min_layer_level == -1 || min_layer_level > tech_layer->getRoutingLevel()) {
+          min_layer_level = tech_layer->getRoutingLevel();
+        }
+      }
+    }
+  }
+  return db_->getTech()->findRoutingLayer(min_layer_level);
+}
+
 void Opendp::insertDecapCells(const double target)
 {
 
+  // init dpl variables
   if (cells_.empty()) {
     importDb();
   }
@@ -83,51 +113,49 @@ void Opendp::insertDecapCells(const double target)
   setGridCells();
 
   if (grid_->infoMapEmpty()) {
-    std::cerr << "ERROR: Info map is empty" << std::endl;
-    return;
+    logger_->error(DPL, 52, "Info map wasnt load to place DECAP cells");
   } 
 
-  // sort in increase order
+  // Sort decaps cells in decrease order
   std::sort(decap_masters_.begin(),
             decap_masters_.end(),
             [](std::pair<dbMaster*,double>& decap_master1, std::pair<dbMaster*,double>& decap_master2) {
-            return decap_master1.second < decap_master2.second;
+            return decap_master1.second > decap_master2.second;
             });
-  printf("Decap Cells %ld\n", decap_masters_.size());
 
-  // Get IR DROP of net VSS on layer met1
+  // Get IR DROP of net VDD on layer met1
   IRDropByPoint ir_drop;
-  odb::dbTechLayer* tech_layer = block_->getTech()->findLayer("met1");
-  odb::dbNet* db_net = block_->findNet("VSS");
+  odb::dbNet* db_net = block_->findNet("VDD");
+  // Get lowest layer
+  odb::dbTechLayer* tech_layer = getLowestLayer(db_net);
 
   psm_->getIRDropForLayer2(db_net, tech_layer, ir_drop);
 
   if (ir_drop.empty()) {
-    std::cerr << "ERROR: IR DROP points dont found\n";
-    return;
+    logger_->error(DPL, 53, "Any IR DROP point found, run analyse_power_grid before of insert DECAP cells");
   }
-  printf("IR DROP size: %ld\n", ir_drop.size());
 
-  // sort points for IR DROP
+  // Sort the IR DROP point ins decrease order
   std::vector<std::pair<odb::Point, double>> irdrop_points;
   for (auto & it: ir_drop) {
     irdrop_points.push_back({it.first, it.second});
   }
 
-  // sort decrease order
   std::sort(irdrop_points.begin(),
             irdrop_points.end(),
             [](std::pair<odb::Point, double>& point1, std::pair<odb::Point, double>& point2) {
               return point1.second > point2.second;
             });
 
-  // if fillers are not placed, then find gaps to place decap cells
-  if (!have_fillers_ && gaps_.empty()) {
-    findGaps();
+  // If fillers are placed
+  if (have_fillers_) {
+    logger_->error(DPL, 54, "Filler cells found when running insert decap cells");
   }
 
+  // Find gaps availables 
+  findGaps();
   int gaps_count = 0;
-  // sort gaps for x position
+  // Sort each gap vector for X position
   for (auto &it: gaps_){
     std::sort(it.second.begin(),
               it.second.end(),
@@ -138,12 +166,10 @@ void Opendp::insertDecapCells(const double target)
   }
 
   if (gaps_count == 0) {
-    std::cerr << "ERROR: Gaps dont found\n";
-    return ;
+    logger_->error(DPL, 55, "Gaps dont found during insert decap cells");
   }
 
   std::cerr << "Gaps count " << gaps_count << std::endl;
-  removeFillers();
 
   double total_cap = 0.0;
   for (auto &irdrop_it: irdrop_points) {
@@ -164,7 +190,7 @@ void Opendp::insertDecapCells(const double target)
       }
     }
   }
-  std::cerr << "Decap cells inserted " << decap_count_ << " cap total " << total_cap << std::endl; 
+  logger_->info(DPL, 56, "Placed {} decap cells, cap total {:6.4f}", decap_count_, total_cap);
 }
 
 void Opendp::insertDecapInRow(const vector<GapX> &gaps, const int gap_y, const int irdrop_x, const int irdrop_y, double &total, const double &target)
@@ -178,8 +204,10 @@ void Opendp::insertDecapInRow(const vector<GapX> &gaps, const int gap_y, const i
                                   );
   // if this row has free gap with x <= xpoint <= x + width
   if (find_gap != gaps.end() && (find_gap->x + find_gap->width) >= irdrop_x && !find_gap->is_filled) { 
-    gaps_[gap_y][find_gap - gaps.begin()].is_filled = true;
     auto ids = getDecapCell(find_gap->width, total, target);
+    if (!ids.empty()) {
+      gaps_[gap_y][find_gap - gaps.begin()].is_filled = true;
+    }
     int gap_x = find_gap->x;
     for (const int &it_decap : ids) {
       // insert decap inst in this pos
