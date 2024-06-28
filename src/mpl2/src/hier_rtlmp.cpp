@@ -1205,8 +1205,10 @@ void HierRTLMP::createFlatCluster(odb::dbModule* module, Cluster* parent)
   Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
   addModuleInstsToCluster(cluster, module);
 
-  // The cluster will have been deleted if the module was empty
-  if (cluster) {
+  if (cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty()) {
+    delete cluster;
+    cluster = nullptr;
+  } else {
     incorporateNewClusterToTree(cluster, parent);
   }
 }
@@ -1227,11 +1229,6 @@ void HierRTLMP::addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module)
       continue;
     }
     cluster->addLeafInst(inst);
-  }
-
-  if (cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty()) {
-    delete cluster;
-    cluster = nullptr;
   }
 }
 
