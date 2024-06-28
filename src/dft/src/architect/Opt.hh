@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Myrtle Shah
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,43 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
+#include "ScanArchitect.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
-// A simple single cell with just one bit. Usually one scan FF
-class OneBitScanCell : public ScanCell
-{
- public:
-  OneBitScanCell(const std::string& name,
-                 std::unique_ptr<ClockDomain> clock_domain,
-                 odb::dbInst* inst,
-                 sta::TestCell* test_cell,
-                 sta::dbNetwork* db_network,
-                 utl::Logger* logger);
-  // Not copyable or movable
-  OneBitScanCell(const OneBitScanCell&) = delete;
-  OneBitScanCell& operator=(const OneBitScanCell&) = delete;
-
-  uint64_t getBits() const override;
-  void connectScanEnable(const ScanDriver& driver) const override;
-  void connectScanIn(const ScanDriver& driver) const override;
-  void connectScanOut(const ScanLoad& load) const override;
-  ScanDriver getScanOut() const override;
-
-  odb::Point getOrigin() const override;
-  bool isPlaced() const override;
-
- private:
-  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
-
-  odb::dbInst* inst_;
-  sta::TestCell* test_cell_;
-  sta::dbNetwork* db_network_;
-};
+// Order scan cells to reduce wirelength
+void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+                            utl::Logger* logger);
 
 }  // namespace dft
