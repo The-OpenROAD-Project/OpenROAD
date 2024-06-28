@@ -186,13 +186,6 @@ void Opendp::placeRowFillers(GridY row,
       dbMasterSeq& fillers
           = gapFillers(implant, gap, filler_masters_by_implant);
       const Rect core = grid_->getCore();
-
-      // Save gap information (pos in dbu)
-      DbuX gap_x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY gap_y{core.yMin() + gridToDbu(row, DbuY{row_height})};
-      DbuX gap_width {gridToDbu(k, site_width) - gridToDbu(j, site_width)};
-      gaps_[gap_y.v].push_back(GapX(gap_x.v, orient, gap_width.v, row_height.v));
-
       if (fillers.empty()) {
         DbuX x{core.xMin() + gridToDbu(j, site_width)};
         DbuY y{core.yMin() + gridToDbu(row, DbuY{row_height})};
