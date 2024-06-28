@@ -160,6 +160,7 @@ size_t ScopedStatistics::getPeakRSZ()
 #else
   return (size_t) rsg.ru_maxrss / kFactor;
 #endif
+  return (size_t) 0L; /* Unsupported. */
 }
 
 ScopedStatistics::~ScopedStatistics()
