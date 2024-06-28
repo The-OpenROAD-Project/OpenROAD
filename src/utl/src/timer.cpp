@@ -51,6 +51,7 @@
 #endif
 
 namespace utl {
+const size_t FRACTION = 1024;
 
 void Timer::reset()
 {
@@ -107,7 +108,7 @@ size_t ScopedStatistics::getStartRSZ()
                 (task_info_t) &info, &info_count) {
     return (size_t) 0L;
   }
-  return (size_t) info.resident_size / 1024;
+  return (size_t) info.resident_size / FRACTION;
 #elif defined(__linux) || defined(linux) || defined(__gnu_linux__)
   int64_t rss = 0L;
   FILE* fp = fopen("/proc/self/statm", "r");
@@ -120,7 +121,7 @@ size_t ScopedStatistics::getStartRSZ()
   }
   fclose(fp);
   return static_cast<size_t>(rss) * static_cast<size_t>(sysconf(_SC_PAGESIZE))
-         / (1024 * 1024);
+         / (FRACTION * FRACTION);
 #else
   return (size_t) 0L; /* Unsupported. */
 #endif
@@ -135,9 +136,9 @@ size_t ScopedStatistics::getPeakRSZ()
     return (size_t) 0L;
   }
 #if defined(__APPLE__) && defined(__MACH__)
-  return ((size_t) rsg.ru_maxrss) / (1024 * 1024);
+  return ((size_t) rsg.ru_maxrss) / (FRACTION * FRACTION);
 #else
-  return (size_t) rsg.ru_maxrss / 1024;
+  return (size_t) rsg.ru_maxrss / FRACTION;
 #endif
 #endif
 }

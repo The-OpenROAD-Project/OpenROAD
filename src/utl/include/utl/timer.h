@@ -92,7 +92,6 @@ class ScopedStatistics : public Timer
 
   std::string msg_;
   size_t start_rsz_;
-  size_t start_vsz_;
   utl::Logger* logger_;
   clock_t cpu_start_;
 };
