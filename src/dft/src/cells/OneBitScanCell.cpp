@@ -88,4 +88,14 @@ odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
   return inst_->getITerm(mterm);
 }
 
+odb::Point OneBitScanCell::getOrigin() const
+{
+  return inst_->getOrigin();
+}
+
+bool OneBitScanCell::isPlaced() const
+{
+  return inst_->isPlaced();
+}
+
 }  // namespace dft

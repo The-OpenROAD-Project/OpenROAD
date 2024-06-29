@@ -88,6 +88,8 @@ class frNet : public frBlockObject
   bool isFake() const { return isFakeNet_; }
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
   bool hasInitialRouting() const { return hasInitialRouting_; }
+  bool isFixed() const { return isFixed_; }
+  bool hasGuides() const { return !guides_.empty(); }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
@@ -192,6 +194,7 @@ class frNet : public frBlockObject
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
   void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
+  void setFixed(bool in) { isFixed_ = in; }
   // others
   void clearRoutes()
   {
@@ -266,6 +269,7 @@ class frNet : public frBlockObject
   bool isClock_{false};
   bool isSpecial_{false};
   bool hasInitialRouting_{false};
+  bool isFixed_{false};
 
   std::vector<frPinFig*> all_pinfigs_;
 };

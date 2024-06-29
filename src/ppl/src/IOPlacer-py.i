@@ -44,14 +44,14 @@ using ppl::PinSet;
 using namespace ppl;
 
 template <class TYPE>
-set<TYPE> *
+set<TYPE, ppl::pinSetComp> *
 PyListSet(PyObject *const source,
           swig_type_info *swig_type)
 {
   int sz;
   if (PyList_Check(source) && PyList_Size(source) > 0) {
     sz = PyList_Size(source);
-    set<TYPE> *seq = new set<TYPE>;
+    set<TYPE, ppl::pinSetComp> *seq = new set<TYPE, ppl::pinSetComp>;
     for (int i = 0; i < sz; i++) {
       void *obj;
       SWIG_ConvertPtr(PyList_GetItem(source, i), &obj, swig_type, false);

@@ -2,6 +2,7 @@ include("openroad")
 
 set(TEST_NAMES
     constant1
+    dont_touch_attr
     make_port
     network_edit1
     sdc_names1

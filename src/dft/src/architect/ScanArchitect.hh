@@ -39,6 +39,7 @@
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "ScanChain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
@@ -112,7 +113,8 @@ class ScanArchitect
   // since some of them could generate better scan chains for some designs
   static std::unique_ptr<ScanArchitect> ConstructScanScanArchitect(
       const ScanArchitectConfig& config,
-      std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
+      std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
+      utl::Logger* logger);
 
  protected:
   void createScanChains();
