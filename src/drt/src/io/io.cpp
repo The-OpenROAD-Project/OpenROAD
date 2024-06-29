@@ -1881,12 +1881,13 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addKeepOutZoneConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerCutEnclosureRules()) {
-    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::EOL) {
-      logger_->warn(
-          DRT,
-          340,
-          "LEF58_ENCLOSURE EOL is not supported. Skipping for layer {}",
-          layer->getName());
+    if (rule->getType() == odb::dbTechLayerCutEnclosureRule::EOL
+        && (rule->isSideSpacingValid() || rule->isEndSpacingValid())) {
+      logger_->warn(DRT,
+                    340,
+                    "LEF58_ENCLOSURE EOL SIDESPACING/ENDSPACING is not "
+                    "supported. Skipping for layer {}",
+                    layer->getName());
       continue;
     }
     if (rule->getType() == odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT) {

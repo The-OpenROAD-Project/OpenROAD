@@ -2247,6 +2247,14 @@ class frLef58EnclosureConstraint : public frConstraint
                && sideOverhang >= db_rule_->getFirstOverhang());
   }
   frCoord getWidth() const { return db_rule_->getMinWidth(); }
+  bool isEol() const
+  {
+    return db_rule_->getType() == odb::dbTechLayerCutEnclosureRule::EOL;
+  }
+  bool isEolOnly() const { return db_rule_->isEolOnly(); }
+  frCoord getFirstOverhang() const { return db_rule_->getFirstOverhang(); }
+  frCoord getSecondOverhang() const { return db_rule_->getSecondOverhang(); }
+  frCoord getEolLength() const { return db_rule_->getEolWidth(); }
   void report(utl::Logger* logger) const override
   {
     logger->report("LEF58_ENCLOSURE");

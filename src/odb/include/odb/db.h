@@ -8708,9 +8708,9 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   bool isEolOnly() const;
 
-  void setShortEdgeOnly(bool short_edge_only);
+  void setShortEdgeOnEol(bool short_edge_on_eol);
 
-  bool isShortEdgeOnly() const;
+  bool isShortEdgeOnEol() const;
 
   void setSideSpacingValid(bool side_spacing_valid);
 

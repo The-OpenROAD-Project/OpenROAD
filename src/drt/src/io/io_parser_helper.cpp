@@ -129,7 +129,7 @@ void io::Parser::initDefaultVias()
                        tech_->getLayer(layerNum)->getName());
       }
       // set secondary viadef
-      if (defaultSingleCutVia) {
+      if (defaultSingleCutVia && layer->hasLef58MaxSpacingConstraints()) {
         for (auto [cuts, viadefs] : cuts2ViaDefs) {
           for (auto [priority, viadef] : viadefs) {
             if (viadef->getCutClassIdx()
@@ -230,6 +230,88 @@ void io::Parser::initDefaultVias()
               utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
         }
         tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
+      }
+      // check for secondaryViaDef (partial support for GF14)
+      auto secondaryViaDef = layer->getSecondaryViaDef();
+      if (secondaryViaDef != nullptr) {
+        frVia secVia(secondaryViaDef);
+        auto getBloatingDist = [this, secVia](bool above) {
+          auto cutLayer = tech_->getLayer(secVia.getViaDef()->getCutLayerNum());
+          auto encBox = above ? secVia.getLayer2BBox() : secVia.getLayer1BBox();
+          auto cutBox = secVia.getCutBBox();
+          frCoord horzOverhang = 0;
+          frCoord vertOverhang = 0;
+          horzOverhang = std::min(encBox.xMax() - cutBox.xMax(),
+                                  cutBox.xMin() - encBox.xMin());
+          vertOverhang = std::min(encBox.yMax() - cutBox.yMax(),
+                                  cutBox.yMin() - encBox.yMin());
+          bool eolIsHorz = encBox.dx() < encBox.dy();
+          for (auto con : cutLayer->getLef58EnclosureConstraints(
+                   secVia.getViaDef()->getCutClassIdx(), 0, above, true)) {
+            if (!con->isEolOnly()) {
+              break;
+            }
+            if ((eolIsHorz ? encBox.dx() : encBox.dy()) > con->getEolLength()) {
+              continue;
+            }
+            std::pair<frCoord, frCoord> bloats;
+            if (eolIsHorz) {
+              bloats = {std::max(0, con->getFirstOverhang() - vertOverhang),
+                        std::max(0, con->getSecondOverhang() - horzOverhang)};
+            } else {
+              bloats = {std::max(0, con->getSecondOverhang() - vertOverhang),
+                        std::max(0, con->getFirstOverhang() - horzOverhang)};
+            }
+            return bloats;
+          }
+          return std::make_pair<frCoord, frCoord>(0, 0);
+        };
+        auto layer1Bloats = getBloatingDist(false);
+        auto layer2Bloats = getBloatingDist(true);
+        if (layer1Bloats != std::pair<int, int>(0, 0)
+            || layer2Bloats != std::pair<int, int>(0, 0)) {
+          needViaGen = true;
+          std::string viaDefName
+              = tech_->getLayer(secondaryViaDef->getCutLayerNum())->getName();
+          viaDefName += std::string("_SECONDARY_FR");
+          std::unique_ptr<frShape> uBotFig = std::make_unique<frRect>();
+          auto botFig = static_cast<frRect*>(uBotFig.get());
+          std::unique_ptr<frShape> uTopFig = std::make_unique<frRect>();
+          auto topFig = static_cast<frRect*>(uTopFig.get());
+          Rect layer1Box = secVia.getLayer1BBox();
+          Rect layer2Box = secVia.getLayer2BBox();
+          layer1Box = layer1Box.bloat(layer1Bloats.first,
+                                      odb::Orientation2D::Vertical);
+          layer1Box = layer1Box.bloat(layer1Bloats.second,
+                                      odb::Orientation2D::Horizontal);
+          layer2Box = layer2Box.bloat(layer2Bloats.first,
+                                      odb::Orientation2D::Vertical);
+          layer2Box = layer2Box.bloat(layer2Bloats.second,
+                                      odb::Orientation2D::Horizontal);
+          frLayerNum layer1Num = secondaryViaDef->getLayer1Num();
+          frLayerNum layer2Num = secondaryViaDef->getLayer2Num();
+          botFig->setBBox(layer1Box);
+          topFig->setBBox(layer2Box);
+          botFig->setLayerNum(layer1Num);
+          topFig->setLayerNum(layer2Num);
+          // cut layer shape
+          std::unique_ptr<frShape> uCutFig = std::make_unique<frRect>();
+          auto cutFig = static_cast<frRect*>(uCutFig.get());
+          Rect cutBox = secVia.getCutBBox();
+          cutFig->setBBox(cutBox);
+          cutFig->setLayerNum(secondaryViaDef->getCutLayerNum());
+
+          // create via
+          auto viaDef = std::make_unique<frViaDef>(viaDefName);
+          viaDef->addLayer1Fig(std::move(uBotFig));
+          viaDef->addLayer2Fig(std::move(uTopFig));
+          viaDef->addCutFig(std::move(uCutFig));
+          viaDef->setAddedByRouter(true);
+          auto vdfPtr = tech_->addVia(std::move(viaDef));
+          if (vdfPtr != nullptr) {
+            tech_->getLayer(layerNum)->setSecondaryViaDef(vdfPtr);
+          }
+        }
       }
     }
   }

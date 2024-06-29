@@ -751,32 +751,45 @@ class frLayer
             lef58EncConstraints[cutClassIdx][con->getWidth()].push_back(con);
           };
     if (!con->isAboveOnly()) {
-      addToLef58EncConstraints(belowLef58EncConstraints_, con);
+      addToLef58EncConstraints(con->isEol() ? belowLef58EncEolConstraints_
+                                            : belowLef58EncConstraints_,
+                               con);
     }
     if (!con->isBelowOnly()) {
-      addToLef58EncConstraints(aboveLef58EncConstraints_, con);
+      addToLef58EncConstraints(con->isEol() ? aboveLef58EncEolConstraints_
+                                            : aboveLef58EncConstraints_,
+                               con);
     }
   }
 
-  bool hasLef58EnclosureConstraint(int cutClassIdx, bool above) const
+  bool hasLef58EnclosureConstraint(int cutClassIdx,
+                                   bool above,
+                                   bool eol = false) const
   {
-    auto& lef58EncConstraints
-        = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+    auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
+                                             : aboveLef58EncConstraints_)
+                                      : (eol ? belowLef58EncEolConstraints_
+                                             : belowLef58EncConstraints_);
     if (cutClassIdx < 0 || lef58EncConstraints.size() <= cutClassIdx) {
       return false;
     }
     return !lef58EncConstraints.at(cutClassIdx).empty();
   }
 
-  std::vector<frLef58EnclosureConstraint*>
-  getLef58EnclosureConstraints(int cutClassIdx, frCoord width, bool above) const
+  std::vector<frLef58EnclosureConstraint*> getLef58EnclosureConstraints(
+      int cutClassIdx,
+      frCoord width,
+      bool above,
+      bool eol = false) const
   {
     // initialize with empty vector
     std::vector<frLef58EnclosureConstraint*> result;
     // check class and size match first
     if (hasLef58EnclosureConstraint(cutClassIdx, above)) {
-      auto& lef58EncConstraints
-          = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+      auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
+                                               : aboveLef58EncConstraints_)
+                                        : (eol ? belowLef58EncEolConstraints_
+                                               : belowLef58EncConstraints_);
       const auto& mmap = lef58EncConstraints.at(cutClassIdx);
       auto it = mmap.upper_bound(width);
       if (it != mmap.begin()) {
@@ -885,6 +898,10 @@ class frLayer
       aboveLef58EncConstraints_;
   std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
       belowLef58EncConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      aboveLef58EncEolConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      belowLef58EncEolConstraints_;
   // vector of maxspacing constraints
   std::vector<frLef58MaxSpacingConstraint*> maxSpacingConstraints_;
   drEolSpacingConstraint drEolCon_;
