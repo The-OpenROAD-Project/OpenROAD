@@ -184,6 +184,7 @@ class Cluster
   void addDbModule(odb::dbModule* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
   void addLeafMacro(odb::dbInst* leaf_macro);
+  void addLeafInst(odb::dbInst* inst);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
   const std::vector<odb::dbModule*> getDbModules() const;
   const std::vector<odb::dbInst*> getLeafStdCells() const;

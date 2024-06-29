@@ -199,6 +199,15 @@ void Cluster::addLeafMacro(odb::dbInst* leaf_macro)
   leaf_macros_.push_back(leaf_macro);
 }
 
+void Cluster::addLeafInst(odb::dbInst* inst)
+{
+  if (inst->isBlock()) {
+    addLeafMacro(inst);
+  } else {
+    addLeafStdCell(inst);
+  }
+}
+
 void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 {
   hard_macros_ = hard_macros;

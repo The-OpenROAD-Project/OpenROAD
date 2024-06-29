@@ -109,7 +109,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     }
     // Make sure we only visit things once
     rtree.remove(cursor);
-    cursor = next;
+    cursor = std::move(next);
     result.emplace_back(std::move(cells[cursor.second]));
   }
   // Replace with sorted vector
