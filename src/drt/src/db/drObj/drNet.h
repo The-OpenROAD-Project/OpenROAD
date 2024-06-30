@@ -148,7 +148,7 @@ class drNet : public drBlockObject
   void resetInQueue() { inQueue_ = false; }
   void setRouted() { routed_ = true; }
   void resetRouted() { routed_ = false; }
-  void setOrigGuides(std::vector<frRect>& in)
+  void setOrigGuides(const std::vector<frRect>& in)
   {
     origGuides_.assign(in.begin(), in.end());
   }
