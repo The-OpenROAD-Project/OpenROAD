@@ -149,8 +149,68 @@ void DetailedGlobalSwap::globalSwap()
 {
   // Nothing for than random greedy improvement with only a hpwl objective
   // and done such that every candidate cell is considered once!!!
-
+  // Initialization
   traversal_ = 0;
+  edgeMask_.resize(network_->getNumEdges());
+  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
+
+  mgr_->resortSegments();
+
+  // Get candidate cells.
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  mgr_->shuffle(candidates);
+
+  // Wirelength objective.
+  DetailedHPWL hpwlObj(network_);
+  hpwlObj.init(mgr_, nullptr);  // Ignore orientation.
+
+  double currHpwl = hpwlObj.curr();
+  double nextHpwl = 0.;
+
+  double initialTemp = 100.0;
+  double finalTemp = 1e-3;
+  double alpha = 0.99;  // Cooling rate
+  double temperature = initialTemp;
+  std::mt19937 rng(std::random_device{}());
+  std::uniform_real_distribution<double> distribution(0.0, 1.0);
+
+  // Consider each candidate cell once.
+  for (auto ndi : candidates) {
+    if (!generate(ndi)) {
+      continue;
+    }
+
+    double delta = hpwlObj.delta(mgr_->getNMoved(),
+                                 mgr_->getMovedNodes(),
+                                 mgr_->getCurLeft(),
+                                 mgr_->getCurBottom(),
+                                 mgr_->getCurOri(),
+                                 mgr_->getNewLeft(),
+                                 mgr_->getNewBottom(),
+                                 mgr_->getNewOri());
+
+    nextHpwl = currHpwl - delta;  // -delta is +ve is less.
+
+    if (nextHpwl <= currHpwl) {
+      mgr_->acceptMove();
+      currHpwl = nextHpwl;
+    } else {
+      double acceptanceProbability = std::exp(-delta / temperature);
+      if (acceptanceProbability > distribution(rng)) {
+        mgr_->acceptMove();
+        currHpwl = nextHpwl;
+      } else {
+        mgr_->rejectMove();
+      }
+    }
+
+    // Update temperature
+    temperature *= alpha;
+    if (temperature < finalTemp) {
+      break;
+    }
+  }
+  /*traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
   std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
 
@@ -189,7 +249,7 @@ void DetailedGlobalSwap::globalSwap()
     } else {
       mgr_->rejectMove();
     }
-  }
+  }*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
