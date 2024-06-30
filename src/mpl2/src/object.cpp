@@ -199,6 +199,15 @@ void Cluster::addLeafMacro(odb::dbInst* leaf_macro)
   leaf_macros_.push_back(leaf_macro);
 }
 
+void Cluster::addLeafInst(odb::dbInst* inst)
+{
+  if (inst->isBlock()) {
+    addLeafMacro(inst);
+  } else {
+    addLeafStdCell(inst);
+  }
+}
+
 void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 {
   hard_macros_ = hard_macros;
@@ -553,6 +562,10 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
         && (weight >= net_threshold)) {
       neighbors.push_back(cluster_id);
     }
+  }
+
+  if (neighbors.empty()) {
+    return false;
   }
 
   for (auto& [cluster_id, weight] : cluster.connection_map_) {

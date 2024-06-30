@@ -605,8 +605,9 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       netIn->addNode(instTermNode);
     }
   }
-  bool db_net_routed
-      = net->getWire() && net->getWireType() == odb::dbWireType::ROUTED;
+  bool db_net_routed = net->getWire()
+                       && (net->getWireType() == odb::dbWireType::ROUTED
+                           || net->getWireType() == odb::dbWireType::FIXED);
   bool fr_net_routed = !netIn->getShapes().empty() || !netIn->getVias().empty()
                        || !netIn->getPatchWires().empty();
   netIn->setHasInitialRouting(false);
@@ -648,6 +649,9 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
   if (!net->isSpecial() && net->getWire() != nullptr) {
     decoder.begin(net->getWire());
     odb::dbWireDecoder::OpCode pathId = decoder.next();
+    if (decoder.getWireType() == odb::dbWireType::FIXED) {
+      netIn->setFixed(true);
+    }
     while (pathId != odb::dbWireDecoder::END_DECODE) {
       // for each path start
       // when previous connection has a different direction of the current
@@ -3443,6 +3447,9 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
   odb::dbWireEncoder _wire_encoder;
   for (auto net : block->getNets()) {
     if (connFigs_.find(net->getName()) != connFigs_.end()) {
+      if (getDesign()->getTopBlock()->findNet(net->getName())->isFixed()) {
+        continue;
+      }
       odb::dbWire* wire = net->getWire();
       if (wire == nullptr) {
         wire = odb::dbWire::create(net);

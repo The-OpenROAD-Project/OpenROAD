@@ -56,12 +56,18 @@ utl::Logger* getLogger()
 
 void preview_dft(bool verbose)
 {
-  getDft()->preview_dft(verbose);
+  getDft()->previewDft(verbose);
 }
+
+void scan_replace()
+{
+  getDft()->scanReplace();
+}
+
 
 void insert_dft()
 {
-  getDft()->insert_dft();
+  getDft()->insertDft();
 }
 
 void set_dft_config_max_length(int max_length)

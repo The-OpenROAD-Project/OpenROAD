@@ -50,7 +50,9 @@ set_output_delay -clock clk  0.0  [all_outputs]
 set_wire_rc -layer metal2
 estimate_parasitics -placement
 repair_design
+report_worst_slack -max
 repair_timing
+report_worst_slack -max
 set def_file [make_result_file buffer_varying_lengths.def]
 write_def $def_file
 diff_files buffer_varying_lengths.defok $def_file
