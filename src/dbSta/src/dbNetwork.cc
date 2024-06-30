@@ -43,8 +43,6 @@
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
-//#define DEBUG_DBNWK 1
-
 namespace sta {
 
 using utl::ORD;
@@ -1013,26 +1011,6 @@ Port* dbNetwork::port(const Pin* pin) const
 
 PortDirection* dbNetwork::direction(const Port* port) const
 {
-  static int debug;
-  debug++;
-
-#ifdef DEBUG_DBNWK
-  printf("D %d Getting direction of port %s\n", debug, name(port));
-  if (isBus(port)) {
-    printf("This is a bus !\n");
-    int from_ix = fromIndex(port);
-    Port* bus_pin = findBusBit(port, from_ix);
-    port = bus_pin;
-    if (libertyPort(port)) {
-      printf("This is a liberty bus port!\n");
-      return PortDirection::unknown();
-    }
-  } else if (isBundle(port)) {
-    printf("This is a bundle\n");
-  } else if (libertyPort(port)) {
-    printf("This is a liberty port\n");
-  }
-#endif
   dbMTerm* mterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   dbBTerm* bterm = nullptr;
@@ -1052,29 +1030,11 @@ PortDirection* dbNetwork::direction(const Port* port) const
 
 PortDirection* dbNetwork::direction(const Pin* pin) const
 {
-  static int debug;
-  debug++;
-
   // ODB does not undestand tristates so look to liberty before ODB for port
   // direction.
-
-#ifdef DEBUG_DBNWK
-  printf("D %d **Getting direction of pin %s on instance %s of cell %s\n",
-         debug,
-         name(pin),
-         name(instance(pin)),
-         name(cell(port(pin))));
-  if (cell(port(pin)) == top_cell_)
-    printf("A top port !\n");
-  else
-    printf("Not a top port !\n");
-#endif
-
-  if (isConcretePort(port(pin))) {
-    LibertyPort* lib_port = libertyPort(pin);
-    if (lib_port) {
-      return lib_port->direction();
-    }
+  LibertyPort* lib_port = libertyPort(pin);
+  if (lib_port) {
+    return lib_port->direction();
   }
 
   dbITerm* iterm;
@@ -1091,7 +1051,6 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
   }
-
   if (modbterm) {
     PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
@@ -1101,29 +1060,7 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     std::string pin_name = moditerm->getName();
     dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
-
-#ifdef DEBUG_DBNWK
-    printf(
-        "D %d *** Getting direction of pin %s from dbModule %s instance %s\n",
-        debug,
-        name(pin),
-        module->getName(),
-        mod_inst->getName());
-    printf("Dump of bterms on module\n");
-    for (dbModBTerm* mod_bterm : module->getModBTerms()) {
-      debug++;
-      printf("D %d module bterm %s \n", debug, mod_bterm->getName());
-    }
-#endif
-
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
-#ifdef DEBUG_DBNWK
-    if (!modbterm_local) {
-      printf("Something very bad ! Cannot find pin %s on module %s\n",
-             pin_name.c_str(),
-             module->getName());
-    }
-#endif
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
@@ -1494,10 +1431,6 @@ void dbNetwork::makeLibrary(dbLib* lib)
 void dbNetwork::makeCell(Library* library, dbMaster* master)
 {
   const char* cell_name = master->getConstName();
-#ifdef DEBUG_DBNWK
-  printf("Making cell %s\n", cell_name);
-#endif
-
   Cell* cell = makeCell(library, cell_name, true, nullptr);
   master->staSetCell(reinterpret_cast<void*>(cell));
   // keep track of db leaf cells. These are cells for which we
@@ -1509,19 +1442,12 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   // Use the default liberty for "linking" the db/LEF masters.
   LibertyCell* lib_cell = findLibertyCell(cell_name);
   if (lib_cell) {
-#ifdef DEBUG_DBNWK
-    printf("A liberty cell %s\n", cell_name);
-#endif
     ccell->setLibertyCell(lib_cell);
     lib_cell->setExtCell(reinterpret_cast<void*>(master));
   }
 
   for (dbMTerm* mterm : master->getMTerms()) {
     const char* port_name = mterm->getConstName();
-#ifdef DEBUG_DBNWK
-    printf("Making mterm port %s\n", port_name);
-#endif
-
     Port* port = makePort(cell, port_name);
     PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
@@ -1531,15 +1457,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     registerConcretePort(port);
     if (lib_cell) {
       LibertyPort* lib_port = lib_cell->findLibertyPort(port_name);
-#ifdef DEBUG_DBNWK
-      if (dir->isPowerGround())
-        printf("A power ground port %p (lib port %p)\n", port, lib_port);
-
-#endif
       if (lib_port) {
-#ifdef DEBUG_DBNWK
-        printf("A liberty port\n");
-#endif
         cport->setLibertyPort(lib_port);
         lib_port->setExtPort(mterm);
       } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
@@ -1577,9 +1495,6 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   CellPortIterator* port_iter = portIterator(cell);
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
-#ifdef DEBUG_DBNWK
-    printf("Registering liberty port %s\n", name(cur_port));
-#endif
     registerConcretePort(cur_port);
   }
 
@@ -1634,9 +1549,6 @@ void dbNetwork::makeTopCell()
   CellPortIterator* port_iter = portIterator(top_cell_);
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
-#ifdef DEBUG_DBNWK
-    printf("Registering top level port %s\n", name(cur_port));
-#endif
     registerConcretePort(cur_port);
   }
 }
@@ -2140,14 +2052,14 @@ void dbNetwork::staToDb(const Port* port,
   mterm = nullptr;
   modbterm = nullptr;
 
+  // if it is a concrete port we get the port stuff from the extPort
+  // void* field in the fake library created.
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
-#ifdef DEBUG_DBNWK
-    printf("A leaf port\n");
-#endif
     return;
   } else {
+    // just get the port directly from odb
     dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
     dbObjectType type = obj->getObjectType();
     if (type == dbModBTermObj) {
@@ -2306,6 +2218,10 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
+  // We keep a note of the hierarchical ports and avoid
+  // trying to coerce them with the concrete network api calls
+  // Because of the way the fake library is build up outside of
+  // odb there is no easy way of doing the type conversion.
   const Port* cur_port = port(pin);
   if (isHPort(cur_port)) {
     return nullptr;
@@ -2317,6 +2233,10 @@ LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 /*
 We keep a registry of the concrete cells.
 For these we know to use the concrete network interface.
+The concrete cells are created outside of the odb world
+-- attempting to type cast those can lead to bad pointers.
+So we simply note them and then when we inspect a cell
+we can decide whether or not to use the ConcreteNetwork api.
 */
 
 void dbNetwork::registerConcreteCell(const Cell* cell)
@@ -2349,19 +2269,11 @@ bool dbNetwork::isConcretePort(const Port* port) const
 
 bool dbNetwork::hasMembers(const Port* port) const
 {
-  static int debug;
-  debug++;
-#ifdef DEBUG_DBNWK
-  printf("D: %d Checking if (%s) port %s has members\n",
-         debug,
-         isBus(port) ? "bus" : "non-bus",
-         name(port));
-#endif
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->hasMembers();
   } else {
-    // TODO: bus ports in hierarchy.
+    // TODO: bus ports in hierarchy. (Bus support in next pull)
     return false;
   }
   return false;
@@ -2373,7 +2285,7 @@ Port* dbNetwork::findMember(const Port* port, int index) const
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return reinterpret_cast<Port*>(cport->findMember(index));
   } else {
-    // TODO: hierarhcial ports
+    // TODO: hierarhcial ports, bus support in next pull.
     return nullptr;
   }
 }
