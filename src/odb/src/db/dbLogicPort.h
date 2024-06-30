@@ -35,7 +35,7 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -48,6 +48,7 @@ class _dbLogicPort : public _dbObject
  public:
   _dbLogicPort(_dbDatabase*, const _dbLogicPort& r);
   _dbLogicPort(_dbDatabase*);
+
   ~_dbLogicPort();
 
   bool operator==(const _dbLogicPort& rhs) const;

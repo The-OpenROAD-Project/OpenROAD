@@ -3,8 +3,11 @@ record_tests {
   bump_array_remove
   bump_array_remove_single
 
+  make_corner_sites
   make_io_sites
+  non_top_layer
   place_pad
+  place_pad_outsideofrow
   place_bondpad
   place_bondpad_stagger
   place_pad_no_master
@@ -25,4 +28,7 @@ record_tests {
 
   skywater130_caravel
   skywater130_coyote_tc
+
+  #pad_man_tcl_check
+  #pad_readme_msgs_check
 }

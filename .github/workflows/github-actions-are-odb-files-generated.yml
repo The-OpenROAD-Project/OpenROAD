@@ -1,0 +1,38 @@
+name: Check That ODB Files Are Generated
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup
+        run: |
+          sudo apt update
+          sudo apt install -y python3-jinja2 git clang-format-14
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check that ODB Generated Files Are Up To Date
+        run: |
+          cd src/odb/src/codeGenerator/
+          ./generate
+          if [ -z "$(git status --porcelain)" ]; then
+            exit 0
+          else
+            echo ::group::Non-Empty Git Status Oputput
+            git status --porcelain
+            echo ::endgroup::
+            
+            echo ::group::Non-Empty Git Diff Oputput
+            git diff
+            echo ::endgroup::
+
+            printf "Your ODB generated files are out of date\n"
+            printf "run ./generate in the src/odb/src/codeGenerator folder"
+            exit 1
+          fi
+

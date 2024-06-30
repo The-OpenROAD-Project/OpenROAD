@@ -33,11 +33,11 @@
 #pragma once
 
 #include "dbBox.h"
-#include "dbId.h"
-#include "dbObject.h"
-#include "dbTypes.h"
-#include "geom.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -51,7 +51,10 @@ struct _dbSBoxFlags
   dbWireShapeType::Value _wire_type : 6;
   uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
                         // octilinear
-  uint _spare_bits : 24;
+  uint _via_bottom_mask : 2;
+  uint _via_cut_mask : 2;
+  uint _via_top_mask : 2;
+  uint _spare_bits : 18;
 };
 
 class _dbSBox : public _dbBox
@@ -81,6 +84,9 @@ inline _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
 {
   _sflags._wire_type = dbWireShapeType::COREWIRE;
   _sflags._direction = 0;
+  _sflags._via_bottom_mask = 0;
+  _sflags._via_cut_mask = 0;
+  _sflags._via_top_mask = 0;
   _sflags._spare_bits = 0;
 }
 

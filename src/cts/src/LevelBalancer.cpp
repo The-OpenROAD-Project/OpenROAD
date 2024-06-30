@@ -82,11 +82,11 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 
 void LevelBalancer::addBufferLevels(TreeBuilder* builder,
                                     const std::vector<ClockInst*> cluster,
-                                    Clock::SubNet* driverNet,
+                                    ClockSubNet* driverNet,
                                     const unsigned bufLevels,
                                     const std::string& nameSuffix)
 {
-  Clock::SubNet* prevLevelSubNet = driverNet;
+  ClockSubNet* prevLevelSubNet = driverNet;
 
   // Compute driver, receiver locations
   double totalX = 0, totalY = 0;
@@ -101,16 +101,28 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
+    double x
+        = (driverX
+           + (centroidX - driverX) * (double) (level + 1) / (bufLevels + 1))
+          / wireSegmentUnit_;
+    double y
+        = (driverY
+           + (centroidY - driverY) * (double) (level + 1) / (bufLevels + 1))
+          / wireSegmentUnit_;
+    Point<double> bufferLoc(x, y);
+    Point<double> legalBufferLoc
+        = builder->legalizeOneBuffer(bufferLoc, options_->getSinkBuffer());
     ClockInst& levelBuffer = builder->getClock().addClockBuffer(
         "clkbuf_level_" + std::to_string(level) + "_" + nameSuffix
             + std::to_string(levelBufCount_),
         options_->getSinkBuffer(),
-        driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
-        driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
+        legalBufferLoc.getX() * wireSegmentUnit_,
+        legalBufferLoc.getY() * wireSegmentUnit_);
+    builder->commitLoc(legalBufferLoc);
     builder->addTreeLevelBuffer(&levelBuffer);
 
     // Add Net
-    Clock::SubNet* levelSubNet = &(builder->getClock().addSubNet(
+    ClockSubNet* levelSubNet = &(builder->getClock().addSubNet(
         "clknet_level_" + std::to_string(level) + "_" + nameSuffix
         + std::to_string(levelBufCount_)));
     levelBufCount_++;
@@ -144,7 +156,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
       maxTreeDepth,
       builder->getClock().getName());
   unsigned clusterCnt = 0;
-  builder->getClock().forEachSubNet([&](Clock::SubNet& subNet) {
+  builder->getClock().forEachSubNet([&](ClockSubNet& subNet) {
     std::map<unsigned, std::vector<ClockInst*>> subClusters;
     std::set<ClockInst*> instsToRemove;
     subNet.forEachSink([&](ClockInst* clkInst) {
@@ -164,7 +176,7 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
     }
 
     clusterCnt++;
-    subNet.removeSinks(instsToRemove);
+    subNet.removeSinks(std::move(instsToRemove));
     subNet.setLeafLevel(false);
     unsigned subClusterCnt = 0;
     for (const auto& cluster : subClusters) {

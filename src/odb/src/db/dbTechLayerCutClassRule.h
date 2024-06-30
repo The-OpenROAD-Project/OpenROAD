@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -54,6 +54,7 @@ class _dbTechLayerCutClassRule : public _dbObject
  public:
   _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
+
   ~_dbTechLayerCutClassRule();
 
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;

@@ -264,7 +264,7 @@ class Descriptor
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getShortName(std::any object) const
   {
-    return getName(object);
+    return getName(std::move(object));
   }
   virtual std::string getTypeName() const = 0;
   virtual std::string getTypeName(std::any /* object */) const
@@ -355,7 +355,7 @@ class Selected
   Selected() : object_({}), descriptor_(nullptr) {}
 
   Selected(std::any object, const Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+      : object_(std::move(object)), descriptor_(descriptor)
   {
   }
 
@@ -611,6 +611,7 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 
@@ -716,6 +717,8 @@ class Gui
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
+  Renderer::Setting getHeatMapSetting(const std::string& name,
+                                      const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the

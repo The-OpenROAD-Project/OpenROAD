@@ -21,6 +21,5 @@ clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -wire_unit 20 \
                      -sink_clustering_enable \
                      -distance_between_buffers 100 \
-                     -num_static_layers 1
-
-
+                     -num_static_layers 1 \
+                     -obstruction_aware    

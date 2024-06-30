@@ -26,16 +26,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
-
 #include "FlexRP.h"
-#include "db/infra/frTime.h"
 #include "frProfileTask.h"
-#include "gc/FlexGC.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 void FlexRP::init()
 {
@@ -48,14 +42,17 @@ void FlexRP::init()
     if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    tech_->via2ViaForbiddenLen.push_back({});
-    tech_->viaForbiddenTurnLen.push_back({});
-    tech_->viaForbiddenPlanarLen.push_back({});
-    tech_->line2LineForbiddenLen.push_back({});
-    tech_->viaForbiddenThrough.push_back({});
-    for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen.push_back({});
-      ndr->viaForbiddenTurnLen.push_back({});
+    tech_->via2ViaForbiddenLen_.push_back({});
+    tech_->via2ViaPrlLen_.push_back({});
+    tech_->viaForbiddenTurnLen_.push_back({});
+    tech_->viaForbiddenPlanarLen_.push_back({});
+    tech_->line2LineForbiddenLen_.push_back({});
+    tech_->viaForbiddenThrough_.push_back({});
+    for (auto& ndr : tech_->nonDefaultRules_) {
+      ndr->via2ViaForbiddenLen_.push_back({});
+      ndr->viaForbiddenTurnLen_.push_back({});
     }
   }
 }
+
+}  // namespace drt

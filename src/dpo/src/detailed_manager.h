@@ -41,6 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
+#include <memory>
 #include <vector>
 
 #include "network.h"
@@ -113,9 +114,9 @@ class DetailedMgr
       std::vector<std::vector<std::pair<double, double>>>& intervals);
 
   void findSegments();
-  DetailedSeg* findClosestSegment(Node* nd);
+  DetailedSeg* findClosestSegment(const Node* nd);
   void findClosestSpanOfSegmentsDfs(
-      Node* ndi,
+      const Node* ndi,
       DetailedSeg* segPtr,
       double xmin,
       double xmax,
@@ -124,7 +125,7 @@ class DetailedMgr
       std::vector<DetailedSeg*>& stack,
       std::vector<std::vector<DetailedSeg*>>& candidates);
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
-  bool isInsideABlockage(Node* nd, double position);
+  bool isInsideABlockage(const Node* nd, double position);
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
@@ -139,9 +140,11 @@ class DetailedMgr
                                int newX,
                                int segment,
                                Node* violatingNode);
-  void removeCellFromSegment(Node* nd, int seg);
+  void removeCellFromSegment(const Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
-  double getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells);
+  double getCellSpacing(const Node* ndl,
+                        const Node* ndr,
+                        bool checkPinsOnCells);
 
   void collectSingleHeightCells();
   void collectMultiHeightCells();
@@ -218,7 +221,7 @@ class DetailedMgr
   }
   const std::vector<Node*>& getWideCells() const { return wideCells_; }
 
-  Placer_RNG* getRng() const { return rng_; }
+  void shuffle(std::vector<Node*>& nodes);
   int getRandom(int limit) const { return (*rng_)() % limit; }
 
   const std::vector<int>& getCurLeft() const { return curLeft_; }
@@ -227,7 +230,7 @@ class DetailedMgr
   const std::vector<int>& getNewLeft() const { return newLeft_; }
   const std::vector<int>& getNewBottom() const { return newBottom_; }
   const std::vector<unsigned>& getNewOri() const { return newOri_; }
-  const std::vector<Node*> getMovedNodes() const { return movedNodes_; }
+  const std::vector<Node*>& getMovedNodes() const { return movedNodes_; }
   int getNMoved() const { return nMoved_; }
 
   void getSpaceAroundCell(int seg,
@@ -261,9 +264,9 @@ class DetailedMgr
   void rejectMove();
 
   // For help aligning cells to sites.
-  bool alignPos(Node* ndi, int& xi, int xl, int xr);
+  bool alignPos(const Node* ndi, int& xi, int xl, int xr);
   int getMoveLimit() { return moveLimit_; }
-  void setMoveLimit(uint newMoveLimit) { moveLimit_ = newMoveLimit; }
+  void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   struct compareNodesX
   {
@@ -335,10 +338,10 @@ class DetailedMgr
   bool addToMoveList(Node* ndi,
                      int curLeft,
                      int curBottom,
-                     std::vector<int>& curSegs,
+                     const std::vector<int>& curSegs,
                      int newLeft,
                      int newBottom,
-                     std::vector<int>& newSegs);
+                     const std::vector<int>& newSegs);
 
   // Standard stuff.
   Architecture* arch_;
@@ -346,7 +349,7 @@ class DetailedMgr
   RoutingParams* rt_;
 
   // For output.
-  utl::Logger* logger_;
+  utl::Logger* logger_ = nullptr;
 
   // Info about rows.
   int numSingleHeightRows_;
@@ -366,20 +369,22 @@ class DetailedMgr
   std::vector<std::vector<Node*>> cellsInSeg_;
   std::vector<std::vector<DetailedSeg*>> segsInRow_;
   std::vector<DetailedSeg*> segments_;
+  // size == #nodes
   std::vector<std::vector<DetailedSeg*>> reverseCellToSegs_;
 
   // For short and pin access stuff...
   std::vector<std::vector<std::vector<Rectangle>>> obstacles_;
 
   // Random number generator.
-  Placer_RNG* rng_;
+  std::unique_ptr<Placer_RNG> rng_;
 
-  // Info about cells.
-  std::vector<Node*> singleHeightCells_;  // Single height cells.
-  std::vector<std::vector<Node*>>
-      multiHeightCells_;  // Multi height cells by height.
-  std::vector<Node*>
-      wideCells_;  // Wide movable cells.  Can be single of multi.
+  // Info about cells:
+  // Single height cells.
+  std::vector<Node*> singleHeightCells_;
+  // Multi height cells by height.
+  std::vector<std::vector<Node*>> multiHeightCells_;
+  // Wide movable cells.  Can be single or multi height.
+  std::vector<Node*> wideCells_;
 
   // Original cell positions.
   std::vector<int> origBottom_;
@@ -387,7 +392,7 @@ class DetailedMgr
 
   std::vector<Rectangle> boxes_;
 
-  // For generating a move list...
+  // For generating a move list... (size = moveLimit_)
   std::vector<int> curLeft_;
   std::vector<int> curBottom_;
   std::vector<int> newLeft_;

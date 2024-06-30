@@ -111,10 +111,11 @@ uint64_t ScanCellsBucket::numberOfCells(size_t hash_domain) const
 
 std::unique_ptr<ScanArchitect> ScanArchitect::ConstructScanScanArchitect(
     const ScanArchitectConfig& config,
-    std::unique_ptr<ScanCellsBucket> scan_cells_bucket)
+    std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
+    utl::Logger* logger_)
 {
-  return std::make_unique<ScanArchitectHeuristic>(config,
-                                                  std::move(scan_cells_bucket));
+  return std::make_unique<ScanArchitectHeuristic>(
+      config, std::move(scan_cells_bucket), logger_);
 }
 
 ScanArchitect::ScanArchitect(const ScanArchitectConfig& config,

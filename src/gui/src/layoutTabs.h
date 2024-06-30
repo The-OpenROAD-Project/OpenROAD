@@ -141,6 +141,7 @@ class LayoutTabs : public QTabWidget
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
   utl::Logger* logger_;
+  bool command_executing_ = false;
 
   // Set of nets to focus drawing on, if empty draw everything
   std::set<odb::dbNet*> focus_nets_;

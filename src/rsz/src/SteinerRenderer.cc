@@ -10,7 +10,7 @@
 
 namespace rsz {
 
-SteinerRenderer::SteinerRenderer() : tree_(nullptr)
+SteinerRenderer::SteinerRenderer()
 {
   gui::Gui::get()->registerRenderer(this);
 }

@@ -56,11 +56,15 @@ class Net
   int getNumPins() const { return pins_.size(); }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
+  void setHasWires(bool in) { has_wires_ = in; }
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
+  bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
 
  private:
+  int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
+
   odb::dbNet* net_;
   std::vector<Pin> pins_;
   float slack_;

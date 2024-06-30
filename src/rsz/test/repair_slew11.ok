@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
@@ -38,9 +34,16 @@ Pin                                    Limit     Cap   Slack
 wire1/Z                                60.65   20.68   39.97 (MET)
 
 Net in1
+ Pin capacitance: 0.88-0.97
+ Wire capacitance: 12.54-12.54
+ Total capacitance: 13.42-13.51
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
 Driver pins
  in1 input port (0, 0)
 
 Load pins
- wire7/A input (BUF_X1) (166, 1)
+ wire7/A input (BUF_X1) 0.88-0.97 (166, 1)
 

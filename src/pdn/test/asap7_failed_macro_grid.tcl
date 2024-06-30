@@ -17,7 +17,8 @@ add_pdn_connect -grid {top} -layers {M1 M2}
 add_pdn_connect -grid {top} -layers {M2 M5}
 add_pdn_connect -grid {top} -layers {M5 M6}
 
-define_pdn_grid -name {CORE_macro_grid_1} -voltage_domains {CORE} -macro -orient {R0 R180 MX MY} -cells {.*}
+define_pdn_grid -name {CORE_macro_grid_1} -voltage_domains {CORE} -macro \
+  -orient {R0 R180 MX MY} -cells {.*}
 add_pdn_connect -grid {CORE_macro_grid_1} -layers {M4 M5}
 
 catch {pdngen} err

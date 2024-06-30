@@ -63,7 +63,7 @@ using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
 using utl::GPL;
 
-typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
+using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
 #ifdef ENABLE_GPU
 ResidualError cudaSparseSolve(int iter,

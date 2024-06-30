@@ -36,6 +36,7 @@
 #include <set>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "odb/dbWireGraph.h"
 
@@ -96,35 +97,6 @@ class DbBlockDescriptor : public Descriptor
 class DbInstDescriptor : public Descriptor
 {
  public:
-  enum Type
-  {
-    BLOCK,
-    PAD,
-    PAD_INPUT,
-    PAD_OUTPUT,
-    PAD_INOUT,
-    PAD_POWER,
-    PAD_SPACER,
-    PAD_AREAIO,
-    ENDCAP,
-    FILL,
-    TAPCELL,
-    BUMP,
-    COVER,
-    ANTENNA,
-    TIE,
-    LEF_OTHER,
-    STD_CELL,
-    STD_BUFINV,
-    STD_BUFINV_CLK_TREE,
-    STD_BUFINV_TIMING_REPAIR,
-    STD_CLOCK_GATE,
-    STD_LEVEL_SHIFT,
-    STD_SEQUENTIAL,
-    STD_PHYSICAL,
-    STD_COMBINATIONAL,
-    STD_OTHER
-  };
   DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
@@ -142,9 +114,6 @@ class DbInstDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-
-  Type getInstanceType(odb::dbInst* inst) const;
-  std::string getInstanceTypeText(Type type) const;
 
  private:
   void makeMasterOptions(odb::dbMaster* master,
@@ -251,8 +220,8 @@ class DbNetDescriptor : public Descriptor
   const std::set<odb::dbNet*>& guide_nets_;
   const std::set<odb::dbNet*>& tracks_nets_;
 
-  odb::dbNet* getNet(std::any object) const;
-  odb::dbObject* getSink(std::any object) const;
+  odb::dbNet* getNet(const std::any& object) const;
+  odb::dbObject* getSink(const std::any& object) const;
 
   static const int max_iterms_ = 10000;
 };
@@ -391,16 +360,25 @@ class DbTechLayerDescriptor : public Descriptor
 
 // The ap doesn't know its location as it is associated the master and
 // needs the iterm to get a location
-struct DbItermAccessPoint
+struct DbTermAccessPoint
 {
-  odb::dbAccessPoint* ap;
-  odb::dbITerm* iterm;
+  odb::dbAccessPoint* ap{nullptr};
+  odb::dbITerm* iterm{nullptr};
+  odb::dbBTerm* bterm{nullptr};
+  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbITerm* itermIn)
+      : ap(apIn), iterm(itermIn)
+  {
+  }
+  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbBTerm* btermIn)
+      : ap(apIn), bterm(btermIn)
+  {
+  }
 };
 
-class DbItermAccessPointDescriptor : public Descriptor
+class DbTermAccessPointDescriptor : public Descriptor
 {
  public:
-  DbItermAccessPointDescriptor(odb::dbDatabase* db);
+  DbTermAccessPointDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -682,9 +660,9 @@ class DbSiteDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
 
-  odb::dbSite* getSite(std::any object) const;
-  odb::Rect getRect(std::any object) const;
-  bool isSpecificSite(std::any object) const;
+  odb::dbSite* getSite(const std::any& object) const;
+  odb::Rect getRect(const std::any& object) const;
+  bool isSpecificSite(const std::any& object) const;
 };
 
 class DbRowDescriptor : public Descriptor

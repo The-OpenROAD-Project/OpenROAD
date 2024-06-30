@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -49,7 +49,8 @@ class _dbGuide : public _dbObject
  public:
   _dbGuide(_dbDatabase*, const _dbGuide& r);
   _dbGuide(_dbDatabase*);
-  ~_dbGuide();
+
+  ~_dbGuide() = default;
 
   bool operator==(const _dbGuide& rhs) const;
   bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }

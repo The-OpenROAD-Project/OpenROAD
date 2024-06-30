@@ -38,17 +38,17 @@
 #include <string>
 
 #include "clockWidget.h"
-#include "db.h"
-#include "dbShape.h"
-#include "defin.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "geom.h"
 #include "heatMapPlacementDensity.h"
 #include "inspector.h"
 #include "layoutViewer.h"
-#include "lefin.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/defin.h"
+#include "odb/geom.h"
+#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -369,6 +369,7 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 
   auto inst = block->findInst(name);
   if (!inst) {
+    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
     return;
   }
   SelectionSet sel_inst_set;
@@ -385,6 +386,7 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 
   auto net = block->findNet(name);
   if (!net) {
+    logger_->error(utl::GUI, 101, "No net named {} found.", name);
     return;
   }
   SelectionSet selection_set;
@@ -674,6 +676,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -731,6 +734,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(width_px) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -747,7 +751,7 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
@@ -892,6 +896,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
     source->destroyMap();
+    source->ensureMap();
   } else {
     auto settings = source->getSettings();
 
@@ -908,7 +913,7 @@ void Gui::setHeatMapSetting(const std::string& name,
                      options.join(", ").toStdString());
     }
 
-    auto current_value = settings[option];
+    auto& current_value = settings[option];
     if (std::holds_alternative<bool>(current_value)) {
       // is bool
       if (auto* s = std::get_if<bool>(&value)) {
@@ -952,6 +957,33 @@ void Gui::setHeatMapSetting(const std::string& name,
   }
 
   source->getRenderer()->redraw();
+}
+
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (settings.count(option) == 0) {
+    QStringList options;
+    for (const auto& [key, kv] : settings) {
+      options.append(QString::fromStdString(key));
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   options.join(", ").toStdString());
+  }
+
+  return settings[option];
 }
 
 void Gui::dumpHeatMap(const std::string& name, const std::string& file)
@@ -1411,6 +1443,12 @@ Descriptor::Properties Selected::getProperties() const
   odb::Rect bbox;
   if (getBBox(bbox)) {
     props.push_back({"BBox", bbox});
+    // convenience; the user may want to know the dimensions
+    props.push_back(
+        {"BBox Width, Height",
+         std::string("(") + Descriptor::Property::convert_dbu(bbox.dx(), false)
+             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)
+             + ")"});
   }
 
   return props;
@@ -1458,6 +1496,10 @@ std::string Descriptor::Property::toString(const std::any& value)
     text += convert_dbu(v->yMin(), false) + "), (";
     text += convert_dbu(v->xMax(), false) + ",";
     text += convert_dbu(v->yMax(), false) + ")";
+    return text;
+  } else if (auto v = std::any_cast<odb::Point>(&value)) {
+    std::string text = fmt::format(
+        "({},{})", convert_dbu(v->x(), false), convert_dbu(v->y(), false));
     return text;
   }
 

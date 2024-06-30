@@ -60,6 +60,7 @@ void initReplace(OpenRoad* openroad)
   Gpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
   openroad->getReplace()->init(openroad->getDb(),
+                               openroad->getSta(),
                                openroad->getResizer(),
                                openroad->getGlobalRouter(),
                                openroad->getLogger());

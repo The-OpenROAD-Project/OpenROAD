@@ -1,58 +1,173 @@
-# PDNSim
+# IR Drop Analysis
 
-PDNSim is an open-source static IR analyzer.
+The IR Drop Analysis module in OpenROAD (`psm`) is based on PDNSim,
+an open-source static IR analyzer.
 
 Features:
 
--   Report worst IR drop.
--   Report worst current density over all nodes and wire segments in the
-    power distribution network, given a placed and PDN-synthesized design.
--   Check for floating PDN stripes on the power and ground nets.
--   Spice netlist writer for power distribution network wire segments.
+- Report worst IR drop.
+- Report worst current density over all nodes and wire segments in the
+  power distribution network, given a placed and PDN-synthesized design.
+- Check for floating PDN stripes on the power and ground nets.
+- Spice netlist writer for power distribution network wire segments.
 
-
-<img align = "right" width="50%" src="doc/current_map.jpg">
-<img align = "right" width="50%" src="doc/IR_map.jpg">
+![picorv32](doc/picorv32.png)
 
 ## Commands
 
-```
-set_pdnsim_net_voltage -net <net_name> -voltage <voltage_value>
-check_power_grid -net <net_name> [-error_file <filename>]
-analyze_power_grid [-vsrc <voltage_source_location_file>] \
-                   -net <net_name> \
-                   [-outfile <filename>] \
-                   [-enable_em] \
-                   [-em_outfile <filename>]
-                   [-dx]
-                   [-dy]
-                   [-em_outfile <filename>]
-                   [-node_density <node_pitch>]
-                   [-node_density_factor <factor>]
-                   [-corner corner] \
-                   [-error_file <filename>]
-write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
 ```
 
-Options description:
-- ``vsrc``: (optional) file to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
-- ``dx,dy``: (optional) these arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc.
-- ``net``: (mandatory) is the name of the net to analyze, power or ground net name.
-- ``enable_em``: (optional) is the flag to report current per power grid segment.
-- ``outfile``: (optional) filename specified per-instance voltage written into file.
-- ``error_file``: (optional) filename to write each connectivity error into.
-- ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists.
-- ``voltage``: (optional) Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
-- ``node_density``: (optional)  This value can be specfied by the user in um to determine the node density on the std. cell rails. Cannot be used together with node_density_factor.
-- ``node_density_factor``: (optional) Integer value factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with node_density. Default value is 5.
-- ``corner``: (optional) Corner to use for analysis.
+### Analyze Power Grid
+
+This command analyzes power grid.
+
+```tcl
+analyze_power_grid
+    -net net_name
+    [-corner corner]
+    [-error_file error_file]
+    [-voltage_file voltage_file]
+    [-enable_em]
+    [-em_outfile em_file]
+    [-vsrc voltage_source_file]
+    [-source_type FULL|BUMPS|STRAPS]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to analyze, power or ground net name. |
+| `-corner` | Corner to use for analysis. |
+| `-error_file` | File to write power grid error to. |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
+| `-enable_em` | Report current per power grid segment. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
+| `-voltage_file` | Write per-instance voltage into the file. |
+| `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
+
+### Check Power Grid
+
+This command checks power grid.
+
+```tcl
+check_power_grid
+    -net net_name
+    [-floorplanning]
+    [-error_file error_file]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
+| `-error_file` | File to write power grid errors to. |
+
+### Write Spice Power Grid
+
+This command writes the `spice` file for power grid.
+
+```tcl
+write_pg_spice
+    -net net_name
+    [-vsrc vsrc_file]
+    [-corner corner]
+    [-source_type FULL|BUMPS|STRAPS]
+    spice_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
+| `-corner` | Corner to use for analysis. |
+| `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
+| `spice_file` | File to write spice netlist to. |
+
+### Set PDNSim Net voltage
+
+This command sets PDNSim net voltage.
+
+```tcl
+set_pdnsim_net_voltage
+    -net net_name
+    -voltage volt
+    [-corner corner]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to analyze. It must be a power or ground net name. |
+| `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
+| `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+
+### Set PDNSim Power Source Settings
+
+Set PDNSim power source setting.
+
+```tcl
+set_pdnsim_source_settings
+    [-bump_dx pitch]
+    [-bump_dy pitch]
+    [-bump_size size]
+    [-bump_interval interval]
+    [-strap_track_pitch pitch]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-bump_dx`,`-bump_dy` | Set the bump pitch to decide the voltage source location. The default bump pitch is 140um. |
+| `-bump_size` | Set the bump size. The default bump size is 70um. |
+| `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
+| `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
+
+## Source grid options
+
+The source grid models how power is going be delivered to the power grid.
+The image below illustrate how they can be modeled, the red elements are the source models, the black horizontal boxes represent the top metal layer of the power grid, and the gray boxes indicate these are not used in the modeling.
+
+| Bumps with 2x interval | Bumps with 3x interval | Straps | Full |
+| - | - | - | - |
+| ![Image 1](doc/top_grid_bumps_2x.png) | ![Image 2](doc/top_grid_bumps_3x.png) | ![Image 1](doc/top_grid_straps.png) | ![Image 2](doc/top_grid_full.png) |
+
+
+## Useful Developer Commands
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/pdnsim.cpp) or the [swig file](./src/pdnsim.i).
+
+| Command Name | Description |
+| ----- | ----- |
+| `find_net` | Get a reference to net name. |
 
 ## Example scripts
 
-See the file `test/Vsrc_aes_vdd.loc` for an example
-with a description specified [here](doc/Vsrc_description.md).
+Example scripts demonstrating how to run PDNSim on a sample design on `aes` as follows:
+
+```
+./test/aes_test_vdd.tcl
+./test/aes_test_vss.tcl
+```
 
 ## Regression tests
+
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
+
+Simply run the following script:
+
+```shell
+./test/regression
+```
 
 ## Limitations
 
@@ -61,21 +176,10 @@ with a description specified [here](doc/Vsrc_description.md).
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+psm+in%3Atitle)
 about this tool.
 
-## Detailed paper
+## References
 
-See [here](doc/PDNSim-documentation.pdf).
-
-## Cite this Work
-
-If you find PDNSim useful, please use the following `bibtex` to cite it:
-
-```
-@misc{pdnsim,
-author = "V. A. Chhabria and S. S. Sapatnekar",
-title={{PDNSim}},
-note= "\url{https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/PDNSim}"
-}
-```
+1. PDNSIM [documentation](doc/PDNSim-documentation.pdf)
+1. Chhabria, V.A. and Sapatnekar, S.S. (no date) The-openroad-project/pdnsim: Power Grid Analysis, GitHub. Available at: https://github.com/The-OpenROAD-Project/PDNSim (Accessed: 24 July 2023). [(link)](https://github.com/The-OpenROAD-Project/PDNSim)
 
 ## License
 

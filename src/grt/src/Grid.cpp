@@ -54,16 +54,14 @@ void Grid::init(const odb::Rect& die_area,
   perfect_regular_x_ = perfect_regular_x;
   perfect_regular_y_ = perfect_regular_y;
   num_layers_ = num_layers;
-  spacings_.resize(num_layers);
-  min_widths_.resize(num_layers);
+  track_pitches_.resize(num_layers);
   horizontal_edges_capacities_.resize(num_layers);
   vertical_edges_capacities_.resize(num_layers);
 }
 
 void Grid::clear()
 {
-  spacings_.clear();
-  min_widths_.clear();
+  track_pitches_.clear();
   horizontal_edges_capacities_.clear();
   vertical_edges_capacities_.clear();
 }
@@ -108,12 +106,12 @@ void Grid::getBlockedTiles(const odb::Rect& obstruction,
                                    // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  first_tile = {(lower.x() - (getTileSize() / 2)) / getTileSize(),
-                (lower.y() - (getTileSize() / 2)) / getTileSize()};
+  first_tile = {(lower.x() - getXMin()) / getTileSize(),
+                (lower.y() - getYMin()) / getTileSize()};
 
   // Get x and y indices of last blocked tile
-  last_tile = {(upper.x() - (getTileSize() / 2)) / getTileSize(),
-               (upper.y() - (getTileSize() / 2)) / getTileSize()};
+  last_tile = {(upper.x() - getXMin()) / getTileSize(),
+               (upper.y() - getYMin()) / getTileSize()};
 
   odb::Point ll_first_tile = odb::Point(lower.x() - (getTileSize() / 2),
                                         lower.y() - (getTileSize() / 2));
@@ -173,7 +171,7 @@ interval<int>::type Grid::computeTileReduceInterval(
 
 int Grid::computeTileReduce(const odb::Rect& obs,
                             const odb::Rect& tile,
-                            int track_space,
+                            double track_space,
                             bool first,
                             odb::dbTechLayerDir direction)
 {

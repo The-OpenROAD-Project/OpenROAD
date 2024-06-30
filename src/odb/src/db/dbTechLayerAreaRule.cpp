@@ -33,35 +33,44 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerAreaRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerAreaRule>;
 
 bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 {
-  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_)
+  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_) {
     return false;
-
-  if (flags_.overlap_ != rhs.flags_.overlap_)
+  }
+  if (flags_.overlap_ != rhs.flags_.overlap_) {
     return false;
-
-  if (area_ != rhs.area_)
+  }
+  if (area_ != rhs.area_) {
     return false;
-  if (except_min_width_ != rhs.except_min_width_)
+  }
+  if (except_min_width_ != rhs.except_min_width_) {
     return false;
-  if (except_edge_length_ != rhs.except_edge_length_)
+  }
+  if (except_edge_length_ != rhs.except_edge_length_) {
     return false;
-  if (trim_layer_ != rhs.trim_layer_)
+  }
+  if (trim_layer_ != rhs.trim_layer_) {
     return false;
-  if (mask_ != rhs.mask_)
+  }
+  if (mask_ != rhs.mask_) {
     return false;
-  if (rect_width_ != rhs.rect_width_)
+  }
+  if (rect_width_ != rhs.rect_width_) {
     return false;
+  }
 
   return true;
 }
@@ -104,8 +113,12 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
+  area_ = 0;
+  except_min_width_ = 0;
+  except_edge_length_ = 0;
+  mask_ = 0;
+  rect_width_ = 0;
 }
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
@@ -124,8 +137,10 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.area_;
   stream >> obj.except_min_width_;
   stream >> obj.except_edge_length_;
@@ -140,8 +155,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.area_;
   stream << obj.except_min_width_;
   stream << obj.except_edge_length_;
@@ -152,10 +169,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   stream << obj.mask_;
   stream << obj.rect_width_;
   return stream;
-}
-
-_dbTechLayerAreaRule::~_dbTechLayerAreaRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -339,4 +352,4 @@ void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* rule)
 
 // User Code End dbTechLayerAreaRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

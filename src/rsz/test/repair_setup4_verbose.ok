@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: reg1
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 17 components and 92 component-terminals.
@@ -10,14 +6,16 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 worst slack -1.95
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
-Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint
----------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |         0 |  -1.954 |  -6.294 | r2/D
-       10 |       8 |       3 |            0 |         0 |  -0.865 |  -3.085 | r2/D
-       19 |      17 |       3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
-    final |      17 |       3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
----------------------------------------------------------------------------------------
+Iteration | Removed | Resized | Inserted | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint
+          | Buffers |         | Buffers  |              |           |         |         |
+-------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |            0 |         0 |  -1.954 |  -6.294 | r2/D
+       10 |       0 |       8 |        3 |            0 |         0 |  -0.865 |  -3.085 | r2/D
+       19 |       0 |      17 |        3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
+    final |       0 |      17 |        3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
+-------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0041] Resized 17 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
+Repair timing output passed/skipped equivalence test
 worst slack -0.65

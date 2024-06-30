@@ -18,5 +18,5 @@ clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -distance_between_buffers 100 \
                      -sink_clustering_size 10 \
                      -sink_clustering_max_diameter 60 \
-                     -num_static_layers 1
-
+                     -num_static_layers 1 \
+                     -obstruction_aware    

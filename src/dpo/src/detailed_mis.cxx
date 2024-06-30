@@ -54,7 +54,7 @@
 #include <lemon/smart_graph.h>
 
 #include <boost/tokenizer.hpp>
-#include <deque>
+#include <queue>
 #include <vector>
 
 #include "architecture.h"
@@ -91,21 +91,7 @@ struct DetailedMis::Bucket
 DetailedMis::DetailedMis(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : mgrPtr_(nullptr),
-      arch_(arch),
-      network_(network),
-      rt_(rt),
-      dimW_(0),
-      dimH_(0),
-      stepX_(0.0),
-      stepY_(0.0),
-      skipEdgesLargerThanThis_(100),
-      maxProblemSize_(25),
-      traversal_(0),
-      useSameSize_(true),
-      useSameColor_(true),
-      maxTimesUsed_(2),
-      obj_(DetailedMis::Hpwl)
+    : arch_(arch), network_(network), rt_(rt)
 {
 }
 
@@ -125,11 +111,8 @@ void DetailedMis::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
-    args.push_back(*it);
+  for (const auto& token : tokens) {
+    args.push_back(token);
   }
   run(mgrPtr, args);
 }
@@ -247,8 +230,7 @@ void DetailedMis::place()
   // keep track of how many problems a candidate cell has been involved in;
   // if it has been involved is >= a certain number of problems, it has "had
   // some chance" to be moved, so skip it.
-  Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
+  mgrPtr_->shuffle(candidates_);
   for (Node* ndi : candidates_) {  // Pick a candidate as a seed.
     // Skip seed if it has been used already.
     if (timesUsed_[ndi->getId()] >= maxTimesUsed_) {
@@ -333,7 +315,6 @@ void DetailedMis::colorCells()
   }
 
   // The actual coloring.
-  gr.removeDuplicates();
   gr.greedyColoring();
 
   std::vector<int> hist;
@@ -341,7 +322,7 @@ void DetailedMis::colorCells()
     const Node* ndi = network_->getNode(i);
 
     const int color = gr.getColor(i);
-    if (color < 0 || color >= gr.getNColors()) {
+    if (color < 0 || color >= gr.getNumColors()) {
       mgrPtr_->internalError("Unable to color cells during matching");
     }
     if (movable_[ndi->getId()]) {
@@ -437,11 +418,11 @@ void DetailedMis::clearGrid()
 // Clear out any old grid.  The dimensions of the grid are also stored in the
 // class...
 {
-  for (size_t i = 0; i < grid_.size(); i++) {
-    for (size_t j = 0; j < grid_[i].size(); j++) {
-      delete grid_[i][j];
+  for (auto& row : grid_) {
+    for (auto bucket : row) {
+      delete bucket;
     }
-    grid_[i].clear();
+    row.clear();
   }
   grid_.clear();
 }
@@ -465,12 +446,12 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
   const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
 
-  std::deque<Bucket*> Q;
-  Q.push_back(it->second);
+  std::queue<Bucket*> Q;
+  Q.push(it->second);
   ++traversal_;
   while (!Q.empty()) {
     Bucket* currPtr = Q.front();
-    Q.pop_front();
+    Q.pop();
 
     if (currPtr->travId_ == traversal_) {
       continue;
@@ -480,38 +461,41 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
     for (Node* ndj : currPtr->nodes_) {
-      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
-
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
       // and that they have the same color (if applicable).
-      bool compat = ndj != ndi;  // diff nodes
-      if (compat) {
-        // Must be the same color to avoid sharing nets.
-        compat
-            = !useSameColor_ || colors_[ndi->getId()] == colors_[ndj->getId()];
+
+      // diff nodes
+      if (ndj == ndi) {
+        continue;
       }
-      if (compat) {
-        // Must be the same size.
-        compat = !useSameSize_
-                 || (ndi->getWidth() == ndj->getWidth()
-                     && ndi->getHeight() == ndj->getHeight());
+
+      // Must be the same color to avoid sharing nets.
+      if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()]) {
+        continue;
       }
-      if (compat) {
-        // Must span the same number of rows and also be voltage compatible.
-        compat = spanned_i == spanned_j
-                 && ndi->getBottomPower() == ndj->getBottomPower()
-                 && ndi->getTopPower() == ndj->getTopPower();
+
+      // Must be the same size.
+      if (useSameSize_
+          && (ndi->getWidth() != ndj->getWidth()
+              || ndi->getHeight() != ndj->getHeight())) {
+        continue;
       }
-      if (compat) {
-        // Must be in the same region.
-        compat = ndj->getRegionId() == ndi->getRegionId();
+
+      // Must be in the same region.
+      if (ndj->getRegionId() != ndi->getRegionId()) {
+        continue;
+      }
+
+      // Must span the same number of rows and also be voltage compatible.
+      if (ndi->getBottomPower() != ndj->getBottomPower()
+          || ndi->getTopPower() != ndj->getTopPower()
+          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight)) {
+        continue;
       }
 
       // If compatible, include this current cell.
-      if (compat) {
-        neighbours_.push_back(ndj);
-      }
+      neighbours_.push_back(ndj);
     }
 
     if (neighbours_.size() >= maxProblemSize_) {
@@ -519,17 +503,17 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->i_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_ - 1][currPtr->j_]);
+    if (currPtr->i_ > 0) {
+      Q.push(grid_[currPtr->i_ - 1][currPtr->j_]);
     }
-    if (currPtr->i_ + 1 <= dimW_ - 1) {
-      Q.push_back(grid_[currPtr->i_ + 1][currPtr->j_]);
+    if (currPtr->i_ + 1 < dimW_) {
+      Q.push(grid_[currPtr->i_ + 1][currPtr->j_]);
     }
-    if (currPtr->j_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ - 1]);
+    if (currPtr->j_ > 0) {
+      Q.push(grid_[currPtr->i_][currPtr->j_ - 1]);
     }
-    if (currPtr->j_ + 1 <= dimH_ - 1) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ + 1]);
+    if (currPtr->j_ + 1 < dimH_) {
+      Q.push(grid_[currPtr->i_][currPtr->j_ + 1]);
     }
   }
   return true;
@@ -577,7 +561,7 @@ void DetailedMis::solveMatch()
 
   std::map<lemon::ListDigraph::Arc, std::pair<int, int>> reverseMap;
 
-  int icost;
+  double icost;
   for (int i = 0; i < nNodes; i++) {
     // Supply to node.
     lemon::ListDigraph::Arc arc_sv = g.addArc(supplyNode, nodeForCell[i]);
@@ -613,20 +597,22 @@ void DetailedMis::solveMatch()
 
       // Okay to assign the cell to this location.
       if (obj_ == DetailedMis::Hpwl) {
-        icost = (int) getHpwl(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getHpwl(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       } else {
-        icost = (int) getDisp(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getDisp(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       }
 
       // Node to spot.
       lemon::ListDigraph::Arc arc_vu = g.addArc(nodeForCell[i], nodeForSpot[j]);
       l_i[arc_vu] = 0;
       u_i[arc_vu] = 1;
-      c_i[arc_vu] = icost;
+      c_i[arc_vu] = icost > std::numeric_limits<int>::max()
+                        ? std::numeric_limits<int>::max()
+                        : static_cast<int>(icost);
 
       reverseMap[arc_vu] = std::make_pair(i, j);
     }

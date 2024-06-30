@@ -1,0 +1,90 @@
+{
+  "name": "dbScanInst",
+  "type": "dbObject",
+  "description":
+    ["A scan inst is a cell with a scan in, scan out and an optional scan enable. If",
+    "no scan enable is provided, then this is an stateless component (because we",
+    "don't need to enable scan for it) and the number of bits is set to 0.  It may",
+    "be possible that two or more dbScanInst contains the same dbInst if the dbInst",
+    "has more than one scan_in/scan_out pair. Examples of those cases are multibit",
+    "cells with external scan or black boxes.  In this case, the scan_in, scan_out",
+    "and scan enables are pins in the dbInst. The scan clock is the pin that we use",
+    "to shift patterns in and out of the scan chain."],
+  "fields": [
+    {
+      "name": "bits_",
+      "type": "uint",
+      "default": "0",
+      "flags": ["private"]
+    },
+    {
+      "name": "access_pins_",
+      "type": "std::pair<dbId<dbScanPin>, dbId<dbScanPin>>",
+      "flags": ["private", "no-template"]
+    },
+    {
+      "name": "scan_enable_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "inst_",
+      "type": "dbId<dbInst>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_clock_",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "clock_edge_",
+      "type": "uint",
+      "default": "0",
+      "flags": ["private"]
+    }
+  ],
+  "enums": [
+    {
+      "name": "ClockEdge",
+      "class": true,
+      "values": [
+        "Rising",
+        "Falling"
+      ],
+      "public": true
+    }
+  ],
+  "structs": [
+    {
+    "name": "AccessPins",
+    "public": true,
+    "fields": [
+      {
+        "name": "scan_in",
+        "type": "std::variant<dbBTerm*, dbITerm*>"
+      },
+      {
+        "name": "scan_out",
+        "type": "std::variant<dbBTerm*, dbITerm*>"
+      }
+    ],
+    "flags": [
+      "no-serializer-in",
+      "no-serializer-out"
+    ]
+    }
+  ],
+  "h_includes": [
+    "dbScanPin.h",
+    "dbInst.h",
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h",
+    "dbDft.h",
+    "dbScanChain.h",
+    "dbScanList.h",
+    "dbScanPartition.h"
+  ]
+}

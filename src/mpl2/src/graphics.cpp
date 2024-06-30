@@ -39,13 +39,34 @@
 
 namespace mpl2 {
 
-Graphics::Graphics(int dbu, utl::Logger* logger) : dbu_(dbu), logger_(logger)
+Graphics::Graphics(bool coarse,
+                   bool fine,
+                   odb::dbBlock* block,
+                   utl::Logger* logger)
+    : coarse_(coarse),
+      fine_(fine),
+      show_bundled_nets_(false),
+      block_(block),
+      logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
+void Graphics::startCoarse()
+{
+  active_ = coarse_;
+}
+
+void Graphics::startFine()
+{
+  active_ = fine_;
+}
+
 void Graphics::startSA()
 {
+  if (!active_) {
+    return;
+  }
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -53,6 +74,9 @@ void Graphics::startSA()
 
 void Graphics::endSA()
 {
+  if (!active_) {
+    return;
+  }
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
@@ -84,6 +108,9 @@ void Graphics::report(const char* name, const std::optional<T>& value)
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
+  if (!active_) {
+    return;
+  }
   if (norm_cost < best_norm_cost_) {
     logger_->report("------ Penalty ------");
 
@@ -123,8 +150,6 @@ void Graphics::resetPenalties()
   boundary_penalty_.reset();
   macro_blockage_penalty_.reset();
   notch_penalty_.reset();
-  outline_width_.reset();
-  outline_height_.reset();
 }
 
 void Graphics::setNotchPenalty(float notch_penalty)
@@ -157,13 +182,9 @@ void Graphics::setAreaPenalty(float area_penalty)
   area_penalty_ = area_penalty;
 }
 
-void Graphics::setOutlinePenalty(float outline_penalty,
-                                 float outline_width,
-                                 float outline_height)
+void Graphics::setOutlinePenalty(float outline_penalty)
 {
   outline_penalty_ = outline_penalty;
-  outline_width_ = outline_width;
-  outline_height_ = outline_height;
 }
 
 void Graphics::setWirelength(float wirelength)
@@ -171,18 +192,88 @@ void Graphics::setWirelength(float wirelength)
   wirelength_ = wirelength;
 }
 
+void Graphics::finishedClustering(Cluster* root)
+{
+  root_ = root;
+}
+
+void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
+{
+  const int lx = block_->micronsToDbu(cluster->getX());
+  const int ly = block_->micronsToDbu(cluster->getY());
+  const int ux = lx + block_->micronsToDbu(cluster->getWidth());
+  const int uy = ly + block_->micronsToDbu(cluster->getHeight());
+  odb::Rect bbox(lx, ly, ux, uy);
+
+  painter.drawRect(bbox);
+
+  for (Cluster* child : cluster->getChildren()) {
+    drawCluster(child, painter);
+  }
+}
+
+void Graphics::drawAllBlockages(gui::Painter& painter)
+{
+  if (!macro_blockages_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+
+    for (const auto& blockage : macro_blockages_) {
+      drawBlockage(blockage, painter);
+    }
+  }
+
+  if (!placement_blockages_.empty()) {
+    painter.setPen(gui::Painter::green, true);
+    painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
+
+    for (const auto& blockage : placement_blockages_) {
+      drawBlockage(blockage, painter);
+    }
+  }
+}
+
+void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
+{
+  const int lx = block_->micronsToDbu(blockage.xMin());
+  const int ly = block_->micronsToDbu(blockage.yMin());
+  const int ux = block_->micronsToDbu(blockage.xMax());
+  const int uy = block_->micronsToDbu(blockage.yMax());
+
+  odb::Rect blockage_bbox(lx, ly, ux, uy);
+  blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
+  painter.drawRect(blockage_bbox);
+}
+
+// We draw the shapes of SoftMacros, HardMacros and blockages based
+// on the outline's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  painter.setPen(gui::Painter::yellow, true);
-  painter.setBrush(gui::Painter::gray);
+  if (root_) {
+    painter.setPen(gui::Painter::red, true);
+    painter.setBrush(gui::Painter::transparent);
+    drawCluster(root_, painter);
+  }
+
+  // Draw blockages only during SA for SoftMacros
+  if (!soft_macros_.empty()) {
+    drawAllBlockages(painter);
+  }
+
+  painter.setPen(gui::Painter::white, true);
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
-    const int lx = dbu_ * macro.getX();
-    const int ly = dbu_ * macro.getY();
-    const int ux = lx + dbu_ * macro.getWidth();
-    const int uy = ly + dbu_ * macro.getHeight();
+    setSoftMacroBrush(painter, macro);
+
+    const int lx = block_->micronsToDbu(macro.getX());
+    const int ly = block_->micronsToDbu(macro.getY());
+    const int ux = lx + block_->micronsToDbu(macro.getWidth());
+    const int uy = ly + block_->micronsToDbu(macro.getHeight());
     odb::Rect bbox(lx, ly, ux, uy);
+
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -191,15 +282,20 @@ void Graphics::drawObjects(gui::Painter& painter)
                        std::to_string(i++));
   }
 
+  painter.setPen(gui::Painter::white, true);
+  painter.setBrush(gui::Painter::dark_red);
+
   i = 0;
   for (const auto& macro : hard_macros_) {
-    const int lx = dbu_ * macro.getX();
-    const int ly = dbu_ * macro.getY();
-    const int width = dbu_ * macro.getWidth();
-    const int height = dbu_ * macro.getHeight();
+    const int lx = block_->micronsToDbu(macro.getX());
+    const int ly = block_->micronsToDbu(macro.getY());
+    const int width = block_->micronsToDbu(macro.getWidth());
+    const int height = block_->micronsToDbu(macro.getHeight());
     const int ux = lx + width;
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
+
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -208,19 +304,31 @@ void Graphics::drawObjects(gui::Painter& painter)
                        std::to_string(i++));
     switch (macro.getOrientation()) {
       case odb::dbOrientType::R0: {
-        painter.drawLine(lx, ly + 0.1 * height, lx + 0.1 * width, ly);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::MX: {
-        painter.drawLine(lx, uy - 0.1 * height, lx + 0.1 * width, uy);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::MY: {
-        painter.drawLine(ux, ly + 0.1 * height, ux - 0.1 * width, ly);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::R180: {
-        painter.drawLine(ux, uy - 0.1 * height, ux - 0.1 * width, uy);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::R90:
@@ -232,14 +340,105 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (outline_width_.has_value()) {
-    odb::Rect bbox(
-        0, 0, dbu_ * outline_width_.value(), dbu_ * outline_height_.value());
+  if (show_bundled_nets_) {
+    painter.setPen(gui::Painter::yellow, true);
 
-    painter.setPen(gui::Painter::red, true);
-    painter.setBrush(gui::Painter::transparent);
-    painter.drawRect(bbox);
+    if (!hard_macros_.empty()) {
+      drawBundledNets(painter, hard_macros_);
+    }
+    if (!soft_macros_.empty()) {
+      drawBundledNets(painter, soft_macros_);
+    }
   }
+
+  // Hightlight outline so we see where SA is working
+  painter.setPen(gui::Painter::cyan, true);
+  painter.setBrush(gui::Painter::transparent);
+  painter.drawRect(outline_);
+}
+
+template <typename T>
+void Graphics::drawBundledNets(gui::Painter& painter,
+                               const std::vector<T>& macros)
+{
+  for (const auto& bundled_net : bundled_nets_) {
+    const int x1
+        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinX());
+    const int y1
+        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinY());
+    odb::Point from(x1, y1);
+
+    const int x2
+        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinX());
+    const int y2
+        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinY());
+    odb::Point to(x2, y2);
+
+    from.addX(outline_.xMin());
+    from.addY(outline_.yMin());
+    to.addX(outline_.xMin());
+    to.addY(outline_.yMin());
+
+    painter.drawLine(from, to);
+  }
+}
+
+// Give some transparency to mixed and hard so we can see overlap with
+// macro blockages.
+void Graphics::setSoftMacroBrush(gui::Painter& painter,
+                                 const SoftMacro& soft_macro)
+{
+  if (soft_macro.getCluster() == nullptr) {  // fixed terminals
+    return;
+  }
+
+  if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
+    painter.setBrush(gui::Painter::dark_blue);
+  } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
+    // dark red
+    painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
+  } else {
+    // dark purple
+    painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x80, 150));
+  }
+}
+
+void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+{
+  macro_blockages_ = macro_blockages;
+}
+
+void Graphics::setPlacementBlockages(
+    const std::vector<mpl2::Rect>& placement_blockages)
+{
+  placement_blockages_ = placement_blockages;
+}
+
+void Graphics::setShowBundledNets(bool show_bundled_nets)
+{
+  show_bundled_nets_ = show_bundled_nets;
+}
+
+void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
+{
+  bundled_nets_ = bundled_nets;
+}
+
+void Graphics::setOutline(const odb::Rect& outline)
+{
+  outline_ = outline;
+}
+
+void Graphics::eraseDrawing()
+{
+  // Ensure we don't try to access the clusters after they were deleted
+  root_ = nullptr;
+
+  soft_macros_.clear();
+  hard_macros_.clear();
+  macro_blockages_.clear();
+  placement_blockages_.clear();
+  bundled_nets_.clear();
 }
 
 }  // namespace mpl2

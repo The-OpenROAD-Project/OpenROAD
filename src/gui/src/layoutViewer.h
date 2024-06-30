@@ -168,6 +168,7 @@ class LayoutViewer : public QWidget
   // save image of the layout
   void saveImage(const QString& filepath,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0);
 
   // From QWidget
@@ -181,6 +182,9 @@ class LayoutViewer : public QWidget
   {
     return screenToDBU(visibleRegion().boundingRect());
   }
+
+  bool isCursorInsideViewport();
+  void updateCursorCoordinates();
 
  signals:
   // indicates the current location of the mouse
@@ -273,9 +277,12 @@ class LayoutViewer : public QWidget
   void commandFinishedExecuting();
   void executionPaused();
 
+  static QColor background() { return Qt::black; }
+
  private slots:
   void setBlock(odb::dbBlock* block);
   void updatePixmap(const QImage& image, const QRect& bounds);
+  void handleLoadingIndication();
 
  private:
   struct Boxes
@@ -347,6 +354,10 @@ class LayoutViewer : public QWidget
   bool isNetVisible(odb::dbNet* net);
 
   void drawScaleBar(QPainter* painter, const QRect& rect);
+  void drawLoadingIndicator(QPainter* painter, const QRect& bounds);
+  QRect computeIndicatorBackground(QPainter* painter,
+                                   const QRect& bounds) const;
+  void setLoadingState();
 
   void populateModuleColors();
 
@@ -377,6 +388,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_press_pos_;
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
+  bool is_view_dragging_;
   Gui* gui_;
 
   std::function<bool(void)> usingDBU_;
@@ -433,14 +445,14 @@ class LayoutViewer : public QWidget
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;
   QRect draw_pixmap_bounds_;
+  QTimer* loading_timer_;
+  std::string loading_indicator_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 
   // parameters used to animate the selection of objects
   static constexpr int animation_repeats_ = 6;
   static constexpr int animation_interval_ = 300;
-
-  const QColor background_ = Qt::black;
 
   friend class RenderThread;
 };
@@ -453,6 +465,7 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+  bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
@@ -465,9 +478,12 @@ class LayoutScroll : public QScrollArea
   void resizeEvent(QResizeEvent* event) override;
   void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
+  bool eventFilter(QObject* object, QEvent* event) override;
 
  private:
   LayoutViewer* viewer_;
+
+  bool scrolling_with_cursor_;
 };
 
 }  // namespace gui

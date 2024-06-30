@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -209,11 +210,11 @@ class dbDiff : public dbObject
 
 #define DIFF_BEGIN \
   { /* } */        \
-    diff.begin(field, getObjName(), getId());
+    diff.begin(field, getTypeName(), getId());
 
 #define DIFF_OUT_BEGIN \
   { /* } */            \
-    diff.begin(side, field, getObjName(), getId());
+    diff.begin(side, field, getTypeName(), getId());
 
 #define DIFF_END             \
   diff.end_object(); /* { */ \

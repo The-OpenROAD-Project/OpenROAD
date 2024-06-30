@@ -62,8 +62,8 @@ PinSet *
 tclListSetPin(Tcl_Obj *source,
               Tcl_Interp *interp);
 
-typedef NetSeq TmpNetSeq;
-typedef PinSet TmpPinSet;
+using TmpNetSeq = NetSeq ;
+using TmpPinSet = PinSet;
 
 } // namespace
 
@@ -74,6 +74,7 @@ using sta::Corner;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
+using sta::InstanceSeq;
 using sta::Net;
 using sta::NetSeq;
 using sta::Pin;
@@ -151,6 +152,19 @@ tclListNetworkSet(Tcl_Obj *const source,
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   delete nets;
+  Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) TmpPinSet* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet *pins = $1;
+  PinSet::Iterator pin_iter(pins);
+  while (pin_iter.hasNext()) {
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete pins;
   Tcl_SetObjResult(interp, list);
 }
 
@@ -244,23 +258,43 @@ layer_capacitance(odb::dbTechLayer *layer,
 }
 
 void
-set_wire_signal_rc_cmd(const Corner *corner,
-                       float res,
-                       float cap)
+set_h_wire_signal_rc_cmd(const Corner *corner,
+                         float res,
+                         float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireSignalRC(corner, res, cap);
+  resizer->setHWireSignalRC(corner, res, cap);
 }
 
 void
-set_wire_clk_rc_cmd(const Corner *corner,
-                    float res,
-                    float cap)
+set_v_wire_signal_rc_cmd(const Corner *corner,
+                         float res,
+                         float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(corner, res, cap);
+  resizer->setVWireSignalRC(corner, res, cap);
+}
+
+void
+set_h_wire_clk_rc_cmd(const Corner *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setHWireClkRC(corner, res, cap);
+}
+
+void
+set_v_wire_clk_rc_cmd(const Corner *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setVWireClkRC(corner, res, cap);
 }
 
 // ohms/meter
@@ -321,12 +355,39 @@ have_estimated_parasitics()
   return resizer->haveEstimatedParasitics();
 }
 
+InstanceSeq*
+init_insts_cmd()
+{
+  InstanceSeq* insts = new InstanceSeq;
+  return insts;
+}
+
 void
-remove_buffers_cmd()
+add_to_insts_cmd(Instance* inst, InstanceSeq* insts)
+{
+  insts->emplace_back(inst);
+}
+
+void
+delete_insts_cmd(InstanceSeq* insts)
+{
+  delete insts;
+}
+
+void
+remove_buffers_cmd(InstanceSeq insts)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers();
+  resizer->removeBuffers(std::move(insts));
+}
+
+void
+balance_row_usage_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->balanceRowUsage();
 }
 
 void
@@ -420,6 +481,14 @@ find_floating_nets()
   return resizer->findFloatingNets();
 }
 
+TmpPinSet *
+find_floating_pins()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingPins();
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -480,13 +549,15 @@ repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
              bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning)
+             bool skip_pin_swap, bool skip_gate_cloning,
+             bool enable_buffer_removal)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, verbose,
-                       skip_pin_swap, skip_gate_cloning);
+                       skip_pin_swap, skip_gate_cloning,
+                       !enable_buffer_removal);
 }
 
 void
@@ -495,6 +566,14 @@ repair_setup_pin_cmd(Pin *end_pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(end_pin);
+}
+
+void
+report_swappable_pins_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportSwappablePins();
 }
 
 void

@@ -66,6 +66,13 @@ LayoutTabs::LayoutTabs(Options* options,
 
 void LayoutTabs::blockLoaded(odb::dbBlock* block)
 {
+  // Check if we already have a tab for this block
+  for (LayoutViewer* viewer : viewers_) {
+    if (viewer->getBlock() == block) {
+      return;
+    }
+  }
+
   populateModuleColors(block);
   auto viewer = new LayoutViewer(options_,
                                  output_widget_,
@@ -82,12 +89,22 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
+  if (command_executing_) {
+    viewer->commandAboutToExecute();
+  }
   auto scroll = new LayoutScroll(viewer, this);
   viewer->blockLoaded(block);
 
   auto tech = block->getTech();
   const auto name = fmt::format("{} ({})", block->getName(), tech->getName());
   addTab(scroll, name.c_str());
+
+  // This has to be done after addTab.  For unexplained reasons it
+  // doesn't work for all users if done in LayoutViewer::LayoutViewer.
+  QPalette palette;
+  palette.setColor(QPalette::Window, LayoutViewer::background());
+  viewer->setPalette(palette);
+  viewer->setAutoFillBackground(true);
 
   // forward signals from the viewer upward
   connect(viewer, &LayoutViewer::location, this, &LayoutTabs::location);
@@ -112,6 +129,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
 void LayoutTabs::tabChange(int index)
 {
   current_viewer_ = viewers_[index];
+
   emit setCurrentBlock(current_viewer_->getBlock());
 }
 
@@ -125,14 +143,28 @@ void LayoutTabs::setLogger(utl::Logger* logger)
 void LayoutTabs::zoomIn()
 {
   if (current_viewer_) {
-    current_viewer_->zoomIn();
+    if (current_viewer_->isCursorInsideViewport()) {
+      const odb::Point focus = current_viewer_->screenToDBU(
+          current_viewer_->mapFromGlobal(QCursor::pos()));
+
+      current_viewer_->zoomIn(focus, true);
+    } else {
+      current_viewer_->zoomIn();
+    }
   }
 }
 
 void LayoutTabs::zoomOut()
 {
   if (current_viewer_) {
-    current_viewer_->zoomOut();
+    if (current_viewer_->isCursorInsideViewport()) {
+      const odb::Point focus = current_viewer_->screenToDBU(
+          current_viewer_->mapFromGlobal(QCursor::pos()));
+
+      current_viewer_->zoomOut(focus, true);
+    } else {
+      current_viewer_->zoomOut();
+    }
   }
 }
 
@@ -299,16 +331,18 @@ void LayoutTabs::exit()
 
 void LayoutTabs::commandAboutToExecute()
 {
-  if (current_viewer_) {
-    current_viewer_->commandAboutToExecute();
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->commandAboutToExecute();
   }
+  command_executing_ = true;
 }
 
 void LayoutTabs::commandFinishedExecuting()
 {
-  if (current_viewer_) {
-    current_viewer_->commandFinishedExecuting();
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->commandFinishedExecuting();
   }
+  command_executing_ = false;
 }
 
 void LayoutTabs::restoreTclCommands(std::vector<std::string>& cmds)

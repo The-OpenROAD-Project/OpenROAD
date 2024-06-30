@@ -35,7 +35,7 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -50,7 +50,8 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableOrthRule& r);
   _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingTableOrthRule();
+
+  ~_dbTechLayerCutSpacingTableOrthRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const

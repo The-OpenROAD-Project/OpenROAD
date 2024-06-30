@@ -30,8 +30,7 @@
 
 #include "gc/FlexGC_impl.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            Logger* logger,
@@ -53,16 +52,8 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
     : tech_(techIn),
       logger_(logger),
       drWorker_(drWorkerIn),
-      extBox_(),
-      drcBox_(),
-      owner2nets_(),
-      nets_(),
-      markers_(),
-      mapMarkers_(),
-      pwires_(),
       rq_(gcWorkerIn),
       printMarker_(false),
-      modifiedDRNets_(),
       targetNet_(nullptr),
       minLayerNum_(std::numeric_limits<frLayerNum>::min()),
       maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
@@ -79,21 +70,11 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   Rect bbox = in->getBBox();
   auto layerNum = in->getLayerNum();
   auto con = in->getConstraint();
-  std::vector<frBlockObject*> srcs(2, nullptr);
-  int i = 0;
-  for (auto& src : in->getSrcs()) {
-    srcs.at(i) = src;
-    i++;
-  }
-  if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
+  if (mapMarkers_.find({bbox, layerNum, con, in->getSrcs()})
       != mapMarkers_.end()) {
     return;
   }
-  if (mapMarkers_.find({bbox, layerNum, con, srcs[1], srcs[0]})
-      != mapMarkers_.end()) {
-    return;
-  }
-  mapMarkers_[{bbox, layerNum, con, srcs[0], srcs[1]}] = in.get();
+  mapMarkers_[{bbox, layerNum, con, in->getSrcs()}] = in.get();
   markers_.push_back(std::move(in));
 }
 
@@ -157,15 +138,19 @@ const std::vector<std::unique_ptr<drPatchWire>>& FlexGCWorker::getPWires() const
   return impl_->pwires_;
 }
 
+void FlexGCWorker::clearPWires()
+{
+  impl_->pwires_.clear();
+}
+
 bool FlexGCWorker::setTargetNet(frBlockObject* in)
 {
   auto& owner2nets = impl_->owner2nets_;
   if (owner2nets.find(in) != owner2nets.end()) {
     impl_->targetNet_ = owner2nets[in];
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 gcNet* FlexGCWorker::getTargetNet()
 {
@@ -220,3 +205,5 @@ gcNet* FlexGCWorker::getNet(frNet* net)
 {
   return impl_->getNet(net);
 }
+
+}  // namespace drt

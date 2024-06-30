@@ -14,7 +14,6 @@
 #include "utl/Logger.h"
 
 using namespace dst;
-using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -22,7 +21,7 @@ BOOST_AUTO_TEST_CASE(test_default)
 {
   Distributed* dist = new Distributed();
   utl::Logger* logger = new utl::Logger();
-  string local_ip = "127.0.0.1";
+  std::string local_ip = "127.0.0.1";
   unsigned short port = 1234;
 
   Worker* worker = new Worker(dist, logger, local_ip.c_str(), port);

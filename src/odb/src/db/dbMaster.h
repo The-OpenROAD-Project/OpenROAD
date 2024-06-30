@@ -34,8 +34,8 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "dbTypes.h"
-#include "odb.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -43,6 +43,7 @@ template <class T>
 class dbTable;
 class _dbMTerm;
 class _dbBox;
+class _dbLib;
 class _dbMPin;
 class _dbTarget;
 class _dbSite;
@@ -84,6 +85,7 @@ class _dbMaster : public _dbObject
   dbId<_dbMaster> _leq;
   dbId<_dbMaster> _eeq;
   dbId<_dbBox> _obstructions;
+  dbId<_dbLib> _lib_for_site;
   dbId<_dbSite> _site;
   dbHashTable<_dbMTerm> _mterm_hash;
   dbTable<_dbMTerm>* _mterm_tbl;

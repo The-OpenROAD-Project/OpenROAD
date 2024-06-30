@@ -41,6 +41,7 @@
 #include <QVBoxLayout>
 #include <array>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/regex.hpp>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -521,7 +522,7 @@ void DRCWidget::loadTRReport(const QString& filename)
   }
 
   std::regex violation_type("\\s*violation type: (.*)");
-  std::regex srcs("\\s*srcs: (.*)");
+  boost::regex srcs("\\s*srcs: (.*)");
   std::regex congestion_line("\\s*congestion information: (.*)");
   std::regex bbox_layer("\\s*bbox = (.*) on Layer (.*)");
   std::regex bbox_corners(
@@ -557,8 +558,9 @@ void DRCWidget::loadTRReport(const QString& filename)
     int source_line_number = line_number;
     std::getline(report, line);
     std::string sources;
-    if (std::regex_match(line, base_match, srcs)) {
-      sources = base_match[1].str();
+    boost::smatch sources_match;
+    if (boost::regex_match(line, sources_match, srcs)) {
+      sources = sources_match[1].str();
     } else {
       logger_->error(utl::GUI,
                      46,
@@ -812,8 +814,13 @@ void DRCWidget::loadJSONReport(const QString& filename)
       } else if (shape_type == "edge") {
         shapes.emplace_back(
             DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+      } else if (shape_type == "edge_pair") {
+        shapes.emplace_back(
+            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+        shapes.emplace_back(
+            DRCViolation::DRCLine(shape_points[2], shape_points[3]));
       } else if (shape_type == "polygon") {
-        shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
+        shapes.emplace_back(DRCViolation::DRCPoly(std::move(shape_points)));
       } else {
         logger_->error(
             utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);

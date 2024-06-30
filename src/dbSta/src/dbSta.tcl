@@ -41,11 +41,15 @@ proc highlight_path { args } {
   parse_key_args "highlight_path" args keys {} \
     flags {-max -min} 0
 
-  if { [info exists flags(-min)] && [info exists flags(-max)] } {
+  if { [ord::get_db_block] == "NULL" } {
+    sta_error "No design block found."
+  }
+
+  if {[info exists flags(-min)] && [info exists flags(-max)]} {
     sta_error "-min and -max cannot both be specified."
-  } elseif [info exists flags(-min)] {
+  } elseif {[info exists flags(-min)]} {
     set min_max "min"
-  } elseif [info exists flags(-max)] {
+  } elseif {[info exists flags(-max)]} {
     set min_max "max"
   } else {
     # Default to max path.
@@ -74,6 +78,15 @@ proc highlight_path { args } {
       }
     }
   }
+}
+
+define_cmd_args "report_cell_usage" {}
+
+proc report_cell_usage {} {
+  if { [ord::get_db_block] == "NULL" } {
+    sta_error "No design block found."
+  }
+  report_cell_usage_cmd
 }
 
 # redefine sta::sta_warn/error to call utl::warn/error

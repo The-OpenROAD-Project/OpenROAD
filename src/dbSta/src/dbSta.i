@@ -17,8 +17,9 @@ using sta::Instance;
 %}
 
 %import "odb.i"
-%include "../../src/Exception.i"
+%include "../../Exception.i"
 // OpenSTA swig files
+%include "tcl/StaTclTypes.i"
 %include "tcl/StaTcl.i"
 %include "tcl/NetworkEdit.i"
 %include "sdf/Sdf.i"
@@ -102,7 +103,9 @@ sta_to_db_port(Port *port)
   Pin *pin = db_network->findPin(db_network->topInstance(), port);
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm *moditerm;
+  dbModBTerm *modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return bterm;
 }
 
@@ -113,7 +116,9 @@ sta_to_db_pin(Pin *pin)
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm *moditerm;
+  dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return iterm;
 }
 
@@ -142,6 +147,15 @@ db_network_defined()
   odb::dbChip *chip = db->getChip();
   odb::dbBlock *block = chip->getBlock();
   db_network->readDefAfter(block);
+}
+
+void
+report_cell_usage_cmd()
+{
+  cmdLinkedNetwork();
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->report_cell_usage();
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

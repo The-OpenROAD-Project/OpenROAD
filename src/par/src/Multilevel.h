@@ -54,15 +54,15 @@ using MultiLevelPartitioner = std::shared_ptr<MultilevelPartitioner>;
 class MultilevelPartitioner
 {
  public:
-  MultilevelPartitioner(const int num_parts,
+  MultilevelPartitioner(int num_parts,
                         // user-specified parameters
-                        const bool v_cycle_flag,
-                        const int num_initial_solutions,
-                        const int num_best_initial_solutions,
-                        const int num_vertices_threshold_ilp,
-                        const int max_num_vcycle,
-                        const int num_coarsen_solutions,
-                        const int seed,
+                        bool v_cycle_flag,
+                        int num_initial_solutions,
+                        int num_best_initial_solutions,
+                        int num_vertices_threshold_ilp,
+                        int max_num_vcycle,
+                        int num_coarsen_solutions,
+                        int seed,
                         // pointers
                         CoarseningPtr coarsener,
                         PartitioningPtr partitioner,

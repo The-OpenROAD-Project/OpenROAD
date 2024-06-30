@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -58,7 +58,8 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
   _dbTechLayerKeepOutZoneRule(_dbDatabase*,
                               const _dbTechLayerKeepOutZoneRule& r);
   _dbTechLayerKeepOutZoneRule(_dbDatabase*);
-  ~_dbTechLayerKeepOutZoneRule();
+
+  ~_dbTechLayerKeepOutZoneRule() = default;
 
   bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
   bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const

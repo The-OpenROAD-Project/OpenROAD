@@ -31,6 +31,8 @@ set_dont_use $dont_use
 estimate_parasitics -placement
 
 report_worst_slack -max
-repair_timing -setup -repair_tns 100 -skip_gate_cloning 
+write_verilog_for_eqy repair_fanout8 before "None"
+repair_timing -setup -repair_tns 100 -skip_gate_cloning -skip_pin_swap
+run_equivalence_test repair_fanout8 ./Nangate45/work_around_yosys/ "None"
 report_worst_slack -max
 

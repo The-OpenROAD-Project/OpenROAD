@@ -61,16 +61,8 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
         }
         return corners;
       },
-      [this]() -> std::string {
-        ensureCorner();
-        if (corner_ == nullptr) {
-          return "";
-        }
-        return corner_->name();
-      },
-      [this](const std::string& value) {
-        corner_ = sta_->findCorner(value.c_str());
-      });
+      [this]() -> std::string { return corner_; },
+      [this](const std::string& value) { corner_ = value; });
   addBooleanSetting(
       "Internal",
       "Internal power:",
@@ -100,8 +92,6 @@ bool PowerDensityDataSource::populateMap()
     return false;
   }
 
-  ensureCorner();
-
   auto* network = sta_->getDbNetwork();
 
   const bool include_all
@@ -111,7 +101,7 @@ bool PowerDensityDataSource::populateMap()
       continue;
     }
 
-    sta::PowerResult power = sta_->power(network->dbToSta(inst), corner_);
+    sta::PowerResult power = sta_->power(network->dbToSta(inst), getCorner());
 
     float pwr = 0.0;
     if (include_all) {
@@ -146,19 +136,19 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
   base += (new_data / data_area) * intersection_area;
 }
 
-void PowerDensityDataSource::ensureCorner()
+sta::Corner* PowerDensityDataSource::getCorner() const
 {
-  if (corner_ != nullptr) {
-    return;
+  auto* corner = sta_->findCorner(corner_.c_str());
+  if (corner != nullptr) {
+    return corner;
   }
 
   auto corners = sta_->corners()->corners();
-  corner_ = corners[0];
-}
+  if (!corners.empty()) {
+    return corners[0];
+  }
 
-void PowerDensityDataSource::setCorner(const std::string& name)
-{
-  corner_ = sta_->findCorner(name.c_str());
+  return nullptr;
 }
 
 }  // namespace sta

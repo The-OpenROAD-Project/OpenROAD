@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include "array1.h"
-#include "odb.h"
-#include "parse.h"
+#include "odb/array1.h"
+#include "odb/odb.h"
+#include "odb/parse.h"
 
 namespace utl {
 class Logger;
@@ -136,7 +136,7 @@ class extMasterConductor
                           double width,
                           double X,
                           double volt,
-                          extProcess* p = NULL);
+                          extProcess* p = nullptr);
   void printDielBox(FILE* fp, double X, double width, extDielectric* diel);
   void writeRaphaelPointXY(FILE* fp, double X, double Y);
   void writeRaphaelDielPoly(FILE* fp,
@@ -273,7 +273,7 @@ class extProcess
                              int overMet,
                              double X,
                              double width,
-                             double thichness,
+                             double thickness,
                              bool diag = false);
 
   extVariation* getVariation(uint met);

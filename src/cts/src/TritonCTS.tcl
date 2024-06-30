@@ -84,21 +84,32 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
-                                            }
+                                             [-obstruction_aware] \
+                                             [-apply_ndr] \
+                                             [-sink_buffer_max_cap_derate] \
+                                             [-dont_use_dummy_load] \
+                                             [-delay_buffer_derate] \
+};# checker off
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
-          -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
-          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
-    flags {-post_cts_disable -sink_clustering_enable -balance_levels}
+    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
+          -num_static_layers -sink_clustering_buffer \
+          -distance_between_buffers -branching_point_buffers_distance \
+          -clustering_exponent \
+          -clustering_unbalance_ratio -sink_clustering_max_diameter \
+          -sink_clustering_levels -tree_buf \
+          -sink_buffer_max_cap_derate -delay_buffer_derate} \
+    flags {-post_cts_disable -sink_clustering_enable -balance_levels \
+           -obstruction_aware -apply_ndr -dont_use_dummy_load
+  };# checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   if { [info exists flags(-post_cts_disable)] } {
     utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
-  
+
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
 
   if { [info exists keys(-sink_clustering_size)] } {
@@ -147,8 +158,7 @@ proc clock_tree_synthesis { args } {
     set buf_list $keys(-buf_list)
     cts::set_buffer_list $buf_list
   } else {
-    #User must input the buffer list.
-    utl::error CTS 55 "Missing argument -buf_list"
+    cts::set_buffer_list ""
   }
 
   if { [info exists keys(-wire_unit)] } {
@@ -171,29 +181,44 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)
-    if { [llength $root_buf] > 1} {
-      set root_buf [lindex $root_buf 0]
-    }
     cts::set_root_buffer $root_buf
   } else {
-    if { [info exists keys(-buf_list)] } {
-      #If using -buf_list, the first buffer can become the root buffer.
-      set root_buf [lindex $buf_list 0]
-      cts::set_root_buffer $root_buf
-    } else {
-      utl::error CTS 57 "Missing argument, user must enter at least one of -root_buf or -buf_list."
-    }
+    cts::set_root_buffer ""
   }
 
   if { [info exists keys(-sink_clustering_buffer)] } {
     set sink_buf $keys(-sink_clustering_buffer)
-    if { [llength $sink_buf] > 1} {
-      set sink_buf [lindex $sink_buf 0]
-    }
     cts::set_sink_buffer $sink_buf
   } else {
-    cts::set_sink_buffer $root_buf
+    cts::set_sink_buffer ""
   }
+
+  if { [info exists keys(-sink_buffer_max_cap_derate)] } {
+    set derate $keys(-sink_buffer_max_cap_derate)
+    if {[expr {$derate > 1.0 || $derate < 0.0 }]} {
+      utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
+    }
+    cts::set_sink_buffer_max_cap_derate $derate
+  }
+
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if {[expr {$buffer_derate < 0.0 }]} {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
+  }
+
+  cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
+
+  if { [info exists flags(-dont_use_dummy_load)] } {
+    cts::set_dummy_load false
+  } else {
+    cts::set_dummy_load true
+  }
+
+  cts::set_apply_ndr [info exists flags(-apply_ndr)]
+
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."
@@ -220,7 +245,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}
+    keys {} flags {-plot}; # checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]

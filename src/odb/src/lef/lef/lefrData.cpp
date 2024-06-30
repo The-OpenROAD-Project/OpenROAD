@@ -35,8 +35,6 @@
 
 #include "lefrSettings.hpp"
 
-using namespace std;
-
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 extern void* lefMalloc(size_t lef_size);

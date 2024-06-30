@@ -35,7 +35,7 @@
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexTAGraphics;
 
 class FlexTA
@@ -76,20 +76,33 @@ class FlexTAWorkerRegionQuery
   void add(taPinFig* fig);
   void remove(taPinFig* fig);
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              std::set<taPin*, frBlockObjectComp>& result) const;
 
   void addCost(const Rect& box,
-               const frLayerNum layerNum,
+               frLayerNum layerNum,
                frBlockObject* obj,
                frConstraint* con);
   void removeCost(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   frBlockObject* obj,
                   frConstraint* con);
   void queryCost(
       const Rect& box,
-      const frLayerNum layerNum,
+      frLayerNum layerNum,
+      std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
+          result) const;
+  void addViaCost(const Rect& box,
+                  frLayerNum layerNum,
+                  frBlockObject* obj,
+                  frConstraint* con);
+  void removeViaCost(const Rect& box,
+                     frLayerNum layerNum,
+                     frBlockObject* obj,
+                     frConstraint* con);
+  void queryViaCost(
+      const Rect& box,
+      frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
 
@@ -118,7 +131,7 @@ class FlexTAWorker
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
-  void setDir(dbTechLayerDir in) { dir_ = in; }
+  void setDir(const dbTechLayerDir& in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
   {
@@ -204,19 +217,20 @@ class FlexTAWorker
   void init();
   void initFixedObjs();
   frCoord initFixedObjs_calcBloatDist(frBlockObject* obj,
-                                      const frLayerNum lNum,
+                                      frLayerNum lNum,
                                       const Rect& box);
   frCoord initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
-                                            const frLayerNum lNum,
+                                            frLayerNum lNum,
                                             const Rect& box,
                                             bool isOBS = true);
   void initFixedObjs_helper(const Rect& box,
                             frCoord bloatDist,
                             frLayerNum lNum,
-                            frNet* net);
+                            frNet* net,
+                            bool isViaCost = false);
   void initTracks();
   void initIroutes();
-  void initIroute(frGuide* in);
+  void initIroute(frGuide* guide);
   void initIroute_helper(frGuide* guide,
                          frCoord& maxBegin,
                          frCoord& minEnd,
@@ -225,8 +239,8 @@ class FlexTAWorker
                          int& nextIrouteDir,
                          frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
-                                 frCoord& maxBegin,
-                                 frCoord& minEnd,
+                                 frCoord& minBegin,
+                                 frCoord& maxEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
                                  int& nextIrouteDir,
@@ -316,4 +330,4 @@ class FlexTAWorker
   friend class FlexTA;
 };
 
-}  // namespace fr
+}  // namespace drt

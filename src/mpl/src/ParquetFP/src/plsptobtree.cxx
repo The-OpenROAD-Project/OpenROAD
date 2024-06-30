@@ -42,8 +42,6 @@ namespace parquetfp {
 
 using std::vector;
 
-const float PlSP2BTree::Infty = basepacking_h::Dimension::Infty;
-const int PlSP2BTree::Undefined = BTree::Undefined;
 // --------------------------------------------------------
 PlSP2BTree::PlSP2BTree(const vector<float>& n_xloc,
                        const vector<float>& n_yloc,

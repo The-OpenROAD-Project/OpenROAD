@@ -112,7 +112,7 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         logger_->warn(utl::DST,
                       5,
                       "Unsupported job type {} from port {}",
-                      msg_.getJobType(),
+                      (int) msg_.getJobType(),
                       sock_.remote_endpoint().port());
         asio::write(sock_, asio::buffer("0"), error);
         sock_.close();

@@ -48,10 +48,7 @@ namespace gpl {
 using utl::GPL;
 
 // TimingBase
-TimingBase::TimingBase()
-    : rs_(nullptr), log_(nullptr), nbc_(nullptr), net_weight_max_(1.9)
-{
-}
+TimingBase::TimingBase() = default;
 
 TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
                        rsz::Resizer* rs,

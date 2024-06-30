@@ -33,13 +33,16 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutClassRule.h"
 
-#include "db.h"
+#include <cstdint>
+#include <cstring>
+
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 // User Code End Includes
@@ -49,22 +52,27 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (flags_.length_valid_ != rhs.flags_.length_valid_)
+  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
     return false;
-
-  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_)
+  }
+  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_) {
     return false;
-
-  if (_name != rhs._name)
+  }
+  if (_name != rhs._name) {
     return false;
-  if (width_ != rhs.width_)
+  }
+  if (width_ != rhs.width_) {
     return false;
-  if (length_ != rhs.length_)
+  }
+  if (length_ != rhs.length_) {
     return false;
-  if (num_cuts_ != rhs.num_cuts_)
+  }
+  if (num_cuts_ != rhs.num_cuts_) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
   return true;
 }
@@ -109,8 +117,8 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
 
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
+  _name = nullptr;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
@@ -132,8 +140,10 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj._name;
   stream >> obj.width_;
   stream >> obj.length_;
@@ -144,8 +154,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj._name;
   stream << obj.width_;
   stream << obj.length_;
@@ -156,8 +168,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -243,8 +256,9 @@ bool dbTechLayerCutClassRule::isCutsValid() const
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
                                                          const char* name)
 {
-  if (_layer->findTechLayerCutClassRule(name) != nullptr)
+  if (_layer->findTechLayerCutClassRule(name) != nullptr) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
   newrule->_name = strdup(name);
@@ -270,4 +284,4 @@ void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 }
 // User Code End dbTechLayerCutClassRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

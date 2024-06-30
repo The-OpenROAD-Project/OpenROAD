@@ -34,7 +34,7 @@
 #pragma once
 
 #include "dbCore.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -58,7 +58,8 @@ class _dbTechLayerArraySpacingRule : public _dbObject
   _dbTechLayerArraySpacingRule(_dbDatabase*,
                                const _dbTechLayerArraySpacingRule& r);
   _dbTechLayerArraySpacingRule(_dbDatabase*);
-  ~_dbTechLayerArraySpacingRule();
+
+  ~_dbTechLayerArraySpacingRule() = default;
 
   bool operator==(const _dbTechLayerArraySpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerArraySpacingRule& rhs) const

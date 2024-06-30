@@ -76,6 +76,7 @@ void SimulatedAnnealing::run(float init_temperature,
     int64 pre_cost = 0;
     pre_cost = getAssignmentCost();
     float temperature = init_temperature_;
+    odb::dbBlock* block = db_->getChip()->getBlock();
 
     boost::random::uniform_real_distribution<float> distribution;
     for (int iter = 0; iter < max_iterations_; iter++) {
@@ -94,8 +95,8 @@ void SimulatedAnnealing::run(float init_temperature,
             "cost: {}um",
             iter,
             temperature,
-            dbuToMicrons(cost),
-            dbuToMicrons(delta_cost));
+            block->dbuToMicrons(cost),
+            block->dbuToMicrons(delta_cost));
 
         const float rand_float = distribution(generator_);
         const float accept_prob = std::exp((-1) * delta_cost / temperature);
@@ -312,7 +313,7 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       group_slot = slot_indices[slot_idx];
     }
 
-    const auto pin_list = group.pin_indices;
+    const auto& pin_list = group.pin_indices;
     for (const auto& pin_idx : pin_list) {
       const IOPin& io_pin = netlist_->getIoPin(pin_idx);
       pin_assignment_[pin_idx] = group_slot;
@@ -581,11 +582,18 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
 {
   const PinGroupByIndex& group = pin_groups_[group_idx];
   const std::vector<int>& pin_indices = group.pin_indices;
+  bool is_mirrored = false;
+  for (const int pin_idx : pin_indices) {
+    const IOPin& io_pin = netlist_->getIoPin(pin_idx);
+    if (io_pin.isMirrored()) {
+      is_mirrored = true;
+      break;
+    }
+  }
   int prev_cost = computeGroupPrevCost(group_idx);
+  updateSlotsFromGroup(prev_slots_, false);
 
   const int min_slot = std::min(pin_assignment_[pin_indices.front()],
-                                pin_assignment_[pin_indices.back()]);
-  const int max_slot = std::max(pin_assignment_[pin_indices.front()],
                                 pin_assignment_[pin_indices.back()]);
 
   bool free_slot = true;
@@ -596,6 +604,10 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   int slot = min_slot - 1;
   while (free_slot && same_edge_slot && slot >= 0) {
     free_slot = slots_[slot].isAvailable();
+    int mirrored_slot;
+    if (is_mirrored) {
+      free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
+    }
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
       break;
@@ -609,9 +621,13 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   same_edge_slot = true;
 
   int max_count = 0;
-  slot = max_slot + 1;
+  slot = min_slot + 1;
   while (free_slot && same_edge_slot && slot < slots_.size()) {
     free_slot = slots_[slot].isAvailable();
+    int mirrored_slot;
+    if (is_mirrored) {
+      free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
+    }
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
       break;
@@ -620,6 +636,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     max_count++;
     slot++;
   }
+  max_count -= pin_indices.size();
 
   if (min_count + max_count > 0) {
     if (min_count > max_count) {
@@ -627,6 +644,8 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     } else {
       shiftGroupToPosition(pin_indices, max_count, min_slot, true);
     }
+  } else {
+    prev_cost = move_fail_;
   }
 
   return prev_cost;
@@ -737,11 +756,6 @@ void SimulatedAnnealing::restorePreviousAssignment()
   }
 }
 
-double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
-{
-  return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
-}
-
 bool SimulatedAnnealing::isFreeForGroup(int& slot_idx,
                                         int group_size,
                                         int last_slot)
@@ -829,7 +843,20 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
   const odb::Point& position = slot.pos;
   odb::Point mirrored_pos = core_->getMirroredPosition(position);
 
-  return getSlotIdxByPosition(mirrored_pos, layer);
+  int mirrored_idx = getSlotIdxByPosition(mirrored_pos, layer);
+
+  if (mirrored_idx < 0) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
+    logger_->error(utl::PPL,
+                   112,
+                   "Mirrored position ({}, {}) at layer {} is not a "
+                   "valid position.",
+                   mirrored_pos.getX(),
+                   mirrored_pos.getY(),
+                   tech_layer ? tech_layer->getName() : "NA");
+  }
+
+  return mirrored_idx;
 }
 
 void SimulatedAnnealing::updateSlotsFromGroup(

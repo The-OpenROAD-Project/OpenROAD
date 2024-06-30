@@ -35,8 +35,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithOneClockDomainNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains
@@ -99,8 +99,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithTwoClockDomainNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains
@@ -156,8 +156,8 @@ TEST(TestScanArchitectHeuristic, ArchitectWithTwoEdgesNoMix)
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(config,
-                                                  std::move(scan_cells_bucket));
+      = ScanArchitect::ConstructScanScanArchitect(
+          config, std::move(scan_cells_bucket), logger);
   scan_architect->init();
   scan_architect->architect();
   std::vector<std::unique_ptr<ScanChain>> scan_chains

@@ -73,11 +73,16 @@ class RenderThread : public QThread
             qreal render_ratio,
             const QColor& background);
 
+  bool isFirstRenderDone() { return is_first_render_done_; };
+  bool isRendering() { return is_rendering_; };
+
  signals:
   void done(const QImage& image, const QRect& bounds);
 
  private:
   void run() override;
+
+  void setupIOPins(odb::dbBlock* block, const odb::Rect& bounds);
 
   void drawBlock(QPainter* painter,
                  odb::dbBlock* block,
@@ -132,9 +137,10 @@ class RenderThread : public QThread
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter, const SelectionSet& selected);
   void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
-  void drawPinMarkers(Painter& painter,
-                      odb::dbBlock* block,
-                      const odb::Rect& bounds);
+  void drawIOPins(Painter& painter,
+                  odb::dbBlock* block,
+                  const odb::Rect& bounds,
+                  odb::dbTechLayer* layer);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
@@ -148,6 +154,8 @@ class RenderThread : public QThread
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
+
+  void drawDesignLoadingMessage(Painter& painter, const odb::Rect& bounds);
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
@@ -166,6 +174,15 @@ class RenderThread : public QThread
   QWaitCondition condition_;
   bool restart_ = false;
   bool abort_ = false;
+  bool is_rendering_ = false;
+  bool is_first_render_done_ = false;
+
+  QFont pin_font_;
+  bool pin_draw_names_ = false;
+  double pin_max_size_ = 0.0;
+  std::map<odb::dbTechLayer*,
+           std::vector<std::pair<odb::dbBTerm*, odb::dbBox*>>>
+      pins_;
 };
 
 }  // namespace gui

@@ -33,6 +33,7 @@
 #include <boost/io/ios_state.hpp>
 #include <boost/serialization/export.hpp>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -47,9 +48,9 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
-using namespace std;
-using namespace fr;
-BOOST_CLASS_EXPORT(PinAccessJobDescription)
+BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
+
+namespace drt {
 
 FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
@@ -91,6 +92,7 @@ void FlexPA::init()
   initTrackCoords();
 
   unique_insts_.init();
+  initSkipInstTerm();
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -116,6 +118,7 @@ void FlexPA::prep()
       for (const auto& term : master->getTerms()) {
         for (const auto& pin : term->getPins()) {
           std::vector<std::unique_ptr<frPinAccess>> pa;
+          pa.reserve(pin->getNumPinAccess());
           for (int i = 0; i < pin->getNumPinAccess(); i++) {
             pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
           }
@@ -126,6 +129,7 @@ void FlexPA::prep()
     for (const auto& term : design_->getTopBlock()->getTerms()) {
       for (const auto& pin : term->getPins()) {
         std::vector<std::unique_ptr<frPinAccess>> pa;
+        pa.reserve(pin->getNumPinAccess());
         for (int i = 0; i < pin->getNumPinAccess(); i++) {
           pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
         }
@@ -145,8 +149,9 @@ void FlexPA::prep()
     msg.setJobDescription(std::move(uDesc));
     const bool ok
         = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-    if (!ok)
+    if (!ok) {
       logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
+    }
   }
   prepPattern();
 }
@@ -157,7 +162,7 @@ void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
 }
 
 void FlexPA::setDistributed(const std::string& rhost,
-                            const ushort rport,
+                            const uint16_t rport,
                             const std::string& shared_vol,
                             const int cloud_sz)
 {
@@ -251,3 +256,5 @@ template void FlexPinAccessPattern::serialize<frIArchive>(
 template void FlexPinAccessPattern::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
+
+}  // namespace drt

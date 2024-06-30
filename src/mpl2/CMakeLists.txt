@@ -33,11 +33,7 @@
 
 include("openroad")
 
-# The location used by etc/DependencyInstaller.sh
-list(APPEND CMAKE_PREFIX_PATH
-  "/opt/or-tools/lib64/cmake"
-  "/opt/or-tools/lib/cmake"
-)
+
 
 find_package(ortools REQUIRED)
 
@@ -95,5 +91,5 @@ target_link_libraries(mpl2
 )
 
 if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
+  add_subdirectory(test)
 endif()

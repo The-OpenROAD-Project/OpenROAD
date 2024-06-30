@@ -48,7 +48,11 @@ class Graphics : public gui::Renderer, public DplObserver
   ~Graphics() override = default;
   void startPlacement(dbBlock* block) override;
   void placeInstance(dbInst* instance) override;
-  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) override;
+  void binSearch(const Cell* cell,
+                 GridX xl,
+                 GridY yl,
+                 GridX xh,
+                 GridY yh) override;
   void endPlacement() override;
 
   // From Renderer API
@@ -59,7 +63,7 @@ class Graphics : public gui::Renderer, public DplObserver
  private:
   Opendp* dp_;
   const dbInst* debug_instance_;
-  dbBlock* block_;
+  dbBlock* block_ = nullptr;
   float min_displacement_;  // in row height
   std::vector<Rect> searched_;
 };

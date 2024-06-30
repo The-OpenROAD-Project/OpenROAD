@@ -130,10 +130,14 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
+#set_debug_level CTS clustering 1
+
 clock_tree_synthesis  -root_buf $cts_buffer \
     -buf_list $cts_buffer \
     -sink_clustering_enable \
-    -sink_clustering_max_diameter $cts_cluster_diameter
+    -sink_clustering_max_diameter $cts_cluster_diameter \
+    -balance_levels \
+    -obstruction_aware
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
@@ -145,11 +149,8 @@ detailed_placement
 estimate_parasitics -placement
 report_clock_skew
 
-# Prevent grt from going over the macros to magnify the problem
-set_routing_layers -signal metal2-metal5
-global_route -allow_congestion
-estimate_parasitics -global_routing
-report_clock_skew
+# max latency path
+report_checks -through inst_1_1/clk -format full_clock_expanded
 
-#set_thread_count 40
-#detailed_route -verbose 1
+# min latency path
+report_checks -through inst_2_1/clk -format full_clock_expanded

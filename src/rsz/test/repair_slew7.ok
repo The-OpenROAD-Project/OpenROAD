@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: repair_slew5
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 13 components and 73 component-terminals.
@@ -38,7 +34,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 
-[INFO RSZ-0058] Using max wire length 1258um.
+[INFO RSZ-0058] Using max wire length 1229um.
 [INFO RSZ-0039] Resized 3 instances.
 Startpoint: u1/A4 (internal pin)
 Endpoint: out1 (output port)

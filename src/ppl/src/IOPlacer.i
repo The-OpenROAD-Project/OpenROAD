@@ -77,7 +77,7 @@ tclListStdSeq(Tcl_Obj *const source,
 }
 
 template <class TYPE>
-set<TYPE> *
+set<TYPE, ppl::pinSetComp> *
 tclSetStdSeq(Tcl_Obj *const source,
         swig_type_info *swig_type,
         Tcl_Interp *interp)
@@ -87,7 +87,7 @@ tclSetStdSeq(Tcl_Obj *const source,
 
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
-    set<TYPE> *seq = new set<TYPE>;
+    set<TYPE, ppl::pinSetComp> *seq = new set<TYPE, ppl::pinSetComp>;
     for (int i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
@@ -354,6 +354,12 @@ void
 run_annealing(bool random)
 {
   getIOPlacer()->runAnnealing(random);
+}
+
+void
+write_pin_placement(const char* file_name)
+{
+  getIOPlacer()->writePinPlacement(file_name);
 }
 
 } // namespace

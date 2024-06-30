@@ -117,7 +117,11 @@ std::vector<int> MultilevelPartitioner::Partition(
     }
   }
 
-  logger_->info(PAR, 151, "Finish Candidate Solutions Generation");
+  debugPrint(logger_,
+             PAR,
+             "multilevel_partitioning",
+             1,
+             "Finish Candidate Solutions Generation");
 
   // Step 2: run cut-overlay clustering to enhance the solution
   std::vector<int> best_solution = CutOverlayILPPart(hgraph,
@@ -126,8 +130,11 @@ std::vector<int> MultilevelPartitioner::Partition(
                                                      top_solutions,
                                                      best_solution_id);
 
-  logger_->info(
-      PAR, 152, "Finish Cut-Overlay Clustering and Optimal Partitioning");
+  debugPrint(logger_,
+             PAR,
+             "multilevel_partitioning",
+             1,
+             "Finish Cut-Overlay Clustering and Optimal Partitioning");
 
   // Step 3: Guided v-cycle. Note that hgraph has been updated.
   // The best_solution will be refined.
@@ -138,7 +145,8 @@ std::vector<int> MultilevelPartitioner::Partition(
         hgraph, upper_block_balance, lower_block_balance, best_solution);
   }
 
-  logger_->info(PAR, 153, "Finish Vcycle Refinement");
+  debugPrint(
+      logger_, PAR, "multilevel_partitioning", 1, "Finish Vcycle Refinement");
 
   return best_solution;
 }
@@ -215,11 +223,13 @@ void MultilevelPartitioner::VcycleRefinement(
     candidate_solutions.push_back(best_solution);
     const float cost
         = evaluator_->CutEvaluator(hgraph, best_solution, false).cost;
-    logger_->info(PAR,
-                  154,
-                  "[V-cycle Refinement] num_cycles = {}, cutcost = {}",
-                  num_cycles,
-                  cost);
+    debugPrint(logger_,
+               PAR,
+               "v_cycle_refinement",
+               1,
+               "num_cycles = {}, cutcost = {}",
+               num_cycles,
+               cost);
   }
 
   // Perform Cut-overlay clustering and ILP-based partitioning
@@ -274,11 +284,11 @@ void MultilevelPartitioner::InitialPartition(
     Matrix<int>& top_initial_solutions,
     int& best_solution_id) const
 {
-  logger_->report(
-      "======================================================================");
-  logger_->report("[STATUS] Initial Partitioning ");
-  logger_->report(
-      "======================================================================");
+  debugPrint(logger_,
+             PAR,
+             "initial_partitioning",
+             1,
+             "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
   std::uniform_real_distribution<> dist(0.0, 1.0);
@@ -309,16 +319,19 @@ void MultilevelPartitioner::InitialPartition(
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
-    const auto token = evaluator_->CutEvaluator(hgraph, solution, true);
+    const auto token = evaluator_->CutEvaluator(hgraph, solution, false);
     initial_solutions_cost.push_back(token.cost);
     // Here we only check the upper bound to make sure more possible solutions
     initial_solutions_flag.push_back(token.block_balance
                                      <= upper_block_balance);
-    logger_->report(
-        "[INIT-PART] {} :: Random part cutcost = {}, balance_flag = {}",
-        i,
-        initial_solutions_cost.back(),
-        initial_solutions_flag.back());
+    debugPrint(logger_,
+               PAR,
+               "initial_partitioning",
+               1,
+               "{} :: Random part cutcost = {}, balance_flag = {}",
+               i,
+               initial_solutions_cost.back(),
+               (bool) initial_solutions_flag.back());
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
@@ -334,16 +347,19 @@ void MultilevelPartitioner::InitialPartition(
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
-    const auto token = evaluator_->CutEvaluator(hgraph, solution, true);
+    const auto token = evaluator_->CutEvaluator(hgraph, solution, false);
     initial_solutions_cost.push_back(token.cost);
     // Here we only check the upper bound to make sure more possible solutions
     initial_solutions_flag.push_back(token.block_balance
                                      <= upper_block_balance);
-    logger_->report(
-        "[INIT-PART] {} :: Random VILE part cutcost = {}, balance_flag = {}",
-        i,
-        initial_solutions_cost.back(),
-        initial_solutions_flag.back());
+    debugPrint(logger_,
+               PAR,
+               "initial_partitioning",
+               1,
+               "{} :: Random VILE part cutcost = {}, balance_flag = {}",
+               i,
+               initial_solutions_cost.back(),
+               (bool) initial_solutions_flag.back());
   }
 
   // Vile partitioning. Vile partitioning needs refiner to generated a balanced
@@ -358,13 +374,18 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->Refine(
       hgraph, upper_block_balance, lower_block_balance, vile_solution);
   k_way_fm_refiner_->RestoreDefaultParameters();
-  const auto vile_token = evaluator_->CutEvaluator(hgraph, vile_solution, true);
+  const auto vile_token
+      = evaluator_->CutEvaluator(hgraph, vile_solution, false);
   initial_solutions_cost.push_back(vile_token.cost);
   initial_solutions_flag.push_back(vile_token.block_balance
                                    <= upper_block_balance);
-  logger_->report("[INIT-PART] :: VILE part cutcost = {}, balance_flag = {}",
-                  initial_solutions_cost.back(),
-                  initial_solutions_flag.back());
+  debugPrint(logger_,
+             PAR,
+             "initial_partitioning",
+             1,
+             "VILE part cutcost = {}, balance_flag = {}",
+             initial_solutions_cost.back(),
+             (bool) initial_solutions_flag.back());
   // ILP partitioning
   if (hgraph->GetNumVertices() <= num_vertices_threshold_ilp_) {
     auto& ilp_solution = initial_solutions.back();
@@ -384,13 +405,18 @@ void MultilevelPartitioner::InitialPartition(
                             lower_block_balance,
                             ilp_solution,
                             PartitionType::INIT_DIRECT_ILP);
-    const auto ilp_token = evaluator_->CutEvaluator(hgraph, ilp_solution, true);
+    const auto ilp_token
+        = evaluator_->CutEvaluator(hgraph, ilp_solution, false);
     initial_solutions_cost.push_back(ilp_token.cost);
     initial_solutions_flag.push_back(ilp_token.block_balance
                                      <= upper_block_balance);
-    logger_->report("[INIT-PART] :: ILP part cutcost = {}, balance_flag = {}",
-                    initial_solutions_cost.back(),
-                    initial_solutions_flag.back());
+    debugPrint(logger_,
+               PAR,
+               "initial_partitioning",
+               1,
+               "ILP part cutcost = {}, balance_flag = {}",
+               initial_solutions_cost.back(),
+               (bool) initial_solutions_flag.back());
   }
   // sort the solutions based on cost
   std::vector<int> solution_ids(initial_solutions_cost.size(), 0);
@@ -439,12 +465,19 @@ void MultilevelPartitioner::InitialPartition(
     top_initial_solutions.pop_back();
   }
 
-  logger_->info(PAR,
-                155,
-                "Number of chosen best initial solutions = {}",
-                num_chosen_best_init_solution);
+  debugPrint(logger_,
+             PAR,
+             "initial_partitioning",
+             1,
+             "Number of chosen best initial solutions = {}",
+             num_chosen_best_init_solution);
   best_solution_id = 0;  // the first one is the best one
-  logger_->info(PAR, 156, "Best initial cutcost {}", best_initial_cost);
+  debugPrint(logger_,
+             PAR,
+             "initial_partitioning",
+             1,
+             "Best initial cutcost {}",
+             best_initial_cost);
 }
 
 // Refine the solutions in top_solutions in parallel with multi-threading
@@ -505,20 +538,23 @@ void MultilevelPartitioner::RefinePartition(
     float best_cost = std::numeric_limits<float>::max();
     for (auto i = 0; i < top_solutions.size(); i++) {
       const float cost
-          = evaluator_->CutEvaluator(hgraph, top_solutions[i], true).cost;
+          = evaluator_->CutEvaluator(hgraph, top_solutions[i], false).cost;
       if (best_cost > cost) {
         best_cost = cost;
         best_solution_id = i;
       }
     }
-    logger_->report(
-        "[Refinement] Level {} :: num_vertices = {}, num_hyperedges = {},"
-        " cutcost = {}, best_solution_id = {}",
-        ++num_level,
-        hgraph->GetNumVertices(),
-        hgraph->GetNumHyperedges(),
-        best_cost,
-        best_solution_id);
+    debugPrint(logger_,
+               PAR,
+               "refinement",
+               1,
+               "Level {} :: num_vertices = {}, num_hyperedges = {},"
+               " cutcost = {}, best_solution_id = {}",
+               ++num_level,
+               hgraph->GetNumVertices(),
+               hgraph->GetNumHyperedges(),
+               best_cost,
+               best_solution_id);
   }
 }
 
@@ -620,12 +656,13 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
 
   // Call ILP-based partitioning
   HGraphPtr clustered_hgraph = coarsener_->GroupVertices(hgraph, cluster_attr);
-  logger_->info(
-      PAR,
-      157,
-      "Cut-Overlay Clustering : num_vertices = {}, num_hyperedges = {}",
-      clustered_hgraph->GetNumVertices(),
-      clustered_hgraph->GetNumHyperedges());
+  debugPrint(logger_,
+             PAR,
+             "cut_overlay_clustering",
+             1,
+             "num_vertices = {}, num_hyperedges = {}",
+             clustered_hgraph->GetNumVertices(),
+             clustered_hgraph->GetNumHyperedges());
 
   if (num_clusters <= num_vertices_threshold_ilp_) {
     partitioner_->Partition(clustered_hgraph,
@@ -647,8 +684,12 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     }
   }
 
-  logger_->info(PAR, 158, "Statistics of cut-overlay solution:");
-  evaluator_->CutEvaluator(hgraph, optimal_solution, true);
+  debugPrint(logger_,
+             PAR,
+             "cut_overlay_clustering",
+             1,
+             "Statistics of cut-overlay solution:");
+  evaluator_->CutEvaluator(hgraph, optimal_solution, false);
   return optimal_solution;
 }
 

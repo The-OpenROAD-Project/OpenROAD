@@ -5,14 +5,15 @@
 #include <fstream>
 #include <iostream>
 
-#include "db.h"
-#include "defin.h"
-#include "defout.h"
-#include "lefin.h"
-#include "lefout.h"
+#include "env.h"
+#include "odb/db.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/lefin.h"
+#include "odb/lefout.h"
 #include "utl/Logger.h"
-using namespace odb;
-using namespace std;
+
+namespace odb {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -24,13 +25,12 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("data", "gscl45nm.lef");
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  path = testTmpPath("data", "lef58class_gscl45nm.lef");
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
@@ -49,21 +49,23 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("data", "gscl45nm.lef");
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  FILE* write;
-  path = std::string(std::getenv("BASE_DIR"))
-         + "/results/TestLef58PropertiesDbRW";
-  write = fopen(path.c_str(), "w");
+  path = testTmpPath("results", "TestLef58PropertiesDbRW");
+
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+  write.open(path, std::ios::binary);
+
   db1->write(write);
 
   std::ifstream read;
   read.exceptions(std::ifstream::failbit | std::ifstream::badbit
                   | std::ios::eofbit);
-  read.open(path.c_str(), std::ios::binary);
+  read.open(path, std::ios::binary);
 
   db2->read(read);
 
@@ -92,6 +94,17 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(rule->getParMinLength() == -0.1 * distFactor);
   BOOST_TEST(rule->isTwoEdgesValid() == 1);
   BOOST_TEST(rule->isToConcaveCornerValid() == 0);
+
+  auto wrongDir_rules = layer->getTechLayerWrongDirSpacingRules();
+  BOOST_TEST(wrongDir_rules.size() == 1);
+  odb::dbTechLayerWrongDirSpacingRule* wrongDir_rule
+      = (odb::dbTechLayerWrongDirSpacingRule*) *wrongDir_rules.begin();
+  BOOST_TEST(wrongDir_rule->getWrongdirSpace() == 0.12 * distFactor);
+  BOOST_TEST(wrongDir_rule->isNoneolValid() == 1);
+  BOOST_TEST(wrongDir_rule->getNoneolWidth() == 0.15 * distFactor);
+  BOOST_TEST(wrongDir_rule->getPrlLength() == -0.05 * distFactor);
+  BOOST_TEST(wrongDir_rule->isLengthValid() == 1);
+  BOOST_TEST(wrongDir_rule->getLength() == 0.2 * distFactor);
 
   auto minStepRules = layer->getTechLayerMinStepRules();
   BOOST_TEST(minStepRules.size() == 4);
@@ -126,8 +139,8 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(corner_rule->isExceptEol());
   BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
-  vector<pair<int, int>> spacing;
-  vector<int> corner_width;
+  std::vector<std::pair<int, int>> spacing;
+  std::vector<int> corner_width;
   corner_rule->getSpacingTable(spacing);
   corner_rule->getWidthTable(corner_width);
   BOOST_TEST(spacing.size() == 1);
@@ -143,10 +156,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(spacing_tbl_rule->isSameMask() == false);
   BOOST_TEST(spacing_tbl_rule->isExceeptEol() == true);
   BOOST_TEST(spacing_tbl_rule->getEolWidth() == 0.090 * distFactor);
-  vector<int> width;
-  vector<int> length;
-  vector<vector<int>> spacing_tbl;
-  map<unsigned int, pair<int, int>> within;
+  std::vector<int> width;
+  std::vector<int> length;
+  std::vector<std::vector<int>> spacing_tbl;
+  std::map<unsigned int, std::pair<int, int>> within;
   spacing_tbl_rule->getTable(width, length, spacing_tbl, within);
   BOOST_TEST(width.size() == 2);
   BOOST_TEST(length.size() == 2);
@@ -340,7 +353,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   layer = dbTech->findLayer("metal2");
   // Check LEF57_MINSTEP
   auto minStepRules_57 = layer->getTechLayerMinStepRules();
-  BOOST_TEST(minStepRules_57.size() == 4);
+  BOOST_TEST(minStepRules_57.size() == 7);
   auto itr_57 = minStepRules_57.begin();
   odb::dbTechLayerMinStepRule* step_rule_57
       = (odb::dbTechLayerMinStepRule*) *itr_57;
@@ -434,6 +447,61 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     i_57++;
   }
+
+  // check LEF58_FORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto forbiddenSpacingRules = layer->getTechLayerForbiddenSpacingRules();
+  BOOST_TEST(forbiddenSpacingRules.size() == 1);
+  int c = 0;
+  for (odb::dbTechLayerForbiddenSpacingRule* subRule : forbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getForbiddenSpacing().first == 0.05 * distFactor);
+      BOOST_TEST(subRule->getForbiddenSpacing().second == 0.2 * distFactor);
+      BOOST_TEST(subRule->getWidth() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getWithin() == 0.15 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0.015 * distFactor);
+      BOOST_TEST(subRule->getTwoEdges() == 0.06 * distFactor);
+    }
+    c++;
+  }
+
+  layer = dbTech->findLayer("metal3");
+  forbiddenSpacingRules = layer->getTechLayerForbiddenSpacingRules();
+  BOOST_TEST(forbiddenSpacingRules.size() == 1);
+  c = 0;
+  for (odb::dbTechLayerForbiddenSpacingRule* subRule : forbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getForbiddenSpacing().first == 0.1 * distFactor);
+      BOOST_TEST(subRule->getForbiddenSpacing().second == 0.3 * distFactor);
+      BOOST_TEST(subRule->getWidth() == 0.5 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0.02 * distFactor);
+      BOOST_TEST(subRule->getTwoEdges() == 0.12 * distFactor);
+    }
+    c++;
+  }
+  // check LEF58_TWOWIRESFORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto TWforbiddenSpacingRules = layer->getTechLayerTwoWiresForbiddenSpcRules();
+  BOOST_TEST(TWforbiddenSpacingRules.size() == 2);
+  c = 0;
+  for (auto* subRule : TWforbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getMinSpacing() == 0.16 * distFactor);
+      BOOST_TEST(subRule->getMaxSpacing() == 0.2 * distFactor);
+      BOOST_TEST(subRule->getMinSpanLength() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getMaxSpanLength() == 0.08 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0);
+      BOOST_TEST(subRule->isMinExactSpanLength());
+      BOOST_TEST(subRule->isMaxExactSpanLength());
+    } else {
+      BOOST_TEST(subRule->getPrl() == -0.5 * distFactor);
+      BOOST_TEST(!subRule->isMinExactSpanLength());
+      BOOST_TEST(!subRule->isMaxExactSpanLength());
+    }
+    c++;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace odb

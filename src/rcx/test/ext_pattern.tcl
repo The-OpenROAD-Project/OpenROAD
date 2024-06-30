@@ -13,4 +13,4 @@ extract_parasitics -ext_model_file ext_pattern.rules \
 set spef_file [make_result_file ext_pattern.spef]
 write_spef $spef_file -nets $test_nets
 
-diff_files ext_pattern.spefok $spef_file
+diff_files ext_pattern.spefok $spef_file "^\\*(DATE|VERSION)"

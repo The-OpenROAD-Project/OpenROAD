@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "parse.h"
+#include "odb/parse.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -160,7 +160,7 @@ void Ath__parser::addSeparator(const char* s)
   strcat(_wordSeparators, s);
 }
 
-void Ath__parser::openFile(char* name)
+void Ath__parser::openFile(const char* name)
 {
   if (name != nullptr && strlen(name) > 4
       && !strcmp(name + strlen(name) - 3, ".gz")) {

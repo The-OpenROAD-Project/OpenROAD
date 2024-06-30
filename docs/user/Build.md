@@ -1,4 +1,4 @@
-# Build OpenROAD
+# Installing OpenROAD
 
 ## Build
 
@@ -51,7 +51,7 @@ sudo ./etc/DependencyInstaller.sh
 mkdir build && cd build
 cmake ..
 make
-make install 
+sudo make install 
 ```
 
 The default install directory is `/usr/local`.
@@ -73,6 +73,9 @@ make DESTDIR=<prefix_path> install
 ./etc/Build.sh
 # To build with debug option enabled and if the Tcl library is not on the default path
 ./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
+
+# To build manpages
+./etc/Build.sh -build-man
 ```
 
 The default install directory is `/usr/local`.
@@ -95,3 +98,9 @@ for using Address Sanitizer.
 
 > **Note:** Address Sanitizer adds instrumentation for detecting memory errors.
 >  Enabling this option will cause OpenROAD to run slower and consume more RAM.
+
+### Build with Prebuilt Binaries
+
+Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
+of OpenROAD with self-contained dependencies released on a regular basis.
+Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) here.

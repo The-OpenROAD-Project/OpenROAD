@@ -47,6 +47,8 @@
 
 #pragma once
 
+#include "utl/Logger.h"
+
 namespace odb {
 
 // Note that the use of the word 'orientation' here is distinct from
@@ -79,7 +81,7 @@ class Direction1D
   // [East/North/Up -> High] [West/South/Down -> Low]
   constexpr explicit Direction1D(const Direction3D& other);
 
-  constexpr operator unsigned char() const { return value_; }
+  constexpr operator Value() const { return static_cast<Value>(value_); }
   Direction1D flipped() const { return Value(value_ ^ 1); }
 
   bool operator==(const Direction1D& d) const { return value_ == d.value_; }
@@ -110,7 +112,7 @@ class Orientation2D
   // [West / East -> Horizontal] [South / North -> Vertical]
   constexpr explicit Orientation2D(const Direction2D& other);
 
-  constexpr operator unsigned char() const { return value_; }
+  constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Horizontal -> Vertical] [Vertical -> Horizontal]
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
@@ -153,8 +155,8 @@ class Direction2D
   bool operator>(const Direction2D& d) const { return value_ > d.value_; }
   bool operator>=(const Direction2D& d) const { return value_ >= d.value_; }
 
-  // Casting to int
-  constexpr operator unsigned char() const { return value_; }
+  // Casting to Value
+  constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [East <-> West] [ North <-> South]
   Direction2D flipped() const { return Value(value_ ^ 1); }
@@ -197,7 +199,7 @@ class Orientation3D
   constexpr explicit Orientation3D(const Direction2D& other);
   constexpr explicit Orientation3D(const Direction3D& other);
 
-  constexpr operator unsigned char() const { return value_; }
+  constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Proximal: Low->down, High->Up] [others as Orientation2D]
   Direction3D getDirection(Direction1D dir) const;
@@ -239,7 +241,7 @@ class Direction3D
   bool operator>=(const Direction3D& d) const { return value_ >= d.value_; }
 
   // Casting to int
-  constexpr operator unsigned char() const { return value_; }
+  constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Up <-> Down] [others as Direction2D]
   Direction3D flipped() const { return Value(value_ ^ 1); }
@@ -308,5 +310,7 @@ inline constexpr Direction2D north{Direction2D::North};
 
 inline constexpr Direction3D down{Direction3D::Down};
 inline constexpr Direction3D up{Direction3D::Up};
+
+using utl::format_as;
 
 }  // namespace odb

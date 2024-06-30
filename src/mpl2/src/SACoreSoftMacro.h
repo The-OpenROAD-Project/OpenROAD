@@ -50,8 +50,8 @@ class Graphics;
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
-  SACoreSoftMacro(float outline_width,
-                  float outline_height,  // boundary constraints
+  SACoreSoftMacro(Cluster* root,
+                  const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   // weight for different penalty
                   float area_weight,
@@ -76,8 +76,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float init_prob,
                   int max_num_step,
                   int num_perturb_per_step,
-                  int k,
-                  int c,
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
@@ -96,10 +94,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void alignMacroClusters();
-  void setBlockages(const std::vector<Rect>& blockages)
-  {
-    blockages_ = blockages;
-  }
+  void addBlockages(const std::vector<Rect>& blockages);
 
  private:
   float getAreaPenalty() const;
@@ -109,7 +104,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void perturb() override;
   void restore() override;
   // actions used
-  void resize();
+  void resizeOneCluster();
 
   void shrink() override;
 
@@ -126,6 +121,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calNotchPenalty();
   void calMacroBlockagePenalty();
   std::vector<Rect> blockages_;
+
+  Cluster* root_;
 
   // notch threshold
   float notch_h_th_;

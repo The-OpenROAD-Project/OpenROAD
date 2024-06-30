@@ -1,0 +1,174 @@
+VERSION 5.8 ;
+
+#NAMESCASESENSITIVE ON ;
+USEMINSPACING OBS OFF ;
+#BUSBITCHARS "[]" ;
+
+# UNITS
+# YBASE MICRON 1000 ;
+# END UNITS
+
+SITE IOSITE
+  SYMMETRY Y ;
+  CLASS PAD ;
+  SIZE    1.000 BY 140.000 ;
+END IOSITE
+
+# IO pad with no top level pin shape
+MACRO PADCELL_SIG_V
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  FOREIGN PADCELL_SIG_V 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  SITE IOSITE ;
+  PIN PAD 
+    USE SIGNAL ;
+    DIRECTION INOUT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal9 ;
+        RECT 10.0 50.0 20.0 55.0 ;
+    END
+  END PAD
+  PIN A
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal5 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal6 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal7 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal8 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal9 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+    END
+  END A
+  PIN Y
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal5 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal6 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal7 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal8 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal9 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+    END
+  END Y
+  PIN PU
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END PU
+  PIN OE
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END OE
+  PIN RETN
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  0.000  99.900  0.100 100.00 ;
+      LAYER metal4 ;
+        RECT 24.900  99.900 25.000 100.00 ;
+    END
+  END RETN
+  PIN SNS
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    SHAPE ABUTMENT ;
+    PORT 
+      LAYER metal4 ;
+        RECT  0.000  89.900  0.100 90.00 ;
+      LAYER metal4 ;
+        RECT 24.900  89.900 25.000 90.00 ;
+    END
+  END SNS
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_SIG_V
+
+END LIBRARY

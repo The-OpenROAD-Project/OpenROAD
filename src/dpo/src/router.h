@@ -169,7 +169,6 @@ class RoutingParams
 
   double blockage_porosity_ = 0;
 
-  int num_ni_terminals_ = 0;
   int num_route_blockages_ = 0;
 
   // Stuff for edge adjustements (ICCAD12).

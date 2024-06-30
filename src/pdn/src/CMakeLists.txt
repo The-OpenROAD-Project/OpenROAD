@@ -60,6 +60,7 @@ target_sources(pdn
     via.cpp
     connect.cpp
     renderer.cpp
+    sroute.cpp
     via_repair.cpp
 )
 

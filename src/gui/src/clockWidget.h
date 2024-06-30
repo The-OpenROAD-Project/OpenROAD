@@ -182,7 +182,8 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   constexpr static Qt::GlobalColor root_color_ = Qt::red;
   constexpr static Qt::GlobalColor clock_gate_color_ = Qt::magenta;
   constexpr static Qt::GlobalColor unknown_color_ = Qt::darkGray;
-  constexpr static Qt::GlobalColor leaf_color_ = Qt::red;
+  constexpr static Qt::GlobalColor leaf_register_color_ = Qt::red;
+  constexpr static Qt::GlobalColor leaf_macro_color_ = Qt::darkCyan;
 
   constexpr static qreal default_size_ = 100.0;
 
@@ -256,16 +257,16 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   constexpr static qreal bar_scale_size_ = 0.1;
 };
 
-// Handles drawing the register node for a tree
-class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
+// Handles drawing macro or register leaf cell
+class ClockLeafNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 {
  public:
-  ClockRegisterNodeGraphicsViewItem(odb::dbITerm* iterm,
-                                    QGraphicsItem* parent = nullptr);
-  ~ClockRegisterNodeGraphicsViewItem() {}
+  ClockLeafNodeGraphicsViewItem(odb::dbITerm* iterm,
+                                QGraphicsItem* parent = nullptr);
+  ~ClockLeafNodeGraphicsViewItem() override = default;
 
-  virtual QString getType() const override { return "Register"; }
-  virtual QColor getColor() const override { return leaf_color_; }
+  QString getType() const override = 0;
+  QColor getColor() const override = 0;
 
   QRectF boundingRect() const override;
   void paint(QPainter* painter,
@@ -276,13 +277,46 @@ class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
 
  protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
-
- private:
   QMenu menu_;
   QAction* highlight_path_;
 
-  QRectF getOutlineRect() const;
+  virtual QRectF getOutlineRect() const;
   QPolygonF getClockInputPolygon() const;
+};
+
+// Handles drawing register cell node for a tree
+class ClockRegisterNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
+{
+ public:
+  ClockRegisterNodeGraphicsViewItem(odb::dbITerm* iterm,
+                                    QGraphicsItem* parent = nullptr)
+      : ClockLeafNodeGraphicsViewItem(iterm, parent)
+  {
+  }
+  ~ClockRegisterNodeGraphicsViewItem() override = default;
+  QString getType() const override { return "Register"; }
+  QColor getColor() const override { return leaf_register_color_; }
+};
+
+// Handles drawing macro cell node for a tree
+class ClockMacroNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
+{
+ public:
+  ClockMacroNodeGraphicsViewItem(odb::dbITerm* iterm,
+                                 qreal insertion_delay_as_height,
+                                 QGraphicsItem* parent = nullptr)
+      : ClockLeafNodeGraphicsViewItem(iterm, parent),
+        insertion_delay_as_height_(insertion_delay_as_height)
+  {
+  }
+  ~ClockMacroNodeGraphicsViewItem() override = default;
+  QString getType() const override { return "Macro"; }
+  QColor getColor() const override { return leaf_macro_color_; }
+
+ protected:
+  QRectF getOutlineRect() const override;
+
+  const qreal insertion_delay_as_height_;
 };
 
 // Handles drawing the clock gate and non-inverter/buffers nodes in the tree
@@ -481,6 +515,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
  public slots:
   void setBlock(odb::dbBlock* block);
   void populate(sta::Corner* corner = nullptr);
+  void fit();
 
  private slots:
   void currentClockChanged(int index);
@@ -496,6 +531,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   std::unique_ptr<STAGuiInterface> stagui_;
 
   QPushButton* update_button_;
+  QPushButton* fit_button_;
   QComboBox* corner_box_;
 
   QTabWidget* clocks_tab_;

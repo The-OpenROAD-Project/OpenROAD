@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "db.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -72,6 +72,7 @@ namespace odb {
 #define WOP_RECT 14      //  X X X 0 1 1 1 0 :  operand = first offset
 #define WOP_NOP 15       //  X X X 0 1 1 1 1 :  operand = 0
 #define WOP_COLOR 16     //  X X X 1 0 0 0 0 :  operand = integer operand
+#define WOP_VIACOLOR 17  //  X X X 1 0 0 0 1 :  operand = via color
 
 // opcode-flags
 #define WOP_VIA_EXIT_TOP \
@@ -104,9 +105,9 @@ namespace odb {
 
 struct WirePoint
 {
-  int _x;
-  int _y;
-  dbTechLayer* _layer;
+  int _x = 0;
+  int _y = 0;
+  dbTechLayer* _layer = nullptr;
 };
 
 template <class O, class D>
@@ -136,8 +137,9 @@ prevOpCode:
       if (get_layer) {
         pnt._layer = dbTechLayer::getTechLayer(tech, data[idx]);
 
-        if ((look_for_x == false) && (look_for_y == false))
+        if ((look_for_x == false) && (look_for_y == false)) {
           return;
+        }
 
         get_layer = false;
       }
@@ -156,8 +158,9 @@ prevOpCode:
         look_for_x = false;
         pnt._x = data[idx];
 
-        if ((look_for_y == false) && (get_layer == false))
+        if ((look_for_y == false) && (get_layer == false)) {
           return;
+        }
       }
 
       --idx;
@@ -169,8 +172,9 @@ prevOpCode:
         look_for_y = false;
         pnt._y = data[idx];
 
-        if ((look_for_x == false) && (get_layer == false))
+        if ((look_for_x == false) && (get_layer == false)) {
           return;
+        }
       }
 
       --idx;
@@ -181,13 +185,15 @@ prevOpCode:
       if (get_layer) {
         dbVia* via = dbVia::getVia(block, data[idx]);
 
-        if (opcode & WOP_VIA_EXIT_TOP)
+        if (opcode & WOP_VIA_EXIT_TOP) {
           pnt._layer = via->getTopLayer();
-        else
+        } else {
           pnt._layer = via->getBottomLayer();
+        }
 
-        if ((look_for_x == false) && (look_for_y == false))
+        if ((look_for_x == false) && (look_for_y == false)) {
           return;
+        }
 
         get_layer = false;
       }
@@ -200,13 +206,15 @@ prevOpCode:
       if (get_layer) {
         dbTechVia* via = dbTechVia::getTechVia(tech, data[idx]);
 
-        if (opcode & WOP_VIA_EXIT_TOP)
+        if (opcode & WOP_VIA_EXIT_TOP) {
           pnt._layer = via->getTopLayer();
-        else
+        } else {
           pnt._layer = via->getBottomLayer();
+        }
 
-        if ((look_for_x == false) && (look_for_y == false))
+        if ((look_for_x == false) && (look_for_y == false)) {
           return;
+        }
 
         get_layer = false;
       }

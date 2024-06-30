@@ -109,6 +109,7 @@ int Architecture::getCellHeightInRows(const Node* ndi) const
 {
   return std::lround(ndi->getHeight() / (double) rows_[0]->getHeight());
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Row* Architecture::createAndAddRow()
@@ -117,6 +118,7 @@ Architecture::Row* Architecture::createAndAddRow()
   rows_.push_back(row);
   return row;
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::Region* Architecture::createAndAddRegion()
@@ -170,7 +172,7 @@ int Architecture::postProcess(Network* network)
     for (auto subrow : subrows) {
       const int lx = subrow->getLeft();
       const int rx = subrow->getRight();
-      intervals.emplace_back(std::make_pair(lx, rx));
+      intervals.emplace_back(lx, rx);
     }
     std::sort(intervals.begin(), intervals.end());
 
@@ -203,6 +205,7 @@ int Architecture::postProcess(Network* network)
       const int lx = intervals.front().first;
       const int rx = intervals.back().second;
       subrows[0]->setNumSites((int) ((rx - lx) / subrows[0]->getSiteSpacing()));
+      subrows[0]->setSubRowOrigin(lx);
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {
@@ -213,8 +216,7 @@ int Architecture::postProcess(Network* network)
     }
     rows.push_back(subrows[0]);
 
-    // Check for the insertion of filler.  Hmm.
-    // How do we set the id of the filler here?
+    // Check for the insertion of filler.
     const int height = subrows[0]->getHeight();
     const int yb = subrows[0]->getBottom();
     if (xmin_ < intervals.front().first) {
@@ -249,8 +251,7 @@ int Architecture::postProcess(Network* network)
     }
   }
   // Replace original rows with new rows.
-  rows_.clear();
-  rows_.insert(rows_.end(), rows.begin(), rows.end());
+  rows_ = std::move(rows);
   // Sort rows (to be safe).
   std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
   // Assign row ids.
@@ -374,7 +375,7 @@ void Architecture::addCellSpacingUsingTable(int firstEdge,
 ////////////////////////////////////////////////////////////////////////////////
 void Architecture::addCellPadding(Node* ndi, int leftPadding, int rightPadding)
 {
-  cellPaddings_[ndi->getId()] = std::make_pair(leftPadding, rightPadding);
+  cellPaddings_[ndi->getId()] = {leftPadding, rightPadding};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -389,8 +390,7 @@ bool Architecture::getCellPadding(const Node* ndi,
     leftPadding = 0;
     return false;
   }
-  rightPadding = it->second.second;
-  leftPadding = it->second.first;
+  std::tie(leftPadding, rightPadding) = it->second;
   return true;
 }
 
@@ -410,8 +410,8 @@ int Architecture::getCellSpacing(const Node* leftNode,
   int retval = 0;
   if (useSpacingTable_) {
     // Don't need this if one of the cells is null.
-    const int i1 = (leftNode == nullptr) ? -1 : leftNode->getRightEdgeType();
-    const int i2 = (rightNode == nullptr) ? -1 : rightNode->getLeftEdgeType();
+    const int i1 = leftNode ? leftNode->getRightEdgeType() : -1;
+    const int i2 = rightNode ? rightNode->getLeftEdgeType() : -1;
     retval = std::max(retval, getCellSpacingUsingTable(i1, i2));
   }
   if (usePadding_) {
@@ -420,13 +420,13 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
     int separation = 0;
     if (leftNode != nullptr) {
-      auto it = cellPaddings_.find(leftNode->getId());
+      const auto it = cellPaddings_.find(leftNode->getId());
       if (it != cellPaddings_.end()) {
         separation += it->second.second;
       }
     }
     if (rightNode != nullptr) {
-      auto it = cellPaddings_.find(rightNode->getId());
+      const auto it = cellPaddings_.find(rightNode->getId());
       if (it != cellPaddings_.end()) {
         separation += it->second.first;
       }
@@ -438,7 +438,8 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::getCellSpacingUsingTable(int firstEdge, int secondEdge) const
+int Architecture::getCellSpacingUsingTable(const int firstEdge,
+                                           const int secondEdge) const
 {
   // In the event that one of the left or right indices is
   // void (-1), return the worst possible spacing.  This
@@ -448,14 +449,14 @@ int Architecture::getCellSpacingUsingTable(int firstEdge, int secondEdge) const
   int spacing = 0;
 
   if (firstEdge == -1 && secondEdge == -1) {
-    for (auto cellSpacings : cellSpacings_) {
+    for (const auto& cellSpacings : cellSpacings_) {
       spacing = std::max(spacing, cellSpacings->getSeparation());
     }
     return spacing;
   }
 
   if (firstEdge == -1) {
-    for (auto cellSpacings : cellSpacings_) {
+    for (const auto& cellSpacings : cellSpacings_) {
       if (cellSpacings->getFirstEdge() == secondEdge
           || cellSpacings->getSecondEdge() == secondEdge) {
         spacing = std::max(spacing, cellSpacings->getSeparation());
@@ -465,7 +466,7 @@ int Architecture::getCellSpacingUsingTable(int firstEdge, int secondEdge) const
   }
 
   if (secondEdge == -1) {
-    for (auto cellSpacings : cellSpacings_) {
+    for (const auto& cellSpacings : cellSpacings_) {
       if (cellSpacings->getFirstEdge() == firstEdge
           || cellSpacings->getSecondEdge() == firstEdge) {
         spacing = std::max(spacing, cellSpacings->getSeparation());
@@ -474,7 +475,7 @@ int Architecture::getCellSpacingUsingTable(int firstEdge, int secondEdge) const
     return spacing;
   }
 
-  for (auto cellSpacings : cellSpacings_) {
+  for (const auto& cellSpacings : cellSpacings_) {
     if ((cellSpacings->getFirstEdge() == firstEdge
          && cellSpacings->getSecondEdge() == secondEdge)
         || (cellSpacings->getFirstEdge() == secondEdge
@@ -497,7 +498,7 @@ void Architecture::clear_edge_type()
 void Architecture::init_edge_type()
 {
   clear_edge_type();
-  edgeTypes_.emplace_back(std::make_pair("DEFAULT", EDGETYPE_DEFAULT));
+  edgeTypes_.emplace_back("DEFAULT", EDGETYPE_DEFAULT);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -511,7 +512,7 @@ int Architecture::add_edge_type(const char* name)
     }
   }
   const int n = (int) edgeTypes_.size();
-  edgeTypes_.emplace_back(std::make_pair(name, n));
+  edgeTypes_.emplace_back(name, n);
   return n;
 }
 

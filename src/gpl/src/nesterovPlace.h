@@ -76,7 +76,7 @@ class NesterovPlace
 
   void updateWireLengthCoef(float overflow);
 
-  void updateNextIter(const int iter);
+  void updateNextIter(int iter);
 
   void updateDb();
 
@@ -95,38 +95,38 @@ class NesterovPlace
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
-  utl::Logger* log_;
+  utl::Logger* log_ = nullptr;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;
 
-  float total_sum_overflow_;
-  float total_sum_overflow_unscaled_;
-  float average_overflow_;
-  float average_overflow_unscaled_;
+  float total_sum_overflow_ = 0;
+  float total_sum_overflow_unscaled_ = 0;
+  float average_overflow_ = 0;
+  float average_overflow_unscaled_ = 0;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
 
   // base_wcof
-  float baseWireLengthCoef_;
+  float baseWireLengthCoef_ = 0;
 
   // wlen_cof
-  float wireLengthCoefX_;
-  float wireLengthCoefY_;
+  float wireLengthCoefX_ = 0;
+  float wireLengthCoefY_ = 0;
 
   // half-parameter-wire-length
-  int64_t prevHpwl_;
+  int64_t prevHpwl_ = 0;
 
-  float isDiverged_;
-  float isRoutabilityNeed_;
+  bool isDiverged_ = false;
+  bool isRoutabilityNeed_ = true;
 
   std::string divergeMsg_;
-  int divergeCode_;
+  int divergeCode_ = 0;
 
-  int recursionCntWlCoef_;
-  int recursionCntInitSLPCoef_;
+  int recursionCntWlCoef_ = 0;
+  int recursionCntInitSLPCoef_ = 0;
 
   void cutFillerCoordinates();
 

@@ -39,18 +39,11 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
+
 namespace utl {
 class Logger;
 }
-
-namespace odb {
-class dbBlock;
-class dbDatabase;
-class dbMTerm;
-class dbSite;
-class dbTechLayer;
-class Rect;
-}  // namespace odb
 
 namespace sta {
 class dbNetwork;
@@ -59,29 +52,32 @@ class Report;
 
 namespace ifp {
 
-using odb::dbBlock;
-using odb::dbDatabase;
-using odb::dbSite;
 using sta::dbNetwork;
 using utl::Logger;
 
 class InitFloorplan
 {
  public:
-  InitFloorplan(dbBlock* block, Logger* logger, sta::dbNetwork* network);
+  InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
 
   // utilization is in [0, 100]%
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern.
   void initFloorplan(double utilization,
                      double aspect_ratio,
                      int core_space_bottom,
                      int core_space_top,
                      int core_space_left,
                      int core_space_right,
-                     const std::vector<odb::dbSite*>& extra_sites = {});
+                     odb::dbSite* base_site,
+                     const std::vector<odb::dbSite*>& additional_sites = {});
 
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern.
   void initFloorplan(const odb::Rect& die,
                      const odb::Rect& core,
-                     const std::vector<odb::dbSite*>& extra_sites = {});
+                     odb::dbSite* base_site,
+                     const std::vector<odb::dbSite*>& additional_sites = {});
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
@@ -102,24 +98,33 @@ class InitFloorplan
 
   odb::dbSite* findSite(const char* site_name);
 
- protected:
+ private:
+  using SitesByName = std::map<std::string, odb::dbSite*>;
+
   double designArea();
-  int makeRows(dbSite* site,
-               int core_lx,
-               int core_ly,
-               int core_ux,
-               int core_uy,
-               int factor,
-               int row_index);
+  void makeRows(const odb::dbSite::RowPattern& pattern, const odb::Rect& core);
+  void makeUniformRows(odb::dbSite* base_site,
+                       const SitesByName& sites_by_name,
+                       const odb::Rect& core);
+  void makeHybridRows(odb::dbSite* base_hybrid_site,
+                      const SitesByName& sites_by_name,
+                      const odb::Rect& core);
+  int getOffset(odb::dbSite* base_hybrid_site,
+                odb::dbSite* site,
+                odb::dbOrientType& orientation) const;
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
   void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
-  std::set<dbSite*> getSites() const;
+  void addUsedSites(std::map<std::string, odb::dbSite*>& sites_by_name) const;
 
-  dbBlock* block_;
+  odb::dbBlock* block_;
   Logger* logger_;
   sta::dbNetwork* network_;
+
+  // this is a set of sets of all constructed site ids.
+  std::set<std::set<int>> constructed_patterns_;
+  std::vector<std::vector<odb::dbSite*>> repeating_row_patterns_;
 };
 
 }  // namespace ifp

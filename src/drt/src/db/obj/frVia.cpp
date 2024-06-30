@@ -32,10 +32,9 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-using namespace std;
-using namespace fr;
+namespace drt {
 
-frVia::frVia(const drVia& in) : owner_(nullptr), index_in_owner_(0)
+frVia::frVia(const drVia& in)
 {
   origin_ = in.getOrigin();
   viaDef_ = in.getViaDef();
@@ -75,3 +74,5 @@ template void frVia::serialize<frIArchive>(frIArchive& ar,
 
 template void frVia::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
+
+}  // namespace drt

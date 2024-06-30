@@ -21,7 +21,7 @@ TEST(HTreeBuilderTest, Instantiates)
 
   utl::Logger logger;
   HTreeBuilder instance(
-      /*options=*/nullptr, clock, /*parent=*/nullptr, &logger);
+      /*options=*/nullptr, clock, /*parent=*/nullptr, &logger, nullptr);
 }
 
 }  // namespace cts

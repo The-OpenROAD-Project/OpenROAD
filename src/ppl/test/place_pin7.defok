@@ -332,7 +332,7 @@ PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met2 ( -70 -245 ) ( 70 245 )
-        + FIXED ( 7590 245 ) N ;
+        + FIXED ( 8050 245 ) N ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL ;
     - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL ;

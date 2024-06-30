@@ -30,13 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "util.h"
+#include "odb/util.h"
 
 #include <map>
 #include <numeric>
 #include <string>
 
-#include "db.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -90,9 +91,10 @@ static void cutRow(dbBlock* block,
 
   vector<dbBox*> row_blockage_bboxs = row_blockages;
   vector<std::pair<int, int>> row_blockage_xs;
+  row_blockage_xs.reserve(row_blockages.size());
   for (dbBox* row_blockage_bbox : row_blockages) {
-    row_blockage_xs.push_back(
-        std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
+    row_blockage_xs.emplace_back(row_blockage_bbox->xMin(),
+                                 row_blockage_bbox->xMax());
   }
 
   std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
@@ -103,7 +105,7 @@ static void cutRow(dbBlock* block,
   for (std::pair<int, int> blockage : row_blockage_xs) {
     const int blockage_x0 = blockage.first;
     const int new_row_end_x
-        = makeSiteLoc(blockage_x0 - halo_x, site_width, 1, start_origin_x);
+        = makeSiteLoc(blockage_x0 - halo_x, site_width, true, start_origin_x);
     buildRow(block,
              row_name + "_" + std::to_string(row_sub_idx),
              row_site,
@@ -116,7 +118,7 @@ static void cutRow(dbBlock* block,
     row_sub_idx++;
     const int blockage_x1 = blockage.second;
     start_origin_x
-        = makeSiteLoc(blockage_x1 + halo_x, site_width, 0, start_origin_x);
+        = makeSiteLoc(blockage_x1 + halo_x, site_width, false, start_origin_x);
   }
   // Make last row
   buildRow(block,
@@ -165,6 +167,16 @@ int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
   return site_x1 * site_width + offset;
 }
 
+template <typename T>
+bool hasOverflow(T a, T b)
+{
+  if ((b > 0 && a > std::numeric_limits<T>::max() - b)
+      || (b < 0 && a < std::numeric_limits<T>::lowest() - b)) {
+    return true;
+  }
+  return false;
+}
+
 void cutRows(dbBlock* block,
              const int min_row_width,
              const vector<dbBox*>& blockages,
@@ -177,10 +189,13 @@ void cutRows(dbBlock* block,
   }
   auto rows = block->getRows();
   const int initial_rows_count = rows.size();
-  const int initial_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t initial_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   std::map<dbRow*, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
@@ -221,10 +236,13 @@ void cutRows(dbBlock* block,
     }
   }
 
-  const int final_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t final_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   logger->info(utl::ODB,
                303,
@@ -235,6 +253,50 @@ void cutRows(dbBlock* block,
                blockages.size(),
                block->getRows().size(),
                final_sites_count);
+}
+
+std::string generateMacroPlacementString(dbBlock* block)
+{
+  std::string macro_placement;
+
+  const float dbu = block->getTech()->getDbUnitsPerMicron();
+  float x = 0.0f;
+  float y = 0.0f;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isBlock()) {
+      x = (inst->getLocation().x()) / dbu;
+      y = (inst->getLocation().y()) / dbu;
+
+      macro_placement += fmt::format(
+          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          inst->getName(),
+          x,
+          y,
+          inst->getOrient().getString());
+    }
+  }
+
+  return macro_placement;
+}
+
+int64_t WireLengthEvaluator::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    hpwl_sum += hpwl(net);
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net) const
+{
+  if (net->getSigType().isSupply()) {
+    return 0;
+  }
+
+  Rect bbox = net->getTermBBox();
+  return bbox.dx() + bbox.dy();
 }
 
 }  // namespace odb

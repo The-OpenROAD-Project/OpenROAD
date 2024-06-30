@@ -11,6 +11,8 @@ set_wire_rc -clock  -layer metal5
 estimate_parasitics -placement
 
 report_worst_slack
+write_verilog_for_eqy repair_setup2 before "None"
 repair_design
 repair_timing -setup -skip_pin_swap
+run_equivalence_test repair_setup2 ./Nangate45/work_around_yosys/ "None"
 report_worst_slack

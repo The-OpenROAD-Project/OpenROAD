@@ -101,9 +101,8 @@ DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
   }
 }
 
-DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
-{
-}
+// must be in the .cpp due to forward decl
+DensityFill::~DensityFill() = default;
 
 // Converts the user's JSON configuration file in per layer
 // DensityFillLayerConfig objects.
@@ -191,7 +190,7 @@ void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
         logger_->error(
             FIN, 2, "Layer {} not found.", layer.get_child("name").data());
       }
-      layers_[tech_layer] = cfg;
+      layers_[tech_layer] = std::move(cfg);
     }
   }
 }

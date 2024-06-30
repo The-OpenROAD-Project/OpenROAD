@@ -144,7 +144,9 @@ void Restructure::getBlob(unsigned max_depth)
     for (const sta::Pin* pin : boundary_points) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
-      open_sta_->getDbNetwork()->staToDb(pin, term, port);
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
       if (term && !term->getInst()->getMaster()->isBlock())
         path_insts_.insert(term->getInst());
     }
@@ -295,7 +297,9 @@ void Restructure::runABC()
 
   for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1))
-      std::remove(file_to_remove.c_str());
+      if (std::remove(file_to_remove.c_str()) != 0) {
+        logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
+      }
   }
 }
 
@@ -659,7 +663,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
           }
           break;
         }
-        prev_token = token;
+        prev_token = std::move(token);
       }
     }
   }

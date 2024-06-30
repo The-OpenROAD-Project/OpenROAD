@@ -146,6 +146,9 @@ void Clustering::fixSegment(const std::pair<float, float>& fixedPoint,
                             std::pair<float, float>& movablePoint)
 {
   const float actualDist = calcDist(fixedPoint, movablePoint);
+  if (actualDist == 0) {
+    return;
+  }
   const float ratio = targetDist / actualDist;
 
   const float dx = (movablePoint.first - fixedPoint.first) * ratio;
@@ -343,7 +346,7 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
 
   debugPrint(logger_,
              CTS,
-             "tritoncts",
+             "clustering",
              1,
              "Graph has {} nodes and {} edges",
              countNodes(graph),
@@ -372,13 +375,13 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   for (ListDigraph::ArcIt it(graph); it != INVALID; ++it) {
     debugPrint(logger_,
                CTS,
-               "tritoncts",
+               "clustering",
                2,
                "{}-{}",
                graph.id(graph.source(it)),
                graph.id(graph.target(it)));
-    debugPrint(logger_, CTS, "tritoncts", 2, " cost = ", edge_cost[it]);
-    debugPrint(logger_, CTS, "tritoncts", 2, " cap = ", edge_capacity[it]);
+    debugPrint(logger_, CTS, "clustering", 2, " cost = ", edge_cost[it]);
+    debugPrint(logger_, CTS, "clustering", 2, " cap = ", edge_capacity[it]);
   }
 
   NetworkSimplex<ListDigraph, int, int> flow(graph);
@@ -409,7 +412,7 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
         && node_map[graph.target(it)].first == -1) {
       debugPrint(logger_,
                  CTS,
-                 "tritoncts",
+                 "clustering",
                  3,
                  "Flow from: sink_{}  to cluster_{} flow = {}",
                  node_map[graph.source(it)].first,

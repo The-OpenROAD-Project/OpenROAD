@@ -32,6 +32,9 @@
 
 #include <stdio.h>
 
+#include <string>
+#include <vector>
+
 #include "lefiKRDefs.hpp"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
@@ -314,6 +317,7 @@ class lefiSite
   void setYSymmetry();
   void set90Symmetry();
   void addRowPattern(const char* name, int orient);
+  std::vector<std::pair<std::string, std::string>> getRowPatterns() const;
 
   const char* name() const;
   int hasClass() const;

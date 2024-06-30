@@ -43,6 +43,7 @@ define_tool_script "ppl" "src/ppl/test/regression"
 define_tool_script "pdn" "src/pdn/test/regression"
 define_tool_script "pad" "src/pad/test/regression"
 define_tool_script "mpl" "src/mpl/test/regression"
+define_tool_script "mpl2" "src/mpl2/test/regression"
 define_tool_script "par" "src/par/test/regression"
 define_tool_script "gpl" "src/gpl/test/regression"
 define_tool_script "rsz" "src/rsz/test/regression"
@@ -59,6 +60,7 @@ define_tool_script "upf" "src/upf/test/regression"
 define_tool_script "utl" "src/utl/test/regression"
 define_tool_script "fin" "src/fin/test/regression"
 define_tool_script "dft" "src/dft/test/regression"
+define_tool_script "gui" "src/gui/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors

@@ -486,7 +486,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
     }
     updateDbInstLocations();
   } else
-    logger_->warn(MPL, 72, "No partition solutions found.");
+    logger_->error(MPL, 72, "No partition solutions found.");
 }
 
 int MacroPlacer::weight(int idx1, int idx2)
@@ -706,7 +706,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
         uClass = SE;
         break;
       default:
-        logger_->error(MPL, 12, "Unhandled partition class.");
+        logger_->error(MPL, 64, "Unhandled partition class.");
         lClass = W;
         uClass = E;
         break;
@@ -1285,7 +1285,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
     logger_->warn(
-        MPL, 11, "Pin {} is not placed, using west.", bTerm->getConstName());
+        MPL, 65, "Pin {} is not placed, using west.", bTerm->getConstName());
     return CoreEdge::West;
   } else {
     const double dbu = db_->getTech()->getDbUnitsPerMicron();

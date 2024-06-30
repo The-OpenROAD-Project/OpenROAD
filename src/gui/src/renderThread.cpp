@@ -86,6 +86,8 @@ void RenderThread::render(const QRect& draw_rect,
     return;
   }
 
+  is_rendering_ = true;
+
   QMutexLocker locker(&mutex_);
   draw_rect_ = draw_rect;
   selected_ = selected;
@@ -121,15 +123,29 @@ void RenderThread::run()
                  draw_bounds.height(),
                  QImage::Format_ARGB32_Premultiplied);
     // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+    try {
+      draw(image,
+           draw_bounds,
+           selected,
+           highlighted,
+           rulers,
+           1.0,
+           Qt::transparent);
+    } catch (const std::exception& e) {
+      logger_->warn(
+          GUI, 102, "An exception occurred during rendering: {}", e.what());
+    } catch (...) {
+      logger_->warn(GUI, 103, "An unknown exception occurred during rendering");
+    }
+
     if (!restart_) {
+      is_rendering_ = false;
+
       emit done(image, draw_bounds);
+
+      if (!is_first_render_done_) {
+        is_first_render_done_ = true;
+      }
     }
     if (abort_) {
       return;
@@ -142,6 +158,24 @@ void RenderThread::run()
     restart_ = false;
     mutex_.unlock();
   }
+}
+
+void RenderThread::drawDesignLoadingMessage(Painter& painter,
+                                            const odb::Rect& bounds)
+{
+  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
+  const QFont initial_font = qpainter->font();
+  QFont design_loading_font = qpainter->font();
+  design_loading_font.setPointSize(16);
+
+  qpainter->setFont(design_loading_font);
+
+  std::string message = "Design loading...";
+  painter.setPen(gui::Painter::white, true);
+  painter.drawString(
+      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, message);
+
+  qpainter->setFont(initial_font);
 }
 
 void RenderThread::draw(QImage& image,
@@ -171,13 +205,23 @@ void RenderThread::draw(QImage& image,
   painter.scale(render_ratio, render_ratio);
 
   const Rect dbu_bounds = viewer_->screenToDBU(draw_bounds);
-  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   GuiPainter gui_painter(&painter,
                          viewer_->options_,
                          viewer_->screenToDBU(draw_bounds),
                          viewer_->pixels_per_dbu_,
                          viewer_->block_->getDbUnitsPerMicron());
+
+  if (!is_first_render_done_ && !restart_) {
+    drawDesignLoadingMessage(gui_painter, dbu_bounds);
+    emit done(image, draw_bounds);
+
+    // Erase the first render indication so it does not remain on the screen
+    // when the design is drawn for the first time
+    image.fill(background);
+  }
+
+  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
@@ -423,15 +467,12 @@ void RenderThread::drawInstanceOutlines(QPainter* painter,
     if (minimum_size > master->getWidth()
         && minimum_size > master->getHeight()) {
       painter->setTransform(initial_xfm);
-      int x;
-      int y;
-      inst->getOrigin(x, y);
-      painter->drawPoint(x, y);
+      auto origin = inst->getOrigin();
+      painter->drawPoint(origin.x(), origin.y());
     } else {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
       addInstTransform(xfm, inst_xfm);
       painter->setTransform(xfm);
 
@@ -489,13 +530,12 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
       continue;
     }
 
-    dbBlock* child;
+    dbBlock* child = nullptr;
     if (has_child_blocks
         && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
       addInstTransform(xfm, inst_xfm);
       painter->setTransform(xfm);
       Rect bbox = child->getBBox()->getBox();
@@ -508,7 +548,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
                                                      instance_limit);
       child_insts.clear();
       child_insts.reserve(10000);
-      for (auto& [box, inst] : inst_range) {
+      for (auto* inst : inst_range) {
         if (viewer_->options_->isInstanceVisible(inst)) {
           child_insts.push_back(inst);
         }
@@ -526,8 +566,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
 
     // setup the instance's transform
     QTransform xfm = initial_xfm;
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
+    const dbTransform inst_xfm = inst->getTransform();
     addInstTransform(xfm, inst_xfm);
     painter->setTransform(xfm);
 
@@ -580,7 +619,8 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     QString name = inst->getName().c_str();
     auto master = inst->getMaster();
     auto center = master->isBlock() || master->isPad();
-    drawTextInBBox(text_color, text_font, instance_box, name, painter, center);
+    drawTextInBBox(
+        text_color, text_font, instance_box, std::move(name), painter, center);
   }
   painter->setFont(initial_font);
 }
@@ -608,8 +648,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
     for (auto inst_iterm : inst->getITerms()) {
       bool drawn = false;
       for (auto* mpin : inst_iterm->getMTerm()->getMPins()) {
@@ -758,7 +797,7 @@ void RenderThread::drawBlockages(QPainter* painter,
                                          bounds.yMax(),
                                          viewer_->shapeSizeLimit());
 
-  for (auto& [box, blockage] : blockage_range) {
+  for (auto* blockage : blockage_range) {
     if (restart_) {
       break;
     }
@@ -791,7 +830,7 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
                                             bounds.yMax(),
                                             viewer_->shapeSizeLimit());
 
-  for (auto& [box, obs] : obstructions_range) {
+  for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
     }
@@ -807,7 +846,7 @@ void RenderThread::drawViaShapes(QPainter* painter,
                                  const Rect& bounds,
                                  const int shape_limit)
 {
-  auto via_sbox_iter = viewer_->search_.searchViaSBoxShapes(block,
+  auto via_sbox_iter = viewer_->search_.searchSNetViaShapes(block,
                                                             cut_layer,
                                                             bounds.xMin(),
                                                             bounds.yMin(),
@@ -816,7 +855,7 @@ void RenderThread::drawViaShapes(QPainter* painter,
                                                             shape_limit);
 
   std::vector<odb::dbShape> via_shapes;
-  for (auto& [box, sbox, net] : via_sbox_iter) {
+  for (const auto& [sbox, net] : via_sbox_iter) {
     if (restart_) {
       break;
     }
@@ -854,6 +893,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const bool draw_shapes
       = !(layer->getType() == dbTechLayerType::CUT
           && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
+                                || layer->getType() == dbTechLayerType::ROUTING;
 
   if (draw_shapes) {
     drawInstanceShapes(layer, painter, insts, bounds, gui_painter);
@@ -861,73 +902,90 @@ void RenderThread::drawLayer(QPainter* painter,
 
   drawObstructions(block, layer, painter, bounds);
 
+  const bool draw_routing
+      = viewer_->options_->areRoutingSegmentsVisible() && layer_is_routing;
+  const bool draw_vias
+      = viewer_->options_->areRoutingViasVisible() && layer_is_routing;
+  // Now draw the shapes
+  QColor color = getColor(layer);
+  Qt::BrushStyle brush_pattern = getPattern(layer);
+  painter->setBrush(QBrush(color, brush_pattern));
+  painter->setPen(QPen(color, 0));
   if (draw_shapes) {
-    // Now draw the shapes
-    QColor color = getColor(layer);
-    Qt::BrushStyle brush_pattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brush_pattern));
-    painter->setPen(QPen(color, 0));
-    auto box_iter = viewer_->search_.searchBoxShapes(block,
-                                                     layer,
-                                                     bounds.xMin(),
-                                                     bounds.yMin(),
-                                                     bounds.xMax(),
-                                                     bounds.yMax(),
-                                                     shape_limit);
+    if (draw_routing || draw_vias) {
+      auto box_iter = viewer_->search_.searchBoxShapes(block,
+                                                       layer,
+                                                       bounds.xMin(),
+                                                       bounds.yMin(),
+                                                       bounds.xMax(),
+                                                       bounds.yMax(),
+                                                       shape_limit);
 
-    for (auto& [box, net] : box_iter) {
-      if (restart_) {
-        break;
-      }
-      if (!viewer_->isNetVisible(net)) {
-        continue;
-      }
-      const auto& ll = box.min_corner();
-      const auto& ur = box.max_corner();
-      painter->drawRect(
-          QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
-    }
-
-    if (layer->getType() == dbTechLayerType::CUT) {
-      drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
-    } else {
-      // Get the enclosure shapes from any vias on the cut layers
-      // above or below this one.  Skip enclosure shapes if they
-      // will be too small based on the cut size (enclosure shapes
-      // are generally only slightly larger).
-      if (auto upper = layer->getUpperLayer()) {
-        if (viewer_->cut_maximum_size_[upper] >= shape_limit) {
-          drawViaShapes(painter, block, upper, layer, bounds, shape_limit);
+      for (auto& [box, is_via, net] : box_iter) {
+        if (restart_) {
+          break;
         }
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        if (viewer_->cut_maximum_size_[lower] >= shape_limit) {
-          drawViaShapes(painter, block, lower, layer, bounds, shape_limit);
+        if (!draw_routing && !is_via) {
+          // Don't draw since it's a segment
+          continue;
         }
+        if (!draw_vias && is_via) {
+          // Don't draw since it's a via
+          continue;
+        }
+        if (!viewer_->isNetVisible(net)) {
+          continue;
+        }
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
 
-    auto polygon_iter = viewer_->search_.searchPolygonShapes(block,
-                                                             layer,
-                                                             bounds.xMin(),
-                                                             bounds.yMin(),
-                                                             bounds.xMax(),
-                                                             bounds.yMax(),
-                                                             shape_limit);
+    if (viewer_->options_->areSpecialRoutingViasVisible() && layer_is_routing) {
+      if (layer->getType() == dbTechLayerType::CUT) {
+        drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
+      } else {
+        // Get the enclosure shapes from any vias on the cut layers
+        // above or below this one.  Skip enclosure shapes if they
+        // will be too small based on the cut size (enclosure shapes
+        // are generally only slightly larger).
+        if (auto upper = layer->getUpperLayer()) {
+          if (viewer_->cut_maximum_size_[upper] >= shape_limit) {
+            drawViaShapes(painter, block, upper, layer, bounds, shape_limit);
+          }
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          if (viewer_->cut_maximum_size_[lower] >= shape_limit) {
+            drawViaShapes(painter, block, lower, layer, bounds, shape_limit);
+          }
+        }
+      }
+    }
 
-    for (auto& [box, poly, net] : polygon_iter) {
-      if (restart_) {
-        break;
+    if (viewer_->options_->areSpecialRoutingSegmentsVisible()
+        && layer_is_routing) {
+      auto polygon_iter = viewer_->search_.searchSNetShapes(block,
+                                                            layer,
+                                                            bounds.xMin(),
+                                                            bounds.yMin(),
+                                                            bounds.xMax(),
+                                                            bounds.yMax(),
+                                                            shape_limit);
+
+      for (auto& [box, poly, net] : polygon_iter) {
+        if (restart_) {
+          break;
+        }
+        if (!viewer_->isNetVisible(net)) {
+          continue;
+        }
+        const int size = poly.outer().size();
+        QPolygon qpoly(size);
+        for (int i = 0; i < size; i++) {
+          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+        }
+        painter->drawPolygon(qpoly);
       }
-      if (!viewer_->isNetVisible(net)) {
-        continue;
-      }
-      const int size = poly.outer().size();
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++) {
-        qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
-      }
-      painter->drawPolygon(qpoly);
     }
 
     // Now draw the fills
@@ -944,19 +1002,31 @@ void RenderThread::drawLayer(QPainter* painter,
                                                bounds.yMax(),
                                                shape_limit);
 
-      for (auto& i : iter) {
+      for (auto* fill : iter) {
         if (restart_) {
           break;
         }
-        const auto& ll = std::get<0>(i).min_corner();
-        const auto& ur = std::get<0>(i).max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+        odb::Rect box;
+        fill->getRect(box);
+        const auto& ll = box.ll();
+        painter->drawRect(QRect(ll.x(), ll.y(), box.dx(), box.dy()));
       }
     }
   }
 
   if (draw_shapes) {
+    if (viewer_->options_->areIOPinsVisible()) {
+      utl::Timer io_pins;
+      drawIOPins(gui_painter, block, bounds, layer);
+      debugPrint(logger_,
+                 GUI,
+                 "draw",
+                 1,
+                 "io pins on {} {}",
+                 layer->getName(),
+                 io_pins);
+    }
+
     drawTracks(layer, painter, bounds);
     drawRouteGuides(gui_painter, layer);
     drawNetTracks(gui_painter, layer);
@@ -1025,7 +1095,7 @@ void RenderThread::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, inst] : inst_range) {
+  for (auto* inst : inst_range) {
     if (restart_) {
       break;
     }
@@ -1034,6 +1104,10 @@ void RenderThread::drawBlock(QPainter* painter,
     }
   }
   debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
+
+  utl::Timer io_pins_setup;
+  setupIOPins(block, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "io pins setup {}", io_pins_setup);
 
   utl::Timer insts_outline;
   drawInstanceOutlines(painter, insts);
@@ -1045,6 +1119,23 @@ void RenderThread::drawBlock(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
+  std::set<dbTech*> child_techs;
+  for (auto child : block->getChildren()) {
+    dbTech* child_tech = child->getTech();
+    if (child_tech != tech) {
+      child_techs.insert(child_tech);
+    }
+  }
+
+  for (dbTech* child_tech : child_techs) {
+    for (dbTechLayer* layer : child_tech->getLayers()) {
+      if (restart_) {
+        break;
+      }
+      drawLayer(painter, block, layer, insts, bounds, gui_painter);
+    }
+  }
+
   for (dbTechLayer* layer : tech->getLayers()) {
     if (restart_) {
       break;
@@ -1078,12 +1169,6 @@ void RenderThread::drawBlock(QPainter* painter,
   drawRegions(painter, block);
   debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
-  utl::Timer inst_pin_markers;
-  if (viewer_->options_->arePinMarkersVisible()) {
-    drawPinMarkers(gui_painter, block, bounds);
-  }
-  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
-
   utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
@@ -1114,7 +1199,13 @@ void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
     return;
   }
 
-  const odb::Rect draw_bounds = bounds.intersect(viewer_->block_->getDieArea());
+  const auto die_area = viewer_->block_->getDieArea();
+
+  if (!bounds.intersects(die_area)) {
+    return;
+  }
+
+  const odb::Rect draw_bounds = bounds.intersect(die_area);
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
@@ -1322,7 +1413,7 @@ void RenderThread::drawModuleView(QPainter* painter,
       continue;
     }
 
-    const auto setting = viewer_->modules_.at(module);
+    const auto& setting = viewer_->modules_.at(module);
 
     if (!setting.visible) {
       continue;
@@ -1341,32 +1432,33 @@ void RenderThread::drawModuleView(QPainter* painter,
   }
 }
 
-void RenderThread::drawPinMarkers(Painter& painter,
-                                  odb::dbBlock* block,
-                                  const odb::Rect& bounds)
+void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
 {
-  auto die_area = block->getDieArea();
-  auto die_width = die_area.dx();
-  auto die_height = die_area.dy();
+  pins_.clear();
+  if (!viewer_->options_->areIOPinsVisible()) {
+    return;
+  }
+
+  const auto die_area = block->getDieArea();
+  const auto die_width = die_area.dx();
+  const auto die_height = die_area.dy();
 
   const double scale_factor
       = 0.02;  // 4 Percent of bounds is used to draw pin-markers
   const int die_max_dim
       = std::min(std::max(die_width, die_height), bounds.maxDXDY());
   const double abs_min_dim = 8.0;  // prevent markers from falling apart
-  const double max_dim = std::max(scale_factor * die_max_dim, abs_min_dim);
+  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
 
-  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
-  const QFont initial_font = qpainter->font();
-  QFont marker_font = viewer_->options_->pinMarkersFont();
-  const QFontMetrics font_metrics(marker_font);
+  pin_font_ = viewer_->options_->pinMarkersFont();
+  const QFontMetrics font_metrics(pin_font_);
 
   QString largest_text;
   for (auto pin : block->getBTerms()) {
     QString current_text = QString::fromStdString(pin->getName());
     if (font_metrics.boundingRect(current_text).width()
         > font_metrics.boundingRect(largest_text).width()) {
-      largest_text = current_text;
+      largest_text = std::move(current_text);
     }
   }
 
@@ -1381,9 +1473,9 @@ void RenderThread::drawPinMarkers(Painter& painter,
 
   const int available_space
       = std::min(vertical_gap, horizontal_gap)
-        - std::ceil(max_dim) * viewer_->pixels_per_dbu_;  // in pixels
+        - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
 
-  int font_size = marker_font.pointSize();
+  int font_size = pin_font_.pointSize();
   int largest_text_width = font_metrics.boundingRect(largest_text).width();
   const int drawing_font_size = 6;  // in points
 
@@ -1395,171 +1487,202 @@ void RenderThread::drawPinMarkers(Painter& painter,
       break;
     }
     font_size -= 1;
-    marker_font.setPointSize(font_size);
-    QFontMetrics current_font_metrics(marker_font);
+    pin_font_.setPointSize(font_size);
+    QFontMetrics current_font_metrics(pin_font_);
     largest_text_width
         = current_font_metrics.boundingRect(largest_text).width();
   }
 
-  qpainter->setFont(marker_font);
-
   // draw names of pins when text height is at least 6 pts
-  const bool draw_names = font_size >= drawing_font_size;
-  const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
-
-  // templates of pin markers (block top)
-  const std::vector<Point> in_marker{// arrow head pointing in to block
-                                     Point(max_dim / 4, max_dim),
-                                     Point(0, 0),
-                                     Point(-max_dim / 4, max_dim),
-                                     Point(max_dim / 4, max_dim)};
-  const std::vector<Point> out_marker{// arrow head pointing out of block
-                                      Point(0, max_dim),
-                                      Point(-max_dim / 4, 0),
-                                      Point(max_dim / 4, 0),
-                                      Point(0, max_dim)};
-  const std::vector<Point> bi_marker{// diamond
-                                     Point(0, 0),
-                                     Point(-max_dim / 4, max_dim / 2),
-                                     Point(0, max_dim),
-                                     Point(max_dim / 4, max_dim / 2),
-                                     Point(0, 0)};
-
-  // RTree used to search for overlapping shapes and decide if rotation of
-  // text is needed.
-  bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
-  struct PinText
-  {
-    Search::Box rect;
-    bool can_rotate;
-    odb::dbTechLayer* layer;
-    std::string text;
-    odb::Point pt;
-    Painter::Anchor anchor;
-  };
-  std::vector<PinText> pin_text_spec;
+  pin_draw_names_ = font_size >= drawing_font_size;
 
   for (odb::dbBTerm* term : block->getBTerms()) {
     if (restart_) {
       break;
+    }
+    if (!viewer_->isNetVisible(term->getNet())) {
+      continue;
     }
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
       if (!status.isPlaced()) {
         continue;
       }
-      auto pin_dir = term->getIoType();
       for (odb::dbBox* box : pin->getBoxes()) {
         if (!box) {
           continue;
         }
-        Point pin_center((box->xMin() + box->xMax()) / 2,
-                         (box->yMin() + box->yMax()) / 2);
 
-        auto dist_to_left = std::abs(box->xMin() - die_area.xMin());
-        auto dist_to_right = std::abs(box->xMax() - die_area.xMax());
-        auto dist_to_top = std::abs(box->yMax() - die_area.yMax());
-        auto dist_to_bot = std::abs(box->yMin() - die_area.yMin());
-        std::vector<int> dists{
-            dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
-        int arg_min = std::distance(
-            dists.begin(), std::min_element(dists.begin(), dists.end()));
-
-        odb::dbTransform xfm(pin_center);
-        if (arg_min == 0) {  // left
-          xfm.setOrient(dbOrientType::R90);
-          if (dist_to_left == 0) {  // touching edge so draw on edge
-            xfm.setOffset({die_area.xMin(), pin_center.y()});
-          }
-        } else if (arg_min == 1) {  // right
-          xfm.setOrient(dbOrientType::R270);
-          if (dist_to_right == 0) {  // touching edge so draw on edge
-            xfm.setOffset({die_area.xMax(), pin_center.y()});
-          }
-        } else if (arg_min == 2) {  // top
-          // none needed
-          if (dist_to_top == 0) {  // touching edge so draw on edge
-            xfm.setOffset({pin_center.x(), die_area.yMax()});
-          }
-        } else {  // bottom
-          xfm.setOrient(dbOrientType::MX);
-          if (dist_to_bot == 0) {  // touching edge so draw on edge
-            xfm.setOffset({pin_center.x(), die_area.yMin()});
-          }
-        }
-
-        odb::dbTechLayer* layer = box->getTechLayer();
-        painter.setPen(layer);
-        painter.setBrush(layer);
-
-        // select marker
-        const std::vector<Point>* template_points = &bi_marker;
-        if (pin_dir == odb::dbIoType::INPUT) {
-          template_points = &in_marker;
-        } else if (pin_dir == odb::dbIoType::OUTPUT) {
-          template_points = &out_marker;
-        }
-
-        // make new marker based on pin location
-        std::vector<Point> marker;
-        for (const auto& pt : *template_points) {
-          Point new_pt = pt;
-          xfm.apply(new_pt);
-          marker.push_back(new_pt);
-        }
-
-        painter.drawPolygon(marker);
-
-        if (draw_names) {
-          Point text_anchor_pt = xfm.getOffset();
-
-          auto text_anchor = Painter::BOTTOM_CENTER;
-          if (arg_min == 0) {  // left
-            text_anchor = Painter::RIGHT_CENTER;
-            text_anchor_pt.setX(text_anchor_pt.x() - max_dim - text_margin);
-          } else if (arg_min == 1) {  // right
-            text_anchor = Painter::LEFT_CENTER;
-            text_anchor_pt.setX(text_anchor_pt.x() + max_dim + text_margin);
-          } else if (arg_min == 2) {  // top
-            text_anchor = Painter::BOTTOM_CENTER;
-            text_anchor_pt.setY(text_anchor_pt.y() + max_dim + text_margin);
-          } else {  // bottom
-            text_anchor = Painter::TOP_CENTER;
-            text_anchor_pt.setY(text_anchor_pt.y() - max_dim - text_margin);
-          }
-
-          PinText pin_specs;
-          pin_specs.layer = layer;
-          pin_specs.text = term->getName();
-          pin_specs.pt = text_anchor_pt;
-          pin_specs.anchor = text_anchor;
-          pin_specs.can_rotate = arg_min == 2 || arg_min == 3;
-          // only need bounding box when rotation is possible
-          if (pin_specs.can_rotate) {
-            odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(),
-                                                           pin_specs.pt.y(),
-                                                           pin_specs.anchor,
-                                                           pin_specs.text);
-            text_rect.bloat(text_margin, text_rect);
-            pin_specs.rect = Search::Box(
-                Search::Point(text_rect.xMin(), text_rect.yMin()),
-                Search::Point(text_rect.xMax(), text_rect.yMax()));
-            pin_text_spec_shapes.insert(pin_specs.rect);
-          } else {
-            pin_specs.rect = Search::Box();
-          }
-          pin_text_spec.push_back(pin_specs);
-        }
+        pins_[box->getTechLayer()].emplace_back(term, box);
       }
     }
   }
+}
+
+void RenderThread::drawIOPins(Painter& painter,
+                              odb::dbBlock* block,
+                              const odb::Rect& bounds,
+                              odb::dbTechLayer* layer)
+{
+  const auto& pins = pins_[layer];
+  if (pins.empty()) {
+    return;
+  }
+
+  const auto die_area = block->getDieArea();
+
+  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
+  const QFont initial_font = qpainter->font();
+  qpainter->setFont(pin_font_);
+
+  const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
+
+  // templates of pin markers (block top)
+  const std::vector<Point> in_marker{// arrow head pointing in to block
+                                     Point(pin_max_size_ / 4, pin_max_size_),
+                                     Point(0, 0),
+                                     Point(-pin_max_size_ / 4, pin_max_size_),
+                                     Point(pin_max_size_ / 4, pin_max_size_)};
+  const std::vector<Point> out_marker{// arrow head pointing out of block
+                                      Point(0, pin_max_size_),
+                                      Point(-pin_max_size_ / 4, 0),
+                                      Point(pin_max_size_ / 4, 0),
+                                      Point(0, pin_max_size_)};
+  const std::vector<Point> bi_marker{
+      // diamond
+      Point(0, 0),
+      Point(-pin_max_size_ / 4, pin_max_size_ / 2),
+      Point(0, pin_max_size_),
+      Point(pin_max_size_ / 4, pin_max_size_ / 2),
+      Point(0, 0)};
+
+  // RTree used to search for overlapping shapes and decide if rotation of
+  // text is needed.
+  bgi::rtree<odb::Rect, bgi::quadratic<16>> pin_text_spec_shapes;
+  struct PinText
+  {
+    odb::Rect rect;
+    bool can_rotate;
+    std::string text;
+    odb::Point pt;
+    Painter::Anchor anchor;
+  };
+  std::vector<PinText> pin_text_spec;
+
+  painter.setPen(layer);
+  painter.setBrush(layer);
+
+  for (const auto& [term, box] : pins) {
+    if (restart_) {
+      break;
+    }
+    const auto pin_dir = term->getIoType();
+
+    Point pin_center((box->xMin() + box->xMax()) / 2,
+                     (box->yMin() + box->yMax()) / 2);
+
+    auto dist_to_left = std::abs(box->xMin() - die_area.xMin());
+    auto dist_to_right = std::abs(box->xMax() - die_area.xMax());
+    auto dist_to_top = std::abs(box->yMax() - die_area.yMax());
+    auto dist_to_bot = std::abs(box->yMin() - die_area.yMin());
+    std::vector<int> dists{
+        dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
+    int arg_min = std::distance(dists.begin(),
+                                std::min_element(dists.begin(), dists.end()));
+
+    odb::dbTransform xfm(pin_center);
+    if (arg_min == 0) {  // left
+      xfm.setOrient(dbOrientType::R90);
+      if (dist_to_left == 0) {  // touching edge so draw on edge
+        xfm.setOffset({die_area.xMin(), pin_center.y()});
+      }
+    } else if (arg_min == 1) {  // right
+      xfm.setOrient(dbOrientType::R270);
+      if (dist_to_right == 0) {  // touching edge so draw on edge
+        xfm.setOffset({die_area.xMax(), pin_center.y()});
+      }
+    } else if (arg_min == 2) {  // top
+      // none needed
+      if (dist_to_top == 0) {  // touching edge so draw on edge
+        xfm.setOffset({pin_center.x(), die_area.yMax()});
+      }
+    } else {  // bottom
+      xfm.setOrient(dbOrientType::MX);
+      if (dist_to_bot == 0) {  // touching edge so draw on edge
+        xfm.setOffset({pin_center.x(), die_area.yMin()});
+      }
+    }
+
+    // select marker
+    const std::vector<Point>* template_points = &bi_marker;
+    if (pin_dir == odb::dbIoType::INPUT) {
+      template_points = &in_marker;
+    } else if (pin_dir == odb::dbIoType::OUTPUT) {
+      template_points = &out_marker;
+    }
+
+    // make new marker based on pin location
+    std::vector<Point> marker;
+    for (const auto& pt : *template_points) {
+      Point new_pt = pt;
+      xfm.apply(new_pt);
+      marker.push_back(new_pt);
+    }
+
+    // draw marker to indicate signal direction
+    painter.drawPolygon(marker);
+
+    painter.drawRect(box->getBox());
+
+    if (pin_draw_names_) {
+      Point text_anchor_pt = xfm.getOffset();
+
+      auto text_anchor = Painter::BOTTOM_CENTER;
+      if (arg_min == 0) {  // left
+        text_anchor = Painter::RIGHT_CENTER;
+        text_anchor_pt.setX(text_anchor_pt.x() - pin_max_size_ - text_margin);
+      } else if (arg_min == 1) {  // right
+        text_anchor = Painter::LEFT_CENTER;
+        text_anchor_pt.setX(text_anchor_pt.x() + pin_max_size_ + text_margin);
+      } else if (arg_min == 2) {  // top
+        text_anchor = Painter::BOTTOM_CENTER;
+        text_anchor_pt.setY(text_anchor_pt.y() + pin_max_size_ + text_margin);
+      } else {  // bottom
+        text_anchor = Painter::TOP_CENTER;
+        text_anchor_pt.setY(text_anchor_pt.y() - pin_max_size_ - text_margin);
+      }
+
+      PinText pin_specs;
+      pin_specs.text = term->getName();
+      pin_specs.pt = text_anchor_pt;
+      pin_specs.anchor = text_anchor;
+      pin_specs.can_rotate = arg_min == 2 || arg_min == 3;
+      // only need bounding box when rotation is possible
+      if (pin_specs.can_rotate) {
+        odb::Rect text_rect = painter.stringBoundaries(pin_specs.pt.x(),
+                                                       pin_specs.pt.y(),
+                                                       pin_specs.anchor,
+                                                       pin_specs.text);
+        text_rect.bloat(text_margin, text_rect);
+        pin_specs.rect = text_rect;
+        pin_text_spec_shapes.insert(pin_specs.rect);
+      } else {
+        pin_specs.rect = odb::Rect();
+      }
+      pin_text_spec.push_back(pin_specs);
+    }
+  }
+
+  painter.setPen(layer);
+  auto color = painter.getPenColor();
+  color.a = 255;
+  painter.setPen(color);
+  painter.setBrush(color);
 
   for (const auto& pin : pin_text_spec) {
     if (restart_) {
       break;
     }
-
-    odb::dbTechLayer* layer = pin.layer;
 
     bool do_rotate = false;
     auto anchor = pin.anchor;
@@ -1578,12 +1701,6 @@ void RenderThread::drawPinMarkers(Painter& painter,
         do_rotate = true;
       }
     }
-
-    painter.setPen(layer);
-    auto color = painter.getPenColor();
-    color.a = 255;
-    painter.setPen(color);
-    painter.setBrush(color);
 
     painter.drawString(pin.pt.x(), pin.pt.y(), anchor, pin.text, do_rotate);
   }

@@ -39,7 +39,7 @@
 #include "dbNet.h"
 #include "dbRegion.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
 #include <regex>
@@ -65,7 +65,8 @@ class _dbGlobalConnect : public _dbObject
  public:
   _dbGlobalConnect(_dbDatabase*, const _dbGlobalConnect& r);
   _dbGlobalConnect(_dbDatabase*);
-  ~_dbGlobalConnect();
+
+  ~_dbGlobalConnect() = default;
 
   bool operator==(const _dbGlobalConnect& rhs) const;
   bool operator!=(const _dbGlobalConnect& rhs) const

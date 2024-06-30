@@ -30,13 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWireCodec.h"
+#include "odb/dbWireCodec.h"
 
 #include <ctype.h>
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
@@ -44,6 +42,8 @@
 #include "dbTechLayerRule.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -139,10 +139,11 @@ void dbWireEncoder::initPath(dbTechLayer* layer,
   _layer = layer;
   _non_default_rule = rule->getImpl()->getOID();
 
-  if (rule->isBlockRule())
+  if (rule->isBlockRule()) {
     _rule_opcode = WOP_RULE | WOP_BLOCK_RULE;
-  else
+  } else {
     _rule_opcode = WOP_RULE;
+  }
 
   _prev_extended_colinear_pnt = false;
   _x = 0;
@@ -264,11 +265,13 @@ int dbWireEncoder::addPoint(int x, int y, uint property)
     }
 
     if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0))
+        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
       addOp(_rule_opcode, _non_default_rule);
+    }
   }
-  if (_point_cnt != 1)
+  if (_point_cnt != 1) {
     addOp(WOP_PROPERTY, property);
+  }
 
   _prev_extended_colinear_pnt = false;
   return jct_id;
@@ -345,11 +348,13 @@ int dbWireEncoder::addPoint(int x, int y, int ext, uint property)
     }
 
     if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0))
+        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
       addOp(_rule_opcode, _non_default_rule);
+    }
   }
-  if (_point_cnt != 1)
+  if (_point_cnt != 1) {
     addOp(WOP_PROPERTY, property);
+  }
 
   return jct_id;
 }
@@ -595,8 +600,9 @@ void dbWireEncoder::newPathExt(int jct_id,
 
 void dbWireEncoder::end()
 {
-  if (_opcodes.size() == 0)
+  if (_opcodes.empty()) {
     return;
+  }
 
   uint n = _opcodes.size();
 
@@ -640,6 +646,32 @@ void dbWireEncoder::clearColor()
 {
   // 0 is a special value representing no mask color.
   addOp(WOP_COLOR, 0);
+}
+
+void dbWireEncoder::setViaColor(uint8_t bottom_color,
+                                uint8_t cut_color,
+                                uint8_t top_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  for (const auto color : {bottom_color, cut_color, top_color}) {
+    if (color > 3) {
+      utl::Logger* logger = _wire->getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
+    }
+  }
+
+  // encode as XX BB CC TT
+  const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
+
+  addOp(WOP_VIACOLOR, mask_color);
+}
+
+void dbWireEncoder::clearViaColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_VIACOLOR, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -710,9 +742,11 @@ inline unsigned char dbWireDecoder::peekOp()
 //
 inline void dbWireDecoder::flushRule()
 {
-  if (_idx != (int) _wire->_opcodes.size())
-    if ((_wire->_opcodes[_idx] & WOP_OPCODE_MASK) == WOP_RULE)
+  if (_idx != (int) _wire->_opcodes.size()) {
+    if ((_wire->_opcodes[_idx] & WOP_OPCODE_MASK) == WOP_RULE) {
       ++_idx;
+    }
+  }
 }
 
 dbWireDecoder::OpCode dbWireDecoder::peek() const
@@ -723,8 +757,9 @@ dbWireDecoder::OpCode dbWireDecoder::peek() const
 
 nextOpCode:
 
-  if (idx == (int) _wire->_opcodes.size())
+  if (idx == (int) _wire->_opcodes.size()) {
     return END_DECODE;
+  }
 
   unsigned char opcode = _wire->_opcodes[idx];
 
@@ -744,8 +779,9 @@ nextOpCode:
     case WOP_X:
     case WOP_Y:
     case WOP_COLINEAR:
-      if (opcode & WOP_EXTENSION)
+      if (opcode & WOP_EXTENSION) {
         return POINT_EXT;
+      }
 
       return POINT;
 
@@ -779,8 +815,9 @@ dbWireDecoder::OpCode dbWireDecoder::next()
 
 nextOpCode:
 
-  if (_idx == (int) _wire->_opcodes.size())
+  if (_idx == (int) _wire->_opcodes.size()) {
     return END_DECODE;
+  }
 
   _jct_id = _idx;
   unsigned char opcode = nextOp(_operand);
@@ -909,8 +946,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         nextOp(_operand2);
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -932,8 +970,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         nextOp(_operand2);
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -953,8 +992,9 @@ nextOpCode:
       if (opcode & WOP_EXTENSION) {
         _operand2 = _operand;
         _opcode = POINT_EXT;
-      } else
+      } else {
         _opcode = POINT;
+      }
 
       // if ( peekOp() == WOP_PROPERTY )
       //{
@@ -971,10 +1011,11 @@ nextOpCode:
     case WOP_VIA: {
       dbVia* via = dbVia::getVia(_block, _operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
       return _opcode = VIA;
     }
@@ -982,10 +1023,11 @@ nextOpCode:
     case WOP_TECH_VIA: {
       dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
 
-      if (opcode & WOP_VIA_EXIT_TOP)
+      if (opcode & WOP_VIA_EXIT_TOP) {
         _layer = via->getTopLayer();
-      else
+      } else {
         _layer = via->getBottomLayer();
+      }
 
       return _opcode = TECH_VIA;
     }
@@ -1057,6 +1099,20 @@ nextOpCode:
       goto nextOpCode;
     }
 
+    case WOP_VIACOLOR: {
+      uint8_t viacolor = static_cast<uint8_t>(_operand);
+      if (viacolor == 0) {
+        _viacolor = std::nullopt;
+      } else {
+        _viacolor = ViaColor();
+        _viacolor.value().bottom_color = (viacolor & 0x30) >> 4;
+        _viacolor.value().cut_color = (viacolor & 0x0c) >> 2;
+        _viacolor.value().top_color = (viacolor & 0x03);
+      }
+
+      goto nextOpCode;
+    }
+
     default:
       ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
@@ -1074,9 +1130,8 @@ dbTechLayerRule* dbWireDecoder::getRule() const
 
   if (_block_rule) {
     return dbTechLayerRule::getTechLayerRule(_block, _operand);
-  } else {
-    return dbTechLayerRule::getTechLayerRule(_tech, _operand);
   }
+  return dbTechLayerRule::getTechLayerRule(_tech, _operand);
 }
 
 void dbWireDecoder::getPoint(int& x, int& y) const
@@ -1117,6 +1172,11 @@ dbTechVia* dbWireDecoder::getTechVia() const
 std::optional<uint8_t> dbWireDecoder::getColor() const
 {
   return _color;
+}
+
+std::optional<dbWireDecoder::ViaColor> dbWireDecoder::getViaColor() const
+{
+  return _viacolor;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,
@@ -1161,16 +1221,18 @@ int dbWireDecoder::getJunctionValue() const
 {
   ZASSERT((_opcode == JUNCTION) || (_opcode == SHORT) || (_opcode == VWIRE));
 
-  if (_opcode == SHORT || _opcode == VWIRE)
+  if (_opcode == SHORT || _opcode == VWIRE) {
     return _operand2;
+  }
 
   return _operand;
 }
 
 void dumpDecoder4Net(dbNet* innet)
 {
-  if (!innet)
+  if (!innet) {
     return;
+  }
 
   const char* prfx = "dumpDecoder:";
   dbWire* wire0 = innet->getWire();
@@ -1237,7 +1299,7 @@ void dumpDecoder4Net(dbNet* innet)
         if (opcode == dbWireDecoder::POINT_EXT) {
           opcode = decoder.next();
           decoder.getPoint(x, y, ext);
-          if (lyr_rule)
+          if (lyr_rule) {
             logger->info(
                 utl::ODB,
                 68,
@@ -1249,7 +1311,7 @@ void dumpDecoder4Net(dbNet* innet)
                 y,
                 ext,
                 lyr_rule->getNonDefaultRule()->getName());
-          else
+          } else {
             logger->info(utl::ODB,
                          69,
                          "{} New path at junction {}, point(ext) {} {} {}",
@@ -1258,10 +1320,11 @@ void dumpDecoder4Net(dbNet* innet)
                          x,
                          y,
                          ext);
+          }
         } else if (opcode == dbWireDecoder::POINT) {
           opcode = decoder.next();
           decoder.getPoint(x, y);
-          if (lyr_rule)
+          if (lyr_rule) {
             logger->info(
                 utl::ODB,
                 70,
@@ -1271,7 +1334,7 @@ void dumpDecoder4Net(dbNet* innet)
                 x,
                 y,
                 lyr_rule->getNonDefaultRule()->getName());
-          else
+          } else {
             logger->info(utl::ODB,
                          71,
                          "{} New path at junction {}, point {} {}",
@@ -1279,6 +1342,7 @@ void dumpDecoder4Net(dbNet* innet)
                          jct,
                          x,
                          y);
+          }
 
         } else {
           logger->warn(utl::ODB,
@@ -1299,15 +1363,16 @@ void dumpDecoder4Net(dbNet* innet)
           opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
-        if (lyr_rule)
+        if (lyr_rule) {
           logger->info(utl::ODB,
                        73,
                        "{} Short at junction {}, with rule {}",
                        prfx,
                        jval,
                        lyr_rule->getNonDefaultRule()->getName());
-        else
+        } else {
           logger->info(utl::ODB, 74, "{} Short at junction {}", prfx, jval);
+        }
         break;
       }
 
@@ -1321,16 +1386,17 @@ void dumpDecoder4Net(dbNet* innet)
           opcode = decoder.next();
           lyr_rule = decoder.getRule();
         }
-        if (lyr_rule)
+        if (lyr_rule) {
           logger->info(utl::ODB,
                        75,
                        "{} Virtual wire at junction {}, with rule {}",
                        prfx,
                        jval,
                        lyr_rule->getNonDefaultRule()->getName());
-        else
+        } else {
           logger->info(
               utl::ODB, 76, "{} Virtual wire at junction {}", prfx, jval);
+        }
         break;
       }
 
@@ -1428,9 +1494,11 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
 
   dbNet* innet = nullptr;
   const char* ckdigit;
-  for (ckdigit = net_name_or_id; *ckdigit; ckdigit++)
-    if (!isdigit(*ckdigit))
+  for (ckdigit = net_name_or_id; *ckdigit; ckdigit++) {
+    if (!isdigit(*ckdigit)) {
       break;
+    }
+  }
 
   innet = (*ckdigit == '\0') ? dbNet::getNet(inblk, atoi(net_name_or_id))
                              : inblk->findNet(net_name_or_id);

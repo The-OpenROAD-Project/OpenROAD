@@ -12,9 +12,11 @@ design.link("top")
 space = design.micronToDBU(1)
 
 floorplan = design.getFloorplan()
+site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")
 floorplan.initFloorplan(30,
                         0.5,
-                        space, space, space, space)
+                        space, space, space, space,
+                        site)
 
 def_file = helpers.make_result_file("init_floorplan2.def")
 design.writeDef(def_file)

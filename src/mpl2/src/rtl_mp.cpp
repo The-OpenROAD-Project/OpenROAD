@@ -36,17 +36,18 @@
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
-#include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
 using std::string;
-using std::unordered_map;
 using utl::Logger;
 using utl::MPL;
 
 MacroPlacer2::MacroPlacer2() = default;
 MacroPlacer2::~MacroPlacer2() = default;
+
+class Snapper;
 
 void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
@@ -56,9 +57,12 @@ void MacroPlacer2::init(sta::dbNetwork* network,
 {
   hier_rtlmp_
       = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
+  logger_ = logger;
+  db_ = db;
 }
 
-bool MacroPlacer2::place(const int max_num_macro,
+bool MacroPlacer2::place(const int num_threads,
+                         const int max_num_macro,
                          const int min_num_macro,
                          const int max_num_inst,
                          const int min_num_inst,
@@ -87,7 +91,7 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float target_dead_space,
                          const float min_ar,
                          const int snap_layer,
-                         const bool bus_planning_flag,
+                         const bool bus_planning_on,
                          const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
@@ -114,16 +118,80 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setSnapLayer(snap_layer);
-  hier_rtlmp_->setBusPlanningFlag(bus_planning_flag);
+  hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
-  hier_rtlmp_->hierRTLMacroPlacer();
+  hier_rtlmp_->setNumThreads(num_threads);
+  hier_rtlmp_->run();
 
   return true;
+}
+
+void MacroPlacer2::placeMacro(odb::dbInst* inst,
+                              const float& x_origin,
+                              const float& y_origin,
+                              const odb::dbOrientType& orientation)
+{
+  odb::dbBlock* block = inst->getBlock();
+
+  const int x1 = block->micronsToDbu(x_origin);
+  const int y1 = block->micronsToDbu(y_origin);
+  const int x2 = x1 + inst->getBBox()->getDX();
+  const int y2 = y1 + inst->getBBox()->getDY();
+
+  odb::Rect macro_new_bbox(x1, y1, x2, y2);
+  odb::Rect core_area = inst->getBlock()->getCoreArea();
+
+  if (!core_area.contains(macro_new_bbox)) {
+    logger_->error(MPL,
+                   34,
+                   "Specified location results in illegal placement. Cannot "
+                   "place macro outside of the core.");
+  }
+
+  // Orientation must be set before location so we don't end up flipping
+  // and misplacing the macro.
+  inst->setOrient(orientation);
+  inst->setLocation(x1, y1);
+
+  if (!orientation.isRightAngleRotation()) {
+    Snapper snapper(inst);
+    snapper.snapMacro();
+  } else {
+    logger_->warn(
+        MPL,
+        36,
+        "Orientation {} specified for macro {} is a right angle rotation.",
+        orientation.getString(),
+        inst->getName());
+  }
+
+  inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+
+  logger_->info(MPL,
+                35,
+                "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
+                "({:.3f}um, {:.3f}um). Orientation {}",
+                inst->getName(),
+                block->dbuToMicrons(inst->getBBox()->xMin()),
+                block->dbuToMicrons(inst->getBBox()->yMin()),
+                block->dbuToMicrons(inst->getBBox()->xMax()),
+                block->dbuToMicrons(inst->getBBox()->yMax()),
+                orientation.getString());
+}
+
+void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
+{
+  hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);
+}
+
+void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

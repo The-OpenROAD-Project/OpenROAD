@@ -1,0 +1,19 @@
+name: Lint Tcl code
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tclint
+        run: |
+          python -m pip install tclint==0.2.0
+
+      - name: Lint
+        run: |
+          tclint .

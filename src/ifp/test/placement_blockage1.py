@@ -17,7 +17,7 @@ odb.dbBlockage_create(ord.get_db_block(), 0, 508400, 1000000, 708400)
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(helpers.make_rect(design, 0, 0, 1000, 1000),
                         helpers.make_rect(design, 100, 100, 900, 900),
-                        [floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")])
+                        floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O"))
 
 def_file = helpers.make_result_file("placement_blockage1.def")
 design.writeDef(def_file)

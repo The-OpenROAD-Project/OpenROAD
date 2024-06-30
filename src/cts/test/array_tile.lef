@@ -56,8 +56,6 @@ MACRO array_tile
     RECT 0 0 300 300 ;
     LAYER metal5 ;
     RECT 0 0 300 300 ;
-    LAYER OVERLAP ;
-    RECT 0 0 300 300 ;
   END
 END array_tile
 

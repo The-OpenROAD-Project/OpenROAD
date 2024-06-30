@@ -46,6 +46,7 @@ target_sources(dpo
     src/Optdp.cpp
     src/MakeOptdp.cpp
     src/architecture.cxx
+    src/color.cxx
     src/network.cxx
     src/router.cxx
     src/utility.cxx
@@ -113,3 +114,5 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 
 endif()
+
+add_subdirectory(test)

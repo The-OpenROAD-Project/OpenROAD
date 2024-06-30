@@ -1,0 +1,274 @@
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO HM_100x400_4x4
+  CLASS BLOCK ;
+  FOREIGN HM_100x400_4x4 0 0 ;
+  ORIGIN 0 0 ;
+  SYMMETRY X Y ;
+  SIZE 100 BY 430 ;
+  PIN I1
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210 0.140 210.070  ;
+    END
+  END I1
+  PIN I2
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210.280 0.140 210.350  ;
+    END
+  END I2 
+  PIN I3
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210.560 0.140 210.630  ;
+    END
+  END I3 
+  PIN I4
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210.840 0.140 210.910  ;
+    END
+  END I4 
+  PIN O1 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 210 100 210.070  ;
+    END
+  END O1 
+  PIN O2 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 210.280 100 210.350  ;
+    END
+  END O2 
+  PIN O3 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 210.560 100 210.630  ;
+    END
+  END O3 
+  PIN O4 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 210.840 100 210.910  ;
+    END
+  END O4
+  OBS
+      LAYER metal3 ;
+        RECT 0 0 100 430 ;
+  END
+END HM_100x400_4x4 
+
+MACRO HM_100x100_1x1
+  CLASS BLOCK ;
+  FOREIGN HM_100x100_1x1 0 0 ;
+  ORIGIN 0 0 ;
+  SYMMETRY X Y ;
+  SIZE 100 BY 100 ;
+  PIN I1
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 50 0.140 50.070  ;
+    END
+  END I1
+  PIN O1 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 50 100 50.070  ;
+    END
+  END O1 
+  OBS
+      LAYER metal3 ;
+        RECT 0 0 100 100 ;
+  END
+END HM_100x100_1x1 
+
+SITE DoubleHeightSite
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 2.8 ;
+END DoubleHeightSite
+
+
+SITE TripleHeightSite
+  SYMMETRY Y ;
+  CLASS core ;
+  SIZE 0.19 BY 4.2 ;
+END TripleHeightSite
+
+
+SITE HybridG
+ SYMMETRY X Y ;
+ CLASS core ;
+ SIZE 0.19 BY 1.4 ;
+END HybridG
+
+SITE HybridA
+ SYMMETRY X Y ;
+ CLASS core ;
+ SIZE 0.19 BY 1.8 ;
+END HybridA
+
+SITE HybridAG
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridA N HybridG FS ;
+END HybridAG
+
+SITE HybridAG2
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridA FS HybridG N ;
+END HybridAG2
+
+SITE HybridGA
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridG FS HybridA N ;
+END HybridGA
+
+MACRO MOCK_SINGLE
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN AND2_X1 0 0 ;
+  SIZE 0.76 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_SINGLE
+
+MACRO MOCK_DOUBLE
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN AND2_X1 0 0 ;
+  SIZE 0.76 BY 2.8 ;
+  SYMMETRY X Y ;
+  SITE DoubleHeightSite ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_DOUBLE
+
+MACRO MOCK_TRIPLE
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN AND2_X1 0 0 ;
+  SIZE 0.76 BY 4.2 ;
+  SYMMETRY X Y ;
+  SITE TripleHeightSite ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_TRIPLE
+
+MACRO MOCK_HYBRID_A
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.19 BY 1.8 ;
+  SYMMETRY X Y ;
+  SITE HybridA ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_HYBRID_A
+
+MACRO MOCK_HYBRID_G
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.19 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE HybridG ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_HYBRID_G
+
+MACRO MOCK_HYBRID_AG
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.19 BY 3.2 ;
+  SYMMETRY X Y ;
+  SITE HybridAG ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_HYBRID_AG
+
+
+MACRO MOCK_HYBRID_GA
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.19 BY 3.2 ;
+  SYMMETRY X Y ;
+  SITE HybridGA ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_HYBRID_GA

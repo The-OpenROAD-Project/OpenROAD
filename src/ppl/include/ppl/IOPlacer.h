@@ -38,8 +38,10 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
 
@@ -72,8 +74,16 @@ using odb::Rect;
 
 using utl::Logger;
 
+struct pinSetComp
+{
+  bool operator()(const odb::dbBTerm* lhs, const odb::dbBTerm* rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+
 // A list of pins that will be placed together in the die boundary
-using PinSet = std::set<odb::dbBTerm*>;
+using PinSet = std::set<odb::dbBTerm*, pinSetComp>;
 using PinList = std::vector<odb::dbBTerm*>;
 using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
 
@@ -175,6 +185,8 @@ class IOPlacer
   void setAnnealingDebugPaintInterval(int iters_between_paintings);
   void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
+  void writePinPlacement(const char* file_name);
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -263,14 +275,18 @@ class IOPlacer
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
-  double dbuToMicrons(int64_t dbu);
-  int micronsToDbu(double microns);
-  void writePinPlacement();
   Edge getMirroredEdge(const Edge& edge);
+  int computeNewRegionLength(const Interval& interval, int num_pins);
+  int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
                         const std::set<int>& ver_layer_idx);
+  void findConstraintRegion(const Interval& interval,
+                            const Rect& constraint_box,
+                            Point& pt1,
+                            Point& pt2);
+  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
@@ -287,9 +303,12 @@ class IOPlacer
 
   int slots_per_section_ = 0;
   float slots_increase_factor_ = 0;
+  int top_layer_pins_count_ = 0;
   // set the offset on tracks as 15 to approximate the size of a GCell in global
   // router
   const int num_tracks_offset_ = 15;
+  const int pins_per_report_ = 5;
+  const int default_min_dist_ = 2;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;

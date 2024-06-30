@@ -27,9 +27,11 @@
  */
 
 #pragma once
+
 #include <boost/asio.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/thread/thread.hpp>
+#include <cstdint>
 #include <mutex>
 #include <queue>
 #include <vector>

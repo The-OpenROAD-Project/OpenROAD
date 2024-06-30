@@ -24,7 +24,8 @@ add_pdn_connect -grid "Core" -layers {metal1 metal4}
 add_pdn_connect -grid "Core" -layers {metal4 metal7}
 add_pdn_connect -grid "Core" -layers {metal7 metal8}
 
-define_pdn_grid -macro -name "sram1" -instances "dcache.data.data_arrays_0.data_arrays_0_ext.mem" -halo 5
+define_pdn_grid -macro -name "sram1" \
+  -instances "dcache.data.data_arrays_0.data_arrays_0_ext.mem" -halo 5
 add_pdn_ring -grid "sram1" -layers {metal5 metal6} -widths 2.0 -spacings 2.0 -core_offsets 2.0
 add_pdn_stripe -layer metal5 -width 0.93 -pitch 10.0 -offset 2.0 -extend_to_core_ring
 add_pdn_stripe -layer metal6 -width 0.93 -pitch 10.0 -offset 2.0 -extend_to_core_ring
@@ -33,7 +34,8 @@ add_pdn_connect -grid "sram1" -layers {metal4 metal5}
 add_pdn_connect -grid "sram1" -layers {metal5 metal6}
 add_pdn_connect -grid "sram1" -layers {metal6 metal7}
 
-define_pdn_grid -macro -name "sram2" -instances "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem" -halo 3
+define_pdn_grid -macro -name "sram2" \
+  -instances "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem" -halo 3
 add_pdn_ring -grid "sram2" -layers {metal5 metal6} -widths 2.0 -spacings 2.0 -core_offsets 2.0
 add_pdn_stripe -layer metal5 -width 0.93 -pitch 10.0 -offset 2.0 -extend_to_core_ring
 add_pdn_stripe -layer metal6 -width 0.93 -pitch 10.0 -offset 2.0 -extend_to_core_ring

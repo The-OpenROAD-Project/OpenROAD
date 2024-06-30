@@ -1,0 +1,37 @@
+create_power_domain PD_TOP \
+  -elements {.}  \
+
+create_power_domain PD_AES_1 \
+  -elements {u_aes_1} \
+
+set_level_shifter ls_2 \
+  -update \
+  -domain "PD_AES_1" \
+  -threshold 2.1 \
+
+set_level_shifter ls_1 \
+  -domain "PD_AES_1" \
+  -elements {"Element1" "Element2"} \
+  -exclude_elements {"ExcludeElement1"} \
+  -source "SourceDomain" \
+  -sink "SinkDomain" \
+  -use_functional_equivalence TRUE \
+  -applies_to "inputs" \
+  -applies_to_boundary "lower" \
+  -rule "low_to_high" \
+  -threshold 2.6 \
+  -no_shift \
+  -location "self" \
+  -input_supply "VDD" \
+  -output_supply "VDD2" \
+  -internal_supply "VDD_internal" \
+  -name_prefix "LS_" \
+  -name_suffix "_01" \
+  -instance {"Instance1 Port1" "Instance2 Port2"} \
+  -use_equivalence FALSE \
+
+set_level_shifter ls_1 \
+  -update \
+  -domain "PD_AES_1" \
+  -threshold 2.1 
+

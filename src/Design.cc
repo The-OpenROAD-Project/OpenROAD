@@ -38,6 +38,8 @@
 #include <tcl.h>
 
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
 #include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
@@ -96,7 +98,7 @@ void Design::readDef(const std::string& file_name,
 void Design::link(const std::string& design_name)
 {
   auto app = OpenRoad::openRoad();
-  app->linkDesign(design_name.c_str());
+  app->linkDesign(design_name.c_str(), false);
 }
 
 void Design::readDb(const std::string& file_name)
@@ -157,6 +159,92 @@ Tech* Design::getTech()
   return tech_;
 }
 
+sta::dbSta* Design::getSta()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSta();
+}
+
+sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return nullptr;
+  }
+  return network->libertyCell(cell);
+}
+
+bool Design::isBuffer(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->isBuffer();
+}
+
+bool Design::isInverter(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->isInverter();
+}
+
+bool Design::isSequential(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->hasSequentials();
+}
+
+bool Design::isInClock(odb::dbInst* inst)
+{
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string Design::getITermName(odb::dbITerm* pin)
+{
+  return pin->getName();
+}
+
+bool Design::isInSupply(odb::dbITerm* pin)
+{
+  return pin->getSigType().isSupply();
+}
+
+std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
+{
+  std::uint64_t route_length = 0;
+  if (net->getSigType().isSupply()) {
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* wire : swire->getWires()) {
+        if (wire != nullptr && !(wire->isVia())) {
+          route_length += wire->getLength();
+        }
+      }
+    }
+  } else {
+    auto* wire = net->getWire();
+    if (wire != nullptr) {
+      route_length += wire->getLength();
+    }
+  }
+  return route_length;
+}
+
 grt::GlobalRouter* Design::getGlobalRouter()
 {
   auto app = OpenRoad::openRoad();
@@ -199,7 +287,7 @@ cts::TritonCTS* Design::getTritonCts()
   return app->getTritonCts();
 }
 
-triton_route::TritonRoute* Design::getTritonRoute()
+drt::TritonRoute* Design::getTritonRoute()
 {
   auto app = OpenRoad::openRoad();
   return app->getTritonRoute();
@@ -257,6 +345,15 @@ pad::ICeWall* Design::getICeWall()
 {
   auto app = OpenRoad::openRoad();
   return app->getICeWall();
+}
+
+/* static */
+odb::dbDatabase* Design::createDetachedDb()
+{
+  auto app = OpenRoad::openRoad();
+  auto db = odb::dbDatabase::create();
+  db->setLogger(app->getLogger());
+  return db;
 }
 
 }  // namespace ord

@@ -3,11 +3,12 @@
 #include <iostream>
 #include <string>
 
-#include "db.h"
-#include "helper.cpp"
+#include "helper.h"
+#include "odb/db.h"
 
-using namespace odb;
-using namespace std;
+namespace odb {
+namespace {
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 
 struct F_DEFAULT
@@ -45,3 +46,6 @@ BOOST_FIXTURE_TEST_CASE(test_delete_module, F_DEFAULT)
   }
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

@@ -7,5 +7,4 @@ record_tests {
   medium06
   large01
   large02
-  upf_aes
 }

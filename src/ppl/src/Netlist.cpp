@@ -38,6 +38,7 @@
 #include <algorithm>
 
 #include "Slots.h"
+#include "iostream"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -177,13 +178,14 @@ void Netlist::sortPinsFromGroup(int group_idx, Edge edge)
   }
 }
 
-void Netlist::clear()
+void Netlist::reset()
 {
   inst_pins_.clear();
   net_pointer_.clear();
   io_pins_.clear();
   io_groups_.clear();
   _db_pin_idx_map.clear();
+  net_pointer_.push_back(0);
 }
 
 int IOPin::getArea() const

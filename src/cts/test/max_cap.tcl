@@ -23,7 +23,8 @@ set_wire_rc -clock  -layer met3
 #set_wire_rc -clock  -capacitance [expr 100e-10 * 1e-6 * 1e+12] -resistance [expr 166800.0 * 1e-6 * 1e-3]
 
 clock_tree_synthesis -root_buf sky130_fd_sc_hs__clkbuf_1 \
-                     -buf_list sky130_fd_sc_hs__clkbuf_1
+                     -buf_list sky130_fd_sc_hs__clkbuf_1 \
+                     -obstruction_aware    
 
 set_propagated_clock clk1
 estimate_parasitics -placement

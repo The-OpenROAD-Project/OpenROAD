@@ -42,6 +42,7 @@
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Liberty.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
@@ -55,10 +56,9 @@ std::string TimingPathNode::getNodeName(bool include_master) const
   if (isPinITerm()) {
     odb::dbITerm* iterm = getPinAsITerm();
 
-    odb::dbInst* inst = iterm->getInst();
-
-    std::string name = inst->getName() + "/" + iterm->getMTerm()->getName();
+    std::string name = iterm->getName();
     if (include_master) {
+      odb::dbInst* inst = iterm->getInst();
       name += " (" + inst->getMaster()->getName() + ")";
     }
 
@@ -136,8 +136,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 {
   if (isPinITerm()) {
     auto* iterm = getPinAsITerm();
-    odb::dbTransform transform;
-    iterm->getInst()->getTransform(transform);
+    const odb::dbTransform transform = iterm->getInst()->getTransform();
 
     odb::Rect pin_rect;
     auto* mterm = iterm->getMTerm();
@@ -176,9 +175,13 @@ TimingPath::TimingPath()
       start_clk_(),
       end_clk_(),
       slack_(0),
+      skew_(0),
       path_delay_(0),
       arr_time_(0),
       req_time_(0),
+      logic_delay_(0),
+      logic_depth_(0),
+      fanout_(0),
       clk_path_end_index_(0),
       clk_capture_end_index_(0)
 {
@@ -187,30 +190,39 @@ TimingPath::TimingPath()
 void TimingPath::populateNodeList(sta::Path* path,
                                   sta::dbSta* sta,
                                   sta::DcalcAnalysisPt* dcalc_ap,
-                                  float offset,
-                                  bool clock_expanded,
+                                  const float offset,
+                                  const bool is_capture_path,
+                                  const bool clock_expanded,
                                   TimingNodeList& list)
 {
-  float arrival_prev_stage = 0;
-  float arrival_cur_stage = 0;
+  float arrival_prev_stage = 0.0f;
+  float arrival_cur_stage = 0.0f;
 
   sta::PathExpanded expand(path, sta);
   auto* graph = sta->graph();
   auto* network = sta->network();
   auto* sdc = sta->sdc();
+
+  // Used to compute logic metrics.
+  std::set<sta::Instance*> logic_insts;
+  sta::Instance* inst_of_prev_pin = nullptr;
+  sta::Instance* prev_inst = nullptr;
+  float curr_inst_delay = 0.0f;
+  float prev_inst_delay = 0.0f;
+  bool pin_belongs_to_inverter_pair_instance = false;
+
   for (size_t i = 0; i < expand.size(); i++) {
     const auto* ref = expand.path(i);
     sta::Vertex* vertex = ref->vertex(sta);
     const auto pin = vertex->pin();
     const bool pin_is_clock = sta->isClock(pin);
-    const auto slew = ref->slew(sta);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
 
     // based on:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
-    int fanout = 0;
+    int node_fanout = 0;
     sta::VertexOutEdgeIterator iter(vertex, graph);
     while (iter.hasNext()) {
       sta::Edge* edge = iter.next();
@@ -219,46 +231,74 @@ void TimingPath::populateNodeList(sta::Path* path,
         if (network->isTopLevelPort(pin)) {
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
-          fanout += sdc->portExtFanout(
-                        port, dcalc_ap->corner(), sta::MinMax::max())
-                    + 1;
+          node_fanout += sdc->portExtFanout(
+                             port, dcalc_ap->corner(), sta::MinMax::max())
+                         + 1;
         } else {
-          fanout++;
+          node_fanout++;
         }
       }
     }
 
     float cap = 0.0;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
-      sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
-      sta::Parasitic* parasitic
-          = arc_delay_calc->findParasitic(pin, ref->transition(sta), dcalc_ap);
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(
-          pin, parasitic, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(pin, ref->transition(sta), dcalc_ap);
     }
 
     odb::dbITerm* term;
     odb::dbBTerm* port;
-    sta->getDbNetwork()->staToDb(pin, term, port);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
     odb::dbObject* pin_object = term;
     if (term == nullptr) {
       pin_object = port;
     }
-    arrival_cur_stage = arrival;
 
-    list.push_back(
-        std::make_unique<TimingPathNode>(pin_object,
-                                         pin,
-                                         pin_is_clock,
-                                         is_rising,
-                                         !is_driver,
-                                         true,
-                                         arrival + offset,
-                                         arrival_cur_stage - arrival_prev_stage,
-                                         slew,
-                                         cap,
-                                         fanout));
+    float slew = 0.0f;
+
+    if (!sta->isIdealClock(pin)) {
+      arrival_cur_stage = arrival;
+      slew = ref->slew(sta);
+    }
+
+    const float pin_delay = arrival_cur_stage - arrival_prev_stage;
+
+    if (!is_capture_path) {
+      sta::Instance* inst_of_curr_pin = network->instance(pin);
+
+      if (!sta->isClock(pin)) {
+        updateLogicMetrics(network,
+                           inst_of_curr_pin,
+                           inst_of_prev_pin,
+                           prev_inst,
+                           pin_delay,
+                           logic_insts,
+                           curr_inst_delay,
+                           prev_inst_delay,
+                           pin_belongs_to_inverter_pair_instance);
+      }
+
+      logic_depth_ = static_cast<int>(logic_insts.size());
+      inst_of_prev_pin = inst_of_curr_pin;
+    }
+
+    if (!sta->isClock(pin)) {
+      fanout_ += node_fanout;
+    }
+
+    list.push_back(std::make_unique<TimingPathNode>(pin_object,
+                                                    pin,
+                                                    pin_is_clock,
+                                                    is_rising,
+                                                    !is_driver,
+                                                    true,
+                                                    arrival_cur_stage + offset,
+                                                    pin_delay,
+                                                    slew,
+                                                    cap,
+                                                    node_fanout));
     arrival_prev_stage = arrival_cur_stage;
   }
 
@@ -293,12 +333,92 @@ void TimingPath::populateNodeList(sta::Path* path,
   }
 }
 
+void TimingPath::updateLogicMetrics(sta::Network* network,
+                                    sta::Instance* inst_of_curr_pin,
+                                    sta::Instance* inst_of_prev_pin,
+                                    sta::Instance* prev_inst,
+                                    const float pin_delay,
+                                    std::set<sta::Instance*>& logic_insts,
+                                    float& curr_inst_delay,
+                                    float& prev_inst_delay,
+                                    bool& pin_belongs_to_inverter_pair_instance)
+{
+  if (pin_belongs_to_inverter_pair_instance) {
+    pin_belongs_to_inverter_pair_instance = false;
+    return;
+  }
+
+  if (!instanceIsLogic(inst_of_curr_pin, network)) {
+    return;
+  }
+
+  curr_inst_delay += pin_delay;
+  logic_insts.insert(inst_of_curr_pin);
+
+  if (inst_of_prev_pin == inst_of_curr_pin) {
+    logic_delay_ += curr_inst_delay;
+    curr_inst_delay = 0;
+
+    prev_inst = inst_of_curr_pin;
+    prev_inst_delay = curr_inst_delay;
+  } else if (instancesAreInverterPair(inst_of_curr_pin, prev_inst, network)) {
+    logic_delay_ -= prev_inst_delay;
+    curr_inst_delay = 0;
+
+    logic_insts.erase(prev_inst);
+    logic_insts.erase(inst_of_curr_pin);
+
+    // We need this to skip the next pin of inverter pair's second instance.
+    pin_belongs_to_inverter_pair_instance = true;
+
+    // We need this in case there's another inverter pair ahead.
+    prev_inst = nullptr;
+  }
+}
+
+bool TimingPath::instanceIsLogic(sta::Instance* inst, sta::Network* network)
+{
+  sta::LibertyCell* lib_cell = network->libertyCell(inst);
+
+  if (!lib_cell) {
+    return false;
+  }
+
+  if (lib_cell->isBuffer()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool TimingPath::instancesAreInverterPair(sta::Instance* curr_inst,
+                                          sta::Instance* prev_inst,
+                                          sta::Network* network)
+{
+  if (!prev_inst || !curr_inst) {
+    return false;
+  }
+
+  sta::LibertyCell* prev = network->libertyCell(prev_inst);
+  sta::LibertyCell* curr = network->libertyCell(curr_inst);
+
+  if (!prev || !curr) {
+    return false;
+  }
+
+  if (!curr->isInverter() || !prev->isInverter()) {
+    return false;
+  }
+
+  return true;
+}
+
 void TimingPath::populatePath(sta::Path* path,
                               sta::dbSta* sta,
                               sta::DcalcAnalysisPt* dcalc_ap,
                               bool clock_expanded)
 {
-  populateNodeList(path, sta, dcalc_ap, 0, clock_expanded, path_nodes_);
+  populateNodeList(path, sta, dcalc_ap, 0, false, clock_expanded, path_nodes_);
 }
 
 void TimingPath::populateCapturePath(sta::Path* path,
@@ -307,7 +427,8 @@ void TimingPath::populateCapturePath(sta::Path* path,
                                      float offset,
                                      bool clock_expanded)
 {
-  populateNodeList(path, sta, dcalc_ap, offset, clock_expanded, capture_nodes_);
+  populateNodeList(
+      path, sta, dcalc_ap, offset, true, clock_expanded, capture_nodes_);
 }
 
 std::string TimingPath::getStartStageName() const
@@ -322,6 +443,21 @@ std::string TimingPath::getStartStageName() const
 std::string TimingPath::getEndStageName() const
 {
   return path_nodes_.back()->getNodeName();
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getStartStageNode() const
+{
+  const int start_idx = getClkPathEndIndex() + 1;
+  if (start_idx >= path_nodes_.size()) {
+    return path_nodes_.front();
+  }
+
+  return path_nodes_[start_idx];
+}
+
+const std::unique_ptr<TimingPathNode>& TimingPath::getEndStageNode() const
+{
+  return path_nodes_.back();
 }
 
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
@@ -644,7 +780,7 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
 
   const sta::Pin* search_pin = pin;
   while (search_pin != root) {
-    const auto connections = pin_map[search_pin];
+    const auto& connections = pin_map[search_pin];
 
     for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);
@@ -697,10 +833,19 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       corner_(nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
-      max_path_count_(1000),
+      max_path_count_(50),
       include_unconstrained_(false),
       include_capture_path_(false)
 {
+}
+
+StaPins STAGuiInterface::getStartPoints() const
+{
+  StaPins pins;
+  for (auto end : sta_->startpointPins()) {
+    pins.insert(end);
+  }
+  return pins;
 }
 
 StaPins STAGuiInterface::getEndPoints() const
@@ -844,6 +989,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
     timing_path->setSlack(path_end->slack(sta_));
     timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     timing_path->setPathRequiredTime(path_end->requiredTime(sta_));
+    timing_path->setSkew(path_end->clkSkew(sta_));
 
     bool clock_propagated = false;
     if (start_clock_edge != nullptr) {
@@ -903,7 +1049,7 @@ ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
                                           0,
                                           true,   // thru_disabled
                                           true);  // thru_constants
-  return getCone(pin, pins, false);
+  return getCone(pin, std::move(pins), false);
 }
 
 ConeDepthMapPinSet STAGuiInterface::getCone(const sta::Pin* source_pin,
@@ -990,7 +1136,9 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
       odb::dbBTerm* bterm;
       odb::dbITerm* iterm;
-      network->staToDb(pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+      network->staToDb(pin, iterm, bterm, moditerm, modbterm);
       if (bterm != nullptr) {
         dbpin = bterm;
       } else {

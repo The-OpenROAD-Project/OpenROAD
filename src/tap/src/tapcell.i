@@ -83,8 +83,8 @@
   }
 
   void run(odb::dbMaster* endcap_master,
-           int halo_x,
-           int halo_y,
+           const int halo_x,
+           const int halo_y,
            const char* cnrcap_nwin_master,
            const char* cnrcap_nwout_master,
            const char* tap_nwintie_master,
@@ -96,7 +96,8 @@
            const char* incnrcap_nwin_master,
            const char* incnrcap_nwout_master,
            odb::dbMaster* tapcell_master,
-           int dist)
+           const int dist,
+           const bool disallow_one_site_gaps)
   {
     Options options;
     options.endcap_master = endcap_master;
@@ -114,6 +115,7 @@
     options.tap_nwout3_master = findMaster(tap_nwout3_master);
     options.incnrcap_nwin_master = findMaster(incnrcap_nwin_master);
     options.incnrcap_nwout_master = findMaster(incnrcap_nwout_master);
+    options.disallow_one_site_gaps = disallow_one_site_gaps;
     getTapcell()->run(options);
   }
 

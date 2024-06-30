@@ -52,7 +52,11 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-
+#ifdef ENABLE_CHARTS
+namespace sta {
+class Pin;
+}
+#endif
 namespace gui {
 
 class LayoutViewer;
@@ -66,9 +70,7 @@ class TimingWidget;
 class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
-#ifdef ENABLE_CHARTS
 class ChartsWidget;
-#endif
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -257,6 +259,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showApplicationFont();
   void showGlobalConnect();
   void openDesign();
+#ifdef ENABLE_CHARTS
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
+#endif
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -299,9 +304,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   DRCWidget* drc_viewer_;
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
-#ifdef ENABLE_CHARTS
   ChartsWidget* charts_widget_;
-#endif
 
   FindObjectDialog* find_dialog_;
   GotoLocationDialog* goto_dialog_;
@@ -341,6 +344,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
+  static constexpr const char* window_title_ = "OpenROAD";
 };
 
 }  // namespace gui

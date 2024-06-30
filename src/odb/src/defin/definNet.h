@@ -35,9 +35,9 @@
 #include <map>
 #include <string>
 
-#include "dbWireCodec.h"
 #include "definBase.h"
-#include "odb.h"
+#include "odb/dbWireCodec.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -97,6 +97,7 @@ class definNet : public definBase
   void pathVia(const char* via, dbOrientType orient);
   void pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2);
   void pathColor(int color);
+  void pathViaColor(int bottom_color, int cut_color, int top_color);
   void pathEnd();
   void wireEnd();
   void source(dbSourceType source);

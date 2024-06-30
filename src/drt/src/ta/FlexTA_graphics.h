@@ -39,7 +39,7 @@ class dbDatabase;
 class dbTechLayer;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 
 class frDesign;
 class frNet;
@@ -62,8 +62,7 @@ class FlexTAGraphics : public gui::Renderer
                        gui::Painter& painter);
 
   // From Renderer API
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
   // Update status and optionally pause
   void endIter(int iter);
@@ -80,4 +79,4 @@ class FlexTAGraphics : public gui::Renderer
   frNet* net_;
 };
 
-}  // namespace fr
+}  // namespace drt
