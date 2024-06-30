@@ -96,6 +96,7 @@ class dbNetwork : public ConcreteNetwork
   void init(dbDatabase* db, Logger* logger);
   void setBlock(dbBlock* block);
   void clear() override;
+  CellPortIterator* portIterator(const Cell* cell) const;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -118,7 +119,7 @@ class dbNetwork : public ConcreteNetwork
   bool isPlaced(const Pin* pin) const;
 
   LibertyCell* libertyCell(dbInst* inst);
-
+  LibertyPort* libertyPort(const Pin*) const;
   dbInst* staToDb(const Instance* instance) const;
   void staToDb(const Instance* instance,
                dbInst*& db_inst,
@@ -143,6 +144,11 @@ class dbNetwork : public ConcreteNetwork
   dbMaster* staToDb(const LibertyCell* cell) const;
   dbMTerm* staToDb(const Port* port) const;
   dbMTerm* staToDb(const LibertyPort* port) const;
+  void staToDb(const Port* port,
+               dbBTerm*& bterm,
+               dbMTerm*& mterm,
+               dbModBTerm*& modbterm) const;
+
   void staToDb(PortDirection* dir,
                dbSigType& sig_type,
                dbIoType& io_type) const;
@@ -169,6 +175,7 @@ class dbNetwork : public ConcreteNetwork
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(dbBTerm* bterm);
+  dbBTerm* isTopPort(const Port*) const;
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
@@ -219,6 +226,26 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Term* term) const override;
 
   ////////////////////////////////////////////////////////////////
+  // Cell functions
+  const char* name(const Cell* instance) const override;
+
+  bool isConcreteCell(const Cell*) const;
+  void registerConcreteCell(const Cell*);
+
+  ////////////////////////////////////////////////////////////////
+  // Port functions
+  Cell* cell(const Port* port) const override;
+  void registerConcretePort(const Port*);
+  void registerLibertyPort(const Port*, const LibertyPort*);
+  void registerHPorts();
+  void registerHPort(const Port*);
+  bool isHPort(const Port*) const;
+  bool isConcretePort(const Port*) const;
+  bool isLibertyPort(const Port*) const;
+
+  PortDirection* direction(const Port* port) const override;
+
+  ////////////////////////////////////////////////////////////////
   // Net functions
   ObjectId id(const Net* net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
@@ -264,6 +291,8 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy handler, set in openroad tested in network child traverserser
   void setHierarchy() { hierarchy_ = true; }
   bool hasHierarchy() const { return hierarchy_; }
+  bool hasMembers(const Port* port) const;
+  Port* findMember(const Port* port, int index) const;
 
   using Network::cell;
   using Network::direction;
@@ -313,6 +342,10 @@ class dbNetwork : public ConcreteNetwork
 
  private:
   bool hierarchy_ = false;
+  std::set<const Cell*> concrete_cells_;
+  std::set<const Port*> concrete_ports_;
+  std::map<const Port*, const LibertyPort*> liberty_ports_;
+  std::set<const Port*> h_ports_;
 };
 
 }  // namespace sta
