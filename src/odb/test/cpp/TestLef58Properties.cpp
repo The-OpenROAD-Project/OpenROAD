@@ -331,6 +331,14 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(kozrule->getSideForwardExtension() == 0.2 * distFactor);
   BOOST_TEST(kozrule->getSpiralExtension() == 0.05 * distFactor);
 
+  auto maxSpacingRules = cutLayer->getTechLayerMaxSpacingRules();
+  BOOST_TEST(maxSpacingRules.size() == 1);
+  auto maxSpcRule
+      = (odb::dbTechLayerMaxSpacingRule*) *(maxSpacingRules.begin());
+  BOOST_TEST(maxSpcRule->getMaxSpacing() == 2 * distFactor);
+  BOOST_TEST(maxSpcRule->hasCutClass());
+  BOOST_TEST(maxSpcRule->getCutClass() == "VA");
+
   layer = dbTech->findLayer("contact");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
   layer = dbTech->findLayer("metal2");

@@ -1,0 +1,18 @@
+{
+    "name": "dbTechLayerMaxSpacingRule",
+    "type": "dbObject",
+    "fields": [
+      {
+        "type": "std::string",
+        "name": "cut_class_"
+      },
+      {
+        "type": "int",
+        "name": "max_spacing_"
+      }
+    ],
+    "cpp_includes": [
+      "dbTechLayer.h"
+    ]
+  }
+  
