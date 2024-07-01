@@ -34,6 +34,8 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
+find_package(OpenMP REQUIRED)
+
 add_library(FastRoute4.1
   src/FastRoute.cpp
   src/RSMT.cpp
@@ -59,4 +61,5 @@ target_link_libraries(FastRoute4.1
     stt_lib
     odb
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
