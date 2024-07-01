@@ -159,7 +159,7 @@ void InitialPlace::placeInstsCenter()
         }
         inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin) / 2,
                                 domain_yMax - (domain_yMax - domain_yMin) / 2);
-      } else if (db_inst->isPlaced()) {
+      } else if (ipVars_.maxIter == 0 && db_inst->isPlaced()) {
         // It is helpful to pick up the placement from mpl2 if available,
         // particularly when you are going to skip initial placement
         // (eg skip_io).
