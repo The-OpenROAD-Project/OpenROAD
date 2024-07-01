@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "mpl2/rtl_mp.h"
 #include "../../src/hier_rtlmp.h"
-#include "helper/helper.h"
 #include "odb/db.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
