@@ -314,6 +314,9 @@ class HierRTLMP
 
   static bool isIgnoredMaster(odb::dbMaster* master);
 
+  // Aux for conversion
+  odb::Rect micronsToDbu(const Rect& micron_rect);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
