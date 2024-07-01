@@ -134,6 +134,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class SynthesizeBuffers;
 
 class NetHash
 {
@@ -249,6 +250,10 @@ class Resizer : public dbStaState
   void bufferInputs();
   void bufferOutputs();
 
+  LibertyCell *findSmallestEquiv(const DcalcAnalysisPt *dcalc_ap,
+                                 LibertyCell *cell);
+  void downsizeAllCells();
+
   // Balance the usage of hybrid rows
   void balanceRowUsage();
 
@@ -294,6 +299,9 @@ class Resizer : public dbStaState
 
   ////////////////////////////////////////////////////////////////
   void recoverPower(float recover_power_percent);
+
+  ////////////////////////////////////////////////////////////////
+  void synthesizeBuffers(int max_fanout, float gain, float slew);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -621,6 +629,7 @@ class Resizer : public dbStaState
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  SynthesizeBuffers* synthesize_buffers_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -709,6 +718,17 @@ class Resizer : public dbStaState
   friend class RepairSetup;
   friend class RepairHold;
   friend class SteinerTree;
+  friend class SynthesizeBuffers;
+};
+
+class VertexLevelLess
+{
+ public:
+  VertexLevelLess(const sta::Network* network);
+  bool operator()(const Vertex* vertex1, const Vertex* vertex2) const;
+
+ protected:
+  const sta::Network* network_;
 };
 
 }  // namespace rsz
