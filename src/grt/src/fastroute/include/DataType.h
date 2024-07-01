@@ -160,7 +160,7 @@ struct TreeNode
 {
   bool assigned;
 
-  short status;
+  short status = 0;
   short conCNT;
   short botL, topL;
   // heights and eID arrays size were increased after using PD
@@ -188,7 +188,7 @@ struct Route
   // valid for LRoute:
   // true - the route is horizontal first (x1, y1) - (x2, y1) - (x2, y2),
   // false (x1, y1) - (x1, y2) - (x2, y2)
-  bool xFirst;
+  bool xFirst = false;
 
   // valid for ZRoute:
   // true - the route is HVH shape, false - VHV shape
