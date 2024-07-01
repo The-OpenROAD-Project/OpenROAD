@@ -67,12 +67,13 @@ HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      sta::dbSta* sta,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
+    : network_(network),
+      db_(db),
+      sta_(sta),
+      logger_(logger),
+      tritonpart_(tritonpart) /*,
+      clustering_engine_(nullptr) */
 {
-  network_ = network;
-  db_ = db;
-  sta_ = sta;
-  logger_ = logger;
-  tritonpart_ = tritonpart;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -155,6 +156,11 @@ void HierRTLMP::setClusterSize(int max_num_macro,
   min_num_macro_base_ = min_num_macro;
   max_num_inst_base_ = max_num_inst;
   min_num_inst_base_ = min_num_inst;
+/*
+  tree_.base_thresholds.max_macro = max_num_macro;
+  tree_.base_thresholds.min_macro = min_num_macro;
+  tree_.base_thresholds.max_std_cell = max_num_inst;
+  tree_.base_thresholds.min_std_cell = min_num_inst;*/
 }
 
 void HierRTLMP::setClusterSizeTolerance(float tolerance)
@@ -165,11 +171,13 @@ void HierRTLMP::setClusterSizeTolerance(float tolerance)
 void HierRTLMP::setMaxNumLevel(int max_num_level)
 {
   max_num_level_ = max_num_level;
+  /*tree_.max_level = max_num_level;*/
 }
 
 void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
 {
   coarsening_ratio_ = coarsening_ratio;
+  /*tree_.coarsening_ratio = coarsening_ratio;*/
 }
 
 void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
@@ -216,61 +224,6 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 // Set defaults for min/max number of instances and macros if not set by user.
 void HierRTLMP::setDefaultThresholds()
 {
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Setting default threholds...");
-
-  std::string snap_layer_name;
-
-  for (auto& macro : hard_macro_map_) {
-    odb::dbMaster* master = macro.first->getMaster();
-    for (odb::dbMTerm* mterm : master->getMTerms()) {
-      if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
-        for (odb::dbMPin* mpin : mterm->getMPins()) {
-          for (odb::dbBox* box : mpin->getGeometry()) {
-            odb::dbTechLayer* layer = box->getTechLayer();
-            snap_layer_name = layer->getName();
-          }
-        }
-      }
-    }
-
-    break;
-  }
-
-  // update weight
-  if (dynamic_congestion_weight_flag_ == true) {
-    std::vector<std::string> layers;
-    int tot_num_layer = 0;
-    for (odb::dbTechLayer* layer : db_->getTech()->getLayers()) {
-      if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-        layers.push_back(layer->getName());
-        tot_num_layer++;
-      }
-    }
-    snap_layer_ = 0;
-    for (int i = 0; i < layers.size(); i++) {
-      if (layers[i] == snap_layer_name) {
-        snap_layer_ = i + 1;
-        break;
-      }
-    }
-    if (snap_layer_ <= 0) {
-      congestion_weight_ = 0.0;
-    } else {
-      congestion_weight_ = 1.0 * snap_layer_ / layers.size();
-    }
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "snap_layer : {}  congestion_weight : {}",
-               snap_layer_,
-               congestion_weight_);
-  }
-
   if (max_num_macro_base_ <= 0 || min_num_macro_base_ <= 0
       || max_num_inst_base_ <= 0 || min_num_inst_base_ <= 0) {
     min_num_inst_base_
@@ -298,18 +251,6 @@ void HierRTLMP::setDefaultThresholds()
     }
   }
 
-  // for num_level = 1, we recommand to increase the macro_blockage_weight to
-  // half of the outline_weight
-  if (max_num_level_ == 1) {
-    macro_blockage_weight_ = outline_weight_ / 2.0;
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "Reset macro_blockage_weight : {}",
-               macro_blockage_weight_);
-  }
-
   // Set sizes for root level based on coarsening_factor and the number of
   // physical hierarchy levels
   unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ - 1);
@@ -329,21 +270,6 @@ void HierRTLMP::setDefaultThresholds()
       min_num_macro_base_,
       max_num_inst_base_,
       min_num_inst_base_);
-
-  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
-    logger_->report("\nPrint Default Parameters\n");
-    logger_->report("area_weight_ = {}", area_weight_);
-    logger_->report("outline_weight_ = {}", outline_weight_);
-    logger_->report("wirelength_weight_ = {}", wirelength_weight_);
-    logger_->report("guidance_weight_ = {}", guidance_weight_);
-    logger_->report("fence_weight_ = {}", fence_weight_);
-    logger_->report("boundary_weight_ = {}", boundary_weight_);
-    logger_->report("notch_weight_ = {}", notch_weight_);
-    logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
-    logger_->report("halo_width_ = {}", halo_width_);
-    logger_->report("halo_height_ = {}", halo_height_);
-    logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
-  }
 }
 
 // Top Level Function
@@ -380,7 +306,13 @@ void HierRTLMP::run()
     graphics_->startFine();
   }
 
+  adjustMacroBlockageWeight();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    reportSAWeights();
+  }
+
   if (bus_planning_on_) {
+    adjustCongestionWeight();
     runHierarchicalMacroPlacement(root_cluster_);
   } else {
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
@@ -481,11 +413,12 @@ void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
                                                   float core_util)
 {
   logger_->report(
-      "Traversed logical hierarchy\n"
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
+      "\tHalo width: {:.2f}\n"
+      "\tHalo height: {:.2f}\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tCore area: {:.2f}\n"
@@ -496,6 +429,8 @@ void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
+      halo_width_,
+      halo_height_,
       macro_with_halo_area_,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       core_area,
@@ -525,6 +460,14 @@ void HierRTLMP::initPhysicalHierarchy()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
+  /*
+  clustering_engine_ = std::make_unique<ClusteringEngine>(block_, logger_);
+  clustering_engine_->setDesignMetrics(metrics_);
+  clustering_engine_->setTargetStructure(&tree_);
+
+  clustering_engine_->buildPhysicalHierarchy();
+  */
+
   initPhysicalHierarchy();
 
   createIOClusters();
@@ -3238,6 +3181,62 @@ void HierRTLMP::setPlacementBlockages()
   }
 }
 
+void HierRTLMP::adjustCongestionWeight()
+{
+  // TODO: Isso aqui faz sentido? E se nós usarmos pinos de sinal
+  // em dois layers? Qual é o snap layer nesse caso? O de baixo
+  // ou o de cima?
+  // Should we alow setting the snap layer manually?
+  std::string snap_layer_name;
+
+  for (auto& macro : hard_macro_map_) {
+    odb::dbMaster* master = macro.first->getMaster();
+    for (odb::dbMTerm* mterm : master->getMTerms()) {
+      if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* box : mpin->getGeometry()) {
+            odb::dbTechLayer* layer = box->getTechLayer();
+            snap_layer_name = layer->getName();
+          }
+        }
+      }
+    }
+
+    break;
+  }
+
+  // update weight
+  if (dynamic_congestion_weight_flag_) {
+    std::vector<std::string> layers;
+    int tot_num_layer = 0;
+    for (odb::dbTechLayer* layer : db_->getTech()->getLayers()) {
+      if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+        layers.push_back(layer->getName());
+        tot_num_layer++;
+      }
+    }
+    snap_layer_ = 0;
+    for (int i = 0; i < layers.size(); i++) {
+      if (layers[i] == snap_layer_name) {
+        snap_layer_ = i + 1;
+        break;
+      }
+    }
+    if (snap_layer_ <= 0) {
+      congestion_weight_ = 0.0;
+    } else {
+      congestion_weight_ = 1.0 * snap_layer_ / layers.size();
+    }
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "Adjusting congestion weight to {} - Snap layer is {}",
+               congestion_weight_,
+               snap_layer_);
+  }
+}
+
 // Cluster Placement Engine Starts ...........................................
 // The cluster placement is done in a top-down manner
 // (Preorder DFS)
@@ -4205,6 +4204,39 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   if (graphics_) {
     graphics_->setBundledNets(nets);
   }
+}
+
+// Recommendation from the original implementation:
+// For single level, increase macro blockage weight to
+// half of the outline weight.
+void HierRTLMP::adjustMacroBlockageWeight()
+{
+  if (max_num_level_ == 1) {
+    float new_macro_blockage_weight = outline_weight_ / 2.0;
+    debugPrint(logger_,
+               MPL,
+               "multilevel_autoclustering",
+               1,
+               "Number of levels is {}, Changing macro blockage weight from {} "
+               "to {} (half of the outline weight)",
+               max_num_level_,
+               macro_blockage_weight_,
+               new_macro_blockage_weight);
+    macro_blockage_weight_ = new_macro_blockage_weight;
+  }
+}
+
+void HierRTLMP::reportSAWeights()
+{
+  logger_->report("\nSimmulated Annealing Weights:\n");
+  logger_->report("Area = \t{}", area_weight_);
+  logger_->report("Outline = \t{}", outline_weight_);
+  logger_->report("WL = \t{}", wirelength_weight_);
+  logger_->report("Guidance = {}", guidance_weight_);
+  logger_->report("Fence = {}", fence_weight_);
+  logger_->report("Boundary = {}", boundary_weight_);
+  logger_->report("Notch = {}", notch_weight_);
+  logger_->report("Macro Blockage = {}", macro_blockage_weight_);
 }
 
 // Multilevel macro placement without bus planning
