@@ -6,20 +6,22 @@
 #include "utl/Logger.h"
 
 namespace mpl2 {
-class Mpl2SnapperTest : public ::testing::Test {
+class Mpl2SnapperTest : public ::testing::Test
+{
  protected:
   template <class T>
   using OdbUniquePtr = std::unique_ptr<T, void (*)(T*)>;
 
-  void SetUp() override {
+  void SetUp() override
+  {
     utl::Logger* logger = new utl::Logger();
 
     db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
                                         &odb::dbDatabase::destroy);
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
                                       &odb::dbChip::destroy);
-    block_ =
-        OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
+    block_
+        = OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
   }
 
   utl::Logger logger_;
@@ -29,7 +31,8 @@ class Mpl2SnapperTest : public ::testing::Test {
   OdbUniquePtr<odb::dbBlock> block_{nullptr, &odb::dbBlock::destroy};
 };
 
-TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances) {
+TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
+{
   // create a simple block and then add 3 instances to that block
   // without any further configuration to each instance,
   // and then run setMacro(inst) on each instance
@@ -47,10 +50,10 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances) {
   master_->setWidth(1000);
   master_->setHeight(1000);
   master_->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT,
-                       odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT,
-                       odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   master_->setFrozen();
 
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
