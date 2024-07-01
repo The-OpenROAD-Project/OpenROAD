@@ -145,6 +145,8 @@ void HierRTLMP::setHaloHeight(float halo_height)
 void HierRTLMP::setNumBundledIOsPerBoundary(int num_bundled_ios)
 {
   num_bundled_IOs_ = num_bundled_ios;
+
+  tree_.bundled_ios_per_edge = num_bundled_ios;
 }
 
 void HierRTLMP::setClusterSize(int max_num_macro,
@@ -156,11 +158,11 @@ void HierRTLMP::setClusterSize(int max_num_macro,
   min_num_macro_base_ = min_num_macro;
   max_num_inst_base_ = max_num_inst;
   min_num_inst_base_ = min_num_inst;
-/*
+
   tree_.base_thresholds.max_macro = max_num_macro;
   tree_.base_thresholds.min_macro = min_num_macro;
   tree_.base_thresholds.max_std_cell = max_num_inst;
-  tree_.base_thresholds.min_std_cell = min_num_inst;*/
+  tree_.base_thresholds.min_std_cell = min_num_inst;
 }
 
 void HierRTLMP::setClusterSizeTolerance(float tolerance)
@@ -171,13 +173,15 @@ void HierRTLMP::setClusterSizeTolerance(float tolerance)
 void HierRTLMP::setMaxNumLevel(int max_num_level)
 {
   max_num_level_ = max_num_level;
-  /*tree_.max_level = max_num_level;*/
+
+  tree_.max_level = max_num_level;
 }
 
 void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
 {
   coarsening_ratio_ = coarsening_ratio;
-  /*tree_.coarsening_ratio = coarsening_ratio;*/
+
+  tree_.coarsening_ratio = coarsening_ratio;
 }
 
 void HierRTLMP::setLargeNetThreshold(int large_net_threshold)

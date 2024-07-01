@@ -43,6 +43,7 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbInst;
+class dbBTerm;
 }  // namespace odb
 
 namespace mpl2 {
@@ -51,26 +52,47 @@ class Cluster;
 
 struct SizeThresholds
 {
-  int max_macro = 0;
-  int min_macro = 0;
-  int max_std_cell = 0;
-  int min_std_cell = 0;
+  SizeThresholds()
+      : max_macro(0), min_macro(0), max_std_cell(0), min_std_cell(0)
+  {
+  }
+
+  int max_macro;
+  int min_macro;
+  int max_std_cell;
+  int min_std_cell;
 };
 
 struct PhysicalHierarchyMaps
 {
   std::map<int, Cluster*> id_to_cluster;
   std::unordered_map<odb::dbInst*, int> inst_to_cluster_id;
+  std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_id;
+
+  // Only for designs with IO Pads
+  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
 };
 
 struct PhysicalHierarchy
 {
+  PhysicalHierarchy()
+      : root(nullptr),
+        coarsening_ratio(0),
+        max_level(0),
+        bundled_ios_per_edge(0),
+        has_io_clusters(true)
+  {
+  }
+
   Cluster* root;
   PhysicalHierarchyMaps maps;
 
   SizeThresholds base_thresholds;
-  float coarsening_ratio = 0;
-  int max_level = 0;  // Max level might be reset when clustering.
+  float coarsening_ratio;
+  int max_level;
+  int bundled_ios_per_edge;
+
+  bool has_io_clusters;
 };
 
 class ClusteringEngine
@@ -86,6 +108,8 @@ class ClusteringEngine
  private:
   void initTree();
   void setDefaultThresholds();
+  void createIOClusters();
+  void mapIOPads();
 
   odb::dbBlock* block_;
   utl::Logger* logger_;

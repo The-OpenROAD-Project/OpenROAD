@@ -43,7 +43,7 @@
 #include <vector>
 
 #include "Mpl2Observer.h"
-/*#include "clusterEngine.h"*/
+#include "clusterEngine.h"
 
 namespace odb {
 class dbBTerm;
@@ -502,7 +502,7 @@ class HierRTLMP
   bool design_has_only_macros_ = false;
   bool design_has_unfixed_macros_ = true;
 
-  /*PhysicalHierarchy tree_;*/
+  PhysicalHierarchy tree_;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
