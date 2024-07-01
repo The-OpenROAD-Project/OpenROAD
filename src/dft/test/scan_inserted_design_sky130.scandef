@@ -1,0 +1,88 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN scan_inserted_design ;
+
+SCANCHAINS 9 ;
+
+- chain_0
++ START PIN scan_in_1
++ FLOATING
+  ff6_clk2_falling ( IN SCD ) ( OUT Q )
+  ff2_clk2_falling ( IN SCD ) ( OUT Q )
++ ORDERED
+  mux1 ( IN A0 ) ( OUT X )
+  ff8_clk2_falling ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_falling
++ STOP PIN output1 ;
+
+- chain_1_0
++ START PIN ff10_clk2_falling/SCD
++ FLOATING
+  ff10_clk2_falling ( IN SCD ) ( OUT Q )
+  ff4_clk2_falling ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_falling
++ STOP PIN ff4_clk2_falling/Q ;
+
+- chain_1_1
++ START PIN ff10_clk2_rising/SCD
++ FLOATING ff10_clk2_rising ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_rising
++ STOP PIN ff10_clk2_rising/Q ;
+
+- chain_2
++ START PIN ff8_clk2_rising/SCD
++ FLOATING
+  ff8_clk2_rising ( IN SCD ) ( OUT Q )
+  ff2_clk2_rising ( IN SCD ) ( OUT Q )
++ ORDERED
+  iso ( IN A ) ( OUT X )
+  ff6_clk2_rising ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_rising
++ STOP PIN ff6_clk2_rising/SCD ;
+
+- chain_3_0 
++ COMMONSCANPINS ( IN SCD ) ( OUT Q )
++ START PIN ff1_clk1_falling/SCD
++ FLOATING
+  ff1_clk1_falling
+  ff3_clk1_falling
++ PARTITION main_clock_falling
++ STOP PIN ff3_clk1_falling/SCD ;
+
+- chain_3_1
++ START PIN ff4_clk2_rising/SCD
++ FLOATING ff4_clk2_rising ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_rising
++ STOP PIN ff4_clk2_rising/Q ;
+
+- chain_4
++ START PIN ff7_clk1_falling/SCD
++ FLOATING
+  ff7_clk1_falling ( IN SCD ) ( OUT Q )
+  ff9_clk1_falling ( IN SCD ) ( OUT Q )
+  ff5_clk1_falling ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_falling
++ STOP PIN ff5_clk1_falling/Q ;
+
+- chain_5
++ START PIN ff3_clk1_rising/SCD
++ COMMONSCANPINS ( IN SCD ) ( OUT Q )
++ FLOATING
+  ff3_clk1_rising
+  ff5_clk1_rising
+  ff7_clk1_rising
++ PARTITION main_clock_rising
++ STOP PIN ff7_clk1_rising/Q ;
+
+- chain_6
++ START PIN ff1_clk1_rising/SCD
++ FLOATING
+  ff1_clk1_rising ( IN SCD ) ( OUT Q )
+  ff9_clk1_rising ( IN SCD ) ( OUT Q )
++ PARTITION main_clock_rising
++ STOP PIN ff9_clk1_rising/Q ;
+
+
+END SCANCHAINS
+END DESIGN

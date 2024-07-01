@@ -102,6 +102,7 @@ class defout_impl
   void writeBPin(dbBPin* bpin, int n);
   void writeRegions(dbBlock* block);
   void writeGroups(dbBlock* block);
+  void writeScanChains(dbBlock* block);
   void writeBlockages(dbBlock* block);
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
@@ -130,7 +131,7 @@ class defout_impl
     _logger = logger;
   }
 
-  ~defout_impl() {}
+  ~defout_impl() = default;
 
   void setUseLayerAlias(bool value) { _use_alias = value; }
 

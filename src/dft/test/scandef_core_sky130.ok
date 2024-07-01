@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: register_bank_cores.lef, created 2 library cells
+[WARNING ORD-2011] LEF master bank1 has no liberty cell.
+[WARNING ORD-2011] LEF master bank2 has no liberty cell.
+[INFO ODB-0128] Design: scan_inserted_design
+No differences found.

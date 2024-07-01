@@ -48,10 +48,22 @@
 #include "utl/ScopedTemporaryFile.h"
 namespace odb {
 
+namespace {
+
+std::string getPinName(dbBTerm* bterm)
+{
+  return bterm->getName();
+}
+
+std::string getPinName(dbITerm* iterm)
+{
+  return iterm->getMTerm()->getName();
+}
+
 static const int max_name_length = 256;
 
 template <typename T>
-static std::vector<T*> sortedSet(dbSet<T>& to_sort)
+std::vector<T*> sortedSet(dbSet<T>& to_sort)
 {
   std::vector<T*> sorted(to_sort.begin(), to_sort.end());
   std::sort(sorted.begin(), sorted.end(), [](T* a, T* b) {
@@ -60,7 +72,7 @@ static std::vector<T*> sortedSet(dbSet<T>& to_sort)
   return sorted;
 }
 
-static const char* defOrient(dbOrientType orient)
+const char* defOrient(const dbOrientType& orient)
 {
   switch (orient.getValue()) {
     case dbOrientType::R0:
@@ -91,14 +103,16 @@ static const char* defOrient(dbOrientType orient)
   return "N";
 }
 
-static const char* defSigType(dbSigType type)
+const char* defSigType(const dbSigType& type)
 {
   return type.getString();
 }
-static const char* defIoType(dbIoType type)
+const char* defIoType(const dbIoType& type)
 {
   return type.getString();
 }
+
+}  // namespace
 
 void defout_impl::selectNet(dbNet* net)
 {
@@ -241,6 +255,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   writeFills(block);
   writeNets(block);
   writeGroups(block);
+  writeScanChains(block);
 
   fprintf(_out, "END DESIGN\n");
   {
@@ -912,6 +927,69 @@ void defout_impl::writeGroups(dbBlock* block)
   }
 
   fprintf(_out, "END GROUPS\n");
+}
+
+void defout_impl::writeScanChains(dbBlock* block)
+{
+  dbDft* dft = block->getDft();
+  dbSet<dbScanChain> scan_chains = dft->getScanChains();
+  if (scan_chains.empty()) {
+    // If we don't have scan chains we have nothing to print
+    return;
+  }
+  fprintf(_out, "\nSCANCHAINS %d ;\n\n", scan_chains.size());
+
+  for (dbScanChain* scan_chain : dft->getScanChains()) {
+    dbSet<dbScanPartition> scan_partitions = scan_chain->getScanPartitions();
+    int chain_suffix = 0;
+    for (dbScanPartition* scan_partition : scan_partitions) {
+      bool already_printed_floating = false;
+      bool already_printed_ordered = false;
+      const std::string chain_name
+          = scan_partitions.size() == 1
+                ? scan_chain->getName()
+                : fmt::format("{}_{}", scan_chain->getName(), chain_suffix);
+
+      const std::string start_pin_name = std::visit(
+          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanIn());
+      const std::string stop_pin_name = std::visit(
+          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanOut());
+
+      fprintf(_out, "- %s\n", chain_name.c_str());
+      fprintf(_out, "+ START PIN %s\n", start_pin_name.c_str());
+
+      for (dbScanList* scan_list : scan_partition->getScanLists()) {
+        dbSet<dbScanInst> scan_insts = scan_list->getScanInsts();
+        if (scan_insts.size() == 1 && !already_printed_floating) {
+          fprintf(_out, "+ FLOATING\n");
+          already_printed_floating = true;
+          already_printed_ordered = false;
+        } else if (scan_insts.size() > 1 && !already_printed_ordered) {
+          fprintf(_out, "+ ORDERED\n");
+          already_printed_floating = false;
+          already_printed_ordered = true;
+        }
+
+        for (dbScanInst* scan_inst : scan_insts) {
+          dbScanInst::AccessPins access_pins = scan_inst->getAccessPins();
+          const std::string scan_in_name = std::visit(
+              [](auto&& pin) { return getPinName(pin); }, access_pins.scan_in);
+          const std::string scan_out_name = std::visit(
+              [](auto&& pin) { return getPinName(pin); }, access_pins.scan_out);
+          fprintf(_out,
+                  "  %s ( IN %s ) ( OUT %s )\n",
+                  scan_inst->getInst()->getName().c_str(),
+                  scan_in_name.c_str(),
+                  scan_out_name.c_str());
+        }
+      }
+      fprintf(_out, "+ PARTITION %s\n", scan_partition->getName().c_str());
+      fprintf(_out, "+ STOP PIN %s ;\n\n", stop_pin_name.c_str());
+      ++chain_suffix;
+    }
+  }
+
+  fprintf(_out, "END SCANCHAINS\n\n");
 }
 
 void defout_impl::writeBTerm(dbBTerm* bterm)
