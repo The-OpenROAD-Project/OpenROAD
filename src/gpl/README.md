@@ -39,9 +39,9 @@ resistance and capacitance of estimated wires used for timing.
 Timing-driven iterations are triggered based on a list of overflow threshold 
 values. Each time the placer execution reaches these overflow values, the 
 resizer is executed. This process can be costly in terms of runtime. The 
-default overflow values for recalculating weights are [79, 64, 49, 29, 21, 15] 
-and can be modified with `-timing_driven_net_reweight_overflow`, you may use 
-less overflow threhsold values to decrease runtime, for example.
+overflow values for recalculating weights can be modified with 
+`-timing_driven_net_reweight_overflow`, you may use less overflow threhsold 
+values to decrease runtime, for example.
 
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
@@ -138,7 +138,7 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. |
+| `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [79, 64, 49, 29, 21, 15] |
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 

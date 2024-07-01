@@ -150,7 +150,10 @@ bool TimingBase::updateGNetWeights(float overflow)
   sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();
 
   if (worst_slack_nets.empty()) {
-    log_->warn(GPL, 114, "Timing-driven: no net slacks found. Timing-driven mode disabled.");
+    log_->warn(
+        GPL,
+        114,
+        "Timing-driven: no net slacks found. Timing-driven mode disabled.");
     return false;
   }
 
@@ -163,7 +166,9 @@ bool TimingBase::updateGNetWeights(float overflow)
   log_->info(GPL, 101, "Timing-driven: worst slack {:.3g}", slack_min);
 
   if (sta::fuzzyInf(slack_min)) {
-    log_->warn(GPL, 102, "Timing-driven: no slacks found. Timing-driven mode disabled.");
+    log_->warn(GPL,
+               102,
+               "Timing-driven: no slacks found. Timing-driven mode disabled.");
     return false;
   }
 
