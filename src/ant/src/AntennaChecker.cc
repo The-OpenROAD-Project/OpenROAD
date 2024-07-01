@@ -231,7 +231,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
                                        iterm->getInst()->getConstName(),
                                        mterm->getConstName(),
                                        mterm->getMaster()->getConstName());
-    PinType pin = PinType(pin_name, iterm);
+    PinType pin = PinType(std::move(pin_name), iterm);
     odb::dbInst* inst = iterm->getInst();
     const odb::dbTransform transform = inst->getTransform();
     for (odb::dbMPin* mterm : mterm->getMPins()) {
@@ -928,7 +928,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             std::vector<odb::dbITerm*> gates_for_violation;
             gates_for_violation.push_back(gates[0]);
             antenna_violations.push_back(
-                {layer->getRoutingLevel(), gates_for_violation, 1});
+                {layer->getRoutingLevel(), std::move(gates_for_violation), 1});
           }
         }
       }
