@@ -37,53 +37,57 @@ import enum
 persistence_range = [1, 2, 3, 4, 5, 6]
 cut_multiple = range(1, 128)
 
-parser = argparse.ArgumentParser('Arguments for delta debugging')
-parser.add_argument('--base_db_path',
-                    type=str,
-                    help='Path to the db file to perform the step on')
-parser.add_argument('--error_string',
-                    type=str,
-                    help='The output that indicates target error has occurred')
-parser.add_argument('--step',
-                    type=str,
-                    help='Command used to perform step on the input odb file')
+parser = argparse.ArgumentParser("Arguments for delta debugging")
 parser.add_argument(
-    '--timeout',
+    "--base_db_path", type=str, help="Path to the db file to perform the step on"
+)
+parser.add_argument(
+    "--error_string",
+    type=str,
+    help="The output that indicates target error has occurred",
+)
+parser.add_argument(
+    "--step", type=str, help="Command used to perform step on the input odb file"
+)
+parser.add_argument(
+    "--timeout",
     type=int,
     default=None,
-    help='Specify initial timeout in seconds, default is to measure it')
-parser.add_argument('--multiplier',
-                    type=int,
-                    default=cut_multiple[0],
-                    choices=cut_multiple,
-                    help='Multiply number of cuts with this number')
-parser.add_argument('--persistence',
-                    type=int,
-                    default=persistence_range[0],
-                    choices=persistence_range,
-                    help='Indicates maximum input fragmentation; '
-                    'fragments = 2^persistence; value in ' +
-                    ', '.join(map(str, persistence_range)))
-parser.add_argument(
-    '--use_stdout',
-    action='store_true',
-    help='Enables reading the error string from standard output')
-parser.add_argument(
-    '--exit_early_on_error',
-    action='store_true',
-    help=
-    'Exit early on unrelated errors to speed things up, but risks exiting on false negatives.'
+    help="Specify initial timeout in seconds, default is to measure it",
 )
-parser.add_argument('--lib_path',
-    type=str,
-    help='Path to the library files (.lib)')
-parser.add_argument('--lef_path',
-    type=str,
-    help='Path to the macro files (.lef)')
 parser.add_argument(
-    '--dump_def',
-    action='store_true',
-    help='Determines whether to dumb def at each step in addition to the odb')
+    "--multiplier",
+    type=int,
+    default=cut_multiple[0],
+    choices=cut_multiple,
+    help="Multiply number of cuts with this number",
+)
+parser.add_argument(
+    "--persistence",
+    type=int,
+    default=persistence_range[0],
+    choices=persistence_range,
+    help="Indicates maximum input fragmentation; "
+    "fragments = 2^persistence; value in " + ", ".join(map(str, persistence_range)),
+)
+parser.add_argument(
+    "--use_stdout",
+    action="store_true",
+    help="Enables reading the error string from standard output",
+)
+parser.add_argument(
+    "--exit_early_on_error",
+    action="store_true",
+    help="Exit early on unrelated errors to speed things up, but risks exiting on false negatives.",
+)
+parser.add_argument("--lib_path", type=str, help="Path to the library files (.lib)")
+parser.add_argument("--lef_path", type=str, help="Path to the macro files (.lef)")
+parser.add_argument(
+    "--dump_def",
+    action="store_true",
+    help="Determines whether to dumb def at each step in addition to the odb",
+)
+
 
 class cutLevel(enum.Enum):
     Nets = 0
@@ -91,11 +95,11 @@ class cutLevel(enum.Enum):
 
 
 class deltaDebugger:
-
     def __init__(self, opt):
         if not os.path.exists(opt.base_db_path):
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
-                                    opt.base_db_path)
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), opt.base_db_path
+            )
 
         base_db_directory = os.path.dirname(opt.base_db_path)
         base_db_name = os.path.basename(opt.base_db_path)
@@ -119,23 +123,27 @@ class deltaDebugger:
 
         # Temporary file names to hold the original base_db file across the run
         self.original_base_db_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_original_{base_db_name}")
+            base_db_directory, f"deltaDebug_base_original_{base_db_name}"
+        )
 
         # Temporary file used to hold current base_db to ensure its integrity across cuts
         self.temp_base_db_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
+            base_db_directory, f"deltaDebug_base_temp_{base_db_name}"
+        )
 
         # The name of the result file after running deltaDebug
         self.deltaDebug_result_def_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_result_def.def")
+            base_db_directory, f"deltaDebug_base_result_def.def"
+        )
 
-        # # The name of the result file after running deltaDebug
+        # The name of the result file after running deltaDebug
         self.deltaDebug_result_base_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_result_{base_db_name}")
+            base_db_directory, f"deltaDebug_base_result_{base_db_name}"
+        )
 
-        # # This determines whether design def shall be dumped or not
+        # This determines whether design def shall be dumped or not
         self.dump_def = opt.dump_def
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             self.base_def_file = self.base_db_file[:-3] + "def"
 
         # A variable to hold the base_db
@@ -172,7 +180,7 @@ class deltaDebugger:
                 sys.exit(1)
 
         for self.cut_level in (cutLevel.Insts, cutLevel.Nets):
-            while (True):
+            while True:
                 err = None
                 self.n = 2  # Initial Number of cuts
 
@@ -184,7 +192,7 @@ class deltaDebugger:
                     while j == 0 or j < cuts:
                         current_err, cuts = self.perform_step(cut_index=j)
                         self.step_count += 1
-                        if (current_err is not None):
+                        if current_err is not None:
                             # Found the target error with the cut DB
                             #
                             # This is a suitable level of detail to look
@@ -194,7 +202,7 @@ class deltaDebugger:
                             self.prepare_new_step()
                         j += 1
 
-                    if (error_in_range is None):
+                    if error_in_range is None:
                         # Increase the granularity of the cut in case target
                         # error not found
                         self.n *= 2
@@ -232,20 +240,20 @@ class deltaDebugger:
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
         # reduce .lib and .lef files
-        if (not self.reduced_lib):
+        if not self.reduced_lib:
             self.reduce_lib_files()
-        if (not self.reduced_lef):
+        if not self.reduced_lef:
             self.reduce_lef_files()
 
         # Cut the block with the given step index.
         # if cut index of -1 is provided it means
         # that no cut will be made.
-        if (cut_index != -1):
+        if cut_index != -1:
             self.cut_block(index=cut_index)
 
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             print("Writing def file")
             self.write_dump_def(self.base_def_file)
 
@@ -253,7 +261,7 @@ class deltaDebugger:
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
-        if (self.base_db is not None):
+        if self.base_db is not None:
             self.base_db.destroy(self.base_db)
             self.base_db = None
 
@@ -265,7 +273,7 @@ class deltaDebugger:
         # Handling timeout so as not to run the code for time
         # that is more than the original buggy code or a
         # buggy cut.
-        if (error_string is not None):
+        if error_string is not None:
             self.timeout = max(120, 1.2 * (end_time - start_time))
             print(f"Error Code found: {error_string}")
 
@@ -273,21 +281,25 @@ class deltaDebugger:
 
     def run_command(self, command):
         poll_obj = select.poll()
-        if (self.use_stdout == 0):
-            process = subprocess.Popen(command,
-                                       shell=True,
-                                       stdout=subprocess.DEVNULL,
-                                       stderr=subprocess.PIPE,
-                                       encoding='utf-8',
-                                       preexec_fn=os.setsid)
+        if self.use_stdout == 0:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                encoding="utf-8",
+                preexec_fn=os.setsid,
+            )
             poll_obj.register(process.stderr, select.POLLIN)
         else:
-            process = subprocess.Popen(command,
-                                       shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.STDOUT,
-                                       encoding='utf-8',
-                                       preexec_fn=os.setsid)
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+                preexec_fn=os.setsid,
+            )
             poll_obj.register(process.stdout, select.POLLIN)
 
         start_time = time.time()
@@ -301,32 +313,32 @@ class deltaDebugger:
                 pass
 
     def poll(self, process, poll_obj, start_time):
-        output = ''
+        output = ""
         error_string = None  # None for any error code other than self.error_string
         while True:
             # polling on the output of the process with a timeout of 1 second
             # to avoid busywaiting
             if poll_obj.poll(1):
-                if (self.use_stdout == 0):
+                if self.use_stdout == 0:
                     output = process.stderr.readline()
                 else:
                     output = process.stdout.readline()
 
-                if (output.find(self.error_string) != -1):
+                if output.find(self.error_string) != -1:
                     # found the error code that we are searching for.
                     error_string = self.error_string
                     break
-                elif (self.exit_early_on_error and output.find("ERROR") != -1):
+                elif self.exit_early_on_error and output.find("ERROR") != -1:
                     # Found different error (bad cut) so we can just
                     # terminate early and ignore this cut.
                     break
 
             curr_time = time.time()
-            if ((curr_time - start_time) > self.timeout):
+            if (curr_time - start_time) > self.timeout:
                 print(f"Step {self.step_count} timed out!", flush=True)
                 break
 
-            if (process.poll() is not None):
+            if process.poll() is not None:
                 break
 
         return error_string
@@ -336,7 +348,7 @@ class deltaDebugger:
     # cutting on it.
     def prepare_new_step(self):
         # Delete the old temporary db file
-        if (os.path.exists(self.temp_base_db_file)):
+        if os.path.exists(self.temp_base_db_file):
             os.remove(self.temp_base_db_file)
         # Rename the new base db file to the temp name to keep it from overwriting across the two steps cut
         if os.path.exists(self.base_db_file):
@@ -373,27 +385,26 @@ class deltaDebugger:
     # whether to cut Insts or Nets.
     def cut_block(self, index=0):
         message = [f"Step {self.step_count}"]
-        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+        if self.cut_level == cutLevel.Insts:  # Insts cut level
             elms = self.get_insts()
             message += ["Insts level debugging"]
-        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+        elif self.cut_level == cutLevel.Nets:  # Nets cut level
             elms = self.get_nets()
             message += ["Nets level debugging"]
 
-        message += [
-            f"Insts {len(self.get_insts())}", f"Nets {len(self.get_nets())}"
-        ]
+        message += [f"Insts {len(self.get_insts())}", f"Nets {len(self.get_nets())}"]
 
         num_elms = len(elms)
-        assert (num_elms > 0)
+        assert num_elms > 0
 
         cuts = self.get_cuts()
         start = num_elms * index // cuts
         end = num_elms * (index + 1) // cuts
 
-        cut_position_string = '#' * cuts
-        cut_position_string = (cut_position_string[:index] + 'C' +
-                               cut_position_string[index + 1:])
+        cut_position_string = "#" * cuts
+        cut_position_string = (
+            cut_position_string[:index] + "C" + cut_position_string[index + 1 :]
+        )
         message += [f"cut elements {end-start}"]
         message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
         self.cut_elements(start, end)
@@ -404,9 +415,9 @@ class deltaDebugger:
 
     def cut_elements(self, start, end):
         block = self.base_db.getChip().getBlock()
-        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+        if self.cut_level == cutLevel.Insts:  # Insts cut level
             elms = block.getInsts()
-        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+        elif self.cut_level == cutLevel.Nets:  # Nets cut level
             elms = block.getNets()
 
         for i in range(start, end):
@@ -427,11 +438,11 @@ class deltaDebugger:
         print(f"Removed {unused} masters.")
         odb.write_db(self.base_db, self.temp_base_db_file)
 
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             print("Writing def file")
             self.write_dump_def(self.temp_base_db_file[:-3] + "def")
 
-        if (self.base_db is not None):
+        if self.base_db is not None:
             self.base_db.destroy(self.base_db)
             self.base_db = None
 
@@ -439,17 +450,19 @@ class deltaDebugger:
         print("Attempt to reduce lib files in", self.lib_directory)
         if not os.path.exists(self.lib_directory):
             return
-        for lib_file in glob.glob(os.path.join( self.lib_directory, "*.lib")):
+        for lib_file in glob.glob(os.path.join(self.lib_directory, "*.lib")):
             used_cells = self.get_used_cells()
-            with open(lib_file, 'r') as f:
+            with open(lib_file, "r") as f:
                 lines = f.readlines()
 
-            with open(lib_file, 'w') as f:
+            with open(lib_file, "w") as f:
                 write_lines = False
                 for line in lines:
                     if any(cell in line for cell in used_cells):
                         write_lines = True
-                    if 'cell (' in line and not any(cell in line for cell in used_cells):
+                    if "cell (" in line and not any(
+                        cell in line for cell in used_cells
+                    ):
                         write_lines = False
                     if write_lines:
                         f.write(line)
@@ -459,27 +472,27 @@ class deltaDebugger:
         print("Attempt to reduce lef files in", self.lef_directory)
         if not os.path.exists(self.lef_directory):
             return
-        
-        for lef_file in glob.glob(os.path.join( self.lef_directory, "*.lef")):
-            with open(lef_file, 'r') as infile:
+
+        for lef_file in glob.glob(os.path.join(self.lef_directory, "*.lef")):
+            with open(lef_file, "r") as infile:
                 lines = infile.readlines()
-            
+
             in_layer_block = False
             essential_lines = []
-            
+
             for line in lines:
-                if re.match(r'\s*LAYER\s+\w+', line):
+                if re.match(r"\s*LAYER\s+\w+", line):
                     in_layer_block = True
                     essential_lines.append(line)
-                elif in_layer_block and re.match(r'\s*END\s+\w+', line):
+                elif in_layer_block and re.match(r"\s*END\s+\w+", line):
                     essential_lines.append(line)
                     in_layer_block = False
                 elif in_layer_block:
                     essential_lines.append(line)
-            
-            with open(lef_file, 'w') as outfile:
+
+            with open(lef_file, "w") as outfile:
                 outfile.writelines(essential_lines)
-            
+
             self.reduced_lef = True
 
     def get_used_cells(self):
@@ -498,7 +511,7 @@ class deltaDebugger:
             master = inst.getMaster()
             if master and master.isMacro():
                 used_macros.add(master.getName())
-        return used_macros    
+        return used_macros
 
     def write_dump_def(self, output_file):
         if self.base_db is None:
@@ -514,7 +527,7 @@ class deltaDebugger:
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
         if self.base_db is None:
             raise ValueError("Database is not loaded.")
-        
+
         block = self.base_db.getChip().getBlock()
         if block is None:
             raise ValueError("Block is not present in the database.")
@@ -522,15 +535,14 @@ class deltaDebugger:
         odb.write_def(block, self.deltaDebug_result_def_file)
         self.mangle_def_file(self.deltaDebug_result_def_file)
 
-        if (self.base_db is not None):
+        if self.base_db is not None:
             self.base_db.destroy(self.base_db)
             self.base_db = None
-        
 
     def mangle_def_file(self, input_def_file):
         patterns = {
-            'nets': r'(-\s+(\S+)\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)',
-            'components': r'(-\s+(\S+)\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)'
+            "nets": r"(-\s+(\S+)\s+\(.*?\)\s+\+\s+USE\s+\S+\s*;)",
+            "components": r"(-\s+(\S+)\s+\S+\s+\+\s+PLACED\s+\(\s+\d+\s+\d+\s+\)\s+\S\s*;)",
         }
 
         net_count = 1
@@ -540,6 +552,7 @@ class deltaDebugger:
 
         def rename_nets(text):
             nonlocal net_count
+
             def repl(match):
                 nonlocal net_count
                 original_name = match.group(2)
@@ -548,10 +561,12 @@ class deltaDebugger:
                     net_mapping[original_name] = new_name
                     net_count += 1
                 return match.group(1).replace(original_name, net_mapping[original_name])
-            return re.sub(patterns['nets'], repl, text)
+
+            return re.sub(patterns["nets"], repl, text)
 
         def rename_elements(text):
             nonlocal element_count
+
             def repl(match):
                 nonlocal element_count
                 original_name = match.group(2)
@@ -559,10 +574,13 @@ class deltaDebugger:
                     new_name = f"element{element_count}"
                     element_mapping[original_name] = new_name
                     element_count += 1
-                return match.group(1).replace(original_name, element_mapping[original_name])
-            return re.sub(patterns['components'], repl, text)
+                return match.group(1).replace(
+                    original_name, element_mapping[original_name]
+                )
 
-        with open(input_def_file, 'r') as file:
+            return re.sub(patterns["components"], repl, text)
+
+        with open(input_def_file, "r") as file:
             content = file.read()
 
         content = rename_nets(content)
@@ -570,7 +588,7 @@ class deltaDebugger:
 
         def replace_all(text, mapping):
             for original, new in mapping.items():
-                text = re.sub(rf'\b{re.escape(original)}\b', new, text)
+                text = re.sub(rf"\b{re.escape(original)}\b", new, text)
             return text
 
         content = replace_all(content, net_mapping)
@@ -579,13 +597,13 @@ class deltaDebugger:
         base_name = os.path.splitext(input_def_file)[0]
         output_def_file = f"{base_name}_mangled.def"
 
-        with open(output_def_file, 'w') as file:
+        with open(output_def_file, "w") as file:
             file.write(content)
 
         print(f"Mangled DEF file has been written to {output_def_file}")
-        
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     opt = parser.parse_args()
     debugger = deltaDebugger(opt)
     debugger.debug()
