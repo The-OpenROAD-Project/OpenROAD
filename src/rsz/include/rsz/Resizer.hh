@@ -467,6 +467,13 @@ class Resizer : public dbStaState
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
+  void gateDelays(const LibertyPort* drvr_port,
+                  float load_cap,
+                  const Slew in_slews[RiseFall::index_count],
+                  const DcalcAnalysisPt* dcalc_ap,
+                  // Return values.
+                  ArcDelay delays[RiseFall::index_count],
+                  Slew out_slews[RiseFall::index_count]);
   ArcDelay gateDelay(const LibertyPort* drvr_port,
                      float load_cap,
                      const DcalcAnalysisPt* dcalc_ap);

@@ -62,6 +62,7 @@ using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
+using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -78,6 +79,31 @@ class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
+
+using slackEstimatorParams = struct slackEstimatorParams
+{
+  Pin* driver_pin;
+  Pin* prev_driver_pin;
+  Pin* driver_input_pin;
+  Instance* driver;
+  PathRef* driver_path;
+  PathRef* prev_driver_path;
+  LibertyCell* driver_cell;
+  const float setup_slack_margin;
+  const Corner* corner;
+
+  slackEstimatorParams(const float margin, const Corner* corner)
+      : setup_slack_margin(margin), corner(corner)
+  {
+    driver_pin = nullptr;
+    prev_driver_pin = nullptr;
+    driver_input_pin = nullptr;
+    driver = nullptr;
+    driver_path = nullptr;
+    prev_driver_path = nullptr;
+    driver_cell = nullptr;
+  }
+};
 
 class RepairSetup : public sta::dbStaState
 {
@@ -106,7 +132,8 @@ class RepairSetup : public sta::dbStaState
                   Slack path_slack,
                   bool skip_pin_swap,
                   bool skip_gate_cloning,
-                  bool skip_buffer_removal);
+                  bool skip_buffer_removal,
+                  float setup_slack_margin);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -126,7 +153,9 @@ class RepairSetup : public sta::dbStaState
   bool removeDrvr(PathRef* drvr_path,
                   LibertyCell* drvr_cell,
                   int drvr_index,
-                  PathExpanded* expanded);
+                  PathExpanded* expanded,
+                  float setup_slack_margin);
+  bool estimatedSlackOK(slackEstimatorParams* params);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,

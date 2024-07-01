@@ -6,9 +6,9 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 worst slack -1.95
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
-[INFO RSZ-0059] Removed 5 buffers.
-[INFO RSZ-0040] Inserted 3 buffers.
-[INFO RSZ-0041] Resized 2 instances.
+[INFO RSZ-0059] Removed 4 buffers.
+[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0041] Resized 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -0.43
+worst slack -0.44
