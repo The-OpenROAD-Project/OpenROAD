@@ -14,9 +14,11 @@ entries:
   - file: main/src/utl/README
     title: Man pages
 
-- file: main/src/README
+- file: main/README2
   title: OpenROAD User Guide
   entries:
+  - file: main/src/README
+    title: OpenROAD APIs
   - file: main/src/odb/README
     title: Database
     entries:
