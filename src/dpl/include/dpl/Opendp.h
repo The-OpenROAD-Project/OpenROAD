@@ -114,13 +114,15 @@ struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
-struct GapX {
+struct GapX
+{
   int x;
   odb::dbOrientType orient;
   int width;
   int height;
   bool is_filled;
-  GapX (int _x, odb::dbOrientType _orient, int _width, int _height) {
+  GapX(int _x, odb::dbOrientType _orient, int _width, int _height)
+  {
     x = _x;
     orient = _orient;
     width = _width;
@@ -129,7 +131,7 @@ struct GapX {
   }
 };
 
-using gapMap = map<int,vector<GapX>>;
+using gapMap = map<int, vector<GapX>>;
 
 ////////////////////////////////////////////////////////////////
 
@@ -337,13 +339,23 @@ class Opendp
   const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
 
   // Place decaps
-  vector<int> getDecapCell(const int &gap_width, const double &current, const double &target);
-  void insertDecapInPos(dbMaster* master, const odb::dbOrientType &orient, const int &pos_x, const int &pos_y);
-  void insertDecapInRow(const vector<GapX> &gaps, const int gap_y, const int irdrop_x, const int irdrop_y, double &total, const double &target);
+  vector<int> getDecapCell(const int& gap_width,
+                           const double& current,
+                           const double& target);
+  void insertDecapInPos(dbMaster* master,
+                        const odb::dbOrientType& orient,
+                        const int& pos_x,
+                        const int& pos_y);
+  void insertDecapInRow(const vector<GapX>& gaps,
+                        const int gap_y,
+                        const int irdrop_x,
+                        const int irdrop_y,
+                        double& total,
+                        const double& target);
   void findGaps();
   void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
-  odb::dbTechLayer* getLowestLayer(odb::dbNet * db_net);
- 
+  odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
+
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;

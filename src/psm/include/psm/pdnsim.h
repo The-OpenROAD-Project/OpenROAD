@@ -132,7 +132,9 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbSWireRemoveSBox(odb::dbSBox*) override;
   void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
 
-  void getIRDropForLayer2(odb::dbNet* net, odb::dbTechLayer* layer, IRDropByPoint& ir_drop) const;
+  void getIRDropForLayer(odb::dbNet* net,
+                         odb::dbTechLayer* layer,
+                         IRDropByPoint& ir_drop) const;
 
  private:
   IRSolver* getIRSolver(odb::dbNet* net, bool floorplanning);

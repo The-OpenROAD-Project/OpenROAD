@@ -172,7 +172,9 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
   return solver.get();
 }
 
-void PDNSim::getIRDropForLayer2(odb::dbNet* net, odb::dbTechLayer* layer, IRDropByPoint& ir_drop) const
+void PDNSim::getIRDropForLayer(odb::dbNet* net,
+                               odb::dbTechLayer* layer,
+                               IRDropByPoint& ir_drop) const
 {
   auto find_solver = solvers_.find(net);
   if (last_corner_ == nullptr || find_solver == solvers_.end()) {
