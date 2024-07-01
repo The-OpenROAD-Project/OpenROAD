@@ -121,7 +121,7 @@ struct GapX
   int width;
   int height;
   bool is_filled;
-  GapX(int _x, odb::dbOrientType _orient, int _width, int _height)
+  GapX(int _x, const odb::dbOrientType _orient, int _width, int _height)
   {
     x = _x;
     orient = _orient;
@@ -177,7 +177,7 @@ class Opendp
 
   // Place decap cells
   void setDecapMaster(dbMaster* decap_master, double decap_cap);
-  void insertDecapCells(const double target);
+  void insertDecapCells(double target);
 
  private:
   using bgPoint
@@ -347,9 +347,9 @@ class Opendp
                         const int& pos_x,
                         const int& pos_y);
   void insertDecapInRow(const vector<GapX>& gaps,
-                        const int gap_y,
-                        const int irdrop_x,
-                        const int irdrop_y,
+                        int gap_y,
+                        int irdrop_x,
+                        int irdrop_y,
                         double& total,
                         const double& target);
   void findGaps();

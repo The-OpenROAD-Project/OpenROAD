@@ -54,7 +54,7 @@ using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
 
 void Opendp::setDecapMaster(dbMaster* decap_master, double decap_cap)
 {
-  decap_masters_.push_back({decap_master, decap_cap});
+  decap_masters_.emplace_back(decap_master, decap_cap);
 }
 
 vector<int> Opendp::getDecapCell(const int& gap_width,
@@ -146,7 +146,7 @@ void Opendp::insertDecapCells(const double target)
   // Sort the IR DROP point ins decrease order
   std::vector<std::pair<odb::Point, double>> irdrop_points;
   for (auto& it : ir_drop) {
-    irdrop_points.push_back({it.first, it.second});
+    irdrop_points.emplace_back(it.first, it.second);
   }
 
   std::sort(irdrop_points.begin(),
@@ -176,8 +176,6 @@ void Opendp::insertDecapCells(const double target)
   if (gaps_count == 0) {
     logger_->error(DPL, 55, "Gaps dont found during insert decap cells");
   }
-
-  std::cerr << "Gaps count " << gaps_count << std::endl;
 
   double total_cap = 0.0;
   for (auto& irdrop_it : irdrop_points) {
