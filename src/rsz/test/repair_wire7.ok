@@ -34,10 +34,10 @@ u2/Z manhtn 0.4 steiner 0.4 0.00
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 Driver    length delay
-wire2/Z manhtn 567.0 steiner 567.0 0.04
-wire1/Z manhtn 566.9 steiner 566.9 0.04
+max_length2/Z manhtn 567.0 steiner 567.0 0.04
+max_length1/Z manhtn 566.9 steiner 566.9 0.04
 in1 manhtn 452.6 steiner 452.6 0.03
-wire3/Z manhtn 407.3 steiner 407.3 0.02
+max_length3/Z manhtn 407.3 steiner 407.3 0.02
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -47,12 +47,12 @@ Path Type: max
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
   40.601    0.000    0.000    0.000 ^ in1 (in)
-            0.032    0.026    0.026 ^ wire3/A (BUF_X8)
-  43.020    0.010    0.029    0.056 ^ wire3/Z (BUF_X8)
-            0.040    0.031    0.087 ^ wire2/A (BUF_X16)
-  55.028    0.008    0.029    0.116 ^ wire2/Z (BUF_X16)
-            0.061    0.050    0.165 ^ wire1/A (BUF_X16)
-  43.586    0.009    0.030    0.196 ^ wire1/Z (BUF_X16)
+            0.032    0.026    0.026 ^ max_length3/A (BUF_X8)
+  43.020    0.010    0.029    0.056 ^ max_length3/Z (BUF_X8)
+            0.040    0.031    0.087 ^ max_length2/A (BUF_X16)
+  55.028    0.008    0.029    0.116 ^ max_length2/Z (BUF_X16)
+            0.061    0.050    0.165 ^ max_length1/A (BUF_X16)
+  43.586    0.009    0.030    0.196 ^ max_length1/Z (BUF_X16)
             0.040    0.033    0.229 ^ u1/A (BUF_X1)
    1.008    0.007    0.028    0.257 ^ u1/Z (BUF_X1)
             0.007    0.000    0.257 ^ u2/A (BUF_X1)

@@ -16,8 +16,8 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Driver    length delay
 u2/Z manhtn 792.7 steiner 792.7 0.08
 max_length3/Z manhtn 790.8 steiner 790.8 0.08
-wire1/Z manhtn 716.2 steiner 716.2 0.07
-wire2/Z manhtn 715.3 steiner 715.3 0.07
+max_length1/Z manhtn 716.2 steiner 716.2 0.07
+max_length2/Z manhtn 715.3 steiner 715.3 0.07
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.8 steiner 0.8 0.00

@@ -56,9 +56,9 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
 Driver    length delay
-wire2/Z manhtn 1494.2 steiner 1494.2 0.30
+max_length2/Z manhtn 1494.2 steiner 1494.2 0.30
 u2/Z manhtn 785.1 steiner 785.1 0.08
-wire1/Z manhtn 715.2 steiner 715.2 0.07
+max_length1/Z manhtn 715.2 steiner 715.2 0.07
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.8 steiner 0.8 0.00
@@ -76,8 +76,8 @@ Path Type: max
   26.763    0.018    0.030    0.030 ^ u1/Z (BUF_X4)
             0.018    0.000    0.030 ^ u2/A (BUF_X32)
   71.422    0.006    0.023    0.053 ^ u2/Z (BUF_X32)
-            0.102    0.083    0.136 ^ wire2/A (BUF_X16)
- 125.723    0.011    0.034    0.170 ^ wire2/Z (BUF_X16)
+            0.102    0.083    0.136 ^ max_length2/A (BUF_X16)
+ 125.723    0.011    0.034    0.170 ^ max_length2/Z (BUF_X16)
             0.220    0.179    0.349 ^ u3/A (BUF_X1)
    0.000    0.011    0.026    0.375 ^ u3/Z (BUF_X1)
             0.011    0.000    0.375 ^ out1 (out)
@@ -99,10 +99,10 @@ Path Type: max
   26.763    0.018    0.030    0.030 ^ u1/Z (BUF_X4)
             0.018    0.000    0.030 ^ u2/A (BUF_X32)
   71.422    0.006    0.023    0.053 ^ u2/Z (BUF_X32)
-            0.102    0.083    0.136 ^ wire2/A (BUF_X16)
- 125.723    0.011    0.034    0.170 ^ wire2/Z (BUF_X16)
-            0.321    0.263    0.433 ^ wire1/A (BUF_X16)
-  54.731    0.019    0.030    0.463 ^ wire1/Z (BUF_X16)
+            0.102    0.083    0.136 ^ max_length2/A (BUF_X16)
+ 125.723    0.011    0.034    0.170 ^ max_length2/Z (BUF_X16)
+            0.321    0.263    0.433 ^ max_length1/A (BUF_X16)
+  54.731    0.019    0.030    0.463 ^ max_length1/Z (BUF_X16)
             0.065    0.053    0.516 ^ u4/A (BUF_X1)
    0.000    0.006    0.027    0.543 ^ u4/Z (BUF_X1)
             0.006    0.000    0.543 ^ out2 (out)
