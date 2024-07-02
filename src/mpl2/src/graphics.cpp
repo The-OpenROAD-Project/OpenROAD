@@ -520,6 +520,10 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
 
 void Graphics::setOutline(const odb::Rect& outline)
 {
+  if (only_final_result_) {
+    return;
+  }
+
   outline_ = outline;
 }
 
