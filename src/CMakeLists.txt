@@ -354,6 +354,15 @@ target_link_libraries(openroad
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
+find_package(CUDAToolkit)
+if (CUDAToolkit_FOUND) 
+  target_link_libraries(openroad gpl2)
+  target_compile_definitions(openroad PRIVATE ENABLE_GPU)
+  add_subdirectory(gpl2)
+else()
+  message(STATUS "CUDA not found, disabling GPU acceleration")
+endif()
+
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # tclReadline

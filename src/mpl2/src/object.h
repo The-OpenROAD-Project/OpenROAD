@@ -114,6 +114,14 @@ enum Boundary
 std::string toString(const Boundary& pin_access);
 Boundary opposite(const Boundary& pin_access);
 
+
+// store the nets connected to the instance
+struct InstNet
+{
+  int instIdx = -1;
+  std::vector<int> netIds;
+};
+
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
 // only has leaf_std_cells_ and dbModules_
