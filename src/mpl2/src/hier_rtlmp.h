@@ -75,7 +75,7 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
-struct instNet;
+struct InstNet;
 class Snapper;
 
 // Hierarchical RTL-MP
@@ -342,7 +342,7 @@ class HierRTLMP
   // To speedup the autoclustering process, 
   // we store the netlist as a hypergraph instead of using OpenDB to traverse the netlist
   std::vector<odb::dbNet*> netVec_;
-  std::vector<instNet> instNetVec_;
+  std::vector<InstNet> instNetVec_;
   void initHypergraph();
   void clearHypergraph();
   void getInsts(Cluster* cluster, std::vector<odb::dbInst*>& insts);

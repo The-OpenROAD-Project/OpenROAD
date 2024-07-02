@@ -116,7 +116,7 @@ Boundary opposite(const Boundary& pin_access);
 
 
 // store the nets connected to the instance
-struct instNet
+struct InstNet
 {
   int instIdx = -1;
   std::vector<int> netIds;
