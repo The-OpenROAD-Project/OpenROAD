@@ -2690,7 +2690,9 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                              0,
                              outline.getWidth() * vary_factor_list[run_id++],
                              outline.getHeight());
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
                                 new_outline,
@@ -2754,7 +2756,9 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                              0,
                              outline.getWidth(),
                              outline.getHeight() * vary_factor_list[run_id++]);
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
                                 new_outline,
@@ -2929,7 +2933,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                              0,
                              outline.getWidth() * vary_factor_list[run_id++],
                              outline.getHeight());
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
                                 macros,
@@ -2987,7 +2993,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                              0,
                              outline.getWidth(),
                              outline.getHeight() * vary_factor_list[run_id++]);
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
                                 macros,
@@ -5237,12 +5245,7 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
   }
 
   if (graphics_) {
-    odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                          block_->micronsToDbu(outline.yMin()),
-                          block_->micronsToDbu(outline.xMax()),
-                          block_->micronsToDbu(outline.yMax()));
-
-    graphics_->setOutline(dbu_outline);
+    graphics_->setOutline(micronsToDbu(outline));
     graphics_->setMacroBlockages(macro_blockages);
     graphics_->setPlacementBlockages(placement_blockages);
   }
@@ -5574,11 +5577,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (int i = 0; i < run_thread; i++) {
       if (graphics_) {
-        odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                              block_->micronsToDbu(outline.yMin()),
-                              block_->micronsToDbu(outline.xMax()),
-                              block_->micronsToDbu(outline.yMax()));
-        graphics_->setOutline(dbu_outline);
+        graphics_->setOutline(micronsToDbu(outline));
       }
 
       SACoreHardMacro* sa
@@ -6264,6 +6263,14 @@ void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
 {
   graphics_->setShowBundledNets(show_bundled_nets);
+}
+
+odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
+{
+  return odb::Rect(block_->micronsToDbu(micron_rect.xMin()),
+                   block_->micronsToDbu(micron_rect.yMin()),
+                   block_->micronsToDbu(micron_rect.xMax()),
+                   block_->micronsToDbu(micron_rect.yMax()));
 }
 
 //////// Pusher ////////
