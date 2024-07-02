@@ -36,7 +36,8 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
 {
   // create a simple block and then add 3 instances to that block
   // without any further configuration to each instance,
-  // and then run setMacro(inst) on each instance
+  // and then run setMacro(inst) on each instance;
+  // this simply verifies that setMacro(inst) doesn't crash
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
@@ -110,11 +111,27 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   master_->setWidth(1000);
   master_->setHeight(1000);
   master_->setType(odb::dbMasterType::BLOCK);
+  
   odb::dbMTerm* mterm_i = odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMTerm* mterm_o = odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  
   odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
   odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
+  
+  odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer1_, 0, 0, 500, 500);
+  odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer2_, 0, 0, 500, 500);
+
   master_->setFrozen();
+
+  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
+  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
+  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_, layer1_);
+  odb::dbTrackGrid* track2 = odb::dbTrackGrid::create(block_, layer2_);
+
+  odb::dbDatabase::beginEco(block_);
+  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
+  odb::dbDatabase::endEco(block_);
 
   logger->report(
     "bbox of mpin_i: ({}, {}, {}, {})",
@@ -133,16 +150,42 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   );
 
   for (odb::dbBox* box : mpin_i->getGeometry()) {
-    logger->report("box found");
-    logger->report("tech layer: {}", box->getTechLayer()->getName());
+    logger->report("box found for mpin_i");
+    logger->report(
+      "tech layer: {} with direction {}",
+      box->getTechLayer()->getName(),
+      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+      // in hier_rtlmp.cpp, direction is inputed "false" if horizontal
+    );
+
+    logger->report(
+      "track grid found: {}",
+      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
+    );
+
+    /*
+    std::vector<int> coordinate_grid;
+    getTrackGrid(
+      inst1->getBlock()->findTrackGrid(box->getTechLayer()),
+      coordinate_grid,
+      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+    )
+    */
   }
-  
-  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  
-  odb::dbDatabase::beginEco(block_);
-  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  odb::dbDatabase::endEco(block_);
+
+  for (odb::dbBox* box : mpin_o->getGeometry()) {
+    logger->report("box found for mpin_o");
+    logger->report(
+      "tech layer: {} with direction {}",
+      box->getTechLayer()->getName(),
+      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+      // in hier_rtlmp.cpp, direction is inputed "false" if horizontal
+    );
+    logger->report(
+      "track grid found: {}",
+      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
+    );
+  }
 
 
   Snapper snapper;
