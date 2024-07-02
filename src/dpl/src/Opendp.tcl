@@ -136,6 +136,46 @@ proc filler_placement { args } {
   dpl::filler_placement_cmd $filler_masters $prefix
 }
 
+sta::define_cmd_args "insert_decap" { [-cap target] [-cells cell_info] }
+
+proc insert_decap { args } {
+  sta::parse_key_args "insert_decap" args \
+    keys {-cap -cells} flags {}
+
+  set cap_target 0.0
+  if { [info exists keys(-cap)] } {
+    set cap_target $keys(-cap)
+  }
+
+  # Check even size
+  set cells_and_decap $keys(-cells)
+  if { [expr [llength $cells_and_decap] % 2] != 0 } {
+    utl::error DPL 181 "List of decap cells must have an even size."
+  }
+
+  # Add decap cells on DPL
+  set db [ord::get_db]
+  foreach {cell_name decap} $cells_and_decap {
+    set decap_value [format "%.4f" $decap]
+    # Find master with cell_name
+    set matched 0
+    foreach lib [$db getLibs] {
+      foreach master [$lib getMasters] {
+        set master_name [$master getConstName]
+        if { [string match $cell_name $master_name] } {
+          dpl::set_decap_master $master $decap_value
+          set matched 1
+        }
+      }
+    }
+    if { !$matched } {
+      utl::warn "DPL" 280 "$decap_name did not match any masters."
+    }
+  }
+  # Insert decap cells
+  dpl::insert_decap_cmd $cap_target
+}
+
 sta::define_cmd_args "remove_fillers" {}
 
 proc remove_fillers { args } {
