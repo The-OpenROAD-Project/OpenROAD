@@ -373,7 +373,7 @@ void HeatMapSetup::addMultiChoiceOption(
 
   QObject::connect(combo_box,
                    &QComboBox::currentTextChanged,
-                   [this, option](const QString& value) {
+                   [this, &option](const QString& value) {
                      option.setter(value.toStdString());
                      destroyMap();
                      source_.redraw();

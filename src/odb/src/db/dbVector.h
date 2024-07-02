@@ -34,9 +34,9 @@
 
 #include <vector>
 
-#include "dbDiff.h"
-#include "dbStream.h"
-#include "odb.h"
+#include "odb/dbDiff.h"
+#include "odb/dbStream.h"
+#include "odb/odb.h"
 
 namespace odb {
 

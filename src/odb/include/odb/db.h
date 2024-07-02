@@ -347,6 +347,12 @@ class dbDatabase : public dbObject
   dbMaster* findMaster(const char* name);
 
   ///
+  /// This function is used to delete unused master-cells.
+  /// Returns the number of unused master-cells that have been deleted.
+  ///
+  int removeUnusedMasters();
+
+  ///
   /// Get the chip of this database.
   /// Returns nullptr if no chip has been created.
   ///
@@ -765,6 +771,11 @@ class dbSBox : public dbBox
   bool hasViaLayerMasks();
 
   ///
+  /// Create a set of new sboxes from a via array
+  ///
+  std::vector<dbSBox*> smashVia();
+
+  ///
   /// Add a rect to a dbSWire.
   ///
   /// If direction == UNDEFINED
@@ -1176,6 +1187,29 @@ class dbBlock : public dbObject
   /// Get the Database units per micron.
   ///
   int getDbUnitsPerMicron();
+
+  ///
+  /// Convert a length from database units (DBUs) to microns.
+  ///
+  double dbuToMicrons(int dbu);
+  double dbuToMicrons(unsigned int dbu);
+  double dbuToMicrons(int64_t dbu);
+  double dbuToMicrons(double dbu);
+
+  ///
+  /// Convert an area from database units squared (DBU^2) to square microns.
+  ///
+  double dbuAreaToMicrons(const int64_t dbu_area);
+
+  ///
+  /// Convert a length from microns to database units (DBUs).
+  ///
+  int micronsToDbu(double microns);
+
+  ///
+  /// Convert an area from square microns to database units squared (DBU^2).
+  ///
+  int64_t micronsAreaToDbu(const double micronsArea);
 
   ///
   /// Get the hierarchy delimeter.
@@ -1852,6 +1886,16 @@ class dbBTerm : public dbObject
 
   uint32_t staVertexId();
   void staSetVertexId(uint32_t id);
+
+  ///
+  /// Set the region where the BTerm is constrained
+  ///
+  void setConstraintRegion(const std::pair<Point, Point>& constraint_region);
+
+  ///
+  /// Get the region where the BTerm is constrained
+  ///
+  std::optional<std::pair<Point, Point>> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2770,8 +2814,8 @@ class dbInst : public dbObject
   ///
   /// There are seven methods used to get/set the placement.
   ///
-  ///     getOrigin           - Get the origin of this instance (Where the
-  ///     master is setOrigin           - Set the origin of this instance
+  ///     getOrigin           - Get the origin of this instance
+  ///     setOrigin           - Set the origin of this instance
   ///     getOrient           - Get orient of this instance
   ///     setOrient           - Set orient of this instance
   ///     getLocation         - Get the lower-left corner of this instance
@@ -3841,6 +3885,18 @@ class dbWire : public dbObject
   /// Destroy a wire.
   ///
   static void destroy(dbWire* wire);
+
+  ///
+  /// get raw data of _dbWire
+  ///
+  void getRawWireData(std::vector<int>& data,
+                      std::vector<unsigned char>& op_codes);
+
+  ////
+  /// set raw data of _dbWire
+  ///
+  void setRawWireData(const std::vector<int>& data,
+                      const std::vector<unsigned char>& op_codes);
 
  private:
   void addOneSeg(unsigned char op,
@@ -7925,6 +7981,10 @@ class dbTechLayer : public dbObject
   void setWrongWayWidth(uint wrong_way_width);
 
   uint getWrongWayWidth() const;
+
+  void setLayerAdjustment(float layer_adjustment);
+
+  float getLayerAdjustment() const;
 
   dbSet<dbTechLayerCutClassRule> getTechLayerCutClassRules() const;
 

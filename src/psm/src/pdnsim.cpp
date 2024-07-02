@@ -62,7 +62,6 @@ void PDNSim::init(utl::Logger* logger,
   sta_ = sta;
   resizer_ = resizer;
   logger_ = logger;
-  debug_gui_enabled_ = false;
   heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
   heatmap_->registerHeatMap();
 }
@@ -84,7 +83,7 @@ void PDNSim::setDebugGui(bool enable)
       new ConnectionDescriptor(solvers_));
 }
 
-void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, float voltage)
+void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
   voltages[corner] = voltage;

@@ -51,11 +51,12 @@ sta::define_cmd_args "global_placement" {\
     [-overflow overflow]\
     [-initial_place_max_iter initial_place_max_iter]\
     [-initial_place_max_fanout initial_place_max_fanout]\
+    [-routability_use_grt]\
+    [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
     [-routability_max_density routability_max_density]\
     [-routability_max_bloat_iter routability_max_bloat_iter]\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
-    [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
@@ -87,6 +88,7 @@ proc global_placement { args } {
       -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
+      -routability_use_grt \
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
@@ -156,6 +158,15 @@ proc global_placement { args } {
   }
   if { [info exists flags(-disable_routability_driven)] } {
     utl::warn "GPL" 116 "-disable_routability_driven is deprecated."
+  }
+
+  set routability_use_grt [info exists flags(-routability_use_grt)]
+  gpl::set_routability_use_grt $routability_use_grt
+  if { $routability_driven } {
+    if { $routability_use_grt } {
+      utl::warn "GPL" 152\
+        "Using GRT FastRoute instead of default RUDY for congestion in routability driven."
+    }
   }
 
   if { [info exists keys(-initial_place_max_fanout)] } {
@@ -331,6 +342,10 @@ proc cluster_flops { args } {
     keys { -tray_weight -timing_weight -max_split_size -num_paths } \
     flags {}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 104 "No design block found."
+  }
+
   set tray_weight 20.0
   set timing_weight 1.0
   set max_split_size 250
@@ -360,6 +375,10 @@ proc global_placement_debug { args } {
     keys {-pause -update -inst} \
     flags {-draw_bins -initial};# checker off
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 105 "No design block found."
+  }
+
   set pause 10
   if { [info exists keys(-pause)] } {
     set pause $keys(-pause)
@@ -385,6 +404,11 @@ proc global_placement_debug { args } {
 
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 106 "No design block found."
+  }
+
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \
     flags {};# checker off

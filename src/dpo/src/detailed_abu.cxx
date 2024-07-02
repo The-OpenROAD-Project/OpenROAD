@@ -59,6 +59,8 @@
 #include "detailed_orient.h"
 #include "utl/Logger.h"
 
+namespace dpo {
+
 using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -66,26 +68,17 @@ using utl::DPO;
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(USE_ISPD14)
-constexpr double BIN_AREA_THRESHOLD = 0.2;
-constexpr double FREE_SPACE_THRESHOLD = 0.2;
 constexpr double BIN_DIM = 4.0;
-constexpr double ABU_ALPHA = 1.0;
-constexpr int ABU2_WGT = 10;
-constexpr int ABU5_WGT = 4;
-constexpr int ABU10_WGT = 2;
-constexpr int ABU20_WGT = 1;
 #else
+constexpr double BIN_DIM = 9.0;
+#endif
 constexpr double BIN_AREA_THRESHOLD = 0.2;
 constexpr double FREE_SPACE_THRESHOLD = 0.2;
-constexpr double BIN_DIM = 9.0;
 constexpr double ABU_ALPHA = 1.0;
 constexpr int ABU2_WGT = 10;
 constexpr int ABU5_WGT = 4;
 constexpr int ABU10_WGT = 2;
 constexpr int ABU20_WGT = 1;
-#endif
-
-namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -94,21 +87,7 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedABU::DetailedABU(Architecture* arch, Network* network)
-    : DetailedObjective("abu"),
-      mgrPtr_(nullptr),
-      orientPtr_(nullptr),
-      arch_(arch),
-      network_(network),
-      abuGridUnit_(0.0),
-      abuGridNumX_(0),
-      abuGridNumY_(0),
-      abuNumBins_(0),
-      abuTargUt_(0.0),
-      abuTargUt02_(0.0),
-      abuTargUt05_(0.0),
-      abuTargUt10_(0.0),
-      abuTargUt20_(0.0),
-      abuChangedBinsCounter_(0)
+    : DetailedObjective("abu"), arch_(arch), network_(network)
 {
 }
 
@@ -134,7 +113,7 @@ void DetailedABU::init()
   clearBins();
 
   // Initialize the density map.  Then, add in the fixed stuff.  We only need to
-  // do this once!  During ABU computation (eitheer incremental or from
+  // do this once!  During ABU computation (either incremental or from
   // scratch), we only deal with moveable stuff.
 
   for (int j = 0; j < abuGridNumY_; j++) {
@@ -172,29 +151,31 @@ void DetailedABU::init()
       continue;
     }
 
-    double xmin = nd->getLeft();
-    double xmax = nd->getRight();
-    double ymin = nd->getBottom();
-    double ymax = nd->getTop();
+    const double xmin = nd->getLeft();
+    const double xmax = nd->getRight();
+    const double ymin = nd->getBottom();
+    const double ymax = nd->getTop();
 
-    int lcol
+    const int lcol
         = std::max((int) floor((xmin - arch_->getMinX()) / abuGridUnit_), 0);
-    int rcol = std::min((int) floor((xmax - arch_->getMinX()) / abuGridUnit_),
-                        abuGridNumX_ - 1);
-    int brow
+    const int rcol
+        = std::min((int) floor((xmax - arch_->getMinX()) / abuGridUnit_),
+                   abuGridNumX_ - 1);
+    const int brow
         = std::max((int) floor((ymin - arch_->getMinY()) / abuGridUnit_), 0);
-    int trow = std::min((int) floor((ymax - arch_->getMinY()) / abuGridUnit_),
-                        abuGridNumY_ - 1);
+    const int trow
+        = std::min((int) floor((ymax - arch_->getMinY()) / abuGridUnit_),
+                   abuGridNumY_ - 1);
 
     for (int j = brow; j <= trow; j++) {
       for (int k = lcol; k <= rcol; k++) {
-        unsigned binId = j * abuGridNumX_ + k;
+        const unsigned binId = j * abuGridNumX_ + k;
 
         // Get intersection
-        double lx = std::max(abuBins_[binId].lx, xmin);
-        double hx = std::min(abuBins_[binId].hx, xmax);
-        double ly = std::max(abuBins_[binId].ly, ymin);
-        double hy = std::min(abuBins_[binId].hy, ymax);
+        const double lx = std::max(abuBins_[binId].lx, xmin);
+        const double hx = std::min(abuBins_[binId].hx, xmax);
+        const double ly = std::max(abuBins_[binId].ly, ymin);
+        const double hy = std::min(abuBins_[binId].hy, ymax);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
           const double common_area = (hx - lx) * (hy - ly);
@@ -221,7 +202,7 @@ void DetailedABU::clearUtils()
   // Set utilizations to zero.
   for (int j = 0; j < abuGridNumY_; j++) {
     for (int k = 0; k < abuGridNumX_; k++) {
-      unsigned binId = j * abuGridNumX_ + k;
+      const unsigned binId = j * abuGridNumX_ + k;
 
       abuBins_[binId].m_util = 0.0;
       abuBins_[binId].c_util = 0.0;
@@ -235,39 +216,39 @@ void DetailedABU::computeUtils()
 {
   // Insert movables.
   for (int i = 0; i < network_->getNumNodes(); i++) {
-    Node* nd = network_->getNode(i);
+    const Node* nd = network_->getNode(i);
 
     if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
-    double nlx = nd->getLeft();
-    double nrx = nd->getRight();
-    double nly = nd->getBottom();
-    double nhy = nd->getTop();
+    const double nlx = nd->getLeft();
+    const double nrx = nd->getRight();
+    const double nly = nd->getBottom();
+    const double nhy = nd->getTop();
 
-    int lcol
+    const int lcol
         = std::max((int) floor((nlx - arch_->getMinX()) / abuGridUnit_), 0);
-    int rcol = std::min((int) floor((nrx - arch_->getMinX()) / abuGridUnit_),
-                        abuGridNumX_ - 1);
-    int brow
+    const int rcol = std::min(
+        (int) floor((nrx - arch_->getMinX()) / abuGridUnit_), abuGridNumX_ - 1);
+    const int brow
         = std::max((int) floor((nly - arch_->getMinY()) / abuGridUnit_), 0);
-    int trow = std::min((int) floor((nhy - arch_->getMinY()) / abuGridUnit_),
-                        abuGridNumY_ - 1);
+    const int trow = std::min(
+        (int) floor((nhy - arch_->getMinY()) / abuGridUnit_), abuGridNumY_ - 1);
 
     // Cell area...
     for (int j = brow; j <= trow; j++) {
       for (int k = lcol; k <= rcol; k++) {
-        unsigned binId = j * abuGridNumX_ + k;
+        const unsigned binId = j * abuGridNumX_ + k;
 
         // get intersection
-        double lx = std::max(abuBins_[binId].lx, nlx);
-        double hx = std::min(abuBins_[binId].hx, nrx);
-        double ly = std::max(abuBins_[binId].ly, nly);
-        double hy = std::min(abuBins_[binId].hy, nhy);
+        const double lx = std::max(abuBins_[binId].lx, nlx);
+        const double hx = std::min(abuBins_[binId].hx, nrx);
+        const double ly = std::max(abuBins_[binId].ly, nly);
+        const double hy = std::min(abuBins_[binId].hy, nhy);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-          double common_area = (hx - lx) * (hy - ly);
+          const double common_area = (hx - lx) * (hy - ly);
           abuBins_[binId].m_util += common_area;
         }
       }
@@ -285,9 +266,9 @@ void DetailedABU::computeBuckets()
   }
   for (int j = 0; j < abuGridNumY_; j++) {
     for (int k = 0; k < abuGridNumX_; k++) {
-      unsigned binId = j * abuGridNumX_ + k;
+      const unsigned binId = j * abuGridNumX_ + k;
 
-      int ix = getBucketId(binId, abuBins_[binId].m_util);
+      const int ix = getBucketId(binId, abuBins_[binId].m_util);
       if (ix != -1) {
         utilBuckets_[ix].insert(binId);
       }
@@ -296,8 +277,8 @@ void DetailedABU::computeBuckets()
   for (size_t i = 0; i < utilBuckets_.size(); i++) {
     utilTotals_[i] = 0.;
     for (auto it = utilBuckets_[i].begin(); it != utilBuckets_[i].end(); it++) {
-      double space = abuBins_[*it].area - abuBins_[*it].f_util;
-      double util = abuBins_[*it].m_util;
+      const double space = abuBins_[*it].area - abuBins_[*it].f_util;
+      const double util = abuBins_[*it].m_util;
 
       utilTotals_[i] += util / space;
     }
@@ -314,15 +295,15 @@ int DetailedABU::getBucketId(int binId, double occ)
       <= abuGridUnit_ * abuGridUnit_ * BIN_AREA_THRESHOLD) {
     return -1;
   }
-  double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
+  const double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
   if (free_space <= FREE_SPACE_THRESHOLD * abuBins_[binId].area) {
     return -1;
   }
 
-  double util = occ / free_space;
+  const double util = occ / free_space;
 
-  double denom = 1. / (double) utilBuckets_.size();
-  int ix = std::max(
+  const double denom = 1. / (double) utilBuckets_.size();
+  const int ix = std::max(
       0, std::min((int) (util / denom), (int) utilBuckets_.size() - 1));
 
   return ix;
@@ -356,7 +337,7 @@ double DetailedABU::calculateABU(bool print)
   std::vector<double> util_array(abuNumBins_, 0.0);
   for (int j = 0; j < abuGridNumY_; j++) {
     for (int k = 0; k < abuGridNumX_; k++) {
-      unsigned binId = j * abuGridNumX_ + k;
+      const unsigned binId = j * abuGridNumX_ + k;
       if (abuBins_[binId].area
           > abuGridUnit_ * abuGridUnit_ * BIN_AREA_THRESHOLD) {
         abuBins_[binId].free_space
@@ -414,9 +395,10 @@ double DetailedABU::calculateABU(bool print)
     abu20 = std::max(0.0, abu20 / abuTargUt_ - 1.0);
   }
 
-  double penalty = (ABU2_WGT * abu2 + ABU5_WGT * abu5 + ABU10_WGT * abu10
-                    + ABU20_WGT * abu20)
-                   / (double) (ABU2_WGT + ABU5_WGT + ABU10_WGT + ABU20_WGT);
+  const double penalty
+      = (ABU2_WGT * abu2 + ABU5_WGT * abu5 + ABU10_WGT * abu10
+         + ABU20_WGT * abu20)
+        / (double) (ABU2_WGT + ABU5_WGT + ABU10_WGT + ABU20_WGT);
 
   if (print) {
     mgrPtr_->getLogger()->info(DPO,
@@ -452,8 +434,8 @@ double DetailedABU::curr()
   // Create a cost based on the buckets.  Something based on the buckets
   // which is "normalized" towards 0 when nothing is wrong.  This
   // implies we can use some sort of (1.0+penalty) during annealing.
-  int n = (int) utilBuckets_.size();
-  double denom = 1.0 / (double) n;
+  const int n = (int) utilBuckets_.size();
+  const double denom = 1.0 / (double) n;
   double fof = 0.;
   for (int i = n; (i * denom) > abuTargUt_;) {
     --i;
@@ -477,7 +459,7 @@ double DetailedABU::delta(const int n,
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
-  double denom = 1.0 / (double) utilBuckets_.size();
+  const double denom = 1.0 / (double) utilBuckets_.size();
 
   double fofOld = 0.;
   for (int i = (int) utilBuckets_.size(); (i * denom) > abuTargUt_;) {
@@ -502,27 +484,26 @@ double DetailedABU::delta(const int n,
                +1);
   }
 
-  double space = 0.;
-  double util = 0.;
-  int ix = -1;
-  std::set<int>::iterator it;
   for (int binId : abuChangedBins_) {
-    space = abuBins_[binId].area - abuBins_[binId].f_util;
+    const double space = abuBins_[binId].area - abuBins_[binId].f_util;
 
-    util = abuBins_[binId].c_util;
-    if ((ix = getBucketId(binId, util)) != -1) {
-      if (utilBuckets_[ix].end() == (it = utilBuckets_[ix].find(binId))) {
+    const double util_c = abuBins_[binId].c_util;
+    const int ix_c = getBucketId(binId, util_c);
+    if (ix_c != -1) {
+      auto it = utilBuckets_[ix_c].find(binId);
+      if (it == utilBuckets_[ix_c].end()) {
         mgrPtr_->internalError(
             "Unable to find bin within utilization objective");
       }
-      utilBuckets_[ix].erase(it);
-      utilTotals_[ix] -= util / space;
+      utilBuckets_[ix_c].erase(it);
+      utilTotals_[ix_c] -= util_c / space;
     }
 
-    util = abuBins_[binId].m_util;
-    if ((ix = getBucketId(binId, util)) != -1) {
-      utilBuckets_[ix].insert(binId);
-      utilTotals_[ix] += util / space;
+    const double util_m = abuBins_[binId].m_util;
+    const int ix_m = getBucketId(binId, util_m);
+    if (ix_m != -1) {
+      utilBuckets_[ix_m].insert(binId);
+      utilTotals_[ix_m] += util_m / space;
     }
   }
 
@@ -533,7 +514,7 @@ double DetailedABU::delta(const int n,
       fofNew += utilTotals_[i] / (double) utilBuckets_[i].size();
     }
   }
-  double fofDelta = fofOld - fofNew;
+  const double fofDelta = fofOld - fofNew;
   return fofDelta;
 
   // The following is not any sort of normalized number which can
@@ -552,22 +533,22 @@ double DetailedABU::delta()
     return 0.0;
   }
 
-  double util_0 = 0., util_1 = 0.;
-  double pen_0 = 0., pen_1 = 0.;
   double delta = 0.;
   double sum_0 = 0.;
   double sum_1 = 0.;
   for (int binId : abuChangedBins_) {
     if (abuBins_[binId].area
         > abuGridUnit_ * abuGridUnit_ * BIN_AREA_THRESHOLD) {
-      double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
+      const double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
       if (free_space > FREE_SPACE_THRESHOLD * abuBins_[binId].area) {
-        util_0 = abuBins_[binId].c_util / free_space;
-        pen_0 = (abuTargUt_ - std::max(util_0, abuTargUt_)) / (abuTargUt_ - 1.);
+        const double util_0 = abuBins_[binId].c_util / free_space;
+        const double pen_0
+            = (abuTargUt_ - std::max(util_0, abuTargUt_)) / (abuTargUt_ - 1.);
         sum_0 += pen_0;
 
-        util_1 = abuBins_[binId].m_util / free_space;
-        pen_1 = (abuTargUt_ - std::max(util_1, abuTargUt_)) / (abuTargUt_ - 1.);
+        const double util_1 = abuBins_[binId].m_util / free_space;
+        const double pen_1
+            = (abuTargUt_ - std::max(util_1, abuTargUt_)) / (abuTargUt_ - 1.);
         sum_1 += pen_1;
 
         // delta += pen_0;
@@ -583,7 +564,10 @@ double DetailedABU::delta()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
+void DetailedABU::updateBins(const Node* nd,
+                             const double x,
+                             const double y,
+                             const int addSub)
 {
   // Updates the bins incrementally.  Can add or remove a *MOVABLE* node's
   // contribution to the bin utilization.  Assumes the node is located at (x,y)
@@ -593,32 +577,25 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
-  int lcol
-      = std::max((int) floor(((x - 0.5 * nd->getWidth()) - arch_->getMinX())
-                             / abuGridUnit_),
-                 0);
-  int rcol
-      = std::min((int) floor(((x + 0.5 * nd->getWidth()) - arch_->getMinX())
-                             / abuGridUnit_),
-                 abuGridNumX_ - 1);
-  int brow
-      = std::max((int) floor(((y - 0.5 * nd->getHeight()) - arch_->getMinY())
-                             / abuGridUnit_),
-                 0);
-  int trow
-      = std::min((int) floor(((y + 0.5 * nd->getHeight()) - arch_->getMinY())
-                             / abuGridUnit_),
-                 abuGridNumY_ - 1);
+  const double lx = x - 0.5 * nd->getWidth() - arch_->getMinX();
+  const double ux = x + 0.5 * nd->getWidth() - arch_->getMinX();
+  const double ly = y - 0.5 * nd->getHeight() - arch_->getMinY();
+  const double uy = y + 0.5 * nd->getHeight() - arch_->getMinY();
+
+  const int lcol = std::max((int) floor(lx / abuGridUnit_), 0);
+  const int rcol = std::min((int) floor(ux / abuGridUnit_), abuGridNumX_ - 1);
+  const int brow = std::max((int) floor(ly / abuGridUnit_), 0);
+  const int trow = std::min((int) floor(uy / abuGridUnit_), abuGridNumY_ - 1);
 
   for (int j = brow; j <= trow; j++) {
     for (int k = lcol; k <= rcol; k++) {
-      unsigned binId = j * abuGridNumX_ + k;
+      const int binId = j * abuGridNumX_ + k;
 
       // get intersection
-      double lx = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth());
-      double hx = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth());
-      double ly = std::max(abuBins_[binId].ly, y - 0.5 * nd->getHeight());
-      double hy = std::min(abuBins_[binId].hy, y + 0.5 * nd->getHeight());
+      const double lx = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth());
+      const double hx = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth());
+      const double ly = std::max(abuBins_[binId].ly, y - 0.5 * nd->getHeight());
+      const double hy = std::min(abuBins_[binId].hy, y + 0.5 * nd->getHeight());
 
       if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
         // XXX: Keep track of the bins that change.
@@ -630,8 +607,8 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
           // going to change usage.
           abuBins_[binId].c_util = abuBins_[binId].m_util;
         }
-        double common_area = (hx - lx) * (hy - ly);
-        abuBins_[binId].m_util += common_area * (double) addSub;
+        const double common_area = (hx - lx) * (hy - ly);
+        abuBins_[binId].m_util += common_area * addSub;
       }
     }
   }
@@ -648,29 +625,28 @@ void DetailedABU::acceptBins()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedABU::rejectBins()
 {
-  double space = 0.;
-  double util = 0.;
-  int ix = -1;
-  std::set<int>::iterator it;
   for (int binId : abuChangedBins_) {
-    space = abuBins_[binId].area - abuBins_[binId].f_util;
+    const double space = abuBins_[binId].area - abuBins_[binId].f_util;
 
     // Remove from current bucket.
-    util = abuBins_[binId].m_util;
-    if ((ix = getBucketId(binId, util)) != -1) {
-      if (utilBuckets_[ix].end() == (it = utilBuckets_[ix].find(binId))) {
+    const double util_m = abuBins_[binId].m_util;
+    const int ix_m = getBucketId(binId, util_m);
+    if (ix_m != -1) {
+      auto it = utilBuckets_[ix_m].find(binId);
+      if (it == utilBuckets_[ix_m].end()) {
         mgrPtr_->internalError(
             "Error rejecting bins for utilization objective");
       }
-      utilBuckets_[ix].erase(it);
-      utilTotals_[ix] -= util / space;
+      utilBuckets_[ix_m].erase(it);
+      utilTotals_[ix_m] -= util_m / space;
     }
 
     // Insert into original bucket.
-    util = abuBins_[binId].c_util;
-    if ((ix = getBucketId(binId, util)) != -1) {
-      utilBuckets_[ix].insert(binId);
-      utilTotals_[ix] += util / space;
+    const double util_c = abuBins_[binId].c_util;
+    const int ix_c = getBucketId(binId, util_c);
+    if (ix_c != -1) {
+      utilBuckets_[ix_c].insert(binId);
+      utilTotals_[ix_c] += util_c / space;
     }
 
     // Restore original utilization.

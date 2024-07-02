@@ -32,17 +32,14 @@
 
 #include "dbBTerm.h"
 
-#include "db.h"
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -53,10 +50,13 @@
 #include "dbMaster.h"
 #include "dbModNet.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbDiff.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -274,6 +274,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+    stream << bterm._constraint_region;
+  }
   return stream;
 }
 
@@ -299,6 +302,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._bpins;
   stream >> bterm._ground_pin;
   stream >> bterm._supply_pin;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+    stream >> bterm._constraint_region;
+  }
 
   return stream;
 }
@@ -919,6 +925,25 @@ void dbBTerm::staSetVertexId(uint32_t id)
 {
   _dbBTerm* iterm = (_dbBTerm*) this;
   iterm->_sta_vertex_id = id;
+}
+
+void dbBTerm::setConstraintRegion(
+    const std::pair<Point, Point>& constraint_region)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region = constraint_region;
+}
+
+std::optional<std::pair<Point, Point>> dbBTerm::getConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  const auto& constraint_region = bterm->_constraint_region;
+  if (constraint_region.first == Point(0, 0)
+      && constraint_region.second == Point(0, 0)) {
+    return std::nullopt;
+  }
+
+  return bterm->_constraint_region;
 }
 
 }  // namespace odb

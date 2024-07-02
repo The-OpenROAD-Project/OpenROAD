@@ -34,7 +34,7 @@
 
 #include "definBase.h"
 #include "defrReader.hpp"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace utl {
 class Logger;

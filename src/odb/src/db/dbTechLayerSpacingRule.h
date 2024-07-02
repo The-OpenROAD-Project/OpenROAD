@@ -33,9 +33,9 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -129,6 +129,8 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
   _flags._cut_center_to_center = false;
   _flags._cut_same_net = false;
   _flags._cut_parallel_overlap = false;
+  _flags._notch_length = false;
+  _flags._end_of_notch_width = false;
   _flags._spare_bits = 0;
   _spacing = 0;
   _length_or_influence = 0;

@@ -36,7 +36,6 @@
 
 #include <sstream>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
@@ -47,6 +46,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
+#include "odb/db.h"
 
 namespace odb {
 

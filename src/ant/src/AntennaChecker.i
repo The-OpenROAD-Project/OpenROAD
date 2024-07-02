@@ -58,7 +58,7 @@ check_antennas(const char *net_name, bool verbose)
 {
   auto app = ord::OpenRoad::openRoad();
   auto block = app->getDb()->getChip()->getBlock();
-  dbNet* net = nullptr;
+  odb::dbNet* net = nullptr;
   if (strlen(net_name) > 0) {
     net = block->findNet(net_name);
     if (!net) {
@@ -66,7 +66,8 @@ check_antennas(const char *net_name, bool verbose)
       logger->error(utl::ANT, 12, "Net {} not found.", net_name);
     }
   }
-  return getAntennaChecker()->checkAntennas(net, verbose);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return getAntennaChecker()->checkAntennas(net, num_threads, verbose);
 }
 
 int

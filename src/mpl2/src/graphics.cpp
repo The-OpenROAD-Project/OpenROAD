@@ -39,11 +39,14 @@
 
 namespace mpl2 {
 
-Graphics::Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger)
+Graphics::Graphics(bool coarse,
+                   bool fine,
+                   odb::dbBlock* block,
+                   utl::Logger* logger)
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
-      dbu_(dbu),
+      block_(block),
       logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
@@ -196,10 +199,10 @@ void Graphics::finishedClustering(Cluster* root)
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 {
-  const int lx = dbu_ * cluster->getX();
-  const int ly = dbu_ * cluster->getY();
-  const int ux = lx + dbu_ * cluster->getWidth();
-  const int uy = ly + dbu_ * cluster->getHeight();
+  const int lx = block_->micronsToDbu(cluster->getX());
+  const int ly = block_->micronsToDbu(cluster->getY());
+  const int ux = lx + block_->micronsToDbu(cluster->getWidth());
+  const int uy = ly + block_->micronsToDbu(cluster->getHeight());
   odb::Rect bbox(lx, ly, ux, uy);
 
   painter.drawRect(bbox);
@@ -232,10 +235,10 @@ void Graphics::drawAllBlockages(gui::Painter& painter)
 
 void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
 {
-  const int lx = dbu_ * blockage.xMin();
-  const int ly = dbu_ * blockage.yMin();
-  const int ux = dbu_ * blockage.xMax();
-  const int uy = dbu_ * blockage.yMax();
+  const int lx = block_->micronsToDbu(blockage.xMin());
+  const int ly = block_->micronsToDbu(blockage.yMin());
+  const int ux = block_->micronsToDbu(blockage.xMax());
+  const int uy = block_->micronsToDbu(blockage.yMax());
 
   odb::Rect blockage_bbox(lx, ly, ux, uy);
   blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
@@ -264,10 +267,10 @@ void Graphics::drawObjects(gui::Painter& painter)
   for (const auto& macro : soft_macros_) {
     setSoftMacroBrush(painter, macro);
 
-    const int lx = dbu_ * macro.getX();
-    const int ly = dbu_ * macro.getY();
-    const int ux = lx + dbu_ * macro.getWidth();
-    const int uy = ly + dbu_ * macro.getHeight();
+    const int lx = block_->micronsToDbu(macro.getX());
+    const int ly = block_->micronsToDbu(macro.getY());
+    const int ux = lx + block_->micronsToDbu(macro.getWidth());
+    const int uy = ly + block_->micronsToDbu(macro.getHeight());
     odb::Rect bbox(lx, ly, ux, uy);
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
@@ -284,10 +287,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   i = 0;
   for (const auto& macro : hard_macros_) {
-    const int lx = dbu_ * macro.getX();
-    const int ly = dbu_ * macro.getY();
-    const int width = dbu_ * macro.getWidth();
-    const int height = dbu_ * macro.getHeight();
+    const int lx = block_->micronsToDbu(macro.getX());
+    const int ly = block_->micronsToDbu(macro.getY());
+    const int width = block_->micronsToDbu(macro.getWidth());
+    const int height = block_->micronsToDbu(macro.getHeight());
     const int ux = lx + width;
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
@@ -359,10 +362,17 @@ void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
   for (const auto& bundled_net : bundled_nets_) {
-    odb::Point from(macros[bundled_net.terminals.first].getPinX() * dbu_,
-                    macros[bundled_net.terminals.first].getPinY() * dbu_);
-    odb::Point to(macros[bundled_net.terminals.second].getPinX() * dbu_,
-                  macros[bundled_net.terminals.second].getPinY() * dbu_);
+    const int x1
+        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinX());
+    const int y1
+        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinY());
+    odb::Point from(x1, y1);
+
+    const int x2
+        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinX());
+    const int y2
+        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinY());
+    odb::Point to(x2, y2);
 
     from.addX(outline_.xMin());
     from.addY(outline_.yMin());
@@ -429,6 +439,7 @@ void Graphics::eraseDrawing()
   macro_blockages_.clear();
   placement_blockages_.clear();
   bundled_nets_.clear();
+  outline_.reset(0, 0, 0, 0);
 }
 
 }  // namespace mpl2

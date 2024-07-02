@@ -35,10 +35,10 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "dbMatrix.h"
-#include "dbTypes.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbMatrix.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -120,6 +120,7 @@ class _dbTechLayer : public _dbObject
 
   dbTechLayerFlags flags_;
   uint wrong_way_width_;
+  float layer_adjustment_;
 
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;

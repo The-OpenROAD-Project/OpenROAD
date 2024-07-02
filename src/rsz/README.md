@@ -33,7 +33,24 @@ set_wire_rc
     [-signal]
     [-data]
     [-corner corner]
+    [-layers layers_list]
+
+or 
+set_wire_rc
+    [-h_resistance res]
+    [-h_capacitance cap]
+    [-v_resistance res]
+    [-v_capacitance cap]
+
+or
+set_wire_rc 
+    [-clock] 
+    [-signal]
+    [-data]
+    [-corner corner]
     [-layer layer_name]
+or 
+set_wire_rc
     [-resistance res]
     [-capacitance cap]
 ```
@@ -44,9 +61,14 @@ set_wire_rc
 | ----- | ----- |
 | `-clock` | Enable setting of RC for clock nets. |
 | `-signal` | Enable setting of RC for signal nets. | 
+| `-layers` | Use the LEF technology resistance and area/edge capacitance values for the layers. The values for each layers will be used for wires with the prefered layer direction, if 2 or more layers have the same prefered direction the avarege value is used for wires with that direction. This is used for a default width wire on the layer. |
 | `-layer` | Use the LEF technology resistance and area/edge capacitance values for the layer. This is used for a default width wire on the layer. |
-| `-resistance` | Resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
-| `-capacitance` | Capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
+| `-resistance` | Resistance per unit length, units are from the first Liberty file read. |
+| `-capacitance` | Capacitance per unit length, units are from the first Liberty file read. |
+| `-h_resistance` | Resistance per unit length for horizontal wires, units are from the first Liberty file read. |
+| `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
+| `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
+| `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
 
 
 ### Set Layer RC
@@ -162,10 +184,15 @@ buffer_ports
 
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This
 step is recommended before using `repair_design` so that there is more flexibility
-in buffering nets. 
+in buffering nets.  If buffer instances are specified, only specified buffer instances
+will be removed regardless of dont-touch or fixed cell.  Direct input port to output port
+feedthrough buffers will not be removed.
+If no buffer instances are specified, all buffers will be removed except those that are associated with
+dont-touch, fixed cell or direct input port to output port feedthrough buffering.
 
 ```tcl
 remove_buffers
+    [ instances ]
 ```
 
 ### Balance Row Usage
@@ -248,6 +275,7 @@ repair_timing
     [-allow_setup_violations]
     [-skip_pin_swap]
     [-skip_gate_cloning]
+    [-enable_buffer_removal]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_utilization util]
@@ -267,6 +295,7 @@ repair_timing
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default value is `False`, and the allowed values are bools. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default value is `False`, and the allowed values are bools. |
+| `-enable_buffer_removal` | Flag to enable buffer removal during setup fixing. The default value is `False`, and the allowed values are bools. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |

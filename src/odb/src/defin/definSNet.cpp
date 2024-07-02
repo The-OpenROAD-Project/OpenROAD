@@ -37,9 +37,9 @@
 #include <stdlib.h>
 
 #include "create_box.h"
-#include "db.h"
-#include "dbShape.h"
 #include "definPolygon.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -141,9 +141,9 @@ void definSNet::begin(const char* name)
         dbSWire* swire = *itr;
         dbSWire::destroy(swire);
       }
-    }
 
-    _cur_net->setSpecial();
+      _cur_net->setSpecial();
+    }
   }
 
   _snet_cnt++;

@@ -35,9 +35,6 @@
 
 #include "object.h"
 
-#include <iostream>
-
-#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -46,18 +43,7 @@ using utl::MPL;
 ///////////////////////////////////////////////////////////////////////
 // Basic utility functions
 
-// conversion between dbu and microns
-float dbuToMicron(int metric, float dbu)
-{
-  return metric / dbu;
-}
-
-int micronToDbu(float metric, float dbu)
-{
-  return std::round(metric * dbu);
-}
-
-std::string toString(const PinAccess& pin_access)
+std::string toString(const Boundary& pin_access)
 {
   switch (pin_access) {
     case L:
@@ -73,7 +59,7 @@ std::string toString(const PinAccess& pin_access)
   }
 }
 
-PinAccess opposite(const PinAccess& pin_access)
+Boundary opposite(const Boundary& pin_access)
 {
   switch (pin_access) {
     case L:
@@ -213,6 +199,15 @@ void Cluster::addLeafMacro(odb::dbInst* leaf_macro)
   leaf_macros_.push_back(leaf_macro);
 }
 
+void Cluster::addLeafInst(odb::dbInst* inst)
+{
+  if (inst->isBlock()) {
+    addLeafMacro(inst);
+  } else {
+    addLeafStdCell(inst);
+  }
+}
+
 void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 {
   hard_macros_ = hard_macros;
@@ -339,6 +334,16 @@ void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
 bool Cluster::isIOCluster() const
 {
   return is_io_cluster_;
+}
+
+void Cluster::setAsArrayOfInterconnectedMacros()
+{
+  is_array_of_interconnected_macros = true;
+}
+
+bool Cluster::isArrayOfInterconnectedMacros() const
+{
+  return is_array_of_interconnected_macros;
 }
 
 // Metrics Support and Statistics
@@ -559,6 +564,10 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
     }
   }
 
+  if (neighbors.empty()) {
+    return false;
+  }
+
   for (auto& [cluster_id, weight] : cluster.connection_map_) {
     if ((cluster_id != id_) && (cluster_id != cluster.id_)
         && (weight >= net_threshold)) {
@@ -578,6 +587,23 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
   }
 
   return true;
+}
+
+// Directly connected macros should be grouped in an array of macros.
+// The number of connections must be greater than the threshold in order for
+// the macros to be considered part of the same array.
+bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
+                                     float net_threshold)
+{
+  if (id_ != cluster.getId()) {
+    for (const auto& [cluster_id, num_of_conn] : connection_map_) {
+      if (cluster_id == cluster.getId() && num_of_conn > net_threshold) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 //
@@ -619,7 +645,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
 
 // Pin Access Support
 void Cluster::setPinAccess(int cluster_id,
-                           PinAccess pin_access,
+                           Boundary pin_access,
                            float net_weight)
 {
   if (cluster_id < 0) {
@@ -629,34 +655,33 @@ void Cluster::setPinAccess(int cluster_id,
                    toString(pin_access));
   }
   pin_access_map_[cluster_id]
-      = std::pair<PinAccess, float>(pin_access, net_weight);
+      = std::pair<Boundary, float>(pin_access, net_weight);
 }
 
-const std::pair<PinAccess, float> Cluster::getPinAccess(int cluster_id)
+const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
 {
   return pin_access_map_[cluster_id];
 }
 
-const std::map<int, std::pair<PinAccess, float>> Cluster::getPinAccessMap()
-    const
+const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
 {
   return pin_access_map_;
 }
 
-const std::map<PinAccess, std::map<PinAccess, float>>
+const std::map<Boundary, std::map<Boundary, float>>
 Cluster::getBoundaryConnection() const
 {
   return boundary_connection_map_;
 }
 
-void Cluster::addBoundaryConnection(PinAccess pin_a,
-                                    PinAccess pin_b,
+void Cluster::addBoundaryConnection(Boundary pin_a,
+                                    Boundary pin_b,
                                     float num_net)
 {
   if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
-    std::map<PinAccess, float> pin_map;
+    std::map<Boundary, float> pin_map;
     pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = pin_map;
+    boundary_connection_map_[pin_a] = std::move(pin_map);
   } else {
     if (boundary_connection_map_[pin_a].find(pin_b)
         == boundary_connection_map_[pin_a].end()) {
@@ -748,26 +773,20 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
   pin_y_ = height / 2.0;
 }
 
-HardMacro::HardMacro(odb::dbInst* inst,
-                     float dbu,
-                     int manufacturing_grid,
-                     float halo_width,
-                     float halo_height)
+HardMacro::HardMacro(odb::dbInst* inst, float halo_width, float halo_height)
 {
   inst_ = inst;
-  dbu_ = dbu;
+  block_ = inst->getBlock();
+  name_ = inst->getName();
+
   halo_width_ = halo_width;
   halo_height_ = halo_height;
-  manufacturing_grid_ = manufacturing_grid;
 
-  // set name
-  name_ = inst->getName();
   odb::dbMaster* master = inst->getMaster();
-  // set the width and height
-  width_ = dbuToMicron(master->getWidth(), dbu) + 2 * halo_width;
-  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_height;
+  width_ = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width;
+  height_ = block_->dbuToMicrons(master->getHeight()) + 2 * halo_height;
+
   // Set the position of virtual pins
-  // Here we only consider signal pins
   odb::Rect bbox;
   bbox.mergeInit();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -780,8 +799,10 @@ HardMacro::HardMacro(odb::dbInst* inst,
       }
     }
   }
-  pin_x_ = dbuToMicron((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
-  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_height_;
+  pin_x_
+      = block_->dbuToMicrons((bbox.xMin() + bbox.xMax()) / 2.0) + halo_width_;
+  pin_y_
+      = block_->dbuToMicrons((bbox.yMin() + bbox.yMax()) / 2.0) + halo_height_;
 }
 
 // overload the comparison operators
@@ -925,201 +946,6 @@ const std::string HardMacro::getMasterName() const
     return name_;
   }
   return inst_->getMaster()->getName();
-}
-
-void HardMacro::updateDb(odb::dbBlock* block)
-{
-  if ((inst_ == nullptr) || (dbu_ <= 0.0)) {
-    return;
-  }
-
-  const odb::Rect bbox(micronToDbu(getRealX(), dbu_),
-                       micronToDbu(getRealY(), dbu_),
-                       micronToDbu(getRealX() + getRealWidth(), dbu_),
-                       micronToDbu(getRealY() + getRealHeight(), dbu_));
-
-  const odb::Point snap_origin = computeSnapOrigin(bbox, orientation_, block);
-
-  inst_->setOrigin(snap_origin.x(), snap_origin.y());
-  inst_->setOrient(orientation_);
-  inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-}
-
-odb::Point HardMacro::computeSnapOrigin(const odb::Rect& macro_box,
-                                        const odb::dbOrientType& orientation,
-                                        odb::dbBlock* block)
-{
-  SnapParameters x, y;
-
-  std::set<odb::dbTechLayer*> snap_layers;
-
-  odb::dbMaster* master = inst_->getMaster();
-  for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
-      continue;
-    }
-
-    for (odb::dbMPin* mpin : mterm->getMPins()) {
-      for (odb::dbBox* box : mpin->getGeometry()) {
-        odb::dbTechLayer* layer = box->getTechLayer();
-
-        if (snap_layers.find(layer) != snap_layers.end()) {
-          continue;
-        }
-
-        snap_layers.insert(layer);
-
-        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-          y = computeSnapParameters(block, layer, box, false);
-        } else {
-          x = computeSnapParameters(block, layer, box, true);
-        }
-      }
-    }
-  }
-
-  // Defaults for R0
-  int origin_x = macro_box.xMin();
-  int origin_y = macro_box.yMin();
-
-  // The distance between the pins and the origin in the master of a macro
-  // instance may not be a multiple of the track-grid, in these cases, we
-  // need to compensate a small offset.
-  const int mterm_offset_x
-      = x.pitch != 0
-            ? x.pin_to_origin - std::floor(x.pin_to_origin / x.pitch) * x.pitch
-            : 0;
-  const int mterm_offset_y
-      = y.pitch != 0
-            ? y.pin_to_origin - std::floor(y.pin_to_origin / y.pitch) * y.pitch
-            : 0;
-
-  int pin_offset_x = x.pin_width / 2 + mterm_offset_x;
-  int pin_offset_y = y.pin_width / 2 + mterm_offset_y;
-
-  if (orientation == odb::dbOrientType::MX) {
-    origin_y = macro_box.yMax();
-    pin_offset_y = -pin_offset_y;
-  } else if (orientation == odb::dbOrientType::MY) {
-    origin_x = macro_box.xMax();
-    pin_offset_x = -pin_offset_x;
-  } else if (orientation == odb::dbOrientType::R180) {
-    origin_x = macro_box.xMax();
-    origin_y = macro_box.yMax();
-    pin_offset_x = -pin_offset_x;
-    pin_offset_y = -pin_offset_y;
-  }
-
-  // Compute trackgrid alignment only if there are pins in the grid's direction.
-  // Note that we first align the macro origin with the track grid and then, we
-  // compensate the necessary offset.
-  if (x.pin_width != 0) {
-    origin_x = std::round(origin_x / x.pitch) * x.pitch + x.offset;
-    origin_x -= pin_offset_x;
-  }
-  if (y.pin_width != 0) {
-    origin_y = std::round(origin_y / y.pitch) * y.pitch + y.offset;
-    origin_y -= pin_offset_y;
-  }
-
-  origin_x = std::round(origin_x / manufacturing_grid_) * manufacturing_grid_;
-  origin_y = std::round(origin_y / manufacturing_grid_) * manufacturing_grid_;
-
-  const odb::Point snap_origin(origin_x, origin_y);
-
-  return snap_origin;
-}
-
-SnapParameters HardMacro::computeSnapParameters(odb::dbBlock* block,
-                                                odb::dbTechLayer* layer,
-                                                odb::dbBox* box,
-                                                bool is_vertical_direction)
-{
-  SnapParameters params;
-
-  odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
-
-  if (track_grid != nullptr) {
-    std::vector<int> coordinate_grid;
-    getDirectionTrackGrid(track_grid, coordinate_grid, is_vertical_direction);
-
-    params.offset = coordinate_grid[0];
-    params.pitch = coordinate_grid[1] - coordinate_grid[0];
-  } else {
-    params.pitch = getDirectionPitch(layer, is_vertical_direction);
-    params.offset = getDirectionOffset(layer, is_vertical_direction);
-  }
-
-  params.pin_width = getDirectionPinWidth(box, is_vertical_direction);
-  params.pin_to_origin = getPinToOriginDistance(box, is_vertical_direction);
-
-  return params;
-}
-
-int HardMacro::getDirectionPitch(odb::dbTechLayer* layer,
-                                 bool is_vertical_direction)
-{
-  int pitch = 0;
-
-  if (is_vertical_direction) {
-    pitch = layer->getPitchX();
-  } else {
-    pitch = layer->getPitchY();
-  }
-
-  return pitch;
-}
-
-int HardMacro::getDirectionOffset(odb::dbTechLayer* layer,
-                                  bool is_vertical_direction)
-{
-  int offset = 0;
-
-  if (is_vertical_direction) {
-    offset = layer->getOffsetX();
-  } else {
-    offset = layer->getOffsetY();
-  }
-
-  return offset;
-}
-
-int HardMacro::getDirectionPinWidth(odb::dbBox* box, bool is_vertical_direction)
-{
-  int pin_width = 0;
-
-  if (is_vertical_direction) {
-    pin_width = box->getDX();
-  } else {
-    pin_width = box->getDY();
-  }
-
-  return pin_width;
-}
-
-void HardMacro::getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
-                                      std::vector<int>& coordinate_grid,
-                                      bool is_vertical_direction)
-{
-  if (is_vertical_direction) {
-    track_grid->getGridX(coordinate_grid);
-  } else {
-    track_grid->getGridY(coordinate_grid);
-  }
-}
-
-int HardMacro::getPinToOriginDistance(odb::dbBox* box,
-                                      bool is_vertical_direction)
-{
-  int pin_to_origin = 0;
-
-  if (is_vertical_direction) {
-    pin_to_origin = box->getBox().xMin();
-  } else {
-    pin_to_origin = box->getBox().yMin();
-  }
-
-  return pin_to_origin;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1334,8 +1160,8 @@ void SoftMacro::setArea(float area)
     }
   }
 
-  width_list_ = width_list;
-  height_list_ = height_list;
+  width_list_ = std::move(width_list);
+  height_list_ = std::move(height_list);
   area_ = area;
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;

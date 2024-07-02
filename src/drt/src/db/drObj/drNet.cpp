@@ -122,6 +122,10 @@ bool drNet::isClockNet() const
 {
   return fNet_->isClock();
 }
+bool drNet::isFixed() const
+{
+  return fNet_->isFixed();
+}
 template <class Archive>
 void drNet::serialize(Archive& ar, const unsigned int version)
 {

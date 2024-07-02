@@ -34,16 +34,16 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -437,6 +437,7 @@ void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
     }
     w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
   }
+  free(destid);
 }
 
 void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
@@ -1848,6 +1849,24 @@ void dbWire::destroy(dbWire* wire_)
 
   dbProperty::destroyProperties(wire);
   block->_wire_tbl->destroy(wire);
+}
+
+void dbWire::getRawWireData(std::vector<int>& data,
+                            std::vector<unsigned char>& op_codes)
+{
+  _dbWire* wire = (_dbWire*) this;
+  data = wire->_data;
+  op_codes = wire->_opcodes;
+}
+
+void dbWire::setRawWireData(const std::vector<int>& data,
+                            const std::vector<unsigned char>& op_codes)
+{
+  _dbWire* wire = (_dbWire*) this;
+  _dbNet* net = (_dbNet*) getNet();
+  wire->_data = data;
+  wire->_opcodes = op_codes;
+  net->_flags._wire_ordered = 0;
 }
 
 }  // namespace odb

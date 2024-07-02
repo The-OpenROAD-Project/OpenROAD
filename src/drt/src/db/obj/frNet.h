@@ -87,6 +87,9 @@ class frNet : public frBlockObject
   bool isModified() const { return modified_; }
   bool isFake() const { return isFakeNet_; }
   frNonDefaultRule* getNondefaultRule() const { return ndr_; }
+  bool hasInitialRouting() const { return hasInitialRouting_; }
+  bool isFixed() const { return isFixed_; }
+  bool hasGuides() const { return !guides_.empty(); }
   // setters
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
@@ -168,7 +171,18 @@ class frNet : public frBlockObject
     in->setIndexInOwner(guides_.size());
     guides_.push_back(std::move(in));
   }
+  void clearRPins() { rpins_.clear(); }
   void clearGuides() { guides_.clear(); }
+  void clearOrigGuides() { orig_guides_.clear(); }
+  void clearConns()
+  {
+    instTerms_.clear();
+    bterms_.clear();
+    nodes_.clear();
+    root_ = nullptr;
+    rootGCellNode_ = nullptr;
+    firstNonRPinNode_ = nullptr;
+  }
   void removeShape(frShape* in) { shapes_.erase(in->getIter()); }
   void removeVia(frVia* in) { vias_.erase(in->getIter()); }
   void removePatchWire(frShape* in) { pwires_.erase(in->getIter()); }
@@ -179,7 +193,15 @@ class frNet : public frBlockObject
   void removeNode(frNode* in) { nodes_.erase(in->getIter()); }
   void setModified(bool in) { modified_ = in; }
   void setIsFake(bool in) { isFakeNet_ = in; }
+  void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
+  void setFixed(bool in) { isFixed_ = in; }
   // others
+  void clearRoutes()
+  {
+    shapes_.clear();
+    vias_.clear();
+    pwires_.clear();
+  }
   dbSigType getType() const { return type_; }
   void setType(const dbSigType& in) { type_ = in; }
   frBlockObjectEnum typeId() const override { return frcNet; }
@@ -246,6 +268,8 @@ class frNet : public frBlockObject
                           // ordering before other criteria
   bool isClock_{false};
   bool isSpecial_{false};
+  bool hasInitialRouting_{false};
+  bool isFixed_{false};
 
   std::vector<frPinFig*> all_pinfigs_;
 };

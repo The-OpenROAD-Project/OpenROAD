@@ -170,9 +170,9 @@ void Graph::calShortPathParentVertices(int root)
       } else if (dist[edge.dest] == dist[vertex_dist.vertex] + edge.weight) {
         parent[edge.dest].push_back(vertex_dist.vertex);
       }
-    }                       // done edge traversal
-  }                         // done forward propagation
-  parents_[root] = parent;  // update parents map
+    }                                  // done edge traversal
+  }                                    // done forward propagation
+  parents_[root] = std::move(parent);  // update parents map
 };
 
 // Find real paths between root vertex and target vertex
@@ -1030,7 +1030,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     debugPrint(logger, MPL, "bus_planning", 1, "working on path {}", i);
     auto target_cluster
         = soft_macros[nets[path_net_map[i]].terminals.second].getCluster();
-    PinAccess src_pin = NONE;
+    Boundary src_pin = NONE;
     Cluster* pre_cluster = nullptr;
     int last_edge_id = -1;
     const float net_weight = nets[path_net_map[i]].weight;

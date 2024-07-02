@@ -5,12 +5,12 @@
 #include <fstream>
 #include <iostream>
 
-#include "db.h"
-#include "defin.h"
-#include "defout.h"
 #include "env.h"
-#include "lefin.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/defin.h"
+#include "odb/defout.h"
+#include "odb/lefin.h"
+#include "odb/lefout.h"
 #include "utl/Logger.h"
 
 namespace odb {

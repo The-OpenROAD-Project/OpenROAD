@@ -35,7 +35,7 @@
 #include <tuple>
 #include <utility>
 
-#include "dbShape.h"
+#include "odb/dbShape.h"
 
 namespace gui {
 
@@ -78,6 +78,11 @@ void Search::inDbPostMoveInst(odb::dbInst* inst)
   if (inst->isPlaced()) {
     clearInsts();
   }
+}
+
+void Search::inDbBPinCreate(odb::dbBPin* pin)
+{
+  clearShapes();
 }
 
 void Search::inDbBPinDestroy(odb::dbBPin* pin)

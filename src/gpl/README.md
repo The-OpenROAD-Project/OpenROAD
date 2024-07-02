@@ -36,9 +36,19 @@ is scaled from the full value for the worst slack, to 1.0 at the
 `timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing.
 
+When the routability-driven option is enabled, each of its iterations will 
+execute FastRoute to provide an estimation of routing congestion, which is 
+typically costly in terms of runtime. Congested tiles will have the area of 
+their logic cells inflated to reduce routing congestion. The iterations will 
+attempt to achieve the target RC (routing congestion) by comparing it to the 
+final RC. If the algorithm takes too long during routability-driven execution, 
+consider raising the target RC value to alleviate the constraints. The final 
+RC value is calculated based on the weight coefficients. The algorithm will 
+stop if the RC is not decreasing for three consecutive iterations.
+
 Routability-driven arguments
 - They begin with `-routability`.
-- `-routability_check_overflow`, `-routability_max_density`, `-routability_max_bloat_iter`, `-routability_max_inflation_iter`, `-routability_target_rc_metric`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+- `-routability_target_rc_metric`, `-routability_check_overflow`, `-routability_max_density`, `-routability_max_bloat_iter`, `-routability_max_inflation_iter`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
@@ -67,11 +77,12 @@ global_placement
     [-force_cpu]
     [-skip_io]
     [-skip_nesterov_place]
+    [-routability_use_grt]
+    [-routability_target_rc_metric routability_target_rc_metric]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
     [-routability_max_bloat_iter routability_max_bloat_iter]
-    [-routability_max_inflation_iter routability_max_inflation_iter]
-    [-routability_target_rc_metric routability_target_rc_metric]
+    [-routability_max_inflation_iter routability_max_inflation_iter]    
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
     [-routability_rc_coefficients routability_rc_coefficients]
@@ -106,14 +117,14 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-routability_target_rc_metric` | Set target RC metric for routability mode. The algorithm will try to reach this RC value. The default value is `1.01`, and the allowed values are floats. |
 | `-routability_check_overflow` | Set overflow threshold for routability mode. The default value is `0.2`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_max_bloat_iter` | Set bloat iteration threshold for routability mode. The default value is `1`, and the allowed values are integers `[1, MAX_INT]`.|
 | `-routability_max_inflation_iter` | Set inflation iteration threshold for routability mode. The default value is `4`, and the allowed values are integers `[1, MAX_INT]`. |
-| `-routability_target_rc_metric` | Set target RC metric for routability mode. The default value is `1.0`, and the allowed values are floats. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2.5`, and the allowed values are floats. |
-| `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode. The default value is `2.5`, and the allowed values are floats. |
-| `-routability_rc_coefficients` | Set routability RC coefficients. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
+| `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `2.5`, and the allowed values are floats. |
+| `-routability_rc_coefficients` | Set routability RC coefficients for calculating the final RC. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments
 

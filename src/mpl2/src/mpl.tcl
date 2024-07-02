@@ -288,8 +288,6 @@ proc place_macro { args } {
   set orientation R0
   if {[info exists keys(-orientation)]} {
     set orientation $keys(-orientation)
-  } else {
-    utl::warn MPL 18 "No orientation specified for [$macro getName], defaulting to R0."
   }
 
   mpl2::place_macro $macro $x_origin $y_origin $orientation
@@ -321,8 +319,9 @@ proc mpl_debug { args } {
     set coarse true
     set fine true
   }
+  set block [ord::get_db_block]
 
-  mpl2::set_debug_cmd $coarse $fine [info exists flags(-show_bundled_nets)]
+  mpl2::set_debug_cmd $block $coarse $fine [info exists flags(-show_bundled_nets)]
 }
 
 }

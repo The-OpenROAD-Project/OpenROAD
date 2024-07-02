@@ -33,12 +33,12 @@
 // Generator Code Begin Cpp
 #include "dbAccessPoint.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTypes.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 
@@ -135,6 +135,8 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
 
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 {
+  low_type_ = dbAccessType::OnGrid;
+  high_type_ = dbAccessType::OnGrid;
   // User Code Begin Constructor
   accesses_.fill(false);
   // User Code End Constructor

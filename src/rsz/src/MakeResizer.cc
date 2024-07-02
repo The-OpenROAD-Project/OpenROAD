@@ -51,20 +51,17 @@ extern const char* rsz_tcl_inits[];
 
 namespace ord {
 
-rsz::Resizer *
-makeResizer()
+rsz::Resizer* makeResizer()
 {
   return new rsz::Resizer;
 }
 
-void
-deleteResizer(rsz::Resizer *resizer)
+void deleteResizer(rsz::Resizer* resizer)
 {
   delete resizer;
 }
 
-void
-initResizer(OpenRoad *openroad)
+void initResizer(OpenRoad* openroad)
 {
   std::unique_ptr<rsz::AbstractSteinerRenderer> steiner_renderer;
   if (gui::Gui::enabled()) {

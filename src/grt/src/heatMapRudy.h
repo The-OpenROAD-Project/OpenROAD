@@ -33,8 +33,8 @@
 #pragma once
 
 #include "AbstractRoutingCongestionDataSource.h"
-#include "Rudy.h"
 #include "grt/GlobalRouter.h"
+#include "grt/Rudy.h"
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
@@ -74,6 +74,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
   void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
 
  protected:
+  void populateXYGrid() override;
   bool populateMap() override;
   void combineMapData(bool base_has_value,
                       double& base,
@@ -85,7 +86,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
  private:
   grt::GlobalRouter* grouter_;
   odb::dbDatabase* db_;
-  std::unique_ptr<grt::Rudy> rudy_;
+  grt::Rudy* rudy_;
 };
 
 }  // namespace grt

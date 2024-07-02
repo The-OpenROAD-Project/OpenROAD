@@ -34,6 +34,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 
@@ -65,6 +66,8 @@ class Connection
       return lhs->compare(rhs);
     }
   };
+
+  using ConnectionSet = std::set<Connection*, Compare>;
 
   Connection(Node* node0, Node* node1);
   virtual ~Connection() = default;

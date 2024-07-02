@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbModNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbModITerm>;
 
@@ -109,6 +109,7 @@ void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
 
 _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
+  _name = nullptr;
 }
 
 _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)

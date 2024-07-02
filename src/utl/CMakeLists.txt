@@ -122,21 +122,5 @@ messages(
 # Unit testing
 ############################################################\
 if(ENABLE_TESTS)
-  enable_testing()
-
-  add_executable(CFileUtilsTest
-    ${PROJECT_SOURCE_DIR}/src/utl/test/CFileUtilsTest.cpp
-  )
-
-  target_include_directories(CFileUtilsTest
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/src
-    ${OPENROAD_HOME}/include
-  )
-
-  target_link_libraries(CFileUtilsTest
-    utl
-  )
+  add_subdirectory(test)
 endif()
-
-add_subdirectory(test)

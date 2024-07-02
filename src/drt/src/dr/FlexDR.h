@@ -130,6 +130,7 @@ class FlexDR
       std::vector<std::unique_ptr<FlexDRWorker>>& batch);
 
   void reportGuideCoverage();
+  void setIter(int iterNum) { iter_ = iterNum; }
 
  private:
   TritonRoute* router_;
@@ -515,7 +516,8 @@ class FlexDRWorker
       std::map<frNet*,
                std::vector<std::unique_ptr<drConnFig>>,
                frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
   void initNetObjs_pathSeg(frPathSeg* pathSeg,
                            std::set<frNet*, frBlockObjectComp>& nets,
                            std::map<frNet*,
@@ -554,7 +556,20 @@ class FlexDRWorker
       std::map<frNet*,
                std::vector<std::unique_ptr<drConnFig>>,
                frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
+      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
+  int initNets_initDR_helper_getObjComponent(
+      drConnFig* obj,
+      const std::vector<std::vector<int>>& connectedComponents,
+      const std::vector<frRect>& netGuides);
+  void initNets_initDR_helper(
+      frNet* net,
+      std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
+      std::vector<std::unique_ptr<drConnFig>>& netExtObjs,
+      const std::vector<frBlockObject*>& netTerms,
+      const std::vector<frRect>& netOrigGuides,
+      const std::vector<frRect>& netGuides);
+
   void initNets_searchRepair(
       const frDesign* design,
       const std::set<frNet*, frBlockObjectComp>& nets,
@@ -620,8 +635,9 @@ class FlexDRWorker
                frNet* net,
                std::vector<std::unique_ptr<drConnFig>>& routeObjs,
                std::vector<std::unique_ptr<drConnFig>>& extObjs,
-               std::vector<frRect>& origGuides,
-               std::vector<frBlockObject*>& terms);
+               const std::vector<frRect>& origGuides,
+               const std::vector<frBlockObject*>& terms,
+               std::vector<std::pair<Point, frLayerNum>> bounds = {});
   void initNet_term(const frDesign* design,
                     drNet* dNet,
                     const std::vector<frBlockObject*>& terms);
@@ -647,7 +663,8 @@ class FlexDRWorker
                     std::set<frCoord>& xLocs,
                     std::set<frCoord>& yLocs);
   void initNet_boundary(drNet* net,
-                        const std::vector<std::unique_ptr<drConnFig>>& extObjs);
+                        const std::vector<std::unique_ptr<drConnFig>>& extObjs,
+                        std::vector<std::pair<Point, frLayerNum>> bounds);
   void initNets_numPinsIn();
   void initNets_boundaryArea();
 
@@ -827,7 +844,7 @@ class FlexDRWorker
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
-  bool routeNet(drNet* net);
+  bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
   void routeNet_prep(drNet* net,
                      std::set<drPin*, frBlockObjectComp>& unConnPins,
                      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&

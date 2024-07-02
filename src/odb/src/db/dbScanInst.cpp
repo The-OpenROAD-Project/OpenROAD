@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbScanInst.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbDiff.hpp"
@@ -43,6 +42,7 @@
 #include "dbScanPin.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
 namespace odb {
 template class dbTable<_dbScanInst>;
 
@@ -99,6 +99,8 @@ void _dbScanInst::out(dbDiff& diff, char side, const char* field) const
 
 _dbScanInst::_dbScanInst(_dbDatabase* db)
 {
+  bits_ = 0;
+  clock_edge_ = 0;
 }
 
 _dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)

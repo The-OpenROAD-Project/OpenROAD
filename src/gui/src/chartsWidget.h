@@ -43,21 +43,51 @@
 #include <memory>
 
 #include "gui/gui.h"
+#include "staGuiInterface.h"
 
 namespace sta {
+class Pin;
 class dbSta;
 class Clock;
 }  // namespace sta
 #endif
 
 namespace gui {
-
 #ifdef ENABLE_CHARTS
+
+using ITermBTermPinsLists = std::pair<StaPins, StaPins>;
+
+enum StartEndPathType
+{
+  RegisterToRegister,
+  RegisterToIO,
+  IOToRegister,
+  IOToIO,
+};
 
 struct SlackHistogramData
 {
-  std::vector<float> end_points_slack;
+  StaPins constrained_pins;
   std::set<sta::Clock*> clocks;
+};
+
+struct Buckets
+{
+  std::deque<std::vector<const sta::Pin*>> positive;
+  std::deque<std::vector<const sta::Pin*>> negative;
+};
+
+class HistogramView : public QChartView
+{
+  Q_OBJECT
+
+ public:
+  HistogramView(QChart* chart, QWidget* parent);
+
+  virtual void mousePressEvent(QMouseEvent* event) override;
+
+ signals:
+  void barIndex(int bar_index);
 };
 
 #endif
@@ -69,77 +99,99 @@ class ChartsWidget : public QDockWidget
  public:
   ChartsWidget(QWidget* parent = nullptr);
 #ifdef ENABLE_CHARTS
-  enum Mode
-  {
-    SELECT,
-    SLACK_HISTOGRAM
-  };
-  void setSTA(sta::dbSta* sta)
-  {
-    sta_ = sta;
-  }
+  void setSTA(sta::dbSta* sta);
   void setLogger(utl::Logger* logger)
   {
     logger_ = logger;
   }
 
+ signals:
+  void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
+
  private slots:
   void changeMode();
+  void changeStartEndFilter();
   void showToolTip(bool is_hovering, int bar_index);
+  void emitEndPointsInBucket(int bar_index);
 
  private:
-  void setSlackMode();
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
 
-  void setBucketInterval(float max_slack, float min_slack);
+  static std::string toString(enum StartEndPathType);
+
+  void setSlackHistogram();
+  void setModeMenu();
+  void setStartEndFiltersMenu();
+  void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {
     bucket_interval_ = bucket_interval;
-  }
-  void setNegativeCountOffset(int neg_count_offset)
-  {
-    neg_count_offset_ = neg_count_offset;
   }
   void setDecimalPrecision(int precision_count)
   {
     precision_count_ = precision_count;
   }
+  void setClocks(const std::set<sta::Clock*>& clocks)
+  {
+    clocks_ = clocks;
+  }
 
-  SlackHistogramData fetchSlackHistogramData() const;
+  SlackHistogramData fetchSlackHistogramData();
+  void removeUnconstrainedPinsAndSetLimits(StaPins& end_points);
+  TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
+  StaPins getEndPointsFromPaths(const TimingPathList& paths);
+  ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
+  void setLimits(const TimingPathList& paths);
 
-  void populateBuckets(const std::vector<float>& all_slack,
-                       std::deque<int>& neg_buckets,
-                       std::deque<int>& pos_buckets);
+  void populateBuckets(StaPins* end_points, TimingPathList* paths);
+  std::pair<QBarSet*, QBarSet*> createBarSets();
+  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
+
+  void setVisualConfig();
+
   int computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
   int computeNumberofBuckets(int bucket_interval,
                              float max_slack,
                              float min_slack);
 
-  void setXAxisConfig(int all_bars_count, const std::set<sta::Clock*>& clocks);
+  void setXAxisConfig(int all_bars_count);
+  void setXAxisTitle();
   void setYAxisConfig();
-  QString createXAxisTitle(const std::set<sta::Clock*>& clocks);
-  int computeMaxYSnap();
+  int computeYInterval(int largest_slack_count);
+  int computeMaxYSnap(int largest_slack_count);
   int computeNumberOfDigits(int value);
   int computeFirstDigit(int value, int digits);
-  int computeYInterval();
 
   void clearChart();
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
+  std::unique_ptr<STAGuiInterface> stagui_;
 
   QComboBox* mode_menu_;
+  QComboBox* filters_menu_;
   QChart* chart_;
-  QChartView* display_;
+  HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
-  const int default_number_of_buckets_ = 15;
-  int largest_slack_count_ = 0;  // Used to configure the y axis.
-  int precision_count_ = 0;      // Used to configure the x labels.
+  std::set<sta::Clock*> clocks_;
+  std::unique_ptr<Buckets> buckets_;
 
-  float bucket_interval_ = 0;
-  int neg_count_offset_ = 0;
+  int prev_filter_index_;
+  bool resetting_menu_;
+
+  const int default_number_of_buckets_;
+  float max_slack_;
+  float min_slack_;
+  float bucket_interval_;
+
+  int precision_count_;  // Used to configure the x labels.
 #endif
   QLabel* label_;
 };

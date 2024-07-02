@@ -40,6 +40,10 @@ proc improve_placement { args } {
   sta::parse_key_args "improve_placement" args \
     keys {-random_seed -max_displacement} flags {-disallow_one_site_gaps}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPO 2 "No design block found."
+  }
+
   set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   set seed 1
   if { [info exists keys(-random_seed)] } {

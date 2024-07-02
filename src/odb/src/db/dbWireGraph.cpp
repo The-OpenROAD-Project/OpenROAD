@@ -30,11 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbWireGraph.h"
+#include "odb/dbWireGraph.h"
 
 #include "dbWire.h"
-#include "dbWireCodec.h"
 #include "odb/db.h"
+#include "odb/dbWireCodec.h"
 
 namespace odb {
 

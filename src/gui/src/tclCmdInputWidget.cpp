@@ -132,7 +132,8 @@ int TclCmdInputWidget::tclExitHandler(ClientData instance_data,
   // announces exit to Qt
   emit widget->exiting();
 
-  return TCL_OK;
+  Tcl_SetResult(interp, (char*) exit_string, TCL_STATIC);
+  return TCL_ERROR;
 }
 
 void TclCmdInputWidget::keyPressEvent(QKeyEvent* e)
