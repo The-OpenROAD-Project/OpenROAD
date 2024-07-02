@@ -605,6 +605,15 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       netIn->addNode(instTermNode);
     }
   }
+  if (net->getWire()
+      && (net->getWireType() == odb::dbWireType::SHIELD
+          || net->getWireType() == odb::dbWireType::COVER)) {
+    logger_->error(DRT,
+                   309,
+                   "Unsupported net wiring {} for net {}",
+                   net->getWireType().getString(),
+                   net->getName());
+  }
   bool db_net_routed
       = net->isSpecial()
         || (net->getWire()
@@ -653,6 +662,12 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
     odb::dbWireDecoder::OpCode pathId = decoder.next();
     if (decoder.getWireType() == odb::dbWireType::FIXED) {
       netIn->setFixed(true);
+    } else if (decoder.getWireType() != odb::dbWireType::ROUTED) {
+      logger_->error(DRT,
+                     310,
+                     "Unsupported net wiring {} for net {}",
+                     decoder.getWireType().getString(),
+                     net->getName());
     }
     while (pathId != odb::dbWireDecoder::END_DECODE) {
       // for each path start
@@ -3766,6 +3781,17 @@ void io::Writer::updateDb(odb::dbDatabase* db,
   updateDbVias(block, db_tech);
   updateDbAccessPoints(block, db_tech);
   if (!pin_access_only) {
+    for (auto net : block->getNets()) {
+      if (net->getWire()) {
+        odb::dbWireDecoder decoder;
+        decoder.begin(net->getWire());
+        decoder.next();
+        if (decoder.getWireType() == odb::dbWireType::FIXED) {
+          continue;
+        }
+        odb::dbWire::destroy(net->getWire());
+      }
+    }
     fillConnFigs(false);
     updateDbConn(block, db_tech, snapshot);
     router_->processBTermsAboveTopLayer(true);
