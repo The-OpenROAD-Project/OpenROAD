@@ -194,4 +194,9 @@ void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
   hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
 }
 
+void MacroPlacer2::setDebugOnlyFinalResult(bool only_final_result)
+{
+  hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
+}
+
 }  // namespace mpl2
