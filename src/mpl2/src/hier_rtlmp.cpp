@@ -386,6 +386,11 @@ void HierRTLMP::run()
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
+  if (graphics_) {
+    graphics_->setMaxLevel(max_num_level_);
+    graphics_->drawResult();
+  }
+
   Pusher pusher(logger_, root_cluster_, block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
 
@@ -6210,6 +6215,11 @@ void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
 {
   graphics_->setShowBundledNets(show_bundled_nets);
+}
+
+void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
+{
+  graphics_->setOnlyFinalResult(only_final_result);
 }
 
 odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)

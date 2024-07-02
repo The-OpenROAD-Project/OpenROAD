@@ -223,6 +223,7 @@ class Cluster
   void setX(float x);
   void setY(float y);
   const std::pair<float, float> getLocation() const;
+  Rect getBBox() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
@@ -523,6 +524,7 @@ class SoftMacro
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
   float getArea() const;
+  Rect getBBox() const;
   // Num Macros
   bool isMacroCluster() const;
   bool isStdCellCluster() const;

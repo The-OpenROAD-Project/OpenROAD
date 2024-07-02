@@ -468,6 +468,11 @@ const std::pair<float, float> Cluster::getLocation() const
   return soft_macro_->getLocation();
 }
 
+Rect Cluster::getBBox() const
+{
+  return soft_macro_->getBBox();
+}
+
 // Hierarchy Support
 void Cluster::setParent(Cluster* parent)
 {
@@ -1235,6 +1240,11 @@ void SoftMacro::setShapes(
 float SoftMacro::getArea() const
 {
   return area_ > 0.01 ? area_ : 0.0;
+}
+
+Rect SoftMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
 }
 
 // Num Macros
