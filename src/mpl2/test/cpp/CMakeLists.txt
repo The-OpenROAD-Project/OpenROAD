@@ -6,17 +6,30 @@
 
 include("openroad")
 
-add_executable(mpl2_test mpl2_test.cc)
+set(TEST_LIBS
+  gtest
+  gmock
+  gtest_main
+  odb
+  mpl2_lib
+)
 
+add_executable(TestSnapper TestSnapper.cpp)
+target_link_libraries(TestSnapper ${TEST_LIBS})
+gtest_discover_tests(TestSnapper WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(mpl2_test mpl2_test.cc)
 target_link_libraries(mpl2_test 
     gtest 
     gtest_main
     mpl2_lib
 )
-
 gtest_discover_tests(mpl2_test
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_dependencies(build_and_test mpl2_test)
+add_dependencies(build_and_test
+    mpl2_test
+    TestSnapper
+)
 
