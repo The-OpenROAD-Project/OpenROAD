@@ -925,10 +925,16 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           // best approach. as a first implementation, insert one diode per net.
           // TODO: implement a proper approach for CAR violations
           if (car_violation || csr_violation) {
-            std::vector<odb::dbITerm*> gates_for_violation;
-            gates_for_violation.push_back(gates[0]);
+            std::vector<odb::dbITerm*> gates_for_diode_insertion;
+            for (auto gate : gates) {
+              odb::dbMaster* gate_master = gate->getMTerm()->getMaster();
+              if (gate_master->getType()
+                  != odb::dbMasterType::CORE_ANTENNACELL) {
+                gates_for_diode_insertion.push_back(gate);
+              }
+            }
             antenna_violations.push_back(
-                {layer->getRoutingLevel(), gates_for_violation, 1});
+                {layer->getRoutingLevel(), gates_for_diode_insertion, 1});
           }
         }
       }
