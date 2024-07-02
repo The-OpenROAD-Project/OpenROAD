@@ -127,10 +127,12 @@ void Graphics::report(const char* name, const std::optional<T>& value)
 
 void Graphics::drawResult()
 {
-  std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
-  int level = 0;
-  fetchSoftAndHard(root_, hard_macros_, soft_macros_, outlines, level);
-  outlines_ = outlines;
+  if (max_level_) {
+    std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
+    int level = 0;
+    fetchSoftAndHard(root_, hard_macros_, soft_macros_, outlines, level);
+    outlines_ = outlines;
+  }
 
   gui::Gui::get()->redraw();
   gui::Gui::get()->pause();
