@@ -484,18 +484,19 @@ void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
     odb::dbTechLayer* iter_layer = min_layer_;
     while (iter_layer) {
       if (layer_to_node_info.find(iter_layer) != layer_to_node_info.end()) {
+        NodeInfo& node_info = layer_to_node_info[iter_layer];
         if (iter_layer->getRoutingLevel() == 0) {
-          sumVia += layer_to_node_info[iter_layer];
-          layer_to_node_info[iter_layer].CAR += sumVia.PAR;
-          layer_to_node_info[iter_layer].CSR += sumVia.PSR;
-          layer_to_node_info[iter_layer].diff_CAR += sumVia.diff_PAR;
-          layer_to_node_info[iter_layer].diff_CSR += sumVia.diff_PSR;
+          sumVia += node_info;
+          node_info.CAR += sumVia.PAR;
+          node_info.CSR += sumVia.PSR;
+          node_info.diff_CAR += sumVia.diff_PAR;
+          node_info.diff_CSR += sumVia.diff_PSR;
         } else {
-          sumWire += layer_to_node_info[iter_layer];
-          layer_to_node_info[iter_layer].CAR += sumWire.PAR;
-          layer_to_node_info[iter_layer].CSR += sumWire.PSR;
-          layer_to_node_info[iter_layer].diff_CAR += sumWire.diff_PAR;
-          layer_to_node_info[iter_layer].diff_CSR += sumWire.diff_PSR;
+          sumWire += node_info;
+          node_info.CAR += sumWire.PAR;
+          node_info.CSR += sumWire.PSR;
+          node_info.diff_CAR += sumWire.diff_PAR;
+          node_info.diff_CSR += sumWire.diff_PSR;
         }
       }
       iter_layer = iter_layer->getUpperLayer();
