@@ -1,0 +1,34 @@
+@Library('utils@main') _
+
+node {
+  def COVERITY_TOKEN = credentials('COVERITY_TOKEN');
+
+  stage('Checkout'){
+    checkout scm
+  }
+
+  stage('Build and Push Docker Image') {
+    if (isDependencyInstallerChanged(env.BRANCH_NAME)) {
+      def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true)
+      commitHash = commitHash.replaceAll(/[^a-zA-Z0-9-]/, '')
+
+      DOCKER_IMAGE_TAG = pushCIImage(env.BRANCH_NAME, commitHash)
+    }
+  }
+
+  try {
+    node {
+      checkout scm
+      docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+        stage('Run Coverity') {
+          sh "git config --system --add safe.directory '*'"
+          sh 'bash -ic "./etc/CodeCoverage.sh static"';
+        }
+      }
+    }
+  } finally {
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "", "OR")
+    }
+  }
+}
