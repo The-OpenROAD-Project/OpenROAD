@@ -23,7 +23,13 @@ set block [$chip getBlock]
 puts "Power Domains List:"
 set pds [$block getPowerDomains]
 foreach pd $pds {
-    puts "PowerDomain: [$pd getName], Elements: [$pd getElements]"
+    lassign [$pd getArea] present area
+    if { $present } {
+        set area [list [$area xMin] [$area yMin] [$area xMax] [$area yMax]]
+    } else {
+        set area "unset"
+    }
+    puts "PowerDomain: [$pd getName], Elements: [$pd getElements], Area: $area"
 }
 
 
@@ -79,7 +85,3 @@ foreach inst $insts {
 
     }
 }
-
-
-
-

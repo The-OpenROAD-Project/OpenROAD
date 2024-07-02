@@ -345,10 +345,7 @@ bool use_interface_cell(utl::Logger* logger,
 bool set_domain_area(utl::Logger* logger,
                      odb::dbBlock* block,
                      const std::string& domain,
-                     float x1,
-                     float y1,
-                     float x2,
-                     float y2)
+                     const odb::Rect& area)
 {
   odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
   if (pd == nullptr) {
@@ -359,7 +356,7 @@ bool set_domain_area(utl::Logger* logger,
     return false;
   }
 
-  pd->setArea(x1, y1, x2, y2);
+  pd->setArea(area);
 
   return true;
 }
@@ -491,9 +488,10 @@ static bool associate_groups(
     }
     region->setRegionType(odb::dbRegionType::EXCLUSIVE);
     // Specifying region area
-    int x1, x2, y1, y2;
-    if (domain->getArea(x1, y1, x2, y2)) {
-      odb::dbBox::create(region, x1, y1, x2, y2);
+    odb::Rect area;
+    if (domain->getArea(area)) {
+      odb::dbBox::create(
+          region, area.xMin(), area.yMin(), area.xMax(), area.yMax());
     } else {
       logger->warn(utl::UPF,
                    21,

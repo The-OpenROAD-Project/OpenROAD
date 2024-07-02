@@ -48,28 +48,8 @@
       "parent":"dbBlock"
     },
     {
-      "name": "_x1",
-      "type": "int",
-      "default": "0",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_x2",
-      "type": "int",
-      "default": "0",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_y1",
-      "type": "int",
-      "default": "0",
-      "default": "0",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name": "_y2",
-      "type": "int",
-      "default": "0",
+      "name": "_area",
+      "type": "Rect",
       "flags":["no-set","no-get"]
     },
     {

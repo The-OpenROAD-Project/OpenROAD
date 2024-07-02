@@ -303,18 +303,23 @@ proc set_domain_area { args } {
     if { [llength $area] != 4 } {
       utl::error UPF 36 "-area is a list of 4 coordinates"
     }
-    lassign $area llx lly urx ury
-    sta::check_positive_float "-area" $llx
-    sta::check_positive_float "-area" $lly
-    sta::check_positive_float "-area" $urx
-    sta::check_positive_float "-area" $ury
+    lassign $area lx ly ux uy
+    sta::check_positive_float "-area" $lx
+    sta::check_positive_float "-area" $ly
+    sta::check_positive_float "-area" $ux
+    sta::check_positive_float "-area" $uy
   } else {
     utl::error UPF 37 "please define area"
   }
   sta::check_argc_eq1 "set_domain_area" $args
   set domain_name $args
 
-  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+  set lx [ord::microns_to_dbu $lx]
+  set ly [ord::microns_to_dbu $ly]
+  set ux [ord::microns_to_dbu $ux]
+  set uy [ord::microns_to_dbu $uy]
+  set area [odb::new_Rect $lx $ly $ux $uy]
+  upf::set_domain_area_cmd $domain_name $area
 }
 
 # Specify which power-switch model is to be used for the implementation of the corresponding switch

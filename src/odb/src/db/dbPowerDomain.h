@@ -71,10 +71,7 @@ class _dbPowerDomain : public _dbObject
   dbId<_dbGroup> _group;
   bool _top;
   dbId<_dbPowerDomain> _parent;
-  int _x1;
-  int _x2;
-  int _y1;
-  int _y2;
+  Rect _area;
   dbVector<dbId<_dbLevelShifter>> _levelshifters;
   float _voltage;
 };
