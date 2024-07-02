@@ -35,6 +35,46 @@
 
 // dbSta, OpenSTA on OpenDB
 
+/*
+  Need to distinguish between (a) hierarchical cells
+  and leaf cells (b) hierarchical ports and leaf ports.
+
+  Leaf ports/cells use weird void* field.
+
+  Two approaches:
+
+  Option A
+
+  (1) Stash all liberty cells pointers in map
+  (2) Stash all concrete ports in map
+   --note extport (on cport)
+   --     extcell (on cell)
+   These special cases require us to know the type to get the values.
+   So have to discriminate them.
+
+  A.1 use  map, maybe not to bad.
+  A.2 Possibility of using pointer tricks to avoid map (mark up lower bit,
+unusued in processors).
+
+
+  option B
+  (1) Stash all hierarchical cells in map
+  (2) Stash all hierarchical ports in map
+  -- ok, but then we need to flush table
+  -- and do house keeping with each port update.
+  -- feels wrong
+
+  option C
+  Somehow use block (which has stash of instances/ports).
+  -- wont work needs name and name discrimination needs type
+  -- wont work as db has no physical <-> virtual address conversion
+  (1) Use bterm hash table (bterm ports)
+  (2) use inst hash table (binst)
+
+
+Recommended conclusion: use map for concrete cells. They are invariant.
+
+ */
 #include "db_sta/dbNetwork.hh"
 
 #include "odb/db.h"
@@ -600,10 +640,10 @@ const char* dbNetwork::name(const Instance* instance) const
 
 const char* dbNetwork::name(const Cell* cell) const
 {
-  dbMaster* db_master = nullptr;
-  dbModule* db_module = nullptr;
+  dbMaster* db_master;
+  dbModule* db_module;
   staToDb(cell, db_master, db_module);
-  if (db_master) {
+  if (db_master || cell == top_cell_) {
     return ConcreteNetwork::name(cell);
   } else {
     return db_module->getName();
@@ -671,6 +711,10 @@ CellPortIterator* dbNetwork::portIterator(const Cell* cell) const
 
 Cell* dbNetwork::cell(const Port* port) const
 {
+  // Check -- can we just do is HPort ?
+  // rather than stash everything at leaf level
+  // looks like we have to keep cports and ccells in tables.
+  //
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->cell();
@@ -1065,6 +1109,9 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
   }
+
+  // Review with Matt -- seems to occur with some cases. (lef based ?)
+  // eg block_sta.tcl
   //
   // note the nasty default behaviour here.
   // if not a liberty port then return unknown
@@ -1501,29 +1548,11 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   delete lib_iter;
 }
 
-bool dbNetwork::isHPort(const Port* port) const
-{
-  return (h_ports_.find(port) != h_ports_.end());
-}
-
-void dbNetwork::registerHPort(const Port* port)
-{
-  h_ports_.insert(port);
-}
-
-void dbNetwork::registerHPorts()
-{
-  for (auto b : block_->getModBTerms()) {
-    h_ports_.insert(reinterpret_cast<const Port*>(b));
-  }
-}
-
 void dbNetwork::readDbNetlistAfter()
 {
   makeTopCell();
   findConstantNets();
   checkLibertyCorners();
-  registerHPorts();
 }
 
 void dbNetwork::makeTopCell()
@@ -1619,7 +1648,6 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               registerConcretePort(cur_port);
               LibertyPort* lport = lcell->findLibertyPort(port_name);
               if (lport) {
-                registerLibertyPort(cur_port, lport);
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
               } else if (!cport->direction()->isPowerGround()
@@ -1994,14 +2022,22 @@ void dbNetwork::staToDb(const Term* term,
   }
 }
 
+// Primary -- needs concrete test
 void dbNetwork::staToDb(const Cell* cell,
                         dbMaster*& master,
                         dbModule*& module) const
 {
   module = nullptr;
   master = nullptr;
+  //
+  // Check with Matt..
+  // Can we kill this test ? eg look up cell by name in library ? -- apparently
+  // not looping problem staToDb is called by name. Or do something different ??
+  // Otherwise we are stuck with map.
+  //
   if (isConcreteCell(cell) || cell == top_cell_) {
-    master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+    const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+    master = reinterpret_cast<dbMaster*>(ccell->extCell());
   } else {
     if (block_) {
       module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
@@ -2009,12 +2045,16 @@ void dbNetwork::staToDb(const Cell* cell,
   }
 }
 
+//
+// Left in, these are only called by db Cells.
+//
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
 {
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
   return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
+// called only on db cells.
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
   const ConcreteCell* ccell = cell;
@@ -2023,8 +2063,6 @@ dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 
 dbMTerm* dbNetwork::staToDb(const Port* port) const
 {
-  // Todo fix to use modbterm
-
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
@@ -2052,8 +2090,13 @@ void dbNetwork::staToDb(const Port* port,
   mterm = nullptr;
   modbterm = nullptr;
 
+  //
+  // Primary, needs concrete test
+  //
   // if it is a concrete port we get the port stuff from the extPort
   // void* field in the fake library created.
+  //
+  //
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
@@ -2218,16 +2261,18 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
-  // We keep a note of the hierarchical ports and avoid
-  // trying to coerce them with the concrete network api calls
-  // Because of the way the fake library is build up outside of
-  // odb there is no easy way of doing the type conversion.
+  // Primary: needs concrete test.
+  // Look up instance
   const Port* cur_port = port(pin);
-  if (isHPort(cur_port)) {
-    return nullptr;
+  const Instance* cur_instance = instance(pin);
+  dbInst* db_inst = nullptr;
+  dbModInst* mod_inst = nullptr;
+  staToDb(cur_instance, db_inst, mod_inst);
+  if (db_inst) {
+    LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
+    return ret;
   }
-  LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
-  return ret;
+  return nullptr;
 }
 
 /*
@@ -2252,11 +2297,6 @@ bool dbNetwork::isConcreteCell(const Cell* cell) const
 void dbNetwork::registerConcretePort(const Port* port)
 {
   concrete_ports_.insert(port);
-}
-
-void dbNetwork::registerLibertyPort(const Port* port, const LibertyPort* lport)
-{
-  liberty_ports_[port] = lport;
 }
 
 bool dbNetwork::isConcretePort(const Port* port) const

@@ -236,10 +236,7 @@ class dbNetwork : public ConcreteNetwork
   // Port functions
   Cell* cell(const Port* port) const override;
   void registerConcretePort(const Port*);
-  void registerLibertyPort(const Port*, const LibertyPort*);
-  void registerHPorts();
-  void registerHPort(const Port*);
-  bool isHPort(const Port*) const;
+
   bool isConcretePort(const Port*) const;
   bool isLibertyPort(const Port*) const;
 
@@ -344,8 +341,6 @@ class dbNetwork : public ConcreteNetwork
   bool hierarchy_ = false;
   std::set<const Cell*> concrete_cells_;
   std::set<const Port*> concrete_ports_;
-  std::map<const Port*, const LibertyPort*> liberty_ports_;
-  std::set<const Port*> h_ports_;
 };
 
 }  // namespace sta
