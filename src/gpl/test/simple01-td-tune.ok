@@ -37,8 +37,9 @@
 [INFO GPL-0029] BinSize: (  1.936  1.925 )
 [INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter:    1 overflow: 0.832 HPWL: 3651238
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:   10 overflow: 0.727 HPWL: 4009562
 [NesterovSolve] Iter:   20 overflow: 0.731 HPWL: 3997062
 [NesterovSolve] Iter:   30 overflow: 0.732 HPWL: 3995030
@@ -56,32 +57,38 @@
 [NesterovSolve] Iter:  150 overflow: 0.722 HPWL: 4025227
 [NesterovSolve] Iter:  160 overflow: 0.714 HPWL: 4039990
 [NesterovSolve] Iter:  170 overflow: 0.703 HPWL: 4061044
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  180 overflow: 0.676 HPWL: 4127122
 [NesterovSolve] Iter:  190 overflow: 0.664 HPWL: 4152168
 [NesterovSolve] Iter:  200 overflow: 0.640 HPWL: 4202374
 [NesterovSolve] Iter:  210 overflow: 0.610 HPWL: 4259798
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  220 overflow: 0.574 HPWL: 4317137
 [NesterovSolve] Iter:  230 overflow: 0.535 HPWL: 4384909
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  240 overflow: 0.485 HPWL: 4422542
 [NesterovSolve] Iter:  250 overflow: 0.433 HPWL: 4433114
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  260 overflow: 0.377 HPWL: 4431530
 [NesterovSolve] Iter:  270 overflow: 0.325 HPWL: 4435491
 [NesterovSolve] Iter:  280 overflow: 0.294 HPWL: 4464120
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  290 overflow: 0.269 HPWL: 4501197
 [NesterovSolve] Iter:  300 overflow: 0.235 HPWL: 4537610
 [NesterovSolve] Iter:  310 overflow: 0.201 HPWL: 4566148
-[INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 35 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 1.39e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  320 overflow: 0.176 HPWL: 4597391
 [NesterovSolve] Iter:  330 overflow: 0.146 HPWL: 4619555
 [NesterovSolve] Iter:  340 overflow: 0.120 HPWL: 4633301
