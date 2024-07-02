@@ -92,7 +92,7 @@ class _dbBTerm : public _dbObject
   dbId<_dbBTerm> _ground_pin;
   dbId<_dbBTerm> _supply_pin;
   std::uint32_t _sta_vertex_id;  // not saved
-  std::pair<Point, Point> _constraint_region;
+  Rect _constraint_region;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
