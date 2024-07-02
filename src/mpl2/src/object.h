@@ -203,6 +203,8 @@ class Cluster
   bool isIOCluster() const;
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
+  bool isEmpty() const;
+  bool correspondsToLogicalModule() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);

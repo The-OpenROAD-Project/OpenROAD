@@ -346,6 +346,18 @@ bool Cluster::isArrayOfInterconnectedMacros() const
   return is_array_of_interconnected_macros;
 }
 
+bool Cluster::isEmpty() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && getDbModules().empty();
+}
+
+bool Cluster::correspondsToLogicalModule() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && (getDbModules().size() == 1);
+}
+
 // Metrics Support and Statistics
 void Cluster::setMetrics(const Metrics& metrics)
 {
