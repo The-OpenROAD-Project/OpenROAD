@@ -35,6 +35,46 @@
 
 // dbSta, OpenSTA on OpenDB
 
+/*
+  Need to distinguish between (a) hierarchical cells
+  and leaf cells (b) hierarchical ports and leaf ports.
+
+  Leaf ports/cells use weird void* field.
+
+  Two approaches:
+
+  Option A
+
+  (1) Stash all liberty cells pointers in map
+  (2) Stash all concrete ports in map
+   --note extport (on cport)
+   --     extcell (on cell)
+   These special cases require us to know the type to get the values.
+   So have to discriminate them.
+
+  A.1 use  map, maybe not to bad.
+  A.2 Possibility of using pointer tricks to avoid map (mark up lower bit,
+unusued in processors).
+
+
+  option B
+  (1) Stash all hierarchical cells in map
+  (2) Stash all hierarchical ports in map
+  -- ok, but then we need to flush table
+  -- and do house keeping with each port update.
+  -- feels wrong
+
+  option C
+  Somehow use block (which has stash of instances/ports).
+  -- wont work needs name and name discrimination needs type
+  -- wont work as db has no physical <-> virtual address conversion
+  (1) Use bterm hash table (bterm ports)
+  (2) use inst hash table (binst)
+
+
+Recommended conclusion: use map for concrete cells. They are invariant.
+
+ */
 #include "db_sta/dbNetwork.hh"
 
 #include "odb/db.h"
@@ -598,52 +638,91 @@ const char* dbNetwork::name(const Instance* instance) const
   return tmpStringCopy(mod_inst->getName());
 }
 
-void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
+const char* dbNetwork::name(const Cell* cell) const
 {
-  dbModule* master = mod_inst->getMaster();
-  Cell* local_cell
-      = ConcreteNetwork::makeCell(library, master->getName(), false, nullptr);
-  master->staSetCell((void*) (local_cell));
-
-  std::map<std::string, dbModBTerm*> name2modbterm;
-
-  for (auto modbterm : master->getModBTerms()) {
-    const char* port_name = modbterm->getName();
-    Port* port = ConcreteNetwork::makePort(local_cell, port_name);
-    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
-    setDirection(port, dir);
-    name2modbterm[std::string(port_name)] = modbterm;
+  dbMaster* db_master;
+  dbModule* db_module;
+  staToDb(cell, db_master, db_module);
+  if (db_master || cell == top_cell_) {
+    return ConcreteNetwork::name(cell);
+  } else {
+    return db_module->getName();
   }
+  return nullptr;
+}
 
-  // make the bus ports. This will generate the bus bits.
-  groupBusPorts(local_cell, [=](const char* port_name) {
-    return portMsbFirst(port_name, master->getName());
-  });
+////////////////////////////////////////////////////////////////
+// Module port iterator, allows traversal across dbModulePorts
+class dbModulePortIterator : public CellPortIterator
+{
+ public:
+  explicit dbModulePortIterator(const dbModule* cell);
+  ~dbModulePortIterator();
+  virtual bool hasNext();
+  virtual Port* next();
 
-  CellPortIterator* ccport_iter = portIterator(local_cell);
-  while (ccport_iter->hasNext()) {
-    Port* cport = ccport_iter->next();
-    const ConcretePort* ccport = reinterpret_cast<const ConcretePort*>(cport);
-    std::string port_name = ccport->name();
+ private:
+  dbSet<dbModBTerm>::iterator iter_;
+  const dbModule* module_;
+};
 
-    if (ccport->isBus()) {
-      PortMemberIterator* pmi = memberIterator(cport);
-      while (pmi->hasNext()) {
-        Port* bitport = pmi->next();
-        const ConcretePort* cbitport
-            = reinterpret_cast<const ConcretePort*>(bitport);
-        dbModBTerm* modbterm = name2modbterm[std::string(cbitport->name())];
-        modbterm->staSetPort(bitport);
-      }
-    } else if (ccport->isBundle()) {
-      ;
-    } else if (ccport->isBusBit()) {
-      ;
-    } else {
-      dbModBTerm* modbterm = name2modbterm[port_name];
-      modbterm->staSetPort(cport);
+dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
+{
+  iter_ = (const_cast<dbModule*>(cell)->getModBTerms()).begin();
+  module_ = cell;
+}
+
+dbModulePortIterator::~dbModulePortIterator()
+{
+}
+
+bool dbModulePortIterator::hasNext()
+{
+  if (iter_ == (const_cast<dbModule*>(module_))->getModBTerms().end())
+    return false;
+  return true;
+}
+
+Port* dbModulePortIterator::next()
+{
+  if (iter_ == (const_cast<dbModule*>(module_))->getModBTerms().end())
+    return nullptr;
+  dbModBTerm* modbterm = *iter_;
+  Port* ret = reinterpret_cast<Port*>(modbterm);
+  // advance to next
+  iter_++;
+  return ret;
+}
+
+CellPortIterator* dbNetwork::portIterator(const Cell* cell) const
+{
+  if (isConcreteCell(cell) || cell == top_cell_) {
+    return ConcreteNetwork::portIterator(cell);
+  } else {
+    dbMaster* db_master;
+    dbModule* db_module;
+    staToDb(cell, db_master, db_module);
+    if (db_module) {
+      return new dbModulePortIterator(db_module);
     }
   }
+  return nullptr;
+}
+
+Cell* dbNetwork::cell(const Port* port) const
+{
+  // Check -- can we just do is HPort ?
+  // rather than stash everything at leaf level
+  // looks like we have to keep cports and ccells in tables.
+  //
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->cell();
+  } else {
+    const dbModBTerm* modbterm = reinterpret_cast<const dbModBTerm*>(port);
+    return (reinterpret_cast<Cell*>(modbterm->getParent()));
+  }
+  return nullptr;
 }
 
 Cell* dbNetwork::cell(const Instance* instance) const
@@ -664,9 +743,6 @@ Cell* dbNetwork::cell(const Instance* instance) const
     // look up the cell in the verilog library.
     return dbToSta(master);
   }
-  // no traversal of the hierarchy this way; we would have to split
-  // Cell into dbMaster and dbModule otherwise.  When we have full
-  // odb hierarchy this can be revisited.
   return nullptr;
 }
 
@@ -845,9 +921,8 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
 Instance* dbNetwork::instance(const Pin* pin) const
 {
-  dbITerm* iterm;
-
-  dbBTerm* bterm;
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
   dbModBTerm* modbterm = nullptr;
 
@@ -950,7 +1025,8 @@ Port* dbNetwork::port(const Pin* pin) const
   dbModITerm* moditerm;
   dbModBTerm* modbterm;
   Port* ret = nullptr;
-
+  static int debug;
+  debug++;
   // Will return the bterm for a top level pin
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
@@ -977,6 +1053,25 @@ Port* dbNetwork::port(const Pin* pin) const
   return ret;
 }
 
+PortDirection* dbNetwork::direction(const Port* port) const
+{
+  dbMTerm* mterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (bterm) {
+    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    return dir;
+  } else if (modbterm) {
+    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
+    return dir;
+  } else {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->direction();
+  }
+  return PortDirection::unknown();
+}
+
 PortDirection* dbNetwork::direction(const Pin* pin) const
 {
   // ODB does not undestand tristates so look to liberty before ODB for port
@@ -985,11 +1080,11 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   if (lib_port) {
     return lib_port->direction();
   }
+
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModBTerm* modbterm;
   dbModITerm* moditerm;
-  // pin -> iterm or moditerm
 
   staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm) {
@@ -1014,6 +1109,15 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
   }
+
+  // Review with Matt -- seems to occur with some cases. (lef based ?)
+  // eg block_sta.tcl
+  //
+  // note the nasty default behaviour here.
+  // if not a liberty port then return unknown
+  // presumably unlinked lefs fall through here
+  // This is probably a bug in the original code.
+  //
   return PortDirection::unknown();
 }
 
@@ -1355,19 +1459,6 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
       makeLibrary(lib);
     }
     readDbNetlistAfter();
-    if (hierarchy_) {
-      // we make the library for the verilog hierarchical cells
-      // this is in the same fashion as the original dbInst code
-      // which uses the void* staGetCell to associate a cell with
-      // concrete cell. We do same for verilog hierarchical cells.
-      Library* verilog_library = makeLibrary("verilog", nullptr);
-      dbSet<dbModInst> modinsts = block_->getModInsts();
-      dbSet<dbModInst>::iterator modinst_iter_ = modinsts.begin();
-      dbSet<dbModInst>::iterator modinst_end_ = modinsts.end();
-      for (; modinst_iter_ != modinst_end_; modinst_iter_++) {
-        makeVerilogCell(verilog_library, *modinst_iter_);
-      }
-    }
   }
 
   for (auto* observer : observers_) {
@@ -1389,6 +1480,9 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   const char* cell_name = master->getConstName();
   Cell* cell = makeCell(library, cell_name, true, nullptr);
   master->staSetCell(reinterpret_cast<void*>(cell));
+  // keep track of db leaf cells. These are cells for which we
+  // use the concrete network.
+  registerConcreteCell(cell);
   ConcreteCell* ccell = reinterpret_cast<ConcreteCell*>(cell);
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
@@ -1407,7 +1501,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     mterm->staSetPort(reinterpret_cast<void*>(port));
     ConcretePort* cport = reinterpret_cast<ConcretePort*>(port);
     cport->setExtPort(reinterpret_cast<void*>(mterm));
-
+    registerConcretePort(port);
     if (lib_cell) {
       LibertyPort* lib_port = lib_cell->findLibertyPort(port_name);
       if (lib_port) {
@@ -1423,6 +1517,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
   // Assume msb first busses because LEF has no clue about busses.
+  // This generates the top level ports
   groupBusPorts(cell, [](const char*) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
@@ -1443,6 +1538,13 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
       }
     }
   }
+
+  CellPortIterator* port_iter = portIterator(cell);
+  while (port_iter->hasNext()) {
+    Port* cur_port = port_iter->next();
+    registerConcretePort(cur_port);
+  }
+
   delete lib_iter;
 }
 
@@ -1464,12 +1566,20 @@ void dbNetwork::makeTopCell()
   const char* design_name = block_->getConstName();
   Library* top_lib = makeLibrary(design_name, nullptr);
   top_cell_ = makeCell(top_lib, design_name, false, nullptr);
+  // bterms in top cell include bus components
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
   groupBusPorts(top_cell_, [=](const char* port_name) {
     return portMsbFirst(port_name, design_name);
   });
+
+  // record the top level ports
+  CellPortIterator* port_iter = portIterator(top_cell_);
+  while (port_iter->hasNext()) {
+    Port* cur_port = port_iter->next();
+    registerConcretePort(cur_port);
+  }
 }
 
 Port* dbNetwork::makeTopPort(dbBTerm* bterm)
@@ -1478,6 +1588,7 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
   Port* port = makePort(top_cell_, port_name);
   PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
+  registerConcretePort(port);
   return port;
 }
 
@@ -1533,6 +1644,8 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
             while (port_iter->hasNext()) {
               ConcretePort* cport = port_iter->next();
               const char* port_name = cport->name();
+              Port* cur_port = reinterpret_cast<Port*>(cport);
+              registerConcretePort(cur_port);
               LibertyPort* lport = lcell->findLibertyPort(port_name);
               if (lport) {
                 cport->setLibertyPort(lport);
@@ -1738,9 +1851,13 @@ Port* dbNetwork::makePort(Cell* cell, const char* name)
     }
     // Making the bterm creates the port in the db callback
     odb::dbBTerm::create(net, name);
-    return findPort(cell, name);
+    Port* ret = findPort(cell, name);
+    registerConcretePort(ret);
+    return ret;
   }
-  return ConcreteNetwork::makePort(cell, name);
+  Port* cur_port = ConcreteNetwork::makePort(cell, name);
+  registerConcretePort(cur_port);
+  return cur_port;
 }
 
 Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
@@ -1905,31 +2022,39 @@ void dbNetwork::staToDb(const Term* term,
   }
 }
 
+// Primary -- needs concrete test
 void dbNetwork::staToDb(const Cell* cell,
                         dbMaster*& master,
                         dbModule*& module) const
 {
   module = nullptr;
   master = nullptr;
-  if (findLibertyCell(name(cell))) {
-    master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
+  //
+  // Check with Matt..
+  // Can we kill this test ? eg look up cell by name in library ? -- apparently
+  // not looping problem staToDb is called by name. Or do something different ??
+  // Otherwise we are stuck with map.
+  //
+  if (isConcreteCell(cell) || cell == top_cell_) {
+    const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+    master = reinterpret_cast<dbMaster*>(ccell->extCell());
   } else {
     if (block_) {
-      if (block_->findModule(name(cell))) {
-        module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
-      } else {
-        master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
-      }
+      module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
     }
   }
 }
 
+//
+// Left in, these are only called by db Cells.
+//
 dbMaster* dbNetwork::staToDb(const Cell* cell) const
 {
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
   return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
+// called only on db cells.
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
   const ConcreteCell* ccell = cell;
@@ -1938,10 +2063,56 @@ dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 
 dbMTerm* dbNetwork::staToDb(const Port* port) const
 {
-  // Todo fix to use modbterm
-
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return reinterpret_cast<dbMTerm*>(cport->extPort());
+}
+
+dbBTerm* dbNetwork::isTopPort(const Port* port) const
+{
+  CellPortIterator* port_iter = portIterator(top_cell_);
+  while (port_iter->hasNext()) {
+    if (port == port_iter->next()) {
+      const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+      if (cport->isBus()) {
+        return block_->findBTerm(busName(port));
+      }
+      return block_->findBTerm(name(port));
+    }
+  }
+  return nullptr;
+}
+
+void dbNetwork::staToDb(const Port* port,
+                        dbBTerm*& bterm,
+                        dbMTerm*& mterm,
+                        dbModBTerm*& modbterm) const
+{
+  mterm = nullptr;
+  modbterm = nullptr;
+
+  //
+  // Primary, needs concrete test
+  //
+  // if it is a concrete port we get the port stuff from the extPort
+  // void* field in the fake library created.
+  //
+  //
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
+    return;
+  } else {
+    // just get the port directly from odb
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
+    dbObjectType type = obj->getObjectType();
+    if (type == dbModBTermObj) {
+      Port* port_unconst = const_cast<Port*>(port);
+      modbterm = reinterpret_cast<dbModBTerm*>(port_unconst);
+    } else if (type == dbBTermObj) {
+      Port* port_unconst = const_cast<Port*>(port);
+      bterm = reinterpret_cast<dbBTerm*>(port_unconst);
+    }
+  }
 }
 
 dbMTerm* dbNetwork::staToDb(const LibertyPort* port) const
@@ -1998,7 +2169,7 @@ Net* dbNetwork::dbToSta(dbModNet* net) const
 
 Port* dbNetwork::dbToSta(dbModBTerm* modbterm) const
 {
-  return reinterpret_cast<Port*>(modbterm->staPort());
+  return reinterpret_cast<Port*>(modbterm);
 }
 
 Term* dbNetwork::dbToStaTerm(dbModITerm* moditerm) const
@@ -2013,7 +2184,7 @@ Term* dbNetwork::dbToStaTerm(dbModBTerm* modbterm) const
 
 Cell* dbNetwork::dbToSta(dbModule* master) const
 {
-  return ((Cell*) (master->getStaCell()));
+  return reinterpret_cast<Cell*>(master);
 }
 
 Instance* dbNetwork::dbToSta(dbInst* inst) const
@@ -2086,6 +2257,77 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
 LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 {
   return libertyCell(dbToSta(inst));
+}
+
+LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
+{
+  // Primary: needs concrete test.
+  // Look up instance
+  const Port* cur_port = port(pin);
+  const Instance* cur_instance = instance(pin);
+  dbInst* db_inst = nullptr;
+  dbModInst* mod_inst = nullptr;
+  staToDb(cur_instance, db_inst, mod_inst);
+  if (db_inst) {
+    LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
+    return ret;
+  }
+  return nullptr;
+}
+
+/*
+We keep a registry of the concrete cells.
+For these we know to use the concrete network interface.
+The concrete cells are created outside of the odb world
+-- attempting to type cast those can lead to bad pointers.
+So we simply note them and then when we inspect a cell
+we can decide whether or not to use the ConcreteNetwork api.
+*/
+
+void dbNetwork::registerConcreteCell(const Cell* cell)
+{
+  concrete_cells_.insert(cell);
+}
+
+bool dbNetwork::isConcreteCell(const Cell* cell) const
+{
+  return (concrete_cells_.find(cell) != concrete_cells_.end());
+}
+
+void dbNetwork::registerConcretePort(const Port* port)
+{
+  concrete_ports_.insert(port);
+}
+
+bool dbNetwork::isConcretePort(const Port* port) const
+{
+  if (concrete_ports_.find(port) != concrete_ports_.end()) {
+    return true;
+  }
+  return false;
+}
+
+bool dbNetwork::hasMembers(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->hasMembers();
+  } else {
+    // TODO: bus ports in hierarchy. (Bus support in next pull)
+    return false;
+  }
+  return false;
+}
+
+Port* dbNetwork::findMember(const Port* port, int index) const
+{
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return reinterpret_cast<Port*>(cport->findMember(index));
+  } else {
+    // TODO: hierarhcial ports, bus support in next pull.
+    return nullptr;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
