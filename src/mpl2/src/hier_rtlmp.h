@@ -132,6 +132,7 @@ class HierRTLMP
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugOnlyFinalResult(bool only_final_result);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
