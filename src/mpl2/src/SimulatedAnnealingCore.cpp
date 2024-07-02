@@ -518,7 +518,10 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
       neg_index2 = i;
     }
   }
-  std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
+
+  if (neg_index1 >= 0 && neg_index2 >= 0) {
+    std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
+  }
 }
 
 template <class T>

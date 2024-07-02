@@ -226,7 +226,7 @@ class AntennaChecker
   int net_violation_count_{0};
   float ratio_margin_{0};
   std::string report_file_name_;
-  odb::dbTechLayer* min_layer_;
+  odb::dbTechLayer* min_layer_{nullptr};
   std::vector<odb::dbNet*> nets_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;

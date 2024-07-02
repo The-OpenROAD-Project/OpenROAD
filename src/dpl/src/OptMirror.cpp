@@ -113,7 +113,7 @@ void OptimizeMirroring::run()
                   22,
                   "HPWL after           {:8.1f} u",
                   block_->dbuToMicrons(hpwl_after));
-    double hpwl_delta = (hpwl_before != 0.0)
+    double hpwl_delta = (hpwl_before != 0)
                             ? (hpwl_after - hpwl_before) / hpwl_before * 100
                             : 0.0;
     logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
