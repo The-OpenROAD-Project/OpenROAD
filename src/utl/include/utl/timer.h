@@ -36,6 +36,8 @@
 #pragma once
 
 #include <chrono>
+#include <cmath>
+#include <ctime>
 #include <iostream>
 
 #include "utl/Logger.h"
@@ -77,5 +79,21 @@ class DebugScopedTimer : public Timer
 };
 
 std::ostream& operator<<(std::ostream& os, const Timer& t);
+
+class ScopedStatistics : public Timer
+{
+ public:
+  ScopedStatistics(utl::Logger* logger, std::string msg);
+  ~ScopedStatistics() override;
+
+ private:
+  size_t getStartRSZ();
+  size_t getPeakRSZ();
+
+  std::string msg_;
+  size_t start_rsz_;
+  utl::Logger* logger_;
+  clock_t cpu_start_;
+};
 
 }  // namespace utl

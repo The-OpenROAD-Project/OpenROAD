@@ -66,6 +66,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -2528,6 +2529,7 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            bool verbose)
 {
+  utl::ScopedStatistics stat(logger_, "repair_design");
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2717,6 +2719,7 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  utl::ScopedStatistics stat(logger_, "repair_timing");
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2736,6 +2739,7 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
+  utl::ScopedStatistics stat(logger_, "repair_timing");
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,

@@ -57,6 +57,7 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
+#include "utl/timer.h"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -923,6 +924,7 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  utl::ScopedStatistics stat(logger_, "detailed_route");
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     USENONPREFTRACKS = false;
   }
