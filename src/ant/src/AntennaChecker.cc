@@ -478,24 +478,24 @@ void AntennaChecker::calculatePAR(GateToLayerToNodeInfo& gate_info)
 // calculate CAR and CSR of wires and vias
 void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
 {
-  for (auto& gate_it : gate_info) {
+  for (auto& [gate, layer_to_node_info] : gate_info) {
     NodeInfo sumWire, sumVia;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
     odb::dbTechLayer* iter_layer = min_layer_;
     while (iter_layer) {
-      if (gate_it.second.find(iter_layer) != gate_it.second.end()) {
+      if (layer_to_node_info.find(iter_layer) != layer_to_node_info.end()) {
         if (iter_layer->getRoutingLevel() == 0) {
-          sumVia += gate_it.second[iter_layer];
-          gate_it.second[iter_layer].CAR += sumVia.PAR;
-          gate_it.second[iter_layer].CSR += sumVia.PSR;
-          gate_it.second[iter_layer].diff_CAR += sumVia.diff_PAR;
-          gate_it.second[iter_layer].diff_CSR += sumVia.diff_PSR;
+          sumVia += layer_to_node_info[iter_layer];
+          layer_to_node_info[iter_layer].CAR += sumVia.PAR;
+          layer_to_node_info[iter_layer].CSR += sumVia.PSR;
+          layer_to_node_info[iter_layer].diff_CAR += sumVia.diff_PAR;
+          layer_to_node_info[iter_layer].diff_CSR += sumVia.diff_PSR;
         } else {
-          sumWire += gate_it.second[iter_layer];
-          gate_it.second[iter_layer].CAR += sumWire.PAR;
-          gate_it.second[iter_layer].CSR += sumWire.PSR;
-          gate_it.second[iter_layer].diff_CAR += sumWire.diff_PAR;
-          gate_it.second[iter_layer].diff_CSR += sumWire.diff_PSR;
+          sumWire += layer_to_node_info[iter_layer];
+          layer_to_node_info[iter_layer].CAR += sumWire.PAR;
+          layer_to_node_info[iter_layer].CSR += sumWire.PSR;
+          layer_to_node_info[iter_layer].diff_CAR += sumWire.diff_PAR;
+          layer_to_node_info[iter_layer].diff_CSR += sumWire.diff_PSR;
         }
       }
       iter_layer = iter_layer->getUpperLayer();
