@@ -40,7 +40,7 @@ Timing-driven iterations are triggered based on a list of overflow threshold
 values. Each time the placer execution reaches these overflow values, the 
 resizer is executed. This process can be costly in terms of runtime. The 
 overflow values for recalculating weights can be modified with 
-`-timing_driven_net_reweight_overflow`, you may use less overflow threhsold 
+`-timing_driven_net_reweight_overflow`, you may use less overflow threshold 
 values to decrease runtime, for example.
 
 When the routability-driven option is enabled, each of its iterations will 
@@ -49,9 +49,9 @@ will have the area of their logic cells inflated to reduce routing congestion.
 The iterations will attempt to achieve the target RC (routing congestion) 
 by comparing it to the final RC at each iteration. If the algorithm takes too 
 long during routability-driven execution, consider raising the target RC value 
-to alleviate the constraints. The final RC value is calculated based on the 
-weight coefficients. The algorithm will stop if the RC is not decreasing 
-for three consecutive iterations.
+(`-routability_target_rc_metric`) to alleviate the constraints. The final RC 
+value is calculated based on the weight coefficients. The algorithm will stop 
+if the RC is not decreasing for three consecutive iterations.
 
 Routability-driven arguments
 - They begin with `-routability`.
@@ -274,6 +274,10 @@ about this tool.
 -   The routability-driven mode has been implemented by Mingyu Woo.
 -   Timing-driven mode re-implementation is ongoing with the current
     clean-code structure.
+-   RUDY: Spindler, Peter, and Frank M. Johannes. "Fast and accurate routing 
+    demand estimation for efficient routability-driven placement. In 2007 
+    Design, Automation & Test in Europe Conference & Exhibition." (2007): 1-6.
+    [(.pdf)](https://past.date-conference.com/proceedings-archive/2007/DATE07/PDFFILES/08.7_1.PDF)
 
  ## Authors
 
