@@ -300,13 +300,14 @@ _installRHELPackages() {
 
     yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
+        yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-24.el9.noarch.rpm
+        yum -y install https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-24.el9.noarch.rpm
         rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
+
     yum -y install tzdata
     yum -y install redhat-rpm-config rpm-build
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
     yum -y install \
         autoconf \
         automake \
@@ -319,9 +320,6 @@ _installRHELPackages() {
         glibc-devel \
         libtool \
         libffi-devel \
-        llvm7.0 \
-        llvm7.0-devel \
-        llvm7.0-libs \
         make \
         pcre-devel \
         pcre2-devel \
@@ -335,7 +333,6 @@ _installRHELPackages() {
         qt5-qtimageformats \
         readline \
         readline-devel \
-        tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
         tcl-thread-devel \
@@ -344,8 +341,9 @@ _installRHELPackages() {
         zlib-devel
 
     yum install -y \
-        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+        https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/bison-3.7.4-5.el9.x86_64.rpm \
+        https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm
 
     wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
     tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
@@ -715,14 +713,20 @@ EOF
         fi
         ;;
     "Red Hat Enterprise Linux")
-        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            _checkIsLocal
-            _installRHELPackages
-            _installRHELCleanUp
-        fi
-        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-            _installCommonDev
-            _installOrTools "centos" "8" "amd64"
+        version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ "$version" == 9.* ]]; then
+            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+                _checkIsLocal
+                _installRHELPackages
+                _installRHELCleanUp
+            fi
+            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+                _installCommonDev
+                _installOrTools "centos" "8" "amd64"
+            fi
+        else
+            echo "[ERROR] Only version 9 of RHEL supported" >&2
+            exit 1
         fi
         ;;
     "Darwin" )
