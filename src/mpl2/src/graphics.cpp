@@ -439,6 +439,7 @@ void Graphics::eraseDrawing()
   macro_blockages_.clear();
   placement_blockages_.clear();
   bundled_nets_.clear();
+  outline_.reset(0, 0, 0, 0);
 }
 
 }  // namespace mpl2

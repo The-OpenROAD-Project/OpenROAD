@@ -13,6 +13,13 @@ set_dft_config -max_length 10
 
 scan_replace
 
+proc place_inst { inst x y } {
+  set db_inst [[ord::get_db_block] findInst $inst]
+  $db_inst setLocation $x $y
+  $db_inst setOrient R0
+  $db_inst setPlacementStatus PLACED
+}
+
 place_inst ff1_clk1_rising  1000 2000
 place_inst ff2_clk1_rising  5000 6000
 place_inst ff3_clk1_rising  9500 9000
