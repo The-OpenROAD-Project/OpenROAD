@@ -134,12 +134,10 @@ void ScanArchitect::inferChainCount()
   std::unordered_map<size_t, uint64_t> hash_domains_total_bits
       = scan_cells_bucket_->getTotalBitsPerHashDomain();
 
-  if (config_.getMaxLength().has_value()) {
+  if (auto max_length = config_.getMaxLength(); max_length.has_value()) {
     // The user is saying that we should respect this max_length
-    hash_domain_to_limits_
-        = inferChainCountFromMaxLength(hash_domains_total_bits,
-                                       config_.getMaxLength().value(),
-                                       config_.getMaxChains());
+    hash_domain_to_limits_ = inferChainCountFromMaxLength(
+        hash_domains_total_bits, max_length.value(), config_.getMaxChains());
   } else {
     // The user did not specify any max_length, let's use a default of 200
     hash_domain_to_limits_ = inferChainCountFromMaxLength(
