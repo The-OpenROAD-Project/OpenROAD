@@ -132,6 +132,7 @@ class HierRTLMP
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugOnlyFinalResult(bool only_final_result);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -200,12 +201,18 @@ class HierRTLMP
   void treatEachMacroAsSingleCluster();
   void resetSAParameters();
   void multilevelAutocluster(Cluster* parent);
+  void updateSizeThresholds();
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   void updateInstancesAssociation(Cluster* cluster);
   void updateInstancesAssociation(odb::dbModule* module,
                                   int cluster_id,
                                   bool include_macro);
   void breakCluster(Cluster* parent);
+  void createFlatCluster(odb::dbModule* module, Cluster* parent);
+  void createCluster(Cluster* parent);
+  void createCluster(odb::dbModule* module, Cluster* parent);
+  void addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module);
+  void incorporateNewClusterToTree(Cluster* cluster, Cluster* parent);
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);

@@ -7743,8 +7743,8 @@ class dbPowerDomain : public dbObject
   std::vector<dbIsolation*> getIsolations();
   std::vector<dbLevelShifter*> getLevelShifters();
 
-  bool setArea(float x1, float y1, float x2, float y2);
-  bool getArea(int& x1, int& y1, int& x2, int& y2);
+  void setArea(const Rect& area);
+  bool getArea(Rect& area);
 
   // User Code End dbPowerDomain
 };
