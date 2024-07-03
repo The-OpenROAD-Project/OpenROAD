@@ -348,8 +348,9 @@ static void getRegisteredCommands(
         == TCL_OK) {
       for (int i = 0; i < cmd_size; i++) {
         std::string cmd_name = Tcl_GetString(cmds_objs[i]);
-        if (cmd_name != "source")
+        if (cmd_name != "source") {
           openroad_commands.insert(cmd_name);
+        }
       }
     }
   }
