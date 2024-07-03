@@ -886,7 +886,7 @@ void HierRTLMP::createIOClusters()
     if (cluster_id == -1) {
       logger_->error(
           MPL,
-          2,
+          102,
           "Floorplan has not been initialized? Pin location error for {}.",
           term->getName());
     } else {
@@ -915,7 +915,7 @@ void HierRTLMP::createIOClusters()
 
   // At this point the cluster map has only the root (id = 0) and bundledIOs
   if (cluster_map_.size() == 1) {
-    logger_->warn(MPL, 26, "Design has no IO pins!");
+    logger_->warn(MPL, 126, "Design has no IO pins!");
     design_has_io_clusters_ = false;
   }
 }
