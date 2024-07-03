@@ -71,8 +71,8 @@ HierRTLMP::HierRTLMP(sta::dbNetwork* network,
       db_(db),
       sta_(sta),
       logger_(logger),
-      tritonpart_(tritonpart) /*,
-      clustering_engine_(nullptr) */
+      tritonpart_(tritonpart),
+      clustering_engine_(nullptr)
 {
 }
 
@@ -187,6 +187,8 @@ void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
 void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
 {
   large_net_threshold_ = large_net_threshold;
+
+  tree_.large_net_threshold = large_net_threshold;
 }
 
 void HierRTLMP::setSignatureNetThreshold(int signature_net_threshold)
@@ -464,13 +466,12 @@ void HierRTLMP::initPhysicalHierarchy()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  /*
-  clustering_engine_ = std::make_unique<ClusteringEngine>(block_, logger_);
+  clustering_engine_
+      = std::make_unique<ClusteringEngine>(block_, network_, logger_);
   clustering_engine_->setDesignMetrics(metrics_);
   clustering_engine_->setTargetStructure(&tree_);
 
   clustering_engine_->buildPhysicalHierarchy();
-  */
 
   initPhysicalHierarchy();
 

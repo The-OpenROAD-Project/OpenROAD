@@ -34,21 +34,44 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <unordered_map>
+#include <vector>
 
 namespace utl {
 class Logger;
+}
+
+namespace sta {
+class dbNetwork;
 }
 
 namespace odb {
 class dbBlock;
 class dbInst;
 class dbBTerm;
+class dbMaster;
+class dbITerm;
 }  // namespace odb
 
 namespace mpl2 {
 class Metrics;
 class Cluster;
+class HardMacro;
+
+struct DataFlow
+{
+  const int register_dist = 5;
+  const float factor = 2.0;
+  const float weight = 1;
+
+  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
+      macro_pin_to_regs;
+  std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
+      io_to_regs;
+  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
+      macro_pin_to_macros;
+};
 
 struct SizeThresholds
 {
@@ -66,6 +89,7 @@ struct SizeThresholds
 struct PhysicalHierarchyMaps
 {
   std::map<int, Cluster*> id_to_cluster;
+  std::map<odb::dbInst*, HardMacro*> inst_to_hard;
   std::unordered_map<odb::dbInst*, int> inst_to_cluster_id;
   std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_id;
 
@@ -80,6 +104,7 @@ struct PhysicalHierarchy
         coarsening_ratio(0),
         max_level(0),
         bundled_ios_per_edge(0),
+        large_net_threshold(0),
         has_io_clusters(true)
   {
   }
@@ -91,6 +116,7 @@ struct PhysicalHierarchy
   float coarsening_ratio;
   int max_level;
   int bundled_ios_per_edge;
+  int large_net_threshold;  // used to ignore global nets
 
   bool has_io_clusters;
 };
@@ -98,7 +124,9 @@ struct PhysicalHierarchy
 class ClusteringEngine
 {
  public:
-  ClusteringEngine(odb::dbBlock* block, utl::Logger* logger);
+  ClusteringEngine(odb::dbBlock* block,
+                   sta::dbNetwork* network,
+                   utl::Logger* logger);
 
   void setDesignMetrics(Metrics* design_metrics);
   void setTargetStructure(PhysicalHierarchy* tree);
@@ -111,15 +139,44 @@ class ClusteringEngine
   void createIOClusters();
   void mapIOPads();
 
-  odb::dbBlock* block_;
-  utl::Logger* logger_;
-  Metrics* design_metrics_;
+  // Methods for data flow
+  void createDataFlow();
+  void dataFlowDFSIOPin(int parent,
+                        int idx,
+                        std::vector<std::set<odb::dbInst*>>& insts,
+                        std::map<int, odb::dbBTerm*>& io_pin_vertex,
+                        std::map<int, odb::dbInst*>& std_cell_vertex,
+                        std::map<int, odb::dbITerm*>& macro_pin_vertex,
+                        std::vector<bool>& stop_flag_vec,
+                        std::vector<bool>& visited,
+                        std::vector<std::vector<int>>& vertices,
+                        std::vector<std::vector<int>>& hyperedges,
+                        bool backward_search);
+  void dataFlowDFSMacroPin(int parent,
+                           int idx,
+                           std::vector<std::set<odb::dbInst*>>& std_cells,
+                           std::vector<std::set<odb::dbInst*>>& macros,
+                           std::map<int, odb::dbBTerm*>& io_pin_vertex,
+                           std::map<int, odb::dbInst*>& std_cell_vertex,
+                           std::map<int, odb::dbITerm*>& macro_pin_vertex,
+                           std::vector<bool>& stop_flag_vec,
+                           std::vector<bool>& visited,
+                           std::vector<std::vector<int>>& vertices,
+                           std::vector<std::vector<int>>& hyperedges,
+                           bool backward_search);
 
+  static bool isIgnoredMaster(odb::dbMaster* master);
+
+  odb::dbBlock* block_;
+  sta::dbNetwork* network_;
+  utl::Logger* logger_;
+
+  Metrics* design_metrics_;
   PhysicalHierarchy* tree_;
 
-  // Criado na engine
   int id_;
   SizeThresholds level_thresholds_;
+  DataFlow data_flow;
 };
 
 }  // namespace mpl2

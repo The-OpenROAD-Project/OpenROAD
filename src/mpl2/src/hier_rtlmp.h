@@ -335,8 +335,7 @@ class HierRTLMP
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
-
-  /*std::unique_ptr<ClusteringEngine> clustering_engine_;*/
+  std::unique_ptr<ClusteringEngine> clustering_engine_;
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;

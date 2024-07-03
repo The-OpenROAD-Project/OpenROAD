@@ -33,13 +33,17 @@
 
 #include "clusterEngine.h"
 
+#include "db_sta/dbNetwork.hh"
 #include "object.h"
+#include "sta/Liberty.hh"
 
 namespace mpl2 {
 using utl::MPL;
 
-ClusteringEngine::ClusteringEngine(odb::dbBlock* block, utl::Logger* logger)
-    : block_(block), logger_(logger), id_(0)
+ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
+                                   sta::dbNetwork* network,
+                                   utl::Logger* logger)
+    : block_(block), network_(network), logger_(logger), id_(0)
 {
 }
 
@@ -49,6 +53,7 @@ void ClusteringEngine::buildPhysicalHierarchy()
   setDefaultThresholds();
 
   createIOClusters();
+  createDataFlow();
 }
 
 void ClusteringEngine::setDesignMetrics(Metrics* design_metrics)
@@ -335,6 +340,370 @@ void ClusteringEngine::mapIOPads()
         odb::dbInst* inst = iterm->getInst();
         tree_->maps.bterm_to_inst[bterm] = inst;
       }
+    }
+  }
+}
+
+// Dataflow is used to improve quality of macro placement.
+// Here we model each std cell instance, IO pin and macro pin as vertices.
+void ClusteringEngine::createDataFlow()
+{
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Creating dataflow...");
+  if (data_flow.register_dist <= 0) {
+    return;
+  }
+
+  // create vertex id property for std cell, IO pin and macro pin
+  std::map<int, odb::dbBTerm*> io_pin_vertex;
+  std::map<int, odb::dbInst*> std_cell_vertex;
+  std::map<int, odb::dbITerm*> macro_pin_vertex;
+
+  std::vector<bool> stop_flag_vec;
+  // assign vertex_id property of each Bterm
+  // All boundary terms are marked as sequential stopping pts
+  for (odb::dbBTerm* term : block_->getBTerms()) {
+    odb::dbIntProperty::create(term, "vertex_id", stop_flag_vec.size());
+    io_pin_vertex[stop_flag_vec.size()] = term;
+    stop_flag_vec.push_back(true);
+  }
+
+  // assign vertex_id property of each instance
+  for (auto inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (!liberty_cell) {
+      continue;
+    }
+
+    // Mark registers
+    odb::dbIntProperty::create(inst, "vertex_id", stop_flag_vec.size());
+    std_cell_vertex[stop_flag_vec.size()] = inst;
+
+    if (liberty_cell->hasSequentials()) {
+      stop_flag_vec.push_back(true);
+    } else {
+      stop_flag_vec.push_back(false);
+    }
+  }
+  // assign vertex_id property of each macro pin
+  // all macro pins are flagged as sequential stopping pt
+  for (auto& [macro, hard_macro] : tree_->maps.inst_to_hard) {
+    for (odb::dbITerm* pin : macro->getITerms()) {
+      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+        continue;
+      }
+      odb::dbIntProperty::create(pin, "vertex_id", stop_flag_vec.size());
+      macro_pin_vertex[stop_flag_vec.size()] = pin;
+      stop_flag_vec.push_back(true);
+    }
+  }
+
+  //
+  // Num of vertices will be # of boundary pins + number of logical std cells +
+  // number of macro pins)
+  //
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Number of vertices: {}",
+             stop_flag_vec.size());
+
+  // create hypergraphs
+  std::vector<std::vector<int>> vertices(stop_flag_vec.size());
+  std::vector<std::vector<int>> backward_vertices(stop_flag_vec.size());
+  std::vector<std::vector<int>> hyperedges;  // dircted hypergraph
+  // traverse the netlist
+  for (odb::dbNet* net : block_->getNets()) {
+    // ignore all the power net
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    int driver_id = -1;      // driver vertex id
+    std::set<int> loads_id;  // load vertex id
+    bool ignore = false;
+    // check the connected instances
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      odb::dbMaster* master = inst->getMaster();
+      // We ignore nets connecting ignored masters
+      if (isIgnoredMaster(master)) {
+        ignore = true;
+        break;
+      }
+      int vertex_id = -1;
+      if (master->isBlock()) {
+        vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
+      } else {
+        vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
+      }
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        driver_id = vertex_id;
+      } else {
+        loads_id.insert(vertex_id);
+      }
+    }
+    if (ignore) {
+      continue;  // the nets with Pads should be ignored
+    }
+
+    // check the connected IO pins  of the net
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      const int vertex_id
+          = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        driver_id = vertex_id;
+      } else {
+        loads_id.insert(vertex_id);
+      }
+    }
+
+    //
+    // Skip high fanout nets or nets that do not have valid driver or loads
+    //
+    if (driver_id < 0 || loads_id.empty()
+        || loads_id.size() > tree_->large_net_threshold) {
+      continue;
+    }
+
+    // Create the hyperedge
+    std::vector<int> hyperedge{driver_id};
+    for (auto& load : loads_id) {
+      if (load != driver_id) {
+        hyperedge.push_back(load);
+      }
+    }
+    vertices[driver_id].push_back(hyperedges.size());
+    for (int i = 1; i < hyperedge.size(); i++) {
+      backward_vertices[hyperedge[i]].push_back(hyperedges.size());
+    }
+    hyperedges.push_back(hyperedge);
+  }  // end net traversal
+
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Created hypergraph");
+
+  // traverse hypergraph to build dataflow
+  for (auto [src, src_pin] : io_pin_vertex) {
+    int idx = 0;
+    std::vector<bool> visited(vertices.size(), false);
+    std::vector<std::set<odb::dbInst*>> insts(data_flow.register_dist);
+    dataFlowDFSIOPin(src,
+                     idx,
+                     insts,
+                     io_pin_vertex,
+                     std_cell_vertex,
+                     macro_pin_vertex,
+                     stop_flag_vec,
+                     visited,
+                     vertices,
+                     hyperedges,
+                     false);
+    dataFlowDFSIOPin(src,
+                     idx,
+                     insts,
+                     io_pin_vertex,
+                     std_cell_vertex,
+                     macro_pin_vertex,
+                     stop_flag_vec,
+                     visited,
+                     backward_vertices,
+                     hyperedges,
+                     true);
+    data_flow.io_to_regs.emplace_back(src_pin, insts);
+  }
+
+  for (auto [src, src_pin] : macro_pin_vertex) {
+    int idx = 0;
+    std::vector<bool> visited(vertices.size(), false);
+    std::vector<std::set<odb::dbInst*>> std_cells(data_flow.register_dist);
+    std::vector<std::set<odb::dbInst*>> macros(data_flow.register_dist);
+    dataFlowDFSMacroPin(src,
+                        idx,
+                        std_cells,
+                        macros,
+                        io_pin_vertex,
+                        std_cell_vertex,
+                        macro_pin_vertex,
+                        stop_flag_vec,
+                        visited,
+                        vertices,
+                        hyperedges,
+                        false);
+    dataFlowDFSMacroPin(src,
+                        idx,
+                        std_cells,
+                        macros,
+                        io_pin_vertex,
+                        std_cell_vertex,
+                        macro_pin_vertex,
+                        stop_flag_vec,
+                        visited,
+                        backward_vertices,
+                        hyperedges,
+                        true);
+    data_flow.macro_pin_to_regs.emplace_back(src_pin, std_cells);
+    data_flow.macro_pin_to_macros.emplace_back(src_pin, macros);
+  }
+}
+
+/* static */
+bool ClusteringEngine::isIgnoredMaster(odb::dbMaster* master)
+{
+  // IO corners are sometimes marked as end caps
+  return master->isPad() || master->isCover() || master->isEndCap();
+}
+
+// Forward or Backward DFS search to find sequential paths from/to IO pins based
+// on hop count to macro pins
+void ClusteringEngine::dataFlowDFSIOPin(
+    int parent,
+    int idx,
+    std::vector<std::set<odb::dbInst*>>& insts,
+    std::map<int, odb::dbBTerm*>& io_pin_vertex,
+    std::map<int, odb::dbInst*>& std_cell_vertex,
+    std::map<int, odb::dbITerm*>& macro_pin_vertex,
+    std::vector<bool>& stop_flag_vec,
+    std::vector<bool>& visited,
+    std::vector<std::vector<int>>& vertices,
+    std::vector<std::vector<int>>& hyperedges,
+    bool backward_search)
+{
+  visited[parent] = true;
+  if (stop_flag_vec[parent]) {
+    if (parent < io_pin_vertex.size()) {
+      ;  // currently we do not consider IO pin to IO pin connection
+    } else if (parent < io_pin_vertex.size() + std_cell_vertex.size()) {
+      insts[idx].insert(std_cell_vertex[parent]);
+    } else {
+      insts[idx].insert(macro_pin_vertex[parent]->getInst());
+    }
+    idx++;
+  }
+
+  if (idx >= data_flow.register_dist) {
+    return;
+  }
+
+  if (!backward_search) {
+    for (auto& hyperedge : vertices[parent]) {
+      for (auto& vertex : hyperedges[hyperedge]) {
+        // we do not consider pin to pin
+        if (visited[vertex] || vertex < io_pin_vertex.size()) {
+          continue;
+        }
+        dataFlowDFSIOPin(vertex,
+                         idx,
+                         insts,
+                         io_pin_vertex,
+                         std_cell_vertex,
+                         macro_pin_vertex,
+                         stop_flag_vec,
+                         visited,
+                         vertices,
+                         hyperedges,
+                         backward_search);
+      }
+    }
+  } else {
+    for (auto& hyperedge : vertices[parent]) {
+      const int vertex = hyperedges[hyperedge][0];  // driver vertex
+      // we do not consider pin to pin
+      if (visited[vertex] || vertex < io_pin_vertex.size()) {
+        continue;
+      }
+      dataFlowDFSIOPin(vertex,
+                       idx,
+                       insts,
+                       io_pin_vertex,
+                       std_cell_vertex,
+                       macro_pin_vertex,
+                       stop_flag_vec,
+                       visited,
+                       vertices,
+                       hyperedges,
+                       backward_search);
+    }
+  }
+}
+
+// Forward or Backward DFS search to find sequential paths between Macros based
+// on hop count
+void ClusteringEngine::dataFlowDFSMacroPin(
+    int parent,
+    int idx,
+    std::vector<std::set<odb::dbInst*>>& std_cells,
+    std::vector<std::set<odb::dbInst*>>& macros,
+    std::map<int, odb::dbBTerm*>& io_pin_vertex,
+    std::map<int, odb::dbInst*>& std_cell_vertex,
+    std::map<int, odb::dbITerm*>& macro_pin_vertex,
+    std::vector<bool>& stop_flag_vec,
+    std::vector<bool>& visited,
+    std::vector<std::vector<int>>& vertices,
+    std::vector<std::vector<int>>& hyperedges,
+    bool backward_search)
+{
+  visited[parent] = true;
+  if (stop_flag_vec[parent]) {
+    if (parent < io_pin_vertex.size()) {
+      ;  // the connection between IO and macro pins have been considers
+    } else if (parent < io_pin_vertex.size() + std_cell_vertex.size()) {
+      std_cells[idx].insert(std_cell_vertex[parent]);
+    } else {
+      macros[idx].insert(macro_pin_vertex[parent]->getInst());
+    }
+    idx++;
+  }
+
+  if (idx >= data_flow.register_dist) {
+    return;
+  }
+
+  if (!backward_search) {
+    for (auto& hyperedge : vertices[parent]) {
+      for (auto& vertex : hyperedges[hyperedge]) {
+        // we do not consider pin to pin
+        if (visited[vertex] || vertex < io_pin_vertex.size()) {
+          continue;
+        }
+        dataFlowDFSMacroPin(vertex,
+                            idx,
+                            std_cells,
+                            macros,
+                            io_pin_vertex,
+                            std_cell_vertex,
+                            macro_pin_vertex,
+                            stop_flag_vec,
+                            visited,
+                            vertices,
+                            hyperedges,
+                            backward_search);
+      }
+    }
+  } else {
+    for (auto& hyperedge : vertices[parent]) {
+      const int vertex = hyperedges[hyperedge][0];
+      // we do not consider pin to pin
+      if (visited[vertex] || vertex < io_pin_vertex.size()) {
+        continue;
+      }
+      dataFlowDFSMacroPin(vertex,
+                          idx,
+                          std_cells,
+                          macros,
+                          io_pin_vertex,
+                          std_cell_vertex,
+                          macro_pin_vertex,
+                          stop_flag_vec,
+                          visited,
+                          vertices,
+                          hyperedges,
+                          backward_search);
     }
   }
 }
