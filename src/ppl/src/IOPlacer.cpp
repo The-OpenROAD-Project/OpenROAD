@@ -2802,11 +2802,67 @@ void IOPlacer::initNetlist()
   }
 }
 
+void IOPlacer::findConstraintRegion(const Interval& interval,
+                                    const Rect& constraint_box,
+                                    Point& pt1,
+                                    Point& pt2)
+{
+  const Rect& die_bounds = core_->getBoundary();
+  if (interval.getEdge() == Edge::bottom) {
+    pt1 = Point(interval.getBegin(), die_bounds.yMin());
+    pt2 = Point(interval.getEnd(), die_bounds.yMin());
+  } else if (interval.getEdge() == Edge::top) {
+    pt1 = Point(interval.getBegin(), die_bounds.yMax());
+    pt2 = Point(interval.getEnd(), die_bounds.yMax());
+  } else if (interval.getEdge() == Edge::left) {
+    pt1 = Point(die_bounds.xMin(), interval.getBegin());
+    pt2 = Point(die_bounds.xMin(), interval.getEnd());
+  } else if (interval.getEdge() == Edge::right) {
+    pt1 = Point(die_bounds.xMax(), interval.getBegin());
+    pt2 = Point(die_bounds.xMax(), interval.getEnd());
+  } else {
+    pt1 = constraint_box.ll();
+    pt2 = constraint_box.ur();
+  }
+}
+
+void IOPlacer::commitConstraintsToDB()
+{
+  for (Constraint& constraint : constraints_) {
+    for (odb::dbBTerm* bterm : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      odb::Point pt1, pt2;
+      const Interval& interval = constraint.interval;
+      findConstraintRegion(interval, constraint.box, pt1, pt2);
+      std::pair<odb::Point, odb::Point> constraint_region(pt1, pt2);
+      bterm->setConstraintRegion(constraint_region);
+
+      if (io_pin.isMirrored()) {
+        IOPin& mirrored_pin
+            = netlist_io_pins_->getIoPin(io_pin.getMirrorPinIdx());
+        odb::dbBTerm* mirrored_bterm
+            = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+        Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+        Interval mirrored_interval(mirrored_edge,
+                                   interval.getBegin(),
+                                   interval.getEnd(),
+                                   interval.getLayer());
+        findConstraintRegion(mirrored_interval, constraint.box, pt1, pt2);
+        std::pair<odb::Point, odb::Point> mirrored_constraint_region(pt1, pt2);
+        mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
+      }
+    }
+  }
+}
+
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   for (const IOPin& pin : assignment) {
     commitIOPinToDB(pin);
   }
+
+  commitConstraintsToDB();
 }
 
 void IOPlacer::commitIOPinToDB(const IOPin& pin)

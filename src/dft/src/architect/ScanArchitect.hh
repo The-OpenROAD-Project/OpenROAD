@@ -39,6 +39,7 @@
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "ScanChain.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
@@ -103,7 +104,8 @@ class ScanArchitect
   // max_length
   static std::map<size_t, HashDomainLimits> inferChainCountFromMaxLength(
       const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
-      uint64_t max_length);
+      uint64_t max_length,
+      const std::optional<uint64_t>& max_chains);
 
   // Returns an ScanArchitect object based on the configuration.
   //
@@ -112,7 +114,8 @@ class ScanArchitect
   // since some of them could generate better scan chains for some designs
   static std::unique_ptr<ScanArchitect> ConstructScanScanArchitect(
       const ScanArchitectConfig& config,
-      std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
+      std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
+      utl::Logger* logger);
 
  protected:
   void createScanChains();

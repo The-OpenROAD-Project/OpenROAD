@@ -592,6 +592,12 @@ void TritonRoute::initDesign()
     db_callback_->addOwner(db_->getChip()->getBlock());
     for (auto net : db_->getChip()->getBlock()->getNets()) {
       if (net->getWire()) {
+        odb::dbWireDecoder decoder;
+        decoder.begin(net->getWire());
+        decoder.next();
+        if (decoder.getWireType() == odb::dbWireType::FIXED) {
+          continue;
+        }
         odb::dbWire::destroy(net->getWire());
       }
     }

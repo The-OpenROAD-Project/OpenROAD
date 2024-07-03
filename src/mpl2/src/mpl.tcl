@@ -309,7 +309,8 @@ proc parse_macro_name {cmd macro_name} {
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
-    flags {-coarse -fine -show_bundled_nets};# checker off
+    flags {-coarse -fine -show_bundled_nets \
+           -skip_steps -only_final_result};# checker off
 
   set coarse [info exists flags(-coarse)]
   set fine [info exists flags(-fine)]
@@ -319,7 +320,12 @@ proc mpl_debug { args } {
   }
   set block [ord::get_db_block]
 
-  mpl2::set_debug_cmd $block $coarse $fine [info exists flags(-show_bundled_nets)]
+  mpl2::set_debug_cmd $block \
+                      $coarse  \
+                      $fine \
+                      [info exists flags(-show_bundled_nets)] \
+                      [info exists flags(-skip_steps)] \
+                      [info exists flags(-only_final_result)] \
 }
 
 }
