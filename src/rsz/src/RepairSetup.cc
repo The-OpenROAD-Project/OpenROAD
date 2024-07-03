@@ -177,6 +177,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                end_index,
                max_end_count);
     if (end_index > max_end_count) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "{} end_index {} is larger than"
+                 " max_end_count {}", end->name(network_), end_index,
+                 max_end_count);
+      // clang-format on
       break;
     }
     Slack prev_end_slack = end_slack;
@@ -204,6 +209,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} end_slack {} is larger than"
+                   " setup_slack_margin {}", end->name(network_), end_index,
+                   max_end_count);
+        // clang-format on
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -232,6 +242,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} no changes"
+                   " after {} decreasing passes", end->name(network_),
+                   decreasing_slack_passes);
+        // clang-format on
         break;
       }
       resizer_->updateParasitics();
@@ -280,11 +295,20 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
               resize_count_, inserted_buffer_count_, cloned_gate_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
+          // clang-format off
+          debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} decreasing"
+                     " passes {} > decreasig pass limit {}", end->name(network_),
+                     decreasing_slack_passes, decreasing_slack_max_passes_);
+          // clang-format on
           break;
         }
       }
 
       if (resizer_->overMaxArea()) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} resizer"
+                   " over max area", end->name(network_));
+        // clang-format on
         break;
       }
       if (end_index == 1) {
@@ -547,6 +571,18 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
                            PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
+  // Skip if there is no liberty model or this is a single-input cell
+  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  if (drvr_port == nullptr) {
+    return false;
+  }
+  LibertyCell* cell = drvr_port->libertyCell();
+  if (cell == nullptr) {
+    return false;
+  }
+  if (cell->isBuffer() || cell->isInverter()) {
+    return false;
+  }
   Instance* drvr = network_->instance(drvr_pin);
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
@@ -557,9 +593,7 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 
   if (!resizer_->dontTouch(drvr)) {
     // We get the driver port and the cell for that port.
-    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     LibertyPort* input_port = network_->libertyPort(in_pin);
-    LibertyCell* cell = drvr_port->libertyCell();
     LibertyPort* swap_port = input_port;
     sta::LibertyPortSet ports;
 
@@ -574,6 +608,26 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
       swap_pin_inst_set_.insert(drvr);
     } else {
       return false;
+    }
+
+    // Pass slews at input pins for more accurate delay/slew estimation
+    resizer_->input_slew_map_.clear();
+    std::unique_ptr<InstancePinIterator> inst_pin_iter{
+        network_->pinIterator(drvr)};
+    while (inst_pin_iter->hasNext()) {
+      Pin* pin = inst_pin_iter->next();
+      if (network_->direction(pin)->isInput()) {
+        LibertyPort* port = network_->libertyPort(pin);
+        if (port) {
+          Vertex* vertex = graph_->pinDrvrVertex(pin);
+          InputSlews slews;
+          slews[RiseFall::rise()->index()]
+              = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+          slews[RiseFall::fall()->index()]
+              = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+          resizer_->input_slew_map_.emplace(port, slews);
+        }
+      }
     }
 
     // Find the equivalent pins for a cell (simple implementation for now)

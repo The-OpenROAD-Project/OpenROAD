@@ -62,6 +62,7 @@ using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
+using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -78,6 +79,30 @@ class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
+struct SlackEstimatorParams
+{
+  Pin* driver_pin;
+  Pin* prev_driver_pin;
+  Pin* driver_input_pin;
+  Instance* driver;
+  PathRef* driver_path;
+  PathRef* prev_driver_path;
+  LibertyCell* driver_cell;
+  const float setup_slack_margin;
+  const Corner* corner;
+
+  SlackEstimatorParams(const float margin, const Corner* corner)
+      : setup_slack_margin(margin), corner(corner)
+  {
+    driver_pin = nullptr;
+    prev_driver_pin = nullptr;
+    driver_input_pin = nullptr;
+    driver = nullptr;
+    driver_path = nullptr;
+    prev_driver_path = nullptr;
+    driver_cell = nullptr;
+  }
+};
 
 class RepairSetup : public sta::dbStaState
 {

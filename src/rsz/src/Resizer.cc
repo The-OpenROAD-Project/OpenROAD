@@ -1153,11 +1153,13 @@ void Resizer::swapPins(Instance* inst,
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
     LibertyPort* port = network_->libertyPort(pin);
-    if (port == port1) {
+    // port pointers may change after sizing
+    // if (port == port1) {
+    if (std::strcmp(port->name(), port1->name()) == 0) {
       found_pin1 = pin;
       net1 = net;
     }
-    if (port == port2) {
+    if (std::strcmp(port->name(), port2->name()) == 0) {
       found_pin2 = pin;
       net2 = net;
     }
@@ -2170,8 +2172,15 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        float in_slew = tgt_slews_[in_rf->index()];
         LibertyPort* port = arc->from();
+        float in_slew = 0.0;
+        auto it = input_slew_map_.find(port);
+        if (it != input_slew_map_.end()) {
+          const InputSlews& slew = it->second;
+          in_slew = slew[in_rf->index()];
+        } else {
+          in_slew = tgt_slews_[in_rf->index()];
+        }
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
             = arc_delay_calc_->gateDelay(nullptr,
@@ -2975,7 +2984,7 @@ void Resizer::journalRestore(int& resize_count,
                network_->pathName(inst),
                port1->name(),
                port2->name());
-    swapPins(inst, port1, port2, false);
+    swapPins(inst, port2, port1, false);
   }
   swapped_pins_.clear();
 
