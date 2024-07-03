@@ -41,7 +41,6 @@ node {
                 unstash 'install';
                 try {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                        env.EQUIVALENCE_CHECK = 1;
                         sh 'ctest --test-dir build -j $(nproc)'
                     }
                 }
@@ -78,6 +77,7 @@ node {
             }
         }
     }
+
     tasks["C++ Unit Tests"] = {
         node {
             checkout scm;
