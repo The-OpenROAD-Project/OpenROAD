@@ -36,31 +36,6 @@ node {
         }
     }
 
-    tasks["Dynamic Code Coverage"] = {
-        node {
-            checkout scm;
-            docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
-                stage('Build for Coverage') {
-                    sh './etc/Build.sh -coverage';
-                }
-                stage('Run Dynamic Coverage') {
-                    sh './etc/CodeCoverage.sh dynamic';
-                }
-                stage('Generate Coverage Report') {
-                    publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: false,
-                            keepAll: false,
-                            reportDir: 'coverage-output',
-                            reportFiles: 'index.html',
-                            reportName: 'Dynamic Code Coverage',
-                            reportTitles: ''
-                    ]);
-                }
-            }
-        }
-    }
-
     tasks["Unit Tests"] = {
         node {
             checkout scm;
