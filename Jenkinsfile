@@ -2,8 +2,6 @@
 
 node {
 
-    env.EQUIVALENCE_CHECK = 1;
-
     stage('Checkout'){
         checkout scm;
     }
@@ -36,14 +34,15 @@ node {
         }
     }
 
-    tasks["Unit Tests"] = {
+    tasks["Unit Tests CTest"] = {
         node {
             checkout scm;
             docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
                 unstash 'install';
                 try {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                        sh 'ctest --test-dir build -j'
+                        env.EQUIVALENCE_CHECK = 1;
+                        sh 'ctest --test-dir build -j $(nproc)'
                     }
                 }
                 catch (e) {
@@ -58,6 +57,27 @@ node {
         }
     }
 
+    tasks["Unit Tests TCL"] = {
+        node {
+            checkout scm;
+            docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                unstash 'install';
+                try {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        sh './test/regression'
+                    }
+                }
+                catch (e) {
+                    echo "Failed regressions";
+                    currentBuild.result = 'FAILURE';
+                }
+                finally {
+                    sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                }
+            }
+        }
+    }
     tasks["C++ Unit Tests"] = {
         node {
             checkout scm;
