@@ -188,6 +188,23 @@ _installCommonDev() {
         _equivalenceDeps
     fi
 
+    if [[ ${CI} == "yes" ]]; then
+        # ninja
+        ninjaCheckSum="817e12e06e2463aeb5cb4e1d19ced606"
+        ninjaVersion=1.10.2
+        ninjaPrefix=${PREFIX:-"/usr/local"}
+        ninjaBin=${ninjaPrefix}/bin/ninja
+        if [[ ! -d ${ninjaBin} ]]; then
+            cd "${baseDir}"
+            wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
+            md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
+            unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
+            chmod +x ${ninjaBin}
+        else
+            echo "ninja already installed."
+        fi
+    fi
+
     cd "${lastDir}"
     rm -rf "${baseDir}"
 
@@ -264,6 +281,7 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
+        ccache \
 
     if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
@@ -401,6 +419,7 @@ _installCentosPackages() {
         tcl-tclreadline-devel \
         tcllib \
         wget \
+        ccache \
         zlib-devel
     }
 
@@ -557,6 +576,26 @@ _installDebianPackages() {
     fi
 }
 
+_installCI() {
+    apt-get -y update
+
+    #docker
+    apt install -y \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        software-properties-common
+    # apt-get -y install ca-certificates curl
+    # install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+    echo \
+    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get -y update
+    apt-get -y install docker-ce docker-ce-cli containerd.io
+}
+
 _checkIsLocal() {
     if [[ "${isLocal}" == "true" ]]; then
         echo "ERROR: cannot install base packages locally; you need privileged access." >&2
@@ -591,6 +630,8 @@ Usage: $0
                                 #    "$HOME/.local". Only used with
                                 #    -common. This flag cannot be used with
                                 #    sudo or with root access.
+       $0 -ci
+                                # Installs dependencies required to run CI
 
 EOF
     exit "${1:-1}"
@@ -601,6 +642,7 @@ PREFIX=""
 option="all"
 isLocal="false"
 equivalenceDeps="no"
+CI="no"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -630,6 +672,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -eqy)
             equivalenceDeps="yes"
+            ;;
+        -ci)
+            CI="yes"
             ;;
         -local)
             if [[ $(id -u) == 0 ]]; then
@@ -682,6 +727,9 @@ esac
 
 case "${os}" in
     "CentOS Linux" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installCentosPackages
@@ -713,8 +761,14 @@ EOF
             fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi
+        if [[ ${CI} == "yes" ]]; then
+            _installCI
+        fi
         ;;
     "Red Hat Enterprise Linux")
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installRHELPackages
@@ -726,6 +780,9 @@ EOF
         fi
         ;;
     "Darwin" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         _installDarwin
         cat <<EOF
 
@@ -735,6 +792,9 @@ To install or run openroad, update your path with:
 EOF
         ;;
     "openSUSE Leap" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installOpenSusePackages
@@ -752,6 +812,9 @@ EOF
         ;;
     "Debian GNU/Linux" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installDebianPackages "${version}"
