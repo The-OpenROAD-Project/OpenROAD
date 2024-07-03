@@ -393,7 +393,7 @@ bool RepairSetup::repairPath(PathRef& path,
                              const bool skip_pin_swap,
                              const bool skip_gate_cloning,
                              const bool skip_buffer_removal,
-                             float setup_slack_margin)
+                             const float setup_slack_margin)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -620,9 +620,9 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 // 4) it doesn't worsen slack
 bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              LibertyCell* drvr_cell,
-                             int drvr_index,
+                             const int drvr_index,
                              PathExpanded* expanded,
-                             float setup_slack_margin)
+                             const float setup_slack_margin)
 {
   // TODO:
   // 1. add max slew check
@@ -730,7 +730,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
 
     PathRef* drvr_input_path = expanded->path(drvr_index - 1);
     Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
-    slackEstimatorParams params(setup_slack_margin, corner);
+    SlackEstimatorParams params(setup_slack_margin, corner);
     params.driver_pin = drvr_pin;
     params.prev_driver_pin = prev_drvr_pin;
     params.driver_input_pin = drvr_input_vertex->pin();
@@ -738,7 +738,7 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
     params.driver_path = drvr_path;
     params.prev_driver_path = prev_drvr_path;
     params.driver_cell = drvr_cell;
-    if (!estimatedSlackOK(&params)) {
+    if (!estimatedSlackOK(params)) {
       return false;
     }
 
@@ -765,57 +765,57 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
 //               |
 //               ------>  (side_input_pin2  side_out_pin2) ----->
 //
-bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
+bool RepairSetup::estimatedSlackOK(const SlackEstimatorParams& params)
 {
-  if (params->corner == nullptr) {
+  if (params.corner == nullptr) {
     // can't do any estimation without a corner
     return false;
   }
 
   // Prep for delay calc
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  const DcalcAnalysisPt* dcalc_ap = params->corner->findDcalcAnalysisPt(max_);
-  LibertyPort* prev_drvr_port = network_->libertyPort(params->prev_driver_pin);
+  const DcalcAnalysisPt* dcalc_ap = params.corner->findDcalcAnalysisPt(max_);
+  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
   if (prev_drvr_port == nullptr) {
     return false;
   }
   LibertyPort *buffer_input_port, *buffer_output_port;
-  params->driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params->prev_driver_path->transition(sta_);
+  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
 
   // Compute delay degradation at prev driver due to increased load cap
+  // TODO: use actual slew at input pins instead of fixed slew
   ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
   Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
-  float old_cap = dcalc->loadCap(params->prev_driver_pin, dcalc_ap);
+  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
   resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
-  float new_cap
-      = old_cap + dcalc->loadCap(params->driver_pin, dcalc_ap)
-        - resizer_->portCapacitance(buffer_input_port, params->corner);
+  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
+                  - resizer_->portCapacitance(buffer_input_port, params.corner);
   resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
   float delay_imp
-      = resizer_->bufferDelay(params->driver_cell,
-                              params->driver_path->transition(sta_),
-                              dcalc->loadCap(params->driver_pin, dcalc_ap),
+      = resizer_->bufferDelay(params.driver_cell,
+                              params.driver_path->transition(sta_),
+                              dcalc->loadCap(params.driver_pin, dcalc_ap),
                               dcalc_ap);
 
-  Net* prev_net = network_->net(params->prev_driver_pin);
+  Net* prev_net = network_->net(params.prev_driver_pin);
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(prev_net);
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
-    if (side_input_pin == params->prev_driver_pin) {
+    if (side_input_pin == params.prev_driver_pin) {
       continue;
     }
     // Check if degraded delay can be absorbed
-    if (side_input_pin == params->driver_input_pin) {
+    if (side_input_pin == params.driver_input_pin) {
       if (delay_imp < delay_degrad) {
         // clang-format off
         debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                    "because delay degradation of {} at previous driver {} "
                    "is greater than delay improvement of {}",
-                   db_network_->name(params->driver), delay_degrad,
-                   db_network_->name(params->prev_driver_pin), delay_imp);
+                   db_network_->name(params.driver), delay_degrad,
+                   db_network_->name(params.prev_driver_pin), delay_imp);
         // clang-format on
         return false;
       }
@@ -823,21 +823,21 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
       debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
                  "because delay degradation of {} at previous driver {} "
                  "is less than delay improvement of {}",
-                 db_network_->name(params->driver), delay_degrad,
-                 db_network_->name(params->prev_driver_pin), delay_imp);
+                 db_network_->name(params.driver), delay_degrad,
+                 db_network_->name(params.prev_driver_pin), delay_imp);
       // clang-format on
     } else {
       // side input pin is not driver input pin
       float old_slack = sta_->pinSlack(side_input_pin, max_);
-      float new_slack = old_slack - params->setup_slack_margin - delay_degrad;
+      float new_slack = old_slack - params.setup_slack_margin - delay_degrad;
       if (new_slack < 0) {
         // clang-format off
         debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                    "because side input pin {} will have a violating slack of {}:"
                    " old slack={}, slack margin={}, delay_degrad={}",
-                   db_network_->name(params->driver),
+                   db_network_->name(params.driver),
                    db_network_->name(side_input_pin), new_slack, old_slack, 
-                   params->setup_slack_margin, delay_degrad);
+                   params.setup_slack_margin, delay_degrad);
         // clang-format on
         return false;
       }
@@ -845,9 +845,9 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
       debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
                  "because side input pin {} will have a positive slack of {}:"
                  " old slack={}, slack margin={}, delay_degrad={}",
-                 db_network_->name(params->driver),
+                 db_network_->name(params.driver),
                  db_network_->name(side_input_pin), new_slack, old_slack, 
-                 params->setup_slack_margin, delay_degrad);
+                 params.setup_slack_margin, delay_degrad);
       // clang-format on
 
       // Consider secondary degradation at side out pin due to degraded input
@@ -889,9 +889,9 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
           debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
                      "because side output pin {} will have a violating slack of "
                      "{}: old slack={}, slack margin={}, delay_degrad={}",
-                     db_network_->name(params->driver),
+                     db_network_->name(params.driver),
                      db_network_->name(side_out_pin), new_slack, old_slack, 
-                     params->setup_slack_margin, delay_degrad + delay_diff);
+                     params.setup_slack_margin, delay_degrad + delay_diff);
           // clang-format on
           return false;
         }
@@ -899,9 +899,9 @@ bool RepairSetup::estimatedSlackOK(slackEstimatorParams* params)
         debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed"
                    "because side output pin {} will have a positive slack of "
                    "{}: old slack={}, slack margin={}, delay_degrad={}",
-                   db_network_->name(params->driver),
+                   db_network_->name(params.driver),
                    db_network_->name(side_out_pin), new_slack, old_slack, 
-                   params->setup_slack_margin, delay_degrad + delay_diff);
+                   params.setup_slack_margin, delay_degrad + delay_diff);
         // clang-format on
       }  // for each side_out_pin of side inst
     }

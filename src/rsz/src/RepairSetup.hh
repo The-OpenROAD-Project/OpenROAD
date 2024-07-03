@@ -79,8 +79,7 @@ class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
-
-using slackEstimatorParams = struct slackEstimatorParams
+struct SlackEstimatorParams
 {
   Pin* driver_pin;
   Pin* prev_driver_pin;
@@ -92,7 +91,7 @@ using slackEstimatorParams = struct slackEstimatorParams
   const float setup_slack_margin;
   const Corner* corner;
 
-  slackEstimatorParams(const float margin, const Corner* corner)
+  SlackEstimatorParams(const float margin, const Corner* corner)
       : setup_slack_margin(margin), corner(corner)
   {
     driver_pin = nullptr;
@@ -129,11 +128,11 @@ class RepairSetup : public sta::dbStaState
  private:
   void init();
   bool repairPath(PathRef& path,
-                  Slack path_slack,
-                  bool skip_pin_swap,
-                  bool skip_gate_cloning,
-                  bool skip_buffer_removal,
-                  float setup_slack_margin);
+                  const Slack path_slack,
+                  const bool skip_pin_swap,
+                  const bool skip_gate_cloning,
+                  const bool skip_buffer_removal,
+                  const float setup_slack_margin);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -152,10 +151,10 @@ class RepairSetup : public sta::dbStaState
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   bool removeDrvr(PathRef* drvr_path,
                   LibertyCell* drvr_cell,
-                  int drvr_index,
+                  const int drvr_index,
                   PathExpanded* expanded,
-                  float setup_slack_margin);
-  bool estimatedSlackOK(slackEstimatorParams* params);
+                  const float setup_slack_margin);
+  bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
