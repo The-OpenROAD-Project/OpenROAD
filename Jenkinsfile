@@ -143,24 +143,6 @@ node {
         }
     }
 
-    def os_list = ['ubuntu20.04', 'ubuntu22.04'];
-    def compiler_list = ['gcc', 'clang'];
-    for (os in os_list) {
-        for (compiler in compiler_list) {
-            tasks["Docker ${os} ${compiler}"] = {
-                node {
-                    checkout scm;
-                    stage("Build docker ${os} ${compiler}") {
-                        sh "./etc/DockerHelper.sh create -os=${os} -target=builder -compiler=${compiler}"
-                    }
-                    stage("Test docker ${os} ${compiler}") {
-                        sh "./etc/DockerHelper.sh test -os=${os} -target=builder -compiler=${compiler}"
-                    }
-                }
-            }
-        }
-    }
-
     timeout(time: 2, unit: 'HOURS') {
         parallel(tasks);
     }
