@@ -519,9 +519,15 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
     }
   }
 
-  if (neg_index1 >= 0 && neg_index2 >= 0) {
-    std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
+  if (neg_index1 < 0 || neg_index2 < 0) {
+    logger_->error(utl::MPL,
+                   18,
+                   "Divergence in sequence pair: Macros ID {} or {} (or both) "
+                   "exist only in positive sequence.",
+                   index1,
+                   index2);
   }
+  std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
 template <class T>
