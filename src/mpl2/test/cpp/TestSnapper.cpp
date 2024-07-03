@@ -95,6 +95,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   db_->setLogger(logger);
   
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
+  tech_->setManufacturingGrid(2);
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbChip* chip_ = odb::dbChip::create(db_);
   odb::dbTechLayer* layer1_ = odb::dbTechLayer::create(tech_, "layer1", odb::dbTechLayerType::CUT);
@@ -162,15 +163,19 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
       "track grid found: {}",
       inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
     );
-
-    /*
-    std::vector<int> coordinate_grid;
-    getTrackGrid(
-      inst1->getBlock()->findTrackGrid(box->getTechLayer()),
-      coordinate_grid,
-      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
-    )
-    */
+    odb::dbOrientType orientation = inst1->getOrient();
+    logger->report(
+      "is orientation of instance\nR0? {}\nR90? {}\nR180? {}\nR270? {}\nMY? {}\nMYR90? {}\nMX? {}\nMXR90? {}",
+      orientation == odb::dbOrientType::R0,
+      orientation == odb::dbOrientType::R90,
+      orientation == odb::dbOrientType::R180,
+      orientation == odb::dbOrientType::R270,
+      orientation == odb::dbOrientType::MY,
+      orientation == odb::dbOrientType::MYR90,
+      orientation == odb::dbOrientType::MX,
+      orientation == odb::dbOrientType::MXR90
+    );
+    
   }
 
   for (odb::dbBox* box : mpin_o->getGeometry()) {
@@ -184,6 +189,23 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
     logger->report(
       "track grid found: {}",
       inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
+    );
+
+    logger->report(
+      "track grid found: {}",
+      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
+    );
+    odb::dbOrientType orientation = inst1->getOrient();
+    logger->report(
+      "is orientation of instance\nR0? {}\nR90? {}\nR180? {}\nR270? {}\nMY? {}\nMYR90? {}\nMX? {}\nMXR90? {}",
+      orientation == odb::dbOrientType::R0,
+      orientation == odb::dbOrientType::R90,
+      orientation == odb::dbOrientType::R180,
+      orientation == odb::dbOrientType::R270,
+      orientation == odb::dbOrientType::MY,
+      orientation == odb::dbOrientType::MYR90,
+      orientation == odb::dbOrientType::MX,
+      orientation == odb::dbOrientType::MXR90
     );
   }
 
@@ -224,11 +246,13 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
         "found mpin belonging to {}",
         mpin->getMTerm()->getName()
       );
-
-
-      
     }
   }
+
+  logger->report(
+    "manufacturing grid: {}",
+    inst1->getDb()->getTech()->getManufacturingGrid()
+  );
 
   snapper.snapMacro(); // expected to change inst1->getOrigin
 
