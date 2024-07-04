@@ -1,6 +1,6 @@
 [INFO ODB-0227] LEF file: ./../../../test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 Report metrics stage 2, final...
-Metrics results directory: .
+Metrics results directory: ./results/
 
 ==========================================================================
 final report_design_area
