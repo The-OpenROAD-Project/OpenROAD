@@ -245,26 +245,7 @@ void HierRTLMP::run()
   }
 
   runCoarseShaping();
-
-  if (graphics_) {
-    graphics_->startFine();
-  }
-  adjustMacroBlockageWeight();
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
-    reportSAWeights();
-  }
-
-  if (bus_planning_on_) {
-    adjustCongestionWeight();
-    runHierarchicalMacroPlacement(tree_.root);
-  } else {
-    runHierarchicalMacroPlacementWithoutBusPlanning(tree_.root);
-  }
-
-  if (graphics_) {
-    graphics_->setMaxLevel(tree_.max_level);
-    graphics_->drawResult();
-  }
+  runHierarchicalMacroPlacement();
 
   Pusher pusher(logger_, tree_.root, block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
@@ -310,6 +291,30 @@ void HierRTLMP::runMultilevelAutoclustering()
   
   if (graphics_) {
     graphics_->finishedClustering(tree_.root);
+  }
+}
+
+void HierRTLMP::runHierarchicalMacroPlacement()
+{
+  if (graphics_) {
+    graphics_->startFine();
+  }
+
+  adjustMacroBlockageWeight();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    reportSAWeights();
+  }
+
+  if (bus_planning_on_) {
+    adjustCongestionWeight();
+    runHierarchicalMacroPlacement(tree_.root);
+  } else {
+    runHierarchicalMacroPlacementWithoutBusPlanning(tree_.root);
+  }
+
+  if (graphics_) {
+    graphics_->setMaxLevel(tree_.max_level);
+    graphics_->drawResult();
   }
 }
 

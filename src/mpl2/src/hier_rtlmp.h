@@ -139,7 +139,11 @@ class HierRTLMP
  private:
   using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
+  void runMultilevelAutoclustering();
+  void runHierarchicalMacroPlacement();
+
 	void resetSAParameters();
+
   void updateMacrosOnDb();
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
@@ -149,8 +153,6 @@ class HierRTLMP
                    float outline_width,
                    float outline_height,
                    const std::string& file_name);
-
-  void runMultilevelAutoclustering();
 
   // Coarse Shaping
   void runCoarseShaping();
