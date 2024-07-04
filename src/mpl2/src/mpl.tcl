@@ -306,6 +306,7 @@ proc parse_macro_name {cmd macro_name} {
   return $inst
 }
 
+# tclint-disable indent
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
@@ -327,5 +328,6 @@ proc mpl_debug { args } {
                       [info exists flags(-skip_steps)] \
                       [info exists flags(-only_final_result)] \
 }
+# tclint-enable indent
 
 }
