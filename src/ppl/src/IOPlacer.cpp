@@ -203,7 +203,7 @@ void IOPlacer::randomPlacement()
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.pin_indices, valid_slots, false, true);
+    randomPlacement(io_group.pin_indices, std::move(valid_slots), false, true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
