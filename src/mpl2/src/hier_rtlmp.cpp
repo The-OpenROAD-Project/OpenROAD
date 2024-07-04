@@ -234,11 +234,9 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 //      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
 {
-  block_ = db_->getChip()->getBlock();
-
   runMultilevelAutoclustering();
   if (skip_macro_placement_) {
-    logger_->info(MPL, 17, "Skipping macro placement.");
+    logger_->info(MPL, 13, "Skipping macro placement.");
     return;
   }
 
@@ -280,6 +278,11 @@ void HierRTLMP::run()
 
   writeMacroPlacement(macro_placement_file_);
   clear();
+}
+
+void HierRTLMP::init()
+{
+  block_ = db_->getChip()->getBlock();
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -89,6 +89,7 @@ class HierRTLMP
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
 
+  void init();
   void run();
 
   // Interfaces functions for setting options
