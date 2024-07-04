@@ -1890,12 +1890,12 @@ class dbBTerm : public dbObject
   ///
   /// Set the region where the BTerm is constrained
   ///
-  void setConstraintRegion(const std::pair<Point, Point>& constraint_region);
+  void setConstraintRegion(const Rect& constraint_region);
 
   ///
   /// Get the region where the BTerm is constrained
   ///
-  std::optional<std::pair<Point, Point>> getConstraintRegion();
+  std::optional<Rect> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
