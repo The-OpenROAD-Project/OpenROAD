@@ -866,8 +866,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     for (const auto& [gate, violation_layers] : gates_with_violations) {
       for (odb::dbTechLayer* layer : violation_layers) {
         // when repair antenna is running, calculate number of diodes
-        if (layer->getRoutingLevel() != 0
-            && pin_added[layer].find(gate) == pin_added[layer].end()) {
+        if (pin_added[layer].find(gate) == pin_added[layer].end()) {
           double diode_diff_area = 0.0;
           if (diode_mterm) {
             diode_diff_area = diffArea(diode_mterm);
