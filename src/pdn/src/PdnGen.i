@@ -67,6 +67,8 @@ using utl::PDN;
     $1 = pdn::ExtensionMode::RINGS;
   } else if (strcasecmp(str, "Boundary") == 0) {
     $1 = pdn::ExtensionMode::BOUNDARY;
+  } else if (strcasecmp(str, "Clip_Cells") == 0) {
+    $1 = pdn::ExtensionMode::CLIP_CELLS;
   } else {
     $1 = pdn::ExtensionMode::CORE;
   }

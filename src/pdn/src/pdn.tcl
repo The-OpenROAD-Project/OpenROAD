@@ -289,7 +289,7 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
 proc add_pdn_stripe {args} {
   sta::parse_key_args "add_pdn_stripe" args \
     keys {-grid -layer -width -pitch -spacing -offset -starts_with -number_of_straps -nets} \
-    flags {-followpins -extend_to_core_ring -extend_to_boundary -snap_to_grid}
+    flags {-followpins -extend_to_core_ring -extend_to_boundary -clip_around_cells -snap_to_grid}
 
   sta::check_argc_eq0 "add_pdn_stripe" $args
 
@@ -308,6 +308,10 @@ proc add_pdn_stripe {args} {
 
     if {![info exists keys(-pitch)]} {
       utl::error PDN 1009 "The -pitch argument is required."
+    }
+
+    if {[info exists keys(-clip_around_cells)]} {
+      utl::error PDN 1050 "The -clip_around_cells argument is only supported in followpins mode."
     }
   }
 
@@ -366,6 +370,8 @@ proc add_pdn_stripe {args} {
     set extend "Rings"
   } elseif {[info exists flags(-extend_to_boundary)]} {
     set extend "Boundary"
+  } elseif {[info exists flags(-clip_around_cells)]} {
+    set extend "Clip_Cells"
   }
 
   set use_grid_power_order 1

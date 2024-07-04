@@ -61,7 +61,8 @@ enum ExtensionMode
   CORE,
   RINGS,
   BOUNDARY,
-  FIXED
+  FIXED,
+  CLIP_CELLS
 };
 
 enum StartsWith
