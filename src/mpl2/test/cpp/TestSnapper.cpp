@@ -96,8 +96,10 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
   tech_->setManufacturingGrid(2);
+
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbChip* chip_ = odb::dbChip::create(db_);
+
   odb::dbTechLayer* layer1_ = odb::dbTechLayer::create(tech_, "layer1", odb::dbTechLayerType::CUT);
   odb::dbTechLayer* layer2_ = odb::dbTechLayer::create(tech_, "layer2", odb::dbTechLayerType::CUT);
 
@@ -111,147 +113,46 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
   master_->setWidth(1000);
   master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::BLOCK);
+  master_->setType(odb::dbMasterType::BLOCK); // snapper expects a block type
   
+  // component with 1 input, 1 output -> 2 terminals
   odb::dbMTerm* mterm_i = odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm* mterm_o = odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  
   odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
-  odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  
   odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer1_, 0, 0, 500, 500);
+
+  odb::dbMTerm* mterm_o = odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
   odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer2_, 0, 0, 500, 500);
 
   master_->setFrozen();
 
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  odb::dbGCellGrid* grid_ = odb::dbGCellGrid::create(block_);
 
   odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_, layer1_);
+  track1->addGridPatternX(0, 20, 10);
+  track1->addGridPatternY(0, 20, 10);
+
   odb::dbTrackGrid* track2 = odb::dbTrackGrid::create(block_, layer2_);
+  track2->addGridPatternX(0, 20, 10);
+  track2->addGridPatternY(0, 20, 10);
 
   odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
+  odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
+  odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
   odb::dbDatabase::endEco(block_);
-
-  logger->report(
-    "bbox of mpin_i: ({}, {}, {}, {})",
-    mpin_i->getBBox().xMin(),
-    mpin_i->getBBox().yMin(),
-    mpin_i->getBBox().xMax(),
-    mpin_i->getBBox().yMax()
-  );
-
-  logger->report(
-    "bbox of mpin_o: ({}, {}, {}, {})",
-    mpin_o->getBBox().xMin(),
-    mpin_o->getBBox().yMin(),
-    mpin_o->getBBox().xMax(),
-    mpin_o->getBBox().yMax()
-  );
-
-  for (odb::dbBox* box : mpin_i->getGeometry()) {
-    logger->report("box found for mpin_i");
-    logger->report(
-      "tech layer: {} with direction {}",
-      box->getTechLayer()->getName(),
-      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
-      // in hier_rtlmp.cpp, direction is inputed "false" if horizontal
-    );
-
-    logger->report(
-      "track grid found: {}",
-      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
-    );
-    odb::dbOrientType orientation = inst1->getOrient();
-    logger->report(
-      "is orientation of instance\nR0? {}\nR90? {}\nR180? {}\nR270? {}\nMY? {}\nMYR90? {}\nMX? {}\nMXR90? {}",
-      orientation == odb::dbOrientType::R0,
-      orientation == odb::dbOrientType::R90,
-      orientation == odb::dbOrientType::R180,
-      orientation == odb::dbOrientType::R270,
-      orientation == odb::dbOrientType::MY,
-      orientation == odb::dbOrientType::MYR90,
-      orientation == odb::dbOrientType::MX,
-      orientation == odb::dbOrientType::MXR90
-    );
-    
-  }
-
-  for (odb::dbBox* box : mpin_o->getGeometry()) {
-    logger->report("box found for mpin_o");
-    logger->report(
-      "tech layer: {} with direction {}",
-      box->getTechLayer()->getName(),
-      box->getTechLayer()->getDirection() != odb::dbTechLayerDir::HORIZONTAL
-      // in hier_rtlmp.cpp, direction is inputed "false" if horizontal
-    );
-    logger->report(
-      "track grid found: {}",
-      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
-    );
-
-    logger->report(
-      "track grid found: {}",
-      inst1->getBlock()->findTrackGrid(box->getTechLayer()) != 0
-    );
-    odb::dbOrientType orientation = inst1->getOrient();
-    logger->report(
-      "is orientation of instance\nR0? {}\nR90? {}\nR180? {}\nR270? {}\nMY? {}\nMYR90? {}\nMX? {}\nMXR90? {}",
-      orientation == odb::dbOrientType::R0,
-      orientation == odb::dbOrientType::R90,
-      orientation == odb::dbOrientType::R180,
-      orientation == odb::dbOrientType::R270,
-      orientation == odb::dbOrientType::MY,
-      orientation == odb::dbOrientType::MYR90,
-      orientation == odb::dbOrientType::MX,
-      orientation == odb::dbOrientType::MXR90
-    );
-  }
-
 
   Snapper snapper;
   snapper.setMacro(inst1);
   
-  inst1->setOrigin(0, 0);
-  // program stops when running getOrigin()
-  // setOrigin doesn't seem to have an effect?
+  inst1->setOrigin(-250, 0);
 
   logger->report(
     "initial (x, y) of inst1: ({}, {})",
     inst1->getOrigin().x(),
     inst1->getOrigin().y()
-  );
-
-  // - gets instance master, then each MTerm->MPins in master
-  // it is expected that dbMaster is of isBlock type
-  odb::dbMaster* master = inst1->getMaster();
-  logger->report(
-    "master of inst1: {}, isBlock status: {}, isCore status: {}, isPad status: {}",
-    master->getName(),
-    master->isBlock(),
-    master->isCore(),
-    master->isPad()
-  );
-
-  for (odb::dbMTerm* mterm : master->getMTerms()) {
-    logger->report(
-      "mterm: {}, is type signal: {}",
-      mterm->getName(),
-      mterm->getSigType() == odb::dbSigType::SIGNAL
-    );
-
-    for (odb::dbMPin* mpin : mterm->getMPins()) {
-      logger->report(
-        "found mpin belonging to {}",
-        mpin->getMTerm()->getName()
-      );
-    }
-  }
-
-  logger->report(
-    "manufacturing grid: {}",
-    inst1->getDb()->getTech()->getManufacturingGrid()
   );
 
   snapper.snapMacro(); // expected to change inst1->getOrigin
@@ -260,6 +161,42 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
     "end (x, y) of inst1: ({}, {})",
     inst1->getOrigin().x(),
     inst1->getOrigin().y()
+  );
+
+  snapper.setMacro(inst2);
+  
+  inst2->setOrigin(0, 0);
+
+  logger->report(
+    "initial (x, y) of inst2: ({}, {})",
+    inst2->getOrigin().x(),
+    inst2->getOrigin().y()
+  );
+
+  snapper.snapMacro(); // expected to change inst2->getOrigin
+
+  logger->report(
+    "end (x, y) of inst1: ({}, {})",
+    inst1->getOrigin().x(),
+    inst1->getOrigin().y()
+  );
+
+  snapper.setMacro(inst3);
+  
+  inst3->setOrigin(250, 0);
+
+  logger->report(
+    "initial (x, y) of inst3: ({}, {})",
+    inst3->getOrigin().x(),
+    inst3->getOrigin().y()
+  );
+
+  snapper.snapMacro(); // expected to change inst3->getOrigin
+
+  logger->report(
+    "end (x, y) of inst3: ({}, {})",
+    inst3->getOrigin().x(),
+    inst3->getOrigin().y()
   );
 }
 
