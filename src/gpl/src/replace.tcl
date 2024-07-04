@@ -164,7 +164,7 @@ proc global_placement { args } {
   gpl::set_routability_use_grt $routability_use_grt
   if { $routability_driven } {
     if { $routability_use_grt } {
-      utl::warn "GPL" 152\
+      utl::warn "GPL" 152 \
         "Using GRT FastRoute instead of default RUDY for congestion in routability driven."
     }
   }
