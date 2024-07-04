@@ -38,6 +38,10 @@
 #include <unordered_map>
 #include <vector>
 
+namespace par {
+class PartitionMgr;
+}
+
 namespace utl {
 class Logger;
 }
@@ -52,6 +56,7 @@ class dbInst;
 class dbBTerm;
 class dbMaster;
 class dbITerm;
+class dbModule;
 }  // namespace odb
 
 namespace mpl2 {
@@ -73,25 +78,14 @@ struct DataFlow
       macro_pin_to_macros;
 };
 
-struct SizeThresholds
-{
-  SizeThresholds()
-      : max_macro(0), min_macro(0), max_std_cell(0), min_std_cell(0)
-  {
-  }
-
-  int max_macro;
-  int min_macro;
-  int max_std_cell;
-  int min_std_cell;
-};
-
 struct PhysicalHierarchyMaps
 {
   std::map<int, Cluster*> id_to_cluster;
-  std::map<odb::dbInst*, HardMacro*> inst_to_hard;
   std::unordered_map<odb::dbInst*, int> inst_to_cluster_id;
   std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_id;
+
+  std::map<odb::dbInst*, HardMacro*> inst_to_hard;
+  std::map<const odb::dbModule*, Metrics*> module_to_metrics;
 
   // Only for designs with IO Pads
   std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
@@ -101,24 +95,42 @@ struct PhysicalHierarchy
 {
   PhysicalHierarchy()
       : root(nullptr),
-        coarsening_ratio(0),
+        base_max_macro(0),
+        base_min_macro(0),
+        base_max_std_cell(0),
+        base_min_std_cell(0),
+        cluster_size_ratio(0.0f),
+        cluster_size_tolerance(0.0f),
+        virtual_weight(0.0f),
         max_level(0),
         bundled_ios_per_edge(0),
         large_net_threshold(0),
-        has_io_clusters(true)
+        min_net_count_for_connection(0),
+        has_io_clusters(true),
+        has_only_macros(false),
+        has_std_cells(true)
   {
   }
 
   Cluster* root;
   PhysicalHierarchyMaps maps;
 
-  SizeThresholds base_thresholds;
-  float coarsening_ratio;
+  int base_max_macro;
+  int base_min_macro;
+  int base_max_std_cell;
+  int base_min_std_cell;
+
+  float cluster_size_ratio;
+  float cluster_size_tolerance;
+  float virtual_weight; // between std cell part and macro part
   int max_level;
   int bundled_ios_per_edge;
   int large_net_threshold;  // used to ignore global nets
+  int min_net_count_for_connection;
 
   bool has_io_clusters;
+  bool has_only_macros;
+  bool has_std_cells;
 };
 
 class ClusteringEngine
@@ -126,18 +138,82 @@ class ClusteringEngine
  public:
   ClusteringEngine(odb::dbBlock* block,
                    sta::dbNetwork* network,
-                   utl::Logger* logger);
+                   utl::Logger* logger,
+                   par::PartitionMgr* triton_part);
+
+  void run();
 
   void setDesignMetrics(Metrics* design_metrics);
-  void setTargetStructure(PhysicalHierarchy* tree);
+  void setTree(PhysicalHierarchy* tree);
 
-  void buildPhysicalHierarchy();
+  // Methods to update the tree as the hierarchical
+  // macro placement runs.
+  void updateConnections();
+  void updateDataFlow();
+  void updateInstancesAssociation(Cluster* cluster);
+  void updateInstancesAssociation(odb::dbModule* module,
+                                  int cluster_id,
+                                  bool include_macro);
+
+  // Needed for macro placement
+  void createClusterForEachMacro(const std::vector<HardMacro*>& hard_macros,
+                                 std::vector<HardMacro>& sa_macros,
+                                 std::vector<Cluster*>& macro_clusters,
+                                 std::map<int, int>& cluster_to_macro,
+                                 std::set<odb::dbMaster*>& masters);
+
+  // Keep this auxiliary method here temporarily until
+  // we remove the micron code.
+  float computeMicronArea(odb::dbInst* inst);
+
+  static bool isIgnoredMaster(odb::dbMaster* master);
 
  private:
   void initTree();
-  void setDefaultThresholds();
+  void setBaseThresholds();
   void createIOClusters();
   void mapIOPads();
+  void treatEachMacroAsSingleCluster();
+  void incorporateNewCluster(Cluster* cluster, Cluster* parent);
+  void setClusterMetrics(Cluster* cluster);
+  void multilevelAutocluster(Cluster* parent);
+  void updateSizeThresholds();
+  void breakCluster(Cluster* parent);
+  void createFlatCluster(odb::dbModule* module, Cluster* parent);
+  void addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module);
+  void createCluster(odb::dbModule* module, Cluster* parent);
+  void createCluster(Cluster* parent);
+  void updateSubTree(Cluster* parent);
+  void breakLargeFlatCluster(Cluster* parent);
+  void mergeClusters(std::vector<Cluster*>& candidate_clusters);
+  void fetchMixedLeaves(Cluster* parent,
+                        std::vector<std::vector<Cluster*>>& mixed_leaves);
+  void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
+  void breakMixedLeaf(Cluster* mixed_leaf);
+  void mapMacroInCluster2HardMacro(Cluster* cluster);
+  void getHardMacros(odb::dbModule* module,
+                     std::vector<HardMacro*>& hard_macros);
+  void createOneClusterForEachMacro(Cluster* parent,
+                                    const std::vector<HardMacro*>& hard_macros,
+                                    std::vector<Cluster*>& macro_clusters);
+  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                            std::vector<int>& size_class);
+  void classifyMacrosByConnSignature(
+      const std::vector<Cluster*>& macro_clusters,
+      std::vector<int>& signature_class);
+  void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
+                                 std::vector<int>& interconn_class);
+  void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
+                                const std::vector<int>& size_class,
+                                const std::vector<int>& signature_class,
+                                std::vector<int>& interconn_class,
+                                std::vector<int>& macro_class);
+  void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
+  void addStdCellClusterToSubTree(Cluster* parent,
+                                  Cluster* mixed_leaf,
+                                  std::vector<int>& virtual_conn_clusters);
+  void replaceByStdCellCluster(Cluster* mixed_leaf,
+                               std::vector<int>& virtual_conn_clusters);
 
   // Methods for data flow
   void createDataFlow();
@@ -165,18 +241,28 @@ class ClusteringEngine
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_search);
 
-  static bool isIgnoredMaster(odb::dbMaster* master);
+  void printPhysicalHierarchyTree(Cluster* parent, int level);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
   utl::Logger* logger_;
+  par::PartitionMgr* triton_part_;
 
   Metrics* design_metrics_;
   PhysicalHierarchy* tree_;
 
-  int id_;
-  SizeThresholds level_thresholds_;
+  int level_; // Current level
+  int id_;    // Current "highest" id
+
+  // Size limits of the current level
+  int max_macro_;
+  int min_macro_;
+  int max_std_cell_;
+  int min_std_cell_;
+
   DataFlow data_flow;
+
+  const float size_tolerance_ = 0.1;
 };
 
 }  // namespace mpl2
