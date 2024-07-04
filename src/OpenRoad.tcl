@@ -211,7 +211,7 @@ proc assign_ndr { args } {
   if { ![info exists keys(-ndr)] } {
     utl::error ORD 1009 "-name is missing."
   }
-  if { ! ([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+  if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
     utl::error ORD 1010 "Either -net or -all_clocks need to be defined."
   }
   set block [[[ord::get_db] getChip] getBlock]

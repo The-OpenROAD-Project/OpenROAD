@@ -617,7 +617,11 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }  // end while
   // update the final results
+
   packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
   calPenalty();
 
   if (centralization_on_) {

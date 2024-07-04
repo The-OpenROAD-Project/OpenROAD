@@ -46,6 +46,8 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      skip_steps_(false),
+      is_skipping_(false),
       only_final_result_(false),
       block_(block),
       logger_(logger)
@@ -69,7 +71,7 @@ void Graphics::startSA()
     return;
   }
 
-  if (only_final_result_) {
+  if (only_final_result_ || skip_steps_) {
     return;
   }
 
@@ -84,7 +86,7 @@ void Graphics::endSA()
     return;
   }
 
-  if (only_final_result_) {
+  if (only_final_result_ || skip_steps_) {
     return;
   }
 
@@ -131,7 +133,7 @@ void Graphics::drawResult()
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
     fetchSoftAndHard(root_, hard_macros_, soft_macros_, outlines, level);
-    outlines_ = outlines;
+    outlines_ = std::move(outlines);
   }
 
   gui::Gui::get()->redraw();
@@ -163,11 +165,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
         }
+        break;
       }
       case StdCellCluster:
         soft.push_back(*child->getSoftMacro());
+        break;
       case MixedCluster: {
         fetchSoftAndHard(child, hard, soft, outlines, (level + 1));
+        break;
       }
     }
   }
@@ -183,7 +188,11 @@ void Graphics::penaltyCalculated(float norm_cost)
     return;
   }
 
-  if (norm_cost < best_norm_cost_) {
+  if (is_skipping_) {
+    return;
+  }
+
+  if (norm_cost < best_norm_cost_ || !is_skipping_) {
     logger_->report("------ Penalty ------");
 
     report("Area", area_penalty_);
@@ -203,10 +212,14 @@ void Graphics::penaltyCalculated(float norm_cost)
     const char* type = !soft_macros_.empty() ? "SoftMacro" : "HardMacro";
     gui::Gui::get()->status(type);
     gui::Gui::get()->redraw();
-    if (norm_cost < 0.99 * best_norm_cost_) {
+    if (norm_cost < 0.99 * best_norm_cost_ || !is_skipping_) {
       gui::Gui::get()->pause();
     }
     best_norm_cost_ = norm_cost;
+
+    if (!is_skipping_) {
+      is_skipping_ = true;
+    }
   } else {
     ++skipped_;
   }
@@ -508,6 +521,19 @@ void Graphics::setPlacementBlockages(
 void Graphics::setShowBundledNets(bool show_bundled_nets)
 {
   show_bundled_nets_ = show_bundled_nets;
+}
+
+void Graphics::setSkipSteps(bool skip_steps)
+{
+  skip_steps_ = skip_steps;
+  is_skipping_ = true;
+}
+
+void Graphics::doNotSkip()
+{
+  if (skip_steps_) {
+    is_skipping_ = false;
+  }
 }
 
 void Graphics::setOnlyFinalResult(bool only_final_result)
