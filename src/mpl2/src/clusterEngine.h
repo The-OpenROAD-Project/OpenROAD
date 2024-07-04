@@ -172,12 +172,6 @@ class ClusteringEngine
                                  std::map<int, int>& cluster_to_macro,
                                  std::set<odb::dbMaster*>& masters);
 
-  // Keep this auxiliary method here temporarily until
-  // we remove the micron code.
-  float computeMicronArea(odb::dbInst* inst);
-
-  static bool isIgnoredMaster(odb::dbMaster* master);
-
  private:
   Metrics* computeMetrics(odb::dbModule* module);
   void reportLogicalHierarchyInformation(float core_area,
@@ -256,6 +250,9 @@ class ClusteringEngine
                            bool backward_search);
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
+  float computeMicronArea(odb::dbInst* inst);
+
+  static bool isIgnoredMaster(odb::dbMaster* master);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
