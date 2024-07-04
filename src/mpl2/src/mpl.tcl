@@ -222,19 +222,19 @@ proc rtl_macro_placer { args } {
     mpl2::set_macro_placement_file $keys(-write_macro_placement)
   }
 
-  if {![mpl2::rtl_macro_placer_cmd $max_num_macro  \
-                                   $min_num_macro  \
-                                   $max_num_inst   \
-                                   $min_num_inst   \
-                                   $tolerance      \
-                                   $max_num_level  \
+  if {![mpl2::rtl_macro_placer_cmd $max_num_macro \
+                                   $min_num_macro \
+                                   $max_num_inst \
+                                   $min_num_inst \
+                                   $tolerance \
+                                   $max_num_level \
                                    $coarsening_ratio \
-                                   $num_bundled_ios  \
+                                   $num_bundled_ios \
                                    $large_net_threshold \
                                    $signature_net_threshold \
                                    $halo_width \
                                    $halo_height \
-                                   $fence_lx $fence_ly $fence_ux $fence_uy  \
+                                   $fence_lx $fence_ly $fence_ux $fence_uy \
                                    $area_weight $outline_weight $wirelength_weight \
                                    $guidance_weight $fence_weight $boundary_weight \
                                    $notch_weight $macro_blockage_weight \
@@ -306,7 +306,6 @@ proc parse_macro_name {cmd macro_name} {
   return $inst
 }
 
-# tclint-disable indent
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
@@ -322,12 +321,11 @@ proc mpl_debug { args } {
   set block [ord::get_db_block]
 
   mpl2::set_debug_cmd $block \
-                      $coarse  \
-                      $fine \
-                      [info exists flags(-show_bundled_nets)] \
-                      [info exists flags(-skip_steps)] \
-                      [info exists flags(-only_final_result)] \
+    $coarse \
+    $fine \
+    [info exists flags(-show_bundled_nets)] \
+    [info exists flags(-skip_steps)] \
+    [info exists flags(-only_final_result)]
 }
-# tclint-enable indent
 
 }
