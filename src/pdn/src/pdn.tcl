@@ -587,7 +587,7 @@ proc add_pdn_connect {args} {
     set cut_pitch [pdn::get_one_to_two "-cut_pitch" $keys(-cut_pitch)]
   }
   set cut_pitch [list \
-    [ord::microns_to_dbu [lindex $cut_pitch 0]]\
+    [ord::microns_to_dbu [lindex $cut_pitch 0]] \
     [ord::microns_to_dbu [lindex $cut_pitch 1]]
   ]
 

@@ -73,6 +73,8 @@ class Mpl2Observer
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
+  virtual void setSkipSteps(bool skip_steps) {}
+  virtual void doNotSkip() {}
   virtual void setOnlyFinalResult(bool skip_to_end) {}
   virtual void setOutline(const odb::Rect& outline) {}
 

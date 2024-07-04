@@ -6217,6 +6217,11 @@ void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
   graphics_->setShowBundledNets(show_bundled_nets);
 }
 
+void HierRTLMP::setDebugSkipSteps(bool skip_steps)
+{
+  graphics_->setSkipSteps(skip_steps);
+}
+
 void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
 {
   graphics_->setOnlyFinalResult(only_final_result);

@@ -348,18 +348,18 @@ proc place_endcaps { args } {
     [tap::parse_endcap_key keys -bottom_edge -endcap_horizontal -endcap]]
 
   tap::place_endcaps \
-    $left_top_corner\
-    $right_top_corner\
-    $left_bottom_corner\
-    $right_bottom_corner\
-    $left_top_edge\
-    $right_top_edge\
-    $left_bottom_edge\
-    $right_bottom_edge\
-    $top_edge\
-    $bottom_edge\
-    $left_edge\
-    $right_edge\
+    $left_top_corner \
+    $right_top_corner \
+    $left_bottom_corner \
+    $right_bottom_corner \
+    $left_top_edge \
+    $right_top_edge \
+    $left_bottom_edge \
+    $right_bottom_edge \
+    $top_edge \
+    $bottom_edge \
+    $left_edge \
+    $right_edge \
     $prefix
 }
 

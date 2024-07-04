@@ -429,6 +429,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // and update GNet's weights from worst timing paths.
       //
       // See timingBase.cpp in detail
+      log_->info(
+          GPL, 100, "Timing-driven: executing resizer for reweighting nets.");
       bool shouldTdProceed = tb_->updateGNetWeights(average_overflow_);
 
       // problem occured
