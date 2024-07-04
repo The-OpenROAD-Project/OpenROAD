@@ -33,6 +33,9 @@
 ##
 ############################################################################
 
+# set thread count for all tools with support for multithreading
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 # Assumes flow_helpers.tcl has been read.
 read_libraries
 read_verilog $synth_verilog
@@ -190,8 +193,6 @@ write_verilog $verilog_file
 
 ################################################################
 # Global routing
-
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
