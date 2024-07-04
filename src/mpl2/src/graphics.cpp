@@ -133,7 +133,7 @@ void Graphics::drawResult()
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
     fetchSoftAndHard(root_, hard_macros_, soft_macros_, outlines, level);
-    outlines_ = outlines;
+    outlines_ = std::move(outlines);
   }
 
   gui::Gui::get()->redraw();
@@ -165,11 +165,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
         }
+        break;
       }
       case StdCellCluster:
         soft.push_back(*child->getSoftMacro());
+        break;
       case MixedCluster: {
         fetchSoftAndHard(child, hard, soft, outlines, (level + 1));
+        break;
       }
     }
   }
