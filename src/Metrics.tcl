@@ -255,11 +255,11 @@ proc report_design_area_metrics {args} {
 }
 
 proc report_puts { out } {
-    upvar 1 when when
-    upvar 1 filename filename
-    set fileId [open $filename a]
-    puts $fileId $out
-    close $fileId
+  upvar 1 when when
+  upvar 1 filename filename
+  set fileId [open $filename a]
+  puts $fileId $out
+  close $fileId
 }
 
 define_cmd_args "report_metrics" {[-stage][-when][-include_erc][-include_clock_skew][-metrics_report_dir]}

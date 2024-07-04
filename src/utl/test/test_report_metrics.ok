@@ -1,45 +1,8 @@
-OpenROAD> read_lef ./../../../test/Nangate45/Nangate45.lef
 [INFO ODB-0227] LEF file: ./../../../test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-OpenROAD> read_verilog ./../../../test/gcd_nangate45.v
-OpenROAD> link_design gcd
-[WARNING ORD-2011] LEF master INV_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master BUF_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master INV_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master NOR2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master OAI21_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND2_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master NOR2_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master OAI21_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND2_X4 has no liberty cell.
-[WARNING ORD-2011] LEF master BUF_X4 has no liberty cell.
-[WARNING ORD-2011] LEF master XNOR2_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master XNOR2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master AND2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master AOI21_X2 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND3_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master XOR2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master AOI21_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND4_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master NOR3_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master OR2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master BUF_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master OAI22_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master AND3_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND3_X4 has no liberty cell.
-[WARNING ORD-2011] LEF master MUX2_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master CLKBUF_X1 has no liberty cell.
-[WARNING ORD-2011] LEF master INV_X8 has no liberty cell.
-[WARNING ORD-2011] LEF master NAND4_X4 has no liberty cell.
-[WARNING ORD-2011] LEF master DFF_X1 has no liberty cell.
-OpenROAD> report_metrics 2 final
 Report metrics stage 2, final...
-Warning: There are 36 input ports missing set_input_delay.
-Warning: There are 18 output ports missing set_output_delay.
-Warning: There are 18 unconstrained endpoints.
-No registers in design
+Metrics results directory: .
 
 ==========================================================================
 final report_design_area
 --------------------------------------------------------------------------
-Design area 0 u^2 100% utilization.
+Design area 520 u^2 100% utilization.
