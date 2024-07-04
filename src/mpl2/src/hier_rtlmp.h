@@ -138,28 +138,17 @@ class HierRTLMP
  private:
   using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
-  // General Hier-RTLMP flow functions
-  void initMacroPlacer();
-  void computeMetricsForModules(float core_area);
-  void reportLogicalHierarchyInformation(float core_area,
-                                         float util,
-                                         float core_util);
 	void resetSAParameters();
-
-  Metrics* computeMetrics(odb::dbModule* module);
-
   void updateMacrosOnDb();
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
-
   void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
                    float outline_width,
                    float outline_height,
                    const std::string& file_name);
 
-  // Multilevel Autoclustering
   void runMultilevelAutoclustering();
 
   // Coarse Shaping
@@ -270,9 +259,6 @@ class HierRTLMP
   float global_fence_ux_ = 0.0;
   float global_fence_uy_ = 0.0;
 
-  float halo_width_ = 0.0;
-  float halo_height_ = 0.0;
-
   const int num_runs_ = 10;    // number of runs for SA
   int num_threads_ = 10;       // number of threads
   const int random_seed_ = 0;  // random seed for deterministic
@@ -328,9 +314,6 @@ class HierRTLMP
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
-  // design-related variables
-  float macro_with_halo_area_ = 0.0;
-
   // statistics of the design
   Metrics* metrics_ = nullptr;
 
@@ -341,7 +324,7 @@ class HierRTLMP
   // during calculation, we may loss some accuracy.
   const float conversion_tolerance_ = 0.01;
 
-  bool design_has_unfixed_macros_ = true;
+  bool skip_macro_placement_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };

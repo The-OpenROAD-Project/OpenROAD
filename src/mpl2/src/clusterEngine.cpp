@@ -96,6 +96,150 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
+// Fetch the design's logical data
+void ClusteringEngine::fetchDesignMetrics()
+{
+  design_metrics_ = computeMetrics(block_->getTopModule());
+
+  odb::Rect die = block_->getDieArea();
+  odb::Rect core_box = block_->getCoreArea();
+
+  float core_lx = block_->dbuToMicrons(core_box.xMin());
+  float core_ly = block_->dbuToMicrons(core_box.yMin());
+  float core_ux = block_->dbuToMicrons(core_box.xMax());
+  float core_uy = block_->dbuToMicrons(core_box.yMax());
+
+  logger_->report(
+      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
+      block_->dbuToMicrons(die.xMin()),
+      block_->dbuToMicrons(die.yMin()),
+      block_->dbuToMicrons(die.xMax()),
+      block_->dbuToMicrons(die.yMax()),
+      core_lx,
+      core_ly,
+      core_ux,
+      core_uy);
+
+  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
+  float util
+      = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea()) / core_area;
+  float core_util
+      = design_metrics_->getStdCellArea() / (core_area - design_metrics_->getMacroArea());
+
+  // Check if placement is feasible in the core area when considering
+  // the macro halos
+  int unfixed_macros = 0;
+  for (auto inst : block_->getInsts()) {
+    auto master = inst->getMaster();
+    if (master->isBlock()) {
+      const auto width
+          = block_->dbuToMicrons(master->getWidth()) + 2 * tree_->halo_width;
+      const auto height
+          = block_->dbuToMicrons(master->getHeight()) + 2 * tree_->halo_width;
+      tree_->macro_with_halo_area += width * height;
+      unfixed_macros += !inst->getPlacementStatus().isFixed();
+    }
+  }
+
+  reportLogicalHierarchyInformation(core_area, util, core_util);
+
+  if (unfixed_macros == 0) {
+    tree_->has_unfixed_macros = false;
+    return;
+  }
+
+  if (tree_->macro_with_halo_area + design_metrics_->getStdCellArea() > core_area) {
+    logger_->error(MPL,
+                   16,
+                   "The instance area with halos {} exceeds the core area {}",
+                   tree_->macro_with_halo_area + design_metrics_->getStdCellArea(),
+                   core_area);
+  }
+}
+
+// Traverse Logical Hierarchy
+// Recursive function to collect the design metrics (number of std cells,
+// area of std cells, number of macros and area of macros) in the logical
+// hierarchy
+Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
+{
+  unsigned int num_std_cell = 0;
+  float std_cell_area = 0.0;
+  unsigned int num_macro = 0;
+  float macro_area = 0.0;
+
+  for (odb::dbInst* inst : module->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+
+    if (ClusteringEngine::isIgnoredMaster(master)) {
+      continue;
+    }
+
+    float inst_area = computeMicronArea(inst);
+
+    if (master->isBlock()) {  // a macro
+      num_macro += 1;
+      macro_area += inst_area;
+
+      // add hard macro to corresponding map
+      HardMacro* macro = new HardMacro(inst, tree_->halo_width, tree_->halo_width);
+      tree_->maps.inst_to_hard[inst] = macro;
+    } else {
+      num_std_cell += 1;
+      std_cell_area += inst_area;
+    }
+  }
+
+  // Be careful about the relationship between
+  // odb::dbModule and odb::dbInst
+  // odb::dbModule and odb::dbModInst
+  // recursively traverse the hierarchical module instances
+  for (odb::dbModInst* inst : module->getChildren()) {
+    Metrics* metrics = computeMetrics(inst->getMaster());
+    num_std_cell += metrics->getNumStdCell();
+    std_cell_area += metrics->getStdCellArea();
+    num_macro += metrics->getNumMacro();
+    macro_area += metrics->getMacroArea();
+  }
+
+  Metrics* metrics
+      = new Metrics(num_std_cell, num_macro, std_cell_area, macro_area);
+  tree_->maps.module_to_metrics[module] = metrics;
+
+  return metrics;
+}
+
+void ClusteringEngine::reportLogicalHierarchyInformation(float core_area,
+                                                  float util,
+                                                  float core_util)
+{
+  logger_->report(
+      "\tNumber of std cell instances: {}\n"
+      "\tArea of std cell instances: {:.2f}\n"
+      "\tNumber of macros: {}\n"
+      "\tArea of macros: {:.2f}\n"
+      "\tHalo width: {:.2f}\n"
+      "\tHalo height: {:.2f}\n"
+      "\tArea of macros with halos: {:.2f}\n"
+      "\tArea of std cell instances + Area of macros: {:.2f}\n"
+      "\tCore area: {:.2f}\n"
+      "\tDesign Utilization: {:.2f}\n"
+      "\tCore Utilization: {:.2f}\n"
+      "\tManufacturing Grid: {}\n",
+      design_metrics_->getNumStdCell(),
+      design_metrics_->getStdCellArea(),
+      design_metrics_->getNumMacro(),
+      design_metrics_->getMacroArea(),
+      tree_->halo_width,
+      tree_->halo_height,
+      tree_->macro_with_halo_area,
+      design_metrics_->getStdCellArea() + design_metrics_->getMacroArea(),
+      core_area,
+      util,
+      core_util,
+      block_->getTech()->getManufacturingGrid());
+}
+
 void ClusteringEngine::initTree()
 {
   tree_->root = new Cluster(id_, std::string("root"), logger_);

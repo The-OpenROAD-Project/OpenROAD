@@ -133,12 +133,12 @@ void HierRTLMP::setGlobalFence(float fence_lx,
 
 void HierRTLMP::setHaloWidth(float halo_width)
 {
-  halo_width_ = halo_width;
+  tree_.halo_width = halo_width;
 }
 
 void HierRTLMP::setHaloHeight(float halo_height)
 {
-  halo_height_ = halo_height;
+  tree_.halo_height = halo_height;
 }
 
 // Options related to clustering
@@ -234,16 +234,12 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 //      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
 {
-  initMacroPlacer();
-  if (!design_has_unfixed_macros_) {
-    logger_->info(MPL, 17, "No unfixed macros. Skipping macro placement.");
-    return;
-  }
+  block_ = db_->getChip()->getBlock();
 
   runMultilevelAutoclustering();
-
-  if (graphics_) {
-    graphics_->finishedClustering(tree_.root);
+  if (skip_macro_placement_) {
+    logger_->info(MPL, 17, "Skipping macro placement.");
+    return;
   }
 
   if (!tree_.has_std_cells) {
@@ -290,112 +286,28 @@ void HierRTLMP::run()
 // Private functions
 ////////////////////////////////////////////////////////////////////////
 
-void HierRTLMP::initMacroPlacer()
-{
-  block_ = db_->getChip()->getBlock();
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_);
-
-  odb::Rect die = block_->getDieArea();
-  odb::Rect core_box = block_->getCoreArea();
-
-  float core_lx = block_->dbuToMicrons(core_box.xMin());
-  float core_ly = block_->dbuToMicrons(core_box.yMin());
-  float core_ux = block_->dbuToMicrons(core_box.xMax());
-  float core_uy = block_->dbuToMicrons(core_box.yMax());
-
-  logger_->report(
-      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      block_->dbuToMicrons(die.xMin()),
-      block_->dbuToMicrons(die.yMin()),
-      block_->dbuToMicrons(die.xMax()),
-      block_->dbuToMicrons(die.yMax()),
-      core_lx,
-      core_ly,
-      core_ux,
-      core_uy);
-
-  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
-
-  computeMetricsForModules(core_area);
-}
-
-void HierRTLMP::computeMetricsForModules(float core_area)
-{
-  metrics_ = computeMetrics(block_->getTopModule());
-
-  float util
-      = (metrics_->getStdCellArea() + metrics_->getMacroArea()) / core_area;
-  float core_util
-      = metrics_->getStdCellArea() / (core_area - metrics_->getMacroArea());
-
-  // Check if placement is feasible in the core area when considering
-  // the macro halos
-  int unfixed_macros = 0;
-  for (auto inst : block_->getInsts()) {
-    auto master = inst->getMaster();
-    if (master->isBlock()) {
-      const auto width
-          = block_->dbuToMicrons(master->getWidth()) + 2 * halo_width_;
-      const auto height
-          = block_->dbuToMicrons(master->getHeight()) + 2 * halo_width_;
-      macro_with_halo_area_ += width * height;
-      unfixed_macros += !inst->getPlacementStatus().isFixed();
-    }
-  }
-  reportLogicalHierarchyInformation(core_area, util, core_util);
-
-  if (unfixed_macros == 0) {
-    design_has_unfixed_macros_ = false;
-    return;
-  }
-
-  if (macro_with_halo_area_ + metrics_->getStdCellArea() > core_area) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area with halos {} exceeds the core area {}",
-                   macro_with_halo_area_ + metrics_->getStdCellArea(),
-                   core_area);
-  }
-}
-
-void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
-                                                  float util,
-                                                  float core_util)
-{
-  logger_->report(
-      "\tNumber of std cell instances: {}\n"
-      "\tArea of std cell instances: {:.2f}\n"
-      "\tNumber of macros: {}\n"
-      "\tArea of macros: {:.2f}\n"
-      "\tHalo width: {:.2f}\n"
-      "\tHalo height: {:.2f}\n"
-      "\tArea of macros with halos: {:.2f}\n"
-      "\tArea of std cell instances + Area of macros: {:.2f}\n"
-      "\tCore area: {:.2f}\n"
-      "\tDesign Utilization: {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n"
-      "\tManufacturing Grid: {}\n",
-      metrics_->getNumStdCell(),
-      metrics_->getStdCellArea(),
-      metrics_->getNumMacro(),
-      metrics_->getMacroArea(),
-      halo_width_,
-      halo_height_,
-      macro_with_halo_area_,
-      metrics_->getStdCellArea() + metrics_->getMacroArea(),
-      core_area,
-      util,
-      core_util,
-      block_->getTech()->getManufacturingGrid());
-}
-
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_);
+
+  // Set target structures
   clustering_engine_->setDesignMetrics(metrics_);
   clustering_engine_->setTree(&tree_);
+
+  clustering_engine_->fetchDesignMetrics();
+  if (!tree_.has_unfixed_macros) {
+    logger_->info(MPL, 17, "No unfixed macros.");
+    skip_macro_placement_ = true;
+    return;
+  }
+
   clustering_engine_->run();
+  
+  if (graphics_) {
+    graphics_->finishedClustering(tree_.root);
+  }
 }
 
 void HierRTLMP::resetSAParameters()
@@ -463,58 +375,6 @@ void HierRTLMP::setRootShapes()
   root_soft_macro->setX(root_lx);
   root_soft_macro->setY(root_ly);
   tree_.root->setSoftMacro(root_soft_macro);
-}
-
-// Traverse Logical Hierarchy
-// Recursive function to collect the design metrics (number of std cells,
-// area of std cells, number of macros and area of macros) in the logical
-// hierarchy
-Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
-{
-  unsigned int num_std_cell = 0;
-  float std_cell_area = 0.0;
-  unsigned int num_macro = 0;
-  float macro_area = 0.0;
-
-  for (odb::dbInst* inst : module->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-
-    if (ClusteringEngine::isIgnoredMaster(master)) {
-      continue;
-    }
-
-    float inst_area = clustering_engine_->computeMicronArea(inst);
-
-    if (master->isBlock()) {  // a macro
-      num_macro += 1;
-      macro_area += inst_area;
-
-      // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, halo_width_, halo_height_);
-      tree_.maps.inst_to_hard[inst] = macro;
-    } else {
-      num_std_cell += 1;
-      std_cell_area += inst_area;
-    }
-  }
-
-  // Be careful about the relationship between
-  // odb::dbModule and odb::dbInst
-  // odb::dbModule and odb::dbModInst
-  // recursively traverse the hierarchical module instances
-  for (odb::dbModInst* inst : module->getChildren()) {
-    Metrics* metrics = computeMetrics(inst->getMaster());
-    num_std_cell += metrics->getNumStdCell();
-    std_cell_area += metrics->getStdCellArea();
-    num_macro += metrics->getNumMacro();
-    macro_area += metrics->getMacroArea();
-  }
-
-  Metrics* metrics
-      = new Metrics(num_std_cell, num_macro, std_cell_area, macro_area);
-  tree_.maps.module_to_metrics[module] = metrics;
-
-  return metrics;
 }
 
 // Compare two intervals according to the product
@@ -1205,7 +1065,7 @@ float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
   }
 
   const float macro_dominance_factor
-      = macro_with_halo_area_
+      = tree_.macro_with_halo_area
         / (tree_.root->getWidth() * tree_.root->getHeight());
   const float depth = (std_cell_area / sum_length)
                       * std::pow((1 - macro_dominance_factor), 2);
@@ -2266,7 +2126,7 @@ void HierRTLMP::adjustMacroBlockageWeight()
                MPL,
                "multilevel_autoclustering",
                1,
-               "Number of levels is {}, Changing macro blockage weight from {} "
+               "Max level is {}, Changing macro blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_.max_level,
                macro_blockage_weight_,
@@ -2278,14 +2138,14 @@ void HierRTLMP::adjustMacroBlockageWeight()
 void HierRTLMP::reportSAWeights()
 {
   logger_->report("\nSimmulated Annealing Weights:\n");
-  logger_->report("Area = \t{}", area_weight_);
-  logger_->report("Outline = \t{}", outline_weight_);
-  logger_->report("WL = \t{}", wirelength_weight_);
+  logger_->report("Area = {}", area_weight_);
+  logger_->report("Outline = {}", outline_weight_);
+  logger_->report("WL = {}", wirelength_weight_);
   logger_->report("Guidance = {}", guidance_weight_);
   logger_->report("Fence = {}", fence_weight_);
   logger_->report("Boundary = {}", boundary_weight_);
   logger_->report("Notch = {}", notch_weight_);
-  logger_->report("Macro Blockage = {}", macro_blockage_weight_);
+  logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
 }
 
 // Multilevel macro placement without bus planning

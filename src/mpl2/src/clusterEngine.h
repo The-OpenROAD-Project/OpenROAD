@@ -99,16 +99,20 @@ struct PhysicalHierarchy
         base_min_macro(0),
         base_max_std_cell(0),
         base_min_std_cell(0),
-        cluster_size_ratio(0.0f),
-        cluster_size_tolerance(0.0f),
-        virtual_weight(0.0f),
         max_level(0),
         bundled_ios_per_edge(0),
         large_net_threshold(0),
         min_net_count_for_connection(0),
+        cluster_size_ratio(0.0f),
+        cluster_size_tolerance(0.0f),
+        virtual_weight(0.0f),
+        halo_width(0.0f),
+        halo_height(0.0f),
+        macro_with_halo_area(0.0f),
         has_io_clusters(true),
         has_only_macros(false),
-        has_std_cells(true)
+        has_std_cells(true),
+        has_unfixed_macros(true)
   {
   }
 
@@ -120,17 +124,22 @@ struct PhysicalHierarchy
   int base_max_std_cell;
   int base_min_std_cell;
 
-  float cluster_size_ratio;
-  float cluster_size_tolerance;
-  float virtual_weight; // between std cell part and macro part
   int max_level;
   int bundled_ios_per_edge;
   int large_net_threshold;  // used to ignore global nets
   int min_net_count_for_connection;
+  float cluster_size_ratio;
+  float cluster_size_tolerance;
+  float virtual_weight; // between std cell part and macro part
+
+  float halo_width;
+  float halo_height;
+  float macro_with_halo_area;
 
   bool has_io_clusters;
   bool has_only_macros;
   bool has_std_cells;
+  bool has_unfixed_macros;
 };
 
 class ClusteringEngine
@@ -142,6 +151,7 @@ class ClusteringEngine
                    par::PartitionMgr* triton_part);
 
   void run();
+  void fetchDesignMetrics();
 
   void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
@@ -169,6 +179,10 @@ class ClusteringEngine
   static bool isIgnoredMaster(odb::dbMaster* master);
 
  private:
+  Metrics* computeMetrics(odb::dbModule* module);
+  void reportLogicalHierarchyInformation(float core_area,
+                                         float util,
+                                         float core_util);
   void initTree();
   void setBaseThresholds();
   void createIOClusters();
