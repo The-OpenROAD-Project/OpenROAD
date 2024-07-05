@@ -100,7 +100,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
-  
+
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbChip* chip_ = odb::dbChip::create(db_);
@@ -113,7 +113,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // create 2 layers and configure with corresponding grid patterns
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
-  odb::dbTechLayer* layer_ = odb::dbTechLayer::create(tech_, "layer1", odb::dbTechLayerType::CUT);
+  odb::dbTechLayer* layer_ = odb::dbTechLayer::create(tech_, "layer", odb::dbTechLayerType::CUT);
   odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, layer_);
   track_->addGridPatternX(0, 50, 20);
   track_->addGridPatternY(0, 50, 20);
@@ -141,57 +141,88 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   // create 3 instances on block_
   odb::dbDatabase::beginEco(block_);
-  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
-  odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
+  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "macro1");
   odb::dbDatabase::endEco(block_);
 
   // inst setup: (all quantities in internal DB units)
   // 1000 x 1000 master and block 
-  // with 2 pins, one on each of the 2 layers, at (0, 0, 50, 50)
+  // with 2 pins at (0, 0, 50, 50) and (100, 100, 150, 150)
   // grid pattern is (0, 50, 20) -> 0 20 40 60 80 ... 980
   // manufacturing grid size is 5
 
   Snapper snapper;
 
-  // instance 1
-  logger->report("Snapping instance 1 ...");
+  // new snap parameters are computed depending on whether
+  // the correponding TechLayer is horizontal (y is calculated)
+  // or vertical (x is calculated)
+
+  // first, we test an instance whose layer is vertical, so
+  // it will only shift along the x-axis
+  layer_->setDirection(odb::dbTechLayerDir::HORIZONTAL);
   snapper.setMacro(inst1);
-  inst1->setOrigin(500, 500);
+
+  inst1->setOrigin(519, 500);
   logger->report(
     "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
   snapper.snapMacro();
-  inst1->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   logger->report(
     "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
+  EXPECT_TRUE(inst1->getOrigin().x() == 515);
 
-  // instance 2
-  logger->report("Snapping instance 2 ...");
-  snapper.setMacro(inst2);
-  inst2->setOrigin(500, 500);
+  inst1->setOrigin(517, 500);
   logger->report(
-    "input origin: ({}, {})", inst2->getOrigin().x(), inst2->getOrigin().y()
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
   snapper.snapMacro();
-  inst2->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   logger->report(
-    "output origin: ({}, {})", inst2->getOrigin().x(), inst2->getOrigin().y()
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
-
-  // instance 3
-  logger->report("Snapping instance 3 ...");
-  snapper.setMacro(inst3);
-  inst3->setOrigin(500, 500);
+  EXPECT_TRUE(inst1->getOrigin().x() == 515);
+  
+  inst1->setOrigin(515, 500);
   logger->report(
-    "input origin: ({}, {})", inst3->getOrigin().x(), inst3->getOrigin().y()
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
   snapper.snapMacro();
-  inst3->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   logger->report(
-    "output origin: ({}, {})", inst3->getOrigin().x(), inst3->getOrigin().y()
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
+  EXPECT_TRUE(inst1->getOrigin().x() == 515);
+
+  // 515 will still stay 515
+  // but 514 and 513 will snap to 510 even though 515 is nearer
+  inst1->setOrigin(514, 500);
+  logger->report(
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  EXPECT_TRUE(inst1->getOrigin().x() == 510);
+
+  inst1->setOrigin(513, 500);
+  logger->report(
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  EXPECT_TRUE(inst1->getOrigin().x() == 510);
+
+  inst1->setOrigin(512, 500);
+  logger->report(
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  EXPECT_TRUE(inst1->getOrigin().x() == 510);
+
 
 } // CanSnapMacros
 
