@@ -1793,7 +1793,7 @@ void ClusteringEngine::breakMixedLeaves(
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
   Cluster* parent = mixed_leaf;
-  const float macro_dominated_cluster_ratio = 0.1;
+  const float macro_dominated_cluster_ratio = 0.01;
 
   // Split by replacement if macro dominated.
   if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_ratio
