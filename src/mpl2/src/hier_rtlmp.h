@@ -488,9 +488,6 @@ class HierRTLMP
   std::unique_ptr<Mpl2Observer> graphics_;
 };
 
-///
-/// Process of pushing macros to boundaries 
-///
 class Pusher
 {
  public:
@@ -499,9 +496,6 @@ class Pusher
          odb::dbBlock* block,
          const std::map<Boundary, Rect>& boundary_to_io_blockage);
 
-  ///
-  /// Initiate the process of pushing macros
-  ///
   void pushMacrosToCoreBoundaries();
 
  private:
@@ -542,90 +536,28 @@ struct SnapParameters
   int lower_left_to_first_pin = 0;
 };
 
-/// The process of snapping macros to grid
 class Snapper
 {
  public:
   Snapper();
   Snapper(odb::dbInst* inst);
 
-  ///
-  /// Set which macro instance is being snapped to grid,
-  /// is to be immediately followed by snapMacro. 
-  /// Called from within HierRTLMP::commitMacroPlacementToDb
-  /// 
   void setMacro(odb::dbInst* inst) { inst_ = inst; }
-
-  ///
-  /// Initiate the process of snapping selected macro instance
-  /// (set using setMacro) to the grid.
-  /// The process involves computing the new origin of macro instance
-  /// based on aspects including pin width, pitch, layer direction, et
-  /// cetera.
-  /// The new origin from computeSnapOrigin is then inputed to setOrigin.
-  ///
   void snapMacro();
 
  private:
-  ///
-  /// Check the macro instance's master, then MTerms, then MPins,
-  /// then boxes (dbBox from getGeometry), then tech layer, then
-  /// layer direction. Accordingly, it will then call either 
-  /// computeSnapParameters(layer, box, false) or
-  /// computeSnapParameters(layer, box, true) depending on the
-  /// tech layer being horizontal. 
-  /// Potentially applicable offset is computed based on pitch,
-  /// distance of lower-left to first pin, and instance orientation
-  /// (dbOrientType). The resulting origin is rounded with consideration
-  /// to the manufacturing grid (getManufacturingGrid). 
-  /// The result, an odb::Point, is returned.
-  ///
   odb::Point computeSnapOrigin();
-
-  ///
-  /// This will check instance block, track grid, coordinate grid,
-  /// and vertical layer. Accordingly, the following parameters are
-  /// computed or retrieved: offset, pitch, pin width, lower left to
-  /// first pin. They are returned in the form of SnapParameters.
-  ///
   SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
                                        odb::dbBox* box,
                                        bool vertical_layer);
-  ///
-  /// Based on whether vertical_layer is True or False,
-  /// retrieve track_grid->getGridX or track_grid->getGridY.
-  ///
   void getTrackGrid(odb::dbTrackGrid* track_grid,
                     std::vector<int>& coordinate_grid,
                     bool vertical_layer);
-
-  /// 
-  /// Based on the whether vertical_layer is True or False,
-  /// retrieve either layer->getPitchX or layer->getPitchY.
-  ///
   int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
-
-  ///
-  /// Based on whether vertical_layer is True or False,
-  /// retrieve either layer->getOffsetX or layer->getOffsetY.
-  ///
   int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
-  
-  ///
-  /// Based on whether vertical_layer is True or False,
-  /// retrieve either box->getDX or box->getDY.
-  ///
   int getPinWidth(odb::dbBox* box, bool vertical_layer);
-
-  ///
-  /// Based on whether vertical_layer is True or False,
-  /// retrieve either box->getBox().xMin() or box->getBox().yMin()
-  ///
   int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
 
-  ///
-  /// Macro instance to be snapped to grid.
-  ///
   odb::dbInst* inst_;
 };
 
