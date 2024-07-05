@@ -145,8 +145,8 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // has a "horizontal" direction preference.
   layer_->setDirection(odb::dbTechLayerDir::HORIZONTAL);
 
-  // Taking the grid pattern configuration (0 20 40 ... 980)
-  // and manufacturing grid size (5) into consideration:
+  // Considering the grid pattern configuration (0 20 40 ... 980)
+  // manufacturing grid size (5), and direction preference (horizontal):
   // Valid alignments for x would include 10 15 20 25 30 35 40 ...
   // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
   // Valid alignments for y would include 15 35 55 75 95 ...
@@ -174,8 +174,6 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   EXPECT_TRUE(inst_->getOrigin().x() == 510);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
   
-  // 515 will still stay 515
-  // but 514 and 513 will snap to 510 even though 515 is nearer
   inst_->setOrigin(516, 560);
   logger->report(
     "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
@@ -197,6 +195,63 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   );
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 535);
+
+  // Now, we want to test for when the layer
+  // has a "vertical" direction preference.
+  layer_->setDirection(odb::dbTechLayerDir::VERTICAL);
+
+  // Considering the grid pattern configuration (0 20 40 ... 980)
+  // manufacturing grid size (5), and direction preference (horizontal):
+  // Valid alignments for x would include 15 35 55 75 95 ...
+  // with 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
+  // Valid alignments for y would include 10 15 20 25 30 35 40 ...
+  // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
+
+  inst_->setOrigin(540, 511);
+  logger->report(
+    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  EXPECT_TRUE(inst_->getOrigin().x() == 515);
+  EXPECT_TRUE(inst_->getOrigin().y() == 510);
+
+  inst_->setOrigin(559, 514);
+  logger->report(
+    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  EXPECT_TRUE(inst_->getOrigin().x() == 515);
+  EXPECT_TRUE(inst_->getOrigin().y() == 510);
+  
+  // 515 will still stay 515
+  // but 514 and 513 will snap to 510 even though 515 is nearer
+  inst_->setOrigin(560, 516);
+  logger->report(
+    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  EXPECT_TRUE(inst_->getOrigin().x() == 535);
+  EXPECT_TRUE(inst_->getOrigin().y() == 515);
+
+  inst_->setOrigin(579, 519);
+  logger->report(
+    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  snapper.snapMacro();
+  logger->report(
+    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
+  );
+  EXPECT_TRUE(inst_->getOrigin().x() == 535);
+  EXPECT_TRUE(inst_->getOrigin().y() == 515);
 
 
 } // CanSnapMacros
