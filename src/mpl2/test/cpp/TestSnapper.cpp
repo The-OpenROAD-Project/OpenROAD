@@ -69,7 +69,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst1);
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);
-}
+} // CanSetMacroForEmptyInstances
 
 TEST_F(Mpl2SnapperTest, CanSnapMacros)
 {
@@ -113,15 +113,10 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // create 2 layers and configure with corresponding grid patterns
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
-  odb::dbTechLayer* layer1_ = odb::dbTechLayer::create(tech_, "layer1", odb::dbTechLayerType::CUT);
-  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_, layer1_);
-  track1->addGridPatternX(0, 50, 20);
-  track1->addGridPatternY(0, 50, 20);
-
-  odb::dbTechLayer* layer2_ = odb::dbTechLayer::create(tech_, "layer2", odb::dbTechLayerType::CUT);
-  odb::dbTrackGrid* track2 = odb::dbTrackGrid::create(block_, layer2_);
-  track2->addGridPatternX(0, 50, 20);
-  track2->addGridPatternY(0, 50, 20);
+  odb::dbTechLayer* layer_ = odb::dbTechLayer::create(tech_, "layer1", odb::dbTechLayerType::CUT);
+  odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, layer_);
+  track_->addGridPatternX(0, 50, 20);
+  track_->addGridPatternY(0, 50, 20);
 
   // set manufacturing grid size
   tech_->setManufacturingGrid(5); 
@@ -132,23 +127,23 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   master_->setHeight(1000);
   master_->setType(odb::dbMasterType::BLOCK);
   
-  // component with 1 input (layer1), 1 output (layer2) -> 2 terminals 
-  // each pin occupies (0, 0) to (50, 50)
+  // component with 1 input, 1 output -> 2 terminals 
+  // each 50x50, input at (0,0) and output at (100, 100)
   odb::dbMTerm* mterm_i = odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
-  odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer1_, 0, 0, 50, 50);
+  odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer_, 0, 0, 50, 50);
 
   odb::dbMTerm* mterm_o = odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer2_, 0, 0, 50, 50);
+  odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer_, 100, 100, 150, 150);
 
   master_->setFrozen();
 
   // create 3 instances on block_
   odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  //odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
-  //odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
+  odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
+  odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
   odb::dbDatabase::endEco(block_);
 
   // inst setup: (all quantities in internal DB units)
@@ -158,61 +153,46 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // manufacturing grid size is 5
 
   Snapper snapper;
+
+  // instance 1
+  logger->report("Snapping instance 1 ...");
   snapper.setMacro(inst1);
-
-  inst1->setOrigin(435, 500);
-
+  inst1->setOrigin(500, 500);
   logger->report(
-    "initial (x, y) of inst1: ({}, {})",
-    inst1->getOrigin().x(),
-    inst1->getOrigin().y()
+    "input origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
+  );
+  snapper.snapMacro();
+  inst1->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  logger->report(
+    "output origin: ({}, {})", inst1->getOrigin().x(), inst1->getOrigin().y()
   );
 
-  snapper.snapMacro(); // expected to change inst1->getOrigin
-
-  logger->report(
-    "end (x, y) of inst1: ({}, {})",
-    inst1->getOrigin().x(),
-    inst1->getOrigin().y()
-  );
-
-  /*
+  // instance 2
+  logger->report("Snapping instance 2 ...");
   snapper.setMacro(inst2);
-  
-  inst2->setOrigin(0, 0);
-
+  inst2->setOrigin(500, 500);
   logger->report(
-    "initial (x, y) of inst2: ({}, {})",
-    inst2->getOrigin().x(),
-    inst2->getOrigin().y()
+    "input origin: ({}, {})", inst2->getOrigin().x(), inst2->getOrigin().y()
+  );
+  snapper.snapMacro();
+  inst2->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  logger->report(
+    "output origin: ({}, {})", inst2->getOrigin().x(), inst2->getOrigin().y()
   );
 
-  snapper.snapMacro(); // expected to change inst2->getOrigin
-
-  logger->report(
-    "end (x, y) of inst1: ({}, {})",
-    inst1->getOrigin().x(),
-    inst1->getOrigin().y()
-  );
-
+  // instance 3
+  logger->report("Snapping instance 3 ...");
   snapper.setMacro(inst3);
-  
-  inst3->setOrigin(250, 0);
-
+  inst3->setOrigin(500, 500);
   logger->report(
-    "initial (x, y) of inst3: ({}, {})",
-    inst3->getOrigin().x(),
-    inst3->getOrigin().y()
+    "input origin: ({}, {})", inst3->getOrigin().x(), inst3->getOrigin().y()
+  );
+  snapper.snapMacro();
+  inst3->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  logger->report(
+    "output origin: ({}, {})", inst3->getOrigin().x(), inst3->getOrigin().y()
   );
 
-  snapper.snapMacro(); // expected to change inst3->getOrigin
-
-  logger->report(
-    "end (x, y) of inst3: ({}, {})",
-    inst3->getOrigin().x(),
-    inst3->getOrigin().y()
-  );
-  */
-}
+} // CanSnapMacros
 
 }  // namespace mpl2
