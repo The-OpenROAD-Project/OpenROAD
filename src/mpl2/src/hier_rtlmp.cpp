@@ -1144,7 +1144,7 @@ void HierRTLMP::adjustCongestionWeight()
     }
     debugPrint(logger_,
                MPL,
-               "hierarchical_macro_placement",
+               "bus_planning",
                1,
                "Adjusting congestion weight to {} - Snap layer is {}",
                congestion_weight_,
@@ -2132,9 +2132,9 @@ void HierRTLMP::adjustMacroBlockageWeight()
     float new_macro_blockage_weight = outline_weight_ / 2.0;
     debugPrint(logger_,
                MPL,
-               "multilevel_autoclustering",
+               "hierarchical_macro_placement",
                1,
-               "Max level is {}, Changing macro blockage weight from {} "
+               "Tree max level is {}, Changing macro blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_.max_level,
                macro_blockage_weight_,
