@@ -131,7 +131,7 @@ struct PhysicalHierarchy
   float cluster_size_tolerance;
 
   // Virtual connection weight between each macro cluster
-  // and its corresponding standard-cell cluster to bias 
+  // and its corresponding standard-cell cluster to bias
   // the macro placer to place them together.
   const float virtual_weight = 10.0f;
 
@@ -265,8 +265,8 @@ class ClusteringEngine
   Metrics* design_metrics_;
   PhysicalHierarchy* tree_;
 
-  int level_; // Current level
-  int id_;    // Current "highest" id
+  int level_;  // Current level
+  int id_;     // Current "highest" id
 
   // Size limits of the current level
   int max_macro_;

@@ -37,8 +37,8 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "object.h"
-#include "sta/Liberty.hh"
 #include "par/PartitionMgr.h"
+#include "sta/Liberty.hh"
 
 namespace mpl2 {
 using utl::MPL;
@@ -122,9 +122,10 @@ void ClusteringEngine::fetchDesignMetrics()
 
   float core_area = (core_ux - core_lx) * (core_uy - core_ly);
   float util
-      = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea()) / core_area;
-  float core_util
-      = design_metrics_->getStdCellArea() / (core_area - design_metrics_->getMacroArea());
+      = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
+        / core_area;
+  float core_util = design_metrics_->getStdCellArea()
+                    / (core_area - design_metrics_->getMacroArea());
 
   // Check if placement is feasible in the core area when considering
   // the macro halos
@@ -148,12 +149,14 @@ void ClusteringEngine::fetchDesignMetrics()
     return;
   }
 
-  if (tree_->macro_with_halo_area + design_metrics_->getStdCellArea() > core_area) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area with halos {} exceeds the core area {}",
-                   tree_->macro_with_halo_area + design_metrics_->getStdCellArea(),
-                   core_area);
+  if (tree_->macro_with_halo_area + design_metrics_->getStdCellArea()
+      > core_area) {
+    logger_->error(
+        MPL,
+        16,
+        "The instance area with halos {} exceeds the core area {}",
+        tree_->macro_with_halo_area + design_metrics_->getStdCellArea(),
+        core_area);
   }
 }
 
@@ -182,7 +185,8 @@ Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
       macro_area += inst_area;
 
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, tree_->halo_width, tree_->halo_width);
+      HardMacro* macro
+          = new HardMacro(inst, tree_->halo_width, tree_->halo_width);
       tree_->maps.inst_to_hard[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -210,8 +214,8 @@ Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
 }
 
 void ClusteringEngine::reportLogicalHierarchyInformation(float core_area,
-                                                  float util,
-                                                  float core_util)
+                                                         float util,
+                                                         float core_util)
 {
   logger_->report(
       "\tNumber of std cell instances: {}\n"
@@ -256,10 +260,8 @@ void ClusteringEngine::initTree()
 
 void ClusteringEngine::setBaseThresholds()
 {
-  if (tree_->base_max_macro <= 0
-      || tree_->base_min_macro <= 0
-      || tree_->base_max_std_cell <= 0
-      || tree_->base_min_std_cell <= 0) {
+  if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
+      || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
     // Set base values for std cell lower/upper thresholds
     const int min_num_std_cells_allowed = 1000;
     tree_->base_min_std_cell
@@ -1019,10 +1021,9 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 
 // Unlike macros, std cells are always considered when when updating
 // the inst -> cluster map with the data from a module.
-void ClusteringEngine::updateInstancesAssociation(
-    odb::dbModule* module,
-    int cluster_id,
-    bool include_macro)
+void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
+                                                  int cluster_id,
+                                                  bool include_macro)
 {
   if (include_macro) {
     for (odb::dbInst* inst : module->getInsts()) {
@@ -1100,7 +1101,8 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   bool force_split_root = false;
   if (level_ == 0) {
     const int leaf_max_std_cell
-        = tree_->base_max_std_cell / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1)
+        = tree_->base_max_std_cell
+          / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1)
           * (1 + size_tolerance_);
     if (parent->getNumStdCell() < leaf_max_std_cell) {
       force_split_root = true;
@@ -1131,8 +1133,7 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   level_++;
   updateSizeThresholds();
 
-  if (force_split_root
-      || (parent->getNumStdCell() > max_std_cell_)) {
+  if (force_split_root || (parent->getNumStdCell() > max_std_cell_)) {
     breakCluster(parent);
     updateSubTree(parent);
 
@@ -1159,10 +1160,9 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
 
 void ClusteringEngine::updateSizeThresholds()
 {
-  const double coarse_factor
-      = std::pow(tree_->cluster_size_ratio, level_ - 1);
+  const double coarse_factor = std::pow(tree_->cluster_size_ratio, level_ - 1);
 
-  // A high cluster size ratio per level helps the 
+  // A high cluster size ratio per level helps the
   // clustering process converge fast
   max_macro_ = tree_->base_max_macro / coarse_factor;
   min_macro_ = tree_->base_min_macro / coarse_factor;
@@ -1278,7 +1278,8 @@ void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
   }
 }
 
-void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module)
+void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster,
+                                               odb::dbModule* module)
 {
   for (odb::dbInst* inst : module->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
@@ -1454,11 +1455,11 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   std::vector<int> part
       = triton_part_->PartitionKWaySimpleMode(num_parts,
-                                             balance_constraint,
-                                             seed,
-                                             hyperedges,
-                                             vertex_weight,
-                                             hyperedge_weights);
+                                              balance_constraint,
+                                              seed,
+                                              hyperedges,
+                                              vertex_weight,
+                                              hyperedge_weights);
 
   parent->clearLeafStdCells();
   parent->clearLeafMacros();
@@ -1550,8 +1551,10 @@ void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
           1,
           "Candidate cluster: {} - {}",
           candidate_clusters[i]->getName(),
-          (cluster_id != -1 ? tree_->maps.id_to_cluster[cluster_id]->getName() : "   "));
-      if (cluster_id != -1 && !tree_->maps.id_to_cluster[cluster_id]->isIOCluster()) {
+          (cluster_id != -1 ? tree_->maps.id_to_cluster[cluster_id]->getName()
+                            : "   "));
+      if (cluster_id != -1
+          && !tree_->maps.id_to_cluster[cluster_id]->isIOCluster()) {
         Cluster*& cluster = tree_->maps.id_to_cluster[cluster_id];
         bool delete_flag = false;
         if (cluster->mergeCluster(*candidate_clusters[i], delete_flag)) {
@@ -1909,8 +1912,7 @@ void ClusteringEngine::createOneClusterForEachMacro(
 {
   for (auto& hard_macro : hard_macros) {
     std::string cluster_name = hard_macro->getName();
-    Cluster* single_macro_cluster
-        = new Cluster(id_, cluster_name, logger_);
+    Cluster* single_macro_cluster = new Cluster(id_, cluster_name, logger_);
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
     incorporateNewCluster(single_macro_cluster, parent);
 
@@ -1918,8 +1920,9 @@ void ClusteringEngine::createOneClusterForEachMacro(
   }
 }
 
-void ClusteringEngine::classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
-                                     std::vector<int>& size_class)
+void ClusteringEngine::classifyMacrosBySize(
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<int>& size_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
     if (size_class[i] == -1) {
@@ -1948,8 +1951,8 @@ void ClusteringEngine::classifyMacrosByConnSignature(
           continue;
         }
 
-        if (macro_clusters[i]->isSameConnSignature(*macro_clusters[j],
-                                                   tree_->min_net_count_for_connection)) {
+        if (macro_clusters[i]->isSameConnSignature(
+                *macro_clusters[j], tree_->min_net_count_for_connection)) {
           signature_class[j] = i;
         }
       }
@@ -1961,7 +1964,9 @@ void ClusteringEngine::classifyMacrosByConnSignature(
     for (auto& cluster : macro_clusters) {
       logger_->report("Macro Signature: {}", cluster->getName());
       for (auto& [cluster_id, weight] : cluster->getConnection()) {
-        logger_->report(" {} {} ", tree_->maps.id_to_cluster[cluster_id]->getName(), weight);
+        logger_->report(" {} {} ",
+                        tree_->maps.id_to_cluster[cluster_id]->getName(),
+                        weight);
       }
     }
   }
@@ -2052,7 +2057,7 @@ void ClusteringEngine::groupSingleMacroClusters(
 }
 
 void ClusteringEngine::mergeMacroClustersWithinSameClass(Cluster* target,
-                                                  Cluster* source)
+                                                         Cluster* source)
 {
   bool delete_merged = false;
   target->mergeCluster(*source, delete_merged);
@@ -2070,8 +2075,7 @@ void ClusteringEngine::addStdCellClusterToSubTree(
     std::vector<int>& virtual_conn_clusters)
 {
   std::string std_cell_cluster_name = mixed_leaf->getName();
-  Cluster* std_cell_cluster
-      = new Cluster(id_, std_cell_cluster_name, logger_);
+  Cluster* std_cell_cluster = new Cluster(id_, std_cell_cluster_name, logger_);
 
   std_cell_cluster->copyInstances(*mixed_leaf);
   std_cell_cluster->clearLeafMacros();
@@ -2088,8 +2092,9 @@ void ClusteringEngine::addStdCellClusterToSubTree(
 }
 
 // We don't modify the physical hierarchy when spliting by replacement
-void ClusteringEngine::replaceByStdCellCluster(Cluster* mixed_leaf,
-                                        std::vector<int>& virtual_conn_clusters)
+void ClusteringEngine::replaceByStdCellCluster(
+    Cluster* mixed_leaf,
+    std::vector<int>& virtual_conn_clusters)
 {
   mixed_leaf->clearLeafMacros();
   mixed_leaf->setClusterType(StdCellCluster);

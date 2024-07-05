@@ -288,7 +288,7 @@ void HierRTLMP::runMultilevelAutoclustering()
   }
 
   clustering_engine_->run();
-  
+
   if (graphics_) {
     graphics_->finishedClustering(tree_.root);
   }
@@ -479,8 +479,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
 
-  const Rect outline(
-      0, 0, tree_.root->getWidth(), tree_.root->getHeight());
+  const Rect outline(0, 0, tree_.root->getWidth(), tree_.root->getHeight());
 
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
@@ -710,8 +709,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_;
 
-  const Rect outline(
-      0, 0, tree_.root->getWidth(), tree_.root->getHeight());
+  const Rect outline(0, 0, tree_.root->getWidth(), tree_.root->getHeight());
 
   // update macros
   std::vector<HardMacro> macros;
@@ -1248,7 +1246,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    clustering_engine_->updateInstancesAssociation(cluster);  // we need this step to calculate nets
+    clustering_engine_->updateInstancesAssociation(
+        cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -1320,9 +1319,10 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
-    BundledNet net(soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-                   soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-                   tree_.virtual_weight);
+    BundledNet net(
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
+        tree_.virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);
@@ -2234,7 +2234,8 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    clustering_engine_->updateInstancesAssociation(cluster);  // we need this step to calculate nets
+    clustering_engine_->updateInstancesAssociation(
+        cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -2339,9 +2340,10 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
-    BundledNet net(soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-                   soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-                   tree_.virtual_weight);
+    BundledNet net(
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
+        tree_.virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);
@@ -2735,7 +2737,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
     SoftMacro* soft_macro = new SoftMacro(cluster);
-    clustering_engine_->updateInstancesAssociation(cluster);  // we need this step to calculate nets
+    clustering_engine_->updateInstancesAssociation(
+        cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
     cluster->setSoftMacro(soft_macro);
     // merge fences and guides for hard macros within cluster
@@ -2839,9 +2842,10 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
-    BundledNet net(soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-                   soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-                   tree_.virtual_weight);
+    BundledNet net(
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
+        tree_.virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);

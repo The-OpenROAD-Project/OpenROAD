@@ -142,7 +142,7 @@ class HierRTLMP
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
 
-	void resetSAParameters();
+  void resetSAParameters();
 
   void updateMacrosOnDb();
   void updateMacroOnDb(const HardMacro* hard_macro);
