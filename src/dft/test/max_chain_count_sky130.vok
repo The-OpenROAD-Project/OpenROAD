@@ -1,0 +1,93 @@
+module max_chain_count (clock,
+    output1,
+    output10,
+    output2,
+    output3,
+    output4,
+    output5,
+    output6,
+    output7,
+    output8,
+    output9,
+    port1,
+    set_b,
+    scan_enable_1,
+    scan_in_1);
+ input clock;
+ output output1;
+ output output10;
+ output output2;
+ output output3;
+ output output4;
+ output output5;
+ output output6;
+ output output7;
+ output output8;
+ output output9;
+ input port1;
+ input set_b;
+ input scan_enable_1;
+ input scan_in_1;
+
+
+ sky130_fd_sc_hd__sdfsbp_1 ff1_clk1_rising (.D(port1),
+    .Q(output1),
+    .SCD(output2),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff2_clk1_rising (.D(port1),
+    .Q(output2),
+    .SCD(output3),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff3_clk1_rising (.D(port1),
+    .Q(output3),
+    .SCD(output4),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff4_clk1_rising (.D(port1),
+    .Q(output4),
+    .SCD(output5),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff5_clk1_rising (.D(port1),
+    .Q(output5),
+    .SCD(output6),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff6_clk1_rising (.D(port1),
+    .Q(output6),
+    .SCD(output7),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff7_clk1_rising (.D(port1),
+    .Q(output7),
+    .SCD(output8),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff8_clk1_rising (.D(port1),
+    .Q(output8),
+    .SCD(output9),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff9_clk1_rising (.D(port1),
+    .Q(output9),
+    .SCD(scan_in_1),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 ff10_clk1_rising (.D(port1),
+    .Q(output10),
+    .SCD(output1),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+endmodule

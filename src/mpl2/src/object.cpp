@@ -346,6 +346,18 @@ bool Cluster::isArrayOfInterconnectedMacros() const
   return is_array_of_interconnected_macros;
 }
 
+bool Cluster::isEmpty() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && getDbModules().empty();
+}
+
+bool Cluster::correspondsToLogicalModule() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && (getDbModules().size() == 1);
+}
+
 // Metrics Support and Statistics
 void Cluster::setMetrics(const Metrics& metrics)
 {
@@ -454,6 +466,11 @@ const std::pair<float, float> Cluster::getLocation() const
   }
 
   return soft_macro_->getLocation();
+}
+
+Rect Cluster::getBBox() const
+{
+  return soft_macro_->getBBox();
 }
 
 // Hierarchy Support
@@ -1223,6 +1240,11 @@ void SoftMacro::setShapes(
 float SoftMacro::getArea() const
 {
   return area_ > 0.01 ? area_ : 0.0;
+}
+
+Rect SoftMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
 }
 
 // Num Macros
