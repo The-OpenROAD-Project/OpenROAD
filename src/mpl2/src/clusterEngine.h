@@ -105,7 +105,6 @@ struct PhysicalHierarchy
         min_net_count_for_connection(0),
         cluster_size_ratio(0.0f),
         cluster_size_tolerance(0.0f),
-        virtual_weight(0.0f),
         halo_width(0.0f),
         halo_height(0.0f),
         macro_with_halo_area(0.0f),
@@ -130,7 +129,7 @@ struct PhysicalHierarchy
   int min_net_count_for_connection;
   float cluster_size_ratio;
   float cluster_size_tolerance;
-  float virtual_weight; // between std cell part and macro part
+  const float virtual_weight = 10.0f;; // between std cell part and macro part
 
   float halo_width;
   float halo_height;
