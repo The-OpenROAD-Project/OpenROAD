@@ -141,6 +141,12 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   Snapper snapper;
   snapper.setMacro(inst_);
 
+  // At the moment, this test only tests invalid input origins,
+  // because right now, Snapper will not necessarily compute
+  // the most optimal origin for valid input origins (i.e. no change)
+  // However, this might change in the future if Snapepr is optimized
+  // further.
+
   // First, we want to test for when the layer
   // has a "horizontal" direction preference.
   layer_->setDirection(odb::dbTechLayerDir::HORIZONTAL);
@@ -153,46 +159,22 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // with 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
 
   inst_->setOrigin(511, 540);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 510);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
 
   inst_->setOrigin(514, 559);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 510);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
   
   inst_->setOrigin(516, 560);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 535);
 
   inst_->setOrigin(519, 579);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 535);
 
@@ -208,48 +190,22 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
 
   inst_->setOrigin(540, 511);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 510);
 
   inst_->setOrigin(559, 514);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 510);
   
-  // 515 will still stay 515
-  // but 514 and 513 will snap to 510 even though 515 is nearer
   inst_->setOrigin(560, 516);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 535);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
 
   inst_->setOrigin(579, 519);
-  logger->report(
-    "input origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   snapper.snapMacro();
-  logger->report(
-    "output origin: ({}, {})", inst_->getOrigin().x(), inst_->getOrigin().y()
-  );
   EXPECT_TRUE(inst_->getOrigin().x() == 535);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
 
