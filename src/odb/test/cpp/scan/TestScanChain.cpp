@@ -70,7 +70,6 @@ class TestScanChain : public testing::Test
   {
     db_ = create2LevetDbWithBTerms();
     block_ = db_->getChip()->getBlock();
-    tmp_path_ = testTmpPath("results", "TestScanChain");
     dft_ = block_->getDft();
 
     std::vector<std::string> instances_names = {"i1", "i2", "i3"};
@@ -78,6 +77,11 @@ class TestScanChain : public testing::Test
     for (const auto& name : instances_names) {
       instances_.push_back(block_->findInst(name.c_str()));
     }
+  }
+
+  void SetUpTmpPath(const std::string& name)
+  {
+    tmp_path_ = testTmpPath("results", name);
   }
 
   // Writes a temporal DB and then tries to read the contents back to check if
@@ -117,6 +121,7 @@ class TestScanChain : public testing::Test
 
 TEST_F(TestScanChain, CreateScanChain)
 {
+  SetUpTmpPath("CreateScanChain");
   dbInst* inst = block_->findInst("i1");
   dbITerm* iterm = inst->findITerm("a");
   dbBTerm* bterm = block_->findBTerm("IN1");
@@ -155,6 +160,7 @@ TEST_F(TestScanChain, CreateScanChain)
 
 TEST_F(TestScanChain, CreateScanChainWithPartition)
 {
+  SetUpTmpPath("CreateScanChainWithPartition");
   dbScanChain* scan_chain = dbScanChain::create(dft_);
 
   std::vector<dbInst*> instances_partition1 = {instances_[0], instances_[1]};

@@ -41,7 +41,7 @@ sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-corner corner]}
 proc set_layer_rc {args} {
   sta::parse_key_args "set_layer_rc" args \
-    keys {-layer -via -capacitance -resistance -corner}\
+    keys {-layer -via -capacitance -resistance -corner} \
     flags {}
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {

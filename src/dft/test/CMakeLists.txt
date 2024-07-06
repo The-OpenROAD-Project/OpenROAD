@@ -7,6 +7,8 @@ set(TEST_NAMES
   sub_modules_sky130
   scan_architect_no_mix_sky130
   scan_architect_clock_mix_sky130
+  place_sort_sky130
+  max_chain_count_sky130
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)

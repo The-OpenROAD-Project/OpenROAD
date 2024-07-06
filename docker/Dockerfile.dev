@@ -8,6 +8,7 @@ ARG fromImage=ubuntu:22.04
 FROM $fromImage
 
 ARG INSTALLER_ARGS=""
+
 ARG fromImage
 
 COPY DependencyInstaller.sh /tmp/.

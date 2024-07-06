@@ -14,15 +14,12 @@ class Mpl2SnapperTest : public ::testing::Test
 
   void SetUp() override
   {
-    utl::Logger* logger = new utl::Logger();
-
     db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
                                         &odb::dbDatabase::destroy);
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
                                       &odb::dbChip::destroy);
-    block_ = OdbUniquePtr<odb::dbBlock>(
-        chip_->getBlock(), &odb::dbBlock::destroy);
-    
+    block_
+        = OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
   }
 
   utl::Logger logger_;
@@ -41,7 +38,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
-  
+
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
@@ -51,13 +48,15 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   master_->setWidth(1000);
   master_->setHeight(1000);
   master_->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   master_->setFrozen();
-  
+
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  
+
   odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
   odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");

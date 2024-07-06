@@ -199,6 +199,15 @@ void Cluster::addLeafMacro(odb::dbInst* leaf_macro)
   leaf_macros_.push_back(leaf_macro);
 }
 
+void Cluster::addLeafInst(odb::dbInst* inst)
+{
+  if (inst->isBlock()) {
+    addLeafMacro(inst);
+  } else {
+    addLeafStdCell(inst);
+  }
+}
+
 void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 {
   hard_macros_ = hard_macros;
@@ -337,6 +346,18 @@ bool Cluster::isArrayOfInterconnectedMacros() const
   return is_array_of_interconnected_macros;
 }
 
+bool Cluster::isEmpty() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && getDbModules().empty();
+}
+
+bool Cluster::correspondsToLogicalModule() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && (getDbModules().size() == 1);
+}
+
 // Metrics Support and Statistics
 void Cluster::setMetrics(const Metrics& metrics)
 {
@@ -445,6 +466,11 @@ const std::pair<float, float> Cluster::getLocation() const
   }
 
   return soft_macro_->getLocation();
+}
+
+Rect Cluster::getBBox() const
+{
+  return soft_macro_->getBBox();
 }
 
 // Hierarchy Support
@@ -1214,6 +1240,11 @@ void SoftMacro::setShapes(
 float SoftMacro::getArea() const
 {
   return area_ > 0.01 ? area_ : 0.0;
+}
+
+Rect SoftMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
 }
 
 // Num Macros

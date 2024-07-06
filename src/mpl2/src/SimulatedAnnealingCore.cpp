@@ -518,6 +518,15 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
       neg_index2 = i;
     }
   }
+
+  if (neg_index1 < 0 || neg_index2 < 0) {
+    logger_->error(utl::MPL,
+                   18,
+                   "Divergence in sequence pair: Macros ID {} or {} (or both) "
+                   "exist only in positive sequence.",
+                   index1,
+                   index2);
+  }
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
@@ -608,7 +617,11 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }  // end while
   // update the final results
+
   packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
   calPenalty();
 
   if (centralization_on_) {

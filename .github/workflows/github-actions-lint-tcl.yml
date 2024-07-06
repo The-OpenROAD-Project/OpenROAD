@@ -12,7 +12,7 @@ jobs:
 
       - name: Install tclint
         run: |
-          python -m pip install tclint==0.2.0
+          python -m pip install tclint==0.3.2
 
       - name: Lint
         run: |

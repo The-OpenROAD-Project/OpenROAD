@@ -996,7 +996,7 @@ void Grid::setGridPaddedLoc(Cell* cell, GridX x, GridY y) const
 {
   cell->x_ = gridToDbu(x + padding_->padLeft(cell), getSiteWidth());
   if (cell->isHybrid()) {
-    auto grid_info = getInfoMap().at(getGridMapKey(cell));
+    const auto& grid_info = getInfoMap().at(getGridMapKey(cell));
     DbuY total_sites_height = grid_info.getSitesTotalHeight();
     const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();

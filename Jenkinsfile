@@ -1,178 +1,154 @@
-pipeline {
-  agent any;
-  options {
-    timeout(time: 75, unit: 'MINUTES')
-  }
-  environment {
-    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-    EQUIVALENCE_CHECK = 1;
-  }
-  stages {
-    stage('Build and test') {
-      parallel {
-        stage('Local centos7 gcc') {
-          agent any;
-          stages {
-            stage('Build centos7 gcc') {
-              steps {
-                sh './etc/Build.sh -no-warnings';
-              }
-            }
-            stage('Check message IDs') {
-              steps {
-                sh 'cd src && ../etc/find_messages.py > messages.txt';
-              }
-            }
-            stage('Test centos7 gcc') {
-              steps {
-                script {
-                  parallel (
-                      'Unit tests':           { sh './test/regression' },
-                      'nangate45 aes':        { sh './test/regression aes_nangate45' },
-                      'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
-                      'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
-                      'sky130hd aes':         { sh './test/regression aes_sky130hd' },
-                      'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
-                      'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
-                      'sky130hd jpeg':        { sh './test/regression jpeg_sky130hd' },
-                      'sky130hs aes':         { sh './test/regression aes_sky130hs' },
-                      'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
-                      'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
-                      'sky130hs jpeg':        { sh './test/regression jpeg_sky130hs' },
-                      )
-                }
-              }
-            }
-          }
-          post {
-            always {
-              sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-              archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
-            }
-          }
-        }
-        stage('Local centos7 gcc without GUI') {
-          agent any;
-          stages {
-            stage('Build centos7 gcc without GUI') {
-              steps {
-                sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
-              }
-            }
-          }
-        }
-        stage('Local centos7 cmake configure no tests') {
-          agent any;
-          stages {
-            stage('Configure centos7 cmake without tests') {
-              steps {
-                sh 'cmake -B build_no_tests -D ENABLE_TESTS=OFF';
-              }
-            }
-          }
-        }
-        stage('Docker Ubuntu 20.04 gcc') {
-          agent any;
-          stages{
-            stage('Pull Ubuntu 20.04') {
-              steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/ubuntu20.04-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
-              }
-            }
-            stage('Build docker Ubuntu 20.04') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc':   { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=gcc' },
-                      'build clang': { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker Ubuntu 20.04') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc':    { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=gcc' },
-                      'test clang': { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-          }
-        }
-        stage('Docker Ubuntu 22.04 gcc') {
-          agent any;
-          stages{
-            stage('Pull Ubuntu 22.04') {
-              steps {
-                retry(3) {
-                  script {
-                    try {
-                      sh 'docker pull openroad/ubuntu22.04-dev'
-                    }
-                    catch (err) {
-                      echo err.getMessage();
-                      sh 'sleep 1m ; exit 1';
-                    }
-                  }
-                }
-              }
-            }
-            stage('Build docker Ubuntu 22.04') {
-              steps {
-                script {
-                  parallel (
-                      'build gcc':   { sh './etc/DockerHelper.sh create -os=ubuntu22.04 -target=builder -compiler=gcc' },
-                      'build clang': { sh './etc/DockerHelper.sh create -os=ubuntu22.04 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-            stage('Test docker Ubuntu 22.04') {
-              steps {
-                script {
-                  parallel (
-                      'test gcc':   { sh './etc/DockerHelper.sh test -os=ubuntu22.04 -target=builder -compiler=gcc' },
-                      'test clang': { sh './etc/DockerHelper.sh test -os=ubuntu22.04 -target=builder -compiler=clang' },
-                      )
-                }
-              }
-            }
-          }
-        }
-      }
+@Library('utils@or-v2.0.1') _
+
+node {
+
+    stage('Checkout'){
+        checkout scm;
     }
-  }
-  post {
-    failure {
-      script {
-        if ( env.BRANCH_NAME == 'master' ) {
-          echo('Main development branch: report to stakeholders and commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS";
-          REPLY_TO="$EMAIL_TO";
-        } else {
-          echo('Feature development branch: report only to commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
-          REPLY_TO='$DEFAULT_REPLYTO';
-        }
-        emailext (
-            to: "$EMAIL_TO",
-            replyTo: "$REPLY_TO",
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
+
+    def DOCKER_IMAGE;
+    stage('Build and Push Docker Image') {
+        DOCKER_IMAGE = dockerPush("ubuntu22.04", "openroad");
+        echo "Docker image is $DOCKER_IMAGE";
     }
-  }
+
+    stage('Build and Stash bins') {
+        buildBinsOR(DOCKER_IMAGE);
+    }
+
+    stage('Check message IDs') {
+        dir('src') {
+            sh '../etc/find_messages.py > messages.txt';
+        }
+        archiveArtifacts artifacts: 'src/messages.txt';
+    }
+
+    Map tasks = [failFast: false];
+
+    tasks["Build without GUI"] = {
+        node {
+            checkout scm;
+            stage('Build gcc without GUI') {
+                sh './etc/Build.sh -no-gui -dir=build-without-gui';
+            }
+        }
+    }
+
+    tasks["Unit Tests CTest"] = {
+        node {
+            checkout scm;
+            docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                unstash 'install';
+                try {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        sh 'ctest --test-dir build -j $(nproc)'
+                    }
+                }
+                catch (e) {
+                    echo "Failed regressions";
+                    currentBuild.result = 'FAILURE';
+                }
+                finally {
+                    sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                }
+            }
+        }
+    }
+
+    tasks["Unit Tests TCL"] = {
+        node {
+            checkout scm;
+            docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                unstash 'install';
+                try {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                        sh './test/regression'
+                    }
+                }
+                catch (e) {
+                    echo "Failed regressions";
+                    currentBuild.result = 'FAILURE';
+                }
+                finally {
+                    sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                    archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                }
+            }
+        }
+    }
+
+    tasks["C++ Unit Tests"] = {
+        node {
+            checkout scm;
+            docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                stage('C++ Unit Tests Steup') {
+                    sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
+                }
+                stage('C++ Unit Tests Run') {
+                    sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
+                }
+            }
+        }
+    }
+
+    tasks["Test C++20 Compile"] = {
+        node {
+            checkout scm;
+            docker.image("openroad/ubuntu-cpp20").inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                stage('Test C++20 Compile') {
+                    sh "git config --system --add safe.directory '*'";
+                    sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
+                }
+            }
+        }
+    }
+
+    def test_slugs = [
+        "aes_nangate45",
+        "gcd_nangate45",
+        "tinyRocket_nangate45",
+        "aes_sky130hd",
+        "gcd_sky130hd",
+        "ibex_sky130hd",
+        "jpeg_sky130hd",
+        "aes_sky130hs",
+        "gcd_sky130hs",
+        "ibex_sky130hs",
+        "jpeg_sky130hs"
+    ];
+
+    test_slugs.each { test ->
+        def currentSlug = test;
+        tasks["Flow Test - ${currentSlug}"] = {
+            node {
+                checkout scm;
+                docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                    unstash 'install';
+                    try {
+                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                            sh "./test/regression ${currentSlug}";
+                        }
+                    }
+                    catch (e) {
+                        echo "Failed regressions";
+                        currentBuild.result = 'FAILURE';
+                    }
+                    finally {
+                        sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                        archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                    }
+                }
+            }
+        }
+    }
+
+    timeout(time: 2, unit: 'HOURS') {
+        parallel(tasks);
+    }
+
+    stage('Send Email Report') {
+        sendEmail();
+    }
+
 }
