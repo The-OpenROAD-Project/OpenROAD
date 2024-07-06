@@ -1123,11 +1123,9 @@ void HierRTLMP::adjustCongestionWeight()
   // update weight
   if (dynamic_congestion_weight_flag_) {
     std::vector<std::string> layers;
-    int tot_num_layer = 0;
     for (odb::dbTechLayer* layer : db_->getTech()->getLayers()) {
       if (layer->getType() == odb::dbTechLayerType::ROUTING) {
         layers.push_back(layer->getName());
-        tot_num_layer++;
       }
     }
     snap_layer_ = 0;
