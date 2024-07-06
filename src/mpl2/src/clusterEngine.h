@@ -93,56 +93,34 @@ struct PhysicalHierarchyMaps
 
 struct PhysicalHierarchy
 {
-  PhysicalHierarchy()
-      : root(nullptr),
-        base_max_macro(0),
-        base_min_macro(0),
-        base_max_std_cell(0),
-        base_min_std_cell(0),
-        max_level(0),
-        bundled_ios_per_edge(0),
-        large_net_threshold(0),
-        min_net_count_for_connection(0),
-        cluster_size_ratio(0.0f),
-        cluster_size_tolerance(0.0f),
-        halo_width(0.0f),
-        halo_height(0.0f),
-        macro_with_halo_area(0.0f),
-        has_io_clusters(true),
-        has_only_macros(false),
-        has_std_cells(true),
-        has_unfixed_macros(true)
-  {
-  }
-
-  Cluster* root;
+  Cluster* root{nullptr};
   PhysicalHierarchyMaps maps;
 
-  int base_max_macro;
-  int base_min_macro;
-  int base_max_std_cell;
-  int base_min_std_cell;
+  float halo_width{0.0f};
+  float halo_height{0.0f};
+  float macro_with_halo_area{0.0f};
 
-  int max_level;
-  int bundled_ios_per_edge;
-  int large_net_threshold;  // used to ignore global nets
-  int min_net_count_for_connection;
-  float cluster_size_ratio;
-  float cluster_size_tolerance;
+  bool has_io_clusters{true};
+  bool has_only_macros{false};
+  bool has_std_cells{true};
+  bool has_unfixed_macros{true};
+
+  int base_max_macro{0};
+  int base_min_macro{0};
+  int base_max_std_cell{0};
+  int base_min_std_cell{0};
+
+  int max_level{0};
+  int bundled_ios_per_edge{0};
+  int large_net_threshold{0};  // used to ignore global nets
+  int min_net_count_for_connection{0};
+  float cluster_size_ratio{0.0f};
+  float cluster_size_tolerance{0.0f};
 
   // Virtual connection weight between each macro cluster
   // and its corresponding standard-cell cluster to bias
   // the macro placer to place them together.
   const float virtual_weight = 10.0f;
-
-  float halo_width;
-  float halo_height;
-  float macro_with_halo_area;
-
-  bool has_io_clusters;
-  bool has_only_macros;
-  bool has_std_cells;
-  bool has_unfixed_macros;
 };
 
 class ClusteringEngine
