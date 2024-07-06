@@ -1,6 +1,6 @@
+#include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
 #include "mpl2/rtl_mp.h"
-#include "../../src/hier_rtlmp.h"
 #include "odb/db.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -36,8 +36,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
 {
   // create a simple block and then add 3 instances to that block
   // without any further configuration to each instance,
-  // and then run setMacro(inst) on each instance;
-  // this simply verifies that setMacro(inst) doesn't crash
+  // and then run setMacro(inst) on each instance
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
