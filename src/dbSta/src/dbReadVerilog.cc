@@ -188,6 +188,9 @@ class Verilog2db
   // Map file names to a unique id to avoid having to store the full file name
   // for each instance
   std::map<std::string, int> src_file_id_;
+  // We have to store dont_touch instances and apply the attribute after
+  // creating iterms; as iterms can't be added to a dont_touch inst
+  std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
 };
 
@@ -260,6 +263,9 @@ void Verilog2db::makeDbNetlist()
   makeDbNets(network_->topInstance());
   if (hierarchy_) {
     makeVModNets(inst_module_vec);
+  }
+  for (auto inst : dont_touch_insts) {
+    inst->setDoNotTouch(true);
   }
 }
 
@@ -465,6 +471,13 @@ void Verilog2db::makeDbModule(
           odb::dbIntProperty::create(db_inst, "src_file_id", file_id);
           odb::dbIntProperty::create(
               db_inst, "src_file_line", line_info.line_number);
+        }
+      }
+
+      const auto dont_touch = network_->getAttribute(child, "dont_touch");
+      if (!dont_touch.empty()) {
+        if (std::stoi(dont_touch)) {
+          dont_touch_insts.push_back(db_inst);
         }
       }
 

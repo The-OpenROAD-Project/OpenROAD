@@ -231,7 +231,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
                                        iterm->getInst()->getConstName(),
                                        mterm->getConstName(),
                                        mterm->getMaster()->getConstName());
-    PinType pin = PinType(pin_name, iterm);
+    PinType pin = PinType(std::move(pin_name), iterm);
     odb::dbInst* inst = iterm->getInst();
     const odb::dbTransform transform = inst->getTransform();
     for (odb::dbMPin* mterm : mterm->getMPins()) {
@@ -478,24 +478,25 @@ void AntennaChecker::calculatePAR(GateToLayerToNodeInfo& gate_info)
 // calculate CAR and CSR of wires and vias
 void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
 {
-  for (auto& gate_it : gate_info) {
+  for (auto& [gate, layer_to_node_info] : gate_info) {
     NodeInfo sumWire, sumVia;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
     odb::dbTechLayer* iter_layer = min_layer_;
     while (iter_layer) {
-      if (gate_it.second.find(iter_layer) != gate_it.second.end()) {
+      if (layer_to_node_info.find(iter_layer) != layer_to_node_info.end()) {
+        NodeInfo& node_info = layer_to_node_info[iter_layer];
         if (iter_layer->getRoutingLevel() == 0) {
-          sumVia += gate_it.second[iter_layer];
-          gate_it.second[iter_layer].CAR += sumVia.PAR;
-          gate_it.second[iter_layer].CSR += sumVia.PSR;
-          gate_it.second[iter_layer].diff_CAR += sumVia.diff_PAR;
-          gate_it.second[iter_layer].diff_CSR += sumVia.diff_PSR;
+          sumVia += node_info;
+          node_info.CAR += sumVia.PAR;
+          node_info.CSR += sumVia.PSR;
+          node_info.diff_CAR += sumVia.diff_PAR;
+          node_info.diff_CSR += sumVia.diff_PSR;
         } else {
-          sumWire += gate_it.second[iter_layer];
-          gate_it.second[iter_layer].CAR += sumWire.PAR;
-          gate_it.second[iter_layer].CSR += sumWire.PSR;
-          gate_it.second[iter_layer].diff_CAR += sumWire.diff_PAR;
-          gate_it.second[iter_layer].diff_CSR += sumWire.diff_PSR;
+          sumWire += node_info;
+          node_info.CAR += sumWire.PAR;
+          node_info.CSR += sumWire.PSR;
+          node_info.diff_CAR += sumWire.diff_PAR;
+          node_info.diff_CSR += sumWire.diff_PSR;
         }
       }
       iter_layer = iter_layer->getUpperLayer();
@@ -865,8 +866,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     for (const auto& [gate, violation_layers] : gates_with_violations) {
       for (odb::dbTechLayer* layer : violation_layers) {
         // when repair antenna is running, calculate number of diodes
-        if (layer->getRoutingLevel() != 0
-            && pin_added[layer].find(gate) == pin_added[layer].end()) {
+        if (pin_added[layer].find(gate) == pin_added[layer].end()) {
           double diode_diff_area = 0.0;
           if (diode_mterm) {
             diode_diff_area = diffArea(diode_mterm);
@@ -925,10 +925,17 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           // best approach. as a first implementation, insert one diode per net.
           // TODO: implement a proper approach for CAR violations
           if (car_violation || csr_violation) {
-            std::vector<odb::dbITerm*> gates_for_violation;
-            gates_for_violation.push_back(gates[0]);
-            antenna_violations.push_back(
-                {layer->getRoutingLevel(), gates_for_violation, 1});
+            std::vector<odb::dbITerm*> gates_for_diode_insertion;
+            for (auto gate : gates) {
+              odb::dbMaster* gate_master = gate->getMTerm()->getMaster();
+              if (gate_master->getType()
+                  != odb::dbMasterType::CORE_ANTENNACELL) {
+                gates_for_diode_insertion.push_back(gate);
+              }
+            }
+            antenna_violations.push_back({layer->getRoutingLevel(),
+                                          std::move(gates_for_diode_insertion),
+                                          1});
           }
         }
       }

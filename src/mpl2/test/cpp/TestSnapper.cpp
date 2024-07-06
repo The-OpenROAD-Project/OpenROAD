@@ -14,8 +14,6 @@ class Mpl2SnapperTest : public ::testing::Test
 
   void SetUp() override
   {
-    utl::Logger* logger = new utl::Logger();
-
     db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
                                         &odb::dbDatabase::destroy);
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),

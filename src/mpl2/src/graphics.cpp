@@ -46,6 +46,9 @@ Graphics::Graphics(bool coarse,
     : coarse_(coarse),
       fine_(fine),
       show_bundled_nets_(false),
+      skip_steps_(false),
+      is_skipping_(false),
+      only_final_result_(false),
       block_(block),
       logger_(logger)
 {
@@ -67,6 +70,11 @@ void Graphics::startSA()
   if (!active_) {
     return;
   }
+
+  if (only_final_result_ || skip_steps_) {
+    return;
+  }
+
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -77,6 +85,11 @@ void Graphics::endSA()
   if (!active_) {
     return;
   }
+
+  if (only_final_result_ || skip_steps_) {
+    return;
+  }
+
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
@@ -86,6 +99,10 @@ void Graphics::endSA()
 
 void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
+  if (only_final_result_) {
+    return;
+  }
+
   resetPenalties();
   soft_macros_ = macros;
   hard_macros_.clear();
@@ -93,6 +110,10 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 
 void Graphics::saStep(const std::vector<HardMacro>& macros)
 {
+  if (only_final_result_) {
+    return;
+  }
+
   resetPenalties();
   hard_macros_ = macros;
   soft_macros_.clear();
@@ -106,12 +127,72 @@ void Graphics::report(const char* name, const std::optional<T>& value)
   }
 }
 
+void Graphics::drawResult()
+{
+  if (max_level_) {
+    std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
+    int level = 0;
+    fetchSoftAndHard(root_, hard_macros_, soft_macros_, outlines, level);
+    outlines_ = std::move(outlines);
+  }
+
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
+}
+
+void Graphics::fetchSoftAndHard(Cluster* parent,
+                                std::vector<HardMacro>& hard,
+                                std::vector<SoftMacro>& soft,
+                                std::vector<std::vector<odb::Rect>>& outlines,
+                                int level)
+{
+  std::vector<Cluster*> children = parent->getChildren();
+  if (children.empty()) {
+    return;
+  }
+
+  Rect outline = parent->getBBox();
+  odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
+                        block_->micronsToDbu(outline.yMin()),
+                        block_->micronsToDbu(outline.xMax()),
+                        block_->micronsToDbu(outline.yMax()));
+  outlines[level].push_back(dbu_outline);
+
+  for (Cluster* child : children) {
+    switch (child->getClusterType()) {
+      case HardMacroCluster: {
+        std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
+        for (HardMacro* hard_macro : hard_macros) {
+          hard.push_back(*hard_macro);
+        }
+        break;
+      }
+      case StdCellCluster:
+        soft.push_back(*child->getSoftMacro());
+        break;
+      case MixedCluster: {
+        fetchSoftAndHard(child, hard, soft, outlines, (level + 1));
+        break;
+      }
+    }
+  }
+}
+
 void Graphics::penaltyCalculated(float norm_cost)
 {
   if (!active_) {
     return;
   }
-  if (norm_cost < best_norm_cost_) {
+
+  if (only_final_result_) {
+    return;
+  }
+
+  if (is_skipping_) {
+    return;
+  }
+
+  if (norm_cost < best_norm_cost_ || !is_skipping_) {
     logger_->report("------ Penalty ------");
 
     report("Area", area_penalty_);
@@ -131,10 +212,14 @@ void Graphics::penaltyCalculated(float norm_cost)
     const char* type = !soft_macros_.empty() ? "SoftMacro" : "HardMacro";
     gui::Gui::get()->status(type);
     gui::Gui::get()->redraw();
-    if (norm_cost < 0.99 * best_norm_cost_) {
+    if (norm_cost < 0.99 * best_norm_cost_ || !is_skipping_) {
       gui::Gui::get()->pause();
     }
     best_norm_cost_ = norm_cost;
+
+    if (!is_skipping_) {
+      is_skipping_ = true;
+    }
   } else {
     ++skipped_;
   }
@@ -190,6 +275,11 @@ void Graphics::setOutlinePenalty(float outline_penalty)
 void Graphics::setWirelength(float wirelength)
 {
   wirelength_ = wirelength;
+}
+
+void Graphics::setMaxLevel(const int max_level)
+{
+  max_level_ = max_level;
 }
 
 void Graphics::finishedClustering(Cluster* root)
@@ -250,7 +340,7 @@ void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
 // on the outline's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  if (root_) {
+  if (root_ && !only_final_result_) {
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
@@ -351,10 +441,24 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  // Hightlight outline so we see where SA is working
-  painter.setPen(gui::Painter::cyan, true);
   painter.setBrush(gui::Painter::transparent);
-  painter.drawRect(outline_);
+  if (only_final_result_) {
+    // Draw all outlines. Same level outlines have the same color.
+    for (int level = 0; level < outlines_.size(); ++level) {
+      gui::Painter::Color level_color = gui::Painter::highlightColors[level];
+      // Remove transparency
+      level_color.a = 255;
+
+      painter.setPen(level_color, true, 3 /*width*/);
+      for (const odb::Rect& outline : outlines_[level]) {
+        painter.drawRect(outline);
+      }
+    }
+  } else {
+    // Hightlight current outline so we see where SA is working
+    painter.setPen(gui::Painter::cyan, true);
+    painter.drawRect(outline_);
+  }
 }
 
 template <typename T>
@@ -419,6 +523,24 @@ void Graphics::setShowBundledNets(bool show_bundled_nets)
   show_bundled_nets_ = show_bundled_nets;
 }
 
+void Graphics::setSkipSteps(bool skip_steps)
+{
+  skip_steps_ = skip_steps;
+  is_skipping_ = true;
+}
+
+void Graphics::doNotSkip()
+{
+  if (skip_steps_) {
+    is_skipping_ = false;
+  }
+}
+
+void Graphics::setOnlyFinalResult(bool only_final_result)
+{
+  only_final_result_ = only_final_result;
+}
+
 void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
 {
   bundled_nets_ = bundled_nets;
@@ -426,6 +548,10 @@ void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
 
 void Graphics::setOutline(const odb::Rect& outline)
 {
+  if (only_final_result_) {
+    return;
+  }
+
   outline_ = outline;
 }
 
@@ -439,6 +565,8 @@ void Graphics::eraseDrawing()
   macro_blockages_.clear();
   placement_blockages_.clear();
   bundled_nets_.clear();
+  outline_.reset(0, 0, 0, 0);
+  outlines_.clear();
 }
 
 }  // namespace mpl2
