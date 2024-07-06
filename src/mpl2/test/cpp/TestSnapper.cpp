@@ -20,9 +20,8 @@ class Mpl2SnapperTest : public ::testing::Test
                                         &odb::dbDatabase::destroy);
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
                                       &odb::dbChip::destroy);
-    block_ = OdbUniquePtr<odb::dbBlock>(
-        chip_->getBlock(), &odb::dbBlock::destroy);
-    
+    block_
+        = OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
   }
 
   utl::Logger logger_;
@@ -41,7 +40,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
-  
+
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
@@ -51,13 +50,15 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   master_->setWidth(1000);
   master_->setHeight(1000);
   master_->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   master_->setFrozen();
-  
+
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  
+
   odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
   odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
@@ -68,7 +69,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst1);
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);
-} // CanSetMacroForEmptyInstances
+}  // CanSetMacroForEmptyInstances
 
 TEST_F(Mpl2SnapperTest, CanSnapMacros)
 {
@@ -83,7 +84,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // Therefore, this test inputs invalid instance origins
   // as testcases, and then checks whether snapMacro
   // has aligned those instances correctly.
-  
+
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
@@ -96,31 +97,34 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbTechLayer* layer_ = odb::dbTechLayer::create(tech_, "layer", odb::dbTechLayerType::CUT);
+  odb::dbTechLayer* layer_
+      = odb::dbTechLayer::create(tech_, "layer", odb::dbTechLayerType::CUT);
   odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, layer_);
-  
+
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
   // with manufacturing grid 5
   odb::dbGCellGrid* grid_ = odb::dbGCellGrid::create(block_);
   track_->addGridPatternX(0, 50, 20);
   track_->addGridPatternY(0, 50, 20);
-  tech_->setManufacturingGrid(5); 
+  tech_->setManufacturingGrid(5);
 
   // add a master
   odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
   master_->setWidth(1000);
   master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::BLOCK); // snapper expects block type
-  
+  master_->setType(odb::dbMasterType::BLOCK);  // snapper expects block type
+
   // add two pins each of size 50x50
   // input at (0,0) and output at (100, 100)
   // snapper will only take signal pins into consideration
-  odb::dbMTerm* mterm_i = odb::dbMTerm::create(master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm* mterm_i = odb::dbMTerm::create(
+      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
   odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer_, 0, 0, 50, 50);
 
-  odb::dbMTerm* mterm_o = odb::dbMTerm::create(master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm* mterm_o = odb::dbMTerm::create(
+      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
   odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer_, 100, 100, 150, 150);
   master_->setFrozen();
@@ -166,7 +170,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   snapper.snapMacro();
   EXPECT_TRUE(inst_->getOrigin().x() == 510);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
-  
+
   inst_->setOrigin(516, 560);
   snapper.snapMacro();
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
@@ -197,7 +201,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   snapper.snapMacro();
   EXPECT_TRUE(inst_->getOrigin().x() == 515);
   EXPECT_TRUE(inst_->getOrigin().y() == 510);
-  
+
   inst_->setOrigin(560, 516);
   snapper.snapMacro();
   EXPECT_TRUE(inst_->getOrigin().x() == 535);
@@ -208,7 +212,6 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   EXPECT_TRUE(inst_->getOrigin().x() == 535);
   EXPECT_TRUE(inst_->getOrigin().y() == 515);
 
-
-} // CanSnapMacros
+}  // CanSnapMacros
 
 }  // namespace mpl2
