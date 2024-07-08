@@ -107,7 +107,7 @@ def gen_files(work_dir, ispd_year, design, drv_min, drv_max):
             set -e -o pipefail
             echo Running {design}
             {args.program} -exit {design_dir}/run.tcl 2>&1 \\
-                | tee {design_dir}/run_{design}.log
+                | tee {design_dir}/{design}.log
             cd '{bench_dir}/ispd{ispd_year}eval'
             ./ispd{ispd_year}eval \\
                 -lef {bench_dir}/{design}/{design}.input.lef \\
@@ -172,7 +172,7 @@ status = subprocess.run(['parallel',
                          '-j', str(args.jobs),
                          '--halt', 'never',
                          '--joblog', f"{args.workspace}/ispd-parallel.log",
-                         os.path.join(args.workspace, '{}/run.sh'),
+                         'bash', os.path.join(args.workspace, '{}/run.sh'),
                          ':::', *list(running_tests)],
                         check=True)
 
