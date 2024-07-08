@@ -65,7 +65,6 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst1);
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);
-  
 }  // CanSetMacroForEmptyInstances
 
 TEST_F(Mpl2SnapperTest, CanSnapMacros)
