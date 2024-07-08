@@ -59,6 +59,8 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbRow;
 
+using utl::format_as;
+
 PixelPt::PixelPt(Pixel* pixel1, GridX grid_x, GridY grid_y)
     : pixel(pixel1), x(grid_x), y(grid_y)
 {
