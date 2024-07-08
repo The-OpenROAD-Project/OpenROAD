@@ -31,6 +31,14 @@ class Mpl2PusherTest : public ::testing::Test
 
 TEST_F(Mpl2PusherTest, CanConstructPusher)
 {
+  // This tests whether a Pusher object can be constructed
+  // without halting, and indirectly tests private function
+  // Pusher::SetIOBlockages.
+  // 
+  // There are several cases based on the cluster type:
+  // 1. HardMacroCluster (cluster1)
+  // 2. StdCellCluster (cluster2)
+  // 3. MixedCluster (cluster3)
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
@@ -40,6 +48,39 @@ TEST_F(Mpl2PusherTest, CanConstructPusher)
   odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
   odb::dbChip* chip_ = odb::dbChip::create(db_);
+  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
+  odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
+  master_->setWidth(1000);
+  master_->setHeight(1000);
+  master_->setType(odb::dbMasterType::CORE);
+  odb::dbMTerm::create(
+      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  master_->setFrozen();
+
+  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
+  odb::dbDatabase::beginEco(block_);
+  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
+  odb::dbDatabase::endEco(block_);
+
+  // Cluster class is defined in mpl2/src/object.h
+
+  // cluster1 is HardMacroCluster
+  Cluster* cluster1 = new Cluster(0, std::string("hard_macro_cluster"), logger);
+  cluster1->addDbModule(block_->getTopModule());
+  cluster1->addLeafMacro(inst1);
+  cluster1->setClusterType(HardMacroCluster); // width, height, coordinates will all be 0
+
+  logger->report("getNumMacro is {}", cluster1->getNumMacro());
+  cluster1->printBasicInformation(logger);
+
+  std::map<Boundary, Rect> boundary_to_io_blockage_;
+
+  Pusher pusher(logger, cluster1, block_, boundary_to_io_blockage_);
+
+  logger->report("size of boundary_to_io_blockage_ is {}", boundary_to_io_blockage_.size());
 }
 
 }  // namespace mpl2
