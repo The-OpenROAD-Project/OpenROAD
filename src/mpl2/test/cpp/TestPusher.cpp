@@ -59,10 +59,8 @@ TEST_F(Mpl2PusherTest, CanConstructPusher)
   odb::dbMTerm::create(
       master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   master_->setFrozen();
-
-  odb::dbDatabase::beginEco(block_);
-  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  odb::dbDatabase::endEco(block_);
+=
+  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");=
 
   // Case 1:
   // cluster1 is HardMacroCluster
