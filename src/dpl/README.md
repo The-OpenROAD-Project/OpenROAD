@@ -8,6 +8,11 @@ Open-Source Detailed Placement Engine. Its key features are:
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
 ### Detailed Placement
 
 The `detailed_placement` command performs detailed placement of instances
@@ -26,7 +31,7 @@ detailed_placement
 | ----- | ----- |
 | `-max_displacement` | Max distance that an instance can be moved (in microns) when finding a site where it can be placed. Either set one value for both directions or set `{disp_x disp_y}` for individual directions. The default values are `{0, 0}`, and the allowed values within are integers `[0, MAX_INT]`. |
 | `-disallow_one_site_gaps` | Disable one site gap during placement check. |
-| `-report_file_name` | File name for saving the report to (e.g. `report.json`. |
+| `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 
 ### Set Placement Padding
 
@@ -92,8 +97,6 @@ This command removes all filler cells.
 remove_fillers 
 ```
 
-No arguments are needed for this function. 
-
 ### Check Placement
 
 The `check_placement` command checks the placement legality. It returns
@@ -103,7 +106,7 @@ The `check_placement` command checks the placement legality. It returns
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
-    [-report_filename filename]
+    [-report_file_name filename]
 ```
 
 #### Options
@@ -123,9 +126,7 @@ a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 optimize_mirroring
 ```
 
-No arguments are needed for this function. 
-
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Opendp.cpp) or the [swig file](./src/Opendp.i).
 

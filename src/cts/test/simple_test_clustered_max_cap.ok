@@ -1,8 +1,4 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -39,7 +35,8 @@
 [INFO CTS-0016]     Fanout distribution for the current clock = 4:1, 12:5, 13:20..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 300
+[INFO CTS-0099]  Sinks 304
 [INFO CTS-0100]  Leaf buffers 24
-[INFO CTS-0101]  Average sink wire length 124.17 um
+[INFO CTS-0101]  Average sink wire length 123.90 um
 [INFO CTS-0102]  Path depth 3 - 3
+[INFO CTS-0207]  Leaf load cells 4

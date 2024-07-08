@@ -169,6 +169,13 @@ set_routability_driven_mode(bool routability_driven)
 }
 
 void
+  set_routability_use_grt(bool use_grt)
+{
+  Replace* replace = getReplace();
+  replace->setRoutabilityUseGrt(use_grt);
+}
+
+void
 set_routability_check_overflow_cmd(float overflow) 
 {
   Replace* replace = getReplace();

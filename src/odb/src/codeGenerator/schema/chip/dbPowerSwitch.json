@@ -5,6 +5,7 @@
     {
       "name":"_name",
       "type":"char *",
+      "default": "nullptr",
       "flags":["no-set"]
     },
     {
@@ -128,6 +129,6 @@
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h", "dbMaster.h", "dbMTerm.h", "utl/Logger.h"],
   "h_includes": [
     "dbVector.h",
-    "dbSet.h"
+    "odb/dbSet.h"
   ]
 }

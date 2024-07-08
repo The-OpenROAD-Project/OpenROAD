@@ -14,7 +14,7 @@ EOF
 }
 
 _lcov() {
-    ./test/regression
+    ctest --test-dir build -j $(nproc)
 
     # sta has a private test suite; mpl is obsoleted by mpl2;
     # drt's gr is not in use
@@ -30,6 +30,7 @@ _lcov() {
         --exclude "*build*" \
         --exclude "*/third-party/*" \
         --exclude "*/sta/*" \
+        --exclude "*/test/*" \
         --exclude "*/mpl/*" \
         --exclude "*/drt/src/gr/*" \
         --exclude "*/drt/src/db/grObj/*" \

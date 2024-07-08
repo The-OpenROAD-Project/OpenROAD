@@ -711,8 +711,8 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
 
   if (cnt_C1C2 == 1) {
-    if (verbose_)
-      logger_->warn(GRT, 184, "Shift to 0 length edge, type2.");
+    debugPrint(
+        logger_, utl::GRT, "maze_3d", 1, "Shift to 0 length edge, type2.");
   }
 
   // find the index of E1 in (C1, C2)
@@ -816,10 +816,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
-
-    if (skipNet(netID)) {
-      continue;
-    }
 
     FrNet* net = nets_[netID];
 

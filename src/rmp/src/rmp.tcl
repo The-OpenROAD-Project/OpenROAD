@@ -56,6 +56,7 @@ sta::define_cmd_args "restructure" { \
                                       [-slack_threshold slack]\
                                       [-depth_threshold depth]\
                                       [-target area|timing]\
+                                      [-abc_logfile logfile]\
                                       [-liberty_file liberty_file]\
                                       [-tielo_port tielow_port]\
                                       [-tiehi_port tiehigh_port]\

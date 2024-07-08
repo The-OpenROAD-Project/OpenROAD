@@ -101,11 +101,18 @@ class Timing
 
   float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
   float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
+  float getMaxCapLimit(odb::dbMTerm* pin);
+  float getMaxSlewLimit(odb::dbMTerm* pin);
   float staticPower(odb::dbInst* inst, sta::Corner* corner);
   float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   std::vector<sta::Corner*> getCorners();
+  sta::Corner* cmdCorner();
+  sta::Corner* findCorner(const char* name);
+
+  void makeEquivCells();
+  std::vector<odb::dbMaster*> equivCells(odb::dbMaster* master);
 
  private:
   sta::dbSta* getSta();

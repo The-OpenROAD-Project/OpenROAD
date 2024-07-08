@@ -33,7 +33,7 @@
 #pragma once
 
 #include "definBase.h"
-#include "odb.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -41,7 +41,7 @@ class dbRegion;
 
 class definRegion : public definBase
 {
-  dbRegion* _cur_region;
+  dbRegion* _cur_region = nullptr;
 
  public:
   definRegion();

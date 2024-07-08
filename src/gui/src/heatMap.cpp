@@ -296,10 +296,10 @@ Renderer::Settings HeatMapDataSource::getSettings() const
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto set = std::get<MapSettingBoolean>(setting);
+      const auto& set = std::get<MapSettingBoolean>(setting);
       settings[set.name] = set.getter();
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto set = std::get<MapSettingMultiChoice>(setting);
+      const auto& set = std::get<MapSettingMultiChoice>(setting);
       settings[set.name] = set.getter();
     }
   }
@@ -321,12 +321,12 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
-      auto set = std::get<MapSettingBoolean>(setting);
+      const auto& set = std::get<MapSettingBoolean>(setting);
       bool temp_value = set.getter();
       Renderer::setSetting<bool>(settings, set.name, temp_value);
       set.setter(temp_value);
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
-      auto set = std::get<MapSettingMultiChoice>(setting);
+      const auto& set = std::get<MapSettingMultiChoice>(setting);
       std::string temp_value = set.getter();
       Renderer::setSetting<std::string>(settings, set.name, temp_value);
       set.setter(temp_value);
@@ -440,7 +440,7 @@ void HeatMapDataSource::setupMap()
       map_pt->value = 0.0;
       map_pt->color = default_color;
 
-      map_[x][y] = map_pt;
+      map_[x][y] = std::move(map_pt);
     }
   }
 }
@@ -850,14 +850,15 @@ void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
 {
   determineMinMax(map);
   determineUnits();
-  min_ = roundData(min_);
-  max_ = roundData(max_);
 
   for (const auto& map_col : map) {
     for (const auto& map_pt : map_col) {
       map_pt->value = convertValueToPercent(map_pt->value);
     }
   }
+
+  min_ = roundData(min_ * scale_);
+  max_ = roundData(max_ * scale_);
 
   // reset since all data has been scaled by the appropriate amount
   scale_ = 1.0;
@@ -866,15 +867,14 @@ void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
 double RealValueHeatMapDataSource::roundData(double value) const
 {
   const double precision = 1000.0;
-  double new_value = value * scale_;
-  return std::round(new_value * precision) / precision;
+  return std::round(value * precision) / precision;
 }
 
 void RealValueHeatMapDataSource::determineMinMax(
     const HeatMapDataSource::Map& map)
 {
   min_ = std::numeric_limits<double>::max();
-  max_ = std::numeric_limits<double>::min();
+  max_ = std::numeric_limits<double>::lowest();
 
   for (const auto& map_col : map) {
     for (const auto& map_pt : map_col) {
@@ -886,8 +886,8 @@ void RealValueHeatMapDataSource::determineMinMax(
 
 void RealValueHeatMapDataSource::determineUnits()
 {
-  const double range = max_ - min_;
-  if (range > 1.0 || range == 0) {
+  const double range = getValueRange();
+  if (range >= 1.0 || range == 0) {
     units_ = "";
     scale_ = 1.0;
   } else if (range > 1e-3) {

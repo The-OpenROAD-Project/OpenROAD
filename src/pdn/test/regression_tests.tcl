@@ -18,6 +18,7 @@ record_tests {
   core_grid_start_power
   core_grid_start_power_strap_ground
   core_grid_with_rings_with_straps
+  core_grid_with_single_layer_rings
   core_grid_dual_followpins
   core_grid_dual_followpins_error
   core_grid_with_dual_rings
@@ -112,4 +113,9 @@ record_tests {
   repair_vias
 
   sroute_test
+
+  bpin_removal
+
+  #pdn_man_tcl_check
+  #pdn_readme_msgs_check
 }

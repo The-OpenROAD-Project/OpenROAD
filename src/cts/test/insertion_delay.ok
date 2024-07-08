@@ -1,11 +1,5 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: array_tile_ins_delay.lef
-[INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  array_tile_ins_delay.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 279 components and 1673 component-terminals.
@@ -15,7 +9,7 @@
 [INFO CTS-0052] The following clock buffers will be used for CTS:
                     CLKBUF_X3
 [INFO CTS-0049] Characterization buffer is CLKBUF_X3.
-[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0007] Net "clk" found for clock "core".
 [INFO CTS-0011]  Clock net "clk" for macros has 1 sinks.
 [INFO CTS-0011]  Clock net "clk_regs" for registers has 278 sinks.
 [INFO CTS-0008] TritonCTS found 2 clock nets.
@@ -60,12 +54,11 @@
 [INFO CTS-0034]     Segment length (rounded): 4.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
-[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0018]     Created 2 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0014]     1 clock nets were removed/fixed.
 [INFO CTS-0015]     Created 2 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 0:1, 1:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0018]     Created 31 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
@@ -76,8 +69,9 @@
 [INFO CTS-0124] Clock net "clk"
 [INFO CTS-0125]  Sinks 1
 [INFO CTS-0098] Clock net "clk_regs"
-[INFO CTS-0099]  Sinks 278
+[INFO CTS-0099]  Sinks 279
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 74.51 um
+[INFO CTS-0101]  Average sink wire length 74.54 um
 [INFO CTS-0102]  Path depth 3 - 3
+[INFO CTS-0207]  Leaf load cells 1
 Found 0 unconnected buffers.

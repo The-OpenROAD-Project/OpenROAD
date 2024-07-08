@@ -51,6 +51,7 @@
 
 namespace gpl {
 
+using odb::dbBlock;
 using utl::GPL;
 
 static int fastModulo(int input, int ceil);
@@ -601,21 +602,45 @@ void BinGrid::initBins()
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 
-  int64_t averagePlaceInstArea
-      = pb_->placeInstsArea() / pb_->placeInsts().size();
+  int64_t averagePlaceInstArea = 0;
+  if (!pb_->placeInsts().empty()) {
+    averagePlaceInstArea = pb_->placeInstsArea() / pb_->placeInsts().size();
+  } else {
+    log_->warn(GPL, 306, "GPL component has no placed instances.");
+  }
 
-  int64_t idealBinArea
-      = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
-  int idealBinCnt = totalBinArea / idealBinArea;
+  int64_t idealBinArea = 0;
+  if (targetDensity_ != 0) {
+    idealBinArea
+        = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
+  }
+
+  int idealBinCnt = 0;
+  if (idealBinArea != 0) {
+    idealBinCnt = totalBinArea / idealBinArea;
+  }
   if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
     idealBinCnt = 4;
   }
 
-  log_->info(GPL, 23, "TargetDensity: {:.2f}", targetDensity_);
-  log_->info(GPL, 24, "AveragePlaceInstArea: {}", averagePlaceInstArea);
-  log_->info(GPL, 25, "IdealBinArea: {}", idealBinArea);
-  log_->info(GPL, 26, "IdealBinCnt: {}", idealBinCnt);
-  log_->info(GPL, 27, "TotalBinArea: {}", totalBinArea);
+  dbBlock* block = pb_->db()->getChip()->getBlock();
+  log_->info(GPL, 23, "{:20} {:10.3f}", "TargetDensity:", targetDensity_);
+  log_->info(GPL,
+             24,
+             "{:20} {:10.3f} um^2",
+             "AvrgPlaceInstArea:",
+             block->dbuAreaToMicrons(averagePlaceInstArea));
+  log_->info(GPL,
+             25,
+             "{:20} {:10.3f} um^2",
+             "IdealBinArea:",
+             block->dbuAreaToMicrons(idealBinArea));
+  log_->info(GPL, 26, "{:20} {:10}", "IdealBinCnt:", idealBinCnt);
+  log_->info(GPL,
+             27,
+             "{:20} {:10.3f} um^2",
+             "TotalBinArea:",
+             block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
     // Consider the apect ratio of the block when computing the number
@@ -645,12 +670,17 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 28, "BinCnt: {} {}", binCntX_, binCntY_);
+  log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
-  log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
+  log_->info(GPL,
+             29,
+             "{:8} ( {:6.3f} {:6.3f} )",
+             "BinSize:",
+             block->dbuToMicrons(binSizeX_),
+             block->dbuToMicrons(binSizeY_));
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
@@ -667,7 +697,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "NumBins: {}", bins_.size());
+  log_->info(GPL, 30, "{:8} {}", "NumBins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -1289,9 +1319,11 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     }
   }
 
-  log_->info(GPL, 31, "FillerInit: NumGCells: {}", gCells_.size());
-  log_->info(GPL, 32, "FillerInit: NumGNets: {}", nbc_->gNets().size());
-  log_->info(GPL, 33, "FillerInit: NumGPins: {}", nbc_->gPins().size());
+  log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
+  log_->info(
+      GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
+  log_->info(
+      GPL, 33, "{:20} {:10}", "FillerInit:NumGPins:", nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1648,7 +1680,7 @@ void NesterovBase::cutFillerCells(int64_t targetFillerArea)
   std::vector<GCell*> newGCellFillers;
 
   int64_t curFillerArea = 0;
-  log_->info(GPL, 34, "gCellFiller: {}", gCellFillers_.size());
+  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
 
   for (auto& gCellFiller : gCellFillers_) {
     curFillerArea += static_cast<int64_t>(gCellFiller->dx())
@@ -1666,7 +1698,12 @@ void NesterovBase::cutFillerCells(int64_t targetFillerArea)
 
   // update totalFillerArea_
   totalFillerArea_ = curFillerArea;
-  log_->info(GPL, 35, "NewTotalFillerArea: {}", totalFillerArea_);
+  dbBlock* block = pb_->db()->getChip()->getBlock();
+  log_->info(GPL,
+             35,
+             "{:20} {:10.3f} um^2",
+             "NewTotalFillerArea:",
+             block->dbuAreaToMicrons(totalFillerArea_));
 
   gCells_.swap(newGCells);
   gCellFillers_.swap(newGCellFillers);
@@ -2134,10 +2171,15 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
 
   if (iter == 0 || (iter + 1) % 10 == 0) {
-    log_->report("[NesterovSolve] Iter: {} overflow: {:g} HPWL: {}",
+    std::string group;
+    if (pb_->group()) {
+      group = fmt::format(" ({})", pb_->group()->getName());
+    }
+    log_->report("[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {}{}",
                  iter + 1,
                  sumOverflowUnscaled_,
-                 prevHpwl_);
+                 prevHpwl_,
+                 group);
   }
 
   if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
@@ -2294,7 +2336,7 @@ bool NesterovBase::checkConvergence()
 
 bool NesterovBase::checkDivergence()
 {
-  if (sumOverflowUnscaled_ < 0.3f
+  if (sumOverflowUnscaled_ < 0.2f
       && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
     divergeMsg_ = "RePlAce divergence detected. ";

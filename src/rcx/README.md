@@ -27,6 +27,8 @@ objects. Optionally, OpenRCX can generate a `.spef` file.
 
 ### Define Process Corner
 
+This command defines proccess corner.
+
 ```tcl
 define_process_corner 
     [-ext_model_index index]
@@ -82,6 +84,7 @@ in the database.
 write_spef
     [-net_id net_id]                
     [-nets nets]
+    [-coordinates]
     filename                     
 ```
 
@@ -91,6 +94,7 @@ write_spef
 | ----- | ----- |
 | `-net_id` | Output the parasitics info for specific net IDs. |
 | `-nets` | Net name. |
+| `coordinates` | Coordinates TBC. |
 | `filename` | Output filename. |
 
 ### Scale RC
@@ -113,7 +117,7 @@ adjust_rc
 | `-cc_factor` | Scale factor for coupling capacitance. |
 | `-gndc_factor` | Scale factor for ground capacitance. |
 
-### Comparing SPEF files
+### Comparing different SPEF files
 
 The `diff_spef` command compares the parasitics in the reference database `<filename>.spef`.
 The output of this command is `diff_spef.out`
@@ -232,6 +236,7 @@ write_rules
   [-dir dir]
   [-name name]
   [-pattern pattern]
+  [-db]
 ```
 
 #### Options
@@ -242,6 +247,7 @@ write_rules
 | `-dir` | Output file directory. |
 | `-name` | Name of rule. |
 | `-pattern` | Flag to write the pattern to rulefile (0/1). | 
+| `-db` | DB tbc. |
 
 ## Example scripts
 

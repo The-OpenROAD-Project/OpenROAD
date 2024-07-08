@@ -45,6 +45,7 @@ sta::define_cmd_args "write_upf" {file}
 proc write_upf { args } {
   upf::check_block_exists
   sta::check_argc_eq1 "write_upf" $args
+  sta::parse_key_args "write_upf" args keys {} flags {}
 
   upf::write_upf_cmd [lindex $args 0]
 }
@@ -119,14 +120,14 @@ sta::define_cmd_args "create_power_switch" { \
     [-control_port control_port] \
     [-on_state on_state] \
     name
-}
+}; # checker off
 proc create_power_switch { args } {
   upf::check_block_exists
 
   ord::parse_list_args "create_power_switch" args \
     list {-input_supply_port -control_port -ack_port -on_state}
   sta::parse_key_args "create_power_switch" args \
-    keys {-domain -output_supply_port} flags {}
+    keys {-domain -output_supply_port} flags {}; # checker off
 
   sta::check_argc_eq1 "create_power_switch" $args
 
@@ -302,18 +303,23 @@ proc set_domain_area { args } {
     if { [llength $area] != 4 } {
       utl::error UPF 36 "-area is a list of 4 coordinates"
     }
-    lassign $area llx lly urx ury
-    sta::check_positive_float "-area" $llx
-    sta::check_positive_float "-area" $lly
-    sta::check_positive_float "-area" $urx
-    sta::check_positive_float "-area" $ury
+    lassign $area lx ly ux uy
+    sta::check_positive_float "-area" $lx
+    sta::check_positive_float "-area" $ly
+    sta::check_positive_float "-area" $ux
+    sta::check_positive_float "-area" $uy
   } else {
     utl::error UPF 37 "please define area"
   }
   sta::check_argc_eq1 "set_domain_area" $args
   set domain_name $args
 
-  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+  set lx [ord::microns_to_dbu $lx]
+  set ly [ord::microns_to_dbu $ly]
+  set ux [ord::microns_to_dbu $ux]
+  set uy [ord::microns_to_dbu $uy]
+  set area [odb::new_Rect $lx $ly $ux $uy]
+  upf::set_domain_area_cmd $domain_name $area
 }
 
 # Specify which power-switch model is to be used for the implementation of the corresponding switch
@@ -340,7 +346,7 @@ proc map_power_switch { args } {
   upf::check_block_exists
 
   sta::parse_key_args "map_power_switch" args \
-    keys {switch_name_list -lib_cells -port_map} flags {}
+    keys {-switch_name_list -lib_cells -port_map} flags {}
 
   sta::check_argc_eq1 "map_power_switch" $args
 

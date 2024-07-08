@@ -53,6 +53,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-incnrcap_nwin_master incnrcap_nwin_master]\
                                 [-incnrcap_nwout_master incnrcap_nwout_master]\
                                 [-tbtie_cpp tbtie_cpp]\
+                                [-endcap_cpp endcap_cpp]\
                                 [-no_cell_at_top_bottom]\
 }
 
@@ -67,6 +68,10 @@ proc tapcell { args } {
     flags {-no_cell_at_top_bottom -disallow_one_site_gaps}
 
   sta::check_argc_eq0 "tapcell" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 1 "No design block found."
+  }
 
   tap::clear
 
@@ -228,9 +233,13 @@ sta::define_cmd_args "tapcell_ripup" {[-tap_prefix tap_prefix]\
 
 # This will remove the tap cells and endcaps to tapcell can be rerun with new parameters
 proc tapcell_ripup { args } {
-  sta::parse_key_args "tapcell" args \
+  sta::parse_key_args "tapcell_ripup" args \
     keys {-tap_prefix -endcap_prefix} \
     flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 2 "No design block found."
+  }
 
   sta::check_argc_eq0 "tapcell_ripup" $args
 
@@ -299,6 +308,10 @@ proc place_endcaps { args } {
       -top_edge -bottom_edge} \
     flags {}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 6 "No design block found."
+  }
+
   sta::check_argc_eq0 "place_endcaps" $args
 
   set prefix "PHY_"
@@ -335,18 +348,18 @@ proc place_endcaps { args } {
     [tap::parse_endcap_key keys -bottom_edge -endcap_horizontal -endcap]]
 
   tap::place_endcaps \
-    $left_top_corner\
-    $right_top_corner\
-    $left_bottom_corner\
-    $right_bottom_corner\
-    $left_top_edge\
-    $right_top_edge\
-    $left_bottom_edge\
-    $right_bottom_edge\
-    $top_edge\
-    $bottom_edge\
-    $left_edge\
-    $right_edge\
+    $left_top_corner \
+    $right_top_corner \
+    $left_bottom_corner \
+    $right_bottom_corner \
+    $left_top_edge \
+    $right_top_edge \
+    $left_bottom_edge \
+    $right_bottom_edge \
+    $top_edge \
+    $bottom_edge \
+    $left_edge \
+    $right_edge \
     $prefix
 }
 
@@ -357,11 +370,11 @@ sta::define_cmd_args "place_tapcells" {
 
 proc place_tapcells {args } {
 
-  sta::parse_key_args "place_boundary_cells" args \
+  sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
     flags {}
 
-  sta::check_argc_eq0 "place_boundary_cells" $args
+  sta::check_argc_eq0 "place_tapcells" $args
 
   set dist -1
   if { [info exists keys(-distance)] } {

@@ -69,6 +69,9 @@ class ScanCell
   const ClockDomain& getClockDomain() const;
   std::string_view getName() const;
 
+  virtual odb::Point getOrigin() const = 0;
+  virtual bool isPlaced() const = 0;
+
  private:
   std::string name_;
   std::unique_ptr<ClockDomain> clock_domain_;

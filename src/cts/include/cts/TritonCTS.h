@@ -67,6 +67,7 @@ class Clock;
 class dbNetwork;
 class Unit;
 class LibertyCell;
+class Vertex;
 }  // namespace sta
 
 namespace stt {
@@ -180,7 +181,8 @@ class TritonCTS
                              int& maxDepth,
                              int depth,
                              bool fullTree,
-                             const std::unordered_set<odb::dbITerm*>& sinks);
+                             const std::unordered_set<odb::dbITerm*>& sinks,
+                             const std::unordered_set<odb::dbInst*>& dummies);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
@@ -194,12 +196,14 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
-  void writeDummyLoadsToDb(Clock& clockNet);
+  void writeDummyLoadsToDb(Clock& clockNet,
+                           std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
-  void insertDummyCell(Clock& clockNet,
-                       ClockInst* inst,
-                       const std::vector<sta::LibertyCell*>& dummyCandidates);
+  odb::dbInst* insertDummyCell(
+      Clock& clockNet,
+      ClockInst* inst,
+      const std::vector<sta::LibertyCell*>& dummyCandidates);
   ClockInst& placeDummyCell(Clock& clockNet,
                             const ClockInst* inst,
                             const sta::LibertyCell* dummyCell,
@@ -210,6 +214,7 @@ class TritonCTS
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
+  float getVertexClkArrival(sta::Vertex* sink_vertex, odb::dbNet* topNet);
   void computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbITerm* iterm,
                                float& sumArrivals,

@@ -38,7 +38,8 @@ sta::define_cmd_args "define_process_corner" {
 }
 
 proc define_process_corner { args } {
-  sta::parse_key_args "define_process_corner" args keys {-ext_model_index}
+  sta::parse_key_args "define_process_corner" args \
+    keys {-ext_model_index} flags {}
   sta::check_argc_eq1 "define_process_corner" $args
 
   set ext_model_index 0
@@ -124,7 +125,9 @@ proc extract_parasitics { args } {
 
 sta::define_cmd_args "write_spef" {
   [-net_id net_id]
-  [-nets nets] filename }
+  [-nets nets]
+  [-coordinates]
+  filename }
 
 proc write_spef { args } {
   sta::parse_key_args "write_spef" args \
@@ -159,7 +162,8 @@ proc adjust_rc { args } {
   sta::parse_key_args "adjust_rc" args \
     keys { -res_factor
            -cc_factor
-           -gndc_factor }
+           -gndc_factor } \
+    flags {}
 
   set res_factor 1.0
   if { [info exists keys(-res_factor)] } {
@@ -284,6 +288,7 @@ proc bench_wires { args } {
 sta::define_cmd_args "bench_verilog" { filename }
 
 proc bench_verilog { args } {
+  sta::parse_key_args "bench_verilog" args keys {} flags{}
   sta::check_argc_eq1 "bench_verilog" $args
   rcx::bench_verilog $args
 }
@@ -291,6 +296,7 @@ proc bench_verilog { args } {
 sta::define_cmd_args "bench_read_spef" { filename }
 
 proc bench_read_spef { args } {
+  sta::parse_key_args "bench_read_spef" args keys {} flags{}
   sta::check_argc_eq1 "bench_read_spef" $args
   rcx::read_spef $args
 }
@@ -300,6 +306,7 @@ sta::define_cmd_args "write_rules" {
     [-dir dir]
     [-name name]
     [-pattern pattern]
+    [-db]
 }
 
 proc write_rules { args } {

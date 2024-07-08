@@ -33,19 +33,44 @@
 #include "heatMap.h"
 
 #include "psm/pdnsim.h"
+#include "sta/Corner.hh"
+#include "sta/Sta.hh"
 
 namespace psm {
 
-IRDropDataSource::IRDropDataSource(PDNSim* psm, utl::Logger* logger)
+IRDropDataSource::IRDropDataSource(PDNSim* psm,
+                                   sta::Sta* sta,
+                                   utl::Logger* logger)
     : gui::RealValueHeatMapDataSource(logger,
                                       "V",
                                       "IR Drop",
                                       "IRDrop",
                                       "IRDrop"),
       psm_(psm),
-      tech_(nullptr),
-      layer_(nullptr)
+      sta_(sta)
 {
+  addMultipleChoiceSetting(
+      "Net",
+      "Net:",
+      [this]() {
+        std::vector<std::string> nets;
+        if (getBlock() == nullptr) {
+          return nets;
+        }
+        for (auto* net : getBlock()->getNets()) {
+          if (net->getSigType().isSupply()) {
+            nets.push_back(net->getName());
+          }
+        }
+        return nets;
+      },
+      [this]() -> std::string {
+        if (net_ == nullptr) {
+          return "";
+        }
+        return net_->getName();
+      },
+      [this](const std::string& value) { setNet(value); });
   addMultipleChoiceSetting(
       "Layer",
       "Layer:",
@@ -71,6 +96,24 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm, utl::Logger* logger)
         }
         layer_ = tech_->findLayer(value.c_str());
       });
+  addMultipleChoiceSetting(
+      "Corner",
+      "Corner:",
+      [this]() {
+        std::vector<std::string> corners;
+        for (auto* corner : *sta_->corners()) {
+          corners.emplace_back(corner->name());
+        }
+        return corners;
+      },
+      [this]() -> std::string {
+        ensureCorner();
+        if (corner_ == nullptr) {
+          return "";
+        }
+        return corner_->name();
+      },
+      [this](const std::string& value) { setCorner(value); });
 }
 
 void IRDropDataSource::setBlock(odb::dbBlock* block)
@@ -81,45 +124,43 @@ void IRDropDataSource::setBlock(odb::dbBlock* block)
   }
 }
 
-double IRDropDataSource::getGridSizeMinimumValue() const
-{
-  odb::dbBlock* block = getBlock();
-  if (block == nullptr || psm_ == nullptr) {
-    return RealValueHeatMapDataSource::getGridSizeMinimumValue();
-  }
-
-  try {
-    const double resolution = psm_->getMinimumResolution();
-    double resolution_um = resolution / block->getDbUnitsPerMicron();
-    if (resolution_um > getGridSizeMaximumValue()) {
-      resolution_um
-          = gui::RealValueHeatMapDataSource::getGridSizeMinimumValue();
-    }
-    return resolution_um;
-  } catch (const std::runtime_error& /* e */) {
-    // psm is not setup up
-    return gui::RealValueHeatMapDataSource::getGridSizeMinimumValue();
-  }
-}
-
 bool IRDropDataSource::populateMap()
 {
   if (getBlock() == nullptr || psm_ == nullptr || tech_ == nullptr) {
     return false;
   }
 
+  ensureNet();
+  if (net_ == nullptr) {
+    return false;
+  }
+
+  ensureCorner();
+  if (corner_ == nullptr) {
+    return false;
+  }
   ensureLayer();
 
-  std::map<odb::dbTechLayer*, std::map<odb::Point, double>> ir_drops;
-  psm_->getIRDropMap(ir_drops);
+  std::map<odb::dbTechLayer*, PDNSim::IRDropByPoint> ir_drops;
 
-  if (ir_drops.empty()) {
+  for (auto* layer : tech_->getLayers()) {
+    psm_->getIRDropForLayer(net_, corner_, layer, ir_drops[layer]);
+  }
+
+  bool empty = true;
+  for (const auto& [layer, ir_drop] : ir_drops) {
+    if (!ir_drop.empty()) {
+      empty = false;
+    }
+  }
+
+  if (empty) {
     return false;
   }
 
   // track min/max here to make it constant across all layers
   double min = std::numeric_limits<double>::max();
-  double max = std::numeric_limits<double>::min();
+  double max = std::numeric_limits<double>::lowest();
   for (const auto& [layer, drop_map] : ir_drops) {
     for (const auto& [point, drop] : drop_map) {
       min = std::min(min, drop);
@@ -169,6 +210,33 @@ void IRDropDataSource::ensureLayer()
   layer_ = tech_->findRoutingLayer(1);
 }
 
+void IRDropDataSource::setNet(const std::string& name)
+{
+  if (getBlock() == nullptr) {
+    return;
+  }
+
+  net_ = getBlock()->findNet(name.c_str());
+}
+
+void IRDropDataSource::ensureNet()
+{
+  if (net_ != nullptr) {
+    return;
+  }
+
+  if (getBlock() == nullptr) {
+    return;
+  }
+
+  for (auto* net : getBlock()->getNets()) {
+    if (net->getSigType() == odb::dbSigType::POWER) {
+      net_ = net;
+      return;
+    }
+  }
+}
+
 void IRDropDataSource::setLayer(const std::string& name)
 {
   if (tech_ == nullptr) {
@@ -176,6 +244,25 @@ void IRDropDataSource::setLayer(const std::string& name)
   }
 
   layer_ = tech_->findLayer(name.c_str());
+}
+
+void IRDropDataSource::setCorner(const std::string& name)
+{
+  corner_ = sta_->findCorner(name.c_str());
+}
+
+void IRDropDataSource::ensureCorner()
+{
+  if (corner_ != nullptr) {
+    return;
+  }
+
+  auto corners = sta_->corners()->corners();
+  if (!corners.empty()) {
+    corner_ = *corners.begin();
+  }
+
+  corner_ = sta_->cmdCorner();
 }
 
 }  // namespace psm

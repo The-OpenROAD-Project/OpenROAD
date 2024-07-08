@@ -32,10 +32,8 @@
 
 #include "dbTechViaLayerRule.h"
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -43,6 +41,8 @@
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaRule.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
@@ -56,62 +56,81 @@ template class dbTable<_dbTechViaLayerRule>;
 
 bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
 {
-  if (_flags._direction != rhs._flags._direction)
+  if (_flags._direction != rhs._flags._direction) {
     return false;
+  }
 
-  if (_flags._has_enclosure != rhs._flags._has_enclosure)
+  if (_flags._has_enclosure != rhs._flags._has_enclosure) {
     return false;
+  }
 
-  if (_flags._has_width != rhs._flags._has_width)
+  if (_flags._has_width != rhs._flags._has_width) {
     return false;
+  }
 
-  if (_flags._has_overhang != rhs._flags._has_overhang)
+  if (_flags._has_overhang != rhs._flags._has_overhang) {
     return false;
+  }
 
-  if (_flags._has_metal_overhang != rhs._flags._has_metal_overhang)
+  if (_flags._has_metal_overhang != rhs._flags._has_metal_overhang) {
     return false;
+  }
 
-  if (_flags._has_resistance != rhs._flags._has_resistance)
+  if (_flags._has_resistance != rhs._flags._has_resistance) {
     return false;
+  }
 
-  if (_flags._has_spacing != rhs._flags._has_spacing)
+  if (_flags._has_spacing != rhs._flags._has_spacing) {
     return false;
+  }
 
-  if (_flags._has_rect != rhs._flags._has_rect)
+  if (_flags._has_rect != rhs._flags._has_rect) {
     return false;
+  }
 
-  if (_overhang1 != rhs._overhang1)
+  if (_overhang1 != rhs._overhang1) {
     return false;
+  }
 
-  if (_overhang2 != rhs._overhang2)
+  if (_overhang2 != rhs._overhang2) {
     return false;
+  }
 
-  if (_min_width != rhs._min_width)
+  if (_min_width != rhs._min_width) {
     return false;
+  }
 
-  if (_max_width != rhs._max_width)
+  if (_max_width != rhs._max_width) {
     return false;
+  }
 
-  if (_overhang != rhs._overhang)
+  if (_overhang != rhs._overhang) {
     return false;
+  }
 
-  if (_metal_overhang != rhs._metal_overhang)
+  if (_metal_overhang != rhs._metal_overhang) {
     return false;
+  }
 
-  if (_spacing_x != rhs._spacing_x)
+  if (_spacing_x != rhs._spacing_x) {
     return false;
+  }
 
-  if (_spacing_y != rhs._spacing_y)
+  if (_spacing_y != rhs._spacing_y) {
     return false;
+  }
 
-  if (_resistance != rhs._resistance)
+  if (_resistance != rhs._resistance) {
     return false;
+  }
 
-  if (_rect != rhs._rect)
+  if (_rect != rhs._rect) {
     return false;
+  }
 
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
   return true;
 }
@@ -257,8 +276,9 @@ dbTechLayer* dbTechViaLayerRule::getLayer()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
 
-  if (rule->_layer == 0)
+  if (rule->_layer == 0) {
     return nullptr;
+  }
 
   _dbTech* tech = (_dbTech*) rule->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer);

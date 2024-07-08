@@ -157,7 +157,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
       cnt++;
     }
   }
-  if (cnt >= 2) {
+  if (cnt >= 3) {
     return;
   }
 
@@ -1570,12 +1570,12 @@ void FlexPA::prepPoint()
         {
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 1000) {
-              if (cnt % 100 == 0) {
+            if (cnt < 10000) {
+              if (cnt % 1000 == 0) {
                 logger_->info(DRT, 76, "  Complete {} pins.", cnt);
               }
             } else {
-              if (cnt % 1000 == 0) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 77, "  Complete {} pins.", cnt);
               }
             }
@@ -1669,12 +1669,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           }
           cnt += batch.size();
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 110, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 111, "  Complete {} groups.", cnt);
               }
             }
@@ -1715,12 +1715,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
           rowIdx++;
           cnt++;
           if (VERBOSE > 0) {
-            if (cnt < 10000) {
-              if (cnt % 1000 == 0) {
+            if (cnt < 100000) {
+              if (cnt % 10000 == 0) {
                 logger_->info(DRT, 82, "  Complete {} groups.", cnt);
               }
             } else {
-              if (cnt % 10000 == 0) {
+              if (cnt % 100000 == 0) {
                 logger_->info(DRT, 83, "  Complete {} groups.", cnt);
               }
             }
@@ -2226,34 +2226,32 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
 }
 
 // Skip power pins, pins connected to special nets, and dangling pins
-// (since we won't route these).  We have to be careful that these
-// conditions are true not only of the unique instance but also all
-// the equivalent instances.
-bool FlexPA::isSkipInstTerm(frInstTerm* in)
+// (since we won't route these).
+//
+// Checks only this instTerm and not an equivalent ones.  This
+// is a helper to isSkipInstTerm and initSkipInstTerm.
+bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
 {
-  if (in->getTerm()->getType().isSupply()) {
+  auto term = in->getTerm();
+  if (term->getType().isSupply()) {
     return true;
   }
   auto in_net = in->getNet();
   if (in_net && !in_net->isSpecial()) {
     return false;
   }
-  auto instClass = unique_insts_.getClass(in->getInst());
-  if (instClass != nullptr) {
-    for (auto& inst : *instClass) {
-      frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
-      if (!in_net) {
-        if (it->getNet()) {
-          return false;
-        }
-      } else if (in_net->isSpecial()) {
-        if (it->getNet() && !it->getNet()->isSpecial()) {
-          return false;
-        }
-      }
-    }
-  }
   return true;
+}
+
+bool FlexPA::isSkipInstTerm(frInstTerm* in)
+{
+  auto instClass = unique_insts_.getClass(in->getInst());
+  if (instClass == nullptr) {
+    return isSkipInstTermLocal(in);
+  }
+
+  // This should be already computed in initSkipInstTerm()
+  return skip_unique_inst_term_.at({instClass, in->getTerm()});
 }
 
 // the input inst must be unique instance
@@ -2467,7 +2465,6 @@ void FlexPA::genPatterns_reset(
   nodes[endNodeIdx].setNodeCost(0);
 }
 
-// objs must hold at least 1 obj
 bool FlexPA::genPatterns_gc(
     const std::set<frBlockObject*>& targetObjs,
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
@@ -2478,7 +2475,7 @@ bool FlexPA::genPatterns_gc(
     if (VERBOSE > 1) {
       logger_->warn(DRT, 89, "genPattern_gc objs empty.");
     }
-    return false;
+    return true;
   }
 
   FlexGCWorker gcWorker(getTech(), logger_);

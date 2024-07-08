@@ -41,6 +41,7 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 
 namespace odb {
 class dbBlock;
@@ -73,15 +74,8 @@ class Shape;
 class Via;
 class ViaGenerator;
 
-using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-using Box = bg::model::box<Point>;
-using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
-using ShapeValue = std::pair<Box, ShapePtr>;
-using ViaValue = std::pair<Box, ViaPtr>;
-using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
-using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
-using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+
 using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
@@ -729,6 +723,13 @@ class TechViaGenerator : public ViaGenerator
 class Via
 {
  public:
+  struct ViaIndexableGetter
+  {
+    using result_type = odb::Rect;
+    odb::Rect operator()(const ViaPtr& via) const { return via->getArea(); }
+  };
+  using ViaTree = bgi::rtree<ViaPtr, bgi::quadratic<16>, ViaIndexableGetter>;
+
   Via(Connect* connect,
       odb::dbNet* net,
       const odb::Rect& area,
@@ -737,7 +738,6 @@ class Via
 
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
-  Box getBox() const;
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
   const ShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
@@ -757,7 +757,7 @@ class Via
 
   void writeToDb(odb::dbSWire* wire,
                  odb::dbBlock* block,
-                 const ShapeTreeMap& obstructions);
+                 const Shape::ObstructionTreeMap& obstructions);
 
   Grid* getGrid() const;
 
@@ -767,6 +767,8 @@ class Via
 
   void markFailed(failedViaReason reason);
   bool isFailed() const { return failed_; }
+
+  static ViaTree convertVectorToTree(std::vector<ViaPtr>& vec);
 
  private:
   odb::dbNet* net_;

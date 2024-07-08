@@ -109,21 +109,33 @@ void PdnGen::buildGrids(bool trim)
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
-  ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
+  ShapeVectorMap block_obs_vec;
+  Grid::makeInitialObstructions(block, block_obs_vec, insts_in_grids, logger_);
   for (auto* grid : grids) {
-    grid->getGridLevelObstructions(block_obs);
+    grid->getGridLevelObstructions(block_obs_vec);
   }
-  ShapeTreeMap all_shapes;
+  ShapeVectorMap all_shapes_vec;
 
   // get special shapes
-  Grid::makeInitialShapes(block, all_shapes, logger_);
-  for (const auto& [layer, layer_shapes] : all_shapes) {
-    auto& layer_obs = block_obs[layer];
-    for (const auto& [box, shape] : layer_shapes) {
-      layer_obs.insert({shape->getObstructionBox(), shape});
+  Grid::makeInitialShapes(block, all_shapes_vec, logger_);
+  for (const auto& [layer, layer_shapes] : all_shapes_vec) {
+    auto& layer_obs = block_obs_vec[layer];
+    for (const auto& shape : layer_shapes) {
+      layer_obs.push_back(shape);
     }
   }
+
+  Shape::ObstructionTreeMap block_obs;
+  for (const auto& [layer, shapes] : block_obs_vec) {
+    block_obs[layer] = Shape::ObstructionTree(shapes.begin(), shapes.end());
+  }
+  block_obs_vec.clear();
+
+  Shape::ShapeTreeMap all_shapes;
+  for (const auto& [layer, shapes] : all_shapes_vec) {
+    all_shapes[layer] = Shape::ShapeTree(shapes.begin(), shapes.end());
+  }
+  all_shapes_vec.clear();
 
   for (auto* grid : grids) {
     debugPrint(
@@ -183,7 +195,7 @@ void PdnGen::updateVias()
 
   for (auto* grid : grids) {
     for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         shape->clearVias();
       }
     }
@@ -210,7 +222,7 @@ void PdnGen::trimShapes()
     }
     const auto& pin_layers = grid->getPinLayers();
     for (const auto& [layer, shapes] : grid->getShapes()) {
-      for (const auto& [box, shape] : shapes) {
+      for (const auto& shape : shapes) {
         if (!shape->isModifiable()) {
           continue;
         }
@@ -754,14 +766,23 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   // collect all the SWires from the block
   auto* block = db_->getChip()->getBlock();
-  ShapeTreeMap obstructions;
+  ShapeVectorMap net_shapes_vec;
   for (auto* net : block->getNets()) {
-    ShapeTreeMap net_shapes;
-    Shape::populateMapFromDb(net, net_shapes);
-    for (const auto& [layer, net_obs_layer] : net_shapes) {
-      auto& obs_layer = obstructions[layer];
-      for (const auto& [box, shape] : net_obs_layer) {
-        obs_layer.insert({shape->getObstructionBox(), shape});
+    Shape::populateMapFromDb(net, net_shapes_vec);
+  }
+  const Shape::ObstructionTreeMap obstructions(net_shapes_vec.begin(),
+                                               net_shapes_vec.end());
+  net_shapes_vec.clear();
+
+  // Remove existing non-fixed bpins
+  for (auto& [net, swire] : net_map) {
+    for (auto* bterm : net->getBTerms()) {
+      auto bpins = bterm->getBPins();
+      std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
+      for (auto* bpin : pins) {
+        if (!bpin->getPlacementStatus().isFixed()) {
+          odb::dbBPin::destroy(bpin);
+        }
       }
     }
   }
@@ -812,8 +833,10 @@ void PdnGen::ripUp(odb::dbNet* net)
     return;
   }
 
-  ShapeTreeMap net_shapes;
-  Shape::populateMapFromDb(net, net_shapes);
+  ShapeVectorMap net_shapes_vec;
+  Shape::populateMapFromDb(net, net_shapes_vec);
+  Shape::ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
+
   // remove bterms that connect to swires
   std::set<odb::dbBTerm*> terms;
   for (auto* bterm : net->getBTerms()) {
@@ -831,9 +854,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 
         odb::Rect rect = box->getBox();
         const auto& shapes = net_shapes[layer];
-        Box search_box(Point(rect.xMin(), rect.yMin()),
-                       Point(rect.xMax(), rect.yMax()));
-        if (shapes.qbegin(bgi::intersects(search_box)) != shapes.qend()) {
+        if (shapes.qbegin(bgi::intersects(rect)) != shapes.qend()) {
           remove = true;
           break;
         }
@@ -1091,7 +1112,8 @@ bool PdnGen::importUPF(Grid* grid, PowerSwitchNetworkType type) const
       auto* pdn_switch
           = findSwitchedPowerCell(pswitch->getLibCell()->getName());
 
-      const auto control_net = pswitch->getControlPorts()[0].net_name;
+      const auto& control_ports = pswitch->getControlPorts();
+      const auto& control_net = control_ports[0].net_name;
       if (control_net.empty()) {
         logger_->error(
             utl::PDN,

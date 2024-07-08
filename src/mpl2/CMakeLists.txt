@@ -91,5 +91,5 @@ target_link_libraries(mpl2
 )
 
 if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
+  add_subdirectory(test)
 endif()

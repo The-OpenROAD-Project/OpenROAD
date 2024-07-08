@@ -567,7 +567,7 @@ proc save_defok { test } {
 proc result_lang { test } {
   global test_langs
 
-  if {[lsearch $test_langs($test) tcl]} {
+  if {[lsearch $test_langs($test) tcl] != -1} {
     return tcl
   }
   return [lindex $test_langs($test) 0]

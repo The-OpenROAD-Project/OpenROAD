@@ -34,16 +34,16 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 
@@ -51,29 +51,37 @@ template class dbTable<_dbTrackGrid>;
 
 bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
 {
-  if (_layer != rhs._layer)
+  if (_layer != rhs._layer) {
     return false;
+  }
 
-  if (_x_origin != rhs._x_origin)
+  if (_x_origin != rhs._x_origin) {
     return false;
+  }
 
-  if (_x_count != rhs._x_count)
+  if (_x_count != rhs._x_count) {
     return false;
+  }
 
-  if (_x_step != rhs._x_step)
+  if (_x_step != rhs._x_step) {
     return false;
+  }
 
-  if (_y_origin != rhs._y_origin)
+  if (_y_origin != rhs._y_origin) {
     return false;
+  }
 
-  if (_y_count != rhs._y_count)
+  if (_y_count != rhs._y_count) {
     return false;
+  }
 
-  if (_y_step != rhs._y_step)
+  if (_y_step != rhs._y_step) {
     return false;
+  }
 
-  if (_next_grid != rhs._next_grid)
+  if (_next_grid != rhs._next_grid) {
     return false;
+  }
 
   return true;
 }
@@ -143,8 +151,9 @@ void dbTrackGrid::getGridX(std::vector<int>& x_grid)
   }
 
   // empty grid
-  if (x_grid.begin() == x_grid.end())
+  if (x_grid.begin() == x_grid.end()) {
     return;
+  }
 
   // sort coords in asscending order
   std::sort(x_grid.begin(), x_grid.end());
@@ -177,8 +186,9 @@ void dbTrackGrid::getGridY(std::vector<int>& y_grid)
   }
 
   // empty grid
-  if (y_grid.begin() == y_grid.end())
+  if (y_grid.begin() == y_grid.end()) {
     return;
+  }
 
   // sort coords in asscending order
   std::sort(y_grid.begin(), y_grid.end());
@@ -291,8 +301,9 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  if (block_->findTrackGrid(layer_))
+  if (block_->findTrackGrid(layer_)) {
     return nullptr;
+  }
 
   _dbTrackGrid* grid = block->_track_grid_tbl->create();
   grid->_layer = layer_->getImpl()->getOID();

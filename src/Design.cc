@@ -98,7 +98,7 @@ void Design::readDef(const std::string& file_name,
 void Design::link(const std::string& design_name)
 {
   auto app = OpenRoad::openRoad();
-  app->linkDesign(design_name.c_str());
+  app->linkDesign(design_name.c_str(), false);
 }
 
 void Design::readDb(const std::string& file_name)

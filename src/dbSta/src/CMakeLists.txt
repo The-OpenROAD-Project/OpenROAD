@@ -50,9 +50,10 @@ target_include_directories(dbSta_lib
 
 
 target_link_libraries(dbSta_lib
-  PRIVATE
-    OpenSTA
+  PUBLIC
     odb
+    OpenSTA
+  PRIVATE
     utl_lib
 )
 
