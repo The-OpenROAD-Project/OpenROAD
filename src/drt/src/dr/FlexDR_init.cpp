@@ -3002,7 +3002,7 @@ void FlexDRWorker::route_queue_update_from_marker(
               allowAvoidRipup = true;
               dNet->setNRipupAvoids(0);
             }
-            routes.push_back({dNet, dNet->getNumReroutes(), true, nullptr});
+            routes.push_back({dNet, dNet->getNumReroutes(), true});
           }
         }
       }
@@ -3011,14 +3011,14 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (drNet* dNet : avoidRipupCandidates) {
     if (allowAvoidRipup) {
       dNet->incNRipupAvoids();
-      checks.push_back({dNet, -1, false, nullptr});
+      checks.push_back({dNet, -1, false});
     } else {
       dNet->setNRipupAvoids(0);
-      routes.push_back({dNet, dNet->getNumReroutes(), true, nullptr});
+      routes.push_back({dNet, dNet->getNumReroutes(), true});
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-    checks.push_back({victimOwner, -1, false, nullptr});
+    checks.push_back({victimOwner, -1, false});
   }
 }
 
@@ -3068,8 +3068,7 @@ bool FlexDRWorker::canRipup(drNet* n)
 
 void FlexDRWorker::route_queue_update_queue(
     const std::vector<std::unique_ptr<frMarker>>& markers,
-    std::queue<RouteQueueEntry>& rerouteQueue,
-    frBlockObject* checkingObj)
+    std::queue<RouteQueueEntry>& rerouteQueue)
 {
   std::set<frBlockObject*> uniqueVictims;
   std::set<frBlockObject*> uniqueAggressors;
@@ -3082,7 +3081,7 @@ void FlexDRWorker::route_queue_update_queue(
         marker, uniqueVictims, uniqueAggressors, checks, routes);
   }
 
-  route_queue_update_queue(checks, routes, rerouteQueue, checkingObj);
+  route_queue_update_queue(checks, routes, rerouteQueue);
 }
 
 void FlexDRWorker::initMazeCost_guide_helper(drNet* net, const bool isAdd)
