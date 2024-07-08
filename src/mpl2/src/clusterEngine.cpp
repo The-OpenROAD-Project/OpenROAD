@@ -50,9 +50,7 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
     : block_(block),
       network_(network),
       logger_(logger),
-      triton_part_(triton_part),
-      level_(0),
-      id_(0)
+      triton_part_(triton_part)
 {
 }
 

@@ -243,14 +243,14 @@ class ClusteringEngine
   Metrics* design_metrics_;
   PhysicalHierarchy* tree_;
 
-  int level_;  // Current level
-  int id_;     // Current "highest" id
+  int level_{0};  // Current level
+  int id_{0};     // Current "highest" id
 
   // Size limits of the current level
-  int max_macro_;
-  int min_macro_;
-  int max_std_cell_;
-  int min_std_cell_;
+  int max_macro_{0};
+  int min_macro_{0};
+  int max_std_cell_{0};
+  int min_std_cell_{0};
 
   DataFlow data_flow;
 
