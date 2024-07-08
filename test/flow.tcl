@@ -39,8 +39,8 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-# set thread count for all tools with support for multithreading
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
+# # set thread count for all tools with support for multithreading
+# set_thread_count [exec getconf _NPROCESSORS_ONLN]
 
 utl::metric "IFP::ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
@@ -193,6 +193,8 @@ write_verilog $verilog_file
 
 ################################################################
 # Global routing
+
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
 
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
