@@ -97,12 +97,11 @@
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 150.
-[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0018]     Created 2 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0014]     1 clock nets were removed/fixed.
 [INFO CTS-0015]     Created 2 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 0:1, 1:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0018]     Created 17 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -119,10 +118,11 @@
 [INFO CTS-0124] Clock net "clk"
 [INFO CTS-0125]  Sinks 1
 [INFO CTS-0098] Clock net "clk_regs"
-[INFO CTS-0099]  Sinks 150
+[INFO CTS-0099]  Sinks 165
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 48.98 um
+[INFO CTS-0101]  Average sink wire length 48.10 um
 [INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Leaf load cells 30
 [INFO CTS-0098] Clock net "CELL\/clk2"
 [INFO CTS-0099]  Sinks 165
 [INFO CTS-0100]  Leaf buffers 0
