@@ -1,5 +1,6 @@
 #include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
+#include "helper.h"
 #include "mpl2/rtl_mp.h"
 #include "odb/db.h"
 #include "odb/util.h"
@@ -41,13 +42,14 @@ TEST_F(Mpl2PusherTest, CanConstructPusher)
   // 3. MixedCluster (cluster3)
 
   utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db_ = odb::dbDatabase::create();
+  odb::dbDatabase* db_ = odb::createSimpleDB();
   db_->setLogger(logger);
 
-  odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
-  odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
-  odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
-  odb::dbChip* chip_ = odb::dbChip::create(db_);
+  odb::dbTech* tech_ = db_->getTech();
+  odb::dbLib* lib_ = db_->findLib("lib");
+  odb::dbChip* chip_ = db_->getChip();
+  odb::dbTechLayer* layer_ = tech_->findLayer("L1");
+  
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
   master_->setWidth(1000);

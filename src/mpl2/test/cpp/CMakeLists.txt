@@ -12,6 +12,7 @@ set(TEST_LIBS
   gtest_main
   odb
   mpl2_lib
+  mpl2_odb_helper
 )
 
 add_executable(TestPusher TestPusher.cpp)
@@ -38,3 +39,4 @@ add_dependencies(build_and_test
     TestPusher
 )
 
+add_subdirectory(helper)
