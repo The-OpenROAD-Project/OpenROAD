@@ -71,8 +71,7 @@ HierRTLMP::HierRTLMP(sta::dbNetwork* network,
       db_(db),
       sta_(sta),
       logger_(logger),
-      tritonpart_(tritonpart),
-      clustering_engine_(nullptr)
+      tritonpart_(tritonpart)
 {
 }
 
