@@ -66,6 +66,7 @@ void ClusteringEngine::run()
 
   if (design_metrics_->getNumStdCell() == 0) {
     logger_->warn(MPL, 25, "Design has no standard cells!");
+    tree_->has_std_cells = false;
     treatEachMacroAsSingleCluster();
   } else {
     multilevelAutocluster(tree_->root);
