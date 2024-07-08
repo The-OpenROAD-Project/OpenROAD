@@ -14,6 +14,10 @@ set(TEST_LIBS
   mpl2_lib
 )
 
+add_executable(TestPusher TestPusher.cpp)
+target_link_libraries(TestPusher ${TEST_LIBS})
+gtest_discover_tests(TestPusher WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_executable(TestSnapper TestSnapper.cpp)
 target_link_libraries(TestSnapper ${TEST_LIBS})
 gtest_discover_tests(TestSnapper WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -31,5 +35,6 @@ gtest_discover_tests(mpl2_test
 add_dependencies(build_and_test
     mpl2_test
     TestSnapper
+    TestPusher
 )
 
