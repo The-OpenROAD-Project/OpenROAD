@@ -1466,7 +1466,7 @@ void FlexDRWorker::modPathCost(drConnFig* connFig,
       box = rect->getBBox();
       xform.apply(box);
       if (modCutSpc) {
-        modCutSpacingCost(box, bi.z(), type);
+        modCutSpacingCost(box, bi.z(), type, false, bi.x(), bi.y());
       }
       modInterLayerCutSpacingCost(box, bi.z(), type, true);
       modInterLayerCutSpacingCost(box, bi.z(), type, false);
@@ -1782,7 +1782,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         graphics_->startNet(net);
       }
       for (auto& uConnFig : net->getRouteConnFigs()) {
-        subPathCost(uConnFig.get());
+        subPathCost(uConnFig.get(), false, true);
         workerRegionQuery.remove(uConnFig.get());  // worker region query
       }
       modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),

@@ -3002,7 +3002,7 @@ void FlexDRWorker::route_queue_update_from_marker(
               allowAvoidRipup = true;
               dNet->setNRipupAvoids(0);
             }
-            routes.push_back({dNet, dNet->getNumReroutes(), true});
+            routes.push_back({dNet, dNet->getNumReroutes(), true, nullptr});
           }
         }
       }
@@ -3011,14 +3011,14 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (drNet* dNet : avoidRipupCandidates) {
     if (allowAvoidRipup) {
       dNet->incNRipupAvoids();
-      checks.push_back({dNet, -1, false});
+      checks.push_back({dNet, -1, false, nullptr});
     } else {
       dNet->setNRipupAvoids(0);
-      routes.push_back({dNet, dNet->getNumReroutes(), true});
+      routes.push_back({dNet, dNet->getNumReroutes(), true, nullptr});
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-    checks.push_back({victimOwner, -1, false});
+    checks.push_back({victimOwner, -1, false, nullptr});
   }
 }
 
@@ -3068,7 +3068,8 @@ bool FlexDRWorker::canRipup(drNet* n)
 
 void FlexDRWorker::route_queue_update_queue(
     const std::vector<std::unique_ptr<frMarker>>& markers,
-    std::queue<RouteQueueEntry>& rerouteQueue)
+    std::queue<RouteQueueEntry>& rerouteQueue,
+    frBlockObject* checkingObj)
 {
   std::set<frBlockObject*> uniqueVictims;
   std::set<frBlockObject*> uniqueAggressors;
@@ -3081,7 +3082,7 @@ void FlexDRWorker::route_queue_update_queue(
         marker, uniqueVictims, uniqueAggressors, checks, routes);
   }
 
-  route_queue_update_queue(checks, routes, rerouteQueue);
+  route_queue_update_queue(checks, routes, rerouteQueue, checkingObj);
 }
 
 void FlexDRWorker::initMazeCost_guide_helper(drNet* net, const bool isAdd)
@@ -3490,10 +3491,10 @@ void FlexDRWorker::initMazeCost_connFig()
 {
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
-      addPathCost(connFig.get());
+      addPathCost(connFig.get(), false, true);
     }
     for (auto& connFig : net->getRouteConnFigs()) {
-      addPathCost(connFig.get());
+      addPathCost(connFig.get(), false, true);
     }
     gcWorker_->updateDRNet(net.get());
     gcWorker_->updateGCWorker();
@@ -3548,9 +3549,9 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
     via->addToNet(net);
     initMazeIdx_connFig(via.get());
     if (isAddPathCost) {
-      addPathCost(via.get(), true);
+      addPathCost(via.get(), true, true);
     } else {
-      subPathCost(via.get(), true);
+      subPathCost(via.get(), true, true);
     }
   }
 }
