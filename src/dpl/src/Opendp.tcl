@@ -136,34 +136,43 @@ proc filler_placement { args } {
   dpl::filler_placement_cmd $filler_masters $prefix
 }
 
-sta::define_cmd_args "insert_decap" { [-cap target] [-cells cell_info] }
+sta::define_cmd_args "insert_decap" { -target_cap target_cap\
+                                       [-cells cell_info]\
+                                       [-net net_name]\
+                                    }
 
 proc insert_decap { args } {
   sta::parse_key_args "insert_decap" args \
-    keys {-cap -cells} flags {}
+    keys {-target_cap -cells -net} flags {}
 
-  set cap_target 0.0
-  if { [info exists keys(-cap)] } {
-    set cap_target $keys(-cap)
+  set target_cap 0.0
+  if { [info exists keys(-target_cap)] } {
+    set target_cap $keys(-target_cap)
+    sta::check_positive_float "-target_cap" $target_cap
+    # F/m
+    set target_cap [expr [sta::capacitance_ui_sta $target_cap] / [sta::distance_ui_sta 1.0]]
   }
 
   # Check even size
   set cells_and_decap $keys(-cells)
   if { [expr [llength $cells_and_decap] % 2] != 0 } {
-    utl::error DPL 181 "List of decap cells must have an even size."
+    utl::error DPL 181 "-cells must be a list of cell and decap pairs"
   }
 
   # Add decap cells on DPL
   set db [ord::get_db]
   foreach {cell_name decap} $cells_and_decap {
-    set decap_value [format "%.4f" $decap]
+    set decap_value $decap
+    sta::check_positive_float "-cells" $decap_value
+    # F/m
+    set decap_value [expr [sta::capacitance_ui_sta $decap_value] / [sta::distance_ui_sta 1.0]]
     # Find master with cell_name
     set matched 0
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
         set master_name [$master getConstName]
         if { [string match $cell_name $master_name] } {
-          dpl::set_decap_master $master $decap_value
+          dpl::add_decap_master $master $decap_value
           set matched 1
         }
       }
@@ -172,8 +181,15 @@ proc insert_decap { args } {
       utl::warn "DPL" 280 "$decap_name did not match any masters."
     }
   }
+  # Get net name
+  set net_name ""
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+  }
+
+  puts $net_name
   # Insert decap cells
-  dpl::insert_decap_cmd $cap_target
+  dpl::insert_decap_cmd $target_cap $net_name
 }
 
 sta::define_cmd_args "remove_fillers" {}

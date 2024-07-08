@@ -114,25 +114,9 @@ struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
-struct GapX
-{
-  int x;
-  odb::dbOrientType orient;
-  int width;
-  int height;
-  bool is_filled;
-  GapX(int _x, const odb::dbOrientType _orient, int _width, int _height)
-  {
-    x = _x;
-    orient = _orient;
-    width = _width;
-    height = _height;
-    is_filled = false;
-  }
-};
-
-using gapMap = map<int, vector<GapX>>;
-
+struct GapInfo;
+struct DecapCell;
+struct IRDrop;
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -176,8 +160,8 @@ class Opendp
   void optimizeMirroring();
 
   // Place decap cells
-  void setDecapMaster(dbMaster* decap_master, double decap_cap);
-  void insertDecapCells(double target);
+  void addDecapMaster(dbMaster* decap_master, double decap_cap);
+  void insertDecapCells(double target, const char* net_name);
 
  private:
   using bgPoint
@@ -193,6 +177,9 @@ class Opendp
   using GapFillers = vector<dbMasterSeq>;
 
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
+
+  using GapMapByY = std::map<int, vector<GapInfo*>>;
+
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
@@ -339,14 +326,14 @@ class Opendp
   const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
 
   // Place decaps
-  vector<int> getDecapCell(const int& gap_width,
+  vector<int> findDecapCellIndices(const int& gap_width,
                            const double& current,
                            const double& target);
   void insertDecapInPos(dbMaster* master,
                         const odb::dbOrientType& orient,
                         const int& pos_x,
                         const int& pos_y);
-  void insertDecapInRow(const vector<GapX>& gaps,
+  void insertDecapInRow(const vector<GapInfo*>& gaps,
                         int gap_y,
                         int irdrop_x,
                         int irdrop_y,
@@ -355,6 +342,9 @@ class Opendp
   void findGaps();
   void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
+  void getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops);
+  void prepareDecapAndGaps();
+  odb::dbNet* findPowerNet(const char* net_name);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -386,9 +376,9 @@ class Opendp
 
   // Decap placement.
   psm::PDNSim* psm_;
-  vector<std::pair<dbMaster*, double>> decap_masters_;
+  vector<DecapCell*> decap_masters_;
   int decap_count_ = 0;
-  gapMap gaps_;
+  GapMapByY gaps_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_ = 0;
