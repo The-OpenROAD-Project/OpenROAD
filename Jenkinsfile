@@ -119,6 +119,26 @@ def getParallelTests(String image) {
             }
         },
 
+        'Build without Test': {
+            node {
+                docker.image(image).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                    stage('Setup no-test Build') {
+                        echo "Build without Tests";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                    }
+                    stage('no-test Build') {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                                sh label: 'no-test Build', script: 'cmake -B build_no_tests -D ENABLE_TESTS=OFF 2>&1 | tee no_test.log';
+                            }
+                        }
+                        archiveArtifacts artifacts: 'no_test.log';
+                    }
+                }
+            }
+        },
+
         'Check message IDs': {
             dir('src') {
                 sh label: 'Find duplicated message IDs', script: '../etc/find_messages.py > messages.txt';
