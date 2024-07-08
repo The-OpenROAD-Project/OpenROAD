@@ -582,8 +582,9 @@ _installCI() {
         apt-transport-https \
         ca-certificates \
         curl \
-        software-properties-common \
+        jq \
         parallel \
+        software-properties-common \
         unzip
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     echo \
