@@ -216,7 +216,8 @@ class TritonCTS
   void balanceMacroRegisterLatencies();
   float getVertexClkArrival(sta::Vertex* sink_vertex, odb::dbNet* topNet);
   void computeAveSinkArrivals(TreeBuilder* builder);
-  void computeSinkArrivalRecur(odb::dbITerm* iterm,
+  void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
+                               odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
