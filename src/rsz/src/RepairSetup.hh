@@ -128,10 +128,11 @@ class RepairSetup : public sta::dbStaState
  private:
   void init();
   bool repairPath(PathRef& path,
-                  Slack path_slack,
-                  bool skip_pin_swap,
-                  bool skip_gate_cloning,
-                  bool skip_buffer_removal);
+                  const Slack path_slack,
+                  const bool skip_pin_swap,
+                  const bool skip_gate_cloning,
+                  const bool skip_buffer_removal,
+                  const float setup_slack_margin);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -150,8 +151,10 @@ class RepairSetup : public sta::dbStaState
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   bool removeDrvr(PathRef* drvr_path,
                   LibertyCell* drvr_cell,
-                  int drvr_index,
-                  PathExpanded* expanded);
+                  const int drvr_index,
+                  PathExpanded* expanded,
+                  const float setup_slack_margin);
+  bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,

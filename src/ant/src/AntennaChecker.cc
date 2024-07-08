@@ -231,7 +231,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
                                        iterm->getInst()->getConstName(),
                                        mterm->getConstName(),
                                        mterm->getMaster()->getConstName());
-    PinType pin = PinType(pin_name, iterm);
+    PinType pin = PinType(std::move(pin_name), iterm);
     odb::dbInst* inst = iterm->getInst();
     const odb::dbTransform transform = inst->getTransform();
     for (odb::dbMPin* mterm : mterm->getMPins()) {
@@ -866,8 +866,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     for (const auto& [gate, violation_layers] : gates_with_violations) {
       for (odb::dbTechLayer* layer : violation_layers) {
         // when repair antenna is running, calculate number of diodes
-        if (layer->getRoutingLevel() != 0
-            && pin_added[layer].find(gate) == pin_added[layer].end()) {
+        if (pin_added[layer].find(gate) == pin_added[layer].end()) {
           double diode_diff_area = 0.0;
           if (diode_mterm) {
             diode_diff_area = diffArea(diode_mterm);
@@ -934,8 +933,9 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                 gates_for_diode_insertion.push_back(gate);
               }
             }
-            antenna_violations.push_back(
-                {layer->getRoutingLevel(), gates_for_diode_insertion, 1});
+            antenna_violations.push_back({layer->getRoutingLevel(),
+                                          std::move(gates_for_diode_insertion),
+                                          1});
           }
         }
       }

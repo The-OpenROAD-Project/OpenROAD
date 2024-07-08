@@ -851,7 +851,7 @@ void RepairDesign::repairNetWire(
                  level,
                  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
                  units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
-      split_length = min(max_length_, length / 2);
+      split_length = min(max(max_length_ - wire_length_ref, 0), length / 2);
 
       split_wire = true;
     }
