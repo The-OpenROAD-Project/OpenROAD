@@ -263,19 +263,16 @@ proc report_puts { out } {
 }
 
 define_cmd_args "report_metrics" {[-stage][-when][-include_erc][-include_clock_skew][-metrics_report_dir]}
-proc report_metrics { stage when {include_erc true} {include_clock_skew true} {metrics_report_dir ""}} {
+proc report_metrics { stage when {include_erc true} {include_clock_skew true} {metrics_report_dir "."}} {
   if {[info exists ::env(SKIP_REPORT_METRICS)] && $::env(SKIP_REPORT_METRICS) == 1} {
     return
   }
   puts "Report metrics stage $stage, $when..."
-  if {$metrics_report_dir eq ""} {
-    set metrics_report_dir [file join  $::env(HOME) "OpenROAD" "results"]
+  if {![file isdirectory $metrics_report_dir/results]} {
+    file mkdir ${metrics_report_dir}/results
   }
-  if {![file isdirectory $metrics_report_dir]} {
-    file mkdir $metrics_report_dir
-  }
-  puts "Metrics results directory: $metrics_report_dir"
   set filename ${metrics_report_dir}/${stage}_[string map {" " "_"} $when].rpt
+  puts "Metrics results directory: $filename"
   set fileId [open $filename w]
   close $fileId
   report_puts "\n=========================================================================="
