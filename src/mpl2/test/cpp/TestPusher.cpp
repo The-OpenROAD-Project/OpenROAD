@@ -51,38 +51,32 @@ TEST_F(Mpl2PusherTest, CanConstructPusher)
   odb::dbTechLayer* layer_ = tech_->findLayer("L1");
   
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
+  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
   odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
-  master_->setWidth(1000);
-  master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::CORE);
   odb::dbMTerm::create(
       master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMTerm::create(
       master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   master_->setFrozen();
 
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-
   odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
   odb::dbDatabase::endEco(block_);
 
-  // Cluster class is defined in mpl2/src/object.h
-
+  // Case 1:
   // cluster1 is HardMacroCluster
   Cluster* cluster1 = new Cluster(0, std::string("hard_macro_cluster"), logger);
   cluster1->addDbModule(block_->getTopModule());
   cluster1->addLeafMacro(inst1);
-  cluster1->setClusterType(HardMacroCluster); // width, height, coordinates will all be 0
-
-  logger->report("getNumMacro is {}", cluster1->getNumMacro());
-  cluster1->printBasicInformation(logger);
+  cluster1->setClusterType(HardMacroCluster); 
 
   std::map<Boundary, Rect> boundary_to_io_blockage_;
-
   Pusher pusher(logger, cluster1, block_, boundary_to_io_blockage_);
-
-  logger->report("size of boundary_to_io_blockage_ is {}", boundary_to_io_blockage_.size());
+  
+  // Due to getX, getY, getWidth, and getHeight (see mpl2/src/object.h),
+  // it is expected that boundary_to_io_blockage_ here will be empty.
+  EXPECT_TRUE(boundary_to_io_blockage_.size() == 0);
 }
 
 }  // namespace mpl2
