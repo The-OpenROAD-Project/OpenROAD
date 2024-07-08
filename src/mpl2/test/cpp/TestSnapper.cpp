@@ -57,16 +57,15 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
   odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
   odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
-  odb::dbDatabase::endEco(block_);
 
   Snapper snapper;
   snapper.setMacro(inst1);
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);
+  
 }  // CanSetMacroForEmptyInstances
 
 TEST_F(Mpl2SnapperTest, CanSnapMacros)
@@ -102,7 +101,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
   // with manufacturing grid 5
-  odb::dbGCellGrid* grid_ = odb::dbGCellGrid::create(block_);
+  odb::dbGCellGrid::create(block_);
   track_->addGridPatternX(0, 50, 20);
   track_->addGridPatternY(0, 50, 20);
   tech_->setManufacturingGrid(5);
@@ -119,18 +118,16 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbMTerm* mterm_i = odb::dbMTerm::create(
       master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
-  odb::dbBox* box_i = odb::dbBox::create(mpin_i, layer_, 0, 0, 50, 50);
+  odb::dbBox::create(mpin_i, layer_, 0, 0, 50, 50);
 
   odb::dbMTerm* mterm_o = odb::dbMTerm::create(
       master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  odb::dbBox* box_o = odb::dbBox::create(mpin_o, layer_, 100, 100, 150, 150);
+  odb::dbBox::create(mpin_o, layer_, 100, 100, 150, 150);
   master_->setFrozen();
 
   // create a macro instance
-  odb::dbDatabase::beginEco(block_);
   odb::dbInst* inst_ = odb::dbInst::create(block_, master_, "macro1");
-  odb::dbDatabase::endEco(block_);
 
   // A summary of the set-up (all quantities in internal DB units):
   // -> master and block both 1000 x 1000, with only 1 layer
