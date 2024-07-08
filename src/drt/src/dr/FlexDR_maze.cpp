@@ -1755,7 +1755,7 @@ void FlexDRWorker::identifyCongestionLevel()
 void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
 {
   int gc_version = 1;
-  std::map<frBlockObject*, int> obj_gc_version;
+  std::map<frBlockObject*, std::pair<int, int>> obj_gc_version;
   auto& workerRegionQuery = getWorkerRegionQuery();
   while (!rerouteQueue.empty()) {
     auto& entry = rerouteQueue.front();
@@ -1770,6 +1770,14 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     if (obj->typeId() == drcNet && doRoute) {
       auto net = static_cast<drNet*>(obj);
       if (numReroute != net->getNumReroutes()) {
+        continue;
+      }
+      if (ripupMode_ == RipUpMode::DRC && entry.checkingObj != nullptr
+          && obj_gc_version.find(net->getFrNet()) != obj_gc_version.end()
+          && obj_gc_version.find(entry.checkingObj) != obj_gc_version.end()
+          && obj_gc_version[net->getFrNet()] == std::make_pair(gc_version, 0)
+          && obj_gc_version[entry.checkingObj]
+                 == std::make_pair(gc_version, 0)) {
         continue;
       }
       // init
@@ -1890,7 +1898,8 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           }
         }
         didCheck = true;
-        obj_gc_version[net->getFrNet()] = gc_version;
+        obj_gc_version[net->getFrNet()]
+            = {gc_version, gcWorker_->getMarkers().size()};
 
       } else {
         logger_->error(DRT, 1006, "failed to setTargetNet");
@@ -1898,10 +1907,9 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     } else {
       gcWorker_->setEnableSurgicalFix(false);
       if (obj_gc_version.find(obj) != obj_gc_version.end()
-          && obj_gc_version[obj] == gc_version) {
+          && obj_gc_version[obj].first == gc_version) {
         continue;
       }
-      obj_gc_version[obj] = gc_version;
       if (obj->typeId() == frcNet) {
         auto net = static_cast<frNet*>(obj);
         if (gcWorker_->setTargetNet(net)) {
@@ -1914,10 +1922,11 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           didCheck = true;
         }
       }
+      obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
     }
     // end
     if (didCheck) {
-      route_queue_update_queue(gcWorker_->getMarkers(), rerouteQueue);
+      route_queue_update_queue(gcWorker_->getMarkers(), rerouteQueue, obj);
     }
     if (didRoute) {
       route_queue_markerCostDecay();
