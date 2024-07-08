@@ -65,6 +65,8 @@ using utl::DPL;
 using odb::dbMasterType;
 using odb::Rect;
 
+using utl::format_as;
+
 ////////////////////////////////////////////////////////////////
 
 bool Opendp::isMultiRow(const Cell* cell) const
