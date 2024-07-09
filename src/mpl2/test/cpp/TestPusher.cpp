@@ -35,10 +35,10 @@ class Mpl2PusherTest : public ::testing::Test
 // 
 // There are several cases based on the cluster type (see mpl2/object.h):
 // 1. HardMacroCluster (ConstructPusherHardMacro)
-//     -> Cluster only has leaf_macros_
-// 2. StdCellCluster   (ConstructPusherStdCell)
+//     -> Cluster only has leaf_macros_ 
+// 2. StdCellCluster   (ConstructPusherStdCell) (in-progress)
 //     -> Cluster only has leaf_std_cells_ and dbModules_
-// 3. MixedCluster     (ConstructPusherMixed)     
+// 3. MixedCluster     (ConstructPusherMixed) (in-progress)
 //     -> Cluster has both std cells and hard macros
 
 TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
@@ -84,61 +84,5 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   EXPECT_TRUE(boundary_to_io_blockage_.size() == 0);
   
 }  // ConstructPusherHardMacro
-
-TEST_F(Mpl2PusherTest, ConstructPusherStdCell)
-{
-  // Test whether a Cluster of type StdCellCluster can be created
-  // and then used to construct a Pusher object, and then whether the 
-  // boundary_to_io_blockage_ created during construction has the expected
-  // values.
-
-  utl::Logger* logger_ = new utl::Logger();
-  odb::dbDatabase* db_ = createSimpleDB();
-  db_->setLogger(logger_);
-
-  odb::dbMaster* master_ = createSimpleMaster(
-      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::CORE);
-
-  odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
-
-  odb::dbInst::create(block_, master_, "leaf_std_cell1");
-  odb::dbInst::create(block_, master_, "leaf_std_cell2");
-  odb::dbInst::create(block_, master_, "leaf_std_cell3");
-
-  Cluster* cluster_ = new Cluster(0, std::string("stdcell_cluster"), logger_);
-  cluster_->setClusterType(StdCellCluster);
-  cluster_->addDbModule(block_->getTopModule());
-
-  // add declared instances as leaf std cells to cluster
-  // and compute metrics alongside
-  
-  Metrics* metrics_ = new Metrics(0, 0, 0.0, 0.0);
-  for (auto inst : block_->getInsts()) {
-
-    const float inst_width = block_->dbuToMicrons(
-        inst->getBBox()->getBox().dx());
-    const float inst_height = block_->dbuToMicrons(
-        inst->getBBox()->getBox().dy());
-    
-    cluster_->addLeafStdCell(inst);
-    metrics_->addMetrics(Metrics(1, 0, inst_width * inst_height, 0.0));
-
-  }
-
-  cluster_->setMetrics(Metrics(
-      metrics_->getNumStdCell(),
-      metrics_->getNumMacro(),
-      metrics_->getStdCellArea(), 
-      metrics_->getMacroArea()
-  ));
-
-  cluster_->printBasicInformation(logger_);
-  std::map<Boundary, Rect> boundary_to_io_blockage_;
-  Pusher pusher(logger_, cluster_, block_, boundary_to_io_blockage_);
-
-  logger_->report("area: {}", cluster_->getArea());
-
-}  // ConstructPusherStdCell
 
 }  // namespace mpl2
