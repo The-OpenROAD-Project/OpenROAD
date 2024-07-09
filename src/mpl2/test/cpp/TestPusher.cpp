@@ -42,23 +42,22 @@ TEST_F(Mpl2PusherTest, CanConstructPusher)
   // 3. MixedCluster (cluster3)
 
   utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db_ = odb::createSimpleDB();
+  odb::dbDatabase* db_ = createSimpleDB();
   db_->setLogger(logger);
 
-  odb::dbTech* tech_ = db_->getTech();
-  odb::dbLib* lib_ = db_->findLib("lib");
-  odb::dbChip* chip_ = db_->getChip();
-  odb::dbTechLayer* layer_ = tech_->findLayer("L1");
-  
-  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  // Create setup for case 1 (HardMacroCluster):
+  // Simple master with 1 input, 1 output, 1 simple block, 1 instance
+  odb::dbMaster* master_ = createSimpleMaster(
+                                        db_->findLib("lib"), 
+                                        "simple_master", 
+                                        1000, 
+                                        1000, 
+                                        odb::dbMasterType::CORE);
 
-  odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
-  odb::dbMTerm::create(
-      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(
-      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  master_->setFrozen();
+  odb::dbBlock* block_ = odb::dbBlock::create(
+                                        db_->getChip(), 
+                                        "simple_block");
+  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
 
