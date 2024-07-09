@@ -7,6 +7,7 @@ namespace mpl2 {
 
 ///
 /// Create simple database with simple/default dbChip, dbTech, dbLib
+/// and layer of type dbTechLayerType::MASTERSLICE
 ///
 odb::dbDatabase* createSimpleDB()
 {
@@ -36,10 +37,15 @@ odb::dbMaster* createSimpleMaster(
   master->setHeight(height);
   master->setType(type);
 
-  odb::dbMTerm::create(
+  odb::dbMTerm* mterm_i = odb::dbMTerm::create(
       master, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(
+  odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
+  odb::dbBox::create(mpin_i, lib->getTech()->findLayer("L1"), 0, 0, 50, 50);
+
+  odb::dbMTerm* mterm_o = odb::dbMTerm::create(
       master, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
+  odb::dbBox::create(mpin_o, lib->getTech()->findLayer("L1"), 100, 100, 150, 150);
 
   master->setFrozen();
   return master;
