@@ -31,11 +31,12 @@ class Mpl2PusherTest : public ::testing::Test
 };
 
 // The ConstructPusher tests whether a Pusher object can be constructed
-// without halting, and indirectly tests private function Pusher::SetIOBlockages. 
-// 
+// without halting, and indirectly tests private function
+// Pusher::SetIOBlockages.
+//
 // There are several cases based on the cluster type (see mpl2/object.h):
 // 1. HardMacroCluster (ConstructPusherHardMacro)
-//     -> Cluster only has leaf_macros_ 
+//     -> Cluster only has leaf_macros_
 // 2. StdCellCluster   (ConstructPusherStdCell) (in-progress)
 //     -> Cluster only has leaf_std_cells_ and dbModules_
 // 3. MixedCluster     (ConstructPusherMixed) (in-progress)
@@ -44,7 +45,7 @@ class Mpl2PusherTest : public ::testing::Test
 TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
 {
   // Test whether a Cluster of type HardMacroCluster can be created
-  // and then used to construct a Pusher object, and then whether the 
+  // and then used to construct a Pusher object, and then whether the
   // boundary_to_io_blockage_ created during construction has the expected
   // value (empty).
 
@@ -52,23 +53,27 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   odb::dbDatabase* db_ = createSimpleDB();
   db_->setLogger(logger_);
 
-  odb::dbMaster* master_ = createSimpleMaster(
-      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::CORE);
+  odb::dbMaster* master_ = createSimpleMaster(db_->findLib("lib"),
+                                              "simple_master",
+                                              1000,
+                                              1000,
+                                              odb::dbMasterType::CORE);
 
   odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "leaf_macro");
-  
+
   // Create cluster of type HardMacroCluster, and add one instance
-  Cluster* cluster_ = new Cluster(0, std::string("hard_macro_cluster"), logger_);
+  Cluster* cluster_
+      = new Cluster(0, std::string("hard_macro_cluster"), logger_);
   cluster_->setClusterType(HardMacroCluster);
-  cluster_->addLeafMacro(inst1); 
+  cluster_->addLeafMacro(inst1);
 
   // Construct Pusher object, indirectly run Pusher::SetIOBlockages
   std::map<Boundary, Rect> boundary_to_io_blockage_;
   Pusher pusher(logger_, cluster_, block_, boundary_to_io_blockage_);
-  
+
   // In hier_rtlmp.cpp the io blockages would have been retrieved by
   // setIOClustersBlockages (-> computeIOSpans, computeIOBlockagesDepth)
   //
@@ -77,12 +82,12 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   // io_spans[L, T, R, B].second = 0.0
   //
   // Left, top, right, and bottom blockages are computed the second
-  // part of each io_span is bigger than the first part, however 
+  // part of each io_span is bigger than the first part, however
   // in this case this is always untrue (always first > second)
   // so boundary_to_io_blockage_ will still be empty at the end.
 
   EXPECT_TRUE(boundary_to_io_blockage_.empty());
-  
+
 }  // ConstructPusherHardMacro
 
 }  // namespace mpl2
