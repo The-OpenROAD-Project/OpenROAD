@@ -45,9 +45,9 @@ struct GapInfo
   odb::dbOrientType orient;
   int width;
   int height;
-  bool is_filled;
+  bool is_filled{false};
   GapInfo(int x, const odb::dbOrientType& orient, int width, int height)
-      : x(x), orient(orient), width(width), height(height), is_filled(false)
+      : x(x), orient(orient), width(width), height(height)
   {
   }
 };
