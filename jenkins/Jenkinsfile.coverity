@@ -1,25 +1,37 @@
-pipeline {
-  agent {label 'ubuntu22'};
-  environment {
-    COVERITY_TOKEN = credentials('COVERITY_TOKEN');
-  }
-  stages {
-    stage('Run Coverity') {
-      steps {
-        sh 'bash -ic "./etc/CodeCoverage.sh static"';
-      }
+@Library('utils@or-v2.0.1') _
+
+timeout(time: 2, unit: 'HOURS') {
+    node {
+
+        stage('Checkout'){
+            checkout scm;
+        }
+
+        def DOCKER_IMAGE;
+        stage('Build and Push Docker Image') {
+            DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+            echo "Docker image is ${DOCKER_IMAGE}";
+        }
+
+        docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/cov-latest:/root/cov-latest') {
+            stage("Setup") {
+                sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+            }
+            stage('Run Static Code Coverage') {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    env.COVERITY_TOKEN = credentials('COVERITY_TOKEN');
+                    sh label: 'Coverity', script: '''
+                        export PATH=/root/cov-latest/bin:$PATH;
+                        bash -ic "./etc/CodeCoverage.sh static";
+                        ''';
+                }
+                archiveArtifacts artifacts: 'openroad.tgz';
+            }
+        }
+
+        stage('Send Email Report') {
+            sendEmail();
+        }
+
     }
-  }
-  post {
-    failure {
-      script {
-        emailext (
-            to:'$DEFAULT_RECIPIENTS',
-            replyTo: '$DEFAULT_REPLYTO',
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
-    }
-  }
 }

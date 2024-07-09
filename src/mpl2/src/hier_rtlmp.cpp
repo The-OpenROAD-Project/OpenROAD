@@ -386,6 +386,11 @@ void HierRTLMP::run()
     runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
+  if (graphics_) {
+    graphics_->setMaxLevel(max_num_level_);
+    graphics_->drawResult();
+  }
+
   Pusher pusher(logger_, root_cluster_, block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
 
@@ -575,13 +580,9 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
       std::string cluster_name = inst->getName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierarchy tree
-      cluster->setParent(root_cluster_);
+      incorporateNewClusterToTree(cluster, root_cluster_);
       cluster->setClusterType(HardMacroCluster);
-      root_cluster_->addChild(cluster);
+
       debugPrint(logger_,
                  MPL,
                  "multilevel_autoclustering",
@@ -976,70 +977,48 @@ void HierRTLMP::createIOClusters()
 // Recursive call for creating the physical hierarchy tree
 void HierRTLMP::multilevelAutocluster(Cluster* parent)
 {
-  bool force_split = false;
+  bool force_split_root = false;
   if (level_ == 0) {
-    // check if root cluster is below the max size of a leaf cluster
-    // Force create child clusters in this case
-    const int leaf_cluster_size
+    const int leaf_max_std_cell
         = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1)
           * (1 + tolerance_);
-    if (parent->getNumStdCell() < leaf_cluster_size) {
-      force_split = true;
+    if (parent->getNumStdCell() < leaf_max_std_cell) {
+      force_split_root = true;
+      debugPrint(logger_,
+                 MPL,
+                 "multilevel_autoclustering",
+                 1,
+                 "Root number of std cells ({}) is below leaf cluster max "
+                 "({}). Root will be force split.",
+                 parent->getNumStdCell(),
+                 leaf_max_std_cell);
     }
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "Force Split: root cluster size: {}, leaf cluster size: {}",
-               parent->getNumStdCell(),
-               leaf_cluster_size);
   }
 
   if (level_ >= max_num_level_) {
     return;
   }
-  level_++;
   debugPrint(logger_,
              MPL,
              "multilevel_autoclustering",
              1,
-             "Parent: {}, level: {}, num macros: {}, num std cells: {}",
+             "Current cluster: {} - Level: {} - Macros: {} - Std Cells: {}",
              parent->getName(),
              level_,
              parent->getNumMacro(),
              parent->getNumStdCell());
 
-  // a large coarsening_ratio_ helps the clustering process converge fast
-  max_num_macro_
-      = max_num_macro_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  min_num_macro_
-      = min_num_macro_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  max_num_inst_ = max_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  min_num_inst_ = min_num_inst_base_ / std::pow(coarsening_ratio_, level_ - 1);
-  // We define the tolerance to improve the robustness of our hierarchical
-  // clustering
-  max_num_inst_ = max_num_inst_ * (1 + tolerance_);
-  min_num_inst_ = min_num_inst_ * (1 - tolerance_);
-  max_num_macro_ = max_num_macro_ * (1 + tolerance_);
-  min_num_macro_ = min_num_macro_ * (1 - tolerance_);
-  if (min_num_macro_ <= 0) {
-    min_num_macro_ = 1;
-    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
-    // max_num_macro_ = min_num_macro_;
-  }
+  level_++;
+  updateSizeThresholds();
 
-  if (min_num_inst_ <= 0) {
-    min_num_inst_ = 100;
-    max_num_inst_ = min_num_inst_ * coarsening_ratio_ / 2.0;
-  }
+  if (force_split_root || (parent->getNumStdCell() > max_num_inst_)) {
+    breakCluster(parent);
+    updateSubTree(parent);
 
-  if (force_split || (parent->getNumStdCell() > max_num_inst_)) {
-    breakCluster(parent);   // Break the parent cluster into children clusters
-    updateSubTree(parent);  // update the subtree to the physical hierarchy tree
     for (auto& child : parent->getChildren()) {
       updateInstancesAssociation(child);
     }
-    // print the basic information of the children cluster
+
     for (auto& child : parent->getChildren()) {
       debugPrint(logger_,
                  MPL,
@@ -1055,6 +1034,34 @@ void HierRTLMP::multilevelAutocluster(Cluster* parent)
 
   updateInstancesAssociation(parent);
   level_--;
+}
+
+void HierRTLMP::updateSizeThresholds()
+{
+  const double coarse_factor = std::pow(coarsening_ratio_, level_ - 1);
+
+  // a large coarsening_ratio_ helps the clustering process converge fast
+  max_num_macro_ = max_num_macro_base_ / coarse_factor;
+  min_num_macro_ = min_num_macro_base_ / coarse_factor;
+  max_num_inst_ = max_num_inst_base_ / coarse_factor;
+  min_num_inst_ = min_num_inst_base_ / coarse_factor;
+
+  // We define the tolerance to improve the robustness of our hierarchical
+  // clustering
+  max_num_inst_ *= (1 + tolerance_);
+  min_num_inst_ *= (1 - tolerance_);
+  max_num_macro_ *= (1 + tolerance_);
+  min_num_macro_ *= (1 - tolerance_);
+
+  if (min_num_macro_ <= 0) {
+    min_num_macro_ = 1;
+    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
+  }
+
+  if (min_num_inst_ <= 0) {
+    min_num_inst_ = 100;
+    max_num_inst_ = min_num_inst_ * coarsening_ratio_ / 2.0;
+  }
 }
 
 void HierRTLMP::updateInstancesAssociation(Cluster* cluster)
@@ -1111,7 +1118,6 @@ void HierRTLMP::updateInstancesAssociation(odb::dbModule* module,
   }
 }
 
-// Break the parent cluster into children clusters
 // We expand the parent cluster into a subtree based on logical
 // hierarchy in a DFS manner.  During the expansion process,
 // we merge small clusters in the same logical hierarchy
@@ -1121,156 +1127,46 @@ void HierRTLMP::breakCluster(Cluster* parent)
              MPL,
              "multilevel_autoclustering",
              1,
-             "Dissolve Cluster: {}",
+             "Breaking Cluster: {}",
              parent->getName());
-  //
-  // Consider three different cases:
-  // (a) parent is an empty cluster
-  // (b) parent is a cluster corresponding to a logical module
-  // (c) parent is a cluster generated by merging small clusters
-  if (parent->getLeafStdCells().empty() && parent->getLeafMacros().empty()
-      && parent->getDbModules().empty()) {
-    // (a) parent is an empty cluster, do nothing
-    // In the normal operation, this case should not happen
+
+  if (parent->isEmpty()) {
     return;
   }
-  if (parent->getLeafStdCells().empty() && parent->getLeafMacros().empty()
-      && (parent->getDbModules().size() == 1)) {
-    // (b) parent is a cluster corresponding to a logical module
-    // For example, the root cluster_
-    odb::dbModule* module = parent->getDbModules()[0];
-    // Check the child logical modules
-    // (b.1) if the logical module has no child logical module
-    // this logical module is a leaf logical module
-    // we will use the TritonPart to partition this large flat cluster
-    // in the follow-up UpdateSubTree function
+
+  if (parent->correspondsToLogicalModule()) {
+    odb::dbModule* module = parent->getDbModules().front();
+    // Flat module that will be partitioned with TritonPart when updating
+    // the subtree later on.
     if (module->getChildren().size() == 0) {
       if (parent == root_cluster_) {
-        // Check the glue logics
-        std::string cluster_name
-            = std::string("(") + parent->getName() + ")_glue_logic";
-        Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-        for (odb::dbInst* inst : module->getInsts()) {
-          odb::dbMaster* master = inst->getMaster();
-
-          if (isIgnoredMaster(master)) {
-            continue;
-          }
-
-          if (master->isBlock()) {
-            cluster->addLeafMacro(inst);
-          } else {
-            cluster->addLeafStdCell(inst);
-          }
-        }
-        // if the module has no meaningful glue instances
-        if (cluster->getLeafStdCells().empty()
-            && cluster->getLeafMacros().empty()) {
-          delete cluster;
-        } else {
-          updateInstancesAssociation(cluster);
-          setClusterMetrics(cluster);
-          cluster_map_[cluster_id_++] = cluster;
-          // modify the physical hierarchy tree
-          cluster->setParent(parent);
-          parent->addChild(cluster);
-        }
+        createFlatCluster(module, parent);
       } else {
-        for (odb::dbInst* inst : module->getInsts()) {
-          odb::dbMaster* master = inst->getMaster();
-          // check if the instance is a Pad, Cover or empty block (such as
-          // marker)
-          if (isIgnoredMaster(master)) {
-            continue;
-          }
-          if (master->isBlock()) {
-            parent->addLeafMacro(inst);
-          } else {
-            parent->addLeafStdCell(inst);
-          }
-        }
-        parent->clearDbModules();  // remove module from the parent cluster
+        addModuleInstsToCluster(parent, module);
+        parent->clearDbModules();
         updateInstancesAssociation(parent);
       }
       return;
     }
-    // (b.2) if the logical module has child logical modules,
-    // we first model each child logical module as a cluster
+
     for (odb::dbModInst* child : module->getChildren()) {
-      std::string cluster_name = child->getMaster()->getHierarchicalName();
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      cluster->addDbModule(child->getMaster());
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierarchy tree
-      cluster->setParent(parent);
-      parent->addChild(cluster);
+      createCluster(child->getMaster(), parent);
     }
-    // Check the glue logics
-    std::string cluster_name
-        = std::string("(") + parent->getName() + ")_glue_logic";
-    Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-    for (odb::dbInst* inst : module->getInsts()) {
-      odb::dbMaster* master = inst->getMaster();
-      if (isIgnoredMaster(master)) {
-        continue;
-      }
-      if (master->isBlock()) {
-        cluster->addLeafMacro(inst);
-      } else {
-        cluster->addLeafStdCell(inst);
-      }
-    }
-    // if the module has no meaningful glue instances
-    if (cluster->getLeafStdCells().empty()
-        && cluster->getLeafMacros().empty()) {
-      delete cluster;
-    } else {
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierarchy tree
-      cluster->setParent(parent);
-      parent->addChild(cluster);
-    }
+    createFlatCluster(module, parent);
   } else {
-    // (c) parent is a cluster generated by merging small clusters
-    // parent cluster has few logical modules or many glue insts
+    // Parent is a cluster generated by merging small clusters:
+    // It may have a few logical modules or many glue insts.
     for (auto& module : parent->getDbModules()) {
-      std::string cluster_name = module->getHierarchicalName();
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      cluster->addDbModule(module);
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierachy tree
-      cluster->setParent(parent);
-      parent->addChild(cluster);
+      createCluster(module, parent);
     }
-    // Check glue logics
+
     if (!parent->getLeafStdCells().empty()
         || !parent->getLeafMacros().empty()) {
-      std::string cluster_name
-          = std::string("(") + parent->getName() + ")_glue_logic";
-      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      for (auto& inst : parent->getLeafStdCells()) {
-        cluster->addLeafStdCell(inst);
-      }
-      for (auto& inst : parent->getLeafMacros()) {
-        cluster->addLeafMacro(inst);
-      }
-      updateInstancesAssociation(cluster);
-      setClusterMetrics(cluster);
-      cluster_map_[cluster_id_++] = cluster;
-      // modify the physical hierachy tree
-      cluster->setParent(parent);
-      parent->addChild(cluster);
+      createCluster(parent);
     }
   }
 
-  // Recursively break down large clusters with logical modules
-  // For large flat cluster, we will break it in the UpdateSubTree function
+  // Recursively break down non-flat large clusters with logical modules
   for (auto& child : parent->getChildren()) {
     if (!child->getDbModules().empty()) {
       if (child->getNumStdCell() > max_num_inst_
@@ -1280,7 +1176,6 @@ void HierRTLMP::breakCluster(Cluster* parent)
     }
   }
 
-  //
   // Merge small clusters
   std::vector<Cluster*> candidate_clusters;
   for (auto& cluster : parent->getChildren()) {
@@ -1295,6 +1190,68 @@ void HierRTLMP::breakCluster(Cluster* parent)
   // Update the cluster_id
   // This is important to maintain the clustering results
   updateInstancesAssociation(parent);
+}
+
+// This cluster won't be associated with the module. It will only
+// contain its macros and std cells as leaves.
+void HierRTLMP::createFlatCluster(odb::dbModule* module, Cluster* parent)
+{
+  std::string cluster_name
+      = std::string("(") + parent->getName() + ")_glue_logic";
+  Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+  addModuleInstsToCluster(cluster, module);
+
+  if (cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty()) {
+    delete cluster;
+    cluster = nullptr;
+  } else {
+    incorporateNewClusterToTree(cluster, parent);
+  }
+}
+
+void HierRTLMP::createCluster(Cluster* parent)
+{
+  std::string cluster_name
+      = std::string("(") + parent->getName() + ")_glue_logic";
+  Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+  for (auto& inst : parent->getLeafStdCells()) {
+    cluster->addLeafStdCell(inst);
+  }
+  for (auto& inst : parent->getLeafMacros()) {
+    cluster->addLeafMacro(inst);
+  }
+
+  incorporateNewClusterToTree(cluster, parent);
+}
+
+void HierRTLMP::createCluster(odb::dbModule* module, Cluster* parent)
+{
+  std::string cluster_name = module->getHierarchicalName();
+  Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+  cluster->addDbModule(module);
+  incorporateNewClusterToTree(cluster, parent);
+}
+
+void HierRTLMP::addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module)
+{
+  for (odb::dbInst* inst : module->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master)) {
+      continue;
+    }
+    cluster->addLeafInst(inst);
+  }
+}
+
+void HierRTLMP::incorporateNewClusterToTree(Cluster* cluster, Cluster* parent)
+{
+  updateInstancesAssociation(cluster);
+  setClusterMetrics(cluster);
+  cluster_map_[cluster_id_++] = cluster;
+
+  // modify physical hierarchy
+  cluster->setParent(parent);
+  parent->addChild(cluster);
 }
 
 // Merge small clusters with the same parent cluster
@@ -2132,6 +2089,14 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
+
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Breaking flat cluster {} with TritonPart",
+             parent->getName());
+
   std::vector<int> part
       = tritonpart_->PartitionKWaySimpleMode(num_parts,
                                              balance_constraint,
@@ -2159,12 +2124,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
-
-  updateInstancesAssociation(cluster_part_1);
-  setClusterMetrics(cluster_part_1);
-  cluster_map_[cluster_id_++] = cluster_part_1;
-  cluster_part_1->setParent(parent->getParent());
-  parent->getParent()->addChild(cluster_part_1);
+  incorporateNewClusterToTree(cluster_part_1, parent->getParent());
 
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
@@ -2349,17 +2309,9 @@ void HierRTLMP::createOneClusterForEachMacro(
     std::string cluster_name = hard_macro->getName();
     Cluster* single_macro_cluster
         = new Cluster(cluster_id_, cluster_name, logger_);
-
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
+    incorporateNewClusterToTree(single_macro_cluster, parent);
 
-    updateInstancesAssociation(single_macro_cluster);
-    setClusterMetrics(single_macro_cluster);
-
-    cluster_map_[cluster_id_++] = single_macro_cluster;
-
-    // modify the physical hierachy tree
-    single_macro_cluster->setParent(parent);
-    parent->addChild(single_macro_cluster);
     macro_clusters.push_back(single_macro_cluster);
   }
 }
@@ -2690,7 +2642,9 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                              0,
                              outline.getWidth() * vary_factor_list[run_id++],
                              outline.getHeight());
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
                                 new_outline,
@@ -2754,7 +2708,9 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                              0,
                              outline.getWidth(),
                              outline.getHeight() * vary_factor_list[run_id++]);
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
                                 new_outline,
@@ -2929,7 +2885,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                              0,
                              outline.getWidth() * vary_factor_list[run_id++],
                              outline.getHeight());
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
                                 macros,
@@ -2987,7 +2945,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                              0,
                              outline.getWidth(),
                              outline.getHeight() * vary_factor_list[run_id++]);
-
+      if (graphics_) {
+        graphics_->setOutline(micronsToDbu(new_outline));
+      }
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
                                 macros,
@@ -5237,12 +5197,7 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
   }
 
   if (graphics_) {
-    odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                          block_->micronsToDbu(outline.yMin()),
-                          block_->micronsToDbu(outline.xMax()),
-                          block_->micronsToDbu(outline.yMax()));
-
-    graphics_->setOutline(dbu_outline);
+    graphics_->setOutline(micronsToDbu(outline));
     graphics_->setMacroBlockages(macro_blockages);
     graphics_->setPlacementBlockages(placement_blockages);
   }
@@ -5574,11 +5529,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (int i = 0; i < run_thread; i++) {
       if (graphics_) {
-        odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                              block_->micronsToDbu(outline.yMin()),
-                              block_->micronsToDbu(outline.xMax()),
-                              block_->micronsToDbu(outline.yMax()));
-        graphics_->setOutline(dbu_outline);
+        graphics_->setOutline(micronsToDbu(outline));
       }
 
       SACoreHardMacro* sa
@@ -6264,6 +6215,24 @@ void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
 {
   graphics_->setShowBundledNets(show_bundled_nets);
+}
+
+void HierRTLMP::setDebugSkipSteps(bool skip_steps)
+{
+  graphics_->setSkipSteps(skip_steps);
+}
+
+void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
+{
+  graphics_->setOnlyFinalResult(only_final_result);
+}
+
+odb::Rect HierRTLMP::micronsToDbu(const Rect& micron_rect)
+{
+  return odb::Rect(block_->micronsToDbu(micron_rect.xMin()),
+                   block_->micronsToDbu(micron_rect.yMin()),
+                   block_->micronsToDbu(micron_rect.xMax()),
+                   block_->micronsToDbu(micron_rect.yMax()));
 }
 
 //////// Pusher ////////

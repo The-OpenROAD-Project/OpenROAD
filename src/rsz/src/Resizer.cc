@@ -315,14 +315,14 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
     if (honorDontTouchFixed) {
       return false;
     }
-    /* remove dont touch */
+    //  remove instance dont touch
     db_inst->setDoNotTouch(false);
   }
   if (db_inst->isFixed()) {
     if (honorDontTouchFixed) {
       return false;
     }
-    /* change FIXED to PLACED */
+    // change FIXED to PLACED just in case
     db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
   LibertyPort *in_port, *out_port;
@@ -331,6 +331,17 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
+  dbNet* in_db_net = db_network_->staToDb(in_net);
+  dbNet* out_db_net = db_network_->staToDb(out_net);
+  // honor net dont-touch on input net or output net
+  if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
+    if (honorDontTouchFixed) {
+      return false;
+    }
+    // remove net dont touch for manual ECO
+    in_db_net->setDoNotTouch(false);
+    out_db_net->setDoNotTouch(false);
+  }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
@@ -1153,11 +1164,13 @@ void Resizer::swapPins(Instance* inst,
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
     LibertyPort* port = network_->libertyPort(pin);
-    if (port == port1) {
+    // port pointers may change after sizing
+    // if (port == port1) {
+    if (std::strcmp(port->name(), port1->name()) == 0) {
       found_pin1 = pin;
       net1 = net;
     }
-    if (port == port2) {
+    if (std::strcmp(port->name(), port2->name()) == 0) {
       found_pin2 = pin;
       net2 = net;
     }
@@ -2170,8 +2183,15 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        float in_slew = tgt_slews_[in_rf->index()];
         LibertyPort* port = arc->from();
+        float in_slew = 0.0;
+        auto it = input_slew_map_.find(port);
+        if (it != input_slew_map_.end()) {
+          const InputSlews& slew = it->second;
+          in_slew = slew[in_rf->index()];
+        } else {
+          in_slew = tgt_slews_[in_rf->index()];
+        }
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
             = arc_delay_calc_->gateDelay(nullptr,
@@ -2248,6 +2268,45 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
         const Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
+      }
+    }
+  }
+}
+
+// Rise/fall delays across all timing arcs into drvr_port.
+// Takes input slews and load cap
+void Resizer::gateDelays(const LibertyPort* drvr_port,
+                         const float load_cap,
+                         const Slew in_slews[RiseFall::index_count],
+                         const DcalcAnalysisPt* dcalc_ap,
+                         // Return values.
+                         ArcDelay delays[RiseFall::index_count],
+                         Slew out_slews[RiseFall::index_count])
+{
+  for (int rf_index : RiseFall::rangeIndex()) {
+    delays[rf_index] = -INF;
+    out_slews[rf_index] = -INF;
+  }
+  LibertyCell* cell = drvr_port->libertyCell();
+  for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
+        LoadPinIndexMap load_pin_index_map(network_);
+        ArcDcalcResult dcalc_result
+            = arc_delay_calc_->gateDelay(nullptr,
+                                         arc,
+                                         in_slews[in_rf->index()],
+                                         load_cap,
+                                         nullptr,
+                                         load_pin_index_map,
+                                         dcalc_ap);
+
+        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const Slew& drvr_slew = dcalc_result.drvrSlew();
+        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
+        out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
       }
     }
   }

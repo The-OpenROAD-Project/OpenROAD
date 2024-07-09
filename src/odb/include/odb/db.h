@@ -1890,12 +1890,12 @@ class dbBTerm : public dbObject
   ///
   /// Set the region where the BTerm is constrained
   ///
-  void setConstraintRegion(const std::pair<Point, Point>& constraint_region);
+  void setConstraintRegion(const Rect& constraint_region);
 
   ///
   /// Get the region where the BTerm is constrained
   ///
-  std::optional<std::pair<Point, Point>> getConstraintRegion();
+  std::optional<Rect> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7743,8 +7743,8 @@ class dbPowerDomain : public dbObject
   std::vector<dbIsolation*> getIsolations();
   std::vector<dbLevelShifter*> getLevelShifters();
 
-  bool setArea(float x1, float y1, float x2, float y2);
-  bool getArea(int& x1, int& y1, int& x2, int& y2);
+  void setArea(const Rect& area);
+  bool getArea(Rect& area);
 
   // User Code End dbPowerDomain
 };

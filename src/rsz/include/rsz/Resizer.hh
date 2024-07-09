@@ -119,6 +119,7 @@ using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
 using InstanceTuple = std::tuple<Instance*, Instance*>;
+using InputSlews = std::array<Slew, RiseFall::index_count>;
 
 class AbstractSteinerRenderer;
 class SteinerTree;
@@ -467,6 +468,13 @@ class Resizer : public dbStaState
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
+  void gateDelays(const LibertyPort* drvr_port,
+                  float load_cap,
+                  const Slew in_slews[RiseFall::index_count],
+                  const DcalcAnalysisPt* dcalc_ap,
+                  // Return values.
+                  ArcDelay delays[RiseFall::index_count],
+                  Slew out_slews[RiseFall::index_count]);
   ArcDelay gateDelay(const LibertyPort* drvr_port,
                      float load_cap,
                      const DcalcAnalysisPt* dcalc_ap);
@@ -700,6 +708,9 @@ class Resizer : public dbStaState
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 200000;
+
+  // Use actual input slews for accurate delay/slew estimation
+  sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
 
   friend class BufferedNet;
   friend class GateCloner;

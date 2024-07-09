@@ -115,10 +115,7 @@ bool use_interface_cell(utl::Logger* logger,
 bool set_domain_area(utl::Logger* logger,
                      odb::dbBlock* block,
                      const std::string& domain,
-                     float x1,
-                     float y1,
-                     float x2,
-                     float y2);
+                     const odb::Rect& area);
 
 bool eval_upf(sta::dbNetwork* network,
               utl::Logger* logger,

@@ -203,7 +203,7 @@ void IOPlacer::randomPlacement()
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.pin_indices, valid_slots, false, true);
+    randomPlacement(io_group.pin_indices, std::move(valid_slots), false, true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -2804,25 +2804,31 @@ void IOPlacer::initNetlist()
 
 void IOPlacer::findConstraintRegion(const Interval& interval,
                                     const Rect& constraint_box,
-                                    Point& pt1,
-                                    Point& pt2)
+                                    Rect& region)
 {
   const Rect& die_bounds = core_->getBoundary();
   if (interval.getEdge() == Edge::bottom) {
-    pt1 = Point(interval.getBegin(), die_bounds.yMin());
-    pt2 = Point(interval.getEnd(), die_bounds.yMin());
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMin(),
+                  interval.getEnd(),
+                  die_bounds.yMin());
   } else if (interval.getEdge() == Edge::top) {
-    pt1 = Point(interval.getBegin(), die_bounds.yMax());
-    pt2 = Point(interval.getEnd(), die_bounds.yMax());
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMax(),
+                  interval.getEnd(),
+                  die_bounds.yMax());
   } else if (interval.getEdge() == Edge::left) {
-    pt1 = Point(die_bounds.xMin(), interval.getBegin());
-    pt2 = Point(die_bounds.xMin(), interval.getEnd());
+    region = Rect(die_bounds.xMin(),
+                  interval.getBegin(),
+                  die_bounds.xMin(),
+                  interval.getEnd());
   } else if (interval.getEdge() == Edge::right) {
-    pt1 = Point(die_bounds.xMax(), interval.getBegin());
-    pt2 = Point(die_bounds.xMax(), interval.getEnd());
+    region = Rect(die_bounds.xMax(),
+                  interval.getBegin(),
+                  die_bounds.xMax(),
+                  interval.getEnd());
   } else {
-    pt1 = constraint_box.ll();
-    pt2 = constraint_box.ur();
+    region = constraint_box;
   }
 }
 
@@ -2832,10 +2838,9 @@ void IOPlacer::commitConstraintsToDB()
     for (odb::dbBTerm* bterm : constraint.pin_list) {
       int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
       IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
-      odb::Point pt1, pt2;
+      Rect constraint_region;
       const Interval& interval = constraint.interval;
-      findConstraintRegion(interval, constraint.box, pt1, pt2);
-      std::pair<odb::Point, odb::Point> constraint_region(pt1, pt2);
+      findConstraintRegion(interval, constraint.box, constraint_region);
       bterm->setConstraintRegion(constraint_region);
 
       if (io_pin.isMirrored()) {
@@ -2844,12 +2849,13 @@ void IOPlacer::commitConstraintsToDB()
         odb::dbBTerm* mirrored_bterm
             = getBlock()->findBTerm(mirrored_pin.getName().c_str());
         Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+        Rect mirrored_constraint_region;
         Interval mirrored_interval(mirrored_edge,
                                    interval.getBegin(),
                                    interval.getEnd(),
                                    interval.getLayer());
-        findConstraintRegion(mirrored_interval, constraint.box, pt1, pt2);
-        std::pair<odb::Point, odb::Point> mirrored_constraint_region(pt1, pt2);
+        findConstraintRegion(
+            mirrored_interval, constraint.box, mirrored_constraint_region);
         mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
       }
     }
