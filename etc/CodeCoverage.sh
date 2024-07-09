@@ -14,7 +14,7 @@ EOF
 }
 
 _lcov() {
-    ./test/regression
+    ctest --test-dir build -j $(nproc)
 
     # sta has a private test suite; mpl is obsoleted by mpl2;
     # drt's gr is not in use
@@ -56,13 +56,37 @@ _coverity() {
         echo "Coverity requires more than 85% of compilation coverage. Only got ${percentage}%."
         exit 1
     fi
+
     tar czvf openroad.tgz cov-int
     commitSha="$(git rev-parse HEAD)"
-    curl --form token=$COVERITY_TOKEN \
-         --form email=openroad@eng.ucsd.edu \
-         --form file=@openroad.tgz \
-         --form version="$commitSha" \
-         "https://scan.coverity.com/builds?project=The-OpenROAD-Project%2FOpenROAD"
+
+    # Step 1: Initialize a build. Fetch a cloud upload url.
+    curl -X POST \
+        -d version="version=${commitSha}" \
+        -d description="OpenROAD Build ${commitSha}" \
+        -d email=openroad@ucsd.edu \
+        -d token=${COVERITY_TOKEN} \
+        -d file_name=openroad.tgz \
+        https://scan.coverity.com/projects/21946/builds/init \
+        | tee response
+
+    # Step 2: Store response data to use in later stages.
+    # Requires the JSON parsing tool jq.
+    # If opting for other bash tools, be careful about url encodings.
+    upload_url=$(jq -r '.url' response)
+    build_id=$(jq -r '.build_id' response)
+
+    # Step 3: Upload the tarball to the Cloud.
+    curl -X PUT \
+        --header 'Content-Type: application/json' \
+        --upload-file openroad.tgz \
+        "${upload_url}"
+
+    # Step 4: Trigger the build on Scan.
+    curl -X PUT \
+        -d "token=${COVERITY_TOKEN}" \
+        https://scan.coverity.com/projects/21946/builds/${build_id}/enqueue
+
 }
 
 target="${1:-dynamic}"

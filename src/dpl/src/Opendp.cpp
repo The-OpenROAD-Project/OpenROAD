@@ -65,6 +65,8 @@ using utl::DPL;
 using odb::dbMasterType;
 using odb::Rect;
 
+using utl::format_as;
+
 ////////////////////////////////////////////////////////////////
 
 bool Opendp::isMultiRow(const Cell* cell) const
@@ -349,7 +351,9 @@ void Opendp::groupAssignCellRegions()
         cell->region_ = group.region_boundaries.data();
       }
     }
-    group.util = static_cast<double>(cell_area) / total_site_area;
+    group.util = (total_site_area != 0)
+                     ? static_cast<double>(cell_area) / total_site_area
+                     : 0.0;
   }
 }
 

@@ -128,6 +128,7 @@ void set_debug_cmd(odb::dbBlock* block,
                    bool coarse,
                    bool fine,
                    bool show_bundled_nets,
+                   bool skip_steps,
                    bool only_final_result)
 {
   auto macro_placer = getMacroPlacer2();
@@ -135,6 +136,7 @@ void set_debug_cmd(odb::dbBlock* block,
     = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
   macro_placer->setDebug(graphics);
   macro_placer->setDebugShowBundledNets(show_bundled_nets);
+  macro_placer->setDebugSkipSteps(skip_steps);
   macro_placer->setDebugOnlyFinalResult(only_final_result);
 }
 
