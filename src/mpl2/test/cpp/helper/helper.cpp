@@ -15,9 +15,9 @@ odb::dbDatabase* createSimpleDB()
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
   
-  odb::dbChip* chip_ = odb::dbChip::create(db_);
+  odb::dbChip::create(db_);
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
-  odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
+  odb::dbLib::create(db_, "lib", tech_, ',');
   odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
   return db_;
 }
@@ -30,7 +30,7 @@ odb::dbMaster* createSimpleMaster(
                           const char* name,
                           uint width,
                           uint height,
-                          odb::dbMasterType type)
+                          const odb::dbMasterType& type)
 {
   odb::dbMaster* master = odb::dbMaster::create(lib, name);
   master->setWidth(width);

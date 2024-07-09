@@ -8,6 +8,6 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
                                const char* name,
                                uint width,
                                uint height,
-                               odb::dbMasterType type);
+                               const odb::dbMasterType& type);
 
 }  // namespace mpl2

@@ -79,9 +79,9 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   // Left, top, right, and bottom blockages are computed the second
   // part of each io_span is bigger than the first part, however 
   // in this case this is always untrue (always first > second)
-  // so boundary_to_io_blockage_.size() will still be empty at the end.
+  // so boundary_to_io_blockage_ will still be empty at the end.
 
-  EXPECT_TRUE(boundary_to_io_blockage_.size() == 0);
+  EXPECT_TRUE(boundary_to_io_blockage_.empty());
   
 }  // ConstructPusherHardMacro
 
