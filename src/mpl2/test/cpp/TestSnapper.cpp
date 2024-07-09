@@ -1,5 +1,6 @@
 #include "../../src/hier_rtlmp.h"
 #include "gtest/gtest.h"
+#include "helper.h"
 #include "mpl2/rtl_mp.h"
 #include "odb/db.h"
 #include "odb/util.h"
@@ -35,26 +36,14 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   // without any further configuration to each instance,
   // and then run setMacro(inst) on each instance
 
-  utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db_ = odb::dbDatabase::create();
-  db_->setLogger(logger);
+  utl::Logger* logger_ = new utl::Logger();
+  odb::dbDatabase* db_ = createSimpleDB();
+  db_->setLogger(logger_);
 
-  odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
-  odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
-  odb::dbTechLayer::create(tech_, "L1", odb::dbTechLayerType::MASTERSLICE);
-  odb::dbChip* chip_ = odb::dbChip::create(db_);
+  odb::dbMaster* master_ = createSimpleMaster(
+      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::CORE);
 
-  odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
-  master_->setWidth(1000);
-  master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::CORE);
-  odb::dbMTerm::create(
-      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMTerm::create(
-      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  master_->setFrozen();
-
-  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
+  odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
   odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
@@ -81,21 +70,14 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // as testcases, and then checks whether snapMacro
   // has aligned those instances correctly.
 
-  utl::Logger* logger = new utl::Logger();
-  odb::dbDatabase* db_ = odb::dbDatabase::create();
-  db_->setLogger(logger);
+  utl::Logger* logger_ = new utl::Logger();
+  odb::dbDatabase* db_ = createSimpleDB();
+  db_->setLogger(logger_);
 
-  odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
-  odb::dbLib* lib_ = odb::dbLib::create(db_, "lib", tech_, ',');
-  odb::dbChip* chip_ = odb::dbChip::create(db_);
-
-  // create simple block of size 1000x1000, then add 1 layer
-  odb::dbBlock* block_ = odb::dbBlock::create(chip_, "simple_block");
+  odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbTechLayer* layer_
-      = odb::dbTechLayer::create(tech_, "layer", odb::dbTechLayerType::CUT);
-  odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, layer_);
+  odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, db_->getTech()->findLayer("L1"));
 
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
@@ -103,27 +85,11 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbGCellGrid::create(block_);
   track_->addGridPatternX(0, 50, 20);
   track_->addGridPatternY(0, 50, 20);
-  tech_->setManufacturingGrid(5);
+  db_->getTech()->setManufacturingGrid(5);
 
-  // add a master
-  odb::dbMaster* master_ = odb::dbMaster::create(lib_, "simple_master");
-  master_->setWidth(1000);
-  master_->setHeight(1000);
-  master_->setType(odb::dbMasterType::BLOCK);  // snapper expects block type
-
-  // add two pins each of size 50x50
-  // input at (0,0) and output at (100, 100)
-  // snapper will only take signal pins into consideration
-  odb::dbMTerm* mterm_i = odb::dbMTerm::create(
-      master_, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
-  odb::dbBox::create(mpin_i, layer_, 0, 0, 50, 50);
-
-  odb::dbMTerm* mterm_o = odb::dbMTerm::create(
-      master_, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  odb::dbBox::create(mpin_o, layer_, 100, 100, 150, 150);
-  master_->setFrozen();
+  // add a master; snapper expects block type
+  odb::dbMaster* master_ = createSimpleMaster(
+      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::BLOCK); 
 
   // create a macro instance
   odb::dbInst* inst_ = odb::dbInst::create(block_, master_, "macro1");
@@ -146,7 +112,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   // First, we want to test for when the layer
   // has a "horizontal" direction preference.
-  layer_->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  db_->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::HORIZONTAL);
 
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
@@ -177,7 +143,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   // Now, we want to test for when the layer
   // has a "vertical" direction preference.
-  layer_->setDirection(odb::dbTechLayerDir::VERTICAL);
+  db_->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::VERTICAL);
 
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
