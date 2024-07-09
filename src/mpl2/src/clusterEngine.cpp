@@ -95,10 +95,9 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-// Fetch the design's logical data
-void ClusteringEngine::fetchDesignMetrics()
+void ClusteringEngine::computeDesignMetrics()
 {
-  design_metrics_ = computeMetrics(block_->getTopModule());
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   odb::Rect die = block_->getDieArea();
   odb::Rect core_box = block_->getCoreArea();
@@ -159,11 +158,7 @@ void ClusteringEngine::fetchDesignMetrics()
   }
 }
 
-// Traverse Logical Hierarchy
-// Recursive function to collect the design metrics (number of std cells,
-// area of std cells, number of macros and area of macros) in the logical
-// hierarchy
-Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
+Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;
   float std_cell_area = 0.0;
@@ -172,8 +167,7 @@ Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
 
   for (odb::dbInst* inst : module->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
-
-    if (ClusteringEngine::isIgnoredMaster(master)) {
+    if (isIgnoredMaster(master)) {
       continue;
     }
 
@@ -193,12 +187,8 @@ Metrics* ClusteringEngine::computeMetrics(odb::dbModule* module)
     }
   }
 
-  // Be careful about the relationship between
-  // odb::dbModule and odb::dbInst
-  // odb::dbModule and odb::dbModInst
-  // recursively traverse the hierarchical module instances
-  for (odb::dbModInst* inst : module->getChildren()) {
-    Metrics* metrics = computeMetrics(inst->getMaster());
+  for (odb::dbModInst* child_module_inst : module->getChildren()) {
+    Metrics* metrics = computeModuleMetrics(child_module_inst->getMaster());
     num_std_cell += metrics->getNumStdCell();
     std_cell_area += metrics->getStdCellArea();
     num_macro += metrics->getNumMacro();

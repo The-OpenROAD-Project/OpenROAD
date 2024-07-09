@@ -279,7 +279,7 @@ void HierRTLMP::runMultilevelAutoclustering()
   clustering_engine_->setDesignMetrics(metrics_);
   clustering_engine_->setTree(&tree_);
 
-  clustering_engine_->fetchDesignMetrics();
+  clustering_engine_->computeDesignMetrics();
   if (!tree_.has_unfixed_macros) {
     logger_->info(MPL, 17, "No unfixed macros.");
     skip_macro_placement_ = true;

@@ -151,7 +151,7 @@ class ClusteringEngine
                    par::PartitionMgr* triton_part);
 
   void run();
-  void fetchDesignMetrics();
+  void computeDesignMetrics();
 
   void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
@@ -173,7 +173,7 @@ class ClusteringEngine
                                  std::set<odb::dbMaster*>& masters);
 
  private:
-  Metrics* computeMetrics(odb::dbModule* module);
+  Metrics* computeModuleMetrics(odb::dbModule* module);
   void reportLogicalHierarchyInformation(float core_area,
                                          float util,
                                          float core_util);
