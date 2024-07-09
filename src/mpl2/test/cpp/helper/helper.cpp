@@ -1,5 +1,4 @@
 #include "helper.h"
-
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -14,7 +13,7 @@ odb::dbDatabase* createSimpleDB()
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = odb::dbDatabase::create();
   db_->setLogger(logger);
-  
+
   odb::dbChip::create(db_);
   odb::dbTech* tech_ = odb::dbTech::create(db_, "tech");
   odb::dbLib::create(db_, "lib", tech_, ',');
@@ -25,12 +24,11 @@ odb::dbDatabase* createSimpleDB()
 ///
 /// Create dbMaster with 1 input and 1 output pin configuration
 ///
-odb::dbMaster* createSimpleMaster(
-                          odb::dbLib* lib,
-                          const char* name,
-                          uint width,
-                          uint height,
-                          const odb::dbMasterType& type)
+odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
+                                  const char* name,
+                                  uint width,
+                                  uint height,
+                                  const odb::dbMasterType& type)
 {
   odb::dbMaster* master = odb::dbMaster::create(lib, name);
   master->setWidth(width);
@@ -45,7 +43,8 @@ odb::dbMaster* createSimpleMaster(
   odb::dbMTerm* mterm_o = odb::dbMTerm::create(
       master, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  odb::dbBox::create(mpin_o, lib->getTech()->findLayer("L1"), 100, 100, 150, 150);
+  odb::dbBox::create(
+      mpin_o, lib->getTech()->findLayer("L1"), 100, 100, 150, 150);
 
   master->setFrozen();
   return master;
