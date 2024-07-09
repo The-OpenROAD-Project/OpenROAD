@@ -64,11 +64,23 @@ class Metrics;
 class Cluster;
 class HardMacro;
 
+// For data flow computation.
+struct VerticesMaps
+{
+  std::map<int, odb::dbBTerm*> id_to_bterm;
+  std::map<int, odb::dbInst*> id_to_std_cell;
+  std::map<int, odb::dbITerm*> id_to_macro_pin;
+
+  // Each index represents a vertex in which
+  // the flow is interrupted.
+  std::vector<bool> stoppers;
+};
+
 struct DataFlow
 {
-  const int register_dist = 5;
-  const float factor = 2.0;
-  const float weight = 1;
+  // The register distance between two macros to
+  // them to be considered connected.
+  const int max_num_of_hops = 5;
 
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_pin_to_regs;
@@ -206,29 +218,31 @@ class ClusteringEngine
 
   // Methods for data flow
   void createDataFlow();
+  void computeIOVertices(VerticesMaps& vertices_maps);
+  void computeStdCellVertices(VerticesMaps& vertices_maps);
+  void computeMacroPinVertices(VerticesMaps& vertices_maps);
+  void createHypergraph(std::vector<std::vector<int>>& vertices,
+                        std::vector<std::vector<int>>& backward_vertices,
+                        std::vector<std::vector<int>>& hyperedges);
   void dataFlowDFSIOPin(int parent,
                         int idx,
+                        const VerticesMaps& vertices_maps,
                         std::vector<std::set<odb::dbInst*>>& insts,
-                        std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                        std::map<int, odb::dbInst*>& std_cell_vertex,
-                        std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                        std::vector<bool>& stop_flag_vec,
                         std::vector<bool>& visited,
                         std::vector<std::vector<int>>& vertices,
                         std::vector<std::vector<int>>& hyperedges,
                         bool backward_search);
   void dataFlowDFSMacroPin(int parent,
                            int idx,
+                           const VerticesMaps& vertices_maps,
                            std::vector<std::set<odb::dbInst*>>& std_cells,
                            std::vector<std::set<odb::dbInst*>>& macros,
-                           std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                           std::map<int, odb::dbInst*>& std_cell_vertex,
-                           std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                           std::vector<bool>& stop_flag_vec,
                            std::vector<bool>& visited,
                            std::vector<std::vector<int>>& vertices,
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_search);
+  std::set<int> computeSinks(const std::set<odb::dbInst*>& insts);
+  float computeConnWeight(int hops);
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
