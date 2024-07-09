@@ -327,8 +327,8 @@ class Opendp
 
   // Place decaps
   vector<int> findDecapCellIndices(const int& gap_width,
-                           const double& current,
-                           const double& target);
+                                   const double& current,
+                                   const double& target);
   void insertDecapInPos(dbMaster* master,
                         const odb::dbOrientType& orient,
                         const int& pos_x,

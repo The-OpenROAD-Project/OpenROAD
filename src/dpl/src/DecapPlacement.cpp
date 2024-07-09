@@ -34,9 +34,9 @@
 
 #include <algorithm>
 
-#include "dpl/Opendp.h"
-#include "Objects.h"
 #include "DecapObjects.h"
+#include "Objects.h"
+#include "dpl/Opendp.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
@@ -60,15 +60,16 @@ void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
 
 // Return list of decap indices to fill gap
 vector<int> Opendp::findDecapCellIndices(const int& gap_width,
-                                 const double& current,
-                                 const double& target)
+                                         const double& current,
+                                         const double& target)
 {
   vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
   for (int i = 0; i < decap_masters_.size(); i++) {
-    while ( decap_masters_[i]->master->getWidth() <= (gap_width - width_acum)
-        && (cap_acum + decap_masters_[i]->capacitance) <= (target - current)) {
+    while (decap_masters_[i]->master->getWidth() <= (gap_width - width_acum)
+           && (cap_acum + decap_masters_[i]->capacitance)
+                  <= (target - current)) {
       id_masters.push_back(i);
       cap_acum += decap_masters_[i]->capacitance;
       width_acum += decap_masters_[i]->master->getWidth();
@@ -94,11 +95,13 @@ odb::dbTechLayer* Opendp::getLowestLayer(odb::dbNet* db_net)
           if (tech_layer->getRoutingLevel() == 0) {
             continue;
           }
-          min_layer_level = std::min(min_layer_level, tech_layer->getRoutingLevel());
+          min_layer_level
+              = std::min(min_layer_level, tech_layer->getRoutingLevel());
         }
       } else {
         odb::dbTechLayer* tech_layer = s->getTechLayer();
-        min_layer_level = std::min(min_layer_level, tech_layer->getRoutingLevel());
+        min_layer_level
+            = std::min(min_layer_level, tech_layer->getRoutingLevel());
       }
     }
   }
@@ -112,17 +115,20 @@ odb::dbNet* Opendp::findPowerNet(const char* net_name)
   if (!std::string(net_name).empty()) {
     power_net = block_->findNet(net_name);
     if (power_net == nullptr) {
-      logger_->error(utl::DPL, 58, "Cannot find net {} in the design.", net_name);
+      logger_->error(
+          utl::DPL, 58, "Cannot find net {} in the design.", net_name);
     }
     // Check if net is supply
     if (!power_net->getSigType().isSupply()) {
-      logger_->error(utl::DPL, 57, "{} is not a supply net.", power_net->getName());
+      logger_->error(
+          utl::DPL, 57, "{} is not a supply net.", power_net->getName());
     }
     return power_net;
   }
   // Otherwise find power net
   for (auto db_net : block_->getNets()) {
-    if (db_net->getSigType().isSupply() && db_net->getSigType() == dbSigType::POWER) {
+    if (db_net->getSigType().isSupply()
+        && db_net->getSigType() == dbSigType::POWER) {
       power_net = db_net;
       break;
     }
@@ -137,7 +143,7 @@ void Opendp::getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops)
 
   // Get db_net
   odb::dbNet* db_net = findPowerNet(net_name);
-  
+
   // Get lowest layer
   odb::dbTechLayer* tech_layer = getLowestLayer(db_net);
 
@@ -146,7 +152,9 @@ void Opendp::getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops)
   if (ir_drop.empty()) {
     logger_->error(DPL,
                    53,
-                   "No IR drop data found. Run analyse_power_grid for net {} before inserting decap cells.", db_net->getName());
+                   "No IR drop data found. Run analyse_power_grid for net {} "
+                   "before inserting decap cells.",
+                   db_net->getName());
   }
 
   // Sort the IR DROP point in descending order
@@ -156,10 +164,9 @@ void Opendp::getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops)
 
   std::sort(ir_drops.begin(),
             ir_drops.end(),
-            [](const IRDrop& ir_drop1,
-               const IRDrop& ir_drop2) {
+            [](const IRDrop& ir_drop1, const IRDrop& ir_drop2) {
               return ir_drop1.value > ir_drop2.value;
-            }); 
+            });
 }
 
 void Opendp::prepareDecapAndGaps()
@@ -167,8 +174,7 @@ void Opendp::prepareDecapAndGaps()
   // Sort decaps cells in decrease order
   std::sort(decap_masters_.begin(),
             decap_masters_.end(),
-            [](const DecapCell* decap1,
-               const DecapCell* decap2) {
+            [](const DecapCell* decap1, const DecapCell* decap2) {
               return decap1->capacitance > decap2->capacitance;
             });
 
@@ -177,9 +183,11 @@ void Opendp::prepareDecapAndGaps()
   int gaps_count = 0;
   // Sort each gap vector for X position
   for (auto& it : gaps_) {
-    std::sort(it.second.begin(), it.second.end(), [](const GapInfo* gap1, const GapInfo* gap2) {
-      return gap1->x < gap2->x;
-    });
+    std::sort(it.second.begin(),
+              it.second.end(),
+              [](const GapInfo* gap1, const GapInfo* gap2) {
+                return gap1->x < gap2->x;
+              });
     gaps_count += it.second.size();
   }
 
@@ -202,12 +210,10 @@ void Opendp::insertDecapCells(const double target, const char* net_name)
 
   // If fillers are placed
   if (have_fillers_) {
-    logger_->error(
-        DPL, 54, "Run remove_fillers before inserting decap cells");
+    logger_->error(DPL, 54, "Run remove_fillers before inserting decap cells");
   }
 
   if (!grid_->infoMapEmpty()) {
-
     // Sort Decap cells and Gaps
     prepareDecapAndGaps();
 
@@ -265,7 +271,8 @@ void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
       irdrop_x,
       [](const GapInfo* elem, const int& value) { return elem->x < value; });
   // if this row has free gap with x <= xpoint <= x + width
-  if (find_gap != gaps.end() && ((*find_gap)->x + (*find_gap)->width) >= irdrop_x
+  if (find_gap != gaps.end()
+      && ((*find_gap)->x + (*find_gap)->width) >= irdrop_x
       && !(*find_gap)->is_filled) {
     auto ids = findDecapCellIndices((*find_gap)->width, total, target);
     if (!ids.empty()) {

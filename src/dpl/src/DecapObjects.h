@@ -33,7 +33,11 @@
 
 #pragma once
 
+#include "dpl/Opendp.h"
+
 namespace dpl {
+
+using odb::dbOrientType;
 
 struct GapInfo
 {
@@ -43,12 +47,9 @@ struct GapInfo
   int height;
   bool is_filled;
   GapInfo(int x, const odb::dbOrientType& orient, int width, int height)
-  : x(x),
-    orient(orient),
-    width(width),
-    height(height),
-    is_filled(false)
-  {}
+      : x(x), orient(orient), width(width), height(height), is_filled(false)
+  {
+  }
 };
 
 struct DecapCell
@@ -56,9 +57,9 @@ struct DecapCell
   dbMaster* master;
   double capacitance;
   DecapCell(dbMaster* master, double& capacitance)
-  : master(master),
-    capacitance(capacitance)
-  {}
+      : master(master), capacitance(capacitance)
+  {
+  }
 };
 
 struct IRDrop
@@ -66,9 +67,9 @@ struct IRDrop
   odb::Point position;
   double value;
   IRDrop(const odb::Point& position, double& value)
-  : position(position),
-    value(value)
-  {}
+      : position(position), value(value)
+  {
+  }
 };
 
 }  // namespace dpl
