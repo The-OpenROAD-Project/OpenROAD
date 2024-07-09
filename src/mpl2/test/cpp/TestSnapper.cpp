@@ -40,8 +40,11 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   odb::dbDatabase* db_ = createSimpleDB();
   db_->setLogger(logger_);
 
-  odb::dbMaster* master_ = createSimpleMaster(
-      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::CORE);
+  odb::dbMaster* master_ = createSimpleMaster(db_->findLib("lib"),
+                                              "simple_master",
+                                              1000,
+                                              1000,
+                                              odb::dbMasterType::CORE);
 
   odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
@@ -77,7 +80,8 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbTrackGrid* track_ = odb::dbTrackGrid::create(block_, db_->getTech()->findLayer("L1"));
+  odb::dbTrackGrid* track_
+      = odb::dbTrackGrid::create(block_, db_->getTech()->findLayer("L1"));
 
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
@@ -88,8 +92,11 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   db_->getTech()->setManufacturingGrid(5);
 
   // add a master; snapper expects block type
-  odb::dbMaster* master_ = createSimpleMaster(
-      db_->findLib("lib"), "simple_master", 1000, 1000, odb::dbMasterType::BLOCK); 
+  odb::dbMaster* master_ = createSimpleMaster(db_->findLib("lib"),
+                                              "simple_master",
+                                              1000,
+                                              1000,
+                                              odb::dbMasterType::BLOCK);
 
   // create a macro instance
   odb::dbInst* inst_ = odb::dbInst::create(block_, master_, "macro1");
@@ -112,7 +119,8 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   // First, we want to test for when the layer
   // has a "horizontal" direction preference.
-  db_->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  db_->getTech()->findLayer("L1")->setDirection(
+      odb::dbTechLayerDir::HORIZONTAL);
 
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
