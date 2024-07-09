@@ -151,7 +151,6 @@ class ClusteringEngine
                    par::PartitionMgr* triton_part);
 
   void run();
-  void computeDesignMetrics();
 
   void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
@@ -173,11 +172,14 @@ class ClusteringEngine
                                  std::set<odb::dbMaster*>& masters);
 
  private:
+  void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
-  void reportLogicalHierarchyInformation(float core_area,
-                                         float util,
-                                         float core_util);
-  void initTree();
+  std::vector<odb::dbInst*> getUnfixedMacros();
+  bool macroPlacementIsFeasible(const float core_area);
+  float computeMacroWithHaloArea(
+      const std::vector<odb::dbInst*>& unfixed_macros);
+  void reportDesignData(float core_area);
+  void createRoot();
   void setBaseThresholds();
   void createIOClusters();
   void mapIOPads();

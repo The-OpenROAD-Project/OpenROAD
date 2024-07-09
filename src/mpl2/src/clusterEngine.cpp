@@ -56,7 +56,14 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 
 void ClusteringEngine::run()
 {
-  initTree();
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
+  init();
+
+  if (!tree_->has_unfixed_macros) {
+    return;
+  }
+
+  createRoot();
   setBaseThresholds();
 
   createIOClusters();
@@ -95,17 +102,39 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::computeDesignMetrics()
+// Check if macro placement is both needed and feasible.
+// Also report some design data relevant for the user.
+void ClusteringEngine::init()
 {
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
+  const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
+  if (unfixed_macros.empty()) {
+    tree_->has_unfixed_macros = false;
+    logger_->info(MPL, 17, "No unfixed macros.");
+    return;
+  }
 
-  odb::Rect die = block_->getDieArea();
-  odb::Rect core_box = block_->getCoreArea();
+  tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
 
-  float core_lx = block_->dbuToMicrons(core_box.xMin());
-  float core_ly = block_->dbuToMicrons(core_box.yMin());
-  float core_ux = block_->dbuToMicrons(core_box.xMax());
-  float core_uy = block_->dbuToMicrons(core_box.yMax());
+  const odb::Rect die = block_->getDieArea();
+  const odb::Rect core_box = block_->getCoreArea();
+
+  const float core_lx = block_->dbuToMicrons(core_box.xMin());
+  const float core_ly = block_->dbuToMicrons(core_box.yMin());
+  const float core_ux = block_->dbuToMicrons(core_box.xMax());
+  const float core_uy = block_->dbuToMicrons(core_box.yMax());
+
+  const float core_area = (core_ux - core_lx) * (core_uy - core_ly);
+  const float inst_area_with_halos
+      = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
+
+  if (inst_area_with_halos > core_area) {
+    logger_->error(MPL,
+                   16,
+                   "The instance area considering the macros' halos {} exceeds "
+                   "the core area {}",
+                   inst_area_with_halos,
+                   core_area);
+  }
 
   logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
@@ -118,44 +147,33 @@ void ClusteringEngine::computeDesignMetrics()
       core_ux,
       core_uy);
 
-  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
-  float util
-      = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
-        / core_area;
-  float core_util = design_metrics_->getStdCellArea()
-                    / (core_area - design_metrics_->getMacroArea());
+  reportDesignData(core_area);
+}
 
-  // Check if placement is feasible in the core area when considering
-  // the macro halos
-  int unfixed_macros = 0;
-  for (auto inst : block_->getInsts()) {
-    auto master = inst->getMaster();
-    if (master->isBlock()) {
-      const auto width
-          = block_->dbuToMicrons(master->getWidth()) + 2 * tree_->halo_width;
-      const auto height
-          = block_->dbuToMicrons(master->getHeight()) + 2 * tree_->halo_width;
-      tree_->macro_with_halo_area += width * height;
-      unfixed_macros += !inst->getPlacementStatus().isFixed();
+float ClusteringEngine::computeMacroWithHaloArea(
+    const std::vector<odb::dbInst*>& unfixed_macros)
+{
+  float macro_with_halo_area = 0.0f;
+  for (odb::dbInst* unfixed_macro : unfixed_macros) {
+    odb::dbMaster* master = unfixed_macro->getMaster();
+    const float width
+        = block_->dbuToMicrons(master->getWidth()) + 2 * tree_->halo_width;
+    const float height
+        = block_->dbuToMicrons(master->getHeight()) + 2 * tree_->halo_height;
+    macro_with_halo_area += width * height;
+  }
+  return macro_with_halo_area;
+}
+
+std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
+{
+  std::vector<odb::dbInst*> unfixed_macros;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock() && !inst->getPlacementStatus().isFixed()) {
+      unfixed_macros.push_back(inst);
     }
   }
-
-  reportLogicalHierarchyInformation(core_area, util, core_util);
-
-  if (unfixed_macros == 0) {
-    tree_->has_unfixed_macros = false;
-    return;
-  }
-
-  if (tree_->macro_with_halo_area + design_metrics_->getStdCellArea()
-      > core_area) {
-    logger_->error(
-        MPL,
-        16,
-        "The instance area with halos {} exceeds the core area {}",
-        tree_->macro_with_halo_area + design_metrics_->getStdCellArea(),
-        core_area);
-  }
+  return unfixed_macros;
 }
 
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
@@ -202,10 +220,14 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   return metrics;
 }
 
-void ClusteringEngine::reportLogicalHierarchyInformation(float core_area,
-                                                         float util,
-                                                         float core_util)
+void ClusteringEngine::reportDesignData(const float core_area)
 {
+  float util
+      = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
+        / core_area;
+  float core_util = design_metrics_->getStdCellArea()
+                    / (core_area - design_metrics_->getMacroArea());
+
   logger_->report(
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
@@ -233,7 +255,7 @@ void ClusteringEngine::reportLogicalHierarchyInformation(float core_area,
       block_->getTech()->getManufacturingGrid());
 }
 
-void ClusteringEngine::initTree()
+void ClusteringEngine::createRoot()
 {
   tree_->root = new Cluster(id_, std::string("root"), logger_);
   tree_->root->addDbModule(block_->getTopModule());
@@ -1678,7 +1700,6 @@ void ClusteringEngine::updateConnections()
   }
 }
 
-// Traverse the physical hierarchy tree in a DFS manner (post-order)
 void ClusteringEngine::fetchMixedLeaves(
     Cluster* parent,
     std::vector<std::vector<Cluster*>>& mixed_leaves)
