@@ -64,6 +64,13 @@ class Metrics;
 class Cluster;
 class HardMacro;
 
+struct DataFlowHypergraph
+{
+  std::vector<std::vector<int>> vertices;
+  std::vector<std::vector<int>> backward_vertices;
+  std::vector<std::vector<int>> hyperedges;
+};
+
 // For data flow computation.
 struct VerticesMaps
 {
@@ -218,28 +225,25 @@ class ClusteringEngine
 
   // Methods for data flow
   void createDataFlow();
+  VerticesMaps computeVertices();
   void computeIOVertices(VerticesMaps& vertices_maps);
   void computeStdCellVertices(VerticesMaps& vertices_maps);
   void computeMacroPinVertices(VerticesMaps& vertices_maps);
-  void createHypergraph(std::vector<std::vector<int>>& vertices,
-                        std::vector<std::vector<int>>& backward_vertices,
-                        std::vector<std::vector<int>>& hyperedges);
+  DataFlowHypergraph computeHypergraph(int num_of_vertices);
   void dataFlowDFSIOPin(int parent,
                         int idx,
                         const VerticesMaps& vertices_maps,
+                        const DataFlowHypergraph& hypergraph,
                         std::vector<std::set<odb::dbInst*>>& insts,
                         std::vector<bool>& visited,
-                        std::vector<std::vector<int>>& vertices,
-                        std::vector<std::vector<int>>& hyperedges,
                         bool backward_search);
   void dataFlowDFSMacroPin(int parent,
                            int idx,
                            const VerticesMaps& vertices_maps,
+                           const DataFlowHypergraph& hypergraph,
                            std::vector<std::set<odb::dbInst*>>& std_cells,
                            std::vector<std::set<odb::dbInst*>>& macros,
                            std::vector<bool>& visited,
-                           std::vector<std::vector<int>>& vertices,
-                           std::vector<std::vector<int>>& hyperedges,
                            bool backward_search);
   std::set<int> computeSinks(const std::set<odb::dbInst*>& insts);
   float computeConnWeight(int hops);

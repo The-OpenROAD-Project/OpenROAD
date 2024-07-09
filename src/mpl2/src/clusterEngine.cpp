@@ -522,68 +522,53 @@ void ClusteringEngine::mapIOPads()
 void ClusteringEngine::createDataFlow()
 {
   // Create vertices IDs.
-  VerticesMaps vertices_maps;
-  computeIOVertices(vertices_maps);
-  computeStdCellVertices(vertices_maps);
-  computeMacroPinVertices(vertices_maps);
-
+  VerticesMaps vertices_maps = computeVertices();
   const int num_of_vertices = static_cast<int>(vertices_maps.stoppers.size());
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Number of vertices: {}",
-             num_of_vertices);
 
-  std::vector<std::vector<int>> vertices(num_of_vertices);
-  std::vector<std::vector<int>> backward_vertices(num_of_vertices);
-  std::vector<std::vector<int>> hyperedges;  // directed hypergraph
-  createHypergraph(vertices, backward_vertices, hyperedges);
+  DataFlowHypergraph hypergraph = computeHypergraph(num_of_vertices);
 
   // Traverse hypergraph to build dataflow.
   for (auto [src, src_pin] : vertices_maps.id_to_bterm) {
     int idx = 0;
-    std::vector<bool> visited(vertices.size(), false);
+    std::vector<bool> visited(num_of_vertices, false);
     std::vector<std::set<odb::dbInst*>> insts(data_flow.max_num_of_hops);
     dataFlowDFSIOPin(
-        src, idx, vertices_maps, insts, visited, vertices, hyperedges, false);
-    dataFlowDFSIOPin(src,
-                     idx,
-                     vertices_maps,
-                     insts,
-                     visited,
-                     backward_vertices,
-                     hyperedges,
-                     true);
+        src, idx, vertices_maps, hypergraph, insts, visited, false);
+    dataFlowDFSIOPin(src, idx, vertices_maps, hypergraph, insts, visited, true);
+
     data_flow.io_to_regs.emplace_back(src_pin, insts);
   }
 
   for (auto [src, src_pin] : vertices_maps.id_to_macro_pin) {
     int idx = 0;
-    std::vector<bool> visited(vertices.size(), false);
+    std::vector<bool> visited(num_of_vertices, false);
     std::vector<std::set<odb::dbInst*>> std_cells(data_flow.max_num_of_hops);
     std::vector<std::set<odb::dbInst*>> macros(data_flow.max_num_of_hops);
-    dataFlowDFSMacroPin(src,
-                        idx,
-                        vertices_maps,
-                        std_cells,
-                        macros,
-                        visited,
-                        vertices,
-                        hyperedges,
-                        false);
-    dataFlowDFSMacroPin(src,
-                        idx,
-                        vertices_maps,
-                        std_cells,
-                        macros,
-                        visited,
-                        backward_vertices,
-                        hyperedges,
-                        true);
+    dataFlowDFSMacroPin(
+        src, idx, vertices_maps, hypergraph, std_cells, macros, visited, false);
+    dataFlowDFSMacroPin(
+        src, idx, vertices_maps, hypergraph, std_cells, macros, visited, true);
+
     data_flow.macro_pin_to_regs.emplace_back(src_pin, std_cells);
     data_flow.macro_pin_to_macros.emplace_back(src_pin, macros);
   }
+}
+
+VerticesMaps ClusteringEngine::computeVertices()
+{
+  VerticesMaps vertices_maps;
+  computeIOVertices(vertices_maps);
+  computeStdCellVertices(vertices_maps);
+  computeMacroPinVertices(vertices_maps);
+
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Number of vertices: {}",
+             vertices_maps.stoppers.size());
+
+  return vertices_maps;
 }
 
 void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
@@ -639,11 +624,13 @@ void ClusteringEngine::computeMacroPinVertices(VerticesMaps& vertices_maps)
   }
 }
 
-void ClusteringEngine::createHypergraph(
-    std::vector<std::vector<int>>& vertices,
-    std::vector<std::vector<int>>& backward_vertices,
-    std::vector<std::vector<int>>& hyperedges)
+DataFlowHypergraph ClusteringEngine::computeHypergraph(
+    const int num_of_vertices)
 {
+  DataFlowHypergraph graph;
+  graph.vertices.resize(num_of_vertices);
+  graph.backward_vertices.resize(num_of_vertices);
+
   for (odb::dbNet* net : block_->getNets()) {
     if (net->getSigType().isSupply()) {
       continue;
@@ -700,12 +687,14 @@ void ClusteringEngine::createHypergraph(
         hyperedge.push_back(load);
       }
     }
-    vertices[driver_id].push_back(hyperedges.size());
+    graph.vertices[driver_id].push_back(graph.hyperedges.size());
     for (int i = 1; i < hyperedge.size(); i++) {
-      backward_vertices[hyperedge[i]].push_back(hyperedges.size());
+      graph.backward_vertices[hyperedge[i]].push_back(graph.hyperedges.size());
     }
-    hyperedges.push_back(hyperedge);
+    graph.hyperedges.push_back(hyperedge);
   }
+
+  return graph;
 }
 
 /* static */
@@ -721,10 +710,9 @@ void ClusteringEngine::dataFlowDFSIOPin(
     int parent,
     int idx,
     const VerticesMaps& vertices_maps,
+    const DataFlowHypergraph& hypergraph,
     std::vector<std::set<odb::dbInst*>>& insts,
     std::vector<bool>& visited,
-    std::vector<std::vector<int>>& vertices,
-    std::vector<std::vector<int>>& hyperedges,
     bool backward_search)
 {
   visited[parent] = true;
@@ -745,8 +733,8 @@ void ClusteringEngine::dataFlowDFSIOPin(
   }
 
   if (!backward_search) {
-    for (auto& hyperedge : vertices[parent]) {
-      for (auto& vertex : hyperedges[hyperedge]) {
+    for (auto& hyperedge : hypergraph.vertices[parent]) {
+      for (auto& vertex : hypergraph.hyperedges[hyperedge]) {
         // we do not consider pin to pin
         if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
           continue;
@@ -754,16 +742,16 @@ void ClusteringEngine::dataFlowDFSIOPin(
         dataFlowDFSIOPin(vertex,
                          idx,
                          vertices_maps,
+                         hypergraph,
                          insts,
                          visited,
-                         vertices,
-                         hyperedges,
                          backward_search);
       }
     }
   } else {
-    for (auto& hyperedge : vertices[parent]) {
-      const int vertex = hyperedges[hyperedge][0];  // driver vertex
+    for (auto& hyperedge : hypergraph.vertices[parent]) {
+      const int vertex
+          = hypergraph.hyperedges[hyperedge].front();  // driver vertex
       // we do not consider pin to pin
       if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
         continue;
@@ -771,10 +759,9 @@ void ClusteringEngine::dataFlowDFSIOPin(
       dataFlowDFSIOPin(vertex,
                        idx,
                        vertices_maps,
+                       hypergraph,
                        insts,
                        visited,
-                       vertices,
-                       hyperedges,
                        backward_search);
     }
   }
@@ -786,11 +773,10 @@ void ClusteringEngine::dataFlowDFSMacroPin(
     int parent,
     int idx,
     const VerticesMaps& vertices_maps,
+    const DataFlowHypergraph& hypergraph,
     std::vector<std::set<odb::dbInst*>>& std_cells,
     std::vector<std::set<odb::dbInst*>>& macros,
     std::vector<bool>& visited,
-    std::vector<std::vector<int>>& vertices,
-    std::vector<std::vector<int>>& hyperedges,
     bool backward_search)
 {
   visited[parent] = true;
@@ -811,8 +797,8 @@ void ClusteringEngine::dataFlowDFSMacroPin(
   }
 
   if (!backward_search) {
-    for (auto& hyperedge : vertices[parent]) {
-      for (auto& vertex : hyperedges[hyperedge]) {
+    for (auto& hyperedge : hypergraph.vertices[parent]) {
+      for (auto& vertex : hypergraph.hyperedges[hyperedge]) {
         // we do not consider pin to pin
         if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
           continue;
@@ -820,17 +806,16 @@ void ClusteringEngine::dataFlowDFSMacroPin(
         dataFlowDFSMacroPin(vertex,
                             idx,
                             vertices_maps,
+                            hypergraph,
                             std_cells,
                             macros,
                             visited,
-                            vertices,
-                            hyperedges,
                             backward_search);
       }
     }
   } else {
-    for (auto& hyperedge : vertices[parent]) {
-      const int vertex = hyperedges[hyperedge][0];
+    for (auto& hyperedge : hypergraph.vertices[parent]) {
+      const int vertex = hypergraph.hyperedges[hyperedge].front();
       // we do not consider pin to pin
       if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
         continue;
@@ -838,11 +823,10 @@ void ClusteringEngine::dataFlowDFSMacroPin(
       dataFlowDFSMacroPin(vertex,
                           idx,
                           vertices_maps,
+                          hypergraph,
                           std_cells,
                           macros,
                           visited,
-                          vertices,
-                          hyperedges,
                           backward_search);
     }
   }
