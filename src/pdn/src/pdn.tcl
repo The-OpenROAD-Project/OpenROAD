@@ -283,7 +283,8 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-extend_to_boundary] \
                                        [-snap_to_grid] \
                                        [-number_of_straps count] \
-                                       [-nets list_of_nets]
+                                       [-nets list_of_nets] \
+                                       [-clip_around_cells]
 }
 
 proc add_pdn_stripe {args} {
@@ -371,7 +372,7 @@ proc add_pdn_stripe {args} {
   } elseif {[info exists flags(-extend_to_boundary)]} {
     set extend "Boundary"
   } elseif {[info exists flags(-clip_around_cells)]} {
-    set extend "Clip_Cells"
+    set extend "ClipCells"
   }
 
   set use_grid_power_order 1

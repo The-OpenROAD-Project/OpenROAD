@@ -133,6 +133,14 @@ class FollowPins : public Straps
   void checkLayerSpecifications() const override;
 
  private:
+  // obstructions for power and ground nets - these are seperate, because
+  // power/ground pins are not power/ground obstructions respectively
+  Shape::ObstructionTree power_obs_tree;
+  Shape::ObstructionTree ground_obs_tree;
+
+  void findClipCellsObstructions();
+  void clipAndAddShape(Shape* shape, Shape::ObstructionTree& clip_obstructions);
+
   // search for the shape of the power pins in the standard cells to determine
   // the width if possible
   void determineWidth();

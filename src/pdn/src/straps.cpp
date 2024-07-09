@@ -348,6 +348,98 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 }
 
+void FollowPins::findClipCellsObstructions()
+{
+  std::vector<std::shared_ptr<Shape>> power_obs;
+  std::vector<std::shared_ptr<Shape>> ground_obs;
+
+  auto* grid = getGrid();
+  odb::Rect boundary = grid->getGridBoundary();
+  odb::dbTechLayer* layer = getLayer();
+
+  odb::dbNet* power = getDomain()->getPower();
+  odb::dbNet* ground = getDomain()->getGround();
+
+  for (odb::dbInst* inst : grid->getBlock()->getInsts()) {
+    if (!inst->isEndCap()
+        && inst->getMaster()->getType() != odb::dbMasterType::CORE_WELLTAP) {
+      continue;
+    }
+    if (!inst->isFixed() || !boundary.contains(inst->getBBox()->getBox())) {
+      continue;
+    }
+
+    const odb::dbTransform transform = inst->getTransform();
+
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      bool is_power = iterm->getNet() == power;
+      bool is_ground = iterm->getNet() == ground;
+
+      // Non-power pins might obstruct
+      for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          if (box->getTechLayer() != layer) {
+            continue;
+          }
+          odb::Rect rect = box->getBox();
+          transform.apply(rect);
+
+          auto shape
+              = std::make_shared<Shape>(box->getTechLayer(), rect, Shape::OBS);
+          shape->generateObstruction();
+          if (!is_power) {
+            power_obs.emplace_back(shape);
+          }
+          if (!is_ground) {
+            ground_obs.emplace_back(shape);
+          }
+        }
+      }
+      // Actual obstructions
+      for (odb::dbBox* obstr : inst->getMaster()->getObstructions()) {
+        if (obstr->getTechLayer() != layer) {
+          continue;
+        }
+        odb::Rect rect = obstr->getBox();
+        transform.apply(rect);
+
+        auto shape
+            = std::make_shared<Shape>(obstr->getTechLayer(), rect, Shape::OBS);
+        shape->generateObstruction();
+        power_obs.emplace_back(shape);
+        ground_obs.emplace_back(shape);
+      }
+    }
+  }
+
+  power_obs_tree.clear();
+  power_obs_tree.insert(power_obs.begin(), power_obs.end());
+  ground_obs_tree.clear();
+  ground_obs_tree.insert(ground_obs.begin(), ground_obs.end());
+}
+
+void FollowPins::clipAndAddShape(Shape* shape,
+                                 Shape::ObstructionTree& clip_obstructions)
+{
+  std::vector<Shape*> replacements;
+
+  const int width = getWidth();
+  auto* grid = getGrid();
+
+  if (shape->cut(clip_obstructions, grid, replacements)) {
+    for (Shape* cut_shape : replacements) {
+      if (cut_shape->getRect().dx() > 20 * width) {
+        cut_shape->setLocked();
+        addShape(cut_shape);
+      } else {
+        delete cut_shape;
+      }
+    }
+  } else {
+    addShape(shape);
+  }
+}
+
 void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
@@ -386,57 +478,9 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
 
-  std::vector<std::shared_ptr<Shape>> power_obs, ground_obs;
   if (getExtendMode() == CLIP_CELLS) {
-    for (odb::dbInst *inst : grid->getBlock()->getInsts()) {
-      if (!inst->isPlaced() || !boundary.contains(inst->getBBox()->getBox())) {
-        continue;
-      }
-
-      const odb::dbTransform transform = inst->getTransform();
-
-      for (odb::dbITerm *iterm : inst->getITerms()) {
-
-        bool is_power = iterm->getNet() == power;
-        bool is_ground = iterm->getNet() == ground;
-
-        // Non-power pins might obstruct
-        for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
-          for (odb::dbBox* box : mpin->getGeometry()) {
-            if (box->getTechLayer() != layer) {
-              continue;
-            }
-            odb::Rect rect = box->getBox();
-            transform.apply(rect);
-
-            auto shape = std::make_shared<Shape>(box->getTechLayer(), rect, Shape::OBS);
-            shape->generateObstruction();
-            if (!is_power) {
-              power_obs.emplace_back(shape);
-            }
-            if (!is_ground) {
-              ground_obs.emplace_back(shape);
-            }
-          }
-        }
-        // Actual obstructions
-        for (odb::dbBox *obstr : inst->getMaster()->getObstructions()) {
-          if (obstr->getTechLayer() != layer) {
-            continue;
-          }
-          odb::Rect rect = obstr->getBox();
-          transform.apply(rect);
-
-          auto shape = std::make_shared<Shape>(obstr->getTechLayer(), rect, Shape::OBS);
-          shape->generateObstruction();
-          power_obs.emplace_back(shape);
-          ground_obs.emplace_back(shape);
-        }
-      }
-    }
+    findClipCellsObstructions();
   }
-
-  Shape::ObstructionTree power_obs_tree(power_obs), ground_obs_tree(ground_obs);
 
   for (auto* row : getDomain()->getRows()) {
     odb::Rect bbox = row->getBBox();
@@ -460,17 +504,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
     power_strap->addRow(row);
     if (getExtendMode() == CLIP_CELLS) {
-      std::vector<Shape*> replacements;
-      if (power_strap->cut(power_obs_tree, grid, replacements)) {
-        for (Shape *cut_shape : replacements) {
-          if (cut_shape->getRect().dx() > 20 * width) {
-            cut_shape->setLocked();
-            addShape(cut_shape);
-          }
-        }
-      } else {
-        addShape(power_strap);
-      }
+      clipAndAddShape(power_strap, power_obs_tree);
     } else {
       addShape(power_strap);
     }
@@ -479,17 +513,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
     ground_strap->addRow(row);
     if (getExtendMode() == CLIP_CELLS) {
-      std::vector<Shape*> replacements;
-      if (ground_strap->cut(ground_obs_tree, grid, replacements)) {
-        for (Shape *cut_shape : replacements) {
-          if (cut_shape->getRect().dx() > 20 * width) {
-            cut_shape->setLocked();
-            addShape(cut_shape);
-          }
-        }
-      } else {
-        addShape(ground_strap);
-      }
+      clipAndAddShape(ground_strap, ground_obs_tree);
     } else {
       addShape(ground_strap);
     }

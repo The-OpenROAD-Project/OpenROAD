@@ -211,6 +211,7 @@ add_pdn_stripe
     [-snap_to_grid]
     [-number_of_straps count]
     [-nets list_of_nets]
+    [-clip_around_cells]
 ```
 
 #### Options
@@ -230,6 +231,7 @@ add_pdn_stripe
 | `-snap_to_grid` | Snap the stripes to the defined routing grid. |
 | `-number_of_straps` | Number of power/ground pairs to add. |
 | `-nets` | Limit straps to just this list of nets. |
+| `-clip_around_cells` | Only valid in `-followpins` mode, cuts the generated stripes to avoid obstructions inside of fixed cells. |
 
 ### Add Sroute Connect
 
