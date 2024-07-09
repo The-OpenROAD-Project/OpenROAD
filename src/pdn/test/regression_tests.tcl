@@ -116,6 +116,8 @@ record_tests {
 
   bpin_removal
 
+  clip_around_cells
+
   #pdn_man_tcl_check
   #pdn_readme_msgs_check
 }

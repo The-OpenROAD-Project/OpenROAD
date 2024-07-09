@@ -1,0 +1,117 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: nangate_guardring/nangate45_fake_guardring.lef, created 3 library cells
+[INFO ODB-0128] Design: nangate45_guardring_test
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 19011 components and 35364 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 0 connections.
+[INFO PDN-0001] Inserting grid: Core
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 102.1150) - (397.7150, 102.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 104.9150) - (397.7150, 105.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 107.7150) - (397.7150, 107.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 110.5150) - (397.7150, 110.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 113.3150) - (397.7150, 113.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 116.1150) - (397.7150, 116.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 118.9150) - (397.7150, 119.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 121.7150) - (397.7150, 121.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 124.5150) - (397.7150, 124.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 127.3150) - (397.7150, 127.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 130.1150) - (397.7150, 130.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 132.9150) - (397.7150, 133.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 135.7150) - (397.7150, 135.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 138.5150) - (397.7150, 138.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 141.3150) - (397.7150, 141.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 144.1150) - (397.7150, 144.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 146.9150) - (397.7150, 147.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 149.7150) - (397.7150, 149.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 152.5150) - (397.7150, 152.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 155.3150) - (397.7150, 155.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 158.1150) - (397.7150, 158.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 160.9150) - (397.7150, 161.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 163.7150) - (397.7150, 163.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 166.5150) - (397.7150, 166.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 169.3150) - (397.7150, 169.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 172.1150) - (397.7150, 172.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 174.9150) - (397.7150, 175.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 177.7150) - (397.7150, 177.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 180.5150) - (397.7150, 180.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 183.3150) - (397.7150, 183.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 186.1150) - (397.7150, 186.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 188.9150) - (397.7150, 189.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 191.7150) - (397.7150, 191.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 194.5150) - (397.7150, 194.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 197.3150) - (397.7150, 197.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 200.1150) - (397.7150, 200.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 202.9150) - (397.7150, 203.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 205.7150) - (397.7150, 205.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 208.5150) - (397.7150, 208.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 211.3150) - (397.7150, 211.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 214.1150) - (397.7150, 214.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 216.9150) - (397.7150, 217.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 219.7150) - (397.7150, 219.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 222.5150) - (397.7150, 222.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 225.3150) - (397.7150, 225.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 228.1150) - (397.7150, 228.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 230.9150) - (397.7150, 231.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 233.7150) - (397.7150, 233.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 236.5150) - (397.7150, 236.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 239.3150) - (397.7150, 239.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 242.1150) - (397.7150, 242.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 244.9150) - (397.7150, 245.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 247.7150) - (397.7150, 247.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 250.5150) - (397.7150, 250.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 253.3150) - (397.7150, 253.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 256.1150) - (397.7150, 256.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 258.9150) - (397.7150, 259.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 261.7150) - (397.7150, 261.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 264.5150) - (397.7150, 264.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 267.3150) - (397.7150, 267.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 270.1150) - (397.7150, 270.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 272.9150) - (397.7150, 273.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 275.7150) - (397.7150, 275.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 278.5150) - (397.7150, 278.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 281.3150) - (397.7150, 281.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 284.1150) - (397.7150, 284.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 286.9150) - (397.7150, 287.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 289.7150) - (397.7150, 289.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 292.5150) - (397.7150, 292.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 295.3150) - (397.7150, 295.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 298.1150) - (397.7150, 298.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 300.9150) - (397.7150, 301.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 303.7150) - (397.7150, 303.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 306.5150) - (397.7150, 306.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 309.3150) - (397.7150, 309.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 312.1150) - (397.7150, 312.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 314.9150) - (397.7150, 315.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 317.7150) - (397.7150, 317.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 320.5150) - (397.7150, 320.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 323.3150) - (397.7150, 323.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 326.1150) - (397.7150, 326.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 328.9150) - (397.7150, 329.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 331.7150) - (397.7150, 331.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 334.5150) - (397.7150, 334.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 337.3150) - (397.7150, 337.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 340.1150) - (397.7150, 340.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 342.9150) - (397.7150, 343.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 345.7150) - (397.7150, 345.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 348.5150) - (397.7150, 348.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 351.3150) - (397.7150, 351.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 354.1150) - (397.7150, 354.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 356.9150) - (397.7150, 357.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 359.7150) - (397.7150, 359.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 362.5150) - (397.7150, 362.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 365.3150) - (397.7150, 365.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 368.1150) - (397.7150, 368.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 370.9150) - (397.7150, 371.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 373.7150) - (397.7150, 373.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 376.5150) - (397.7150, 376.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 379.3150) - (397.7150, 379.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 382.1150) - (397.7150, 382.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 384.9150) - (397.7150, 385.0850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 387.7150) - (397.7150, 387.8850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 390.5150) - (397.7150, 390.6850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 393.3150) - (397.7150, 393.4850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 396.1150) - (397.7150, 396.2850) on VDD
+[WARNING PDN-0110] No via inserted between metal1 and metal4 at (397.1300, 398.9150) - (397.7150, 399.0850) on VDD
+[WARNING PDN-0200] Removing floating shape: VDD (397.1300, 102.1150) - (397.7150, 399.0850) on metal4
+No differences found.
