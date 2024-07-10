@@ -32,9 +32,9 @@ class Mpl2SnapperTest : public ::testing::Test
 
 TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
 {
-  // create a simple block and then add 3 instances to that block
+  // Create a simple block and then add 3 instances to that block
   // without any further configuration to each instance,
-  // and then run setMacro(inst) on each instance
+  // and then run setMacro(inst) on each instance.
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
@@ -64,14 +64,14 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // This test checks the snapMacro functionality of the
   // Snapper class defined in hier_rtlmp.cpp.
   //
-  // snapMacro works by computing a valid origin for a
-  // particular macro instance by taking its pin alignment
-  // into account, and then setting the instance's origin
-  // accordingly using setOrigin.
+  // snapMacro works by adjusting the position of the
+  // macro so that the signal pins are aligned with the
+  // track-grid.
   //
-  // Therefore, this test inputs invalid instance origins
-  // as testcases, and then checks whether snapMacro
-  // has aligned those instances correctly.
+  // Therefore, this test inputs instances that have
+  // not been aligned correctly as testcases, and then
+  // checks whether snapMacro has aligned said instances
+  // correctly.
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
@@ -83,38 +83,28 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   odb::dbTrackGrid* track
       = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
 
-  // grid pattern parameters: origin, line count, step
-  // (0, 50, 20) -> 0 20 40 60 80 ... 980
-  // with manufacturing grid 5
   odb::dbGCellGrid::create(block);
   track->addGridPatternX(0, 50, 20);
   track->addGridPatternY(0, 50, 20);
   db_->getTech()->setManufacturingGrid(5);
 
-  // add a master; snapper expects block type
   odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
                                               "simple_master",
                                               1000,
                                               1000,
                                               odb::dbMasterType::BLOCK);
 
-  // create a macro instance
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
-
-  // A summary of the set-up (all quantities in internal DB units):
-  // -> master and block both 1000 x 1000, with only 1 layer
-  // -> 2 signal pins at (0, 0, 50, 50) and (100, 100, 150, 150)
-  // -> grid pattern is (0, 50, 20) -> 0 20 40 60 80 ... 980
-  // -> manufacturing grid size is 5
-  // -> set-up used to create 1 macro instance
 
   Snapper snapper;
   snapper.setMacro(inst);
 
-  // At the moment, this test only tests invalid input origins,
-  // because right now, Snapper will not necessarily compute
-  // the most optimal origin for valid input origins (i.e. no change)
-  // However, this might change in the future if Snapepr is optimized
+  // At the moment, this test only receives instance unaligned with
+  // the track-grid as inputs, because right now, Snapper will not
+  // necessarily compute the most optimal origin for instances that
+  // are  already aligned (origins should've been left unchanged).
+  //
+  // However, this might change in the future if Snapper is optimized
   // further.
 
   // First, we want to test for when the layer
