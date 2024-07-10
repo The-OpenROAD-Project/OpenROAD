@@ -1272,9 +1272,8 @@ void ClusteringEngine::createCluster(Cluster* parent)
 }
 
 // This function has two purposes:
-// 1) remove all the internal clusters between parent and leaf clusters in its
-// subtree 2) Call TritonPart to partition large flat clusters (a cluster with
-// no logical modules)
+// 1) Remove internal clusters between parent and leaf clusters in its subtree.
+// 2) Call TritonPart to partition large flat clusters.
 void ClusteringEngine::updateSubTree(Cluster* parent)
 {
   std::vector<Cluster*> children_clusters;
@@ -1297,7 +1296,6 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
     }
   }
 
-  // delete all the internal clusters
   for (Cluster* cluster : internal_clusters) {
     tree_->maps.id_to_cluster.erase(cluster->getId());
     delete cluster;
