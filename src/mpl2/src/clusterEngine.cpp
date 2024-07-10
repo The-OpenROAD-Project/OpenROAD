@@ -755,7 +755,7 @@ void ClusteringEngine::dataFlowDFSIOPin(
       }
     }
   } else {
-    for (auto& hyperedge : hypergraph.vertices[parent]) {
+    for (auto& hyperedge : hypergraph.backward_vertices[parent]) {
       const int vertex
           = hypergraph.hyperedges[hyperedge].front();  // driver vertex
       // we do not consider pin to pin
@@ -820,7 +820,7 @@ void ClusteringEngine::dataFlowDFSMacroPin(
       }
     }
   } else {
-    for (auto& hyperedge : hypergraph.vertices[parent]) {
+    for (auto& hyperedge : hypergraph.backward_vertices[parent]) {
       const int vertex = hypergraph.hyperedges[hyperedge].front();
       // we do not consider pin to pin
       if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
@@ -997,7 +997,8 @@ void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
     }
   }
   for (odb::dbModInst* child_module_inst : module->getChildren()) {
-    updateInstancesAssociation(child_module_inst->getMaster(), cluster_id, include_macro);
+    updateInstancesAssociation(
+        child_module_inst->getMaster(), cluster_id, include_macro);
   }
 }
 
