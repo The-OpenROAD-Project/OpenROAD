@@ -23,7 +23,7 @@ class Mpl2SnapperTest : public ::testing::Test
         = OdbUniquePtr<odb::dbBlock>(chip_->getBlock(), &odb::dbBlock::destroy);
   }
 
-  utl::Logger logger_;
+  utl::Logger logger;
   OdbUniquePtr<odb::dbDatabase> db_{nullptr, &odb::dbDatabase::destroy};
   OdbUniquePtr<odb::dbLib> lib_{nullptr, &odb::dbLib::destroy};
   OdbUniquePtr<odb::dbChip> chip_{nullptr, &odb::dbChip::destroy};
@@ -36,22 +36,22 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   // without any further configuration to each instance,
   // and then run setMacro(inst) on each instance
 
-  utl::Logger* logger_ = new utl::Logger();
+  utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
-  db_->setLogger(logger_);
+  db_->setLogger(logger);
 
-  odb::dbMaster* master_ = createSimpleMaster(db_->findLib("lib"),
+  odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
                                               "simple_master",
                                               1000,
                                               1000,
                                               odb::dbMasterType::CORE);
 
-  odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
+  block->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbInst* inst1 = odb::dbInst::create(block_, master_, "cells_1");
-  odb::dbInst* inst2 = odb::dbInst::create(block_, master_, "cells_2");
-  odb::dbInst* inst3 = odb::dbInst::create(block_, master_, "cells_3");
+  odb::dbInst* inst1 = odb::dbInst::create(block, master, "cells_1");
+  odb::dbInst* inst2 = odb::dbInst::create(block, master, "cells_2");
+  odb::dbInst* inst3 = odb::dbInst::create(block, master, "cells_3");
 
   Snapper snapper;
   snapper.setMacro(inst1);
@@ -73,33 +73,33 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // as testcases, and then checks whether snapMacro
   // has aligned those instances correctly.
 
-  utl::Logger* logger_ = new utl::Logger();
+  utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
-  db_->setLogger(logger_);
+  db_->setLogger(logger);
 
-  odb::dbBlock* block_ = odb::dbBlock::create(db_->getChip(), "simple_block");
-  block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
+  block->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbTrackGrid* track_
-      = odb::dbTrackGrid::create(block_, db_->getTech()->findLayer("L1"));
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
 
   // grid pattern parameters: origin, line count, step
   // (0, 50, 20) -> 0 20 40 60 80 ... 980
   // with manufacturing grid 5
-  odb::dbGCellGrid::create(block_);
-  track_->addGridPatternX(0, 50, 20);
-  track_->addGridPatternY(0, 50, 20);
+  odb::dbGCellGrid::create(block);
+  track->addGridPatternX(0, 50, 20);
+  track->addGridPatternY(0, 50, 20);
   db_->getTech()->setManufacturingGrid(5);
 
   // add a master; snapper expects block type
-  odb::dbMaster* master_ = createSimpleMaster(db_->findLib("lib"),
+  odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
                                               "simple_master",
                                               1000,
                                               1000,
                                               odb::dbMasterType::BLOCK);
 
   // create a macro instance
-  odb::dbInst* inst_ = odb::dbInst::create(block_, master_, "macro1");
+  odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
 
   // A summary of the set-up (all quantities in internal DB units):
   // -> master and block both 1000 x 1000, with only 1 layer
@@ -109,7 +109,7 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // -> set-up used to create 1 macro instance
 
   Snapper snapper;
-  snapper.setMacro(inst_);
+  snapper.setMacro(inst);
 
   // At the moment, this test only tests invalid input origins,
   // because right now, Snapper will not necessarily compute
@@ -129,25 +129,25 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // Valid alignments for y would include 15 35 55 75 95 ...
   // with 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
 
-  inst_->setOrigin(511, 540);
+  inst->setOrigin(511, 540);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 510);
-  EXPECT_TRUE(inst_->getOrigin().y() == 515);
+  EXPECT_TRUE(inst->getOrigin().x() == 510);
+  EXPECT_TRUE(inst->getOrigin().y() == 515);
 
-  inst_->setOrigin(514, 559);
+  inst->setOrigin(514, 559);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 510);
-  EXPECT_TRUE(inst_->getOrigin().y() == 515);
+  EXPECT_TRUE(inst->getOrigin().x() == 510);
+  EXPECT_TRUE(inst->getOrigin().y() == 515);
 
-  inst_->setOrigin(516, 560);
+  inst->setOrigin(516, 560);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 515);
-  EXPECT_TRUE(inst_->getOrigin().y() == 535);
+  EXPECT_TRUE(inst->getOrigin().x() == 515);
+  EXPECT_TRUE(inst->getOrigin().y() == 535);
 
-  inst_->setOrigin(519, 579);
+  inst->setOrigin(519, 579);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 515);
-  EXPECT_TRUE(inst_->getOrigin().y() == 535);
+  EXPECT_TRUE(inst->getOrigin().x() == 515);
+  EXPECT_TRUE(inst->getOrigin().y() == 535);
 
   // Now, we want to test for when the layer
   // has a "vertical" direction preference.
@@ -160,25 +160,25 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   // Valid alignments for y would include 10 15 20 25 30 35 40 ...
   // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
 
-  inst_->setOrigin(540, 511);
+  inst->setOrigin(540, 511);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 515);
-  EXPECT_TRUE(inst_->getOrigin().y() == 510);
+  EXPECT_TRUE(inst->getOrigin().x() == 515);
+  EXPECT_TRUE(inst->getOrigin().y() == 510);
 
-  inst_->setOrigin(559, 514);
+  inst->setOrigin(559, 514);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 515);
-  EXPECT_TRUE(inst_->getOrigin().y() == 510);
+  EXPECT_TRUE(inst->getOrigin().x() == 515);
+  EXPECT_TRUE(inst->getOrigin().y() == 510);
 
-  inst_->setOrigin(560, 516);
+  inst->setOrigin(560, 516);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 535);
-  EXPECT_TRUE(inst_->getOrigin().y() == 515);
+  EXPECT_TRUE(inst->getOrigin().x() == 535);
+  EXPECT_TRUE(inst->getOrigin().y() == 515);
 
-  inst_->setOrigin(579, 519);
+  inst->setOrigin(579, 519);
   snapper.snapMacro();
-  EXPECT_TRUE(inst_->getOrigin().x() == 535);
-  EXPECT_TRUE(inst_->getOrigin().y() == 515);
+  EXPECT_TRUE(inst->getOrigin().x() == 535);
+  EXPECT_TRUE(inst->getOrigin().y() == 515);
 
 }  // CanSnapMacros
 
