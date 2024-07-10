@@ -1018,10 +1018,10 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
   const unsigned int num_macro = cluster->getLeafMacros().size();
 
   Metrics metrics(num_std_cell, num_macro, std_cell_area, macro_area);
-
   for (auto& module : cluster->getDbModules()) {
     metrics.addMetrics(*tree_->maps.module_to_metrics[module]);
   }
+  cluster->setMetrics(metrics);
 
   debugPrint(logger_,
              MPL,
@@ -1031,16 +1031,6 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
              cluster->getName(),
              metrics.getNumMacro(),
              metrics.getNumStdCell());
-
-  if (cluster->getClusterType() == HardMacroCluster) {
-    cluster->setMetrics(
-        Metrics(0, metrics.getNumMacro(), 0.0, metrics.getMacroArea()));
-  } else if (cluster->getClusterType() == StdCellCluster) {
-    cluster->setMetrics(
-        Metrics(metrics.getNumStdCell(), 0, metrics.getStdCellArea(), 0.0));
-  } else {
-    cluster->setMetrics(metrics);
-  }
 }
 
 float ClusteringEngine::computeMicronArea(odb::dbInst* inst)
