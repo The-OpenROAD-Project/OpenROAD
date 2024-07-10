@@ -7,7 +7,7 @@ cd "$(dirname $(readlink -f $0))/../"
 _help() {
     cat <<EOF
 usage: $0 [dynamic]
-       $0 static
+       $0 static <TOKEN>
 
 EOF
     exit "${1:-1}"
@@ -63,12 +63,14 @@ _coverity() {
     # Step 1: Initialize a build. Fetch a cloud upload url.
     curl -X POST \
         -d version="version=${commitSha}" \
-        -d description="OpenROAD Build ${commitSha}" \
+        -d description="build=${commitSha}" \
         -d email=openroad@ucsd.edu \
-        -d token=${COVERITY_TOKEN} \
+        -d token=${token} \
         -d file_name=openroad.tgz \
         https://scan.coverity.com/projects/21946/builds/init \
         | tee response
+
+    cat response
 
     # Step 2: Store response data to use in later stages.
     # Requires the JSON parsing tool jq.
@@ -84,10 +86,12 @@ _coverity() {
 
     # Step 4: Trigger the build on Scan.
     curl -X PUT \
-        -d "token=${COVERITY_TOKEN}" \
+        -d "token=${token}" \
         https://scan.coverity.com/projects/21946/builds/${build_id}/enqueue
 
 }
+
+token=""
 
 target="${1:-dynamic}"
 case "${target}" in
@@ -95,6 +99,17 @@ case "${target}" in
         _lcov
         ;;
     static )
+        if [[ $# -ne 2 ]]; then
+            if [[ $# -lt 2 ]]; then
+                echo -n "Too few arguments. "
+            fi
+            if [[ $# -gt 2 ]]; then
+                echo -n "Too many arguments. "
+            fi
+            echo "'${0} ${1}' requires a token as the second argument."
+            _help
+        fi
+        token="${2}"
         _coverity
         ;;
     *)
