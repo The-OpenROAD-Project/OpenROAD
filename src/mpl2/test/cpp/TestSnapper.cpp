@@ -41,10 +41,10 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   db_->setLogger(logger);
 
   odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
-                                              "simple_master",
-                                              1000,
-                                              1000,
-                                              odb::dbMasterType::CORE);
+                                             "simple_master",
+                                             1000,
+                                             1000,
+                                             odb::dbMasterType::CORE);
 
   odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
@@ -89,10 +89,10 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   db_->getTech()->setManufacturingGrid(5);
 
   odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
-                                              "simple_master",
-                                              1000,
-                                              1000,
-                                              odb::dbMasterType::BLOCK);
+                                             "simple_master",
+                                             1000,
+                                             1000,
+                                             odb::dbMasterType::BLOCK);
 
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
 
