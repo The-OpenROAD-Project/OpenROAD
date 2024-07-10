@@ -11,6 +11,129 @@
 
 namespace odb {
 
+GDSReader::GDSReader(const std::string& filename) : lib(nullptr)
+{
+  db = dbDatabase::create();
+  file.open(filename, std::ios::binary);
+  if (!file) {
+    throw std::runtime_error("Could not open file");
+  }
+}
+
+GDSReader::~GDSReader() 
+{
+  if (file.is_open()) {
+    file.close();
+  }
+}
+
+dbGDSLib* GDSReader::read_gds() 
+{
+  readRecord();
+  checkRType(RecordType::HEADER);
+
+  processLib();
+  return lib;
+}
+
+bool GDSReader::checkRType(RecordType expect)
+{
+  if (r.type != expect) {
+    std::string error_msg = "Corrupted GDS, Expected: " + std::string(recordNames[static_cast<int>(expect)])
+     + " Got: " + std::string(recordNames[static_cast<int>(r.type)]);
+    throw std::runtime_error(error_msg);
+  }
+  return true;
+}
+
+bool GDSReader::checkRData(DataType eType, size_t eSize)
+{
+  if (r.dataType != eType) {
+    std::string error_msg = "Corrupted GDS, Expected data type: " + std::to_string(eType)
+     + " Got: " + std::to_string(r.dataType);
+    throw std::runtime_error("Corrupted GDS, Unexpected data type!");
+  }
+  return true;
+}
+
+double GDSReader::readReal8()
+{
+  uint64_t value;
+  file.read(reinterpret_cast<char*>(&value), 8);
+  return real8_to_double(htobe64(value));
+}
+
+int32_t GDSReader::readInt32() 
+{
+  int32_t value;
+  file.read(reinterpret_cast<char*>(&value), 4);
+  return htobe32(value);
+}
+
+int16_t GDSReader::readInt16() 
+{
+  int16_t value;
+  file.read(reinterpret_cast<char*>(&value), 2);
+  return htobe16(value);
+}
+
+int8_t GDSReader::readInt8()
+{
+  int8_t value;
+  file.read(reinterpret_cast<char*>(&value), 1);
+  return value;
+}
+
+bool GDSReader::readRecord()
+{
+  uint16_t recordLength = readInt16();
+    uint8_t recordType = readInt8();
+    uint8_t dataType = readInt8();
+
+    r.type = toRecordType(recordType);
+    r.dataType = toDataType(dataType);
+
+    printf("Record Length: %d Record Type: %s Data Type: %d\n", recordLength, recordNames[recordType], dataType);
+
+    if((recordLength-4) % dataTypeSize[r.dataType] != 0){
+      throw std::runtime_error("Corrupted GDS, Data size is not a multiple of data type size!");
+    }
+
+    r.length = recordLength;
+    int length = recordLength - 4;
+
+    if(dataType == DataType::INT_2){
+      r.data16.clear();
+      for(int i = 0; i < length; i += 2){
+        r.data16.push_back(readInt16());
+      }
+    }
+    else if(dataType == DataType::INT_4 || dataType == DataType::REAL_4){
+      r.data32.clear();
+      for(int i = 0; i < length; i += 4){
+        r.data32.push_back(readInt32());
+      }
+    }
+    else if(dataType == DataType::REAL_8){
+      r.data64.clear();
+      for(int i = 0; i < length; i += 8){
+        r.data64.push_back(readReal8());
+      }
+    }
+    else if(dataType == DataType::ASCII_STRING || dataType == DataType::BIT_ARRAY){
+      r.data8.clear();
+      for(int i = 0; i < length; i++){
+        r.data8.push_back(readInt8());
+      }
+    }
+    
+    if(file)
+      return true;
+    else
+      return false;
+}
+
+
 bool GDSReader::processLib(){
   readRecord();
   checkRType(RecordType::BGNLIB);
@@ -48,8 +171,8 @@ bool GDSReader::processLib(){
   readRecord();
   checkRType(RecordType::UNITS);
 
-  printf("UNITS: %f %f\n", r.data64[0], r.data64[1]);
-  printf("UNITS HEX: %016llX %016llX\n", r.data64[0], r.data64[1]);
+  printf("UNITS: %ld %ld\n", r.data64[0], r.data64[1]);
+  printf("UNITS HEX: %016lX %016lX\n", r.data64[0], r.data64[1]);
   lib->setUnits(r.data64[0], r.data64[1]);
 
   while(readRecord()){
@@ -105,10 +228,56 @@ bool GDSReader::processElement(dbGDSStructure& str){
     case RecordType::AREF:
       processSRef(str);
       break;
+    case RecordType::PATH:
+      processPath(str);
+      break;
     default:
       throw std::runtime_error("Unimplemented GDS Record Type");
       break;
   }
+  return true;
+}
+
+bool GDSReader::processPath(dbGDSStructure& str){
+  _dbGDSPath* path = new _dbGDSPath((_dbDatabase*)db);
+
+  readRecord();
+  checkRType(RecordType::LAYER);
+
+  path->_layer = r.data16[0];
+
+  readRecord();
+  checkRType(RecordType::DATATYPE);
+
+  path->_datatype = r.data16[0];
+
+  readRecord();
+  if(r.type == RecordType::PATHTYPE){
+    path->_pathType = r.data16[0];
+    readRecord();
+  }
+  else{
+    path->_pathType = 0;
+  }
+
+  if(r.type == RecordType::WIDTH){
+    path->_width = r.data32[0];
+    readRecord();
+  }
+  else{
+    path->_width = 0;
+  }
+
+  checkRType(RecordType::XY);
+
+  for(int i = 0; i < r.data32.size(); i+=2){
+    path->_xy.push_back({r.data32[i], r.data32[i + 1]});
+  }
+
+  readRecord();
+  checkRType(RecordType::ENDEL);
+
+  ((_dbGDSStructure*)&str)->_elements.push_back(path);
   return true;
 }
 
