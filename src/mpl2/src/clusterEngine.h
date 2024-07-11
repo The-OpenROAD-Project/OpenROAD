@@ -175,7 +175,6 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
-  bool macroPlacementIsFeasible(const float core_area);
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   void reportDesignData(float core_area);
