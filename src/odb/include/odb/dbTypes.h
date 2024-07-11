@@ -134,48 +134,54 @@ class dbGDSSTrans
   bool _absMag, _absAngle;
   double _mag, _angle;
 
-  dbGDSSTrans()
-  {
-    _flipX = false;
-    _absMag = false;
-    _absAngle = false;
-    _mag = 1.0;
-    _angle = 0.0;
-  }
+  dbGDSSTrans();
 
-  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle)
-  {
-    _flipX = flipX;
-    _absMag = absMag;
-    _absAngle = absAngle;
-    _mag = mag;
-    _angle = angle;
-  }
+  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
 
-  bool operator==(const dbGDSSTrans& t) const
-  {
-    return (_flipX == t._flipX) && (_absMag == t._absMag) && (_absAngle == t._absAngle) && (_mag == t._mag) && (_angle == t._angle);
-  }
+  bool operator==(const dbGDSSTrans& t) const;
 
-  std::string to_string() const {
-    std::string s("");
-    if(_flipX)
-      s += std::string("FLIP_X ");
-    s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
-    s += std::to_string(_mag) + " ";
-    s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
-    s += std::to_string(_angle);
-    return s;
-  }
+  std::string to_string() const;
 
-  bool identity() const
-  {
-    return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0) && (_angle == 0.0);
-  }
+  bool identity() const;
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
 dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t);
+
+class dbGDSTextPres
+{
+ public:
+  enum VPres
+  {
+    TOP = 0,
+    MIDDLE = 1,
+    BOTTOM = 2
+  };
+  enum HPres
+  {
+    LEFT = 0,
+    CENTER = 1,
+    RIGHT = 2
+  };
+
+  uint8_t _fontNum;
+  VPres _vPres;
+  HPres _hPres;
+
+  dbGDSTextPres();
+
+  dbGDSTextPres(uint8_t fontNum, VPres vPres, HPres hPres);
+
+  bool operator==(const dbGDSTextPres& t) const;
+
+  bool identity() const;
+
+  std::string to_string() const;
+};
+
+dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
+dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres t);
+
 ///
 /// The dbGroup's basis.
 ///
