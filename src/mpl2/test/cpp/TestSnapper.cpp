@@ -213,8 +213,7 @@ TEST_F(Mpl2SnapperTest, SnapMacrosDouble)
 
   db_->getTech()->findLayer("L1")->setDirection(
       odb::dbTechLayerDir::HORIZONTAL);
-  db_->getTech()->findLayer("L2")->setDirection(
-      odb::dbTechLayerDir::VERTICAL);
+  db_->getTech()->findLayer("L2")->setDirection(odb::dbTechLayerDir::VERTICAL);
 
   odb::dbMaster* master1 = createSimpleMaster(db_->findLib("lib"),
                                               "master_horizontal",
