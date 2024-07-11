@@ -59,19 +59,31 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst3);
 }  // CanSetMacroForEmptyInstances
 
-TEST_F(Mpl2SnapperTest, CanSnapMacros)
+
+// The three following tests checks the snapMacro functionality of the
+// Snapper class defined in hier_rtlmp.cpp.
+//
+// snapMacro works by adjusting the position of the
+// macro so that the signal pins are aligned with the
+// track-grid.
+//
+// Therefore, this test inputs instances that have
+// not been aligned correctly as testcases, and then
+// checks whether snapMacro has aligned said instances
+// correctly.
+
+// At the moment, these tests only receive instances unaligned with
+// the track-grid as inputs, because right now, Snapper will not
+// necessarily compute the most optimal origin for instances that
+// are already aligned (origins should've been left unchanged).
+//
+// However, this might change in the future if Snapper is optimized
+// further.
+
+TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
 {
-  // This test checks the snapMacro functionality of the
-  // Snapper class defined in hier_rtlmp.cpp.
-  //
-  // snapMacro works by adjusting the position of the
-  // macro so that the signal pins are aligned with the
-  // track-grid.
-  //
-  // Therefore, this test inputs instances that have
-  // not been aligned correctly as testcases, and then
-  // checks whether snapMacro has aligned said instances
-  // correctly.
+  // This test checks snapMacro functionality
+  // for a 1-layer master with horizontal direction layer preference
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
@@ -82,11 +94,13 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   odb::dbTrackGrid* track
       = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
-
   odb::dbGCellGrid::create(block);
   track->addGridPatternX(0, 50, 20);
   track->addGridPatternY(0, 50, 20);
   db_->getTech()->setManufacturingGrid(5);
+
+  db_->getTech()->findLayer("L1")->setDirection(
+      odb::dbTechLayerDir::HORIZONTAL);
 
   odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
                                              "simple_master",
@@ -98,19 +112,6 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
 
   Snapper snapper;
   snapper.setMacro(inst);
-
-  // At the moment, this test only receives instance unaligned with
-  // the track-grid as inputs, because right now, Snapper will not
-  // necessarily compute the most optimal origin for instances that
-  // are  already aligned (origins should've been left unchanged).
-  //
-  // However, this might change in the future if Snapper is optimized
-  // further.
-
-  // First, we want to test for when the layer
-  // has a "horizontal" direction preference.
-  db_->getTech()->findLayer("L1")->setDirection(
-      odb::dbTechLayerDir::HORIZONTAL);
 
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
@@ -139,9 +140,41 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   EXPECT_TRUE(inst->getOrigin().x() == 515);
   EXPECT_TRUE(inst->getOrigin().y() == 535);
 
-  // Now, we want to test for when the layer
-  // has a "vertical" direction preference.
-  db_->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::VERTICAL);
+}  // SnapMacrosHorizontal
+
+TEST_F(Mpl2SnapperTest, SnapMacrosVertical)
+{
+  // This test checks snapMacro functionality
+  // for a 1-layer master with vertical direction layer preference
+
+  utl::Logger* logger = new utl::Logger();
+  odb::dbDatabase* db_ = createSimpleDB();
+  db_->setLogger(logger);
+
+  odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
+  block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
+
+  odb::dbGCellGrid::create(block);
+  track->addGridPatternX(0, 50, 20);
+  track->addGridPatternY(0, 50, 20);
+  db_->getTech()->setManufacturingGrid(5);
+
+  db_->getTech()->findLayer("L1")->setDirection(
+      odb::dbTechLayerDir::VERTICAL);
+
+  odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
+                                             "simple_master",
+                                             1000,
+                                             1000,
+                                             odb::dbMasterType::BLOCK);
+
+  odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
+
+  Snapper snapper;
+  snapper.setMacro(inst);
 
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
@@ -170,6 +203,6 @@ TEST_F(Mpl2SnapperTest, CanSnapMacros)
   EXPECT_TRUE(inst->getOrigin().x() == 535);
   EXPECT_TRUE(inst->getOrigin().y() == 515);
 
-}  // CanSnapMacros
+}  // SnapMacrosVertical
 
 }  // namespace mpl2
