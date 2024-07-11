@@ -2660,9 +2660,10 @@ void GlobalRouter::createFakePin(Pin pin,
   int pin_conn_final_y = pin_connection.final_y;
 
   for (Pin& net_pin : net->getPins()) {
+    const auto& net_pin_pos = net_pin.getOnGridPosition();
     if (net_pin.getName() != pin.getName()
-        && !(net_pin.isConnectedToPadOrMacro() || net_pin.isPort())) {
-      auto net_pin_pos = net_pin.getOnGridPosition();
+        && !(net_pin.isConnectedToPadOrMacro() || net_pin.isPort())
+        && net_pin_pos != pin_position) {
       if (pin_connection.init_y == pin_connection.final_y) {
         if ((net_pin_pos.x() >= pin_conn_init_x)
             && (net_pin_pos.x() <= pin_conn_final_x)
