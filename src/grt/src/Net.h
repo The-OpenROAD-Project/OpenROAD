@@ -61,6 +61,7 @@ class Net
   void destroyPins();
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
+  odb::Rect computeBBox();
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
