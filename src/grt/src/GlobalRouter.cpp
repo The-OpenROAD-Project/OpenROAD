@@ -599,10 +599,28 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     // compare new positions with last positions & add on vector
     // check if pins that changed positions are new positions
     if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)) {
-      dirty_nets.push_back(db_net_map_[db_net]);
+      dirty_nets.push_back(net);
+    } else {
+      shrinkNetRoute(net);
     }
   }
   dirty_nets_.clear();
+}
+
+void GlobalRouter::shrinkNetRoute(Net* net)
+{
+  GRoute& route = routes_[net->getDbNet()];
+  odb::Rect net_bbox = net->computeBBox();
+  for (auto route_it = route.begin(); route_it != route.end(); ) {
+    GSegment& seg = *route_it;
+    odb::Point pt1(seg.init_x, seg.init_y);
+    odb::Point pt2(seg.final_x, seg.final_y);
+    if (!net_bbox.intersects(pt1) || !net_bbox.intersects(pt2)) {
+      route_it = route.erase(route_it);
+    } else {
+      ++route_it;
+    }
+  }
 }
 
 void GlobalRouter::destroyNetWire(Net* net)

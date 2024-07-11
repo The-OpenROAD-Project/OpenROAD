@@ -388,6 +388,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  void shrinkNetRoute(Net* net);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
