@@ -44,7 +44,8 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
                                              "simple_master",
                                              1000,
                                              1000,
-                                             odb::dbMasterType::CORE);
+                                             odb::dbMasterType::CORE,
+                                             db_->getTech()->findLayer("L1"));
 
   odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
@@ -58,7 +59,6 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   snapper.setMacro(inst2);
   snapper.setMacro(inst3);
 }  // CanSetMacroForEmptyInstances
-
 
 // The three following tests checks the snapMacro functionality of the
 // Snapper class defined in hier_rtlmp.cpp.
@@ -83,7 +83,7 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
 TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
 {
   // This test checks snapMacro functionality
-  // for a 1-layer master with horizontal direction layer preference
+  // for a block with 1 master (horizontal direction layer preference)
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
@@ -101,13 +101,14 @@ TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
                                              "simple_master",
                                              1000,
                                              1000,
-                                             odb::dbMasterType::BLOCK);
+                                             odb::dbMasterType::BLOCK,
+                                             db_->getTech()->findLayer("L1"));
 
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
-  
+
   Snapper snapper;
   snapper.setMacro(inst);
-  
+
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
   // Valid alignments for x would include 10 15 20 25 30 35 40 ...
@@ -140,7 +141,7 @@ TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
 TEST_F(Mpl2SnapperTest, SnapMacrosVertical)
 {
   // This test checks snapMacro functionality
-  // for a 1-layer master with vertical direction layer preference
+  // for a block with 1 master (vertical direction layer preference)
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db_ = createSimpleDB();
@@ -148,17 +149,17 @@ TEST_F(Mpl2SnapperTest, SnapMacrosVertical)
 
   odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
-  
+
   createSimpleTrack(block, db_->getTech()->findLayer("L1"), 0, 50, 20, 5);
 
-  db_->getTech()->findLayer("L1")->setDirection(
-      odb::dbTechLayerDir::VERTICAL);
+  db_->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::VERTICAL);
 
   odb::dbMaster* master = createSimpleMaster(db_->findLib("lib"),
                                              "simple_master",
                                              1000,
                                              1000,
-                                             odb::dbMasterType::BLOCK);
+                                             odb::dbMasterType::BLOCK,
+                                             db_->getTech()->findLayer("L1"));
 
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
 
@@ -193,5 +194,93 @@ TEST_F(Mpl2SnapperTest, SnapMacrosVertical)
   EXPECT_TRUE(inst->getOrigin().y() == 515);
 
 }  // SnapMacrosVertical
+
+TEST_F(Mpl2SnapperTest, SnapMacrosDouble)
+{
+  // This test checks snapMacro functionality
+  // for a block with 2 masters (ensure the 2 layers aren't interfering with
+  // each other) (layer 1, 2 with horizontal, vertical preferences respectively)
+
+  utl::Logger* logger = new utl::Logger();
+  odb::dbDatabase* db_ = createSimpleDB();
+  db_->setLogger(logger);
+
+  odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
+  block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
+  createSimpleTrack(block, db_->getTech()->findLayer("L1"), 0, 50, 20, 5);
+  createSimpleTrack(block, db_->getTech()->findLayer("L2"), 0, 50, 20, 5);
+
+  db_->getTech()->findLayer("L1")->setDirection(
+      odb::dbTechLayerDir::HORIZONTAL);
+  db_->getTech()->findLayer("L2")->setDirection(
+      odb::dbTechLayerDir::VERTICAL);
+
+  odb::dbMaster* master1 = createSimpleMaster(db_->findLib("lib"),
+                                              "master_horizontal",
+                                              500,
+                                              1000,
+                                              odb::dbMasterType::BLOCK,
+                                              db_->getTech()->findLayer("L1"));
+
+  odb::dbMaster* master2 = createSimpleMaster(db_->findLib("lib"),
+                                              "master_vertical",
+                                              500,
+                                              1000,
+                                              odb::dbMasterType::BLOCK,
+                                              db_->getTech()->findLayer("L2"));
+
+  odb::dbInst* inst1 = odb::dbInst::create(block, master1, "macro1");
+  odb::dbInst* inst2 = odb::dbInst::create(block, master2, "macro2");
+
+  Snapper snapper;
+
+  // same testcases as SnapMacrosHorizontal
+  snapper.setMacro(inst1);
+
+  inst1->setOrigin(511, 540);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst1->getOrigin().x() == 510);
+  EXPECT_TRUE(inst1->getOrigin().y() == 515);
+
+  inst1->setOrigin(514, 559);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst1->getOrigin().x() == 510);
+  EXPECT_TRUE(inst1->getOrigin().y() == 515);
+
+  inst1->setOrigin(516, 560);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst1->getOrigin().x() == 515);
+  EXPECT_TRUE(inst1->getOrigin().y() == 535);
+
+  inst1->setOrigin(519, 579);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst1->getOrigin().x() == 515);
+  EXPECT_TRUE(inst1->getOrigin().y() == 535);
+
+  // same testcases as SnapMacrosVertical
+  snapper.setMacro(inst2);
+
+  inst2->setOrigin(540, 511);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst2->getOrigin().x() == 515);
+  EXPECT_TRUE(inst2->getOrigin().y() == 510);
+
+  inst2->setOrigin(559, 514);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst2->getOrigin().x() == 515);
+  EXPECT_TRUE(inst2->getOrigin().y() == 510);
+
+  inst2->setOrigin(560, 516);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst2->getOrigin().x() == 535);
+  EXPECT_TRUE(inst2->getOrigin().y() == 515);
+
+  inst2->setOrigin(579, 519);
+  snapper.snapMacro();
+  EXPECT_TRUE(inst2->getOrigin().x() == 535);
+  EXPECT_TRUE(inst2->getOrigin().y() == 515);
+
+}  // SnapMacrosDouble
 
 }  // namespace mpl2
