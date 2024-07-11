@@ -366,7 +366,13 @@ static int tclAppInit(int& argc,
     }
     Tcl_StaticPackage(
         interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
-    if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
+    if (Tcl_Eval(interp, "set tclreadline::library") != TCL_OK) {
+      printf("Failed to run tclreadline::library\n");
+      exit(1);
+    }
+    std::string tclreadlineInitPath = Tcl_GetStringResult(interp);
+    tclreadlineInitPath += "/tclreadlineInit.tcl";
+    if (Tcl_EvalFile(interp, tclreadlineInitPath.c_str()) != TCL_OK) {
       printf("Failed to load tclreadline\n");
     }
 #endif
