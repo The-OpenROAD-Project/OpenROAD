@@ -114,20 +114,14 @@
   }
 
   void set_domain_area_cmd(const char* domain,
-                           float x1,
-                           float y1,
-                           float x2,
-                           float y2)
+                           const odb::Rect& area)
   {
 
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::set_domain_area(getOpenRoad()->getLogger(),
-                        db->getChip()->getBlock(), 
-                        domain,
-                        x1,
-                        y1,
-                        x2,
-                        y2);
+                         db->getChip()->getBlock(), 
+                         domain,
+                         area);
   }
 
   void set_power_switch_cell(const char* name, const char* cell)

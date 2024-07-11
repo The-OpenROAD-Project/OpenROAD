@@ -518,6 +518,15 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
       neg_index2 = i;
     }
   }
+
+  if (neg_index1 < 0 || neg_index2 < 0) {
+    logger_->error(utl::MPL,
+                   18,
+                   "Divergence in sequence pair: Macros ID {} or {} (or both) "
+                   "exist only in positive sequence.",
+                   index1,
+                   index2);
+  }
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
@@ -608,7 +617,11 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }  // end while
   // update the final results
+
   packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
   calPenalty();
 
   if (centralization_on_) {
@@ -642,6 +655,8 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
 
   // revert centralization
   if (calNormCost() > pre_cost) {
+    centralization_was_reverted_ = true;
+
     for (int& id : pos_seq_) {
       macros_[id].setX(clusters_locations[id].first);
       macros_[id].setY(clusters_locations[id].second);

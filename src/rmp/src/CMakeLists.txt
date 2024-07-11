@@ -90,6 +90,7 @@ target_link_libraries(rmp_abc_library
     dbSta_lib
     libabc
     utl_lib
+    ${ABC_LIBRARY}
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

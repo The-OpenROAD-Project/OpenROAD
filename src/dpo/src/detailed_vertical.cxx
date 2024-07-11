@@ -85,11 +85,8 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
-    args.push_back(*it);
+  for (const auto& token : tokens) {
+    args.push_back(token);
   }
   run(mgrPtr, args);
 }
@@ -167,7 +164,7 @@ void DetailedVerticalSwap::verticalSwap()
 
   // Get candidate cells.
   std::vector<Node*> candidates = mgr_->getSingleHeightCells();
-  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->getRng());
+  mgr_->shuffle(candidates);
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(network_);

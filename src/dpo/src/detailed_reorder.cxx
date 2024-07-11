@@ -49,12 +49,7 @@ namespace dpo {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 DetailedReorderer::DetailedReorderer(Architecture* arch, Network* network)
-    : arch_(arch),
-      network_(network),
-      mgrPtr_(nullptr),
-      skipNetsLargerThanThis_(100),
-      traversal_(0),
-      windowSize_(3)
+    : arch_(arch), network_(network)
 {
 }
 
@@ -67,8 +62,8 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (auto it = tokens.begin(); it != tokens.end(); it++) {
-    args.push_back(*it);
+  for (const auto& token : tokens) {
+    args.push_back(token);
   }
   run(mgrPtr, args);
 }
@@ -198,12 +193,12 @@ void DetailedReorderer::reorder()
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
-                                int jstrt,
-                                int jstop,
-                                int leftLimit,
-                                int rightLimit,
-                                int segId,
-                                int rowId)
+                                const int jstrt,
+                                const int jstop,
+                                const int leftLimit,
+                                const int rightLimit,
+                                const int segId,
+                                const int rowId)
 {
   const int size = jstop - jstrt + 1;
 
@@ -223,7 +218,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   std::vector<int> left(size, 0);
   std::vector<int> width(size, 0);
   for (int i = 0; i < size; i++) {
-    Node* ndi = nodes[jstrt + i];
+    const Node* ndi = nodes[jstrt + i];
     arch_->getCellPadding(ndi, left[i], right[i]);
     width[i] = (int) std::ceil(ndi->getWidth());
     totalPadding += (left[i] + right[i]);
@@ -375,8 +370,8 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedReorderer::cost(const std::vector<Node*>& nodes,
-                               int istrt,
-                               int istop)
+                               const int istrt,
+                               const int istop)
 {
   // Compute hpwl for the specified sequence of cells.
 

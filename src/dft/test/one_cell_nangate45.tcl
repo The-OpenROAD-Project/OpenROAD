@@ -28,6 +28,7 @@ foreach lib_file $fake_macro_lib {
 read_verilog one_cell_nangate45.v
 link_design one_cell
 
+scan_replace
 insert_dft
 
 set verilog_file [make_result_file one_cell_nandgate45.v]

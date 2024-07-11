@@ -1,7 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,39 +29,47 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
 #pragma once
 
-#include "odb/dbIterator.h"
-#include "odb/odb.h"
+#include <boost/functional/hash.hpp>
+#include <boost/polygon/polygon.hpp>
 
-namespace odb {
-class _dbModITerm;
+#include "PinType.hh"
+#include "ant/AntennaChecker.hh"
 
-template <class T>
-class dbTable;
+namespace ant {
 
-class dbModInstModITermItr : public dbIterator
+namespace gtl = boost::polygon;
+using namespace gtl::operators;
+
+using Polygon = gtl::polygon_90_data<int>;
+using PolygonSet = std::vector<Polygon>;
+using Point = gtl::polygon_traits<Polygon>::point_type;
+
+struct GraphNode
 {
- public:
-  dbModInstModITermItr(dbTable<_dbModITerm>* moditerm_tbl)
+  int id;
+  bool isVia;
+  Polygon pol;
+  std::vector<int> low_adj;
+  std::unordered_set<PinType, PinTypeHash> gates;
+  GraphNode() = default;
+  GraphNode(int id_, bool isVia_, const Polygon& pol_)
   {
-    _moditerm_tbl = moditerm_tbl;
+    id = id_;
+    isVia = isVia_;
+    pol = pol_;
   }
-
-  bool reversible() override;
-  bool orderReversed() override;
-  void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
-  dbObject* getObject(uint id, ...) override;
-
- private:
-  dbTable<_dbModITerm>* _moditerm_tbl;
 };
 
-}  // namespace odb
-   // Generator Code End Header
+Polygon rectToPolygon(const odb::Rect& rect);
+std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
+                                           const Polygon& pol);
+void wiresToPolygonSetMap(
+    odb::dbWire* wires,
+    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+void avoidPinIntersection(
+    odb::dbNet* db_net,
+    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+
+}  // namespace ant

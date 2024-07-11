@@ -2369,7 +2369,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
 
 int LayoutViewer::instanceSizeLimit() const
 {
-  if (options_->isDetailedVisibility()) {
+  if (options_->isDetailedVisibility() || options_->isModuleView()) {
     return 0;
   }
 

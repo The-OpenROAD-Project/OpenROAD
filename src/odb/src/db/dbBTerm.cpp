@@ -76,6 +76,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _ext_id = 0;
   _name = nullptr;
   _sta_vertex_id = 0;
+  _constraint_region.mergeInit();
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -91,7 +92,8 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0)
+      _sta_vertex_id(0),
+      _constraint_region(b._constraint_region)
 {
   if (b._name) {
     _name = strdup(b._name);
@@ -274,6 +276,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._bpins;
   stream << bterm._ground_pin;
   stream << bterm._supply_pin;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+    stream << bterm._constraint_region;
+  }
   return stream;
 }
 
@@ -299,6 +304,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._bpins;
   stream >> bterm._ground_pin;
   stream >> bterm._supply_pin;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+    stream >> bterm._constraint_region;
+  }
 
   return stream;
 }
@@ -919,6 +927,23 @@ void dbBTerm::staSetVertexId(uint32_t id)
 {
   _dbBTerm* iterm = (_dbBTerm*) this;
   iterm->_sta_vertex_id = id;
+}
+
+void dbBTerm::setConstraintRegion(const Rect& constraint_region)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region = constraint_region;
+}
+
+std::optional<Rect> dbBTerm::getConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  const auto& constraint_region = bterm->_constraint_region;
+  if (constraint_region.isInverted()) {
+    return std::nullopt;
+  }
+
+  return bterm->_constraint_region;
 }
 
 }  // namespace odb

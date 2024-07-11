@@ -116,9 +116,6 @@ class Optdp
   std::unordered_set<odb::dbTechLayer*> gndLayers_;
   std::unordered_map<odb::dbMaster*, std::pair<int, int>>
       masterPwrs_;  // top,bot
-
-  int64_t hpwlBefore_ = 0;
-  int64_t hpwlAfter_ = 0;
 };
 
 }  // namespace dpo

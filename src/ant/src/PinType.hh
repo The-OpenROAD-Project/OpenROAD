@@ -1,7 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,39 +29,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
 #pragma once
 
-#include "odb/dbIterator.h"
-#include "odb/odb.h"
+#include <string>
 
-namespace odb {
-class _dbModBTerm;
+#include "odb/db.h"
 
-template <class T>
-class dbTable;
+namespace ant {
 
-class dbModuleBTermItr : public dbIterator
+struct PinType
 {
- public:
-  dbModuleBTermItr(dbTable<_dbModBTerm>* modbterm_tbl)
+  bool isITerm;
+  std::string name;
+  union
   {
-    _modbterm_tbl = modbterm_tbl;
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+  };
+  PinType(std::string name_, odb::dbITerm* iterm_)
+  {
+    name = std::move(name_);
+    iterm = iterm_;
+    isITerm = true;
   }
-
-  bool reversible() override;
-  bool orderReversed() override;
-  void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
-  dbObject* getObject(uint id, ...) override;
-
- private:
-  dbTable<_dbModBTerm>* _modbterm_tbl;
+  PinType(std::string name_, odb::dbBTerm* bterm_)
+  {
+    name = std::move(name_);
+    bterm = bterm_;
+    isITerm = false;
+  }
+  bool operator==(const PinType& t) const { return (this->name == t.name); }
 };
 
-}  // namespace odb
-   // Generator Code End Header
+class PinTypeHash
+{
+ public:
+  size_t operator()(const PinType& t) const
+  {
+    return std::hash<std::string>{}(t.name);
+  }
+};
+
+}  // namespace ant

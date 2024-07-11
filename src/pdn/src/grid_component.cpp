@@ -125,6 +125,10 @@ ShapePtr GridComponent::addShape(Shape* shape)
       return nullptr;
     }
 
+    if (areIntersectionsAllowed()) {
+      continue;
+    }
+
     const odb::Rect& other_rect = intersecting_shape->getRect();
     const bool is_x_overlap = shape_rect.xMin() == other_rect.xMin()
                               && shape_rect.xMax() == other_rect.xMax();
