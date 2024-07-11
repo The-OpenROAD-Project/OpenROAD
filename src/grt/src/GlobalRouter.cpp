@@ -3470,13 +3470,18 @@ int GlobalRouter::findInstancesObstructions(
 
       // iterate all Rects for each layer and apply adjustment in FastRoute
       for (auto& [layer, obs] : macro_obs_per_layer) {
+        odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
         int layer_extension = layer_extensions[layer];
         layer_extension += macro_extension_ * grid_->getTileSize();
         for (odb::Rect& cur_obs : obs) {
-          cur_obs.set_xlo(cur_obs.xMin() - layer_extension);
-          cur_obs.set_ylo(cur_obs.yMin() - layer_extension);
-          cur_obs.set_xhi(cur_obs.xMax() + layer_extension);
-          cur_obs.set_yhi(cur_obs.yMax() + layer_extension);
+          if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            cur_obs.set_ylo(cur_obs.yMin() - layer_extension);
+            cur_obs.set_yhi(cur_obs.yMax() + layer_extension);
+          } else if (tech_layer->getDirection()
+                     == odb::dbTechLayerDir::VERTICAL) {
+            cur_obs.set_xlo(cur_obs.xMin() - layer_extension);
+            cur_obs.set_xhi(cur_obs.xMax() + layer_extension);
+          }
           layer_obs_map[layer].push_back(cur_obs);
           applyObstructionAdjustment(cur_obs, tech->findRoutingLayer(layer));
         }
