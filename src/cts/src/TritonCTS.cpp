@@ -2069,10 +2069,7 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           // ignore arrival fall (no inverters in current clock tree)
           float arrival_pin = openSta_->pinArrival(
               pin, sta::RiseFall::rise(), sta::MinMax::max());
-          if (arrival != arrival_pin) {
-            logger_->report("returned arrival: {}", arrival);
-            logger_->report("pin arrival: {}", arrival_pin);
-          }
+
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell
