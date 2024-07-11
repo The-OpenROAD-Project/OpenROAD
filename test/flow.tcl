@@ -86,6 +86,11 @@ set_macro_extension 2
 global_placement -routability_driven -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
+# set thread count for all tools with support for multithreading.
+# set after global placement because it uses omp but generates
+# different results when using multiple threads.
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
