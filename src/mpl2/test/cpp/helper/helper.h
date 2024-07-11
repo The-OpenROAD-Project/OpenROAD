@@ -10,4 +10,6 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
                                   uint height,
                                   const odb::dbMasterType& type);
 
+odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block, odb::dbTechLayer* layer, int origin, int line_count, int step, int manufacturing_grid);
+
 }  // namespace mpl2

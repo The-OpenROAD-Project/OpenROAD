@@ -92,12 +92,7 @@ TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
   odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  odb::dbTrackGrid* track
-      = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
-  odb::dbGCellGrid::create(block);
-  track->addGridPatternX(0, 50, 20);
-  track->addGridPatternY(0, 50, 20);
-  db_->getTech()->setManufacturingGrid(5);
+  createSimpleTrack(block, db_->getTech()->findLayer("L1"), 0, 50, 20, 5);
 
   db_->getTech()->findLayer("L1")->setDirection(
       odb::dbTechLayerDir::HORIZONTAL);
@@ -109,10 +104,10 @@ TEST_F(Mpl2SnapperTest, SnapMacrosHorizontal)
                                              odb::dbMasterType::BLOCK);
 
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
-
+  
   Snapper snapper;
   snapper.setMacro(inst);
-
+  
   // Considering the grid pattern configuration (0 20 40 ... 980)
   // manufacturing grid size (5), and direction preference (horizontal):
   // Valid alignments for x would include 10 15 20 25 30 35 40 ...
@@ -153,14 +148,8 @@ TEST_F(Mpl2SnapperTest, SnapMacrosVertical)
 
   odb::dbBlock* block = odb::dbBlock::create(db_->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
-
-  odb::dbTrackGrid* track
-      = odb::dbTrackGrid::create(block, db_->getTech()->findLayer("L1"));
-
-  odb::dbGCellGrid::create(block);
-  track->addGridPatternX(0, 50, 20);
-  track->addGridPatternY(0, 50, 20);
-  db_->getTech()->setManufacturingGrid(5);
+  
+  createSimpleTrack(block, db_->getTech()->findLayer("L1"), 0, 50, 20, 5);
 
   db_->getTech()->findLayer("L1")->setDirection(
       odb::dbTechLayerDir::VERTICAL);

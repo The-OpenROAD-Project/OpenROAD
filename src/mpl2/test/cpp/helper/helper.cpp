@@ -51,4 +51,22 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
   return master;
 }
 
+///
+/// Create track-grid with same origin, line_count, and step for both X and Y grid patterns
+///
+odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block, odb::dbTechLayer* layer, int origin, int line_count, int step, int manufacturing_grid) {
+
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(block, layer);
+
+  odb::dbGCellGrid::create(block);
+
+  track->addGridPatternX(origin, line_count, step);
+  track->addGridPatternY(origin, line_count, step);
+
+  block->getTech()->setManufacturingGrid(manufacturing_grid);
+
+  return track;
+}
+
 }  // namespace mpl2
