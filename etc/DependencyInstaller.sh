@@ -9,8 +9,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=yosys-0.33
-    eqyVersion=8327ac7
+    yosysVersion=yosys-0.42
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -34,9 +33,8 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --recursive https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
-        git checkout ${eqyVersion}
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
         make install PREFIX="${eqyPrefix}"
@@ -50,7 +48,7 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
@@ -249,8 +247,8 @@ _installUbuntuCleanUp() {
 _installUbuntuPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install tzdata
-    apt-get -y install \
+    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
         binutils \
@@ -284,7 +282,7 @@ _installUbuntuPackages() {
         ccache \
 
     if _versionCompare $1 -ge 22.10; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.11 \
             qt5-qmake \
             qtbase5-dev \
@@ -292,7 +290,7 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qtchooser
     elif [[ $1 == 22.04 ]]; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             qt5-qmake \
             qtbase5-dev \
@@ -300,7 +298,7 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qtchooser
     else
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             libqt5charts5-dev \
             qt5-default
@@ -531,8 +529,8 @@ _installDebianCleanUp() {
 _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install tzdata
-    apt-get -y install \
+    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
         binutils \
@@ -563,11 +561,11 @@ _installDebianPackages() {
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.7 \
             qt5-default
     else
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             qtbase5-dev \
             qtchooser \
@@ -578,22 +576,23 @@ _installDebianPackages() {
 
 _installCI() {
     apt-get -y update
-
-    #docker
-    apt install -y \
+    apt-get -y install --no-install-recommends \
         apt-transport-https \
         ca-certificates \
         curl \
-        software-properties-common
-    # apt-get -y install ca-certificates curl
-    # install -m 0755 -d /etc/apt/keyrings
+        jq \
+        parallel \
+        software-properties-common \
+        unzip
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
     echo \
     "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
     apt-get -y update
-    apt-get -y install docker-ce docker-ce-cli containerd.io
+    apt-get -y install --no-install-recommends \
+        containerd.io \
+        docker-ce \
+        docker-ce-cli
 }
 
 _checkIsLocal() {
@@ -749,6 +748,9 @@ EOF
         ;;
     "Ubuntu" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ ${CI} == "yes" ]]; then
+            _installCI
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${version}"
@@ -760,9 +762,6 @@ EOF
                 version=22.10
             fi
             _installOrTools "ubuntu" "${version}" "amd64"
-        fi
-        if [[ ${CI} == "yes" ]]; then
-            _installCI
         fi
         ;;
     "Red Hat Enterprise Linux")
