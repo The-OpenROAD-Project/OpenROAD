@@ -36,48 +36,54 @@
 #include "dbCore.h"
 #include "dbGDSElement.h"
 #include "odb/odb.h"
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+// User Code Begin Classes
+// User Code End Classes
 
-class _dbGDSSRef : public _dbGDSElement
+// User Code Begin Structs
+// User Code End Structs
+
+class _dbGDSText : public _dbGDSElement
 {
  public:
-  _dbGDSSRef(_dbDatabase*, const _dbGDSSRef& r);
-  _dbGDSSRef(_dbDatabase*);
+  // User Code Begin Enums
+  // User Code End Enums
 
-  ~_dbGDSSRef() = default;
+  _dbGDSText(_dbDatabase*, const _dbGDSText& r);
+  _dbGDSText(_dbDatabase*);
 
-  bool operator==(const _dbGDSSRef& rhs) const;
-  bool operator!=(const _dbGDSSRef& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGDSSRef& rhs) const;
+  ~_dbGDSText() = default;
+
+  bool operator==(const _dbGDSText& rhs) const;
+  bool operator!=(const _dbGDSText& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGDSText& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbGDSSRef& rhs) const;
+                   const _dbGDSText& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
-
-  std::string to_string() override
-  {
-    if (_colRow.first == 1 && _colRow.second == 1) {
-      return "SREF " + _sName + " " + _sTrans.to_string();
-    } else {
-      return "AREF " + _sName + " " + _sTrans.to_string() + " COL "
-             + std::to_string(_colRow.first) + " ROW "
-             + std::to_string(_colRow.second);
-    }
-  }
-
   // User Code End Methods
 
-  std::string _sName;
+  int16_t _textType;
+  dbGDSTextPres _presentation;
+  int16_t _pathType;
+  int _width;
   dbGDSSTrans _sTrans;
-  std::pair<int16_t, int16_t> _colRow;
+  std::string _text;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
-dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);
+dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj);
+// User Code Begin General
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

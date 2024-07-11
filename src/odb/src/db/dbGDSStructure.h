@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbGDSElement;
 
 class _dbGDSStructure : public _dbObject
 {

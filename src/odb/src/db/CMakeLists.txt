@@ -89,10 +89,13 @@ add_library(db
     dbDft.cpp
     dbGCellGrid.cpp
     dbGDSBoundary.cpp
+    dbGDSBox.cpp
     dbGDSElement.cpp
+    dbGDSNode.cpp
     dbGDSPath.cpp
     dbGDSSRef.cpp
     dbGDSStructure.cpp
+    dbGDSText.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp
     dbGuide.cpp

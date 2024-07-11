@@ -132,10 +132,13 @@ class dbAccessPoint;
 class dbDft;
 class dbGCellGrid;
 class dbGDSBoundary;
+class dbGDSBox;
 class dbGDSElement;
+class dbGDSNode;
 class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
+class dbGDSText;
 class dbGlobalConnect;
 class dbGroup;
 class dbGuide;
@@ -7303,6 +7306,24 @@ class dbGDSBoundary : public dbGDSElement
  public:
 };
 
+class dbGDSBox : public dbGDSElement
+{
+ public:
+  void set_boxType(int16_t boxType);
+
+  int16_t get_boxType() const;
+};
+
+
+
+class dbGDSNode : public dbGDSElement
+{
+ public:
+  void set_nodeType(int16_t nodeType);
+
+  int16_t get_nodeType() const;
+};
+
 class dbGDSPath : public dbGDSElement
 {
  public:
@@ -7345,6 +7366,34 @@ class dbGDSStructure : public dbObject
   static void destroy(dbGDSStructure* structure);
 
   // User Code End dbGDSStructure
+};
+
+class dbGDSText : public dbGDSElement
+{
+ public:
+  void set_textType(int16_t textType);
+
+  int16_t get_textType() const;
+
+  void setPresentation(dbGDSTextPres presentation);
+
+  dbGDSTextPres getPresentation() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_sTrans(dbGDSSTrans sTrans);
+
+  dbGDSSTrans get_sTrans() const;
+
+  void setText(std::string text);
+
+  std::string getText() const;
 };
 
 class dbGlobalConnect : public dbObject
