@@ -61,7 +61,7 @@ class _dbGDSSRef : public _dbGDSElement
 
   std::string _sName;
   dbGDSSTrans _sTrans;
-  std::pair<int, int> _colRow;
+  std::pair<int16_t, int16_t> _colRow;
 
   // User Code Begin Methods
 

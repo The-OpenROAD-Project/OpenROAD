@@ -72,7 +72,7 @@ typedef struct
   std::string data8;
   std::vector<int16_t> data16;
   std::vector<int32_t> data32;
-  std::vector<int64_t> data64;
+  std::vector<double> data64;
 } record_t;
 
 

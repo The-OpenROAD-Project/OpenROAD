@@ -167,6 +167,11 @@ class dbGDSSTrans
     s += std::to_string(_angle);
     return s;
   }
+
+  bool identity() const
+  {
+    return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0) && (_angle == 0.0);
+  }
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);

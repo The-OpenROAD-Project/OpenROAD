@@ -14,7 +14,7 @@
       },
       {
         "name":"_colRow",
-        "type":"std::pair<int,int>",
+        "type":"std::pair<int16_t,int16_t>",
         "flags":["no-template"]
       }
     ],

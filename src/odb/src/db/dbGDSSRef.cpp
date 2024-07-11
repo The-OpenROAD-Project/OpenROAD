@@ -130,14 +130,14 @@ dbGDSSTrans dbGDSSRef::get_sTrans() const
   return obj->_sTrans;
 }
 
-void dbGDSSRef::set_colRow(std::pair<int, int> colRow)
+void dbGDSSRef::set_colRow(std::pair<int16_t, int16_t> colRow)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
   obj->_colRow = colRow;
 }
 
-std::pair<int, int> dbGDSSRef::get_colRow() const
+std::pair<int16_t, int16_t> dbGDSSRef::get_colRow() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
   return obj->_colRow;

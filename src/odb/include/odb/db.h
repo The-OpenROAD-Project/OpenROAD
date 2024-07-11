@@ -7326,9 +7326,9 @@ class dbGDSSRef : public dbGDSElement
 
   dbGDSSTrans get_sTrans() const;
 
-  void set_colRow(std::pair<int, int> colRow);
+  void set_colRow(std::pair<int16_t, int16_t> colRow);
 
-  std::pair<int, int> get_colRow() const;
+  std::pair<int16_t, int16_t> get_colRow() const;
 };
 
 class dbGDSStructure : public dbObject

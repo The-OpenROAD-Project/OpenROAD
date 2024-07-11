@@ -20,6 +20,39 @@ class dbGDSStructure;
 
 class GDSWriter
 {
-};
+ public:
+  GDSWriter();
 
+  ~GDSWriter();
+
+  void write_gds(dbGDSLib* lib, const std::string& filename);
+
+ private:
+  std::ofstream _file;
+  dbGDSLib* _lib;
+  dbDatabase* _db;
+
+  void calcRecSize(record_t& r);
+  void writeRecord(record_t& r);
+
+  void writeReal8(double real);
+  void writeInt32(int32_t i);
+  void writeInt16(int16_t i);
+  void writeInt8(int8_t i);
+
+  void writeLayer(dbGDSElement* el);
+  void writeXY(dbGDSElement* el);
+  void writeDataType(dbGDSElement* el);
+  void writeEndel();
+
+  void writeLib();
+  void writeStruct(dbGDSStructure* str);
+  void writeElement(dbGDSElement* el);
+  void writeBoundary(dbGDSBoundary* bnd);
+  void writePath(dbGDSPath* path);
+  void writeSRef(dbGDSSRef* sref);
+
+  void writeSTrans(const dbGDSSTrans& strans);
+};
+  
 } // namespace odb
