@@ -86,40 +86,4 @@ odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block,
   return track;
 }
 
-/*
-  odb::dbInst* inst1 = odb::dbInst::create(block, master, "leaf_macro1");
-  HardMacro* macro1 = new HardMacro(inst1, 1, 1);
-  hard_macros.push_back(macro1);
-  cluster->addLeafMacro(inst1);
-  metrics->addMetrics(
-      Metrics(0,
-              1,
-              0.0,
-              block->dbuToMicrons(inst1->getBBox()->getBox().dx())
-                  * block->dbuToMicrons(inst1->getBBox()->getBox().dy())));
-*/
-
-std::map<HardMacro*, Metrics*> createMacroWithMetrics(odb::dbMaster* master,
-                                                      odb::dbBlock* block,
-                                                      const char* name,
-                                                      bool isHardMacro, // if false, SoftMacro
-                                                      float halo_width,
-                                                      float halo_height
-                                                      ) {
-  std::map<HardMacro*, Metrics*> macro_info;
-
-  odb::dbInst* inst = odb::dbInst::create(block, master, name);
-  //if (isHardMacro) {
-    HardMacro* macro = new HardMacro(inst, halo_width, halo_height);
-  //}
-  
-  macro_info[macro] = new Metrics(0,
-                                  1,
-                                  0.0,
-                                  block->dbuToMicrons(inst->getBBox()->getBox().dx())
-                                      * block->dbuToMicrons(inst->getBBox()->getBox().dy()));
-
-  return macro_info;
-}
-
 }  // namespace mpl2

@@ -27,12 +27,4 @@ odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block,
                                     int step,
                                     int manufacturing_grid);
 
-std::map<HardMacro*, Metrics*> createMacroWithMetrics(odb::dbMaster* master,
-                                                      odb::dbBlock* block,
-                                                      const char* name,
-                                                      bool isHardMacro, // if false, SoftMacro
-                                                      float halo_width,
-                                                      float halo_height
-                                                      );
-
 }  // namespace mpl2
