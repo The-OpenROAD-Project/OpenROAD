@@ -90,6 +90,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool verbose,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
+                              const bool skip_buffering,
                               const bool skip_buffer_removal)
 {
   init();
@@ -137,11 +138,14 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   } else {
     // nothing to repair
     logger_->metric("design__instance__count__setup_buffer", 0);
+    logger_->info(RSZ, 98, "No setup violations found");
     return;
   }
 
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
+  float initial_tns = sta_->totalNegativeSlack(max_);
+  float prev_tns = initial_tns;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
@@ -151,9 +155,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkFanoutLimitPreamble();
 
   resizer_->incrementalParasiticsBegin();
-  int print_iteration = 0;
+  int opto_iteration = 0;
+  bool prev_termination = false;
+  bool two_cons_terminations = false;
   if (verbose) {
-    printProgress(print_iteration, false, false);
+    printProgress(opto_iteration, false, false);
   }
   for (const auto& end_original_slack : violating_ends) {
     Vertex* end = end_original_slack.first;
@@ -191,9 +197,25 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
     while (pass <= max_passes) {
-      print_iteration++;
+      opto_iteration++;
       if (verbose) {
-        printProgress(print_iteration, false, false);
+        printProgress(opto_iteration, false, false);
+      }
+      if (terminateProgress(opto_iteration,
+                            initial_tns,
+                            prev_tns,
+                            end_index,
+                            max_end_count)) {
+        if (prev_termination) {
+          // Abort entire fixing if no progress for 200 iterations
+          two_cons_terminations = true;
+        } else {
+          prev_termination = true;
+        }
+        break;
+      }
+      if (opto_iteration % opto_interval_ == 0) {
+        prev_termination = false;
       }
 
       if (end_slack > setup_slack_margin) {
@@ -222,6 +244,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                       end_slack,
                                       skip_pin_swap,
                                       skip_gate_cloning,
+                                      skip_buffering,
                                       skip_buffer_removal,
                                       setup_slack_margin);
       if (!changed) {
@@ -317,13 +340,20 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         end = worst_vertex;
       }
       pass++;
-    }
+    }  // while pass <= max_passes
     if (verbose) {
-      printProgress(print_iteration, true, false);
+      printProgress(opto_iteration, true, false);
     }
-  }
+    if (two_cons_terminations) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of setup fixing"
+                 "due to no TNS progress for two opto cycles");
+      // clang-format on
+      break;
+    }
+  }  // for each violating endpoint
   if (verbose) {
-    printProgress(print_iteration, true, true);
+    printProgress(opto_iteration, true, true);
   }
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
@@ -375,7 +405,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairPath(path, slack, false, false, false, 0.0);
+  repairPath(path, slack, false, false, false, false, 0.0);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -416,6 +446,7 @@ bool RepairSetup::repairPath(PathRef& path,
                              const Slack path_slack,
                              const bool skip_pin_swap,
                              const bool skip_gate_cloning,
+                             const bool skip_buffering,
                              const bool skip_buffer_removal,
                              const float setup_slack_margin)
 {
@@ -507,7 +538,8 @@ bool RepairSetup::repairPath(PathRef& path,
       // For tristate nets all we can do is resize the driver.
       const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
       dbNet* db_net = db_network_->staToDb(net);
-      if (fanout > 1
+      if (!skip_buffering
+          && fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_ && !tristate_drvr
           && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
@@ -537,14 +569,16 @@ bool RepairSetup::repairPath(PathRef& path,
         break;
       }
 
-      // Don't split loads on low fanout nets.
-      if (fanout > split_load_min_fanout_ && !tristate_drvr
-          && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-        const int init_buffer_count = inserted_buffer_count_;
-        splitLoads(drvr_path, drvr_index, path_slack, &expanded);
-        split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
-        changed = true;
-        break;
+      if (!skip_buffering) {
+        // Don't split loads on low fanout nets.
+        if (fanout > split_load_min_fanout_ && !tristate_drvr
+            && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
+          const int init_buffer_count = inserted_buffer_count_;
+          splitLoads(drvr_path, drvr_index, path_slack, &expanded);
+          split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
+          changed = true;
+          break;
+        }
       }
     }
   }
@@ -1586,6 +1620,33 @@ void RepairSetup::printProgress(const int iteration,
         "----------------------------------------------------------------------"
         "---------------------------");
   }
+}
+
+// Terminate progress if incremental fix rate within an opto interval falls
+// below the threshold of 0.01%
+bool RepairSetup::terminateProgress(const int iteration,
+                                    const float initial_tns,
+                                    float& prev_tns,
+                                    // for debug only
+                                    const int endpt_index,
+                                    const int num_endpts)
+{
+  if (iteration % opto_interval_ == 0) {
+    float curr_tns = sta_->totalNegativeSlack(max_);
+    float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
+    prev_tns = curr_tns;
+    if (iteration > 1000  // allow for some initial fixing for 1000 iterations
+        && inc_fix_rate < inc_fix_rate_threshold_) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at iter {}"
+                 " because incr fix rate {:0.2f}% is < {:0.2f}% [endpt {}/{}]",
+                 iteration, inc_fix_rate*100, inc_fix_rate_threshold_*100,
+                 endpt_index, num_endpts);
+      // clang-format on
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace rsz

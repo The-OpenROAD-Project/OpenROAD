@@ -116,6 +116,7 @@ class RepairSetup : public sta::dbStaState
                    bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
+                   bool skip_buffering,
                    bool skip_buffer_removal);
   // For testing.
   void repairSetup(const Pin* end_pin);
@@ -128,11 +129,12 @@ class RepairSetup : public sta::dbStaState
  private:
   void init();
   bool repairPath(PathRef& path,
-                  const Slack path_slack,
-                  const bool skip_pin_swap,
-                  const bool skip_gate_cloning,
-                  const bool skip_buffer_removal,
-                  const float setup_slack_margin);
+                  Slack path_slack,
+                  bool skip_pin_swap,
+                  bool skip_gate_cloning,
+                  bool skip_buffering,
+                  bool skip_buffer_removal,
+                  float setup_slack_margin);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -151,9 +153,9 @@ class RepairSetup : public sta::dbStaState
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   bool removeDrvr(PathRef* drvr_path,
                   LibertyCell* drvr_cell,
-                  const int drvr_index,
+                  int drvr_index,
                   PathExpanded* expanded,
-                  const float setup_slack_margin);
+                  float setup_slack_margin);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
@@ -187,6 +189,11 @@ class RepairSetup : public sta::dbStaState
   Slack slackPenalized(const BufferedNetPtr& bnet, int index);
 
   void printProgress(int iteration, bool force, bool end) const;
+  bool terminateProgress(int iteration,
+                         float initial_tns,
+                         float& prev_tns,
+                         int endpt_index,
+                         int num_endpts);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
@@ -215,7 +222,10 @@ class RepairSetup : public sta::dbStaState
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
+  static constexpr int opto_interval_ = 100;
   static constexpr int buffer_removal_max_fanout_ = 10;
+  static constexpr float inc_fix_rate_threshold_
+      = 0.0001;  // default fix rate threshold = 0.01%
 };
 
 }  // namespace rsz
