@@ -1,30 +1,41 @@
 name: Update Changelog
-on:
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-  # add this once to get workflow into record
-  push: 
 
-permissions:
-  pull-requests: write
-  contents: write
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ "master" ] # Temporarily to test
 
 jobs:
   updateChangeLog:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
       - name: Create Changelog file
         run: |
           git log --pretty=format:"%h%x09%an%x09%ad%x09%s" --date=short --since="2023-08-01" > NEWS.md
           cd .github/workflows && python changelog_report.py
+      
+      - name: Commit changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add NEWS.md
+          git commit -m "update changelog" --signoff
+      
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: update changelog
           title: Update Changelog
-          body: test
+          body: Automated changelog update
           branch: update-changelog
+          token: ${{ secrets.GITHUB_TOKEN }}
