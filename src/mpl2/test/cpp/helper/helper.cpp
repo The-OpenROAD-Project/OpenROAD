@@ -42,8 +42,8 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
 
 odb::dbMPin* createMPinWithMTerm(odb::dbMaster* master,
                                  const char* mterm_name,
-                                 const odb::dbIoType io_type,
-                                 const odb::dbSigType sig_type,
+                                 const odb::dbIoType& io_type,
+                                 const odb::dbSigType& sig_type,
                                  odb::dbTechLayer* layer,
                                  odb::Rect mpin_position)
 {
