@@ -180,9 +180,13 @@ TEST_F(Mpl2PusherTest, PushSimpleCluster)
 
   SoftMacro* soft_macro1 = new SoftMacro(child_cluster1);
   child_cluster1->setSoftMacro(soft_macro1);
+  child_cluster1->setX(0.1);
+  child_cluster1->setY(0.2);
 
   SoftMacro* soft_macro2 = new SoftMacro(child_cluster2);
   child_cluster2->setSoftMacro(soft_macro2);
+  child_cluster2->setX(0.5);
+  child_cluster2->setY(0.6);
   
   Cluster* root_cluster = new Cluster(0, std::string("root_cluster"), logger); 
   root_cluster->setClusterType(StdCellCluster);
@@ -193,9 +197,12 @@ TEST_F(Mpl2PusherTest, PushSimpleCluster)
   std::map<Boundary, Rect> boundary_to_io_blockage;
   Pusher pusher(logger, root_cluster, block, boundary_to_io_blockage);
 
-  // Should do nothing due to HardMacroCluster type
+  logger->report("macro1 initial: {} {}", macro1->getXDBU(), macro2->getYDBU());
+  logger->report("macro2 initial: {} {}", macro1->getXDBU(), macro2->getYDBU());
   pusher.pushMacrosToCoreBoundaries();
-  logger->report("{} {}", macro1->getXDBU(), macro1->getYDBU());
+  
+  logger->report("macro1 result: {} {}", macro1->getXDBU(), macro2->getYDBU());
+  logger->report("macro2 result: {} {}", macro1->getXDBU(), macro2->getYDBU());
 
   for (Cluster* child : root_cluster->getChildren()) {
     logger->report("{}", child->getSoftMacro()->getArea());
