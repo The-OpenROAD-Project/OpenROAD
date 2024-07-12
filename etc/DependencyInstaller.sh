@@ -513,10 +513,6 @@ EOF
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
-    # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b" ""
-    # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0" ""
     # Install swig 4.1.1
     _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
