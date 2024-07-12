@@ -37,19 +37,27 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
   master->setWidth(width);
   master->setHeight(height);
   master->setType(type);
-
-  odb::dbMTerm* mterm_i = odb::dbMTerm::create(
-      master, "in", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin_i = odb::dbMPin::create(mterm_i);
-  odb::dbBox::create(mpin_i, layer, 0, 0, 50, 50);
-
-  odb::dbMTerm* mterm_o = odb::dbMTerm::create(
-      master, "out", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin_o = odb::dbMPin::create(mterm_o);
-  odb::dbBox::create(mpin_o, layer, 100, 100, 150, 150);
-
-  master->setFrozen();
   return master;
+}
+
+odb::dbMPin* createMPinWithMTerm(odb::dbMaster* master,
+                                 const char* mterm_name,
+                                 odb::dbIoType io_type,
+                                 odb::dbSigType sig_type,
+                                 odb::dbTechLayer* layer,
+                                 odb::Rect mpin_position)
+{
+  odb::dbMTerm* mterm_
+      = odb::dbMTerm::create(master, mterm_name, io_type, sig_type);
+  odb::dbMPin* mpin_ = odb::dbMPin::create(mterm_);
+  odb::dbBox::create(mpin_,
+                     layer,
+                     mpin_position.xMin(),
+                     mpin_position.yMin(),
+                     mpin_position.xMax(),
+                     mpin_position.yMax());
+
+  return mpin_;
 }
 
 ///

@@ -50,6 +50,14 @@ TEST_F(Mpl2SnapperTest, CanSetMacroForEmptyInstances)
   odb::dbBlock* block = odb::dbBlock::create(db->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
+  createMPinWithMTerm(master,
+                      "in",
+                      odb::dbIoType::INPUT,
+                      odb::dbSigType::SIGNAL,
+                      db->getTech()->findLayer("L1"),
+                      odb::Rect(0, 0, 50, 50));
+  master->setFrozen();
+
   odb::dbInst* inst = odb::dbInst::create(block, master, "cells");
 
   Snapper snapper;
@@ -90,8 +98,7 @@ TEST_F(Mpl2SnapperTest, HorizontalSnap)
 
   createSimpleTrack(block, db->getTech()->findLayer("L1"), 0, 50, 20, 5);
 
-  db->getTech()->findLayer("L1")->setDirection(
-      odb::dbTechLayerDir::HORIZONTAL);
+  db->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::HORIZONTAL);
 
   odb::dbMaster* master = createSimpleMaster(db->findLib("lib"),
                                              "simple_master",
@@ -100,17 +107,21 @@ TEST_F(Mpl2SnapperTest, HorizontalSnap)
                                              odb::dbMasterType::BLOCK,
                                              db->getTech()->findLayer("L1"));
 
+  createMPinWithMTerm(master,
+                      "in",
+                      odb::dbIoType::INPUT,
+                      odb::dbSigType::SIGNAL,
+                      db->getTech()->findLayer("L1"),
+                      odb::Rect(0, 0, 50, 50));
+  master->setFrozen();
+
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
 
   Snapper snapper;
   snapper.setMacro(inst);
 
-  // Considering the grid pattern configuration (0 20 40 ... 980)
-  // manufacturing grid size (5), and direction preference (horizontal):
-  // Valid alignments for x would include 10 15 20 25 30 35 40 ...
-  // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
-  // Valid alignments for y would include 15 35 55 75 95 ...
-  // with 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
+  // x: 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
+  // y: 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
 
   inst->setOrigin(511, 540);
   snapper.snapMacro();
@@ -157,17 +168,21 @@ TEST_F(Mpl2SnapperTest, VerticalSnap)
                                              odb::dbMasterType::BLOCK,
                                              db->getTech()->findLayer("L1"));
 
+  createMPinWithMTerm(master,
+                      "in",
+                      odb::dbIoType::INPUT,
+                      odb::dbSigType::SIGNAL,
+                      db->getTech()->findLayer("L1"),
+                      odb::Rect(0, 0, 50, 50));
+  master->setFrozen();
+
   odb::dbInst* inst = odb::dbInst::create(block, master, "macro1");
 
   Snapper snapper;
   snapper.setMacro(inst);
 
-  // Considering the grid pattern configuration (0 20 40 ... 980)
-  // manufacturing grid size (5), and direction preference (horizontal):
-  // Valid alignments for x would include 15 35 55 75 95 ...
-  // with 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
-  // Valid alignments for y would include 10 15 20 25 30 35 40 ...
-  // with 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
+  // x: 40 to 59 snapping to 15, 60 to 79 mapping to 35, etc.
+  // y: 14 to 11 snapping to 10, 19 to 16 snapping to 15, etc.
 
   inst->setOrigin(540, 511);
   snapper.snapMacro();
@@ -207,8 +222,7 @@ TEST_F(Mpl2SnapperTest, SnapMacrosDouble)
   createSimpleTrack(block, db->getTech()->findLayer("L1"), 0, 50, 20, 5);
   createSimpleTrack(block, db->getTech()->findLayer("L2"), 0, 50, 20, 5);
 
-  db->getTech()->findLayer("L1")->setDirection(
-      odb::dbTechLayerDir::HORIZONTAL);
+  db->getTech()->findLayer("L1")->setDirection(odb::dbTechLayerDir::HORIZONTAL);
   db->getTech()->findLayer("L2")->setDirection(odb::dbTechLayerDir::VERTICAL);
 
   odb::dbMaster* master1 = createSimpleMaster(db->findLib("lib"),
@@ -224,6 +238,22 @@ TEST_F(Mpl2SnapperTest, SnapMacrosDouble)
                                               1000,
                                               odb::dbMasterType::BLOCK,
                                               db->getTech()->findLayer("L2"));
+
+  createMPinWithMTerm(master1,
+                      "in",
+                      odb::dbIoType::INPUT,
+                      odb::dbSigType::SIGNAL,
+                      db->getTech()->findLayer("L1"),
+                      odb::Rect(0, 0, 50, 50));
+  master1->setFrozen();
+
+  createMPinWithMTerm(master2,
+                      "out",
+                      odb::dbIoType::OUTPUT,
+                      odb::dbSigType::SIGNAL,
+                      db->getTech()->findLayer("L2"),
+                      odb::Rect(0, 0, 50, 50));
+  master2->setFrozen();
 
   odb::dbInst* inst1 = odb::dbInst::create(block, master1, "macro1");
   odb::dbInst* inst2 = odb::dbInst::create(block, master2, "macro2");

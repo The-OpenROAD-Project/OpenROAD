@@ -11,6 +11,13 @@ odb::dbMaster* createSimpleMaster(odb::dbLib* lib,
                                   const odb::dbMasterType& type,
                                   odb::dbTechLayer* layer);
 
+odb::dbMPin* createMPinWithMTerm(odb::dbMaster* master,
+                                 const char* mterm_name,
+                                 odb::dbIoType io_type,
+                                 odb::dbSigType sig_type,
+                                 odb::dbTechLayer* layer,
+                                 odb::Rect mpin_position);
+
 odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block,
                                     odb::dbTechLayer* layer,
                                     int origin,
