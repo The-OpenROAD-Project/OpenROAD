@@ -30,11 +30,12 @@ class Mpl2PusherTest : public ::testing::Test
   OdbUniquePtr<odb::dbBlock> block{nullptr, &odb::dbBlock::destroy};
 };
 
-TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
+TEST_F(Mpl2PusherTest, ConstructedCentralizedMacros)
 {
-  // Test whether a Cluster of type HardMacroCluster can be created
+  // Test whether a Cluster of type StdCellCluster can be created
   // and then used to construct a Pusher object. Run pushMacrosToCoreBoundaries
-  // and check that the XDBU, YDBU values remain the same.
+  // and check that the XDBU, YDBU values remain the same because Pusher detected
+  // it as a centralized macros array (no SoftMacro area).
 
   utl::Logger* logger = new utl::Logger();
   odb::dbDatabase* db = createSimpleDB();
@@ -59,34 +60,137 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   odb::dbBlock* block = odb::dbBlock::create(db->getChip(), "simple_block");
   block->setDieArea(odb::Rect(0, 0, 1000, 1000));
 
-  // Create cluster of type HardMacroCluster, and add 2 leaf macros
-  Cluster* cluster = new Cluster(0, std::string("hard_macro_cluster"), logger);
-  cluster->setClusterType(HardMacroCluster);
-  
-  odb::dbInst* inst1 = odb::dbInst::create(block, master, "leaf_macro1");
-  odb::dbInst* inst2 = odb::dbInst::create(block, master, "leaf_macro2");
+  Cluster* cluster = new Cluster(0, std::string("std_cell_cluster"), logger);
+  cluster->setClusterType(StdCellCluster);
+
+  odb::dbInst* inst1 = odb::dbInst::create(block, master, "std_cell_1");
+  odb::dbInst* inst2 = odb::dbInst::create(block, master, "std_cell_2");
+
+  cluster->addLeafStdCell(inst1);
+  cluster->addLeafStdCell(inst2);
+
+  std::vector<HardMacro*> hard_macros;
   HardMacro* macro1 = new HardMacro(inst1, 1, 1);
   HardMacro* macro2 = new HardMacro(inst2, 1, 1);
-  cluster->addLeafMacro(inst1);
-  cluster->addLeafMacro(inst2);
-
+  
   macro1->setXDBU(1000);
   macro1->setYDBU(1000);
   macro2->setXDBU(5000);
   macro2->setYDBU(5000);
   
-  // Construct Pusher object, indirectly run Pusher::SetIOBlockages
+  hard_macros.push_back(macro1);
+  hard_macros.push_back(macro2);
+  cluster->specifyHardMacros(hard_macros);
+
+  Metrics* metrics = new Metrics(0, 0, 0.0, 0.0);
+  metrics->addMetrics(
+      Metrics(1,
+              0,
+              block->dbuToMicrons(inst1->getBBox()->getBox().dx())
+                  * block->dbuToMicrons(inst1->getBBox()->getBox().dy()),
+              0.0));
+  metrics->addMetrics(
+      Metrics(1,
+              0,
+              block->dbuToMicrons(inst2->getBBox()->getBox().dx())
+                  * block->dbuToMicrons(inst2->getBBox()->getBox().dy()),
+              0.0));
+  cluster->setMetrics(Metrics(metrics->getNumStdCell(),
+                              metrics->getNumMacro(),
+                              metrics->getStdCellArea(),
+                              metrics->getMacroArea()));
+
   std::map<Boundary, Rect> boundary_to_io_blockage;
   Pusher pusher(logger, cluster, block, boundary_to_io_blockage);
 
-  // Should do nothing due to HardMacroCluster type
   pusher.pushMacrosToCoreBoundaries();
+
+  // criteria for bool designHasSingleCentralizedMacroArray
+  for (Cluster* child : cluster->getChildren()) {
+    EXPECT_TRUE(cluster->getSoftMacro()->getArea() == 0);
+  }
 
   EXPECT_TRUE(macro1->getXDBU() == 1000);
   EXPECT_TRUE(macro1->getYDBU() == 1000);
   EXPECT_TRUE(macro2->getXDBU() == 5000);
   EXPECT_TRUE(macro2->getYDBU() == 5000);
 
-}  // ConstructPusherHardMacro
+}  // ConstructedCentralizedMacros
+
+TEST_F(Mpl2PusherTest, PushTwoMacros)
+{
+
+  utl::Logger* logger = new utl::Logger();
+  odb::dbDatabase* db = createSimpleDB();
+  db->setLogger(logger);
+
+  odb::dbMaster* master = createSimpleMaster(db->findLib("lib"),
+                                              "simple_master",
+                                              1000,
+                                              1000,
+                                              odb::dbMasterType::CORE,
+                                              db->getTech()->findLayer("L1"));
+
+  createMPinWithMTerm(
+                      master, 
+                      "in", 
+                      odb::dbIoType::INPUT, 
+                      odb::dbSigType::SIGNAL, 
+                      db->getTech()->findLayer("L1"), 
+                      odb::Rect(0, 0, 50, 50));  
+  master->setFrozen();
+
+  odb::dbBlock* block = odb::dbBlock::create(db->getChip(), "simple_block");
+  block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+
+  Cluster* cluster = new Cluster(0, std::string("std_cell_cluster"), logger);
+  cluster->setClusterType(StdCellCluster);
+  std::vector<HardMacro*> hard_macros;
+  Metrics* metrics = new Metrics(0, 0, 0.0, 0.0);
+  
+  odb::dbInst* inst1 = odb::dbInst::create(block, master, "std_cell_1");
+  HardMacro* macro1 = new HardMacro(inst1, 1, 1);
+  
+  macro1->setXDBU(1000);
+  macro1->setYDBU(1000);
+  hard_macros.push_back(macro1);
+  cluster->addLeafStdCell(inst1);
+  metrics->addMetrics(
+      Metrics(1,
+              0,
+              block->dbuToMicrons(inst1->getBBox()->getBox().dx())
+                  * block->dbuToMicrons(inst1->getBBox()->getBox().dy()),
+              0.0));
+
+  odb::dbInst* inst2 = odb::dbInst::create(block, master, "std_cell_2");
+  HardMacro* macro2 = new HardMacro(inst2, 1, 1);
+  
+  macro2->setXDBU(5000);
+  macro2->setYDBU(5000);
+  hard_macros.push_back(macro2);
+  cluster->addLeafStdCell(inst2);
+  metrics->addMetrics(
+      Metrics(1,
+              0,
+              block->dbuToMicrons(inst2->getBBox()->getBox().dx())
+                  * block->dbuToMicrons(inst2->getBBox()->getBox().dy()),
+              0.0));
+  cluster->setMetrics(Metrics(metrics->getNumStdCell(),
+                              metrics->getNumMacro(),
+                              metrics->getStdCellArea(),
+                              metrics->getMacroArea()));
+
+  cluster->specifyHardMacros(hard_macros);
+  cluster->printBasicInformation(logger);
+
+  // Construct Pusher object, indirectly run Pusher::SetIOBlockages
+  std::map<Boundary, Rect> boundary_to_io_blockage;
+  Pusher pusher(logger, cluster, block, boundary_to_io_blockage);
+
+  // Should do nothing due to HardMacroCluster type
+  pusher.pushMacrosToCoreBoundaries();
+  logger->report("{} {} {} {}", macro1->getXDBU(), macro1->getYDBU(), macro2->getXDBU(), macro2->getYDBU());
+
+}  // PushTwoMacros
 
 }  // namespace mpl2
