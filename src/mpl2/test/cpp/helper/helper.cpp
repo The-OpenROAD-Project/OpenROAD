@@ -1,10 +1,8 @@
+#include "../../../src/hier_rtlmp.h"
 #include "helper.h"
-
+#include "mpl2/rtl_mp.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
-
-#include "../../../src/hier_rtlmp.h"
-#include "mpl2/rtl_mp.h"
 
 namespace mpl2 {
 
