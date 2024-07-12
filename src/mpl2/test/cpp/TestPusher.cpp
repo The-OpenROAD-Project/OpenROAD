@@ -62,38 +62,13 @@ TEST_F(Mpl2PusherTest, ConstructPusherHardMacro)
   // Create cluster of type HardMacroCluster, and add 2 leaf macros
   Cluster* cluster = new Cluster(0, std::string("hard_macro_cluster"), logger);
   cluster->setClusterType(HardMacroCluster);
-
-  Metrics* metrics = new Metrics(0, 0, 0.0, 0.0);
-  std::vector<HardMacro*> hard_macros;
   
   odb::dbInst* inst1 = odb::dbInst::create(block, master, "leaf_macro1");
-  HardMacro* macro1 = new HardMacro(inst1, 1, 1);
-  hard_macros.push_back(macro1);
-  cluster->addLeafMacro(inst1);
-  metrics->addMetrics(
-      Metrics(0,
-              1,
-              0.0,
-              block->dbuToMicrons(inst1->getBBox()->getBox().dx())
-                  * block->dbuToMicrons(inst1->getBBox()->getBox().dy())));
-
   odb::dbInst* inst2 = odb::dbInst::create(block, master, "leaf_macro2");
+  HardMacro* macro1 = new HardMacro(inst1, 1, 1);
   HardMacro* macro2 = new HardMacro(inst2, 1, 1);
-  hard_macros.push_back(macro2);
+  cluster->addLeafMacro(inst1);
   cluster->addLeafMacro(inst2);
-  metrics->addMetrics(
-      Metrics(0,
-              1,
-              0.0,
-              block->dbuToMicrons(inst2->getBBox()->getBox().dx())
-                  * block->dbuToMicrons(inst2->getBBox()->getBox().dy())));
-
-  cluster->setMetrics(Metrics(metrics->getNumStdCell(),
-                              metrics->getNumMacro(),
-                              metrics->getStdCellArea(),
-                              metrics->getMacroArea()));
-
-  cluster->specifyHardMacros(hard_macros);
 
   macro1->setXDBU(1000);
   macro1->setYDBU(1000);
