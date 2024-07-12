@@ -1,4 +1,6 @@
 #include "odb/db.h"
+#include "../../../src/hier_rtlmp.h"
+#include "mpl2/rtl_mp.h"
 
 namespace mpl2 {
 
@@ -24,5 +26,13 @@ odb::dbTrackGrid* createSimpleTrack(odb::dbBlock* block,
                                     int line_count,
                                     int step,
                                     int manufacturing_grid);
+
+std::map<HardMacro*, Metrics*> createMacroWithMetrics(odb::dbMaster* master,
+                                                      odb::dbBlock* block,
+                                                      const char* name,
+                                                      bool isHardMacro, // if false, SoftMacro
+                                                      float halo_width,
+                                                      float halo_height
+                                                      );
 
 }  // namespace mpl2
