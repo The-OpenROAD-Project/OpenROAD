@@ -66,6 +66,7 @@ using utl::RSZ;
 using sta::Edge;
 using sta::fuzzyEqual;
 using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
 using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
@@ -352,6 +353,13 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       break;
     }
   }  // for each violating endpoint
+
+  // do some last gasp setup fixing before we give up
+  OptoParams params(setup_slack_margin, verbose);
+  params.iteration = opto_iteration;
+  params.initial_tns = initial_tns;
+  repairSetupLastGasp(params);
+
   if (verbose) {
     printProgress(opto_iteration, true, true);
   }
@@ -1647,6 +1655,163 @@ bool RepairSetup::terminateProgress(const int iteration,
     }
   }
   return false;
+}
+
+// Perform some last fixing based on sizing only.
+// This is a greedy opto that does not degrade WNS or TNS.
+// TODO: add VT swap
+void RepairSetup::repairSetupLastGasp(const OptoParams& params)
+{
+  float curr_tns = sta_->totalNegativeSlack(max_);
+  if (curr_tns >= 0) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because TNS is {:0.2f}", curr_tns);
+    // clang-format on
+    return;
+  }
+
+  // Don't do anything unless there was some progress from previous fixing
+  if ((params.initial_tns - curr_tns) / params.initial_tns < 0.05) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because TNS was reduced by < 5% from previous fixing");
+    // clang-format on
+    return;
+  }
+
+  // Sort remaining failing endpoints
+  const VertexSet* endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : *endpoints) {
+    const Slack end_slack = sta_->vertexSlack(end, max_);
+    if (end_slack < params.setup_slack_margin) {
+      violating_ends.emplace_back(end, end_slack);
+    }
+  }
+  std::stable_sort(violating_ends.begin(),
+                   violating_ends.end(),
+                   [](const auto& end_slack1, const auto& end_slack2) {
+                     return end_slack1.second < end_slack2.second;
+                   });
+
+  int end_index = 0;
+  int max_end_count = violating_ends.size();
+  // clang-format off
+  debugPrint(logger_, RSZ, "repair_setup", 1, "{} violating endpoints remain",
+             max_end_count);
+  // clang-format on
+  swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
+  int opto_iteration = params.iteration;
+  if (params.verbose) {
+    printProgress(opto_iteration, false, false);
+  }
+
+  float prev_tns = curr_tns;
+  Slack curr_worst_slack = violating_ends[0].second;
+  Slack prev_worst_slack = curr_worst_slack;
+  bool prev_termination = false;
+  bool two_cons_terminations = false;
+
+  for (const auto& end_original_slack : violating_ends) {
+    Vertex* end = end_original_slack.first;
+    Slack end_slack = sta_->vertexSlack(end, max_);
+    Slack worst_slack;
+    Vertex* worst_vertex;
+    sta_->worstSlack(max_, worst_slack, worst_vertex);
+    end_index++;
+    if (end_index > max_end_count) {
+      break;
+    }
+    int pass = 1;
+    resizer_->journalBegin();
+    while (pass <= max_last_gasp_passes_) {
+      opto_iteration++;
+      if (terminateProgress(opto_iteration,
+                            params.initial_tns,
+                            prev_tns,
+                            end_index,
+                            max_end_count)) {
+        if (prev_termination) {
+          // Abort entire fixing if no progress for 200 iterations
+          two_cons_terminations = true;
+        } else {
+          prev_termination = true;
+        }
+        break;
+      }
+      if (opto_iteration % opto_interval_ == 0) {
+        prev_termination = false;
+      }
+      if (params.verbose) {
+        printProgress(opto_iteration, false, false);
+      }
+      if (end_slack > params.setup_slack_margin) {
+        break;
+      }
+      PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+      const bool changed = repairPath(end_path,
+                                      end_slack,
+                                      true /* skip_pin_swap */,
+                                      true /* skip_gate_cloning */,
+                                      true /* skip_buffering */,
+                                      true /* skip_buffer_removal */,
+                                      params.setup_slack_margin);
+
+      if (!changed) {
+        if (pass != 1) {
+          resizer_->journalRestore(
+              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->updateParasitics();
+          sta_->findRequireds();
+        }
+        break;
+      }
+      resizer_->updateParasitics();
+      sta_->findRequireds();
+      end_slack = sta_->vertexSlack(end, max_);
+      sta_->worstSlack(max_, curr_worst_slack, worst_vertex);
+      curr_tns = sta_->totalNegativeSlack(max_);
+
+      // Accept only moves that improve both WNS and TNS
+      if (fuzzyGreaterEqual(curr_worst_slack, prev_worst_slack)
+          && fuzzyGreaterEqual(curr_tns, prev_tns)) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "sizing move accepted for "
+                   "endpoint {} pass {} because WNS improved to {:0.3f} and "
+                   "TNS improved to {:0.3f}",
+                   end_index, pass, curr_worst_slack, curr_tns);
+        // clang-format on
+        prev_worst_slack = curr_worst_slack;
+        prev_tns = curr_tns;
+        resizer_->journalBegin();
+      } else {
+        resizer_->journalRestore(
+            resize_count_, inserted_buffer_count_, cloned_gate_count_);
+        resizer_->updateParasitics();
+        sta_->findRequireds();
+        break;
+      }
+
+      if (resizer_->overMaxArea()) {
+        break;
+      }
+      if (end_index == 1) {
+        end = worst_vertex;
+      }
+      pass++;
+    }  // while pass <= max_last_gasp_passes_
+    if (params.verbose) {
+      printProgress(opto_iteration, true, false);
+    }
+    if (two_cons_terminations) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of last gasp fixing"
+                 "due to no TNS progress for two opto cycles");
+      // clang-format on
+      break;
+    }
+  }  // for each violating endpoint
 }
 
 }  // namespace rsz

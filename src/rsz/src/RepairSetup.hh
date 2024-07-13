@@ -103,6 +103,20 @@ struct SlackEstimatorParams
     driver_cell = nullptr;
   }
 };
+struct OptoParams
+{
+  int iteration;
+  float initial_tns;
+  const float setup_slack_margin;
+  const bool verbose;
+
+  OptoParams(const float margin, const bool verbose)
+      : setup_slack_margin(margin), verbose(verbose)
+  {
+    iteration = 0;
+    initial_tns = 0.0;
+  }
+};
 
 class RepairSetup : public sta::dbStaState
 {
@@ -194,6 +208,7 @@ class RepairSetup : public sta::dbStaState
                          float& prev_tns,
                          int endpt_index,
                          int num_endpts);
+  void repairSetupLastGasp(const OptoParams& params);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
@@ -226,6 +241,7 @@ class RepairSetup : public sta::dbStaState
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
+  static constexpr int max_last_gasp_passes_ = 10;
 };
 
 }  // namespace rsz
