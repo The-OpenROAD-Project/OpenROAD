@@ -107,7 +107,8 @@ std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect,
 
 bool PowerCell::appliesToRow(odb::dbRow* row) const
 {
-  // needs to be string compare because site pointers can come from different libraries
+  // needs to be string compare because site pointers can come from different
+  // libraries
   return master_->getSite()->getName() == row->getSite()->getName();
 }
 
@@ -345,11 +346,10 @@ void GridSwitchedPower::build()
   }
 
   if (!found_row) {
-    grid_->getLogger()->error(
-      utl::PDN,
-      240,
-      "No rows found that match the power cell: {}.",
-      cell_->getMaster()->getName());
+    grid_->getLogger()->error(utl::PDN,
+                              240,
+                              "No rows found that match the power cell: {}.",
+                              cell_->getMaster()->getName());
   }
 
   updateControlNetwork();
