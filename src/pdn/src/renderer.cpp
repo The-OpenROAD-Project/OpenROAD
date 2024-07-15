@@ -55,6 +55,7 @@ const gui::Painter::Color PDNRenderer::repair_color_
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
   addDisplayControl(grid_obs_text_, false);
+  addDisplayControl(initial_obs_text_, false);
   addDisplayControl(obs_text_, false);
   addDisplayControl(vias_text_, true);
   addDisplayControl(followpins_text_, true);
@@ -70,9 +71,19 @@ PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 void PDNRenderer::update()
 {
   shapes_.clear();
+  initial_obstructions_.clear();
   grid_obstructions_.clear();
   vias_.clear();
   repair_.clear();
+
+  if (!pdn_->getDomains().empty()) {
+    auto* domain = pdn_->getDomains()[0];
+    ShapeVectorMap initial_shapes;
+    Grid::makeInitialObstructions(
+        domain->getBlock(), initial_shapes, {}, domain->getLogger());
+    initial_obstructions_
+        = Shape::convertVectorToObstructionTree(initial_shapes);
+  }
 
   ShapeVectorMap shapes;
   ShapeVectorMap obs;
@@ -130,6 +141,18 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   const int min_shape = 1.0 / painter.getPixelsPerDBU();
 
   const odb::Rect paint_rect = painter.getBounds();
+
+  if (checkDisplayControl(initial_obs_text_)) {
+    painter.setPen(gui::Painter::highlight, true);
+    painter.setBrush(gui::Painter::transparent);
+    auto& shapes = initial_obstructions_[layer];
+    for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
+         it != shapes.qend();
+         it++) {
+      const auto& shape = *it;
+      painter.drawRect(shape->getObstruction());
+    }
+  }
 
   if (checkDisplayControl(grid_obs_text_)) {
     painter.setPen(gui::Painter::highlight, true);

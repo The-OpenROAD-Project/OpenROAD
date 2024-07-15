@@ -1022,6 +1022,25 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
+
+  // fixed pins obs
+  for (auto* bterm : block->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isFixed()) {
+        continue;
+      }
+
+      for (auto* geom : bpin->getBoxes()) {
+        auto* layer = geom->getTechLayer();
+        auto shape
+            = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
+        shape->generateObstruction();
+        shape->setRect(shape->getRect());
+        obs[layer].push_back(shape);
+      }
+    }
+  }
+
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - end");
 }
 
