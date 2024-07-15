@@ -116,6 +116,8 @@ class Straps : public GridComponent
                   int y_start,
                   int x_end,
                   int y_end,
+                  int abs_start,
+                  int abs_end,
                   bool is_delta_x,
                   const TechLayer& layer,
                   const Shape::ObstructionTree& avoid);

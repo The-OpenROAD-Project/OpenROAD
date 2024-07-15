@@ -19,11 +19,12 @@ timeout(time: 2, unit: 'HOURS') {
             }
             stage('Run Static Code Coverage') {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                    env.COVERITY_TOKEN = credentials('COVERITY_TOKEN');
-                    sh label: 'Coverity', script: '''
-                        export PATH=/root/cov-latest/bin:$PATH;
-                        bash -ic "./etc/CodeCoverage.sh static";
+                    withCredentials([string(credentialsId: 'COVERITY_TOKEN', variable: 'TOKEN')]) {
+                        sh label: 'CodeCoverage Script', script: '''
+                            export PATH=/root/cov-latest/bin:$PATH
+                            ./etc/CodeCoverage.sh static ${TOKEN}
                         ''';
+                    }
                 }
                 archiveArtifacts artifacts: 'openroad.tgz';
             }

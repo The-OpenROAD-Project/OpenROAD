@@ -13,7 +13,6 @@ def global_placement(design, *,
     timing_driven=False,
     routability_driven=False,
     incremental=False,
-    force_cpu=False,
     skip_io=False,
     bin_grid_count=None,       # positive int, default 0
     density=None,              # 'uniform' or 0.0 < d < 1.0  default 0.7
@@ -45,8 +44,6 @@ def global_placement(design, *,
         gpl.setInitialPlaceMaxIter(0)
     elif is_pos_int(initial_place_max_iter):
         gpl.setInitialPlaceMaxIter(initial_place_max_iter)
-
-    gpl.setForceCPU(force_cpu)
 
     gpl.setSkipIoMode(skip_io)
     if skip_io:
