@@ -92,7 +92,7 @@ GlobalRouter::GlobalRouter()
       min_routing_layer_(1),
       max_routing_layer_(-1),
       layer_for_guide_dimension_(3),
-      gcells_offset_(2),
+      gcells_offset_(0),
       overflow_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
