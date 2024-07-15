@@ -216,7 +216,15 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int abs_min = die.xMin();
     const int abs_max = die.xMax();
 
-    makeStraps(x_start, core.yMin(), x_end, core.yMax(), abs_min, abs_max, false, layer, avoid);
+    makeStraps(x_start,
+               core.yMin(),
+               x_end,
+               core.yMax(),
+               abs_min,
+               abs_max,
+               false,
+               layer,
+               avoid);
   } else {
     const int y_start = boundary.yMin();
     const int y_end = boundary.yMax();
@@ -224,7 +232,15 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int abs_min = die.yMin();
     const int abs_max = die.yMax();
 
-    makeStraps(core.xMin(), y_start, core.xMax(), y_end, abs_min, abs_max, true, layer, avoid);
+    makeStraps(core.xMin(),
+               y_start,
+               core.xMax(),
+               y_end,
+               abs_min,
+               abs_max,
+               true,
+               layer,
+               avoid);
   }
   debugPrint(getLogger(),
              utl::PDN,
@@ -259,10 +275,13 @@ void Straps::makeStraps(int x_start,
              utl::PDN,
              "Straps",
              2,
-             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, {:.4f}) with an {}-offset of {:.4f}",
+             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
+             "{:.4f}) with an {}-offset of {:.4f}",
              layer_->getName(),
-             layer.dbuToMicron(x_start), layer.dbuToMicron(y_start),
-             layer.dbuToMicron(x_end), layer.dbuToMicron(y_end),
+             layer.dbuToMicron(x_start),
+             layer.dbuToMicron(y_start),
+             layer.dbuToMicron(x_end),
+             layer.dbuToMicron(y_end),
              is_delta_x ? "x" : "y",
              layer.dbuToMicron(offset_));
 
@@ -276,12 +295,15 @@ void Straps::makeStraps(int x_start,
       const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
       debugPrint(getLogger(),
-                utl::PDN,
-                "Straps",
-                3,
-                "Snapped from {:.4f} -> {:.4f} resulting in strap from {:.4f} to {:.4f}",
-                layer.dbuToMicron(org_group_pos), layer.dbuToMicron(group_pos),
-                layer.dbuToMicron(strap_start), layer.dbuToMicron(strap_end));
+                 utl::PDN,
+                 "Straps",
+                 3,
+                 "Snapped from {:.4f} -> {:.4f} resulting in strap from {:.4f} "
+                 "to {:.4f}",
+                 layer.dbuToMicron(org_group_pos),
+                 layer.dbuToMicron(group_pos),
+                 layer.dbuToMicron(strap_start),
+                 layer.dbuToMicron(strap_end));
 
       if (strap_start >= pos_end) {
         // no portion of the strap is inside the limit
