@@ -39,7 +39,6 @@ sta::define_cmd_args "global_placement" {\
     [-disable_timing_driven]\
     [-disable_routability_driven]\
     [-incremental]\
-    [-force_cpu]\
     [-skip_io]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
@@ -92,8 +91,7 @@ proc global_placement { args } {
       -disable_timing_driven \
       -disable_routability_driven \
       -skip_io \
-      -incremental\
-      -force_cpu}
+      -incremental}
 
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
@@ -104,8 +102,9 @@ proc global_placement { args } {
     gpl::set_initial_place_max_iter_cmd $initial_place_max_iter
   }
 
-  set force_cpu [info exists flags(-force_cpu)]
-  gpl::set_force_cpu $force_cpu
+  if { [info exists flags(-force_cpu)] } {
+    utl::warn "GPL" 152 "-force_cpu is deprecated."
+  }
 
   set skip_io [info exists flags(-skip_io)]
   gpl::set_skip_io_mode_cmd $skip_io
