@@ -85,16 +85,22 @@ struct VerticesMaps
 
 struct DataFlow
 {
-  // The register distance between two macros to
-  // them to be considered connected.
-  const int max_num_of_hops = 5;
+  // Macro Pins --> Registers
+  // Registers --> Macro Pins
+  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
+      macro_pins_and_regs;
 
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pin_to_regs;
+  // IO --> Register
+  // Register --> IO
+  // IO --> Macro Pin
+  // Macro Pin --> IO
   std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
-      io_to_regs;
+      io_and_regs;
+
+  // Macro Pin --> Macros
+  // Macros --> Macro Pin
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pin_to_macros;
+      macro_pins_and_macros;
 };
 
 struct PhysicalHierarchyMaps
@@ -259,8 +265,8 @@ class ClusteringEngine
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
 
-  Metrics* design_metrics_;
-  PhysicalHierarchy* tree_;
+  Metrics* design_metrics_{nullptr};
+  PhysicalHierarchy* tree_{nullptr};
 
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id
@@ -270,10 +276,14 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-
-  DataFlow data_flow;
-
   const float size_tolerance_ = 0.1;
+
+  // Variables for data flow
+  DataFlow data_connections_;
+
+  // The register distance between two macros for
+  // them to be considered connected when creating data flow.
+  const int max_num_of_hops_ = 5;
 };
 
 }  // namespace mpl2

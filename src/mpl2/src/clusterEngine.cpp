@@ -537,26 +537,26 @@ void ClusteringEngine::createDataFlow()
   for (auto [src, src_pin] : vertices_maps.id_to_bterm) {
     int idx = 0;
     std::vector<bool> visited(num_of_vertices, false);
-    std::vector<std::set<odb::dbInst*>> insts(data_flow.max_num_of_hops);
+    std::vector<std::set<odb::dbInst*>> insts(max_num_of_hops_);
     dataFlowDFSIOPin(
         src, idx, vertices_maps, hypergraph, insts, visited, false);
     dataFlowDFSIOPin(src, idx, vertices_maps, hypergraph, insts, visited, true);
 
-    data_flow.io_to_regs.emplace_back(src_pin, insts);
+    data_connections_.io_and_regs.emplace_back(src_pin, insts);
   }
 
   for (auto [src, src_pin] : vertices_maps.id_to_macro_pin) {
     int idx = 0;
     std::vector<bool> visited(num_of_vertices, false);
-    std::vector<std::set<odb::dbInst*>> std_cells(data_flow.max_num_of_hops);
-    std::vector<std::set<odb::dbInst*>> macros(data_flow.max_num_of_hops);
+    std::vector<std::set<odb::dbInst*>> std_cells(max_num_of_hops_);
+    std::vector<std::set<odb::dbInst*>> macros(max_num_of_hops_);
     dataFlowDFSMacroPin(
         src, idx, vertices_maps, hypergraph, std_cells, macros, visited, false);
     dataFlowDFSMacroPin(
         src, idx, vertices_maps, hypergraph, std_cells, macros, visited, true);
 
-    data_flow.macro_pin_to_regs.emplace_back(src_pin, std_cells);
-    data_flow.macro_pin_to_macros.emplace_back(src_pin, macros);
+    data_connections_.macro_pins_and_regs.emplace_back(src_pin, std_cells);
+    data_connections_.macro_pins_and_macros.emplace_back(src_pin, macros);
   }
 }
 
@@ -734,7 +734,7 @@ void ClusteringEngine::dataFlowDFSIOPin(
     idx++;
   }
 
-  if (idx >= data_flow.max_num_of_hops) {
+  if (idx >= max_num_of_hops_) {
     return;
   }
 
@@ -798,7 +798,7 @@ void ClusteringEngine::dataFlowDFSMacroPin(
     idx++;
   }
 
-  if (idx >= data_flow.max_num_of_hops) {
+  if (idx >= max_num_of_hops_) {
     return;
   }
 
@@ -841,7 +841,7 @@ void ClusteringEngine::dataFlowDFSMacroPin(
 void ClusteringEngine::updateDataFlow()
 {
   // bterm, macros or ffs
-  for (const auto& [bterm, insts] : data_flow.io_to_regs) {
+  for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
     if (tree_->maps.bterm_to_cluster_id.find(bterm)
         == tree_->maps.bterm_to_cluster_id.end()) {
       continue;
@@ -849,7 +849,7 @@ void ClusteringEngine::updateDataFlow()
 
     const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
 
-    for (int hops = 0; hops < data_flow.max_num_of_hops; hops++) {
+    for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
@@ -860,10 +860,10 @@ void ClusteringEngine::updateDataFlow()
   }
 
   // macros to ffs
-  for (const auto& [iterm, insts] : data_flow.macro_pin_to_regs) {
+  for (const auto& [iterm, insts] : data_connections_.macro_pins_and_regs) {
     const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
 
-    for (int hops = 0; hops < data_flow.max_num_of_hops; hops++) {
+    for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
@@ -874,10 +874,10 @@ void ClusteringEngine::updateDataFlow()
   }
 
   // macros to macros
-  for (const auto& [iterm, insts] : data_flow.macro_pin_to_macros) {
+  for (const auto& [iterm, insts] : data_connections_.macro_pins_and_macros) {
     const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
 
-    for (int hops = 0; hops < data_flow.max_num_of_hops; hops++) {
+    for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
       const float conn_weight = computeConnWeight(hops);
       for (auto& sink : sink_clusters) {
