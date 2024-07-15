@@ -1032,7 +1032,8 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
       for (auto* geom : bpin->getBoxes()) {
         auto* layer = geom->getTechLayer();
-        auto shape = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
+        auto shape
+            = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
         shape->generateObstruction();
         shape->setRect(shape->getRect());
         obs[layer].push_back(shape);

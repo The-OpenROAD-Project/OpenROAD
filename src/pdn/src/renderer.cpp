@@ -79,8 +79,10 @@ void PDNRenderer::update()
   if (!pdn_->getDomains().empty()) {
     auto* domain = pdn_->getDomains()[0];
     ShapeVectorMap initial_shapes;
-    Grid::makeInitialObstructions(domain->getBlock(), initial_shapes, {}, domain->getLogger());
-    initial_obstructions_ = Shape::convertVectorToObstructionTree(initial_shapes);
+    Grid::makeInitialObstructions(
+        domain->getBlock(), initial_shapes, {}, domain->getLogger());
+    initial_obstructions_
+        = Shape::convertVectorToObstructionTree(initial_shapes);
   }
 
   ShapeVectorMap shapes;
