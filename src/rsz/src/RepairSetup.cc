@@ -162,6 +162,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   if (verbose) {
     printProgress(opto_iteration, false, false);
   }
+  float fix_rate_threshold = inc_fix_rate_threshold_;
   for (const auto& end_original_slack : violating_ends) {
     Vertex* end = end_original_slack.first;
     Slack end_slack = sta_->vertexSlack(end, max_);
@@ -205,6 +206,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       if (terminateProgress(opto_iteration,
                             initial_tns,
                             prev_tns,
+                            fix_rate_threshold,
                             end_index,
                             max_end_count)) {
         if (prev_termination) {
@@ -215,7 +217,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         }
         break;
       }
-      if (opto_iteration % opto_interval_ == 0) {
+      if (opto_iteration % opto_small_interval_ == 0) {
         prev_termination = false;
       }
 
@@ -1631,24 +1633,28 @@ void RepairSetup::printProgress(const int iteration,
 }
 
 // Terminate progress if incremental fix rate within an opto interval falls
-// below the threshold of 0.01%
+// below the threshold.   Bump up the threshold after each large opto internval.
 bool RepairSetup::terminateProgress(const int iteration,
                                     const float initial_tns,
                                     float& prev_tns,
+                                    float& fix_rate_threshold,
                                     // for debug only
                                     const int endpt_index,
                                     const int num_endpts)
 {
-  if (iteration % opto_interval_ == 0) {
+  if (iteration % opto_large_interval_ == 0) {
+    fix_rate_threshold *= 2.0;
+  }
+  if (iteration % opto_small_interval_ == 0) {
     float curr_tns = sta_->totalNegativeSlack(max_);
     float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
     prev_tns = curr_tns;
     if (iteration > 1000  // allow for some initial fixing for 1000 iterations
-        && inc_fix_rate < inc_fix_rate_threshold_) {
+        && inc_fix_rate < fix_rate_threshold) {
       // clang-format off
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at iter {}"
                  " because incr fix rate {:0.2f}% is < {:0.2f}% [endpt {}/{}]",
-                 iteration, inc_fix_rate*100, inc_fix_rate_threshold_*100,
+                 iteration, inc_fix_rate*100, fix_rate_threshold*100,
                  endpt_index, num_endpts);
       // clang-format on
       return true;
@@ -1663,7 +1669,7 @@ bool RepairSetup::terminateProgress(const int iteration,
 void RepairSetup::repairSetupLastGasp(const OptoParams& params)
 {
   float curr_tns = sta_->totalNegativeSlack(max_);
-  if (curr_tns >= 0) {
+  if (fuzzyGreaterEqual(curr_tns, 0)) {
     // clang-format off
     debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
                "because TNS is {:0.2f}", curr_tns);
@@ -1697,6 +1703,13 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
 
   int end_index = 0;
   int max_end_count = violating_ends.size();
+  if (max_end_count == 0) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because there no violating endpoints");
+    // clang-format on
+    return;
+  }
   // clang-format off
   debugPrint(logger_, RSZ, "repair_setup", 1, "{} violating endpoints remain",
              max_end_count);
@@ -1712,6 +1725,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
   Slack prev_worst_slack = curr_worst_slack;
   bool prev_termination = false;
   bool two_cons_terminations = false;
+  float fix_rate_threshold = inc_fix_rate_threshold_;
 
   for (const auto& end_original_slack : violating_ends) {
     Vertex* end = end_original_slack.first;
@@ -1730,6 +1744,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
       if (terminateProgress(opto_iteration,
                             params.initial_tns,
                             prev_tns,
+                            fix_rate_threshold,
                             end_index,
                             max_end_count)) {
         if (prev_termination) {
@@ -1740,7 +1755,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
         }
         break;
       }
-      if (opto_iteration % opto_interval_ == 0) {
+      if (opto_iteration % opto_small_interval_ == 0) {
         prev_termination = false;
       }
       if (params.verbose) {

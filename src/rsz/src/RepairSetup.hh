@@ -206,6 +206,7 @@ class RepairSetup : public sta::dbStaState
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,
+                         float& fix_rate_threshold,
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params);
@@ -237,7 +238,8 @@ class RepairSetup : public sta::dbStaState
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
-  static constexpr int opto_interval_ = 100;
+  static constexpr int opto_small_interval_ = 100;
+  static constexpr int opto_large_interval_ = 1000;
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
