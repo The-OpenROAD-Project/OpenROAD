@@ -1633,7 +1633,7 @@ void RepairSetup::printProgress(const int iteration,
 }
 
 // Terminate progress if incremental fix rate within an opto interval falls
-// below the threshold.   Bump up the threshold after each large opto internval.
+// below the threshold.   Bump up the threshold after each large opto interval.
 bool RepairSetup::terminateProgress(const int iteration,
                                     const float initial_tns,
                                     float& prev_tns,
@@ -1706,7 +1706,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
   if (max_end_count == 0) {
     // clang-format off
     debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
-               "because there no violating endpoints");
+               "because there are no violating endpoints");
     // clang-format on
     return;
   }
