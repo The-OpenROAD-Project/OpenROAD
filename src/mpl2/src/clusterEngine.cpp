@@ -686,7 +686,15 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
       if (master->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else {
-        vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
+        odb::dbIntProperty* int_prop = odb::dbIntProperty::find(inst, "vertex_id");
+
+        // Std cells without liberty data are not marked as vertices
+        if (int_prop) {
+          vertex_id = int_prop->getValue();
+        } else {
+          ignore = true;
+          break;
+        }
       }
 
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
