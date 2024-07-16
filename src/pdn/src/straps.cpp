@@ -213,8 +213,8 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int x_start = boundary.xMin();
     const int x_end = boundary.xMax();
 
-    const int abs_min = die.xMin();
-    const int abs_max = die.xMax();
+    const int abs_min = die.yMin();
+    const int abs_max = die.yMax();
 
     makeStraps(x_start,
                core.yMin(),
@@ -229,8 +229,8 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int y_start = boundary.yMin();
     const int y_end = boundary.yMax();
 
-    const int abs_min = die.yMin();
-    const int abs_max = die.yMax();
+    const int abs_min = die.xMin();
+    const int abs_max = die.xMax();
 
     makeStraps(core.xMin(),
                y_start,
@@ -276,14 +276,17 @@ void Straps::makeStraps(int x_start,
              "Straps",
              2,
              "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
-             "{:.4f}) with an {}-offset of {:.4f}",
+             "{:.4f}) with an {}-offset of {:.4f} and must be within {:.4f} "
+             "and {:.4f}",
              layer_->getName(),
              layer.dbuToMicron(x_start),
              layer.dbuToMicron(y_start),
              layer.dbuToMicron(x_end),
              layer.dbuToMicron(y_end),
              is_delta_x ? "x" : "y",
-             layer.dbuToMicron(offset_));
+             layer.dbuToMicron(offset_),
+             layer.dbuToMicron(abs_start),
+             layer.dbuToMicron(abs_end));
 
   int next_minimum_track = std::numeric_limits<int>::lowest();
   for (pos += offset_; pos <= pos_end; pos += pitch_) {
