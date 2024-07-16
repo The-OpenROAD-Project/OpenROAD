@@ -127,6 +127,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Arrival:
       case LogicDelay:
       case LogicDepth:
+      case Fanout:
       case Slack:
       case Skew:
         return Qt::AlignRight;
@@ -149,6 +150,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getLogicDelay(), time_units);
       case LogicDepth:
         return timing_path->getLogicDepth();
+      case Fanout:
+        return timing_path->getFanout();
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -162,9 +165,36 @@ QVariant TimingPathsModel::headerData(int section,
                                       Qt::Orientation orientation,
                                       int role) const
 {
-  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    return getColumnNames().at(static_cast<Column>(section));
+  Column column = static_cast<Column>(section);
+
+  if (role == Qt::ToolTipRole) {
+    switch (column) {
+      case Clock:
+      case Required:
+      case Arrival:
+      case Slack:
+      case Fanout:
+      case Start:
+      case End:
+        // return empty string so that the tooltip goes away
+        // when switching from a header item that has a tooltip
+        // to a header item that doesn't.
+        return "";
+      case Skew:
+        return "Path clock skew (crpr corrected)";
+      case LogicDelay:
+        return "Path delay from instances (excluding buffers and consecutive "
+               "inverter pairs)";
+      case LogicDepth:
+        return "Path instances (excluding buffers and consecutive inverter "
+               "pairs)";
+    }
   }
+
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    return getColumnNames().at(column);
+  }
+
   return QVariant();
 }
 
@@ -214,6 +244,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getLogicDepth() < path2->getLogicDepth();
+    };
+  } else if (col_index == Fanout) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getFanout() < path2->getFanout();
     };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
@@ -717,7 +752,9 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   auto* network = sta_->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm != nullptr) {
     if (iterm->getSigType().isSupply()) {
       return true;
@@ -1077,7 +1114,9 @@ void PinSetWidget::showMenu(const QPoint& point)
     auto* gui = Gui::get();
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm, modbterm);
     if (iterm != nullptr) {
       emit inspect(gui->makeSelected(iterm));
     } else {

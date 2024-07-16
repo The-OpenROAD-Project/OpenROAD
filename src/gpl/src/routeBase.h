@@ -130,7 +130,7 @@ class TileGrid
 
   const std::vector<Tile*>& tiles() const;
 
-  void initTiles();
+  void initTiles(bool use_rudy);
 
  private:
   // for traversing layer info!
@@ -151,10 +151,11 @@ class TileGrid
 class RouteBaseVars
 {
  public:
+  bool useRudy;
+  float targetRC;
   float inflationRatioCoef;
   float maxInflationRatio;
   float maxDensity;
-  float targetRC;
   float ignoreEdgeRatio;
   float minInflationRatio;
 
@@ -180,10 +181,14 @@ class RouteBase
             utl::Logger* log);
   ~RouteBase();
 
-  // update Route and Est info
-  // from GlobalRouter
-  void updateRoute();
-  void getGlobalRouterResult();
+  // Functions using fastroute on grt are saved as backup.
+  void updateGrtRoute();
+  void getGrtResult();
+  float getGrtRC() const;
+
+  void updateRudyRoute();
+  void getRudyResult();
+  float getRudyRC() const;
 
   // first: is Routability Need
   // second: reverting procedure need in NesterovPlace
@@ -194,8 +199,6 @@ class RouteBase
   int numCall() const;
   int bloatIterCnt() const;
   int inflationIterCnt() const;
-
-  float getRC() const;
 
   void revertGCellSizeToMinRc();
 

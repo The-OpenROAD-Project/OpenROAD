@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2024, Myrtle Shah
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,70 +29,15 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-// Generator Code Begin Cpp
-#include "dbModInstModITermItr.h"
+#include "ScanArchitect.hh"
+#include "utl/Logger.h"
 
-#include "dbModITerm.h"
-#include "dbTable.h"
+namespace dft {
 
-namespace odb {
+// Order scan cells to reduce wirelength
+void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+                            utl::Logger* logger);
 
-////////////////////////////////////////////////////////////////////
-//
-// dbModInstModITermItr - Methods
-//
-////////////////////////////////////////////////////////////////////
-
-bool dbModInstModITermItr::reversible()
-{
-  return true;
-}
-
-bool dbModInstModITermItr::orderReversed()
-{
-  return true;
-}
-
-void dbModInstModITermItr::reverse(dbObject* parent)
-{
-}
-
-uint dbModInstModITermItr::sequential()
-{
-  return 0;
-}
-
-uint dbModInstModITermItr::size(dbObject* parent)
-{
-  uint id;
-  uint cnt = 0;
-
-  for (id = dbModInstModITermItr::begin(parent);
-       id != dbModInstModITermItr::end(parent);
-       id = dbModInstModITermItr::next(id)) {
-    ++cnt;
-  }
-
-  return cnt;
-}
-
-uint dbModInstModITermItr::begin(dbObject* parent)
-{
-}
-
-uint dbModInstModITermItr::end(dbObject* /* unused: parent */)
-{
-  return 0;
-}
-
-uint dbModInstModITermItr::next(uint id, ...)
-{
-}
-
-dbObject* dbModInstModITermItr::getObject(uint id, ...)
-{
-  return _moditerm_tbl->getPtr(id);
-}
-}  // namespace odb
-   // Generator Code End Cpp
+}  // namespace dft

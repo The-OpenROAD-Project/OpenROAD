@@ -4,5 +4,5 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [WARNING STA-0366] port 'qq' not found.
-[ERROR PPL-0061] Pins for set_io_pin_constraint command were not found.
+[ERROR PPL-0061] Pins {qq} for set_io_pin_constraint command were not found.
 PPL-0061

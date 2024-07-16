@@ -63,6 +63,7 @@ class PDNRenderer : public gui::Renderer
   PdnGen* pdn_;
   Shape::ShapeTreeMap shapes_;
   Shape::ObstructionTreeMap grid_obstructions_;
+  Shape::ObstructionTreeMap initial_obstructions_;
   Via::ViaTree vias_;
   struct RepairChannel
   {
@@ -81,6 +82,7 @@ class PDNRenderer : public gui::Renderer
   static const gui::Painter::Color repair_color_;
 
   static constexpr const char* grid_obs_text_ = "Grid obstructions";
+  static constexpr const char* initial_obs_text_ = "Initial obstructions";
   static constexpr const char* obs_text_ = "Obstructions";
   static constexpr const char* rings_text_ = "Rings";
   static constexpr const char* straps_text_ = "Straps";

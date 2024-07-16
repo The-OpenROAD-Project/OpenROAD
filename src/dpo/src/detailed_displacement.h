@@ -83,15 +83,15 @@ class DetailedDisplacement : public DetailedObjective
  private:
   Architecture* arch_;
 
-  DetailedMgr* mgrPtr_;
-  DetailedOrient* orientPtr_;
+  DetailedMgr* mgrPtr_ = nullptr;
+  DetailedOrient* orientPtr_ = nullptr;
 
   // Other.
   double singleRowHeight_;
   std::vector<double> tot_;
   std::vector<double> del_;
   std::vector<int> count_;
-  int nSets_;
+  int nSets_ = 0;
 };
 
 }  // namespace dpo

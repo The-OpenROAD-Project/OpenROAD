@@ -91,21 +91,7 @@ struct DetailedMis::Bucket
 DetailedMis::DetailedMis(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : mgrPtr_(nullptr),
-      arch_(arch),
-      network_(network),
-      rt_(rt),
-      dimW_(0),
-      dimH_(0),
-      stepX_(0.0),
-      stepY_(0.0),
-      skipEdgesLargerThanThis_(100),
-      maxProblemSize_(25),
-      traversal_(0),
-      useSameSize_(true),
-      useSameColor_(true),
-      maxTimesUsed_(2),
-      obj_(DetailedMis::Hpwl)
+    : arch_(arch), network_(network), rt_(rt)
 {
 }
 
@@ -125,11 +111,8 @@ void DetailedMis::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
-    args.push_back(*it);
+  for (const auto& token : tokens) {
+    args.push_back(token);
   }
   run(mgrPtr, args);
 }
@@ -247,8 +230,7 @@ void DetailedMis::place()
   // keep track of how many problems a candidate cell has been involved in;
   // if it has been involved is >= a certain number of problems, it has "had
   // some chance" to be moved, so skip it.
-  Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
+  mgrPtr_->shuffle(candidates_);
   for (Node* ndi : candidates_) {  // Pick a candidate as a seed.
     // Skip seed if it has been used already.
     if (timesUsed_[ndi->getId()] >= maxTimesUsed_) {
@@ -333,7 +315,6 @@ void DetailedMis::colorCells()
   }
 
   // The actual coloring.
-  gr.removeDuplicates();
   gr.greedyColoring();
 
   std::vector<int> hist;
@@ -341,7 +322,7 @@ void DetailedMis::colorCells()
     const Node* ndi = network_->getNode(i);
 
     const int color = gr.getColor(i);
-    if (color < 0 || color >= gr.getNColors()) {
+    if (color < 0 || color >= gr.getNumColors()) {
       mgrPtr_->internalError("Unable to color cells during matching");
     }
     if (movable_[ndi->getId()]) {
@@ -437,11 +418,11 @@ void DetailedMis::clearGrid()
 // Clear out any old grid.  The dimensions of the grid are also stored in the
 // class...
 {
-  for (size_t i = 0; i < grid_.size(); i++) {
-    for (size_t j = 0; j < grid_[i].size(); j++) {
-      delete grid_[i][j];
+  for (auto& row : grid_) {
+    for (auto bucket : row) {
+      delete bucket;
     }
-    grid_[i].clear();
+    row.clear();
   }
   grid_.clear();
 }

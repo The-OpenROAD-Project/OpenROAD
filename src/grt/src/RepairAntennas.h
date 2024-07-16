@@ -92,9 +92,11 @@ class RepairAntennas
                  utl::Logger* logger);
 
   bool checkAntennaViolations(NetRouteMap& routing,
+                              const std::vector<odb::dbNet*>& nets_to_repair,
                               int max_routing_layer,
                               odb::dbMTerm* diode_mterm,
-                              float ratio_margin);
+                              float ratio_margin,
+                              int num_threads);
   void checkNetViolations(odb::dbNet* db_net,
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
@@ -111,8 +113,10 @@ class RepairAntennas
   }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
-  void makeNetWires(NetRouteMap& routing, int max_routing_layer);
-  void destroyNetWires();
+  void makeNetWires(NetRouteMap& routing,
+                    const std::vector<odb::dbNet*>& nets_to_repair,
+                    int max_routing_layer);
+  void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
   odb::dbMTerm* findDiodeMTerm();
   double diffArea(odb::dbMTerm* mterm);
 

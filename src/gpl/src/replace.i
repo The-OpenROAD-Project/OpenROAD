@@ -147,13 +147,6 @@ replace_incremental_place_cmd()
 }
 
 
-void
-set_force_cpu(bool force_cpu)
-{
-  Replace* replace = getReplace();
-  replace->setForceCPU(force_cpu);
-}
-
 void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();
@@ -166,6 +159,13 @@ set_routability_driven_mode(bool routability_driven)
 {
   Replace* replace = getReplace();
   replace->setRoutabilityDrivenMode(routability_driven);
+}
+
+void
+  set_routability_use_grt(bool use_grt)
+{
+  Replace* replace = getReplace();
+  replace->setRoutabilityUseGrt(use_grt);
 }
 
 void

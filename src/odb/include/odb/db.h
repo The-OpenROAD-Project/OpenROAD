@@ -347,6 +347,12 @@ class dbDatabase : public dbObject
   dbMaster* findMaster(const char* name);
 
   ///
+  /// This function is used to delete unused master-cells.
+  /// Returns the number of unused master-cells that have been deleted.
+  ///
+  int removeUnusedMasters();
+
+  ///
   /// Get the chip of this database.
   /// Returns nullptr if no chip has been created.
   ///
@@ -1880,6 +1886,16 @@ class dbBTerm : public dbObject
 
   uint32_t staVertexId();
   void staSetVertexId(uint32_t id);
+
+  ///
+  /// Set the region where the BTerm is constrained
+  ///
+  void setConstraintRegion(const Rect& constraint_region);
+
+  ///
+  /// Get the region where the BTerm is constrained
+  ///
+  std::optional<Rect> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2798,8 +2814,8 @@ class dbInst : public dbObject
   ///
   /// There are seven methods used to get/set the placement.
   ///
-  ///     getOrigin           - Get the origin of this instance (Where the
-  ///     master is setOrigin           - Set the origin of this instance
+  ///     getOrigin           - Get the origin of this instance
+  ///     setOrigin           - Set the origin of this instance
   ///     getOrient           - Get orient of this instance
   ///     setOrient           - Set orient of this instance
   ///     getLocation         - Get the lower-left corner of this instance
@@ -3869,18 +3885,6 @@ class dbWire : public dbObject
   /// Destroy a wire.
   ///
   static void destroy(dbWire* wire);
-
-  ///
-  /// get raw data of _dbWire
-  ///
-  void getRawWireData(std::vector<int>& data,
-                      std::vector<unsigned char>& op_codes);
-
-  ////
-  /// set raw data of _dbWire
-  ///
-  void setRawWireData(const std::vector<int>& data,
-                      const std::vector<unsigned char>& op_codes);
 
  private:
   void addOneSeg(unsigned char op,
@@ -7727,8 +7731,8 @@ class dbPowerDomain : public dbObject
   std::vector<dbIsolation*> getIsolations();
   std::vector<dbLevelShifter*> getLevelShifters();
 
-  bool setArea(float x1, float y1, float x2, float y2);
-  bool getArea(int& x1, int& y1, int& x2, int& y2);
+  void setArea(const Rect& area);
+  bool getArea(Rect& area);
 
   // User Code End dbPowerDomain
 };

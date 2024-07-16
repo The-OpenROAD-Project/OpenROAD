@@ -2236,7 +2236,7 @@ bool lefin::readLefInner(const char* lef_file)
         _logger->error(utl::ODB,
                        246,
                        "unknown incomplete layer prop of type {}",
-                       obj->getObjName());
+                       obj->getTypeName());
         break;
     }
   }
@@ -2286,12 +2286,7 @@ dbTech* lefin::createTech(const char* name, const char* lef_file)
   _tech = dbTech::create(_db, name, _dbu_per_micron);
   _create_tech = true;
 
-  if (!readLef(lef_file)) {
-    dbTech::destroy(_tech);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
+  if (!readLef(lef_file) || _errors != 0) {
     dbTech::destroy(_tech);
     _logger->error(
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
@@ -2321,15 +2316,10 @@ dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
   _lib_name = name;
   _create_lib = true;
 
-  if (!readLef(lef_file)) {
-    if (_lib)
+  if (!readLef(lef_file) || _errors != 0) {
+    if (_lib) {
       dbLib::destroy(_lib);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
-    if (_lib)
-      dbLib::destroy(_lib);
+    }
     _logger->error(
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
@@ -2362,16 +2352,10 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
   _create_lib = true;
   _create_tech = true;
 
-  if (!readLef(lef_file)) {
-    if (_lib)
+  if (!readLef(lef_file) || _errors != 0) {
+    if (_lib) {
       dbLib::destroy(_lib);
-    dbTech::destroy(_tech);
-    return nullptr;
-  }
-
-  if (_errors != 0) {
-    if (_lib)
-      dbLib::destroy(_lib);
+    }
     dbTech::destroy(_tech);
     _logger->error(
         utl::ODB, 289, "LEF data from {} is discarded due to errors", lef_file);

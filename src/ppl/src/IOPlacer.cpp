@@ -203,7 +203,7 @@ void IOPlacer::randomPlacement()
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.pin_indices, valid_slots, false, true);
+    randomPlacement(io_group.pin_indices, std::move(valid_slots), false, true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -2066,11 +2066,13 @@ void IOPlacer::run(bool random_mode)
     // add groups to fallback
     for (const auto& io_group : netlist_io_pins_->getIOGroups()) {
       if (io_group.pin_indices.size() > slots_per_section_) {
-        logger_->warn(PPL,
-                      92,
-                      "Pin group of size {} does not fit any section. Adding "
-                      "to fallback mode.",
-                      io_group.pin_indices.size());
+        debugPrint(logger_,
+                   utl::PPL,
+                   "pin_groups",
+                   1,
+                   "Pin group of size {} does not fit any section. Adding "
+                   "to fallback mode.",
+                   io_group.pin_indices.size());
         addGroupToFallback(io_group.pin_indices, io_group.order);
       }
     }
@@ -2800,11 +2802,73 @@ void IOPlacer::initNetlist()
   }
 }
 
+void IOPlacer::findConstraintRegion(const Interval& interval,
+                                    const Rect& constraint_box,
+                                    Rect& region)
+{
+  const Rect& die_bounds = core_->getBoundary();
+  if (interval.getEdge() == Edge::bottom) {
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMin(),
+                  interval.getEnd(),
+                  die_bounds.yMin());
+  } else if (interval.getEdge() == Edge::top) {
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMax(),
+                  interval.getEnd(),
+                  die_bounds.yMax());
+  } else if (interval.getEdge() == Edge::left) {
+    region = Rect(die_bounds.xMin(),
+                  interval.getBegin(),
+                  die_bounds.xMin(),
+                  interval.getEnd());
+  } else if (interval.getEdge() == Edge::right) {
+    region = Rect(die_bounds.xMax(),
+                  interval.getBegin(),
+                  die_bounds.xMax(),
+                  interval.getEnd());
+  } else {
+    region = constraint_box;
+  }
+}
+
+void IOPlacer::commitConstraintsToDB()
+{
+  for (Constraint& constraint : constraints_) {
+    for (odb::dbBTerm* bterm : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      Rect constraint_region;
+      const Interval& interval = constraint.interval;
+      findConstraintRegion(interval, constraint.box, constraint_region);
+      bterm->setConstraintRegion(constraint_region);
+
+      if (io_pin.isMirrored()) {
+        IOPin& mirrored_pin
+            = netlist_io_pins_->getIoPin(io_pin.getMirrorPinIdx());
+        odb::dbBTerm* mirrored_bterm
+            = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+        Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+        Rect mirrored_constraint_region;
+        Interval mirrored_interval(mirrored_edge,
+                                   interval.getBegin(),
+                                   interval.getEnd(),
+                                   interval.getLayer());
+        findConstraintRegion(
+            mirrored_interval, constraint.box, mirrored_constraint_region);
+        mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
+      }
+    }
+  }
+}
+
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   for (const IOPin& pin : assignment) {
     commitIOPinToDB(pin);
   }
+
+  commitConstraintsToDB();
 }
 
 void IOPlacer::commitIOPinToDB(const IOPin& pin)
