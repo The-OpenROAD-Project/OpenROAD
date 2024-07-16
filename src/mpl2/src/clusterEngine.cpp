@@ -572,7 +572,6 @@ void ClusteringEngine::createDataFlow()
 // Here we assume that there are std cells in the design!
 bool ClusteringEngine::stdCellsHaveLiberty()
 {
-  int valid_lib_cell_count = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
     if (isIgnoredMaster(master) || master->isBlock()) {
@@ -581,15 +580,11 @@ bool ClusteringEngine::stdCellsHaveLiberty()
 
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
     if (liberty_cell) {
-      ++valid_lib_cell_count;
+      return true;
     }
   }
 
-  if (valid_lib_cell_count == 0) {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 VerticesMaps ClusteringEngine::computeVertices()
