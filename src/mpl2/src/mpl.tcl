@@ -61,6 +61,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
                                           -bus_planning \
+                                          -auto_cluster_only \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                         }
@@ -76,7 +77,7 @@ proc rtl_macro_placer { args } {
          -target_dead_space -min_ar -snap_layer \
          -report_directory \
          -write_macro_placement } \
-    flags {-bus_planning}
+    flags {-bus_planning -auto_cluster_only}
   #
   # Check for valid design
   if {  [ord::get_db_block] == "NULL" } {
@@ -244,6 +245,7 @@ proc rtl_macro_placer { args } {
                                    $min_ar \
                                    $snap_layer \
                                    [info exists flags(-bus_planning)] \
+                                   [info exists flags(-auto_cluster_only)] \
                                    $report_directory \
                                    ]} {
 
