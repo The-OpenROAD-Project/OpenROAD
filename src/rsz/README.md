@@ -296,7 +296,7 @@ repair_timing
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default value is `False`, and the allowed values are bools. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default value is `False`, and the allowed values are bools. |
-| `-skip_buffergin` | Flag to skip rebuffering and load splitting. The default value is `False`, and the allowed values are bools. |
+| `-skip_buffering` | Flag to skip rebuffering and load splitting. The default value is `False`, and the allowed values are bools. |
 | `-enable_buffer_removal` | Flag to enable buffer removal during setup fixing. The default value is `False`, and the allowed values are bools. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
