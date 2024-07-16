@@ -527,6 +527,13 @@ void ClusteringEngine::mapIOPads()
 // Here we model each std cell instance, IO pin and macro pin as vertices.
 void ClusteringEngine::createDataFlow()
 {
+  if (!stdCellsHaveLiberty()) {
+    logger_->warn(
+        MPL, 14, "No Liberty data found. Continuing without dataflow.");
+    data_connections_.is_empty = true;
+    return;
+  }
+
   // Create vertices IDs.
   const VerticesMaps vertices_maps = computeVertices();
   const int num_of_vertices = static_cast<int>(vertices_maps.stoppers.size());
@@ -558,6 +565,28 @@ void ClusteringEngine::createDataFlow()
     data_connections_.macro_pins_and_regs.emplace_back(src_pin, std_cells);
     data_connections_.macro_pins_and_macros.emplace_back(src_pin, macros);
   }
+}
+
+bool ClusteringEngine::stdCellsHaveLiberty()
+{
+  int valid_lib_cell_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (liberty_cell) {
+      ++valid_lib_cell_count;
+    }
+  }
+
+  if (valid_lib_cell_count == 0) {
+    return false;
+  }
+
+  return true;
 }
 
 VerticesMaps ClusteringEngine::computeVertices()
@@ -840,6 +869,10 @@ void ClusteringEngine::dataFlowDFSMacroPin(
 
 void ClusteringEngine::updateDataFlow()
 {
+  if (data_connections_.is_empty) {
+    return;
+  }
+
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
     if (tree_->maps.bterm_to_cluster_id.find(bterm)
