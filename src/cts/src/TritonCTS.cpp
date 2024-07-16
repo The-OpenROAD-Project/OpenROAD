@@ -1964,7 +1964,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
   }
 }
 
-float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet)
+float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
 {
   sta::VertexPathIterator path_iter(sinVertex, openSta_);
   float clkPathArrival = 0.0;
@@ -2008,13 +2008,17 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet)
       if (path_start_net == topNet) {
         clkPathArrival = path->arrival(openSta_);
         paths_accepted += 1;
+      } else{
+        logger_->report("Path start net regected: {}",path_start_net->getName());
       }
     }
   }
   if (paths_accepted > 1 || paths_accepted == 0) {
+    
     logger_->error(CTS,
                    2,
-                   "Number of clock paths is not 1. Number of clock paths: {}",
+                   "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
+                   iterm->getName(),
                    paths_accepted);
   }
   return clkPathArrival;
@@ -2028,7 +2032,7 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
   openSta_->ensureClkArrivals();
   Clock clock = builder->getClock();
   odb::dbNet* topClockNet = clock.getNetObj();
-  if (builder->getTreeType() == TreeType::RegisterTree) {
+  if (builder->getTopInputNet() != nullptr) {
     topClockNet = builder->getTopInputNet();
   }
   // compute average input arrival at all sinks
@@ -2065,7 +2069,7 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         if (pin) {
           sta::Graph* graph = openSta_->graph();
           sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
-          float arrival = getVertexClkArrival(drvr_vertex, topClokcNet);
+          float arrival = getVertexClkArrival(drvr_vertex, topClokcNet, iterm);
           // ignore arrival fall (no inverters in current clock tree)
           float arrival_pin = openSta_->pinArrival(
               pin, sta::RiseFall::rise(), sta::MinMax::max());
