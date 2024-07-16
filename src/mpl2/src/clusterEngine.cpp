@@ -527,6 +527,15 @@ void ClusteringEngine::mapIOPads()
 // Here we model each std cell instance, IO pin and macro pin as vertices.
 void ClusteringEngine::createDataFlow()
 {
+  if (design_metrics_->getNumStdCell() != 0 && !stdCellsHaveLiberty()) {
+    logger_->warn(
+        MPL,
+        14,
+        "No Liberty data found for std cells. Continuing without dataflow.");
+    data_connections_.is_empty = true;
+    return;
+  }
+
   // Create vertices IDs.
   const VerticesMaps vertices_maps = computeVertices();
   const int num_of_vertices = static_cast<int>(vertices_maps.stoppers.size());
@@ -558,6 +567,24 @@ void ClusteringEngine::createDataFlow()
     data_connections_.macro_pins_and_regs.emplace_back(src_pin, std_cells);
     data_connections_.macro_pins_and_macros.emplace_back(src_pin, macros);
   }
+}
+
+// Here we assume that there are std cells in the design!
+bool ClusteringEngine::stdCellsHaveLiberty()
+{
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (isIgnoredMaster(master) || master->isBlock()) {
+      continue;
+    }
+
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (liberty_cell) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 VerticesMaps ClusteringEngine::computeVertices()
@@ -657,7 +684,16 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
       if (master->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else {
-        vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
+        odb::dbIntProperty* int_prop
+            = odb::dbIntProperty::find(inst, "vertex_id");
+
+        // Std cells without liberty data are not marked as vertices
+        if (int_prop) {
+          vertex_id = int_prop->getValue();
+        } else {
+          ignore = true;
+          break;
+        }
       }
 
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -840,6 +876,10 @@ void ClusteringEngine::dataFlowDFSMacroPin(
 
 void ClusteringEngine::updateDataFlow()
 {
+  if (data_connections_.is_empty) {
+    return;
+  }
+
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
     if (tree_->maps.bterm_to_cluster_id.find(bterm)
