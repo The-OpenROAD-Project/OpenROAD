@@ -529,7 +529,9 @@ void ClusteringEngine::createDataFlow()
 {
   if (!stdCellsHaveLiberty()) {
     logger_->warn(
-        MPL, 14, "No Liberty data found. Continuing without dataflow.");
+        MPL,
+        14,
+        "No Liberty data found for std cells. Continuing without dataflow.");
     data_connections_.is_empty = true;
     return;
   }
@@ -686,7 +688,8 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
       if (master->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else {
-        odb::dbIntProperty* int_prop = odb::dbIntProperty::find(inst, "vertex_id");
+        odb::dbIntProperty* int_prop
+            = odb::dbIntProperty::find(inst, "vertex_id");
 
         // Std cells without liberty data are not marked as vertices
         if (int_prop) {
