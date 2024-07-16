@@ -331,6 +331,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* build_ruler_;
   QAction* show_dbu_;
   QAction* default_ruler_style_;
+  QAction* default_mouse_wheel_zoom_;
   QAction* font_;
   QAction* global_connect_;
 

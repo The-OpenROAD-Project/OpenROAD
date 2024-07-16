@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget* parent)
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
+          [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -390,6 +391,9 @@ MainWindow::MainWindow(QWidget* parent)
   default_ruler_style_->setChecked(
       settings.value("ruler_style", default_ruler_style_->isChecked())
           .toBool());
+  default_mouse_wheel_zoom_->setChecked(
+      settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+          .toBool());
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -584,6 +588,11 @@ void MainWindow::createActions()
   default_ruler_style_->setCheckable(true);
   default_ruler_style_->setChecked(true);
 
+  default_mouse_wheel_zoom_
+      = new QAction("Mouse wheel mapped to zoom by default", this);
+  default_mouse_wheel_zoom_->setCheckable(true);
+  default_mouse_wheel_zoom_->setChecked(false);
+
   font_ = new QAction("Application font", this);
 
   global_connect_ = new QAction("Global connect", this);
@@ -696,6 +705,7 @@ void MainWindow::createMenus()
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
   option_menu->addAction(default_ruler_style_);
+  option_menu->addAction(default_mouse_wheel_zoom_);
   option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
@@ -1350,6 +1360,7 @@ void MainWindow::saveSettings()
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
   settings.setValue("ruler_style", default_ruler_style_->isChecked());
+  settings.setValue("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked());
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
