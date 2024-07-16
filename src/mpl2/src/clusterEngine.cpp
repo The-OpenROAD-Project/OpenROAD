@@ -527,7 +527,7 @@ void ClusteringEngine::mapIOPads()
 // Here we model each std cell instance, IO pin and macro pin as vertices.
 void ClusteringEngine::createDataFlow()
 {
-  if (!stdCellsHaveLiberty()) {
+  if (design_metrics_->getNumStdCell() != 0 && !stdCellsHaveLiberty()) {
     logger_->warn(
         MPL,
         14,
@@ -569,6 +569,7 @@ void ClusteringEngine::createDataFlow()
   }
 }
 
+// Here we assume that there are std cells in the design!
 bool ClusteringEngine::stdCellsHaveLiberty()
 {
   int valid_lib_cell_count = 0;
