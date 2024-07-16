@@ -2013,7 +2013,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet)
   }
   if (paths_accepted > 1 || paths_accepted == 0) {
     logger_->error(CTS,
-                   1,
+                   2,
                    "Number of clock paths is not 1. Number of clock paths: {}",
                    paths_accepted);
   }
