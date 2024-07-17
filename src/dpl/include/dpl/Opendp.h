@@ -54,7 +54,6 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "psm/pdnsim.h"
 
 namespace utl {
 class Logger;
@@ -114,6 +113,7 @@ struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
+using IRDropByPoint = std::map<odb::Point, double>;
 struct GapInfo;
 struct DecapCell;
 struct IRDrop;
@@ -131,7 +131,7 @@ class Opendp
   void legalCellPos(dbInst* db_inst);  // call from rsz
   void initMacrosAndGrid();            // call from rsz
 
-  void init(dbDatabase* db, Logger* logger, psm::PDNSim* psm);
+  void init(dbDatabase* db, Logger* logger);
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
@@ -161,7 +161,7 @@ class Opendp
 
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
-  void insertDecapCells(double target, const char* net_name);
+  void insertDecapCells(const double target, IRDropByPoint& psm_ir_drops);
 
  private:
   using bgPoint
@@ -341,10 +341,9 @@ class Opendp
                         const double& target);
   void findGaps();
   void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
-  odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
-  void getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops);
+  void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
+                          std::vector<IRDrop>& ir_drops);
   void prepareDecapAndGaps();
-  odb::dbNet* findPowerNet(const char* net_name);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -375,7 +374,6 @@ class Opendp
   bool have_one_site_cells_ = false;
 
   // Decap placement.
-  psm::PDNSim* psm_;
   vector<DecapCell*> decap_masters_;
   int decap_count_ = 0;
   GapMapByY gaps_;

@@ -153,20 +153,6 @@ filler_placement_cmd(dpl::dbMasterSeq *filler_masters,
 }
 
 void
-add_decap_master(odb::dbMaster *master, float cap)
-{
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->addDecapMaster(master, cap);
-}
-
-void
-insert_decap_cmd(const float target, const char* net_name)
-{
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->insertDecapCells(target, net_name);
-}
-
-void
 remove_fillers_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();

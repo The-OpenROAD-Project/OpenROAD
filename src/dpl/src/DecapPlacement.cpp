@@ -50,7 +50,6 @@ using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSigType;
 
-using IRDropByPoint = std::map<odb::Point, double>;
 using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
 
 void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
@@ -81,84 +80,12 @@ vector<int> Opendp::findDecapCellIndices(const int& gap_width,
   return id_masters;
 }
 
-// Return the lowest layer of db_net route
-odb::dbTechLayer* Opendp::getLowestLayer(odb::dbNet* db_net)
-{
-  int min_layer_level = std::numeric_limits<int>::max();
-  std::vector<odb::dbShape> via_boxes;
-  for (odb::dbSWire* swire : db_net->getSWires()) {
-    for (odb::dbSBox* s : swire->getWires()) {
-      if (s->isVia()) {
-        s->getViaBoxes(via_boxes);
-        for (const odb::dbShape& box : via_boxes) {
-          odb::dbTechLayer* tech_layer = box.getTechLayer();
-          if (tech_layer->getRoutingLevel() == 0) {
-            continue;
-          }
-          min_layer_level
-              = std::min(min_layer_level, tech_layer->getRoutingLevel());
-        }
-      } else {
-        odb::dbTechLayer* tech_layer = s->getTechLayer();
-        min_layer_level
-            = std::min(min_layer_level, tech_layer->getRoutingLevel());
-      }
-    }
-  }
-  return db_->getTech()->findRoutingLayer(min_layer_level);
-}
-
-odb::dbNet* Opendp::findPowerNet(const char* net_name)
-{
-  odb::dbNet* power_net = nullptr;
-  // If net name is defined by user
-  if (!std::string(net_name).empty()) {
-    power_net = block_->findNet(net_name);
-    if (power_net == nullptr) {
-      logger_->error(
-          utl::DPL, 58, "Cannot find net {} in the design.", net_name);
-    }
-    // Check if net is supply
-    if (!power_net->getSigType().isSupply()) {
-      logger_->error(
-          utl::DPL, 57, "{} is not a supply net.", power_net->getName());
-    }
-    return power_net;
-  }
-  // Otherwise find power net
-  for (auto db_net : block_->getNets()) {
-    if (db_net->getSigType().isSupply()
-        && db_net->getSigType() == dbSigType::POWER) {
-      power_net = db_net;
-      break;
-    }
-  }
-  return power_net;
-}
-
 // Return IR Drops for the net name in the lowest layer
-void Opendp::getIRDrops(const char* net_name, std::vector<IRDrop>& ir_drops)
+void Opendp::mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
+                                std::vector<IRDrop>& ir_drops)
 {
-  IRDropByPoint ir_drop;
-
-  // Get db_net
-  odb::dbNet* db_net = findPowerNet(net_name);
-
-  // Get lowest layer
-  odb::dbTechLayer* tech_layer = getLowestLayer(db_net);
-
-  psm_->getIRDropForLayer(db_net, tech_layer, ir_drop);
-
-  if (ir_drop.empty()) {
-    logger_->error(DPL,
-                   53,
-                   "No IR drop data found. Run analyse_power_grid for net {} "
-                   "before inserting decap cells.",
-                   db_net->getName());
-  }
-
   // Sort the IR DROP point in descending order
-  for (auto& it : ir_drop) {
+  for (auto& it : psm_ir_drops) {
     ir_drops.emplace_back(it.first, it.second);
   }
 
@@ -196,7 +123,7 @@ void Opendp::prepareDecapAndGaps()
   }
 }
 
-void Opendp::insertDecapCells(const double target, const char* net_name)
+void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
 {
   // init dpl variables
   if (cells_.empty()) {
@@ -219,7 +146,7 @@ void Opendp::insertDecapCells(const double target, const char* net_name)
 
     // Get IR DROP of net VDD on the lowest layer
     std::vector<IRDrop> ir_drops;
-    getIRDrops(net_name, ir_drops);
+    mapToVectorIRDrops(psm_ir_drops, ir_drops);
 
     for (auto& irdrop_it : ir_drops) {
       // Find gaps in same row

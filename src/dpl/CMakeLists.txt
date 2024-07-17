@@ -57,7 +57,6 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
-    psm
   PRIVATE
     utl_lib
 )
@@ -95,7 +94,6 @@ target_link_libraries(dpl
     dpl_lib
     OpenSTA
     gui
-    psm
 )
 
 messages(
@@ -127,7 +125,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       gui
       odb
-      psm
   )
 
 endif()
