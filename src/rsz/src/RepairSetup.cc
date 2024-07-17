@@ -151,7 +151,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   const double hopeless_limit = 4.0;
 
   if (std::abs(worst_path_slack / worst_path_clock_period) > hopeless_limit) {
-    logger_->error(RSZ, 99,
+    logger_->error(RSZ,
+                   99,
                    "The worst slack {} is more than {} times the clock period "
                    "{}.  This is too large to repair.",
                    delayAsString(worst_path_slack, sta_, 3),
