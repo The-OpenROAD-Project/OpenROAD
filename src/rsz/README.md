@@ -298,7 +298,7 @@ repair_timing
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default value is `False`, and the allowed values are bools. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default value is `False`, and the allowed values are bools. |
 | `-enable_buffer_removal` | Flag to enable buffer removal during setup fixing. The default value is `False`, and the allowed values are bools. |
-| `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
+| `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
 | `-verbose` | Enable verbose logging of the repair progress. |

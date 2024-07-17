@@ -150,6 +150,12 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
+  logger_->info(RSZ,
+                99,
+                "Repairing {} out of {} ({:0.2f}%) violating endpoints...",
+                max_end_count,
+                violating_ends.size(),
+                repair_tns_end_percent*100.0);
 
   // Ensure that max cap and max fanout violations don't get worse
   sta_->checkCapacitanceLimitPreamble();
