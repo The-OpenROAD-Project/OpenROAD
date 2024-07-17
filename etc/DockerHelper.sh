@@ -141,7 +141,7 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    eval docker build \
+    eval docker buildx build \
         --file "${file}" \
         --tag "${imagePath}" \
         ${buildArgs} \
