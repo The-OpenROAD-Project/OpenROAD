@@ -38,7 +38,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <optional>
 #include <string>
 
+#include "dpl/Opendp.h"
 #include "odb/dbBlockCallBackObj.h"
+
+using odb::dbMaster;
 
 namespace odb {
 class dbDatabase;
@@ -93,7 +96,8 @@ class PDNSim : public odb::dbBlockCallBackObj
   void init(utl::Logger* logger,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            rsz::Resizer* resizer);
+            rsz::Resizer* resizer,
+            dpl::Opendp* opendp);
 
   void setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage);
   void analyzePowerGrid(odb::dbNet* net,
@@ -136,12 +140,21 @@ class PDNSim : public odb::dbBlockCallBackObj
                          odb::dbTechLayer* layer,
                          IRDropByPoint& ir_drop) const;
 
+  // Functions of decap cells
+  void addDecapMaster(dbMaster* decap_master, double decap_cap);
+  void insertDecapCells(double target, const char* net_name);
+
  private:
+  // Functions of decap cells
+  odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
+  odb::dbNet* findPowerNet(const char* net_name);
+
   IRSolver* getIRSolver(odb::dbNet* net, bool floorplanning);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
+  dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
   std::unique_ptr<IRDropDataSource> heatmap_;

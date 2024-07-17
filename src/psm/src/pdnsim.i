@@ -84,6 +84,20 @@ analyze_power_grid_cmd(odb::dbNet* net, Corner* corner, psm::GeneratedSourceType
   pdnsim->analyzePowerGrid(net, corner, type, voltage_file, enable_em, em_file, error_file, voltage_source_file);
 }
 
+void
+add_decap_master(odb::dbMaster *master, float cap)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->addDecapMaster(master, cap);
+}
+
+void
+insert_decap_cmd(const float target, const char* net_name)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->insertDecapCells(target, net_name);
+}
+
 bool
 check_connectivity_cmd(odb::dbNet* net, bool floorplanning, const char* error_file)
 {
