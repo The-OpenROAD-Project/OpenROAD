@@ -305,11 +305,13 @@ odb::dbNet* PDNSim::findPowerNet(const char* net_name)
   if (!std::string(net_name).empty()) {
     power_net = block->findNet(net_name);
     if (power_net == nullptr) {
-      logger_->error(utl::PSM, 48, "Cannot find net {} in the design.", net_name);
+      logger_->error(
+          utl::PSM, 48, "Cannot find net {} in the design.", net_name);
     }
     // Check if net is supply
     if (!power_net->getSigType().isSupply()) {
-      logger_->error(utl::PSM, 47, "{} is not a supply net.", power_net->getName());
+      logger_->error(
+          utl::PSM, 47, "{} is not a supply net.", power_net->getName());
     }
     return power_net;
   }
