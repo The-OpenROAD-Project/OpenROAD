@@ -251,6 +251,8 @@ class TreeBuilder
   void setTopBufferName(std::string name) { topBufferName_ = name; }
   odb::dbNet* getTopInputNet() const { return topInputNet_; }
   void setTopInputNet(odb::dbNet* net) { topInputNet_ = net; }
+  odb::dbNet* getDrivingNet() const { return drivingNet_; }
+  void setDrivingNet(odb::dbNet* net) { drivingNet_ = net; }
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -281,6 +283,7 @@ class TreeBuilder
   float topBufferDelay_ = 0.0;
   odb::dbInst* topBuffer_ = nullptr;
   std::string topBufferName_;
+  odb::dbNet* drivingNet_ = nullptr;
   odb::dbNet* topInputNet_ = nullptr;
 };
 

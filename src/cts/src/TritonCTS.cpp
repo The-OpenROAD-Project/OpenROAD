@@ -189,6 +189,7 @@ void TritonCTS::buildClockTrees()
 }
 
 void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
+                                 odb::dbNet* clkInputNet,
                                  const std::string& sdcClockName,
                                  TreeBuilder* parent)
 {
@@ -197,7 +198,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
   } else {
-    clockBuilder = initClock(driverNet, sdcClockName, parent);
+    clockBuilder = initClock(driverNet, clkInputNet, sdcClockName, parent);
   }
   // Treat gated clocks as separate clock trees
   // TODO: include sinks from gated clocks together with other sinks and build
@@ -214,7 +215,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
                   network_->dbToSta(outputPin))) {
-            initOneClockTree(outputNet, sdcClockName, clockBuilder);
+            initOneClockTree(outputNet, clkInputNet, sdcClockName, clockBuilder);
           }
         }
       }
@@ -865,7 +866,7 @@ void TritonCTS::populateTritonCTS()
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         if (visitedClockNets_.find(net) == visitedClockNets_.end()) {
-          initOneClockTree(net, clkName, nullptr);
+          initOneClockTree(net, net, clkName, nullptr);
         }
       } else {
         logger_->warn(
@@ -886,6 +887,7 @@ void TritonCTS::populateTritonCTS()
 }
 
 TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
+                                  odb::dbNet* clkInputNet,
                                   const std::string& sdcClock,
                                   TreeBuilder* parentBuilder)
 {
@@ -941,7 +943,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
   // Build a clock tree to drive macro cells with insertion delays
   // separated from registers or leaves without insertion delays
   HTreeBuilder* builder = initClockTreeForMacrosAndRegs(
-      firstNet, buffer_masters, clockNet, parentBuilder);
+      firstNet, clkInputNet, buffer_masters, clockNet, parentBuilder);
   return builder;
 }
 
@@ -964,6 +966,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 //
 HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     odb::dbNet*& firstNet,
+    odb::dbNet* clkInputNet,
     const std::unordered_set<odb::dbMaster*>& buffer_masters,
     Clock& clockNet,
     TreeBuilder* parentBuilder)
@@ -1024,6 +1027,7 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                       "macros");
   if (firstBuilder) {
     firstBuilder->setTreeType(TreeType::MacroTree);
+    firstBuilder->setTopInputNet(clkInputNet);
   }
 
   // create a new net 'secondNet' to drive register sinks
@@ -1042,7 +1046,8 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
   if (secondBuilder) {
     secondBuilder->setTreeType(TreeType::RegisterTree);
     secondBuilder->setTopBufferName(topBufferName);
-    secondBuilder->setTopInputNet(firstNet);
+    secondBuilder->setDrivingNet(firstNet);
+    secondBuilder->setTopInputNet(clkInputNet);
   }
 
   return secondBuilder;
@@ -1201,7 +1206,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
         = block_->findInst(builder->getTopBufferName().c_str());
     if (topRegBuffer) {
       odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
-      topRegBufferInputPin->connect(builder->getTopInputNet());
+      topRegBufferInputPin->connect(builder->getDrivingNet());
     }
   }
 
@@ -1970,9 +1975,22 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
   float clkPathArrival = 0.0;
   int paths_accepted = 0;
   while (path_iter.hasNext()) {
-    sta::PathVertex* path = path_iter.next();
+    sta::Path* path = path_iter.next();
+    bool path_transition = true;
+    bool path_min_max = true;
 
     if (path->dcalcAnalysisPt(openSta_)->corner() != openSta_->cmdCorner()) {
+      continue;
+    }
+    if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
+      // only populate with rising edges
+      path_transition = false;
+      continue;
+    }
+    if (path->dcalcAnalysisPt(openSta_)->delayMinMax()
+        != sta::MinMax::max()) {
+      // only populate with max delay
+      path_min_max = false;
       continue;
     }
 
@@ -1985,13 +2003,23 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       odb::dbNet* path_start_net;
       if (start->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
         // only populate with rising edges
-        continue;
+        if(path_transition) {
+          logger_->report("Não são o mesmo transitions");
+        }
       }
 
       if (start->dcalcAnalysisPt(openSta_)->delayMinMax()
           != sta::MinMax::max()) {
+        if(path_min_max) {
+          logger_->report("Não são o mesmo MinMax");
+        }
         // only populate with max delay
-        continue;
+      }
+      if(!path_transition) {
+        logger_->report("Não são o mesmo transitions");
+      }
+      if(!path_min_max) {
+        logger_->report("Não são o mesmo MinMax");
       }
 
       odb::dbITerm* term;
@@ -2008,8 +2036,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       if (path_start_net == topNet) {
         clkPathArrival = path->arrival(openSta_);
         paths_accepted += 1;
-      } else{
-        logger_->report("Path start net regected: {}",path_start_net->getName());
       }
     }
   }
@@ -2031,16 +2057,16 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
   openSta_->ensureClkNetwork();
   openSta_->ensureClkArrivals();
   Clock clock = builder->getClock();
-  odb::dbNet* topClockNet = clock.getNetObj();
+  odb::dbNet* topInputClockNet = clock.getNetObj();
   if (builder->getTopInputNet() != nullptr) {
-    topClockNet = builder->getTopInputNet();
+    topInputClockNet = builder->getTopInputNet();
   }
   // compute average input arrival at all sinks
   float sumArrivals = 0.0;
   unsigned numSinks = 0;
   clock.forEachSink([&](const ClockInst& sink) {
     odb::dbITerm* iterm = sink.getDbInputPin();
-    computeSinkArrivalRecur(topClockNet, iterm, sumArrivals, numSinks);
+    computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks);
   });
   float aveArrival = sumArrivals / (float) numSinks;
   builder->setAveSinkArrival(aveArrival);
