@@ -69,6 +69,10 @@ proc tapcell { args } {
 
   sta::check_argc_eq0 "tapcell" $args
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 1 "No design block found."
+  }
+
   tap::clear
 
   if { [info exists keys(-endcap_cpp)] } {
@@ -233,6 +237,10 @@ proc tapcell_ripup { args } {
     keys {-tap_prefix -endcap_prefix} \
     flags {}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 2 "No design block found."
+  }
+
   sta::check_argc_eq0 "tapcell_ripup" $args
 
   set tap_prefix "TAP_"
@@ -300,6 +308,10 @@ proc place_endcaps { args } {
       -top_edge -bottom_edge} \
     flags {}
 
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error TAP 6 "No design block found."
+  }
+
   sta::check_argc_eq0 "place_endcaps" $args
 
   set prefix "PHY_"
@@ -336,18 +348,18 @@ proc place_endcaps { args } {
     [tap::parse_endcap_key keys -bottom_edge -endcap_horizontal -endcap]]
 
   tap::place_endcaps \
-    $left_top_corner\
-    $right_top_corner\
-    $left_bottom_corner\
-    $right_bottom_corner\
-    $left_top_edge\
-    $right_top_edge\
-    $left_bottom_edge\
-    $right_bottom_edge\
-    $top_edge\
-    $bottom_edge\
-    $left_edge\
-    $right_edge\
+    $left_top_corner \
+    $right_top_corner \
+    $left_bottom_corner \
+    $right_bottom_corner \
+    $left_top_edge \
+    $right_top_edge \
+    $left_bottom_edge \
+    $right_bottom_edge \
+    $top_edge \
+    $bottom_edge \
+    $left_edge \
+    $right_edge \
     $prefix
 }
 

@@ -38,6 +38,9 @@
 #include <fstream>
 #include <limits>
 
+#include "Grid.h"
+#include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 namespace dpl {
@@ -47,8 +50,10 @@ using std::vector;
 
 using utl::DPL;
 
-void Opendp::checkPlacement(bool verbose,
-                            bool disallow_one_site_gaps,
+using utl::format_as;
+
+void Opendp::checkPlacement(const bool verbose,
+                            const bool disallow_one_site_gaps,
                             const string& report_file_name)
 {
   importDb();
@@ -62,25 +67,14 @@ void Opendp::checkPlacement(bool verbose,
 
   initGrid();
   groupAssignCellRegions();
+  const auto& row_coords = grid_->getRowCoordinates();
   for (Cell& cell : cells_) {
-    if (isStdCell(&cell)) {
+    if (cell.isStdCell()) {
       // Site alignment check
-      if (!cell.isHybrid()) {
-        if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
-          site_align_failures.push_back(&cell);
-        }
-      } else {
-        // here, the cell is hybrid, if it is a parent, then the check is
-        // quite simple
-        if (cell.x_ % site_width_ != 0) {
-          site_align_failures.push_back(&cell);
-          continue;
-        }
-        auto grid_info = getGridInfo(&cell);
-        auto [cell_index, cell_height] = gridY(cell.y_, grid_info.getSites());
-        if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
-          site_align_failures.push_back(&cell);
-        }
+      if (cell.x_ % grid_->getSiteWidth() != 0
+          || row_coords.find(cell.y_.v) == row_coords.end()) {
+        site_align_failures.push_back(&cell);
+        continue;
       }
 
       if (!checkInRows(cell)) {
@@ -151,14 +145,15 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
 {
   using boost::property_tree::ptree;
   ptree violations;
-  double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
-  const Rect core = getCore();
+  const double dbUnits
+      = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
+  const Rect core = grid_->getCore();
   for (auto failure : failures) {
     ptree violation, shapes, source, sources, shape;
-    double xMin = (failure->x_ + core.xMin()) / dbUnits;
-    double yMin = (failure->y_ + core.yMin()) / dbUnits;
-    double xMax = (failure->x_ + failure->width_ + core.xMin()) / dbUnits;
-    double yMax = (failure->y_ + failure->height_ + core.yMin()) / dbUnits;
+    double xMin = (failure->x_ + core.xMin()).v / dbUnits;
+    double yMin = (failure->y_ + core.yMin()).v / dbUnits;
+    double xMax = (failure->x_ + failure->width_ + core.xMin()).v / dbUnits;
+    double yMax = (failure->y_ + failure->height_ + core.yMin()).v / dbUnits;
 
     if (violation_type == "overlap") {
       const Cell* o_cell = checkOverlap(*failure);
@@ -168,14 +163,14 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
                        "Could not find overlapping cell for cell {}",
                        failure->name());
       }
-      odb::Rect o_rect(o_cell->x_,
-                       o_cell->y_,
-                       o_cell->x_ + o_cell->width_,
-                       o_cell->y_ + o_cell->height_);
-      odb::Rect f_rect(failure->x_,
-                       failure->y_,
-                       failure->x_ + failure->width_,
-                       failure->y_ + failure->height_);
+      odb::Rect o_rect(o_cell->x_.v,
+                       o_cell->y_.v,
+                       o_cell->x_.v + o_cell->width_.v,
+                       o_cell->y_.v + o_cell->height_.v);
+      odb::Rect f_rect(failure->x_.v,
+                       failure->y_.v,
+                       failure->x_.v + failure->width_.v,
+                       failure->y_.v + failure->height_.v);
 
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
@@ -290,9 +285,9 @@ void Opendp::writeJsonReport(const string& filename,
 }
 
 void Opendp::reportFailures(const vector<Cell*>& failures,
-                            int msg_id,
+                            const int msg_id,
                             const char* msg,
-                            bool verbose) const
+                            const bool verbose) const
 {
   reportFailures(failures, msg_id, msg, verbose, [&](Cell* cell) -> void {
     logger_->report(" {}", cell->name());
@@ -301,9 +296,9 @@ void Opendp::reportFailures(const vector<Cell*>& failures,
 
 void Opendp::reportFailures(
     const vector<Cell*>& failures,
-    int msg_id,
+    const int msg_id,
     const char* msg,
-    bool verbose,
+    const bool verbose,
     const std::function<void(Cell* cell)>& report_failure) const
 {
   if (!failures.empty()) {
@@ -322,6 +317,7 @@ void Opendp::reportOverlapFailure(Cell* cell) const
   logger_->report(" {} overlaps {}", cell->name(), overlap->name());
 }
 
+/* static */
 bool Opendp::isPlaced(const Cell* cell)
 {
   return cell->db_inst_->isPlaced();
@@ -329,11 +325,11 @@ bool Opendp::isPlaced(const Cell* cell)
 
 bool Opendp::checkInRows(const Cell& cell) const
 {
-  auto grid_info = getRowInfo(&cell);
-  int x_ll = gridX(&cell);
-  int x_ur = gridEndX(&cell);
-  int y_ll = gridY(&cell);
-  int y_ur = gridEndY(&cell);
+  auto grid_info = grid_->getRowInfo(&cell);
+  const GridX x_ll = grid_->gridX(&cell);
+  const GridX x_ur = grid_->gridEndX(&cell);
+  const GridY y_ll = grid_->gridY(&cell);
+  const GridY y_ur = grid_->gridEndY(&cell);
   debugPrint(logger_,
              DPL,
              "hybrid",
@@ -346,9 +342,10 @@ bool Opendp::checkInRows(const Cell& cell) const
              y_ll,
              y_ur);
 
-  for (int y = y_ll; y < y_ur; y++) {
-    for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(grid_info.second.getGridIndex(), x, y);
+  for (GridY y = y_ll; y < y_ur; y++) {
+    for (GridX x = x_ll; x < x_ur; x++) {
+      const Pixel* pixel
+          = grid_->gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;
@@ -381,13 +378,13 @@ bool Opendp::checkInRows(const Cell& cell) const
 // The rules apply to both FIXED or PLACED instances
 
 // Return the cell this cell overlaps.
-Cell* Opendp::checkOverlap(Cell& cell) const
+const Cell* Opendp::checkOverlap(Cell& cell) const
 {
   debugPrint(
       logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
-  Cell* overlap_cell = nullptr;
-  visitCellPixels(cell, true, [&](Pixel* pixel) {
-    Cell* pixel_cell = pixel->cell;
+  const Cell* overlap_cell = nullptr;
+  grid_->visitCellPixels(cell, true, [&](Pixel* pixel) {
+    const Cell* pixel_cell = pixel->cell;
     if (pixel_cell) {
       if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
         overlap_cell = pixel_cell;
@@ -402,56 +399,53 @@ Cell* Opendp::checkOverlap(Cell& cell) const
 bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 {
   // BLOCK/BLOCK overlaps allowed
-  if (isBlock(cell1) && isBlock(cell2)) {
+  if (cell1->isBlock() && cell2->isBlock()) {
     return false;
   }
 
-  bool padded = havePadding() && isOverlapPadded(cell1, cell2);
-  Point ll1 = initialLocation(cell1, padded);
-  Point ll2 = initialLocation(cell2, padded);
-  Point ur1, ur2;
+  const bool padded = padding_->havePadding() && isOverlapPadded(cell1, cell2);
+  const DbuPt ll1 = initialLocation(cell1, padded);
+  const DbuPt ll2 = initialLocation(cell2, padded);
+  DbuPt ur1, ur2;
   if (padded) {
-    ur1 = Point(ll1.getX() + paddedWidth(cell1), ll1.getY() + cell1->height_);
-    ur2 = Point(ll2.getX() + paddedWidth(cell2), ll2.getY() + cell2->height_);
+    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1), ll1.y + cell1->height_);
+    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2), ll2.y + cell2->height_);
   } else {
-    ur1 = Point(ll1.getX() + cell1->width_, ll1.getY() + cell1->height_);
-    ur2 = Point(ll2.getX() + cell2->width_, ll2.getY() + cell2->height_);
+    ur1 = DbuPt(ll1.x + cell1->width_.v, ll1.y + cell1->height_.v);
+    ur2 = DbuPt(ll2.x + cell2->width_.v, ll2.y + cell2->height_.v);
   }
-  return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
-         && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
+  return ll1.x < ur2.x && ur1.x > ll2.x && ll1.y < ur2.y && ur1.y > ll2.y;
 }
 
 Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
-  auto row_info = getRowInfo(&cell);
-  int index_in_grid = row_info.second.getGridIndex();
-  visitCellBoundaryPixels(
-      cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
-        Cell* pixel_cell = pixel->cell;
+  const auto row_info = grid_->getRowInfo(&cell);
+  const int grid_index = row_info.second.getGridIndex();
+  grid_->visitCellBoundaryPixels(
+      cell, true, [&](Pixel* pixel, const Direction2D& edge, GridX x, GridY y) {
+        GridX abut_x{0};
 
-        int abut_x = 0;
-
-        switch (edge) {
+        switch (static_cast<Direction2D::Value>(edge)) {
           case Direction2D::West:
-            abut_x = -1;
+            abut_x = GridX{-1};
             break;
           case Direction2D::East:
-            abut_x = 1;
+            abut_x = GridX{1};
             break;
+          case Direction2D::North:
+          case Direction2D::South:
+            return;
         }
-        if (0 != abut_x) {
-          // check the abutting pixel
-          Pixel* abut_pixel = gridPixel(index_in_grid, x + abut_x, y);
-          bool abuttment_exists
-              = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell
-                 && abut_pixel->cell != nullptr);
-          if (!abuttment_exists) {
-            // check the 1 site gap pixel
-            Pixel* gap_pixel = gridPixel(index_in_grid, x + 2 * abut_x, y);
-            if (gap_pixel && gap_pixel->cell != pixel_cell) {
-              gap_cell = gap_pixel->cell;
-            }
+        // check the abutting pixel
+        const Pixel* abut_pixel = grid_->gridPixel(grid_index, x + abut_x, y);
+        const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
+        if (!abuttment_exists) {
+          // check the 1 site gap pixel
+          const Pixel* gap_pixel
+              = grid_->gridPixel(grid_index, x + GridX{2 * abut_x.v}, y);
+          if (gap_pixel) {
+            gap_cell = gap_pixel->cell;
           }
         }
       });
@@ -460,33 +454,37 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 
 bool Opendp::checkRegionPlacement(const Cell* cell) const
 {
-  int x_begin = cell->x_;
-  int x_end = x_begin + cell->width_;
-  int y_begin = cell->y_;
-  int y_end = y_begin + cell->height_;
+  const DbuX x_begin = cell->x_;
+  const DbuX x_end = x_begin + cell->width_;
+  const DbuY y_begin = cell->y_;
+  const DbuY y_end = y_begin + cell->height_;
 
   if (cell->region_) {
-    return cell->region_->contains(odb::Rect(x_begin, y_begin, x_end, y_end))
+    const DbuX site_width = grid_->getSiteWidth();
+    return cell->region_->contains(
+               odb::Rect(x_begin.v, y_begin.v, x_end.v, y_end.v))
            && checkRegionOverlap(cell,
-                                 x_begin / site_width_,
-                                 y_begin / cell->height_,
-                                 x_end / site_width_,
-                                 y_end / cell->height_);
+                                 GridX{x_begin.v / site_width.v},
+                                 GridY{y_begin.v / cell->height_.v},
+                                 GridX{x_end.v / site_width.v},
+                                 GridY{y_end.v / cell->height_.v});
   }
   return true;
 }
 
-bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
+/* static */
+bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2)
 {
   return isCrWtBlClass(cell1) && isCrWtBlClass(cell2)
-         && !(isWtClass(cell1) && isWtClass(cell2));
+         && !(isWellTap(cell1) && isWellTap(cell2));
 }
 
-bool Opendp::isCrWtBlClass(const Cell* cell) const
+/* static */
+bool Opendp::isCrWtBlClass(const Cell* cell)
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
+  switch (type.getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_ANTENNACELL:
     case dbMasterType::CORE_FEEDTHRU:
@@ -535,7 +533,8 @@ bool Opendp::isCrWtBlClass(const Cell* cell) const
   return false;
 }
 
-bool Opendp::isWtClass(const Cell* cell) const
+/* static */
+bool Opendp::isWellTap(const Cell* cell)
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::CORE_WELLTAP;

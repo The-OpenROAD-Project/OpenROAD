@@ -803,9 +803,20 @@ void PlacerBaseCommon::init()
   siteSizeX_ = site->getWidth();
   siteSizeY_ = site->getHeight();
 
-  log_->info(GPL, 3, "SiteSize: {} {}", siteSizeX_, siteSizeY_);
-  log_->info(GPL, 4, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());
-  log_->info(GPL, 5, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy());
+  log_->info(GPL,
+             3,
+             "{:9} ( {:6.3f} {:6.3f} ) um",
+             "SiteSize:",
+             block->dbuToMicrons(siteSizeX_),
+             block->dbuToMicrons(siteSizeY_));
+  log_->info(GPL,
+             4,
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "CoreBBox:",
+             block->dbuToMicrons(die_.coreLx()),
+             block->dbuToMicrons(die_.coreLy()),
+             block->dbuToMicrons(die_.coreUx()),
+             block->dbuToMicrons(die_.coreUy()));
 
   // insts fill with real instances
   dbSet<dbInst> insts = block->getInsts();
@@ -1260,36 +1271,71 @@ void PlacerBase::reset()
 
 void PlacerBase::printInfo() const
 {
+  dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
              6,
-             "NumInstances: {}",
+             "{:20} {:10}",
+             "NumInstances:",
              placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
-  log_->info(GPL, 7, "NumPlaceInstances: {}", placeInsts_.size());
-  log_->info(GPL, 8, "NumFixedInstances: {}", fixedInsts_.size());
-  log_->info(GPL, 9, "NumDummyInstances: {}", dummyInsts_.size());
-  log_->info(GPL, 10, "NumNets: {}", pbCommon_->nets().size());
-  log_->info(GPL, 11, "NumPins: {}", pbCommon_->pins().size());
+  log_->info(GPL, 7, "{:20} {:10}", "NumPlaceInstances:", placeInsts_.size());
+  log_->info(GPL, 8, "{:20} {:10}", "NumFixedInstances:", fixedInsts_.size());
+  log_->info(GPL, 9, "{:20} {:10}", "NumDummyInstances:", dummyInsts_.size());
+  log_->info(GPL, 10, "{:20} {:10}", "NumNets:", pbCommon_->nets().size());
+  log_->info(GPL, 11, "{:20} {:10}", "NumPins:", pbCommon_->pins().size());
 
-  log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy());
-  log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy());
-  log_->info(GPL, 14, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());
-  log_->info(GPL, 15, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy());
+  log_->info(GPL,
+             12,
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "DieBBox:",
+             block->dbuToMicrons(die_.dieLx()),
+             block->dbuToMicrons(die_.dieLy()),
+             block->dbuToMicrons(die_.dieUx()),
+             block->dbuToMicrons(die_.dieUy()));
+  log_->info(GPL,
+             13,
+             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "CoreBBox:",
+             block->dbuToMicrons(die_.coreLx()),
+             block->dbuToMicrons(die_.coreLy()),
+             block->dbuToMicrons(die_.coreUx()),
+             block->dbuToMicrons(die_.coreUy()));
 
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
                / (coreArea - nonPlaceInstsArea_) * 100;
 
-  log_->info(GPL, 16, "CoreArea: {}", coreArea);
-  log_->info(GPL, 17, "NonPlaceInstsArea: {}", nonPlaceInstsArea_);
+  log_->info(GPL,
+             16,
+             "{:20} {:10.3f} um^2",
+             "CoreArea:",
+             block->dbuAreaToMicrons(coreArea));
+  log_->info(GPL,
+             17,
+             "{:20} {:10.3f} um^2",
+             "NonPlaceInstsArea:",
+             block->dbuAreaToMicrons(nonPlaceInstsArea_));
 
-  log_->info(GPL, 18, "PlaceInstsArea: {}", placeInstsArea_);
-  log_->info(GPL, 19, "Util(%): {:.2f}", util);
+  log_->info(GPL,
+             18,
+             "{:20} {:10.3f} um^2",
+             "PlaceInstsArea:",
+             block->dbuAreaToMicrons(placeInstsArea_));
+  log_->info(GPL, 19, "{:20} {:10.3f} %", "Util:", util);
 
-  log_->info(GPL, 20, "StdInstsArea: {}", stdInstsArea_);
-  log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_);
+  log_->info(GPL,
+             20,
+             "{:20} {:10.3f} um^2",
+             "StdInstsArea:",
+             block->dbuAreaToMicrons(stdInstsArea_));
+
+  log_->info(GPL,
+             21,
+             "{:20} {:10.3f} um^2",
+             "MacroInstsArea:",
+             block->dbuAreaToMicrons(macroInstsArea_));
 
   if (util >= 100.1) {
-    log_->error(GPL, 301, "Utilization {:.2f}% exceeds 100%.", util);
+    log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
   }
 }
 

@@ -265,6 +265,11 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
     netID = nets_.size() - 1;
     db_net_id_map_[db_net] = netID;
     // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
+    seglist_.emplace_back();
+    sttrees_.emplace_back();
+    gxs_.emplace_back();
+    gys_.emplace_back();
+    gs_.emplace_back();
   }
   net->reset(db_net,
              is_clock,
@@ -644,24 +649,12 @@ void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
 
-  initNetAuxVars();
-
   grid_hv_ = x_range_ * y_range_;
 
   parent_x1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_x3_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
-}
-
-void FastRouteCore::initNetAuxVars()
-{
-  int node_count = netCount();
-  seglist_.resize(node_count);
-  sttrees_.resize(node_count);
-  gxs_.resize(node_count);
-  gys_.resize(node_count);
-  gs_.resize(node_count);
 }
 
 NetRouteMap FastRouteCore::getRoutes()
@@ -823,6 +816,9 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
 
 void FastRouteCore::updateDbCongestion()
 {
+  if (h_edges_3D_.num_elements() == 0) {  // no information
+    return;
+  }
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
   if (db_gcell)
@@ -873,6 +869,55 @@ void FastRouteCore::updateDbCongestion()
           uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
           uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
           db_gcell->setUsage(layer, x, y, usageH + usageV);
+        }
+      }
+    }
+  }
+}
+
+void FastRouteCore::getCapacityReductionData(
+    CapacityReductionData& cap_red_data)
+{
+  cap_red_data.resize(x_grid_);
+  for (int x = 0; x < x_grid_; x++) {
+    cap_red_data[x].resize(y_grid_);
+  }
+
+  for (int k = 0; k < num_layers_; k++) {
+    const uint8_t capH = h_capacity_3D_[k];
+    const uint8_t capV = v_capacity_3D_[k];
+    const uint8_t last_row_capH = last_row_h_capacity_3D_[k];
+    const uint8_t last_col_capV = last_col_v_capacity_3D_[k];
+    bool is_horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    for (int x = 0; x < x_grid_; x++) {
+      for (int y = 0; y < y_grid_; y++) {
+        if (is_horizontal) {
+          if (!regular_y_ && y == y_grid_ - 1) {
+            cap_red_data[x][y].capacity += last_row_capH;
+          } else if (x != x_grid_ - 1 || y == y_grid_ - 1) {
+            // don't add horizontal cap in the last col because there is no
+            // usage there
+            cap_red_data[x][y].capacity += capH;
+          }
+        } else {
+          if (!regular_x_ && x == x_grid_ - 1) {
+            cap_red_data[x][y].capacity += last_col_capV;
+          } else if (y != y_grid_ - 1 || x == x_grid_ - 1) {
+            // don't add vertical cap in the last row because there is no usage
+            // there
+            cap_red_data[x][y].capacity += capV;
+          }
+        }
+        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
+            && y_grid_ > 1) {
+          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+          cap_red_data[x][y].reduction += blockageH + blockageV;
+        } else {
+          uint8_t blockageH = h_edges_3D_[k][y][x].red;
+          uint8_t blockageV = v_edges_3D_[k][y][x].red;
+          cap_red_data[x][y].reduction += blockageH + blockageV;
         }
       }
     }

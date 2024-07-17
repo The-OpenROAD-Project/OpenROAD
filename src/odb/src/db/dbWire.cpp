@@ -34,16 +34,16 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbNet.h"
-#include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -437,6 +437,7 @@ void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
     }
     w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
   }
+  free(destid);
 }
 
 void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)

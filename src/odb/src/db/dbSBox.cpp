@@ -32,7 +32,6 @@
 
 #include "dbSBox.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
@@ -43,6 +42,8 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 
 namespace odb {
 
@@ -457,6 +458,70 @@ void dbSBox::destroy(dbSBox* box_)
   block->remove_rect(box->_shape._rect);
   dbProperty::destroyProperties(box);
   block->_sbox_tbl->destroy(box);
+}
+
+std::vector<dbSBox*> dbSBox::smashVia()
+{
+  if (!isVia()) {
+    return {};
+  }
+
+  auto* block_via = getBlockVia();
+
+  if (block_via == nullptr) {
+    return {};
+  }
+
+  if (block_via->getTechVia() != nullptr) {
+    return {};
+  }
+
+  auto params = block_via->getViaParams();
+
+  if (params.getNumCutCols() == 1 && params.getNumCutRows() == 1) {
+    // nothing to do
+    return {};
+  }
+
+  const std::string name = block_via->getName() + "_smashed";
+
+  _dbSWire* wire = (_dbSWire*) getSWire();
+  dbBlock* block = (dbBlock*) wire->getOwner();
+  dbSWire* swire = (dbSWire*) wire;
+
+  odb::dbVia* new_block_via = block->findVia(name.c_str());
+
+  if (new_block_via == nullptr) {
+    new_block_via = odb::dbVia::create(block, name.c_str());
+
+    params.setNumCutCols(1);
+    params.setNumCutRows(1);
+
+    new_block_via->setViaParams(params);
+  }
+
+  std::vector<dbSBox*> new_boxes;
+
+  std::vector<odb::dbShape> via_boxes;
+  getViaBoxes(via_boxes);
+  for (const auto& via_box : via_boxes) {
+    auto* layer = via_box.getTechLayer();
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+
+    const auto& box = via_box.getBox();
+    auto* sbox_via = odb::dbSBox::create(
+        swire, new_block_via, box.xCenter(), box.yCenter(), getWireShapeType());
+    new_boxes.push_back(sbox_via);
+
+    if (hasViaLayerMasks()) {
+      sbox_via->setViaLayerMask(
+          getViaBottomLayerMask(), getViaCutLayerMask(), getViaTopLayerMask());
+    }
+  }
+
+  return new_boxes;
 }
 
 }  // namespace odb

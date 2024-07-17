@@ -9,8 +9,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=yosys-0.33
-    eqyVersion=8327ac7
+    yosysVersion=yosys-0.42
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -34,9 +33,8 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --recursive https://github.com/YosysHQ/eqy
+        git clone --depth=1 -b "${yosysVersion}" https://github.com/YosysHQ/eqy
         cd eqy
-        git checkout ${eqyVersion}
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
         make install PREFIX="${eqyPrefix}"
@@ -50,7 +48,7 @@ _equivalenceDeps() {
             source /opt/rh/llvm-toolset-7.0/enable
         fi
         cd "${baseDir}"
-        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
@@ -178,7 +176,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
@@ -186,6 +184,23 @@ _installCommonDev() {
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
+    fi
+
+    if [[ ${CI} == "yes" ]]; then
+        # ninja
+        ninjaCheckSum="817e12e06e2463aeb5cb4e1d19ced606"
+        ninjaVersion=1.10.2
+        ninjaPrefix=${PREFIX:-"/usr/local"}
+        ninjaBin=${ninjaPrefix}/bin/ninja
+        if [[ ! -d ${ninjaBin} ]]; then
+            cd "${baseDir}"
+            wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
+            md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
+            unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
+            chmod +x ${ninjaBin}
+        else
+            echo "ninja already installed."
+        fi
     fi
 
     cd "${lastDir}"
@@ -232,8 +247,8 @@ _installUbuntuCleanUp() {
 _installUbuntuPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install tzdata
-    apt-get -y install \
+    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
         binutils \
@@ -264,9 +279,10 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
+        ccache \
 
     if _versionCompare $1 -ge 22.10; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.11 \
             qt5-qmake \
             qtbase5-dev \
@@ -274,7 +290,7 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qtchooser
     elif [[ $1 == 22.04 ]]; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             qt5-qmake \
             qtbase5-dev \
@@ -282,14 +298,11 @@ _installUbuntuPackages() {
             libqt5charts5-dev \
             qtchooser
     else
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             libqt5charts5-dev \
             qt5-default
     fi
-
-    # need the strip "hack" above to run on docker
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
 }
 
 _installRHELCleanUp() {
@@ -404,6 +417,7 @@ _installCentosPackages() {
         tcl-tclreadline-devel \
         tcllib \
         wget \
+        ccache \
         zlib-devel
     }
 
@@ -456,7 +470,8 @@ _installOpenSusePackages() {
 _installHomebrewPackage() {
     package=$1
     commit=$2
-    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
+    dir=$3
+    url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${dir}${package}.rb
     curl -L ${url} > ${package}.rb
 
     if brew list "${package}" &> /dev/null; then
@@ -490,7 +505,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex groff libomp pandoc pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -498,10 +513,8 @@ EOF
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
-    # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b"
-    # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0"
+    # Install swig 4.1.1
+    _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
 
 _installDebianCleanUp() {
@@ -512,8 +525,8 @@ _installDebianCleanUp() {
 _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install tzdata
-    apt-get -y install \
+    apt-get -y install --no-install-recommends tzdata
+    apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
         binutils \
@@ -544,17 +557,38 @@ _installDebianPackages() {
         zlib1g-dev
 
     if [[ $1 == 10 ]]; then
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.7 \
             qt5-default
     else
-        apt-get install -y \
+        apt-get install -y --no-install-recommends \
             libpython3.8 \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
             qtbase5-dev-tools
     fi
+}
+
+_installCI() {
+    apt-get -y update
+    apt-get -y install --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        jq \
+        parallel \
+        software-properties-common \
+        unzip
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo \
+    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get -y update
+    apt-get -y install --no-install-recommends \
+        containerd.io \
+        docker-ce \
+        docker-ce-cli
 }
 
 _checkIsLocal() {
@@ -591,6 +625,8 @@ Usage: $0
                                 #    "$HOME/.local". Only used with
                                 #    -common. This flag cannot be used with
                                 #    sudo or with root access.
+       $0 -ci
+                                # Installs dependencies required to run CI
 
 EOF
     exit "${1:-1}"
@@ -601,6 +637,7 @@ PREFIX=""
 option="all"
 isLocal="false"
 equivalenceDeps="no"
+CI="no"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -630,6 +667,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -eqy)
             equivalenceDeps="yes"
+            ;;
+        -ci)
+            CI="yes"
             ;;
         -local)
             if [[ $(id -u) == 0 ]]; then
@@ -682,6 +722,9 @@ esac
 
 case "${os}" in
     "CentOS Linux" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installCentosPackages
@@ -701,6 +744,9 @@ EOF
         ;;
     "Ubuntu" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ ${CI} == "yes" ]]; then
+            _installCI
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${version}"
@@ -715,6 +761,9 @@ EOF
         fi
         ;;
     "Red Hat Enterprise Linux")
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installRHELPackages
@@ -726,8 +775,10 @@ EOF
         fi
         ;;
     "Darwin" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         _installDarwin
-        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
@@ -736,6 +787,9 @@ To install or run openroad, update your path with:
 EOF
         ;;
     "openSUSE Leap" )
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installOpenSusePackages
@@ -753,6 +807,9 @@ EOF
         ;;
     "Debian GNU/Linux" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ ${CI} == "yes" ]]; then
+            echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installDebianPackages "${version}"

@@ -139,6 +139,8 @@ class GridComponent
                          const odb::dbTechLayerDir& direction) const;
   ShapePtr addShape(Shape* shape);
 
+  virtual bool areIntersectionsAllowed() const { return false; }
+
  private:
   Grid* grid_;
   bool starts_with_power_;

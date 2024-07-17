@@ -32,9 +32,7 @@
 
 #include "dbRegion.h"
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -44,6 +42,8 @@
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 
 namespace odb {
 
@@ -53,6 +53,7 @@ _dbRegion::_dbRegion(_dbDatabase*)
 {
   _flags._type = dbRegionType::INCLUSIVE;
   _flags._invalid = false;
+  _flags._spare_bits = false;
   _name = nullptr;
 }
 

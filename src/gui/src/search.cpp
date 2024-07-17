@@ -35,7 +35,7 @@
 #include <tuple>
 #include <utility>
 
-#include "dbShape.h"
+#include "odb/dbShape.h"
 
 namespace gui {
 
@@ -78,6 +78,11 @@ void Search::inDbPostMoveInst(odb::dbInst* inst)
   if (inst->isPlaced()) {
     clearInsts();
   }
+}
+
+void Search::inDbBPinCreate(odb::dbBPin* pin)
+{
+  clearShapes();
 }
 
 void Search::inDbBPinDestroy(odb::dbBPin* pin)
@@ -417,14 +422,14 @@ void Search::addVia(
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
-      bbox.moveTo(x, y);
+      bbox.moveDelta(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
-      bbox.moveTo(x, y);
+      bbox.moveDelta(x, y);
       tree_shapes[box->getTechLayer()].emplace_back(bbox, true, net);
     }
   }

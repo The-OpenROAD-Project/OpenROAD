@@ -41,13 +41,16 @@ swig_lib(NAME      psm
 
 target_sources(psm
   PRIVATE
-  node.cpp
-  gmat.cpp
-  ir_solver.cpp
-  pdnsim.cpp
-  MakePDNSim.cpp
-  heatMap.cpp
-  debug_gui.cpp
+    MakePDNSim.cpp
+    pdnsim.cpp
+    heatMap.cpp
+    ir_solver.cpp
+    ir_network.cpp
+    connection.cpp
+    shape.cpp
+    node.cpp
+
+    debug_gui.cpp
 )
 
 target_include_directories( psm
@@ -65,6 +68,7 @@ target_link_libraries(psm
     Eigen3::Eigen
     gui
     pad
+    Boost::boost
 )
 
 messages(

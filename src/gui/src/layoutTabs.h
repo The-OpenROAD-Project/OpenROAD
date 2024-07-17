@@ -60,6 +60,7 @@ class LayoutTabs : public QTabWidget
              Gui* gui,
              std::function<bool(void)> usingDBU,
              std::function<bool(void)> showRulerAsEuclidian,
+             std::function<bool(void)> default_mouse_wheel_zoom,
              QWidget* parent = nullptr);
 
   LayoutViewer* getCurrent() const { return current_viewer_; }
@@ -140,6 +141,7 @@ class LayoutTabs : public QTabWidget
   Gui* gui_;
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
+  std::function<bool(void)> default_mouse_wheel_zoom_;
   utl::Logger* logger_;
   bool command_executing_ = false;
 

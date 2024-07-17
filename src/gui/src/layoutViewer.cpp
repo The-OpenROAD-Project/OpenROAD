@@ -57,14 +57,14 @@
 #include <tuple>
 #include <vector>
 
-#include "db.h"
 #include "dbDescriptors.h"
-#include "dbShape.h"
-#include "dbTransform.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "highlightGroupDialog.h"
 #include "mainWindow.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "painter.h"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -2369,7 +2369,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
 
 int LayoutViewer::instanceSizeLimit() const
 {
-  if (options_->isDetailedVisibility()) {
+  if (options_->isDetailedVisibility() || options_->isModuleView()) {
     return 0;
   }
 
@@ -2426,8 +2426,14 @@ void LayoutViewer::executionPaused()
 }
 
 ////// LayoutScroll ///////
-LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
-    : QScrollArea(parent), viewer_(viewer), scrolling_with_cursor_(false)
+LayoutScroll::LayoutScroll(
+    LayoutViewer* viewer,
+    const std::function<bool(void)>& default_mouse_wheel_zoom,
+    QWidget* parent)
+    : QScrollArea(parent),
+      default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
+      viewer_(viewer),
+      scrolling_with_cursor_(false)
 {
   setWidgetResizable(false);
   setWidget(viewer);
@@ -2451,10 +2457,12 @@ void LayoutScroll::scrollContentsBy(int dx, int dy)
   widget()->update();
 }
 
-// Handles zoom in/out on ctrl-wheel
+// Handles zoom in/out on ctrl-wheel when option mouse_wheel_zoom is not set and
+// vice-versa
 void LayoutScroll::wheelEvent(QWheelEvent* event)
 {
-  if (!event->modifiers().testFlag(Qt::ControlModifier)) {
+  if (default_mouse_wheel_zoom_()
+      == event->modifiers().testFlag(Qt::ControlModifier)) {
     QScrollArea::wheelEvent(event);
     return;
   }

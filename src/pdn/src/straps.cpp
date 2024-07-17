@@ -175,8 +175,9 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
   auto* grid = getGrid();
 
+  const odb::Rect die = grid->getBlock()->getDieArea();
   odb::Rect boundary;
-  odb::Rect core = grid->getDomainArea();
+  const odb::Rect core = grid->getDomainArea();
   switch (extend_mode_) {
     case CORE:
       boundary = grid->getDomainBoundary();
@@ -212,25 +213,50 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     const int x_start = boundary.xMin();
     const int x_end = boundary.xMax();
 
-    makeStraps(x_start, core.yMin(), x_end, core.yMax(), false, layer, avoid);
+    const int abs_min = die.yMin();
+    const int abs_max = die.yMax();
+
+    makeStraps(x_start,
+               core.yMin(),
+               x_end,
+               core.yMax(),
+               abs_min,
+               abs_max,
+               false,
+               layer,
+               avoid);
   } else {
     const int y_start = boundary.yMin();
     const int y_end = boundary.yMax();
 
-    makeStraps(core.xMin(), y_start, core.xMax(), y_end, true, layer, avoid);
+    const int abs_min = die.xMin();
+    const int abs_max = die.xMax();
+
+    makeStraps(core.xMin(),
+               y_start,
+               core.xMax(),
+               y_end,
+               abs_min,
+               abs_max,
+               true,
+               layer,
+               avoid);
   }
   debugPrint(getLogger(),
              utl::PDN,
              "Straps",
              1,
-             "Generated {} straps",
-             getShapeCount());
+             "Generated {} straps on {}",
+             getShapeCount(),
+             layer_->getName());
 }
 
 void Straps::makeStraps(int x_start,
                         int y_start,
                         int x_end,
                         int y_end,
+                        int abs_start,
+                        int abs_end,
                         bool is_delta_x,
                         const TechLayer& layer,
                         const Shape::ObstructionTree& avoid)
@@ -245,14 +271,43 @@ void Straps::makeStraps(int x_start,
 
   const int group_pitch = spacing_ + width_;
 
-  int next_minimum_track = 0;
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Straps",
+             2,
+             "Generating straps on {} from ({:.4f}, {:.4f}) to ({:.4f}, "
+             "{:.4f}) with an {}-offset of {:.4f} and must be within {:.4f} "
+             "and {:.4f}",
+             layer_->getName(),
+             layer.dbuToMicron(x_start),
+             layer.dbuToMicron(y_start),
+             layer.dbuToMicron(x_end),
+             layer.dbuToMicron(y_end),
+             is_delta_x ? "x" : "y",
+             layer.dbuToMicron(offset_),
+             layer.dbuToMicron(abs_start),
+             layer.dbuToMicron(abs_end));
+
+  int next_minimum_track = std::numeric_limits<int>::lowest();
   for (pos += offset_; pos <= pos_end; pos += pitch_) {
     int group_pos = pos;
     for (auto* net : nets) {
       // snap to grid if needed
-      group_pos = layer.snapToGrid(group_pos, next_minimum_track);
+      const int org_group_pos = group_pos;
+      group_pos = layer.snapToGrid(org_group_pos, next_minimum_track);
       const int strap_start = group_pos - half_width;
       const int strap_end = strap_start + width_;
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Straps",
+                 3,
+                 "Snapped from {:.4f} -> {:.4f} resulting in strap from {:.4f} "
+                 "to {:.4f}",
+                 layer.dbuToMicron(org_group_pos),
+                 layer.dbuToMicron(group_pos),
+                 layer.dbuToMicron(strap_start),
+                 layer.dbuToMicron(strap_end));
+
       if (strap_start >= pos_end) {
         // no portion of the strap is inside the limit
         return;
@@ -274,6 +329,16 @@ void Straps::makeStraps(int x_start,
       if (avoid.qbegin(bgi::intersects(strap_rect)) != avoid.qend()) {
         // dont add this strap as it intersects an avoidance
         continue;
+      }
+
+      if (is_delta_x) {
+        if (strap_rect.xMin() < abs_start || strap_rect.xMax() > abs_end) {
+          continue;
+        }
+      } else {
+        if (strap_rect.yMin() < abs_start || strap_rect.yMax() > abs_end) {
+          continue;
+        }
       }
 
       addShape(
@@ -669,7 +734,8 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     };
   }
 
-  pins.erase(std::remove_if(pins.begin(), pins.end(), remove_func), pins.end());
+  pins.erase(std::remove_if(pins.begin(), pins.end(), std::move(remove_func)),
+             pins.end());
 
   if (!pins.empty()) {
     type_ = ConnectionType::Edge;
@@ -1116,7 +1182,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     ShapePtr layer_closest_shape
         = getClosestShape(layer_shapes, pin_shape, iterm_->getNet());
     if (layer_closest_shape != nullptr) {
-      closest_shape = layer_closest_shape;
+      closest_shape = std::move(layer_closest_shape);
     }
   }
   if (closest_shape == nullptr) {

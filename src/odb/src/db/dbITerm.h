@@ -35,11 +35,11 @@
 #include <cstdint>
 #include <map>
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbId.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/dbId.h"
+#include "odb/odb.h"
 
 namespace odb {
 

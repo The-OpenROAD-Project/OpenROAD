@@ -44,10 +44,10 @@
 #include <random>
 #include <vector>
 
-#include "db.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -192,7 +192,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
           QString information;
 
           auto add_prop
-              = [props](const std::string& prop, QString& info) -> bool {
+              = [&props](const std::string& prop, QString& info) -> bool {
             auto prop_find = std::find_if(
                 props.begin(), props.end(), [prop](const auto& p) {
                   return p.name == prop;
@@ -1067,7 +1067,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
           cut_color_item->setIcon(makeSwatchIcon(chosen_color));
         }
       }
-      *item_color = chosen_color;
+      *item_color = std::move(chosen_color);
       if (item_pattern != nullptr) {
         *item_pattern = display_dialog->getSelectedPattern();
       }
@@ -1929,7 +1929,7 @@ void DisplayControls::techInit(odb::dbTech* tech)
       continue;
     }
     color.setAlpha(180);
-    layer_color_[layer] = color;
+    layer_color_[layer] = std::move(color);
     layer_pattern_[layer] = Qt::SolidPattern;  // Default pattern is fill solid
   }
   techs_.insert(tech);

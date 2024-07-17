@@ -33,13 +33,13 @@
 #include "dbNameCache.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbName.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/dbDiff.h"
+#include "odb/dbSet.h"
 
 namespace odb {
 

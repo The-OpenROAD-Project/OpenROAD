@@ -32,17 +32,17 @@
 
 #include "dbRow.h"
 
-#include "db.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbLib.h"
-#include "dbSet.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
 
 namespace odb {
 

@@ -222,19 +222,19 @@ proc rtl_macro_placer { args } {
     mpl2::set_macro_placement_file $keys(-write_macro_placement)
   }
 
-  if {![mpl2::rtl_macro_placer_cmd $max_num_macro  \
-                                   $min_num_macro  \
-                                   $max_num_inst   \
-                                   $min_num_inst   \
-                                   $tolerance      \
-                                   $max_num_level  \
+  if {![mpl2::rtl_macro_placer_cmd $max_num_macro \
+                                   $min_num_macro \
+                                   $max_num_inst \
+                                   $min_num_inst \
+                                   $tolerance \
+                                   $max_num_level \
                                    $coarsening_ratio \
-                                   $num_bundled_ios  \
+                                   $num_bundled_ios \
                                    $large_net_threshold \
                                    $signature_net_threshold \
                                    $halo_width \
                                    $halo_height \
-                                   $fence_lx $fence_ly $fence_ux $fence_uy  \
+                                   $fence_lx $fence_ly $fence_ux $fence_uy \
                                    $area_weight $outline_weight $wirelength_weight \
                                    $guidance_weight $fence_weight $boundary_weight \
                                    $notch_weight $macro_blockage_weight \
@@ -286,8 +286,6 @@ proc place_macro { args } {
   set orientation R0
   if {[info exists keys(-orientation)]} {
     set orientation $keys(-orientation)
-  } else {
-    utl::warn MPL 18 "No orientation specified for [$macro getName], defaulting to R0."
   }
 
   mpl2::place_macro $macro $x_origin $y_origin $orientation
@@ -311,7 +309,8 @@ proc parse_macro_name {cmd macro_name} {
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
     keys {} \
-    flags {-coarse -fine -show_bundled_nets};# checker off
+    flags {-coarse -fine -show_bundled_nets \
+           -skip_steps -only_final_result};# checker off
 
   set coarse [info exists flags(-coarse)]
   set fine [info exists flags(-fine)]
@@ -319,8 +318,14 @@ proc mpl_debug { args } {
     set coarse true
     set fine true
   }
+  set block [ord::get_db_block]
 
-  mpl2::set_debug_cmd $coarse $fine [info exists flags(-show_bundled_nets)]
+  mpl2::set_debug_cmd $block \
+    $coarse \
+    $fine \
+    [info exists flags(-show_bundled_nets)] \
+    [info exists flags(-skip_steps)] \
+    [info exists flags(-only_final_result)]
 }
 
 }

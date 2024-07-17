@@ -98,6 +98,10 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 template <class T>
 void SimulatedAnnealingCore<T>::initSequencePair()
 {
+  if (has_initial_sequence_pair_) {
+    return;
+  }
+
   const int sequence_pair_size
       = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
 
@@ -130,6 +134,21 @@ template <class T>
 void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 {
   guides_ = guides;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::setInitialSequencePair(
+    const SequencePair& sequence_pair)
+{
+  if (sequence_pair.pos_sequence.empty()
+      || sequence_pair.neg_sequence.empty()) {
+    return;
+  }
+
+  pos_seq_ = sequence_pair.pos_sequence;
+  neg_seq_ = sequence_pair.neg_sequence;
+
+  has_initial_sequence_pair_ = true;
 }
 
 template <class T>
@@ -499,6 +518,15 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
       neg_index2 = i;
     }
   }
+
+  if (neg_index1 < 0 || neg_index2 < 0) {
+    logger_->error(utl::MPL,
+                   18,
+                   "Divergence in sequence pair: Macros ID {} or {} (or both) "
+                   "exist only in positive sequence.",
+                   index1,
+                   index2);
+  }
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
 }
 
@@ -589,11 +617,73 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
   }  // end while
   // update the final results
+
   packFloorplan();
+  if (graphics_) {
+    graphics_->doNotSkip();
+  }
   calPenalty();
+
+  if (centralization_on_) {
+    attemptCentralization(calNormCost());
+  }
+
   if (graphics_) {
     graphics_->endSA();
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
+{
+  if (outline_penalty_ > 0) {
+    return;
+  }
+
+  // In order to revert the centralization, we cache the current location
+  // of the clusters to avoid floating-point evilness when creating the
+  // x,y grid to fill the dead space by expanding mixed clusters.
+  std::map<int, std::pair<float, float>> clusters_locations;
+
+  for (int& id : pos_seq_) {
+    clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
+  }
+
+  std::pair<float, float> offset((outline_.getWidth() - width_) / 2,
+                                 (outline_.getHeight() - height_) / 2);
+  moveFloorplan(offset);
+
+  // revert centralization
+  if (calNormCost() > pre_cost) {
+    centralization_was_reverted_ = true;
+
+    for (int& id : pos_seq_) {
+      macros_[id].setX(clusters_locations[id].first);
+      macros_[id].setY(clusters_locations[id].second);
+    }
+
+    if (graphics_) {
+      graphics_->saStep(macros_);
+    }
+
+    calPenalty();
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::moveFloorplan(
+    const std::pair<float, float>& offset)
+{
+  for (auto& id : pos_seq_) {
+    macros_[id].setX(macros_[id].getX() + offset.first);
+    macros_[id].setY(macros_[id].getY() + offset.second);
+  }
+
+  if (graphics_) {
+    graphics_->saStep(macros_);
+  }
+
+  calPenalty();
 }
 
 template <class T>

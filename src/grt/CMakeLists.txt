@@ -37,6 +37,8 @@ include("openroad")
 
 project(grt)
 
+find_package(OpenMP REQUIRED)
+
 add_subdirectory(src/fastroute)
 
 swig_lib(NAME      grt
@@ -51,6 +53,7 @@ add_library(grt_lib
     src/Pin.cpp
     src/MakeWireParasitics.cpp
     src/RepairAntennas.cpp
+    src/Rudy.cpp
     src/GlobalRouter.cpp
 )
 
@@ -58,6 +61,7 @@ target_sources(grt
   PRIVATE
     src/MakeGlobalRouter.cpp
     src/heatMap.cpp
+    src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
 )
@@ -86,6 +90,7 @@ target_link_libraries(grt_lib
     rsz_lib
     OpenSTA
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
 
 target_link_libraries(grt
@@ -100,6 +105,7 @@ target_link_libraries(grt
     rsz
     OpenSTA
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

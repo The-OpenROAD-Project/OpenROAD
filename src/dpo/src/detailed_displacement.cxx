@@ -63,10 +63,7 @@ namespace dpo {
 DetailedDisplacement::DetailedDisplacement(Architecture* arch)
     : DetailedObjective("disp"),
       arch_(arch),
-      mgrPtr_(nullptr),
-      orientPtr_(nullptr),
-      singleRowHeight_(arch_->getRow(0)->getHeight()),
-      nSets_(0)
+      singleRowHeight_(arch_->getRow(0)->getHeight())
 {
 }
 

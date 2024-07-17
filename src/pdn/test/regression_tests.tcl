@@ -18,6 +18,7 @@ record_tests {
   core_grid_start_power
   core_grid_start_power_strap_ground
   core_grid_with_rings_with_straps
+  core_grid_with_single_layer_rings
   core_grid_dual_followpins
   core_grid_dual_followpins_error
   core_grid_with_dual_rings
@@ -29,6 +30,7 @@ record_tests {
   core_grid_with_rings_with_straps_rings_over_core
   core_grid_with_routing_obstructions
   core_grid_adjacentcuts
+  core_grid_with_fixed_pins
 
   core_grid_obstruction
 

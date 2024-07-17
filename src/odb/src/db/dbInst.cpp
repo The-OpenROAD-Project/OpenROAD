@@ -34,12 +34,10 @@
 
 #include <algorithm>
 
-#include "db.h"
 #include "dbArrayTable.h"
 #include "dbArrayTable.hpp"
 #include "dbBTerm.h"
 #include "dbBlock.h"
-#include "dbBlockCallBackObj.h"
 #include "dbBox.h"
 #include "dbChip.h"
 #include "dbCommon.h"
@@ -58,10 +56,12 @@
 #include "dbNet.h"
 #include "dbNullIterator.h"
 #include "dbRegion.h"
-#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "dbTransform.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -505,10 +505,11 @@ void dbInst::setOrigin(int x, int y)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   int prev_x = inst->_x;
   int prev_y = inst->_y;
-  if (block->_flags._valid_bbox && prev_x == x && prev_y == y) {
+  const auto placement_status = getPlacementStatus();
+  if (placement_status.isPlaced() && prev_x == x && prev_y == y) {
     return;
   }
-  if (getPlacementStatus().isFixed()) {
+  if (placement_status.isFixed()) {
     inst->getLogger()->error(utl::ODB,
                              359,
                              "Attempt to change the origin of {} instance {}",

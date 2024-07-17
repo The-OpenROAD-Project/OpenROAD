@@ -33,12 +33,12 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbInst.h"
 #include "dbScanPin.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/db.h"
+#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

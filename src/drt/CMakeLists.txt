@@ -94,6 +94,7 @@ target_sources(drt
     src/gc/FlexGC_eol.cpp
     src/gc/FlexGC_inf.cpp
     src/gc/FlexGC_cut.cpp
+    src/gc/FlexGC_metspc.cpp
     src/db/drObj/drAccessPattern.cpp
     src/db/drObj/drPin.cpp
     src/db/drObj/drShape.cpp

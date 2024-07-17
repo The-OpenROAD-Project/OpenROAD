@@ -36,9 +36,9 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbId.h"
-#include "dbTypes.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbTypes.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -92,6 +92,7 @@ class _dbBTerm : public _dbObject
   dbId<_dbBTerm> _ground_pin;
   dbId<_dbBTerm> _supply_pin;
   std::uint32_t _sta_vertex_id;  // not saved
+  Rect _constraint_region;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);

@@ -72,11 +72,11 @@ bool dbIntHashTable<T>::operator==(const dbIntHashTable<T>& rhs) const
 {
   if (_num_entries != rhs._num_entries) {
     return false;
-}
+  }
 
   if (_hash_tbl != rhs._hash_tbl) {
     return false;
-}
+  }
 
   return true;
 }
@@ -106,7 +106,7 @@ void dbIntHashTable<T>::growTable()
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
-}
+  }
 
   // reinsert the entries
   sz = _hash_tbl.size() - 1;
@@ -152,7 +152,7 @@ void dbIntHashTable<T>::shrinkTable()
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
     _hash_tbl.push_back(nullId);
-}
+  }
 
   sz -= 1;
   // reinsert the entries
@@ -201,7 +201,7 @@ T* dbIntHashTable<T>::find(uint id)
 
   if (sz == 0) {
     return 0;
-}
+  }
 
   uint hid = hash_int(id) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -211,7 +211,7 @@ T* dbIntHashTable<T>::find(uint id)
 
     if (entry->_id == id) {
       return entry;
-}
+    }
 
     cur = entry->_next_entry;
   }
@@ -226,7 +226,7 @@ int dbIntHashTable<T>::hasMember(uint id)
 
   if (sz == 0) {
     return false;
-}
+  }
 
   uint hid = hash_int(id) & (sz - 1);
   dbId<T> cur = _hash_tbl[hid];
@@ -236,7 +236,7 @@ int dbIntHashTable<T>::hasMember(uint id)
 
     if (entry->_id == id) {
       return true;
-}
+    }
 
     cur = entry->_next_entry;
   }
@@ -269,7 +269,7 @@ void dbIntHashTable<T>::remove(T* object)
 
       if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
         shrinkTable();
-}
+      }
 
       return;
     }

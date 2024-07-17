@@ -1497,14 +1497,4 @@ odb::dbBlock* Tapcell::getBlock() const
   return db_->getChip()->getBlock();
 }
 
-double Tapcell::dbuToMicrons(int64_t dbu)
-{
-  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
-}
-
-int Tapcell::micronsToDbu(double microns)
-{
-  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
-}
-
 }  // namespace tap

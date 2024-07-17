@@ -32,15 +32,16 @@
 
 #include "definComponent.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
-#include "db.h"
-#include "dbTransform.h"
 #include "defiComponent.hpp"
 #include "defiUtil.hpp"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 definComponent::definComponent()
@@ -52,13 +53,15 @@ definComponent::~definComponent()
 {
   MasterMap::iterator mitr;
 
-  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr)
+  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
     free((void*) (*mitr).first);
+  }
 
   SiteMap::iterator sitr;
 
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
+  }
 }
 
 void definComponent::init()
@@ -67,15 +70,17 @@ void definComponent::init()
   _libs.clear();
 
   MasterMap::iterator mitr;
-  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr)
+  for (mitr = _masters.begin(); mitr != _masters.end(); ++mitr) {
     free((void*) (*mitr).first);
+  }
 
   _masters.clear();
 
   SiteMap::iterator sitr;
 
-  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr)
+  for (sitr = _sites.begin(); sitr != _sites.end(); ++sitr) {
     free((void*) (*sitr).first);
+  }
 
   _sites.clear();
   _inst_cnt = 0;
@@ -175,15 +180,17 @@ void definComponent::begin(const char* iname, const char* mname)
       _errors++;
       return;
     }
-    if (_inst_cnt % 100000 == 0)
+    if (_inst_cnt % 100000 == 0) {
       _logger->info(utl::ODB, 94, "\t\tCreated {} Insts", _inst_cnt);
+    }
   }
 }
 
 void definComponent::placement(int status, int x, int y, int orient)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbPlacementStatus placement_status;
   switch (status) {
@@ -251,81 +258,93 @@ void definComponent::halo(int left, int bottom, int right, int top)
 
 void definComponent::region(const char* name)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbRegion* region = _block->findRegion(name);
 
-  if (region == nullptr)
+  if (region == nullptr) {
     region = dbRegion::create(_block, name);
-  else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
+  } else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region) {
     return;
+  }
 
   region->addInst(_cur_inst);
 }
 
 void definComponent::source(dbSourceType source)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   _cur_inst->setSourceType(source);
 }
 
 void definComponent::weight(int weight)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   _cur_inst->setWeight(weight);
 }
 
 void definComponent::property(const char* name, const char* value)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbStringProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::property(const char* name, int value)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbIntProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::property(const char* name, double value)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
 
-  if (p)
+  if (p) {
     dbProperty::destroy(p);
+  }
 
   dbDoubleProperty::create(_cur_inst, name, value);
 }
 
 void definComponent::end()
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbSet<dbProperty> props = dbProperty::getProperties(_cur_inst);
 
-  if (!props.empty() && props.orderReversed())
+  if (!props.empty() && props.orderReversed()) {
     props.reverse();
+  }
 
   _cur_inst = nullptr;
 }

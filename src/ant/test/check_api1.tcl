@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_lef merged_spacing.lef
 read_def sw130_random.def
 
-check_antennas
+check_antennas -verbose
 puts "violation count = [ant::antenna_violation_count]"
 
 # check if net50 has a violation

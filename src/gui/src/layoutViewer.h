@@ -463,8 +463,9 @@ class LayoutScroll : public QScrollArea
 {
   Q_OBJECT
  public:
-  LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
-
+  LayoutScroll(LayoutViewer* viewer,
+               const std::function<bool(void)>& default_mouse_wheel_zoom,
+               QWidget* parent = nullptr);
   bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
@@ -481,6 +482,7 @@ class LayoutScroll : public QScrollArea
   bool eventFilter(QObject* object, QEvent* event) override;
 
  private:
+  std::function<bool(void)> default_mouse_wheel_zoom_;
   LayoutViewer* viewer_;
 
   bool scrolling_with_cursor_;

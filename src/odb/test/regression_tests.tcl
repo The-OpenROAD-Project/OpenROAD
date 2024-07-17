@@ -34,6 +34,7 @@ record_tests {
   gcd_abstract_lef_with_power
   abstract_origin
   write_macro_placement
+  smash_vias
   #odb_man_tcl_check
   #odb_readme_msgs_check
 }

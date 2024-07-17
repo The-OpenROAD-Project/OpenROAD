@@ -32,7 +32,7 @@
 
 // Generator Code Begin Cpp
 #include "{{klass.name}}.h"
-#include "db.h"
+#include "odb/db.h"
 #include "dbDiff.hpp"
 #include "dbDatabase.h"
 #include "dbTable.h"

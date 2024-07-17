@@ -251,7 +251,7 @@ proc set_io_pin_constraint { args } {
 
 sta::define_cmd_args "clear_io_pin_constraints" {}
 
-proc clear_io_pin_constraints {} {
+proc clear_io_pin_constraints { args } {
   sta::parse_key_args "clear_io_pin_constraints" args keys {} flags {}
   ppl::clear_constraints
 }
@@ -737,7 +737,7 @@ proc parse_pin_names {cmd names} {
   }
 
   if {[llength $pin_list] == 0} {
-    utl::error PPL 61 "Pins for $cmd command were not found."
+    utl::error PPL 61 "Pins {$names} for $cmd command were not found."
   }
 
   return $pin_list

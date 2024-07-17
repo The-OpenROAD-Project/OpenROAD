@@ -184,6 +184,9 @@ class TimingPath
   void setPathDelay(float del) { path_delay_ = del; }
   float getSkew() const { return skew_; }
   void setSkew(float skew) { skew_ = skew; }
+  float getLogicDelay() const { return logic_delay_; }
+  int getLogicDepth() const { return logic_depth_; }
+  int getFanout() const { return fanout_; }
 
   void computeClkEndIndex();
   void setSlackOnPathNodes();
@@ -196,6 +199,9 @@ class TimingPath
 
   std::string getStartStageName() const;
   std::string getEndStageName() const;
+
+  const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
+  const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
   void populatePath(sta::Path* path,
                     sta::dbSta* sta,
@@ -217,6 +223,9 @@ class TimingPath
   float path_delay_;
   float arr_time_;
   float req_time_;
+  float logic_delay_;
+  int logic_depth_;
+  int fanout_;
   int clk_path_end_index_;
   int clk_capture_end_index_;
 
@@ -225,8 +234,21 @@ class TimingPath
                         sta::DcalcAnalysisPt* dcalc_ap,
                         float offset,
                         bool clock_expanded,
+                        bool is_capture_path,
                         TimingNodeList& list);
-
+  bool instanceIsLogic(sta::Instance* inst, sta::Network* network);
+  bool instancesAreInverterPair(sta::Instance* curr_inst,
+                                sta::Instance* prev_inst,
+                                sta::Network* network);
+  void updateLogicMetrics(sta::Network* network,
+                          sta::Instance* inst_of_curr_pin,
+                          sta::Instance* inst_of_prev_pin,
+                          sta::Instance* prev_inst,
+                          float pin_delay,
+                          std::set<sta::Instance*>& logic_insts,
+                          float& curr_inst_delay,
+                          float& prev_inst_delay,
+                          bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
 };
 
@@ -351,6 +373,7 @@ class STAGuiInterface
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
+  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
 
