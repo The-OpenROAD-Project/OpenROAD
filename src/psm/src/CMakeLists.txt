@@ -64,6 +64,7 @@ target_link_libraries(psm
     odb
     OpenSTA
     dbSta
+    dpl_lib
     rsz_lib
     Eigen3::Eigen
     gui
@@ -97,6 +98,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       odb
       psm
+      dpl_lib
   )
 
 endif()
