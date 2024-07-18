@@ -7,6 +7,7 @@
 [INFO ODB-0133]     Created 6 nets and 10 connections.
 worst slack -1.88
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
 [INFO RSZ-0041] Resized 15 instances.
 Repair timing output passed/skipped equivalence test
 worst slack 0.09
