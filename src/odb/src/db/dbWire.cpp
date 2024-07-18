@@ -1015,7 +1015,7 @@ enum Coord
   None = 2
 };
 
-static int nextState[13][3] = {
+static const int nextState[13][3] = {
     /*            X   Y   C */
     /*  0  */ {1, 2, 3},
     /*  1  */ {4, 5, 6},
@@ -1031,7 +1031,7 @@ static int nextState[13][3] = {
     /*  11 */ {13, 11, 11},
     /*  12 */ {10, 11, 12}};
 
-static Coord curCoord[13][3] = {
+static const Coord curCoord[13][3] = {
     /*            X        Y        C */
     /*  0  */ {None, None, None},
     /*  1  */ {XCoord, YCoord, None},
@@ -1047,7 +1047,7 @@ static Coord curCoord[13][3] = {
     /*  11 */ {XCoord, None, None},
     /*  12 */ {XCoord, YCoord, None}};
 
-static Coord prevCoord[13][3] = {
+static const Coord prevCoord[13][3] = {
     /*            X        Y        C */
     /*  0  */ {XCoord, YCoord, None},
     /*  1  */ {None, YCoord, None},

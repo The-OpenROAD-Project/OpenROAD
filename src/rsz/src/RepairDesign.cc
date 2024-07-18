@@ -831,7 +831,7 @@ void RepairDesign::repairNetWire(
          || load_slew > max_load_slew_margined) {
     // Make the wire a bit shorter than necessary to allow for
     // offset from instance origin to pin and detailed placement movement.
-    static double length_margin = .05;
+    constexpr double length_margin = .05;
     bool split_wire = false;
     bool resize = true;
     // Distance from repeater to ref_.

@@ -121,6 +121,8 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
+
+  hier_rtlmp_->init();
   hier_rtlmp_->run();
 
   return true;
