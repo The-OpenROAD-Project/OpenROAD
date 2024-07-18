@@ -37,8 +37,6 @@
 
 namespace dpl {
 
-using odb::dbOrientType;
-
 struct GapInfo
 {
   int x;
