@@ -520,7 +520,7 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
     logger->warn(GPL,
                  1,
                  "{} toplevel port is not placed!\n"
-                 "Replace will regard {} is placed in (0, 0)",
+                 "       Replace will regard {} is placed in (0, 0)",
                  bTerm->getConstName(),
                  bTerm->getConstName());
   }
