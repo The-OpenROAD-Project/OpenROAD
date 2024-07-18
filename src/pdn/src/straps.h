@@ -269,7 +269,8 @@ class RepairChannelStraps : public Straps
   static void repairGridChannels(Grid* grid,
                                  const Shape::ShapeTreeMap& global_shapes,
                                  Shape::ObstructionTreeMap& obstructions,
-                                 bool allow);
+                                 bool allow,
+                                 PDNRenderer* renderer);
 
   struct RepairChannelArea
   {

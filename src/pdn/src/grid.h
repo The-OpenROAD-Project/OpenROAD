@@ -227,6 +227,7 @@ class Grid
   Via::ViaTree vias_;
 
   std::vector<GridComponent*> getGridComponents() const;
+  void removeGridComponent(GridComponent* component);
   bool repairVias(const Shape::ShapeTreeMap& global_shapes,
                   Shape::ObstructionTreeMap& obstructions);
 };

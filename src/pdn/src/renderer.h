@@ -59,6 +59,8 @@ class PDNRenderer : public gui::Renderer
 
   const char* getDisplayControlGroupName() override { return "Power Grid"; }
 
+  void pause();
+
  private:
   PdnGen* pdn_;
   Shape::ShapeTreeMap shapes_;

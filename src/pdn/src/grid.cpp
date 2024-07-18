@@ -180,7 +180,11 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
 
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
-      this, all_shapes, local_obstructions, allow_repair_channels_);
+      this,
+      all_shapes,
+      local_obstructions,
+      allow_repair_channels_,
+      domain_->getPDNGen()->getDebugRenderer());
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const

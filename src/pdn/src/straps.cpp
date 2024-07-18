@@ -39,6 +39,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
+#include "renderer.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "techlayer.h"
@@ -2165,7 +2166,8 @@ void RepairChannelStraps::repairGridChannels(
     Grid* grid,
     const Shape::ShapeTreeMap& global_shapes,
     Shape::ObstructionTreeMap& obstructions,
-    bool allow)
+    bool allow,
+    PDNRenderer* renderer)
 {
   // create copy of shapes so they can be used to determine repair locations
   Shape::ShapeTreeMap local_shapes = global_shapes;
@@ -2179,6 +2181,11 @@ void RepairChannelStraps::repairGridChannels(
              1,
              "Channels to repair {}.",
              channels.size());
+
+  if (!channels.empty() && renderer != nullptr) {
+    renderer->update();
+    renderer->pause();
+  }
 
   // check for recurring channels
   for (const auto& channel : channels) {
@@ -2282,7 +2289,7 @@ void RepairChannelStraps::repairGridChannels(
 
   if (channels.size() != areas_repaired.size() && !areas_repaired.empty()) {
     // channels were skipped so, try again
-    repairGridChannels(grid, global_shapes, obstructions, allow);
+    repairGridChannels(grid, global_shapes, obstructions, allow, renderer);
   } else {
     const auto remaining_channels = findRepairChannels(grid);
     if (!remaining_channels.empty()) {

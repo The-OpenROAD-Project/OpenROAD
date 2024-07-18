@@ -306,4 +306,9 @@ void PDNRenderer::drawObjects(gui::Painter& painter)
 {
 }
 
+void PDNRenderer::pause()
+{
+  gui::Gui::get()->pause();
+}
+
 }  // namespace pdn
