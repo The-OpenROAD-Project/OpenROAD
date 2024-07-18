@@ -51,6 +51,8 @@ const gui::Painter::Color PDNRenderer::obstruction_color_
     = gui::Painter::Color(gui::Painter::gray, 100);
 const gui::Painter::Color PDNRenderer::repair_color_
     = gui::Painter::Color(gui::Painter::light_gray, 100);
+const gui::Painter::Color PDNRenderer::repair_outline_color_
+    = gui::Painter::Color(gui::Painter::yellow, 100);
 
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
@@ -109,6 +111,7 @@ void PDNRenderer::update()
         channel.source = repair.connect_to;
         channel.target = repair.target->getLayer();
         channel.rect = repair.area;
+        channel.available_rect = repair.available_area;
         std::string nets;
         for (auto* net : repair.nets) {
           if (!nets.empty()) {
@@ -287,6 +290,8 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (layer == repair.source || layer == repair.target) {
         painter.setPenAndBrush(repair_color_, true);
         painter.drawRect(repair.rect);
+        painter.setPenAndBrush(repair_outline_color_, true, gui::Painter::NONE);
+        painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
             0, 0, gui::Painter::Anchor::BOTTOM_LEFT, repair.text);
