@@ -277,17 +277,7 @@ odb::dbTechLayer* PDNSim::getLowestLayer(odb::dbNet* db_net)
   std::vector<odb::dbShape> via_boxes;
   for (odb::dbSWire* swire : db_net->getSWires()) {
     for (odb::dbSBox* s : swire->getWires()) {
-      if (s->isVia()) {
-        s->getViaBoxes(via_boxes);
-        for (const odb::dbShape& box : via_boxes) {
-          odb::dbTechLayer* tech_layer = box.getTechLayer();
-          if (tech_layer->getRoutingLevel() == 0) {
-            continue;
-          }
-          min_layer_level
-              = std::min(min_layer_level, tech_layer->getRoutingLevel());
-        }
-      } else {
+      if (!s->isVia()) {
         odb::dbTechLayer* tech_layer = s->getTechLayer();
         min_layer_level
             = std::min(min_layer_level, tech_layer->getRoutingLevel());

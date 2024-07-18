@@ -48,7 +48,6 @@ using utl::DPL;
 
 using odb::dbMaster;
 using odb::dbPlacementStatus;
-using odb::dbSigType;
 
 using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
 

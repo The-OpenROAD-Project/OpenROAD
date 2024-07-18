@@ -161,7 +161,7 @@ class Opendp
 
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
-  void insertDecapCells(const double target, IRDropByPoint& psm_ir_drops);
+  void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
 
  private:
   using bgPoint

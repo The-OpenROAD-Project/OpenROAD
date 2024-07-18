@@ -41,8 +41,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dpl/Opendp.h"
 #include "odb/dbBlockCallBackObj.h"
 
-using odb::dbMaster;
-
 namespace odb {
 class dbDatabase;
 class Point;
@@ -71,6 +69,8 @@ enum class GeneratedSourceType
   STRAPS,
   BUMPS
 };
+
+using odb::dbMaster;
 
 class PDNSim : public odb::dbBlockCallBackObj
 {

@@ -118,8 +118,8 @@ proc analyze_power_grid { args } {
 }
 
 sta::define_cmd_args "insert_decap" { -target_cap target_cap\
-                                       [-cells cell_info]\
-                                       [-net net_name]\
+                                      -cells cell_info\
+                                      [-net net_name]\
                                     }
 
 proc insert_decap { args } {
@@ -137,10 +137,10 @@ proc insert_decap { args } {
   # Check even size
   set cells_and_decap $keys(-cells)
   if { [expr [llength $cells_and_decap] % 2] != 0 } {
-    utl::error DPL 181 "-cells must be a list of cell and decap pairs"
+    utl::error PSM 181 "-cells must be a list of cell and decap pairs"
   }
 
-  # Add decap cells on DPL
+  # Add decap cells
   set db [ord::get_db]
   foreach {cell_name decap} $cells_and_decap {
     set decap_value $decap
@@ -159,7 +159,7 @@ proc insert_decap { args } {
       }
     }
     if { !$matched } {
-      utl::warn "DPL" 280 "$decap_name did not match any masters."
+      utl::warn "PSM" 280 "$cell_name did not match any masters."
     }
   }
   # Get net name
