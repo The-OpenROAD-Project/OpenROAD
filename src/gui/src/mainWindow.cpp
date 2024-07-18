@@ -432,6 +432,8 @@ void MainWindow::setBlock(odb::dbBlock* block)
     const std::string title
         = fmt::format("{} - {}", window_title_, block->getName());
     setWindowTitle(QString::fromStdString(title));
+
+    save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
@@ -548,6 +550,8 @@ void MainWindow::createActions()
   exit_ = new QAction("Exit", this);
 
   open_ = new QAction("Open DB", this);
+  save_ = new QAction("Save DB", this);
+  save_->setEnabled(false);
 
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
@@ -590,6 +594,7 @@ void MainWindow::createActions()
   global_connect_->setShortcut(QString("Ctrl+G"));
 
   connect(open_, &QAction::triggered, this, &MainWindow::openDesign);
+  connect(save_, &QAction::triggered, this, &MainWindow::saveDesign);
   connect(
       this, &MainWindow::blockLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, &QAction::triggered, this, &MainWindow::hide);
@@ -661,6 +666,7 @@ void MainWindow::createMenus()
 {
   file_menu_ = menuBar()->addMenu("&File");
   file_menu_->addAction(open_);
+  file_menu_->addAction(save_);
   file_menu_->addAction(hide_);
   file_menu_->addAction(exit_);
 
@@ -1611,6 +1617,22 @@ void MainWindow::openDesign()
   } catch (const std::exception&) {
     // restore option
     open_->setEnabled(true);
+  }
+}
+
+void MainWindow::saveDesign()
+{
+  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const QString file = QFileDialog::getSaveFileName(
+      this, "Save Design", QString(), filefilter);
+
+  if (file.isEmpty()) {
+    return;
+  }
+
+  try {
+    ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
+  } catch (const std::exception&) {
   }
 }
 
