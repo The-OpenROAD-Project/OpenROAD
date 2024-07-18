@@ -1971,6 +1971,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
 float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
 {
+  logger_->report("Analisando iterm: {}", iterm->getName());
   sta::VertexPathIterator path_iter(sinVertex, openSta_);
   float clkPathArrival = 0.0;
   int paths_accepted = 0;
@@ -1978,20 +1979,14 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
     sta::Path* path = path_iter.next();
     bool path_transition = true;
     bool path_min_max = true;
-
-    if (path->dcalcAnalysisPt(openSta_)->corner() != openSta_->cmdCorner()) {
-      continue;
-    }
     if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
       // only populate with rising edges
-      path_transition = false;
-      continue;
+      path_transition = false; 
     }
     if (path->dcalcAnalysisPt(openSta_)->delayMinMax()
         != sta::MinMax::max()) {
       // only populate with max delay
       path_min_max = false;
-      continue;
     }
 
     sta::PathExpanded expand(path, openSta_);
@@ -2003,7 +1998,8 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       odb::dbNet* path_start_net;
       if (start->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
         // only populate with rising edges
-        if(path_transition) {
+        continue;
+	if(path_transition) {
           logger_->report("Não são o mesmo transitions");
         }
       }
@@ -2013,6 +2009,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
         if(path_min_max) {
           logger_->report("Não são o mesmo MinMax");
         }
+	continue;
         // only populate with max delay
       }
       if(!path_transition) {
@@ -2029,14 +2026,23 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       network_->staToDb(start->pin(openSta_), term, port, moditerm, modbterm);
       if (term) {
         path_start_net = term->getNet();
+	if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
+          logger_->report("iterm do start: {}", term->getName());
+        }
       }
       if (port) {
         path_start_net = port->getNet();
+	if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
+	  logger_->report("iterm do start: {}", port->getName());
+	}
       }
       if (path_start_net == topNet) {
         clkPathArrival = path->arrival(openSta_);
         paths_accepted += 1;
-      }
+	return clkPathArrival;
+      } else if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
+	logger_->report("Rejeitou: {}, Queria: {}",path_start_net->getName(), topNet->getName());
+      }	
     }
   }
   if (paths_accepted > 1 || paths_accepted == 0) {
@@ -2097,7 +2103,7 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
           sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(drvr_vertex, topClokcNet, iterm);
           // ignore arrival fall (no inverters in current clock tree)
-          float arrival_pin = openSta_->pinArrival(
+          float pin_arrival = openSta_->pinArrival(
               pin, sta::RiseFall::rise(), sta::MinMax::max());
 
           // add insertion delay
