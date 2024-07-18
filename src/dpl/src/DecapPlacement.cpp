@@ -97,7 +97,7 @@ void Opendp::mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
 
 void Opendp::prepareDecapAndGaps()
 {
-  // Sort decaps cells in decrease order
+  // Sort decaps cells in descending order
   std::sort(decap_masters_.begin(),
             decap_masters_.end(),
             [](const DecapCell* decap1, const DecapCell* decap2) {

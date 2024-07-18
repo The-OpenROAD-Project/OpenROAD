@@ -178,7 +178,7 @@ class Opendp
 
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
 
-  using GapMapByY = std::map<int, vector<GapInfo*>>;
+  using YCoordToGap = std::map<int, vector<GapInfo*>>;
 
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
@@ -376,7 +376,7 @@ class Opendp
   // Decap placement.
   vector<DecapCell*> decap_masters_;
   int decap_count_ = 0;
-  GapMapByY gaps_;
+  YCoordToGap gaps_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_ = 0;
