@@ -1762,8 +1762,16 @@ bool RepairChannelStraps::determineOffset(
     if (estimated_straps.dy() > available_area_.dy()) {
       return false;
     }
+    if (estimated_straps.xMin() < available_area_.xMin()
+        || estimated_straps.xMax() > available_area_.xMax()) {
+      return false;
+    }
   } else {
     if (estimated_straps.dx() > available_area_.dx()) {
+      return false;
+    }
+    if (estimated_straps.yMin() < available_area_.yMin()
+        || estimated_straps.yMax() > available_area_.yMax()) {
       return false;
     }
   }
