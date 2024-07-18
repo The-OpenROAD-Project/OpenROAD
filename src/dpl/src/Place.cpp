@@ -63,6 +63,8 @@ using std::vector;
 
 using utl::DPL;
 
+using utl::format_as;
+
 std::string Opendp::printBgBox(
     const boost::geometry::model::box<bgPoint>& queryBox)
 {

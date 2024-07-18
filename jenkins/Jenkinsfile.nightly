@@ -1,88 +1,89 @@
-pipeline {
-  agent any;
-  options {
-    timeout(time: 9, unit: 'HOURS')
-  }
-  environment {
-    COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-    EQUIVALENCE_CHECK = 1;
-  }
-  stages {
-    stage("Build") {
-      steps {
-        sh "./etc/Build.sh -no-warnings";
-        stash name: "build", includes: "build/**";
-      }
+@Library('utils@or-v2.0.1') _
+
+node {
+
+    env.EQUIVALENCE_CHECK = 1;
+
+    stage('Checkout'){
+        checkout scm;
     }
 
-    stage('Test Matrix') {
-      matrix {
-        agent any;
-        axes {
-          axis {
-            name 'ISPD_YEAR';
-            values '18', '19';
-          }
-          axis {
-            name 'TEST_TO_RUN';
-            values '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'GPL';
-          }
-        }
-        excludes {
-          // run GPL test only once
-          exclude {
-            axis {
-              name 'ISPD_YEAR';
-              values '19';
-            }
-            axis {
-              name 'TEST_TO_RUN';
-              values 'GPL';
-            }
-          }
-        }
-        stages {
-          stage('Run Tests') {
-            steps {
-              script {
+    def DOCKER_IMAGE;
+    stage('Build and Push Docker Image') {
+        DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
+        echo "Docker image is ${DOCKER_IMAGE}";
+    }
 
-                if (env.TEST_TO_RUN != "GPL") {
-                  stage("ISPD ${ISPD_YEAR} TEST ${TEST_TO_RUN}") {
-                    unstash "build";
-                    sh "python3 src/drt/test/run-ispd.py --program $WORKSPACE/build/src/openroad --tests ispd${ISPD_YEAR}_test${TEST_TO_RUN}";
-                  }
+    stage('Build and Stash bins') {
+        buildBinsOR(DOCKER_IMAGE);
+    }
+
+    docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+        stage('Setup Build') {
+            sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+        }
+        stage('Build OpenROAD') {
+            sh label: 'Build script', script: './etc/Build.sh';
+            stash name: 'build', includes: "build/**";
+        }
+    }
+
+    stage('Nightly Tests') {
+
+        Map tasks = [failFast: false];
+        def ISPD_YEAR = ['18', '19'];
+        def TEST_TO_RUN = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+        ISPD_YEAR.each { ispd_year ->
+            TEST_TO_RUN.each { test_to_run ->
+                def name = "ISPD ${ispd_year} TEST ${test_to_run}";
+                tasks[name] = {
+                    node {
+                        docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/ispd:/root/ispd') {
+                            stage("Setup ${name}") {
+                                sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                                checkout scm;
+                                unstash 'build';
+                            }
+                            stage("Run ${name}") {
+                                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                                    sh "python3 src/drt/test/run-ispd.py --program ${WORKSPACE}/build/src/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                                }
+                            }
+                            stage("Save ${name} Results") {
+                                archiveArtifacts "**/*.tar.gz, **/*.log";
+                            }
+                        }
+                    }
                 }
-
-                if (env.TEST_TO_RUN == "GPL") {
-                  stage("GPL Tests") {
-                    unstash "build";
-                    sh "./src/gpl/test/regression-large";
-                  }
-                }
-
-              }
             }
-          }
-        }
-        post {
-          always {
-            archiveArtifacts "**/*.tar.gz, **/*.log";
-          }
         }
 
-      }
-    }
-  }
+        tasks['GPL Tests'] = {
+            node {
+                docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
+                    stage('Setup GPL Tests') {
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout scm;
+                        unstash 'build';
+                    }
+                    stage('Run GPL Tests') {
+                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                            sh './src/gpl/test/regression-large';
+                        }
+                    }
+                    stage('Save GPL Results') {
+                        archiveArtifacts "**/*.tar.gz, **/*.log";
+                    }
+                }
+            }
+        }
 
-  post {
-    failure {
-      script {
-        emailext (
-            to: "$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS",
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
+        parallel(tasks)
+
     }
-  }
+
+    stage('Send Email Report') {
+        sendEmail();
+    }
+
 }

@@ -6,13 +6,4 @@
 [INFO ODB-0131]     Created 1151 components and 3350 component-terminals.
 [INFO ODB-0133]     Created 324 nets and 1048 connections.
 [INFO PDN-0001] Inserting grid: Core
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_0) at (28.9800, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_1) at (56.1200, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_2) at (83.2600, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_3) at (110.4000, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_4) at (137.5400, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_5) at (164.6800, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_6) at (191.8200, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_7) at (218.9600, 155.0400), due to lack of available rows.
-[WARNING PDN-0223] Unable to insert power switch (PSW_ROW_53_8) at (246.1000, 155.0400), due to lack of available rows.
 No differences found.

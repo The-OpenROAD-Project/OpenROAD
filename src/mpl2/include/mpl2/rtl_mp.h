@@ -111,6 +111,8 @@ class MacroPlacer2
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugSkipSteps(bool skip_steps);
+  void setDebugOnlyFinalResult(bool only_final_result);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;

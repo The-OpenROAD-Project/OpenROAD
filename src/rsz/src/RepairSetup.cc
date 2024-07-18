@@ -66,9 +66,11 @@ using utl::RSZ;
 using sta::Edge;
 using sta::fuzzyEqual;
 using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
 using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
+using sta::NetConnectedPinIterator;
 using sta::PathExpanded;
 using sta::VertexOutEdgeIterator;
 
@@ -89,6 +91,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool verbose,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
+                              const bool skip_buffering,
                               const bool skip_buffer_removal)
 {
   init();
@@ -136,11 +139,14 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   } else {
     // nothing to repair
     logger_->metric("design__instance__count__setup_buffer", 0);
+    logger_->info(RSZ, 98, "No setup violations found");
     return;
   }
 
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
+  float initial_tns = sta_->totalNegativeSlack(max_);
+  float prev_tns = initial_tns;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
@@ -150,10 +156,13 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   sta_->checkFanoutLimitPreamble();
 
   resizer_->incrementalParasiticsBegin();
-  int print_iteration = 0;
+  int opto_iteration = 0;
+  bool prev_termination = false;
+  bool two_cons_terminations = false;
   if (verbose) {
-    printProgress(print_iteration, false, false);
+    printProgress(opto_iteration, false, false);
   }
+  float fix_rate_threshold = inc_fix_rate_threshold_;
   for (const auto& end_original_slack : violating_ends) {
     Vertex* end = end_original_slack.first;
     Slack end_slack = sta_->vertexSlack(end, max_);
@@ -177,6 +186,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                end_index,
                max_end_count);
     if (end_index > max_end_count) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "{} end_index {} is larger than"
+                 " max_end_count {}", end->name(network_), end_index,
+                 max_end_count);
+      // clang-format on
       break;
     }
     Slack prev_end_slack = end_slack;
@@ -185,9 +199,26 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
     while (pass <= max_passes) {
-      print_iteration++;
+      opto_iteration++;
       if (verbose) {
-        printProgress(print_iteration, false, false);
+        printProgress(opto_iteration, false, false);
+      }
+      if (terminateProgress(opto_iteration,
+                            initial_tns,
+                            prev_tns,
+                            fix_rate_threshold,
+                            end_index,
+                            max_end_count)) {
+        if (prev_termination) {
+          // Abort entire fixing if no progress for 200 iterations
+          two_cons_terminations = true;
+        } else {
+          prev_termination = true;
+        }
+        break;
+      }
+      if (opto_iteration % opto_small_interval_ == 0) {
+        prev_termination = false;
       }
 
       if (end_slack > setup_slack_margin) {
@@ -204,6 +235,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} end_slack {} is larger than"
+                   " setup_slack_margin {}", end->name(network_), end_index,
+                   max_end_count);
+        // clang-format on
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -211,7 +247,9 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                       end_slack,
                                       skip_pin_swap,
                                       skip_gate_cloning,
-                                      skip_buffer_removal);
+                                      skip_buffering,
+                                      skip_buffer_removal,
+                                      setup_slack_margin);
       if (!changed) {
         if (pass != 1) {
           debugPrint(logger_,
@@ -232,6 +270,11 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} no changes"
+                   " after {} decreasing passes", end->name(network_),
+                   decreasing_slack_passes);
+        // clang-format on
         break;
       }
       resizer_->updateParasitics();
@@ -280,24 +323,47 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
               resize_count_, inserted_buffer_count_, cloned_gate_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
+          // clang-format off
+          debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} decreasing"
+                     " passes {} > decreasig pass limit {}", end->name(network_),
+                     decreasing_slack_passes, decreasing_slack_max_passes_);
+          // clang-format on
           break;
         }
       }
 
       if (resizer_->overMaxArea()) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} resizer"
+                   " over max area", end->name(network_));
+        // clang-format on
         break;
       }
       if (end_index == 1) {
         end = worst_vertex;
       }
       pass++;
-    }
+    }  // while pass <= max_passes
     if (verbose) {
-      printProgress(print_iteration, true, false);
+      printProgress(opto_iteration, true, false);
     }
-  }
+    if (two_cons_terminations) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of setup fixing"
+                 "due to no TNS progress for two opto cycles");
+      // clang-format on
+      break;
+    }
+  }  // for each violating endpoint
+
+  // do some last gasp setup fixing before we give up
+  OptoParams params(setup_slack_margin, verbose);
+  params.iteration = opto_iteration;
+  params.initial_tns = initial_tns;
+  repairSetupLastGasp(params);
+
   if (verbose) {
-    printProgress(print_iteration, true, true);
+    printProgress(opto_iteration, true, true);
   }
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
@@ -349,7 +415,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairPath(path, slack, false, false, false);
+  repairPath(path, slack, false, false, false, false, 0.0);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -390,7 +456,9 @@ bool RepairSetup::repairPath(PathRef& path,
                              const Slack path_slack,
                              const bool skip_pin_swap,
                              const bool skip_gate_cloning,
-                             const bool skip_buffer_removal)
+                             const bool skip_buffering,
+                             const bool skip_buffer_removal,
+                             const float setup_slack_margin)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -454,7 +522,11 @@ bool RepairSetup::repairPath(PathRef& path,
                  drvr_index);
 
       if (!skip_buffer_removal) {
-        if (removeDrvr(drvr_path, drvr_cell, drvr_index, &expanded)) {
+        if (removeDrvr(drvr_path,
+                       drvr_cell,
+                       drvr_index,
+                       &expanded,
+                       setup_slack_margin)) {
           changed = true;
           break;
         }
@@ -476,7 +548,8 @@ bool RepairSetup::repairPath(PathRef& path,
       // For tristate nets all we can do is resize the driver.
       const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
       dbNet* db_net = db_network_->staToDb(net);
-      if (fanout > 1
+      if (!skip_buffering
+          && fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_ && !tristate_drvr
           && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
@@ -506,14 +579,16 @@ bool RepairSetup::repairPath(PathRef& path,
         break;
       }
 
-      // Don't split loads on low fanout nets.
-      if (fanout > split_load_min_fanout_ && !tristate_drvr
-          && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-        const int init_buffer_count = inserted_buffer_count_;
-        splitLoads(drvr_path, drvr_index, path_slack, &expanded);
-        split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
-        changed = true;
-        break;
+      if (!skip_buffering) {
+        // Don't split loads on low fanout nets.
+        if (fanout > split_load_min_fanout_ && !tristate_drvr
+            && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
+          const int init_buffer_count = inserted_buffer_count_;
+          splitLoads(drvr_path, drvr_index, path_slack, &expanded);
+          split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
+          changed = true;
+          break;
+        }
       }
     }
   }
@@ -547,6 +622,18 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
                            PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
+  // Skip if there is no liberty model or this is a single-input cell
+  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  if (drvr_port == nullptr) {
+    return false;
+  }
+  LibertyCell* cell = drvr_port->libertyCell();
+  if (cell == nullptr) {
+    return false;
+  }
+  if (cell->isBuffer() || cell->isInverter()) {
+    return false;
+  }
   Instance* drvr = network_->instance(drvr_pin);
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
@@ -557,9 +644,7 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 
   if (!resizer_->dontTouch(drvr)) {
     // We get the driver port and the cell for that port.
-    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     LibertyPort* input_port = network_->libertyPort(in_pin);
-    LibertyCell* cell = drvr_port->libertyCell();
     LibertyPort* swap_port = input_port;
     sta::LibertyPortSet ports;
 
@@ -574,6 +659,26 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
       swap_pin_inst_set_.insert(drvr);
     } else {
       return false;
+    }
+
+    // Pass slews at input pins for more accurate delay/slew estimation
+    resizer_->input_slew_map_.clear();
+    std::unique_ptr<InstancePinIterator> inst_pin_iter{
+        network_->pinIterator(drvr)};
+    while (inst_pin_iter->hasNext()) {
+      Pin* pin = inst_pin_iter->next();
+      if (network_->direction(pin)->isInput()) {
+        LibertyPort* port = network_->libertyPort(pin);
+        if (port) {
+          Vertex* vertex = graph_->pinDrvrVertex(pin);
+          InputSlews slews;
+          slews[RiseFall::rise()->index()]
+              = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+          slews[RiseFall::fall()->index()]
+              = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+          resizer_->input_slew_map_.emplace(port, slews);
+        }
+      }
     }
 
     // Find the equivalent pins for a cell (simple implementation for now)
@@ -613,13 +718,12 @@ bool RepairSetup::swapPins(PathRef* drvr_path,
 // 4) it doesn't worsen slack
 bool RepairSetup::removeDrvr(PathRef* drvr_path,
                              LibertyCell* drvr_cell,
-                             int drvr_index,
-                             PathExpanded* expanded)
+                             const int drvr_index,
+                             PathExpanded* expanded,
+                             const float setup_slack_margin)
 {
   // TODO:
-  // 1. add setup slack check (based on Elmore delay?)
-  // 2. check dont-touch on nets
-  // 3. add slew check
+  // 1. add max slew check
   if (drvr_cell && drvr_cell->isBuffer()) {
     Pin* drvr_pin = drvr_path->pin(this);
     Instance* drvr = network_->instance(drvr_pin);
@@ -722,6 +826,20 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
       }
     }
 
+    PathRef* drvr_input_path = expanded->path(drvr_index - 1);
+    Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
+    SlackEstimatorParams params(setup_slack_margin, corner);
+    params.driver_pin = drvr_pin;
+    params.prev_driver_pin = prev_drvr_pin;
+    params.driver_input_pin = drvr_input_vertex->pin();
+    params.driver = drvr;
+    params.driver_path = drvr_path;
+    params.prev_driver_path = prev_drvr_path;
+    params.driver_cell = drvr_cell;
+    if (!estimatedSlackOK(params)) {
+      return false;
+    }
+
     if (resizer_->removeBuffer(drvr, /* honorDontTouch */ true)) {
       removed_buffer_count_++;
       return true;
@@ -729,6 +847,165 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
   }
 
   return false;
+}
+
+// Estimate slack impact from driver removal.
+// Delay improvement from removed driver should be greater than
+// delay degradation from prev driver for driver input pin path.
+// Side input paths should absorb delay and slew degradation from prev driver.
+// Delay degradation for side input paths comes from two sources:
+// 1) delay degradation at prev driver due to increased load cap
+// 2) delay degradation at side out pin due to degraded slew from prev driver
+//
+//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+//               |
+//               ------>  (side_input_pin1  side_out_pin1) ----->
+//               |
+//               ------>  (side_input_pin2  side_out_pin2) ----->
+//
+bool RepairSetup::estimatedSlackOK(const SlackEstimatorParams& params)
+{
+  if (params.corner == nullptr) {
+    // can't do any estimation without a corner
+    return false;
+  }
+
+  // Prep for delay calc
+  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+  const DcalcAnalysisPt* dcalc_ap = params.corner->findDcalcAnalysisPt(max_);
+  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
+  if (prev_drvr_port == nullptr) {
+    return false;
+  }
+  LibertyPort *buffer_input_port, *buffer_output_port;
+  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
+
+  // Compute delay degradation at prev driver due to increased load cap
+  // TODO: use actual slew at input pins instead of fixed slew
+  ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
+  Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
+  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
+  resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
+  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
+                  - resizer_->portCapacitance(buffer_input_port, params.corner);
+  resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
+  float delay_degrad
+      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
+  float delay_imp
+      = resizer_->bufferDelay(params.driver_cell,
+                              params.driver_path->transition(sta_),
+                              dcalc->loadCap(params.driver_pin, dcalc_ap),
+                              dcalc_ap);
+
+  Net* prev_net = network_->net(params.prev_driver_pin);
+  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(prev_net);
+  while (pin_iter->hasNext()) {
+    const Pin* side_input_pin = pin_iter->next();
+    if (side_input_pin == params.prev_driver_pin) {
+      continue;
+    }
+    // Check if degraded delay can be absorbed
+    if (side_input_pin == params.driver_input_pin) {
+      if (delay_imp < delay_degrad) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because delay degradation of {} at previous driver {} "
+                   "is greater than delay improvement of {}",
+                   db_network_->name(params.driver), delay_degrad,
+                   db_network_->name(params.prev_driver_pin), delay_imp);
+        // clang-format on
+        return false;
+      }
+      // clang-format off
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                 "because delay degradation of {} at previous driver {} "
+                 "is less than delay improvement of {}",
+                 db_network_->name(params.driver), delay_degrad,
+                 db_network_->name(params.prev_driver_pin), delay_imp);
+      // clang-format on
+    } else {
+      // side input pin is not driver input pin
+      float old_slack = sta_->pinSlack(side_input_pin, max_);
+      float new_slack = old_slack - params.setup_slack_margin - delay_degrad;
+      if (new_slack < 0) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because side input pin {} will have a violating slack of {}:"
+                   " old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params.driver),
+                   db_network_->name(side_input_pin), new_slack, old_slack, 
+                   params.setup_slack_margin, delay_degrad);
+        // clang-format on
+        return false;
+      }
+      // clang-format off
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed "
+                 "because side input pin {} will have a positive slack of {}:"
+                 " old slack={}, slack margin={}, delay_degrad={}",
+                 db_network_->name(params.driver),
+                 db_network_->name(side_input_pin), new_slack, old_slack, 
+                 params.setup_slack_margin, delay_degrad);
+      // clang-format on
+
+      // Consider secondary degradation at side out pin due to degraded input
+      // slew. Include all output pins in case of multi-output gate (MOG).
+      Instance* side_inst = network_->instance(side_input_pin);
+      InstancePinIterator* side_pin_iter = network_->pinIterator(side_inst);
+      while (side_pin_iter->hasNext()) {
+        const Pin* side_out_pin = side_pin_iter->next();
+        if (!network_->direction(side_out_pin)->isOutput()) {
+          continue;
+        }
+        LibertyPort* side_out_port = network_->libertyPort(side_out_pin);
+        if (side_out_port == nullptr) {
+          return false;
+        }
+        float side_load_cap = dcalc->loadCap(side_out_pin, dcalc_ap);
+        ArcDelay old_delay2[RiseFall::index_count],
+            new_delay2[RiseFall::index_count];
+        Slew old_slew2[RiseFall::index_count], new_slew2[RiseFall::index_count];
+        resizer_->gateDelays(side_out_port,
+                             side_load_cap,
+                             old_slew,  // old input slew from prev_driver
+                             dcalc_ap,
+                             old_delay2,
+                             old_slew2);
+        resizer_->gateDelays(side_out_port,
+                             side_load_cap,
+                             new_slew,  // new input slew from prev_driver
+                             dcalc_ap,
+                             new_delay2,
+                             new_slew2);
+        float delay_diff = max(new_delay2[RiseFall::riseIndex()]
+                                   - old_delay2[RiseFall::riseIndex()],
+                               new_delay2[RiseFall::fallIndex()]
+                                   - old_delay2[RiseFall::fallIndex()]);
+        new_slack -= delay_diff;
+        if (new_slack < 0) {
+          // clang-format off
+          debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+                     "because side output pin {} will have a violating slack of "
+                     "{}: old slack={}, slack margin={}, delay_degrad={}",
+                     db_network_->name(params.driver),
+                     db_network_->name(side_out_pin), new_slack, old_slack, 
+                     params.setup_slack_margin, delay_degrad + delay_diff);
+          // clang-format on
+          return false;
+        }
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed"
+                   "because side output pin {} will have a positive slack of "
+                   "{}: old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params.driver),
+                   db_network_->name(side_out_pin), new_slack, old_slack, 
+                   params.setup_slack_margin, delay_degrad + delay_diff);
+        // clang-format on
+      }  // for each side_out_pin of side inst
+    }
+  }  // for each side_input_pin of prev_net
+
+  return true;
 }
 
 bool RepairSetup::upsizeDrvr(PathRef* drvr_path,
@@ -1353,6 +1630,203 @@ void RepairSetup::printProgress(const int iteration,
         "----------------------------------------------------------------------"
         "---------------------------");
   }
+}
+
+// Terminate progress if incremental fix rate within an opto interval falls
+// below the threshold.   Bump up the threshold after each large opto interval.
+bool RepairSetup::terminateProgress(const int iteration,
+                                    const float initial_tns,
+                                    float& prev_tns,
+                                    float& fix_rate_threshold,
+                                    // for debug only
+                                    const int endpt_index,
+                                    const int num_endpts)
+{
+  if (iteration % opto_large_interval_ == 0) {
+    fix_rate_threshold *= 2.0;
+  }
+  if (iteration % opto_small_interval_ == 0) {
+    float curr_tns = sta_->totalNegativeSlack(max_);
+    float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
+    prev_tns = curr_tns;
+    if (iteration > 1000  // allow for some initial fixing for 1000 iterations
+        && inc_fix_rate < fix_rate_threshold) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at iter {}"
+                 " because incr fix rate {:0.2f}% is < {:0.2f}% [endpt {}/{}]",
+                 iteration, inc_fix_rate*100, fix_rate_threshold*100,
+                 endpt_index, num_endpts);
+      // clang-format on
+      return true;
+    }
+  }
+  return false;
+}
+
+// Perform some last fixing based on sizing only.
+// This is a greedy opto that does not degrade WNS or TNS.
+// TODO: add VT swap
+void RepairSetup::repairSetupLastGasp(const OptoParams& params)
+{
+  float curr_tns = sta_->totalNegativeSlack(max_);
+  if (fuzzyGreaterEqual(curr_tns, 0)) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because TNS is {:0.2f}", curr_tns);
+    // clang-format on
+    return;
+  }
+
+  // Don't do anything unless there was some progress from previous fixing
+  if ((params.initial_tns - curr_tns) / params.initial_tns < 0.05) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because TNS was reduced by < 5% from previous fixing");
+    // clang-format on
+    return;
+  }
+
+  // Sort remaining failing endpoints
+  const VertexSet* endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : *endpoints) {
+    const Slack end_slack = sta_->vertexSlack(end, max_);
+    if (end_slack < params.setup_slack_margin) {
+      violating_ends.emplace_back(end, end_slack);
+    }
+  }
+  std::stable_sort(violating_ends.begin(),
+                   violating_ends.end(),
+                   [](const auto& end_slack1, const auto& end_slack2) {
+                     return end_slack1.second < end_slack2.second;
+                   });
+
+  int end_index = 0;
+  int max_end_count = violating_ends.size();
+  if (max_end_count == 0) {
+    // clang-format off
+    debugPrint(logger_, RSZ, "repair_setup", 1, "last gasp is bailing out "
+               "because there are no violating endpoints");
+    // clang-format on
+    return;
+  }
+  // clang-format off
+  debugPrint(logger_, RSZ, "repair_setup", 1, "{} violating endpoints remain",
+             max_end_count);
+  // clang-format on
+  swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
+  int opto_iteration = params.iteration;
+  if (params.verbose) {
+    printProgress(opto_iteration, false, false);
+  }
+
+  float prev_tns = curr_tns;
+  Slack curr_worst_slack = violating_ends[0].second;
+  Slack prev_worst_slack = curr_worst_slack;
+  bool prev_termination = false;
+  bool two_cons_terminations = false;
+  float fix_rate_threshold = inc_fix_rate_threshold_;
+
+  for (const auto& end_original_slack : violating_ends) {
+    Vertex* end = end_original_slack.first;
+    Slack end_slack = sta_->vertexSlack(end, max_);
+    Slack worst_slack;
+    Vertex* worst_vertex;
+    sta_->worstSlack(max_, worst_slack, worst_vertex);
+    end_index++;
+    if (end_index > max_end_count) {
+      break;
+    }
+    int pass = 1;
+    resizer_->journalBegin();
+    while (pass <= max_last_gasp_passes_) {
+      opto_iteration++;
+      if (terminateProgress(opto_iteration,
+                            params.initial_tns,
+                            prev_tns,
+                            fix_rate_threshold,
+                            end_index,
+                            max_end_count)) {
+        if (prev_termination) {
+          // Abort entire fixing if no progress for 200 iterations
+          two_cons_terminations = true;
+        } else {
+          prev_termination = true;
+        }
+        break;
+      }
+      if (opto_iteration % opto_small_interval_ == 0) {
+        prev_termination = false;
+      }
+      if (params.verbose) {
+        printProgress(opto_iteration, false, false);
+      }
+      if (end_slack > params.setup_slack_margin) {
+        break;
+      }
+      PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+      const bool changed = repairPath(end_path,
+                                      end_slack,
+                                      true /* skip_pin_swap */,
+                                      true /* skip_gate_cloning */,
+                                      true /* skip_buffering */,
+                                      true /* skip_buffer_removal */,
+                                      params.setup_slack_margin);
+
+      if (!changed) {
+        if (pass != 1) {
+          resizer_->journalRestore(
+              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->updateParasitics();
+          sta_->findRequireds();
+        }
+        break;
+      }
+      resizer_->updateParasitics();
+      sta_->findRequireds();
+      end_slack = sta_->vertexSlack(end, max_);
+      sta_->worstSlack(max_, curr_worst_slack, worst_vertex);
+      curr_tns = sta_->totalNegativeSlack(max_);
+
+      // Accept only moves that improve both WNS and TNS
+      if (fuzzyGreaterEqual(curr_worst_slack, prev_worst_slack)
+          && fuzzyGreaterEqual(curr_tns, prev_tns)) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "repair_setup", 1, "sizing move accepted for "
+                   "endpoint {} pass {} because WNS improved to {:0.3f} and "
+                   "TNS improved to {:0.3f}",
+                   end_index, pass, curr_worst_slack, curr_tns);
+        // clang-format on
+        prev_worst_slack = curr_worst_slack;
+        prev_tns = curr_tns;
+        resizer_->journalBegin();
+      } else {
+        resizer_->journalRestore(
+            resize_count_, inserted_buffer_count_, cloned_gate_count_);
+        resizer_->updateParasitics();
+        sta_->findRequireds();
+        break;
+      }
+
+      if (resizer_->overMaxArea()) {
+        break;
+      }
+      if (end_index == 1) {
+        end = worst_vertex;
+      }
+      pass++;
+    }  // while pass <= max_last_gasp_passes_
+    if (params.verbose) {
+      printProgress(opto_iteration, true, false);
+    }
+    if (two_cons_terminations) {
+      // clang-format off
+      debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of last gasp fixing"
+                 "due to no TNS progress for two opto cycles");
+      // clang-format on
+      break;
+    }
+  }  // for each violating endpoint
 }
 
 }  // namespace rsz

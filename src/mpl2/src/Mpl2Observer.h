@@ -59,9 +59,11 @@ class Mpl2Observer
   virtual void saStep(const std::vector<SoftMacro>& macros) {}
   virtual void saStep(const std::vector<HardMacro>& macros) {}
   virtual void endSA() {}
+  virtual void drawResult() {}
 
   virtual void finishedClustering(Cluster* root) {}
 
+  virtual void setMaxLevel(int max_level) {}
   virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
   {
   }
@@ -71,6 +73,9 @@ class Mpl2Observer
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
+  virtual void setSkipSteps(bool skip_steps) {}
+  virtual void doNotSkip() {}
+  virtual void setOnlyFinalResult(bool skip_to_end) {}
   virtual void setOutline(const odb::Rect& outline) {}
 
   virtual void setAreaPenalty(float area) {}

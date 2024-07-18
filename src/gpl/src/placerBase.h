@@ -145,7 +145,7 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbBTerm* bTerm);
+  Pin(odb::dbBTerm* bTerm, utl::Logger* logger);
   ~Pin();
 
   odb::dbITerm* dbITerm() const;
@@ -211,7 +211,7 @@ class Pin
   unsigned char maxPinYField_ : 1;
 
   void updateCoordi(odb::dbITerm* iTerm);
-  void updateCoordi(odb::dbBTerm* bTerm);
+  void updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger);
 };
 
 class Net
