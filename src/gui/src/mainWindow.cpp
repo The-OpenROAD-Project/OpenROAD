@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget* parent)
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
+          [this]() -> int { return arrow_keys_scroll_step_; },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -394,6 +395,9 @@ MainWindow::MainWindow(QWidget* parent)
   default_mouse_wheel_zoom_->setChecked(
       settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
           .toBool());
+  arrow_keys_scroll_step_
+      = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+            .toInt();
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -597,6 +601,9 @@ void MainWindow::createActions()
   default_mouse_wheel_zoom_->setCheckable(true);
   default_mouse_wheel_zoom_->setChecked(false);
 
+  arrow_keys_scroll_step_dialog_ = new QAction("Arrow keys scroll step", this);
+  arrow_keys_scroll_step_ = 20;
+
   font_ = new QAction("Application font", this);
 
   global_connect_ = new QAction("Global connect", this);
@@ -640,6 +647,11 @@ void MainWindow::createActions()
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
 
+  connect(arrow_keys_scroll_step_dialog_,
+          &QAction::triggered,
+          this,
+          &MainWindow::showArrowKeysScrollStep);
+
   connect(font_, &QAction::triggered, this, &MainWindow::showApplicationFont);
 
   connect(global_connect_,
@@ -667,6 +679,25 @@ void MainWindow::showApplicationFont()
 
   if (okay) {
     QApplication::setFont(font);
+    update();
+  }
+}
+
+void MainWindow::showArrowKeysScrollStep()
+{
+  bool okay = false;
+  int arrow_keys_scroll_step
+      = QInputDialog::getInt(this,
+                             tr("Configure arrow keys"),
+                             tr("Arrow keys scrool step value"),
+                             arrow_keys_scroll_step_,
+                             10,
+                             1000,
+                             1,
+                             &okay);
+
+  if (okay) {
+    arrow_keys_scroll_step_ = arrow_keys_scroll_step;
     update();
   }
 }
@@ -712,6 +743,7 @@ void MainWindow::createMenus()
   option_menu->addAction(show_dbu_);
   option_menu->addAction(default_ruler_style_);
   option_menu->addAction(default_mouse_wheel_zoom_);
+  option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
@@ -1367,6 +1399,7 @@ void MainWindow::saveSettings()
   settings.setValue("use_dbu", show_dbu_->isChecked());
   settings.setValue("ruler_style", default_ruler_style_->isChecked());
   settings.setValue("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked());
+  settings.setValue("arrow_keys_scroll_step", arrow_keys_scroll_step_);
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);

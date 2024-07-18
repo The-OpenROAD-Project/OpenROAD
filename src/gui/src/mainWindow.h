@@ -257,6 +257,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void setUseDBU(bool use_dbu);
   void setClearLocation();
   void showApplicationFont();
+  void showArrowKeysScrollStep();
   void showGlobalConnect();
   void openDesign();
   void saveDesign();
@@ -293,6 +294,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   SelectionSet selected_;
   HighlightSet highlighted_;
   Rulers rulers_;
+
+  int arrow_keys_scroll_step_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -334,6 +337,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* show_dbu_;
   QAction* default_ruler_style_;
   QAction* default_mouse_wheel_zoom_;
+  QAction* arrow_keys_scroll_step_dialog_;
   QAction* font_;
   QAction* global_connect_;
 
