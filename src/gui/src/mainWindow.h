@@ -259,6 +259,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showApplicationFont();
   void showGlobalConnect();
   void openDesign();
+  void saveDesign();
 #ifdef ENABLE_CHARTS
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
 #endif
@@ -317,6 +318,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QToolBar* view_tool_bar_;
 
   QAction* open_;
+  QAction* save_;
   QAction* exit_;
   QAction* hide_option_;
   QAction* hide_;
