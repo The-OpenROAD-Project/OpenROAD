@@ -1754,24 +1754,25 @@ bool RepairChannelStraps::determineOffset(
       utl::PDN,
       "Channel",
       3,
-      "Estimating strap to be {}.",
-      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
+      "Estimating strap to be {} within {}.",
+      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()),
+      Shape::getRectText(available_area_, getBlock()->getDbUnitsPerMicron()));
 
   // check if straps will fit
   if (is_horizontal) {
     if (estimated_straps.dy() > available_area_.dy()) {
       return false;
     }
-    if (estimated_straps.xMin() < available_area_.xMin()
-        || estimated_straps.xMax() > available_area_.xMax()) {
+    if (estimated_straps.yMin() < available_area_.yMin()
+        || estimated_straps.yMax() > available_area_.yMax()) {
       return false;
     }
   } else {
     if (estimated_straps.dx() > available_area_.dx()) {
       return false;
     }
-    if (estimated_straps.yMin() < available_area_.yMin()
-        || estimated_straps.yMax() > available_area_.yMax()) {
+    if (estimated_straps.xMin() < available_area_.xMin()
+        || estimated_straps.xMax() > available_area_.xMax()) {
       return false;
     }
   }
