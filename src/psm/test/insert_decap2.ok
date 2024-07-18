@@ -17,6 +17,5 @@ Average IR drop  : 1.25e-11 V
 Worstcase IR drop: 2.85e-11 V
 Percentage drop  : 0.00 %
 ######################################
-
 [INFO DPL-0056] Placed 4 decap cells. Total capacitance: 0.000010
 No differences found.

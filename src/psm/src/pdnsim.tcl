@@ -168,7 +168,6 @@ proc insert_decap { args } {
     set net_name $keys(-net)
   }
 
-  puts $net_name
   # Insert decap cells
   psm::insert_decap_cmd $target_cap $net_name
 }
