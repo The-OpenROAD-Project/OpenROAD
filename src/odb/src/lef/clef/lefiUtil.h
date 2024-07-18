@@ -40,9 +40,6 @@
 /* Structure to return Macro data to FE                                       */
 
 /*int lefiValidTime();                                                        */
-EXTERN int lefiValidUser();
-
-EXTERN char* lefiUser();
 
 EXTERN char* lefiOrientStr(int orient);
 

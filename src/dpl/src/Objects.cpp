@@ -35,8 +35,6 @@
 
 namespace dpl {
 
-Cell Cell::dummy_cell;
-
 const char* Cell::name() const
 {
   return db_inst_->getConstName();

@@ -349,6 +349,7 @@ class Opendp
   int64_t displacement_max_ = 0;
 
   std::unique_ptr<DplObserver> debug_observer_;
+  std::unique_ptr<Cell> dummy_cell_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;
