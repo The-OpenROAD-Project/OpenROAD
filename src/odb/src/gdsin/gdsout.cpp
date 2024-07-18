@@ -7,6 +7,7 @@
 #include "../db/dbGDSPath.h"
 #include "../db/dbGDSElement.h"
 #include "../db/dbGDSSRef.h"
+#include "../db/dbGDSText.h"
 
 namespace odb
 {
@@ -192,6 +193,9 @@ void GDSWriter::writeElement(dbGDSElement* el)
   else if(dynamic_cast<_dbGDSSRef*>(_el)){
     writeSRef((dbGDSSRef*)el);
   }
+  else if(dynamic_cast<_dbGDSText*>(_el)){
+    writeText((dbGDSText*)el);
+  }
   else{
     throw std::runtime_error("Invalid / Unsupported element type");
   }
@@ -316,6 +320,53 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   writeEndel();
 }
 
+void GDSWriter::writeText(dbGDSText* text){
+  record_t r;
+  r.type = RecordType::TEXT;
+  r.dataType = DataType::NO_DATA;
+  writeRecord(r);
+
+  writeLayer(text);
+
+  record_t r2;
+  r2.type = RecordType::TEXTTYPE;
+  r2.dataType = DataType::INT_2;
+  r2.data16 = {text->get_textType()};
+  writeRecord(r2);
+
+  writeTextPres(text->getPresentation());
+
+  if(text->get_pathType() != 0){
+    record_t r3;
+    r3.type = RecordType::PATHTYPE;
+    r3.dataType = DataType::INT_2;
+    r3.data16 = {text->get_pathType()};
+    writeRecord(r3);
+  }
+
+  if(text->getWidth() != 0){
+    record_t r4;
+    r4.type = RecordType::WIDTH;
+    r4.dataType = DataType::INT_4;
+    r4.data32 = {text->getWidth()};
+    writeRecord(r4);
+  }
+
+  if(!text->get_sTrans().identity()){
+    writeSTrans(text->get_sTrans());
+  }
+
+  writeXY(text);
+
+  record_t r5;
+  r5.type = RecordType::STRING;
+  r5.dataType = DataType::ASCII_STRING;
+  r5.data8 = text->getText();
+  writeRecord(r5);
+
+  writeEndel();
+}
+
 void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
 {
   record_t r;
@@ -342,6 +393,18 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
     r3.data64 = {strans._angle};
     writeRecord(r3);
   }
+}
+
+void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
+{
+  record_t r;
+  r.type = RecordType::PRESENTATION;
+  r.dataType = DataType::BIT_ARRAY;
+  r.data8 = {0, 0};
+  r.data8[1] |= pres._fontNum << 4;
+  r.data8[1] |= pres._vPres << 2;
+  r.data8[1] |= pres._hPres;
+  writeRecord(r);
 }
 
 } // namespace odb

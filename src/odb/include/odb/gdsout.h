@@ -51,8 +51,10 @@ class GDSWriter
   void writeBoundary(dbGDSBoundary* bnd);
   void writePath(dbGDSPath* path);
   void writeSRef(dbGDSSRef* sref);
+  void writeText(dbGDSText* text);
 
   void writeSTrans(const dbGDSSTrans& strans);
+  void writeTextPres(const dbGDSTextPres& pres);
 };
   
 } // namespace odb

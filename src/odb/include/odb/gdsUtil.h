@@ -75,6 +75,7 @@ typedef struct
   std::vector<double> data64;
 } record_t;
 
+std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(std::string filename);
 
 
 } // namespace odb

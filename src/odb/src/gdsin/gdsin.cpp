@@ -7,6 +7,7 @@
 #include "../db/dbGDSPath.h"
 #include "../db/dbGDSElement.h"
 #include "../db/dbGDSSRef.h"
+#include "../db/dbGDSText.h"
 
 
 namespace odb {
@@ -93,7 +94,7 @@ bool GDSReader::readRecord()
   uint8_t dataType = readInt8();
   _r.type = toRecordType(recordType);
   _r.dataType = toDataType(dataType);
-  printf("Record Length: %d Record Type: %s Data Type: %d\n", recordLength, recordNames[recordType], dataType);
+  //printf("Record Length: %d Record Type: %s Data Type: %d\n", recordLength, recordNames[recordType], dataType);
   if((recordLength-4) % dataTypeSize[_r.dataType] != 0){
     throw std::runtime_error("Corrupted GDS, Data size is not a multiple of data type size!");
   }
@@ -227,6 +228,9 @@ bool GDSReader::processElement(dbGDSStructure& str){
     case RecordType::PATH:
       processPath(str);
       break;
+    case RecordType::TEXT:
+      processText(str);
+      break;
     default:
       throw std::runtime_error("Unimplemented GDS Record Type");
       break;
@@ -336,10 +340,55 @@ bool GDSReader::processSRef(dbGDSStructure& str){
   return true;
 }
 
+bool GDSReader::processText(dbGDSStructure& str){
+  _dbGDSText* text = new _dbGDSText((_dbDatabase*)_db);
+
+  readRecord();
+  checkRType(RecordType::LAYER);
+  text->_layer = _r.data16[0];
+
+  readRecord();
+  checkRType(RecordType::TEXTTYPE);
+  text->_textType = _r.data16[0];
+
+  readRecord();
+  if(_r.type == RecordType::PRESENTATION){
+    text->_presentation = processTextPres();
+    readRecord();
+  }
+
+  if(_r.type == RecordType::PATHTYPE){
+    text->_pathType = _r.data16[0];
+    readRecord();
+  }
+
+  if(_r.type == RecordType::WIDTH){
+    text->_width = _r.data32[0];
+    readRecord();
+  }
+
+  if(_r.type == RecordType::STRANS){
+    text->_sTrans = processSTrans();
+  }
+
+  checkRType(RecordType::XY);
+  for(int i = 0; i < _r.data32.size(); i+=2){
+    text->_xy.push_back({_r.data32[i], _r.data32[i + 1]});
+  }
+
+  readRecord();
+  checkRType(RecordType::STRING);
+  text->_text = std::string(_r.data8.begin(), _r.data8.end());
+
+  readRecord();
+  checkRType(RecordType::ENDEL);
+
+  ((_dbGDSStructure*)&str)->_elements.push_back(text);
+  return true;
+}
+
 dbGDSSTrans GDSReader::processSTrans(){
   checkRType(RecordType::STRANS);
-  printf("STRANS: %x\n", _r.data8[0]);
-  printf("STRANS: %x\n", _r.data8[1]);
 
   bool flipX = _r.data8[0] & 0x80;
   bool absMag = _r.data8[1] & 0x04;
@@ -361,6 +410,15 @@ dbGDSSTrans GDSReader::processSTrans(){
   return dbGDSSTrans(flipX, absMag, absAngle, mag, angle);
 }
 
+dbGDSTextPres GDSReader::processTextPres(){
+  checkRType(RecordType::PRESENTATION);
+  uint8_t hpres = _r.data8[1] & 0x3;
+  uint8_t vpres = (_r.data8[1] & 0xC) >> 2;
+  uint8_t font = (_r.data8[1] & 0x30) >> 4;
 
+  printf("\nFONT PRES DATA: %u \n", _r.data8[1]);
+
+  return dbGDSTextPres(font, (dbGDSTextPres::VPres)vpres, (dbGDSTextPres::HPres)hpres);
+}
 
 }  // namespace odb

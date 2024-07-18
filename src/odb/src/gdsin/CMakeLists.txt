@@ -2,6 +2,7 @@ add_library(gdsin
     gdsin.cpp
     gdsUtil.cpp
     gdsout.cpp
+    xml.cpp
 )
 
 target_include_directories(gdsin

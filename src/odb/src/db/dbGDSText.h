@@ -68,7 +68,21 @@ class _dbGDSText : public _dbGDSElement
                    const char* field,
                    const _dbGDSText& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  
   // User Code Begin Methods
+
+  std::string to_string() override
+  {
+    std::string str = "TEXT TEXTTYPE " + std::to_string(_textType) + " PRES " + _presentation.to_string() + 
+            " PATHTYPE " + std::to_string(_pathType) + " WIDTH " + std::to_string(_width);
+    if(!_sTrans.identity()){
+      str += " STRANS " + _sTrans.to_string();
+    }
+    str += _dbGDSElement::to_string();
+    str += " STRING " + _text;
+    return str;
+  }
+
   // User Code End Methods
 
   int16_t _textType;

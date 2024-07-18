@@ -259,6 +259,7 @@ std::string dbGDSSTrans::to_string() const
   s += std::to_string(_mag) + " ";
   s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
   s += std::to_string(_angle);
+  s += " ";
   return s;
 }
 

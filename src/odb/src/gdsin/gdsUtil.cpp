@@ -1,5 +1,6 @@
 #include "odb/db.h"
 #include "odb/gdsUtil.h"
+#include "odb/xml.h"
 
 namespace odb {
 
@@ -72,6 +73,34 @@ uint64_t double_to_real8(double value) {
   u8_1 += (uint8_t)(64 + exponent);
   const uint64_t result = ((uint64_t)u8_1 << 56) | (mantissa & 0x00FFFFFFFFFFFFFF);
   return result;
+}
+
+std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(std::string filename){
+  std::map<std::pair<int16_t, int16_t>, std::string> layerMap;
+  XML xml;
+  xml.parseXML(filename);
+  XML* layerList = xml.findChild("layer-properties");
+  if (layerList == nullptr) {
+    throw std::runtime_error("Invalid .lyp file");
+  }
+
+  for (auto& layer : layerList->getChildren()) {
+    if(layer.getName() != "properties"){
+      continue;
+    }
+    std::string name = layer.findChild("name")->getValue();
+    std::string source = layer.findChild("source")->getValue();
+    size_t at_pos = source.find("@");
+    size_t slash_pos = source.find("/");
+    if (at_pos == std::string::npos || slash_pos == std::string::npos) {
+      throw std::runtime_error("Invalid .lyp file");
+    }
+    int16_t layerNum = std::stoi(source.substr(0, slash_pos));
+    int16_t dataType = std::stoi(source.substr(slash_pos + 1, at_pos));
+    layerMap[std::make_pair(layerNum, dataType)] = name;
+  }
+
+  return layerMap;
 }
 
 } // namespace odb

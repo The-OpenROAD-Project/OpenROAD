@@ -125,12 +125,19 @@ class GDSReader
   bool processBoundary(dbGDSStructure& str);
   bool processPath(dbGDSStructure& str);
   bool processSRef(dbGDSStructure& str);
+  bool processText(dbGDSStructure& str);
 
   /** 
    * Parses a GDS STrans from the GDS file 
    * @return The parsed STrans
    */
   dbGDSSTrans processSTrans();
+
+  /** 
+   * Parses a GDS Text Presentation from the GDS file 
+   * @return The parsed STrans
+   */
+  dbGDSTextPres processTextPres();
 };
 
 }  // namespace odb

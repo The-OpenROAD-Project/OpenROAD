@@ -8,9 +8,9 @@
 
 int main(int argc, char* argv[])
 {
-  if(argc != 2)
+  if(argc != 3)
   {
-    std::cerr << "Usage: " << argv[0] << " <gds file>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <input file> <output file>" << std::endl;
     return 1;
   }
   odb::GDSReader reader;
@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
   std::cout << "Units: " << lib->getUnits().first << " " << lib->getUnits().second << std::endl;
 
   odb::GDSWriter writer;
-  writer.write_gds(lib, "gds_out.gds");
+  writer.write_gds(lib, argv[2]);
 
   delete lib;
 }
