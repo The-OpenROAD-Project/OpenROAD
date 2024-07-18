@@ -256,6 +256,8 @@ class RepairChannelStraps : public Straps
                  const Shape::ObstructionTreeMap& obstructions);
   bool isEmpty() const;
 
+  bool isAutoInserted() const override { return true; }
+
   void addNets(const std::set<odb::dbNet*>& nets)
   {
     nets_.insert(nets.begin(), nets.end());
