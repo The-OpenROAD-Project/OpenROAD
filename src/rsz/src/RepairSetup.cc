@@ -155,7 +155,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                 "Repairing {} out of {} ({:0.2f}%) violating endpoints...",
                 max_end_count,
                 violating_ends.size(),
-                repair_tns_end_percent*100.0);
+                repair_tns_end_percent * 100.0);
 
   // Ensure that max cap and max fanout violations don't get worse
   sta_->checkCapacitanceLimitPreamble();
