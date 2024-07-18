@@ -59,6 +59,8 @@ class PDNRenderer : public gui::Renderer
 
   const char* getDisplayControlGroupName() override { return "Power Grid"; }
 
+  void pause();
+
  private:
   PdnGen* pdn_;
   Shape::ShapeTreeMap shapes_;
@@ -70,6 +72,7 @@ class PDNRenderer : public gui::Renderer
     odb::dbTechLayer* source;
     odb::dbTechLayer* target;
     odb::Rect rect;
+    odb::Rect available_rect;
     std::string text;
   };
   std::vector<RepairChannel> repair_;
@@ -80,6 +83,7 @@ class PDNRenderer : public gui::Renderer
   static const gui::Painter::Color via_color_;
   static const gui::Painter::Color obstruction_color_;
   static const gui::Painter::Color repair_color_;
+  static const gui::Painter::Color repair_outline_color_;
 
   static constexpr const char* grid_obs_text_ = "Grid obstructions";
   static constexpr const char* initial_obs_text_ = "Initial obstructions";

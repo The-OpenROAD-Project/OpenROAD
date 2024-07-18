@@ -236,6 +236,7 @@ class RepairChannelStraps : public Straps
                       const Shape::ObstructionTreeMap& other_shapes,
                       const std::set<odb::dbNet*>& nets,
                       const odb::Rect& area,
+                      const odb::Rect& available_area,
                       const odb::Rect& obs_check_area);
 
   Type type() const override { return GridComponent::RepairChannel; }
@@ -256,6 +257,8 @@ class RepairChannelStraps : public Straps
                  const Shape::ObstructionTreeMap& obstructions);
   bool isEmpty() const;
 
+  bool isAutoInserted() const override { return true; }
+
   void addNets(const std::set<odb::dbNet*>& nets)
   {
     nets_.insert(nets.begin(), nets.end());
@@ -267,11 +270,13 @@ class RepairChannelStraps : public Straps
   static void repairGridChannels(Grid* grid,
                                  const Shape::ShapeTreeMap& global_shapes,
                                  Shape::ObstructionTreeMap& obstructions,
-                                 bool allow);
+                                 bool allow,
+                                 PDNRenderer* renderer);
 
   struct RepairChannelArea
   {
     odb::Rect area;
+    odb::Rect available_area;
     odb::Rect obs_area;
     Straps* target;
     odb::dbTechLayer* connect_to;
@@ -284,6 +289,7 @@ class RepairChannelStraps : public Straps
   std::set<odb::dbNet*> nets_;
   odb::dbTechLayer* connect_to_;
   odb::Rect area_;
+  odb::Rect available_area_;
   odb::Rect obs_check_area_;
 
   bool invalid_ = false;
