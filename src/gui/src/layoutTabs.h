@@ -61,6 +61,7 @@ class LayoutTabs : public QTabWidget
              std::function<bool(void)> usingDBU,
              std::function<bool(void)> showRulerAsEuclidian,
              std::function<bool(void)> default_mouse_wheel_zoom,
+             std::function<int(void)> arrow_keys_scroll_step,
              QWidget* parent = nullptr);
 
   LayoutViewer* getCurrent() const { return current_viewer_; }
@@ -142,6 +143,7 @@ class LayoutTabs : public QTabWidget
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
   std::function<bool(void)> default_mouse_wheel_zoom_;
+  std::function<int(void)> arrow_keys_scroll_step_;
   utl::Logger* logger_;
   bool command_executing_ = false;
 

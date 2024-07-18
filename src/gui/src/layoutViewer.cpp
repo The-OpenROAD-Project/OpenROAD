@@ -2429,9 +2429,11 @@ void LayoutViewer::executionPaused()
 LayoutScroll::LayoutScroll(
     LayoutViewer* viewer,
     const std::function<bool(void)>& default_mouse_wheel_zoom,
+    const std::function<int(void)>& arrow_keys_scroll_step,
     QWidget* parent)
     : QScrollArea(parent),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
+      arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
       viewer_(viewer),
       scrolling_with_cursor_(false)
 {
@@ -2507,6 +2509,30 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
   }
 
   return QScrollArea::eventFilter(object, event);
+}
+
+void LayoutScroll::keyPressEvent(QKeyEvent* event)
+{
+  switch (event->key()) {
+    case Qt::Key_Up:
+      verticalScrollBar()->setValue(verticalScrollBar()->value()
+                                    - arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Down:
+      verticalScrollBar()->setValue(verticalScrollBar()->value()
+                                    + arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Left:
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
+                                      - arrow_keys_scroll_step_());
+      break;
+    case Qt::Key_Right:
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
+                                      + arrow_keys_scroll_step_());
+      break;
+    default:
+      QScrollArea::keyPressEvent(event);
+  }
 }
 
 bool LayoutScroll::isScrollingWithCursor()
