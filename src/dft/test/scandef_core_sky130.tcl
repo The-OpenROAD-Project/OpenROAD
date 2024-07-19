@@ -10,4 +10,4 @@ link_design top -hier
 
 read_def -incremental scandef_core_sky130.scandef
 write_def scandef_core_sky130.out.def
-diff_files scandef_core_sky130.out.def scandef_core_sky130.def.ok
+diff_files scandef_core_sky130.out.def scandef_core_sky130.defok
