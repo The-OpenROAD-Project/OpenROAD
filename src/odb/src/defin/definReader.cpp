@@ -100,11 +100,10 @@ dbITerm* findScanITerm(definReader* reader,
 {
   if (!pin_name) {
     if (!common_pin) {
-      reader->_logger->error(utl::ODB,
-                             259,
-                             "SCANDEF is missing either component pin or a "
-                             "COMMONSCANPINS for instance {}",
-                             inst->getName());
+      reader->error(
+          fmt::format("SCANDEF is missing either component pin or a "
+                      "COMMONSCANPINS for instance {}",
+                      inst->getName()));
       return nullptr;
     }
     // using the common pin name
@@ -113,9 +112,8 @@ dbITerm* findScanITerm(definReader* reader,
   return inst->findITerm(pin_name);
 }
 
-std::variant<dbBTerm*, dbITerm*> findScanTerm(definReader* reader,
-                                              dbBlock* block,
-                                              const char* pin_name)
+std::optional<std::variant<dbBTerm*, dbITerm*>>
+findScanTerm(definReader* reader, dbBlock* block, const char* pin_name)
 {
   dbBTerm* bterm = block->findBTerm(pin_name);
   if (bterm) {
@@ -126,8 +124,9 @@ std::variant<dbBTerm*, dbITerm*> findScanTerm(definReader* reader,
   if (iterm) {
     return iterm;
   }
-  reader->_logger->error(
-      utl::ODB, 262, "SCANDEF START/STOP pin {} does not exist", pin_name);
+  reader->error(
+      fmt::format("SCANDEF START/STOP pin {} does not exist", pin_name));
+  return std::nullopt;
 }
 
 void populateScanInst(definReader* reader,
@@ -141,8 +140,8 @@ void populateScanInst(definReader* reader,
 {
   dbInst* inst = block->findInst(inst_name);
   if (!inst) {
-    reader->_logger->error(
-        utl::ODB, 255, "SCANDEF Inst {} does not exist", inst_name);
+    reader->error(fmt::format("SCANDEF Inst {} does not exist", inst_name));
+    return;
   }
 
   dbScanInst* scan_inst = db_scan_list->add(inst);
@@ -150,21 +149,20 @@ void populateScanInst(definReader* reader,
   dbITerm* scan_in
       = findScanITerm(reader, inst, in_pin_name, scan_chain->commonInPin());
   if (!scan_in) {
-    reader->_logger->error(utl::ODB,
-                           256,
-                           "SCANDEF IN pin {} does not exist in cell {}",
-                           in_pin_name,
-                           inst_name);
+    reader->error(fmt::format(
+        "SCANDEF IN pin {} does not exist in cell {}", in_pin_name, inst_name));
   }
 
   dbITerm* scan_out
       = findScanITerm(reader, inst, out_pin_name, scan_chain->commonOutPin());
   if (!scan_out) {
-    reader->_logger->error(utl::ODB,
-                           257,
-                           "SCANDEF OUT pin {} does not exist in cell {}",
-                           out_pin_name,
-                           inst_name);
+    reader->error(fmt::format("SCANDEF OUT pin {} does not exist in cell {}",
+                              out_pin_name,
+                              inst_name));
+  }
+
+  if (!scan_in || !scan_out) {
+    return;
   }
 
   scan_inst->setAccessPins({.scan_in = scan_in, .scan_out = scan_out});
@@ -1432,10 +1430,21 @@ int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
   scan_chain->start(&unused, &start_pin_name);
   scan_chain->stop(&unused, &stop_pin_name);
 
+  auto scan_in_pin = findScanTerm(reader, block, start_pin_name);
+  auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
+  if (!scan_in_pin.has_value()) {
+    reader->error(fmt::format("Can't parse SCANIN pin"));
+    return PARSE_ERROR;
+  }
+  if (!scan_out_pin.has_value()) {
+    reader->error(fmt::format("Can't parse SCANOUT pin"));
+    return PARSE_ERROR;
+  }
+
   std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanIn(pin); },
-             findScanTerm(reader, block, start_pin_name));
+             *scan_in_pin);
   std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanOut(pin); },
-             findScanTerm(reader, block, stop_pin_name));
+             *scan_out_pin);
 
   // Get floating elements, each floating element is in its own dbScanList
   int floating_size = 0;
@@ -1870,7 +1879,7 @@ void definReader::line(int line_num)
   _logger->info(utl::ODB, 125, "lines processed: {}", line_num);
 }
 
-void definReader::error(const char* msg)
+void definReader::error(std::string_view msg)
 {
   _logger->warn(utl::ODB, 126, "error: {}", msg);
   ++_errors;

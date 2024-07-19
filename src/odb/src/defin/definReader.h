@@ -91,8 +91,7 @@ class definReader : public definBase
   void init() override;
   void setLibs(std::vector<dbLib*>& lib_names);
 
-  virtual void error(const char* msg);
-  virtual void line(int line_num);
+  void line(int line_num);
 
   void setTech(dbTech* tech);
   void setBlock(dbBlock* block);
@@ -262,6 +261,7 @@ class definReader : public definBase
   void useBlockName(const char* name);
   void namesAreDBIDs();
   void setAssemblyMode();
+  void error(std::string_view msg);
 
   dbChip* createChip(std::vector<dbLib*>& search_libs,
                      const char* def_file,
