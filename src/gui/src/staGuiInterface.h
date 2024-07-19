@@ -376,6 +376,8 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
+  std::unordered_map<const sta::Pin*, float> getEndPointToSlackMap(
+      const std::string& path_group_name) const;
 
  private:
   sta::dbSta* sta_;
