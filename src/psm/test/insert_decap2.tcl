@@ -8,7 +8,7 @@ read_liberty sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib
 
 source sky130hd/sky130hd.rc
 
-read_def "insert_decap_gcd.def"
+read_def "sky130hd_data/insert_decap_gcd.def"
 
 analyze_power_grid -net {VDD}
 insert_decap -target_cap 10.5 -cells {"sky130_fd_sc_hd__decap_3" 2.5}
