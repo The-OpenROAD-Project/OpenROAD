@@ -36,17 +36,6 @@
 #include "lefiUtil.h"
 #include "lefiUtil.hpp"
 
-// Wrappers definitions.
-int lefiValidUser()
-{
-  return LefDefParser::lefiValidUser();
-}
-
-char* lefiUser()
-{
-  return LefDefParser::lefiUser();
-}
-
 char* lefiOrientStr(int orient)
 {
   return LefDefParser::lefiOrientStr(orient);

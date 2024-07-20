@@ -41,6 +41,7 @@
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "renderer.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -1532,6 +1533,7 @@ RepairChannelStraps::RepairChannelStraps(
     const Shape::ObstructionTreeMap& other_shapes,
     const std::set<odb::dbNet*>& nets,
     const odb::Rect& area,
+    const odb::Rect& available_area,
     const odb::Rect& obs_check_area)
     : Straps(grid,
              target->getLayer(),
@@ -1542,6 +1544,7 @@ RepairChannelStraps::RepairChannelStraps(
       nets_(nets),
       connect_to_(connect_to),
       area_(area),
+      available_area_(available_area),
       obs_check_area_(obs_check_area)
 {
   // use snap to grid
@@ -1645,9 +1648,9 @@ void RepairChannelStraps::determineParameters(
   const int max_length = getMaxLength();
   int area_width = 0;
   if (isHorizontal()) {
-    area_width = area_.dy();
+    area_width = available_area_.dy();
   } else {
-    area_width = area_.dx();
+    area_width = available_area_.dx();
   }
 
   auto check = [&]() -> bool {
@@ -1658,7 +1661,7 @@ void RepairChannelStraps::determineParameters(
           utl::PDN,
           "Channel",
           2,
-          "Failed on channel width check, group {:.4f} and channel {.4f}.",
+          "Failed on channel width check, group {:.4f} and channel {:.4f}.",
           group_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
           area_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
       return false;
@@ -1724,9 +1727,9 @@ bool RepairChannelStraps::determineOffset(
   const int group_width = getStrapGroupWidth();
   int offset = -group_width / 2 + extra_offset;
   if (is_horizontal) {
-    offset += 0.5 * (area_.yMin() + area_.yMax());
+    offset += 0.5 * (available_area_.yMin() + available_area_.yMax());
   } else {
-    offset += 0.5 * (area_.xMin() + area_.xMax());
+    offset += 0.5 * (available_area_.xMin() + available_area_.xMax());
   }
   const int half_width = getWidth() / 2;
   offset += half_width;
@@ -1735,11 +1738,15 @@ bool RepairChannelStraps::determineOffset(
   odb::Rect estimated_straps;
   const int strap_start = offset - half_width;
   if (is_horizontal) {
-    estimated_straps = odb::Rect(
-        area_.xMin(), strap_start, area_.xMax(), strap_start + group_width);
+    estimated_straps = odb::Rect(available_area_.xMin(),
+                                 strap_start,
+                                 available_area_.xMax(),
+                                 strap_start + group_width);
   } else {
-    estimated_straps = odb::Rect(
-        strap_start, area_.yMin(), strap_start + group_width, area_.yMax());
+    estimated_straps = odb::Rect(strap_start,
+                                 available_area_.yMin(),
+                                 strap_start + group_width,
+                                 available_area_.yMax());
   }
 
   debugPrint(
@@ -1747,16 +1754,25 @@ bool RepairChannelStraps::determineOffset(
       utl::PDN,
       "Channel",
       3,
-      "Estimating strap to be {}.",
-      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()));
+      "Estimating strap to be {} within {}.",
+      Shape::getRectText(estimated_straps, getBlock()->getDbUnitsPerMicron()),
+      Shape::getRectText(available_area_, getBlock()->getDbUnitsPerMicron()));
 
   // check if straps will fit
   if (is_horizontal) {
-    if (estimated_straps.dy() > area_.dy()) {
+    if (estimated_straps.dy() > available_area_.dy()) {
+      return false;
+    }
+    if (estimated_straps.yMin() < available_area_.yMin()
+        || estimated_straps.yMax() > available_area_.yMax()) {
       return false;
     }
   } else {
-    if (estimated_straps.dx() > area_.dx()) {
+    if (estimated_straps.dx() > available_area_.dx()) {
+      return false;
+    }
+    if (estimated_straps.xMin() < available_area_.xMin()
+        || estimated_straps.xMax() > available_area_.xMax()) {
       return false;
     }
   }
@@ -1813,7 +1829,8 @@ bool RepairChannelStraps::determineOffset(
     int new_bisect_dist;
     if (bisect_dist == 0) {
       // first time, so use offset of width / 4
-      const int width = is_horizontal ? area_.dy() : area_.dx();
+      const int width
+          = is_horizontal ? available_area_.dy() : available_area_.dx();
       new_bisect_dist = width / 4;
     } else {
       // not first time, so search half the distance of the current bisection.
@@ -2085,7 +2102,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
   // setup channels with information needed to build
   std::vector<RepairChannelArea> channels;
   for (const auto& area : channels_rects) {
-    RepairChannelArea channel{area, odb::Rect(), target, layer, {}};
+    RepairChannelArea channel{area, area, odb::Rect(), target, layer, {}};
     channel.obs_area.mergeInit();
 
     int followpin_count = 0;
@@ -2117,6 +2134,41 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
       // ensure areas are inside the core
       channel.area = channel.area.intersect(grid_core);
+      channel.available_area = channel.area;
+
+      // trim area of channel if it is partially covered by an exisiting shape
+      for (const auto& [layer, layer_shapes] : grid->getShapes()) {
+        if (layer != channel.target->getLayer()) {
+          continue;
+        }
+
+        for (auto itr = layer_shapes.qbegin(bgi::intersects(channel.area));
+             itr != layer_shapes.qend();
+             itr++) {
+          const auto& shape = *itr;
+          const auto& obs = shape->getObstruction();
+
+          if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+            if (channel.available_area.xMax() > obs.xMin()
+                && channel.available_area.xMax() <= obs.xMax()) {
+              channel.available_area.set_xhi(obs.xMin());
+            }
+            if (channel.available_area.xMin() < obs.xMax()
+                && channel.available_area.xMin() >= obs.xMin()) {
+              channel.available_area.set_xlo(obs.xMax());
+            }
+          } else {
+            if (channel.available_area.yMax() > obs.yMin()
+                && channel.available_area.yMax() <= obs.yMax()) {
+              channel.available_area.set_yhi(obs.yMin());
+            }
+            if (channel.available_area.yMin() < obs.yMax()
+                && channel.available_area.yMin() >= obs.yMin()) {
+              channel.available_area.set_ylo(obs.yMax());
+            }
+          }
+        }
+      }
       channel.obs_area = channel.obs_area.intersect(grid_core);
 
       channels.push_back(channel);
@@ -2165,7 +2217,8 @@ void RepairChannelStraps::repairGridChannels(
     Grid* grid,
     const Shape::ShapeTreeMap& global_shapes,
     Shape::ObstructionTreeMap& obstructions,
-    bool allow)
+    bool allow,
+    PDNRenderer* renderer)
 {
   // create copy of shapes so they can be used to determine repair locations
   Shape::ShapeTreeMap local_shapes = global_shapes;
@@ -2179,6 +2232,11 @@ void RepairChannelStraps::repairGridChannels(
              1,
              "Channels to repair {}.",
              channels.size());
+
+  if (!channels.empty() && renderer != nullptr) {
+    renderer->update();
+    renderer->pause();
+  }
 
   // check for recurring channels
   for (const auto& channel : channels) {
@@ -2242,6 +2300,7 @@ void RepairChannelStraps::repairGridChannels(
                                                        obstructions,
                                                        channel.nets,
                                                        channel.area,
+                                                       channel.available_area,
                                                        channel.obs_area);
 
     if (!strap->isRepairValid()) {
@@ -2282,7 +2341,7 @@ void RepairChannelStraps::repairGridChannels(
 
   if (channels.size() != areas_repaired.size() && !areas_repaired.empty()) {
     // channels were skipped so, try again
-    repairGridChannels(grid, global_shapes, obstructions, allow);
+    repairGridChannels(grid, global_shapes, obstructions, allow, renderer);
   } else {
     const auto remaining_channels = findRepairChannels(grid);
     if (!remaining_channels.empty()) {

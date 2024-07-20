@@ -2732,6 +2732,7 @@ void Resizer::repairSetup(double setup_margin,
                           bool verbose,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
+                          bool skip_buffering,
                           bool skip_buffer_removal)
 {
   resizePreamble();
@@ -2744,6 +2745,7 @@ void Resizer::repairSetup(double setup_margin,
                              verbose,
                              skip_pin_swap,
                              skip_gate_cloning,
+                             skip_buffering,
                              skip_buffer_removal);
 }
 

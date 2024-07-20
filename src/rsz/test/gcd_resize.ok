@@ -8,6 +8,7 @@ worst slack 1.34
 [INFO RSZ-0028] Inserted 18 output buffers.
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0039] Resized 50 instances.
+[INFO RSZ-0098] No setup violations found
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 99 hold buffers.
 worst slack 0.20

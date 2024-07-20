@@ -49,6 +49,7 @@ LayoutTabs::LayoutTabs(Options* options,
                        std::function<bool(void)> usingDBU,
                        std::function<bool(void)> showRulerAsEuclidian,
                        std::function<bool(void)> default_mouse_wheel_zoom,
+                       std::function<int(void)> arrow_keys_scroll_step,
                        QWidget* parent)
     : QTabWidget(parent),
       options_(options),
@@ -60,6 +61,7 @@ LayoutTabs::LayoutTabs(Options* options,
       usingDBU_(std::move(usingDBU)),
       showRulerAsEuclidian_(std::move(showRulerAsEuclidian)),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
+      arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
       logger_(nullptr)
 {
   setTabBarAutoHide(true);
@@ -94,7 +96,8 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
   if (command_executing_) {
     viewer->commandAboutToExecute();
   }
-  auto scroll = new LayoutScroll(viewer, default_mouse_wheel_zoom_, this);
+  auto scroll = new LayoutScroll(
+      viewer, default_mouse_wheel_zoom_, arrow_keys_scroll_step_, this);
   viewer->blockLoaded(block);
 
   auto tech = block->getTech();

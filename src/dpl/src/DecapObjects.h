@@ -33,52 +33,41 @@
 
 #pragma once
 
-#include "Grid.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
 
-using odb::dbOrientType;
-using odb::dbSite;
-
-struct Master
+struct GapInfo
 {
-  bool is_multi_row = false;
+  int x;
+  odb::dbOrientType orient;
+  int width;
+  int height;
+  bool is_filled{false};
+  GapInfo(int x, const odb::dbOrientType& orient, int width, int height)
+      : x(x), orient(orient), width(width), height(height)
+  {
+  }
 };
 
-struct Cell
+struct DecapCell
 {
-  const char* name() const;
-  bool inGroup() const { return group_ != nullptr; }
-  int64_t area() const;
-  bool isStdCell() const;
-  DbuX siteWidth() const;
-  bool isFixed() const;
-  bool isHybrid() const;
-  bool isHybridParent() const;
-  dbSite* getSite() const;
-  DbuX xMax() const { return x_ + width_; }
-  bool isBlock() const;
-
-  dbInst* db_inst_ = nullptr;
-  DbuX x_{0};  // lower left wrt core DBU
-  DbuY y_{0};
-  dbOrientType orient_;
-  DbuX width_{0};
-  DbuY height_{0};
-  bool is_placed_ = false;
-  bool hold_ = false;
-  Group* group_ = nullptr;
-  Rect* region_ = nullptr;  // group rect
+  dbMaster* master;
+  double capacitance;
+  DecapCell(dbMaster* master, double& capacitance)
+      : master(master), capacitance(capacitance)
+  {
+  }
 };
 
-struct Group
+struct IRDrop
 {
-  string name;
-  vector<Rect> region_boundaries;
-  vector<Cell*> cells_;
-  Rect boundary;
-  double util = 0.0;
+  odb::Point position;
+  double value;
+  IRDrop(const odb::Point& position, double& value)
+      : position(position), value(value)
+  {
+  }
 };
 
 }  // namespace dpl

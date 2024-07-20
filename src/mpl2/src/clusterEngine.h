@@ -85,6 +85,8 @@ struct VerticesMaps
 
 struct DataFlow
 {
+  bool is_empty{false};
+
   // Macro Pins --> Registers
   // Registers --> Macro Pins
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
@@ -232,6 +234,7 @@ class ClusteringEngine
 
   // Methods for data flow
   void createDataFlow();
+  bool stdCellsHaveLiberty();
   VerticesMaps computeVertices();
   void computeIOVertices(VerticesMaps& vertices_maps);
   void computeStdCellVertices(VerticesMaps& vertices_maps);
