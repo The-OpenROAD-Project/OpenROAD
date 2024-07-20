@@ -168,7 +168,8 @@ write_verilog_cmd(const char *filename,
 {
   // This does NOT want the SDC (cmd) network because it wants
   // to see the sta internal names.
-  Sta *sta = Sta::sta();
+  ord::OpenRoad *openroad = ord::getOpenRoad();  
+  sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
   delete remove_cells;

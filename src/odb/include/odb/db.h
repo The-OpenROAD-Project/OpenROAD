@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbBusPort;
 class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
@@ -7147,6 +7148,31 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbBusPort : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  int getStartIx() const;
+
+  int getSize() const;
+
+  bool isUpdown() const;
+
+  dbModule* getParent() const;
+
+  dbModBTerm* getFirstmember() const;
+
+  // User Code Begin dbBusPort
+  static dbBusPort* create(dbModule* parentModule,
+                           const char* name,
+                           int from_index,
+                           bool updown,
+                           int size);
+  dbModBTerm* fetchIndexedPort(int offset);
+  // User Code End dbBusPort
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7567,7 +7593,11 @@ class dbModBTerm : public dbObject
   void disconnect();
   void staSetPort(void* p);
   void* staPort();
-
+  bool isBusPort() const;
+  void setBusPort(dbBusPort*);
+  dbBusPort* getBusPort() const;
+  dbModBTerm* getNext() const;
+  dbModBTerm* getPrev() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
   // User Code End dbModBTerm
@@ -7678,6 +7708,7 @@ class dbModule : public dbObject
 
   void staSetCell(void* cell);
   void* getStaCell();
+  const dbModBTerm* getHeadDbModBTerm() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 

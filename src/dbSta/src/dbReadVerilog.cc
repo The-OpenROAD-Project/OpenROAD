@@ -53,6 +53,7 @@ namespace ord {
 
 using odb::dbBlock;
 using odb::dbBTerm;
+using odb::dbBusPort;
 using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -367,23 +368,31 @@ void Verilog2db::makeDbModule(
       CellPortIterator* cp_iter = network_->portIterator(cell);
       while (cp_iter->hasNext()) {
         Port* port = cp_iter->next();
-        /* Ports are prefixed by instance name*/
         if (network_->isBus(port)) {
+          int from_index = network_->fromIndex(port);
+          int to_index = network_->toIndex(port);
+          bool up_down = to_index >= from_index ? true : false;
+          int size = up_down ? (to_index - from_index) + 1
+                             : (from_index - to_index) + 1;
+          // make the bus port as part of the port set for the cell.
+          dbBusPort* dbbusport = dbBusPort::create(module,
+                                                   network_->name(port),
+                                                   network_->fromIndex(port),
+                                                   up_down,
+                                                   size);
           const char* port_name = network_->name(port);
-          const char* cell_name = network_->name(cell);
-          int from = network_->fromIndex(port);
-          int to = network_->toIndex(port);
-          string key = "bus_msb_first ";
-          key += key + port_name + " " + cell_name;
-          key += port_name;
-          odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+          dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
+          bmodterm->setBusPort(dbbusport);
+          dbIoType io_type = staToDb(network_->direction(port));
+          bmodterm->setIoType(io_type);
+
           // Make a modbterm for each bus bit
-          int start_index = from < to ? from : to;
-          int end_index = from < to ? to : from;
-          for (int i = start_index; i <= end_index; i++) {
+          // Keep traversal in terms of bits
+          for (int i = 0; i < size; i++) {
+            int ix = up_down ? from_index + i : from_index - i;
             // use actual here
             std::string bus_bit_port = port_name + std::string("[")
-                                       + std::to_string(i) + std::string("]");
+                                       + std::to_string(ix) + std::string("]");
             dbModBTerm* bmodterm
                 = dbModBTerm::create(module, bus_bit_port.c_str());
             dbIoType io_type = staToDb(network_->direction(port));
@@ -419,6 +428,7 @@ void Verilog2db::makeDbModule(
       }
     }
   }
+
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();

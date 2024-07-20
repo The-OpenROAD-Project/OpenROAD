@@ -91,6 +91,7 @@ using odb::dbBlock;
 using odb::dbBoolProperty;
 using odb::dbBTerm;
 using odb::dbBTermObj;
+using odb::dbBusPort;
 using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -623,6 +624,49 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
+const char* dbNetwork::name(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->name();
+  } else {
+    dbMTerm* mterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (bterm) {
+      return bterm->getName().c_str();
+    }
+    if (mterm) {
+      return mterm->getName().c_str();
+    }
+    if (modbterm) {
+      return modbterm->getName();
+    }
+  }
+  return nullptr;
+}
+
+const char* dbNetwork::busName(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->busName();
+  } else {
+    dbMTerm* mterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm) {
+      if (modbterm->isBusPort()) {
+        return modbterm->getBusPort()->getName();
+      }
+    }
+    assert(0);
+    return nullptr;
+  }
+}
+
 const char* dbNetwork::name(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -653,6 +697,8 @@ const char* dbNetwork::name(const Cell* cell) const
 
 ////////////////////////////////////////////////////////////////
 // Module port iterator, allows traversal across dbModulePorts
+// Traverse the ports in creation order (from end to beginning).
+
 class dbModulePortIterator : public CellPortIterator
 {
  public:
@@ -662,13 +708,20 @@ class dbModulePortIterator : public CellPortIterator
   virtual Port* next();
 
  private:
-  dbSet<dbModBTerm>::iterator iter_;
+  const dbModBTerm* iter_;
   const dbModule* module_;
+  int ix;
 };
 
 dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
 {
-  iter_ = (const_cast<dbModule*>(cell)->getModBTerms()).begin();
+  // skip to end
+  const dbModBTerm* first_mod_bterm = cell->getHeadDbModBTerm();
+  for (iter_ = cell->getHeadDbModBTerm(); iter_; iter_ = iter_->getNext()) {
+    first_mod_bterm = iter_;
+  }
+  iter_ = first_mod_bterm;
+  ix = 0;
   module_ = cell;
 }
 
@@ -678,19 +731,29 @@ dbModulePortIterator::~dbModulePortIterator()
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_ == (const_cast<dbModule*>(module_))->getModBTerms().end())
-    return false;
-  return true;
+  if (iter_)
+    return true;
+  return false;
 }
 
 Port* dbModulePortIterator::next()
 {
-  if (iter_ == (const_cast<dbModule*>(module_))->getModBTerms().end())
-    return nullptr;
-  dbModBTerm* modbterm = *iter_;
+  ix++;
+  dbModBTerm* modbterm = const_cast<dbModBTerm*>(iter_);
   Port* ret = reinterpret_cast<Port*>(modbterm);
-  // advance to next
-  iter_++;
+  // advance to next, in case of bus port
+  // next modbterm is the one after the bus port
+  if (modbterm->isBusPort()) {
+    dbBusPort* bp = modbterm->getBusPort();
+    int size = bp->getSize();
+    // skip into the content of the bus
+    iter_ = iter_->getPrev();
+    for (int skip_ix = 0; skip_ix < size && (iter_->getPrev()); skip_ix++) {
+      iter_ = iter_->getPrev();
+    }
+  } else {
+    iter_ = iter_->getPrev();
+  }
   return ret;
 }
 
@@ -711,10 +774,6 @@ CellPortIterator* dbNetwork::portIterator(const Cell* cell) const
 
 Cell* dbNetwork::cell(const Port* port) const
 {
-  // Check -- can we just do is HPort ?
-  // rather than stash everything at leaf level
-  // looks like we have to keep cports and ccells in tables.
-  //
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->cell();
@@ -2029,12 +2088,6 @@ void dbNetwork::staToDb(const Cell* cell,
 {
   module = nullptr;
   master = nullptr;
-  //
-  // Check with Matt..
-  // Can we kill this test ? eg look up cell by name in library ? -- apparently
-  // not looping problem staToDb is called by name. Or do something different ??
-  // Otherwise we are stuck with map.
-  //
   if (isConcreteCell(cell) || cell == top_cell_) {
     const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
     master = reinterpret_cast<dbMaster*>(ccell->extCell());
@@ -2259,11 +2312,19 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
   return libertyCell(dbToSta(inst));
 }
 
+LibertyPort* dbNetwork::libertyPort(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    LibertyPort* ret = ConcreteNetwork::libertyPort(port);
+    return ret;
+  }
+  return nullptr;
+}
+
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
   // Primary: needs concrete test.
   // Look up instance
-  const Port* cur_port = port(pin);
   const Instance* cur_instance = instance(pin);
   dbInst* db_inst = nullptr;
   dbModInst* mod_inst = nullptr;
@@ -2291,6 +2352,8 @@ void dbNetwork::registerConcreteCell(const Cell* cell)
 
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
+  if (!hierarchy_)
+    return true;
   return (concrete_cells_.find(cell) != concrete_cells_.end());
 }
 
@@ -2301,22 +2364,91 @@ void dbNetwork::registerConcretePort(const Port* port)
 
 bool dbNetwork::isConcretePort(const Port* port) const
 {
+  if (!hierarchy_)
+    return true;
   if (concrete_ports_.find(port) != concrete_ports_.end()) {
     return true;
   }
   return false;
 }
 
-bool dbNetwork::hasMembers(const Port* port) const
+/*
+PortBus support
+*/
+
+bool dbNetwork::isBus(const Port* port) const
 {
   if (isConcretePort(port)) {
-    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-    return cport->hasMembers();
+    return ConcreteNetwork::isBus(port);
   } else {
-    // TODO: bus ports in hierarchy. (Bus support in next pull)
-    return false;
+    dbMTerm* mterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm && modbterm->isBusPort()) {
+      return true;
+    } else {
+      return false;
+    }
   }
   return false;
+}
+
+int dbNetwork::fromIndex(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    return ConcreteNetwork::fromIndex(port);
+  } else {
+    dbMTerm* mterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm && modbterm->isBusPort()) {
+      return modbterm->getBusPort()->getStartIx();
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+int dbNetwork::toIndex(const Port* port) const
+{
+  if (isConcretePort(port)) {
+    return ConcreteNetwork::toIndex(port);
+  } else {
+    dbMTerm* mterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm && modbterm->isBusPort()) {
+      int start_ix = modbterm->getBusPort()->getStartIx();
+      if (modbterm->getBusPort()->isUpdown()) {
+        return (start_ix + (modbterm->getBusPort()->getSize() - 1));
+      } else {
+        return (start_ix - (modbterm->getBusPort()->getSize() - 1));
+      }
+    }
+  }
+  assert(0);
+  return 0;
+}
+
+bool dbNetwork::hasMembers(const Port* port) const
+{
+  if (hierarchy_) {
+    dbMTerm* mterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm && modbterm->isBusPort()) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->hasMembers();
+  }
 }
 
 Port* dbNetwork::findMember(const Port* port, int index) const
@@ -2325,8 +2457,100 @@ Port* dbNetwork::findMember(const Port* port, int index) const
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return reinterpret_cast<Port*>(cport->findMember(index));
   } else {
-    // TODO: hierarhcial ports, bus support in next pull.
+    // get the indexed busport member.
+    dbMTerm* mterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+    staToDb(port, bterm, mterm, modbterm);
+    if (modbterm && modbterm->isBusPort()) {
+      dbBusPort* busport = modbterm->getBusPort();
+      return reinterpret_cast<Port*>(busport->fetchIndexedPort(index));
+    }
     return nullptr;
+  }
+  return nullptr;
+}
+
+class DbNetworkPortMemberIterator : public PortMemberIterator
+{
+ public:
+  explicit DbNetworkPortMemberIterator(const Port* port, const dbNetwork* nwk);
+  ~DbNetworkPortMemberIterator();
+  virtual bool hasNext();
+  virtual Port* next();
+
+ private:
+  int size_;
+  int ix_;
+  dbModBTerm* next_;
+  dbSet<dbModBTerm>::iterator iter_;
+  const dbNetwork* nwk_;
+};
+
+DbNetworkPortMemberIterator::DbNetworkPortMemberIterator(const Port* port,
+                                                         const dbNetwork* nwk)
+{
+  size_ = 0;
+  ix_ = -1;
+  next_ = nullptr;
+  dbMTerm* mterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  nwk_ = nwk;
+
+  nwk_->staToDb(port, bterm, mterm, modbterm);
+  if (modbterm && modbterm->isBusPort()) {
+    dbBusPort* busport = modbterm->getBusPort();
+    size_ = busport->getSize();
+    // advance iterator to this modbterm.
+    // note port iterator uses getModBTerms order.
+    // so member iterator does likewise. We traverse backwards
+    // through the list.
+    next_ = modbterm->getPrev();
+  }
+}
+
+DbNetworkPortMemberIterator::~DbNetworkPortMemberIterator()
+{
+}
+
+/*
+Note the side effect: hasNext() increments iterators
+in this traverser. Others do it in next()
+*/
+
+bool DbNetworkPortMemberIterator::hasNext()
+{
+  ix_++;
+  if (ix_ == 0) {
+    if (next_) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    if (ix_ < size_) {
+      // note how we keep traversing through the modbterms on the "cell"
+      // so a busport -> port -> busport is feasible.
+      next_ = next_->getPrev();
+      return true;
+    }
+  }
+  next_ = nullptr;
+  return false;
+}
+
+Port* DbNetworkPortMemberIterator::next()
+{
+  return reinterpret_cast<Port*>(next_);
+}
+
+PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
+{
+  if (!hierarchy_) {
+    return ConcreteNetwork::memberIterator(port);
+  } else {
+    return new DbNetworkPortMemberIterator(port, this);
   }
 }
 

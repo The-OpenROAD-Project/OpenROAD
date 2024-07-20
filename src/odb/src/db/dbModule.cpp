@@ -213,6 +213,23 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+const dbModBTerm* dbModule::getHeadDbModBTerm() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* block_ = (_dbBlock*) obj->getOwner();
+  if (obj->_modbterms == 0) {
+    return nullptr;
+  }
+  // note that the odb objects are "pre-pended"
+  // so first object is at tail. This means we are returning
+  // last object added. The application calling this routine
+  // needs to be aware of this (and possibly skip to the end
+  // of the list and then use prev to reconstruct creation order).
+  else {
+    return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
+  }
+}
+
 int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;

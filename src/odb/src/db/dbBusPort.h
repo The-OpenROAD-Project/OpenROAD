@@ -41,43 +41,33 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbModITerm;
 class _dbModule;
-class _dbModNet;
-class _dbBusPort;
+class _dbModBTerm;
 
-class _dbModBTerm : public _dbObject
+class _dbBusPort : public _dbObject
 {
  public:
-  _dbModBTerm(_dbDatabase*, const _dbModBTerm& r);
-  _dbModBTerm(_dbDatabase*);
+  _dbBusPort(_dbDatabase*, const _dbBusPort& r);
+  _dbBusPort(_dbDatabase*);
 
-  ~_dbModBTerm();
+  ~_dbBusPort();
 
-  bool operator==(const _dbModBTerm& rhs) const;
-  bool operator!=(const _dbModBTerm& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModBTerm& rhs) const;
+  bool operator==(const _dbBusPort& rhs) const;
+  bool operator!=(const _dbBusPort& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbBusPort& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbModBTerm& rhs) const;
+                   const _dbBusPort& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
-  uint _flags;
-  dbId<_dbModITerm> _parent_moditerm;
+  int _start_ix;
+  int _size;
+  bool _updown;
   dbId<_dbModule> _parent;
-  dbId<_dbModNet> _modnet;
-  dbId<_dbModBTerm> _next_net_modbterm;
-  dbId<_dbModBTerm> _prev_net_modbterm;
-  dbId<_dbBusPort> _busPort;
-  dbId<_dbModBTerm> _next_entry;
-  dbId<_dbModBTerm> _prev_entry;
-
-  // User Code Begin Fields
-  void* _sta_port = nullptr;
-  // User Code End Fields
+  dbId<_dbModBTerm> _firstmember;
 };
-dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj);
+dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj);
 }  // namespace odb
    // Generator Code End Header

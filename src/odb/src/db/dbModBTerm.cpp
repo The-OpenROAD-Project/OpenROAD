@@ -34,6 +34,7 @@
 #include "dbModBTerm.h"
 
 #include "dbBlock.h"
+#include "dbBusPort.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
@@ -69,7 +70,13 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   if (_prev_net_modbterm != rhs._prev_net_modbterm) {
     return false;
   }
+  if (_busPort != rhs._busPort) {
+    return false;
+  }
   if (_next_entry != rhs._next_entry) {
+    return false;
+  }
+  if (_prev_entry != rhs._prev_entry) {
     return false;
   }
 
@@ -93,7 +100,9 @@ void _dbModBTerm::differences(dbDiff& diff,
   DIFF_FIELD(_modnet);
   DIFF_FIELD(_next_net_modbterm);
   DIFF_FIELD(_prev_net_modbterm);
+  DIFF_FIELD(_busPort);
   DIFF_FIELD(_next_entry);
+  DIFF_FIELD(_prev_entry);
   DIFF_END
 }
 
@@ -107,7 +116,9 @@ void _dbModBTerm::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_modnet);
   DIFF_OUT_FIELD(_next_net_modbterm);
   DIFF_OUT_FIELD(_prev_net_modbterm);
+  DIFF_OUT_FIELD(_busPort);
   DIFF_OUT_FIELD(_next_entry);
+  DIFF_OUT_FIELD(_prev_entry);
 
   DIFF_END
 }
@@ -127,7 +138,9 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
   _modnet = r._modnet;
   _next_net_modbterm = r._next_net_modbterm;
   _prev_net_modbterm = r._prev_net_modbterm;
+  _busPort = r._busPort;
   _next_entry = r._next_entry;
+  _prev_entry = r._prev_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
@@ -153,8 +166,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._prev_net_modbterm;
   }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream >> obj._busPort;
+  }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._next_entry;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream >> obj._prev_entry;
   }
   return stream;
 }
@@ -182,8 +201,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._prev_net_modbterm;
   }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream << obj._busPort;
+  }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream << obj._next_entry;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream << obj._prev_entry;
   }
   return stream;
 }
@@ -318,11 +343,17 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   modbterm->_modnet = 0;
   modbterm->_next_net_modbterm = 0;
   modbterm->_prev_net_modbterm = 0;
-
+  modbterm->_busPort = 0;
   modbterm->_name = strdup(name);
   ZALLOCATED(modbterm->_name);
   modbterm->_parent = module->getOID();
   modbterm->_next_entry = module->_modbterms;
+  // set back pointer.
+  if (module->_modbterms != 0) {
+    _dbModBTerm* head_entry = block->_modbterm_tbl->getPtr(module->_modbterms);
+    head_entry->_prev_entry = modbterm->getOID();
+  }
+  modbterm->_prev_entry = 0;
   module->_modbterms = modbterm->getOID();
 
   return (dbModBTerm*) modbterm;
@@ -396,6 +427,48 @@ void* dbModBTerm::staPort()
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;
   return _modbterm->_sta_port;
+}
+
+bool dbModBTerm::isBusPort() const
+{
+  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
+  return (_modbterm->_busPort != 0);
+}
+
+dbBusPort* dbModBTerm::getBusPort() const
+{
+  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
+  if (_modbterm->_busPort != 0) {
+    _dbBlock* block = (_dbBlock*) _modbterm->getOwner();
+    return (dbBusPort*) block->_busport_tbl->getPtr(_modbterm->_busPort);
+  }
+  return nullptr;
+}
+
+void dbModBTerm::setBusPort(dbBusPort* bus_port)
+{
+  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
+  _modbterm->_busPort = bus_port->getId();
+}
+
+dbModBTerm* dbModBTerm::getNext() const
+{
+  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
+  if (_modbterm->_next_entry != 0) {
+    _dbBlock* block_ = (_dbBlock*) _modbterm->getOwner();
+    return (dbModBTerm*) block_->_modbterm_tbl->getPtr(_modbterm->_next_entry);
+  }
+  return nullptr;
+}
+
+dbModBTerm* dbModBTerm::getPrev() const
+{
+  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
+  if (_modbterm->_prev_entry != 0) {
+    _dbBlock* block_ = (_dbBlock*) _modbterm->getOwner();
+    return (dbModBTerm*) block_->_modbterm_tbl->getPtr(_modbterm->_prev_entry);
+  }
+  return nullptr;
 }
 
 // User Code End dbModBTermPublicMethods

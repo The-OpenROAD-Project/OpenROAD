@@ -196,6 +196,8 @@ class dbNetwork : public ConcreteNetwork
   Instance* topInstance() const override;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
+  const char* name(const Port* port) const override;
+  const char* busName(const Port* port) const override;
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
@@ -240,6 +242,7 @@ class dbNetwork : public ConcreteNetwork
   bool isConcretePort(const Port*) const;
   bool isLibertyPort(const Port*) const;
 
+  LibertyPort* libertyPort(const Port* port) const override;
   PortDirection* direction(const Port* port) const override;
 
   ////////////////////////////////////////////////////////////////
@@ -288,8 +291,13 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy handler, set in openroad tested in network child traverserser
   void setHierarchy() { hierarchy_ = true; }
   bool hasHierarchy() const { return hierarchy_; }
+
+  int fromIndex(const Port* port) const;
+  int toIndex(const Port* port) const;
+  bool isBus(const Port*) const;
   bool hasMembers(const Port* port) const;
   Port* findMember(const Port* port, int index) const;
+  PortMemberIterator* memberIterator(const Port* port) const;
 
   using Network::cell;
   using Network::direction;
