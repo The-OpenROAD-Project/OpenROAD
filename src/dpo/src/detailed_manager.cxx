@@ -67,7 +67,7 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt)
+    : arch_(arch), network_(network), rt_(rt), disallowOneSiteGaps_(false)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -866,11 +866,11 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
 
   segments.clear();
   if (!best2.empty()) {
-    segments = best2;
+    segments = std::move(best2);
     return true;
   }
   if (!best1.empty()) {
-    segments = best1;
+    segments = std::move(best1);
     return true;
   }
 

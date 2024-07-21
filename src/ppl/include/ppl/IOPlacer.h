@@ -284,8 +284,7 @@ class IOPlacer
                         const std::set<int>& ver_layer_idx);
   void findConstraintRegion(const Interval& interval,
                             const Rect& constraint_box,
-                            Point& pt1,
-                            Point& pt2);
+                            Rect& region);
   void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);

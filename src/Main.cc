@@ -390,10 +390,11 @@ static int tclAppInit(int& argc,
 
     const bool gui_enabled = gui::Gui::enabled();
 
-    if (!findCmdLineFlag(argc, argv, "-no_init")) {
+    const char* home = getenv("HOME");
+    if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
       const char* restore_state_cmd = "source -echo -verbose {{{}}}";
 #ifdef USE_STD_FILESYSTEM
-      std::filesystem::path init(getenv("HOME"));
+      std::filesystem::path init(home);
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
         if (!gui_enabled) {
@@ -406,7 +407,7 @@ static int tclAppInit(int& argc,
         }
       }
 #else
-      string init_path = getenv("HOME");
+      string init_path = home;
       init_path += "/";
       init_path += init_filename;
       if (is_regular_file(init_path.c_str())) {

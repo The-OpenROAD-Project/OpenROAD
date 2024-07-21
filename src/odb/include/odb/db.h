@@ -1890,12 +1890,12 @@ class dbBTerm : public dbObject
   ///
   /// Set the region where the BTerm is constrained
   ///
-  void setConstraintRegion(const std::pair<Point, Point>& constraint_region);
+  void setConstraintRegion(const Rect& constraint_region);
 
   ///
   /// Get the region where the BTerm is constrained
   ///
-  std::optional<std::pair<Point, Point>> getConstraintRegion();
+  std::optional<Rect> getConstraintRegion();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3885,18 +3885,6 @@ class dbWire : public dbObject
   /// Destroy a wire.
   ///
   static void destroy(dbWire* wire);
-
-  ///
-  /// get raw data of _dbWire
-  ///
-  void getRawWireData(std::vector<int>& data,
-                      std::vector<unsigned char>& op_codes);
-
-  ////
-  /// set raw data of _dbWire
-  ///
-  void setRawWireData(const std::vector<int>& data,
-                      const std::vector<unsigned char>& op_codes);
 
  private:
   void addOneSeg(unsigned char op,

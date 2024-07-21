@@ -55,7 +55,6 @@ void InitialPlaceVars::reset()
   maxFanout = 200;
   netWeightScale = 800.0;
   debug = false;
-  forceCPU = false;
 }
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
@@ -69,7 +68,6 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 void InitialPlace::doBicgstabPlace()
 {
   ResidualError error;
-  bool run_cpu = true;
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
@@ -84,40 +82,15 @@ void InitialPlace::doBicgstabPlace()
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
     updatePinInfo();
     createSparseMatrix();
-#ifdef ENABLE_GPU
-    if (!ipVars_.forceCPU) {
-      int gpu_count = 0;
-      cudaGetDeviceCount(&gpu_count);
-      if (gpu_count != 0) {
-        run_cpu = false;
-        // CUSOLVER based on sparse matrix and QR decomposition for initial
-        // place
-        error = cudaSparseSolve(iter,
-                                placeInstForceMatrixX_,
-                                fixedInstForceVecX_,
-                                instLocVecX_,
-                                placeInstForceMatrixY_,
-                                fixedInstForceVecY_,
-                                instLocVecY_,
-                                log_);
-      } else
-        log_->warn(GPL, 250, "GPU is not available. CPU solve is being used.");
-    }
-#endif
-    if (run_cpu) {
-      if (ipVars_.forceCPU) {
-        log_->warn(GPL, 251, "CPU solver is forced to be used.");
-      }
-      error = cpuSparseSolve(ipVars_.maxSolverIter,
-                             iter,
-                             placeInstForceMatrixX_,
-                             fixedInstForceVecX_,
-                             instLocVecX_,
-                             placeInstForceMatrixY_,
-                             fixedInstForceVecY_,
-                             instLocVecY_,
-                             log_);
-    }
+    error = cpuSparseSolve(ipVars_.maxSolverIter,
+                           iter,
+                           placeInstForceMatrixX_,
+                           fixedInstForceVecX_,
+                           instLocVecX_,
+                           placeInstForceMatrixY_,
+                           fixedInstForceVecY_,
+                           instLocVecY_,
+                           log_);
     float error_max = std::max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
