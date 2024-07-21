@@ -635,13 +635,13 @@ const char* dbNetwork::name(const Port* port) const
     dbBTerm* bterm = nullptr;
     staToDb(port, bterm, mterm, modbterm);
     if (bterm) {
-      return bterm->getName().c_str();
+      return tmpStringCopy(bterm->getName().c_str());
     }
     if (mterm) {
-      return mterm->getName().c_str();
+      return tmpStringCopy(mterm->getName().c_str());
     }
     if (modbterm) {
-      return modbterm->getName();
+      return tmpStringCopy(modbterm->getName());
     }
   }
   return nullptr;
@@ -652,19 +652,18 @@ const char* dbNetwork::busName(const Port* port) const
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->busName();
-  } else {
-    dbMTerm* mterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    if (modbterm) {
-      if (modbterm->isBusPort()) {
-        return modbterm->getBusPort()->getName();
-      }
-    }
-    logger_->error(ORD, 2020, "Error: database badly formed bus name");
-    return nullptr;
   }
+  dbMTerm* mterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (modbterm) {
+    if (modbterm->isBusPort()) {
+      return modbterm->getBusPort()->getName();
+    }
+  }
+  logger_->error(ORD, 2020, "Error: database badly formed bus name");
+  return nullptr;
 }
 
 const char* dbNetwork::name(const Instance* instance) const
@@ -704,7 +703,7 @@ class dbModulePortIterator : public CellPortIterator
 {
  public:
   explicit dbModulePortIterator(const dbModule* cell);
-  ~dbModulePortIterator();
+  ~dbModulePortIterator() override;
   virtual bool hasNext();
   virtual Port* next();
 

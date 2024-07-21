@@ -96,7 +96,7 @@ class dbNetwork : public ConcreteNetwork
   void init(dbDatabase* db, Logger* logger);
   void setBlock(dbBlock* block);
   void clear() override;
-  CellPortIterator* portIterator(const Cell* cell) const;
+  CellPortIterator* portIterator(const Cell* cell) const override;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -119,7 +119,7 @@ class dbNetwork : public ConcreteNetwork
   bool isPlaced(const Pin* pin) const;
 
   LibertyCell* libertyCell(dbInst* inst);
-  LibertyPort* libertyPort(const Pin*) const;
+  LibertyPort* libertyPort(const Pin*) const override;
   dbInst* staToDb(const Instance* instance) const;
   void staToDb(const Instance* instance,
                dbInst*& db_inst,
@@ -229,7 +229,7 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Cell functions
-  const char* name(const Cell* instance) const override;
+  const char* name(const Cell* cell) const override;
 
   bool isConcreteCell(const Cell*) const;
   void registerConcreteCell(const Cell*);
