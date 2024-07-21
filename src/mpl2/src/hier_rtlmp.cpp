@@ -55,6 +55,11 @@ namespace mpl2 {
 
 using std::string;
 
+static string make_filename(const string& file_name)
+{
+  return std::regex_replace(file_name, std::regex("[\":<>\\|\\*\\?/]"), "--");
+}
+
 ///////////////////////////////////////////////////////////
 // Class HierRTLMP
 using utl::MPL;
@@ -1544,7 +1549,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+  file_name = make_filename(file_name);
 
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + "net.txt");
@@ -2375,7 +2380,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+  file_name = make_filename(file_name);
 
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + ".net.txt");
@@ -2874,7 +2879,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+  file_name = make_filename(file_name);
 
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + ".net.txt");
