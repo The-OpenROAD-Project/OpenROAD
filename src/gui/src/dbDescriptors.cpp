@@ -1687,11 +1687,21 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
       aps.insert(gui->makeSelected(iap));
     }
   }
+  SelectionSet layers;
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* geom : mpin->getGeometry()) {
+      auto* layer = geom->getTechLayer();
+      if (layer != nullptr) {
+        layers.insert(gui->makeSelected(layer));
+      }
+    }
+  }
   Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
                    {"IO type", iterm->getIoType().getString()},
                    {"Net", std::move(net_value)},
                    {"Special", iterm->isSpecial()},
                    {"MTerm", iterm->getMTerm()->getConstName()},
+                   {"Layers", layers},
                    {"Access Points", aps}};
 
   populateODBProperties(props, iterm);
