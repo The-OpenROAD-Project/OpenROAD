@@ -1544,11 +1544,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  for (auto& c : file_name) {
-    if (c == '/') {
-      c = '*';
-    }
-  }
+  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + "net.txt");
   for (auto& net : nets) {
@@ -2378,11 +2375,8 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  for (auto& c : file_name) {
-    if (c == '/') {
-      c = '*';
-    }
-  }
+  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + ".net.txt");
   for (auto& net : nets) {
@@ -2880,11 +2874,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
-  for (auto& c : file_name) {
-    if (c == '/') {
-      c = '*';
-    }
-  }
+  file_name = std::regex_replace(file_name, std::regex("/"), "--");
+
   file_name = report_directory_ + "/" + file_name;
   file.open(file_name + ".net.txt");
   for (auto& net : nets) {
