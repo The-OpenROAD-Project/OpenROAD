@@ -1,6 +1,6 @@
 @Library('utils@or-v2.0.1') _
 
-timeout(time: 1, unit: 'HOURS') {
+timeout(time: 2, unit: 'HOURS') {
     node {
 
         stage('Checkout'){
@@ -40,10 +40,10 @@ timeout(time: 1, unit: 'HOURS') {
                 }
             }
         }
-    }
 
-    stage('Send Email Report') {
-        sendEmail();
-    }
+        stage('Send Email Report') {
+            sendEmail();
+        }
 
+    }
 }

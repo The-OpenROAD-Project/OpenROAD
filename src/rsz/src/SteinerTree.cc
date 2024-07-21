@@ -61,8 +61,6 @@ static void connectedPins(const Net* net,
                           // Return value.
                           Vector<PinLoc>& pins);
 
-SteinerPt SteinerTree::null_pt = -1;
-
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
 {

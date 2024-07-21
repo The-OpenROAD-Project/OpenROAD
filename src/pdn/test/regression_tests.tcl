@@ -30,6 +30,7 @@ record_tests {
   core_grid_with_rings_with_straps_rings_over_core
   core_grid_with_routing_obstructions
   core_grid_adjacentcuts
+  core_grid_with_fixed_pins
 
   core_grid_obstruction
 
@@ -58,6 +59,7 @@ record_tests {
   macros_narrow_channel
   macros_narrow_channel_large_spacing
   macros_narrow_channel_repair_overlap
+  macros_narrow_channel_overlap
   macros_add_twice
   macros_cells_extend_boundary
   macros_cells_no_grid
