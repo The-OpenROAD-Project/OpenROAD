@@ -1328,10 +1328,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
     dbTechLayerType type = layer->getType();
-    if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT
-        && type != dbTechLayerType::IMPLANT) {
-      continue;
-    }
     boxes[layer].obs.emplace_back(box_to_qrect(box));
   }
 
@@ -1350,10 +1346,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
             odb::Rect box_rect = via_box->getBox();
             dbTechLayer* layer = via_box->getTechLayer();
             dbTechLayerType type = layer->getType();
-            if (type != dbTechLayerType::ROUTING
-                && type != dbTechLayerType::CUT) {
-              continue;
-            }
             via_transform.apply(box_rect);
             boxes[layer].mterms.emplace_back(
                 QRect{box_rect.xMin(),
@@ -1364,10 +1356,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
         } else {
           dbTechLayer* layer = box->getTechLayer();
           dbTechLayerType type = layer->getType();
-          if (type != dbTechLayerType::ROUTING
-              && type != dbTechLayerType::CUT) {
-            continue;
-          }
           boxes[layer].mterms.emplace_back(box_to_qrect(box));
         }
       }
