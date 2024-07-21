@@ -837,15 +837,15 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
   PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
   virtual PathEndVisitor* copy() const;
   virtual void visit(sta::PathEnd* path_end);
-  float slack() const { return slack_; }
+  float worstSlack() const { return worst_slack_; }
   bool hasSlack() const { return has_slack_; }
-  void resetSlack();
+  void resetWorstSlack();
 
  private:
   const sta::PathGroup* path_group_;
   sta::StaState* sta_;
   bool has_slack_{false};
-  float slack_{0.0f};
+  float worst_slack_{std::numeric_limits<float>::max()};
 };
 
 PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
@@ -864,14 +864,16 @@ void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
   sta::Search* search = sta_->search();
   if (search->pathGroup(path_end) == path_group_) {
-    has_slack_ = true;
-    slack_ = path_end->slack(sta_);
+    worst_slack_ = std::min(worst_slack_, path_end->slack(sta_));
+    if (!has_slack_) {
+      has_slack_ = true;
+    }
   }
 }
 
-void PathGroupSlackEndVisitor::resetSlack()
+void PathGroupSlackEndVisitor::resetWorstSlack()
 {
-  slack_ = 0.0f;
+  worst_slack_ = std::numeric_limits<float>::max();
   has_slack_ = false;
 }
 
@@ -924,8 +926,8 @@ STAGuiInterface::getEndPointToSlackMap(const std::string& path_group_name) const
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     visit_ends.visitPathEnds(vertex, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {
-      end_point_to_slack[vertex->pin()] = path_group_visitor.slack();
-      path_group_visitor.resetSlack();
+      end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
+      path_group_visitor.resetWorstSlack();
     }
   }
   return end_point_to_slack;
