@@ -914,10 +914,10 @@ float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
                         use_max_ ? sta::MinMax::max() : sta::MinMax::min());
 }
 
-std::unordered_map<const sta::Pin*, float>
-STAGuiInterface::getEndPointToSlackMap(const std::string& path_group_name) const
+EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
+    const std::string& path_group_name) const
 {
-  std::unordered_map<const sta::Pin*, float> end_point_to_slack;
+  EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
   sta::Search* search = sta_->search();
   sta::PathGroup* path_group

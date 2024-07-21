@@ -153,10 +153,10 @@ void ChartsWidget::setStartEndFiltersMenu()
 {
   filters_menu_->addItem("No Filter");  // Index 0
 
-  filters_menu_->addItem(QString::fromStdString(toString(RegisterToRegister)));
-  filters_menu_->addItem(QString::fromStdString(toString(RegisterToIO)));
-  filters_menu_->addItem(QString::fromStdString(toString(IOToRegister)));
-  filters_menu_->addItem(QString::fromStdString(toString(IOToIO)));
+  // TO DO:
+  // 1) add menu based on existing path groups
+  // 2) ensureGraph(?) to create pathGroups
+  // 2) test results with current master
 
   connect(filters_menu_,
           qOverload<int>(&QComboBox::currentIndexChanged),
@@ -298,7 +298,8 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(StaPins& end_points)
 
 // We define the slack interval as being inclusive in its lower
 // boundary and exclusive in upper: [lower upper)
-void ChartsWidget::populateBuckets(StaPins* end_points, TimingPathList* paths)
+void ChartsWidget::populateBuckets(StaPins* end_points,
+                                   EndPointSlackMap* end_point_to_slack)
 {
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
@@ -325,11 +326,9 @@ void ChartsWidget::populateBuckets(StaPins* end_points, TimingPathList* paths)
           pos_bucket.push_back(pin);
         }
       }
-    } else if (paths) {
-      for (const std::unique_ptr<TimingPath>& path : *paths) {
-        const float slack = time_unit->staToUser(path->getSlack());
-        const sta::Pin* end_point = path->getEndStageNode()->getPinAsSTA();
-
+    } else if (end_point_to_slack) {
+      for (const auto [end_point, sta_slack] : *end_point_to_slack) {
+        const float slack = time_unit->staToUser(sta_slack);
         if (negative_lower <= slack && slack < negative_upper) {
           neg_bucket.push_back(end_point);
         } else if (positive_lower <= slack && slack < positive_upper) {
@@ -633,16 +632,13 @@ void ChartsWidget::changeStartEndFilter()
   clearChart();
 
   StaPins end_points;
-  TimingPathList paths;
+  EndPointSlackMap end_point_to_slack;
   const int filter_index = filters_menu_->currentIndex();
 
   if (filter_index > 0) {
-    const int no_filter_index_offset = 1;
-    const StartEndPathType path_type
-        = static_cast<StartEndPathType>(filter_index - no_filter_index_offset);
-
-    paths = fetchPathsBasedOnStartEnd(path_type);
-    setLimits(paths);
+    std::string path_group = filter_index_to_path_group_name_[filter_index];
+    end_point_to_slack = stagui_->getEndPointToSlackMap(path_group);
+    setLimits(end_point_to_slack);
   } else {
     end_points = stagui_->getEndPoints();
     removeUnconstrainedPinsAndSetLimits(end_points);
@@ -652,8 +648,8 @@ void ChartsWidget::changeStartEndFilter()
 
   if (!end_points.empty()) {
     populateBuckets(&end_points, nullptr);
-  } else if (!paths.empty()) {
-    populateBuckets(nullptr, &paths);
+  } else if (!end_point_to_slack.empty()) {
+    populateBuckets(nullptr, &end_point_to_slack);
   }
 
   setVisualConfig();
@@ -661,88 +657,14 @@ void ChartsWidget::changeStartEndFilter()
   prev_filter_index_ = filter_index;
 }
 
-void ChartsWidget::setLimits(const TimingPathList& paths)
+void ChartsWidget::setLimits(const EndPointSlackMap& end_point_to_slack)
 {
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  for (const std::unique_ptr<TimingPath>& path : paths) {
-    const float slack = time_unit->staToUser(path->getSlack());
-
+  for (const auto [end_point, sta_slack] : end_point_to_slack) {
+    const float slack = time_unit->staToUser(sta_slack);
     min_slack_ = std::min(slack, min_slack_);
     max_slack_ = std::max(slack, max_slack_);
   }
-}
-
-TimingPathList ChartsWidget::fetchPathsBasedOnStartEnd(
-    const StartEndPathType path_type)
-{
-  ITermBTermPinsLists start_pins
-      = separatePinsIntoBTermsAndITerms(stagui_->getStartPoints());
-
-  ITermBTermPinsLists end_pins
-      = separatePinsIntoBTermsAndITerms(stagui_->getEndPoints());
-
-  // Copy current values to reset after fetching.
-  const int initial_max_path_count = stagui_->getMaxPathCount();
-  const bool one_path_per_end_point = stagui_->isOnePathPerEndpoint();
-
-  const int new_max_path_count = static_cast<int>(end_pins.first.size())
-                                 + static_cast<int>(end_pins.second.size());
-
-  stagui_->setMaxPathCount(new_max_path_count);
-  stagui_->setOnePathPerEndpoint(true);
-
-  TimingPathList paths;
-
-  switch (path_type) {
-    case RegisterToRegister: {
-      paths = stagui_->getTimingPaths(start_pins.first, {}, end_pins.first);
-      break;
-    }
-    case RegisterToIO: {
-      paths = stagui_->getTimingPaths(start_pins.first, {}, end_pins.second);
-      break;
-    }
-    case IOToRegister: {
-      paths = stagui_->getTimingPaths(start_pins.second, {}, end_pins.first);
-      break;
-    }
-    case IOToIO: {
-      paths = stagui_->getTimingPaths(start_pins.second, {}, end_pins.second);
-      break;
-    }
-  }
-
-  stagui_->setMaxPathCount(initial_max_path_count);
-  stagui_->setOnePathPerEndpoint(one_path_per_end_point);
-
-  return paths;
-}
-
-ITermBTermPinsLists ChartsWidget::separatePinsIntoBTermsAndITerms(
-    const StaPins& pins)
-{
-  ITermBTermPinsLists pins_lists; /* < ITerms , BTerms > */
-
-  for (const sta::Pin* pin : pins) {
-    sta::dbNetwork* dbnetwork = sta_->getDbNetwork();
-
-    odb::dbITerm* iterm;
-    odb::dbBTerm* bterm;
-    odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-
-    dbnetwork->staToDb(pin, iterm, bterm, moditerm, modbterm);
-
-    if (iterm) {
-      pins_lists.first.insert(pin);
-    }
-
-    if (bterm) {
-      pins_lists.second.insert(pin);
-    }
-  }
-
-  return pins_lists;
 }
 
 void ChartsWidget::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
@@ -755,22 +677,6 @@ void ChartsWidget::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
     neg_set << 0;
     pos_set << buckets_->positive[i].size();
   }
-}
-
-std::string ChartsWidget::toString(StartEndPathType path_type)
-{
-  switch (path_type) {
-    case RegisterToRegister:
-      return "Register to Register";
-    case RegisterToIO:
-      return "Register to IO";
-    case IOToRegister:
-      return "IO to Register";
-    case IOToIO:
-      return "IO to IO";
-  }
-
-  return "";
 }
 
 ////// HistogramView ///////

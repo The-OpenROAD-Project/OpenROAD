@@ -55,16 +55,6 @@ class Clock;
 namespace gui {
 #ifdef ENABLE_CHARTS
 
-using ITermBTermPinsLists = std::pair<StaPins, StaPins>;
-
-enum StartEndPathType
-{
-  RegisterToRegister,
-  RegisterToIO,
-  IOToRegister,
-  IOToIO,
-};
-
 struct SlackHistogramData
 {
   StaPins constrained_pins;
@@ -121,8 +111,6 @@ class ChartsWidget : public QDockWidget
     SLACK_HISTOGRAM
   };
 
-  static std::string toString(enum StartEndPathType);
-
   void setSlackHistogram();
   void setModeMenu();
   void setStartEndFiltersMenu();
@@ -142,12 +130,10 @@ class ChartsWidget : public QDockWidget
 
   SlackHistogramData fetchSlackHistogramData();
   void removeUnconstrainedPinsAndSetLimits(StaPins& end_points);
-  TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
-  StaPins getEndPointsFromPaths(const TimingPathList& paths);
-  ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
-  void setLimits(const TimingPathList& paths);
+  void setLimits(const EndPointSlackMap& end_point_to_slack);
 
-  void populateBuckets(StaPins* end_points, TimingPathList* paths);
+  void populateBuckets(StaPins* end_points,
+                       EndPointSlackMap* end_point_to_slack);
   std::pair<QBarSet*, QBarSet*> createBarSets();
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
@@ -182,6 +168,7 @@ class ChartsWidget : public QDockWidget
 
   std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
+  std::map<int, std::string> filter_index_to_path_group_name_;
 
   int prev_filter_index_;
   bool resetting_menu_;

@@ -60,6 +60,7 @@ class STAGuiInterface;
 using TimingPathList = std::vector<std::unique_ptr<TimingPath>>;
 using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
 using StaPins = std::set<const sta::Pin*>;
+using EndPointSlackMap = std::map<const sta::Pin*, float>;
 using ConeDepthMapPinSet = std::map<int, StaPins>;
 using ConeDepthMap = std::map<int, TimingNodeList>;
 
@@ -376,7 +377,7 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
-  std::unordered_map<const sta::Pin*, float> getEndPointToSlackMap(
+  EndPointSlackMap getEndPointToSlackMap(
       const std::string& path_group_name) const;
 
  private:
