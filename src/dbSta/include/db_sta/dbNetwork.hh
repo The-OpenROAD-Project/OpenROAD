@@ -292,12 +292,12 @@ class dbNetwork : public ConcreteNetwork
   void setHierarchy() { hierarchy_ = true; }
   bool hasHierarchy() const { return hierarchy_; }
 
-  int fromIndex(const Port* port) const;
-  int toIndex(const Port* port) const;
-  bool isBus(const Port*) const;
-  bool hasMembers(const Port* port) const;
-  Port* findMember(const Port* port, int index) const;
-  PortMemberIterator* memberIterator(const Port* port) const;
+  int fromIndex(const Port* port) const override;
+  int toIndex(const Port* port) const override;
+  bool isBus(const Port*) const override;
+  bool hasMembers(const Port* port) const override;
+  Port* findMember(const Port* port, int index) const override;
+  PortMemberIterator* memberIterator(const Port* port) const override;
 
   using Network::cell;
   using Network::direction;

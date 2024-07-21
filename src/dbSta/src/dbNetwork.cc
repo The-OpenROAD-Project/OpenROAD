@@ -662,7 +662,7 @@ const char* dbNetwork::busName(const Port* port) const
         return modbterm->getBusPort()->getName();
       }
     }
-    assert(0);
+    logger_->error(ORD, 2020, "Error: database badly formed bus name");
     return nullptr;
   }
 }
@@ -689,7 +689,8 @@ const char* dbNetwork::name(const Cell* cell) const
   staToDb(cell, db_master, db_module);
   if (db_master || cell == top_cell_) {
     return ConcreteNetwork::name(cell);
-  } else {
+  }
+  if (db_module) {
     return db_module->getName();
   }
   return nullptr;
@@ -731,8 +732,9 @@ dbModulePortIterator::~dbModulePortIterator()
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_)
+  if (iter_) {
     return true;
+  }
   return false;
 }
 
@@ -761,13 +763,12 @@ CellPortIterator* dbNetwork::portIterator(const Cell* cell) const
 {
   if (isConcreteCell(cell) || cell == top_cell_) {
     return ConcreteNetwork::portIterator(cell);
-  } else {
-    dbMaster* db_master;
-    dbModule* db_module;
-    staToDb(cell, db_master, db_module);
-    if (db_module) {
-      return new dbModulePortIterator(db_module);
-    }
+  }
+  dbMaster* db_master;
+  dbModule* db_module;
+  staToDb(cell, db_master, db_module);
+  if (db_module) {
+    return new dbModulePortIterator(db_module);
   }
   return nullptr;
 }
@@ -777,11 +778,9 @@ Cell* dbNetwork::cell(const Port* port) const
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return cport->cell();
-  } else {
-    const dbModBTerm* modbterm = reinterpret_cast<const dbModBTerm*>(port);
-    return (reinterpret_cast<Cell*>(modbterm->getParent()));
   }
-  return nullptr;
+  const dbModBTerm* modbterm = reinterpret_cast<const dbModBTerm*>(port);
+  return (reinterpret_cast<Cell*>(modbterm->getParent()));
 }
 
 Cell* dbNetwork::cell(const Instance* instance) const
@@ -789,7 +788,6 @@ Cell* dbNetwork::cell(const Instance* instance) const
   if (instance == top_instance_) {
     return reinterpret_cast<Cell*>(top_cell_);
   }
-
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
@@ -799,7 +797,6 @@ Cell* dbNetwork::cell(const Instance* instance) const
   }
   if (mod_inst) {
     dbModule* master = mod_inst->getMaster();
-    // look up the cell in the verilog library.
     return dbToSta(master);
   }
   return nullptr;
@@ -810,7 +807,6 @@ Instance* dbNetwork::parent(const Instance* instance) const
   if (instance == top_instance_) {
     return nullptr;
   }
-
   dbInst* db_inst;
   dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
@@ -834,9 +830,8 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module) {
+    if (db_module)
       return false;
-    }
     return true;
   }
   return instance != top_instance_;
@@ -894,7 +889,7 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
     dbModITerm* miterm = mod_inst->findModITerm(port_name);
     return dbToSta(miterm);
   }
-  return nullptr;  // no pins on dbModInst in odb currently
+  return nullptr;
 }
 
 Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
@@ -1168,8 +1163,6 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     return dir;
   }
 
-  // Review with Matt -- seems to occur with some cases. (lef based ?)
-  // eg block_sta.tcl
   //
   // note the nasty default behaviour here.
   // if not a liberty port then return unknown
@@ -2351,8 +2344,9 @@ void dbNetwork::registerConcreteCell(const Cell* cell)
 
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
-  if (!hierarchy_)
+  if (!hierarchy_) {
     return true;
+  }
   return (concrete_cells_.find(cell) != concrete_cells_.end());
 }
 
@@ -2363,8 +2357,9 @@ void dbNetwork::registerConcretePort(const Port* port)
 
 bool dbNetwork::isConcretePort(const Port* port) const
 {
-  if (!hierarchy_)
+  if (!hierarchy_) {
     return true;
+  }
   if (concrete_ports_.find(port) != concrete_ports_.end()) {
     return true;
   }
@@ -2379,16 +2374,14 @@ bool dbNetwork::isBus(const Port* port) const
 {
   if (isConcretePort(port)) {
     return ConcreteNetwork::isBus(port);
-  } else {
-    dbMTerm* mterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    if (modbterm && modbterm->isBusPort()) {
-      return true;
-    } else {
-      return false;
-    }
+  }
+
+  dbMTerm* mterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (modbterm && modbterm->isBusPort()) {
+    return true;
   }
   return false;
 }
@@ -2397,16 +2390,16 @@ int dbNetwork::fromIndex(const Port* port) const
 {
   if (isConcretePort(port)) {
     return ConcreteNetwork::fromIndex(port);
-  } else {
-    dbMTerm* mterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    if (modbterm && modbterm->isBusPort()) {
-      return modbterm->getBusPort()->getStartIx();
-    }
   }
-  assert(0);
+  dbMTerm* mterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (modbterm && modbterm->isBusPort()) {
+    return modbterm->getBusPort()->getStartIx();
+  }
+
+  logger_->error(ORD, 2021, "Error: bad bus from_index defintion");
   return 0;
 }
 
@@ -2414,21 +2407,20 @@ int dbNetwork::toIndex(const Port* port) const
 {
   if (isConcretePort(port)) {
     return ConcreteNetwork::toIndex(port);
-  } else {
-    dbMTerm* mterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    if (modbterm && modbterm->isBusPort()) {
-      int start_ix = modbterm->getBusPort()->getStartIx();
-      if (modbterm->getBusPort()->isUpdown()) {
-        return (start_ix + (modbterm->getBusPort()->getSize() - 1));
-      } else {
-        return (start_ix - (modbterm->getBusPort()->getSize() - 1));
-      }
-    }
   }
-  assert(0);
+  dbMTerm* mterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (modbterm && modbterm->isBusPort()) {
+    int start_ix = modbterm->getBusPort()->getStartIx();
+    if (modbterm->getBusPort()->isUpdown()) {
+      return (start_ix + (modbterm->getBusPort()->getSize() - 1));
+    }
+    return (start_ix - (modbterm->getBusPort()->getSize() - 1));
+  }
+
+  logger_->error(ORD, 2022, "Error: bad bus to_index defintion");
   return 0;
 }
 
@@ -2441,13 +2433,12 @@ bool dbNetwork::hasMembers(const Port* port) const
     staToDb(port, bterm, mterm, modbterm);
     if (modbterm && modbterm->isBusPort()) {
       return true;
-    } else {
-      return false;
     }
-  } else {
-    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-    return cport->hasMembers();
+    return false;
   }
+
+  const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+  return cport->hasMembers();
 }
 
 Port* dbNetwork::findMember(const Port* port, int index) const
@@ -2455,17 +2446,15 @@ Port* dbNetwork::findMember(const Port* port, int index) const
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return reinterpret_cast<Port*>(cport->findMember(index));
-  } else {
-    // get the indexed busport member.
-    dbMTerm* mterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-    staToDb(port, bterm, mterm, modbterm);
-    if (modbterm && modbterm->isBusPort()) {
-      dbBusPort* busport = modbterm->getBusPort();
-      return reinterpret_cast<Port*>(busport->fetchIndexedPort(index));
-    }
-    return nullptr;
+  }
+  // get the indexed busport member.
+  dbMTerm* mterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  staToDb(port, bterm, mterm, modbterm);
+  if (modbterm && modbterm->isBusPort()) {
+    dbBusPort* busport = modbterm->getBusPort();
+    return reinterpret_cast<Port*>(busport->fetchIndexedPort(index));
   }
   return nullptr;
 }
@@ -2513,11 +2502,6 @@ DbNetworkPortMemberIterator::~DbNetworkPortMemberIterator()
 {
 }
 
-/*
-Note the side effect: hasNext() increments iterators
-in this traverser. Others do it in next()
-*/
-
 bool DbNetworkPortMemberIterator::hasNext()
 {
   ix_++;
@@ -2529,8 +2513,6 @@ bool DbNetworkPortMemberIterator::hasNext()
     }
   } else {
     if (ix_ < size_) {
-      // note how we keep traversing through the modbterms on the "cell"
-      // so a busport -> port -> busport is feasible.
       next_ = next_->getPrev();
       return true;
     }
@@ -2548,9 +2530,8 @@ PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
 {
   if (!hierarchy_) {
     return ConcreteNetwork::memberIterator(port);
-  } else {
-    return new DbNetworkPortMemberIterator(port, this);
   }
+  return new DbNetworkPortMemberIterator(port, this);
 }
 
 ////////////////////////////////////////////////////////////////
