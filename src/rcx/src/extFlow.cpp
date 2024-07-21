@@ -1229,8 +1229,6 @@ uint extMain::couplingFlow(Rect& extRect,
   uint totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
-  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
-
   uint minRes[2];
   minRes[1] = pitchTable[1];
   minRes[0] = widthTable[1];
