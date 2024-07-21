@@ -143,7 +143,7 @@ class SteinerTree
   stt::Tree& fluteTree() { return tree_; }
   void createSteinerPtToPinMap();
 
-  static SteinerPt null_pt;
+  static constexpr SteinerPt null_pt = -1;
 
  protected:
   void locAddPin(const Point& loc, const Pin* pin);

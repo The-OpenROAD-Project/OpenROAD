@@ -268,6 +268,9 @@ bool MBFF::IsInvertingQPin(odb::dbITerm* iterm)
   sta::Pin* pin = network_->dbToSta(iterm);
   sta::LibertyPort* lib_port = network_->libertyPort(pin);
   sta::LibertyPort* func_port = getFunction(lib_port)->port();
+  if (!func_port) {
+    return false;
+  }
   std::string func_name = func_port->name();
   if (func_port->hasMembers()) {
     sta::LibertyPortMemberIterator port_iter(func_port);
@@ -430,7 +433,7 @@ bool MBFF::IsValidFlop(odb::dbInst* FF)
   if (lib_cell == nullptr) {
     return false;
   }
-  if (!lib_cell->hasSequentials()) {
+  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
     return false;
   }
 
@@ -467,7 +470,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (lib_cell == nullptr) {
     return false;
   }
-  if (!lib_cell->hasSequentials()) {
+  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
     return false;
   }
 

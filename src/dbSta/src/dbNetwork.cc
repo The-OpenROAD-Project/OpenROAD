@@ -960,7 +960,6 @@ ObjectId dbNetwork::id(const Pin* pin) const
   dbModITerm* moditerm = nullptr;
   dbModBTerm* modbterm = nullptr;
 
-  static std::map<ObjectId, void*> id_ptr_map;
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
   if (hierarchy_) {

@@ -75,6 +75,11 @@ void set_dft_config_max_length(int max_length)
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
 }
 
+void set_dft_config_max_chains(int max_chains)
+{
+  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxChains(max_chains);
+}
+
 void set_dft_config_clock_mixing(const char* clock_mixing_ptr)
 {
   std::string_view clock_mixing(clock_mixing_ptr);

@@ -49,6 +49,7 @@ add_library(dpl_lib
   src/Padding.cpp
   src/Place.cpp
   src/FillerPlacement.cpp
+  src/DecapPlacement.cpp
   src/OptMirror.cpp
 )
 

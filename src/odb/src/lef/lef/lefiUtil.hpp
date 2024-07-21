@@ -43,11 +43,6 @@ struct lefiPoints
 
 typedef struct lefiPoints lefiNum;
 
-// int lefiValidTime();
-extern int lefiValidUser();
-
-extern char* lefiUser();
-
 extern char* lefiOrientStr(int orient);
 
 extern double convert_name2num(const char* versionName);

@@ -65,6 +65,8 @@ using utl::DPL;
 using odb::dbMasterType;
 using odb::Rect;
 
+using utl::format_as;
+
 ////////////////////////////////////////////////////////////////
 
 bool Opendp::isMultiRow(const Cell* cell) const
@@ -76,7 +78,8 @@ bool Opendp::isMultiRow(const Cell* cell) const
 
 Opendp::Opendp()
 {
-  Cell::dummy_cell.is_placed_ = true;
+  dummy_cell_ = std::make_unique<Cell>();
+  dummy_cell_->is_placed_ = true;
 }
 
 Opendp::~Opendp() = default;
@@ -349,7 +352,9 @@ void Opendp::groupAssignCellRegions()
         cell->region_ = group.region_boundaries.data();
       }
     }
-    group.util = static_cast<double>(cell_area) / total_site_area;
+    group.util = (total_site_area != 0)
+                     ? static_cast<double>(cell_area) / total_site_area
+                     : 0.0;
   }
 }
 
@@ -374,7 +379,7 @@ void Opendp::groupInitPixels2()
           for (Rect& rect : group.region_boundaries) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
               pixel->util = 0.0;
-              pixel->cell = &Cell::dummy_cell;
+              pixel->cell = dummy_cell_.get();
               pixel->is_valid = false;
             }
           }
@@ -468,7 +473,7 @@ void Opendp::groupInitPixels()
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {
-            pixel->cell = &Cell::dummy_cell;
+            pixel->cell = dummy_cell_.get();
             pixel->util = 0.0;
             pixel->is_valid = false;
           }
