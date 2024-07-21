@@ -3079,7 +3079,7 @@ void FlexDRWorker::route_queue_update_queue(
   if (checkingObj != nullptr
       && checkingObj->typeId() == frBlockObjectEnum::drcNet) {
     checkingObj = static_cast<drNet*>(checkingObj)->getFrNet();
-  } 
+  }
   for (auto& uMarker : markers) {
     auto marker = uMarker.get();
     route_queue_update_from_marker(
