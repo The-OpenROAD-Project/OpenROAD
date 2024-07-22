@@ -11,8 +11,8 @@
 [INFO RCX-0040] Final 2656 rc segments
 [INFO RCX-0439] Coupling Cap extraction gcd ...
 [INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0442] 48% completion -- 954 wires have been extracted
-[INFO RCX-0442] 100% completion -- 1954 wires have been extracted
+[INFO RCX-0442] 48% of 1954 wires extracted
+[INFO RCX-0442] 100% of 1954 wires extracted
 [INFO RCX-0045] Extract 350 nets, 2972 rsegs, 2972 caps, 2876 ccs
 [INFO RCX-0443] 350 nets finished
 No differences found.
