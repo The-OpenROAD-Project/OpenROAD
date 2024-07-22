@@ -369,9 +369,6 @@ void MakeWireParasitics::makePartialParasiticsToPin(
   odb::Point pt = pin.getPosition();
   odb::Point grid_pt = pin.getOnGridPosition();
 
-  if (pin.isConnectedToPadOrMacro() || pin.isPort()) {
-    grid_pt = grouter_->findFakePinPosition(pin, net);
-  }
   // Use the route layer above the pin layer if there is a via
   // to the pin.
   int net_max_layer;

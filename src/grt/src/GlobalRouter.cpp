@@ -92,7 +92,6 @@ GlobalRouter::GlobalRouter()
       min_routing_layer_(1),
       max_routing_layer_(-1),
       layer_for_guide_dimension_(3),
-      gcells_offset_(0),
       overflow_iterations_(50),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
@@ -204,8 +203,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initBlockedIntervals(track_space);
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
-
-  computePinOffsetAdjustments();
 
   for (RegionAdjustment region_adjustment : region_adjustments_) {
     computeRegionAdjustments(region_adjustment.getRegion(),
@@ -820,14 +817,6 @@ void GlobalRouter::findFastRoutePins(Net* net,
   for (Pin& pin : net->getPins()) {
     odb::Point pin_position = pin.getOnGridPosition();
     int conn_layer = pin.getConnectionLayer();
-    odb::dbTechLayer* layer = routing_layers_[conn_layer];
-    // If pin is connected to PAD, create a "fake" location in routing
-    // grid to avoid PAD obstructions
-    if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
-        && gcells_offset_ != 0 && conn_layer <= max_routing_layer) {
-      createFakePin(pin, pin_position, layer, net);
-    }
-
     conn_layer = std::min(conn_layer, max_routing_layer);
 
     int pinX
@@ -1278,65 +1267,6 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
   }
 }
 
-void GlobalRouter::computePinOffsetAdjustments()
-{
-  for (auto& [db_net, segments] : pad_pins_connections_) {
-    std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
-    GRoute& route = segments;
-    mergeSegments(pins, route);
-    for (auto& segment : segments) {
-      int tile_size = grid_->getTileSize();
-      int die_area_min_x = grid_->getXMin();
-      int die_area_min_y = grid_->getYMin();
-      int gcell_id_x
-          = floor((float) ((segment.init_x - die_area_min_x) / tile_size));
-      int gcell_id_y
-          = floor((float) ((segment.init_y - die_area_min_y) / tile_size));
-      if (!segment.isVia()) {
-        if (segment.init_y == segment.final_y) {
-          for (int i = 0; i < gcells_offset_; i++) {
-            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x + i,
-                                                       gcell_id_y,
-                                                       gcell_id_x + i + 1,
-                                                       gcell_id_y,
-                                                       segment.init_layer);
-            if (curr_cap == 0) {
-              continue;
-            }
-            curr_cap -= 1;
-            fastroute_->addAdjustment(gcell_id_x + i,
-                                      gcell_id_y,
-                                      gcell_id_x + i + 1,
-                                      gcell_id_y,
-                                      segment.init_layer,
-                                      curr_cap,
-                                      true);
-          }
-        } else if (segment.init_x == segment.final_x) {
-          for (int i = 0; i < gcells_offset_; i++) {
-            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x,
-                                                       gcell_id_y + i,
-                                                       gcell_id_x,
-                                                       gcell_id_y + i + 1,
-                                                       segment.init_layer);
-            if (curr_cap == 0) {
-              continue;
-            }
-            curr_cap -= 1;
-            fastroute_->addAdjustment(gcell_id_x,
-                                      gcell_id_y + i,
-                                      gcell_id_x,
-                                      gcell_id_y + i + 1,
-                                      segment.init_layer,
-                                      curr_cap,
-                                      true);
-          }
-        }
-      }
-    }
-  }
-}
-
 void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
                                                 int max_routing_layer)
 {
@@ -1615,11 +1545,6 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;
-}
-
-void GlobalRouter::setPinOffset(int pin_offset)
-{
-  gcells_offset_ = pin_offset;
 }
 
 void GlobalRouter::setCapacitiesPerturbationPercentage(float percentage)
@@ -2157,8 +2082,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
   int last_layer = -1;
   for (size_t p = 0; p < pins.size(); p++) {
     if (p > 0) {
-      odb::Point pin_pos0 = findFakePinPosition(pins[p - 1], db_net);
-      odb::Point pin_pos1 = findFakePinPosition(pins[p], db_net);
+      odb::Point pin_pos0 = pins[p - 1].getOnGridPosition();
+      odb::Point pin_pos1 = pins[p].getOnGridPosition();
       // If the net is not local, FR core result is invalid
       if (pin_pos1.x() != pin_pos0.x() || pin_pos1.y() != pin_pos0.y()) {
         logger_->error(GRT,
@@ -2179,7 +2104,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
   }
 
   for (int l = 1; l <= last_layer; l++) {
-    odb::Point pin_pos = findFakePinPosition(pins[0], db_net);
+    odb::Point pin_pos = pins[0].getOnGridPosition();
     GSegment segment = GSegment(
         pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
     route.push_back(segment);
@@ -2576,126 +2501,6 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
   }
 
   return false;
-}
-
-void GlobalRouter::createFakePin(Pin pin,
-                                 odb::Point& pin_position,
-                                 odb::dbTechLayer* layer,
-                                 Net* net)
-{
-  int original_x = pin_position.x();
-  int original_y = pin_position.y();
-  int conn_layer = layer->getRoutingLevel();
-  GSegment pin_connection;
-  pin_connection.init_layer = conn_layer;
-  pin_connection.final_layer = conn_layer;
-
-  pin_connection.init_x = pin_position.x();
-  pin_connection.final_x = pin_position.x();
-  pin_connection.init_y = pin_position.y();
-  pin_connection.final_y = pin_position.y();
-  const bool is_port = pin.isPort();
-  const PinEdge edge = pin.getEdge();
-
-  if ((edge == PinEdge::east && !is_port)
-      || (edge == PinEdge::west && is_port)) {
-    const int new_x_position
-        = pin_position.x() + (gcells_offset_ * grid_->getTileSize());
-    if (new_x_position <= grid_->getXMax()) {
-      pin_connection.init_x = new_x_position;
-      pin_position.setX(new_x_position);
-    }
-  } else if ((edge == PinEdge::west && !is_port)
-             || (edge == PinEdge::east && is_port)) {
-    const int new_x_position
-        = pin_position.x() - (gcells_offset_ * grid_->getTileSize());
-    if (new_x_position >= grid_->getXMin()) {
-      pin_connection.init_x = new_x_position;
-      pin_position.setX(new_x_position);
-    }
-  } else if ((edge == PinEdge::north && !is_port)
-             || (edge == PinEdge::south && is_port)) {
-    const int new_y_position
-        = pin_position.y() + (gcells_offset_ * grid_->getTileSize());
-    if (new_y_position <= grid_->getYMax()) {
-      pin_connection.init_y = new_y_position;
-      pin_position.setY(new_y_position);
-    }
-  } else if ((edge == PinEdge::south && !is_port)
-             || (edge == PinEdge::north && is_port)) {
-    const int new_y_position
-        = pin_position.y() - (gcells_offset_ * grid_->getTileSize());
-    if (new_y_position >= grid_->getYMin()) {
-      pin_connection.init_y = new_y_position;
-      pin_position.setY(new_y_position);
-    }
-  } else {
-    if (verbose_)
-      logger_->warn(GRT, 33, "Pin {} has invalid edge.", pin.getName());
-  }
-
-  // keep init_x/y <= final_x/y
-  int x_tmp = pin_connection.init_x;
-  int y_tmp = pin_connection.init_y;
-  pin_connection.init_x = std::min(x_tmp, pin_connection.final_x);
-  pin_connection.init_y = std::min(y_tmp, pin_connection.final_y);
-
-  pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
-  pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
-
-  // if there is already a pin with that fake position, don't add the gcell
-  // capacity adjustment.
-  auto& net_pad_pin_connection = pad_pins_connections_[net->getDbNet()];
-  if (std::find(net_pad_pin_connection.begin(),
-                net_pad_pin_connection.end(),
-                pin_connection)
-      != net_pad_pin_connection.end()) {
-    return;
-  }
-
-  int pin_conn_init_x = pin_connection.init_x;
-  int pin_conn_init_y = pin_connection.init_y;
-
-  int pin_conn_final_x = pin_connection.final_x;
-  int pin_conn_final_y = pin_connection.final_y;
-
-  for (Pin& net_pin : net->getPins()) {
-    if (net_pin.getName() != pin.getName()
-        && !(net_pin.isConnectedToPadOrMacro() || net_pin.isPort())) {
-      auto net_pin_pos = net_pin.getOnGridPosition();
-      if (pin_connection.init_y == pin_connection.final_y) {
-        if ((net_pin_pos.x() >= pin_conn_init_x)
-            && (net_pin_pos.x() <= pin_conn_final_x)
-            && (net_pin_pos.y() == pin_conn_init_y)) {
-          pin_position.setX(original_x);
-          return;
-        }
-      } else {
-        if ((net_pin_pos.y() >= pin_conn_init_y)
-            && (net_pin_pos.y() <= pin_conn_final_y)
-            && (net_pin_pos.x() == pin_conn_init_x)) {
-          pin_position.setY(original_y);
-          return;
-        }
-      }
-    }
-  }
-
-  pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
-}
-
-odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
-{
-  odb::Point fake_position = pin.getOnGridPosition();
-  Net* net = db_net_map_[db_net];
-  const int max_routing_layer = getNetMaxRoutingLayer(net);
-  if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
-      && gcells_offset_ != 0 && pin.getConnectionLayer() <= max_routing_layer) {
-    odb::dbTechLayer* layer = routing_layers_[pin.getConnectionLayer()];
-    createFakePin(pin, fake_position, layer, net);
-  }
-
-  return fake_position;
 }
 
 std::vector<Pin*> GlobalRouter::getAllPorts()
