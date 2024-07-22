@@ -3472,8 +3472,9 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
             for (int i = 0; i < pin->getNumPinAccess(); i++) {
               const auto& pa = pin->getPinAccess(i);
               for (const auto& ap : pa->getAccessPoints()) {
-                if (ap->getLayerNum() != layerNum)
+                if (ap->getLayerNum() != layerNum) {
                   continue;
+                }
                 hasVerticalAccess |= ap->hasAccess(frDirEnum::N);
                 hasVerticalAccess |= ap->hasAccess(frDirEnum::S);
                 hasHorizontalAccess |= ap->hasAccess(frDirEnum::W);
