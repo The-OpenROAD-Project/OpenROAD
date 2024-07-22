@@ -94,10 +94,10 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (_flags._octilinear != rhs._flags._octilinear) {
     return false;
   }
-  if (isOct() && _shape._oct != _shape._oct) {
+  if (isOct() && _shape._oct != rhs._shape._oct) {
     return false;
   }
-  if (_shape._rect != _shape._rect) {
+  if (_shape._rect != rhs._shape._rect) {
     return false;
   }
 
@@ -163,10 +163,10 @@ int _dbBox::equal(const _dbBox& rhs) const
   if (design_rule_width_ != rhs.design_rule_width_) {
     return false;
   }
-  if (isOct() && _shape._oct != _shape._oct) {
+  if (isOct() && _shape._oct != rhs._shape._oct) {
     return false;
   }
-  if (_shape._rect != _shape._rect) {
+  if (_shape._rect != rhs._shape._rect) {
     return false;
   }
 
