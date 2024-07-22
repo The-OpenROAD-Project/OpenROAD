@@ -1892,9 +1892,9 @@ void FastRouteCore::copyBR(void)
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<short>& gridsX
+          const std::vector<int16_t>& gridsX
               = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<short>& gridsY
+          const std::vector<int16_t>& gridsY
               = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
@@ -1982,9 +1982,9 @@ void FastRouteCore::copyBR(void)
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
         if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<short>& gridsX
+          const std::vector<int16_t>& gridsX
               = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<short>& gridsY
+          const std::vector<int16_t>& gridsY
               = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
