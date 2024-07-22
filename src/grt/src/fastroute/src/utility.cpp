@@ -1891,21 +1891,18 @@ void FastRouteCore::copyBR(void)
       edgeCost = nets_[netID]->getEdgeCost();
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
-        if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<int16_t>& gridsX
-              = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<int16_t>& gridsY
-              = sttrees_[netID].edges[edgeID].route.gridsY;
-          for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
+        const TreeEdge& edge = sttrees_[netID].edges[edgeID];
+        if (edge.len > 0) {
+          const std::vector<int16_t>& gridsX = edge.route.gridsX;
+          const std::vector<int16_t>& gridsY = edge.route.gridsY;
+          for (i = 0; i < edge.route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
               continue;
             }
-            if (gridsX[i] == gridsX[i + 1])  // a vertical edge
-            {
+            if (gridsX[i] == gridsX[i + 1]) {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
               v_edges_[min_y][gridsX[i]].usage -= edgeCost;
-            } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-            {
+            } else {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
               h_edges_[gridsY[i]][min_x].usage -= edgeCost;
             }
@@ -1981,22 +1978,19 @@ void FastRouteCore::copyBR(void)
       edgeCost = nets_[netID]->getEdgeCost();
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
-        if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<int16_t>& gridsX
-              = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<int16_t>& gridsY
-              = sttrees_[netID].edges[edgeID].route.gridsY;
-          for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
+        const TreeEdge& edge = sttrees_[netID].edges[edgeID];
+        if (edge.len > 0) {
+          const std::vector<int16_t>& gridsX = edge.route.gridsX;
+          const std::vector<int16_t>& gridsY = edge.route.gridsY;
+          for (i = 0; i < edge.route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
               continue;
             }
-            if (gridsX[i] == gridsX[i + 1])  // a vertical edge
-            {
+            if (gridsX[i] == gridsX[i + 1]) {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
               v_edges_[min_y][gridsX[i]].usage += edgeCost;
               v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
-            } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-            {
+            } else {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
               h_edges_[gridsY[i]][min_x].usage += edgeCost;
               h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
