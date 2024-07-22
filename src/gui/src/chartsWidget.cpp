@@ -258,8 +258,8 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
 
   data.constrained_pins = end_points;
 
-  for (std::unique_ptr<gui::ClockTree>& clk_tree : stagui_->getClockTrees()) {
-    data.clocks.insert(clk_tree.get()->getClock());
+  for (sta::Clock* clock : *stagui_->getClocks()) {
+    data.clocks.insert(clock);
   }
 
   return data;

@@ -370,6 +370,7 @@ class STAGuiInterface
   ConeDepthMap buildConeConnectivity(const sta::Pin* pin,
                                      ConeDepthMapPinSet& depth_map) const;
 
+  sta::ClockSeq* getClocks() const;
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;

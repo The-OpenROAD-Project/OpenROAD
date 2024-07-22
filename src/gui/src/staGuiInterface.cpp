@@ -1357,6 +1357,11 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
   }
 }
 
+sta::ClockSeq* STAGuiInterface::getClocks() const
+{
+  return sta_->sdc()->clocks();
+}
+
 std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
 {
   initSTA();
