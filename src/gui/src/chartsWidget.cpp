@@ -636,7 +636,7 @@ void ChartsWidget::changeStartEndFilter()
   const int filter_index = filters_menu_->currentIndex();
 
   if (filter_index > 0) {
-    std::string path_group = filter_index_to_path_group_name_[filter_index];
+    std::string path_group = filter_index_to_path_group_name_.at(filter_index);
     end_point_to_slack = stagui_->getEndPointToSlackMap(path_group);
     setLimits(end_point_to_slack);
   } else {
