@@ -377,6 +377,7 @@ class STAGuiInterface
   StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
+  std::set<std::string> getGroupPathsNames() const;
   EndPointSlackMap getEndPointToSlackMap(
       const std::string& path_group_name) const;
 

@@ -100,7 +100,7 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
-  void changeStartEndFilter();
+  void changePathGroupFilter();
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
 
@@ -113,7 +113,7 @@ class ChartsWidget : public QDockWidget
 
   void setSlackHistogram();
   void setModeMenu();
-  void setStartEndFiltersMenu();
+  void updatePathGroupMenuIndexes();
   void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {

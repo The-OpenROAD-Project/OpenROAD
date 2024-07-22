@@ -88,7 +88,6 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   setModeMenu();
 
   controls_layout->insertWidget(1, filters_menu_);
-  setStartEndFiltersMenu();
   filters_menu_->hide();
 
   controls_layout->insertStretch(2);
@@ -109,6 +108,11 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           &HistogramView::barIndex,
           this,
           &ChartsWidget::emitEndPointsInBucket);
+
+  connect(filters_menu_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &ChartsWidget::changePathGroupFilter);
 #else
   label_->setText("QtCharts is not installed.");
   label_->setAlignment(Qt::AlignCenter);
@@ -125,16 +129,15 @@ void ChartsWidget::changeMode()
     return;
   }
 
+  filters_menu_->clear();
   clearChart();
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
-    if (filters_menu_->currentIndex() != 0) {
-      resetting_menu_ = true;
-      filters_menu_->setCurrentIndex(0);
-    }
-
+    resetting_menu_ = true;
+    updatePathGroupMenuIndexes();
     filters_menu_->show();
     setSlackHistogram();
+    resetting_menu_ = false;
   }
 }
 
@@ -149,19 +152,16 @@ void ChartsWidget::setModeMenu()
           &ChartsWidget::changeMode);
 }
 
-void ChartsWidget::setStartEndFiltersMenu()
+void ChartsWidget::updatePathGroupMenuIndexes()
 {
-  filters_menu_->addItem("No Filter");  // Index 0
+  filters_menu_->addItem("No Path Group");  // Index 0
 
-  // TO DO:
-  // 1) add menu based on existing path groups
-  // 2) ensureGraph(?) to create pathGroups
-  // 2) test results with current master
-
-  connect(filters_menu_,
-          qOverload<int>(&QComboBox::currentIndexChanged),
-          this,
-          &ChartsWidget::changeStartEndFilter);
+  int filter_index = 1;
+  for (const std::string& name : stagui_->getGroupPathsNames()) {
+    filters_menu_->addItem(name.c_str());
+    filter_index_to_path_group_name_[filter_index] = name;
+    ++filter_index;
+  }
 }
 
 void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
@@ -622,10 +622,9 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
   stagui_ = std::make_unique<STAGuiInterface>(sta_);
 }
 
-void ChartsWidget::changeStartEndFilter()
+void ChartsWidget::changePathGroupFilter()
 {
   if (resetting_menu_) {
-    resetting_menu_ = false;
     return;
   }
 
