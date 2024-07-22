@@ -41,36 +41,32 @@ proc read_verilog { filename } {
   ord::read_verilog_cmd [file nativename $filename]
 }
 
-sta::define_cmd_args "link_design" {[top_cell_name]}
+sta::define_cmd_args "link_design" {[-hier] top_cell_name}
 
-proc link_design { {top_cell_name ""} } {
-  variable current_design_name
+proc link_design { args } {
+  sta::parse_key_args "link_design" args keys {} \
+    flags {-hier}
 
-  if { $top_cell_name == "" } {
-    if { $current_design_name == "" } {
-      utl::error ORD 2009 "missing top_cell_name argument and no current_design."
-      return 0
-    } else {
-      set top_cell_name $current_design_name
-    }
-  }
-  if { ![ord::db_has_tech] } {
+  set hierarchy [info exists flags(-hier)]
+  sta::check_argc_eq1 "link_design" $args
+  set top_cell_name [lindex $args 0]
+
+  if {![ord::db_has_tech]} {
     utl::error ORD 2010 "no technology has been read."
   }
-  ord::link_design_db_cmd $top_cell_name
+  ord::link_design_db_cmd $top_cell_name $hierarchy
 }
 
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
-                                        [-remove_cells cells] filename}
+					  [-remove_cells cells] filename}
 
 # Copied from sta/verilog/Verilog.tcl because we don't want sta::read_verilog
 # that is in the same file.
 proc write_verilog { args } {
   sta::parse_key_args "write_verilog" args keys {-remove_cells} \
     flags {-sort -include_pwr_gnd}
-
   set remove_cells {}
-  if { [info exists keys(-remove_cells)] } {
+  if {[info exists keys(-remove_cells)]} {
     set remove_cells [sta::parse_cell_arg $keys(-remove_cells)]
   }
   set sort [info exists flags(-sort)]

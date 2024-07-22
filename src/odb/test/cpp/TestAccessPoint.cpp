@@ -2,9 +2,9 @@
 #include <boost/test/included/unit_test.hpp>
 #include <fstream>
 
-#include "db.h"
 #include "env.h"
 #include "helper.h"
+#include "odb/db.h"
 
 namespace odb {
 namespace {
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   ap->setHighType(dbAccessType::HalfGrid);
   ap->setAccess(true, dbDirection::DOWN);
   iterm->setAccessPoint(pin, ap);
-  std::string path = testTmpPath("/results/TestAccessPointDbRW");
+  std::string path = testTmpPath("results", "TestAccessPointDbRW");
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
                    | std::ios::eofbit);

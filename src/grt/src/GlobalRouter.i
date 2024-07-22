@@ -71,6 +71,12 @@ have_routes()
   return getGlobalRouter()->haveRoutes();
 }
 
+bool
+have_detailed_routes()
+{
+  return getGlobalRouter()->haveDetailedRoutes();
+}
+
 void
 set_capacity_adjustment(float adjustment)
 {
@@ -206,7 +212,8 @@ route_layer_lengths(odb::dbNet* db_net)
 void
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void

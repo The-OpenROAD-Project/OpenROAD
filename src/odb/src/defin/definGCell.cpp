@@ -36,8 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "db.h"
-#include "dbShape.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 
 namespace odb {
 
@@ -61,13 +61,15 @@ void definGCell::gcell(defDirection dir, int orig, int count, int step)
 
   dbGCellGrid* grid = _block->getGCellGrid();
 
-  if (grid == nullptr)
+  if (grid == nullptr) {
     grid = dbGCellGrid::create(_block);
+  }
 
-  if (dir == DEF_X)
+  if (dir == DEF_X) {
     grid->addGridPatternX(orig, count, step);
-  else
+  } else {
     grid->addGridPatternY(orig, count, step);
+  }
 }
 
 }  // namespace odb

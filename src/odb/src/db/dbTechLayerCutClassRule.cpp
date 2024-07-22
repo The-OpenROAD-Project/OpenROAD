@@ -36,13 +36,13 @@
 #include <cstdint>
 #include <cstring>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include "dbHashTable.hpp"
 // User Code End Includes
@@ -118,6 +118,7 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
+  _name = nullptr;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
@@ -255,8 +256,9 @@ bool dbTechLayerCutClassRule::isCutsValid() const
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
                                                          const char* name)
 {
-  if (_layer->findTechLayerCutClassRule(name) != nullptr)
+  if (_layer->findTechLayerCutClassRule(name) != nullptr) {
     return nullptr;
+  }
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
   newrule->_name = strdup(name);

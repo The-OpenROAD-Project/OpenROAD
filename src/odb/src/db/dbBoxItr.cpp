@@ -180,8 +180,9 @@ uint dbBoxItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbBoxItr::begin(parent); id != dbBoxItr::end(parent);
-       id = dbBoxItr::next(id))
+       id = dbBoxItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

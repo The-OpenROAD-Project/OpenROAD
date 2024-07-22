@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[WARNING STA-1171] ./testcases/macro_only.lib line 32, default_max_transition is 0.0.
+[INFO ODB-0128] Design: macro_only
+[INFO ODB-0253]     Updated 10 components.
+[INFO ODB-0254]     Updated 12 nets and 24 connections.
+[INFO MPL-0017] No unfixed macros.
+[INFO MPL-0013] Skipping macro placement.
+No differences found.

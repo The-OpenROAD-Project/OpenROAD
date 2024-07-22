@@ -45,9 +45,9 @@
 ///
 
 #include "dbAttrTable.h"
-#include "dbId.h"
-#include "dbObject.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+#include "odb/odb.h"
 namespace utl {
 class Logger;
 }

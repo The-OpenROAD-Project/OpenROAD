@@ -268,6 +268,9 @@ bool MBFF::IsInvertingQPin(odb::dbITerm* iterm)
   sta::Pin* pin = network_->dbToSta(iterm);
   sta::LibertyPort* lib_port = network_->libertyPort(pin);
   sta::LibertyPort* func_port = getFunction(lib_port)->port();
+  if (!func_port) {
+    return false;
+  }
   std::string func_name = func_port->name();
   if (func_port->hasMembers()) {
     sta::LibertyPortMemberIterator port_iter(func_port);
@@ -430,7 +433,7 @@ bool MBFF::IsValidFlop(odb::dbInst* FF)
   if (lib_cell == nullptr) {
     return false;
   }
-  if (!lib_cell->hasSequentials()) {
+  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
     return false;
   }
 
@@ -467,7 +470,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (lib_cell == nullptr) {
     return false;
   }
-  if (!lib_cell->hasSequentials()) {
+  if (!lib_cell->hasSequentials() || lib_cell->isClockGate()) {
     return false;
   }
 
@@ -1407,7 +1410,7 @@ void MBFF::RunMultistart(
     Tray one_bit = GetOneBit(flops[i].pt);
     one_bit.cand.reserve(1);
     one_bit.cand.emplace_back(i);
-    trays[0][i] = one_bit;
+    trays[0][i] = std::move(one_bit);
   }
 
   std::vector<float> res[num_sizes_];
@@ -1782,7 +1785,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
     std::vector<std::pair<int, int>> mapping(num_flops);
     const float cur_ans
         = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, array_mask);
-    all_mappings[t] = mapping;
+    all_mappings[t] = std::move(mapping);
     ans += cur_ans;
   }
 
@@ -2188,7 +2191,11 @@ MBFF::MBFF(odb::dbDatabase* db,
       knn_(knn),
       multistart_(multistart),
       num_paths_(num_paths),
-      multiplier_(static_cast<float>(block_->getDbUnitsPerMicron()))
+      multiplier_(static_cast<float>(block_->getDbUnitsPerMicron())),
+      single_bit_height_(0.0),
+      single_bit_width_(0.0),
+      single_bit_power_(0.0),
+      test_idx_(-1)
 {
   if (debug_graphics && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(log_);

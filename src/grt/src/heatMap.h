@@ -71,6 +71,18 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
     Capacity
   };
 
+  bool populateMapForLayer(odb::dbTechLayer* layer, odb::dbGCellGrid* grid);
+  bool populateMapForDirection(Direction direction, odb::dbGCellGrid* grid);
+  double defineValue(int capacity,
+                     int usage,
+                     double congestion,
+                     bool show_data);
+  void setCongestionValues(const odb::dbGCellGrid::GCellData& hor_cong_data,
+                           const odb::dbGCellGrid::GCellData& ver_cong_data,
+                           int& capacity,
+                           int& usage,
+                           double& congestion);
+
   odb::dbDatabase* db_;
   Direction direction_;
   odb::dbTechLayer* layer_;

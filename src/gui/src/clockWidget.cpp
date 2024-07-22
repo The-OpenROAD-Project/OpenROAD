@@ -101,7 +101,10 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
       sta::Net* net = network->net(output_pin);
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      network->staToDb(output_pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+
+      network->staToDb(output_pin, iterm, bterm, moditerm, modbterm);
       descriptor->highlight(
           DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
     }
@@ -726,7 +729,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
                              utl::Logger* logger,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
-      tree_(tree),
+      tree_(std::move(tree)),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
       renderer_state_(RendererState::OnlyShowOnActiveWidget),
       scene_(nullptr),
@@ -1129,7 +1132,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(output_pin.pin, iterm, bterm);
+  odb::dbModBTerm* modbterm;
+  odb::dbModITerm* moditerm;
+
+  network->staToDb(output_pin.pin, iterm, bterm, moditerm, modbterm);
 
   ClockNodeGraphicsViewItem* node = nullptr;
   if (iterm != nullptr) {
@@ -1153,7 +1159,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(input_pin.pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+
+  network->staToDb(input_pin.pin, iterm, bterm, moditerm, modbterm);
 
   // distinguish between registers and macros
   ClockLeafNodeGraphicsViewItem* node;
@@ -1167,7 +1176,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
         if (insDelays.hasValue()) {
           ins_delay
               = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
@@ -1214,7 +1223,9 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
   auto convert_pin = [&network](const sta::Pin* pin) -> odb::dbITerm* {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    network->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
     return iterm;
   };
 
@@ -1337,6 +1348,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       sta_(nullptr),
       stagui_(nullptr),
       update_button_(new QPushButton("Update", this)),
+      fit_button_(new QPushButton("Fit", this)),
       corner_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
 {
@@ -1347,6 +1359,7 @@ ClockWidget::ClockWidget(QWidget* parent)
   QHBoxLayout* button_layout = new QHBoxLayout;
   button_layout->addWidget(corner_box_);
   button_layout->addWidget(update_button_);
+  button_layout->addWidget(fit_button_);
 
   corner_box_->setToolTip("Timing corner");
 
@@ -1358,7 +1371,10 @@ ClockWidget::ClockWidget(QWidget* parent)
   setWidget(container);
 
   connect(update_button_, &QPushButton::clicked, [=] { populate(); });
+  connect(fit_button_, &QPushButton::clicked, this, &ClockWidget::fit);
+
   update_button_->setEnabled(false);
+  fit_button_->setEnabled(false);
 
   connect(clocks_tab_,
           &QTabWidget::currentChanged,
@@ -1393,6 +1409,7 @@ void ClockWidget::setLogger(utl::Logger* logger)
 void ClockWidget::setBlock(odb::dbBlock* block)
 {
   update_button_->setEnabled(block != nullptr);
+  fit_button_->setEnabled(block != nullptr);
   block_ = block;
 }
 
@@ -1495,6 +1512,7 @@ void ClockWidget::saveImage(const std::string& clock_name,
       if (height_px.has_value()) {
         view_size.setHeight(height_px.value());
       }
+      print_view.scale(1, 1);  // mysteriously necessary sometimes
       print_view.resize(view_size);
       // Ensure the new view is sized correctly by Qt by processing the event
       // so fit will work
@@ -1515,6 +1533,13 @@ void ClockWidget::currentClockChanged(int index)
 {
   for (const auto& view : views_) {
     view->updateRendererState();
+  }
+}
+
+void ClockWidget::fit()
+{
+  if (!views_.empty() && clocks_tab_->currentIndex() < views_.size()) {
+    views_[clocks_tab_->currentIndex()]->fit();
   }
 }
 

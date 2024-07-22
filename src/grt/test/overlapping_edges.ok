@@ -1,17 +1,14 @@
-[INFO ODB-0222] Reading LEF file: overlapping_edges.lef
 [WARNING ODB-0220] WARNING (LEFPARS-2036): SOURCE statement is obsolete in version 5.6 and later.
 The LEF parser will ignore this statement.
 To avoid this warning in the future, remove this statement from the LEF file with version 5.6 or later. See file overlapping_edges.lef at line 930.
 
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0225]     Created 441 library cells
-[INFO ODB-0226] Finished LEF file:  overlapping_edges.lef
+[INFO ODB-0227] LEF file: overlapping_edges.lef, created 13 layers, 25 vias, 441 library cells
 [INFO ODB-0128] Design: uart_i2c_usb_top
 [INFO ODB-0130]     Created 96 pins.
 [INFO ODB-0131]     Created 10317 components and 72715 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 41268 connections.
 [INFO ODB-0133]     Created 7624 nets and 24234 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 30%
@@ -23,7 +20,6 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [WARNING GRT-0036] Pin app_clk is outside die area.
 [WARNING GRT-0036] Pin cfg_cska_uart[0] is outside die area.
@@ -122,6 +118,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 282
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 30338
 
 [INFO GRT-0053] Routing resources analysis:

@@ -41,6 +41,7 @@
 
 namespace odb {
 class dbBlock;
+class dbDatabase;
 class dbMaster;
 class dbMTerm;
 class dbNet;
@@ -88,7 +89,7 @@ namespace cts {
 class TritonCTS;
 }
 
-namespace triton_route {
+namespace drt {
 class TritonRoute;
 }
 
@@ -181,7 +182,7 @@ class Design
   ppl::IOPlacer* getIOPlacer();
   tap::Tapcell* getTapcell();
   cts::TritonCTS* getTritonCts();
-  triton_route::TritonRoute* getTritonRoute();
+  drt::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
   fin::Finale* getFinale();
   par::PartitionMgr* getPartitionMgr();
@@ -191,6 +192,14 @@ class Design
   psm::PDNSim* getPDNSim();
   pdn::PdnGen* getPdnGen();
   pad::ICeWall* getICeWall();
+
+  // This returns a database that is not the one associated with
+  // the rest of the application.  It is usable as a standalone
+  // db but should not passed to any other Design or Tech APIs.
+  //
+  // This is useful if you need a second database for specialized
+  // use cases and is not ordinarily required.
+  static odb::dbDatabase* createDetachedDb();
 
  private:
   sta::dbSta* getSta();

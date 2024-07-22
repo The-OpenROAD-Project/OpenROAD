@@ -34,12 +34,11 @@
 namespace boost::serialization {
 class access;
 }
-namespace fr {
+namespace drt {
 
 class RoutingJobDescription : public dst::JobDescription
 {
  public:
-  RoutingJobDescription() : design_update_(false), send_every_(10) {}
   void setGlobalsPath(const std::string& path) { globals_path_ = path; }
   void setSharedDir(const std::string& path) { shared_dir_ = path; }
   void setDesignPath(const std::string& path) { design_path_ = path; }
@@ -76,8 +75,8 @@ class RoutingJobDescription : public dst::JobDescription
   std::vector<std::pair<int, std::string>> workers_;
   std::vector<std::string> updates_;
   std::string via_data_;
-  bool design_update_;
-  int send_every_;
+  bool design_update_{false};
+  int send_every_{10};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -95,4 +94,5 @@ class RoutingJobDescription : public dst::JobDescription
   }
   friend class boost::serialization::access;
 };
-}  // namespace fr
+
+}  // namespace drt

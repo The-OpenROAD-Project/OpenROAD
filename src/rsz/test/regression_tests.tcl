@@ -26,6 +26,7 @@ record_tests {
   resize_slack3
   remove_buffers1
   remove_buffers2
+  remove_buffers3
   repair_clk_nets1
   repair_clk_inverters1
   repair_cap1
@@ -64,6 +65,7 @@ record_tests {
   repair_setup4
   repair_setup5
   repair_setup6
+  repair_setup7
   repair_slew1
   repair_slew2
   repair_slew3
@@ -109,4 +111,10 @@ record_tests {
   repair_hold9_verbose
   set_dont_touch1
   set_dont_use1
+  #rsz_man_tcl_check
+  #rsz_readme_msgs_check
+}
+
+record_pass_fail_tests {
+  cpp_tests
 }

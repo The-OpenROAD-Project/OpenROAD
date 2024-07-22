@@ -34,7 +34,7 @@
 #include "serialization.h"
 
 // using struct to omit a bunch of friend declarations
-namespace fr {
+namespace drt {
 struct frOArchive;
 struct frIArchive;
 using OutputArchive
@@ -77,7 +77,7 @@ struct frIArchive : InputArchive
  private:
   frDesign* design;
 };
-}  // namespace fr
+}  // namespace drt
 
 // template implementations
 #include <boost/archive/impl/archive_serializer_map.ipp>

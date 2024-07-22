@@ -48,7 +48,7 @@ class HardMacro;
 class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
-  Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger);
+  Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
 
   ~Graphics() override = default;
 
@@ -59,9 +59,10 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void saStep(const std::vector<SoftMacro>& macros) override;
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA() override;
-
+  void drawResult() override;
   void finishedClustering(Cluster* root) override;
 
+  void setMaxLevel(int max_level) override;
   void setAreaPenalty(float area) override;
   void setOutlinePenalty(float outline_penalty) override;
   void setWirelength(float wirelength) override;
@@ -78,6 +79,11 @@ class Graphics : public gui::Renderer, public Mpl2Observer
       const std::vector<mpl2::Rect>& macro_blockages) override;
   void setPlacementBlockages(
       const std::vector<mpl2::Rect>& placement_blockages) override;
+  void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
+  void setShowBundledNets(bool show_bundled_nets) override;
+  void setSkipSteps(bool skip_steps) override;
+  void doNotSkip() override;
+  void setOnlyFinalResult(bool only_final_result) override;
 
   void setOutline(const odb::Rect& outline) override;
 
@@ -88,6 +94,14 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  template <typename T>
+  void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
+  void fetchSoftAndHard(Cluster* parent,
+                        std::vector<HardMacro>& hard,
+                        std::vector<SoftMacro>& soft,
+                        std::vector<std::vector<odb::Rect>>& outlines,
+                        int level);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
@@ -96,13 +110,21 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<HardMacro> hard_macros_;
   std::vector<mpl2::Rect> macro_blockages_;
   std::vector<mpl2::Rect> placement_blockages_;
+  std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
+  std::vector<std::vector<odb::Rect>> outlines_;
 
   bool active_ = true;
   bool coarse_;
   bool fine_;
-  int dbu_ = 0;
+  bool show_bundled_nets_;
+  bool skip_steps_;
+  bool is_skipping_;
+  bool only_final_result_;
+  odb::dbBlock* block_;
   utl::Logger* logger_;
+
+  std::optional<int> max_level_;
   std::optional<float> outline_penalty_;
   std::optional<float> fence_penalty_;
   std::optional<float> wirelength_;

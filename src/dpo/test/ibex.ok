@@ -1,20 +1,16 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: ibex_core
 [INFO ODB-0130]     Created 231 pins.
 [INFO ODB-0131]     Created 34184 components and 173049 component-terminals.
 [INFO ODB-0133]     Created 33171 nets and 104681 connections.
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 34184 cells, 231 terminals, 33171 edges and 104912 pins.
+[INFO DPO-0100] Creating network with 34184 cells, 231 terminals, 33171 edges, 104912 pins, and 0 blockages.
 [INFO DPO-0109] Network stats: inst 34415, edges 33171, pins 104912
 [INFO DPO-0110] Number of regions is 1
 [INFO DPO-0401] Setting random seed to 1.
 [INFO DPO-0402] Setting maximum displacement 0 0 to 3679920 3679920 units.
-[INFO DPO-0320] Collected 5114 fixed cells (excluded terminal_NI).
+[INFO DPO-0320] Collected 5114 fixed cells.
 [INFO DPO-0318] Collected 29301 single height cells.
 [INFO DPO-0321] Collected 0 wide cells.
 [INFO DPO-0322] Image (28000, 28000) - (1867960, 1467200)

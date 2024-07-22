@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbPowerDomain.h"
 
-#include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -44,6 +43,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
+#include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
 
@@ -70,16 +70,7 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   if (_parent != rhs._parent) {
     return false;
   }
-  if (_x1 != rhs._x1) {
-    return false;
-  }
-  if (_x2 != rhs._x2) {
-    return false;
-  }
-  if (_y1 != rhs._y1) {
-    return false;
-  }
-  if (_y2 != rhs._y2) {
+  if (_area != rhs._area) {
     return false;
   }
   if (_voltage != rhs._voltage) {
@@ -104,10 +95,7 @@ void _dbPowerDomain::differences(dbDiff& diff,
   DIFF_FIELD(_group);
   DIFF_FIELD(_top);
   DIFF_FIELD(_parent);
-  DIFF_FIELD(_x1);
-  DIFF_FIELD(_x2);
-  DIFF_FIELD(_y1);
-  DIFF_FIELD(_y2);
+  DIFF_FIELD(_area);
   DIFF_FIELD(_voltage);
   DIFF_END
 }
@@ -120,10 +108,7 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_group);
   DIFF_OUT_FIELD(_top);
   DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_x1);
-  DIFF_OUT_FIELD(_x2);
-  DIFF_OUT_FIELD(_y1);
-  DIFF_OUT_FIELD(_y2);
+  DIFF_OUT_FIELD(_area);
   DIFF_OUT_FIELD(_voltage);
 
   DIFF_END
@@ -131,6 +116,12 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 {
+  _name = nullptr;
+  _top = false;
+  _voltage = 0;
+  // User Code Begin Constructor
+  _area.mergeInit();
+  // User Code End Constructor
 }
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
@@ -140,10 +131,7 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
   _group = r._group;
   _top = r._top;
   _parent = r._parent;
-  _x1 = r._x1;
-  _x2 = r._x2;
-  _y1 = r._y1;
-  _y2 = r._y2;
+  _area = r._area;
   _voltage = r._voltage;
 }
 
@@ -157,10 +145,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._group;
   stream >> obj._top;
   stream >> obj._parent;
-  stream >> obj._x1;
-  stream >> obj._x2;
-  stream >> obj._y1;
-  stream >> obj._y2;
+  stream >> obj._area;
   // User Code Begin >>
   if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
     stream >> obj._levelshifters;
@@ -183,10 +168,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._group;
   stream << obj._top;
   stream << obj._parent;
-  stream << obj._x1;
-  stream << obj._x2;
-  stream << obj._y1;
-  stream << obj._y2;
+  stream << obj._area;
   // User Code Begin <<
   stream << obj._levelshifters;
   stream << obj._voltage;
@@ -270,11 +252,11 @@ float dbPowerDomain::getVoltage() const
 dbPowerDomain* dbPowerDomain::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_powerdomain_hash.hasMember(name))
+  if (_block->_powerdomain_hash.hasMember(name)) {
     return nullptr;
+  }
   _dbPowerDomain* pd = _block->_powerdomain_tbl->create();
   pd->_name = strdup(name);
-  pd->_x1 = -1;  // used as flag to determine whether area has been set before
   ZALLOCATED(pd->_name);
 
   _block->_powerdomain_hash.insert(pd);
@@ -365,34 +347,20 @@ std::vector<dbLevelShifter*> dbPowerDomain::getLevelShifters()
   return levelshifters;
 }
 
-bool dbPowerDomain::setArea(float _x1, float _y1, float _x2, float _y2)
+void dbPowerDomain::setArea(const Rect& area)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  const int dbu = obj->getDb()->getTech()->getLefUnits();
-
-  if (_x1 >= 0 && _y1 >= 0 && _x2 >= 0 && _y2 >= 0) {
-    obj->_x1 = std::round(_x1 * dbu);
-    obj->_y1 = std::round(_y1 * dbu);
-    obj->_x2 = std::round(_x2 * dbu);
-    obj->_y2 = std::round(_y2 * dbu);
-    return true;
-  }
-
-  return false;
+  obj->_area = area;
 }
 
-bool dbPowerDomain::getArea(int& _x1, int& _y1, int& _x2, int& _y2)
+bool dbPowerDomain::getArea(Rect& area)
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  if (obj->_x1 == -1) {  // area unset
+  if (obj->_area.isInverted()) {  // area unset
     return false;
   }
 
-  _x1 = obj->_x1;
-  _y1 = obj->_y1;
-  _x2 = obj->_x2;
-  _y2 = obj->_y2;
-
+  area = obj->_area;
   return true;
 }
 

@@ -11,12 +11,15 @@ planning approach that exploits the hierarchy and data flow inherent in the desi
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Hier-RTLMP algorithm
+### RTL Macro Placer
+
+This command executes the Hier-RTLMP algorithm for macro placement.
 
 ```tcl
 rtl_macro_placer 
     [-max_num_macro max_num_macro]
     [-min_num_macro min_num_macro]
+    [-max_num_macro max_num_macro]
     [-max_num_inst max_num_inst]  
     [-min_num_inst min_num_inst] 
     [-tolerance tolerance]     
@@ -26,6 +29,7 @@ rtl_macro_placer
     [-large_net_threshold large_net_threshold]
     [-signature_net_threshold signature_net_threshold]
     [-halo_width halo_width] 
+    [-halo_height halo_height]
     [-fence_lx fence_lx] 
     [-fence_ly fence_ly]
     [-fence_ux fence_ux]
@@ -48,7 +52,7 @@ rtl_macro_placer
     [-write_macro_placement file_name]
 ```
 
-#### Generic Parameters
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -69,8 +73,7 @@ rtl_macro_placer
 | `-snap_layer` | Snap macro origins to this routing layer track. The default value is 4, and the allowed values are integers `[1, MAX_LAYER]`). |
 | `-bus_planning` | Flag to enable bus planning. We recommend to enable bus planning for technologies with very limited routing layers such as SKY130 and GF180. As for technologies such as NanGate45 and ASAP7, we recommend to keep it disabled. |
 | `-report_directory` | Save reports to this directory. |
-| `-write_macro_placement` | Generates a file with the placement of the macros placed by HierRTLMP flow in the format of multiple calls for the `place_macro` command. |
-
+| `-write_macro_placement` | Generates a file with the design's macro placement in the format of calls for the `place_macro` command. |
 
 #### Simulated Annealing Weight parameters
 
@@ -87,17 +90,9 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 | `-notch_weight` | Weight for the notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters.  The allowed values are floats, and the default value is `10.0`. |
 | `-macro_blockage_weight` | Weight for macro blockage, or the overlapping instances of the macro.  The allowed values are floats, and the default value is `10.0`. |
 
-### Write Macro Placement
-
-Command to generate a file with the placement of the macros in the design using multiple calls for the `place_macro` command:
-
-```tcl
-write_macro_placement file_name
-```
-
 ### Place Macro
 
-Command for placement of one specific macro.
+Command for manual placement of a single macro.
 
 ```tcl
 place_macro

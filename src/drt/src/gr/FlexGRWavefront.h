@@ -37,20 +37,11 @@
 #include "frBaseTypes.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 class FlexGRWavefrontGrid
 {
  public:
-  FlexGRWavefrontGrid()
-      : xIdx_(-1),
-        yIdx_(-1),
-        zIdx_(-1),
-        pathCost_(0),
-        cost_(0),
-        dist_(0),
-        backTraceBuffer_()
-  {
-  }
+  FlexGRWavefrontGrid() = default;
   FlexGRWavefrontGrid(int xIn,
                       int yIn,
                       int zIn,
@@ -62,8 +53,7 @@ class FlexGRWavefrontGrid
         zIdx_(zIn),
         pathCost_(pathCostIn),
         cost_(costIn),
-        dist_(distIn),
-        backTraceBuffer_()
+        dist_(distIn)
   {
   }
   FlexGRWavefrontGrid(int xIn,
@@ -86,19 +76,15 @@ class FlexGRWavefrontGrid
   {
     if (this->cost_ != b.cost_) {
       return this->cost_ > b.cost_;  // prefer smaller cost
-    } else {
-      if (this->dist_ != b.dist_) {
-        return this->dist_ > b.dist_;  // prefer routing close to pin gravity
-                                       // center (centerPt)
-      } else {
-        if (this->zIdx_ != b.zIdx_) {
-          return this->zIdx_ < b.zIdx_;  // prefer upper layer
-        } else {
-          return this->pathCost_
-                 < b.pathCost_;  // prefer larger pathcost, DFS-style
-        }
-      }
     }
+    if (this->dist_ != b.dist_) {
+      return this->dist_ > b.dist_;  // prefer routing close to pin gravity
+                                     // center (centerPt)
+    }
+    if (this->zIdx_ != b.zIdx_) {
+      return this->zIdx_ < b.zIdx_;  // prefer upper layer
+    }
+    return this->pathCost_ < b.pathCost_;  // prefer larger pathcost, DFS-style
   }
   // getters
   frMIdx x() const { return xIdx_; }
@@ -135,10 +121,10 @@ class FlexGRWavefrontGrid
   }
 
  private:
-  frMIdx xIdx_, yIdx_, zIdx_;
-  frCost pathCost_;  // path cost
-  frCost cost_;      // path + est cost
-  frCoord dist_;     // to maze center
+  frMIdx xIdx_{-1}, yIdx_{-1}, zIdx_{-1};
+  frCost pathCost_{0};  // path cost
+  frCost cost_{0};      // path + est cost
+  frCoord dist_{0};     // to maze center
   std::bitset<GRWAVEFRONTBITSIZE> backTraceBuffer_;
 };
 
@@ -155,4 +141,4 @@ class FlexGRWavefront
  private:
   std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ_;
 };
-}  // namespace fr
+}  // namespace drt

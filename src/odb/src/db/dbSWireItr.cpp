@@ -86,8 +86,9 @@ uint dbSWireItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbSWireItr::begin(parent); id != dbSWireItr::end(parent);
-       id = dbSWireItr::next(id))
+       id = dbSWireItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

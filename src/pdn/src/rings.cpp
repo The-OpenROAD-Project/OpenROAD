@@ -59,12 +59,24 @@ void Rings::checkLayerSpecifications() const
     }
   }
 
-  if (layers_[0].layer->getDirection() == layers_[1].layer->getDirection()) {
-    getLogger()->error(
-        utl::PDN,
-        180,
-        "Ring cannot be build with layers following the same direction: {}",
-        layers_[0].layer->getDirection().getString());
+  checkDieArea();
+}
+
+void Rings::checkDieArea() const
+{
+  int hor_width;
+  int ver_width;
+  getTotalWidth(hor_width, ver_width);
+
+  odb::Rect ring_outline = getInnerRingOutline();
+  ring_outline.set_xlo(ring_outline.xMin() - hor_width);
+  ring_outline.set_xhi(ring_outline.xMax() + hor_width);
+  ring_outline.set_ylo(ring_outline.yMin() - ver_width);
+  ring_outline.set_yhi(ring_outline.yMax() + ver_width);
+
+  if (ring_outline.contains(getBlock()->getDieArea())) {
+    getLogger()->warn(
+        utl::PDN, 239, "Core ring shape falls outside the die bounds.");
   }
 }
 
@@ -169,7 +181,19 @@ void Rings::setExtendToBoundary(bool value)
   extend_to_boundary_ = value;
 }
 
-void Rings::makeShapes(const ShapeTreeMap& other_shapes)
+odb::Rect Rings::getInnerRingOutline() const
+{
+  auto* grid = getGrid();
+  odb::Rect core = grid->getDomainArea();
+  core.set_xlo(core.xMin() - offset_[0]);
+  core.set_ylo(core.yMin() - offset_[1]);
+  core.set_xhi(core.xMax() + offset_[2]);
+  core.set_yhi(core.yMax() + offset_[3]);
+
+  return core;
+}
+
+void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -189,17 +213,23 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
     boundary = grid->getGridBoundary();
   }
 
-  odb::Rect core = grid->getDomainArea();
-  core.set_xlo(core.xMin() - offset_[0]);
-  core.set_ylo(core.yMin() - offset_[1]);
-  core.set_xhi(core.xMax() + offset_[2]);
-  core.set_yhi(core.yMax() + offset_[3]);
+  const odb::Rect core = getInnerRingOutline();
 
+  bool single_layer_ring = false;
+  if (layers_[0].layer == layers_[1].layer) {
+    single_layer_ring = true;
+  }
+
+  bool processed_horizontal = false;
   for (const auto& layer_def : layers_) {
     auto* layer = layer_def.layer;
     const int width = layer_def.width;
     const int pitch = layer_def.spacing + width;
-    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    if ((single_layer_ring && !processed_horizontal)
+        || (!single_layer_ring
+            && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)) {
+      processed_horizontal = true;
+
       // bottom
       int x_start = core.xMin() - width;
       int x_end = core.xMax() + width;
@@ -280,6 +310,14 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
           y_start -= pitch;
           y_end += pitch;
         }
+      }
+    }
+  }
+
+  if (single_layer_ring) {
+    for (const auto& [layer, shapes] : getShapes()) {
+      for (const auto& shape : shapes) {
+        shape->setLocked();
       }
     }
   }

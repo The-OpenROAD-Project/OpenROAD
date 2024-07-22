@@ -33,6 +33,7 @@
 #include "techlayer.h"
 
 #include <limits>
+#include <optional>
 
 #include "utl/Logger.h"
 
@@ -82,7 +83,7 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
     return pos;
   }
 
-  int delta_pos = 0;
+  std::optional<int> delta_pos;
   int delta = std::numeric_limits<int>::max();
   for (const int grid_pos : grid_) {
     if (grid_pos < greater_than) {
@@ -99,7 +100,11 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
       break;
     }
   }
-  return delta_pos;
+
+  if (delta_pos.has_value()) {
+    return delta_pos.value();
+  }
+  return pos;
 }
 
 int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,
@@ -229,20 +234,22 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
   if (width * height < area) {
     if (layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       const int required_width = std::ceil(area / height);
-      const int added_width = (required_width - width) / 2;
+      const double added_width = required_width - width;
+      const int adjust_min = std::ceil(added_width / 2.0);
       const int new_x0
-          = snapToManufacturingGrid(rect.xMin() - added_width, false);
+          = snapToManufacturingGrid(rect.xMin() - adjust_min, false);
       const int new_x1
-          = snapToManufacturingGrid(rect.xMax() + added_width, true);
+          = snapToManufacturingGrid(rect.xMax() + adjust_min, true);
       new_rect.set_xlo(new_x0);
       new_rect.set_xhi(new_x1);
     } else {
       const int required_height = std::ceil(area / width);
-      const int added_height = (required_height - height) / 2;
+      const double added_height = required_height - height;
+      const int adjust_min = std::ceil(added_height / 2.0);
       const int new_y0
-          = snapToManufacturingGrid(rect.yMin() - added_height, false);
+          = snapToManufacturingGrid(rect.yMin() - adjust_min, false);
       const int new_y1
-          = snapToManufacturingGrid(rect.yMax() + added_height, true);
+          = snapToManufacturingGrid(rect.yMax() + adjust_min, true);
       new_rect.set_ylo(new_y0);
       new_rect.set_yhi(new_y1);
     }

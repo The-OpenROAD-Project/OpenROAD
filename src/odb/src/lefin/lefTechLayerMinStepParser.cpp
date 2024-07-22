@@ -28,9 +28,9 @@
 #include <string>
 
 #include "boostParser.h"
-#include "db.h"
 #include "lefLayerPropParser.h"
-#include "lefin.h"
+#include "odb/db.h"
+#include "odb/lefin.h"
 
 namespace odb {
 
@@ -151,8 +151,9 @@ bool lefTechLayerMinStepParser::parse(std::string s,
   bool valid
       = qi::phrase_parse(first, last, minstepRule, space) && first == last;
 
-  if (!valid && curRule != nullptr)  // fail if we did not get a full match
+  if (!valid && curRule != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerMinStepRule::destroy(curRule);
+  }
   return valid;
 }
 

@@ -80,6 +80,10 @@ exclude_patterns = [
     'main/src/odb/src/def/doc/README.md',
     'main/src/odb/src/lef/README.md',
     'main/docs',
+    'md',  # manpage dir
+    'man', # manpage dir
+    'cat', # manpage dir
+    'html' # manpage dir
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -123,7 +127,7 @@ html_theme_options = {
         },
         {
             "name": "Email",
-            "url": "mailto:openroad@eng.ucsd.edu",
+            "url": "mailto:openroad@ucsd.edu",
             "icon": "fa-solid fa-envelope",
         },
         {

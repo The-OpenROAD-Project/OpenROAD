@@ -108,7 +108,7 @@ add_subdirectory(src/replace)
 add_subdirectory(src/stitch)
 add_subdirectory(src/utils)
 if(ENABLE_TESTS)
-  add_subdirectory(test/cpp)
+  add_subdirectory(test)
 endif()
 
 messages(

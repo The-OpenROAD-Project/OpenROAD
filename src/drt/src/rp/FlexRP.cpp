@@ -30,7 +30,7 @@
 
 #include "frProfileTask.h"
 
-namespace fr {
+namespace drt {
 
 void FlexRP::main()
 {
@@ -39,4 +39,4 @@ void FlexRP::main()
   prep();
 }
 
-}  // namespace fr
+}  // namespace drt

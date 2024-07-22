@@ -40,7 +40,8 @@ void
 replace_nesterov_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doNesterovPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doNesterovPlace(threads);
 }
 
 
@@ -141,16 +142,10 @@ void
 replace_incremental_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doIncrementalPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doIncrementalPlace(threads);
 }
 
-
-void
-set_force_cpu(bool force_cpu)
-{
-  Replace* replace = getReplace();
-  replace->setForceCPU(force_cpu);
-}
 
 void set_timing_driven_mode(bool timing_driven)
 {
@@ -164,6 +159,13 @@ set_routability_driven_mode(bool routability_driven)
 {
   Replace* replace = getReplace();
   replace->setRoutabilityDrivenMode(routability_driven);
+}
+
+void
+  set_routability_use_grt(bool use_grt)
+{
+  Replace* replace = getReplace();
+  replace->setRoutabilityUseGrt(use_grt);
 }
 
 void
@@ -251,7 +253,8 @@ float
 get_global_placement_uniform_density_cmd() 
 {
   Replace* replace = getReplace();
-  return replace->getUniformTargetDensity();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return replace->getUniformTargetDensity(threads);
 }
 
 void 

@@ -29,7 +29,7 @@
 
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 
 // Instances are grouped into equivalence classes based on master,
 // orientation, and track-offset.  From each equivalence class a
@@ -44,6 +44,7 @@ namespace fr {
 class UniqueInsts
 {
  public:
+  using InstSet = std::set<frInst*, frBlockObjectComp>;
   // if target_insts is non-empty then analysis is limited to
   // those instances.
   UniqueInsts(frDesign* design,
@@ -58,7 +59,7 @@ class UniqueInsts
   int getPAIndex(frInst* inst) const;
 
   // Gets the instances in the equivalence set of the given inst
-  std::set<frInst*, frBlockObjectComp>* getClass(frInst* inst) const;
+  InstSet* getClass(frInst* inst) const;
 
   const std::vector<frInst*>& getUnique() const;
   frInst* getUnique(int idx) const;
@@ -97,18 +98,16 @@ class UniqueInsts
   // Mapp all instances to their representative unique instance
   std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
   // Maps all instances to the set of instances with the same unique inst
-  std::map<frInst*, std::set<frInst*, frBlockObjectComp>*> inst2Class_;
+  std::unordered_map<frInst*, InstSet*> inst2Class_;
   // Maps a unique instance to its pin access index
   std::map<frInst*, int, frBlockObjectComp> unique2paidx_;
   // Maps a unique instance to its index in unique_
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
   // master orient track-offset to instances
   std::map<frMaster*,
-           std::map<dbOrientType,
-                    std::map<std::vector<frCoord>,
-                             std::set<frInst*, frBlockObjectComp>>>,
+           std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
            frBlockObjectComp>
       masterOT2Insts_;
 };
 
-}  // namespace fr
+}  // namespace drt

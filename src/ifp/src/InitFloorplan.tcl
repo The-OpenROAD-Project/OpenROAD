@@ -50,12 +50,12 @@ proc initialize_floorplan { args } {
   sta::check_argc_eq0 "initialize_floorplan" $args
 
   set site ""
-  if [info exists keys(-site)] {
+  if {[info exists keys(-site)]} {
     set site [ifp::find_site $keys(-site)]
   } else {
     utl::warn IFP 11 "use -site to add placement rows."
   }
-  
+
   set additional_sites {}
   if { [info exists keys(-additional_sites)] } {
     foreach sitename $keys(-additional_sites) {
@@ -64,9 +64,9 @@ proc initialize_floorplan { args } {
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
-  if [info exists keys(-utilization)] {
+  if {[info exists keys(-utilization)]} {
     set util $keys(-utilization)
-    if [info exists keys(-core_space)] {
+    if {[info exists keys(-core_space)]} {
       set core_sp $keys(-core_space)
       if { [llength $core_sp] == 1} {
         sta::check_positive_float "-core_space" $core_sp
@@ -89,7 +89,7 @@ proc initialize_floorplan { args } {
       set core_sp_left 0.0
       set core_sp_right 0.0
     }
-    if [info exists keys(-aspect_ratio)] {
+    if {[info exists keys(-aspect_ratio)]} {
       set aspect_ratio $keys(-aspect_ratio)
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
     } else {
@@ -102,7 +102,7 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_right] \
       $site \
       $additional_sites
-  } elseif [info exists keys(-die_area)] {
+  } elseif {[info exists keys(-die_area)]} {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
       utl::error IFP 15 "-die_area is a list of 4 coordinates."
@@ -114,10 +114,10 @@ proc initialize_floorplan { args } {
     sta::check_positive_float "-die_area" $die_uy
 
     ord::ensure_linked
-    if [info exists keys(-core_area)] {
+    if {[info exists keys(-core_area)]} {
       set core_area $keys(-core_area)
       if { [llength $core_area] != 4 } {
-	utl::error IFP 16 "-core_area is a list of 4 coordinates."
+        utl::error IFP 16 "-core_area is a list of 4 coordinates."
       }
       lassign $core_area core_lx core_ly core_ux core_uy
       sta::check_positive_float "-core_area" $core_lx
@@ -127,10 +127,10 @@ proc initialize_floorplan { args } {
 
       # convert die/core coordinates to dbu.
       ifp::init_floorplan_core \
-	[ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
-	[ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
-	[ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
-	[ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
+        [ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
+        [ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
+        [ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
+        [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
         $site \
         $additional_sites
     } else {
@@ -157,7 +157,7 @@ proc make_tracks { args } {
   set tech [ord::get_db_tech]
 
   if { [llength $args] == 0 } {
-      ifp::make_layer_tracks
+    ifp::make_layer_tracks
   } elseif { [llength $args] == 1 } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
@@ -222,7 +222,7 @@ proc insert_tiecells { args } {
   set tie_pin_split [split $args {/}]
   set port [lindex $tie_pin_split end]
   set tie_cell [join [lrange $tie_pin_split 0 end-1] {/}]
-  
+
   set master NULL
   foreach lib [[ord::get_db] getLibs] {
     set master [$lib findMaster $tie_cell]
@@ -252,7 +252,7 @@ proc microns_to_mfg_grid { microns } {
     return [expr round(round($microns * $dbu / $grid) * $grid)]
   } else {
     return [ord::microns_to_dbu $microns]
-  }  
+  }
 }
 
 }

@@ -79,12 +79,6 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
-// par causes abseil link error at startup on apple silicon
-#ifdef ENABLE_PAR
-#define TOOL_PAR X(par)
-#else
-#define TOOL_PAR
-#endif
 
 #define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
   X(ifp)                                 \
@@ -100,7 +94,7 @@ using std::string;
   X(drt)                                 \
   X(dpo)                                 \
   X(fin)                                 \
-  TOOL_PAR                               \
+  X(par)                                 \
   X(rcx)                                 \
   X(rmp)                                 \
   X(stt)                                 \
@@ -396,10 +390,11 @@ static int tclAppInit(int& argc,
 
     const bool gui_enabled = gui::Gui::enabled();
 
-    if (!findCmdLineFlag(argc, argv, "-no_init")) {
+    const char* home = getenv("HOME");
+    if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
       const char* restore_state_cmd = "source -echo -verbose {{{}}}";
 #ifdef USE_STD_FILESYSTEM
-      std::filesystem::path init(getenv("HOME"));
+      std::filesystem::path init(home);
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
         if (!gui_enabled) {
@@ -412,7 +407,7 @@ static int tclAppInit(int& argc,
         }
       }
 #else
-      string init_path = getenv("HOME");
+      string init_path = home;
       init_path += "/";
       init_path += init_filename;
       if (is_regular_file(init_path.c_str())) {
@@ -468,8 +463,8 @@ int ord::tclAppInit(Tcl_Interp* interp)
 
 static void showUsage(const char* prog, const char* init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] ", prog);
-  printf("[-threads count|max] [-log file_name] [-metrics file_name] ");
+  printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
+  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
   printf("cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
@@ -495,6 +490,16 @@ static void showSplash()
   logger->report("OpenROAD {} {}",
                  ord::OpenRoad::getVersion(),
                  ord::OpenRoad::getGitDescribe());
+  logger->report(
+      "Features included (+) or not (-): "
+      "{}Charts {}GPU {}GUI {}Python{}",
+      ord::OpenRoad::getChartsCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
+      ord::OpenRoad::getGUICompileOption() ? "+" : "-",
+      ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
+      strcasecmp(BUILD_TYPE, "release") == 0
+          ? ""
+          : fmt::format(" : {}", BUILD_TYPE));
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");

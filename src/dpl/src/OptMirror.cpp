@@ -74,12 +74,6 @@ void NetBox::restoreBox()
   box_ = box_saved_;
 }
 
-double OptimizeMirroring::dbuToMicrons(int64_t dbu) const
-{
-  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  return dbu / dbu_micron;
-}
-
 ////////////////////////////////////////////////////////////////
 
 OptimizeMirroring::OptimizeMirroring(Logger* logger, odb::dbDatabase* db)
@@ -111,11 +105,15 @@ void OptimizeMirroring::run()
   if (mirror_count > 0) {
     logger_->info(DPL, 20, "Mirrored {} instances", mirror_count);
     double hpwl_after = eval.hpwl();
-    logger_->info(
-        DPL, 21, "HPWL before          {:8.1f} u", dbuToMicrons(hpwl_before));
-    logger_->info(
-        DPL, 22, "HPWL after           {:8.1f} u", dbuToMicrons(hpwl_after));
-    double hpwl_delta = (hpwl_before != 0.0)
+    logger_->info(DPL,
+                  21,
+                  "HPWL before          {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_before));
+    logger_->info(DPL,
+                  22,
+                  "HPWL after           {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_after));
+    double hpwl_delta = (hpwl_before != 0)
                             ? (hpwl_after - hpwl_before) / hpwl_before * 100
                             : 0.0;
     logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
@@ -205,7 +203,7 @@ int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 // apply mirror about Y axis to orient
 static dbOrientType orientMirrorY(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R0:
       return dbOrientType::MY;
     case dbOrientType::MX:
