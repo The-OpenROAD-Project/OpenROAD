@@ -1688,7 +1688,6 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
     }
   }
   Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
-                   {"IO type", iterm->getIoType().getString()},
                    {"Net", std::move(net_value)},
                    {"Special", iterm->isSpecial()},
                    {"MTerm", gui->makeSelected(iterm->getMTerm())},
