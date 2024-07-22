@@ -46,6 +46,7 @@ tapcell
     [-tbtie_cpp tbtie_cpp]
     [-endcap_cpp endcap_cpp]
     [-no_cell_at_top_bottom]
+    [-ignore_row_orientation]
 ```
 
 #### Options
@@ -70,6 +71,7 @@ tapcell
 | `-incnrcap_nwout_master` | Master cell placed at the corners of macros, according the row orientation. |
 | `-cnrcap_nwin_master` | Macro cell placed at the corners the core area according the row orientation. |
 | `-cnrcap_nwout_master` | Macro cell placed at the corners the core area according the row orientation. |
+| `-ignore_row_orientation` | Ignore row orientations, always place bottom endcaps as nwin with orientation R0 and top endcaps as nwout with orientation MX. |
 | `-tbtie_cpp` | Option is deprecated. |
 | `-endcap_cpp` | Option is deprecated. |
 | `-no_cell_at_top_bottom` | Option is deprecated. |

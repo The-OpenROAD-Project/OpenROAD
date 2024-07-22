@@ -22,6 +22,7 @@ set(TEST_NAMES
     gcd_sky130_separate
     jpeg_gf180
     aes_gf180
+    ignore_row_orientation
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)

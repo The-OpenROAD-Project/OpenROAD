@@ -55,6 +55,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-tbtie_cpp tbtie_cpp]\
                                 [-endcap_cpp endcap_cpp]\
                                 [-no_cell_at_top_bottom]\
+                                [-ignore_row_orientation]\
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -65,7 +66,7 @@ proc tapcell { args } {
               -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
               -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
-    flags {-no_cell_at_top_bottom -disallow_one_site_gaps}
+    flags {-no_cell_at_top_bottom -disallow_one_site_gaps -ignore_row_orientation}
 
   sta::check_argc_eq0 "tapcell" $args
 
@@ -186,11 +187,13 @@ proc tapcell { args } {
     }
   }
 
+  set ignore_row_orientation [info exists flags(-ignore_row_orientation)]
+
   tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master \
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
-    $tapcell_master $dist $disallow_one_site_gaps
+    $tapcell_master $dist $disallow_one_site_gaps $ignore_row_orientation
 }
 
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\

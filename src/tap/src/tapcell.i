@@ -97,7 +97,8 @@
            const char* incnrcap_nwout_master,
            odb::dbMaster* tapcell_master,
            const int dist,
-           const bool disallow_one_site_gaps)
+           const bool disallow_one_site_gaps,
+           const bool ignore_row_orientation)
   {
     Options options;
     options.endcap_master = endcap_master;
@@ -116,6 +117,7 @@
     options.incnrcap_nwin_master = findMaster(incnrcap_nwin_master);
     options.incnrcap_nwout_master = findMaster(incnrcap_nwout_master);
     options.disallow_one_site_gaps = disallow_one_site_gaps;
+    options.ignore_row_orientation = ignore_row_orientation;
     getTapcell()->run(options);
   }
 

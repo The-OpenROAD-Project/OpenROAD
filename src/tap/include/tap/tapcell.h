@@ -71,6 +71,7 @@ struct Options
   odb::dbMaster* incnrcap_nwin_master = nullptr;
   odb::dbMaster* incnrcap_nwout_master = nullptr;
   bool disallow_one_site_gaps = false;
+  bool ignore_row_orientation = false;
 
   bool addBoundaryCells() const
   {
@@ -101,6 +102,8 @@ struct EndcapCellOptions
   odb::dbMaster* right_edge = nullptr;
 
   std::string prefix = "PHY_";
+
+  bool ignore_row_orientation = false;
 };
 
 class Tapcell

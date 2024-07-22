@@ -935,7 +935,12 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   }
 
   odb::dbMaster* master = nullptr;
-  const auto row_orient = row->getOrient();
+  auto row_orient = row->getOrient();
+
+  if (options.ignore_row_orientation) {
+    row_orient = odb::dbOrientType::R0;
+  }
+
   switch (corner.type) {
     case CornerType::OuterBottomLeft:
       if (row_orient == odb::dbOrientType::R0) {
@@ -1060,6 +1065,24 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
       break;
   }
 
+  if (options.ignore_row_orientation) {
+    switch (corner.type) {
+      case CornerType::OuterBottomLeft:
+      case CornerType::OuterBottomRight:
+      case CornerType::InnerTopLeft:
+      case CornerType::InnerTopRight:
+        break;
+      case CornerType::OuterTopLeft:
+      case CornerType::OuterTopRight:
+      case CornerType::InnerBottomLeft:
+      case CornerType::InnerBottomRight:
+        orient = orient.flipX();
+        break;
+      case CornerType::Unknown:
+        break;
+    }
+  }
+
   if (!checkSymmetry(master, orient)) {
     return {};
   }
@@ -1128,7 +1151,8 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
   std::vector<odb::dbMaster*> masters;
   switch (edge.type) {
     case EdgeType::Top:
-      if (row->getOrient() == odb::dbOrientType::R0) {
+      if (row->getOrient() == odb::dbOrientType::R0
+          || options.ignore_row_orientation) {
         masters.insert(
             masters.end(), options.top_edge.begin(), options.top_edge.end());
       } else {
@@ -1138,7 +1162,8 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
       }
       break;
     case EdgeType::Bottom:
-      if (row->getOrient() == odb::dbOrientType::R0) {
+      if (row->getOrient() == odb::dbOrientType::R0
+          || options.ignore_row_orientation) {
         masters.insert(masters.end(),
                        options.bottom_edge.begin(),
                        options.bottom_edge.end());
@@ -1225,9 +1250,24 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
           e1.getX() / dbus);
     }
 
+    odb::dbOrientType orient = row->getOrient();
+
+    if (options.ignore_row_orientation) {
+      switch (edge.type) {
+        case EdgeType::Top:
+          orient = odb::dbOrientType::MX;
+          break;
+        case EdgeType::Bottom:
+          orient = odb::dbOrientType::R0;
+          break;
+        default:
+          break;
+      };
+    }
+
     makeInstance(db_->getChip()->getBlock(),
                  master,
-                 row->getOrient(),
+                 orient,
                  ll.getX(),
                  ll.getY(),
                  fmt::format("{}EDGE_{}_{}_",
@@ -1477,6 +1517,8 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
   bopts.left_bottom_edge = options.incnrcap_nwout_master;
   bopts.right_top_edge = options.incnrcap_nwin_master;
   bopts.right_bottom_edge = options.incnrcap_nwout_master;
+
+  bopts.ignore_row_orientation = options.ignore_row_orientation;
 
   return bopts;
 }
