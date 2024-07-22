@@ -1885,7 +1885,6 @@ void FastRouteCore::copyBR(void)
   int i, j, edgeID, numEdges, numNodes, min_y, min_x, edgeCost;
 
   if (!sttrees_bk_.empty()) {
-
     // Reduce usage with last routes before update
     for (const int& netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
