@@ -208,27 +208,34 @@ _dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
     _diffarea.push_back(e);
   }
 }
-/*
-inline _dbMTerm::~_dbMTerm()
+
+_dbMTerm::~_dbMTerm()
 {
-    if ( _name )
-        free( (void *) _name );
+  if (_name) {
+    free((void*) _name);
+  }
 
-    dbVector<_dbTechAntennaAreaElement *>::iterator  antitr;
-    for (antitr = _par_met_area.begin(); antitr != _par_met_area.end();
-antitr++) delete *antitr; _par_met_area.clear();
+  for (auto elem : _par_met_area) {
+    delete elem;
+  }
+  _par_met_area.clear();
 
-    for (antitr = _par_met_sidearea.begin(); antitr != _par_met_sidearea.end();
-antitr++) delete *antitr; _par_met_sidearea.clear();
+  for (auto elem : _par_met_sidearea) {
+    delete elem;
+  }
+  _par_met_sidearea.clear();
 
-    for (antitr = _par_cut_area.begin(); antitr != _par_cut_area.end();
-antitr++) delete *antitr; _par_cut_area.clear();
+  for (auto elem : _par_cut_area) {
+    delete elem;
+  }
+  _par_cut_area.clear();
 
-    for (antitr = _diffarea.begin(); antitr != _diffarea.end(); antitr++)
-      delete *antitr;
-    _diffarea.clear();
+  for (auto elem : _diffarea) {
+    delete elem;
+  }
+  _diffarea.clear();
 }
-*/
+
 dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 {
   uint* bit_field = (uint*) &mterm._flags;

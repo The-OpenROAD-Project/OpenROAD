@@ -230,6 +230,7 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     Tcl_Obj *obj = Tcl_NewIntObj(*it);
     Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), obj);
   }
+  delete $1;
 }
 
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
