@@ -21,6 +21,7 @@ record_tests {
   jpeg_gf180
   aes_gf180
   ignore_row_orientation
+  ignore_row_orientation_odd
   #tap_man_tcl_check
   #tap_readme_msgs_check
 }

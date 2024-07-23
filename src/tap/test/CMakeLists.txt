@@ -23,6 +23,7 @@ set(TEST_NAMES
     jpeg_gf180
     aes_gf180
     ignore_row_orientation
+    ignore_row_orientation_odd
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
