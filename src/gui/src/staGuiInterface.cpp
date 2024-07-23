@@ -928,30 +928,6 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
     const std::string& path_group_name) const
 {
-  /* TO DO: Find a way to populate the path_groups_ object inside
-            search to create pathGroups without this trick..
-            This is exactly like running "report_checks": */
-  auto path_ends = sta_->findPathEnds(
-      nullptr /* ExceptionFrom *from, */,
-      nullptr /* ExceptionThruSeq *thrus, */,
-      nullptr /* ExceptionTo *to, */,
-      false /* bool unconstrained, */,
-      nullptr /* const Corner *corner, */,
-      sta::MinMaxAll::max() /* const MinMaxAll *min_max, */,
-      1 /* int group_count, */,
-      1 /* int endpoint_count, */,
-      false /* bool unique_pins, */,
-      -sta::INF /* float slack_min, */,
-      sta::INF /* float slack_max, */,
-      false /* bool sort_by_slack, */,
-      nullptr /* PathGroupNameSet *group_names, */,
-      true /* bool setup, */,
-      true /* bool hold, */,
-      true /* bool recovery, */,
-      true /* bool removal, */,
-      true /* bool clk_gating_setup, */,
-      true /* bool clk_gating_hold) */);
-
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
   sta::Search* search = sta_->search();
