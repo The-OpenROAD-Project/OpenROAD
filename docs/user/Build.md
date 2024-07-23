@@ -1,6 +1,6 @@
 # Installing OpenROAD
 
-## Clone repository
+## Clone Repository
 
 The first step, independent of the build method, is to download the repository:
 
@@ -70,7 +70,7 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 ```
 
-### Install dependencies
+### Install Dependencies
 
 You may follow our helper script to install dependencies as follows:
 ``` shell

@@ -57,7 +57,6 @@ Legend:
 | --- | --- | --- | --- | --- |
 | Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
 | Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
-| CentOS 7     | `Y` | `-` | `Y` | `-` |
 | CentOS 8     | `Y` | `-` | `Y` | `-` |
 | Debian 10    | `Y` | `Y` | `Y` | `-` |
 | Debian 11    | `Y` | `Y` | `Y` | `-` |
@@ -65,11 +64,6 @@ Legend:
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
 | macOS        | `Y*` | `-` | `Y` | `-` |
 
-```{warning}
-For macOS, local compilation for the modules `par` and `mpl2` are not
-fully supported due to an upstream issue with `or-tools`. We recommend
-Docker installation wherever possible.
-```
 
 ## Code of conduct
 
