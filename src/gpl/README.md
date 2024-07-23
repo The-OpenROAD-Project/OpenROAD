@@ -81,7 +81,6 @@ global_placement
     [-initial_place_max_fanout initial_place_max_fanout]
     [-pad_left pad_left]
     [-pad_right pad_right]
-    [-force_cpu]
     [-skip_io]
     [-skip_nesterov_place]
     [-routability_use_grt]
@@ -117,7 +116,6 @@ global_placement
 | `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
-| `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 
 #### Routability-Driven Arguments

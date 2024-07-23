@@ -45,6 +45,7 @@ add_library(mpl2_lib
   src/SACoreHardMacro.cpp
   src/SACoreSoftMacro.cpp
   src/bus_synthesis.cpp
+  src/clusterEngine.cpp
 )
 
 target_include_directories(mpl2_lib

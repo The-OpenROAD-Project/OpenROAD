@@ -180,7 +180,11 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
 
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
-      this, all_shapes, local_obstructions, allow_repair_channels_);
+      this,
+      all_shapes,
+      local_obstructions,
+      allow_repair_channels_,
+      domain_->getPDNGen()->getDebugRenderer());
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const
@@ -568,8 +572,17 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
 void Grid::resetShapes()
 {
   vias_.clear();
+  std::set<GridComponent*> remove;
   for (auto* component : getGridComponents()) {
     component->clearShapes();
+
+    if (component->isAutoInserted()) {
+      remove.insert(component);
+    }
+  }
+
+  for (auto* component : remove) {
+    removeGridComponent(component);
   }
 
   for (const auto& connect : connect_) {
@@ -851,6 +864,25 @@ std::vector<GridComponent*> Grid::getGridComponents() const
   return components;
 }
 
+void Grid::removeGridComponent(GridComponent* component)
+{
+  for (auto itr = rings_.begin(); itr != rings_.end();) {
+    if (itr->get() == component) {
+      itr = rings_.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+
+  for (auto itr = straps_.begin(); itr != straps_.end();) {
+    if (itr->get() == component) {
+      itr = straps_.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+}
+
 void Grid::writeToDb(const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
                      bool do_pins,
                      const Shape::ObstructionTreeMap& obstructions) const
@@ -1022,6 +1054,25 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
+
+  // fixed pins obs
+  for (auto* bterm : block->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isFixed()) {
+        continue;
+      }
+
+      for (auto* geom : bpin->getBoxes()) {
+        auto* layer = geom->getTechLayer();
+        auto shape
+            = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
+        shape->generateObstruction();
+        shape->setRect(shape->getRect());
+        obs[layer].push_back(shape);
+      }
+    }
+  }
+
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - end");
 }
 

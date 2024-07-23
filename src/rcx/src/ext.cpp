@@ -234,8 +234,6 @@ void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip();
   odb::dbBlock* block = _ext->getBlock();
-  logger_->info(
-      RCX, 8, "extracting parasitics of {} ...", block->getConstName());
 
   odb::orderWires(logger_, block);
 
@@ -250,9 +248,6 @@ void Ext::extract(ExtractOptions options)
                         options.coupling_threshold,
                         options.context_depth,
                         options.ext_model_file);
-
-  logger_->info(
-      RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
 }
 
 void Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
@@ -288,9 +283,6 @@ void Ext::write_spef(const SpefOptions& options)
                     spef_version_);
     return;
   }
-  if (!options.init) {
-    logger_->info(RCX, 16, "Writing SPEF ...");
-  }
   _ext->writeSPEF((char*) options.file,
                   (char*) options.nets,
                   options.no_name_map,
@@ -313,8 +305,6 @@ void Ext::write_spef(const SpefOptions& options)
                   name,
                   spef_version_,
                   options.parallel);
-
-  logger_->info(RCX, 17, "Finished writing SPEF ...");
 }
 
 void Ext::read_spef(ReadSpefOpts& opt)

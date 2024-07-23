@@ -27,7 +27,7 @@ map_power_switch PS_1 \
   -lib_cells POWER_SWITCH \
   -port_map {{vout VPWR} {vin VDDG} {sleep SLEEP} {acknowledge SLEEP_OUT} {ground VGND}}
 
-initialize_floorplan -utilization 10 -site unithd
+initialize_floorplan -utilization 10 -site unithd -additional_site unithddbl
 tapcell \
   -distance 14 \
   -tapcell_master "sky130_fd_sc_hd__tapvpwrvgnd_1"
