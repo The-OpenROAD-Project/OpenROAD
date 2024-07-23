@@ -1338,10 +1338,10 @@ int startGui(int& argc,
       &app, &QApplication::aboutToQuit, main_window, &MainWindow::saveSettings);
 
   // execute commands to restore state of gui
-  std::string restore_commands;
-  for (const auto& cmd : gui->getRestoreStateCommands()) {
-    restore_commands += cmd + "\n";
-  }
+  std::vector<std::string> restore_commands;
+  auto commands = gui->getRestoreStateCommands();
+  restore_commands.insert(
+      restore_commands.end(), commands.begin(), commands.end());
   if (!restore_commands.empty()) {
     // Temporarily connect to script widget to get ending tcl state
     bool tcl_ok = true;
@@ -1350,8 +1350,10 @@ int startGui(int& argc,
                            &ScriptWidget::commandExecuted,
                            [&tcl_ok](bool is_ok) { tcl_ok = is_ok; });
 
-    main_window->getScriptWidget()->executeSilentCommand(
-        QString::fromStdString(restore_commands));
+    for (const auto& cmd : restore_commands) {
+      main_window->getScriptWidget()->executeSilentCommand(
+          QString::fromStdString(cmd));
+    }
 
     // disconnect tcl return lister
     QObject::disconnect(tcl_return_code_connect);

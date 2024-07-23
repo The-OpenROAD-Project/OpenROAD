@@ -700,7 +700,14 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
 
   const std::string command = cmd.toStdString();
 
-  const int return_code = Tcl_Eval(interp_, command.c_str());
+  int return_code;
+  std::string cmdStr = command;
+  if (cmdStr.rfind("source {", 0) == 0 && cmdStr.back() == '}') {
+    std::string filename = cmdStr.substr(8, cmdStr.size() - 9);
+    return_code = Tcl_EvalFile(interp_, filename.c_str());
+  } else {
+    return_code = Tcl_Eval(interp_, cmdStr.c_str());
+  }
   const bool is_ok = return_code == TCL_OK;
 
   if (!silent) {
