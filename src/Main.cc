@@ -333,6 +333,18 @@ static int tclReadlineInit(Tcl_Interp* interp)
 }
 #endif
 
+int tclEvalFile(const char* filename, Tcl_Interp* interp)
+{
+  int code = Tcl_EvalFile(interp, filename);
+  if (code != TCL_OK) {
+    const char* result = Tcl_GetStringResult(interp);
+    if (result[0] != '\0') {
+      printf("%s\n", result);
+    }
+  }
+  return code;
+}
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -430,7 +442,7 @@ static int tclAppInit(int& argc,
         char* cmd_file = argv[1];
         if (cmd_file) {
           if (!gui_enabled) {
-            int result = sourceTclFile(cmd_file, false, false, interp);
+            int result = tclEvalFile(cmd_file, interp);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               exit(exit_code);
