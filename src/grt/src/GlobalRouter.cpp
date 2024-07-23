@@ -209,6 +209,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                              region_adjustment.getLayer(),
                              region_adjustment.getAdjustment());
   }
+  addResourcesForPinAccess();
   fastroute_->initAuxVar();
 }
 
@@ -1441,6 +1442,40 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                        layer,
                                        first_tile_reduce_interval,
                                        last_tile_reduce_interval);
+  }
+}
+
+// For macro pins in the east and north edges of the macros, the access for
+// them can be blocked by the macro obstructions. This function adds the
+// resources necessary to route these pins.
+// Only pins in the east and north edges are affected because FastRoute
+// routes from left to right, and bottom to top.
+void GlobalRouter::addResourcesForPinAccess()
+{
+  odb::dbTech* tech = db_->getTech();
+  for (const auto& [db_net, net] : db_net_map_) {
+    for (const Pin& pin : net->getPins()) {
+      if (pin.isConnectedToPadOrMacro()
+          && (pin.getEdge() == PinEdge::east
+              || pin.getEdge() == PinEdge::north)) {
+        const odb::Point& pos = pin.getOnGridPosition();
+        int pin_x = (int) ((pos.x() - grid_->getXMin()) / grid_->getTileSize());
+        int pin_y = (int) ((pos.y() - grid_->getYMin()) / grid_->getTileSize());
+        const int layer = pin.getConnectionLayer();
+        odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+        if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+          const int edge_cap = fastroute_->getEdgeCapacity(
+              pin_x, pin_y, pin_x, pin_y + 1, layer);
+          fastroute_->addAdjustment(
+              pin_x, pin_y, pin_x, pin_y + 1, layer, edge_cap + 1, false);
+        } else {
+          const int edge_cap = fastroute_->getEdgeCapacity(
+              pin_x, pin_y, pin_x + 1, pin_y, layer);
+          fastroute_->addAdjustment(
+              pin_x, pin_y, pin_x + 1, pin_y, layer, edge_cap + 1, false);
+        }
+      }
+    }
   }
 }
 
