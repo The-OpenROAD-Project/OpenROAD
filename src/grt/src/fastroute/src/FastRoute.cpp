@@ -409,6 +409,10 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       const int increase = reducedCap - cap;
       h_edges_[y1][x1].cap += increase;
+      int new_red = static_cast<int>(h_edges_[y1][x1].red) - increase;
+      int new_red_3D = static_cast<int>(h_edges_3D_[k][y1][x1].red) - increase;
+      h_edges_[y1][x1].red = new_red >= 0 ? new_red : 0;
+      h_edges_3D_[k][y1][x1].red = new_red_3D >= 0? new_red_3D : 0;
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
@@ -439,6 +443,10 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       int increase = reducedCap - cap;
       v_edges_[y1][x1].cap += increase;
+      int new_red = static_cast<int>(v_edges_[y1][x1].red) - increase;
+      int new_red_3D = static_cast<int>(v_edges_3D_[k][y1][x1].red) - increase;
+      v_edges_[y1][x1].red = new_red >= 0 ? new_red : 0;
+      v_edges_3D_[k][y1][x1].red = new_red_3D >= 0? new_red_3D : 0;
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }
