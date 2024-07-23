@@ -168,12 +168,6 @@ set_macro_extension(int macroExtension)
 }
 
 void
-set_pin_offset(int pin_offset)
-{
-  getGlobalRouter()->setPinOffset(pin_offset);
-}
-
-void
 set_seed(int seed)
 {
   getGlobalRouter()->setSeed(seed);
