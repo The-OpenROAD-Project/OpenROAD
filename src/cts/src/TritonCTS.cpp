@@ -1206,6 +1206,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
         = block_->findInst(builder->getTopBufferName().c_str());
     if (topRegBuffer) {
       odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
+      odb::dbITerm* topRegBufferOutPin = topRegBuffer->getFirstOutput();
       topRegBufferInputPin->connect(builder->getDrivingNet());
     }
   }
@@ -1971,7 +1972,6 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
 float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
 {
-  logger_->report("Analisando iterm: {}", iterm->getName());
   sta::VertexPathIterator path_iter(sinVertex, openSta_);
   float clkPathArrival = 0.0;
   int paths_accepted = 0;
@@ -1999,24 +1999,12 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       if (start->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
         // only populate with rising edges
         continue;
-	if(path_transition) {
-          logger_->report("Não são o mesmo transitions");
-        }
       }
 
       if (start->dcalcAnalysisPt(openSta_)->delayMinMax()
           != sta::MinMax::max()) {
-        if(path_min_max) {
-          logger_->report("Não são o mesmo MinMax");
-        }
 	continue;
         // only populate with max delay
-      }
-      if(!path_transition) {
-        logger_->report("Não são o mesmo transitions");
-      }
-      if(!path_min_max) {
-        logger_->report("Não são o mesmo MinMax");
       }
 
       odb::dbITerm* term;
@@ -2026,30 +2014,23 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       network_->staToDb(start->pin(openSta_), term, port, moditerm, modbterm);
       if (term) {
         path_start_net = term->getNet();
-	if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
-          logger_->report("iterm do start: {}", term->getName());
-        }
+	
+        
       }
       if (port) {
         path_start_net = port->getNet();
-	if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
-	  logger_->report("iterm do start: {}", port->getName());
-	}
+	
       }
       if (path_start_net == topNet) {
         clkPathArrival = path->arrival(openSta_);
         paths_accepted += 1;
 	return clkPathArrival;
-      } else if (iterm->getName() == "u_ca53_noram/u_ca53tlb/u_tlb_pagewalk/g_protection_pw6_walk_cache_ecc_err_early_reg/CK") {
-	logger_->report("Rejeitou: {}, Queria: {}",path_start_net->getName(), topNet->getName());
       }	
     }
   }
   if (paths_accepted > 1 || paths_accepted == 0) {
     
-    logger_->error(CTS,
-                   2,
-                   "Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
+    logger_->report("Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
                    iterm->getName(),
                    paths_accepted);
   }
