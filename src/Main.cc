@@ -74,7 +74,6 @@
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::is_regular_file;
-using sta::sourceTclFile;
 using sta::stringEq;
 using std::string;
 
@@ -410,7 +409,7 @@ static int tclAppInit(int& argc,
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
         if (!gui_enabled) {
-          sourceTclFile(init.c_str(), true, true, interp);
+          tclEvalFile(init.c_str(), interp);
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
@@ -424,7 +423,7 @@ static int tclAppInit(int& argc,
       init_path += init_filename;
       if (is_regular_file(init_path.c_str())) {
         if (!gui_enabled) {
-          sourceTclFile(init_path.c_str(), true, true, interp);
+          tclEvalFile(init_path.c_str(), interp);
         } else {
           // need to delay loading of file until after GUI is completed
           // initialized
