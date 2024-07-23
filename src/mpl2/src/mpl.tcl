@@ -77,6 +77,9 @@ proc rtl_macro_placer { args } {
          -report_directory \
          -write_macro_placement } \
     flags {-bus_planning}
+
+  sta::check_argc_eq0 "rtl_macro_placer" $args
+
   #
   # Check for valid design
   if {  [ord::get_db_block] == "NULL" } {

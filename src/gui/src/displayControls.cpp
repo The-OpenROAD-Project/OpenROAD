@@ -298,13 +298,10 @@ DisplayControls::DisplayControls(QWidget* parent)
   view_->expand(layers->index());
   auto implant_layer
       = makeParentItem(layers_.implant, "Implant", layers, Qt::Checked, true);
-  auto master_layer = makeParentItem(
-      layers_.master, "Masterslice", layers, Qt::Unchecked, true);
   auto other_layer
       = makeParentItem(layers_.other, "Other", layers, Qt::Unchecked, true);
   // hide initially
   view_->setRowHidden(implant_layer->row(), layers->index(), true);
-  view_->setRowHidden(master_layer->row(), layers->index(), true);
   view_->setRowHidden(other_layer->row(), layers->index(), true);
 
   // Nets group
@@ -1229,10 +1226,6 @@ void DisplayControls::addTech(odb::dbTech* tech)
         parent = layers_group_.name;
         checked = Qt::Checked;
         break;
-      case dbTechLayerType::MASTERSLICE:
-        parent = layers_.master.name;
-        checked = Qt::Unchecked;
-        break;
       case dbTechLayerType::IMPLANT:
         parent = layers_.implant.name;
         checked = Qt::Checked;
@@ -1256,12 +1249,6 @@ void DisplayControls::addTech(odb::dbTech* tech)
                         layers_group_.name->index(),
                         !layers_.implant.name->hasChildren());
     toggleParent(layers_.implant);
-  }
-  if (layers_.master.name->hasChildren()) {
-    view_->setRowHidden(layers_.master.name->row(),
-                        layers_group_.name->index(),
-                        !layers_.master.name->hasChildren());
-    toggleParent(layers_.master);
   }
   if (layers_.other.name->hasChildren()) {
     view_->setRowHidden(layers_.other.name->row(),

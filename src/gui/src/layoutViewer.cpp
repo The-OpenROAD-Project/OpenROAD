@@ -1327,7 +1327,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   // store obstructions
   for (dbBox* box : master->getObstructions()) {
     dbTechLayer* layer = box->getTechLayer();
-    dbTechLayerType type = layer->getType();
     boxes[layer].obs.emplace_back(box_to_qrect(box));
   }
 
@@ -1345,7 +1344,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
           for (auto* via_box : tech_via->getBoxes()) {
             odb::Rect box_rect = via_box->getBox();
             dbTechLayer* layer = via_box->getTechLayer();
-            dbTechLayerType type = layer->getType();
             via_transform.apply(box_rect);
             boxes[layer].mterms.emplace_back(
                 QRect{box_rect.xMin(),
@@ -1355,7 +1353,6 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
           }
         } else {
           dbTechLayer* layer = box->getTechLayer();
-          dbTechLayerType type = layer->getType();
           boxes[layer].mterms.emplace_back(box_to_qrect(box));
         }
       }
