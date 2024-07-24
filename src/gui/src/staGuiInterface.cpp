@@ -925,9 +925,31 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
   return group_paths_names;
 }
 
-EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
-    const std::string& path_group_name) const
+// Makes STA incorporate the Sdc GroupPaths information
+// into Search PathGroups. This is equivalent to what happens
+// when running "report_checks".
+void STAGuiInterface::updatePathGroups()
 {
+  sta::Search* search = sta_->search();
+  search->updatePathGroups(1,         /* group count */
+                           1,         /* endpoint count*/
+                           false,     /* unique pins */
+                           -sta::INF, /* min slack */
+                           sta::INF,  /* max slack*/
+                           nullptr,   /* group names */
+                           true,      /* setup */
+                           true,      /* hold */
+                           true,      /* recovery */
+                           true,      /* removal */
+                           true,      /* clk gating setup */
+                           true /* clk gating hold*/);
+}
+
+EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
+    const std::string& path_group_name)
+{
+  updatePathGroups();
+
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
   sta::Search* search = sta_->search();
