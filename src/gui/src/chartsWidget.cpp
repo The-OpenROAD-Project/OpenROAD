@@ -63,6 +63,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       display_(new HistogramView(chart_, this)),
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
+      refresh_filters_button_(new QPushButton("Refresh Filters", this)),
       buckets_(std::make_unique<Buckets>()),
       prev_filter_index_(0),  // start with no filter
       resetting_menu_(false),
@@ -86,10 +87,10 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 
   controls_layout->insertWidget(0, mode_menu_);
   setModeMenu();
-
   controls_layout->insertWidget(1, filters_menu_);
   filters_menu_->hide();
-
+  controls_layout->addWidget(refresh_filters_button_);
+  refresh_filters_button_->hide();
   controls_layout->insertStretch(2);
 
   controls_frame->setLayout(controls_layout);
@@ -103,6 +104,11 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
+
+  connect(refresh_filters_button_,
+          &QPushButton::pressed,
+          this,
+          &ChartsWidget::updatePathGroupMenuIndexes);
 
   connect(display_,
           &HistogramView::barIndex,
@@ -134,11 +140,17 @@ void ChartsWidget::changeMode()
 
   if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     resetting_menu_ = true;
-    updatePathGroupMenuIndexes();
-    filters_menu_->show();
+    setSlackHistogramLayout();
     setSlackHistogram();
     resetting_menu_ = false;
   }
+}
+
+void ChartsWidget::setSlackHistogramLayout()
+{
+  updatePathGroupMenuIndexes();  // so that the user doesn't have to refresh
+  filters_menu_->show();
+  refresh_filters_button_->show();
 }
 
 void ChartsWidget::setModeMenu()
@@ -154,6 +166,10 @@ void ChartsWidget::setModeMenu()
 
 void ChartsWidget::updatePathGroupMenuIndexes()
 {
+  if (filters_menu_->count() != 0) {
+    filters_menu_->clear();
+  }
+
   filters_menu_->addItem("No Path Group");  // Index 0
 
   int filter_index = 1;

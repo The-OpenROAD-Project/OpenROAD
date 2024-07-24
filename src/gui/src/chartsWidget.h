@@ -100,6 +100,7 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
+  void updatePathGroupMenuIndexes();
   void changePathGroupFilter();
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
@@ -112,8 +113,8 @@ class ChartsWidget : public QDockWidget
   };
 
   void setSlackHistogram();
+  void setSlackHistogramLayout();
   void setModeMenu();
-  void updatePathGroupMenuIndexes();
   void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {
@@ -165,6 +166,7 @@ class ChartsWidget : public QDockWidget
   HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+  QPushButton* refresh_filters_button_;
 
   std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
