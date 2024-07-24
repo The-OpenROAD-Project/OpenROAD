@@ -201,7 +201,7 @@ pin_access -bottom_routing_layer $min_routing_layer \
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
-  -congestion_iterations 100
+  -congestion_iterations 100 -verbose
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
