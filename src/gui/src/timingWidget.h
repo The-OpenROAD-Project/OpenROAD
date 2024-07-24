@@ -114,7 +114,7 @@ class TimingWidget : public QDockWidget
   void selectedCaptureRowChanged(const QItemSelection& prev_index,
                                  const QItemSelection& curr_index);
 
-  void detailRowDoubleClicked(const QModelIndex &index);
+  void detailRowDoubleClicked(const QModelIndex& index);
 
   void handleDbChange();
   void setBlock(odb::dbBlock* block);

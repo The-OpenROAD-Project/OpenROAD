@@ -628,12 +628,12 @@ void TimingWidget::selectedCaptureRowChanged(
   highlightPathStage(capture_details_model_, top_sel_index);
 }
 
-void TimingWidget::detailRowDoubleClicked(
-    const QModelIndex &index)
+void TimingWidget::detailRowDoubleClicked(const QModelIndex& index)
 {
   auto model = static_cast<const TimingPathDetailModel*>(index.model());
 
-  if (!index.isValid() || !model->hasNodes() || model->isClockSummaryRow(index)) {
+  if (!index.isValid() || !model->hasNodes()
+      || model->isClockSummaryRow(index)) {
     return;
   }
 
