@@ -45,6 +45,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "TreeAmending.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -130,6 +131,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      tree_amending_(new TreeAmending(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -1267,6 +1269,7 @@ void Resizer::findResizeSlacks()
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
+                               false,
                                false,
                                repaired_net_count,
                                slew_violations,
@@ -2586,6 +2589,7 @@ bool Resizer::isFuncOneZero(const Pin* drvr_pin)
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
+                           bool amend_tree,
                            bool verbose)
 {
   resizePreamble();
@@ -2593,7 +2597,7 @@ void Resizer::repairDesign(double max_wire_length,
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, verbose);
+      max_wire_length, slew_margin, cap_margin, amend_tree, verbose);
 }
 
 int Resizer::repairDesignBufferCount() const

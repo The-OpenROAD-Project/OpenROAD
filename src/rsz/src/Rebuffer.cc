@@ -141,6 +141,87 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
   return inserted_buffer_count;
 }
 
+int RepairSetup::rebuffer(const Pin* drvr_pin, BufferedNetPtr bnet)
+{
+  int inserted_buffer_count = 0;
+  Net* net;
+  if (network_->isTopLevelPort(drvr_pin)) {
+    net = network_->net(network_->term(drvr_pin));
+    LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
+    // Should use sdc external driver here.
+    LibertyPort* input;
+    buffer_cell->bufferPorts(input, drvr_port_);
+  } else {
+    net = network_->net(drvr_pin);
+    drvr_port_ = network_->libertyPort(drvr_pin);
+  }
+  if (drvr_port_
+      && net
+      // Verilog connects by net name, so there is no way to distinguish the
+      // net from the port.
+      && !hasTopLevelOutputPort(net)) {
+    corner_ = sta_->cmdCorner();
+    //BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
+    if (bnet) {
+      bool debug = (drvr_pin == resizer_->debug_pin_);
+      if (debug) {
+        logger_->setDebugLevel(RSZ, "rebuffer", 3);
+      }
+      debugPrint(logger_,
+                 RSZ,
+                 "rebuffer",
+                 2,
+                 "driver {}",
+                 sdc_network_->pathName(drvr_pin));
+      sta_->findRequireds();
+
+      const BufferedNetSeq& Z = rebufferBottomUp(bnet, 1);
+      Required best_slack_penalized = -INF;
+      BufferedNetPtr best_option = nullptr;
+      int best_index = 0;
+      int i = 1;
+      for (const BufferedNetPtr& p : Z) {
+        // Find slack for drvr_pin into option.
+        const PathRef& req_path = p->requiredPath();
+        if (!req_path.isNull()) {
+          Slack slack_penalized = slackPenalized(p, i);
+          if (best_option == nullptr
+              || fuzzyGreater(slack_penalized, best_slack_penalized)) {
+            best_slack_penalized = slack_penalized;
+            best_option = p;
+            best_index = i;
+          }
+          i++;
+        }
+      }
+      if (best_option) {
+        debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
+        inserted_buffer_count = rebufferTopDown(best_option, net, 1);
+        if (inserted_buffer_count > 0) {
+          rebuffer_net_count_++;
+          debugPrint(logger_,
+                     RSZ,
+                     "rebuffer",
+                     2,
+                     "rebuffer {} inserted {}",
+                     network_->pathName(drvr_pin),
+                     inserted_buffer_count);
+        }
+      }
+      if (debug) {
+        logger_->setDebugLevel(RSZ, "rebuffer", 0);
+      }
+    } else {
+      logger_->warn(RSZ,
+                    10001,
+                    "makeBufferedNet failed for driver {}",
+                    network_->pathName(drvr_pin));
+    }
+  }
+  return inserted_buffer_count;
+}
+
+
 Slack RepairSetup::slackPenalized(const BufferedNetPtr& bnet)
 {
   return slackPenalized(bnet, -1);
@@ -188,6 +269,18 @@ void RepairSetup::rebufferNet(const Pin* drvr_pin)
   init();
   resizer_->incrementalParasiticsBegin();
   inserted_buffer_count_ = rebuffer(drvr_pin);
+  // Leave the parasitics up to date.
+  resizer_->updateParasitics();
+  resizer_->incrementalParasiticsEnd();
+  logger_->report("Inserted {} buffers.", inserted_buffer_count_);
+}
+
+// For testing.
+void RepairSetup::rebufferNet(const Pin* drvr_pin, BufferedNetPtr bnet)
+{
+  init();
+  resizer_->incrementalParasiticsBegin();
+  inserted_buffer_count_ = rebuffer(drvr_pin, bnet);
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -327,7 +420,12 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                                : req_path.dcalcAnalysisPt(sta_)->corner();
     int wire_layer = bnet_wire->layer();
     double layer_res, layer_cap;
-    bnet_wire->wireRC(corner, resizer_, layer_res, layer_cap);
+    if (bnet_wire->length()) {
+      bnet_wire->wireRC(corner, resizer_, layer_res, layer_cap);
+    } else {
+      layer_res = 0;
+      layer_cap = 0;
+    }
     double wire_res = wire_length * layer_res;
     double wire_cap = wire_length * layer_cap;
     double wire_delay = wire_res * wire_cap;
@@ -342,9 +440,10 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                RSZ,
                "rebuffer",
                4,
-               "{:{}s}wire wl {} {}",
+               "{:{}s}wire wl {} {} {}",
                "",
                level,
+               units_->timeUnit()->asString(wire_delay, 3),
                wire_length_dbu,
                z->to_string(resizer_));
     Z1.push_back(z);

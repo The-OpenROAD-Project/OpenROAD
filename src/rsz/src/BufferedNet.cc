@@ -310,6 +310,21 @@ int BufferedNet::bufferCount() const
   return 0;
 }
 
+int BufferedNet::wireLength() const
+{
+  switch (type_) {
+    case BufferedNetType::wire:
+      return length() + ref_->wireLength();
+    case BufferedNetType::junction:
+      return ref_->wireLength() + ref2_->wireLength();
+    case BufferedNetType::load:
+      return 0;
+    case BufferedNetType::buffer:
+      return ref_->wireLength();
+  }
+  return 0;
+}
+
 int BufferedNet::maxLoadWireLength() const
 {
   switch (type_) {
@@ -457,7 +472,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     }
   }
   if (bnet && from != SteinerTree::null_pt
-      && tree->location(to) != tree->location(from)) {
+      /* && tree->location(to) != tree->location(from)*/) {
     bnet = make_shared<BufferedNet>(BufferedNetType::wire,
                                     tree->location(from),
                                     BufferedNet::null_layer,

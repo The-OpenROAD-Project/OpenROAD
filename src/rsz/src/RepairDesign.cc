@@ -36,6 +36,7 @@
 #include "RepairDesign.hh"
 
 #include "BufferedNet.hh"
+#include "TreeAmending.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -90,6 +91,7 @@ void RepairDesign::init()
 void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
+                                bool amend_tree,
                                 bool verbose)
 {
   init();
@@ -98,6 +100,7 @@ void RepairDesign::repairDesign(double max_wire_length,
   repairDesign(max_wire_length,
                slew_margin,
                cap_margin,
+               amend_tree,
                verbose,
                repaired_net_count,
                slew_violations,
@@ -133,6 +136,7 @@ void RepairDesign::repairDesign(
     double max_wire_length,  // zero for none (meters)
     double slew_margin,
     double cap_margin,
+    bool amend_tree,
     bool verbose,
     int& repaired_net_count,
     int& slew_violations,
@@ -141,6 +145,8 @@ void RepairDesign::repairDesign(
     int& length_violations)
 {
   init();
+  resizer_->tree_amending_->init();
+
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
 
@@ -153,9 +159,21 @@ void RepairDesign::repairDesign(
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
+  if (amend_tree) {
+    for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+      Vertex* drvr = resizer_->level_drvr_vertices_[i];
+      sta_->setAnnotatedSlew(drvr, sta_->cmdCorner(),
+                             sta::MinMaxAll::all(), sta::RiseFallBoth::rise(), resizer_->tgt_slews_[RiseFall::rise()->index()]);
+      sta_->setAnnotatedSlew(drvr, sta_->cmdCorner(),
+                             sta::MinMaxAll::all(), sta::RiseFallBoth::fall(), resizer_->tgt_slews_[RiseFall::fall()->index()]);
+    }
+  }
+
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
+  sta_->searchPreamble();
+  search_->findAllArrivals();
 
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
@@ -174,6 +192,20 @@ void RepairDesign::repairDesign(
       printProgress(print_iteration, false, false, repaired_net_count);
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
+
+    if (amend_tree) {
+      search_->findRequireds(drvr->level() + 1);
+
+      for (MinMax *mm : sta::MinMaxAll::all()->range()) {
+        const DcalcAnalysisPt *dcalc_ap = sta_->cmdCorner()->findDcalcAnalysisPt(mm);
+        sta::DcalcAPIndex ap_index = dcalc_ap->index();
+        for (RiseFall *rf1 : sta::RiseFallBoth::riseFall()->range()) {
+          drvr->setSlewAnnotated(false, rf1, ap_index);
+        }
+      }
+      graph_delay_calc_->delayInvalid(drvr);
+    }
+
     Pin* drvr_pin = drvr->pin();
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
@@ -195,6 +227,7 @@ void RepairDesign::repairDesign(
                 true,
                 max_length,
                 true,
+                amend_tree,
                 repaired_net_count,
                 slew_violations,
                 cap_violations,
@@ -257,6 +290,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
                     false,
                     false,
                     max_length,
+                    false,
                     false,
                     repaired_net_count,
                     slew_violations,
@@ -322,6 +356,7 @@ void RepairDesign::repairNet(Net* net,
               true,
               max_length,
               true,
+              false,
               repaired_net_count,
               slew_violations,
               cap_violations,
@@ -367,6 +402,7 @@ void RepairDesign::repairNet(Net* net,
                              bool check_fanout,
                              int max_length,  // dbu
                              bool resize_drvr,
+                             bool amend_tree,
                              int& repaired_net_count,
                              int& slew_violations,
                              int& cap_violations,
@@ -410,14 +446,18 @@ void RepairDesign::repairNet(Net* net,
     }
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
-      BufferedNetPtr bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
+
+      BufferedNetPtr bnet = amend_tree ?
+        resizer_->tree_amending_->amendedTree(drvr_pin, corner)
+        : resizer_->makeBufferedNetSteiner(drvr_pin, corner);;
       if (bnet) {
+
         resizer_->ensureWireParasitic(drvr_pin, net);
         graph_delay_calc_->findDelays(drvr);
 
         float max_cap = INF;
         int wire_length = bnet->maxLoadWireLength();
-        bool need_repair = needRepair(drvr_pin,
+        bool need_repair = true; /* needRepair(drvr_pin,
                                       corner,
                                       max_length,
                                       wire_length,
@@ -426,7 +466,7 @@ void RepairDesign::repairNet(Net* net,
                                       max_cap,
                                       slew_violations,
                                       cap_violations,
-                                      length_violations);
+                                      length_violations); */
 
         if (need_repair) {
           if (parasitics_src_ == ParasiticsSrc::global_routing && resize_drvr) {
@@ -1360,6 +1400,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
             false /* check_fanout */,
             max_length,
             resize_drvr,
+            false, /* amend_tree */
             repaired_net_count,
             slew_violations,
             cap_violations,

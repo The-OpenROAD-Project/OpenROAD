@@ -52,6 +52,7 @@ add_library(rsz_lib
     SteinerTree.cc
     EstimateWireParasitics.cc
     Resizer.cc
+    TreeAmending.cc
 )
 
 target_sources(rsz

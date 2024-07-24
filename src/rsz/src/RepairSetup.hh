@@ -139,6 +139,7 @@ class RepairSetup : public sta::dbStaState
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin* drvr_pin);
+  void rebufferNet(const Pin* drvr_pin, BufferedNetPtr bnet);
 
  private:
   void init();
@@ -192,6 +193,7 @@ class RepairSetup : public sta::dbStaState
   bool hasTopLevelOutputPort(Net* net);
 
   int rebuffer(const Pin* drvr_pin);
+  int rebuffer(const Pin* drvr_pin, BufferedNetPtr bnet);
   BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
   int rebufferTopDown(const BufferedNetPtr& choice, Net* net, int level);
   BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
