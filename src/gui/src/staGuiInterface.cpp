@@ -835,8 +835,8 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
   PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
                            sta::StaState* sta);
   PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
-  virtual PathEndVisitor* copy() const;
-  virtual void visit(sta::PathEnd* path_end);
+  PathEndVisitor* copy() const override;
+  void visit(sta::PathEnd* path_end) override;
   float worstSlack() const { return worst_slack_; }
   bool hasSlack() const { return has_slack_; }
   void resetWorstSlack();
