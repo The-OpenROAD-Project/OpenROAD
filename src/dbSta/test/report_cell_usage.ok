@@ -5,7 +5,8 @@
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 Cell usage report:
   Fill cells: 168
-  Buffer/inverters: 232
+  Buffers: 202
+  Inverters: 30
   Sequential cells: 35
   Multi-Input combinational cells: 241
   Total: 676
