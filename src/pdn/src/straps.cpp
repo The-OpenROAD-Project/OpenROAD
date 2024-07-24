@@ -1661,7 +1661,7 @@ void RepairChannelStraps::determineParameters(
           utl::PDN,
           "Channel",
           2,
-          "Failed on channel width check, group {:.4f} and channel {.4f}.",
+          "Failed on channel width check, group {:.4f} and channel {:.4f}.",
           group_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()),
           area_width / static_cast<double>(getBlock()->getDbUnitsPerMicron()));
       return false;
