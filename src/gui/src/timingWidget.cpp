@@ -259,6 +259,16 @@ void TimingWidget::init(sta::dbSta* sta)
           this,
           &TimingWidget::selectedCaptureRowChanged);
 
+  connect(path_details_table_view_,
+          &QTableView::doubleClicked,
+          this,
+          &TimingWidget::detailRowDoubleClicked);
+
+  connect(capture_details_table_view_,
+          &QTableView::doubleClicked,
+          this,
+          &TimingWidget::detailRowDoubleClicked);
+
   clearPathDetails();
 }
 
@@ -616,6 +626,25 @@ void TimingWidget::selectedCaptureRowChanged(
   }
   auto& top_sel_index = sel_indices.first();
   highlightPathStage(capture_details_model_, top_sel_index);
+}
+
+void TimingWidget::detailRowDoubleClicked(const QModelIndex& index)
+{
+  auto model = static_cast<const TimingPathDetailModel*>(index.model());
+
+  if (!index.isValid() || !model->hasNodes()
+      || model->isClockSummaryRow(index)) {
+    return;
+  }
+
+  auto* node = model->getNodeAt(index);
+  auto* gui = Gui::get();
+
+  if (auto iterm = node->getPinAsITerm()) {
+    emit inspect(gui->makeSelected(iterm));
+  } else if (auto bterm = node->getPinAsBTerm()) {
+    emit inspect(gui->makeSelected(bterm));
+  }
 }
 
 void TimingWidget::copy()
