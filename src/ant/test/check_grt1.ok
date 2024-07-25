@@ -353,58 +353,6 @@ Net: req_msg[28]
 
 
 
-Net: req_msg[2]
-  Pin:   _524_/B (sky130_fd_sc_hs__nand2_1)
-    Layer: mcon
-      Partial area ratio:    0.10
-      Required ratio:    3.00 (Gate area) 
-      Cumulative area ratio:    0.10
-      Required ratio:    0.00 (Cumulative area) 
-
-    Layer: met1
-      Partial area ratio:   80.39
-      Required ratio:    0.00 (Gate area) 
-      Cumulative area ratio:   80.39
-      Required ratio:    0.00 (Cumulative area) 
-      Partial area ratio:  401.28
-      Required ratio:  400.00 (Side area) (VIOLATED)
-      Cumulative area ratio:  401.28
-      Required ratio:    0.00 (Cumulative side area) 
-
-    Layer: via
-      Partial area ratio:    0.16
-      Required ratio:    6.00 (Gate area) 
-      Cumulative area ratio:    0.26
-      Required ratio:    0.00 (Cumulative area) 
-
-    Layer: met2
-      Partial area ratio:    4.41
-      Required ratio:    0.00 (Gate area) 
-      Cumulative area ratio:   84.80
-      Required ratio:    0.00 (Cumulative area) 
-      Partial area ratio:   21.39
-      Required ratio:  400.00 (Side area) 
-      Cumulative area ratio:  422.67
-      Required ratio:    0.00 (Cumulative side area) 
-
-    Layer: via2
-      Partial area ratio:    0.14
-      Required ratio:    6.00 (Gate area) 
-      Cumulative area ratio:    0.41
-      Required ratio:    0.00 (Cumulative area) 
-
-    Layer: met3
-      Partial area ratio:    0.39
-      Required ratio:    0.00 (Gate area) 
-      Cumulative area ratio:   85.19
-      Required ratio:    0.00 (Cumulative area) 
-      Partial area ratio:    3.78
-      Required ratio:  400.00 (Side area) 
-      Cumulative area ratio:  426.46
-      Required ratio:    0.00 (Cumulative side area) 
-
-
-
 Net: req_msg[31]
   Pin:   _664_/A1 (sky130_fd_sc_hs__a22oi_1)
     Layer: mcon
@@ -545,5 +493,5 @@ Net: resp_rdy
 
 
 
-[INFO ANT-0002] Found 11 net violations.
-[INFO ANT-0001] Found 11 pin violations.
+[INFO ANT-0002] Found 10 net violations.
+[INFO ANT-0001] Found 10 pin violations.
