@@ -667,7 +667,11 @@ void ChartsWidget::changePathGroupFilter()
     populateBuckets(nullptr, &end_point_to_slack);
   }
 
-  setVisualConfig();
+  if (buckets_->areEmpty()) {
+    chart_->setTitle("No paths in path group.");
+  } else {
+    setVisualConfig();
+  }
 
   prev_filter_index_ = filter_index;
 }

@@ -63,6 +63,8 @@ struct SlackHistogramData
 
 struct Buckets
 {
+  bool areEmpty() { return positive.empty() && negative.empty(); }
+
   std::deque<std::vector<const sta::Pin*>> positive;
   std::deque<std::vector<const sta::Pin*>> negative;
 };
