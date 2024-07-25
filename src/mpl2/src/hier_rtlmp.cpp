@@ -486,7 +486,6 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
                                        : num_perturb_per_step_ / 10;
-  std::vector<SACoreSoftMacro*> sa_containers;
   // we vary the outline of parent cluster to generate different tilings
   // we first vary the outline width while keeping outline height fixed
   // Then we vary the outline height while keeping outline width fixed
@@ -499,7 +498,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   int remaining_runs = num_runs_;
   int run_id = 0;
   while (remaining_runs > 0) {
-    std::vector<SACoreSoftMacro*> sa_vector;
+    SoftSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
@@ -510,62 +509,60 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(new_outline));
       }
-      SACoreSoftMacro* sa
-          = new SACoreSoftMacro(tree_.root,
-                                new_outline,
-                                macros,
-                                1.0,     // area weight
-                                1000.0,  // outline weight
-                                0.0,     // wirelength weight
-                                0.0,     // guidance weight
-                                0.0,     // fence weight
-                                0.0,     // boundary weight
-                                0.0,     // macro blockage
-                                0.0,     // notch weight
-                                0.0,     // no notch size
-                                0.0,     // no notch size
-                                pos_swap_prob_ / action_sum,
-                                neg_swap_prob_ / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
-                                resize_prob_ / action_sum,
-                                init_prob_,
-                                max_num_step_,
-                                num_perturb_per_step,
-                                random_seed_,
-                                graphics_.get(),
-                                logger_);
-      sa_vector.push_back(sa);
+      std::unique_ptr<SACoreSoftMacro> sa
+          = std::make_unique<SACoreSoftMacro>(tree_.root,
+                                              new_outline,
+                                              macros,
+                                              1.0,     // area weight
+                                              1000.0,  // outline weight
+                                              0.0,     // wirelength weight
+                                              0.0,     // guidance weight
+                                              0.0,     // fence weight
+                                              0.0,     // boundary weight
+                                              0.0,     // macro blockage
+                                              0.0,     // notch weight
+                                              0.0,     // no notch size
+                                              0.0,     // no notch size
+                                              pos_swap_prob_ / action_sum,
+                                              neg_swap_prob_ / action_sum,
+                                              double_swap_prob_ / action_sum,
+                                              exchange_swap_prob_ / action_sum,
+                                              resize_prob_ / action_sum,
+                                              init_prob_,
+                                              max_num_step_,
+                                              num_perturb_per_step,
+                                              random_seed_,
+                                              graphics_.get(),
+                                              logger_);
+      sa_batch.push_back(std::move(sa));
     }
-    if (sa_vector.size() == 1) {
-      runSA<SACoreSoftMacro>(sa_vector[0]);
+    if (sa_batch.size() == 1) {
+      runSA<SACoreSoftMacro>(sa_batch[0].get());
     } else {
       // multi threads
       std::vector<std::thread> threads;
-      threads.reserve(sa_vector.size());
-      for (auto& sa : sa_vector) {
-        threads.emplace_back(runSA<SACoreSoftMacro>, sa);
+      threads.reserve(sa_batch.size());
+      for (auto& sa : sa_batch) {
+        threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
       }
       for (auto& th : threads) {
         th.join();
       }
     }
     // add macro tilings
-    for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);
+    for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
     }
-    sa_vector.clear();
     remaining_runs -= run_thread;
   }
   // vary the outline height while keeping outline width fixed
   remaining_runs = num_runs_;
   run_id = 0;
   while (remaining_runs > 0) {
-    std::vector<SACoreSoftMacro*> sa_vector;
+    SoftSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
@@ -576,59 +573,55 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(new_outline));
       }
-      SACoreSoftMacro* sa
-          = new SACoreSoftMacro(tree_.root,
-                                new_outline,
-                                macros,
-                                1.0,     // area weight
-                                1000.0,  // outline weight
-                                0.0,     // wirelength weight
-                                0.0,     // guidance weight
-                                0.0,     // fence weight
-                                0.0,     // boundary weight
-                                0.0,     // macro blockage
-                                0.0,     // notch weight
-                                0.0,     // no notch size
-                                0.0,     // no notch size
-                                pos_swap_prob_ / action_sum,
-                                neg_swap_prob_ / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
-                                resize_prob_ / action_sum,
-                                init_prob_,
-                                max_num_step_,
-                                num_perturb_per_step,
-                                random_seed_,
-                                graphics_.get(),
-                                logger_);
-      sa_vector.push_back(sa);
+      std::unique_ptr<SACoreSoftMacro> sa
+          = std::make_unique<SACoreSoftMacro>(tree_.root,
+                                              new_outline,
+                                              macros,
+                                              1.0,     // area weight
+                                              1000.0,  // outline weight
+                                              0.0,     // wirelength weight
+                                              0.0,     // guidance weight
+                                              0.0,     // fence weight
+                                              0.0,     // boundary weight
+                                              0.0,     // macro blockage
+                                              0.0,     // notch weight
+                                              0.0,     // no notch size
+                                              0.0,     // no notch size
+                                              pos_swap_prob_ / action_sum,
+                                              neg_swap_prob_ / action_sum,
+                                              double_swap_prob_ / action_sum,
+                                              exchange_swap_prob_ / action_sum,
+                                              resize_prob_ / action_sum,
+                                              init_prob_,
+                                              max_num_step_,
+                                              num_perturb_per_step,
+                                              random_seed_,
+                                              graphics_.get(),
+                                              logger_);
+      sa_batch.push_back(std::move(sa));
     }
-    if (sa_vector.size() == 1) {
-      runSA<SACoreSoftMacro>(sa_vector[0]);
+    if (sa_batch.size() == 1) {
+      runSA<SACoreSoftMacro>(sa_batch[0].get());
     } else {
       // multi threads
       std::vector<std::thread> threads;
-      threads.reserve(sa_vector.size());
-      for (auto& sa : sa_vector) {
-        threads.emplace_back(runSA<SACoreSoftMacro>, sa);
+      threads.reserve(sa_batch.size());
+      for (auto& sa : sa_batch) {
+        threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
       }
       for (auto& th : threads) {
         th.join();
       }
     }
     // add macro tilings
-    for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);
+    for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
     }
-    sa_vector.clear();
     remaining_runs -= run_thread;
   }
-  // clean all the SA to avoid memory leakage
-  sa_containers.clear();
   std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
                                                macro_tilings.end());
   std::sort(tilings.begin(), tilings.end(), comparePairProduct);
@@ -728,7 +721,6 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                                : num_perturb_per_step_ / 5;
   }
 
-  std::vector<SACoreHardMacro*> sa_containers;
   // To generate different macro tilings, we vary the outline constraints
   // we first vary the outline width while keeping outline_height fixed
   // Then we vary the outline height while keeping outline_width fixed
@@ -741,7 +733,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   int remaining_runs = num_runs_;
   int run_id = 0;
   while (remaining_runs > 0) {
-    std::vector<SACoreHardMacro*> sa_vector;
+    HardSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
@@ -752,56 +744,54 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(new_outline));
       }
-      SACoreHardMacro* sa
-          = new SACoreHardMacro(new_outline,
-                                macros,
-                                1.0,     // area_weight
-                                1000.0,  // outline weight
-                                0.0,     // wirelength weight
-                                0.0,     // guidance
-                                0.0,     // fence weight
-                                pos_swap_prob_ / action_sum,
-                                neg_swap_prob_ / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
-                                0.0,  // no flip
-                                init_prob_,
-                                max_num_step_,
-                                num_perturb_per_step,
-                                random_seed_ + run_id,
-                                graphics_.get(),
-                                logger_);
-      sa_vector.push_back(sa);
+      std::unique_ptr<SACoreHardMacro> sa
+          = std::make_unique<SACoreHardMacro>(new_outline,
+                                              macros,
+                                              1.0,     // area_weight
+                                              1000.0,  // outline weight
+                                              0.0,     // wirelength weight
+                                              0.0,     // guidance
+                                              0.0,     // fence weight
+                                              pos_swap_prob_ / action_sum,
+                                              neg_swap_prob_ / action_sum,
+                                              double_swap_prob_ / action_sum,
+                                              exchange_swap_prob_ / action_sum,
+                                              0.0,  // no flip
+                                              init_prob_,
+                                              max_num_step_,
+                                              num_perturb_per_step,
+                                              random_seed_ + run_id,
+                                              graphics_.get(),
+                                              logger_);
+      sa_batch.push_back(std::move(sa));
     }
-    if (sa_vector.size() == 1) {
-      runSA<SACoreHardMacro>(sa_vector[0]);
+    if (sa_batch.size() == 1) {
+      runSA<SACoreHardMacro>(sa_batch[0].get());
     } else {
       // multi threads
       std::vector<std::thread> threads;
-      threads.reserve(sa_vector.size());
-      for (auto& sa : sa_vector) {
-        threads.emplace_back(runSA<SACoreHardMacro>, sa);
+      threads.reserve(sa_batch.size());
+      for (auto& sa : sa_batch) {
+        threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
       }
       for (auto& th : threads) {
         th.join();
       }
     }
     // add macro tilings
-    for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);
+    for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
     }
-    sa_vector.clear();
     remaining_runs -= run_thread;
   }
   // change the outline height while keeping outline width fixed
   remaining_runs = num_runs_;
   run_id = 0;
   while (remaining_runs > 0) {
-    std::vector<SACoreHardMacro*> sa_vector;
+    HardSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
@@ -812,53 +802,50 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
       if (graphics_) {
         graphics_->setOutline(micronsToDbu(new_outline));
       }
-      SACoreHardMacro* sa
-          = new SACoreHardMacro(new_outline,
-                                macros,
-                                1.0,     // area_weight
-                                1000.0,  // outline weight
-                                0.0,     // wirelength weight
-                                0.0,     // guidance
-                                0.0,     // fence weight
-                                pos_swap_prob_ / action_sum,
-                                neg_swap_prob_ / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
-                                0.0,
-                                init_prob_,
-                                max_num_step_,
-                                num_perturb_per_step,
-                                random_seed_ + run_id,
-                                graphics_.get(),
-                                logger_);
-      sa_vector.push_back(sa);
+      std::unique_ptr<SACoreHardMacro> sa
+          = std::make_unique<SACoreHardMacro>(new_outline,
+                                              macros,
+                                              1.0,     // area_weight
+                                              1000.0,  // outline weight
+                                              0.0,     // wirelength weight
+                                              0.0,     // guidance
+                                              0.0,     // fence weight
+                                              pos_swap_prob_ / action_sum,
+                                              neg_swap_prob_ / action_sum,
+                                              double_swap_prob_ / action_sum,
+                                              exchange_swap_prob_ / action_sum,
+                                              0.0,
+                                              init_prob_,
+                                              max_num_step_,
+                                              num_perturb_per_step,
+                                              random_seed_ + run_id,
+                                              graphics_.get(),
+                                              logger_);
+      sa_batch.push_back(std::move(sa));
     }
-    if (sa_vector.size() == 1) {
-      runSA<SACoreHardMacro>(sa_vector[0]);
+    if (sa_batch.size() == 1) {
+      runSA<SACoreHardMacro>(sa_batch[0].get());
     } else {
       // multi threads
       std::vector<std::thread> threads;
-      threads.reserve(sa_vector.size());
-      for (auto& sa : sa_vector) {
-        threads.emplace_back(runSA<SACoreHardMacro>, sa);
+      threads.reserve(sa_batch.size());
+      for (auto& sa : sa_batch) {
+        threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
       }
       for (auto& th : threads) {
         th.join();
       }
     }
     // add macro tilings
-    for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);
+    for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
     }
-    sa_vector.clear();
     remaining_runs -= run_thread;
   }
-  // clean the sa_container to avoid memory leakage
-  sa_containers.clear();
+
   // sort the tilings based on area
   std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
                                                macro_tilings.end());
