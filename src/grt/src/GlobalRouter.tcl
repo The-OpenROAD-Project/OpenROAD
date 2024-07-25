@@ -155,6 +155,21 @@ proc set_macro_extension { args } {
   }
 }
 
+sta::define_cmd_args "set_pin_offset" { offset }
+
+proc set_pin_offset { args } {
+  sta::parse_key_args "set_pin_offset" args \
+    keys {} \
+    flags {}
+  if {[llength $args] == 1} {
+    lassign $args offset
+    sta::check_positive_integer "pin_offset" $offset
+    grt::set_pin_offset $offset
+  } else {
+    utl::error GRT 220 "Command set_pin_offset needs one argument: offset."
+  }
+}
+
 sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
                                                    [-capacities_perturbation_percentage percent] \
                                                    [-perturbation_amount value]

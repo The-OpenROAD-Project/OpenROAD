@@ -125,7 +125,7 @@ class FastRouteCore
                      int x2,
                      int y2,
                      int layer,
-                     uint16_t reducedCap,
+                     int reducedCap,
                      bool isReduce);
   void applyVerticalAdjustments(const odb::Point& first_tile,
                                 const odb::Point& last_tile,
