@@ -179,7 +179,7 @@ class AntennaChecker
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
   bool checkRatioViolations(odb::dbTechLayer* layer,
                             const NodeInfo& node_info,
-                            const float ratio_margin,
+                            float ratio_margin,
                             bool verbose,
                             bool report,
                             std::ofstream& report_file);
@@ -200,13 +200,13 @@ class AntennaChecker
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   bool checkPAR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
-                const float ratio_margin,
+                float ratio_margin,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
   bool checkPSR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
-                const float ratio_margin,
+                float ratio_margin,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
