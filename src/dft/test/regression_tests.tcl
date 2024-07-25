@@ -5,6 +5,9 @@ record_tests {
   place_sort_sky130
   scan_architect_no_mix_sky130
   scan_architect_clock_mix_sky130
+  scan_architect_register_bank_no_clock_mix_sky130
+  scandef_sky130
+  scandef_core_sky130
   max_chain_count_sky130
   #dft_man_tcl_check
   #dft_readme_msgs_check

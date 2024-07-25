@@ -48,6 +48,7 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/VisitPathEnds.hh"
 
 namespace gui {
 
@@ -828,6 +829,56 @@ std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping()
 
 /////////////
 
+class PathGroupSlackEndVisitor : public sta::PathEndVisitor
+{
+ public:
+  PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
+                           sta::StaState* sta);
+  PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
+  PathEndVisitor* copy() const override;
+  void visit(sta::PathEnd* path_end) override;
+  float worstSlack() const { return worst_slack_; }
+  bool hasSlack() const { return has_slack_; }
+  void resetWorstSlack();
+
+ private:
+  const sta::PathGroup* path_group_;
+  sta::StaState* sta_;
+  bool has_slack_{false};
+  float worst_slack_{std::numeric_limits<float>::max()};
+};
+
+PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
+    const sta::PathGroup* path_group,
+    sta::StaState* sta)
+    : path_group_(path_group), sta_(sta)
+{
+}
+
+sta::PathEndVisitor* PathGroupSlackEndVisitor::copy() const
+{
+  return new PathGroupSlackEndVisitor(*this);
+}
+
+void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
+{
+  sta::Search* search = sta_->search();
+  if (search->pathGroup(path_end) == path_group_) {
+    worst_slack_ = std::min(worst_slack_, path_end->slack(sta_));
+    if (!has_slack_) {
+      has_slack_ = true;
+    }
+  }
+}
+
+void PathGroupSlackEndVisitor::resetWorstSlack()
+{
+  worst_slack_ = std::numeric_limits<float>::max();
+  has_slack_ = false;
+}
+
+/////////////
+
 STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
       corner_(nullptr),
@@ -861,6 +912,58 @@ float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
 {
   return sta_->pinSlack(pin,
                         use_max_ ? sta::MinMax::max() : sta::MinMax::min());
+}
+
+std::set<std::string> STAGuiInterface::getGroupPathsNames() const
+{
+  std::set<std::string> group_paths_names;
+  sta::Sdc* sdc = sta_->sdc();
+  sta::GroupPathMap group_paths_map = sdc->groupPaths();
+  for (const auto [name, group_paths] : group_paths_map) {
+    group_paths_names.insert(name);
+  }
+  return group_paths_names;
+}
+
+// Makes STA incorporate the Sdc GroupPaths information
+// into Search PathGroups. This is equivalent to what happens
+// when running "report_checks".
+void STAGuiInterface::updatePathGroups()
+{
+  sta::Search* search = sta_->search();
+  search->updatePathGroups(1,         /* group count */
+                           1,         /* endpoint count*/
+                           false,     /* unique pins */
+                           -sta::INF, /* min slack */
+                           sta::INF,  /* max slack*/
+                           nullptr,   /* group names */
+                           true,      /* setup */
+                           true,      /* hold */
+                           true,      /* recovery */
+                           true,      /* removal */
+                           true,      /* clk gating setup */
+                           true /* clk gating hold*/);
+}
+
+EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
+    const std::string& path_group_name)
+{
+  updatePathGroups();
+
+  EndPointSlackMap end_point_to_slack;
+  sta::VisitPathEnds visit_ends(sta_);
+  sta::Search* search = sta_->search();
+  sta::PathGroup* path_group
+      = search->findPathGroup(path_group_name.c_str(), sta::MinMax::max());
+  PathGroupSlackEndVisitor path_group_visitor(path_group, sta_);
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    visit_ends.visitPathEnds(vertex, &path_group_visitor);
+    if (path_group_visitor.hasSlack()) {
+      end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
+      path_group_visitor.resetWorstSlack();
+    }
+  }
+  return end_point_to_slack;
 }
 
 int STAGuiInterface::getEndPointCount() const
@@ -1250,6 +1353,11 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
           return l->getPathSlack() > r->getPathSlack();
         });
   }
+}
+
+sta::ClockSeq* STAGuiInterface::getClocks() const
+{
+  return sta_->sdc()->clocks();
 }
 
 std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const

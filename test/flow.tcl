@@ -86,11 +86,6 @@ set_macro_extension 2
 global_placement -routability_driven -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
-# set thread count for all tools with support for multithreading.
-# set after global placement because it uses omp but generates
-# different results when using multiple threads.
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
-
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
@@ -227,11 +222,14 @@ write_db $fill_db
 ################################################################
 # Detailed routing
 
+# set multithreading only for detailed route due to instability
+# in repair_antennas
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 # Run pin access again after inserting diodes and moving cells
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \
