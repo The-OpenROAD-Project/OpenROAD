@@ -119,7 +119,7 @@ struct Violation
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
-using GraphNodes = std::vector<GraphNode*>;
+using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
 using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;

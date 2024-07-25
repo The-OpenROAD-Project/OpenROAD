@@ -918,12 +918,12 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                        false,
                                        report_file);
               if (diode_count_per_gate > max_diode_count_per_gate) {
-                // logger_->warn(ANT,
-                //               15,
-                //               "Net {} requires more than {} diodes per gate
-                //               to " "repair violations.",
-                //               db_net->getConstName(),
-                //               max_diode_count_per_gate);
+                logger_->warn(ANT,
+                              15,
+                              "Net {} requires more than {} diodes per gate to "
+                              "repair violations.",
+                              db_net->getConstName(),
+                              max_diode_count_per_gate);
                 break;
               }
             }
@@ -982,7 +982,7 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
     for (const auto& pol_it : layer_it.second) {
       bool isVia = layer_it.first->getRoutingLevel() == 0;
       node_by_layer_map[layer_it.first].push_back(
-          new GraphNode(node_count, isVia, pol_it));
+          std::make_unique<GraphNode>(node_count, isVia, pol_it));
       node_count++;
     }
   }
