@@ -506,12 +506,13 @@ void dbSta::report_cell_usage(const bool verbose)
   auto insts = db_->getChip()->getBlock()->getInsts();
   const int total_usage = insts.size();
 
+  const char* format = "  {:35} {:>7}";
   logger_->report("Cell type report:");
   for (auto [type, count] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
-    logger_->report("  {}s: {}", type_name, count);
+    logger_->report(format, type_name, count);
   }
-  logger_->report("  Total: {}", total_usage);
+  logger_->report(format, "Total", total_usage);
 
   if (verbose) {
     logger_->report("\nCell instance report:");
@@ -527,7 +528,7 @@ void dbSta::report_cell_usage(const bool verbose)
       usage_count[inst->getMaster()]++;
     }
     for (auto [master, count] : usage_count) {
-      logger_->report("  {}s: {}", master->getName(), count);
+      logger_->report(format, master->getName(), count);
     }
   }
 }
