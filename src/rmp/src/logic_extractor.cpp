@@ -1,6 +1,5 @@
 #include "logic_extractor.h"
 
-#include <iostream>
 #include <memory>
 #include <unordered_set>
 #include <vector>
@@ -64,8 +63,6 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     cut_vertices.push_back(vertex);
     sta::LibertyPort* port = open_sta_->network()->libertyPort(vertex->pin());
     sta::LibertyCell* cell = port->libertyCell();
-    std::cout << "Cut Vertex: " << vertex->name(open_sta_->getDbNetwork())
-              << "(" << cell->name() << ")" << "\n";
   }
   return cut_vertices;
 }
@@ -104,7 +101,6 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
 
     if (is_primary_input) {
       primary_inputs.push_back(vertex->pin());
-      std::cout << "Primary Input: " << vertex->name(network) << "\n";
     }
   }
 
@@ -145,7 +141,6 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
         sta::VertexId vertex_id = network->vertexId(connected_pin);
         sta::Vertex* vertex = network->graph()->vertex(vertex_id);
         primary_outputs.push_back(vertex->pin());
-        std::cout << "Primary Output: " << vertex->name(network) << "\n";
       }
     }
   }
