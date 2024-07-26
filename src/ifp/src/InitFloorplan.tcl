@@ -40,7 +40,7 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_area {lx ly ux uy}]\
 					       [-additional_sites site_names]\
 					       [-site site_name]\
-                 [-row_parity NONE|ODD|EVEN]}
+					       [-row_parity NONE|ODD|EVEN]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \

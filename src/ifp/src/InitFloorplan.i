@@ -111,7 +111,7 @@ init_floorplan_core(int die_lx,
 		    int core_uy,
 		    odb::dbSite* site,
 		    const std::vector<odb::dbSite*>& additional_sites,
-        ifp::RowParity row_parity)
+		    ifp::RowParity row_parity)
 {
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
@@ -127,7 +127,7 @@ init_floorplan_util(double util,
                     int core_space_right,
 		    odb::dbSite* site,
 		    const std::vector<odb::dbSite*>& additional_sites,
-        ifp::RowParity row_parity)
+		    ifp::RowParity row_parity)
 {
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,

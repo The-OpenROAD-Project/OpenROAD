@@ -436,7 +436,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
         break;
       case RowParity::ODD:
         if (rows_y > 0) {
-          rows_y = ((rows_y - 1) / 2) * 2 + 1;
+          rows_y = (rows_y % 2 == 0) ? rows_y - 1 : rows_y;
         } else {
           rows_y = 0;
         }
