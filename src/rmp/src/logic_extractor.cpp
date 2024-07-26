@@ -61,8 +61,6 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     sta::Vertex* vertex = iter.next();
     iter.enqueueAdjacentVertices(vertex);
     cut_vertices.push_back(vertex);
-    sta::LibertyPort* port = open_sta_->network()->libertyPort(vertex->pin());
-    sta::LibertyCell* cell = port->libertyCell();
   }
   return cut_vertices;
 }
