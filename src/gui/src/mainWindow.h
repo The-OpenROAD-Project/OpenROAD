@@ -262,7 +262,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void openDesign();
   void saveDesign();
 #ifdef ENABLE_CHARTS
-  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins);
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
+                                 const std::string& path_group_name);
 #endif
 
  protected:
