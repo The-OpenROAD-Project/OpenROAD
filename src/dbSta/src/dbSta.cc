@@ -500,17 +500,36 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   return inst_type_count;
 }
 
-void dbSta::report_cell_usage()
+void dbSta::report_cell_usage(const bool verbose)
 {
   std::map<InstType, int> instances_types = countInstancesByType();
-  int total_usage = db_->getChip()->getBlock()->getInsts().size();
+  auto insts = db_->getChip()->getBlock()->getInsts();
+  const int total_usage = insts.size();
 
-  logger_->report("Cell usage report:");
+  logger_->report("Cell type report:");
   for (auto [type, count] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
     logger_->report("  {}s: {}", type_name, count);
   }
   logger_->report("  Total: {}", total_usage);
+
+  if (verbose) {
+    logger_->report("\nCell instance report:");
+    struct CmpById
+    {
+      bool operator()(odb::dbMaster* lhs, odb::dbMaster* rhs) const
+      {
+        return lhs->getId() < rhs->getId();
+      }
+    };
+    std::map<dbMaster*, int, CmpById> usage_count;
+    for (auto inst : insts) {
+      usage_count[inst->getMaster()]++;
+    }
+    for (auto [master, count] : usage_count) {
+      logger_->report("  {}s: {}", master->getName(), count);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
