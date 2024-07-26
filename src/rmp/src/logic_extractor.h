@@ -13,6 +13,7 @@
 #include "db_sta/dbSta.hh"
 #include "logic_cut.h"
 #include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/SearchPred.hh"
 
 namespace rmp {

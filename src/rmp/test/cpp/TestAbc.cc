@@ -30,6 +30,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"

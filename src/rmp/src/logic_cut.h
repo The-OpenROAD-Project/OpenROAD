@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "sta/GraphClass.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/deleter.h"
 
 namespace rmp {
