@@ -1562,7 +1562,11 @@ int definReader::unitsCallback(defrCallbackType_e, double d, defiUserData data)
 
   // Truncation error
   if (d > reader->_tech->getDbUnitsPerMicron()) {
-    UNSUPPORTED(fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) is greater than the database units per micron ({}) value.", d, reader->_tech->getDbUnitsPerMicron()));
+    UNSUPPORTED(
+        fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) is "
+                    "greater than the database units per micron ({}) value.",
+                    d,
+                    reader->_tech->getDbUnitsPerMicron()));
   }
 
   reader->units(d);
