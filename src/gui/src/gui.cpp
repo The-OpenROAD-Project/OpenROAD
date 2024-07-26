@@ -1504,9 +1504,9 @@ std::string Descriptor::Property::toString(const std::any& value)
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
     std::string text = "(";
-    text += convert_dbu(v->xMin(), false) + ",";
+    text += convert_dbu(v->xMin(), false) + ", ";
     text += convert_dbu(v->yMin(), false) + "), (";
-    text += convert_dbu(v->xMax(), false) + ",";
+    text += convert_dbu(v->xMax(), false) + ", ";
     text += convert_dbu(v->yMax(), false) + ")";
     return text;
   } else if (auto v = std::any_cast<odb::Point>(&value)) {
