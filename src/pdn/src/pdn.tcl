@@ -283,13 +283,14 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-extend_to_boundary] \
                                        [-snap_to_grid] \
                                        [-number_of_straps count] \
-                                       [-nets list_of_nets]
+                                       [-nets list_of_nets] \
+                                       [-stop_at_endcaps]
 }
 
 proc add_pdn_stripe {args} {
   sta::parse_key_args "add_pdn_stripe" args \
     keys {-grid -layer -width -pitch -spacing -offset -starts_with -number_of_straps -nets} \
-    flags {-followpins -extend_to_core_ring -extend_to_boundary -snap_to_grid}
+    flags {-followpins -extend_to_core_ring -extend_to_boundary -stop_at_endcaps -snap_to_grid}
 
   sta::check_argc_eq0 "add_pdn_stripe" $args
 
@@ -308,6 +309,10 @@ proc add_pdn_stripe {args} {
 
     if {![info exists keys(-pitch)]} {
       utl::error PDN 1009 "The -pitch argument is required."
+    }
+
+    if {[info exists keys(-stop_at_endcaps)]} {
+      utl::error PDN 1050 "The -stop_at_endcaps argument is only supported in followpins mode."
     }
   }
 
@@ -366,6 +371,8 @@ proc add_pdn_stripe {args} {
     set extend "Rings"
   } elseif {[info exists flags(-extend_to_boundary)]} {
     set extend "Boundary"
+  } elseif {[info exists flags(-stop_at_endcaps)]} {
+    set extend "Endcaps"
   }
 
   set use_grid_power_order 1

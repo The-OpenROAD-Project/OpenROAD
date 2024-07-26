@@ -123,10 +123,18 @@ class Straps : public GridComponent
                   const Shape::ObstructionTree& avoid);
 };
 
+struct RowEndInsts
+{
+  odb::dbInst *left = nullptr, *right = nullptr;
+};
+
 class FollowPins : public Straps
 {
  public:
   FollowPins(Grid* grid, odb::dbTechLayer* layer, int width);
+
+  std::unordered_map<odb::dbRow*, RowEndInsts> findRowEndInsts();
+  int getPinExtent(odb::dbInst* inst, odb::dbNet* net, bool right);
 
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 

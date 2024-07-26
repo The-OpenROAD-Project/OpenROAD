@@ -181,6 +181,7 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const odb::Rect core = grid->getDomainArea();
   switch (extend_mode_) {
     case CORE:
+    case ENDCAPS:
       boundary = grid->getDomainBoundary();
       break;
     case RINGS:
@@ -413,6 +414,70 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 }
 
+std::unordered_map<odb::dbRow*, RowEndInsts> FollowPins::findRowEndInsts()
+{
+  std::unordered_map<odb::dbRow*, RowEndInsts> result;
+  auto rows = getDomain()->getRows();
+
+  std::unordered_map<int, odb::dbRow*> y_to_row;
+  for (auto row : rows) {
+    y_to_row[row->getBBox().yMin()] = row;
+  }
+
+  for (auto inst : getGrid()->getBlock()->getInsts()) {
+    if (!inst->isFixed()
+        || (!inst->isEndCap()
+            && inst->getMaster()->getType()
+                   != odb::dbMasterType::CORE_WELLTAP)) {
+      continue;
+    }
+    auto box = inst->getBBox();
+    auto found_row = y_to_row.find(box->yMin());
+    if (found_row == y_to_row.end()) {
+      continue;
+    }
+    odb::dbRow* row = found_row->second;
+    if (box->xMin() == row->getBBox().xMin()) {
+      result[row].left = inst;
+    }
+    if (box->xMax() == row->getBBox().xMax()) {
+      result[row].right = inst;
+    }
+  }
+
+  return result;
+}
+
+int FollowPins::getPinExtent(odb::dbInst* inst, odb::dbNet* net, bool right)
+{
+  // Find the lowest (right=false) or highest (right=true) x-coordinate of power
+  // pins in a cell
+  int extent = right ? inst->getBBox()->xMin() : inst->getBBox()->xMax();
+  const odb::dbTransform transform = inst->getTransform();
+
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getNet() != net) {
+      continue;
+    }
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        if (box->getTechLayer() != getLayer()) {
+          continue;
+        }
+        odb::Rect rect = box->getBox();
+        transform.apply(rect);
+        if (right) {
+          extent = std::max(extent, rect.xMax());
+        } else {
+          extent = std::min(extent, rect.xMin());
+        }
+      }
+    }
+  }
+
+  return extent;
+}
+
 void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 {
   debugPrint(getLogger(),
@@ -432,6 +497,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   switch (getExtendMode()) {
     case CORE:
     case FIXED:
+    case ENDCAPS:
       // use core area for follow pins
       boundary = grid->getDomainArea();
       break;
@@ -449,6 +515,12 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const int x_start = boundary.xMin();
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
+
+  std::unordered_map<odb::dbRow*, RowEndInsts> row_ends;
+  if (getExtendMode() == ENDCAPS) {
+    row_ends = findRowEndInsts();
+  }
+
   for (auto* row : getDomain()->getRows()) {
     odb::Rect bbox = row->getBBox();
     const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
@@ -462,20 +534,54 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       x1 = x_end;
     }
 
+    int ground_x0 = x0, ground_x1 = x1;
+    int power_x0 = x0, power_x1 = x1;
+
+    if (getExtendMode() == ENDCAPS) {
+      auto found_row_ends = row_ends.find(row);
+      if (found_row_ends != row_ends.end()) {
+        if (found_row_ends->second.left != nullptr) {
+          ground_x0 = std::max(
+              ground_x0,
+              getPinExtent(found_row_ends->second.left, ground, false));
+          power_x0 = std::max(
+              power_x0,
+              getPinExtent(found_row_ends->second.left, power, false));
+        }
+        if (found_row_ends->second.right != nullptr) {
+          ground_x1 = std::min(
+              ground_x1,
+              getPinExtent(found_row_ends->second.right, ground, true));
+          power_x1 = std::min(
+              power_x1,
+              getPinExtent(found_row_ends->second.right, power, true));
+        }
+      }
+    }
+
     const int power_y_bot
         = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
     const int ground_y_bot
         = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
 
     auto* power_strap = new FollowPinShape(
-        layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
+        layer,
+        power,
+        odb::Rect(power_x0, power_y_bot, power_x1, power_y_bot + width));
     power_strap->addRow(row);
     addShape(power_strap);
 
     auto* ground_strap = new FollowPinShape(
-        layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
+        layer,
+        ground,
+        odb::Rect(ground_x0, ground_y_bot, ground_x1, ground_y_bot + width));
     ground_strap->addRow(row);
     addShape(ground_strap);
+
+    if (getExtendMode() == ENDCAPS) {
+      power_strap->setLocked();
+      ground_strap->setLocked();
+    }
   }
 }
 

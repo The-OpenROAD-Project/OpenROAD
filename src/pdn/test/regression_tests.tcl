@@ -118,6 +118,8 @@ record_tests {
 
   bpin_removal
 
+  stop_at_endcaps
+
   #pdn_man_tcl_check
   #pdn_readme_msgs_check
 }

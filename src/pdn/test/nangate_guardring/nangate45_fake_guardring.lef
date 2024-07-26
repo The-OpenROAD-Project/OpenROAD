@@ -1,0 +1,101 @@
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO ENDCAP_20
+  CLASS ENDCAP PRE ;
+  ORIGIN 0 0 ;
+  FOREIGN ENDCAP_20 0 0 ;
+  SIZE 3.8 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.42 1.315 3.8 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.42 -0.085 3.8 0.085 ;
+    END
+  END VSS
+
+  PIN RING
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 2 0 2.17 1.4 ;
+    END
+  END RING
+
+  OBS
+    LAYER metal1 ;
+      RECT 0 0.615 2 0.785 ;
+      RECT 0 0 0.17 1.4 ;
+  END
+
+END ENDCAP_20
+
+MACRO CORNER_20
+  CLASS CORE WELLTAP ;
+  ORIGIN 0 0 ;
+  FOREIGN CORNER_20 0 0 ;
+  SIZE 3.8 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+
+  PIN RING
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 2 -1 2.17 1.4 ;
+        RECT 2 -1 3.8 -0.83 ;
+    END
+  END RING
+
+  OBS
+    LAYER metal1 ;
+      RECT 0 -2 0.17 1.4 ;
+      RECT 0 -2 3.8 -1.83 ;
+  END
+END CORNER_20
+
+MACRO TB_1
+  CLASS CORE WELLTAP ;
+  ORIGIN 0 0 ;
+  FOREIGN TB_1 0 0 ;
+  SIZE 0.19 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+
+  PIN RING
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -1 0.19 -0.83 ;
+    END
+  END RING
+
+  OBS
+    LAYER metal1 ;
+    RECT 0 -2 0.19 -1.83 ;
+  END
+
+END TB_1
+
+END LIBRARY
