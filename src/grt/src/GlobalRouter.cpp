@@ -3664,6 +3664,9 @@ int GlobalRouter::computeMaxRoutingLayer()
     max_routing_layer = layer;
   }
 
+  if (max_routing_layer == -1) {
+    logger_->error(GRT, 701, "Missing track structure for routing layers.");
+  }
   return max_routing_layer;
 }
 

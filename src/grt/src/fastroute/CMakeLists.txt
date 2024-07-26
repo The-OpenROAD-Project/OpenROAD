@@ -44,6 +44,11 @@ add_library(FastRoute4.1
   src/utility.cpp
 )
 
+target_compile_options(FastRoute4.1
+  PRIVATE
+    -Wno-array-bounds
+)
+
 target_include_directories(FastRoute4.1
   PUBLIC
     include

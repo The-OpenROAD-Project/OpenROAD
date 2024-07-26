@@ -185,8 +185,6 @@ proc write_clone_test_def1 { filename clone_gate fanout
     puts $stream "UNITS DISTANCE MICRONS $dbu ;"
     # Write out the die area 
     write_diearea $stream $fanout $load_spacing
-    puts "$filename $clone_gate $fanout $drvr_inst $drvr_cell $drvr_clk $drvr_out "
-    puts "$load_inst $load_cell $load_clk $load_in $load_spacing $port_layer $dbu"
     
     puts $stream "COMPONENTS [expr $fanout + 3] ;"
     puts $stream "- ${drvr_inst}_1 $drvr_cell + PLACED ( 1000 1000 ) N ;"

@@ -1,0 +1,113 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+no_mix
+***************************
+Preview DFT Report
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 64 cells (64 bits)
+
+  bank2/_287_ (clk2, rising)
+  bank2/_286_
+  bank2/_285_
+  bank2/_284_
+  bank2/_283_
+  bank2/_282_
+  bank2/_281_
+  bank2/_280_
+  bank2/_279_
+  bank2/_278_
+  bank2/_277_
+  bank2/_276_
+  bank2/_275_
+  bank2/_274_
+  bank2/_273_
+  bank2/_256_
+  bank2/_271_
+  bank2/_270_
+  bank2/_269_
+  bank2/_268_
+  bank2/_267_
+  bank2/_266_
+  bank2/_265_
+  bank2/_264_
+  bank2/_263_
+  bank2/_262_
+  bank2/_261_
+  bank2/_260_
+  bank2/_259_
+  bank2/_258_
+  bank2/_257_
+  bank2/_272_
+  bank2/_319_
+  bank2/_318_
+  bank2/_317_
+  bank2/_316_
+  bank2/_315_
+  bank2/_314_
+  bank2/_313_
+  bank2/_312_
+  bank2/_311_
+  bank2/_310_
+  bank2/_309_
+  bank2/_308_
+  bank2/_307_
+  bank2/_306_
+  bank2/_305_
+  bank2/_288_
+  bank2/_303_
+  bank2/_302_
+  bank2/_301_
+  bank2/_300_
+  bank2/_299_
+  bank2/_298_
+  bank2/_297_
+  bank2/_296_
+  bank2/_295_
+  bank2/_294_
+  bank2/_293_
+  bank2/_292_
+  bank2/_291_
+  bank2/_290_
+  bank2/_289_
+  bank2/_304_
+
+Scan chain 'chain_1' has 32 cells (32 bits)
+
+  bank1/_129_ (clk1, rising)
+  bank1/_130_
+  bank1/_131_
+  bank1/_132_
+  bank1/_133_
+  bank1/_134_
+  bank1/_135_
+  bank1/_136_
+  bank1/_137_
+  bank1/_138_
+  bank1/_139_
+  bank1/_140_
+  bank1/_141_
+  bank1/_142_
+  bank1/_143_
+  bank1/_128_
+  bank1/_145_
+  bank1/_146_
+  bank1/_147_
+  bank1/_148_
+  bank1/_149_
+  bank1/_150_
+  bank1/_151_
+  bank1/_152_
+  bank1/_153_
+  bank1/_154_
+  bank1/_155_
+  bank1/_156_
+  bank1/_157_
+  bank1/_158_
+  bank1/_159_
+  bank1/_144_
+
+
+No differences found.

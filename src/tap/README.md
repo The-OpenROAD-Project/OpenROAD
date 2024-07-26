@@ -60,12 +60,12 @@ tapcell
 | `-disallow_one_site_gaps` | KIV. |
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
-| `-tap_nwintie_master` | Master cell placed at the top and bottom of|macros and the core area according the row orientation. |
+| `-tap_nwintie_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. |
 | `-tap_nwin2_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwintie_master` |
 | `-tap_nwin3_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwin2_master`. |
 | `-tap_nwouttie_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. |
 | `-tap_nwout2_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwouttie_master`. |
-| `-tap_nwout3_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation | This master should be smaller than `tap_nwout2_master`. |
+| `-tap_nwout3_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwout2_master`. |
 | `-incnrcap_nwin_master` | Master cell placed at the corners of macros, according the row orientation. |
 | `-incnrcap_nwout_master` | Master cell placed at the corners of macros, according the row orientation. |
 | `-cnrcap_nwin_master` | Macro cell placed at the corners the core area according the row orientation. |

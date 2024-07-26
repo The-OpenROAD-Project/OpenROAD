@@ -315,7 +315,6 @@ class DisplayControls : public QDockWidget,
   struct LayerModels
   {
     ModelRow implant;
-    ModelRow master;
     ModelRow other;
   };
 

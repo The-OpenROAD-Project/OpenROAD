@@ -119,7 +119,7 @@ struct Violation
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
-using GraphNodes = std::vector<GraphNode*>;
+using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
 using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
@@ -179,6 +179,7 @@ class AntennaChecker
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
   bool checkRatioViolations(odb::dbTechLayer* layer,
                             const NodeInfo& node_info,
+                            float ratio_margin,
                             bool verbose,
                             bool report,
                             std::ofstream& report_file);
@@ -199,11 +200,13 @@ class AntennaChecker
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   bool checkPAR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
+                float ratio_margin,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
   bool checkPSR(odb::dbTechLayer* tech_layer,
                 const NodeInfo& info,
+                float ratio_margin,
                 bool verbose,
                 bool report,
                 std::ofstream& report_file);
@@ -224,9 +227,7 @@ class AntennaChecker
   utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_{0};
-  float ratio_margin_{0};
   std::string report_file_name_;
-  odb::dbTechLayer* min_layer_{nullptr};
   std::vector<odb::dbNet*> nets_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;

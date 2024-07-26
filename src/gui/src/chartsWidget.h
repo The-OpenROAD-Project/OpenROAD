@@ -55,16 +55,6 @@ class Clock;
 namespace gui {
 #ifdef ENABLE_CHARTS
 
-using ITermBTermPinsLists = std::pair<StaPins, StaPins>;
-
-enum StartEndPathType
-{
-  RegisterToRegister,
-  RegisterToIO,
-  IOToRegister,
-  IOToIO,
-};
-
 struct SlackHistogramData
 {
   StaPins constrained_pins;
@@ -73,6 +63,8 @@ struct SlackHistogramData
 
 struct Buckets
 {
+  bool areEmpty() { return positive.empty() && negative.empty(); }
+
   std::deque<std::vector<const sta::Pin*>> positive;
   std::deque<std::vector<const sta::Pin*>> negative;
 };
@@ -110,7 +102,8 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
-  void changeStartEndFilter();
+  void updatePathGroupMenuIndexes();
+  void changePathGroupFilter();
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
 
@@ -121,11 +114,9 @@ class ChartsWidget : public QDockWidget
     SLACK_HISTOGRAM
   };
 
-  static std::string toString(enum StartEndPathType);
-
   void setSlackHistogram();
+  void setSlackHistogramLayout();
   void setModeMenu();
-  void setStartEndFiltersMenu();
   void setBucketInterval();
   void setBucketInterval(float bucket_interval)
   {
@@ -142,12 +133,10 @@ class ChartsWidget : public QDockWidget
 
   SlackHistogramData fetchSlackHistogramData();
   void removeUnconstrainedPinsAndSetLimits(StaPins& end_points);
-  TimingPathList fetchPathsBasedOnStartEnd(const StartEndPathType path_type);
-  StaPins getEndPointsFromPaths(const TimingPathList& paths);
-  ITermBTermPinsLists separatePinsIntoBTermsAndITerms(const StaPins& pins);
-  void setLimits(const TimingPathList& paths);
+  void setLimits(const EndPointSlackMap& end_point_to_slack);
 
-  void populateBuckets(StaPins* end_points, TimingPathList* paths);
+  void populateBuckets(StaPins* end_points,
+                       EndPointSlackMap* end_point_to_slack);
   std::pair<QBarSet*, QBarSet*> createBarSets();
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
@@ -179,9 +168,11 @@ class ChartsWidget : public QDockWidget
   HistogramView* display_;
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+  QPushButton* refresh_filters_button_;
 
   std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
+  std::map<int, std::string> filter_index_to_path_group_name_;
 
   int prev_filter_index_;
   bool resetting_menu_;

@@ -140,6 +140,7 @@ Resizer::Resizer()
 
 Resizer::~Resizer()
 {
+  delete recover_power_;
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;

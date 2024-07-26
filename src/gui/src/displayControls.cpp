@@ -298,13 +298,10 @@ DisplayControls::DisplayControls(QWidget* parent)
   view_->expand(layers->index());
   auto implant_layer
       = makeParentItem(layers_.implant, "Implant", layers, Qt::Checked, true);
-  auto master_layer = makeParentItem(
-      layers_.master, "Masterslice", layers, Qt::Unchecked, true);
   auto other_layer
       = makeParentItem(layers_.other, "Other", layers, Qt::Unchecked, true);
   // hide initially
   view_->setRowHidden(implant_layer->row(), layers->index(), true);
-  view_->setRowHidden(master_layer->row(), layers->index(), true);
   view_->setRowHidden(other_layer->row(), layers->index(), true);
 
   // Nets group
@@ -1229,10 +1226,6 @@ void DisplayControls::addTech(odb::dbTech* tech)
         parent = layers_group_.name;
         checked = Qt::Checked;
         break;
-      case dbTechLayerType::MASTERSLICE:
-        parent = layers_.master.name;
-        checked = Qt::Unchecked;
-        break;
       case dbTechLayerType::IMPLANT:
         parent = layers_.implant.name;
         checked = Qt::Checked;
@@ -1256,12 +1249,6 @@ void DisplayControls::addTech(odb::dbTech* tech)
                         layers_group_.name->index(),
                         !layers_.implant.name->hasChildren());
     toggleParent(layers_.implant);
-  }
-  if (layers_.master.name->hasChildren()) {
-    view_->setRowHidden(layers_.master.name->row(),
-                        layers_group_.name->index(),
-                        !layers_.master.name->hasChildren());
-    toggleParent(layers_.master);
   }
   if (layers_.other.name->hasChildren()) {
     view_->setRowHidden(layers_.other.name->row(),
@@ -1545,11 +1532,14 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(
       return &physical_instances_.other;
     case sta::dbSta::InstType::STD_CELL:
       return &instances_.stdcells;
-    case sta::dbSta::InstType::STD_BUFINV:
+    case sta::dbSta::InstType::STD_INV: /* fallthru */
+    case sta::dbSta::InstType::STD_BUF:
       return &bufinv_instances_.other;
-    case sta::dbSta::InstType::STD_BUFINV_CLK_TREE:
+    case sta::dbSta::InstType::STD_BUF_CLK_TREE: /* fallthru */
+    case sta::dbSta::InstType::STD_INV_CLK_TREE:
       return &clock_tree_instances_.bufinv;
-    case sta::dbSta::InstType::STD_BUFINV_TIMING_REPAIR:
+    case sta::dbSta::InstType::STD_BUF_TIMING_REPAIR: /* fallthru */
+    case sta::dbSta::InstType::STD_INV_TIMING_REPAIR:
       return &bufinv_instances_.timing;
     case sta::dbSta::InstType::STD_CLOCK_GATE:
       return &clock_tree_instances_.clock_gates;
