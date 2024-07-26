@@ -918,12 +918,14 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                                        false,
                                        report_file);
               if (diode_count_per_gate > max_diode_count_per_gate) {
-                logger_->warn(ANT,
-                              15,
-                              "Net {} requires more than {} diodes per gate to "
-                              "repair violations.",
-                              db_net->getConstName(),
-                              max_diode_count_per_gate);
+                debugPrint(logger_,
+                           ANT,
+                           "check_gates",
+                           1,
+                           "Net {} requires more than {} diodes per gate to "
+                           "repair violations.",
+                           db_net->getConstName(),
+                           max_diode_count_per_gate);
                 break;
               }
             }
