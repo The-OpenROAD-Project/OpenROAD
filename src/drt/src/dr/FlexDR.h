@@ -132,7 +132,7 @@ class FlexDR
   void reportGuideCoverage();
   void setIter(int iterNum) { iter_ = iterNum; }
   // maxSpacing fix
-  void fixMaxSpacing(frLayer* layer, int max_spc, int cut_class);
+  void fixMaxSpacing();
 
  private:
   TritonRoute* router_;
@@ -174,6 +174,7 @@ class FlexDR
                           int startY,
                           int size,
                           const Rect& routeBox);
+  std::vector<frVia*> getLonelyVias(frLayer* layer, int max_spc, int cut_class);
 };
 
 class FlexDRWorker;
@@ -996,6 +997,8 @@ class FlexDRWorker
 
   // helper functions
   frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
+  void writeGCPatchesToDRWorker(drNet* targetNet = nullptr,
+                                std::vector<FlexMazeIdx> validIndices = {});
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

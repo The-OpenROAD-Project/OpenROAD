@@ -1572,6 +1572,51 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
+void FlexDRWorker::writeGCPatchesToDRWorker(
+    drNet* targetNet,
+    std::vector<FlexMazeIdx> validIndices)
+{
+  for (auto& pwire : gcWorker_->getPWires()) {
+    auto net = pwire->getNet();
+    if (!net) {
+      net = targetNet;
+    }
+    if (!net) {
+      logger_->error(utl::DRT, 407, "pwire with no net");
+    }
+    net->setModified(true);
+    auto tmpPWire = std::make_unique<drPatchWire>();
+    tmpPWire->setLayerNum(pwire->getLayerNum());
+    tmpPWire->setOrigin(pwire->getOrigin());
+    tmpPWire->setOffsetBox(pwire->getOffsetBox());
+    if (!validIndices.empty()) {
+      // Find closest path point
+      Point closest;
+      frCoord closestDist = INT_MAX;
+      auto origin = pwire->getOrigin();
+      auto box = pwire->getOffsetBox();
+      for (auto p : validIndices) {
+        Point pp;
+        gridGraph_.getPoint(pp, p.x(), p.y());
+        frCoord pathLength = Point::squaredDistance(origin, pp);
+        if (pathLength < closestDist) {
+          closestDist = pathLength;
+          closest = pp;
+        }
+      }
+      tmpPWire->setOrigin(closest);
+      tmpPWire->setOffsetBox(Rect(origin.getX() - closest.getX() + box.xMin(),
+                                  origin.getY() - closest.getY() + box.yMin(),
+                                  origin.getX() - closest.getX() + box.xMax(),
+                                  origin.getY() - closest.getY() + box.yMax()));
+    }
+    tmpPWire->addToNet(net);
+    std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
+    getWorkerRegionQuery().add(tmp.get());
+    net->addRoute(std::move(tmp));
+  }
+}
+
 void FlexDRWorker::route_queue()
 {
   std::queue<RouteQueueEntry> rerouteQueue;
@@ -1579,25 +1624,8 @@ void FlexDRWorker::route_queue()
   if (needRecheck_) {
     gcWorker_->setEnableSurgicalFix(true);
     gcWorker_->main();
-    for (auto& pwire : gcWorker_->getPWires()) {
-      auto net = pwire->getNet();
-      if (!net) {
-        std::cout << "Error: pwire with no net\n";
-        exit(1);
-      }
-      net->setModified(true);
-      auto tmpPWire = std::make_unique<drPatchWire>();
-      tmpPWire->setLayerNum(pwire->getLayerNum());
-      Point origin = pwire->getOrigin();
-      tmpPWire->setOrigin(origin);
-      Rect box = pwire->getOffsetBox();
-      tmpPWire->setOffsetBox(box);
-      tmpPWire->addToNet(net);
-      std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-      auto& workerRegionQuery = getWorkerRegionQuery();
-      workerRegionQuery.add(tmp.get());
-      net->addRoute(std::move(tmp));
-    }
+    writeGCPatchesToDRWorker();
+    gcWorker_->clearPWires();
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
@@ -1636,25 +1664,7 @@ void FlexDRWorker::route_queue()
   gcWorker_->setEnableSurgicalFix(true);
   gcWorker_->main();
   // write back GC patches
-  for (auto& pwire : gcWorker_->getPWires()) {
-    auto net = pwire->getNet();
-    if (!net) {
-      std::cout << "Error: pwire with no net\n";
-      exit(1);
-    }
-    net->setModified(true);
-    auto tmpPWire = std::make_unique<drPatchWire>();
-    tmpPWire->setLayerNum(pwire->getLayerNum());
-    Point origin = pwire->getOrigin();
-    tmpPWire->setOrigin(origin);
-    Rect box = pwire->getOffsetBox();
-    tmpPWire->setOffsetBox(box);
-    tmpPWire->addToNet(net);
-    std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-    auto& workerRegionQuery = getWorkerRegionQuery();
-    workerRegionQuery.add(tmp.get());
-    net->addRoute(std::move(tmp));
-  }
+  writeGCPatchesToDRWorker();
 
   gcWorker_->end();
 
@@ -1862,41 +1872,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
         drNet* currNet = net;
-        for (auto& pwire : gcWorker_->getPWires()) {
-          auto net = pwire->getNet();
-          if (!net) {
-            net = currNet;
-          }
-          auto tmpPWire = std::make_unique<drPatchWire>();
-          tmpPWire->setLayerNum(pwire->getLayerNum());
-          Point origin = pwire->getOrigin();
-          Rect box = pwire->getOffsetBox();
-          // Find closest path point
-          Point closest;
-          frCoord closestDist = INT_MAX;
-          for (auto p : paths) {
-            Point pp;
-            gridGraph_.getPoint(pp, p.x(), p.y());
-            frCoord pathLength = Point::squaredDistance(origin, pp);
-            if (pathLength < closestDist) {
-              closestDist = pathLength;
-              closest = pp;
-            }
-          }
-          tmpPWire->setOrigin(closest);
-          tmpPWire->setOffsetBox(
-              Rect(origin.getX() - closest.getX() + box.xMin(),
-                   origin.getY() - closest.getY() + box.yMin(),
-                   origin.getX() - closest.getX() + box.xMax(),
-                   origin.getY() - closest.getY() + box.yMax()));
-          tmpPWire->addToNet(net);
-          pwire->addToNet(net);
-
-          std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-          auto& workerRegionQuery = getWorkerRegionQuery();
-          workerRegionQuery.add(tmp.get());
-          net->addRoute(std::move(tmp));
-        }
+        writeGCPatchesToDRWorker(currNet, paths);
         gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
@@ -1915,22 +1891,76 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         logger_->error(DRT, 1006, "failed to setTargetNet");
       }
     } else {
-      gcWorker_->setEnableSurgicalFix(false);
-      if (obj_gc_version.find(obj) != obj_gc_version.end()
-          && obj_gc_version[obj] == gc_version) {
-        continue;
-      }
-      obj_gc_version[obj] = gc_version;
-      if (obj->typeId() == frcNet) {
-        auto net = static_cast<frNet*>(obj);
-        if (gcWorker_->setTargetNet(net)) {
+      if (getRipupMode() == RipUpMode::VIASWAP) {
+        auto net = static_cast<drNet*>(obj);
+        bool noSolutionFound = false;
+        for (auto& connFig : net->getRouteConnFigs()) {
+          if (connFig->typeId() != drcVia) {
+            continue;
+          }
+          auto oldVia = static_cast<drVia*>(connFig.get());
+          if (oldVia->isLonely()) {
+            auto cutLayer
+                = getTech()->getLayer(oldVia->getViaDef()->getCutLayerNum());
+            frViaDef* replacementViaDef = nullptr;
+            if (cutLayer->getSecondaryViaDefs().size()
+                <= numReroute)  // no more secViaDefs to try
+            {
+              noSolutionFound = true;
+              // fall back to the original viadef
+              replacementViaDef = cutLayer->getDefaultViaDef();
+            } else {
+              replacementViaDef = cutLayer->getSecondaryViaDef(numReroute);
+            }
+            if (replacementViaDef == oldVia->getViaDef()) {
+              continue;
+            }
+            // replace via with a secondaryVia at index numReroute
+            std::unique_ptr<drConnFig> newViaConnFig
+                = std::make_unique<drVia>(*oldVia);
+            auto newViaPtr = static_cast<drVia*>(newViaConnFig.get());
+            newViaPtr->setViaDef(replacementViaDef);
+            // remove old via
+            getWorkerRegionQuery().remove(oldVia);
+            net->removeShape(oldVia);
+            // add new via
+            net->addRoute(std::move(newViaConnFig));
+            getWorkerRegionQuery().add(newViaPtr);
+          }
+        }
+        if (noSolutionFound) {
+          continue;
+        } else {
+          gcWorker_->setTargetNet(net->getFrNet());
+          gcWorker_->updateDRNet(net);
+          gcWorker_->setEnableSurgicalFix(true);
           gcWorker_->main();
-          didCheck = true;
+          if (gcWorker_->getMarkers().size() == 0) {
+            net->setModified(true);
+            writeGCPatchesToDRWorker();
+          } else {
+            rerouteQueue.push({net, numReroute + 1, false});
+          }
+          gcWorker_->clearPWires();
         }
       } else {
-        if (gcWorker_->setTargetNet(obj)) {
-          gcWorker_->main();
-          didCheck = true;
+        gcWorker_->setEnableSurgicalFix(false);
+        if (obj_gc_version.find(obj) != obj_gc_version.end()
+            && obj_gc_version[obj] == gc_version) {
+          continue;
+        }
+        obj_gc_version[obj] = gc_version;
+        if (obj->typeId() == frcNet) {
+          auto net = static_cast<frNet*>(obj);
+          if (gcWorker_->setTargetNet(net)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
+        } else {
+          if (gcWorker_->setTargetNet(obj)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
         }
       }
     }

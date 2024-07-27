@@ -3390,17 +3390,6 @@ void io::Writer::mergeSplitConnFigs(
   }
 }
 
-void io::Writer::fillViaDefs()
-{
-  viaDefs_.clear();
-  for (auto& uViaDef : getTech()->getVias()) {
-    auto viaDef = uViaDef.get();
-    if (viaDef->isAddedByRouter()) {
-      viaDefs_.push_back(viaDef);
-    }
-  }
-}
-
 void io::Writer::fillConnFigs(bool isTA)
 {
   connFigs_.clear();
@@ -3417,42 +3406,45 @@ void io::Writer::fillConnFigs(bool isTA)
   }
 }
 
-void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech)
+void io::Writer::writeViaDefToODB(odb::dbBlock* block,
+                                  odb::dbTech* db_tech,
+                                  frViaDef* via)
 {
-  for (auto via : viaDefs_) {
-    if (block->findVia(via->getName().c_str()) != nullptr) {
-      continue;
-    }
-    auto layer1Name = getTech()->getLayer(via->getLayer1Num())->getName();
-    auto layer2Name = getTech()->getLayer(via->getLayer2Num())->getName();
-    auto cutName = getTech()->getLayer(via->getCutLayerNum())->getName();
-    odb::dbTechLayer* _layer1 = db_tech->findLayer(layer1Name.c_str());
-    odb::dbTechLayer* _layer2 = db_tech->findLayer(layer2Name.c_str());
-    odb::dbTechLayer* _cut_layer = db_tech->findLayer(cutName.c_str());
-    if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
-      logger_->error(DRT,
-                     113,
-                     "Tech layers for via {} not found in db tech.",
-                     via->getName());
-    }
-    odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
-    _db_via->setDefault(true);
-    for (auto& fig : via->getLayer2Figs()) {
-      Rect box = fig->getBBox();
-      odb::dbBox::create(
-          _db_via, _layer2, box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    }
-    for (auto& fig : via->getCutFigs()) {
-      Rect box = fig->getBBox();
-      odb::dbBox::create(
-          _db_via, _cut_layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    }
+  if (!via->isAddedByRouter()) {
+    return;
+  }
+  if (block->findVia(via->getName().c_str()) != nullptr) {
+    return;
+  }
+  auto layer1Name = getTech()->getLayer(via->getLayer1Num())->getName();
+  auto layer2Name = getTech()->getLayer(via->getLayer2Num())->getName();
+  auto cutName = getTech()->getLayer(via->getCutLayerNum())->getName();
+  odb::dbTechLayer* _layer1 = db_tech->findLayer(layer1Name.c_str());
+  odb::dbTechLayer* _layer2 = db_tech->findLayer(layer2Name.c_str());
+  odb::dbTechLayer* _cut_layer = db_tech->findLayer(cutName.c_str());
+  if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
+    logger_->error(DRT,
+                   113,
+                   "Tech layers for via {} not found in db tech.",
+                   via->getName());
+  }
+  odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
+  _db_via->setDefault(true);
+  for (auto& fig : via->getLayer2Figs()) {
+    Rect box = fig->getBBox();
+    odb::dbBox::create(
+        _db_via, _layer2, box.xMin(), box.yMin(), box.xMax(), box.yMax());
+  }
+  for (auto& fig : via->getCutFigs()) {
+    Rect box = fig->getBBox();
+    odb::dbBox::create(
+        _db_via, _cut_layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
+  }
 
-    for (auto& fig : via->getLayer1Figs()) {
-      Rect box = fig->getBBox();
-      odb::dbBox::create(
-          _db_via, _layer1, box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    }
+  for (auto& fig : via->getLayer1Figs()) {
+    Rect box = fig->getBBox();
+    odb::dbBox::create(
+        _db_via, _layer1, box.xMin(), box.yMin(), box.xMax(), box.yMax());
   }
 }
 
@@ -3545,6 +3537,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
             if (tech_via != nullptr) {
               _wire_encoder.addTechVia(tech_via);
             } else {
+              writeViaDefToODB(block, db_tech, via->getViaDef());
               odb::dbVia* db_via = block->findVia(viaName.c_str());
               _wire_encoder.addVia(db_via);
             }
@@ -3580,11 +3573,10 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
   }
 }
 
-void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
-                         frAccessPoint* ap,
-                         odb::dbTech* db_tech,
-                         frTechObject* tech,
-                         odb::dbBlock* block)
+void io::Writer::updateDbAccessPoint(odb::dbAccessPoint* db_ap,
+                                     frAccessPoint* ap,
+                                     odb::dbTech* db_tech,
+                                     odb::dbBlock* block)
 {
   db_ap->setPoint(ap->getPoint());
   if (ap->hasAccess(frDirEnum::N)) {
@@ -3606,7 +3598,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
     db_ap->setAccess(true, odb::dbDirection::DOWN);
   }
   auto layer = db_tech->findLayer(
-      tech->getLayer(ap->getLayerNum())->getName().c_str());
+      getTech()->getLayer(ap->getLayerNum())->getName().c_str());
   db_ap->setLayer(layer);
   db_ap->setLowType((odb::dbAccessType::Value) ap->getType(
       true));  // this works because both enums have the same order
@@ -3618,6 +3610,7 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
       if (db_tech->findVia(viaDef->getName().c_str()) != nullptr) {
         db_ap->addTechVia(numCuts, db_tech->findVia(viaDef->getName().c_str()));
       } else {
+        writeViaDefToODB(block, db_tech, viaDef);
         db_ap->addBlockVia(numCuts, block->findVia(viaDef->getName().c_str()));
       }
     }
@@ -3681,7 +3674,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
           auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
-            updateDbAccessPoint(db_ap, ap.get(), db_tech, getTech(), block);
+            updateDbAccessPoint(db_ap, ap.get(), db_tech, block);
             aps_map[ap.get()] = db_ap;
           }
           j++;
@@ -3756,7 +3749,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       auto pa = pin->getPinAccess(j);
       for (auto& ap : pa->getAccessPoints()) {
         auto db_ap = odb::dbAccessPoint::create(db_pin);
-        updateDbAccessPoint(db_ap, ap.get(), db_tech, getTech(), block);
+        updateDbAccessPoint(db_ap, ap.get(), db_tech, block);
       }
       j++;
     }
@@ -3776,8 +3769,6 @@ void io::Writer::updateDb(odb::dbDatabase* db,
   if (block == nullptr || db_tech == nullptr) {
     logger_->error(DRT, 4, "Load design first.");
   }
-  fillViaDefs();
-  updateDbVias(block, db_tech);
   updateDbAccessPoints(block, db_tech);
   if (!pin_access_only) {
     fillConnFigs(false);

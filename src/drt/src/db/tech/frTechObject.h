@@ -77,6 +77,15 @@ class frTechObject
   {
     return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
+  bool hasMaxSpacingConstraints() const
+  {
+    for (const auto& layer : layers_) {
+      if (layer->hasLef58MaxSpacingConstraints()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }

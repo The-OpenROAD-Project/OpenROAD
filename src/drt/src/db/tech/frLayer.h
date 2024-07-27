@@ -56,7 +56,11 @@ class frLayer
   void setWidth(frUInt4 widthIn) { width_ = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth_ = minWidthIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef_ = in; }
-  void setSecondaryViaDef(frViaDef* in) { secondaryViaDef_ = in; }
+  void addSecondaryViaDef(frViaDef* in) { secondaryViaDefs_.emplace_back(in); }
+  const std::vector<frViaDef*>& getSecondaryViaDefs() const
+  {
+    return secondaryViaDefs_;
+  }
   void addConstraint(frConstraint* consIn) { constraints_.push_back(consIn); }
   void addViaDef(frViaDef* viaDefIn) { viaDefs_.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol_ = in; }
@@ -125,7 +129,10 @@ class frLayer
     return style;
   }
   frViaDef* getDefaultViaDef() const { return defaultViaDef_; }
-  frViaDef* getSecondaryViaDef() const { return secondaryViaDef_; }
+  frViaDef* getSecondaryViaDef(int idx) const
+  {
+    return secondaryViaDefs_.at(idx);
+  }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs_; }
   dbTechLayerType getType() const
@@ -785,7 +792,7 @@ class frLayer
     // initialize with empty vector
     std::vector<frLef58EnclosureConstraint*> result;
     // check class and size match first
-    if (hasLef58EnclosureConstraint(cutClassIdx, above)) {
+    if (hasLef58EnclosureConstraint(cutClassIdx, above, eol)) {
       auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
                                                : aboveLef58EncConstraints_)
                                         : (eol ? belowLef58EncEolConstraints_
@@ -823,7 +830,7 @@ class frLayer
   frUInt4 wrongDirWidth_{0};
   frUInt4 minWidth_{0};
   frViaDef* defaultViaDef_{nullptr};
-  frViaDef* secondaryViaDef_{nullptr};
+  std::vector<frViaDef*> secondaryViaDefs_;
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
   std::set<frViaDef*> viaDefs_;

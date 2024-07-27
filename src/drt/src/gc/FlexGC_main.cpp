@@ -3724,10 +3724,8 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
           origin = tmpOrigin;
           break;
         }
-        if (obj->getViaDef()
-            == getTech()
-                   ->getLayer(obj->getViaDef()->getCutLayerNum())
-                   ->getSecondaryViaDef()) {
+        if (obj->isLonely() && getDRWorker()
+            && getDRWorker()->getRipupMode() == RipUpMode::VIASWAP) {
           Rect encBox;
           if (obj->getViaDef()->getLayer1Num() == lNum) {
             encBox = obj->getLayer1BBox();

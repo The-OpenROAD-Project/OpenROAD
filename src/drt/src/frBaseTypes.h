@@ -296,7 +296,8 @@ enum class RipUpMode
   DRC = 0,
   ALL = 1,
   NEARDRC = 2,
-  INCR = 3
+  INCR = 3,
+  VIASWAP = 4
 };
 
 namespace bg = boost::geometry;

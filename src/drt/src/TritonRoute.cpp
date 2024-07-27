@@ -1032,17 +1032,9 @@ void TritonRoute::fixMaxSpacing()
   initGuide();
   prep();
   dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
-  for (const auto& layer : getDesign()->getTech()->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::CUT) {
-      if (!layer->hasLef58MaxSpacingConstraints()) {
-        continue;
-      }
-      for (const auto& rule : layer->getLef58MaxSpacingConstraints()) {
-        dr_->fixMaxSpacing(
-            layer.get(), rule->getMaxSpacing(), rule->getCutClassIdx());
-      }
-    }
-  }
+  dr_->init();
+  dr_->fixMaxSpacing();
+  logger_->report("Markers {}", getDesign()->getTopBlock()->getNumMarkers());
   io::Writer writer(this, logger_);
   writer.updateDb(db_);
 }

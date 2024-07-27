@@ -73,6 +73,7 @@ class Parser
   void postProcessGuide();
   frLayerNum getTopPinLayer();
   void initDefaultVias();
+  void initSecondaryVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }
   std::vector<frTrackPattern*>& getPrefTrackPatterns()
@@ -273,7 +274,6 @@ class Writer
   void updateTrackAssignment(odb::dbBlock* block);
 
  private:
-  void fillViaDefs();
   void fillConnFigs(bool isTA);
   void fillConnFigs_net(frNet* net, bool isTA);
   void mergeSplitConnFigs(std::list<std::shared_ptr<frConnFig>>& connFigs);
@@ -287,8 +287,14 @@ class Writer
           std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>&
           mergedPathSegs);
   void updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech, bool snapshot);
-  void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
+  void writeViaDefToODB(odb::dbBlock* block,
+                        odb::dbTech* db_tech,
+                        frViaDef* via);
   void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
+  void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
+                           frAccessPoint* ap,
+                           odb::dbTech* db_tech,
+                           odb::dbBlock* block);
 
   drt::TritonRoute* router_;
   Logger* logger_;
