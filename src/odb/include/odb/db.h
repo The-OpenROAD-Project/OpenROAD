@@ -7139,25 +7139,32 @@ class dbAccessPoint : public dbObject
 class dbBusPort : public dbObject
 {
  public:
-  const char* getName() const;
+  int getFrom() const;
 
-  int getStartIx() const;
+  int getTo() const;
 
-  int getSize() const;
+  dbModBTerm* getPort() const;
 
-  bool isUpdown() const;
+  dbModBTerm* getMembers() const;
 
   dbModule* getParent() const;
 
-  dbModBTerm* getFirstmember() const;
-
   // User Code Begin dbBusPort
+  // get element by bit index in bus (allows for up/down)
+  // linear access
+  dbModBTerm* getBusIndexedElement(int index) const;
+
+  void setFirstMember(dbModBTerm*);
+  dbModBTerm* getFirstMember();
+  int getSize() const;
+  bool getUpdown() const;
+  // reallocate the bus port so all members sequential.
+  void Realloc();
   static dbBusPort* create(dbModule* parentModule,
-                           const char* name,
+                           dbModBTerm* root,
                            int from_index,
-                           bool updown,
-                           int size);
-  dbModBTerm* fetchIndexedPort(int offset);
+                           int to_index);
+
   // User Code End dbBusPort
 };
 

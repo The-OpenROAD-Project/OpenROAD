@@ -3,51 +3,48 @@
     "type":"dbObject",
     "fields":[
         {
-            "name":"_name",
-            "type":"char *",
-            "flags":["no-set"],
-            "default":"nullptr",
-	          "schema":"db_schema_odb_busport"
+            "name":"_flags",
+            "type":"uint",
+            "flags":["private"],
+            "default":"0",
+            "schema":"db_schema_update_hierarchy"            
         },
         {
-            "name": "_start_ix",
+            "name": "_from",
             "type": "int",
             "flags":["no-set"],
             "default":"0",
-	          "schema":"db_schema_odb_busport"
+            "schema":"db_schema_odb_busport"
         },
         {
-            "name":"_size",
+            "name":"_to",
             "type":"int",
             "flags":["no-set"],
             "default":"0",
-	          "schema":"db_schema_odb_busport"
+            "schema":"db_schema_odb_busport"
         },
         {
-            "name":"_updown",
-            "type":"bool",
+            "name":"_port",
+            "type":"dbId<_dbModBTerm>",
             "flags":["no-set"],
-            "default":"false",
-	          "schema":"db_schema_odb_busport"
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
         },
-        
+        {
+            "name":"_members",
+            "type":"dbId<_dbModBTerm>",
+            "flags":["no-set"],
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        },
         {
             "name":"_parent",
             "type":"dbId<_dbModule>",
             "flags":["no-set"],
-	          "schema":"db_schema_odb_busport",
-	          "parent":"dbBlock"            
-        },
-        
-        {
-            "name":"_firstmember",
-            "type": "dbId<_dbModBTerm>",
-            "flags":["no-set"],
-            "default":"0",            
-	          "schema":"db_schema_odb_busport",	    	    	    	    	    
-            "parent":"dbBlock"
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
         }
     ],
     "constructors":[],
-    "cpp_includes":["dbBlock.h","dbModBTerm.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h","dbBusPort.h"]
+    "cpp_includes":[ "dbVector.h","dbBlock.h","dbModBTerm.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h","dbBusPort.h"]
 }

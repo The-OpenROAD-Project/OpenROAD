@@ -36,13 +36,17 @@
 #include "dbCore.h"
 #include "odb/odb.h"
 
+// User Code Begin Includes
+#include "dbVector.h"
+// User Code End Includes
+
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbModule;
 class _dbModBTerm;
+class _dbModule;
 
 class _dbBusPort : public _dbObject
 {
@@ -50,7 +54,7 @@ class _dbBusPort : public _dbObject
   _dbBusPort(_dbDatabase*, const _dbBusPort& r);
   _dbBusPort(_dbDatabase*);
 
-  ~_dbBusPort();
+  ~_dbBusPort() = default;
 
   bool operator==(const _dbBusPort& rhs) const;
   bool operator!=(const _dbBusPort& rhs) const { return !operator==(rhs); }
@@ -60,12 +64,12 @@ class _dbBusPort : public _dbObject
                    const _dbBusPort& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  char* _name;
-  int _start_ix;
-  int _size;
-  bool _updown;
+  uint _flags;
+  int _from;
+  int _to;
+  dbId<_dbModBTerm> _port;
+  dbId<_dbModBTerm> _members;
   dbId<_dbModule> _parent;
-  dbId<_dbModBTerm> _firstmember;
 };
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj);

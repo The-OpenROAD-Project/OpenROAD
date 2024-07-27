@@ -364,37 +364,39 @@ void Verilog2db::makeDbModule(
       return;
     }
     if (hierarchy_) {
-      // make the module bterms
+      // make the module ports
       CellPortIterator* cp_iter = network_->portIterator(cell);
       while (cp_iter->hasNext()) {
         Port* port = cp_iter->next();
         if (network_->isBus(port)) {
-          int from_index = network_->fromIndex(port);
-          int to_index = network_->toIndex(port);
-          bool up_down = to_index >= from_index ? true : false;
-          int size = up_down ? (to_index - from_index) + 1
-                             : (from_index - to_index) + 1;
           // make the bus port as part of the port set for the cell.
-          dbBusPort* dbbusport = dbBusPort::create(module,
-                                                   network_->name(port),
-                                                   network_->fromIndex(port),
-                                                   up_down,
-                                                   size);
           const char* port_name = network_->name(port);
           dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
+          dbBusPort* dbbusport
+              = dbBusPort::create(module,
+                                  bmodterm,  // the root of the bus port
+                                  network_->fromIndex(port),
+                                  network_->toIndex(port));
           bmodterm->setBusPort(dbbusport);
           dbIoType io_type = staToDb(network_->direction(port));
           bmodterm->setIoType(io_type);
 
           // Make a modbterm for each bus bit
           // Keep traversal in terms of bits
+          int from_index = network_->fromIndex(port);
+          int to_index = network_->toIndex(port);
+          bool updown = (from_index <= to_index) ? true : false;
+          int size
+              = updown ? to_index - from_index + 1 : from_index - to_index + 1;
           for (int i = 0; i < size; i++) {
-            int ix = up_down ? from_index + i : from_index - i;
-            // use actual here
+            int ix = updown ? from_index + i : from_index - i;
             std::string bus_bit_port = port_name + std::string("[")
                                        + std::to_string(ix) + std::string("]");
-            dbModBTerm* bmodterm
+            dbModBTerm* modbterm
                 = dbModBTerm::create(module, bus_bit_port.c_str());
+            if (i == 0) {
+              dbbusport->setFirstMember(modbterm);
+            }
             dbIoType io_type = staToDb(network_->direction(port));
             bmodterm->setIoType(io_type);
           }

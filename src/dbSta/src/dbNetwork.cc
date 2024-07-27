@@ -659,7 +659,9 @@ const char* dbNetwork::busName(const Port* port) const
   staToDb(port, bterm, mterm, modbterm);
   if (modbterm) {
     if (modbterm->isBusPort()) {
-      return modbterm->getBusPort()->getName();
+      // modbterm has the name of the bus and refers
+      // to the BusPort which has the contents.
+      return modbterm->getName();
     }
   }
   logger_->error(ORD, 2020, "Error: database badly formed bus name");
@@ -710,7 +712,6 @@ class dbModulePortIterator : public CellPortIterator
  private:
   const dbModBTerm* iter_;
   const dbModule* module_;
-  int ix;
 };
 
 dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
@@ -721,7 +722,6 @@ dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
     first_mod_bterm = iter_;
   }
   iter_ = first_mod_bterm;
-  ix = 0;
   module_ = cell;
 }
 
@@ -739,15 +739,12 @@ bool dbModulePortIterator::hasNext()
 
 Port* dbModulePortIterator::next()
 {
-  ix++;
   dbModBTerm* modbterm = const_cast<dbModBTerm*>(iter_);
   Port* ret = reinterpret_cast<Port*>(modbterm);
-  // advance to next, in case of bus port
-  // next modbterm is the one after the bus port
   if (modbterm->isBusPort()) {
     dbBusPort* bp = modbterm->getBusPort();
     int size = bp->getSize();
-    // skip into the content of the bus
+    // content of bus
     iter_ = iter_->getPrev();
     for (int skip_ix = 0; skip_ix < size && (iter_->getPrev()); skip_ix++) {
       iter_ = iter_->getPrev();
@@ -2395,7 +2392,7 @@ int dbNetwork::fromIndex(const Port* port) const
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
   if (modbterm && modbterm->isBusPort()) {
-    return modbterm->getBusPort()->getStartIx();
+    return modbterm->getBusPort()->getFrom();
   }
 
   logger_->error(ORD, 2021, "Error: bad bus from_index defintion");
@@ -2412,8 +2409,8 @@ int dbNetwork::toIndex(const Port* port) const
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
   if (modbterm && modbterm->isBusPort()) {
-    int start_ix = modbterm->getBusPort()->getStartIx();
-    if (modbterm->getBusPort()->isUpdown()) {
+    int start_ix = modbterm->getBusPort()->getFrom();
+    if (modbterm->getBusPort()->getUpdown()) {
       return (start_ix + (modbterm->getBusPort()->getSize() - 1));
     }
     return (start_ix - (modbterm->getBusPort()->getSize() - 1));
@@ -2446,14 +2443,14 @@ Port* dbNetwork::findMember(const Port* port, int index) const
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     return reinterpret_cast<Port*>(cport->findMember(index));
   }
-  // get the indexed busport member.
   dbMTerm* mterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
   if (modbterm && modbterm->isBusPort()) {
     dbBusPort* busport = modbterm->getBusPort();
-    return reinterpret_cast<Port*>(busport->fetchIndexedPort(index));
+    modbterm = modbterm->getPrev();
+    modbterm = busport->getBusIndexedElement(index);
   }
   return nullptr;
 }
@@ -2489,11 +2486,7 @@ DbNetworkPortMemberIterator::DbNetworkPortMemberIterator(const Port* port,
   if (modbterm && modbterm->isBusPort()) {
     dbBusPort* busport = modbterm->getBusPort();
     size_ = busport->getSize();
-    // advance iterator to this modbterm.
-    // note port iterator uses getModBTerms order.
-    // so member iterator does likewise. We traverse backwards
-    // through the list.
-    next_ = modbterm->getPrev();
+    next_ = busport->getFirstMember();
   }
 }
 
