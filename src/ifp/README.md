@@ -59,6 +59,7 @@ initialize_floorplan
   [-core_area {llx lly urx ury}]
   [-additional_sites site_names]
   [-site site_name]
+  [-row_parity NONE|EVEN|ODD]
 ```
 
 #### Options
@@ -72,6 +73,7 @@ initialize_floorplan
 | `-site` | Site name. |
 | `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-row_parity` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
 ### Make Tracks
 

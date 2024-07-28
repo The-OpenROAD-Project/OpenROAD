@@ -1251,6 +1251,7 @@ class extMain
                    uint& via_cnt);
 
   extMain();
+  ~extMain();
 
   void set_debug_nets(const char* nets)
   {
