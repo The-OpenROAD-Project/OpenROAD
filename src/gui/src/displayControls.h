@@ -312,6 +312,12 @@ class DisplayControls : public QDockWidget,
     ModelRow clock;
   };
 
+  struct LayerModels
+  {
+    ModelRow implant;
+    ModelRow other;
+  };
+
   struct InstanceModels
   {
     ModelRow stdcells;
@@ -495,6 +501,7 @@ class DisplayControls : public QDockWidget,
 
   QTreeView* view_;
   DisplayControlModel* model_;
+  QMenu* routing_layers_menu_;
   QMenu* layers_menu_;
   odb::dbTechLayer* layers_menu_layer_;
 
@@ -514,6 +521,7 @@ class DisplayControls : public QDockWidget,
   ModelRow shape_type_group_;
 
   // instances
+  LayerModels layers_;
   InstanceModels instances_;
   StdCellModels stdcell_instances_;
   BufferInverterModels bufinv_instances_;

@@ -449,6 +449,7 @@ class FlexDRWorker
     frBlockObject* block;
     int numReroute;
     bool doRoute;
+    frBlockObject* checkingObj;
   };
   frDesign* design_ = nullptr;
   Logger* logger_ = nullptr;
@@ -740,7 +741,8 @@ class FlexDRWorker
       std::set<frBlockObject*>& uniqueVictims,
       std::set<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
-      std::vector<RouteQueueEntry>& routes);
+      std::vector<RouteQueueEntry>& routes,
+      frBlockObject* checkingObj);
   void getRipUpNetsFromMarker(frMarker* marker,
                               std::set<drNet*>& nets,
                               frCoord bloatDist = 0);
@@ -749,7 +751,8 @@ class FlexDRWorker
                                 std::queue<RouteQueueEntry>& rerouteQueue);
   void route_queue_update_queue(
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      std::queue<RouteQueueEntry>& rerouteQueue);
+      std::queue<RouteQueueEntry>& rerouteQueue,
+      frBlockObject* checkingObj = nullptr);
   bool canRipup(drNet* n);
   // route
   void addPathCost(drConnFig* connFig,

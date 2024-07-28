@@ -1415,7 +1415,19 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (interactive && (!gui->isContinueAfterClose() || exit_requested)) {
+  debugPrint(open_road->getLogger(),
+             utl::GUI,
+             "init",
+             1,
+             "Exit state: interactive ({}), isContinueAfterClose ({}), "
+             "exit_requested ({}), exit_code ({})",
+             interactive,
+             gui->isContinueAfterClose(),
+             exit_requested,
+             exit_code);
+
+  const bool do_exit = !gui->isContinueAfterClose() && exit_requested;
+  if (interactive && do_exit) {
     // if exiting, go ahead and exit with gui return code.
     exit(exit_code);
   }
@@ -1492,9 +1504,9 @@ std::string Descriptor::Property::toString(const std::any& value)
     return *v ? "True" : "False";
   } else if (auto v = std::any_cast<odb::Rect>(&value)) {
     std::string text = "(";
-    text += convert_dbu(v->xMin(), false) + ",";
+    text += convert_dbu(v->xMin(), false) + ", ";
     text += convert_dbu(v->yMin(), false) + "), (";
-    text += convert_dbu(v->xMax(), false) + ",";
+    text += convert_dbu(v->xMax(), false) + ", ";
     text += convert_dbu(v->yMax(), false) + ")";
     return text;
   } else if (auto v = std::any_cast<odb::Point>(&value)) {

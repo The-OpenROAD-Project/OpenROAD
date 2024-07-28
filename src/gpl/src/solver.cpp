@@ -37,27 +37,6 @@
 
 namespace gpl {
 
-#ifdef ENABLE_GPU
-ResidualError cudaSparseSolve(int iter,
-                              SMatrix& placeInstForceMatrixX,
-                              Eigen::VectorXf& fixedInstForceVecX,
-                              Eigen::VectorXf& instLocVecX,
-                              SMatrix& placeInstForceMatrixY,
-                              Eigen::VectorXf& fixedInstForceVecY,
-                              Eigen::VectorXf& instLocVecY,
-                              utl::Logger* logger)
-{
-  ResidualError error;
-  GpuSolver SP1(placeInstForceMatrixX, fixedInstForceVecX, logger);
-  SP1.cusolverCal(instLocVecX);
-  error.x = SP1.error();
-
-  GpuSolver SP2(placeInstForceMatrixY, fixedInstForceVecY, logger);
-  SP2.cusolverCal(instLocVecY);
-  error.y = SP2.error();
-  return error;
-}
-#endif
 ResidualError cpuSparseSolve(int maxSolverIter,
                              int iter,
                              SMatrix& placeInstForceMatrixX,

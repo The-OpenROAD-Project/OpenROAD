@@ -92,7 +92,6 @@ void Replace::reset()
   initialPlaceMaxSolverIter_ = 100;
   initialPlaceMaxFanout_ = 200;
   initialPlaceNetWeightScale_ = 800;
-  forceCPU_ = false;
 
   nesterovPlaceMaxIter_ = 5000;
   binGridCntX_ = binGridCntY_ = 0;
@@ -247,7 +246,6 @@ void Replace::doInitialPlace()
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.debug = gui_debug_initial_;
-  ipVars.forceCPU = forceCPU_;
 
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
@@ -487,11 +485,6 @@ void Replace::setDebug(int pause_iterations,
 void Replace::setSkipIoMode(bool mode)
 {
   skipIoMode_ = mode;
-}
-
-void Replace::setForceCPU(bool force_cpu)
-{
-  forceCPU_ = force_cpu;
 }
 
 void Replace::setTimingDrivenMode(bool mode)

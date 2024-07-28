@@ -62,7 +62,8 @@ void initPDNSim(OpenRoad* openroad)
   openroad->getPDNSim()->init(openroad->getLogger(),
                               openroad->getDb(),
                               openroad->getSta(),
-                              openroad->getResizer());
+                              openroad->getResizer(),
+                              openroad->getOpendp());
 }
 
 void deletePDNSim(psm::PDNSim* pdnsim)

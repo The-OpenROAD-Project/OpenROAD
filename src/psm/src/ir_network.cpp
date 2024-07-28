@@ -260,6 +260,11 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
       continue;
     }
     const auto transform = inst->getTransform();
+    if (iterm->getBBox().isInverted()) {
+      // iterm has no physical shape, so ignore.
+      continue;
+    }
+
     int x, y;
     iterm->getAvgXY(&x, &y);
     auto base_node

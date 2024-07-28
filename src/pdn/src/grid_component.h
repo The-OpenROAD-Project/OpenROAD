@@ -129,6 +129,8 @@ class GridComponent
   int getNetCount() const;
   void setNets(const std::vector<odb::dbNet*>& nets);
 
+  virtual bool isAutoInserted() const { return false; }
+
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
                        int width,

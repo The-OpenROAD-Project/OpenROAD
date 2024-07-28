@@ -83,6 +83,19 @@ static ifp::InitFloorplan get_floorplan()
 %import "dbtypes.i"
 %include "../../Exception.i"
 
+%typemap(in) ifp::RowParity {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "NONE") == 0) {
+    $1 = ifp::RowParity::NONE;
+  } else if (strcasecmp(str, "EVEN") == 0) {
+    $1 = ifp::RowParity::EVEN;
+  } else if (strcasecmp(str, "ODD") == 0) {
+    $1 = ifp::RowParity::ODD;
+  } else {
+    $1 = ifp::RowParity::NONE;
+  }
+}
+
 %inline %{
 
 namespace ifp {
@@ -97,11 +110,12 @@ init_floorplan_core(int die_lx,
 		    int core_ux,
 		    int core_uy,
 		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites)
+		    const std::vector<odb::dbSite*>& additional_sites,
+		    ifp::RowParity row_parity)
 {
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites);
+                                site, additional_sites, row_parity);
 }
 
 void
@@ -112,12 +126,13 @@ init_floorplan_util(double util,
                     int core_space_left,
                     int core_space_right,
 		    odb::dbSite* site,
-		    const std::vector<odb::dbSite*>& additional_sites)
+		    const std::vector<odb::dbSite*>& additional_sites,
+		    ifp::RowParity row_parity)
 {
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
-                                site, additional_sites);
+                                site, additional_sites, row_parity);
 }
 
 void

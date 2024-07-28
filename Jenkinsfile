@@ -19,8 +19,8 @@ def baseTests(String image) {
                     echo 'Failed regressions';
                     currentBuild.result = 'FAILURE';
                 }
-                sh label: 'Save ctest results', script: 'tar zcvf results-ctest.tgz build/Testing'
-                    archiveArtifacts artifacts: 'results-ctest.tgz';
+                sh label: 'Save ctest results', script: 'tar zcvf results-ctest.tgz build/Testing';
+                archiveArtifacts artifacts: 'results-ctest.tgz';
             }
         }
     }

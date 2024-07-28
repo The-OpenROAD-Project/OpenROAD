@@ -826,6 +826,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
                      ? (gcell->dUx() - lx()) / binSizeX_
                      : (gcell->dUx() - lx()) / binSizeX_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
   return std::make_pair(lowerIdx, upperIdx);
 }
@@ -837,6 +838,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
                      ? (gcell->dUy() - ly()) / binSizeY_
                      : (gcell->dUy() - ly()) / binSizeY_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
   return std::make_pair(lowerIdx, upperIdx);
 }
