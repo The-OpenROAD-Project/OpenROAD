@@ -112,7 +112,7 @@ def getParallelTests(String image) {
                     }
                     stage('no-GUI Build') {
                         timeout(time: 20, unit: 'MINUTES') {
-                            sh label: 'no-GUI Build', script: './etc/Build.sh -no-gui -dir=build-without-gui';
+                            sh label: 'no-GUI Build', script: './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
                         }
                     }
                 }
@@ -165,7 +165,7 @@ def getParallelTests(String image) {
 
         'Build and Test': {
             stage('Build and Stash bins') {
-                buildBinsOR(image);
+                buildBinsOR(image, "-no-warnings");
             }
             stage('Tests') {
                 parallel(baseTests(image));
@@ -180,7 +180,7 @@ def getParallelTests(String image) {
                         checkout scm;
                     }
                     stage('Compile with C++20') {
-                        sh label: 'Compile C++20', script: "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
+                        sh label: 'Compile C++20', script: "./etc/Build.sh -no-warnings -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
                     }
                 }
             }
