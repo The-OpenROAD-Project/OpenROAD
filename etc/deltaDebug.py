@@ -80,8 +80,6 @@ parser.add_argument(
     action="store_true",
     help="Exit early on unrelated errors to speed things up, but risks exiting on false negatives.",
 )
-parser.add_argument("--lib_path", type=str, help="Path to the library files (.lib)")
-parser.add_argument("--lef_path", type=str, help="Path to the macro files (.lef)")
 parser.add_argument(
     "--dump_def",
     action="store_true",
@@ -105,8 +103,8 @@ class deltaDebugger:
         base_db_name = os.path.basename(opt.base_db_path)
         self.base_db_file = opt.base_db_path
 
-        self.lib_directory = opt.lib_path
-        self.lef_directory = opt.lef_path
+        self.lib_directory , self.lef_directory = parse_vars_file(parse_vars_file_name(opt.step))
+    
         self.reduced_lib = False
         self.reduced_lef = False
 
@@ -602,6 +600,32 @@ class deltaDebugger:
 
         print(f"Mangled DEF file has been written to {output_def_file}")
 
+def parse_vars_file_name(step_arg):
+    match = re.search(r'run-me-(.*)-(.*)-base.sh', step_arg)
+    vars_file = ""
+    if match:
+        design = match.group(1)
+        platform = match.group(2)
+        
+        if design is None or platform is None:
+        print("Invalid step argument format. Expected format: run-me-<design>-<platform>-base.sh")
+        sys.exit(1)
+
+        vars_file = f"vars-{design}-{platform}-base.sh"
+    return vars_file
+
+def parse_vars_file(filename):
+    lib_files = None
+    tech_lef = None
+
+    with open(filename, 'r') as file:
+        for line in file:
+            if match := re.match(r'^\s*LIB_FILES\s*=\s*(.*)$', line):
+                lib_files = match.group(1).strip()
+            elif match := re.match(r'^\s*TECH_LEF\s*=\s*(.*)$', line):
+                tech_lef = match.group(1).strip()
+
+    return lib_files, tech_lef
 
 if __name__ == "__main__":
     opt = parser.parse_args()
