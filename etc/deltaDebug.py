@@ -249,6 +249,10 @@ class deltaDebugger:
         if cut_index != -1:
             self.cut_block(index=cut_index)
 
+        # reduce .lib and .lef files
+        self.reduce_lib_file()
+        self.reduce_lef_file()
+
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
         if self.dump_def != 0:
