@@ -249,10 +249,6 @@ class deltaDebugger:
         if cut_index != -1:
             self.cut_block(index=cut_index)
 
-        # reduce .lib and .lef files
-        self.reduce_lib_file()
-        self.reduce_lef_file()
-
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
         if self.dump_def != 0:
@@ -604,6 +600,11 @@ class deltaDebugger:
 
         print(f"Mangled DEF file has been written to {output_def_file}")
 
+def extract_lib_files(lib_files):
+    lib_list = lib_files.split()
+    filtered_libs = [lib for lib in lib_list if lib.endswith('.lib')]
+    return filtered_libs[0]
+
 def parse_vars_file_name(step_arg):
     match = re.search(r'run-me-(.*)-(.*)-base.sh', step_arg)
     vars_file = ""
@@ -612,10 +613,11 @@ def parse_vars_file_name(step_arg):
         platform = match.group(2)
         
         if design is None or platform is None:
-        print("Invalid step argument format. Expected format: run-me-<design>-<platform>-base.sh")
-        sys.exit(1)
-
+            print("Invalid step argument format. Expected format: run-me-<design>-<platform>-base.sh")
+            sys.exit(1)
+        
         vars_file = f"vars-{design}-{platform}-base.sh"
+        print("vars file name", vars_file)
     return vars_file
 
 def parse_vars_file(filename):
@@ -624,12 +626,13 @@ def parse_vars_file(filename):
 
     with open(filename, 'r') as file:
         for line in file:
-            if match := re.match(r'^\s*LIB_FILES\s*=\s*(.*)$', line):
+            if match :=  re.match(r'^\s*export\s+LIB_FILES\s*=\s*"([^"]*)"\s*$', line):
                 lib_files = match.group(1).strip()
-            elif match := re.match(r'^\s*TECH_LEF\s*=\s*(.*)$', line):
+            elif match := re.match(r'^\s*export\s+TECH_LEF\s*=\s*"([^"]*)"\s*$', line):
                 tech_lef = match.group(1).strip()
-
-    return lib_files, tech_lef
+    print("lib_files", extract_lib_files(lib_files))
+    print("tech lef", tech_lef)
+    return extract_lib_files(lib_files), tech_lef
 
 if __name__ == "__main__":
     opt = parser.parse_args()
