@@ -2,10 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <string>
 
 KDTree::KDTree(const std::vector<std::pair<int, int>>& points)
 {
