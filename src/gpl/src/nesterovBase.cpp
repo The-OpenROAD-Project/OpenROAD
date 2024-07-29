@@ -1961,6 +1961,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
+//NON-DETERMINISM HERE!
 //#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
@@ -2046,7 +2047,7 @@ void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* curGCell = gCells_[i];
 
@@ -2116,7 +2117,7 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
@@ -2320,7 +2321,7 @@ bool NesterovBase::checkConvergence()
                    sumOverflowUnscaled_);
     }
 
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
     for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
       auto& gCell = *it;  // old-style loop for old OpenMP
       if (!gCell->isInstance()) {
