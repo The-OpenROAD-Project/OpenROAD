@@ -98,7 +98,8 @@ class ChartsWidget : public QDockWidget
   }
 
  signals:
-  void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
+  void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
+                         const std::string& path_group_name);
 
  private slots:
   void changeMode();
@@ -170,6 +171,7 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_y_;
   QPushButton* refresh_filters_button_;
 
+  std::string path_group_name_;  // Current selected filter
   std::set<sta::Clock*> clocks_;
   std::unique_ptr<Buckets> buckets_;
   std::map<int, std::string> filter_index_to_path_group_name_;

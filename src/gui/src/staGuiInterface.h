@@ -360,7 +360,8 @@ class STAGuiInterface
 
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
-                                const StaPins& to) const;
+                                const StaPins& to,
+                                const std::string& path_group_name) const;
   TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
   std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;

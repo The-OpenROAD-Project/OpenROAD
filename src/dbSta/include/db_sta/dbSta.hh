@@ -165,7 +165,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::map<InstType, int> countInstancesByType();
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage();
+  void report_cell_usage(bool verbose);
 
   using Sta::netSlack;
   using Sta::replaceCell;

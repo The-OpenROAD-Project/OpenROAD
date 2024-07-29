@@ -168,6 +168,7 @@ void ChartsWidget::updatePathGroupMenuIndexes()
 {
   if (filters_menu_->count() != 0) {
     filters_menu_->clear();
+    path_group_name_.clear();
   }
 
   filters_menu_->addItem("No Path Group");  // Index 0
@@ -422,7 +423,7 @@ void ChartsWidget::emitEndPointsInBucket(const int bar_index)
     ++pin_count;
   }
 
-  emit endPointsToReport(report_pins);
+  emit endPointsToReport(report_pins, path_group_name_);
 }
 
 void ChartsWidget::setBucketInterval()
@@ -651,10 +652,11 @@ void ChartsWidget::changePathGroupFilter()
   const int filter_index = filters_menu_->currentIndex();
 
   if (filter_index > 0) {
-    std::string path_group = filter_index_to_path_group_name_.at(filter_index);
-    end_point_to_slack = stagui_->getEndPointToSlackMap(path_group);
+    path_group_name_ = filter_index_to_path_group_name_.at(filter_index);
+    end_point_to_slack = stagui_->getEndPointToSlackMap(path_group_name_);
     setLimits(end_point_to_slack);
   } else {
+    path_group_name_.clear();
     end_points = stagui_->getEndPoints();
     removeUnconstrainedPinsAndSetLimits(end_points);
   }
