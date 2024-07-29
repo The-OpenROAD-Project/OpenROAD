@@ -942,7 +942,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCellStor_'s pins_ fill
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
 
@@ -956,7 +956,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gPinStor_' GNet and GCell fill
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
     auto& gPin = *it;  // old-style loop for old OpenMP
 
@@ -965,7 +965,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gNetStor_'s GPin fill
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
     auto& gNet = *it;  // old-style loop for old OpenMP
 
