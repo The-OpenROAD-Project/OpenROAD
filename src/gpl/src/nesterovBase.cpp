@@ -1026,13 +1026,13 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
   // clear all WA variables.
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
     // old-style loop for old OpenMP
     gPin->clearWaVars();
   }
 
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
     // old-style loop for old OpenMP
 
@@ -1239,7 +1239,7 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 void NesterovBaseCommon::updateDbGCells()
 {
   assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (auto it = gCells().begin(); it < gCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
