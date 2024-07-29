@@ -1801,7 +1801,7 @@ void NesterovBase::updateDensityForceBin()
 {
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = bins().begin(); it < bins().end(); ++it) {
     auto& bin = *it;  // old-style loop for old OpenMP
     fft_->updateDensity(bin.x(), bin.y(), bin.density());
@@ -2116,7 +2116,7 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
+//#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
