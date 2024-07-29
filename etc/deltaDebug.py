@@ -119,7 +119,7 @@ class deltaDebugger:
 
         # This determines whether design def shall be dumped or not
         self.dump_def = opt.dump_def
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             self.base_def_file = self.base_db_file[:-3] + "def"
 
         # A variable to hold the base_db
@@ -156,7 +156,7 @@ class deltaDebugger:
                 sys.exit(1)
 
         for self.cut_level in (cutLevel.Insts, cutLevel.Nets):
-            while (True):
+            while True:
                 err = None
                 self.n = 2  # Initial Number of cuts
 
@@ -168,7 +168,7 @@ class deltaDebugger:
                     while j == 0 or j < cuts:
                         current_err, cuts = self.perform_step(cut_index=j)
                         self.step_count += 1
-                        if (current_err is not None):
+                        if current_err is not None:
                             # Found the target error with the cut DB
                             #
                             # This is a suitable level of detail to look
@@ -178,7 +178,7 @@ class deltaDebugger:
                             self.prepare_new_step()
                         j += 1
 
-                    if (error_in_range is None):
+                    if error_in_range is None:
                         # Increase the granularity of the cut in case target
                         # error not found
                         self.n *= 2
@@ -216,12 +216,12 @@ class deltaDebugger:
         # Cut the block with the given step index.
         # if cut index of -1 is provided it means
         # that no cut will be made.
-        if (cut_index != -1):
+        if cut_index != -1:
             self.cut_block(index=cut_index)
 
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.base_def_file)
@@ -230,7 +230,7 @@ class deltaDebugger:
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
-        if (self.base_db is not None):
+        if self.base_db is not None:
             self.base_db.destroy(self.base_db)
             self.base_db = None
 
@@ -242,7 +242,7 @@ class deltaDebugger:
         # Handling timeout so as not to run the code for time
         # that is more than the original buggy code or a
         # buggy cut.
-        if (error_string is not None):
+        if error_string is not None:
             self.timeout = max(120, 1.2 * (end_time - start_time))
             print(f"Error Code found: {error_string}")
 
@@ -278,32 +278,32 @@ class deltaDebugger:
                 pass
 
     def poll(self, process, poll_obj, start_time):
-        output = ''
+        output = ""
         error_string = None  # None for any error code other than self.error_string
         while True:
             # polling on the output of the process with a timeout of 1 second
             # to avoid busywaiting
             if poll_obj.poll(1):
-                if (self.use_stdout == 0):
+                if self.use_stdout == 0:
                     output = process.stderr.readline()
                 else:
                     output = process.stdout.readline()
 
-                if (output.find(self.error_string) != -1):
+                if output.find(self.error_string) != -1:
                     # found the error code that we are searching for.
                     error_string = self.error_string
                     break
-                elif (self.exit_early_on_error and output.find("ERROR") != -1):
+                elif self.exit_early_on_error and output.find("ERROR") != -1:
                     # Found different error (bad cut) so we can just
                     # terminate early and ignore this cut.
                     break
 
             curr_time = time.time()
-            if ((curr_time - start_time) > self.timeout):
+            if (curr_time - start_time) > self.timeout:
                 print(f"Step {self.step_count} timed out!", flush=True)
                 break
 
-            if (process.poll() is not None):
+            if process.poll() is not None:
                 break
 
         return error_string
@@ -313,7 +313,7 @@ class deltaDebugger:
     # cutting on it.
     def prepare_new_step(self):
         # Delete the old temporary db file
-        if (os.path.exists(self.temp_base_db_file)):
+        if os.path.exists(self.temp_base_db_file):
             os.remove(self.temp_base_db_file)
         # Rename the new base db file to the temp name to keep it from overwriting across the two steps cut
         if os.path.exists(self.base_db_file):
@@ -350,10 +350,10 @@ class deltaDebugger:
     # whether to cut Insts or Nets.
     def cut_block(self, index=0):
         message = [f"Step {self.step_count}"]
-        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+        if self.cut_level == cutLevel.Insts:  # Insts cut level
             elms = self.get_insts()
             message += ["Insts level debugging"]
-        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+        elif self.cut_level == cutLevel.Nets:  # Nets cut level
             elms = self.get_nets()
             message += ["Nets level debugging"]
 
@@ -362,14 +362,14 @@ class deltaDebugger:
         ]
 
         num_elms = len(elms)
-        assert (num_elms > 0)
+        assert num_elms > 0
 
         cuts = self.get_cuts()
         start = num_elms * index // cuts
         end = num_elms * (index + 1) // cuts
 
-        cut_position_string = '#' * cuts
-        cut_position_string = (cut_position_string[:index] + 'C' +
+        cut_position_string = "#" * cuts
+        cut_position_string = (cut_position_string[:index] + "C" +
                                cut_position_string[index + 1:])
         message += [f"cut elements {end-start}"]
         message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
@@ -381,9 +381,9 @@ class deltaDebugger:
 
     def cut_elements(self, start, end):
         block = self.base_db.getChip().getBlock()
-        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+        if self.cut_level == cutLevel.Insts:  # Insts cut level
             elms = block.getInsts()
-        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+        elif self.cut_level == cutLevel.Nets:  # Nets cut level
             elms = block.getNets()
 
         for i in range(start, end):
@@ -404,12 +404,12 @@ class deltaDebugger:
         print(f"Removed {unused} masters.")
         odb.write_db(self.base_db, self.temp_base_db_file)
 
-        if (self.dump_def != 0):
+        if self.dump_def != 0:
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(),
                           self.temp_base_db_file[:-3] + "def")
 
-        if (self.base_db is not None):
+        if self.base_db is not None:
             self.base_db.destroy(self.base_db)
             self.base_db = None
 
