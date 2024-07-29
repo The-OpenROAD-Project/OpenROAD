@@ -539,9 +539,6 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
           info.PAR,
           PAR_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", par_report);
-      }
       net_to_report_[db_net].report += par_report + "\n";
     }
   } else {
@@ -556,9 +553,6 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
           info.diff_PAR,
           diff_PAR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", diff_par_report);
-      }
       net_to_report_[db_net].report += diff_par_report + "\n";
     }
   }
@@ -596,9 +590,6 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
           info.PSR,
           PSR_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", psr_report);
-      }
       net_to_report_[db_net].report += psr_report + "\n";
     }
   } else {
@@ -613,9 +604,6 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
           info.diff_PSR,
           diff_PSR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", diff_psr_report);
-      }
       net_to_report_[db_net].report += diff_psr_report + "\n";
     }
   }
@@ -649,9 +637,6 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
           info.CAR,
           CAR_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", car_report);
-      }
       net_to_report_[db_net].report += car_report + "\n";
     }
   } else {
@@ -666,9 +651,6 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
           info.diff_CAR,
           diff_CAR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", diff_car_report);
-      }
       net_to_report_[db_net].report += diff_car_report + "\n";
     }
   }
@@ -702,9 +684,6 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
           info.CSR,
           CSR_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", csr_report);
-      }
       net_to_report_[db_net].report += csr_report + "\n";
     }
   } else {
@@ -719,9 +698,6 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
           info.diff_CSR,
           diff_CSR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      if (verbose) {
-        logger_->report("{}", diff_csr_report);
-      }
       net_to_report_[db_net].report += diff_csr_report + "\n";
     }
   }
@@ -753,6 +729,15 @@ void AntennaChecker::writeReport(std::ofstream& report_file, bool verbose)
   for (const auto& [net, violation_report] : net_to_report_) {
     if (verbose || violation_report.violated) {
       report_file << violation_report.report;
+    }
+  }
+}
+
+void AntennaChecker::printReport()
+{
+  for (const auto& [net, violation_report] : net_to_report_) {
+    if (violation_report.violated) {
+      logger_->report("{}", violation_report.report);
     }
   }
 }
@@ -801,7 +786,6 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     }
     net_to_report_[db_net].report += "\n";
   }
-  net_to_report_[db_net].report += "\n";
 
   std::unordered_map<odb::dbTechLayer*, std::unordered_set<std::string>>
       pin_added;
@@ -1108,6 +1092,10 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     }
   }
 
+  if (verbose) {
+    printReport();
+  }
+
   logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
   logger_->metric("antenna__violating__nets", net_violation_count);
   logger_->info(ANT, 1, "Found {} pin violations.", pin_violation_count);
@@ -1117,6 +1105,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     writeReport(report_file, verbose);
     report_file.close();
   }
+  net_to_report_.clear();
 
   if (use_grt_routes) {
     global_route_source_->destroyNetWires();
