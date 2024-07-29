@@ -1,0 +1,4 @@
+[flake8]
+extend-ignore =
+    # Formatting, yapf handles
+    E501, E251, E128, E131, E125, E129
