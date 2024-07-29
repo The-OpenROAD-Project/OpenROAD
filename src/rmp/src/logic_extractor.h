@@ -18,6 +18,11 @@
 
 namespace rmp {
 
+// This class is an implementation of an sta::SearchPred that constrains
+// the edges BfsBwkIterators are allowed to traverse. In this case this
+// particular class will not allow the iterator to walk through DFFs, latches
+// or any cell that is not supported by ABC. This allows our logic extractor
+// to only extract cells that we could reasonably put in ABC.
 class SearchPredNonReg2AbcSupport : public sta::SearchPredNonReg2
 {
  public:
