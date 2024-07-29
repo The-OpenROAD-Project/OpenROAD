@@ -315,8 +315,8 @@ dbBusPort* dbBusPort::create(dbModule* parentModule,
 }
 
 //
-// Reallocate the bus to preserve sequential db ordering
-//
+// TODO: Reallocate the bus to preserve sequential db ordering
+// This to be added as part of "scaffolding functions"
 //
 void dbBusPort::Realloc()
 {
