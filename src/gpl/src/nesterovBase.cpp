@@ -1642,7 +1642,7 @@ void NesterovBase::updateAreas()
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
