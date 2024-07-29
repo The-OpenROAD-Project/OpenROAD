@@ -684,7 +684,7 @@ void BinGrid::initBins()
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
-//#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
       const int x = lx_ + idxX * binSizeX_;
@@ -791,7 +791,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
   overflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-//#pragma omp parallel for num_threads(num_threads_) \
+#pragma omp parallel for num_threads(num_threads_) \
     reduction(+ : overflowArea_, overflowAreaUnscaled_)
   for (auto it = bins_.begin(); it < bins_.end(); ++it) {
     Bin& bin = *it;  // old-style loop for old OpenMP
