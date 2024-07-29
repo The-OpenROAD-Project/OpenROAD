@@ -550,7 +550,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
           info.PAR,
           PAR_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += par_report + "\n";
+      net_to_report_.at(db_net).report += par_report + "\n";
     }
   } else {
     if (diff_PAR_PWL_ratio != 0) {
@@ -564,7 +564,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
           info.diff_PAR,
           diff_PAR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += diff_par_report + "\n";
+      net_to_report_.at(db_net).report += diff_par_report + "\n";
     }
   }
   return violation;
@@ -601,7 +601,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
           info.PSR,
           PSR_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += psr_report + "\n";
+      net_to_report_.at(db_net).report += psr_report + "\n";
     }
   } else {
     if (diff_PSR_PWL_ratio != 0) {
@@ -615,7 +615,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
           info.diff_PSR,
           diff_PSR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += diff_psr_report + "\n";
+      net_to_report_.at(db_net).report += diff_psr_report + "\n";
     }
   }
   return violation;
@@ -648,7 +648,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
           info.CAR,
           CAR_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += car_report + "\n";
+      net_to_report_.at(db_net).report += car_report + "\n";
     }
   } else {
     if (diff_CAR_PWL_ratio != 0) {
@@ -662,7 +662,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
           info.diff_CAR,
           diff_CAR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += diff_car_report + "\n";
+      net_to_report_.at(db_net).report += diff_car_report + "\n";
     }
   }
   return violation;
@@ -695,7 +695,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
           info.CSR,
           CSR_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += csr_report + "\n";
+      net_to_report_.at(db_net).report += csr_report + "\n";
     }
   } else {
     if (diff_CSR_PWL_ratio != 0) {
@@ -709,7 +709,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
           info.diff_CSR,
           diff_CSR_PWL_ratio,
           violation ? "(VIOLATED)" : "");
-      net_to_report_[db_net].report += diff_csr_report + "\n";
+      net_to_report_.at(db_net).report += diff_csr_report + "\n";
     }
   }
   return violation;
@@ -767,35 +767,35 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   GateToViolationLayers gates_with_violations;
 
   std::string net_name = fmt::format("Net: {}", db_net->getConstName());
-  net_to_report_[db_net].report += net_name + "\n";
+  net_to_report_.at(db_net).report += net_name + "\n";
 
   for (const auto& [node, layer_to_node] : gate_info) {
     bool pin_has_violation = false;
 
     std::string pin_name = fmt::format("  Pin: {}", node);
-    net_to_report_[db_net].report += pin_name + "\n";
+    net_to_report_.at(db_net).report += pin_name + "\n";
 
     for (const auto& [layer, node_info] : layer_to_node) {
       if (layer->hasDefaultAntennaRule()) {
         std::string layer_name
             = fmt::format("    Layer: {}", layer->getConstName());
-        net_to_report_[db_net].report += layer_name + "\n";
+        net_to_report_.at(db_net).report += layer_name + "\n";
 
         bool node_has_violation = checkRatioViolations(
             db_net, layer, node_info, ratio_margin, verbose, true);
 
-        net_to_report_[db_net].report += "\n";
+        net_to_report_.at(db_net).report += "\n";
         if (node_has_violation) {
           pin_has_violation = true;
           gates_with_violations[node].insert(layer);
-          net_to_report_[db_net].violated = true;
+          net_to_report_.at(db_net).violated = true;
         }
       }
     }
     if (pin_has_violation) {
       pin_violation_count++;
     }
-    net_to_report_[db_net].report += "\n";
+    net_to_report_.at(db_net).report += "\n";
   }
 
   std::unordered_map<odb::dbTechLayer*, std::unordered_set<std::string>>
