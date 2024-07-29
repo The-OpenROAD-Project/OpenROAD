@@ -164,14 +164,16 @@ void frRegionQuery::removeDRObj(frShape* shape)
 }
 
 std::vector<std::pair<frBlockObject*, Rect>> frRegionQuery::getVias(
-    frLayerNum layerNum)
+    frLayerNum layer_num)
 {
   std::vector<std::pair<frBlockObject*, Rect>> result;
-  for (auto [box, obj] : impl_->shapes_.at(layerNum)) {
-    result.push_back({obj, box});
+  result.reserve(impl_->shapes_.at(layer_num).size()
+                 + impl_->drObjs_.at(layer_num).size());
+  for (auto [box, obj] : impl_->shapes_.at(layer_num)) {
+    result.emplace_back(obj, box);
   }
-  for (auto [box, obj] : impl_->drObjs_.at(layerNum)) {
-    result.push_back({obj, box});
+  for (auto [box, obj] : impl_->drObjs_.at(layer_num)) {
+    result.emplace_back(obj, box);
   }
   return result;
 }

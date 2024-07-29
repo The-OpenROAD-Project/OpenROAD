@@ -5,11 +5,12 @@
 
 KDTree::KDTree(const std::vector<std::pair<int, int>>& points)
 {
-  std::vector<std::pair<int, std::pair<int, int>>> pointsWithIds;
+  std::vector<std::pair<int, std::pair<int, int>>> points_with_ids;
+  points_with_ids.reserve(points.size());
   for (int i = 0; i < points.size(); i++) {
-    pointsWithIds.push_back(std::make_pair(i, points[i]));
+    points_with_ids.emplace_back(i, points[i]);
   }
-  root = buildTree(pointsWithIds, 0);
+  root = buildTree(points_with_ids, 0);
 }
 
 std::vector<int> KDTree::radiusSearch(const std::pair<int, int>& target,
@@ -24,8 +25,9 @@ KDTreeNode* KDTree::buildTree(
     const std::vector<std::pair<int, std::pair<int, int>>>& points,
     int depth)
 {
-  if (points.empty())
+  if (points.empty()) {
     return nullptr;
+  }
 
   auto sorted_points = points;
   size_t axis = depth % 2;
@@ -58,8 +60,9 @@ void KDTree::radiusSearchHelper(KDTreeNode* node,
                                 int depth,
                                 std::vector<int>& result) const
 {
-  if (!node)
+  if (!node) {
     return;
+  }
 
   int distance = std::sqrt(std::pow(node->point.first - target.first, 2)
                            + std::pow(node->point.second - target.second, 2));

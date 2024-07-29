@@ -140,7 +140,7 @@ class frRegionQuery
   std::unique_ptr<Impl> impl_;
 
   frRegionQuery();
-  std::vector<std::pair<frBlockObject*, Rect>> getVias(frLayerNum layerNum);
+  std::vector<std::pair<frBlockObject*, Rect>> getVias(frLayerNum layer_num);
 
   friend class FlexDR;
 };

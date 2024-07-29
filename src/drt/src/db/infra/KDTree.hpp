@@ -40,8 +40,9 @@ class KDTree
 
   void destroyTree(KDTreeNode* node)
   {
-    if (!node)
+    if (!node) {
       return;
+    }
     destroyTree(node->left);
     destroyTree(node->right);
     delete node;

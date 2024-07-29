@@ -1573,45 +1573,46 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
 }
 
 void FlexDRWorker::writeGCPatchesToDRWorker(
-    drNet* targetNet,
-    std::vector<FlexMazeIdx> validIndices)
+    drNet* target_net,
+    std::vector<FlexMazeIdx> valid_indices)
 {
   for (auto& pwire : gcWorker_->getPWires()) {
     auto net = pwire->getNet();
     if (!net) {
-      net = targetNet;
+      net = target_net;
     }
     if (!net) {
       logger_->error(utl::DRT, 407, "pwire with no net");
     }
     net->setModified(true);
-    auto tmpPWire = std::make_unique<drPatchWire>();
-    tmpPWire->setLayerNum(pwire->getLayerNum());
-    tmpPWire->setOrigin(pwire->getOrigin());
-    tmpPWire->setOffsetBox(pwire->getOffsetBox());
-    if (!validIndices.empty()) {
+    auto tmp_pwire = std::make_unique<drPatchWire>();
+    tmp_pwire->setLayerNum(pwire->getLayerNum());
+    tmp_pwire->setOrigin(pwire->getOrigin());
+    tmp_pwire->setOffsetBox(pwire->getOffsetBox());
+    if (!valid_indices.empty()) {
       // Find closest path point
       Point closest;
-      frCoord closestDist = INT_MAX;
+      frCoord closest_dist = INT_MAX;
       auto origin = pwire->getOrigin();
       auto box = pwire->getOffsetBox();
-      for (auto p : validIndices) {
+      for (auto p : valid_indices) {
         Point pp;
         gridGraph_.getPoint(pp, p.x(), p.y());
-        frCoord pathLength = Point::squaredDistance(origin, pp);
-        if (pathLength < closestDist) {
-          closestDist = pathLength;
+        frCoord path_length = Point::squaredDistance(origin, pp);
+        if (path_length < closest_dist) {
+          closest_dist = path_length;
           closest = pp;
         }
       }
-      tmpPWire->setOrigin(closest);
-      tmpPWire->setOffsetBox(Rect(origin.getX() - closest.getX() + box.xMin(),
-                                  origin.getY() - closest.getY() + box.yMin(),
-                                  origin.getX() - closest.getX() + box.xMax(),
-                                  origin.getY() - closest.getY() + box.yMax()));
+      tmp_pwire->setOrigin(closest);
+      tmp_pwire->setOffsetBox(
+          Rect(origin.getX() - closest.getX() + box.xMin(),
+               origin.getY() - closest.getY() + box.yMin(),
+               origin.getX() - closest.getX() + box.xMax(),
+               origin.getY() - closest.getY() + box.yMax()));
     }
-    tmpPWire->addToNet(net);
-    std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
+    tmp_pwire->addToNet(net);
+    std::unique_ptr<drConnFig> tmp(std::move(tmp_pwire));
     getWorkerRegionQuery().add(tmp.get());
     net->addRoute(std::move(tmp));
   }
@@ -1902,42 +1903,42 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     } else {
       if (getRipupMode() == RipUpMode::VIASWAP) {
         auto net = static_cast<drNet*>(obj);
-        bool noSolutionFound = false;
-        for (auto& connFig : net->getRouteConnFigs()) {
-          if (connFig->typeId() != drcVia) {
+        bool no_solution_found = false;
+        for (auto& conn_fig : net->getRouteConnFigs()) {
+          if (conn_fig->typeId() != drcVia) {
             continue;
           }
-          auto oldVia = static_cast<drVia*>(connFig.get());
-          if (oldVia->isLonely()) {
+          auto old_via = static_cast<drVia*>(conn_fig.get());
+          if (old_via->isLonely()) {
             auto cutLayer
-                = getTech()->getLayer(oldVia->getViaDef()->getCutLayerNum());
-            frViaDef* replacementViaDef = nullptr;
+                = getTech()->getLayer(old_via->getViaDef()->getCutLayerNum());
+            frViaDef* replacement_via_def = nullptr;
             if (cutLayer->getSecondaryViaDefs().size()
                 <= numReroute)  // no more secViaDefs to try
             {
-              noSolutionFound = true;
+              no_solution_found = true;
               // fall back to the original viadef
-              replacementViaDef = cutLayer->getDefaultViaDef();
+              replacement_via_def = cutLayer->getDefaultViaDef();
             } else {
-              replacementViaDef = cutLayer->getSecondaryViaDef(numReroute);
+              replacement_via_def = cutLayer->getSecondaryViaDef(numReroute);
             }
-            if (replacementViaDef == oldVia->getViaDef()) {
+            if (replacement_via_def == old_via->getViaDef()) {
               continue;
             }
             // replace via with a secondaryVia at index numReroute
-            std::unique_ptr<drConnFig> newViaConnFig
-                = std::make_unique<drVia>(*oldVia);
-            auto newViaPtr = static_cast<drVia*>(newViaConnFig.get());
-            newViaPtr->setViaDef(replacementViaDef);
+            std::unique_ptr<drConnFig> new_via_connfig
+                = std::make_unique<drVia>(*old_via);
+            auto new_via_ptr = static_cast<drVia*>(new_via_connfig.get());
+            new_via_ptr->setViaDef(replacement_via_def);
             // remove old via
-            getWorkerRegionQuery().remove(oldVia);
-            net->removeShape(oldVia);
+            getWorkerRegionQuery().remove(old_via);
+            net->removeShape(old_via);
             // add new via
-            net->addRoute(std::move(newViaConnFig));
-            getWorkerRegionQuery().add(newViaPtr);
+            net->addRoute(std::move(new_via_connfig));
+            getWorkerRegionQuery().add(new_via_ptr);
           }
         }
-        if (noSolutionFound) {
+        if (no_solution_found) {
           continue;
         } else {
           gcWorker_->setTargetNet(net->getFrNet());

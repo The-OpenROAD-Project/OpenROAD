@@ -1023,7 +1023,6 @@ void TritonRoute::fixMaxSpacing()
   dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
   dr_->init();
   dr_->fixMaxSpacing();
-  logger_->report("Markers {}", getDesign()->getTopBlock()->getNumMarkers());
   io::Writer writer(this, logger_);
   writer.updateDb(db_);
 }

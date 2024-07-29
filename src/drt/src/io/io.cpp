@@ -1988,18 +1988,26 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerMaxSpacingRules()) {
-    std::unique_ptr<frConstraint> uCon
+    if (!rule->hasCutClass()) {
+      logger_->warn(DRT,
+                    350,
+                    "LEF58_MAXSPACING with no CUTCLASS is not supported. "
+                    "Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    std::unique_ptr<frConstraint> u_con
         = std::make_unique<frLef58MaxSpacingConstraint>(rule);
-    auto rptr = static_cast<frLef58MaxSpacingConstraint*>(uCon.get());
+    auto rptr = static_cast<frLef58MaxSpacingConstraint*>(u_con.get());
     if (rule->hasCutClass()) {
-      auto cutClassIdx = tmpLayer->getCutClassIdx(rule->getCutClass());
-      if (cutClassIdx != -1) {
-        rptr->setCutClassIdx(cutClassIdx);
+      auto cut_class_idx = tmpLayer->getCutClassIdx(rule->getCutClass());
+      if (cut_class_idx != -1) {
+        rptr->setCutClassIdx(cut_class_idx);
       } else {
         continue;
       }
     }
-    tech_->addUConstraint(std::move(uCon));
+    tech_->addUConstraint(std::move(u_con));
     tmpLayer->addLef58MaxSpacingConstraint(rptr);
   }
 }

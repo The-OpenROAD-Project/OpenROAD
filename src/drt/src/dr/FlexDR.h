@@ -450,6 +450,16 @@ class FlexDRWorker
     int numReroute;
     bool doRoute;
     frBlockObject* checkingObj;
+    RouteQueueEntry(frBlockObject* block_in,
+                    int num_reroute_in,
+                    bool do_route_in,
+                    frBlockObject* checking_obj_in)
+        : block(block_in),
+          numReroute(num_reroute_in),
+          doRoute(do_route_in),
+          checkingObj(checking_obj_in)
+    {
+    }
   };
   frDesign* design_ = nullptr;
   Logger* logger_ = nullptr;
@@ -1000,8 +1010,8 @@ class FlexDRWorker
 
   // helper functions
   frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
-  void writeGCPatchesToDRWorker(drNet* targetNet = nullptr,
-                                std::vector<FlexMazeIdx> validIndices = {});
+  void writeGCPatchesToDRWorker(drNet* target_net = nullptr,
+                                std::vector<FlexMazeIdx> valid_indices = {});
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

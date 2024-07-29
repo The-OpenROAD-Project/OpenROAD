@@ -592,7 +592,7 @@ class frLayer
 
   void addLef58MaxSpacingConstraint(frLef58MaxSpacingConstraint* in)
   {
-    maxSpacingConstraints_.push_back(in);
+    maxSpacingConstraints_.emplace_back(in);
   }
 
   const std::vector<frLef58MaxSpacingConstraint*>&

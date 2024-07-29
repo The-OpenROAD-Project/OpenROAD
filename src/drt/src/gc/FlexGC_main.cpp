@@ -3726,39 +3726,40 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
         }
         if (obj->isLonely() && getDRWorker()
             && getDRWorker()->getRipupMode() == RipUpMode::VIASWAP) {
-          Rect encBox;
+          Rect enc_box;
           if (obj->getViaDef()->getLayer1Num() == lNum) {
-            encBox = obj->getLayer1BBox();
+            enc_box = obj->getLayer1BBox();
           } else {
-            encBox = obj->getLayer2BBox();
+            enc_box = obj->getLayer2BBox();
           }
-          int minStepLength = 0;
+          int min_step_length = 0;
           if (layer->getMinStepConstraint()) {
-            minStepLength = layer->getMinStepConstraint()->getMinStepLength();
+            min_step_length = layer->getMinStepConstraint()->getMinStepLength();
           } else {
             continue;
           }
-          if (encBox.getDir() == 1 && markerBBox.yMin() == encBox.yMin()
-              && markerBBox.yMax() == encBox.yMax()) {
-            int bloatingDist = std::max(0, minStepLength - markerBBox.dx());
-            if (markerBBox.xMin() >= encBox.xMin()
-                && markerBBox.xMax() == encBox.xMax()) {
-              markerBBox.set_xhi(markerBBox.xMax() + bloatingDist);
-            } else if (markerBBox.xMin() == encBox.xMin()
-                       && markerBBox.xMax() <= encBox.xMax()) {
-              markerBBox.set_xlo(markerBBox.xMin() - bloatingDist);
+          if (enc_box.getDir() == 1 && markerBBox.yMin() == enc_box.yMin()
+              && markerBBox.yMax() == enc_box.yMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dx());
+            if (markerBBox.xMin() >= enc_box.xMin()
+                && markerBBox.xMax() == enc_box.xMax()) {
+              markerBBox.set_xhi(markerBBox.xMax() + bloating_dist);
+            } else if (markerBBox.xMin() == enc_box.xMin()
+                       && markerBBox.xMax() <= enc_box.xMax()) {
+              markerBBox.set_xlo(markerBBox.xMin() - bloating_dist);
             } else {
               continue;
             }
-          } else if (encBox.getDir() == 0 && markerBBox.xMin() == encBox.xMin()
-                     && markerBBox.xMax() == encBox.xMax()) {
-            int bloatingDist = std::max(0, minStepLength - markerBBox.dy());
-            if (markerBBox.yMin() >= encBox.yMin()
-                && markerBBox.yMax() == encBox.yMax()) {
-              markerBBox.set_yhi(markerBBox.yMax() + bloatingDist);
-            } else if (markerBBox.yMin() == encBox.yMin()
-                       && markerBBox.yMax() <= encBox.yMax()) {
-              markerBBox.set_ylo(markerBBox.yMin() - bloatingDist);
+          } else if (enc_box.getDir() == 0
+                     && markerBBox.xMin() == enc_box.xMin()
+                     && markerBBox.xMax() == enc_box.xMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dy());
+            if (markerBBox.yMin() >= enc_box.yMin()
+                && markerBBox.yMax() == enc_box.yMax()) {
+              markerBBox.set_yhi(markerBBox.yMax() + bloating_dist);
+            } else if (markerBBox.yMin() == enc_box.yMin()
+                       && markerBBox.yMax() <= enc_box.yMax()) {
+              markerBBox.set_ylo(markerBBox.yMin() - bloating_dist);
             } else {
               continue;
             }

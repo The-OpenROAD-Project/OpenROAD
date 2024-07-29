@@ -2818,11 +2818,11 @@ void FlexDRWorker::route_queue_init_queue(
         }
         auto via = static_cast<drVia*>(connFig.get());
         if (via->isLonely()) {
-          checks.push_back({net.get(), 0, false, net.get()});
-          mazeIterInit_sortRerouteQueue(0, checks);
+          checks.emplace_back(net.get(), 0, false, net.get());
         }
       }
     }
+    mazeIterInit_sortRerouteQueue(0, checks);
   } else {
     std::cout << "Error: unsupported ripup mode\n";
   }
