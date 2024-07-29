@@ -98,11 +98,22 @@ void AntennaChecker::init(odb::dbDatabase* db,
 
 void AntennaChecker::initAntennaRules()
 {
+  block_ = db_->getChip()->getBlock();
+  odb::dbTech* tech = db_->getTech();
+  // initialize nets_to_report_ with all nets to avoid issues with
+  // multithreading
+  if (net_to_report_.empty()) {
+    for (odb::dbNet* net : block_->getNets()) {
+      if (!net->isSpecial()) {
+        net_to_report_[net];
+      }
+    }
+  }
+
   if (!layer_info_.empty()) {
     return;
   }
-  block_ = db_->getChip()->getBlock();
-  odb::dbTech* tech = db_->getTech();
+
   for (odb::dbTechLayer* tech_layer : tech->getLayers()) {
     double metal_factor = 1.0;
     double diff_metal_factor = 1.0;
@@ -174,14 +185,6 @@ void AntennaChecker::initAntennaRules()
                                   plus_diff_factor,
                                   diff_metal_reduce_factor};
     layer_info_[tech_layer] = layer_antenna;
-  }
-
-  // initialize nets_to_report_ with all nets to avoid issues with
-  // multithreading
-  for (odb::dbNet* net : block_->getNets()) {
-    if (!net->isSpecial()) {
-      net_to_report_[net];
-    }
   }
 }
 
