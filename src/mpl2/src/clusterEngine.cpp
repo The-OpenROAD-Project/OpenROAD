@@ -195,10 +195,9 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
 
-      // add hard macro to corresponding map
-      HardMacro* macro
-          = new HardMacro(inst, tree_->halo_width, tree_->halo_height);
-      tree_->maps.inst_to_hard[inst] = macro;
+      std::unique_ptr<HardMacro> macro = std::make_unique<HardMacro>(
+          inst, tree_->halo_width, tree_->halo_width);
+      tree_->maps.inst_to_hard[inst] = std::move(macro);
     } else {
       num_std_cell += 1;
       std_cell_area += inst_area;
@@ -1859,7 +1858,7 @@ void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
 
   std::vector<HardMacro*> hard_macros;
   for (const auto& inst : cluster->getLeafMacros()) {
-    hard_macros.push_back(tree_->maps.inst_to_hard[inst]);
+    hard_macros.push_back(tree_->maps.inst_to_hard[inst].get());
   }
   for (const auto& module : cluster->getDbModules()) {
     getHardMacros(module, hard_macros);
@@ -1879,7 +1878,7 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
     }
 
     if (master->isBlock()) {
-      hard_macros.push_back(tree_->maps.inst_to_hard[inst]);
+      hard_macros.push_back(tree_->maps.inst_to_hard[inst].get());
     }
   }
 

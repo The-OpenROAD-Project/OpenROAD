@@ -36,7 +36,6 @@
 #pragma once
 
 #include <limits>
-#include <memory>
 #include <string>
 
 #include "Mpl2Observer.h"

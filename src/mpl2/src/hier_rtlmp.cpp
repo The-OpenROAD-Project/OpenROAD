@@ -4006,7 +4006,7 @@ void HierRTLMP::correctAllMacrosOrientation()
 void HierRTLMP::updateMacrosOnDb()
 {
   for (const auto& [inst, hard_macro] : tree_.maps.inst_to_hard) {
-    updateMacroOnDb(hard_macro);
+    updateMacroOnDb(hard_macro.get());
   }
 }
 
@@ -4072,11 +4072,6 @@ void HierRTLMP::clear()
     delete metrics;
   }
   tree_.maps.module_to_metrics.clear();
-
-  for (auto& [inst, hard_macro] : tree_.maps.inst_to_hard) {
-    delete hard_macro;
-  }
-  tree_.maps.inst_to_hard.clear();
 
   for (auto& [cluster_id, cluster] : tree_.maps.id_to_cluster) {
     delete cluster;
