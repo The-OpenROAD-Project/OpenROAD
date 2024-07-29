@@ -1801,7 +1801,7 @@ void NesterovBase::updateDensityForceBin()
 {
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = bins().begin(); it < bins().end(); ++it) {
     auto& bin = *it;  // old-style loop for old OpenMP
     fft_->updateDensity(bin.x(), bin.y(), bin.density());
@@ -1813,7 +1813,7 @@ void NesterovBase::updateDensityForceBin()
   // update electroPhi and electroForce
   // update sumPhi_ for nesterov loop
   sumPhi_ = 0;
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : sumPhi_)
   for (auto it = bins().begin(); it < bins().end(); ++it) {
     auto& bin = *it;  // old-style loop for old OpenMP
@@ -1853,7 +1853,7 @@ void NesterovBase::initDensity1()
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     updateDensityCoordiLayoutInside(gCell);
