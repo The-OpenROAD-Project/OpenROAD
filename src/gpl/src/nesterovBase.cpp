@@ -2046,7 +2046,7 @@ void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
+//#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* curGCell = gCells_[i];
 
