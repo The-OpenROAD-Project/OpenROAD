@@ -1259,7 +1259,7 @@ int64_t NesterovBaseCommon::getHpwl()
 {
   assert(omp_get_thread_num() == 0);
   int64_t hpwl = 0;
-//#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
+#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
   for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
     // old-style loop for old OpenMP
     gNet->updateBox();
@@ -1503,7 +1503,7 @@ void NesterovBase::setTargetDensity(float density)
   assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
   bg_.setTargetDensity(density);
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto bin = bins().begin(); bin < bins().end(); ++bin) {
     // old-style loop for old OpenMP
     bin->setTargetDensity(density);
@@ -1608,7 +1608,7 @@ float NesterovBase::targetDensity() const
 void NesterovBase::updateDensitySize()
 {
   assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     float scaleX = 0, scaleY = 0;
@@ -1642,7 +1642,7 @@ void NesterovBase::updateAreas()
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
