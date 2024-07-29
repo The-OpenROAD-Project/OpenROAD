@@ -542,9 +542,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", par_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += par_report + "\n";
-      }
+      net_to_report_[db_net].report += par_report + "\n";
     }
   } else {
     if (diff_PAR_PWL_ratio != 0) {
@@ -561,9 +559,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", diff_par_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += diff_par_report + "\n";
-      }
+      net_to_report_[db_net].report += diff_par_report + "\n";
     }
   }
   return violation;
@@ -603,9 +599,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", psr_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += psr_report + "\n";
-      }
+      net_to_report_[db_net].report += psr_report + "\n";
     }
   } else {
     if (diff_PSR_PWL_ratio != 0) {
@@ -622,9 +616,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", diff_psr_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += diff_psr_report + "\n";
-      }
+      net_to_report_[db_net].report += diff_psr_report + "\n";
     }
   }
   return violation;
@@ -660,9 +652,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", car_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += car_report + "\n";
-      }
+      net_to_report_[db_net].report += car_report + "\n";
     }
   } else {
     if (diff_CAR_PWL_ratio != 0) {
@@ -679,9 +669,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", diff_car_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += diff_car_report + "\n";
-      }
+      net_to_report_[db_net].report += diff_car_report + "\n";
     }
   }
   return violation;
@@ -717,9 +705,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", csr_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += csr_report + "\n";
-      }
+      net_to_report_[db_net].report += csr_report + "\n";
     }
   } else {
     if (diff_CSR_PWL_ratio != 0) {
@@ -736,9 +722,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
       if (verbose) {
         logger_->report("{}", diff_csr_report);
       }
-      if (violation || verbose) {
-        net_to_report_[db_net].report += diff_csr_report + "\n";
-      }
+      net_to_report_[db_net].report += diff_csr_report + "\n";
     }
   }
   return violation;
