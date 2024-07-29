@@ -1947,12 +1947,12 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
                                    std::vector<FloatPoint>& densityGrads,
                                    float wlCoeffX,
                                    float wlCoeffY)
-{
-  assert(omp_get_thread_num() == 0);
+{  
   if (isConverged_) {
     return;
   }
 
+  assert(omp_get_thread_num() == 0);
   wireLengthGradSum_ = 0;
   densityGradSum_ = 0;
 
@@ -1962,7 +1962,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
 //NON-DETERMINISM HERE!
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
