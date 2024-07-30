@@ -1781,7 +1781,7 @@ void GlobalRouter::readGuides(const char* file_name)
   std::string net_name;
   while (fin.good()) {
     getline(fin, line);
-    if (line == "(" || line == "" || line == ")") {
+    if (line == "(" || line.empty() || line == ")") {
       continue;
     }
 
@@ -2180,7 +2180,7 @@ void GlobalRouter::readSegments(const char* file_name)
 
   while (fin.good()) {
     getline(fin, line);
-    if (line == "(" || line == "" || line == ")") {
+    if (line == "(" || line.empty() || line == ")") {
       continue;
     }
 
