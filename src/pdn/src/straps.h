@@ -134,7 +134,11 @@ class FollowPins : public Straps
   FollowPins(Grid* grid, odb::dbTechLayer* layer, int width);
 
   std::unordered_map<odb::dbRow*, RowEndInsts> findRowEndInsts();
-  int getPinExtent(odb::dbInst* inst, odb::dbNet* net, bool right);
+  int getPinExtent(odb::dbInst* inst,
+                   odb::dbNet* net,
+                   bool right,
+                   int y0,
+                   int y1);
 
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 

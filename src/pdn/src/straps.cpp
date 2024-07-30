@@ -419,36 +419,35 @@ std::unordered_map<odb::dbRow*, RowEndInsts> FollowPins::findRowEndInsts()
   std::unordered_map<odb::dbRow*, RowEndInsts> result;
   auto rows = getDomain()->getRows();
 
-  std::unordered_map<int, odb::dbRow*> y_to_row;
+  std::map<odb::Point, odb::dbRow*> row_left_pt, row_right_pt;
   for (auto row : rows) {
-    y_to_row[row->getBBox().yMin()] = row;
+    row_left_pt[row->getBBox().ll()] = row;
+    row_right_pt[row->getBBox().lr()] = row;
   }
 
   for (auto inst : getGrid()->getBlock()->getInsts()) {
-    if (!inst->isFixed()
-        || (!inst->isEndCap()
-            && inst->getMaster()->getType()
-                   != odb::dbMasterType::CORE_WELLTAP)) {
+    if (!inst->isFixed() || (!inst->isCore() && !inst->isEndCap())) {
       continue;
     }
     auto box = inst->getBBox();
-    auto found_row = y_to_row.find(box->yMin());
-    if (found_row == y_to_row.end()) {
-      continue;
+    auto left_row = row_left_pt.find(box->getBox().ll());
+    if (left_row != row_left_pt.end()) {
+      result[left_row->second].left = inst;
     }
-    odb::dbRow* row = found_row->second;
-    if (box->xMin() == row->getBBox().xMin()) {
-      result[row].left = inst;
-    }
-    if (box->xMax() == row->getBBox().xMax()) {
-      result[row].right = inst;
+    auto right_row = row_right_pt.find(box->getBox().lr());
+    if (right_row != row_right_pt.end()) {
+      result[right_row->second].right = inst;
     }
   }
 
   return result;
 }
 
-int FollowPins::getPinExtent(odb::dbInst* inst, odb::dbNet* net, bool right)
+int FollowPins::getPinExtent(odb::dbInst* inst,
+                             odb::dbNet* net,
+                             bool right,
+                             int y0,
+                             int y1)
 {
   // Find the lowest (right=false) or highest (right=true) x-coordinate of power
   // pins in a cell
@@ -466,6 +465,12 @@ int FollowPins::getPinExtent(odb::dbInst* inst, odb::dbNet* net, bool right)
         }
         odb::Rect rect = box->getBox();
         transform.apply(rect);
+
+        if (rect.yMin() > y1 || rect.yMax() < y0) {
+          // doesn't intersect pin
+          continue;
+        }
+
         if (right) {
           extent = std::max(extent, rect.xMax());
         } else {
@@ -537,32 +542,44 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     int ground_x0 = x0, ground_x1 = x1;
     int power_x0 = x0, power_x1 = x1;
 
-    if (getExtendMode() == ENDCAPS) {
-      auto found_row_ends = row_ends.find(row);
-      if (found_row_ends != row_ends.end()) {
-        if (found_row_ends->second.left != nullptr) {
-          ground_x0 = std::max(
-              ground_x0,
-              getPinExtent(found_row_ends->second.left, ground, false));
-          power_x0 = std::max(
-              power_x0,
-              getPinExtent(found_row_ends->second.left, power, false));
-        }
-        if (found_row_ends->second.right != nullptr) {
-          ground_x1 = std::min(
-              ground_x1,
-              getPinExtent(found_row_ends->second.right, ground, true));
-          power_x1 = std::min(
-              power_x1,
-              getPinExtent(found_row_ends->second.right, power, true));
-        }
-      }
-    }
-
     const int power_y_bot
         = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
     const int ground_y_bot
         = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
+
+    if (getExtendMode() == ENDCAPS) {
+      auto found_row_ends = row_ends.find(row);
+      if (found_row_ends != row_ends.end()) {
+        if (found_row_ends->second.left != nullptr) {
+          ground_x0 = std::max(ground_x0,
+                               getPinExtent(found_row_ends->second.left,
+                                            ground,
+                                            false,
+                                            ground_y_bot,
+                                            ground_y_bot + width));
+          power_x0 = std::max(power_x0,
+                              getPinExtent(found_row_ends->second.left,
+                                           power,
+                                           false,
+                                           power_y_bot,
+                                           power_y_bot + width));
+        }
+        if (found_row_ends->second.right != nullptr) {
+          ground_x1 = std::min(ground_x1,
+                               getPinExtent(found_row_ends->second.right,
+                                            ground,
+                                            true,
+                                            ground_y_bot,
+                                            ground_y_bot + width));
+          power_x1 = std::min(power_x1,
+                              getPinExtent(found_row_ends->second.right,
+                                           power,
+                                           true,
+                                           power_y_bot,
+                                           power_y_bot + width));
+        }
+      }
+    }
 
     auto* power_strap = new FollowPinShape(
         layer,
