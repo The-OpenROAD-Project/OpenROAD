@@ -12,9 +12,11 @@ design.readDef("clock_route.def")
 gr = design.getGlobalRouter()
 
 # layer range for clock nets. def file from the openroad-flow (modified gcd_sky130hs)
-#source "helpers.tcl"
+# source "helpers.tcl"
 
-design.evalTclString("create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]")
+design.evalTclString(
+    "create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]"
+)
 design.evalTclString("set_propagated_clock [get_clocks {core_clock}]")
 
 gfile = helpers.make_result_file("clock_route.guide")
@@ -31,4 +33,3 @@ gr.globalRoute(True)
 design.getBlock().writeGuides(gfile)
 
 helpers.diff_files("clock_route.guideok", gfile)
-

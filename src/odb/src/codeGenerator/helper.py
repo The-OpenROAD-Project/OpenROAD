@@ -152,7 +152,6 @@ def get_template_type(type_name):
 
     open_bracket = type_name.find("<")
     for i in range(open_bracket + 1, len(type_name)):
-
         if type_name[i] == "<":
             num_brackets += 1
         elif type_name[i] == ">":

@@ -46,33 +46,35 @@ import re
 import sys
 from collections import defaultdict
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""
           Find logger calls and report sorted message IDs.
           Also checks for duplicate message IDs.
         """,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "-d",
         "--dir",
         default=os.getcwd(),
-        help="Directory to start the search for messages from"
+        help="Directory to start the search for messages from",
     )
     parser.add_argument(
         "-l",
         "--local",
-        action='store_true',
-        help="Look only at the local files and don't recurse"
+        action="store_true",
+        help="Look only at the local files and don't recurse",
     )
     args = parser.parse_args()
 
     return args
 
+
 # The three capture groups are tool, id, and message.
-warn_regexp_c = \
-    re.compile(r'''
+warn_regexp_c = re.compile(
+    r"""
       (?:->|\.)                                        # deref
       (?P<type>info|warn|fileWarn|error|fileError|critical)  # type
       \s*\(\s*                                         # (
@@ -81,11 +83,13 @@ warn_regexp_c = \
       (?P<id>\d+)                                      # id
       \s*,\s*                                          # ,
       (?P<message>("((?:[^"\\]|\\.)+?\s*)+" ))          # message
-    ''', re.VERBOSE | re.MULTILINE)
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
 
 
-warn_regexp_tcl = \
-    re.compile(r'''
+warn_regexp_tcl = re.compile(
+    r"""
       (?P<type>info|warn|error|critical)     # type
       \s+                              # white-space
       (?P<tool>[A-Z]{3}|"[A-Z]{3}")    # tool
@@ -93,42 +97,47 @@ warn_regexp_tcl = \
       (?P<id>\d+)                      # id
       \s+                              # white-space
       (?P<message>"(?:[^"\\]|\\.)+?")  # message
-    ''', re.VERBOSE | re.MULTILINE)
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
+
 
 def scan_file(path, file_name, msgs):
     # Grab the file contents as a single string
-    with open(os.path.join(path, file_name), encoding='utf-8') as file_handle:
+    with open(os.path.join(path, file_name), encoding="utf-8") as file_handle:
         lines = file_handle.read()
 
-    warn_regexp = warn_regexp_tcl if file_name.endswith('tcl') \
-        else warn_regexp_c
+    warn_regexp = warn_regexp_tcl if file_name.endswith("tcl") else warn_regexp_c
 
-    for match in  re.finditer(warn_regexp, lines):
-        tool = match.group('tool').strip('"')
-        msg_id = int(match.group('id'))
-        key = '{} {:04d}'.format(tool, msg_id)
+    for match in re.finditer(warn_regexp, lines):
+        tool = match.group("tool").strip('"')
+        msg_id = int(match.group("id"))
+        key = "{} {:04d}".format(tool, msg_id)
 
         # remove quotes and join strings
-        message = match.group('message')
+        message = match.group("message")
         message = message.replace("\n", "")
         message = message.rstrip()[1:-1]
-        message = re.sub(r'"\s*"', '', message)
-        message_type = match.group('type').upper()
+        message = re.sub(r'"\s*"', "", message)
+        message_type = match.group("type").upper()
 
         # Count the newlines before the match starts
-        line_num = lines[0:match.start()].count('\n') + 1
-        position = '{}:{}'.format(file_name, line_num)
-        file_link = os.path.join(path, file_name).strip('../').replace('\\','/')
-        file_link = 'https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}'.format(
-                file_link, line_num)
-        value = '{:25} {} {} {}'.format(position, message, message_type, file_link)
+        line_num = lines[0 : match.start()].count("\n") + 1
+        position = "{}:{}".format(file_name, line_num)
+        file_link = os.path.join(path, file_name).strip("../").replace("\\", "/")
+        file_link = "https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}".format(
+            file_link, line_num
+        )
+        value = "{:25} {} {} {}".format(position, message, message_type, file_link)
 
         msgs[key].add(value)
 
+
 def scan_dir(path, files, msgs):
     for file_name in files:
-        if re.search(r'\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$', file_name):
+        if re.search(r"\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$", file_name):
             scan_file(path, file_name, msgs)
+
 
 def main():
     args = parse_args()
@@ -136,9 +145,10 @@ def main():
     # "tool id" -> "file:line message"
     msgs = defaultdict(set)
 
-    if args.local: # no recursion
-        files = [os.path.basename(file)
-                 for file in glob.glob(os.path.join(args.dir, '*'))]
+    if args.local:  # no recursion
+        files = [
+            os.path.basename(file) for file in glob.glob(os.path.join(args.dir, "*"))
+        ]
         scan_dir(args.dir, files, msgs)
     else:
         for path, _, files in os.walk(args.dir):
@@ -158,8 +168,12 @@ def main():
             next_free_integer = int(number) + 1
             while next_free_integer in set_numbers[set_name]:
                 next_free_integer += 1
-            print('Error: {} used {} times, next free message id is {}'.format(key, count, next_free_integer),
-                file=sys.stderr)
+            print(
+                "Error: {} used {} times, next free message id is {}".format(
+                    key, count, next_free_integer
+                ),
+                file=sys.stderr,
+            )
             has_error = True
 
     for key in sorted(msgs):
@@ -168,6 +182,7 @@ def main():
 
     if has_error:
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
