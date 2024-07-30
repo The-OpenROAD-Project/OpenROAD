@@ -41,14 +41,7 @@
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
-
-namespace odb {
-class dbMaster;
-class dbMTerm;
-class dbNet;
-class dbInst;
-class Rect;
-}  // namespace odb
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

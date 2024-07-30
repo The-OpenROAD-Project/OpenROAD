@@ -72,7 +72,7 @@ class Net;
 class Pin;
 
 using AntennaViolations
-    = std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>;
+    = std::map<odb::dbNet*, std::vector<ant::Violation>>;
 
 struct RoutePtPins
 {

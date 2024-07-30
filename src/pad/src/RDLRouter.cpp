@@ -194,14 +194,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // build graph
   makeGraph();
 
-  struct map_net_ordering
-  {
-    bool operator()(odb::dbNet* lhs, odb::dbNet* rhs) const
-    {
-      return lhs->getId() < rhs->getId();
-    }
-  };
-  std::map<odb::dbNet*, std::vector<TargetPair>, map_net_ordering> failed;
+  std::map<odb::dbNet*, std::vector<TargetPair>> failed;
   struct NetRoute
   {
     std::vector<grid_vertex> route;
