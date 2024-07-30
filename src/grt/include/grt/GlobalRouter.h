@@ -213,7 +213,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  std::set<odb::dbNet*, cmpById> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
   bool haveDetailedRoutes();
@@ -479,7 +479,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
 
-  std::set<odb::dbNet*> dirty_nets_;
+  std::set<odb::dbNet*, cmpById> dirty_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;

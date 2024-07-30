@@ -1683,7 +1683,8 @@ void MainWindow::saveDesign()
 
 #ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
-    const std::set<const sta::Pin*>& report_pins)
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
 {
   if (!timing_widget_->isVisible()) {
     timing_widget_->show();
@@ -1695,7 +1696,7 @@ void MainWindow::reportSlackHistogramPaths(
     timing_widget_->raise();
   }
 
-  timing_widget_->reportSlackHistogramPaths(report_pins);
+  timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
 #endif
 }  // namespace gui

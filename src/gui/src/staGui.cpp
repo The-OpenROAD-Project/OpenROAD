@@ -280,25 +280,27 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 void TimingPathsModel::populateModel(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(from, thru, to);
+  populatePaths(from, thru, to, path_group_name);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   const bool sta_max = sta_->isUseMax();
   sta_->setUseMax(is_setup_);
-  timing_paths_ = sta_->getTimingPaths(from, thru, to);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name);
   sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();
