@@ -114,6 +114,9 @@ class TestDeltaDebug(TestCase):
         self.cut_elements.stop()
         self.prepare_new_step.stop()
 
+    def test_failed(self):
+        assert False
+
     def test_pruned_to_one(self):
         self.debugger.insts = list(range(10))
         self.debugger.nets = list(range(10))
