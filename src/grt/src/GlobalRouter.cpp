@@ -2122,6 +2122,42 @@ void GlobalRouter::saveGuides()
   }
 }
 
+void GlobalRouter::writeSegments(const char* file_name)
+{
+  std::ofstream segs_file;
+  segs_file.open(file_name);
+  if (!segs_file) {
+    logger_->error(GRT, 255, "Global route segments file could not be opened.");
+  }
+
+  odb::dbTech* tech = db_->getTech();
+
+  for (const auto [db_net, net] : db_net_map_) {
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    const GRoute& route = iter->second;
+
+    if (!route.empty()) {
+      segs_file << net->getName() << "\n";
+      segs_file << "(\n";
+      for (const GSegment& segment : route) {
+        odb::dbTechLayer* init_layer
+            = tech->findRoutingLayer(segment.init_layer);
+        odb::dbTechLayer* final_layer
+            = tech->findRoutingLayer(segment.final_layer);
+        segs_file << segment.init_x << " " << segment.init_y << " "
+                  << init_layer->getName() << " "
+                  << segment.final_x << " " << segment.final_y << " "
+                  << final_layer->getName() << "\n";
+      }
+      segs_file << ")\n";
+    }
+  }
+  segs_file.close();
+}
+
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
   for (const auto& pin : net->getPins()) {
