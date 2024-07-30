@@ -2,7 +2,7 @@
 
 # Make an array of FF and connect all their clocks to a single
 # top level terminal
-make_array = '''
+make_array = """
 proc make_array { sinks { width 200000 } { height 200000 } \
                       { clock_gate -1 } } {
   set db [ord::get_db]
@@ -63,4 +63,4 @@ proc make_array { sinks { width 200000 } { height 200000 } \
   }
   return $block
 }
-'''
+"""
