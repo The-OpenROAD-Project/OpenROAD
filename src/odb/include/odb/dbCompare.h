@@ -41,9 +41,11 @@
 
 #include <functional>
 
-namespace odb {
+// This is needed just for clang-tidy.  Normally people will not include
+// this header directly; they will include db.h and get this indirectly.
+#include "odb/db.h"
 
-class dbObject;
+namespace odb {
 
 bool compare_by_id(const dbObject* lhs, const dbObject* rhs);
 
