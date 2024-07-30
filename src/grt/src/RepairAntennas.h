@@ -71,8 +71,7 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-using AntennaViolations
-    = std::map<odb::dbNet*, std::vector<ant::Violation>>;
+using AntennaViolations = std::map<odb::dbNet*, std::vector<ant::Violation>>;
 
 struct RoutePtPins
 {
