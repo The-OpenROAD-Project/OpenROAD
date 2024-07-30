@@ -1016,6 +1016,11 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
     return antenna_violations;
   }
 
+  // for the case where the check_net_violation api is called directly
+  if (net_to_report_.find(net) == net_to_report_.end()) {
+    net_to_report_[net];
+  }
+
   int net_violation_count, pin_violation_count;
   net_violation_count = 0;
   pin_violation_count = 0;
