@@ -41,10 +41,10 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
-#include "odb/db.h"
 
 namespace utl {
 class Logger;
