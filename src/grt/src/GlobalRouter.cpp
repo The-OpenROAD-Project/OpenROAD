@@ -306,7 +306,9 @@ void GlobalRouter::globalRoute(bool save_guides,
 
 void GlobalRouter::updateDbCongestion()
 {
-  fastroute_->updateDbCongestion();
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  fastroute_->updateDbCongestion(min_layer, max_layer);
   heatmap_->update();
 }
 
@@ -1781,7 +1783,7 @@ void GlobalRouter::readGuides(const char* file_name)
   std::string net_name;
   while (fin.good()) {
     getline(fin, line);
-    if (line == "(" || line == "" || line == ")") {
+    if (line == "(" || line.empty() || line == ")") {
       continue;
     }
 
@@ -2119,6 +2121,104 @@ void GlobalRouter::saveGuides()
     auto dbGuides = db_net->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
+  }
+}
+
+void GlobalRouter::writeSegments(const char* file_name)
+{
+  std::ofstream segs_file;
+  segs_file.open(file_name);
+  if (!segs_file) {
+    logger_->error(GRT, 255, "Global route segments file could not be opened.");
+  }
+
+  odb::dbTech* tech = db_->getTech();
+
+  for (const auto [db_net, net] : db_net_map_) {
+    auto iter = routes_.find(db_net);
+    if (iter == routes_.end()) {
+      continue;
+    }
+    const GRoute& route = iter->second;
+
+    if (!route.empty()) {
+      segs_file << net->getName() << "\n";
+      segs_file << "(\n";
+      for (const GSegment& segment : route) {
+        odb::dbTechLayer* init_layer
+            = tech->findRoutingLayer(segment.init_layer);
+        odb::dbTechLayer* final_layer
+            = tech->findRoutingLayer(segment.final_layer);
+        segs_file << segment.init_x << " " << segment.init_y << " "
+                  << init_layer->getName() << " " << segment.final_x << " "
+                  << segment.final_y << " " << final_layer->getName() << "\n";
+      }
+      segs_file << ")\n";
+    }
+  }
+  segs_file.close();
+}
+
+void GlobalRouter::readSegments(const char* file_name)
+{
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 256, "Load design before reading guides");
+  }
+
+  initGridAndNets();
+
+  odb::dbTech* tech = db_->getTech();
+
+  std::ifstream fin(file_name);
+  std::string line;
+  odb::dbNet* net = nullptr;
+  std::unordered_map<odb::dbNet*, Guides> guides;
+
+  if (!fin.is_open()) {
+    logger_->error(
+        GRT, 257, "Failed to open global route segments file {}.", file_name);
+  }
+
+  while (fin.good()) {
+    getline(fin, line);
+    if (line == "(" || line.empty() || line == ")") {
+      continue;
+    }
+
+    std::stringstream ss(line);
+    std::string word;
+    std::vector<std::string> tokens;
+    while (!ss.eof()) {
+      ss >> word;
+      tokens.push_back(word);
+    }
+
+    if (tokens.size() == 1) {
+      net = block_->findNet(tokens[0].c_str());
+      if (!net) {
+        logger_->error(GRT, 258, "Cannot find net {}.", tokens[0]);
+      }
+    } else if (tokens.size() == 6) {
+      auto layer1 = tech->findLayer(tokens[2].c_str());
+      auto layer2 = tech->findLayer(tokens[5].c_str());
+      if (!layer1) {
+        logger_->error(GRT, 259, "Cannot find layer {}.", tokens[2]);
+      }
+      if (!layer2) {
+        logger_->error(GRT, 260, "Cannot find layer {}.", tokens[5]);
+      }
+      GSegment segment(stoi(tokens[0]),
+                       stoi(tokens[1]),
+                       layer1->getRoutingLevel(),
+                       stoi(tokens[3]),
+                       stoi(tokens[4]),
+                       layer2->getRoutingLevel());
+      routes_[net].push_back(segment);
+    } else {
+      logger_->error(
+          GRT, 261, "Error reading global route segments file {}.", file_name);
+    }
   }
 }
 

@@ -187,6 +187,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  void writeSegments(const char* file_name);
+  void readSegments(const char* file_name);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -213,7 +215,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  std::set<odb::dbNet*, cmpById> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes() override;
   bool haveDetailedRoutes();
@@ -479,7 +481,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
 
-  std::set<odb::dbNet*> dirty_nets_;
+  std::set<odb::dbNet*, cmpById> dirty_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;

@@ -34,27 +34,29 @@
 ###############################################################################
 from openroad import Design, Tech
 
-def clock_tree_synthesis(design, *,
-                         wire_unit=None,
-                         buf_list=None,
-                         root_buf=None,
-                         clk_nets=None,
-                         tree_buf=None,
-                         distance_between_buffers=None,
-                         branching_point_buffers_distance=None,
-                         clustering_exponent=None,
-                         clustering_unbalance_ratio=None,
-                         sink_clustering_size=None,
-                         sink_clustering_max_diameter=None,
-                         sink_clustering_enable=False,
-                         balance_levels=False,
-                         sink_clustering_levels=None,
-                         num_static_layers=None,
-                         sink_clustering_buffer=None,
-                         obstruction_aware=False,
-                         apply_ndr=False
-                        ):
 
+def clock_tree_synthesis(
+    design,
+    *,
+    wire_unit=None,
+    buf_list=None,
+    root_buf=None,
+    clk_nets=None,
+    tree_buf=None,
+    distance_between_buffers=None,
+    branching_point_buffers_distance=None,
+    clustering_exponent=None,
+    clustering_unbalance_ratio=None,
+    sink_clustering_size=None,
+    sink_clustering_max_diameter=None,
+    sink_clustering_enable=False,
+    balance_levels=False,
+    sink_clustering_levels=None,
+    num_static_layers=None,
+    sink_clustering_buffer=None,
+    obstruction_aware=False,
+    apply_ndr=False,
+):
     cts = design.getTritonCts()
     parms = cts.getParms()
 
@@ -63,7 +65,7 @@ def clock_tree_synthesis(design, *,
     parms.setBalanceLevels(balance_levels)
     parms.setObstructionAware(obstruction_aware)
     parms.setApplyNDR(apply_ndr)
-    
+
     if is_pos_int(sink_clustering_size):
         parms.setSinkClusteringSize(sink_clustering_size)
 
@@ -82,7 +84,9 @@ def clock_tree_synthesis(design, *,
 
     if is_pos_float(branching_point_buffers_distance):
         parms.setVertexBuffersEnabled(True)
-        parms.setVertexBufferDistance(design.micronToDBU(branching_point_buffers_distance))
+        parms.setVertexBufferDistance(
+            design.micronToDBU(branching_point_buffers_distance)
+        )
 
     if is_pos_int(clustering_exponent):
         parms.setClusteringPower(clustering_exponent)
@@ -132,7 +136,7 @@ def report_cts(design, out_file=None):
 def is_pos_int(x):
     if x == None:
         return False
-    elif isinstance(x, int) and x > 0 :
+    elif isinstance(x, int) and x > 0:
         return True
     else:
         utl.error(utl.CTS, 605, f"TypeError: {x} is not a postive integer")

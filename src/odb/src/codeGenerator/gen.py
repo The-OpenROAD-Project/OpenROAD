@@ -169,7 +169,6 @@ for relation in schema["relations"]:
         )
 
 for klass in schema["classes"]:
-
     # Adding functional name to fields and extracting field components
     struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
     klass["hasTables"] = False
@@ -299,7 +298,6 @@ for klass in schema["classes"]:
         struct["fields"].append(spare_bits_field)
 
     if len(struct["fields"]) > 0:
-
         struct["in_class"] = True
         struct["in_class_name"] = "flags_"
         klass["structs"].insert(0, struct)
