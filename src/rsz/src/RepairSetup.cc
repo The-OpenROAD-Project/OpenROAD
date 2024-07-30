@@ -236,8 +236,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                      "Restoring best slack end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(
-              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_,
+                                   removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
@@ -271,8 +273,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                      "Restoring best slack end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(
-              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_,
+                                   removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
@@ -325,8 +329,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                      "Restoring best end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(
-              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_,
+                                   removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
           // clang-format off
@@ -846,7 +852,8 @@ bool RepairSetup::removeDrvr(PathRef* drvr_path,
       return false;
     }
 
-    if (resizer_->removeBuffer(drvr, /* honorDontTouch */ true)) {
+    if (resizer_->removeBuffer(
+            drvr, /* honorDontTouch */ true, /* recordJournal */ true)) {
       removed_buffer_count_++;
       return true;
     }
@@ -1781,8 +1788,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
 
       if (!changed) {
         if (pass != 1) {
-          resizer_->journalRestore(
-              resize_count_, inserted_buffer_count_, cloned_gate_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_,
+                                   removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
         }
@@ -1807,8 +1816,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
         prev_tns = curr_tns;
         resizer_->journalBegin();
       } else {
-        resizer_->journalRestore(
-            resize_count_, inserted_buffer_count_, cloned_gate_count_);
+        resizer_->journalRestore(resize_count_,
+                                 inserted_buffer_count_,
+                                 cloned_gate_count_,
+                                 removed_buffer_count_);
         resizer_->updateParasitics();
         sta_->findRequireds();
         break;
