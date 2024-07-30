@@ -418,11 +418,21 @@ proc draw_route_guides { args } {
 sta::define_cmd_args "write_global_route_segments" { file_name }
 
 proc write_global_route_segments { args } {
-  sta::parse_key_args "read_guides" args \
+  sta::parse_key_args "write_global_route_segments" args \
     keys {} \
     flags {}
   set file_name $args
   grt::write_segments $file_name
+}
+
+sta::define_cmd_args "read_global_route_segments" { file_name }
+
+proc read_global_route_segments { args } {
+  sta::parse_key_args "read_global_route_segments" args \
+    keys {} \
+    flags {}
+  set file_name $args
+  grt::read_segments $file_name
 }
 
 sta::define_cmd_args "global_route_debug" {

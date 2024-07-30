@@ -2148,14 +2148,76 @@ void GlobalRouter::writeSegments(const char* file_name)
         odb::dbTechLayer* final_layer
             = tech->findRoutingLayer(segment.final_layer);
         segs_file << segment.init_x << " " << segment.init_y << " "
-                  << init_layer->getName() << " "
-                  << segment.final_x << " " << segment.final_y << " "
-                  << final_layer->getName() << "\n";
+                  << init_layer->getName() << " " << segment.final_x << " "
+                  << segment.final_y << " " << final_layer->getName() << "\n";
       }
       segs_file << ")\n";
     }
   }
   segs_file.close();
+}
+
+void GlobalRouter::readSegments(const char* file_name)
+{
+  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
+      || db_->getTech() == nullptr) {
+    logger_->error(GRT, 256, "Load design before reading guides");
+  }
+
+  initGridAndNets();
+
+  odb::dbTech* tech = db_->getTech();
+
+  std::ifstream fin(file_name);
+  std::string line;
+  odb::dbNet* net = nullptr;
+  std::unordered_map<odb::dbNet*, Guides> guides;
+
+  if (!fin.is_open()) {
+    logger_->error(
+        GRT, 257, "Failed to open global route segments file {}.", file_name);
+  }
+
+  while (fin.good()) {
+    getline(fin, line);
+    if (line == "(" || line == "" || line == ")") {
+      continue;
+    }
+
+    std::stringstream ss(line);
+    std::string word;
+    std::vector<std::string> tokens;
+    while (!ss.eof()) {
+      ss >> word;
+      tokens.push_back(word);
+    }
+
+    if (tokens.size() == 1) {
+      net = block_->findNet(tokens[0].c_str());
+      if (!net) {
+        logger_->error(GRT, 258, "Cannot find net {}.", tokens[0]);
+      }
+    } else if (tokens.size() == 6) {
+      auto layer1 = tech->findLayer(tokens[2].c_str());
+      auto layer2 = tech->findLayer(tokens[5].c_str());
+      if (!layer1) {
+        logger_->error(GRT, 259, "Cannot find layer {}.", tokens[2]);
+      }
+      if (!layer2) {
+        logger_->error(GRT, 260, "Cannot find layer {}.", tokens[5]);
+      }
+      GSegment segment(stoi(tokens[0]),
+                       stoi(tokens[1]),
+                       layer1->getRoutingLevel(),
+                       stoi(tokens[3]),
+                       stoi(tokens[4]),
+                       layer2->getRoutingLevel());
+      routes_[net].push_back(segment);
+    } else {
+      logger_->error(
+          GRT, 261, "Error reading global route segments file {}.", file_name);
+    }
+  }
 }
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
