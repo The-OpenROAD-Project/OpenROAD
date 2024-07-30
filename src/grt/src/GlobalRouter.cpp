@@ -306,7 +306,9 @@ void GlobalRouter::globalRoute(bool save_guides,
 
 void GlobalRouter::updateDbCongestion()
 {
-  fastroute_->updateDbCongestion();
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  fastroute_->updateDbCongestion(min_layer, max_layer);
   heatmap_->update();
 }
 
