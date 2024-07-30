@@ -172,4 +172,23 @@ const char* dbObject::getTypeName(dbObjectType type)
   return name_tbl[type];
 }
 
+// We have to compare the id not only of this object but all its
+// owning objects to properly compare.  For example dbMTerm is owned
+// by dbMaster so two mterms could have the same id within the scope
+// of different masters.
+bool compare_by_id(const dbObject* lhs, const dbObject* rhs)
+{
+  if (lhs == nullptr || rhs == nullptr) {
+    return lhs < rhs;
+  }
+  const auto lhs_id = lhs->getId();
+  const auto rhs_id = rhs->getId();
+  if (lhs_id != rhs_id) {
+    return lhs_id < rhs_id;
+  }
+  const auto lhs_owner = lhs->getImpl()->getOwner();
+  const auto rhs_owner = rhs->getImpl()->getOwner();
+  return compare_by_id(lhs_owner, rhs_owner);
+}
+
 }  // namespace odb

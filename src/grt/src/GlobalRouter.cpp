@@ -4481,9 +4481,4 @@ std::size_t GSegmentHash::operator()(const GSegment& seg) const
        seg.final_layer});
 }
 
-bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
-{
-  return net1->getId() < net2->getId();
-}
-
 }  // namespace grt

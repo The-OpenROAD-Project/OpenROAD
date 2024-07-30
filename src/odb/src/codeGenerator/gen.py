@@ -335,8 +335,14 @@ for klass in schema["classes"]:
         with open(out_file, "w", encoding="ascii") as file:
             file.write(text)
 
-includes = ["db.h", "dbObject.h"]
-for template_file in ["db.h", "dbObject.h", "CMakeLists.txt", "dbObject.cpp"]:
+includes = ["db.h", "dbObject.h", "dbCompare.h"]
+for template_file in [
+    "db.h",
+    "dbObject.h",
+    "CMakeLists.txt",
+    "dbObject.cpp",
+    "dbCompare.h",
+]:
     template = env.get_template(template_file)
     text = template.render(schema=schema)
     out_file = os.path.join("generated", template_file)
