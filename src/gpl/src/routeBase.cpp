@@ -487,7 +487,7 @@ void RouteBase::updateGrtRoute()
 
         // first extract current tiles' usage
         ratio = getUsageCapacityRatio(
-              tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+            tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
         // if horizontal layer (i.e., vertical edges)
         // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge

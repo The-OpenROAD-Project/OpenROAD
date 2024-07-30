@@ -814,7 +814,8 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
   }
 }
 
-void FastRouteCore::updateDbCongestion(int min_routing_layer, int max_routing_layer)
+void FastRouteCore::updateDbCongestion(int min_routing_layer,
+                                       int max_routing_layer)
 {
   if (h_edges_3D_.num_elements() == 0) {  // no information
     return;
