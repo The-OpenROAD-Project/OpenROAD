@@ -43,6 +43,8 @@
 
 namespace odb {
 
+class dbObject;
+
 bool compare_by_id(const dbObject* lhs, const dbObject* rhs);
 
 }  // namespace odb
