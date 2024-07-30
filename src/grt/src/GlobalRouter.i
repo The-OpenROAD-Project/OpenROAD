@@ -299,6 +299,16 @@ report_layer_wire_lengths()
   getGlobalRouter()->reportLayerWireLengths();
 }
 
+void write_segments(const char* file_name)
+{
+  getGlobalRouter()->writeSegments(file_name);
+}
+
+void read_segments(const char* file_name)
+{
+  getGlobalRouter()->readSegments(file_name);
+}
+
 } // namespace
 
 %} // inline
