@@ -22,8 +22,8 @@ design.evalTclString('read_sdc "critical_nets_percentage.sdc"')
 design.evalTclString('source "sky130hs/sky130hs.rc"')
 design.evalTclString('set_wire_rc -signal -layer "met2"')
 design.evalTclString('set_wire_rc -clock  -layer "met5"')
-design.evalTclString('set_propagated_clock [all_clocks]')
-design.evalTclString('estimate_parasitics -placement')
+design.evalTclString("set_propagated_clock [all_clocks]")
+design.evalTclString("estimate_parasitics -placement")
 
 guideFile = helpers.make_result_file("critical_nets_percentage.guide")
 

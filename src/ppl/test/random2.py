@@ -8,8 +8,9 @@ tech.readLef("Nangate45/Nangate45.lef")
 design = Design(tech)
 design.readDef("gcd.def")
 
-ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2",
-                   random=True, random_seed=0)
+ppl_aux.place_pins(
+    design, hor_layers="metal3", ver_layers="metal2", random=True, random_seed=0
+)
 
 def_file = helpers.make_result_file("random2.def")
 design.writeDef(def_file)

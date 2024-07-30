@@ -11,18 +11,23 @@ timing = Timing(design)
 
 for corner in timing.getCorners():
     for net in design.getBlock().getNets():
-        print(net.getName(),
-              timing.getNetCap(net, corner, Timing.Max),
-              timing.getNetCap(net, corner, Timing.Min))
+        print(
+            net.getName(),
+            timing.getNetCap(net, corner, Timing.Max),
+            timing.getNetCap(net, corner, Timing.Min),
+        )
 
 for inst in design.getBlock().getInsts():
-    print(inst.getName(), inst.getMaster().getName(),
-          design.isSequential(inst.getMaster()))
+    print(
+        inst.getName(),
+        inst.getMaster().getName(),
+        design.isSequential(inst.getMaster()),
+    )
 
 for lib in tech.getDB().getLibs():
     for master in lib.getMasters():
         print(master.getName())
         for mterm in master.getMTerms():
-            print('  ', mterm.getName())
+            print("  ", mterm.getName())
             for m in timing.getTimingFanoutFrom(mterm):
-                print('    ', m.getName())
+                print("    ", m.getName())
