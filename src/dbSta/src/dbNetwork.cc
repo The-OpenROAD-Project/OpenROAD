@@ -705,7 +705,7 @@ class dbModulePortIterator : public CellPortIterator
 {
  public:
   explicit dbModulePortIterator(const dbModule* cell);
-  ~dbModulePortIterator() override;
+  ~dbModulePortIterator() = default;
   virtual bool hasNext() override;
   virtual Port* next() override;
 
@@ -727,10 +727,6 @@ dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
   }
   iter_ = first_mod_bterm;
   module_ = cell;
-}
-
-dbModulePortIterator::~dbModulePortIterator()
-{
 }
 
 bool dbModulePortIterator::hasNext()
@@ -2456,6 +2452,7 @@ Port* dbNetwork::findMember(const Port* port, int index) const
     dbBusPort* busport = modbterm->getBusPort();
     modbterm = modbterm->getPrev();
     modbterm = busport->getBusIndexedElement(index);
+    return reinterpret_cast<Port*>(modbterm);
   }
   return nullptr;
 }

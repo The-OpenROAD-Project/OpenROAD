@@ -7162,8 +7162,8 @@ class dbBusPort : public dbObject
   void Realloc();
   static dbBusPort* create(dbModule* parentModule,
                            dbModBTerm* root,
-                           int from_index,
-                           int to_index);
+                           int from_ix,
+                           int to_ix);
 
   // User Code End dbBusPort
 };
