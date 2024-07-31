@@ -7161,7 +7161,7 @@ class dbBusPort : public dbObject
   // reallocate the bus port so all members sequential.
   void Realloc();
   static dbBusPort* create(dbModule* parentModule,
-                           dbModBTerm* root,
+                           dbModBTerm* port,
                            int from_ix,
                            int to_ix);
 

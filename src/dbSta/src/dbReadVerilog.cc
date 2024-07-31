@@ -428,6 +428,8 @@ void Verilog2db::makeDbModule(
                    "Created module iterm {} ",
                    moditerm->getName());
       }
+      // reverse the ports on the dbModule to natural order
+      module->getModBTerms().reverse();
     }
   }
 
