@@ -428,6 +428,8 @@ class deltaDebugger:
 
 
 if __name__ == "__main__":
+    print("Should fail with error message")
+    sys.exit(1)
     opt = parser.parse_args()
     debugger = deltaDebugger(opt)
     debugger.debug()
