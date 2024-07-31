@@ -197,7 +197,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 
       // add hard macro to corresponding map
       HardMacro* macro
-          = new HardMacro(inst, tree_->halo_width, tree_->halo_width);
+          = new HardMacro(inst, tree_->halo_width, tree_->halo_height);
       tree_->maps.inst_to_hard[inst] = macro;
     } else {
       num_std_cell += 1;

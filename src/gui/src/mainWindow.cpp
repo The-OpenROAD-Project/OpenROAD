@@ -479,6 +479,7 @@ void MainWindow::init(sta::dbSta* sta)
                           viewers_->getNetTracks()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -1682,7 +1683,8 @@ void MainWindow::saveDesign()
 
 #ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
-    const std::set<const sta::Pin*>& report_pins)
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
 {
   if (!timing_widget_->isVisible()) {
     timing_widget_->show();
@@ -1694,7 +1696,7 @@ void MainWindow::reportSlackHistogramPaths(
     timing_widget_->raise();
   }
 
-  timing_widget_->reportSlackHistogramPaths(report_pins);
+  timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
 #endif
 }  // namespace gui

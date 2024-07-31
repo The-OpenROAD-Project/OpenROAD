@@ -10118,3 +10118,6 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 // Generator Code End ClassDefinition
 
 }  // namespace odb
+
+// Overload std::less for these types
+#include "dbCompare.h"

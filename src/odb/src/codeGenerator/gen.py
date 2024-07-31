@@ -25,13 +25,15 @@ from helper import (
     std,
 )
 
+
 def get_json_files(directory):
     json_files = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith('.json'):
+            if file.endswith(".json"):
                 json_files.append(os.path.join(root, file))
     return json_files
+
 
 parser = argparse.ArgumentParser(description="Code generator")
 parser.add_argument("--json", action="store", required=True)
@@ -54,7 +56,7 @@ keep_empty = args.keep_empty
 
 numeric_level = getattr(logging, loglevel.upper(), None)
 if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % loglevel)
+    raise ValueError("Invalid log level: %s" % loglevel)
 logging.basicConfig(level=numeric_level)
 
 with open(src, encoding="ascii") as file:
@@ -74,7 +76,7 @@ toBeMerged = []
 print("###################Code Generation Begin###################")
 add_once_to_dict(["classes", "iterators", "relations"], schema)
 
-for file_path in get_json_files(schema['classes_dir']):
+for file_path in get_json_files(schema["classes_dir"]):
     with open(file_path, encoding="ascii") as file:
         klass = json.load(file)
     schema["classes"].append(klass)
@@ -125,7 +127,9 @@ for relation in schema["relations"]:
     inParentField["table"] = True
     inParentField["dbSetGetter"] = True
     inParentField["components"] = [inParentField["name"]]
-    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get("flags", [])
+    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
+        "flags", []
+    )
     if "schema" in relation:
         inParentField["schema"] = relation["schema"]
 
@@ -157,11 +161,14 @@ for relation in schema["relations"]:
         inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
         inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
         schema["classes"][child]["fields"].append(inChildNextEntry)
-        logging.debug(f"Add hash field {inParentHashField['name']} to {relation['first']}")
-        logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['second']}")
+        logging.debug(
+            f"Add hash field {inParentHashField['name']} to {relation['first']}"
+        )
+        logging.debug(
+            f"Add hash field {inChildNextEntry['name']} to {relation['second']}"
+        )
 
 for klass in schema["classes"]:
-
     # Adding functional name to fields and extracting field components
     struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
     klass["hasTables"] = False
@@ -216,7 +223,8 @@ for klass in schema["classes"]:
                 and template_class_name not in std
                 and "no-template" not in field["flags"]
                 and klass["name"] != template_class_name[1:]
-                and klass["name"]+"::" != template_class_name[0:len(klass["name"])+2]
+                and klass["name"] + "::"
+                != template_class_name[0 : len(klass["name"]) + 2]
             ):
                 klass["classes"].append(template_class_name)
         ####
@@ -265,7 +273,11 @@ for klass in schema["classes"]:
             field["setterArgumentType"] = field["getterReturnType"] = field["type"]
 
         # For fields that we need to free/destroy in the destructor
-        if field["name"] == '_name' and 'no-destruct' not in field["flags"] or "table" in field:
+        if (
+            field["name"] == "_name"
+            and "no-destruct" not in field["flags"]
+            or "table" in field
+        ):
             klass["needs_non_default_destructor"] = True
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
@@ -286,7 +298,6 @@ for klass in schema["classes"]:
         struct["fields"].append(spare_bits_field)
 
     if len(struct["fields"]) > 0:
-
         struct["in_class"] = True
         struct["in_class_name"] = "flags_"
         klass["structs"].insert(0, struct)
@@ -324,8 +335,14 @@ for klass in schema["classes"]:
         with open(out_file, "w", encoding="ascii") as file:
             file.write(text)
 
-includes = ["db.h", "dbObject.h"]
-for template_file in ["db.h", "dbObject.h", "CMakeLists.txt", "dbObject.cpp"]:
+includes = ["db.h", "dbObject.h", "dbCompare.h"]
+for template_file in [
+    "db.h",
+    "dbObject.h",
+    "CMakeLists.txt",
+    "dbObject.cpp",
+    "dbCompare.h",
+]:
     template = env.get_template(template_file)
     text = template.render(schema=schema)
     out_file = os.path.join("generated", template_file)
@@ -361,8 +378,7 @@ for item in toBeMerged:
         p.parse_source_code(os.path.join("generated", item))
         p.write_in_file(os.path.join(dr, item), keep_empty)
     else:
-        shutil.copy(os.path.join("generated", item),
-                    os.path.join(dr, item))
+        shutil.copy(os.path.join("generated", item), os.path.join(dr, item))
     if item != "CMakeLists.txt":
         cf = ["clang-format", "-i", os.path.join(dr, item)]
         retcode = call(cf)

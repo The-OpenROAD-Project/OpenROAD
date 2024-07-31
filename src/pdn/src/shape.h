@@ -36,26 +36,13 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
-
-namespace odb {
-class dbBlock;
-class dbBox;
-class dbNet;
-class dbTechLayer;
-class dbViaVia;
-class dbTechVia;
-class dbTechViaGenerateRule;
-class dbTechViaLayerRule;
-class dbRow;
-class dbSWire;
-class dbVia;
-class dbViaParams;
-}  // namespace odb
 
 namespace utl {
 class Logger;

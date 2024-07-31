@@ -185,6 +185,9 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
   blockages_.resize(numSingleHeightRows_);
 
   for (Node* nd : fixedCells_) {
+    if (nd->isTerminal()) {
+      continue;
+    }
     int xmin = std::max(arch_->getMinX(), nd->getLeft());
     int xmax = std::min(arch_->getMaxX(), nd->getRight());
     const int ymin = std::max(arch_->getMinY(), nd->getBottom());

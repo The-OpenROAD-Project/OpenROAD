@@ -259,6 +259,16 @@ void TimingWidget::init(sta::dbSta* sta)
           this,
           &TimingWidget::selectedCaptureRowChanged);
 
+  connect(path_details_table_view_,
+          &QTableView::doubleClicked,
+          this,
+          &TimingWidget::detailRowDoubleClicked);
+
+  connect(capture_details_table_view_,
+          &QTableView::doubleClicked,
+          this,
+          &TimingWidget::detailRowDoubleClicked);
+
   clearPathDetails();
 }
 
@@ -559,16 +569,17 @@ void TimingWidget::populatePaths()
   const auto thru = settings_->getThruPins();
   const auto to = settings_->getToPins();
 
-  populateAndSortModels(from, thru, to);
+  populateAndSortModels(from, thru, to, "" /* path group name */);
 }
 
 void TimingWidget::populateAndSortModels(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
-  setup_timing_paths_model_->populateModel(from, thru, to);
-  hold_timing_paths_model_->populateModel(from, thru, to);
+  setup_timing_paths_model_->populateModel(from, thru, to, path_group_name);
+  hold_timing_paths_model_->populateModel(from, thru, to, path_group_name);
 
   // honor selected sort
   auto setup_header = setup_timing_table_view_->horizontalHeader();
@@ -616,6 +627,25 @@ void TimingWidget::selectedCaptureRowChanged(
   }
   auto& top_sel_index = sel_indices.first();
   highlightPathStage(capture_details_model_, top_sel_index);
+}
+
+void TimingWidget::detailRowDoubleClicked(const QModelIndex& index)
+{
+  auto model = static_cast<const TimingPathDetailModel*>(index.model());
+
+  if (!index.isValid() || !model->hasNodes()
+      || model->isClockSummaryRow(index)) {
+    return;
+  }
+
+  auto* node = model->getNodeAt(index);
+  auto* gui = Gui::get();
+
+  if (auto iterm = node->getPinAsITerm()) {
+    emit inspect(gui->makeSelected(iterm));
+  } else if (auto bterm = node->getPinAsBTerm()) {
+    emit inspect(gui->makeSelected(bterm));
+  }
 }
 
 void TimingWidget::copy()
@@ -703,10 +733,11 @@ void TimingWidget::showSettings()
 
 #ifdef ENABLE_CHARTS
 void TimingWidget::reportSlackHistogramPaths(
-    const std::set<const sta::Pin*>& report_pins)
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
 {
   clearPathDetails();
-  populateAndSortModels({}, {report_pins}, {});
+  populateAndSortModels({}, {report_pins}, {}, path_group_name);
 }
 #endif
 

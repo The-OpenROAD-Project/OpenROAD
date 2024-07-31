@@ -13,7 +13,8 @@ design.evalTclString("read_sdc Nangate45_data/gcd.sdc")
 spice_file = helpers.make_result_file("gcd_write_sp_test_vdd.sp")
 
 pdnsim_aux.analyze_power_grid(design, net="VDD", vsrc="Vsrc_gcd_vdd.loc")
-pdnsim_aux.write_pg_spice(design, vsrc="Vsrc_gcd_vdd.loc",
-                          outfile=spice_file, net="VDD")
+pdnsim_aux.write_pg_spice(
+    design, vsrc="Vsrc_gcd_vdd.loc", outfile=spice_file, net="VDD"
+)
 
 helpers.diff_files(spice_file, "gcd_write_sp_test_vdd.spok")
