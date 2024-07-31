@@ -237,6 +237,10 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index) const
     offset = getFrom() - index;
   }
   if (offset < getSize()) {
+    //
+    // TODO. Future pull request: support for making vector of objects unclean.
+    // if we cannot count on the order, skip to the dbModBterm
+    //
     // the _flags are set to non zero if we cannot
     // count on the order of the modbterms (eg
     // if some have been deleted or added in non-linear way).
@@ -245,7 +249,6 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index) const
       return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->getId() + offset
                                                           + 1));
     }
-    // if we cannot count on the order, skip to the dbModBterm
     dbModBTerm* cur = (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_port));
     if (cur != nullptr) {
       cur = cur->getPrev();
@@ -315,8 +318,8 @@ dbBusPort* dbBusPort::create(dbModule* parentModule,
 }
 
 //
-// TODO: Reallocate the bus to preserve sequential db ordering
-// This to be added as part of "scaffolding functions"
+// TODO future pull request: Reallocate the bus to preserve sequential db
+// ordering This to be added as part of "scaffolding functions"
 //
 void dbBusPort::Realloc()
 {

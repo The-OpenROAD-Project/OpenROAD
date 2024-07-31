@@ -718,6 +718,10 @@ dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
 {
   // skip to end
   const dbModBTerm* first_mod_bterm = cell->getHeadDbModBTerm();
+  //
+  // Next pull request remove this. Use reverse on list
+  // so head is first element in natural order
+  //
   for (iter_ = cell->getHeadDbModBTerm(); iter_; iter_ = iter_->getNext()) {
     first_mod_bterm = iter_;
   }
@@ -746,6 +750,7 @@ Port* dbModulePortIterator::next()
     int size = bp->getSize();
     // content of bus
     iter_ = iter_->getPrev();
+    // Next pull request remove this, use offset mechanism
     for (int skip_ix = 0; skip_ix < size && (iter_->getPrev()); skip_ix++) {
       iter_ = iter_->getPrev();
     }
