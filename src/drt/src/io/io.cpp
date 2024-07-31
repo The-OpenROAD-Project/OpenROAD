@@ -417,8 +417,11 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   std::vector<odb::dbTechVia*> vias;
   ndr->getUseVias(vias);
   for (auto via : vias) {
-    fnd->addVia(design_->getTech()->getVia(via->getName()),
-                via->getBottomLayer()->getNumber() / 2);
+    z = design_->tech_->getLayer(via->getBottomLayer()->getName())
+                ->getLayerNum()
+            / 2
+        - 1;
+    fnd->addVia(design_->getTech()->getVia(via->getName()), z);
   }
   std::vector<odb::dbTechViaGenerateRule*> viaRules;
   ndr->getUseViaRules(viaRules);

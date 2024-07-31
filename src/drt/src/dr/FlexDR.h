@@ -484,6 +484,7 @@ class FlexDRWorker
   std::vector<frMarker> markers_;
   std::vector<frMarker> bestMarkers_;
   FlexDRWorkerRegionQuery rq_;
+  std::vector<frNonDefaultRule*> ndrs_;
 
   // persistent gc worker
   std::unique_ptr<FlexGCWorker> gcWorker_;
@@ -768,6 +769,16 @@ class FlexDRWorker
                                bool isMacroPin = false,
                                bool resetHorz = true,
                                bool resetVert = true);
+  void modMinSpacingCostPlanarHelper(const Rect& box,
+                                     frMIdx z,
+                                     ModCostType type,
+                                     frCoord width,
+                                     frCoord minSpacing,
+                                     bool isBlockage,
+                                     bool isMacroPin,
+                                     bool resetHorz,
+                                     bool resetVert,
+                                     bool ndr);
   void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
@@ -776,6 +787,17 @@ class FlexDRWorker
                             bool isCurrPs,
                             bool isBlockage = false,
                             frNonDefaultRule* ndr = nullptr);
+  void modMinSpacingCostViaHelper(const Rect& box,
+                                  frMIdx z,
+                                  ModCostType type,
+                                  frCoord width,
+                                  frCoord minSpacing,
+                                  frViaDef* viaDef,
+                                  drEolSpacingConstraint drCon,
+                                  bool isUpperVia,
+                                  bool isCurrPs,
+                                  bool isBlockage,
+                                  bool ndr);
 
   void modCornerToCornerSpacing_helper(const Rect& box,
                                        frMIdx z,
@@ -788,14 +810,16 @@ class FlexDRWorker
                                 const drEolSpacingConstraint& drCon,
                                 frMIdx i,
                                 frMIdx j,
-                                frMIdx z);
+                                frMIdx z,
+                                bool ndr = false);
   void modMinSpacingCostVia_eol_helper(const Rect& box,
                                        const Rect& testBox,
                                        ModCostType type,
                                        bool isUpperVia,
                                        frMIdx i,
                                        frMIdx j,
-                                       frMIdx z);
+                                       frMIdx z,
+                                       bool ndr = false);
   // eolSpc
   void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
