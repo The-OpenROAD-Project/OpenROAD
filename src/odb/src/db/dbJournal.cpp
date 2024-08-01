@@ -48,15 +48,11 @@ namespace odb {
 dbJournal::dbJournal(dbBlock* block)
     : _block(block),
       _logger(block->getImpl()->getLogger()),
+      _log(_logger),
       _start_action(false),
       _action_idx(0),
       _cur_action(0)
 {
-}
-
-dbJournal::~dbJournal()
-{
-  clear();
 }
 
 void dbJournal::clear()
@@ -179,7 +175,10 @@ void dbJournal::updateField(dbObject* obj,
 
 void dbJournal::beginAction(Action action)
 {
-  assert(_start_action == false);
+  if (_start_action != false) {
+    _logger->critical(
+        utl::ODB, 398, "In journal, nested actions are not allowed.");
+  }
   _start_action = true;
   _action_idx = _log.size();
   _log.push((unsigned char) action);
@@ -225,6 +224,11 @@ void dbJournal::pushParam(const char* value)
   _log.push(value);
 }
 
+void dbJournal::pushParam(const std::string& value)
+{
+  _log.push(value.c_str());
+}
+
 void dbJournal::endAction()
 {
   _start_action = false;
@@ -237,9 +241,7 @@ void dbJournal::redo()
   _log.begin();
 
   while (!_log.end()) {
-#ifndef NDEBUG
     uint s = _log.idx();
-#endif
     _log.pop(_cur_action);
 
     switch (_cur_action) {
@@ -267,8 +269,8 @@ void dbJournal::redo()
         redo_updateField();
         break;
 
-      default:
-        assert(0);
+      case END_ACTION:
+        _logger->critical(utl::ODB, 399, "In undo saw unexpected END_ACTION.");
         break;
     }
 
@@ -276,8 +278,9 @@ void dbJournal::redo()
     unsigned int action_idx;
     _log.pop(end_action);
     _log.pop(action_idx);
-    assert(end_action == END_ACTION);
-    assert(action_idx == s);
+    if (end_action != END_ACTION || action_idx != s) {
+      _logger->critical(utl::ODB, 400, "In undo, expected END_ACTION.");
+    }
   }
 }
 
@@ -289,7 +292,9 @@ void dbJournal::redo_createObject()
   switch ((dbObjectType) obj_type) {
     case dbNetObj: {
       std::string name;
+      uint net_id;
       _log.pop(name);
+      _log.pop(net_id);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -321,10 +326,12 @@ void dbJournal::redo_createObject()
     case dbInstObj: {
       uint lib_id;
       uint master_id;
+      uint inst_id;
       std::string name;
       _log.pop(lib_id);
       _log.pop(master_id);
       _log.pop(name);
+      _log.pop(inst_id);
       dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
       debugPrint(_logger,
@@ -418,7 +425,9 @@ void dbJournal::redo_deleteObject()
 
   switch ((dbObjectType) obj_type) {
     case dbNetObj: {
+      std::string name;
       uint net_id;
+      _log.pop(name);
       _log.pop(net_id);
       dbNet* net = dbNet::getNet(_block, net_id);
       debugPrint(_logger,
@@ -445,7 +454,13 @@ void dbJournal::redo_deleteObject()
       break;
     }
     case dbInstObj: {
+      uint lib_id;
+      uint master_id;
       uint inst_id;
+      std::string name;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
       _log.pop(inst_id);
       dbInst* inst = dbInst::getInst(_block, inst_id);
       debugPrint(_logger,
@@ -1378,7 +1393,8 @@ void dbJournal::undo()
     return;
   }
 
-  _log.set(_log.size() - sizeof(uint));
+  _log.moveToEnd();
+  _log.moveBackOneInt();
 
   for (;;) {
     uint action_idx;
@@ -1411,8 +1427,7 @@ void dbJournal::undo()
         undo_updateField();
         break;
 
-      default:
-        assert(0);
+      case END_ACTION:
         break;
     }
 
@@ -1420,7 +1435,8 @@ void dbJournal::undo()
       break;
     }
 
-    _log.set(action_idx -= sizeof(uint));
+    _log.set(action_idx);
+    _log.moveBackOneInt();
   }
 }
 
@@ -1430,14 +1446,35 @@ void dbJournal::undo_createObject()
   _log.pop(obj_type);
 
   switch ((dbObjectType) obj_type) {
-    case dbNetObj:
-    case dbInstObj:
-    case dbRSegObj:
-    case dbCapNodeObj:
-    case dbCCSegObj:
-
-    default:
+    case dbInstObj: {
+      uint lib_id;
+      uint master_id;
+      uint inst_id;
+      std::string name;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
+      _log.pop(inst_id);
+      dbInst* inst = dbInst::getInst(_block, inst_id);
+      dbInst::destroy(inst);
       break;
+    }
+
+    case dbNetObj: {
+      std::string name;
+      uint net_id;
+      _log.pop(name);
+      _log.pop(net_id);
+      dbNet* net = dbNet::getNet(_block, net_id);
+      dbNet::destroy(net);
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 403, "No undo_createObject support for type {}", obj_type);
+      break;
+    }
   }
 }
 
@@ -1447,13 +1484,33 @@ void dbJournal::undo_deleteObject()
   _log.pop(obj_type);
 
   switch ((dbObjectType) obj_type) {
-    case dbNetObj:
-    case dbInstObj:
-    case dbRSegObj:
-    case dbCapNodeObj:
-    case dbCCSegObj:
-    default:
+    case dbInstObj: {
+      uint lib_id;
+      uint master_id;
+      uint object_id;
+      std::string name;
+      _log.pop(lib_id);
+      _log.pop(master_id);
+      _log.pop(name);
+      _log.pop(object_id);
+      dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
+      dbMaster* master = dbMaster::getMaster(lib, master_id);
+      dbInst::create(_block, master, name.c_str());
       break;
+    }
+    case dbNetObj: {
+      std::string name;
+      uint net_id;
+      _log.pop(name);
+      _log.pop(net_id);
+      dbNet::create(_block, name.c_str());
+      break;
+    }
+    default: {
+      _logger->critical(
+          utl::ODB, 417, "No undo_deleteObject support for type {}", obj_type);
+      break;
+    }
   }
 }
 
@@ -1463,9 +1520,11 @@ void dbJournal::undo_connectObject()
   _log.pop(obj_type);
 
   switch ((dbObjectType) obj_type) {
-    case dbITermObj:
-    default:
+    default: {
+      _logger->critical(
+          utl::ODB, 404, "No undo_connectObject support for type {}", obj_type);
       break;
+    }
   }
 }
 
@@ -1475,9 +1534,13 @@ void dbJournal::undo_disconnectObject()
   _log.pop(obj_type);
 
   switch ((dbObjectType) obj_type) {
-    case dbITermObj:
-    default:
+    default: {
+      _logger->critical(utl::ODB,
+                        405,
+                        "No undo_disconnectObject support for type {}",
+                        obj_type);
       break;
+    }
   }
 }
 
@@ -1487,9 +1550,11 @@ void dbJournal::undo_swapObject()
   _log.pop(obj_type);
 
   switch ((dbObjectType) obj_type) {
-    case dbInstObj:
-    default:
+    default: {
+      _logger->critical(
+          utl::ODB, 406, "No undo_swapObject support for type {}", obj_type);
       break;
+    }
   }
 }
 
@@ -1519,8 +1584,11 @@ void dbJournal::undo_updateField()
       undo_updateCapNodeField();
       break;
 
-    default:
+    default: {
+      _logger->critical(
+          utl::ODB, 407, "No undo_updateField support for type {}", obj_type);
       break;
+    }
   }
 }
 
@@ -1534,11 +1602,11 @@ void dbJournal::undo_updateNetField()
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
-    case _dbNet::FLAGS:
-    case _dbNet::NON_DEFAULT_RULE:
+    default: {
+      _logger->critical(
+          utl::ODB, 408, "No undo_updateNetField support for field {}", field);
       break;
-    default:
-      break;
+    }
   }
 }
 
@@ -1551,14 +1619,13 @@ void dbJournal::undo_updateInstField()
   int field;
   _log.pop(field);
 
-#if 0  // dead code generates warnings -cherry
-    switch( (_dbInst::Field) field )
-    {
-        case _dbInst::FLAGS:
-        case _dbInst::ORIGIN:
-            break;
+  switch ((_dbInst::Field) field) {
+    default: {
+      _logger->critical(
+          utl::ODB, 409, "No undo_updateInstField support for field {}", field);
+      break;
     }
-#endif
+  }
 }
 
 void dbJournal::undo_updateITermField()
@@ -1571,8 +1638,13 @@ void dbJournal::undo_updateITermField()
   _log.pop(field);
 
   switch ((_dbITerm::Field) field) {
-    case _dbITerm::FLAGS:
+    default: {
+      _logger->critical(utl::ODB,
+                        410,
+                        "No undo_updateITermField support for field {}",
+                        field);
       break;
+    }
   }
 }
 
@@ -1586,14 +1658,10 @@ void dbJournal::undo_updateRSegField()
   _log.pop(field);
 
   switch ((_dbRSeg::Field) field) {
-    case _dbRSeg::FLAGS:
-    case _dbRSeg::SOURCE:
-    case _dbRSeg::TARGET:
-    case _dbRSeg::RESISTANCE:
-    case _dbRSeg::CAPACITANCE:
-      break;
-    default:
-      break;
+    default: {
+      _logger->critical(
+          utl::ODB, 411, "No undo_updateRSegField support for field {}", field);
+    } break;
   }
 }
 
@@ -1601,17 +1669,20 @@ void dbJournal::undo_updateCapNodeField()
 {
   uint node_id;
   _log.pop(node_id);
-  //_dbCapNode * node = (_dbCapNode *) dbCapNode::getCapNode(_block, node_id );
+  //_dbCapNode * node = (_dbCapNode *) dbCapNode::getCapNode(_block, node_id
+  //);
 
   int field;
   _log.pop(field);
 
   switch ((_dbCapNode::Fields) field) {
-    case _dbCapNode::FLAGS:
-    case _dbCapNode::CAPACITANCE:
+    default: {
+      _logger->critical(utl::ODB,
+                        412,
+                        "No undo_updateCapNodeField support for field {}",
+                        field);
       break;
-    default:
-      break;
+    }
   }
 }
 
@@ -1625,14 +1696,14 @@ void dbJournal::undo_updateCCSegField()
   _log.pop(field);
 
   switch ((_dbCCSeg::Fields) field) {
-    case _dbCCSeg::FLAGS:
-    case _dbCCSeg::CAPACITANCE:
-    case _dbCCSeg::ADDCCCAPACITANCE:
-    case _dbCCSeg::SWAPCAPNODE:
-    case _dbCCSeg::LINKCCSEG:
-    case _dbCCSeg::UNLINKCCSEG:
-    case _dbCCSeg::SETALLCCCAP:
+    default: {
+      _logger->critical(utl::ODB,
+                        413,
+                        "No undo_updateCCSegField support for field {}",
+                        field);
+
       break;
+    }
   }
 }
 

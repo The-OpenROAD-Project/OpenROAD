@@ -442,6 +442,11 @@ class dbDatabase : public dbObject
   static void commitEco(dbBlock* block);
 
   ///
+  /// Undo any pending netlist changes.
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
   /// links to utl::Logger
   ///
   void setLogger(utl::Logger* logger);

@@ -1407,6 +1407,8 @@ dbInst* dbInst::create(dbBlock* block_,
         name_);
   }
 
+  _dbInst* inst = block->_inst_tbl->create();
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -1419,10 +1421,10 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }
 
-  _dbInst* inst = block->_inst_tbl->create();
   inst->_name = strdup(name_);
   ZALLOCATED(inst->_name);
   inst->_inst_hdr = inst_hdr->getOID();
@@ -1597,9 +1599,13 @@ void dbInst::destroy(dbInst* inst_)
                "DB_ECO",
                1,
                "ECO: dbInst:destroy");
+    auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
-    block->_journal->pushParam(inst->getId());
+    block->_journal->pushParam(master->getLib()->getId());
+    block->_journal->pushParam(master->getId());
+    block->_journal->pushParam(inst_->getName().c_str());
+    block->_journal->pushParam(inst_->getId());
     block->_journal->endAction();
   }
 
