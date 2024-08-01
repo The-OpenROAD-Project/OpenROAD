@@ -412,8 +412,9 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
-      if (x1 < x_grid_ - 1)
+      if (x1 < x_grid_ - 1) {
         h_edges_[y1][x1].cap += increase;
+      }
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
@@ -445,8 +446,9 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       int increase = reducedCap - cap;
-      if (y1 < y_grid_ - 1)
+      if (y1 < y_grid_ - 1) {
         v_edges_[y1][x1].cap += increase;
+      }
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }

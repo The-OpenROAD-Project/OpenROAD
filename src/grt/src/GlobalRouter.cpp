@@ -1935,22 +1935,22 @@ void GlobalRouter::updateDbCongestionFromGuides()
 
     const auto& h_edges_3D = fastroute_->getHorizontalEdges3D();
     const auto& v_edges_3D = fastroute_->getVerticalEdges3D();
-    const unsigned short capH = fastroute_->getHorizontalCapacities()[k];
-    const unsigned short capV = fastroute_->getVerticalCapacities()[k];
-    const unsigned short last_row_capH
+    const uint16_t capH = fastroute_->getHorizontalCapacities()[k];
+    const uint16_t capV = fastroute_->getVerticalCapacities()[k];
+    const uint16_t last_row_capH
         = fastroute_->getLastRowHorizontalCapacities()[k];
-    const unsigned short last_col_capV
+    const uint16_t last_col_capV
         = fastroute_->getLastColumnVerticalCapacities()[k];
     for (int y = 0; y < grid_->getYGrids(); y++) {
       for (int x = 0; x < grid_->getXGrids(); x++) {
-        const unsigned short thisCapH
+        const uint16_t thisCapH
             = (y == grid_->getYGrids() - 1 ? last_row_capH : capH);
-        const unsigned short thisCapV
+        const uint16_t thisCapV
             = (x == grid_->getXGrids() - 1 ? last_col_capV : capV);
-        const unsigned short blockageH = thisCapH - h_edges_3D[k][y][x].cap;
-        const unsigned short blockageV = thisCapV - v_edges_3D[k][y][x].cap;
-        const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
-        const unsigned short usageV = v_edges_3D[k][y][x].usage + blockageV;
+        const uint16_t blockageH = thisCapH - h_edges_3D[k][y][x].cap;
+        const uint16_t blockageV = thisCapV - v_edges_3D[k][y][x].cap;
+        const uint16_t usageH = h_edges_3D[k][y][x].usage + blockageH;
+        const uint16_t usageV = v_edges_3D[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, thisCapH + thisCapV);
         db_gcell->setUsage(layer, x, y, usageH + usageV);
       }

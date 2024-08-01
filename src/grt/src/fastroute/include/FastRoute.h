@@ -179,11 +179,11 @@ class FastRouteCore
   {
     last_row_h_capacity_3D_[layer] = cap;
   }
-  const std::vector<short>& getLastColumnVerticalCapacities()
+  const std::vector<int16_t>& getLastColumnVerticalCapacities()
   {
     return last_col_v_capacity_3D_;
   }
-  const std::vector<short>& getLastRowHorizontalCapacities()
+  const std::vector<int16_t>& getLastRowHorizontalCapacities()
   {
     return last_row_h_capacity_3D_;
   }
