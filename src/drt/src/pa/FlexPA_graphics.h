@@ -111,7 +111,7 @@ class FlexPAGraphics : public gui::Renderer
   frBlock* top_block_;
   std::vector<frAccessPoint> aps_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
-  std::vector<frLayerNum> layer_map_;
+  std::vector<std::pair<frLayerNum, std::string>> layer_map_;
   const frAccessPoint* pa_ap_;
   std::vector<const frVia*> pa_vias_;
   std::vector<const frPathSeg*> pa_segs_;

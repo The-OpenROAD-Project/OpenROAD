@@ -16,7 +16,13 @@ pdn_aux.set_voltage_domain(design, power="VDD", ground="VSS")
 pdn_aux.define_pdn_grid_real(design, name="Core")
 
 try:
-    pdn_aux.add_pdn_ring(design, grid="Core", layers=["metal5", "metal6"],
-                         widths=2*[2.001], spacings=2*[2.0], core_offsets=4*[2.0])
+    pdn_aux.add_pdn_ring(
+        design,
+        grid="Core",
+        layers=["metal5", "metal6"],
+        widths=2 * [2.001],
+        spacings=2 * [2.0],
+        core_offsets=4 * [2.0],
+    )
 except Exception as inst:
     print(inst.args[0])

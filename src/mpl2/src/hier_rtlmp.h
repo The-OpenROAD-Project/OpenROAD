@@ -70,6 +70,8 @@ class Metrics;
 struct Rect;
 class SoftMacro;
 class Snapper;
+class SACoreSoftMacro;
+class SACoreHardMacro;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -137,6 +139,8 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+  using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
+  using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
   using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
   void runMultilevelAutoclustering();

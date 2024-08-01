@@ -35,23 +35,27 @@
 import openroad as ord
 import odb
 
+
 class IFPError(Exception):
     def __init__(self, msg):
         print(msg)
+
 
 # To be removed once we have UPF support
 def create_voltage_domain(domain_name, area):
     # which flavor of error reporting should be used here?
     if len(area) != 4:
         raise IFPError("utl::error ODB 315 '-area is a list of 4 coordinates'")
-    
-    db   = ord.get_db()
+
+    db = ord.get_db()
     chip = db.getChip()
 
     if chip == None:
-        raise IFPError("utl::error ODB 317 'please load the design before trying to use this command'")
+        raise IFPError(
+            "utl::error ODB 317 'please load the design before trying to use this command'"
+        )
 
-    block  = chip.getBlock()
+    block = chip.getBlock()
     region = odb.dbRegion_create(block, domain_name)
 
     if region == None:
@@ -74,13 +78,13 @@ def insert_tiecells(floorplan, args, prefix=None):
     master = None
 
     db = ord.get_db()
-    
+
     for lib in db.getLibs():
         master = lib.findMaster(tie_cell)
-        if  master != None:
+        if master != None:
             break
 
-    if  master == None:
+    if master == None:
         raise IFPError(f"IFP 31 Unable to find master: {tie_cell}")
 
     mterm = master.findMTerm(port)

@@ -17,16 +17,33 @@ pdn_aux.add_global_connection(design, net_name="VSS", pin_pattern="^VSS$", groun
 pdn_aux.add_global_connection(design, net_name="VSS", pin_pattern="^VSSE$")
 
 pdn_aux.set_voltage_domain(design, power="VDD", ground="VSS")
-                              
-pdn_aux.define_pdn_grid_real(design, name="Core")
-pdn_aux.add_pdn_ring(design, grid="Core", layers=["metal8", "metal9"], widths=2*[5.0],
-                     spacings=2*[2.0], core_offsets=4*[4.5], connect_to_pads=True)
-pdn_aux.add_pdn_stripe(design, followpins=True, layer="metal1", extend_to_core_ring=True)
 
-pdn_aux.add_pdn_stripe(design, layer="metal4", width=0.48, pitch=56.0, offset=2.0, extend_to_core_ring=True)
-pdn_aux.add_pdn_stripe(design, layer="metal7", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True)
-pdn_aux.add_pdn_stripe(design, layer="metal8", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True)
-pdn_aux.add_pdn_stripe(design, layer="metal9", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True)
+pdn_aux.define_pdn_grid_real(design, name="Core")
+pdn_aux.add_pdn_ring(
+    design,
+    grid="Core",
+    layers=["metal8", "metal9"],
+    widths=2 * [5.0],
+    spacings=2 * [2.0],
+    core_offsets=4 * [4.5],
+    connect_to_pads=True,
+)
+pdn_aux.add_pdn_stripe(
+    design, followpins=True, layer="metal1", extend_to_core_ring=True
+)
+
+pdn_aux.add_pdn_stripe(
+    design, layer="metal4", width=0.48, pitch=56.0, offset=2.0, extend_to_core_ring=True
+)
+pdn_aux.add_pdn_stripe(
+    design, layer="metal7", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True
+)
+pdn_aux.add_pdn_stripe(
+    design, layer="metal8", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True
+)
+pdn_aux.add_pdn_stripe(
+    design, layer="metal9", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True
+)
 
 pdn_aux.add_pdn_connect(design, layers=["metal1", "metal4"])
 pdn_aux.add_pdn_connect(design, layers=["metal4", "metal7"])

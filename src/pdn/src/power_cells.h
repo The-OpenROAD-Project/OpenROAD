@@ -38,17 +38,10 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
-
-namespace odb {
-class dbMaster;
-class dbMTerm;
-class dbNet;
-class dbInst;
-class Rect;
-}  // namespace odb
 
 namespace utl {
 class Logger;

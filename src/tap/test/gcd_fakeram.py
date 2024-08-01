@@ -13,7 +13,7 @@ options.dist = design.micronToDBU(20)
 options.halo_x = design.micronToDBU(2)
 options.halo_y = design.micronToDBU(2)
 options.tapcell_master = tech.getDB().findMaster("TAPCELL_X1")
-options.endcap_master  = tech.getDB().findMaster("TAPCELL_X1")
+options.endcap_master = tech.getDB().findMaster("TAPCELL_X1")
 
 design.getTapcell().run(options)
 
