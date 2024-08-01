@@ -36,26 +36,16 @@
 #include "dbCore.h"
 #include "dbGDSElement.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbGDSText : public _dbGDSElement
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbGDSText(_dbDatabase*, const _dbGDSText& r);
   _dbGDSText(_dbDatabase*);
 
@@ -68,14 +58,15 @@ class _dbGDSText : public _dbGDSElement
                    const char* field,
                    const _dbGDSText& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  
   // User Code Begin Methods
 
   std::string to_string() override
   {
-    std::string str = "TEXT TEXTTYPE " + std::to_string(_textType) + " PRES " + _presentation.to_string() + 
-            " PATHTYPE " + std::to_string(_pathType) + " WIDTH " + std::to_string(_width);
-    if(!_sTrans.identity()){
+    std::string str = "TEXT TEXTTYPE " + std::to_string(_textType) + " PRES "
+                      + _presentation.to_string() + " PATHTYPE "
+                      + std::to_string(_pathType) + " WIDTH "
+                      + std::to_string(_width);
+    if (!_sTrans.identity()) {
       str += " STRANS " + _sTrans.to_string();
     }
     str += _dbGDSElement::to_string();
@@ -91,13 +82,8 @@ class _dbGDSText : public _dbGDSElement
   int _width;
   dbGDSSTrans _sTrans;
   std::string _text;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

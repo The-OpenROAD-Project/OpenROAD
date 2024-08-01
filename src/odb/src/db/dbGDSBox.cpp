@@ -39,8 +39,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBox>;
 
@@ -50,15 +48,11 @@ bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -68,8 +62,6 @@ void _dbGDSBox::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(_boxType);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -78,42 +70,29 @@ void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_boxType);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
 {
   _boxType = r._boxType;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
   stream >> obj._boxType;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
   stream << obj._boxType;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -134,7 +113,5 @@ int16_t dbGDSBox::get_boxType() const
   return obj->_boxType;
 }
 
-// User Code Begin dbGDSBoxPublicMethods
-// User Code End dbGDSBoxPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

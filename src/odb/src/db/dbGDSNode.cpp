@@ -39,8 +39,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSNode>;
 
@@ -50,15 +48,11 @@ bool _dbGDSNode::operator==(const _dbGDSNode& rhs) const
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbGDSNode::operator<(const _dbGDSNode& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -68,8 +62,6 @@ void _dbGDSNode::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(_nodeType);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -78,42 +70,29 @@ void _dbGDSNode::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_nodeType);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db, const _dbGDSNode& r)
 {
   _nodeType = r._nodeType;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj)
 {
   stream >> obj._nodeType;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj)
 {
   stream << obj._nodeType;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -134,7 +113,5 @@ int16_t dbGDSNode::get_nodeType() const
   return obj->_nodeType;
 }
 
-// User Code Begin dbGDSNodePublicMethods
-// User Code End dbGDSNodePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

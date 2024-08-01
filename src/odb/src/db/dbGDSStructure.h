@@ -79,5 +79,12 @@ class _dbGDSStructure : public _dbObject
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj);
+// User Code Begin General
+
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj);
+
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj);
+
+// User Code End General
 }  // namespace odb
    // Generator Code End Header

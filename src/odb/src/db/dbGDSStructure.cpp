@@ -93,7 +93,7 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._name;
-  // stream >> obj._elements;
+  stream >> obj._elements;
   stream >> obj._next_entry;
   return stream;
 }
@@ -101,7 +101,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
   stream << obj._name;
-  // stream << obj._elements;
+  stream << obj._elements;
   stream << obj._next_entry;
   return stream;
 }
@@ -126,6 +126,18 @@ char* dbGDSStructure::getName() const
 }
 
 // User Code Begin dbGDSStructurePublicMethods
+
+dbIStream& operator>>(dbIStream& stream, _dbGDSElement* obj)
+{
+  stream >> *obj;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbGDSElement* obj)
+{
+  stream << *obj;
+  return stream;
+}
 
 dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
 {

@@ -39,8 +39,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSText>;
 
@@ -59,15 +57,11 @@ bool _dbGDSText::operator==(const _dbGDSText& rhs) const
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbGDSText::operator<(const _dbGDSText& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -80,8 +74,6 @@ void _dbGDSText::differences(dbDiff& diff,
   DIFF_FIELD(_pathType);
   DIFF_FIELD(_width);
   DIFF_FIELD(_text);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -93,15 +85,11 @@ void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_width);
   DIFF_OUT_FIELD(_text);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbGDSText::_dbGDSText(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
@@ -110,8 +98,6 @@ _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
   _pathType = r._pathType;
   _width = r._width;
   _text = r._text;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
@@ -122,8 +108,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
   stream >> obj._width;
   stream >> obj._sTrans;
   stream >> obj._text;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -135,13 +119,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
   stream << obj._width;
   stream << obj._sTrans;
   stream << obj._text;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -227,7 +206,5 @@ std::string dbGDSText::getText() const
   return obj->_text;
 }
 
-// User Code Begin dbGDSTextPublicMethods
-// User Code End dbGDSTextPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

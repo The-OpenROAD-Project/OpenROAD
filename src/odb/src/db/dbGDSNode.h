@@ -36,26 +36,16 @@
 #include "dbCore.h"
 #include "dbGDSElement.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbGDSNode : public _dbGDSElement
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbGDSNode(_dbDatabase*, const _dbGDSNode& r);
   _dbGDSNode(_dbDatabase*);
 
@@ -68,17 +58,10 @@ class _dbGDSNode : public _dbGDSElement
                    const char* field,
                    const _dbGDSNode& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   int16_t _nodeType;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header
