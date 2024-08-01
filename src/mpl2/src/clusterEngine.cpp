@@ -1858,7 +1858,7 @@ void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
 
   std::vector<HardMacro*> hard_macros;
   for (const auto& inst : cluster->getLeafMacros()) {
-    hard_macros.push_back(tree_->maps.inst_to_hard[inst].get());
+    hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
   }
   for (const auto& module : cluster->getDbModules()) {
     getHardMacros(module, hard_macros);
@@ -1878,7 +1878,7 @@ void ClusteringEngine::getHardMacros(odb::dbModule* module,
     }
 
     if (master->isBlock()) {
-      hard_macros.push_back(tree_->maps.inst_to_hard[inst].get());
+      hard_macros.push_back(tree_->maps.inst_to_hard.at(inst).get());
     }
   }
 

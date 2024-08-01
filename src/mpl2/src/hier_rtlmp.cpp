@@ -260,7 +260,9 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
+
   writeMacroPlacement(macro_placement_file_);
+  clear();
 }
 
 void HierRTLMP::init()
@@ -4070,7 +4072,7 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
 void HierRTLMP::clear()
 {
-  for (auto& [id, cluster] : tree_.maps.id_to_cluster) {
+  for (auto& [cluster_id, cluster] : tree_.maps.id_to_cluster) {
     delete cluster;
   }
   tree_.maps.id_to_cluster.clear();
