@@ -126,8 +126,7 @@ Tree SteinerTreeBuilder::makeFoarsTree(const std::vector<int>& x_pin,
   std::vector<std::pair<int, int>> y_obstacle;
   for (auto&& inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {
-      x_obstacle.push_back(
-          std::make_pair(inst->getBBox()->xMin(), inst->getBBox()->xMax()));
+      x_obstacle.emplace_back(inst->getBBox()->xMin(), inst->getBBox()->xMax());
       y_obstacle.push_back(
           std::make_pair(inst->getBBox()->yMin(), inst->getBBox()->yMax()));
     }
