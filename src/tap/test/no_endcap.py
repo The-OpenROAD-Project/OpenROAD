@@ -9,7 +9,7 @@ design = Design(tech)
 design.readDef("gcd_sky130hs_floorplan.def")
 
 options = tap.Options()
-options.dist   = design.micronToDBU(15)
+options.dist = design.micronToDBU(15)
 options.halo_x = design.micronToDBU(2)
 options.halo_y = design.micronToDBU(2)
 options.tapcell_master = tech.getDB().findMaster("sky130_fd_sc_hs__tap_1")

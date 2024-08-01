@@ -12,7 +12,9 @@ design = Design(tech)
 design.readDef("clock_route.def")
 gr = design.getGlobalRouter()
 
-design.evalTclString("create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]")
+design.evalTclString(
+    "create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]"
+)
 design.evalTclString("set_propagated_clock [get_clocks {core_clock}]")
 
 guide_file = helpers.make_result_file("pin_access1.guide")
@@ -23,7 +25,9 @@ grt_aux.set_global_routing_layer_adjustment(design, "*", 0.5)
 
 grt_aux.set_routing_layers(design, signal="met1-met5", clock="met3-met5")
 
-design.evalTclString("pin_access -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0")
+design.evalTclString(
+    "pin_access -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0"
+)
 
 gr.setVerbose(True)
 gr.globalRoute(True)

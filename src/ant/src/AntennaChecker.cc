@@ -1162,9 +1162,4 @@ void AntennaChecker::setReportFileName(const char* file_name)
   report_file_name_ = file_name;
 }
 
-bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
-{
-  return net1->getId() < net2->getId();
-}
-
 }  // namespace ant

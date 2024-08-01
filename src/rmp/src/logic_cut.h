@@ -19,9 +19,9 @@ class LogicCut
 {
  public:
   LogicCut() = default;
-  LogicCut(std::vector<sta::Pin*> primary_inputs,
-           std::vector<sta::Pin*> primary_outputs,
-           std::unordered_set<sta::Instance*> cut_instances)
+  LogicCut(std::vector<sta::Pin*>& primary_inputs,
+           std::vector<sta::Pin*>& primary_outputs,
+           std::unordered_set<sta::Instance*>& cut_instances)
       : primary_inputs_(std::move(primary_inputs)),
         primary_outputs_(std::move(primary_outputs)),
         cut_instances_(std::move(cut_instances))

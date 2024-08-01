@@ -6,11 +6,9 @@ import rmp
 tech = Tech()
 design = Design(tech)
 
-blif = rmp_aux.create_blif(design,
-                           hicell="LOGIC1_X1",
-                           hiport="Z",
-                           locell="LOGIC0_X1",
-                           loport="Z")
+blif = rmp_aux.create_blif(
+    design, hicell="LOGIC1_X1", hiport="Z", locell="LOGIC0_X1", loport="Z"
+)
 
 tech.readLef("./Nangate45/Nangate45.lef")
 tech.readLiberty("./Nangate45/Nangate45_typ.lib")

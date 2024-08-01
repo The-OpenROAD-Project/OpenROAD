@@ -516,14 +516,7 @@ void dbSta::report_cell_usage(const bool verbose)
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    struct CmpById
-    {
-      bool operator()(odb::dbMaster* lhs, odb::dbMaster* rhs) const
-      {
-        return lhs->getId() < rhs->getId();
-      }
-    };
-    std::map<dbMaster*, int, CmpById> usage_count;
+    std::map<dbMaster*, int> usage_count;
     for (auto inst : insts) {
       usage_count[inst->getMaster()]++;
     }

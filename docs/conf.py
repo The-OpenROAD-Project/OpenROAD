@@ -14,9 +14,9 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'OpenROAD'
-copyright = 'The Regents of the University of California, 2021'
-author = 'OpenROAD Team'
+project = "OpenROAD"
+copyright = "The Regents of the University of California, 2021"
+author = "OpenROAD Team"
 
 
 # -- General configuration ---------------------------------------------------
@@ -25,77 +25,85 @@ author = 'OpenROAD Team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
-    'sphinx_external_toc',
-    'sphinx_copybutton',
-    'myst_parser',
-    'sphinxcontrib.mermaid'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx_external_toc",
+    "sphinx_copybutton",
+    "myst_parser",
+    "sphinxcontrib.mermaid",
 ]
 
 myst_enable_extensions = [
-    'amsmath',
-    'colon_fence',
-    'deflist',
-    'dollarmath',
-    'html_admonition',
-    'html_image',
-    'replacements',
-    'smartquotes',
-    'substitution',
-    'tasklist',
-    'html_image',
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_admonition",
+    "html_image",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
+    "html_image",
 ]
 
-external_toc_path = 'toc.yml'
+external_toc_path = "toc.yml"
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ['.md']
+source_suffix = [".md"]
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = [
-    '_build',
-    'Thumbs.db',
-    '.DS_Store',
-    '**/LICENSE',
-    '**/LICENSE.md',
-    'README.md',
-    'misc/NewToolDocExample.md',
-    'docs/releases/PostAlpha2.1BranchMethodology.md',
-    'main/src/odb/src/def/README.md',
-    'main/src/odb/src/def/doc/README.md',
-    'main/src/odb/src/lef/README.md',
-    'main/docs',
-    'md',  # manpage dir
-    'man', # manpage dir
-    'cat', # manpage dir
-    'html' # manpage dir
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "**/LICENSE",
+    "**/LICENSE.md",
+    "README.md",
+    "misc/NewToolDocExample.md",
+    "docs/releases/PostAlpha2.1BranchMethodology.md",
+    "main/src/odb/src/def/README.md",
+    "main/src/odb/src/def/doc/README.md",
+    "main/src/odb/src/lef/README.md",
+    "main/docs",
+    "md",  # manpage dir
+    "man",  # manpage dir
+    "cat",  # manpage dir
+    "html",  # manpage dir
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
 # Mermaid related args
-mermaid_output_format = 'svg'
-mermaid_params = ['-p', 'puppeteer-config.json',
-                  '--theme', 'forest',
-                  '--width', '200',
-                  '--backgroundColor', 'transparent']
-mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+mermaid_output_format = "svg"
+mermaid_params = [
+    "-p",
+    "puppeteer-config.json",
+    "--theme",
+    "forest",
+    "--width",
+    "200",
+    "--backgroundColor",
+    "transparent",
+]
+mermaid_init_js = (
+    "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+)
 mermaid_verbose = True
 
 # -- Options for HTML output -------------------------------------------------
@@ -112,7 +120,6 @@ html_theme_options = {
     "use_issues_button": True,
     # "use_repository_button": True,
     "use_download_button": True,
-
     # list for more fine-grained ordering of icons
     "icon_links": [
         {
@@ -141,7 +148,7 @@ html_theme_options = {
             "icon": "https://img.shields.io/github/stars/The-OpenROAD-Project/OpenROAD",
             "type": "url",
         },
-   ],
+    ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -151,21 +158,21 @@ html_theme_options = {
 
 
 def swap_prefix(file, old, new):
-    with open(file, 'r') as f:
+    with open(file, "r") as f:
         lines = f.read()
     lines = lines.replace(old, new)
-    with open(file, 'wt') as f:
+    with open(file, "wt") as f:
         f.write(lines)
 
 
 def setup(app):
     import os
 
-    if not os.path.exists('./main'):
-        os.symlink('..', './main')
+    if not os.path.exists("./main"):
+        os.symlink("..", "./main")
     # these prefix swaps will be reverted and is needed for sphinx compilation.
-    swap_prefix('../README.md', '(docs/', '(../')
-    swap_prefix('../README.md', '```mermaid', '```{mermaid}\n:align: center\n')
+    swap_prefix("../README.md", "(docs/", "(../")
+    swap_prefix("../README.md", "```mermaid", "```{mermaid}\n:align: center\n")
 
     # for populating OR Messages page.
     command = "python getMessages.py"

@@ -39,20 +39,10 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "shape.h"
 #include "via.h"
-
-namespace odb {
-class dbBlock;
-class dbInst;
-class dbMaster;
-class dbNet;
-class dbRegion;
-class dbRow;
-class dbSWire;
-class Rect;
-}  // namespace odb
 
 namespace utl {
 class Logger;

@@ -101,11 +101,6 @@ struct NodeInfo
   }
 };
 
-struct cmpById
-{
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
-};
-
 struct ViolationReport
 {
   bool violated;
@@ -238,7 +233,7 @@ class AntennaChecker
   int net_violation_count_{0};
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
-  std::map<odb::dbNet*, ViolationReport, cmpById> net_to_report_;
+  std::map<odb::dbNet*, ViolationReport> net_to_report_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };

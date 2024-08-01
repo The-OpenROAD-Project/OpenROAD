@@ -42,20 +42,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "odb/db.h"
+
 namespace utl {
 class Logger;
 }
-
-namespace odb {
-class dbDatabase;
-class dbBlock;
-class dbInst;
-class dbNet;
-class dbITerm;
-class dbMTerm;
-class Rect;
-class dbMaster;
-}  // namespace odb
 
 namespace rsz {
 class Resizer;

@@ -10,11 +10,11 @@ design.readDef("gcd_sky130hs_floorplan.def")
 
 
 options = tap.Options()
-options.dist     = design.micronToDBU(14)
-options.halo_x   = design.micronToDBU(2)
-options.halo_y   = design.micronToDBU(2)
+options.dist = design.micronToDBU(14)
+options.halo_x = design.micronToDBU(2)
+options.halo_y = design.micronToDBU(2)
 options.tapcell_master = tech.getDB().findMaster("sky130_fd_sc_hs__tap_1")
-options.endcap_master  = tech.getDB().findMaster("sky130_fd_sc_hs__decap_4")
+options.endcap_master = tech.getDB().findMaster("sky130_fd_sc_hs__decap_4")
 
 design.getTapcell().run(options)
 

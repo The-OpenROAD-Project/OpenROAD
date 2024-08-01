@@ -36,13 +36,8 @@
 #include <set>
 
 #include "grid_component.h"
+#include "odb/db.h"
 #include "pdn/PdnGen.hh"
-
-namespace odb {
-class dbBox;
-class dbITerm;
-class dbTechLayer;
-}  // namespace odb
 
 namespace pdn {
 class Grid;
