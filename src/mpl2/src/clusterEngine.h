@@ -59,6 +59,7 @@ class Cluster;
 class HardMacro;
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
+using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
 
 struct DataFlowHypergraph
 {
@@ -108,7 +109,7 @@ struct PhysicalHierarchyMaps
   std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_id;
 
   InstToHardMap inst_to_hard;
-  std::map<const odb::dbModule*, Metrics*> module_to_metrics;
+  ModuleToMetricsMap module_to_metrics;
 
   // Only for designs with IO Pads
   std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;

@@ -260,9 +260,7 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
-
   writeMacroPlacement(macro_placement_file_);
-  clear();
 }
 
 void HierRTLMP::init()
@@ -3379,8 +3377,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
              cluster->getName());
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  num_hard_macros_cluster_ += hard_macros.size();
-
   std::vector<HardMacro> sa_macros;
   std::vector<Cluster*> macro_clusters;  // needed to calculate connections
   std::map<int, int> cluster_to_macro;
@@ -3548,7 +3544,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   }
 
   for (auto& hard_macro : hard_macros) {
-    num_updated_macros_++;
     hard_macro->setX(hard_macro->getX() + outline.xMin());
     hard_macro->setY(hard_macro->getY() + outline.yMin());
   }
@@ -4075,20 +4070,14 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
 void HierRTLMP::clear()
 {
-  for (auto& [module, metrics] : tree_.maps.module_to_metrics) {
-    delete metrics;
+  for (auto& [id, cluster] : tree_.maps.id_to_cluster) {
+    delete cluster;
   }
-  tree_.maps.module_to_metrics.clear();
+  tree_.maps.id_to_cluster.clear();
 
   if (graphics_) {
     graphics_->eraseDrawing();
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "number of macros in HardMacroCluster : {}",
-             num_hard_macros_cluster_);
 }
 
 void HierRTLMP::setBusPlanningOn(bool bus_planning_on)

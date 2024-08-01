@@ -212,11 +212,11 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
     macro_area += metrics->getMacroArea();
   }
 
-  Metrics* metrics
-      = new Metrics(num_std_cell, num_macro, std_cell_area, macro_area);
-  tree_->maps.module_to_metrics[module] = metrics;
+  std::unique_ptr<Metrics> metrics = std::make_unique<Metrics>(
+      num_std_cell, num_macro, std_cell_area, macro_area);
+  tree_->maps.module_to_metrics[module] = std::move(metrics);
 
-  return metrics;
+  return tree_->maps.module_to_metrics[module].get();
 }
 
 void ClusteringEngine::reportDesignData(const float core_area)
