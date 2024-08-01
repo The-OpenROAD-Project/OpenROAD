@@ -173,6 +173,8 @@ class dbJournal
   void undo_updateCapNodeField();
   void undo_updateCCSegField();
 
+  dbObjectType popObjectType();
+
   friend dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);
   friend dbOStream& operator<<(dbOStream& stream, const dbJournal& jrnl);
 

@@ -286,10 +286,9 @@ void dbJournal::redo()
 
 void dbJournal::redo_createObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj: {
       std::string name;
       uint net_id;
@@ -420,10 +419,9 @@ void dbJournal::redo_createObject()
 
 void dbJournal::redo_deleteObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj: {
       std::string name;
       uint net_id;
@@ -548,10 +546,9 @@ void dbJournal::redo_deleteObject()
 
 void dbJournal::redo_connectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
@@ -594,10 +591,9 @@ void dbJournal::redo_connectObject()
 
 void dbJournal::redo_disconnectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbITermObj: {
       uint iterm_id;
       _log.pop(iterm_id);
@@ -628,10 +624,9 @@ void dbJournal::redo_disconnectObject()
 
 void dbJournal::redo_swapObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);
@@ -672,10 +667,9 @@ void dbJournal::redo_swapObject()
 
 void dbJournal::redo_updateField()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbBlockObj:
       redo_updateBlockField();
       break;
@@ -1384,6 +1378,13 @@ void dbJournal::redo_updateCCSegField()
   }
 }
 
+dbObjectType dbJournal::popObjectType()
+{
+  int obj_type_value;
+  _log.pop(obj_type_value);
+  return static_cast<dbObjectType>(obj_type_value);
+}
+
 //
 // WORK-IN-PROGRESS undo does not yet work.
 //
@@ -1442,10 +1443,9 @@ void dbJournal::undo()
 
 void dbJournal::undo_createObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -1471,8 +1471,10 @@ void dbJournal::undo_createObject()
     }
 
     default: {
-      _logger->critical(
-          utl::ODB, 403, "No undo_createObject support for type {}", obj_type);
+      _logger->critical(utl::ODB,
+                        403,
+                        "No undo_createObject support for type {}",
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
@@ -1480,10 +1482,9 @@ void dbJournal::undo_createObject()
 
 void dbJournal::undo_deleteObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -1507,8 +1508,10 @@ void dbJournal::undo_deleteObject()
       break;
     }
     default: {
-      _logger->critical(
-          utl::ODB, 417, "No undo_deleteObject support for type {}", obj_type);
+      _logger->critical(utl::ODB,
+                        417,
+                        "No undo_deleteObject support for type {}",
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
@@ -1516,13 +1519,14 @@ void dbJournal::undo_deleteObject()
 
 void dbJournal::undo_connectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     default: {
-      _logger->critical(
-          utl::ODB, 404, "No undo_connectObject support for type {}", obj_type);
+      _logger->critical(utl::ODB,
+                        404,
+                        "No undo_connectObject support for type {}",
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
@@ -1530,15 +1534,14 @@ void dbJournal::undo_connectObject()
 
 void dbJournal::undo_disconnectObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     default: {
       _logger->critical(utl::ODB,
                         405,
                         "No undo_disconnectObject support for type {}",
-                        obj_type);
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
@@ -1546,13 +1549,37 @@ void dbJournal::undo_disconnectObject()
 
 void dbJournal::undo_swapObject()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
+    case dbInstObj: {
+      uint inst_id;
+      _log.pop(inst_id);
+
+      uint prev_lib_id;
+      _log.pop(prev_lib_id);
+
+      uint prev_master_id;
+      _log.pop(prev_master_id);
+
+      uint lib_id;
+      _log.pop(lib_id);
+
+      uint master_id;
+      _log.pop(master_id);
+
+      dbInst* inst = dbInst::getInst(_block, inst_id);
+      dbLib* lib = dbLib::getLib(_block->getDb(), prev_lib_id);
+      dbMaster* master = dbMaster::getMaster(lib, prev_master_id);
+      inst->swapMaster(master);
+      break;
+    }
+
     default: {
-      _logger->critical(
-          utl::ODB, 406, "No undo_swapObject support for type {}", obj_type);
+      _logger->critical(utl::ODB,
+                        406,
+                        "No undo_swapObject support for type {}",
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
@@ -1560,10 +1587,9 @@ void dbJournal::undo_swapObject()
 
 void dbJournal::undo_updateField()
 {
-  int obj_type;
-  _log.pop(obj_type);
+  auto obj_type = popObjectType();
 
-  switch ((dbObjectType) obj_type) {
+  switch (obj_type) {
     case dbNetObj:
       undo_updateNetField();
       break;
@@ -1585,8 +1611,10 @@ void dbJournal::undo_updateField()
       break;
 
     default: {
-      _logger->critical(
-          utl::ODB, 407, "No undo_updateField support for type {}", obj_type);
+      _logger->critical(utl::ODB,
+                        407,
+                        "No undo_updateField support for type {}",
+                        dbObject::getTypeName(obj_type));
       break;
     }
   }
