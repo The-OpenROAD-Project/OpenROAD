@@ -598,6 +598,8 @@ void dbJournal::redo_disconnectObject()
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id;
+      _log.pop(net_id);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -612,6 +614,8 @@ void dbJournal::redo_disconnectObject()
       uint bterm_id;
       _log.pop(bterm_id);
       dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      _log.pop(net_id);
       bterm->disconnect();
 
       break;
@@ -1522,6 +1526,26 @@ void dbJournal::undo_connectObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbITermObj: {
+      uint iterm_id;
+      _log.pop(iterm_id);
+      dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      iterm->disconnect();
+      break;
+    }
+
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      bterm->disconnect();
+      break;
+    }
+
     default: {
       _logger->critical(utl::ODB,
                         404,
@@ -1538,11 +1562,32 @@ void dbJournal::undo_disconnectObject()
 
   switch (obj_type) {
     default: {
-      _logger->critical(utl::ODB,
-                        405,
-                        "No undo_disconnectObject support for type {}",
-                        dbObject::getTypeName(obj_type));
-      break;
+      case dbITermObj: {
+        uint iterm_id;
+        _log.pop(iterm_id);
+        dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+        uint net_id;
+        _log.pop(net_id);
+        dbNet* net = dbNet::getNet(_block, net_id);
+        iterm->connect(net);
+        break;
+      }
+
+      case dbBTermObj: {
+        uint bterm_id;
+        _log.pop(bterm_id);
+        dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+        uint net_id;
+        _log.pop(net_id);
+        dbNet* net = dbNet::getNet(_block, net_id);
+        bterm->connect(net);
+        break;
+      }
+        _logger->critical(utl::ODB,
+                          405,
+                          "No undo_disconnectObject support for type {}",
+                          dbObject::getTypeName(obj_type));
+        break;
     }
   }
 }

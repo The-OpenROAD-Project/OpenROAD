@@ -1565,19 +1565,19 @@ void dbInst::destroy(dbInst* inst_)
   uint i;
   uint n = inst->_iterms.size();
 
+  // Delete these in reverse order so undo creates the in
+  // the correct order.
   for (i = 0; i < n; ++i) {
-    dbId<_dbITerm> id = inst->_iterms[i];
+    dbId<_dbITerm> id = inst->_iterms[n - 1 - i];
     _dbITerm* it = block->_iterm_tbl->getPtr(id);
     ((dbITerm*) it)->disconnect();
 
-    // Bugzilla #7: notify when pins are deleted (assumption: pins
-    // are destroyed only when the related instance is destroyed)
-    // payam 01/10/2006
+    // Notify when pins are deleted (assumption: pins are destroyed only when
+    // the related instance is destroyed)
     std::list<dbBlockCallBackObj*>::iterator cbitr;
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
-      (**cbitr)().inDbITermDestroy(
-          (dbITerm*) it);  // client ECO optimization - payam
+      (**cbitr)().inDbITermDestroy((dbITerm*) it);
     }
 
     dbProperty::destroyProperties(it);

@@ -442,7 +442,10 @@ class dbDatabase : public dbObject
   static void commitEco(dbBlock* block);
 
   ///
-  /// Undo any pending netlist changes.
+  /// Undo any pending netlist changes.  Only supports:
+  ///   create and destroy of dbInst and dbNet
+  ///   dbInst::swapMaster
+  ///   connect and disconnect of dbBTerm and dbITerm
   ///
   static void undoEco(dbBlock* block);
 
