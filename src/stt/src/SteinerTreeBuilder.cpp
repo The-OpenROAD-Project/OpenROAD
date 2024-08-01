@@ -127,8 +127,7 @@ Tree SteinerTreeBuilder::makeFoarsTree(const std::vector<int>& x_pin,
   for (auto&& inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->isBlock()) {
       x_obstacle.emplace_back(inst->getBBox()->xMin(), inst->getBBox()->xMax());
-      y_obstacle.push_back(
-          std::make_pair(inst->getBBox()->yMin(), inst->getBBox()->yMax()));
+      y_obstacle.emplace_back(inst->getBBox()->yMin(), inst->getBBox()->yMax());
     }
   }
   return foars::RunFOARS(
