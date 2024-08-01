@@ -80,13 +80,16 @@ proc highlight_path { args } {
   }
 }
 
-define_cmd_args "report_cell_usage" {}
+define_cmd_args "report_cell_usage" {[-verbose]}
 
-proc report_cell_usage {} {
+proc report_cell_usage { args } {
+  parse_key_args "highlight_path" args keys {} \
+    flags {-verbose} 0
+
   if { [ord::get_db_block] == "NULL" } {
     sta_error "No design block found."
   }
-  report_cell_usage_cmd
+  report_cell_usage_cmd [info exists flags(-verbose)]
 }
 
 # redefine sta::sta_warn/error to call utl::warn/error

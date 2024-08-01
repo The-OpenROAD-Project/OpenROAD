@@ -161,6 +161,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
+  int getMinRoutingLayer() const { return min_routing_layer_; }
   int getMaxRoutingLayer() const { return max_routing_layer_; }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
@@ -180,13 +181,14 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
-  int getMinRoutingLayer() const { return min_routing_layer_; }
 
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  void writeSegments(const char* file_name);
+  void readSegments(const char* file_name);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -207,7 +209,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   // repair antenna public functions
   void repairAntennas(odb::dbMTerm* diode_mterm,
                       int iterations,
-                      float ratio_margin);
+                      float ratio_margin,
+                      int num_threads = 1);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
@@ -439,7 +442,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
 
-  std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
+  std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks> routing_tracks_;

@@ -149,7 +149,12 @@ class Verilog2db
   void makeBlock();
   void makeDbNetlist();
 
- protected:
+ private:
+  struct LineInfo
+  {
+    std::string file_name;
+    int line_number;
+  };
   void makeDbModule(
       Instance* inst,
       dbModule* parent,
@@ -172,6 +177,7 @@ class Verilog2db
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
   dbModule* makeUniqueDbModule(const char* name);
+  std::optional<LineInfo> parseLineInfo(const std::string& attribute);
 
   Network* network_;
   dbDatabase* db_;
@@ -179,7 +185,12 @@ class Verilog2db
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
   std::map<std::string, int> uniquify_id_;  // key: module name
- private:
+  // Map file names to a unique id to avoid having to store the full file name
+  // for each instance
+  std::map<std::string, int> src_file_id_;
+  // We have to store dont_touch instances and apply the attribute after
+  // creating iterms; as iterms can't be added to a dont_touch inst
+  std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
 };
 
@@ -253,6 +264,9 @@ void Verilog2db::makeDbNetlist()
   if (hierarchy_) {
     makeVModNets(inst_module_vec);
   }
+  for (auto inst : dont_touch_insts) {
+    inst->setDoNotTouch(true);
+  }
 }
 
 void Verilog2db::recordBusPortsOrder()
@@ -289,6 +303,20 @@ dbModule* Verilog2db::makeUniqueDbModule(const char* name)
     module = dbModule::create(block_, full_name.c_str());
   } while (module == nullptr);
   return module;
+}
+
+std::optional<Verilog2db::LineInfo> Verilog2db::parseLineInfo(
+    const std::string& attribute)
+{
+  // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
+  const std::regex re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
+  std::smatch match;
+
+  if (!std::regex_match(attribute, match, re)) {
+    return {};
+  }
+
+  return LineInfo{match[1], stoi(match[2])};
 }
 
 // Recursively builds odb's dbModule/dbModInst hierarchy corresponding
@@ -421,6 +449,37 @@ void Verilog2db::makeDbModule(
         continue;
       }
       auto db_inst = dbInst::create(block_, master, child_name, false, module);
+
+      // Yosys writes a src attribute on sequential instances to give the
+      // Verilog source info.
+      const auto src = network_->getAttribute(child, "src");
+      if (!src.empty()) {
+        if (auto opt_line_info = parseLineInfo(src)) {
+          const auto& line_info = opt_line_info.value();
+          const auto& file_name = line_info.file_name;
+          const auto iter = src_file_id_.find(file_name);
+          int file_id;
+          if (iter != src_file_id_.end()) {
+            file_id = iter->second;
+          } else {
+            file_id = src_file_id_.size();
+            src_file_id_[file_name] = file_id;
+            const auto id_string = fmt::format("src_file_{}", file_id);
+            odb::dbStringProperty::create(
+                block_, id_string.c_str(), file_name.c_str());
+          }
+          odb::dbIntProperty::create(db_inst, "src_file_id", file_id);
+          odb::dbIntProperty::create(
+              db_inst, "src_file_line", line_info.line_number);
+        }
+      }
+
+      const auto dont_touch = network_->getAttribute(child, "dont_touch");
+      if (!dont_touch.empty()) {
+        if (std::stoi(dont_touch)) {
+          dont_touch_insts.push_back(db_inst);
+        }
+      }
 
       inst_module_vec.emplace_back(child, module);
 

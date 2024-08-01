@@ -24,6 +24,8 @@ record_tests {
   pad_connected_by_abutment
   switch_top_grid
   top_grid_settings
+  insert_decap1
+  insert_decap2
   #psm_man_tcl_check
   #psm_readme_msgs_check
 }

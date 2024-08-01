@@ -77,6 +77,7 @@ class VoltageDomain
 
   odb::dbBlock* getBlock() const { return block_; }
   utl::Logger* getLogger() const { return logger_; }
+  PdnGen* getPDNGen() const { return pdngen_; }
 
   odb::dbNet* getPower() const;
   odb::dbNet* getGround() const { return ground_; }

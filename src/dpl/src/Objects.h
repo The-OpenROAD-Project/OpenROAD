@@ -70,8 +70,6 @@ struct Cell
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
-
-  static Cell dummy_cell;
 };
 
 struct Group

@@ -37,6 +37,8 @@ include("openroad")
 
 project(grt)
 
+find_package(OpenMP REQUIRED)
+
 add_subdirectory(src/fastroute)
 
 swig_lib(NAME      grt
@@ -88,6 +90,7 @@ target_link_libraries(grt_lib
     rsz_lib
     OpenSTA
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
 
 target_link_libraries(grt
@@ -102,6 +105,7 @@ target_link_libraries(grt
     rsz
     OpenSTA
     Boost::boost
+    OpenMP::OpenMP_CXX
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)

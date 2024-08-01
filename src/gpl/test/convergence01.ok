@@ -49,8 +49,9 @@
 [INFO GPL-0029] BinSize: (  1.377  1.350 )
 [INFO GPL-0030] NumBins: 64
 [NesterovSolve] Iter:    1 overflow: 0.127 HPWL: 397899
-[INFO GPL-0100] worst slack 6.35e-09
-[INFO GPL-0103] Weighted 8 nets.
+[INFO GPL-0100] Timing-driven: executing resizer for reweighting nets.
+[INFO GPL-0101] Timing-driven: worst slack 6.35e-09
+[INFO GPL-0103] Timing-driven: weighted 8 nets.
 [NesterovSolve] Iter:   10 overflow: 0.234 HPWL: 398615
 [NesterovSolve] Iter:   20 overflow: 0.223 HPWL: 398901
 [NesterovSolve] Iter:   30 overflow: 0.217 HPWL: 398906

@@ -80,6 +80,7 @@ class TimingPathsModel : public QAbstractTableModel
     Skew,
     LogicDelay,
     LogicDepth,
+    Fanout,
     Start,
     End
   };
@@ -95,6 +96,7 @@ class TimingPathsModel : public QAbstractTableModel
            {Skew, "Skew"},
            {LogicDelay, "Logic Delay"},
            {LogicDepth, "Logic Depth"},
+           {Fanout, "Fanout"},
            {Start, "Start"},
            {End, "End"}};
     return column_names;
@@ -119,7 +121,8 @@ class TimingPathsModel : public QAbstractTableModel
   void resetModel();
   void populateModel(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
-                     const std::set<const sta::Pin*>& to);
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
@@ -127,7 +130,8 @@ class TimingPathsModel : public QAbstractTableModel
  private:
   bool populatePaths(const std::set<const sta::Pin*>& from,
                      const std::vector<std::set<const sta::Pin*>>& thru,
-                     const std::set<const sta::Pin*>& to);
+                     const std::set<const sta::Pin*>& to,
+                     const std::string& path_group_name);
 
   STAGuiInterface* sta_;
   bool is_setup_;

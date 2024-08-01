@@ -42,6 +42,7 @@ Path Type: max
 
 
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [INFO RSZ-0040] Inserted 3 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

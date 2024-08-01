@@ -4,17 +4,36 @@
 [INFO ODB-0131]     Created 17 components and 92 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 34 connections.
 [INFO ODB-0133]     Created 7 nets and 30 connections.
-worst slack -1.95
+worst slack -1.954
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
-Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint
----------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |         0 |  -1.954 |  -6.294 | r2/D
-       10 |       8 |       3 |            0 |         0 |  -0.865 |  -3.085 | r2/D
-       19 |      17 |       3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
-    final |      17 |       3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
----------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0041] Resized 17 instances.
+[INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
+Iteration | Removed | Resized | Inserted | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint
+          | Buffers |         | Buffers  |              |           |         |         |
+-------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |            0 |         0 |  -1.954 |  -6.294 | r2/D
+       10 |       0 |       8 |        3 |            0 |         0 |  -0.865 |  -3.085 | r2/D
+       19 |       0 |      17 |        3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
+       20 |       0 |      17 |        3 |            0 |         0 |  -0.654 |  -2.908 | r2/D
+       30 |       0 |      25 |        7 |            0 |         0 |  -0.663 |  -2.800 | r2/D
+       35 |       0 |      26 |        7 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       40 |       0 |      29 |        9 |            0 |         0 |  -0.652 |  -2.959 | r2/D
+       46 |       0 |      32 |        9 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       50 |       0 |      35 |        9 |            0 |         0 |  -0.663 |  -2.600 | r2/D
+       57 |       0 |      38 |       11 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       60 |       0 |      40 |       11 |            0 |         0 |  -0.663 |  -2.610 | r2/D
+       68 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       69 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       70 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       70 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       71 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       72 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       73 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       74 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+       75 |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+    final |       0 |      44 |       13 |            0 |         0 |  -0.652 |  -2.874 | r2/D
+-------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 3 buffers.
+[INFO RSZ-0041] Resized 44 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -0.65
+worst slack -0.652

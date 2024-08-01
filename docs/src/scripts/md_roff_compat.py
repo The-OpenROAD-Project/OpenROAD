@@ -34,7 +34,7 @@
 ###############################################################################
 
 # This code contains the scripts to convert the individual module READMEs
-#  into individual functions for man2 and man3 level. 
+#  into individual functions for man2 and man3 level.
 
 import os
 from manpage import ManPage
@@ -44,12 +44,39 @@ from extract_utils import extract_tables, parse_switch
 
 # Undocumented manpages.
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
-# odb: documentation is hosted on doxygen. 
+# odb: documentation is hosted on doxygen.
 
-tools = ["ant", "cts", "dbSta", "dft", "dpl", "dpo", "drt",\
-        "dst", "fin", "gpl", "grt", "gui", "ifp", "mpl",\
-        "mpl2", "odb", "pad", "par", "pdn", "ppl", "psm",\
-        "rcx", "rmp", "rsz", "sta", "stt", "tap", "upf", "utl"]
+tools = [
+    "ant",
+    "cts",
+    "dbSta",
+    "dft",
+    "dpl",
+    "dpo",
+    "drt",
+    "dst",
+    "fin",
+    "gpl",
+    "grt",
+    "gui",
+    "ifp",
+    "mpl",
+    "mpl2",
+    "odb",
+    "pad",
+    "par",
+    "pdn",
+    "ppl",
+    "psm",
+    "rcx",
+    "rmp",
+    "rsz",
+    "sta",
+    "stt",
+    "tap",
+    "upf",
+    "utl",
+]
 
 # Process man2 (except odb and sta)
 DEST_DIR2 = SRC_DIR = "./md/man2"
@@ -59,9 +86,12 @@ docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude2]
 # Process man3 (add extra path for ORD messages)
 SRC_DIR = "../src"
 DEST_DIR3 = "./md/man3"
-exclude = ["sta"] #sta excluded because its format is different, and no severity level.
+exclude = [
+    "sta"
+]  # sta excluded because its format is different, and no severity level.
 docs3 = [f"{SRC_DIR}/{tool}/messages.txt" for tool in tools if tool not in exclude]
 docs3.append("../messages.txt")
+
 
 def man2(path=DEST_DIR2):
     for doc in docs2:
@@ -69,6 +99,7 @@ def man2(path=DEST_DIR2):
             print(f"{doc} doesn't exist. Continuing")
             continue
         man2_translate(doc, path)
+
 
 def man2_translate(doc, path):
     with open(doc) as f:
@@ -87,14 +118,21 @@ def man2_translate(doc, path):
         # arguments
         func_options, func_args = extract_arguments(text)
 
-        print(f'{os.path.basename(doc)}')
-        print(f'''Names: {len(func_names)},\
+        print(f"{os.path.basename(doc)}")
+        print(
+            f"""Names: {len(func_names)},\
         Desc: {len(func_descs)},\
         Syn: {len(func_synopsis)},\
         Options: {len(func_options)},\
-        Args: {len(func_args)}''')
-        assert len(func_names) == len(func_descs) == len(func_synopsis) == len(func_options) == len(func_args),\
-            f"""Counts for all 5 categories must match up.\n
+        Args: {len(func_args)}"""
+        )
+        assert (
+            len(func_names)
+            == len(func_descs)
+            == len(func_synopsis)
+            == len(func_options)
+            == len(func_args)
+        ), f"""Counts for all 5 categories must match up.\n
             {func_names}\n
             {func_descs}\n
             {func_synopsis}\n
@@ -108,7 +146,7 @@ def man2_translate(doc, path):
             manpage.desc = func_descs[func_id]
             manpage.synopsis = func_synopsis[func_id]
             if func_options[func_id]:
-                # convert it to dict 
+                # convert it to dict
                 # TODO change this into a function. Or subsume under option/args parsing.
                 switches_dict = {}
                 for line in func_options[func_id]:
@@ -127,6 +165,7 @@ def man2_translate(doc, path):
             manpage.write_roff_file(path)
     print("Man2 successfully compiled.")
 
+
 def man3(path=DEST_DIR3):
     for doc in docs3:
         print(f"Processing {doc}")
@@ -135,20 +174,28 @@ def man3(path=DEST_DIR3):
             continue
         man3_translate(doc, path)
 
+
 def man3_translate(doc, path):
     with open(doc) as f:
         for line in f:
             parts = line.split()
-            module, num, message, level = parts[0], parts[1],\
-                            " ".join(parts[3:-2]), parts[-2]
+            module, num, message, level = (
+                parts[0],
+                parts[1],
+                " ".join(parts[3:-2]),
+                parts[-2],
+            )
             manpage = ManPage()
             manpage.name = f"{module}-{num}"
-            if "with-total" in manpage.name: print(parts); exit()
+            if "with-total" in manpage.name:
+                print(parts)
+                exit()
             manpage.synopsis = "N/A."
             manpage.desc = f"Type: {level}\n\n{message}"
             manpage.write_roff_file(path)
 
     print("Man3 successfully compiled.")
+
 
 if __name__ == "__main__":
     man2()

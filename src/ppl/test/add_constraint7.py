@@ -8,7 +8,11 @@ tech.readLef("Nangate45/Nangate45.lef")
 design = Design(tech)
 design.readDef("gcd.def")
 
-ppl_aux.set_io_pin_constraint(design, pin_names="resp_val resp_rdy req_rdy req_val req_msg.* .*msg.*", region="bottom:*")
+ppl_aux.set_io_pin_constraint(
+    design,
+    pin_names="resp_val resp_rdy req_rdy req_val req_msg.* .*msg.*",
+    region="bottom:*",
+)
 ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2", random=True)
 
 def_file = helpers.make_result_file("add_constraint7.def")

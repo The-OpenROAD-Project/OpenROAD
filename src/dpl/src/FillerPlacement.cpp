@@ -48,6 +48,8 @@ using utl::DPL;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
+using utl::format_as;
+
 static dbTechLayer* getImplant(dbMaster* master)
 {
   if (!master) {

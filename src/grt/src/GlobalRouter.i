@@ -212,7 +212,8 @@ route_layer_lengths(odb::dbNet* db_net)
 void
 repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 {
-  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
 }
 
 void
@@ -296,6 +297,16 @@ void
 report_layer_wire_lengths()
 {
   getGlobalRouter()->reportLayerWireLengths();
+}
+
+void write_segments(const char* file_name)
+{
+  getGlobalRouter()->writeSegments(file_name);
+}
+
+void read_segments(const char* file_name)
+{
+  getGlobalRouter()->readSegments(file_name);
 }
 
 } // namespace

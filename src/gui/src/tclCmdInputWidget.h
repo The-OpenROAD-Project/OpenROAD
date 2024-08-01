@@ -56,6 +56,11 @@ class TclCmdInputWidget : public CmdInputWidget
   Q_OBJECT
 
  public:
+  // When exiting we have to return an error to stop script execution.
+  // We don't want to log the error so we use this string as a special
+  // key.  Not elegant but that's TCL.
+  static constexpr const char* exit_string = "_GUI EXITING_";
+
   TclCmdInputWidget(QWidget* parent = nullptr);
   ~TclCmdInputWidget();
 
