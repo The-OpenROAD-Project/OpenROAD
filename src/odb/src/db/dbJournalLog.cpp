@@ -55,7 +55,7 @@ void dbJournalLog::check_type(LogDataType expected_type)
     const auto type = static_cast<LogDataType>(next());
     if (type != expected_type) {
       logger_->critical(utl::ODB,
-                        401,
+                        426,
                         "In journal: expected type {} got {}.",
                         to_string(expected_type),
                         to_string(type));
@@ -291,7 +291,7 @@ dbIStream& operator>>(dbIStream& stream, dbJournalLog& log)
   bool debug;
   stream >> debug;
   if (debug != log.debug_) {
-    log.logger_->error(utl::ODB, 402, "Journal debug mode mismatch.");
+    log.logger_->error(utl::ODB, 427, "Journal debug mode mismatch.");
   }
   stream >> log.data_;
   return stream;

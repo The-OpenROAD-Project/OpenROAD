@@ -279,7 +279,7 @@ void dbJournal::redo()
     _log.pop(end_action);
     _log.pop(action_idx);
     if (end_action != END_ACTION || action_idx != s) {
-      _logger->critical(utl::ODB, 400, "In undo, expected END_ACTION.");
+      _logger->critical(utl::ODB, 419, "In undo, expected END_ACTION.");
     }
   }
 }
@@ -1476,7 +1476,7 @@ void dbJournal::undo_createObject()
 
     default: {
       _logger->critical(utl::ODB,
-                        403,
+                        441,
                         "No undo_createObject support for type {}",
                         dbObject::getTypeName(obj_type));
       break;
@@ -1548,7 +1548,7 @@ void dbJournal::undo_connectObject()
 
     default: {
       _logger->critical(utl::ODB,
-                        404,
+                        442,
                         "No undo_connectObject support for type {}",
                         dbObject::getTypeName(obj_type));
       break;
@@ -1584,7 +1584,7 @@ void dbJournal::undo_disconnectObject()
         break;
       }
         _logger->critical(utl::ODB,
-                          405,
+                          443,
                           "No undo_disconnectObject support for type {}",
                           dbObject::getTypeName(obj_type));
         break;
@@ -1622,7 +1622,7 @@ void dbJournal::undo_swapObject()
 
     default: {
       _logger->critical(utl::ODB,
-                        406,
+                        444,
                         "No undo_swapObject support for type {}",
                         dbObject::getTypeName(obj_type));
       break;
@@ -1657,7 +1657,7 @@ void dbJournal::undo_updateField()
 
     default: {
       _logger->critical(utl::ODB,
-                        407,
+                        445,
                         "No undo_updateField support for type {}",
                         dbObject::getTypeName(obj_type));
       break;
