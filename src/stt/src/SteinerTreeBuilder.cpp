@@ -40,6 +40,7 @@
 
 #include "odb/db.h"
 #include "stt/flute.h"
+#include "stt/foars.h"
 #include "stt/pd.h"
 
 namespace stt {
@@ -115,6 +116,24 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          int accuracy)
 {
   return flt::flutes(x, y, s, accuracy);
+}
+
+Tree SteinerTreeBuilder::makeFoarsTree(const std::vector<int>& x_pin,
+                                       const std::vector<int>& y_pin,
+                                       const int drvr_index)
+{
+  std::vector<std::pair<int, int>> x_obstacle;
+  std::vector<std::pair<int, int>> y_obstacle;
+  for (auto&& inst : db_->getChip()->getBlock()->getInsts()) {
+    if (inst->isBlock()) {
+      x_obstacle.push_back(
+          std::make_pair(inst->getBBox()->xMin(), inst->getBBox()->xMax()));
+      y_obstacle.push_back(
+          std::make_pair(inst->getBBox()->yMin(), inst->getBBox()->yMax()));
+    }
+  }
+  return foars::RunFOARS(
+      x_pin, y_pin, x_obstacle, y_obstacle, drvr_index, logger_);
 }
 
 static bool rectAreaZero(const odb::Rect& rect)
