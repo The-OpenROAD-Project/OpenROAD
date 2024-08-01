@@ -121,6 +121,8 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
+
+  hier_rtlmp_->init();
   hier_rtlmp_->run();
 
   return true;
@@ -192,6 +194,16 @@ void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
 {
   hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
+}
+
+void MacroPlacer2::setDebugSkipSteps(bool skip_steps)
+{
+  hier_rtlmp_->setDebugSkipSteps(skip_steps);
+}
+
+void MacroPlacer2::setDebugOnlyFinalResult(bool only_final_result)
+{
+  hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
 }
 
 }  // namespace mpl2

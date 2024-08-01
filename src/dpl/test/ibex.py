@@ -1,4 +1,3 @@
-
 from openroad import Design, Tech
 import helpers
 import dpl_aux

@@ -74,6 +74,7 @@ using sta::Corner;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
+using sta::InstanceSeq;
 using sta::Net;
 using sta::NetSeq;
 using sta::Pin;
@@ -354,12 +355,31 @@ have_estimated_parasitics()
   return resizer->haveEstimatedParasitics();
 }
 
+InstanceSeq*
+init_insts_cmd()
+{
+  InstanceSeq* insts = new InstanceSeq;
+  return insts;
+}
+
 void
-remove_buffers_cmd()
+add_to_insts_cmd(Instance* inst, InstanceSeq* insts)
+{
+  insts->emplace_back(inst);
+}
+
+void
+delete_insts_cmd(InstanceSeq* insts)
+{
+  delete insts;
+}
+
+void
+remove_buffers_cmd(InstanceSeq insts)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->removeBuffers();
+  resizer->removeBuffers(std::move(insts));
 }
 
 void
@@ -529,13 +549,15 @@ repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
              bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning)
+             bool skip_pin_swap, bool skip_gate_cloning,
+             bool skip_buffering, bool enable_buffer_removal)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, verbose,
-                       skip_pin_swap, skip_gate_cloning);
+                       skip_pin_swap, skip_gate_cloning,
+                       skip_buffering, !enable_buffer_removal);
 }
 
 void

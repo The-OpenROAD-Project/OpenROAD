@@ -69,8 +69,6 @@ static std::pair<int, int> getMinMaxIdx(int ll,
                                         int minIdx,
                                         int maxIdx);
 
-static utl::Logger* slog_;
-
 static bool isCoreAreaOverlap(Die& die, Instance& inst);
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
@@ -327,11 +325,11 @@ Pin::Pin(odb::dbITerm* iTerm) : Pin()
   updateCoordi(iTerm);
 }
 
-Pin::Pin(odb::dbBTerm* bTerm) : Pin()
+Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
 {
   setBTerm();
   term_ = (void*) bTerm;
-  updateCoordi(bTerm);
+  updateCoordi(bTerm, logger);
 }
 
 std::string Pin::name() const
@@ -503,7 +501,7 @@ void Pin::updateCoordi(odb::dbITerm* iTerm)
 //
 // for BTerm, offset* will hold bbox info.
 //
-void Pin::updateCoordi(odb::dbBTerm* bTerm)
+void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
 {
   int lx = INT_MAX;
   int ly = INT_MAX;
@@ -519,11 +517,12 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm)
   }
 
   if (lx == INT_MAX || ly == INT_MAX || ux == INT_MIN || uy == INT_MIN) {
-    std::string msg = std::string(bTerm->getConstName())
-                      + " toplevel port is not placed!\n";
-    msg += "       Replace will regard " + std::string(bTerm->getConstName())
-           + " is placed in (0, 0)";
-    slog_->warn(GPL, 1, msg);
+    logger->warn(GPL,
+                 1,
+                 "{} toplevel port is not placed!\n"
+                 "       Replace will regard {} is placed in (0, 0)",
+                 bTerm->getConstName(),
+                 bTerm->getConstName());
   }
 
   // Just center
@@ -773,8 +772,6 @@ PlacerBaseCommon::~PlacerBaseCommon()
 
 void PlacerBaseCommon::init()
 {
-  slog_ = log_;
-
   log_->info(GPL, 2, "DBU: {}", db_->getTech()->getDbUnitsPerMicron());
 
   dbBlock* block = db_->getChip()->getBlock();
@@ -890,7 +887,7 @@ void PlacerBaseCommon::init()
 
       if (pbVars_.skipIoMode == false) {
         for (dbBTerm* bTerm : net->getBTerms()) {
-          Pin myPin(bTerm);
+          Pin myPin(bTerm, log_);
           myPin.setNet(myNetPtr);
           pinStor_.push_back(myPin);
         }
@@ -1029,8 +1026,6 @@ PlacerBase::~PlacerBase()
 
 void PlacerBase::init()
 {
-  slog_ = log_;
-
   die_ = pbCommon_->die();
 
   // siteSize update
@@ -1161,7 +1156,7 @@ void PlacerBase::initInstsForUnusableSites()
           = "Blockages associated with moveable instances "
             " are unsupported and ignored [inst: "
             + inst->getName() + "]\n";
-      slog_->error(GPL, 3, msg);
+      log_->error(GPL, 3, msg);
       continue;
     }
     dbBox* bbox = blockage->getBBox();

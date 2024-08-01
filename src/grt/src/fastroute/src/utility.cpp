@@ -1882,9 +1882,36 @@ void FastRouteCore::copyRS(void)
 
 void FastRouteCore::copyBR(void)
 {
-  int i, j, edgeID, numEdges, numNodes, min_y, min_x;
+  int i, j, edgeID, numEdges, numNodes, min_y, min_x, edgeCost;
 
   if (!sttrees_bk_.empty()) {
+    // Reduce usage with last routes before update
+    for (const int& netID : net_ids_) {
+      numEdges = sttrees_[netID].num_edges();
+      edgeCost = nets_[netID]->getEdgeCost();
+
+      for (edgeID = 0; edgeID < numEdges; edgeID++) {
+        const TreeEdge& edge = sttrees_[netID].edges[edgeID];
+        if (edge.len > 0) {
+          const std::vector<int16_t>& gridsX = edge.route.gridsX;
+          const std::vector<int16_t>& gridsY = edge.route.gridsY;
+          for (i = 0; i < edge.route.routelen; i++) {
+            if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
+              continue;
+            }
+            if (gridsX[i] == gridsX[i + 1]) {
+              min_y = std::min(gridsY[i], gridsY[i + 1]);
+              v_edges_[min_y][gridsX[i]].usage -= edgeCost;
+            } else {
+              min_x = std::min(gridsX[i], gridsX[i + 1]);
+              h_edges_[gridsY[i]][min_x].usage -= edgeCost;
+            }
+          }
+        }
+      }
+    }
+
+    // Clean routes
     for (const int& netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
@@ -1895,6 +1922,7 @@ void FastRouteCore::copyBR(void)
       }
     }
 
+    // Copy saved routes
     for (const int& netID : net_ids_) {
       numNodes = sttrees_bk_[netID].num_nodes();
       numEdges = sttrees_bk_[netID].num_edges();
@@ -1944,38 +1972,25 @@ void FastRouteCore::copyBR(void)
       }
     }
 
-    for (i = 0; i < y_grid_; i++) {
-      for (j = 0; j < x_grid_ - 1; j++) {
-        h_edges_[i][j].usage = 0;
-      }
-    }
-    for (i = 0; i < y_grid_ - 1; i++) {
-      for (j = 0; j < x_grid_; j++) {
-        v_edges_[i][j].usage = 0;
-      }
-    }
-
-    for (int netID = 0; netID < netCount(); netID++) {
+    // Increase usage with new routes
+    for (const int& netID : net_ids_) {
       numEdges = sttrees_[netID].num_edges();
-      int edgeCost = nets_[netID]->getEdgeCost();
+      edgeCost = nets_[netID]->getEdgeCost();
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {
-        if (sttrees_[netID].edges[edgeID].len > 0) {
-          const std::vector<short>& gridsX
-              = sttrees_[netID].edges[edgeID].route.gridsX;
-          const std::vector<short>& gridsY
-              = sttrees_[netID].edges[edgeID].route.gridsY;
-          for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
+        const TreeEdge& edge = sttrees_[netID].edges[edgeID];
+        if (edge.len > 0) {
+          const std::vector<int16_t>& gridsX = edge.route.gridsX;
+          const std::vector<int16_t>& gridsY = edge.route.gridsY;
+          for (i = 0; i < edge.route.routelen; i++) {
             if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
               continue;
             }
-            if (gridsX[i] == gridsX[i + 1])  // a vertical edge
-            {
+            if (gridsX[i] == gridsX[i + 1]) {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
               v_edges_[min_y][gridsX[i]].usage += edgeCost;
               v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
-            } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-            {
+            } else {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
               h_edges_[gridsY[i]][min_x].usage += edgeCost;
               h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));

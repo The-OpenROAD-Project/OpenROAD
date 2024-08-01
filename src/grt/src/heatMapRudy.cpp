@@ -113,6 +113,10 @@ bool RUDYDataSource::populateMap()
     return false;
   }
 
+  if (rudy_ == nullptr) {
+    return false;
+  }
+
   for (odb::dbInst* inst : getBlock()->getInsts()) {
     if (!inst->isPlaced()) {
       getLogger()->warn(

@@ -356,12 +356,18 @@ std::string dbSta::getInstanceTypeText(InstType type)
       return "Other";
     case STD_CELL:
       return "Standard cell";
-    case STD_BUFINV:
-      return "Buffer/inverter";
-    case STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case STD_BUFINV_TIMING_REPAIR:
-      return "Timing Repair Buffer/inverter";
+    case STD_BUF:
+      return "Buffer";
+    case STD_BUF_CLK_TREE:
+      return "Clock buffer";
+    case STD_BUF_TIMING_REPAIR:
+      return "Timing Repair Buffer";
+    case STD_INV:
+      return "Inverter";
+    case STD_INV_CLK_TREE:
+      return "Clock inverter";
+    case STD_INV_TIMING_REPAIR:
+      return "Timing Repair inverter";
     case STD_CLOCK_GATE:
       return "Clock gate cell";
     case STD_LEVEL_SHIFT:
@@ -449,7 +455,8 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
     return STD_OTHER;
   }
 
-  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+  const bool is_inverter = lib_cell->isInverter();
+  if (is_inverter || lib_cell->isBuffer()) {
     if (source_type == odb::dbSourceType::TIMING) {
       for (auto* iterm : inst->getITerms()) {
         // look through iterms and check for clock nets
@@ -458,12 +465,12 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
           continue;
         }
         if (net->getSigType() == odb::dbSigType::CLOCK) {
-          return STD_BUFINV_CLK_TREE;
+          return is_inverter ? STD_INV_CLK_TREE : STD_BUF_CLK_TREE;
         }
       }
-      return STD_BUFINV_TIMING_REPAIR;
+      return is_inverter ? STD_INV_TIMING_REPAIR : STD_BUF_TIMING_REPAIR;
     }
-    return STD_BUFINV;
+    return is_inverter ? STD_INV : STD_BUF;
   }
   if (lib_cell->isClockGate()) {
     return STD_CLOCK_GATE;
@@ -493,17 +500,30 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   return inst_type_count;
 }
 
-void dbSta::report_cell_usage()
+void dbSta::report_cell_usage(const bool verbose)
 {
   std::map<InstType, int> instances_types = countInstancesByType();
-  int total_usage = db_->getChip()->getBlock()->getInsts().size();
+  auto insts = db_->getChip()->getBlock()->getInsts();
+  const int total_usage = insts.size();
 
-  logger_->report("Cell usage report:");
+  const char* format = "  {:35} {:>7}";
+  logger_->report("Cell type report:");
   for (auto [type, count] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
-    logger_->report("  {}s: {}", type_name, count);
+    logger_->report(format, type_name, count);
   }
-  logger_->report("  Total: {}", total_usage);
+  logger_->report(format, "Total", total_usage);
+
+  if (verbose) {
+    logger_->report("\nCell instance report:");
+    std::map<dbMaster*, int> usage_count;
+    for (auto inst : insts) {
+      usage_count[inst->getMaster()]++;
+    }
+    for (auto [master, count] : usage_count) {
+      logger_->report(format, master->getName(), count);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////

@@ -45,34 +45,39 @@ TEST(TestScanArchitect, CalculatesChainCountAndMaxLength)
   // For 1 hash domain (1) with 10 bits and a max length of 5, we need to have a
   // chain count of 2 in that hash domain (1)
   EXPECT_TRUE(CompareUnordered(
-      ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 5),
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 5, {}),
       {{1, CreateTestHashDomainLimits(2, 5)}}));
   // Unbalance cases
   // We create 2 chains with max_length of 4
-  EXPECT_TRUE(
-      CompareUnordered(ScanArchitect::inferChainCountFromMaxLength({{1, 9}}, 5),
-                       {{1, CreateTestHashDomainLimits(2, 5)}}));
+  EXPECT_TRUE(CompareUnordered(
+      ScanArchitect::inferChainCountFromMaxLength({{1, 9}}, 5, {}),
+      {{1, CreateTestHashDomainLimits(2, 5)}}));
   // We create 2 chains with max_length of 3
-  EXPECT_TRUE(
-      CompareUnordered(ScanArchitect::inferChainCountFromMaxLength({{1, 6}}, 5),
-                       {{1, CreateTestHashDomainLimits(2, 3)}}));
+  EXPECT_TRUE(CompareUnordered(
+      ScanArchitect::inferChainCountFromMaxLength({{1, 6}}, 5, {}),
+      {{1, CreateTestHashDomainLimits(2, 3)}}));
 
   // Two hash domains, balance case
   EXPECT_TRUE(CompareUnordered(
-      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 10}}, 5),
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 10}}, 5, {}),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(2, 5)}}));
   // Unbalance
   EXPECT_TRUE(CompareUnordered(
-      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 9}}, 5),
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 9}}, 5, {}),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(2, 5)}}));
 
   //// Two hash domains with different number of cells
   EXPECT_TRUE(CompareUnordered(
-      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 15}}, 5),
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 15}}, 5, {}),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(3, 5)}}));
+
+  // Constrained max chain count
+  EXPECT_TRUE(CompareUnordered(
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 5, {1}),
+      {{1, CreateTestHashDomainLimits(1, 10)}}));
 }
 
 }  // namespace

@@ -21,5 +21,3 @@ pdngen
 set def_file [make_result_file core_grid_with_single_layer_rings.def]
 write_def $def_file
 diff_files core_grid_with_single_layer_rings.defok $def_file
-
-pdn::debug_renderer 1

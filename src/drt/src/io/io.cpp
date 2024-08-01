@@ -605,8 +605,20 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       netIn->addNode(instTermNode);
     }
   }
+  if (net->getWire()
+      && (net->getWireType() == odb::dbWireType::SHIELD
+          || net->getWireType() == odb::dbWireType::COVER)) {
+    logger_->error(DRT,
+                   309,
+                   "Unsupported net wiring {} for net {}",
+                   net->getWireType().getString(),
+                   net->getName());
+  }
   bool db_net_routed
-      = net->getWire() && net->getWireType() == odb::dbWireType::ROUTED;
+      = net->isSpecial()
+        || (net->getWire()
+            && (net->getWireType() == odb::dbWireType::ROUTED
+                || net->getWireType() == odb::dbWireType::FIXED));
   bool fr_net_routed = !netIn->getShapes().empty() || !netIn->getVias().empty()
                        || !netIn->getPatchWires().empty();
   netIn->setHasInitialRouting(false);
@@ -648,6 +660,15 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
   if (!net->isSpecial() && net->getWire() != nullptr) {
     decoder.begin(net->getWire());
     odb::dbWireDecoder::OpCode pathId = decoder.next();
+    if (decoder.getWireType() == odb::dbWireType::FIXED) {
+      netIn->setFixed(true);
+    } else if (decoder.getWireType() != odb::dbWireType::ROUTED) {
+      logger_->error(DRT,
+                     310,
+                     "Unsupported net wiring {} for net {}",
+                     decoder.getWireType().getString(),
+                     net->getName());
+    }
     while (pathId != odb::dbWireDecoder::END_DECODE) {
       // for each path start
       // when previous connection has a different direction of the current
@@ -3443,6 +3464,9 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
   odb::dbWireEncoder _wire_encoder;
   for (auto net : block->getNets()) {
     if (connFigs_.find(net->getName()) != connFigs_.end()) {
+      if (getDesign()->getTopBlock()->findNet(net->getName())->isFixed()) {
+        continue;
+      }
       odb::dbWire* wire = net->getWire();
       if (wire == nullptr) {
         wire = odb::dbWire::create(net);
@@ -3757,6 +3781,17 @@ void io::Writer::updateDb(odb::dbDatabase* db,
   updateDbVias(block, db_tech);
   updateDbAccessPoints(block, db_tech);
   if (!pin_access_only) {
+    for (auto net : block->getNets()) {
+      if (net->getWire()) {
+        odb::dbWireDecoder decoder;
+        decoder.begin(net->getWire());
+        decoder.next();
+        if (decoder.getWireType() == odb::dbWireType::FIXED) {
+          continue;
+        }
+        odb::dbWire::destroy(net->getWire());
+      }
+    }
     fillConnFigs(false);
     updateDbConn(block, db_tech, snapshot);
     router_->processBTermsAboveTopLayer(true);

@@ -8,16 +8,24 @@ tech.readLef("Nangate45/Nangate45.lef")
 design = Design(tech)
 design.readDef("gcd.def")
 
-ppl_aux.place_pins(design, hor_layers="metal3",
-                   ver_layers="metal2",
-                   corner_avoidance=0, min_distance=0.12)
+ppl_aux.place_pins(
+    design,
+    hor_layers="metal3",
+    ver_layers="metal2",
+    corner_avoidance=0,
+    min_distance=0.12,
+)
 
 def_file1 = helpers.make_result_file("mc1_iop.def")
 design.writeDef(def_file1)
 
-ppl_aux.place_pins(design, hor_layers="metal3",
-                   ver_layers="metal2",
-                   corner_avoidance=0, min_distance=0.12)
+ppl_aux.place_pins(
+    design,
+    hor_layers="metal3",
+    ver_layers="metal2",
+    corner_avoidance=0,
+    min_distance=0.12,
+)
 
 def_file2 = helpers.make_result_file("mc2_iop.def")
 design.writeDef(def_file2)

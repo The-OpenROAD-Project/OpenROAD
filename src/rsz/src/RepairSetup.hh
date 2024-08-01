@@ -51,6 +51,7 @@ class PathExpanded;
 namespace rsz {
 
 class Resizer;
+class RemoveBuffer;
 
 using odb::Point;
 using std::pair;
@@ -61,6 +62,7 @@ using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
+using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -77,6 +79,44 @@ class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = vector<BufferedNetPtr>;
+struct SlackEstimatorParams
+{
+  Pin* driver_pin;
+  Pin* prev_driver_pin;
+  Pin* driver_input_pin;
+  Instance* driver;
+  PathRef* driver_path;
+  PathRef* prev_driver_path;
+  LibertyCell* driver_cell;
+  const float setup_slack_margin;
+  const Corner* corner;
+
+  SlackEstimatorParams(const float margin, const Corner* corner)
+      : setup_slack_margin(margin), corner(corner)
+  {
+    driver_pin = nullptr;
+    prev_driver_pin = nullptr;
+    driver_input_pin = nullptr;
+    driver = nullptr;
+    driver_path = nullptr;
+    prev_driver_path = nullptr;
+    driver_cell = nullptr;
+  }
+};
+struct OptoParams
+{
+  int iteration;
+  float initial_tns;
+  const float setup_slack_margin;
+  const bool verbose;
+
+  OptoParams(const float margin, const bool verbose)
+      : setup_slack_margin(margin), verbose(verbose)
+  {
+    iteration = 0;
+    initial_tns = 0.0;
+  }
+};
 
 class RepairSetup : public sta::dbStaState
 {
@@ -89,7 +129,9 @@ class RepairSetup : public sta::dbStaState
                    int max_passes,
                    bool verbose,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool skip_gate_cloning,
+                   bool skip_buffering,
+                   bool skip_buffer_removal);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -103,7 +145,10 @@ class RepairSetup : public sta::dbStaState
   bool repairPath(PathRef& path,
                   Slack path_slack,
                   bool skip_pin_swap,
-                  bool skip_gate_cloning);
+                  bool skip_gate_cloning,
+                  bool skip_buffering,
+                  bool skip_buffer_removal,
+                  float setup_slack_margin);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
@@ -120,6 +165,12 @@ class RepairSetup : public sta::dbStaState
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
   bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool removeDrvr(PathRef* drvr_path,
+                  LibertyCell* drvr_cell,
+                  int drvr_index,
+                  PathExpanded* expanded,
+                  float setup_slack_margin);
+  bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
@@ -152,6 +203,13 @@ class RepairSetup : public sta::dbStaState
   Slack slackPenalized(const BufferedNetPtr& bnet, int index);
 
   void printProgress(int iteration, bool force, bool end) const;
+  bool terminateProgress(int iteration,
+                         float initial_tns,
+                         float& prev_tns,
+                         float& fix_rate_threshold,
+                         int endpt_index,
+                         int num_endpts);
+  void repairSetupLastGasp(const OptoParams& params);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
@@ -165,6 +223,7 @@ class RepairSetup : public sta::dbStaState
   int rebuffer_net_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
+  int removed_buffer_count_ = 0;
   // Map to block pins from being swapped more than twice for the
   // same instance.
   std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
@@ -179,6 +238,12 @@ class RepairSetup : public sta::dbStaState
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
+  static constexpr int opto_small_interval_ = 100;
+  static constexpr int opto_large_interval_ = 1000;
+  static constexpr int buffer_removal_max_fanout_ = 10;
+  static constexpr float inc_fix_rate_threshold_
+      = 0.0001;  // default fix rate threshold = 0.01%
+  static constexpr int max_last_gasp_passes_ = 10;
 };
 
 }  // namespace rsz

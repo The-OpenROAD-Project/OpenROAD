@@ -184,6 +184,7 @@ class Cluster
   void addDbModule(odb::dbModule* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
   void addLeafMacro(odb::dbInst* leaf_macro);
+  void addLeafInst(odb::dbInst* inst);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
   const std::vector<odb::dbModule*> getDbModules() const;
   const std::vector<odb::dbInst*> getLeafStdCells() const;
@@ -202,6 +203,8 @@ class Cluster
   bool isIOCluster() const;
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
+  bool isEmpty() const;
+  bool correspondsToLogicalModule() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -220,6 +223,7 @@ class Cluster
   void setX(float x);
   void setY(float y);
   const std::pair<float, float> getLocation() const;
+  Rect getBBox() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
@@ -520,6 +524,7 @@ class SoftMacro
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
   float getArea() const;
+  Rect getBBox() const;
   // Num Macros
   bool isMacroCluster() const;
   bool isStdCellCluster() const;

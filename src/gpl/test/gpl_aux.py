@@ -4,40 +4,41 @@ import utl
 DEFAULT_TARGET_DENSITY = 0.7
 
 
-# Besides design, there are no positional args here. General strategy is that 
+# Besides design, there are no positional args here. General strategy is that
 # when an arg is None, we just skip setting it, otherwise we will set the
 # parameter after a quick type check.
-def global_placement(design, *,
+def global_placement(
+    design,
+    *,
     skip_initial_place=False,
     skip_nesterov_place=False,
     timing_driven=False,
     routability_driven=False,
     incremental=False,
-    force_cpu=False,
     skip_io=False,
-    bin_grid_count=None,       # positive int, default 0
-    density=None,              # 'uniform' or 0.0 < d < 1.0  default 0.7
-    init_density_penalty=None, # positive float  default 0.00008
-    init_wirelength_coef=None, # positive float  default 0.25
-    min_phi_coef=None,         # positive float  default 0.95
-    max_phi_coef=None,         # positive float  default 1.05
-    reference_hpwl=None,       # positive int    default 446000000
-    overflow=None,             # positive float
-    initial_place_max_iter=None,     # positive int, default 20
-    initial_place_max_fanout=None,   # positive int, default 200
-    routability_check_overflow=None, # positive float
-    routability_max_density=None,    # positive float  default  0.99
-    routability_max_bloat_iter=None, # positive int  default  1
-    routability_max_inflation_iter=None,      # positive int  default 4
-    routability_target_rc_metric=None,        # positive float
-    routability_inflation_ratio_coef=None,    # positive float
-    routability_max_inflation_ratio=None,     # positive float
-    routability_rc_coefficients=None,         # a list of four floats
-    timing_driven_net_reweight_overflow=None, # list of ints
-    timing_driven_net_weight_max=None,        # float
-    timing_driven_nets_percentage=None,       # float
-    pad_left=None, # positive int
-    pad_right=None # positive int
+    bin_grid_count=None,  # positive int, default 0
+    density=None,  # 'uniform' or 0.0 < d < 1.0  default 0.7
+    init_density_penalty=None,  # positive float  default 0.00008
+    init_wirelength_coef=None,  # positive float  default 0.25
+    min_phi_coef=None,  # positive float  default 0.95
+    max_phi_coef=None,  # positive float  default 1.05
+    reference_hpwl=None,  # positive int    default 446000000
+    overflow=None,  # positive float
+    initial_place_max_iter=None,  # positive int, default 20
+    initial_place_max_fanout=None,  # positive int, default 200
+    routability_check_overflow=None,  # positive float
+    routability_max_density=None,  # positive float  default  0.99
+    routability_max_bloat_iter=None,  # positive int  default  1
+    routability_max_inflation_iter=None,  # positive int  default 4
+    routability_target_rc_metric=None,  # positive float
+    routability_inflation_ratio_coef=None,  # positive float
+    routability_max_inflation_ratio=None,  # positive float
+    routability_rc_coefficients=None,  # a list of four floats
+    timing_driven_net_reweight_overflow=None,  # list of ints
+    timing_driven_net_weight_max=None,  # float
+    timing_driven_nets_percentage=None,  # float
+    pad_left=None,  # positive int
+    pad_right=None,  # positive int
 ):
     gpl = design.getReplace()
 
@@ -46,16 +47,14 @@ def global_placement(design, *,
     elif is_pos_int(initial_place_max_iter):
         gpl.setInitialPlaceMaxIter(initial_place_max_iter)
 
-    gpl.setForceCPU(force_cpu)
-
     gpl.setSkipIoMode(skip_io)
     if skip_io:
-        gpl.setInitialPlaceMaxIter(0) 
+        gpl.setInitialPlaceMaxIter(0)
 
     gpl.setTimingDrivenMode(timing_driven)
 
     if timing_driven:
-        if design.evalTclString('get_libs -quiet "*"') == '':
+        if design.evalTclString('get_libs -quiet "*"') == "":
             utl.error(utl.GPL, 502, "No liberty libraries found.")
 
         if skip_io:
@@ -66,7 +65,7 @@ def global_placement(design, *,
             overflow_list = timing_driven_net_reweight_overflow
         else:
             overflow_list = [79, 64, 49, 29, 21, 15]
-            
+
         for ov in overflow_list:
             gpl.addTimingNetWeightOverflow(ov)
 
@@ -74,7 +73,9 @@ def global_placement(design, *,
             gpl.setTimingNetWeightMax(timing_driven_net_weight_max)
 
         if is_pos_float(timing_driven_nets_percentage):
-            design.evalTclString(f"rsz::set_worst_slack_nets_percent {timing_driven_nets_percentage}")
+            design.evalTclString(
+                f"rsz::set_worst_slack_nets_percent {timing_driven_nets_percentage}"
+            )
 
     gpl.setRoutabilityDrivenMode(routability_driven)
 
@@ -91,7 +92,7 @@ def global_placement(design, *,
 
     if density != None:
         target_density = density
-    else: 
+    else:
         target_density = DEFAULT_TARGET_DENSITY
 
     if target_density == "uniform":
@@ -164,13 +165,17 @@ def global_placement(design, *,
                 gpl.doNesterovPlace(1)
         gpl.reset()
     else:
-        utl.error(utl.GPL, 506, "No rows defined in design. Use initialize_floorplan to add rows.")
+        utl.error(
+            utl.GPL,
+            506,
+            "No rows defined in design. Use initialize_floorplan to add rows.",
+        )
 
 
 def is_pos_int(x):
     if x == None:
         return False
-    elif isinstance(x, int) and x > 0 :
+    elif isinstance(x, int) and x > 0:
         return True
     else:
         utl.error(utl.GPL, 507, f"TypeError: {x} is not a postive integer")

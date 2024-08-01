@@ -119,6 +119,7 @@ using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
 using InstanceTuple = std::tuple<Instance*, Instance*>;
+using InputSlews = std::array<Slew, RiseFall::index_count>;
 
 class AbstractSteinerRenderer;
 class SteinerTree;
@@ -244,8 +245,8 @@ class Resizer : public dbStaState
   bool dontTouch(const Net* net);
 
   void setMaxUtilization(double max_utilization);
-  // Remove all buffers from the netlist.
-  void removeBuffers();
+  // Remove all or selected buffers from the netlist.
+  void removeBuffers(InstanceSeq insts);
   void bufferInputs();
   void bufferOutputs();
 
@@ -265,7 +266,9 @@ class Resizer : public dbStaState
                    int max_passes,
                    bool verbose,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool skip_gate_cloning,
+                   bool skip_buffering,
+                   bool skip_buffer_removal);
   // For testing.
   void repairSetup(const Pin* end_pin);
   // For testing.
@@ -466,6 +469,13 @@ class Resizer : public dbStaState
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
+  void gateDelays(const LibertyPort* drvr_port,
+                  float load_cap,
+                  const Slew in_slews[RiseFall::index_count],
+                  const DcalcAnalysisPt* dcalc_ap,
+                  // Return values.
+                  ArcDelay delays[RiseFall::index_count],
+                  Slew out_slews[RiseFall::index_count]);
   ArcDelay gateDelay(const LibertyPort* drvr_port,
                      float load_cap,
                      const DcalcAnalysisPt* dcalc_ap);
@@ -553,7 +563,7 @@ class Resizer : public dbStaState
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer);
+  bool removeBuffer(Instance* buffer, bool honorDontTouchFixed = true);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -687,12 +697,21 @@ class Resizer : public dbStaState
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
 
+  // Need to track all changes for buffer removal
+  InstanceSet all_sized_inst_set_;
+  InstanceSet all_inserted_buffer_set_;
+  InstanceSet all_swapped_pin_inst_set_;
+  InstanceSet all_cloned_inst_set_;
+
   dpl::Opendp* opendp_ = nullptr;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   // Prim/Dijkstra gets out of hand with bigger nets.
   static constexpr int max_steiner_pin_count_ = 200000;
+
+  // Use actual input slews for accurate delay/slew estimation
+  sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
 
   friend class BufferedNet;
   friend class GateCloner;

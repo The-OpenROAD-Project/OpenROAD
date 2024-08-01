@@ -942,6 +942,16 @@ void Inspector::clicked(const QModelIndex& index)
   // timer to be able to tell the difference
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
+
+    // Bypass the timer for those items for which there's
+    // no double click handling
+    QStandardItem* item = model_->itemFromIndex(index);
+    QVariant edit_data = item->data(EditorItemDelegate::editor_);
+    if (!edit_data.isValid()) {
+      indexClicked();
+      return;
+    }
+
     mouse_timer_.start();
   }
 }
@@ -1032,7 +1042,9 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
-  auto& callback = actions_[action];
+  // Copy the callback as the action may be deleted from within the
+  // callback.
+  auto callback = actions_[action];
   Selected new_selection;
   try {
     new_selection = callback();
