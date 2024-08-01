@@ -128,6 +128,7 @@ Tree SteinerTreeBuilder::makeFoarsTree(const std::vector<int>& x_pin,
     if (inst->isBlock()) {
       x_obstacle.emplace_back(inst->getBBox()->xMin(), inst->getBBox()->xMax());
       y_obstacle.emplace_back(inst->getBBox()->yMin(), inst->getBBox()->yMax());
+    }
   }
   return foars::RunFOARS(
       x_pin, y_pin, x_obstacle, y_obstacle, drvr_index, logger_);
