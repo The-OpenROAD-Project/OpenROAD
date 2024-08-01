@@ -40,7 +40,6 @@ link_design $top_module
 read_sdc $sdc_file
 
 set_thread_count [exec getconf _NPROCESSORS_ONLN]
-# puts "flow beginning --> set_thread_count:$set_thread_count"
 
 utl::metric "IFP::ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.

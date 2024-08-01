@@ -1947,7 +1947,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
                                    std::vector<FloatPoint>& densityGrads,
                                    float wlCoeffX,
                                    float wlCoeffY)
-{  
+{
   if (isConverged_) {
     return;
   }
@@ -1956,31 +1956,28 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   wireLengthGradSum_ = 0;
   densityGradSum_ = 0;
 
-  float gradSum = 0;
+  int64_t wireLengthGradSumIntX = 0;
+  int64_t wireLengthGradSumIntY = 0;
+  int64_t densityGradSumIntX = 0;
+  int64_t densityGradSumIntY = 0;
+  int64_t gradSumInt = 0;
 
-  debugPrint(
-      log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
+  const int64_t scaleFactor = 1e6;
 
-//NON-DETERMINISM HERE!
+  debugPrint(log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
+
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
+    reduction(+ : wireLengthGradSumIntX, wireLengthGradSumIntY, densityGradSumIntX, densityGradSumIntY, gradSumInt)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
-    wireLengthGrads[i]
-        = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
+    wireLengthGrads[i] = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
     densityGrads[i] = getDensityGradient(gCell);
 
-    // Different compiler has different results on the following formula.
-    // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-    //
-    // To prevent instability problem,
-    // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
-    //
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
+    wireLengthGradSumIntX += static_cast<int64_t>(std::fabs(wireLengthGrads[i].x) * scaleFactor);
+    wireLengthGradSumIntY += static_cast<int64_t>(std::fabs(wireLengthGrads[i].y) * scaleFactor);
 
-    densityGradSum_ += std::fabs(densityGrads[i].x);
-    densityGradSum_ += std::fabs(densityGrads[i].y);
+    densityGradSumIntX += static_cast<int64_t>(std::fabs(densityGrads[i].x) * scaleFactor);
+    densityGradSumIntY += static_cast<int64_t>(std::fabs(densityGrads[i].y) * scaleFactor);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2003,19 +2000,19 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
 
-    gradSum += std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
+    gradSumInt += static_cast<int64_t>(std::fabs(sumGrads[i].x) * scaleFactor) + static_cast<int64_t>(std::fabs(sumGrads[i].y) * scaleFactor);
   }
 
-  debugPrint(log_,
-             GPL,
-             "updateGrad",
-             1,
-             "WireLengthGradSum: {:g}",
-             wireLengthGradSum_);
-  debugPrint(
-      log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+  // Convert the integer sums back to float
+  wireLengthGradSum_ = (static_cast<float>(wireLengthGradSumIntX) + static_cast<float>(wireLengthGradSumIntY)) / scaleFactor;
+  densityGradSum_ = (static_cast<float>(densityGradSumIntX) + static_cast<float>(densityGradSumIntY)) / scaleFactor;
+  float gradSum = static_cast<float>(gradSumInt) / scaleFactor;
+
+  debugPrint(log_, GPL, "updateGrad", 1, "WireLengthGradSum: {:g}", wireLengthGradSum_);
+  debugPrint(log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
   debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 }
+
 
 void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
 {
