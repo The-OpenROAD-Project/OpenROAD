@@ -179,6 +179,8 @@ class FastRouteCore
   {
     last_row_h_capacity_3D_[layer] = cap;
   }
+  const std::vector<short>& getLastColumnVerticalCapacities() { return last_col_v_capacity_3D_; }
+  const std::vector<short>& getLastRowHorizontalCapacities() { return last_row_h_capacity_3D_; }
   void setRegularX(bool regular_x) { regular_x_ = regular_x; }
   void setRegularY(bool regular_y) { regular_y_ = regular_y; }
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
