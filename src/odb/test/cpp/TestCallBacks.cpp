@@ -80,9 +80,9 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   dbInst::destroy(i1);
 
   BOOST_TEST(cb->events.size() == 4);
-  BOOST_TEST(cb->events[0] == "Destroy iterm a of inst i1");
+  BOOST_TEST(cb->events[0] == "Destroy iterm o of inst i1");
   BOOST_TEST(cb->events[1] == "Destroy iterm b of inst i1");
-  BOOST_TEST(cb->events[2] == "Destroy iterm o of inst i1");
+  BOOST_TEST(cb->events[2] == "Destroy iterm a of inst i1");
   BOOST_TEST(cb->events[3] == "Destroy inst i1");
   tearDown();
 }
