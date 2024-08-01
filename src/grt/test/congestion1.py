@@ -22,7 +22,7 @@ grt_aux.set_routing_layers(design, signal="metal2-metal10")
 
 gr.setVerbose(True)
 gr.setAllowCongestion(True)
-gr.globalRoute(True)      # save_guides = True
+gr.globalRoute(True)  # save_guides = True
 
 design.getBlock().writeGuides(guideFile)
 

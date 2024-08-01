@@ -339,6 +339,7 @@ static int tclAppInit(int& argc,
                       const char* init_filename,
                       Tcl_Interp* interp)
 {
+  bool exit_after_cmd_file = false;
   // first check if gui was requested and launch.
   // gui will call this function again as part of setup
   // ensuring the else {} will be utilized to initialize tcl and OR.
@@ -360,14 +361,22 @@ static int tclAppInit(int& argc,
       return TCL_ERROR;
     }
 #endif
+    exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 #ifdef ENABLE_READLINE
-    if (Tclreadline_Init(interp) == TCL_ERROR) {
-      return TCL_ERROR;
-    }
-    Tcl_StaticPackage(
-        interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
-    if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
-      printf("Failed to load tclreadline\n");
+    if (!exit_after_cmd_file) {
+      if (Tclreadline_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+      }
+      // tclreadline is a bit of a tricky dependency because it
+      // uses absolute path references below, so we don't depend on
+      // tclreadline for the batch case where we exit as soon as the
+      // script is done.
+      Tcl_StaticPackage(
+          interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
+      if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl")
+          != TCL_OK) {
+        printf("Failed to load tclreadline\n");
+      }
     }
 #endif
 
@@ -385,8 +394,6 @@ static int tclAppInit(int& argc,
       ord::OpenRoad::openRoad()->setThreadCount(
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
-
-    bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
     const bool gui_enabled = gui::Gui::enabled();
 
@@ -449,7 +456,7 @@ static int tclAppInit(int& argc,
     }
   }
 #ifdef ENABLE_READLINE
-  if (!gui::Gui::enabled()) {
+  if (!gui::Gui::enabled() && !exit_after_cmd_file) {
     return tclReadlineInit(interp);
   }
 #endif

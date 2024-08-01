@@ -824,7 +824,8 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
   }
 }
 
-void FastRouteCore::updateDbCongestion()
+void FastRouteCore::updateDbCongestion(int min_routing_layer,
+                                       int max_routing_layer)
 {
   if (h_edges_3D_.num_elements() == 0) {  // no information
     return;
@@ -839,7 +840,7 @@ void FastRouteCore::updateDbCongestion()
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
   auto db_tech = db_->getTech();
-  for (int k = 0; k < num_layers_; k++) {
+  for (int k = min_routing_layer - 1; k < max_routing_layer - 1; k++) {
     auto layer = db_tech->findRoutingLayer(k + 1);
     if (layer == nullptr) {
       continue;
