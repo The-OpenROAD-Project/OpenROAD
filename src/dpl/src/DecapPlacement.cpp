@@ -36,10 +36,10 @@
 
 #include "DecapObjects.h"
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
-#include "Padding.h"
 
 namespace dpl {
 
@@ -66,15 +66,16 @@ vector<int> Opendp::findDecapCellIndices(const int& gap_width,
   double cap_acum = 0.0;
   int width_acum = 0;
   const DbuX site_width = grid_->getSiteWidth();
-  const DbuX min_space = gridToDbu(padding_->padGlobalRight() + padding_->padGlobalLeft(), site_width);
+  const DbuX min_space = gridToDbu(
+      padding_->padGlobalRight() + padding_->padGlobalLeft(), site_width);
   for (int i = 0; i < decap_masters_.size(); i++) {
     const int master_width = decap_masters_[i]->master->getWidth();
+    const double master_cap = decap_masters_[i]->capacitance;
     while ((width_acum + master_width) <= (gap_width - min_space.v)
-           && (cap_acum + decap_masters_[i]->capacitance)
-                  <= (target - current)) {
+           && (cap_acum + master_cap) <= (target - current)) {
       id_masters.push_back(i);
-      cap_acum += decap_masters_[i]->capacitance;
-      width_acum += decap_masters_[i]->master->getWidth();
+      cap_acum += master_cap;
+      width_acum += master_width;
       if (width_acum == gap_width) {
         return id_masters;
       }
@@ -232,7 +233,6 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
-  std::cerr << master->getConstName() << " " << padding_->padRight(inst).v << " " << padding_->padGlobalLeft() << " " << padding_->padGlobalRight() << std::endl;
   inst->setOrient(orient);
   inst->setLocation(pos_x, pos_y);
   inst->setPlacementStatus(dbPlacementStatus::PLACED);
