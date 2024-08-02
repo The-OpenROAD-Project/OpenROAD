@@ -2385,7 +2385,6 @@ MBFF::MBFF(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* log,
            int threads,
-           int knn,
            int multistart,
            int num_paths,
            bool debug_graphics)
