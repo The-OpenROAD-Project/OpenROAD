@@ -2176,7 +2176,7 @@ void MBFF::ReadFFs()
       const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
-      name_to_idx_[inst->getName()] = num_flops;
+      name_to_idx_[inst->getName()] = num_flops + 1;
       num_flops++;
     }
   }
@@ -2188,7 +2188,7 @@ void MBFF::ReadFFs()
 void MBFF::ReadPaths()
 {
   paths_.resize(flops_.size());
-  occs_.resize(flops_.size());
+  unique_.resize(flops_.size());
 
   sta::ExceptionFrom* e_from = nullptr;
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -2235,11 +2235,18 @@ void MBFF::ReadPaths()
 
     int idx1 = name_to_idx_[network_->pathName(start_ff)];
     int idx2 = name_to_idx_[network_->pathName(end_ff)];
+    // ensure that both are FFs
+    if (!idx1 || !idx2) {
+      continue;
+    }
+
+    idx1--, idx2--;
+    // ensure that paths are unique and start != end
+    if (idx1 == idx2 || unique_[idx1].count(idx2)) {
+      continue;
+    }
     paths_[idx1].push_back(idx2);
-    occs_[idx1]++;
-    occs_[idx2]++;
-    path_points_.insert(idx1);
-    path_points_.insert(idx2);
+    unique_[idx1].insert(idx2);
   }
 }
 
