@@ -1039,7 +1039,6 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
         disp_path_y.push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
     }
 
-    std::cout << "Num paths = " << num_paths << "\n";
     int cur_path_num = 0;
     for (int i = 0; i < flops.size(); i++) {
         for (const auto &end_point : paths_[flops[i].idx]) {
