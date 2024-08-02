@@ -172,10 +172,12 @@ class MBFF
                 const std::vector<Tray>& trays,
                 const std::vector<std::pair<int, int>>& clusters);
 
-   void KMeans(const std::vector<Flop> &flops, int knn,
-                  std::vector<std::vector<Flop> > &clusters, std::vector<int> &rand_nums);
-  float GetKSilh(const std::vector<std::vector<Flop> > &clusters,
-                     const std::vector<Point> &centers);
+  void KMeans(const std::vector<Flop>& flops,
+              int knn,
+              std::vector<std::vector<Flop>>& clusters,
+              std::vector<int>& rand_nums);
+  float GetKSilh(const std::vector<std::vector<Flop>>& clusters,
+                 const std::vector<Point>& centers);
   void KMeansDecomp(const std::vector<Flop>& flops,
                     int max_sz,
                     std::vector<std::vector<Flop>>& pointsets);

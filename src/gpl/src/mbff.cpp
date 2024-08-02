@@ -139,7 +139,7 @@ float MBFF::GetDist(const Point& a, const Point& b)
 
 float MBFF::GetDistAR(const Point& a, const Point& b, const float AR)
 {
-  return (abs(a.x - b.x)/AR + abs(a.y - b.y));
+  return (abs(a.x - b.x) / AR + abs(a.y - b.y));
 }
 
 int MBFF::GetRows(int slot_cnt, std::vector<int> array_mask)
@@ -1016,84 +1016,85 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
     }
   }
 
-  // make sure each timing-critical path contains FFs that can be clustered. 
+  // make sure each timing-critical path contains FFs that can be clustered.
   std::map<int, int> old_to_new_idx;
   for (int i = 0; i < num_flops; i++) {
     old_to_new_idx[flops[i].idx] = i + 1;
   }
 
   int num_paths = 0;
-  for (size_t i = 0; i < (int)flops.size(); i++) {
-    for (auto &j : paths_[flops[i].idx]) {
+  for (size_t i = 0; i < (int) flops.size(); i++) {
+    for (auto& j : paths_[flops[i].idx]) {
       if (!old_to_new_idx[j]) {
         continue;
       }
       num_paths++;
     }
   }
-  
+
   std::vector<operations_research::sat::IntVar> disp_path_x;
   std::vector<operations_research::sat::IntVar> disp_path_y;
-    for (int i = 0; i < num_paths; i++) {
-        disp_path_x.push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
-        disp_path_y.push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
+  for (int i = 0; i < num_paths; i++) {
+    disp_path_x.push_back(
+        cp_model.NewIntVar(operations_research::Domain(0, inf)));
+    disp_path_y.push_back(
+        cp_model.NewIntVar(operations_research::Domain(0, inf)));
+  }
+
+  int cur_path_num = 0;
+  for (int i = 0; i < flops.size(); i++) {
+    for (const auto& end_point : paths_[flops[i].idx]) {
+      int flop_a_idx = old_to_new_idx[flops[i].idx];
+      int flop_b_idx = old_to_new_idx[end_point];
+      if (!flop_a_idx || !flop_b_idx)
+        continue;
+      flop_a_idx--, flop_b_idx--;
+      operations_research::sat::LinearExpr sum_disp_x_flop_a;
+      operations_research::sat::LinearExpr sum_disp_y_flop_a;
+
+      operations_research::sat::LinearExpr sum_disp_x_flop_b;
+      operations_research::sat::LinearExpr sum_disp_y_flop_b;
+
+      for (int j = 0; j < static_cast<int>(cand_tray[flop_a_idx].size()); j++) {
+        float shift_x
+            = trays[cand_tray[flop_a_idx][j]].slots[cand_slot[flop_a_idx][j]].x
+              - flops[flop_a_idx].pt.x;
+        float shift_y
+            = trays[cand_tray[flop_a_idx][j]].slots[cand_slot[flop_a_idx][j]].y
+              - flops[flop_a_idx].pt.y;
+        sum_disp_x_flop_a
+            += (int(multiplier_ * shift_x) * mapped[flop_a_idx][j]);
+        sum_disp_y_flop_a
+            += (int(multiplier_ * shift_y) * mapped[flop_a_idx][j]);
+      }
+
+      for (int j = 0; j < static_cast<int>(cand_tray[flop_b_idx].size()); j++) {
+        float shift_x
+            = trays[cand_tray[flop_b_idx][j]].slots[cand_slot[flop_b_idx][j]].x
+              - flops[flop_b_idx].pt.x;
+        float shift_y
+            = trays[cand_tray[flop_b_idx][j]].slots[cand_slot[flop_b_idx][j]].y
+              - flops[flop_b_idx].pt.y;
+        sum_disp_x_flop_b
+            += (int(multiplier_ * shift_x) * mapped[flop_b_idx][j]);
+        sum_disp_y_flop_b
+            += (int(multiplier_ * shift_y) * mapped[flop_b_idx][j]);
+      }
+
+      cp_model.AddLessOrEqual(
+          0, disp_path_x[cur_path_num] + sum_disp_x_flop_a - sum_disp_x_flop_b);
+      cp_model.AddLessOrEqual(
+          0, disp_path_x[cur_path_num] - sum_disp_x_flop_a + sum_disp_x_flop_b);
+      cp_model.AddLessOrEqual(
+          0, disp_path_y[cur_path_num] + sum_disp_y_flop_a - sum_disp_y_flop_b);
+      cp_model.AddLessOrEqual(
+          0,
+          disp_path_y[cur_path_num++] - sum_disp_y_flop_a + sum_disp_y_flop_b);
     }
-
-    int cur_path_num = 0;
-    for (int i = 0; i < flops.size(); i++) {
-        for (const auto &end_point : paths_[flops[i].idx]) {
-            int flop_a_idx = old_to_new_idx[flops[i].idx];
-            int flop_b_idx = old_to_new_idx[end_point];
-            if (!flop_a_idx || !flop_b_idx) continue;
-            flop_a_idx--, flop_b_idx--;
-            operations_research::sat::LinearExpr sum_disp_x_flop_a;
-            operations_research::sat::LinearExpr sum_disp_y_flop_a;
-
-            operations_research::sat::LinearExpr sum_disp_x_flop_b;
-            operations_research::sat::LinearExpr sum_disp_y_flop_b;
-
-            for (int j = 0; j < static_cast<int>(cand_tray[flop_a_idx].size());
-                 j++) {
-                float shift_x = trays[cand_tray[flop_a_idx][j]]
-                                    .slots[cand_slot[flop_a_idx][j]]
-                                    .x -
-                                flops[flop_a_idx].pt.x;
-                float shift_y = trays[cand_tray[flop_a_idx][j]]
-                                    .slots[cand_slot[flop_a_idx][j]]
-                                    .y -
-                                flops[flop_a_idx].pt.y;
-                sum_disp_x_flop_a += (int(multiplier_ * shift_x) * mapped[flop_a_idx][j]);
-                sum_disp_y_flop_a += (int(multiplier_ * shift_y) * mapped[flop_a_idx][j]);
-            }
-
-            for (int j = 0; j < static_cast<int>(cand_tray[flop_b_idx].size());
-                 j++) {
-                float shift_x = trays[cand_tray[flop_b_idx][j]]
-                                    .slots[cand_slot[flop_b_idx][j]]
-                                .x - 
-                                flops[flop_b_idx].pt.x;
-                float shift_y = trays[cand_tray[flop_b_idx][j]]
-                                  .slots[cand_slot[flop_b_idx][j]]
-                                 .y -
-                                flops[flop_b_idx].pt.y;
-                sum_disp_x_flop_b += (int(multiplier_ * shift_x) * mapped[flop_b_idx][j]);
-                sum_disp_y_flop_b += (int(multiplier_ * shift_y) * mapped[flop_b_idx][j]);
-            }
-
-            cp_model.AddLessOrEqual(0, disp_path_x[cur_path_num] + sum_disp_x_flop_a -
-                                  sum_disp_x_flop_b);
-            cp_model.AddLessOrEqual(0, disp_path_x[cur_path_num] - sum_disp_x_flop_a +
-                                  sum_disp_x_flop_b);
-            cp_model.AddLessOrEqual(0, disp_path_y[cur_path_num] + sum_disp_y_flop_a -
-                                  sum_disp_y_flop_b);
-            cp_model.AddLessOrEqual(0, disp_path_y[cur_path_num++] - sum_disp_y_flop_a +
-                                  sum_disp_y_flop_b);
-        }
-    }
-    for (int i = 0; i < num_paths; i++) {
-        cp_model.AddLessOrEqual(disp_path_x[i] + disp_path_y[i], max_dist);
-    }
-
+  }
+  for (int i = 0; i < num_paths; i++) {
+    cp_model.AddLessOrEqual(disp_path_x[i] + disp_path_y[i], max_dist);
+  }
 
   // check that each flop is matched to a single slot
   for (int i = 0; i < num_flops; i++) {
@@ -1550,345 +1551,342 @@ void MBFF::RunMultistart(
 }
 
 // standard K-means++ implementation
-void MBFF::KMeans(const std::vector<Flop> &flops, int knn,
-                  std::vector<std::vector<Flop> > &clusters, std::vector<int> &rand_nums) {
-    const int num_flops = static_cast<int>(flops.size());
+void MBFF::KMeans(const std::vector<Flop>& flops,
+                  int knn,
+                  std::vector<std::vector<Flop>>& clusters,
+                  std::vector<int>& rand_nums)
+{
+  const int num_flops = static_cast<int>(flops.size());
 
-    // choose initial center
-    int rand_ind = 0;
-    const int seed = rand_nums[rand_ind++] % num_flops;
-    std::set<int> chosen({ seed });
+  // choose initial center
+  int rand_ind = 0;
+  const int seed = rand_nums[rand_ind++] % num_flops;
+  std::set<int> chosen({seed});
 
-    std::vector<Flop> centers;
-    centers.push_back(flops[seed]);
+  std::vector<Flop> centers;
+  centers.push_back(flops[seed]);
 
-    std::vector<float> d(num_flops);
+  std::vector<float> d(num_flops);
+  for (int i = 0; i < num_flops; i++) {
+    d[i] = GetDist(flops[i].pt, flops[seed].pt);
+  }
+
+  // choose remaining K-1 centers
+  while (static_cast<int>(chosen.size()) < knn) {
+    float tot_sum = 0;
+
     for (int i = 0; i < num_flops; i++) {
-        d[i] = GetDist(flops[i].pt, flops[seed].pt);
-    }
-
-    // choose remaining K-1 centers
-    while (static_cast<int>(chosen.size()) < knn) {
-        float tot_sum = 0;
-
-        for (int i = 0; i < num_flops; i++) {
-            if (!chosen.count(i)) {
-                for (int j : chosen) {
-                    d[i] = std::min(d[i], GetDist(flops[i].pt, flops[j].pt));
-                }
-                tot_sum += (float(d[i]) * float(d[i]));
-            }
+      if (!chosen.count(i)) {
+        for (int j : chosen) {
+          d[i] = std::min(d[i], GetDist(flops[i].pt, flops[j].pt));
         }
-
-        const int rnd = rand_nums[rand_ind++] % (int(tot_sum * 100));
-        const float prob = rnd / 100.0;
-
-        float cum_sum = 0;
-        for (int i = 0; i < num_flops; i++) {
-            if (!chosen.count(i)) {
-                cum_sum += (float(d[i]) * float(d[i]));
-                if (cum_sum >= prob) {
-                    chosen.insert(i);
-                    centers.push_back(flops[i]);
-                    break;
-                }
-            }
-        }
-    }
-
-    clusters.resize(knn);
-    float prev = -1;
-    while (true) {
-        for (int i = 0; i < knn; i++) {
-            clusters[i].clear();
-        }
-
-    
-
-        // remap flops to clusters
-        for (int i = 0; i < num_flops; i++) {
-            float min_cost = std::numeric_limits<float>::max();
-            int idx = 0;
-
-            for (int j = 0; j < knn; j++) {
-                if (GetDist(flops[i].pt, centers[j].pt) < min_cost) {
-                    min_cost = GetDist(flops[i].pt, centers[j].pt);
-                    idx = j;
-                }
-                //pq.push({-GetDist(flops[i].pt, centers[j].pt), {j, i}});
-            }
-            clusters[idx].push_back(flops[i]);
-        }
-
-
-
-        // find new center locations
-        for (int i = 0; i < knn; i++) {
-            const int cur_sz = static_cast<int>(clusters[i].size());
-            float cX = 0;
-            float cY = 0;
-
-            for (const Flop &flop : clusters[i]) {
-                cX += flop.pt.x;
-                cY += flop.pt.y;
-            }
-
-            const float new_x = cX / float(cur_sz);
-            const float new_y = cY / float(cur_sz);
-            centers[i].pt = Point{ new_x, new_y };
-        }
-
-        // get total displacement
-        float tot_disp = 0;
-        for (int i = 0; i < knn; i++) {
-            for (size_t j = 0; j < clusters[i].size(); j++) {
-                tot_disp += GetDist(centers[i].pt, clusters[i][j].pt);
-            }
-        }
-
-        if (tot_disp == prev) {
-            break;
-       }
-        prev = tot_disp;
-    }
-
-    for (int i = 0; i < knn; i++) {
-        clusters[i].push_back(centers[i]);
-    }
-}
-
-
-float MBFF::GetKSilh(const std::vector<std::vector<Flop> > &clusters,
-                     const std::vector<Point> &centers) {
-    int num_centers = static_cast<int>(centers.size());
-    int num_flops = 0;
-    float tot = 0;
-
-    for (int i = 0; i < num_centers; i++) {
-        int cur_sz = static_cast<int>(clusters[i].size());
-        num_flops += cur_sz;
-        if (cur_sz <= 1) {
-            tot += -1;
-            continue;
-        }
-
-        /* fast silh score */
-        std::vector<float> all_x(cur_sz + 1, 0);
-        std::vector<float> all_y(cur_sz + 1, 0);
-        for (int j = 0; j < cur_sz; j++) {
-            all_x[j + 1] = (clusters[i][j].pt.x);
-            all_y[j + 1] = (clusters[i][j].pt.y);
-        }
-        std::sort(all_x.begin(), all_x.end());
-        std::sort(all_y.begin(), all_y.end());
-
-        std::vector<float> pref_x(cur_sz + 1, 0);
-        std::vector<float> pref_y(cur_sz + 1, 0);
-        for (int j = 1; j <= cur_sz; j++) {
-            pref_x[j] = pref_x[j - 1] + all_x[j];
-            pref_y[j] = pref_y[j - 1] + all_y[j];
-        }
-
-        for (int j = 0; j < cur_sz; j++) {
-            float a_j = 0;
-            float b_j = std::numeric_limits<float>::max();
-            for (int k = 0; k < num_centers; k++) {
-                if (i != k) {
-                    b_j = std::min(b_j, GetDist(clusters[i][j].pt, centers[k]));
-                }
-            }
-
-            /* find first x_loc == current x */
-            int lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                if (all_x[mid] >= clusters[i][j].pt.x) {
-                    ret = std::min(ret, mid);
-                    hi = mid - 1;
-                } else {
-                    lo = mid + 1;
-                }
-            }
-
-            /* get x contribution */
-            float contribution_x = 0;
-            if (ret > 1) {
-                contribution_x +=
-                    (clusters[i][j].pt.x * (ret - 1)) - (pref_x[ret - 1]);
-            }
-            if (ret < cur_sz) {
-                contribution_x += (pref_x[cur_sz] - pref_x[ret]) -
-                                  (cur_sz - ret) * (clusters[i][j].pt.x);
-            }
-            a_j += contribution_x;
-
-            /* find first y_loc == current y */
-            lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                if (all_y[mid] >= clusters[i][j].pt.y) {
-                    ret = std::min(ret, mid);
-                    hi = mid - 1;
-                } else {
-                    lo = mid + 1;
-                }
-            }
-
-            /* get y contribution */
-            float contribution_y = 0;
-            if (ret > 1) {
-                contribution_y +=
-                    (clusters[i][j].pt.y * (ret - 1)) - (pref_y[ret - 1]);
-            }
-            if (ret < cur_sz) {
-                contribution_y += (pref_y[cur_sz] - pref_y[ret]) -
-                                  (cur_sz - ret) * (clusters[i][j].pt.y);
-            }
-            a_j += contribution_y;
-
-            a_j /= (cur_sz - 1);
-            tot += ((b_j - a_j) / std::max(a_j, b_j));
-        }
-    }
-    return tot / num_flops;
-}
-
-void MBFF::KMeansDecomp(const std::vector<Flop> &flops, const int max_sz,
-                        std::vector<std::vector<Flop> > &pointsets) {
-    const int num_flops = static_cast<int>(flops.size());
-    if (max_sz == -1 || num_flops <= max_sz) {
-        pointsets.push_back(flops);
-        return;
-    }
-
-    int best_k = 4;
-    float best_silh = -20.00;
-    std::vector<float> all_silhs(9);
-
-    std::vector<std::vector<int>> rand_nums(27);
-    for (int i = 0; i < multistart_ + 7; i++) {
-      for (int j = 0; j < 20; j++) {
-        rand_nums[i].push_back(std::rand());
+        tot_sum += (float(d[i]) * float(d[i]));
       }
     }
 
-    #pragma omp parallel for
-    for (int k = 2; k <= 8; k++) {
-        std::vector<std::vector<Flop> > k_clust;
-        KMeans(flops, k, k_clust, rand_nums[k - 2]);
-        std::vector<Point> centers;
-        for (int i = 0; i < k; i++) {
-            centers.push_back(k_clust[i].back().pt);
-            k_clust[i].pop_back();
+    const int rnd = rand_nums[rand_ind++] % (int(tot_sum * 100));
+    const float prob = rnd / 100.0;
+
+    float cum_sum = 0;
+    for (int i = 0; i < num_flops; i++) {
+      if (!chosen.count(i)) {
+        cum_sum += (float(d[i]) * float(d[i]));
+        if (cum_sum >= prob) {
+          chosen.insert(i);
+          centers.push_back(flops[i]);
+          break;
         }
-        float cur_silh = GetKSilh(k_clust, centers);
-        all_silhs[k] = cur_silh;
+      }
+    }
+  }
+
+  clusters.resize(knn);
+  float prev = -1;
+  while (true) {
+    for (int i = 0; i < knn; i++) {
+      clusters[i].clear();
     }
 
-    for (int i = 2; i <= 8; i++) {
-        if (all_silhs[i] > best_silh) {
-            best_silh = all_silhs[i];
-            best_k = i;
+    // remap flops to clusters
+    for (int i = 0; i < num_flops; i++) {
+      float min_cost = std::numeric_limits<float>::max();
+      int idx = 0;
+
+      for (int j = 0; j < knn; j++) {
+        if (GetDist(flops[i].pt, centers[j].pt) < min_cost) {
+          min_cost = GetDist(flops[i].pt, centers[j].pt);
+          idx = j;
         }
+        // pq.push({-GetDist(flops[i].pt, centers[j].pt), {j, i}});
+      }
+      clusters[idx].push_back(flops[i]);
     }
 
-    std::vector<std::vector<Flop> > tmp_clusters[multistart_];
-    std::vector<float> tmp_costs(multistart_);
+    // find new center locations
+    for (int i = 0; i < knn; i++) {
+      const int cur_sz = static_cast<int>(clusters[i].size());
+      float cX = 0;
+      float cY = 0;
 
-    #pragma omp parallel for
-    for (int i = 0; i < multistart_; i++) {
-        KMeans(flops, best_k, tmp_clusters[i], rand_nums[i + 7]);
+      for (const Flop& flop : clusters[i]) {
+        cX += flop.pt.x;
+        cY += flop.pt.y;
+      }
 
-        /* cur_cost = sum of distances between flops and its
-        matching cluster's center */
-        float cur_cost = 0;
-        for (int j = 0; j < best_k; j++) {
-            for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
-                cur_cost += GetDist(tmp_clusters[i][j][k].pt,
-                                    tmp_clusters[i][j].back().pt);
-            }
-        }
-        tmp_costs[i] = cur_cost;
+      const float new_x = cX / float(cur_sz);
+      const float new_y = cY / float(cur_sz);
+      centers[i].pt = Point{new_x, new_y};
     }
 
-    float best_cost = std::numeric_limits<float>::max();
-    std::vector<std::vector<Flop> > k_means_ret;
-    for (int i = 0; i < multistart_; i++) {
-        if (tmp_costs[i] < best_cost) {
-            best_cost = tmp_costs[i];
-            k_means_ret = tmp_clusters[i];
-        }
+    // get total displacement
+    float tot_disp = 0;
+    for (int i = 0; i < knn; i++) {
+      for (size_t j = 0; j < clusters[i].size(); j++) {
+        tot_disp += GetDist(centers[i].pt, clusters[i][j].pt);
+      }
     }
 
-    /*
-    create edges between all std::pairs of cluster centers
-    edge weight = distance between the two centers
-    */
-
-    std::vector<std::pair<float, std::pair<int, int> > > cluster_pairs;
-    for (int i = 0; i < best_k; i++) {
-        for (int j = i + 1; j < best_k; j++) {
-            const float dist =
-                GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt);
-            cluster_pairs.emplace_back(dist, std::make_pair(i, j));
-        }
+    if (tot_disp == prev) {
+      break;
     }
-    std::sort(cluster_pairs.begin(), cluster_pairs.end());
+    prev = tot_disp;
+  }
 
-    for (int i = 0; i < best_k; i++) {
-        k_means_ret[i].pop_back();
-    }
+  for (int i = 0; i < knn; i++) {
+    clusters[i].push_back(centers[i]);
+  }
+}
 
-    // naive implementation of DSU
-    std::vector<int> id(best_k);
-    std::vector<int> sz(best_k);
+float MBFF::GetKSilh(const std::vector<std::vector<Flop>>& clusters,
+                     const std::vector<Point>& centers)
+{
+  int num_centers = static_cast<int>(centers.size());
+  int num_flops = 0;
+  float tot = 0;
 
-    for (int i = 0; i < best_k; i++) {
-        id[i] = i;
-        sz[i] = static_cast<int>(k_means_ret[i].size());
+  for (int i = 0; i < num_centers; i++) {
+    int cur_sz = static_cast<int>(clusters[i].size());
+    num_flops += cur_sz;
+    if (cur_sz <= 1) {
+      tot += -1;
+      continue;
     }
 
-  
-    for (const auto &cluster_pair : cluster_pairs) {
-        int idx1 = cluster_pair.second.first;
-        int idx2 = cluster_pair.second.second;
-
-        if (sz[id[idx1]] < sz[id[idx2]]) {
-            std::swap(idx1, idx2);
-        }
-        if (sz[id[idx1]] + sz[id[idx2]] > max_sz) {
-            continue;
-        }
-
-        sz[id[idx1]] += sz[id[idx2]];
-
-        // merge the two clusters
-        const int orig_id = id[idx2];
-        for (int j = 0; j < best_k; j++) {
-            if (id[j] == orig_id) {
-                id[j] = id[idx1];
-            }
-        }
+    /* fast silh score */
+    std::vector<float> all_x(cur_sz + 1, 0);
+    std::vector<float> all_y(cur_sz + 1, 0);
+    for (int j = 0; j < cur_sz; j++) {
+      all_x[j + 1] = (clusters[i][j].pt.x);
+      all_y[j + 1] = (clusters[i][j].pt.y);
     }
-  
+    std::sort(all_x.begin(), all_x.end());
+    std::sort(all_y.begin(), all_y.end());
 
-    std::vector<std::vector<Flop> > nxt_clusters(best_k);
-    for (int i = 0; i < best_k; i++) {
-        for (const Flop &f : k_means_ret[i]) {
-            nxt_clusters[id[i]].push_back(f);
-        }
+    std::vector<float> pref_x(cur_sz + 1, 0);
+    std::vector<float> pref_y(cur_sz + 1, 0);
+    for (int j = 1; j <= cur_sz; j++) {
+      pref_x[j] = pref_x[j - 1] + all_x[j];
+      pref_y[j] = pref_y[j - 1] + all_y[j];
     }
 
-    // recurse on each new cluster
-    for (int i = 0; i < best_k; i++) {
-        if (static_cast<int>(nxt_clusters[i].size())) {
-            std::vector<std::vector<Flop> > R;
-            KMeansDecomp(nxt_clusters[i], max_sz, R);
-            for (auto &x : R) {
-                pointsets.push_back(x);
-            }
+    for (int j = 0; j < cur_sz; j++) {
+      float a_j = 0;
+      float b_j = std::numeric_limits<float>::max();
+      for (int k = 0; k < num_centers; k++) {
+        if (i != k) {
+          b_j = std::min(b_j, GetDist(clusters[i][j].pt, centers[k]));
         }
+      }
+
+      /* find first x_loc == current x */
+      int lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
+      while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (all_x[mid] >= clusters[i][j].pt.x) {
+          ret = std::min(ret, mid);
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+
+      /* get x contribution */
+      float contribution_x = 0;
+      if (ret > 1) {
+        contribution_x += (clusters[i][j].pt.x * (ret - 1)) - (pref_x[ret - 1]);
+      }
+      if (ret < cur_sz) {
+        contribution_x += (pref_x[cur_sz] - pref_x[ret])
+                          - (cur_sz - ret) * (clusters[i][j].pt.x);
+      }
+      a_j += contribution_x;
+
+      /* find first y_loc == current y */
+      lo = 1, hi = cur_sz, ret = std::numeric_limits<int>::max();
+      while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (all_y[mid] >= clusters[i][j].pt.y) {
+          ret = std::min(ret, mid);
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+
+      /* get y contribution */
+      float contribution_y = 0;
+      if (ret > 1) {
+        contribution_y += (clusters[i][j].pt.y * (ret - 1)) - (pref_y[ret - 1]);
+      }
+      if (ret < cur_sz) {
+        contribution_y += (pref_y[cur_sz] - pref_y[ret])
+                          - (cur_sz - ret) * (clusters[i][j].pt.y);
+      }
+      a_j += contribution_y;
+
+      a_j /= (cur_sz - 1);
+      tot += ((b_j - a_j) / std::max(a_j, b_j));
     }
+  }
+  return tot / num_flops;
+}
+
+void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
+                        const int max_sz,
+                        std::vector<std::vector<Flop>>& pointsets)
+{
+  const int num_flops = static_cast<int>(flops.size());
+  if (max_sz == -1 || num_flops <= max_sz) {
+    pointsets.push_back(flops);
+    return;
+  }
+
+  int best_k = 4;
+  float best_silh = -20.00;
+  std::vector<float> all_silhs(9);
+
+  std::vector<std::vector<int>> rand_nums(27);
+  for (int i = 0; i < multistart_ + 7; i++) {
+    for (int j = 0; j < 20; j++) {
+      rand_nums[i].push_back(std::rand());
+    }
+  }
+
+#pragma omp parallel for
+  for (int k = 2; k <= 8; k++) {
+    std::vector<std::vector<Flop>> k_clust;
+    KMeans(flops, k, k_clust, rand_nums[k - 2]);
+    std::vector<Point> centers;
+    for (int i = 0; i < k; i++) {
+      centers.push_back(k_clust[i].back().pt);
+      k_clust[i].pop_back();
+    }
+    float cur_silh = GetKSilh(k_clust, centers);
+    all_silhs[k] = cur_silh;
+  }
+
+  for (int i = 2; i <= 8; i++) {
+    if (all_silhs[i] > best_silh) {
+      best_silh = all_silhs[i];
+      best_k = i;
+    }
+  }
+
+  std::vector<std::vector<Flop>> tmp_clusters[multistart_];
+  std::vector<float> tmp_costs(multistart_);
+
+#pragma omp parallel for
+  for (int i = 0; i < multistart_; i++) {
+    KMeans(flops, best_k, tmp_clusters[i], rand_nums[i + 7]);
+
+    /* cur_cost = sum of distances between flops and its
+    matching cluster's center */
+    float cur_cost = 0;
+    for (int j = 0; j < best_k; j++) {
+      for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
+        cur_cost
+            += GetDist(tmp_clusters[i][j][k].pt, tmp_clusters[i][j].back().pt);
+      }
+    }
+    tmp_costs[i] = cur_cost;
+  }
+
+  float best_cost = std::numeric_limits<float>::max();
+  std::vector<std::vector<Flop>> k_means_ret;
+  for (int i = 0; i < multistart_; i++) {
+    if (tmp_costs[i] < best_cost) {
+      best_cost = tmp_costs[i];
+      k_means_ret = tmp_clusters[i];
+    }
+  }
+
+  /*
+  create edges between all std::pairs of cluster centers
+  edge weight = distance between the two centers
+  */
+
+  std::vector<std::pair<float, std::pair<int, int>>> cluster_pairs;
+  for (int i = 0; i < best_k; i++) {
+    for (int j = i + 1; j < best_k; j++) {
+      const float dist
+          = GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt);
+      cluster_pairs.emplace_back(dist, std::make_pair(i, j));
+    }
+  }
+  std::sort(cluster_pairs.begin(), cluster_pairs.end());
+
+  for (int i = 0; i < best_k; i++) {
+    k_means_ret[i].pop_back();
+  }
+
+  // naive implementation of DSU
+  std::vector<int> id(best_k);
+  std::vector<int> sz(best_k);
+
+  for (int i = 0; i < best_k; i++) {
+    id[i] = i;
+    sz[i] = static_cast<int>(k_means_ret[i].size());
+  }
+
+  for (const auto& cluster_pair : cluster_pairs) {
+    int idx1 = cluster_pair.second.first;
+    int idx2 = cluster_pair.second.second;
+
+    if (sz[id[idx1]] < sz[id[idx2]]) {
+      std::swap(idx1, idx2);
+    }
+    if (sz[id[idx1]] + sz[id[idx2]] > max_sz) {
+      continue;
+    }
+
+    sz[id[idx1]] += sz[id[idx2]];
+
+    // merge the two clusters
+    const int orig_id = id[idx2];
+    for (int j = 0; j < best_k; j++) {
+      if (id[j] == orig_id) {
+        id[j] = id[idx1];
+      }
+    }
+  }
+
+  std::vector<std::vector<Flop>> nxt_clusters(best_k);
+  for (int i = 0; i < best_k; i++) {
+    for (const Flop& f : k_means_ret[i]) {
+      nxt_clusters[id[i]].push_back(f);
+    }
+  }
+
+  // recurse on each new cluster
+  for (int i = 0; i < best_k; i++) {
+    if (static_cast<int>(nxt_clusters[i].size())) {
+      std::vector<std::vector<Flop>> R;
+      KMeansDecomp(nxt_clusters[i], max_sz, R);
+      for (auto& x : R) {
+        pointsets.push_back(x);
+      }
+    }
+  }
 }
 
 float MBFF::GetPairDisplacements()
@@ -1984,8 +1982,8 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
       }
     }
     std::vector<std::pair<int, int>> mapping(num_flops);
-    const float cur_ans
-        = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, beta, array_mask);
+    const float cur_ans = RunILP(
+        pointsets[t], all_final_trays[t], mapping, alpha, beta, array_mask);
     all_mappings[t] = std::move(mapping);
     ans += cur_ans;
   }
