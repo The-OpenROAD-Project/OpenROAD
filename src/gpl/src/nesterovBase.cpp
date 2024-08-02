@@ -1962,7 +1962,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   int64_t densityGradSumIntY = 0;
   int64_t gradSumInt = 0;
 
-  const int64_t scaleFactor = 1e6;
+  const int64_t scaleFactor = 1e10;
 
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
