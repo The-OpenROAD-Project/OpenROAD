@@ -33,12 +33,9 @@
 
 #pragma once
 
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <vector>
+#include <queue>
 
-#include "odb/db.h"
+#include "object.h"
 
 namespace par {
 class PartitionMgr;
@@ -53,9 +50,6 @@ class dbNetwork;
 }
 
 namespace mpl2 {
-class Metrics;
-class Cluster;
-class HardMacro;
 
 struct DataFlowHypergraph
 {
@@ -113,7 +107,7 @@ struct PhysicalHierarchyMaps
 
 struct PhysicalHierarchy
 {
-  Cluster* root{nullptr};
+  std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
   float halo_width{0.0f};
@@ -165,14 +159,16 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
-  // Needed for macro placement
-  void createClusterForEachMacro(const std::vector<HardMacro*>& hard_macros,
-                                 std::vector<HardMacro>& sa_macros,
-                                 std::vector<Cluster*>& macro_clusters,
-                                 std::map<int, int>& cluster_to_macro,
-                                 std::set<odb::dbMaster*>& masters);
+  void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
+                               std::vector<HardMacro>& sa_macros,
+                               UniqueClusterVector& macro_clusters,
+                               std::map<int, int>& cluster_to_macro,
+                               std::set<odb::dbMaster*>& masters);
+  void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
  private:
+  using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
+
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
@@ -184,7 +180,7 @@ class ClusteringEngine
   void createIOClusters();
   void mapIOPads();
   void treatEachMacroAsSingleCluster();
-  void incorporateNewCluster(Cluster* cluster, Cluster* parent);
+  void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
   void multilevelAutocluster(Cluster* parent);
   void updateSizeThresholds();
@@ -195,7 +191,8 @@ class ClusteringEngine
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
-  void mergeClusters(std::vector<Cluster*>& candidate_clusters);
+  void mergeChildrenBelowThresholds(std::vector<Cluster*>& candidate_clusters);
+  bool attemptMerge(Cluster* receiver, Cluster* incomer);
   void fetchMixedLeaves(Cluster* parent,
                         std::vector<std::vector<Cluster*>>& mixed_leaves);
   void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
@@ -218,7 +215,6 @@ class ClusteringEngine
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
-  void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
   void addStdCellClusterToSubTree(Cluster* parent,
                                   Cluster* mixed_leaf,
                                   std::vector<int>& virtual_conn_clusters);
