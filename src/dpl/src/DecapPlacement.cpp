@@ -65,10 +65,11 @@ vector<int> Opendp::findDecapCellIndices(const int& gap_width,
   vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
-  const int min_space = padding_->padGlobalRight().v + padding_->padGlobalLeft().v;
+  const DbuX site_width = grid_->getSiteWidth();
+  const DbuX min_space = gridToDbu(padding_->padGlobalRight() + padding_->padGlobalLeft(), site_width);
   for (int i = 0; i < decap_masters_.size(); i++) {
     const int master_width = decap_masters_[i]->master->getWidth();
-    while ((width_acum + master_width) <= (gap_width - min_space)
+    while ((width_acum + master_width) <= (gap_width - min_space.v)
            && (cap_acum + decap_masters_[i]->capacitance)
                   <= (target - current)) {
       id_masters.push_back(i);
