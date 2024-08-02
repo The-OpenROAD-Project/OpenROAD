@@ -39,6 +39,7 @@
 #include "dpl/Opendp.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
+#include "Padding.h"
 
 namespace dpl {
 
@@ -228,6 +229,7 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
+  std::cerr << master->getConstName() << " " << padding_->padRight(inst).v << " " << padding_->padGlobalLeft() << std::endl;
   inst->setOrient(orient);
   inst->setLocation(pos_x, pos_y);
   inst->setPlacementStatus(dbPlacementStatus::PLACED);
