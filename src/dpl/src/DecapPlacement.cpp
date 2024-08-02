@@ -65,8 +65,10 @@ vector<int> Opendp::findDecapCellIndices(const int& gap_width,
   vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
+  const int min_space = padding_->padGlobalRight().v + padding_->padGlobalLeft().v;
   for (int i = 0; i < decap_masters_.size(); i++) {
-    while (decap_masters_[i]->master->getWidth() <= (gap_width - width_acum)
+    const int master_width = decap_masters_[i]->master->getWidth();
+    while ((width_acum + master_width) <= (gap_width - min_space)
            && (cap_acum + decap_masters_[i]->capacitance)
                   <= (target - current)) {
       id_masters.push_back(i);
@@ -229,7 +231,7 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
-  std::cerr << master->getConstName() << " " << padding_->padRight(inst).v << " " << padding_->padGlobalLeft() << std::endl;
+  std::cerr << master->getConstName() << " " << padding_->padRight(inst).v << " " << padding_->padGlobalLeft() << " " << padding_->padGlobalRight() << std::endl;
   inst->setOrient(orient);
   inst->setLocation(pos_x, pos_y);
   inst->setPlacementStatus(dbPlacementStatus::PLACED);
