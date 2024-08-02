@@ -460,10 +460,6 @@ proc detailed_route_set_unidirectional_layer { args } {
   drt::detailed_route_set_unidirectional_layer $args
 }
 
-proc fix_max_spacing { args } {
-  sta::check_argc_eq0 "detailed_route_set_unidirectional_layer" $args
-  drt::fix_max_spacing
-}
 namespace eval drt {
 
 proc step_dr { args } {
@@ -498,6 +494,11 @@ proc check_drc { args } {
     utl::error DRT 613 "-output_file is required for check_drc command"
   }
   drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
+}
+
+proc fix_max_spacing { args } {
+  sta::check_argc_eq0 "fix_max_spacing" $args
+  drt::fix_max_spacing_cmd
 }
 
 }

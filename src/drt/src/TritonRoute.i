@@ -227,7 +227,7 @@ void detailed_route_step_drt(int size,
                  workerMarkerCost, workerFixedShapeCost,
                  workerMarkerDecay, ripupMode, followGuide);
 }
-void fix_max_spacing()
+void fix_max_spacing_cmd()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->fixMaxSpacing();
