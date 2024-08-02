@@ -1766,7 +1766,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop> &flops, const int max_sz,
     std::vector<float> all_silhs(9);
 
     std::vector<std::vector<int>> rand_nums(27);
-    for (int i = 0; i < 27; i++) {
+    for (int i = 0; i < multistart_ + 7; i++) {
       for (int j = 0; j < 20; j++) {
         rand_nums[i].push_back(std::rand());
       }
