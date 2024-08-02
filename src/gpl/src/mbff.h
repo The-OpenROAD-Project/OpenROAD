@@ -81,7 +81,6 @@ class MBFF
        sta::dbSta* sta,
        utl::Logger* log,
        int threads,
-       int knn,
        int multistart,
        int num_paths,
        bool debug_graphics = false);
@@ -173,9 +172,10 @@ class MBFF
                 const std::vector<Tray>& trays,
                 const std::vector<std::pair<int, int>>& clusters);
 
-  // K-Means++ for pointset decomposition (fixed K=4 for now)
-  void KMeans(const std::vector<Flop>& flops,
-              std::vector<std::vector<Flop>>& clusters);
+   void KMeans(const std::vector<Flop> &flops, int knn,
+                  std::vector<std::vector<Flop> > &clusters, std::vector<int> &rand_nums);
+  float GetKSilh(const std::vector<std::vector<Flop> > &clusters,
+                     const std::vector<Point> &centers);
   void KMeansDecomp(const std::vector<Flop>& flops,
                     int max_sz,
                     std::vector<std::vector<Flop>>& pointsets);
@@ -236,7 +236,6 @@ class MBFF
   utl::Logger* log_;
   std::unique_ptr<Graphics> graphics_;
   int num_threads_;
-  int knn_;
   int multistart_;
   int num_paths_;
   float multiplier_;
