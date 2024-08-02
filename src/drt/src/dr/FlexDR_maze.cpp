@@ -1574,7 +1574,7 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
 
 void FlexDRWorker::writeGCPatchesToDRWorker(
     drNet* target_net,
-    std::vector<FlexMazeIdx> valid_indices)
+    const std::vector<FlexMazeIdx>& valid_indices)
 {
   for (auto& pwire : gcWorker_->getPWires()) {
     auto net = pwire->getNet();
@@ -1938,14 +1938,12 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
             getWorkerRegionQuery().add(new_via_ptr);
           }
         }
-        if (no_solution_found) {
-          continue;
-        } else {
+        if (!no_solution_found) {
           gcWorker_->setTargetNet(net->getFrNet());
           gcWorker_->updateDRNet(net);
           gcWorker_->setEnableSurgicalFix(true);
           gcWorker_->main();
-          if (gcWorker_->getMarkers().size() == 0) {
+          if (gcWorker_->getMarkers().empty()) {
             net->setModified(true);
             writeGCPatchesToDRWorker();
           } else {

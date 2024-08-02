@@ -1346,7 +1346,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   }
   KDTree tree(via_positions);
   std::vector<bool> visited(via_positions.size(), false);
-  std::vector<int> isolated_via_nodes;
+  std::set<int> isolated_via_nodes;
   omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
@@ -1374,7 +1374,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
         }
       }
       if (is_isolated) {
-        isolated_via_nodes.emplace_back(i);
+        isolated_via_nodes.insert(i);
       }
     }
   }

@@ -221,7 +221,7 @@ void io::Parser::initDefaultVias()
 
 namespace {
 std::pair<frCoord, frCoord> getBloatingDist(frTechObject* tech,
-                                            frVia via,
+                                            const frVia& via,
                                             bool above)
 {
   auto cut_layer = tech->getLayer(via.getViaDef()->getCutLayerNum());
@@ -252,7 +252,7 @@ std::pair<frCoord, frCoord> getBloatingDist(frTechObject* tech,
     }
     return bloats;
   }
-  return std::make_pair<frCoord, frCoord>(0, 0);
+  return std::make_pair(0, 0);
 }
 
 }  // namespace
@@ -287,12 +287,9 @@ void io::Parser::initSecondaryVias()
           if (viadef->getCutClassIdx() == default_viadef->getCutClassIdx()) {
             continue;
           }
-          // logger_->report("VIA {}", viadef->getName());
           frVia secondary_via(viadef);
           auto layer1_bloats = getBloatingDist(tech_, secondary_via, false);
-          // logger_->report("bloat below");
           auto layer2_bloats = getBloatingDist(tech_, secondary_via, true);
-          // logger_->report("bloat above");
           int dx = secondary_via.getCutBBox().xCenter();
           int dy = secondary_via.getCutBBox().yCenter();
           if (layer1_bloats != std::pair<int, int>(0, 0)

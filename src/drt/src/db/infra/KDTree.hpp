@@ -6,11 +6,11 @@ struct KDTreeNode
 {
   int id;
   std::pair<int, int> point;
-  KDTreeNode* left;
-  KDTreeNode* right;
+  KDTreeNode* left{nullptr};
+  KDTreeNode* right{nullptr};
 
   KDTreeNode(const int& idIn, const std::pair<int, int>& pt)
-      : id(idIn), point(pt), left(nullptr), right(nullptr)
+      : id(idIn), point(pt)
   {
   }
 };

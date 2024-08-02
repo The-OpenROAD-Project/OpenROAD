@@ -73,6 +73,15 @@ class Parser
   void postProcessGuide();
   frLayerNum getTopPinLayer();
   void initDefaultVias();
+  /**
+   * Initializes secondary viadefs.
+   *
+   * This function initializes 'frLayer::secondaryViaDefs_', which are needed to
+   * replace lonely vias ('frLayer::defaultViaDef_') according to
+   * LEF58_MAXSPACING constraints. Usage of 'frLayer::secondaryViaDefs_' is in
+   * FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
+   *
+   */
   void initSecondaryVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }

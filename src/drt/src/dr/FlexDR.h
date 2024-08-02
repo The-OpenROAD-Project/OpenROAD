@@ -1011,7 +1011,8 @@ class FlexDRWorker
   // helper functions
   frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
   void writeGCPatchesToDRWorker(drNet* target_net = nullptr,
-                                std::vector<FlexMazeIdx> valid_indices = {});
+                                const std::vector<FlexMazeIdx>& valid_indices
+                                = {});
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);
