@@ -201,6 +201,7 @@ class MBFF
                 const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 float alpha,
+                float beta,
                 std::vector<int> array_mask);
   // calculate beta (1.00) * sum(relative displacements)
   float GetPairDisplacements();

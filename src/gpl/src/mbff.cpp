@@ -137,6 +137,11 @@ float MBFF::GetDist(const Point& a, const Point& b)
   return (abs(a.x - b.x) + abs(a.y - b.y));
 }
 
+float MBFF::GetDistAR(const Point& a, const Point& b, const float AR)
+{
+  return (abs(a.x - b.x)/AR + abs(a.y - b.y));
+}
+
 int MBFF::GetRows(int slot_cnt, std::vector<int> array_mask)
 {
   const int idx = GetBitIdx(slot_cnt);
@@ -906,13 +911,9 @@ float MBFF::RunLP(const std::vector<Flop>& flops,
   }
 
   operations_research::MPObjective* objective = solver->MutableObjective();
-  std::vector<int> coeff(num_flops, 1);
   for (int i = 0; i < num_flops; i++) {
-    if (path_points_.count(flops[i].idx)) {
-      coeff[i] = 1 + occs_[flops[i].idx];
-    }
-    objective->SetCoefficient(disp_x[i], coeff[i]);
-    objective->SetCoefficient(disp_y[i], coeff[i]);
+    objective->SetCoefficient(disp_x[i], 1);
+    objective->SetCoefficient(disp_y[i], 1);
   }
   objective->SetMinimization();
   solver->Solve();
@@ -936,6 +937,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
                     const std::vector<Tray>& trays,
                     std::vector<std::pair<int, int>>& final_flop_to_slot,
                     float alpha,
+                    float beta,
                     std::vector<int> array_mask)
 {
   const int num_flops = static_cast<int>(flops.size());
@@ -1014,12 +1016,85 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
     }
   }
 
-  std::vector<int> coeff(num_flops, 1);
+  // make sure each timing-critical path contains FFs that can be clustered. 
+  std::map<int, int> old_to_new_idx;
   for (int i = 0; i < num_flops; i++) {
-    if (path_points_.count(flops[i].idx)) {
-      coeff[i] = 2;
+    old_to_new_idx[flops[i].idx] = i + 1;
+  }
+
+  int num_paths = 0;
+  for (size_t i = 0; i < (int)flops.size(); i++) {
+    for (auto &j : paths_[flops[i].idx]) {
+      if (!old_to_new_idx[j]) {
+        continue;
+      }
+      num_paths++;
     }
   }
+  
+  std::vector<operations_research::sat::IntVar> disp_path_x;
+  std::vector<operations_research::sat::IntVar> disp_path_y;
+    for (int i = 0; i < num_paths; i++) {
+        disp_path_x[i].push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
+        disp_path_y[i].push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
+    }
+
+    std::cout << "Num paths = " << num_paths << "\n";
+    int cur_path_num = 0;
+    for (int i = 0; i < flops.size(); i++) {
+        for (const auto &end_point : paths_[flops[i].idx]) {
+            int flop_a_idx = old_to_new_idx[flops[i].idx];
+            int flop_b_idx = old_to_new_idx[end_point];
+            if (!flop_a_idx || !flop_b_idx) continue;
+            flop_a_idx--, flop_b_idx--;
+            operations_research::sat::LinearExpr sum_disp_x_flop_a;
+            operations_research::sat::LinearExpr sum_disp_y_flop_a;
+
+            operations_research::sat::LinearExpr sum_disp_x_flop_b;
+            operations_research::sat::LinearExpr sum_disp_y_flop_b;
+
+            for (int j = 0; j < static_cast<int>(cand_tray[flop_a_idx].size());
+                 j++) {
+                float shift_x = trays[cand_tray[flop_a_idx][j]]
+                                    .slots[cand_slot[flop_a_idx][j]]
+                                    .x -
+                                flops[flop_a_idx].pt.x;
+                float shift_y = trays[cand_tray[flop_a_idx][j]]
+                                    .slots[cand_slot[flop_a_idx][j]]
+                                    .y -
+                                flops[flop_a_idx].pt.y;
+                sum_disp_x_flop_a += (int(multiplier_ * shift_x) * mapped[flop_a_idx][j]);
+                sum_disp_y_flop_a += (int(multiplier_ * shift_y) * mapped[flop_a_idx][j]);
+            }
+
+            for (int j = 0; j < static_cast<int>(cand_tray[flop_b_idx].size());
+                 j++) {
+                float shift_x = trays[cand_tray[flop_b_idx][j]]
+                                    .slots[cand_slot[flop_b_idx][j]]
+                                .x - 
+                                flops[flop_b_idx].pt.x;
+                float shift_y = trays[cand_tray[flop_b_idx][j]]
+                                  .slots[cand_slot[flop_b_idx][j]]
+                                 .y -
+                                flops[flop_b_idx].pt.y;
+                sum_disp_x_flop_b += (int(multiplier_ * shift_x) * mapped[flop_b_idx][j]);
+                sum_disp_y_flop_b += (int(multiplier_ * shift_y) * mapped[flop_b_idx][j]);
+            }
+
+            cp_model.AddLessOrEqual(0, disp_path_x[cur_path_num] + sum_disp_x_flop_a -
+                                  sum_disp_x_flop_b);
+            cp_model.AddLessOrEqual(0, disp_path_x[cur_path_num] - sum_disp_x_flop_a +
+                                  sum_disp_x_flop_b);
+            cp_model.AddLessOrEqual(0, disp_path_y[cur_path_num] + sum_disp_y_flop_a -
+                                  sum_disp_y_flop_b);
+            cp_model.AddLessOrEqual(0, disp_path_y[cur_path_num++] - sum_disp_y_flop_a +
+                                  sum_disp_y_flop_b);
+        }
+    }
+    for (int i = 0; i < num_paths; i++) {
+        cp_model.AddLessOrEqual(disp_path_x[i] + disp_path_y[i], max_dist);
+    }
+
 
   // check that each flop is matched to a single slot
   for (int i = 0; i < num_flops; i++) {
@@ -1092,9 +1167,14 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   // add the sum of all distances
   for (int i = 0; i < num_flops; i++) {
     for (size_t j = 0; j < cand_tray[i].size(); j++) {
-      obj.AddTerm(disp_x[i][j], coeff[i] * (1 / multiplier_));
-      obj.AddTerm(disp_y[i][j], coeff[i] * (1 / multiplier_));
+      obj.AddTerm(disp_x[i][j], (1 / multiplier_));
+      obj.AddTerm(disp_y[i][j], (1 / multiplier_));
     }
+  }
+
+  for (int i = 0; i < num_paths; i++) {
+    obj.AddTerm(beta * disp_path_x[i]);
+    obj.AddTerm(beta * disp_path_y[i]);
   }
 
   // add the tray usage constraints
@@ -1126,15 +1206,6 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
           slot_disp_y_[flops[i].idx]
               = trays[cand_tray[i][j]].slots[cand_slot[i][j]].y - flops[i].pt.y;
-
-          if (path_points_.count(flops[i].idx)) {
-            ret -= (coeff[i] - 1)
-                   * std::max(slot_disp_x_[flops[i].idx],
-                              -slot_disp_x_[flops[i].idx]);
-            ret -= (coeff[i] - 1)
-                   * std::max(slot_disp_y_[flops[i].idx],
-                              -slot_disp_y_[flops[i].idx]);
-          }
 
           final_flop_to_slot[i] = {cand_tray[i][j], cand_slot[i][j]};
           trays_used.insert(
@@ -1203,7 +1274,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
 
   float tot_dist = 0;
   for (int i = 0; i < num_flops; i++) {
-    const float contr = GetDist(flops[i].pt, tray_zero.pt) / AR;
+    const float contr = GetDistAR(flops[i].pt, tray_zero.pt, AR);
     flops[i].prob = contr;
     tot_dist += contr;
   }
@@ -1226,7 +1297,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
     trays.push_back(new_tray);
 
     for (int i = 0; i < num_flops; i++) {
-      const float new_contr = GetDist(flops[i].pt, new_tray.pt) / AR;
+      const float new_contr = GetDistAR(flops[i].pt, new_tray.pt, AR);
       flops[i].prob += new_contr;
       tot_dist += new_contr;
     }
@@ -1784,7 +1855,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
     }
     std::vector<std::pair<int, int>> mapping(num_flops);
     const float cur_ans
-        = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, array_mask);
+        = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, beta, array_mask);
     all_mappings[t] = std::move(mapping);
     ans += cur_ans;
   }
@@ -2132,10 +2203,10 @@ void MBFF::ReadPaths()
                                                    e_thrus,
                                                    e_to,
                                                    false,
-                                                   nullptr,
+                                                   sta_->cmdCorner(),
                                                    sta::MinMaxAll::max(),
                                                    num_paths_,
-                                                   num_paths_,
+                                                   20,
                                                    true,
                                                    -sta::INF,
                                                    sta::INF,
