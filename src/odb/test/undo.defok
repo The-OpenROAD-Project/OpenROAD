@@ -1,0 +1,16 @@
+VERSION 5.8 ;
+DIVIDERCHAR "|" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 100 ;
+COMPONENTS 2 ;
+    - pre_inst INV_X1 ;
+    - pre_swap INV_X1 ;
+END COMPONENTS
+PINS 1 ;
+    - pre_bterm + NET pre_net + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 1 ;
+    - pre_net ( PIN pre_bterm ) ( pre_inst A ) + USE SIGNAL ;
+END NETS
+END DESIGN
