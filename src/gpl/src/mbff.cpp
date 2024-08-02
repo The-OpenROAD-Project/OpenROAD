@@ -1035,8 +1035,8 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   std::vector<operations_research::sat::IntVar> disp_path_x;
   std::vector<operations_research::sat::IntVar> disp_path_y;
     for (int i = 0; i < num_paths; i++) {
-        disp_path_x[i].push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
-        disp_path_y[i].push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
+        disp_path_x.push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
+        disp_path_y.push_back(cp_model.NewIntVar(operations_research::Domain(0, inf)));
     }
 
     std::cout << "Num paths = " << num_paths << "\n";
@@ -1173,8 +1173,8 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   }
 
   for (int i = 0; i < num_paths; i++) {
-    obj.AddTerm(beta * disp_path_x[i]);
-    obj.AddTerm(beta * disp_path_y[i]);
+    obj.AddTerm(disp_path_x[i], beta);
+    obj.AddTerm(disp_path_y[i], beta);
   }
 
   // add the tray usage constraints

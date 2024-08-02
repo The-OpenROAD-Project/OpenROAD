@@ -100,6 +100,7 @@ class MBFF
 
   // MBFF functions
   float GetDist(const Point& a, const Point& b);
+  float GetDistAR(const Point& a, const Point& b, const float AR);
   int GetRows(int slot_cnt, std::vector<int> array_mask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
