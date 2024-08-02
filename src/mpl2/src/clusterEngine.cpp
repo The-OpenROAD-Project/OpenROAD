@@ -195,7 +195,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
 
-      std::unique_ptr<HardMacro> macro = std::make_unique<HardMacro>(
+      auto macro = std::make_unique<HardMacro>(
           inst, tree_->halo_width, tree_->halo_width);
       tree_->maps.inst_to_hard[inst] = std::move(macro);
     } else {
@@ -212,7 +212,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
     macro_area += metrics->getMacroArea();
   }
 
-  std::unique_ptr<Metrics> metrics = std::make_unique<Metrics>(
+  auto metrics = std::make_unique<Metrics>(
       num_std_cell, num_macro, std_cell_area, macro_area);
   tree_->maps.module_to_metrics[module] = std::move(metrics);
 

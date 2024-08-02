@@ -357,8 +357,7 @@ void HierRTLMP::runCoarseShaping()
 
 void HierRTLMP::setRootShapes()
 {
-  std::unique_ptr<SoftMacro> root_soft_macro
-      = std::make_unique<SoftMacro>(tree_.root);
+  auto root_soft_macro = std::make_unique<SoftMacro>(tree_.root);
 
   const float core_lx
       = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
@@ -1181,8 +1180,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
     cluster->setSoftMacro(std::move(soft_macro));
@@ -1234,8 +1232,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
@@ -2167,8 +2164,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
     cluster->setSoftMacro(std::move(soft_macro));
@@ -2220,8 +2216,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
@@ -2667,8 +2662,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
     cluster->setSoftMacro(std::move(soft_macro));
@@ -2720,8 +2714,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    std::unique_ptr<SoftMacro> soft_macro
-        = std::make_unique<SoftMacro>(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
