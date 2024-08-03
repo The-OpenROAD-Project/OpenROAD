@@ -47,6 +47,7 @@ LayoutTabs::LayoutTabs(Options* options,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
                        Gui* gui,
                        std::function<bool(void)> usingDBU,
+                       std::function<bool(void)> usingDBView,
                        std::function<bool(void)> showRulerAsEuclidian,
                        std::function<bool(void)> default_mouse_wheel_zoom,
                        std::function<int(void)> arrow_keys_scroll_step,
@@ -59,6 +60,7 @@ LayoutTabs::LayoutTabs(Options* options,
       rulers_(rulers),
       gui_(gui),
       usingDBU_(std::move(usingDBU)),
+      usingDBView_(std::move(usingDBView)),
       showRulerAsEuclidian_(std::move(showRulerAsEuclidian)),
       default_mouse_wheel_zoom_(std::move(default_mouse_wheel_zoom)),
       arrow_keys_scroll_step_(std::move(arrow_keys_scroll_step)),
@@ -90,6 +92,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  gui_,
                                  usingDBU_,
                                  showRulerAsEuclidian_,
+                                 usingDBView_,
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
@@ -361,6 +364,13 @@ void LayoutTabs::executionPaused()
 {
   if (current_viewer_) {
     current_viewer_->executionPaused();
+  }
+}
+
+void LayoutTabs::resetCache()
+{
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->resetCache();
   }
 }
 

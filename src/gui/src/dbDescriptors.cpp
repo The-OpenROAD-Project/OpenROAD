@@ -1618,7 +1618,9 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
+DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool(void)> usingDBView)
+    : db_(db), usingDBView_(usingDBView)
 {
 }
 
@@ -1661,10 +1663,23 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
-    for (auto box : mpin->getGeometry()) {
-      odb::Rect rect = box->getBox();
-      inst_xfm.apply(rect);
-      painter.drawRect(rect);
+    if (usingDBView_()) {
+      for (auto box : mpin->getGeometry()) {
+        odb::Rect rect = box->getBox();
+        inst_xfm.apply(rect);
+        painter.drawRect(rect);
+      }
+    } else {
+      for (auto box : mpin->getPolygonGeometry()) {
+        odb::Polygon poly = box->getPolygon();
+        inst_xfm.apply(poly);
+        painter.drawPolygon(poly);
+      }
+      for (auto box : mpin->getNonPolygonGeometry()) {
+        odb::Rect rect = box->getBox();
+        inst_xfm.apply(rect);
+        painter.drawRect(rect);
+      }
     }
   }
 }
@@ -1848,7 +1863,9 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db) : db_(db)
+DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
+                                     std::function<bool(void)> usingDBView)
+    : db_(db), usingDBView_(usingDBView)
 {
 }
 
@@ -1889,11 +1906,20 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
     return;
   }
 
-  std::set<odb::Rect> mterm_rects;
+  std::vector<odb::Polygon> mterm_polys;
 
   for (auto mpin : mterm->getMPins()) {
-    for (auto box : mpin->getGeometry()) {
-      mterm_rects.insert(box->getBox());
+    if (usingDBView_()) {
+      for (auto box : mpin->getGeometry()) {
+        mterm_polys.push_back(box->getBox());
+      }
+    } else {
+      for (auto box : mpin->getPolygonGeometry()) {
+        mterm_polys.push_back(box->getPolygon());
+      }
+      for (auto box : mpin->getNonPolygonGeometry()) {
+        mterm_polys.push_back(box->getBox());
+      }
     }
   }
   for (auto* iterm : block->getITerms()) {
@@ -1903,9 +1929,9 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
       }
       const odb::dbTransform inst_xfm = iterm->getInst()->getTransform();
 
-      for (odb::Rect rect : mterm_rects) {
-        inst_xfm.apply(rect);
-        painter.drawRect(rect);
+      for (odb::Polygon poly : mterm_polys) {
+        inst_xfm.apply(poly);
+        painter.drawPolygon(poly);
       }
     }
   }
