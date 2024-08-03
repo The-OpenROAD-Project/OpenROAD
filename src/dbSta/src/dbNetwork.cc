@@ -108,6 +108,7 @@ using odb::dbModITerm;
 using odb::dbModITermObj;
 using odb::dbModNetObj;
 using odb::dbModule;
+using odb::dbModuleBusPortModBTermItr;
 using odb::dbModuleObj;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -699,39 +700,47 @@ const char* dbNetwork::name(const Cell* cell) const
 
 ////////////////////////////////////////////////////////////////
 // Module port iterator, allows traversal across dbModulePorts
-// Traverse the ports in creation order (from end to beginning).
+// Note that a port is not the same as a dbModBTerm.
+//
+// A Port is a higher level concept.
+// A Port can be one of:
+// (a) singleton
+// (b) bus port (which has many singletons inside it)
+// (c) bundle port -- todo (which has many singletons inside it).
+//
+// This iterator goes through the ports via the lowest level connections:
+// the singleton modbterms . To see what is inside the
+// aggregated ports (eg bus port/bundle port) we use the member
+// Iterator. (Though this iterator simply skips them).
+//
+//
+// TODO: remove the traversal at the lowest level.
+//
 
 class dbModulePortIterator : public CellPortIterator
 {
  public:
-  explicit dbModulePortIterator(const dbModule* cell);
+  explicit dbModulePortIterator(dbModule* cell);
   ~dbModulePortIterator() override = default;
   virtual bool hasNext() override;
   virtual Port* next() override;
 
  private:
-  const dbModBTerm* iter_;
+  dbSet<dbModBTerm>::iterator iter_;
+  dbSet<dbModBTerm>::iterator end_;
   const dbModule* module_;
 };
 
-dbModulePortIterator::dbModulePortIterator(const dbModule* cell)
+dbModulePortIterator::dbModulePortIterator(dbModule* cell)
 {
-  // skip to end
-  const dbModBTerm* first_mod_bterm = cell->getHeadDbModBTerm();
-  //
-  // Next pull request remove this. Use reverse on list
-  // so head is first element in natural order
-  //
-  for (iter_ = cell->getHeadDbModBTerm(); iter_; iter_ = iter_->getNext()) {
-    first_mod_bterm = iter_;
-  }
-  iter_ = first_mod_bterm;
+  iter_ = cell->getModBTerms().begin();
+  end_ = cell->getModBTerms().end();
   module_ = cell;
 }
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_) {
+  if (iter_ != end_) {
     return true;
   }
   return false;
@@ -739,21 +748,16 @@ bool dbModulePortIterator::hasNext()
 
 Port* dbModulePortIterator::next()
 {
-  dbModBTerm* modbterm = const_cast<dbModBTerm*>(iter_);
-  Port* ret = reinterpret_cast<Port*>(modbterm);
-  if (modbterm->isBusPort()) {
-    dbBusPort* bp = modbterm->getBusPort();
-    int size = bp->getSize();
-    // content of bus
-    iter_ = iter_->getPrev();
-    // Next pull request remove this, use offset mechanism
-    for (int skip_ix = 0; skip_ix < size && (iter_->getPrev()); skip_ix++) {
-      iter_ = iter_->getPrev();
+  dbModBTerm* ret = *iter_;
+  if (ret->isBusPort()) {
+    dbBusPort* bus_port = ret->getBusPort();
+    // TODO clean this up so iter_ = iter_ + bus_port -> getSize()
+    for (int i = 0; i < bus_port->getSize(); i++) {
+      iter_++;
     }
-  } else {
-    iter_ = iter_->getPrev();
   }
-  return ret;
+  iter_++;
+  return (reinterpret_cast<Port*>(ret));
 }
 
 CellPortIterator* dbNetwork::portIterator(const Cell* cell) const
@@ -2132,13 +2136,6 @@ void dbNetwork::staToDb(const Port* port,
   mterm = nullptr;
   modbterm = nullptr;
 
-  //
-  // Primary, needs concrete test
-  //
-  // if it is a concrete port we get the port stuff from the extPort
-  // void* field in the fake library created.
-  //
-  //
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
     mterm = reinterpret_cast<dbMTerm*>(cport->extPort());
@@ -2416,7 +2413,6 @@ int dbNetwork::toIndex(const Port* port) const
     }
     return (start_ix - (modbterm->getBusPort()->getSize() - 1));
   }
-
   logger_->error(ORD, 2022, "Error: bad bus to_index defintion");
   return 0;
 }
@@ -2433,7 +2429,6 @@ bool dbNetwork::hasMembers(const Port* port) const
     }
     return false;
   }
-
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return cport->hasMembers();
 }
@@ -2460,59 +2455,48 @@ class DbNetworkPortMemberIterator : public PortMemberIterator
 {
  public:
   explicit DbNetworkPortMemberIterator(const Port* port, const dbNetwork* nwk);
-  ~DbNetworkPortMemberIterator() = default;
+  ~DbNetworkPortMemberIterator();
   virtual bool hasNext();
   virtual Port* next();
 
  private:
-  int size_;
-  int ix_;
-  dbModBTerm* next_;
-  dbSet<dbModBTerm>::iterator iter_;
+  dbSet<dbModBTerm>::iterator members_;
   const dbNetwork* nwk_;
+  int ix_;
+  int size_;
 };
+
+DbNetworkPortMemberIterator::~DbNetworkPortMemberIterator()
+{
+}
 
 DbNetworkPortMemberIterator::DbNetworkPortMemberIterator(const Port* port,
                                                          const dbNetwork* nwk)
 {
-  size_ = 0;
-  ix_ = -1;
-  next_ = nullptr;
   dbMTerm* mterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   nwk_ = nwk;
-
   nwk_->staToDb(port, bterm, mterm, modbterm);
   if (modbterm && modbterm->isBusPort()) {
     dbBusPort* busport = modbterm->getBusPort();
+    members_ = busport->getBusPortMembers().begin();
     size_ = busport->getSize();
-    next_ = busport->getFirstMember();
+    ix_ = 0;
   }
 }
 
 bool DbNetworkPortMemberIterator::hasNext()
 {
-  ix_++;
-  if (ix_ == 0) {
-    if (next_) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    if (ix_ < size_) {
-      next_ = next_->getPrev();
-      return true;
-    }
-  }
-  next_ = nullptr;
-  return false;
+  return (ix_ != size_);
 }
 
 Port* DbNetworkPortMemberIterator::next()
 {
-  return reinterpret_cast<Port*>(next_);
+  dbModBTerm* ret = *members_;
+  members_++;
+  ix_++;
+  return reinterpret_cast<Port*>(ret);
 }
 
 PortMemberIterator* dbNetwork::memberIterator(const Port* port) const

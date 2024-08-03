@@ -42,6 +42,7 @@
 #include "dbModITerm.h"
 #include "dbModNet.h"
 #include "dbModule.h"
+#include "dbModuleBusPortModBTermItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
@@ -286,10 +287,11 @@ dbModBTerm* dbBusPort::getFirstMember()
 int dbBusPort::getSize() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;
-  if (getUpdown()) {
-    return (obj->_to - obj->_from + 1);
-  }
-  return (obj->_from - obj->_to + 1);
+  // we keep how the size is computed in the
+  // database low level object so that if
+  // we need to use it during low level
+  // iterators we can.
+  return obj->size();
 }
 
 bool dbBusPort::getUpdown() const
@@ -315,6 +317,16 @@ dbBusPort* dbBusPort::create(dbModule* parentModule,
   busport->_flags = 0U;
   busport->_parent = module->getOID();
   return (dbBusPort*) busport;
+}
+
+dbSet<dbModBTerm> dbBusPort::getBusPortMembers()
+{
+  _dbBusPort* obj = (_dbBusPort*) this;
+  if (obj->_members_iter == nullptr) {
+    _dbBlock* block = (_dbBlock*) obj->getOwner();
+    obj->_members_iter = new dbModuleBusPortModBTermItr(block->_modbterm_tbl);
+  }
+  return dbSet<dbModBTerm>(this, obj->_members_iter);
 }
 
 //

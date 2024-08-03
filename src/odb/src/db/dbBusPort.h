@@ -37,6 +37,7 @@
 #include "odb/odb.h"
 
 // User Code Begin Includes
+#include "dbModuleBusPortModBTermItr.h"
 #include "dbVector.h"
 // User Code End Includes
 
@@ -70,6 +71,12 @@ class _dbBusPort : public _dbObject
   dbId<_dbModBTerm> _port;
   dbId<_dbModBTerm> _members;
   dbId<_dbModule> _parent;
+
+  // User Code Begin Fields
+  // need to make sure this is destroyed
+  dbModuleBusPortModBTermItr* _members_iter = nullptr;
+  int size() { return abs(_from - _to) + 1; }
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj);

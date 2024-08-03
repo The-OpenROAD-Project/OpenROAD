@@ -31,10 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbModuleModInstItr.h"
+#include "dbModuleBusPortModBTermItr.h"
 
-#include "dbModInst.h"
-#include "dbModInst.h"
+#include "dbBusPort.h"
+#include "dbModBTerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
 
@@ -42,81 +42,76 @@ namespace odb {
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbModuleModInstItr - Methods
+// dbModuleBusPortModBTermItr - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModInstItr::reversible()
+bool dbModuleBusPortModBTermItr::reversible()
 {
   return true;
 }
 
-bool dbModuleModInstItr::orderReversed()
+bool dbModuleBusPortModBTermItr::orderReversed()
 {
   return true;
 }
 
-void dbModuleModInstItr::reverse(dbObject* parent)
+void dbModuleBusPortModBTermItr::reverse(dbObject* parent)
 {
-  // User Code Begin reverse
-  _dbModule* module = (_dbModule*) parent;
-  uint id = module->_modinsts;
-  uint list = 0;
-
-  while (id != 0) {
-    _dbModInst* modinst = _modinst_tbl->getPtr(id);
-    uint n = modinst->_module_next;
-    modinst->_module_next = list;
-    list = id;
-    id = n;
-  }
-  module->_modinsts = list;
-  // User Code End reverse
 }
 
-uint dbModuleModInstItr::sequential()
+uint dbModuleBusPortModBTermItr::sequential()
 {
   return 0;
 }
 
-uint dbModuleModInstItr::size(dbObject* parent)
+uint dbModuleBusPortModBTermItr::size(dbObject* parent)
 {
   uint id;
   uint cnt = 0;
 
-  for (id = dbModuleModInstItr::begin(parent);
-       id != dbModuleModInstItr::end(parent);
-       id = dbModuleModInstItr::next(id)) {
+  for (id = dbModuleBusPortModBTermItr::begin(parent);
+       id != dbModuleBusPortModBTermItr::end(parent);
+       id = dbModuleBusPortModBTermItr::next(id)) {
     ++cnt;
   }
 
   return cnt;
 }
 
-uint dbModuleModInstItr::begin(dbObject* parent)
+uint dbModuleBusPortModBTermItr::begin(dbObject* parent)
 {
   // User Code Begin begin
-  _dbModule* module = (_dbModule*) parent;
-  return module->_modinsts;
+  _dbBusPort* _busport = (_dbBusPort*) parent;
+  _iter = _modbterm_tbl->getPtr(_busport->_members);
+  _size = abs(_busport->_from - _busport->_to) + 1;
+  _ix = 0;
+  return _busport->_members;
   // User Code End begin
 }
 
-uint dbModuleModInstItr::end(dbObject* /* unused: parent */)
+uint dbModuleBusPortModBTermItr::end(dbObject* /* unused: parent */)
 {
+  if (_ix == _size) {
+    return _iter->getId();
+  }
   return 0;
 }
 
-uint dbModuleModInstItr::next(uint id, ...)
+uint dbModuleBusPortModBTermItr::next(uint id, ...)
 {
   // User Code Begin next
-  _dbModInst* modinst = _modinst_tbl->getPtr(id);
-  return modinst->_module_next;
+  _dbModBTerm* lmodbterm = _modbterm_tbl->getPtr(id);
+  _ix++;
+  uint ret = lmodbterm->_next_entry;
+  _iter = _modbterm_tbl->getPtr(ret);
+  return ret;
   // User Code End next
 }
 
-dbObject* dbModuleModInstItr::getObject(uint id, ...)
+dbObject* dbModuleBusPortModBTermItr::getObject(uint id, ...)
 {
-  return _modinst_tbl->getPtr(id);
+  return _modbterm_tbl->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

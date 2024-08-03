@@ -417,18 +417,6 @@ void dbModBTerm::disconnect()
   _modbterm->_prev_net_modbterm = 0;
 }
 
-void dbModBTerm::staSetPort(void* p)
-{
-  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  _modbterm->_sta_port = p;
-}
-
-void* dbModBTerm::staPort()
-{
-  _dbModBTerm* _modbterm = (_dbModBTerm*) this;
-  return _modbterm->_sta_port;
-}
-
 bool dbModBTerm::isBusPort() const
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) this;

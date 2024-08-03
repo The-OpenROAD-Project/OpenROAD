@@ -176,6 +176,8 @@ class dbTechLayerWrongDirSpacingRule;
 // Extraction Objects
 class dbExtControl;
 
+// Custom iterators
+class dbModuleBusPortModBTermItr;
 ///
 /// dbProperty - Property base class.
 ///
@@ -7153,17 +7155,22 @@ class dbBusPort : public dbObject
   // get element by bit index in bus (allows for up/down)
   // linear access
   dbModBTerm* getBusIndexedElement(int index) const;
-
   void setFirstMember(dbModBTerm*);
   dbModBTerm* getFirstMember();
+
+  dbSet<dbModBTerm> getBusPortMembers();
   int getSize() const;
   bool getUpdown() const;
-  // reallocate the bus port so all members sequential.
-  void Realloc();
+
   static dbBusPort* create(dbModule* parentModule,
                            dbModBTerm* port,
                            int from_ix,
                            int to_ix);
+
+ private:
+  //  dbModuleBusPortModBTermItr* _members_iter=nullptr;
+  // reallocate the bus port so all members sequential.
+  void Realloc();
 
   // User Code End dbBusPort
 };
@@ -7586,15 +7593,15 @@ class dbModBTerm : public dbObject
   dbIoType getIoType();
   void connect(dbModNet* net);
   void disconnect();
-  void staSetPort(void* p);
-  void* staPort();
   bool isBusPort() const;
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
   dbModBTerm* getNext() const;
   dbModBTerm* getPrev() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
+ private:
   // User Code End dbModBTerm
 };
 
@@ -7690,6 +7697,7 @@ class dbModule : public dbObject
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
   dbSet<dbModBTerm> getModBTerms();
+  dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);

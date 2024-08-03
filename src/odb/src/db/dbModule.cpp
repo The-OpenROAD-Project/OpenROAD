@@ -371,6 +371,13 @@ dbSet<dbModBTerm> dbModule::getModBTerms()
   return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
 }
 
+dbModBTerm* dbModule::getModBTerm(uint id)
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return (dbModBTerm*) (block->_modbterm_tbl->getObject(id));
+}
+
 dbSet<dbInst> dbModule::getInsts()
 {
   _dbModule* module = (_dbModule*) this;

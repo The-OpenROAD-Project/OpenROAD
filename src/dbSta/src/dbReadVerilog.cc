@@ -35,6 +35,8 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
+#include <odb/dbSet.h>
+
 #include <map>
 #include <string>
 
@@ -364,6 +366,7 @@ void Verilog2db::makeDbModule(
       return;
     }
     if (hierarchy_) {
+      dbBusPort* dbbusport = nullptr;
       // make the module ports
       CellPortIterator* cp_iter = network_->portIterator(cell);
       while (cp_iter->hasNext()) {
@@ -372,17 +375,19 @@ void Verilog2db::makeDbModule(
           // make the bus port as part of the port set for the cell.
           const char* port_name = network_->name(port);
           dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
-          dbBusPort* dbbusport
-              = dbBusPort::create(module,
-                                  bmodterm,  // the root of the bus port
-                                  network_->fromIndex(port),
-                                  network_->toIndex(port));
+          dbbusport = dbBusPort::create(module,
+                                        bmodterm,  // the root of the bus port
+                                        network_->fromIndex(port),
+                                        network_->toIndex(port));
           bmodterm->setBusPort(dbbusport);
           dbIoType io_type = staToDb(network_->direction(port));
           bmodterm->setIoType(io_type);
-
+          //
           // Make a modbterm for each bus bit
           // Keep traversal in terms of bits
+          // These modbterms are annotated as being
+          // part of the port bus.
+          //
           int from_index = network_->fromIndex(port);
           int to_index = network_->toIndex(port);
           bool updown = (from_index <= to_index) ? true : false;
@@ -413,6 +418,7 @@ void Verilog2db::makeDbModule(
                      bmodterm->getName());
         }
       }
+      module->getModBTerms().reverse();
       // make the instance iterms
       InstancePinIterator* ip_iter = network_->pinIterator(inst);
       while (ip_iter->hasNext()) {
@@ -428,11 +434,8 @@ void Verilog2db::makeDbModule(
                    "Created module iterm {} ",
                    moditerm->getName());
       }
-      // reverse the ports on the dbModule to natural order
-      module->getModBTerms().reverse();
     }
   }
-
   InstanceChildIterator* child_iter = network_->childIterator(inst);
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
@@ -512,6 +515,7 @@ void Verilog2db::makeDbModule(
       && module->getChildren().orderReversed()) {
     module->getChildren().reverse();
   }
+
   if (module->getInsts().reversible() && module->getInsts().orderReversed()) {
     module->getInsts().reverse();
   }

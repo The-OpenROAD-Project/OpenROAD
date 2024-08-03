@@ -39,7 +39,7 @@
 	{
 	    "name":"_modbterms",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["no-set","no-get"],
+	    "flags":["no-set","no-get"],            
 	    "schema":"db_schema_update_hierarchy"	    	    	    
 	}
     ],
