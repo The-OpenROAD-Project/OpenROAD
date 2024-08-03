@@ -382,12 +382,14 @@ void Verilog2db::makeDbModule(
           bmodterm->setBusPort(dbbusport);
           dbIoType io_type = staToDb(network_->direction(port));
           bmodterm->setIoType(io_type);
+
           //
           // Make a modbterm for each bus bit
           // Keep traversal in terms of bits
           // These modbterms are annotated as being
           // part of the port bus.
           //
+
           int from_index = network_->fromIndex(port);
           int to_index = network_->toIndex(port);
           bool updown = (from_index <= to_index) ? true : false;
@@ -401,6 +403,9 @@ void Verilog2db::makeDbModule(
                 = dbModBTerm::create(module, bus_bit_port.c_str());
             if (i == 0) {
               dbbusport->setFirstMember(modbterm);
+            }
+            if (i == size - 1) {
+              dbbusport->setLast(modbterm);
             }
             dbIoType io_type = staToDb(network_->direction(port));
             bmodterm->setIoType(io_type);

@@ -750,7 +750,7 @@ Port* dbModulePortIterator::next()
   dbModBTerm* ret = *iter_;
   if (ret->isBusPort()) {
     dbBusPort* bus_port = ret->getBusPort();
-    // TODO clean this up so iter_ = iter_ + bus_port -> getSize()
+    // todo: remove this using custom iterator
     for (int i = 0; i < bus_port->getSize(); i++) {
       iter_++;
     }

@@ -70,6 +70,7 @@ class _dbBusPort : public _dbObject
   int _to;
   dbId<_dbModBTerm> _port;
   dbId<_dbModBTerm> _members;
+  dbId<_dbModBTerm> _last;
   dbId<_dbModule> _parent;
 
   // User Code Begin Fields

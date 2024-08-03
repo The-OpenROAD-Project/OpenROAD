@@ -34,7 +34,12 @@
         {
             "name":"_members",
             "type":"dbId<_dbModBTerm>",
-            "flags":["no-set"],
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        },
+        {
+            "name":"_last",
+            "type":"dbId<_dbModBTerm>",
             "schema":"db_schema_odb_busport",
             "parent":"dbBlock"            
         },

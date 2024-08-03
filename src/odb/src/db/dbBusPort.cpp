@@ -67,6 +67,9 @@ bool _dbBusPort::operator==(const _dbBusPort& rhs) const
   if (_members != rhs._members) {
     return false;
   }
+  if (_last != rhs._last) {
+    return false;
+  }
   if (_parent != rhs._parent) {
     return false;
   }
@@ -89,6 +92,7 @@ void _dbBusPort::differences(dbDiff& diff,
   DIFF_FIELD(_to);
   DIFF_FIELD(_port);
   DIFF_FIELD(_members);
+  DIFF_FIELD(_last);
   DIFF_FIELD(_parent);
   DIFF_END
 }
@@ -101,6 +105,7 @@ void _dbBusPort::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_to);
   DIFF_OUT_FIELD(_port);
   DIFF_OUT_FIELD(_members);
+  DIFF_OUT_FIELD(_last);
   DIFF_OUT_FIELD(_parent);
 
   DIFF_END
@@ -120,6 +125,7 @@ _dbBusPort::_dbBusPort(_dbDatabase* db, const _dbBusPort& r)
   _to = r._to;
   _port = r._port;
   _members = r._members;
+  _last = r._last;
   _parent = r._parent;
 }
 
@@ -139,6 +145,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
     stream >> obj._members;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream >> obj._last;
   }
   if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
     stream >> obj._parent;
@@ -164,6 +173,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
     stream << obj._members;
   }
   if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+    stream << obj._last;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
     stream << obj._parent;
   }
   return stream;
@@ -171,9 +183,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
 
 _dbBusPort::~_dbBusPort()
 {
-  // User Code Begin d
-  delete (_members_iter);
-  // User Code End d
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -204,6 +213,13 @@ dbModBTerm* dbBusPort::getPort() const
   return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_port);
 }
 
+void dbBusPort::setMembers(dbModBTerm* members)
+{
+  _dbBusPort* obj = (_dbBusPort*) this;
+
+  obj->_members = members->getImpl()->getOID();
+}
+
 dbModBTerm* dbBusPort::getMembers() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;
@@ -212,6 +228,23 @@ dbModBTerm* dbBusPort::getMembers() const
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_members);
+}
+
+void dbBusPort::setLast(dbModBTerm* last)
+{
+  _dbBusPort* obj = (_dbBusPort*) this;
+
+  obj->_last = last->getImpl()->getOID();
+}
+
+dbModBTerm* dbBusPort::getLast() const
+{
+  _dbBusPort* obj = (_dbBusPort*) this;
+  if (obj->_last == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_last);
 }
 
 dbModule* dbBusPort::getParent() const

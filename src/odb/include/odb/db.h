@@ -7155,7 +7155,13 @@ class dbBusPort : public dbObject
 
   dbModBTerm* getPort() const;
 
+  void setMembers(dbModBTerm* members);
+
   dbModBTerm* getMembers() const;
+
+  void setLast(dbModBTerm* last);
+
+  dbModBTerm* getLast() const;
 
   dbModule* getParent() const;
 
