@@ -73,7 +73,6 @@ class _dbBusPort : public _dbObject
   dbId<_dbModule> _parent;
 
   // User Code Begin Fields
-  // need to make sure this is destroyed
   dbModuleBusPortModBTermItr* _members_iter = nullptr;
   int size() { return abs(_from - _to) + 1; }
   // User Code End Fields

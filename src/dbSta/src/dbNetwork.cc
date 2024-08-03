@@ -108,7 +108,6 @@ using odb::dbModITerm;
 using odb::dbModITermObj;
 using odb::dbModNetObj;
 using odb::dbModule;
-using odb::dbModuleBusPortModBTermItr;
 using odb::dbModuleObj;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -2455,7 +2454,7 @@ class DbNetworkPortMemberIterator : public PortMemberIterator
 {
  public:
   explicit DbNetworkPortMemberIterator(const Port* port, const dbNetwork* nwk);
-  ~DbNetworkPortMemberIterator();
+  ~DbNetworkPortMemberIterator() = default;
   virtual bool hasNext();
   virtual Port* next();
 
@@ -2465,10 +2464,6 @@ class DbNetworkPortMemberIterator : public PortMemberIterator
   int ix_ = 0;
   int size_ = 0;
 };
-
-DbNetworkPortMemberIterator::~DbNetworkPortMemberIterator()
-{
-}
 
 DbNetworkPortMemberIterator::DbNetworkPortMemberIterator(const Port* port,
                                                          const dbNetwork* nwk)
