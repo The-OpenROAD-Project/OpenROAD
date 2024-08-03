@@ -4,6 +4,4 @@
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 267 components and 2277 component-terminals.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
-Differences found at line 7.
-ROW IO_CORNER_NORTH_WEST IOSITE 30000 5690000 FS DO 50 BY 1 STEP 2000 0 ;
-ROW IO_CORNER_NORTH_WEST IOSITE 30000 5610000 FS DO 1 BY 1 STEP 2000 0 ;
+No differences found.
