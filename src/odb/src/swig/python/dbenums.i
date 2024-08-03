@@ -745,6 +745,8 @@
 		obj = PyString_FromString("REGION");
 	} else if ($1.getValue() == odb::dbBoxOwner::Value::BPIN) {
 		obj = PyString_FromString("BPIN");
+	} else if ($1.getValue() == odb::dbBoxOwner::Value::PBOX) {
+		obj = PyString_FromString("PBOX");
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown box owner");
         }
@@ -778,6 +780,8 @@
 		$1 = odb::dbBoxOwner::Value::REGION;
 	} else if (strcasecmp(str, "BPIN") == 0) {
 		$1 = odb::dbBoxOwner::Value::BPIN;
+	} else if (strcasecmp(str, "PBOX") == 0) {
+		$1 = odb::dbBoxOwner::Value::PBOX;
 	} else {
                 SWIG_exception(SWIG_ValueError, "Unknown box owner");
         }          
@@ -811,6 +815,8 @@
 		} 	else if (strcasecmp(str, "REGION") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "BPIN") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PBOX") == 0) {
 			found = true;
 		}
 	}

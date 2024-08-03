@@ -490,34 +490,15 @@ void lefin::createPolygon(dbObject* object,
     points.push_back(Point(x, y));
   }
 
-  if (p->numPoints < 4)
-    return;
+  dbPBox* pbox = nullptr;
+  if (is_pin) {
+    pbox = dbPBox::create((dbMPin*) object, layer, points);
+  } else {
+    pbox = dbPBox::create((dbMaster*) object, layer, points);
+  }
 
-  if (points[0] == points[points.size() - 1])
-    points.pop_back();
-
-  if (p->numPoints < 4)
-    return;
-
-  if (!polygon_is_clockwise(points))
-    std::reverse(points.begin(), points.end());
-
-  std::vector<Rect> rects;
-  decompose_polygon(points, rects);
-
-  std::vector<Rect>::iterator itr;
-
-  for (itr = rects.begin(); itr != rects.end(); ++itr) {
-    Rect& r = *itr;
-
-    dbBox* box;
-    if (is_pin)
-      box = dbBox::create(
-          (dbMPin*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
-    else
-      box = dbBox::create(
-          (dbMaster*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
-    box->setDesignRuleWidth(design_rule_width);
+  if (pbox != nullptr) {
+    pbox->setDesignRuleWidth(design_rule_width);
   }
 }
 
@@ -1434,6 +1415,13 @@ void lefin::obstruction(lefiObstruction* obs)
 
   if (geometries->numItems()) {
     addGeoms(_master, false, geometries);
+    dbSet<dbPBox> poly_obstructions = _master->getPolygonObstructions();
+
+    // Reverse the stored order, too match the created order.
+    if (poly_obstructions.reversible() && poly_obstructions.orderReversed()) {
+      poly_obstructions.reverse();
+    }
+
     dbSet<dbBox> obstructions = _master->getObstructions();
 
     // Reverse the stored order, too match the created order.
@@ -1641,6 +1629,11 @@ void lefin::pin(lefiPin* pin)
       dbMPin* dbpin = dbMPin::create(term);
       created_mpins = true;
       addGeoms(dbpin, true, geometries);
+
+      dbSet<dbPBox> poly_geoms = dbpin->getPolygonGeometry();
+      if (poly_geoms.reversible() && poly_geoms.orderReversed()) {
+        poly_geoms.reverse();
+      }
 
       dbSet<dbBox> geoms = dbpin->getGeometry();
       if (geoms.reversible() && geoms.orderReversed())

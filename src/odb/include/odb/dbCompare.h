@@ -638,6 +638,15 @@ struct less<odb::dbNetTrack*>
 };
 
 template <>
+struct less<odb::dbPBox*>
+{
+  bool operator()(const odb::dbPBox* lhs, const odb::dbPBox* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbPowerDomain*>
 {
   bool operator()(const odb::dbPowerDomain* lhs,

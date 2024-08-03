@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,48 +30,53 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
-#include "odb/dbId.h"
-#include "odb/dbIterator.h"
+#include "dbCore.h"
+#include "odb/geom.h"
 #include "odb/odb.h"
 
 namespace odb {
-
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
 class _dbBox;
-class _dbPBox;
-template <class T>
-class dbTable;
 
-class dbBoxItr : public dbIterator
+struct dbPBoxFlags
 {
- protected:
-  dbTable<_dbBox>* _box_tbl;
-  dbTable<_dbPBox>* _pbox_tbl;
-
- public:
-  dbBoxItr(dbTable<_dbBox>* box_tbl,
-           dbTable<_dbPBox>* pbox_tbl,
-           bool include_polygons)
-  {
-    _box_tbl = box_tbl;
-    _pbox_tbl = pbox_tbl;
-    include_polygons_ = include_polygons;
-  }
-
-  bool reversible() override;
-  bool orderReversed() override;
-  void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
-  dbObject* getObject(uint id, ...) override;
-
- private:
-  // include polygons in iterations
-  bool include_polygons_;
+  uint owner_type_ : 4;
+  uint layer_id_ : 9;
+  uint spare_bits_ : 19;
 };
 
+class _dbPBox : public _dbObject
+{
+ public:
+  _dbPBox(_dbDatabase*, const _dbPBox& r);
+  _dbPBox(_dbDatabase*);
+
+  ~_dbPBox() = default;
+
+  bool operator==(const _dbPBox& rhs) const;
+  bool operator!=(const _dbPBox& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbPBox& rhs) const;
+  void differences(dbDiff& diff, const char* field, const _dbPBox& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  static Polygon checkPolygon(std::vector<Point> polygon);
+  void decompose();
+  // User Code End Methods
+
+  dbPBoxFlags flags_;
+  Polygon polygon_;
+  int design_rule_width_;
+  uint owner_;
+  dbId<_dbPBox> next_pbox_;
+  dbId<_dbBox> boxes_;
+};
+dbIStream& operator>>(dbIStream& stream, _dbPBox& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbPBox& obj);
 }  // namespace odb
+   // Generator Code End Header
