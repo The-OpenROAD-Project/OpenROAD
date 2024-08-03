@@ -327,6 +327,8 @@ class Resizer : public dbStaState
                        Slew& slew);
   void setDebugPin(const Pin* pin);
   void setWorstSlackNetsPercent(float);
+  void annotateInputSlews(Instance* inst, const DcalcAnalysisPt* dcalc_ap);
+  void resetInputSlews();
 
   ////////////////////////////////////////////////////////////////
 

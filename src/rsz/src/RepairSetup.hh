@@ -70,7 +70,9 @@ using sta::Net;
 using sta::PathExpanded;
 using sta::PathRef;
 using sta::Pin;
+using sta::RiseFall;
 using sta::Slack;
+using sta::Slew;
 using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
@@ -171,6 +173,14 @@ class RepairSetup : public sta::dbStaState
                   PathExpanded* expanded,
                   float setup_slack_margin);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
+  bool estimateInputSlewImpact(Instance* instance,
+                               const DcalcAnalysisPt* dcalc_ap,
+                               Slew old_in_slew[RiseFall::index_count],
+                               Slew new_in_slew[RiseFall::index_count],
+                               // delay adjustment from prev stage
+                               float delay_adjust,
+                               SlackEstimatorParams params,
+                               bool accept_if_slack_improves);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,

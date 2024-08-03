@@ -2263,7 +2263,16 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        float in_slew = tgt_slews_[in_rf->index()];
+        // use annotated slews if available
+        LibertyPort* port = arc->from();
+        float in_slew = 0.0;
+        auto it = input_slew_map_.find(port);
+        if (it != input_slew_map_.end()) {
+          const InputSlews& slew = it->second;
+          in_slew = slew[in_rf->index()];
+        } else {
+          in_slew = tgt_slews_[in_rf->index()];
+        }
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
             = arc_delay_calc_->gateDelay(nullptr,
@@ -3019,7 +3028,7 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
   Instance* drvr_inst = network_->instance(drvr_pin);
   Port* drvr_port = db_network_->port(drvr_pin);
   data.driver_pin
-    = std::make_pair(network_->name(drvr_inst), network_->name(drvr_port));
+      = std::make_pair(network_->name(drvr_inst), network_->name(drvr_port));
 
   std::pair<std::string, std::string> load_pin;  // inst name, port name
   std::vector<std::pair<std::string, std::string>> load_pins;
@@ -3029,7 +3038,8 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
     if (pin != out_pin) {
       Instance* load_inst = network_->instance(pin);
       Port* load_port = db_network_->port(pin);
-      load_pin = std::make_pair(network_->name(load_inst), network_->name(load_port));
+      load_pin = std::make_pair(network_->name(load_inst),
+                                network_->name(load_port));
       load_pins.emplace_back(load_pin);
     }
   }
@@ -3063,7 +3073,8 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     // Reconnect buffer input pin to previous driver pin
     Net* input_net = makeUniqueNet();
     Instance* drvr_inst = network_->findInstance(data.driver_pin.first.c_str());
-    Pin* drvr_pin = network_->findPin(drvr_inst, data.driver_pin.second.c_str());
+    Pin* drvr_pin
+        = network_->findPin(drvr_inst, data.driver_pin.second.c_str());
     Port* drvr_port = network_->port(drvr_pin);
     sta_->disconnectPin(const_cast<Pin*>(drvr_pin));
     sta_->connectPin(drvr_inst, drvr_port, input_net);
@@ -3074,7 +3085,8 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     for (const std::pair<std::string, std::string>& load_pin_pair :
          data.load_pins) {
       Instance* load_inst = network_->findInstance(load_pin_pair.first.c_str());
-      Pin* load_pin = network_->findPin(load_inst, load_pin_pair.second.c_str());
+      Pin* load_pin
+          = network_->findPin(load_inst, load_pin_pair.second.c_str());
       Port* load_port = network_->port(load_pin);
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load_inst, load_port, output_net);
@@ -3330,6 +3342,34 @@ void Resizer::setDebugPin(const Pin* pin)
 void Resizer::setWorstSlackNetsPercent(float percent)
 {
   worst_slack_nets_percent_ = percent;
+}
+
+void Resizer::annotateInputSlews(Instance* inst,
+                                 const DcalcAnalysisPt* dcalc_ap)
+{
+  input_slew_map_.clear();
+  std::unique_ptr<InstancePinIterator> inst_pin_iter{
+      network_->pinIterator(inst)};
+  while (inst_pin_iter->hasNext()) {
+    Pin* pin = inst_pin_iter->next();
+    if (network_->direction(pin)->isInput()) {
+      LibertyPort* port = network_->libertyPort(pin);
+      if (port) {
+        Vertex* vertex = graph_->pinDrvrVertex(pin);
+        InputSlews slews;
+        slews[RiseFall::rise()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+        slews[RiseFall::fall()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+        input_slew_map_.emplace(port, slews);
+      }
+    }
+  }
+}
+
+void Resizer::resetInputSlews()
+{
+  input_slew_map_.clear();
 }
 
 }  // namespace rsz
