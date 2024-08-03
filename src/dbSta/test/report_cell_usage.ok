@@ -3,9 +3,46 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
-Cell usage report:
-  Fill cells: 168
-  Buffer/inverters: 232
-  Sequential cells: 35
-  Multi-Input combinational cells: 241
-  Total: 676
+Cell type report:
+  Fill cell                               168
+  Buffer                                  202
+  Inverter                                 30
+  Sequential cell                          35
+  Multi-Input combinational cell          241
+  Total                                   676
+
+Cell instance report:
+  AND2_X1                                  22
+  AND3_X1                                   8
+  AND4_X1                                   1
+  AOI211_X1                                 3
+  AOI21_X1                                  7
+  AOI221_X1                                 1
+  AOI221_X4                                 1
+  AOI22_X1                                  3
+  BUF_X1                                   16
+  BUF_X2                                    8
+  BUF_X4                                   53
+  CLKBUF_X1                               123
+  CLKBUF_X2                                 2
+  DFF_X1                                   35
+  FILLCELL_X1                             168
+  INV_X1                                   28
+  INV_X2                                    2
+  MUX2_X1                                  46
+  NAND2_X1                                 28
+  NAND2_X2                                  1
+  NAND3_X1                                  6
+  NAND4_X1                                  4
+  NOR2_X1                                  22
+  NOR2_X2                                   1
+  NOR3_X1                                   6
+  NOR4_X1                                   3
+  OAI211_X1                                16
+  OAI21_X1                                 27
+  OR2_X1                                    1
+  OR2_X2                                    1
+  OR3_X1                                    5
+  XNOR2_X1                                 18
+  XNOR2_X2                                  6
+  XOR2_X1                                   4

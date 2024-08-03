@@ -86,11 +86,6 @@ set_macro_extension 2
 global_placement -routability_driven -density $global_place_density \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
-# set thread count for all tools with support for multithreading.
-# set after global placement because it uses omp but generates
-# different results when using multiple threads.
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
-
 # IO Placement
 place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
@@ -196,12 +191,16 @@ write_verilog $verilog_file
 ################################################################
 # Global routing
 
+# set multithreading for repair_antennas, check_antennas and
+# detailed_route
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
-  -congestion_iterations 100
+  -congestion_iterations 100 -verbose
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
@@ -231,7 +230,6 @@ write_db $fill_db
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \

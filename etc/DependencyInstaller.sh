@@ -9,7 +9,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=yosys-0.42
+    yosysVersion=yosys-0.43
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -71,6 +71,7 @@ _installCommonDev() {
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
+    cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
 
@@ -145,6 +146,19 @@ _installCommonDev() {
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Eigen already installed."
+    fi
+
+    # cudd
+    cuddPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+        cd "${baseDir}"
+        git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
+        cd cudd
+        autoreconf
+        ./configure --prefix=${cuddPrefix}
+        make -j $(nproc) install
+    else
+        echo "Cudd already installed."
     fi
 
     # CUSP
@@ -505,7 +519,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex groff libomp or-tools pandoc pyqt5 python tcl-tk zlib
+    brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -513,10 +527,6 @@ EOF
     # Lemon is not in the homebrew-core repo
     brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 
-    # Install fmt 8.1.1 because fmt 9 causes compile errors
-    _installHomebrewPackage "fmt" "8643c850826702923f02d289e0f93a3b4433741b" ""
-    # Install spdlog 1.9.2
-    _installHomebrewPackage "spdlog" "0974b8721f2f349ed4a47a403323237e46f95ca0" ""
     # Install swig 4.1.1
     _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
 }
@@ -584,15 +594,24 @@ _installCI() {
         parallel \
         software-properties-common \
         unzip
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo \
-    "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    # Add Docker's official GPG key:
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+        -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+
+    # Add the repository to Apt sources:
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null
+
     apt-get -y update
     apt-get -y install --no-install-recommends \
-        containerd.io \
         docker-ce \
-        docker-ce-cli
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin
 }
 
 _checkIsLocal() {

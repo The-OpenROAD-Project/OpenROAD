@@ -476,13 +476,6 @@ int lefwInit(FILE* f)
 {
   int i;
 
-  // Check if the user is valid
-  /* don't need anymore
-  if (!lefiValidUser())
-      exit(77);
-  */
-
-  // if (lefwFile) return LEFW_BAD_ORDER;
   lefwFile = f;
 
   if (lefwHasInitCbk == 1) {  // lefwInitCbk has already called, issue an error

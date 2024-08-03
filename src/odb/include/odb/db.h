@@ -442,6 +442,14 @@ class dbDatabase : public dbObject
   static void commitEco(dbBlock* block);
 
   ///
+  /// Undo any pending netlist changes.  Only supports:
+  ///   create and destroy of dbInst and dbNet
+  ///   dbInst::swapMaster
+  ///   connect and disconnect of dbBTerm and dbITerm
+  ///
+  static void undoEco(dbBlock* block);
+
+  ///
   /// links to utl::Logger
   ///
   void setLogger(utl::Logger* logger);
@@ -3885,18 +3893,6 @@ class dbWire : public dbObject
   /// Destroy a wire.
   ///
   static void destroy(dbWire* wire);
-
-  ///
-  /// get raw data of _dbWire
-  ///
-  void getRawWireData(std::vector<int>& data,
-                      std::vector<unsigned char>& op_codes);
-
-  ////
-  /// set raw data of _dbWire
-  ///
-  void setRawWireData(const std::vector<int>& data,
-                      const std::vector<unsigned char>& op_codes);
 
  private:
   void addOneSeg(unsigned char op,
@@ -10092,3 +10088,6 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 // Generator Code End ClassDefinition
 
 }  // namespace odb
+
+// Overload std::less for these types
+#include "dbCompare.h"

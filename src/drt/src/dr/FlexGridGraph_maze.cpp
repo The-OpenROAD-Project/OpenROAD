@@ -216,31 +216,31 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   bool isForbidden = false;
-  if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
+  if (dstMazeIdx1.z() == dstMazeIdx2.z() && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
-    if (layer->isUnidirectional()) {
+    if (!USENONPREFTRACKS || layer->isUnidirectional()) {
       bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-      if (isH) {
+      if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, false, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, false, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, false, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, false, gap, ndr_))) {
           isForbidden = true;
         }
-      } else {
+      } else if (!isH && dstMazeIdx1.x() == dstMazeIdx2.x()) {
         auto gap = abs(nextPoint.x() - dstPoint1.x());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, true, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, true, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, true, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, true, gap, ndr_))) {
           isForbidden = true;
         }
       }

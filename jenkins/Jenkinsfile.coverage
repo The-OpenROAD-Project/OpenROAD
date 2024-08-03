@@ -1,6 +1,6 @@
 @Library('utils@or-v2.0.1') _
 
-timeout(time: 1, unit: 'HOURS') {
+timeout(time: 2, unit: 'HOURS') {
     node {
 
         stage('Checkout'){
@@ -16,7 +16,7 @@ timeout(time: 1, unit: 'HOURS') {
         docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
             stage('Build for Coverage') {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                    sh label: 'Build OpenROAD', script: './etc/Build.sh -coverage';
+                    sh label: 'Build OpenROAD', script: './etc/Build.sh -no-warnings -coverage';
                 }
             }
 
@@ -40,10 +40,10 @@ timeout(time: 1, unit: 'HOURS') {
                 }
             }
         }
-    }
 
-    stage('Send Email Report') {
-        sendEmail();
-    }
+        stage('Send Email Report') {
+            sendEmail();
+        }
 
+    }
 }

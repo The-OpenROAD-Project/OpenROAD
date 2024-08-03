@@ -95,6 +95,8 @@ MainWindow::MainWindow(QWidget* parent)
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
+          [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
+          [this]() -> int { return arrow_keys_scroll_step_; },
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
@@ -390,6 +392,12 @@ MainWindow::MainWindow(QWidget* parent)
   default_ruler_style_->setChecked(
       settings.value("ruler_style", default_ruler_style_->isChecked())
           .toBool());
+  default_mouse_wheel_zoom_->setChecked(
+      settings.value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
+          .toBool());
+  arrow_keys_scroll_step_
+      = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
+            .toInt();
   script_->readSettings(&settings);
   controls_->readSettings(&settings);
   timing_widget_->readSettings(&settings);
@@ -432,6 +440,8 @@ void MainWindow::setBlock(odb::dbBlock* block)
     const std::string title
         = fmt::format("{} - {}", window_title_, block->getName());
     setWindowTitle(QString::fromStdString(title));
+
+    save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setBlock(block);
@@ -469,6 +479,7 @@ void MainWindow::init(sta::dbSta* sta)
                           viewers_->getNetTracks()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -548,6 +559,8 @@ void MainWindow::createActions()
   exit_ = new QAction("Exit", this);
 
   open_ = new QAction("Open DB", this);
+  save_ = new QAction("Save DB", this);
+  save_->setEnabled(false);
 
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
@@ -584,12 +597,21 @@ void MainWindow::createActions()
   default_ruler_style_->setCheckable(true);
   default_ruler_style_->setChecked(true);
 
+  default_mouse_wheel_zoom_
+      = new QAction("Mouse wheel mapped to zoom by default", this);
+  default_mouse_wheel_zoom_->setCheckable(true);
+  default_mouse_wheel_zoom_->setChecked(false);
+
+  arrow_keys_scroll_step_dialog_ = new QAction("Arrow keys scroll step", this);
+  arrow_keys_scroll_step_ = 20;
+
   font_ = new QAction("Application font", this);
 
   global_connect_ = new QAction("Global connect", this);
   global_connect_->setShortcut(QString("Ctrl+G"));
 
   connect(open_, &QAction::triggered, this, &MainWindow::openDesign);
+  connect(save_, &QAction::triggered, this, &MainWindow::saveDesign);
   connect(
       this, &MainWindow::blockLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, &QAction::triggered, this, &MainWindow::hide);
@@ -626,6 +648,11 @@ void MainWindow::createActions()
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
 
+  connect(arrow_keys_scroll_step_dialog_,
+          &QAction::triggered,
+          this,
+          &MainWindow::showArrowKeysScrollStep);
+
   connect(font_, &QAction::triggered, this, &MainWindow::showApplicationFont);
 
   connect(global_connect_,
@@ -657,10 +684,30 @@ void MainWindow::showApplicationFont()
   }
 }
 
+void MainWindow::showArrowKeysScrollStep()
+{
+  bool okay = false;
+  int arrow_keys_scroll_step
+      = QInputDialog::getInt(this,
+                             tr("Configure arrow keys"),
+                             tr("Arrow keys scrool step value"),
+                             arrow_keys_scroll_step_,
+                             10,
+                             1000,
+                             1,
+                             &okay);
+
+  if (okay) {
+    arrow_keys_scroll_step_ = arrow_keys_scroll_step;
+    update();
+  }
+}
+
 void MainWindow::createMenus()
 {
   file_menu_ = menuBar()->addMenu("&File");
   file_menu_->addAction(open_);
+  file_menu_->addAction(save_);
   file_menu_->addAction(hide_);
   file_menu_->addAction(exit_);
 
@@ -696,6 +743,8 @@ void MainWindow::createMenus()
   option_menu->addAction(hide_option_);
   option_menu->addAction(show_dbu_);
   option_menu->addAction(default_ruler_style_);
+  option_menu->addAction(default_mouse_wheel_zoom_);
+  option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
 
   menuBar()->addAction(help_);
@@ -1350,6 +1399,8 @@ void MainWindow::saveSettings()
   settings.setValue("check_exit", hide_option_->isChecked());
   settings.setValue("use_dbu", show_dbu_->isChecked());
   settings.setValue("ruler_style", default_ruler_style_->isChecked());
+  settings.setValue("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked());
+  settings.setValue("arrow_keys_scroll_step", arrow_keys_scroll_step_);
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);
   timing_widget_->writeSettings(&settings);
@@ -1614,9 +1665,26 @@ void MainWindow::openDesign()
   }
 }
 
+void MainWindow::saveDesign()
+{
+  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const QString file = QFileDialog::getSaveFileName(
+      this, "Save Design", QString(), filefilter);
+
+  if (file.isEmpty()) {
+    return;
+  }
+
+  try {
+    ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
+  } catch (const std::exception&) {
+  }
+}
+
 #ifdef ENABLE_CHARTS
 void MainWindow::reportSlackHistogramPaths(
-    const std::set<const sta::Pin*>& report_pins)
+    const std::set<const sta::Pin*>& report_pins,
+    const std::string& path_group_name)
 {
   if (!timing_widget_->isVisible()) {
     timing_widget_->show();
@@ -1628,7 +1696,7 @@ void MainWindow::reportSlackHistogramPaths(
     timing_widget_->raise();
   }
 
-  timing_widget_->reportSlackHistogramPaths(report_pins);
+  timing_widget_->reportSlackHistogramPaths(report_pins, path_group_name);
 }
 #endif
 }  // namespace gui

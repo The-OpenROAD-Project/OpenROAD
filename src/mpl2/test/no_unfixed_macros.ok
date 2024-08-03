@@ -4,18 +4,6 @@
 [INFO ODB-0128] Design: macro_only
 [INFO ODB-0253]     Updated 10 components.
 [INFO ODB-0254]     Updated 12 nets and 24 connections.
-Floorplan Outline: (0.0, 0.0) (450.0, 450.0),  Core Outline: (4.94, 4.2) (444.98, 443.8)
-Traversed logical hierarchy
-	Number of std cell instances: 0
-	Area of std cell instances: 0.00
-	Number of macros: 10
-	Area of macros: 166000.00
-	Area of macros with halos: 187920.00
-	Area of std cell instances + Area of macros: 166000.00
-	Core area: 193441.58
-	Design Utilization: 0.86
-	Core Utilization: 0.00
-	Manufacturing Grid: 10
-
-[INFO MPL-0017] No unfixed macros. Skipping macro placement.
+[INFO MPL-0017] No unfixed macros.
+[INFO MPL-0013] Skipping macro placement.
 No differences found.

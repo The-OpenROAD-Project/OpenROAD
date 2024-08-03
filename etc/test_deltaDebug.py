@@ -4,22 +4,24 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 odb = MagicMock()
-sys.modules['odb'] = odb
+sys.modules["odb"] = odb
 openroad = MagicMock()
-sys.modules['openroad'] = openroad
+sys.modules["openroad"] = openroad
 import deltaDebug
 
-default_args = argparse.Namespace(persistence=4,
-                                  use_stdout=True,
-                                  error_string="Iter: 100",
-                                  base_db_path="/dummy/path/base.db",
-                                  base_db_file=None,
-                                  original_db_file=None,
-                                  step="dummy_step",
-                                  timeout=100,
-                                  multiplier=1,
-                                  exit_early_on_error=True,
-                                  dump_def=True)
+default_args = argparse.Namespace(
+    persistence=4,
+    use_stdout=True,
+    error_string="Iter: 100",
+    base_db_path="/dummy/path/base.db",
+    base_db_file=None,
+    original_db_file=None,
+    step="dummy_step",
+    timeout=100,
+    multiplier=1,
+    exit_early_on_error=True,
+    dump_def=True,
+)
 
 
 def mock_get_insts(mock_self):
@@ -50,7 +52,11 @@ def mock_perform_step(mock_self, cut_index=-1):
 def mock_cut_elements(mock_self, start, end):
     mock_self.insts_saved = list(mock_self.insts)
     mock_self.nets_saved = list(mock_self.nets)
-    elements = mock_self.insts if mock_self.cut_level == deltaDebug.cutLevel.Insts else mock_self.nets
+    elements = (
+        mock_self.insts
+        if mock_self.cut_level == deltaDebug.cutLevel.Insts
+        else mock_self.nets
+    )
     del elements[start:end]
 
 
@@ -59,29 +65,30 @@ def mock_prepare_new_step(mock_self):
 
 
 class TestDeltaDebug(TestCase):
-
-    @patch('os.path.exists', lambda x: True)
+    @patch("os.path.exists", lambda x: True)
     def setUp(self):
         args = default_args
 
-        self.perform_step_patch = patch.object(deltaDebug.deltaDebugger,
-                                               'perform_step',
-                                               wraps=mock_perform_step,
-                                               autospec=True)
-        self.get_insts_patch = patch.object(deltaDebug.deltaDebugger,
-                                            'get_insts',
-                                            autospec=True)
-        self.get_nets_patch = patch.object(deltaDebug.deltaDebugger,
-                                           'get_nets',
-                                           autospec=True)
-        self.cut_elements = patch.object(deltaDebug.deltaDebugger,
-                                         'cut_elements',
-                                         autospec=True)
-        self.prepare_new_step = patch.object(deltaDebug.deltaDebugger,
-                                             'prepare_new_step',
-                                             autospec=True)
-        self.shutil_copy_patch = patch('shutil.copy')
-        self.os_rename_patch = patch('os.rename')
+        self.perform_step_patch = patch.object(
+            deltaDebug.deltaDebugger,
+            "perform_step",
+            wraps=mock_perform_step,
+            autospec=True,
+        )
+        self.get_insts_patch = patch.object(
+            deltaDebug.deltaDebugger, "get_insts", autospec=True
+        )
+        self.get_nets_patch = patch.object(
+            deltaDebug.deltaDebugger, "get_nets", autospec=True
+        )
+        self.cut_elements = patch.object(
+            deltaDebug.deltaDebugger, "cut_elements", autospec=True
+        )
+        self.prepare_new_step = patch.object(
+            deltaDebug.deltaDebugger, "prepare_new_step", autospec=True
+        )
+        self.shutil_copy_patch = patch("shutil.copy")
+        self.os_rename_patch = patch("os.rename")
 
         self.mock_perform_step = self.perform_step_patch.start()
         self.mock_get_insts = self.get_insts_patch.start()
@@ -114,8 +121,9 @@ class TestDeltaDebug(TestCase):
         error_nets = [7]
 
         def check_error(insts, nets):
-            return (any(map(lambda x: x in error_insts, insts))
-                    and any(map(lambda x: x in error_nets, nets)))
+            return any(map(lambda x: x in error_insts, insts)) and any(
+                map(lambda x: x in error_nets, nets)
+            )
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 4
@@ -130,8 +138,9 @@ class TestDeltaDebug(TestCase):
         error_nets = set(range(70000, 80000))
 
         def check_error(insts, nets):
-            return (any(map(lambda x: x in error_insts, insts))
-                    and any(map(lambda x: x in error_nets, nets)))
+            return any(map(lambda x: x in error_insts, insts)) and any(
+                map(lambda x: x in error_nets, nets)
+            )
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 4
@@ -146,10 +155,12 @@ class TestDeltaDebug(TestCase):
         error_nets = set(range(700, 751))
 
         def check_error(insts, nets):
-            return (any(map(lambda x: x in error_insts, insts))
-                    and len(insts) >= 100
-                    and any(map(lambda x: x in error_nets, nets))
-                    and len(nets) >= 75)
+            return (
+                any(map(lambda x: x in error_insts, insts))
+                and len(insts) >= 100
+                and any(map(lambda x: x in error_nets, nets))
+                and len(nets) >= 75
+            )
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 6
@@ -164,8 +175,9 @@ class TestDeltaDebug(TestCase):
         error_nets = set(range(70, 90))
 
         def check_error(insts, nets):
-            return (all(map(lambda x: x in insts, error_insts))
-                    and all(map(lambda x: x in nets, error_nets)))
+            return all(map(lambda x: x in insts, error_insts)) and all(
+                map(lambda x: x in nets, error_nets)
+            )
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 6
@@ -179,8 +191,7 @@ class TestDeltaDebug(TestCase):
         error_nets = set(range(70, 90))
 
         def check_error(insts, nets):
-            return (len(insts) >= 0
-                    and all(map(lambda x: x in nets, error_nets)))
+            return len(insts) >= 0 and all(map(lambda x: x in nets, error_nets))
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 6
@@ -194,8 +205,7 @@ class TestDeltaDebug(TestCase):
         error_insts = set(range(70, 90))
 
         def check_error(insts, nets):
-            return (len(nets) >= 0
-                    and all(map(lambda x: x in insts, error_insts)))
+            return len(nets) >= 0 and all(map(lambda x: x in insts, error_insts))
 
         self.debugger.check_error = check_error
         self.debugger.persistence = 6

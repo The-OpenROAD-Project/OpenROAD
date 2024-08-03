@@ -75,6 +75,14 @@ option(ENABLE_TESTS "Enable OpenROAD tests" ON)
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
 
+# Allow enabling address sanitizer
+#  On Ubuntu22.04 you need to use "sudo sysctl vm.mmap_rnd_bits=28" to
+#  resolve a known fatal
+option(TSAN "Enable Thread Sanitizer" OFF)
+
+# Allow enabling address sanitizer
+option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )

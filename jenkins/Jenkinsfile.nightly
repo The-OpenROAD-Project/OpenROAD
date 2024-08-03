@@ -15,7 +15,7 @@ node {
     }
 
     stage('Build and Stash bins') {
-        buildBinsOR(DOCKER_IMAGE);
+        buildBinsOR(DOCKER_IMAGE, "-no-warnings");
     }
 
     docker.image(DOCKER_IMAGE).inside('--user=root --privileged -v /var/run/docker.sock:/var/run/docker.sock') {
@@ -23,7 +23,7 @@ node {
             sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
         }
         stage('Build OpenROAD') {
-            sh label: 'Build script', script: './etc/Build.sh';
+            sh label: 'Build script', script: './etc/Build.sh -no-warnings';
             stash name: 'build', includes: "build/**";
         }
     }

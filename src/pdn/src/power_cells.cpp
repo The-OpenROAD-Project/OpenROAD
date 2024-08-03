@@ -107,9 +107,9 @@ std::set<int> PowerCell::getRectAsSiteWidths(const odb::Rect& rect,
 
 bool PowerCell::appliesToRow(odb::dbRow* row) const
 {
-  // double height cell with switched power in the center needs to be placed in
-  // MX rows
-  return row->getOrient() == odb::dbOrientType::MX;
+  // needs to be string compare because site pointers can come from different
+  // libraries
+  return master_->getSite()->getName() == row->getSite()->getName();
 }
 
 //////////
@@ -255,10 +255,14 @@ void GridSwitchedPower::build()
   const Shape::ShapeTree targets = buildStrapTargetList(target);
   const RowTree row_search = buildRowTree();
 
+  bool found_row = false;
+
   for (auto* row : grid_->getDomain()->getRows()) {
     if (!cell_->appliesToRow(row)) {
       continue;
     }
+    found_row = true;
+
     const int site_width = row->getSite()->getWidth();
     cell_->populateAlwaysOnPinPositions(site_width);
     const std::string inst_prefix = inst_prefix_ + row->getName() + "_";
@@ -315,6 +319,7 @@ void GridSwitchedPower::build()
 
       const auto locations = computeLocations(strap, site_width, core_area);
       inst->setLocation(*locations.begin(), bbox.yMin());
+      inst->setLocationOrient(row->getOrient());
 
       const auto inst_rows = getInstanceRows(inst, row_search);
       if (inst_rows.size() < 2) {
@@ -338,6 +343,13 @@ void GridSwitchedPower::build()
 
       insts_[inst] = InstanceInfo{locations, inst_rows};
     }
+  }
+
+  if (!found_row) {
+    grid_->getLogger()->error(utl::PDN,
+                              240,
+                              "No rows found that match the power cell: {}.",
+                              cell_->getMaster()->getName());
   }
 
   updateControlNetwork();
