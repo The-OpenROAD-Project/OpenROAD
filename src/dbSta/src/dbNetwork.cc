@@ -2462,8 +2462,8 @@ class DbNetworkPortMemberIterator : public PortMemberIterator
  private:
   dbSet<dbModBTerm>::iterator members_;
   const dbNetwork* nwk_;
-  int ix_;
-  int size_;
+  int ix_ = 0;
+  int size_ = 0;
 };
 
 DbNetworkPortMemberIterator::~DbNetworkPortMemberIterator()

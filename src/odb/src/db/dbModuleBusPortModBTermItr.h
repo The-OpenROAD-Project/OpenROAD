@@ -62,11 +62,11 @@ class dbModuleBusPortModBTermItr : public dbIterator
 
  private:
   dbTable<_dbModBTerm>* _modbterm_tbl;
-  // User Code Begin begin
+  // User Code Begin b1
   int _ix = 0;
   int _size = 0;
   _dbModBTerm* _iter = nullptr;
-  // User Code End begin
+  // User Code End b1
 };
 
 }  // namespace odb

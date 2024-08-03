@@ -1,6 +1,7 @@
 {
     "name":"dbBusPort",
     "type":"dbObject",
+    "needs_non_default_destructor" : "true",
     "fields": [
         {
             "name":"_flags",

@@ -83,7 +83,6 @@ add_library(db
     wOrder.cpp
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
-    dbBusPortMemberItr.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp

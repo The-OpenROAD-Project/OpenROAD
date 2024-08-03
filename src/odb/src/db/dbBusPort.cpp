@@ -169,6 +169,15 @@ dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
   return stream;
 }
 
+_dbBusPort::~_dbBusPort()
+{
+  // User Code Begin d
+  if (_members_iter != nullptr) {
+    delete (_members_iter);
+  }
+  // User Code End d
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbBusPort - Methods

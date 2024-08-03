@@ -55,7 +55,7 @@ class _dbBusPort : public _dbObject
   _dbBusPort(_dbDatabase*, const _dbBusPort& r);
   _dbBusPort(_dbDatabase*);
 
-  ~_dbBusPort() = default;
+  ~_dbBusPort();
 
   bool operator==(const _dbBusPort& rhs) const;
   bool operator!=(const _dbBusPort& rhs) const { return !operator==(rhs); }
