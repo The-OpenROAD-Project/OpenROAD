@@ -301,14 +301,11 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   // caclulate costs for NDR nets
   // get all unique width,spacing pairs from ndrs
   for (auto ndr : ndrs_) {
-    frCoord ndr_width;
-    frCoord ndr_min_spc;
+    frCoord ndr_width = default_width;
     if (ndr->getWidth(z) != 0) {
       ndr_width = ndr->getWidth(z);
-    } else {
-      ndr_width = default_width;
     }
-    ndr_min_spc = std::max(default_spacing, ndr->getSpacing(z));
+    frCoord ndr_min_spc = std::max(default_spacing, ndr->getSpacing(z));
     modMinSpacingCostPlanarHelper(box,
                                   z,
                                   type,
@@ -325,7 +322,7 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
 void FlexDRWorker::modMinSpacingCostPlanarHelper(const Rect& box,
                                                  frMIdx z,
                                                  ModCostType type,
-                                                 frCoord width,
+                                                 frCoord width2,
                                                  frCoord minSpacing,
                                                  bool isBlockage,
                                                  bool isMacroPin,
@@ -336,7 +333,6 @@ void FlexDRWorker::modMinSpacingCostPlanarHelper(const Rect& box,
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.minDXDY();
   // layer default width
-  frCoord width2 = width;
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS;

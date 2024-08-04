@@ -2037,7 +2037,7 @@ void FlexDRWorker::initNets(const frDesign* design)
   // fill ndrs_ for all nets in the worker
   for (auto& net : nets) {
     if (net->hasNDR()) {
-      ndrs_.push_back(net->getNondefaultRule());
+      ndrs_.emplace_back(net->getNondefaultRule());
     }
   }
 }
