@@ -40,6 +40,7 @@
 #include "dbInst.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
+#include "dbModulePortItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -364,6 +365,26 @@ dbSet<dbModInst> dbModule::getModInsts()
   return dbSet<dbModInst>(module, block->_module_modinst_itr);
 }
 
+//
+// The ports include higher level views. These have a special
+// iterator which knows about how to skip the contents
+// of the hierarchical objects (busports)
+//
+
+dbSet<dbModBTerm> dbModule::getPorts()
+{
+  _dbModule* obj = (_dbModule*) this;
+  if (obj->_port_iter == nullptr) {
+    _dbBlock* block = (_dbBlock*) obj->getOwner();
+    obj->_port_iter = new dbModulePortItr(block->_modbterm_tbl);
+  }
+  return dbSet<dbModBTerm>(this, obj->_port_iter);
+}
+
+//
+// The modbterms are the leaf level connections
+//"flat view"
+//
 dbSet<dbModBTerm> dbModule::getModBTerms()
 {
   _dbModule* module = (_dbModule*) this;
@@ -506,18 +527,6 @@ std::string dbModule::getHierarchicalName() const
     return inst->getHierarchicalName();
   }
   return "<top>";
-}
-
-void* dbModule::getStaCell()
-{
-  _dbModule* module = (_dbModule*) this;
-  return module->_sta_cell;
-}
-
-void dbModule::staSetCell(void* cell)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_sta_cell = cell;
 }
 
 dbBlock* dbModule::getOwner()

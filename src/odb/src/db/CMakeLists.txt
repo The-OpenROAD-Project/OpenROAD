@@ -142,6 +142,7 @@ add_library(db
     dbModuleModNetItr.cpp
     dbModuleModNetModBTermItr.cpp
     dbModuleModNetModITermItr.cpp
+    dbModulePortItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     # Generator Code End cpp

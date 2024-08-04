@@ -92,6 +92,9 @@ uint dbModuleBusPortModBTermItr::begin(dbObject* parent)
 
 uint dbModuleBusPortModBTermItr::end(dbObject* /* unused: parent */)
 {
+  if (_ix == _size) {
+    return _iter->getId();
+  }
   return 0;
 }
 

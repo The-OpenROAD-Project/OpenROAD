@@ -707,13 +707,10 @@ const char* dbNetwork::name(const Cell* cell) const
 // (b) bus port (which has many singletons inside it)
 // (c) bundle port -- todo (which has many singletons inside it).
 //
-// This iterator goes through the ports via the lowest level connections:
-// the singleton modbterms . To see what is inside the
-// aggregated ports (eg bus port/bundle port) we use the member
-// Iterator. (Though this iterator simply skips them).
+// This iterator uses the odb generate iterator dbModulePortItr
+// which has knowledge of he underlying port types and skips
+// over their contents.
 //
-//
-// TODO: remove the traversal at the lowest level.
 //
 
 class dbModulePortIterator : public CellPortIterator
@@ -732,8 +729,8 @@ class dbModulePortIterator : public CellPortIterator
 
 dbModulePortIterator::dbModulePortIterator(dbModule* cell)
 {
-  iter_ = cell->getModBTerms().begin();
-  end_ = cell->getModBTerms().end();
+  iter_ = cell->getPorts().begin();
+  end_ = cell->getPorts().end();
   module_ = cell;
 }
 
@@ -748,13 +745,6 @@ bool dbModulePortIterator::hasNext()
 Port* dbModulePortIterator::next()
 {
   dbModBTerm* ret = *iter_;
-  if (ret->isBusPort()) {
-    dbBusPort* bus_port = ret->getBusPort();
-    // todo: remove this using custom iterator
-    for (int i = 0; i < bus_port->getSize(); i++) {
-      iter_++;
-    }
-  }
   iter_++;
   return (reinterpret_cast<Port*>(ret));
 }

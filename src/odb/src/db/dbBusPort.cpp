@@ -299,7 +299,6 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index) const
       return cur;
     }
   }
-
   return nullptr;
 }
 
@@ -367,38 +366,6 @@ dbSet<dbModBTerm> dbBusPort::getBusPortMembers()
     obj->_members_iter = new dbModuleBusPortModBTermItr(block->_modbterm_tbl);
   }
   return dbSet<dbModBTerm>(this, obj->_members_iter);
-}
-
-//
-// TODO future pull request: Reallocate the bus to preserve sequential db
-// ordering This to be added as part of "scaffolding functions"
-//
-void dbBusPort::Realloc()
-{
-  /*
-  _dbBusPort* obj = (_dbBusPort*) this;
-  _dbBlock* block = (_dbBlock*) obj->getOwner();
-  dbModule* parentModule (_dbModule*) obj -> getParent();
-  if (obj -> _flags !=0U){
-    dbModBTerm* busport = block -> modbterm_tbl -> getPtr(obj -> _port);
-    dbModBTerm* cur = busport -> getPrev();
-    //
-    //sequentially reallocate the elements
-    //to assure they are layed out for sequential access
-    //after being tampered with.
-    //
-    int size = obj -> getSize();
-    for (int i =0; i < size; i++){
-      dbModBTerm* new_cur = dbModBTerm::create(parentModule,cur -> getName());
-      new_cur -> _modnet = cur -> _modnet;
-      new_cur -> _next_net_modbterm = cur -> _modbterm;
-      new_cur -> _prev_net_modbterm = cur -> _modbterm;
-      new_cur -> _busPort = cur -> _busPort;
-      new_cur -> _name = cur -> _name;
-      new_cur -> _parent = cur -> _parent;
-    }
-  }
- */
 }
 
 // User Code End dbBusPortPublicMethods

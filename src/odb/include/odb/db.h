@@ -7181,11 +7181,6 @@ class dbBusPort : public dbObject
                            int from_ix,
                            int to_ix);
 
- private:
-  //  dbModuleBusPortModBTermItr* _members_iter=nullptr;
-  // reallocate the bus port so all members sequential.
-  void Realloc();
-
   // User Code End dbBusPort
 };
 
@@ -7710,6 +7705,9 @@ class dbModule : public dbObject
   dbSet<dbModInst> getChildren();
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
+  // Get the ports of a module (STA world uses ports, which contain members).
+  dbSet<dbModBTerm> getPorts();
+  // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms();
   dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
@@ -7723,8 +7721,6 @@ class dbModule : public dbObject
   int getModInstCount();
   int getDbInstCount();
 
-  void staSetCell(void* cell);
-  void* getStaCell();
   const dbModBTerm* getHeadDbModBTerm() const;
 
   static dbModule* create(dbBlock* block, const char* name);

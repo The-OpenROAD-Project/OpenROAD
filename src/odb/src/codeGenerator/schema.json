@@ -2,6 +2,16 @@
     "classes_dir": "schema",
     "iterators":[
     {
+        "name": "dbModulePortItr",
+        "parentObject": "dbModBTerm",
+        "tableName": "modbterm_tbl",
+        "reversible": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
+        "sequential": 0,
+        "includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h", "dbBlock.h"]
+    },
+    {
         "name": "dbModuleModBTermItr",
         "parentObject": "dbModBTerm",
         "tableName": "modbterm_tbl",
