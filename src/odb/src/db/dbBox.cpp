@@ -956,20 +956,20 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   return (dbBox*) box;
 }
 
-dbBox* dbBox::create(dbPBox* pbox_, int x1, int y1, int x2, int y2)
+dbBox* dbBox::create(dbPBox* pbox, int x1, int y1, int x2, int y2)
 {
-  _dbPBox* pbox = (_dbPBox*) pbox_;
-  _dbMaster* master = (_dbMaster*) pbox->getOwner();
+  _dbPBox* pbox_ = (_dbPBox*) pbox;
+  _dbMaster* master = (_dbMaster*) pbox_->getOwner();
   _dbBox* box = master->_box_tbl->create();
   box->_flags._octilinear = false;
-  box->_flags._layer_id = pbox->flags_.layer_id_;
+  box->_flags._layer_id = pbox_->flags_.layer_id_;
   box->_flags._owner_type = dbBoxOwner::PBOX;
-  box->_owner = pbox->getOID();
+  box->_owner = pbox_->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
 
   // link box to pin
-  box->_next_box = pbox->boxes_;
-  pbox->boxes_ = box->getOID();
+  box->_next_box = pbox_->boxes_;
+  pbox_->boxes_ = box->getOID();
   return (dbBox*) box;
 }
 

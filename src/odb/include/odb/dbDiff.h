@@ -144,7 +144,7 @@ class dbDiff : public dbObject
   void diff(const char* field, Point lhs, Point rhs);
   void diff(const char* field, Rect lhs, Rect rhs);
   void diff(const char* field, Oct lhs, Oct rhs);
-  void diff(const char* field, Polygon lhs, Polygon rhs);
+  void diff(const char* field, const Polygon& lhs, const Polygon& rhs);
 
   void diff(const char* field, const char* lhs, const char* rhs);
   void diff(const char* field, std::string lhs, std::string rhs);
@@ -191,7 +191,7 @@ class dbDiff : public dbObject
   void out(char side, const char* field, Point value);
   void out(char side, const char* field, Rect value);
   void out(char side, const char* field, Oct value);
-  void out(char side, const char* field, Polygon value);
+  void out(char side, const char* field, const Polygon& value);
   void out(char side, const char* field, const char* value);
   void out(char side, const char* field, std::string value);
   void out(char side, const char* field, dbOrientType::Value value);

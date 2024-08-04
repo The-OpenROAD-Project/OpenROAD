@@ -91,7 +91,7 @@ class dbTransform
   void apply(Rect& r) const;
 
   // Apply transform to this polygon
-  void apply(Polygon& r) const;
+  void apply(Polygon& p) const;
 
   // Post multiply transform.
   void concat(const dbTransform& t);

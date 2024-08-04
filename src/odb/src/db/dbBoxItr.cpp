@@ -313,14 +313,15 @@ uint dbBoxItr::next(uint id, ...)
     if (box_pbox->flags_.owner_type_ == dbBoxOwner::MASTER) {
       _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
       return master->_obstructions;
-    } else if (box_pbox->flags_.owner_type_ == dbBoxOwner::MPIN) {
+    }
+    if (box_pbox->flags_.owner_type_ == dbBoxOwner::MPIN) {
       _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
       _dbMPin* pin = (_dbMPin*) master->_mpin_tbl->getPtr(box_pbox->owner_);
       return pin->_geoms;
-    } else {
-      // this should not be possible unless new types with polygons are added
-      ZASSERT(0);
     }
+
+    // this should not be possible unless new types with polygons are added
+    ZASSERT(0);
   }
 
   return 0;

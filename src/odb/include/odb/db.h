@@ -676,7 +676,7 @@ class dbBox : public dbObject
   ///
   /// Add a wire-shape to a polygon.
   ///
-  static dbBox* create(dbPBox* box, int x1, int y1, int x2, int y2);
+  static dbBox* create(dbPBox* pbox, int x1, int y1, int x2, int y2);
 
   ///
   /// Add a via obstrction to a master-pin.

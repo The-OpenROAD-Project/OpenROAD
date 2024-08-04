@@ -504,7 +504,8 @@ void dbDiff::diff(const char* field, Oct lhs, Oct rhs)
     (*this) << "\n";
   }
 }
-void dbDiff::diff(const char* field, Polygon lhs, Polygon rhs)
+
+void dbDiff::diff(const char* field, const Polygon& lhs, const Polygon& rhs)
 {
   if (lhs != rhs) {
     report("< %s: ", field);
@@ -836,7 +837,8 @@ void dbDiff::out(char side, const char* field, Oct value)
   (*this) << (value);
   (*this) << "\n";
 }
-void dbDiff::out(char side, const char* field, Polygon value)
+
+void dbDiff::out(char side, const char* field, const Polygon& value)
 {
   report("%c %s: ", side, field);
   (*this) << (value);

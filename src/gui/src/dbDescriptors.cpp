@@ -1620,7 +1620,7 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
                                      std::function<bool(void)> usingDBView)
-    : db_(db), usingDBView_(usingDBView)
+    : db_(db), usingDBView_(std::move(usingDBView))
 {
 }
 
@@ -1865,7 +1865,7 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
 
 DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
                                      std::function<bool(void)> usingDBView)
-    : db_(db), usingDBView_(usingDBView)
+    : db_(db), usingDBView_(std::move(usingDBView))
 {
 }
 
@@ -1911,14 +1911,14 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
   for (auto mpin : mterm->getMPins()) {
     if (usingDBView_()) {
       for (auto box : mpin->getGeometry()) {
-        mterm_polys.push_back(box->getBox());
+        mterm_polys.emplace_back(box->getBox());
       }
     } else {
       for (auto box : mpin->getPolygonGeometry()) {
         mterm_polys.push_back(box->getPolygon());
       }
       for (auto box : mpin->getNonPolygonGeometry()) {
-        mterm_polys.push_back(box->getBox());
+        mterm_polys.emplace_back(box->getBox());
       }
     }
   }
