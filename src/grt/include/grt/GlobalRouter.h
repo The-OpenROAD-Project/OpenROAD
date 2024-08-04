@@ -187,6 +187,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  void writeSegments(const char* file_name);
+  void readSegments(const char* file_name);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -440,7 +442,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
 
-  std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
+  std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks> routing_tracks_;

@@ -36,6 +36,7 @@ set(TEST_NAMES
     gcd_abstract_lef_with_power
     abstract_origin
     write_macro_placement
+    undo
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
