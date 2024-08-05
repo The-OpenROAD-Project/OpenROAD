@@ -130,6 +130,9 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   setWidget(container);
 }
 
+// When displaying text in Scripting, processing events in order to
+// ensure the text is visible to the user can considerably slow down
+// the logging, so, for reports, we use a buffer.
 void ScriptWidget::flushReportBufferToOuput()
 {
   report_timer_->stop();
@@ -229,7 +232,7 @@ bool ScriptWidget::reportTimerIsActive()
 
 void ScriptWidget::startReportTimer()
 {
-  report_timer_->start();
+  report_timer_->start(20 /*ms*/);
 }
 
 void ScriptWidget::addMsgToReportBuffer(const QString& text)
@@ -414,6 +417,10 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
       }
 
       widget_->addMsgToReportBuffer(formatted_msg);
+
+      // the event loop is blocked so we need to manually process
+      // events so that the timer keeps going
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
