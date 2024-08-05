@@ -1345,35 +1345,28 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
     via_positions.emplace_back(box.xCenter(), box.yCenter());
   }
   KDTree tree(via_positions);
-  std::vector<bool> visited(via_positions.size(), false);
+  std::vector<std::atomic_bool> visited(via_positions.size());
+  std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
   omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
-    bool already_visited = false;
-#pragma omp critical
-    {
-      if (visited[i]) {
-        already_visited = true;
-      }
-      visited[i] = true;
-    }
-    if (already_visited) {
+    if (visited[i].load()) {
       continue;
     }
+    visited[i].store(true);
     std::vector<int> neighbors = tree.radiusSearch(via_positions[i], max_spc);
-
-// Check if there are neighbors other than the point itself
-#pragma omp critical
-    {
-      bool is_isolated = true;
-      for (const auto& neighbor : neighbors) {
-        if (neighbor != i) {
-          visited[neighbor] = true;
-          is_isolated = false;
-        }
+    // Check if there are neighbors other than the point itself
+    bool is_isolated = true;
+    for (const auto& neighbor : neighbors) {
+      if (neighbor != i) {
+        visited[neighbor].store(true);
+        is_isolated = false;
       }
-      if (is_isolated) {
+    }
+    if (is_isolated) {
+#pragma omp critical
+      {
         isolated_via_nodes.insert(i);
       }
     }
