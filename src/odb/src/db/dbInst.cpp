@@ -1407,6 +1407,8 @@ dbInst* dbInst::create(dbBlock* block_,
         name_);
   }
 
+  _dbInst* inst = block->_inst_tbl->create();
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -1419,10 +1421,10 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }
 
-  _dbInst* inst = block->_inst_tbl->create();
   inst->_name = strdup(name_);
   ZALLOCATED(inst->_name);
   inst->_inst_hdr = inst_hdr->getOID();
@@ -1563,19 +1565,19 @@ void dbInst::destroy(dbInst* inst_)
   uint i;
   uint n = inst->_iterms.size();
 
+  // Delete these in reverse order so undo creates the in
+  // the correct order.
   for (i = 0; i < n; ++i) {
-    dbId<_dbITerm> id = inst->_iterms[i];
+    dbId<_dbITerm> id = inst->_iterms[n - 1 - i];
     _dbITerm* it = block->_iterm_tbl->getPtr(id);
     ((dbITerm*) it)->disconnect();
 
-    // Bugzilla #7: notify when pins are deleted (assumption: pins
-    // are destroyed only when the related instance is destroyed)
-    // payam 01/10/2006
+    // Notify when pins are deleted (assumption: pins are destroyed only when
+    // the related instance is destroyed)
     std::list<dbBlockCallBackObj*>::iterator cbitr;
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
-      (**cbitr)().inDbITermDestroy(
-          (dbITerm*) it);  // client ECO optimization - payam
+      (**cbitr)().inDbITermDestroy((dbITerm*) it);
     }
 
     dbProperty::destroyProperties(it);
@@ -1597,9 +1599,13 @@ void dbInst::destroy(dbInst* inst_)
                "DB_ECO",
                1,
                "ECO: dbInst:destroy");
+    auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
-    block->_journal->pushParam(inst->getId());
+    block->_journal->pushParam(master->getLib()->getId());
+    block->_journal->pushParam(master->getId());
+    block->_journal->pushParam(inst_->getName().c_str());
+    block->_journal->pushParam(inst_->getId());
     block->_journal->endAction();
   }
 

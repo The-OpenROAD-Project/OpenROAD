@@ -610,10 +610,20 @@ void dbDatabase::commitEco(dbBlock* block_)
   _dbBlock* block = (_dbBlock*) block_;
 
   // TODO: Need a check to ensure the commit is not applied to the block of
-  // which
-  //       this eco was generated from.
+  // which this eco was generated from.
   if (block->_journal_pending) {
     block->_journal_pending->redo();
+    delete block->_journal_pending;
+    block->_journal_pending = nullptr;
+  }
+}
+
+void dbDatabase::undoEco(dbBlock* block_)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+
+  if (block->_journal_pending) {
+    block->_journal_pending->undo();
     delete block->_journal_pending;
     block->_journal_pending = nullptr;
   }

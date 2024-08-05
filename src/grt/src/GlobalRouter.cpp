@@ -1206,14 +1206,14 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
 
     if (!grid_->isPerfectRegularX()) {
       fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
-      for (int i = 1; i < y_grids; i++) {
+      for (int i = 1; i < y_grids + 1; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
       fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
-      for (int i = 1; i < x_grids; i++) {
+      for (int i = 1; i < x_grids + 1; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
       }
@@ -1935,16 +1935,23 @@ void GlobalRouter::updateDbCongestionFromGuides()
 
     const auto& h_edges_3D = fastroute_->getHorizontalEdges3D();
     const auto& v_edges_3D = fastroute_->getVerticalEdges3D();
-
-    const unsigned short capH = fastroute_->getHorizontalCapacities()[k];
-    const unsigned short capV = fastroute_->getVerticalCapacities()[k];
+    const uint16_t capH = fastroute_->getHorizontalCapacities()[k];
+    const uint16_t capV = fastroute_->getVerticalCapacities()[k];
+    const uint16_t last_row_capH
+        = fastroute_->getLastRowHorizontalCapacities()[k];
+    const uint16_t last_col_capV
+        = fastroute_->getLastColumnVerticalCapacities()[k];
     for (int y = 0; y < grid_->getYGrids(); y++) {
       for (int x = 0; x < grid_->getXGrids(); x++) {
-        const unsigned short blockageH = capH - h_edges_3D[k][y][x].cap;
-        const unsigned short blockageV = capV - v_edges_3D[k][y][x].cap;
-        const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
-        const unsigned short usageV = v_edges_3D[k][y][x].usage + blockageV;
-        db_gcell->setCapacity(layer, x, y, capH + capV);
+        const uint16_t thisCapH
+            = (y == grid_->getYGrids() - 1 ? last_row_capH : capH);
+        const uint16_t thisCapV
+            = (x == grid_->getXGrids() - 1 ? last_col_capV : capV);
+        const uint16_t blockageH = thisCapH - h_edges_3D[k][y][x].cap;
+        const uint16_t blockageV = thisCapV - v_edges_3D[k][y][x].cap;
+        const uint16_t usageH = h_edges_3D[k][y][x].usage + blockageH;
+        const uint16_t usageV = v_edges_3D[k][y][x].usage + blockageV;
+        db_gcell->setCapacity(layer, x, y, thisCapH + thisCapV);
         db_gcell->setUsage(layer, x, y, usageH + usageV);
       }
     }
