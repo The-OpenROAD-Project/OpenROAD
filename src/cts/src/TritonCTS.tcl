@@ -80,6 +80,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_size] \
                                              [-sink_clustering_max_diameter] \
                                              [-sink_clustering_enable] \
+                                             [-max_fanout] \
                                              [-balance_levels] \
                                              [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
@@ -98,7 +99,7 @@ proc clock_tree_synthesis { args } {
           -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
-          -sink_clustering_levels -tree_buf \
+          -sink_clustering_levels -tree_buf -max_fanout \
           -sink_buffer_max_cap_derate -delay_buffer_derate} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -apply_ndr -dont_use_dummy_load
@@ -127,6 +128,11 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-sink_clustering_levels)] } {
     set levels $keys(-sink_clustering_levels)
     cts::set_sink_clustering_levels $levels
+  }
+
+  if { [info exists keys(-max_fanout)] } {
+    set size $keys(-max_fanout)
+    cts::set_max_fanout $size
   }
 
   if { [info exists keys(-num_static_layers)] } {
