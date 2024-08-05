@@ -330,13 +330,15 @@ void FastRouteCore::initEdges()
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
-      h_edges_[i][j].cap = h_capacity_;
-      h_edges_[i][j].usage = 0;
-      h_edges_[i][j].est_usage = 0;
-      h_edges_[i][j].red = 0;
-      h_edges_[i][j].last_usage = 0;
+      if (j < x_grid_ - 1) {
+        h_edges_[i][j].cap = h_capacity_;
+        h_edges_[i][j].usage = 0;
+        h_edges_[i][j].est_usage = 0;
+        h_edges_[i][j].red = 0;
+        h_edges_[i][j].last_usage = 0;
+      }
 
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
@@ -346,14 +348,16 @@ void FastRouteCore::initEdges()
       }
     }
   }
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
-      v_edges_[i][j].cap = v_capacity_;
-      v_edges_[i][j].usage = 0;
-      v_edges_[i][j].est_usage = 0;
-      v_edges_[i][j].red = 0;
-      v_edges_[i][j].last_usage = 0;
+      if (i < y_grid_ - 1) {
+        v_edges_[i][j].cap = v_capacity_;
+        v_edges_[i][j].usage = 0;
+        v_edges_[i][j].est_usage = 0;
+        v_edges_[i][j].red = 0;
+        v_edges_[i][j].last_usage = 0;
+      }
 
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
@@ -408,13 +412,17 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
-      h_edges_[y1][x1].cap += increase;
+      if (x1 < x_grid_ - 1) {
+        h_edges_[y1][x1].cap += increase;
+      }
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
 
-    h_edges_[y1][x1].cap -= reduce;
-    h_edges_[y1][x1].red += reduce;
+    if (x1 < x_grid_ - 1) {
+      h_edges_[y1][x1].cap -= reduce;
+      h_edges_[y1][x1].red += reduce;
+    }
 
   } else if (x1 == x2) {  // vertical edge
     const int cap = v_edges_3D_[k][y1][x1].cap;
@@ -438,13 +446,17 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       int increase = reducedCap - cap;
-      v_edges_[y1][x1].cap += increase;
+      if (y1 < y_grid_ - 1) {
+        v_edges_[y1][x1].cap += increase;
+      }
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }
 
-    v_edges_[y1][x1].cap -= reduce;
-    v_edges_[y1][x1].red += reduce;
+    if (y1 < y_grid_ - 1) {
+      v_edges_[y1][x1].cap -= reduce;
+      v_edges_[y1][x1].red += reduce;
+    }
   }
 }
 
