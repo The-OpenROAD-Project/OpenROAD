@@ -469,17 +469,17 @@ static int tclAppInit(int& argc,
     const int TCL_TRACE_ENTER_DURING_EXEC = 4;
     Tcl_CreateObjTrace(interp,
                        0,
-                       TCL_TRACE_ENTER_DURING_EXEC,
+                       TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_ENTER_DURING_EXEC,
                        tclCmdCommandTracingEnter,
                        nullptr,
                        nullptr);
     Tcl_CreateObjTrace(interp,
                        0,
-                       TCL_TRACE_LEAVE_EXEC,
+                       TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_LEAVE_EXEC,
                        tclCmdCommandTracingLeave,
                        nullptr,
                        nullptr);
-
+                       
     if (!findCmdLineFlag(argc, argv, "-no_splash")) {
       showSplash();
     }
