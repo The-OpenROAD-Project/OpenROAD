@@ -264,9 +264,6 @@ proc report_puts { out } {
 
 define_cmd_args "report_metrics" {[-stage][-when][-include_erc][-include_clock_skew][-metrics_report_dir dir]}
 proc report_metrics { stage when {include_erc true} {include_clock_skew true} {metrics_report_dir "."}} {
-  if {[info exists ::env(SKIP_REPORT_METRICS)] && $::env(SKIP_REPORT_METRICS) == 1} {
-    return
-  }
   puts "Report metrics stage $stage, $when..."
   if {![file isdirectory $metrics_report_dir]} {
     file mkdir ${metrics_report_dir}
@@ -479,8 +476,8 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
   report_puts "\n=========================================================================="
   report_puts "$when report_power"
   report_puts "--------------------------------------------------------------------------"
-  if {[info exists ::env(CORNERS)]} {
-    foreach corner $::env(CORNERS) {
+  if {[info exists sta::env(CORNERS)]} {
+    foreach corner $sta::env(CORNERS) {
       report_puts "Corner: $corner"
       report_power -corner $corner >> $filename
       report_power_metric -corner $corner >> $filename
