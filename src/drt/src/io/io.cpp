@@ -387,6 +387,15 @@ void io::Parser::setVias(odb::dbBlock* block)
   }
 }
 
+namespace {
+// Convert frLayerNum to zero-based routing layer index.(ignoring non-routing
+// layers)
+inline frMIdx getZIdx(frLayerNum lNum)
+{
+  return lNum / 2 - 1;
+}
+}  // namespace
+
 void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
 {
   if (design_->tech_->getNondefaultRule(ndr->getName())) {
@@ -408,8 +417,8 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   std::vector<odb::dbTechLayerRule*> lr;
   ndr->getLayerRules(lr);
   for (auto& l : lr) {
-    z = design_->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
-        - 1;
+    auto layer = tech_->getLayer(l->getLayer()->getName());
+    z = getZIdx(layer->getLayerNum());
     fnd->setWidth(l->getWidth(), z);
     fnd->setSpacing(l->getSpacing(), z);
     fnd->setWireExtension(l->getWireExtension(), z);
@@ -417,11 +426,9 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   std::vector<odb::dbTechVia*> vias;
   ndr->getUseVias(vias);
   for (auto via : vias) {
-    z = design_->tech_->getLayer(via->getBottomLayer()->getName())
-                ->getLayerNum()
-            / 2
-        - 1;
-    fnd->addVia(design_->getTech()->getVia(via->getName()), z);
+    auto layer = tech_->getLayer(via->getBottomLayer()->getName());
+    z = getZIdx(layer->getLayerNum());
+    fnd->addVia(tech_->getVia(via->getName()), z);
   }
   std::vector<odb::dbTechViaGenerateRule*> viaRules;
   ndr->getUseViaRules(viaRules);
@@ -454,7 +461,7 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
     }
     MTSAFEDIST = std::max(MTSAFEDIST,
                           design_->getTech()->getMaxNondefaultSpacing(
-                              layer->getLayerNum() / 2 - 1));
+                              getZIdx(layer->getLayerNum())));
   }
 }
 
