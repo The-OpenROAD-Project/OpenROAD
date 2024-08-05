@@ -7,6 +7,7 @@
 #include "abc_library_factory.h"
 
 #include <cmath>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -19,6 +20,7 @@
 #include "misc/util/utilNam.h"
 #include "map/scl/sclCon.h"
 // clang-format on
+#include "map/scl/sclLib.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -300,7 +302,7 @@ AbcLibraryFactory& AbcLibraryFactory::AddDbSta(sta::dbSta* db_sta)
   return *this;
 }
 
-utl::deleted_unique_ptr<abc::SC_Lib> AbcLibraryFactory::Build()
+AbcLibrary AbcLibraryFactory::Build()
 {
   if (!db_sta_) {
     logger_->error(utl::RMP, 15, "Build called with null sta library");
@@ -315,8 +317,8 @@ utl::deleted_unique_ptr<abc::SC_Lib> AbcLibraryFactory::Build()
   }
   abc::Abc_SclLibNormalize(abc_library);
 
-  return utl::deleted_unique_ptr<abc::SC_Lib>(
-      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); });
+  return AbcLibrary(utl::deleted_unique_ptr<abc::SC_Lib>(
+      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }));
 }
 
 void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
@@ -450,6 +452,18 @@ int AbcLibraryFactory::ScaleAbbreviationToExponent(
 
   logger_->error(
       utl::RMP, 13, "Can't convert scale abbreviation {}", scale_abbreviation);
+}
+
+bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
+{
+  if (supported_cells_.empty()) {
+    int num_gates = abc::SC_LibCellNum(abc_library_.get());
+    for (int i = 0; i < num_gates; i++) {
+      abc::SC_Cell* cell = abc::SC_LibCell(abc_library_.get(), i);
+      supported_cells_.insert(cell->pName);
+    }
+  }
+  return supported_cells_.find(cell_name) != supported_cells_.end();
 }
 
 }  // namespace rmp

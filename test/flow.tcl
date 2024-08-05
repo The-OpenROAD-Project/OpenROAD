@@ -191,6 +191,10 @@ write_verilog $verilog_file
 ################################################################
 # Global routing
 
+# set multithreading for repair_antennas, check_antennas and
+# detailed_route
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
@@ -221,10 +225,6 @@ write_db $fill_db
 
 ################################################################
 # Detailed routing
-
-# set multithreading only for detailed route due to instability
-# in repair_antennas
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 
 # Run pin access again after inserting diodes and moving cells
 pin_access -bottom_routing_layer $min_routing_layer \

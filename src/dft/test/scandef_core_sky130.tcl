@@ -9,5 +9,7 @@ read_verilog scan_inserted_register_bank.v
 link_design top -hier
 
 read_def -incremental scandef_core_sky130.scandef
-write_def scandef_core_sky130.out.def
-diff_files scandef_core_sky130.out.def scandef_core_sky130.defok
+
+set def_file [make_result_file scandef_core_sky130.out.def]
+write_def $def_file
+diff_files $def_file scandef_core_sky130.defok

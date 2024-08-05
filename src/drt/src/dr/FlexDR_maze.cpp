@@ -281,20 +281,64 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
                                            bool resetHorz,
                                            bool resetVert)
 {
+  // calculate costs for non-NDR nets
+  frCoord default_width
+      = getTech()->getLayer(gridGraph_.getLayerNum(z))->getWidth();
+  frCoord default_spacing = 0;
+  if (ndr) {
+    default_spacing = ndr->getSpacing(z);
+  }
+  modMinSpacingCostPlanarHelper(box,
+                                z,
+                                type,
+                                default_width,
+                                default_spacing,
+                                isBlockage,
+                                isMacroPin,
+                                resetHorz,
+                                resetVert,
+                                false);
+  // caclulate costs for NDR nets
+  // get all unique width,spacing pairs from ndrs
+  for (auto ndr : ndrs_) {
+    frCoord ndr_width = default_width;
+    if (ndr->getWidth(z) != 0) {
+      ndr_width = ndr->getWidth(z);
+    }
+    frCoord ndr_min_spc = std::max(default_spacing, ndr->getSpacing(z));
+    modMinSpacingCostPlanarHelper(box,
+                                  z,
+                                  type,
+                                  ndr_width,
+                                  ndr_min_spc,
+                                  isBlockage,
+                                  isMacroPin,
+                                  resetHorz,
+                                  resetVert,
+                                  true);
+  }
+}
+
+void FlexDRWorker::modMinSpacingCostPlanarHelper(const Rect& box,
+                                                 frMIdx z,
+                                                 ModCostType type,
+                                                 frCoord width2,
+                                                 frCoord minSpacing,
+                                                 bool isBlockage,
+                                                 bool isMacroPin,
+                                                 bool resetHorz,
+                                                 bool resetVert,
+                                                 bool ndr)
+{
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.minDXDY();
-  frCoord length1 = box.maxDXDY();
   // layer default width
-  frCoord width2 = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
-      width1, width2, length1, use_min_spacing);
-
-  if (ndr) {
-    bloatDist = std::max(bloatDist, ndr->getSpacing(z));
-  }
+      width1, width2, box.maxDXDY(), use_min_spacing);
+  bloatDist = std::max(bloatDist, minSpacing);
   frSquaredDistance bloatDistSquare = bloatDist;
   bloatDistSquare *= bloatDist;
 
@@ -329,32 +373,37 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
       if (distSquare < bloatDistSquare) {
         switch (type) {
           case subRouteShape:
-            gridGraph_.subRouteShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.subRouteShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case addRouteShape:
-            gridGraph_.addRouteShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.addRouteShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case subFixedShape:
-            gridGraph_.subFixedShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.subFixedShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case addFixedShape:
-            gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.addFixedShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case resetFixedShape:
             if (resetHorz) {
               gridGraph_.setFixedShapeCostPlanarHorz(
-                  i, j, z, 0);  // safe access
+                  i, j, z, 0, ndr);  // safe access
             }
             if (resetVert) {
               gridGraph_.setFixedShapeCostPlanarVert(
-                  i, j, z, 0);  // safe access
+                  i, j, z, 0, ndr);  // safe access
             }
             break;
           case setFixedShape:
-            gridGraph_.setFixedShapeCostPlanarHorz(i, j, z, 1);  // safe access
-            gridGraph_.setFixedShapeCostPlanarVert(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarHorz(
+                i, j, z, 1, ndr);  // safe access
+            gridGraph_.setFixedShapeCostPlanarVert(
+                i, j, z, 1, ndr);  // safe access
             break;
           case resetBlocked:
+            if (ndr) {
+              return;
+            }
             if (isMacroPin) {
               if (j >= mPinLL.y() && j <= mPinUR.y()) {
                 gridGraph_.resetBlocked(i, j, z, frDirEnum::E);
@@ -380,6 +429,9 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             }
             break;
           case setBlocked:  // set blocked
+            if (ndr) {
+              return;
+            }
             gridGraph_.setBlocked(i, j, z, frDirEnum::E);
             gridGraph_.setBlocked(i, j, z, frDirEnum::N);
             if (i == 0) {
@@ -402,22 +454,23 @@ void FlexDRWorker::modMinSpacingCostVia_eol_helper(const Rect& box,
                                                    bool isUpperVia,
                                                    frMIdx i,
                                                    frMIdx j,
-                                                   frMIdx z)
+                                                   frMIdx z,
+                                                   bool ndr)
 {
   frMIdx zIdx = isUpperVia ? z : z - 1;
   if (testBox.overlaps(box)) {
     switch (type) {
       case subRouteShape:
-        gridGraph_.subRouteShapeCostVia(i, j, zIdx);
+        gridGraph_.subRouteShapeCostVia(i, j, zIdx, ndr);
         break;
       case addRouteShape:
-        gridGraph_.addRouteShapeCostVia(i, j, zIdx);
+        gridGraph_.addRouteShapeCostVia(i, j, zIdx, ndr);
         break;
       case subFixedShape:
-        gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+        gridGraph_.subFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
         break;
       case addFixedShape:
-        gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+        gridGraph_.addFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
         break;
       default:;
     }
@@ -431,7 +484,8 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                                             const drEolSpacingConstraint& drCon,
                                             frMIdx i,
                                             frMIdx j,
-                                            frMIdx z)
+                                            frMIdx z,
+                                            bool ndr)
 {
   if (drCon.eolSpace == 0) {
     return;
@@ -446,13 +500,15 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                  tmpBx.yMax(),
                  tmpBx.xMax() + eolWithin,
                  tmpBx.yMax() + eolSpace);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
 
     testBox.init(tmpBx.xMin() - eolWithin,
                  tmpBx.yMin() - eolSpace,
                  tmpBx.xMax() + eolWithin,
                  tmpBx.yMin());
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
   }
   // eol to left and right
   if (tmpBx.dy() <= eolWidth) {
@@ -460,13 +516,15 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                  tmpBx.yMin() - eolWithin,
                  tmpBx.xMax() + eolSpace,
                  tmpBx.yMax() + eolWithin);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
 
     testBox.init(tmpBx.xMin() - eolSpace,
                  tmpBx.yMin() - eolWithin,
                  tmpBx.xMin(),
                  tmpBx.yMax() + eolWithin);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
   }
 }
 
@@ -481,11 +539,11 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   // default via dimension
   frViaDef* viaDef = nullptr;
   if (isUpperVia) {
-    viaDef = (lNum < getTech()->getTopLayerNum())
+    viaDef = (lNum < gridGraph_.getMaxLayerNum())
                  ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
                  : nullptr;
   } else {
-    viaDef = (lNum > getTech()->getBottomLayerNum())
+    viaDef = (lNum > gridGraph_.getMinLayerNum())
                  ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
                  : nullptr;
   }
@@ -608,20 +666,79 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
                                         bool isBlockage,
                                         frNonDefaultRule* ndr)
 {
+  // mod costs for non-NDR nets
   auto lNum = gridGraph_.getLayerNum(z);
-  frCoord width1 = box.minDXDY();
-  frCoord length1 = box.maxDXDY();
-  // default via dimension
-  frViaDef* viaDef = nullptr;
+  frViaDef* defaultViaDef = nullptr;
   if (isUpperVia) {
-    viaDef = (lNum < getTech()->getTopLayerNum())
-                 ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
-                 : nullptr;
+    defaultViaDef = (lNum < gridGraph_.getMaxLayerNum())
+                        ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+                        : nullptr;
   } else {
-    viaDef = (lNum > getTech()->getBottomLayerNum())
-                 ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
-                 : nullptr;
+    defaultViaDef = (lNum > gridGraph_.getMinLayerNum())
+                        ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+                        : nullptr;
   }
+  frCoord defaultMinSpacing = 0;
+  drEolSpacingConstraint drCon;
+  if (ndr) {
+    defaultMinSpacing = ndr->getSpacing(z);
+    drCon = ndr->getDrEolSpacingConstraint(z);
+  }
+  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
+  modMinSpacingCostViaHelper(box,
+                             z,
+                             type,
+                             defaultWidth,
+                             defaultMinSpacing,
+                             defaultViaDef,
+                             drCon,
+                             isUpperVia,
+                             isCurrPs,
+                             isBlockage,
+                             false);
+  // mod costs for ndrs
+  for (auto ndr : ndrs_) {
+    frCoord width = defaultWidth;
+    frViaDef* viadef = defaultViaDef;
+    frCoord minSpacing = defaultMinSpacing;
+    drEolSpacingConstraint ndrDrCon = ndr->getDrEolSpacingConstraint(z);
+    if (isUpperVia && lNum < gridGraph_.getMaxLayerNum()
+        && ndr->getPrefVia(z) != nullptr) {
+      viadef = ndr->getPrefVia(z);
+    } else if (!isUpperVia && lNum > gridGraph_.getMinLayerNum()
+               && ndr->getPrefVia(z - 1) != nullptr) {
+      viadef = ndr->getPrefVia(z - 1);
+    }
+    if (ndr->getWidth(z) != 0) {
+      width = ndr->getWidth(z);
+    }
+    minSpacing = std::max(minSpacing, ndr->getSpacing(z));
+    modMinSpacingCostViaHelper(box,
+                               z,
+                               type,
+                               width,
+                               minSpacing,
+                               viadef,
+                               ndrDrCon,
+                               isUpperVia,
+                               isCurrPs,
+                               isBlockage,
+                               true);
+  }
+}
+
+void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
+                                              frMIdx z,
+                                              ModCostType type,
+                                              frCoord width,
+                                              frCoord minSpacing,
+                                              frViaDef* viaDef,
+                                              drEolSpacingConstraint drCon,
+                                              bool isUpperVia,
+                                              bool isCurrPs,
+                                              bool isBlockage,
+                                              bool ndr)
+{
   if (viaDef == nullptr) {
     return;
   }
@@ -636,36 +753,30 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord length2 = viaBox.maxDXDY();
 
   // via prl should check min area patch metal if not fat via
-  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
+  auto lNum = gridGraph_.getLayerNum(z);
   bool isH
       = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
-  bool isFatVia
-      = (isH) ? (viaBox.dy() > defaultWidth) : (viaBox.dx() > defaultWidth);
+  bool isFatVia = (isH) ? (viaBox.dy() > width) : (viaBox.dx() > width);
 
   frCoord length2_mar = length2;
   frCoord patchLength = 0;
   if (!isFatVia) {
     auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
     auto minArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
-    patchLength = frCoord(ceil(1.0 * minArea / defaultWidth
+    patchLength = frCoord(ceil(1.0 * minArea / width
                                / getTech()->getManufacturingGrid()))
                   * frCoord(getTech()->getManufacturingGrid());
     length2_mar = std::max(length2_mar, patchLength);
   }
 
   // spacing value needed
+  frCoord width1 = box.minDXDY();
+  frCoord length1 = box.maxDXDY();
   frCoord prl = isCurrPs ? (length2_mar) : std::min(length1, length2_mar);
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
       width1, width2, prl, use_min_spacing);
-
-  drEolSpacingConstraint drCon;
-  if (ndr) {
-    bloatDist = std::max(bloatDist, ndr->getSpacing(z));
-    drCon = ndr->getDrEolSpacingConstraint(z);
-  }
-  // other obj eol spc to curr obj
-  // no need to bloat eolWithin because eolWithin always < minSpacing
+  bloatDist = std::max(minSpacing, bloatDist);
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
   if (drCon.eolWidth == 0) {
@@ -733,29 +844,27 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
       bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
       frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
           width1, width2, prl, use_min_spacing);
-
-      if (ndr) {
-        reqDist = std::max(reqDist, ndr->getSpacing(z));
-      }
+      reqDist = std::max(reqDist, minSpacing);
       if (distSquare < (frSquaredDistance) reqDist * reqDist) {
         switch (type) {
           case subRouteShape:
-            gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.subRouteShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case addRouteShape:
-            gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.addRouteShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case subFixedShape:
-            gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.subFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case addFixedShape:
-            gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.addFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           default:;
         }
       }
       // eol, other obj to curr obj
-      modMinSpacingCostVia_eol(box, tmpBx, type, isUpperVia, drCon, i, j, z);
+      modMinSpacingCostVia_eol(
+          box, tmpBx, type, isUpperVia, drCon, i, j, z, ndr);
     }
   }
 }
@@ -2504,8 +2613,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
         if (net_ndr != nullptr
-            && net_ndr->getPrefVia((startLayerNum + 1) / 2)) {
-          via = net_ndr->getPrefVia((startLayerNum + 1) / 2);
+            && net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1)) {
+          via = net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {

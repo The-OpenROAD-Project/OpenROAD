@@ -35,14 +35,8 @@
 #include <map>
 #include <set>
 
+#include "odb/db.h"
 #include "shape.h"
-
-namespace odb {
-class dbBlock;
-class dbNet;
-class dbSBox;
-class dbTechLayer;
-}  // namespace odb
 
 namespace utl {
 class Logger;

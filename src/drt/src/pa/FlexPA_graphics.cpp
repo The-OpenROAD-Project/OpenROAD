@@ -53,12 +53,13 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
-  layer_map_.resize(odb_tech->getLayerCount(), -1);
+  layer_map_.resize(odb_tech->getLayerCount(), std::make_pair(-1, "none"));
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
     auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
-      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
+      layer_map_[odb_layer->getNumber()]
+          = std::make_pair(tr_layer->getLayerNum(), odb_layer->getName());
     }
   }
 
@@ -95,7 +96,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   frLayerNum layerNum;
   if (!shapes_.empty()) {
-    layerNum = layer_map_.at(layer->getNumber());
+    layerNum = layer_map_.at(layer->getNumber()).first;
     for (auto& b : shapes_) {
       if (b.second != layerNum) {
         continue;
@@ -109,7 +110,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  layerNum = layer_map_.at(layer->getNumber());
+  layerNum = layer_map_.at(layer->getNumber()).first;
   if (layerNum < 0) {
     return;
   }
@@ -268,6 +269,13 @@ void FlexPAGraphics::setViaAP(
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     Rect bbox = marker->getBBox();
+    std::string layer_name;
+    for (auto& layer : layer_map_) {
+      if (layer.first == marker->getLayerNum()) {
+        layer_name = layer.second;
+        break;
+      }
+    }
     logger_->info(DRT,
                   119,
                   "Marker ({}, {}) ({}, {}) on {}:",
@@ -275,7 +283,7 @@ void FlexPAGraphics::setViaAP(
                   bbox.yMin(),
                   bbox.xMax(),
                   bbox.yMax(),
-                  marker->getLayerNum());
+                  layer_name);
     marker->getConstraint()->report(logger_);
   }
 

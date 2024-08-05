@@ -4,12 +4,12 @@ import opendbpy as odb
 def createSimpleDB():
     db = odb.dbDatabase.create()
     tech = odb.dbTech.create(db)
-    L1 = odb.dbTechLayer_create(tech, 'L1', 'ROUTING')
+    L1 = odb.dbTechLayer_create(tech, "L1", "ROUTING")
     lib = odb.dbLib.create(db, "lib")
     odb.dbChip.create(db)
     # Creating Master and2 and or2
-    and2 = createMaster2X1(lib, 'and2', 1000, 1000, 'a', 'b', 'o')
-    or2  = createMaster2X1(lib, 'or2', 500, 500, 'a', 'b', 'o')
+    and2 = createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o")
+    or2 = createMaster2X1(lib, "or2", 500, 500, "a", "b", "o")
     return db, lib
 
 
@@ -17,11 +17,11 @@ def createMultiLayerDB():
     db = odb.dbDatabase.create()
     tech = odb.dbTech.create(db)
 
-    m1 = odb.dbTechLayer_create(tech, "M1", 'ROUTING')
+    m1 = odb.dbTechLayer_create(tech, "M1", "ROUTING")
     m1.setWidth(2000)
-    m2 = odb.dbTechLayer_create(tech, "M2", 'ROUTING')
+    m2 = odb.dbTechLayer_create(tech, "M2", "ROUTING")
     m2.setWidth(2000)
-    m3 = odb.dbTechLayer_create(tech, "M3", 'ROUTING')
+    m3 = odb.dbTechLayer_create(tech, "M3", "ROUTING")
     m3.setWidth(2000)
 
     v12 = odb.dbTechVia_create(tech, "VIA12")
@@ -43,25 +43,25 @@ def createMultiLayerDB():
 # IN2--------|b    /
 #            +-----
 def create1LevelBlock(db, lib, parent):
-    blockName = '1LevelBlock'
-    block = odb.dbBlock_create(parent, blockName, ',')
+    blockName = "1LevelBlock"
+    block = odb.dbBlock_create(parent, blockName, ",")
     # Creating Master and2 and instance inst
-    and2 = lib.findMaster('and2')
+    and2 = lib.findMaster("and2")
     inst = odb.dbInst.create(block, and2, "inst")
     # creating our nets
     n1 = odb.dbNet.create(block, "n1")
     n2 = odb.dbNet.create(block, "n2")
     n3 = odb.dbNet.create(block, "n3")
-    IN1 = odb.dbBTerm.create(n1, 'IN1')
-    IN1.setIoType('INPUT')
-    IN2 = odb.dbBTerm.create(n2, 'IN2')
-    IN2.setIoType('INPUT')
-    OUT = odb.dbBTerm.create(n3, 'OUT')
-    OUT.setIoType('OUTPUT')
+    IN1 = odb.dbBTerm.create(n1, "IN1")
+    IN1.setIoType("INPUT")
+    IN2 = odb.dbBTerm.create(n2, "IN2")
+    IN2.setIoType("INPUT")
+    OUT = odb.dbBTerm.create(n3, "OUT")
+    OUT.setIoType("OUTPUT")
     # connecting nets
-    odb.dbITerm.connect(inst, n1, inst.getMaster().findMTerm('a'))
-    odb.dbITerm.connect(inst, n2, inst.getMaster().findMTerm('b'))
-    odb.dbITerm.connect(inst, n3, inst.getMaster().findMTerm('o'))
+    odb.dbITerm.connect(inst, n1, inst.getMaster().findMTerm("a"))
+    odb.dbITerm.connect(inst, n2, inst.getMaster().findMTerm("b"))
+    odb.dbITerm.connect(inst, n3, inst.getMaster().findMTerm("o"))
     return block
 
 
@@ -78,11 +78,11 @@ def create1LevelBlock(db, lib, parent):
 # IN4--------|b    /
 #            +-----
 def create2LevelBlock(db, lib, parent):
-    blockName = '2LevelBlock'
-    block = odb.dbBlock_create(parent, blockName, ',')
+    blockName = "2LevelBlock"
+    block = odb.dbBlock_create(parent, blockName, ",")
 
-    and2 = lib.findMaster('and2')
-    or2 = lib.findMaster('or2')
+    and2 = lib.findMaster("and2")
+    or2 = lib.findMaster("or2")
     # creating instances
     i1 = odb.dbInst.create(block, and2, "i1")
     i2 = odb.dbInst.create(block, and2, "i2")
@@ -96,28 +96,28 @@ def create2LevelBlock(db, lib, parent):
     n6 = odb.dbNet.create(block, "n6")
     n7 = odb.dbNet.create(block, "n7")
 
-    IN1 = odb.dbBTerm.create(n1, 'IN1')
-    IN1.setIoType('INPUT')
-    IN2 = odb.dbBTerm.create(n2, 'IN2')
-    IN2.setIoType('INPUT')
-    IN3 = odb.dbBTerm.create(n3, 'IN3')
-    IN3.setIoType('INPUT')
-    IN4 = odb.dbBTerm.create(n4, 'IN4')
-    IN4.setIoType('INPUT')
-    OUT = odb.dbBTerm.create(n7, 'OUT')
-    OUT.setIoType('OUTPUT')
+    IN1 = odb.dbBTerm.create(n1, "IN1")
+    IN1.setIoType("INPUT")
+    IN2 = odb.dbBTerm.create(n2, "IN2")
+    IN2.setIoType("INPUT")
+    IN3 = odb.dbBTerm.create(n3, "IN3")
+    IN3.setIoType("INPUT")
+    IN4 = odb.dbBTerm.create(n4, "IN4")
+    IN4.setIoType("INPUT")
+    OUT = odb.dbBTerm.create(n7, "OUT")
+    OUT.setIoType("OUTPUT")
     # connecting nets
-    odb.dbITerm.connect(i1, n1, i1.getMaster().findMTerm('a'))
-    odb.dbITerm.connect(i1, n2, i1.getMaster().findMTerm('b'))
-    odb.dbITerm.connect(i1, n5, i1.getMaster().findMTerm('o'))
+    odb.dbITerm.connect(i1, n1, i1.getMaster().findMTerm("a"))
+    odb.dbITerm.connect(i1, n2, i1.getMaster().findMTerm("b"))
+    odb.dbITerm.connect(i1, n5, i1.getMaster().findMTerm("o"))
 
-    odb.dbITerm.connect(i2, n3, i2.getMaster().findMTerm('a'))
-    odb.dbITerm.connect(i2, n4, i2.getMaster().findMTerm('b'))
-    odb.dbITerm.connect(i2, n6, i2.getMaster().findMTerm('o'))
+    odb.dbITerm.connect(i2, n3, i2.getMaster().findMTerm("a"))
+    odb.dbITerm.connect(i2, n4, i2.getMaster().findMTerm("b"))
+    odb.dbITerm.connect(i2, n6, i2.getMaster().findMTerm("o"))
 
-    odb.dbITerm.connect(i3, n5, i3.getMaster().findMTerm('a'))
-    odb.dbITerm.connect(i3, n6, i3.getMaster().findMTerm('b'))
-    odb.dbITerm.connect(i3, n7, i3.getMaster().findMTerm('o'))
+    odb.dbITerm.connect(i3, n5, i3.getMaster().findMTerm("a"))
+    odb.dbITerm.connect(i3, n6, i3.getMaster().findMTerm("b"))
+    odb.dbITerm.connect(i3, n7, i3.getMaster().findMTerm("o"))
 
     P1 = odb.dbBPin_create(IN1)
     P2 = odb.dbBPin_create(IN2)
@@ -137,10 +137,10 @@ def createMaster2X1(lib, name, width, height, in1, in2, out):
     master = odb.dbMaster_create(lib, name)
     master.setWidth(width)
     master.setHeight(height)
-    master.setType('CORE')
-    odb.dbMTerm.create(master, in1, 'INPUT')
-    odb.dbMTerm.create(master, in2, 'INPUT')
-    odb.dbMTerm.create(master, out, 'OUTPUT')
+    master.setType("CORE")
+    odb.dbMTerm.create(master, in1, "INPUT")
+    odb.dbMTerm.create(master, in2, "INPUT")
+    odb.dbMTerm.create(master, out, "OUTPUT")
     master.setFrozen()
     return master
 
@@ -149,10 +149,10 @@ def createMaster3X1(lib, name, width, height, in1, in2, in3, out):
     master = odb.dbMaster_create(lib, name)
     master.setWidth(width)
     master.setHeight(height)
-    master.setType('CORE')
-    odb.dbMTerm.create(master, in1, 'INPUT')
-    odb.dbMTerm.create(master, in2, 'INPUT')
-    odb.dbMTerm.create(master, in3, 'INPUT')
-    odb.dbMTerm.create(master, out, 'OUTPUT')
+    master.setType("CORE")
+    odb.dbMTerm.create(master, in1, "INPUT")
+    odb.dbMTerm.create(master, in2, "INPUT")
+    odb.dbMTerm.create(master, in3, "INPUT")
+    odb.dbMTerm.create(master, out, "OUTPUT")
     master.setFrozen()
     return master

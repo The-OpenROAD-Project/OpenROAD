@@ -393,12 +393,13 @@ proc read_guides { args } {
 }
 
 sta::define_cmd_args "draw_route_guides" { net_names \
+                                           [-show_segments]
                                            [-show_pin_locations] }
 
 proc draw_route_guides { args } {
   sta::parse_key_args "draw_route_guides" args \
     keys {} \
-    flags {-show_pin_locations}
+    flags {-show_pin_locations -show_segments}
   sta::check_argc_eq1 "draw_route_guides" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
@@ -408,11 +409,32 @@ proc draw_route_guides { args } {
 
   grt::clear_route_guides
   set show_pins [info exists flags(-show_pin_locations)]
+  set show_segments [info exists flags(-show_segments)]
   foreach net [get_nets $net_names] {
     if { $net != "NULL" } {
-      grt::highlight_net_route [sta::sta_to_db_net $net] $show_pins
+      grt::highlight_net_route [sta::sta_to_db_net $net] $show_segments $show_pins
     }
   }
+}
+
+sta::define_cmd_args "write_global_route_segments" { file_name }
+
+proc write_global_route_segments { args } {
+  sta::parse_key_args "write_global_route_segments" args \
+    keys {} \
+    flags {}
+  set file_name $args
+  grt::write_segments $file_name
+}
+
+sta::define_cmd_args "read_global_route_segments" { file_name }
+
+proc read_global_route_segments { args } {
+  sta::parse_key_args "read_global_route_segments" args \
+    keys {} \
+    flags {}
+  set file_name $args
+  grt::read_segments $file_name
 }
 
 sta::define_cmd_args "global_route_debug" {

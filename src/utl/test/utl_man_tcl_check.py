@@ -11,7 +11,7 @@ module = os.path.basename(module_dir)
 or_home = os.path.dirname(os.path.dirname(os.path.dirname(path)))
 os.chdir(or_home)
 
-help_dict, proc_dict, readme_dict = {}, {}, {}  
+help_dict, proc_dict, readme_dict = {}, {}, {}
 
 # Directories to exclude (according to md_roff_compat)
 exclude = ["sta"]
@@ -19,17 +19,23 @@ include = ["./src/odb/src/db/odb.tcl"]
 
 for path in glob.glob("./src/*/src/*tcl") + include:
     # exclude all dirs other than the current dir.
-    if module not in path: continue
+    if module not in path:
+        continue
 
     # exclude these dirs which are not compiled in man (do not have readmes).
     tool_dir = os.path.dirname(os.path.dirname(path))
-    if module not in tool_dir: continue
-    if "odb" in tool_dir: tool_dir = './src/odb'
-    if not os.path.exists(f"{tool_dir}/README.md"): continue
-    if re.search(f".*{'|'.join(e for e in exclude)}.*", path): continue
+    if module not in tool_dir:
+        continue
+    if "odb" in tool_dir:
+        tool_dir = "./src/odb"
+    if not os.path.exists(f"{tool_dir}/README.md"):
+        continue
+    if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
+        continue
 
     # special handling for pad, since it has 3 Tcls.
-    if "ICeWall" in path or "PdnGen" in path: continue
+    if "ICeWall" in path or "PdnGen" in path:
+        continue
 
     with open(path) as f:
         # Help patterns
@@ -43,9 +49,11 @@ for path in glob.glob("./src/*/src/*tcl") + include:
 
 for path in glob.glob("./src/*/README.md"):
     # exclude all dirs other than the current dir.
-    if module not in path: continue
+    if module not in path:
+        continue
 
-    if re.search(f".*{'|'.join(e for e in exclude)}.*", path): continue
+    if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
+        continue
     tool_dir = os.path.dirname(path)
 
     # for gui, filter out the gui:: for separate processing
@@ -53,15 +61,17 @@ for path in glob.glob("./src/*/README.md"):
     readme_dict[tool_dir] = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
-    if 'pad' in tool_dir: readme_dict[tool_dir] -= 1
+    if "pad" in tool_dir:
+        readme_dict[tool_dir] -= 1
 
-print("Tool Dir".ljust(20), "Help count".ljust(15), "Proc count".ljust(15), "Readme count")
+print(
+    "Tool Dir".ljust(20), "Help count".ljust(15), "Proc count".ljust(15), "Readme count"
+)
 
 for path in help_dict:
-    h,p,r = help_dict[path], proc_dict[path], readme_dict[path]
-    print(path.ljust(20), 
-            str(h).ljust(15),
-            str(p).ljust(15),
-            str(r))
-    if h == p == r: print("Command counts match.")
-    else: print("Command counts do not match.")
+    h, p, r = help_dict[path], proc_dict[path], readme_dict[path]
+    print(path.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
+    if h == p == r:
+        print("Command counts match.")
+    else:
+        print("Command counts do not match.")

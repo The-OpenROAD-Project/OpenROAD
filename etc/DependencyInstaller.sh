@@ -71,6 +71,7 @@ _installCommonDev() {
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
+    cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
 
@@ -145,6 +146,19 @@ _installCommonDev() {
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Eigen already installed."
+    fi
+
+    # cudd
+    cuddPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+        cd "${baseDir}"
+        git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
+        cd cudd
+        autoreconf
+        ./configure --prefix=${cuddPrefix}
+        make -j $(nproc) install
+    else
+        echo "Cudd already installed."
     fi
 
     # CUSP
