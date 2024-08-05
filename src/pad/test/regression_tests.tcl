@@ -8,6 +8,7 @@ record_tests {
   make_io_sites_different_sites
   non_top_layer
   place_pad
+  place_pad_with_bumps
   place_pad_outsideofrow
   place_bondpad
   place_bondpad_stagger
