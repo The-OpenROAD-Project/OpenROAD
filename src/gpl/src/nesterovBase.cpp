@@ -1961,8 +1961,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-  // reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  //wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
     wireLengthGrads[i]
