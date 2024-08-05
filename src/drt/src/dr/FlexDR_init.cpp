@@ -2034,6 +2034,12 @@ void FlexDRWorker::initNets(const frDesign* design)
   if (ENABLE_BOUNDARY_MAR_FIX) {
     initNets_boundaryArea();
   }
+  // fill ndrs_ for all nets in the worker
+  for (auto& net : nets) {
+    if (net->hasNDR()) {
+      ndrs_.emplace_back(net->getNondefaultRule());
+    }
+  }
 }
 
 void FlexDRWorker::initTrackCoords_route(
