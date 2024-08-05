@@ -56,6 +56,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
+      report_timer_(std::make_unique<QTimer>()),
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
@@ -115,6 +116,10 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &ScriptWidget::outputChanged);
   connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
   connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
+  connect(report_timer_.get(),
+          &QTimer::timeout,
+          this,
+          &ScriptWidget::flushReportBufferToOuput);
 
   connect(this,
           &ScriptWidget::addToOutput,
@@ -123,6 +128,15 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           Qt::QueuedConnection);
 
   setWidget(container);
+}
+
+void ScriptWidget::flushReportBufferToOuput()
+{
+  report_timer_->stop();
+
+  // this comes from a ->report
+  addTextToOutput(report_buffer_, buffer_msg_);
+  report_buffer_.clear();
 }
 
 ScriptWidget::~ScriptWidget()
@@ -208,9 +222,19 @@ void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
   addToOutput(text, color);
 }
 
-void ScriptWidget::addReportToOutput(const QString& text)
+bool ScriptWidget::reportTimerIsActive()
 {
-  addToOutput(text, buffer_msg_);
+  return report_timer_->isActive();
+}
+
+void ScriptWidget::startReportTimer()
+{
+  report_timer_->start();
+}
+
+void ScriptWidget::addMsgToReportBuffer(const QString& text)
+{
+  report_buffer_ += text;
 }
 
 void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
@@ -385,8 +409,11 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
-      // this comes from a ->report
-      widget_->addReportToOutput(formatted_msg);
+      if (!widget_->reportTimerIsActive()) {
+        widget_->startReportTimer();
+      }
+
+      widget_->addMsgToReportBuffer(formatted_msg);
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
