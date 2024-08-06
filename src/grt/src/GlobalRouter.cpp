@@ -597,9 +597,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     findPins(net);
     destroyNetWire(net);
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos)) {
+    if (pinPositionsChanged(net, last_pos) && !net->skipIncremental()) {
       dirty_nets.push_back(db_net_map_[db_net]);
     }
+    net->setSkipIncremental(false);
   }
   dirty_nets_.clear();
 }
@@ -3753,6 +3754,14 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
   return nets_to_route_;
 }
 
+void GlobalRouter::mergeNetsRouting(odb::dbNet* net1, odb::dbNet* net2)
+{
+  GRoute& net1_route = routes_[net1];
+  GRoute& net2_route = routes_[net2];
+  net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+  db_net_map_[net1]->setSkipIncremental(true);
+}
+
 void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
                                int x,
                                int y,
@@ -4386,6 +4395,12 @@ void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
 {
   grouter_->removeNet(net);
+}
+
+void GRouteDbCbk::inDbNetMerge(odb::dbNet* preserved_net,
+                               odb::dbNet* removed_net)
+{
+  grouter_->mergeNetsRouting(preserved_net, removed_net);
 }
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)

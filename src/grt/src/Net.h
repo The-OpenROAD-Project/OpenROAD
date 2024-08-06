@@ -61,6 +61,8 @@ class Net
   void destroyPins();
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
+  void setSkipIncremental(bool skip) { skip_incremental_ = skip; }
+  bool skipIncremental() const { return skip_incremental_; }
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
@@ -69,6 +71,7 @@ class Net
   std::vector<Pin> pins_;
   float slack_;
   bool has_wires_;
+  bool skip_incremental_;
 };
 
 }  // namespace grt
