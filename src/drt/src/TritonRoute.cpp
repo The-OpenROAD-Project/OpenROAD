@@ -590,17 +590,6 @@ void TritonRoute::initDesign()
   if (db_ != nullptr && db_->getChip() != nullptr
       && db_->getChip()->getBlock() != nullptr) {
     db_callback_->addOwner(db_->getChip()->getBlock());
-    for (auto net : db_->getChip()->getBlock()->getNets()) {
-      if (net->getWire()) {
-        odb::dbWireDecoder decoder;
-        decoder.begin(net->getWire());
-        decoder.next();
-        if (decoder.getWireType() == odb::dbWireType::FIXED) {
-          continue;
-        }
-        odb::dbWire::destroy(net->getWire());
-      }
-    }
   }
 }
 
@@ -1024,6 +1013,18 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   pa.main();
   io::Writer writer(this, logger_);
   writer.updateDb(db_, true);
+}
+
+void TritonRoute::fixMaxSpacing()
+{
+  initDesign();
+  initGuide();
+  prep();
+  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
+  dr_->init();
+  dr_->fixMaxSpacing();
+  io::Writer writer(this, logger_);
+  writer.updateDb(db_);
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,

@@ -35,8 +35,14 @@
     "src/utl/test/"
 ]
 
+ignore = [
+    "spaces-in-braces",
+    "unbraced-expr",
+]
+
 [style]
 indent = 2
 line-length = 100
 allow-aligned-sets = true
 indent-namespace-eval = false
+spaces-in-braces = true

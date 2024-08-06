@@ -104,7 +104,8 @@ class ScanArchitect
   // max_length
   static std::map<size_t, HashDomainLimits> inferChainCountFromMaxLength(
       const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
-      uint64_t max_length);
+      uint64_t max_length,
+      const std::optional<uint64_t>& max_chains);
 
   // Returns an ScanArchitect object based on the configuration.
   //

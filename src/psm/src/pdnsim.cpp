@@ -41,11 +41,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "shape.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
+
+using odb::dbBlock;
+using odb::dbSigType;
 
 namespace psm {
 
@@ -56,11 +60,13 @@ PDNSim::~PDNSim() = default;
 void PDNSim::init(utl::Logger* logger,
                   odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  rsz::Resizer* resizer)
+                  rsz::Resizer* resizer,
+                  dpl::Opendp* opendp)
 {
   db_ = db;
   sta_ = sta;
   resizer_ = resizer;
+  opendp_ = opendp;
   logger_ = logger;
   heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
   heatmap_->registerHeatMap();
@@ -102,6 +108,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
     return;
   }
 
+  last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
   solver->solve(corner, source_type, voltage_source_file);
   solver->report(corner);
@@ -169,6 +176,17 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
   }
 
   return solver.get();
+}
+
+void PDNSim::getIRDropForLayer(odb::dbNet* net,
+                               odb::dbTechLayer* layer,
+                               IRDropByPoint& ir_drop) const
+{
+  auto find_solver = solvers_.find(net);
+  if (last_corner_ == nullptr || find_solver == solvers_.end()) {
+    return;
+  }
+  ir_drop = find_solver->second->getIRDrop(layer, last_corner_);
 }
 
 void PDNSim::getIRDropForLayer(odb::dbNet* net,
@@ -245,6 +263,80 @@ void PDNSim::inDbSWireRemoveSBox(odb::dbSBox*)
 void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
 {
   clearSolvers();
+}
+
+// Functions of decap cells
+void PDNSim::addDecapMaster(dbMaster* decap_master, double decap_cap)
+{
+  opendp_->addDecapMaster(decap_master, decap_cap);
+}
+// Return the lowest layer of db_net route
+odb::dbTechLayer* PDNSim::getLowestLayer(odb::dbNet* db_net)
+{
+  int min_layer_level = std::numeric_limits<int>::max();
+  std::vector<odb::dbShape> via_boxes;
+  for (odb::dbSWire* swire : db_net->getSWires()) {
+    for (odb::dbSBox* s : swire->getWires()) {
+      if (!s->isVia()) {
+        odb::dbTechLayer* tech_layer = s->getTechLayer();
+        min_layer_level
+            = std::min(min_layer_level, tech_layer->getRoutingLevel());
+      }
+    }
+  }
+  return db_->getTech()->findRoutingLayer(min_layer_level);
+}
+
+odb::dbNet* PDNSim::findPowerNet(const char* net_name)
+{
+  dbBlock* block = db_->getChip()->getBlock();
+  odb::dbNet* power_net = nullptr;
+  // If net name is defined by user
+  if (!std::string(net_name).empty()) {
+    power_net = block->findNet(net_name);
+    if (power_net == nullptr) {
+      logger_->error(
+          utl::PSM, 48, "Cannot find net {} in the design.", net_name);
+    }
+    // Check if net is supply
+    if (!power_net->getSigType().isSupply()) {
+      logger_->error(
+          utl::PSM, 47, "{} is not a supply net.", power_net->getName());
+    }
+    return power_net;
+  }
+  // Otherwise find power net
+  for (auto db_net : block->getNets()) {
+    if (db_net->getSigType().isSupply()
+        && db_net->getSigType() == dbSigType::POWER) {
+      power_net = db_net;
+      break;
+    }
+  }
+  return power_net;
+}
+
+void PDNSim::insertDecapCells(double target, const char* net_name)
+{
+  // Get db_net
+  odb::dbNet* db_net = findPowerNet(net_name);
+
+  // Get lowest layer
+  odb::dbTechLayer* tech_layer = getLowestLayer(db_net);
+
+  IRDropByPoint ir_drops;
+  getIRDropForLayer(db_net, tech_layer, ir_drops);
+
+  if (ir_drops.empty()) {
+    logger_->error(utl::PSM,
+                   93,
+                   "No IR drop data found. Run analyse_power_grid for net {} "
+                   "before inserting decap cells.",
+                   db_net->getName());
+  }
+
+  // call DPL to insert decap cells
+  opendp_->insertDecapCells(target, ir_drops);
 }
 
 }  // namespace psm

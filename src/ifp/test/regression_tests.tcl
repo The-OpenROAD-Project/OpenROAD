@@ -24,6 +24,8 @@ record_tests {
   tiecells
   upf_test
   upf_shifter_test
+  init_floorplan_even_rows
+  init_floorplan_odd_rows
   #ifp_man_tcl_check
   #ifp_readme_msgs_check
 }

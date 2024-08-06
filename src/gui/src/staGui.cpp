@@ -181,7 +181,13 @@ QVariant TimingPathsModel::headerData(int section,
         // to a header item that doesn't.
         return "";
       case Skew:
-        return "Path clock skew (crpr corrected)";
+        // A rather verbose tooltip, move some of this to a help/documentation
+        // file when one is introduced into OpenROAD. Meanwhile, this is the
+        // best that can be done.
+        return "The difference in arrival times between\n"
+               "source and destination clock pins of a macro/register,\n"
+               "adjusted for CRPR and subtracting a clock period.\n"
+               "Setup and hold times account for internal clock delays.";
       case LogicDelay:
         return "Path delay from instances (excluding buffers and consecutive "
                "inverter pairs)";
@@ -280,25 +286,27 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 void TimingPathsModel::populateModel(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(from, thru, to);
+  populatePaths(from, thru, to, path_group_name);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   const bool sta_max = sta_->isUseMax();
   sta_->setUseMax(is_setup_);
-  timing_paths_ = sta_->getTimingPaths(from, thru, to);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name);
   sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();

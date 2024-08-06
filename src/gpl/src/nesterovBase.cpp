@@ -826,6 +826,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
                      ? (gcell->dUx() - lx()) / binSizeX_
                      : (gcell->dUx() - lx()) / binSizeX_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
   return std::make_pair(lowerIdx, upperIdx);
 }
@@ -837,6 +838,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
                      ? (gcell->dUy() - ly()) / binSizeY_
                      : (gcell->dUy() - ly()) / binSizeY_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
   return std::make_pair(lowerIdx, upperIdx);
 }
@@ -1959,8 +1961,10 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
+  // TODO: This OpenMP parallel section is causing non-determinism. Consider
+  // revisiting this in the future to restore determinism.
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  // wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
     wireLengthGrads[i]

@@ -216,31 +216,31 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   bool isForbidden = false;
-  if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
+  if (dstMazeIdx1.z() == dstMazeIdx2.z() && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
-    if (layer->isUnidirectional()) {
+    if (!USENONPREFTRACKS || layer->isUnidirectional()) {
       bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-      if (isH) {
+      if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, false, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, false, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, false, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, false, gap, ndr_))) {
           isForbidden = true;
         }
-      } else {
+      } else if (!isH && dstMazeIdx1.x() == dstMazeIdx2.x()) {
         auto gap = abs(nextPoint.x() - dstPoint1.x());
         if (gap
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, false, false, true, gap, ndr_)
-                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-            && (getTech()->isVia2ViaForbiddenLen(
-                    gridZ, true, true, true, gap, ndr_)
-                || layerNum + 2 > getTech()->getTopLayerNum())) {
+            && (layerNum - 2 < BOTTOM_ROUTING_LAYER
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ - 1, false, false, true, gap, ndr_))
+            && (layerNum + 2 > getTech()->getTopLayerNum()
+                || getTech()->isVia2ViaForbiddenLen(
+                    gridZ + 1, true, true, true, gap, ndr_))) {
           isForbidden = true;
         }
       }
@@ -473,210 +473,23 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
       }
     }
   }
-
-  if (useNDRCosts(currGrid)) {
-    nextPathCost += getCostsNDR(gridX, gridY, gridZ, dir, currDir, layer);
-  } else {
-    nextPathCost += getCosts(gridX, gridY, gridZ, dir, layer);
-  }
+  nextPathCost
+      += getCosts(gridX, gridY, gridZ, dir, layer, useNDRCosts(currGrid));
 
   return nextPathCost;
-}
-
-frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
-                                   frMIdx gridY,
-                                   frMIdx gridZ,
-                                   frDirEnum dir,
-                                   frDirEnum prevDir,
-                                   frLayer* layer) const
-{
-  if ((dir == frDirEnum::U || dir == frDirEnum::D)) {
-    return getViaCostsNDR(gridX, gridY, gridZ, dir, prevDir, layer);
-  }
-  frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-  frCoord cost = el;
-  cost += (hasGridCost(gridX, gridY, gridZ, dir) ? GRIDCOST * el : 0);
-  cost += (!hasGuide(gridX, gridY, gridZ, dir) ? GUIDECOST * el : 0);
-  frMIdx startX, startY, endX, endY;
-  frCoord r, x1, x2, y1, y2;
-  frCoord sp, wext;
-  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  sp = std::max(
-      ndr_->getSpacing(gridZ),
-      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
-  wext = std::max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
-         - layer->getWidth() / 2;
-
-  // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
-  if (dir == frDirEnum::N || dir == frDirEnum::S) {
-    startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
-    endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
-    startY = endY = gridY;
-    y1 = y2 = yCoords_[startY];
-    if (prevDir == frDirEnum::UNKNOWN || prevDir != dir) {
-      if (dir == frDirEnum::N) {
-        startY
-            = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r - wext));
-      } else {
-        endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r + wext));
-      }
-    }
-    if (prevDir != frDirEnum::UNKNOWN) {
-      getNextGrid(gridX, gridY, gridZ, dir);
-      if (isDst(gridX, gridY, gridZ)) {
-        if (dir == frDirEnum::N) {
-          endY
-              = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r + wext));
-        } else {
-          startY
-              = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r - wext));
-        }
-      }
-      getPrevGrid(gridX, gridY, gridZ, dir);
-    }
-  } else {
-    startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
-    endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-    startX = endX = gridX;
-    x1 = x2 = xCoords_[startX];
-    if (prevDir == frDirEnum::UNKNOWN || prevDir != dir) {
-      if (dir == frDirEnum::E) {
-        startX
-            = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r - wext));
-      } else {
-        endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r + wext));
-      }
-    }
-    if (prevDir != frDirEnum::UNKNOWN) {
-      getNextGrid(gridX, gridY, gridZ, dir);
-      if (isDst(gridX, gridY, gridZ)) {
-        if (dir == frDirEnum::E) {
-          endX
-              = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r + wext));
-        } else {
-          startX
-              = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r - wext));
-        }
-      }
-      getPrevGrid(gridX, gridY, gridZ, dir);
-    }
-  }
-  if (xCoords_[startX] < x1) {
-    startX++;
-  }
-  if (xCoords_[endX] > x2) {
-    endX--;
-  }
-  if (yCoords_[startY] < y1) {
-    startY++;
-  }
-  if (yCoords_[endY] > y2) {
-    endY--;
-  }
-  // get costs
-  for (frMIdx x = startX; x <= endX; x++) {
-    for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
-                                                      : 0);
-      cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
-      cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
-      cost += (isBlocked(x, y, gridZ, dir)
-                   ? BLOCKCOST * layer->getMinWidth() * 20
-                   : 0);
-    }
-  }
-  return cost;
-}
-
-frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
-                                      frMIdx gridY,
-                                      frMIdx gridZ,
-                                      frDirEnum dir,
-                                      frDirEnum prevDir,
-                                      frLayer* layer) const
-{
-  if (ndr_->getPrefVia(dir == frDirEnum::U ? gridZ : gridZ - 1) == nullptr) {
-    return getCosts(gridX, gridY, gridZ, dir, layer);
-  }
-  frMIdx startX, startY, endX, endY;
-  frCoord x1, x2, y1, y2;
-  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  frCoord r, sp;
-  sp = std::max(
-      ndr_->getSpacing(gridZ),
-      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
-
-  // get iteration bounds
-  r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
-  frCoord el = getEdgeLength(gridX, gridY, gridZ, dir);
-  frCoord cost = el;
-
-  startX = getLowerBoundIndex(xCoords_, x1 = (xCoords_[gridX] - r));
-  endX = getUpperBoundIndex(xCoords_, x2 = (xCoords_[gridX] + r));
-  startY = getLowerBoundIndex(yCoords_, y1 = (yCoords_[gridY] - r));
-  endY = getUpperBoundIndex(yCoords_, y2 = (yCoords_[gridY] + r));
-  cost += (hasFixedShapeCostAdj(gridX, gridY, gridZ, dir)
-               ? ggFixedShapeCost_ * el
-               : 0);
-  cost
-      += (hasRouteShapeCostAdj(gridX, gridY, gridZ, dir) ? ggDRCCost_ * el : 0);
-  cost += (hasMarkerCostAdj(gridX, gridY, gridZ, dir) ? ggMarkerCost_ * el : 0);
-  cost += (isBlocked(gridX, gridY, gridZ, dir)
-               ? BLOCKCOST * layer->getMinWidth() * 20
-               : 0);
-  dir = frDirEnum::UNKNOWN;
-
-  if (xCoords_[startX] < x1) {
-    startX++;
-  }
-  if (xCoords_[endX] > x2) {
-    endX--;
-  }
-  if (yCoords_[startY] < y1) {
-    startY++;
-  }
-  if (yCoords_[endY] > y2) {
-    endY--;
-  }
-  switch (prevDir) {
-    case frDirEnum::N:
-      endY = gridY - 1;
-      break;
-    case frDirEnum::S:
-      startY = gridY + 1;
-      break;
-    case frDirEnum::E:
-      startX = gridX + 1;
-      break;
-    case frDirEnum::W:
-      endX = gridX - 1;
-      break;
-    default:
-      break;
-  }
-  // get costs
-  for (frMIdx x = startX; x <= endX; x++) {
-    for (frMIdx y = startY; y <= endY; y++) {
-      cost += (hasFixedShapeCostAdj(x, y, gridZ, dir) ? ggFixedShapeCost_ * el
-                                                      : 0);
-      cost += (hasRouteShapeCostAdj(x, y, gridZ, dir) ? ggDRCCost_ * el : 0);
-      cost += (hasMarkerCostAdj(x, y, gridZ, dir) ? ggMarkerCost_ * el : 0);
-    }
-  }
-  return cost;
 }
 
 frCost FlexGridGraph::getCosts(frMIdx gridX,
                                frMIdx gridY,
                                frMIdx gridZ,
                                frDirEnum dir,
-                               frLayer* layer) const
+                               frLayer* layer,
+                               bool considerNDR) const
 {
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
-  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir);
+  bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
   bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
-  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir);
+  bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
   bool blockCost = isBlocked(gridX, gridY, gridZ, dir);
   bool guideCost = hasGuide(gridX, gridY, gridZ, dir);
   frCoord edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);

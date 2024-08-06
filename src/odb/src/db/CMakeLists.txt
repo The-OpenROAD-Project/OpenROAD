@@ -85,6 +85,7 @@ add_library(db
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbBusPort.cpp
     dbDft.cpp
     dbGCellGrid.cpp
     dbGlobalConnect.cpp
@@ -120,6 +121,7 @@ add_library(db
     dbTechLayerEolKeepOutRule.cpp
     dbTechLayerForbiddenSpacingRule.cpp
     dbTechLayerKeepOutZoneRule.cpp
+    dbTechLayerMaxSpacingRule.cpp
     dbTechLayerMinCutRule.cpp
     dbTechLayerMinStepRule.cpp
     dbTechLayerSpacingEolRule.cpp
@@ -131,6 +133,7 @@ add_library(db
     dbGroupItr.cpp
     dbGroupModInstItr.cpp
     dbGuideItr.cpp
+    dbModuleBusPortModBTermItr.cpp
     dbModuleInstItr.cpp
     dbModuleModBTermItr.cpp
     dbModuleModInstItr.cpp
@@ -140,6 +143,7 @@ add_library(db
     dbModuleModNetItr.cpp
     dbModuleModNetModBTermItr.cpp
     dbModuleModNetModITermItr.cpp
+    dbModulePortItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     # Generator Code End cpp

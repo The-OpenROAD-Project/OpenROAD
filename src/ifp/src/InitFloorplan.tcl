@@ -39,12 +39,13 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
 					       [-additional_sites site_names]\
-					       [-site site_name]}
+					       [-site site_name]\
+					       [-row_parity NONE|ODD|EVEN]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -additional_sites} \
+	    -die_area -core_area -site -additional_sites -row_parity} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -60,6 +61,14 @@ proc initialize_floorplan { args } {
   if { [info exists keys(-additional_sites)] } {
     foreach sitename $keys(-additional_sites) {
       lappend additional_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set row_parity "NONE"
+  if {[info exists keys(-row_parity)]} {
+    set row_parity $keys(-row_parity)
+    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+      utl::error IFP 12 "-row_parity must be NONE, ODD or EVEN"
     }
   }
 
@@ -101,7 +110,8 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_left] \
       [ord::microns_to_dbu $core_sp_right] \
       $site \
-      $additional_sites
+      $additional_sites \
+      $row_parity
   } elseif {[info exists keys(-die_area)]} {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
@@ -132,7 +142,8 @@ proc initialize_floorplan { args } {
         [ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
         [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
         $site \
-        $additional_sites
+        $additional_sites \
+        $row_parity
     } else {
       utl::error IFP 17 "no -core_area specified."
     }

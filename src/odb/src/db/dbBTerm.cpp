@@ -76,6 +76,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _ext_id = 0;
   _name = nullptr;
   _sta_vertex_id = 0;
+  _constraint_region.mergeInit();
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -91,7 +92,8 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       _bpins(b._bpins),
       _ground_pin(b._ground_pin),
       _supply_pin(b._supply_pin),
-      _sta_vertex_id(0)
+      _sta_vertex_id(0),
+      _constraint_region(b._constraint_region)
 {
   if (b._name) {
     _name = strdup(b._name);
@@ -493,6 +495,10 @@ void dbBTerm::connect(dbNet* net_)
                             net->_name);
   }
 
+  if (bterm->_net) {
+    disconnect();
+  }
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -508,9 +514,6 @@ void dbBTerm::connect(dbNet* net_)
     block->_journal->endAction();
   }
 
-  if (bterm->_net) {
-    bterm->disconnectNet(bterm, block);
-  }
   bterm->connectNet(net, block);
 }
 
@@ -539,6 +542,7 @@ void dbBTerm::disconnect()
       block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
+      block->_journal->pushParam(net->getOID());
       block->_journal->endAction();
     }
 
@@ -927,19 +931,17 @@ void dbBTerm::staSetVertexId(uint32_t id)
   iterm->_sta_vertex_id = id;
 }
 
-void dbBTerm::setConstraintRegion(
-    const std::pair<Point, Point>& constraint_region)
+void dbBTerm::setConstraintRegion(const Rect& constraint_region)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_constraint_region = constraint_region;
 }
 
-std::optional<std::pair<Point, Point>> dbBTerm::getConstraintRegion()
+std::optional<Rect> dbBTerm::getConstraintRegion()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   const auto& constraint_region = bterm->_constraint_region;
-  if (constraint_region.first == Point(0, 0)
-      && constraint_region.second == Point(0, 0)) {
+  if (constraint_region.isInverted()) {
     return std::nullopt;
   }
 

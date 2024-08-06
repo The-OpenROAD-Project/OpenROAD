@@ -3677,7 +3677,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     }
     auto lNum = marker->getLayerNum();
     auto layer = tech_->getLayer(lNum);
-    if (!layer->hasVia2ViaMinStepViol()) {
+    if (!layer->hasVia2ViaMinStepViol()
+        && !tech_->getLayer(lNum - 1)->hasLef58MaxSpacingConstraints()
+        && !tech_->getLayer(lNum + 1)->hasLef58MaxSpacingConstraints()) {
       continue;
     }
 
@@ -3717,9 +3719,55 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
         } else {
           downViaFound = true;
         }
-        if (upViaFound && downViaFound) {
+        if (upViaFound && downViaFound && layer->hasVia2ViaMinStepViol()) {
           net = obj->getNet();
           origin = tmpOrigin;
+          break;
+        }
+        if (obj->isLonely() && getDRWorker()
+            && getDRWorker()->getRipupMode() == RipUpMode::VIASWAP) {
+          Rect enc_box;
+          if (obj->getViaDef()->getLayer1Num() == lNum) {
+            enc_box = obj->getLayer1BBox();
+          } else {
+            enc_box = obj->getLayer2BBox();
+          }
+          int min_step_length = 0;
+          if (layer->getMinStepConstraint()) {
+            min_step_length = layer->getMinStepConstraint()->getMinStepLength();
+          } else {
+            continue;
+          }
+          if (enc_box.getDir() == 1 && markerBBox.yMin() == enc_box.yMin()
+              && markerBBox.yMax() == enc_box.yMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dx());
+            if (markerBBox.xMin() >= enc_box.xMin()
+                && markerBBox.xMax() == enc_box.xMax()) {
+              markerBBox.set_xhi(markerBBox.xMax() + bloating_dist);
+            } else if (markerBBox.xMin() == enc_box.xMin()
+                       && markerBBox.xMax() <= enc_box.xMax()) {
+              markerBBox.set_xlo(markerBBox.xMin() - bloating_dist);
+            } else {
+              continue;
+            }
+          } else if (enc_box.getDir() == 0
+                     && markerBBox.xMin() == enc_box.xMin()
+                     && markerBBox.xMax() == enc_box.xMax()) {
+            int bloating_dist = std::max(0, min_step_length - markerBBox.dy());
+            if (markerBBox.yMin() >= enc_box.yMin()
+                && markerBBox.yMax() == enc_box.yMax()) {
+              markerBBox.set_yhi(markerBBox.yMax() + bloating_dist);
+            } else if (markerBBox.yMin() == enc_box.yMin()
+                       && markerBBox.yMax() <= enc_box.yMax()) {
+              markerBBox.set_ylo(markerBBox.yMin() - bloating_dist);
+            } else {
+              continue;
+            }
+          } else {
+            continue;
+          }
+          origin = tmpOrigin;
+          net = obj->getNet();
           break;
         }
       }

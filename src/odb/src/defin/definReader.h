@@ -88,11 +88,10 @@ class definReader : public definBase
   char left_bus_delimeter_;
   char right_bus_delimeter_;
 
-  void init();
+  void init() override;
   void setLibs(std::vector<dbLib*>& lib_names);
 
-  virtual void error(const char* msg);
-  virtual void line(int line_num);
+  void line(int line_num);
 
   void setTech(dbTech* tech);
   void setBlock(dbBlock* block);
@@ -194,8 +193,12 @@ class definReader : public definBase
                          defiRow* row,
                          defiUserData data);
 
-  static int scanchainsCallback(defrCallbackType_e type,
-                                int count,
+  static int scanchainsStartCallback(defrCallbackType_e type,
+                                     int count,
+                                     defiUserData data);
+
+  static int scanchainsCallback(defrCallbackType_e,
+                                LefDefParser::defiScanchain* scan_chain,
                                 defiUserData data);
 
   static int slotsCallback(defrCallbackType_e type,
@@ -246,7 +249,7 @@ class definReader : public definBase
   definReader(dbDatabase* db,
               utl::Logger* logger,
               defin::MODE mode = defin::DEFAULT);
-  virtual ~definReader();
+  ~definReader() override;
 
   void skipConnections();
   void skipWires();
@@ -258,6 +261,7 @@ class definReader : public definBase
   void useBlockName(const char* name);
   void namesAreDBIDs();
   void setAssemblyMode();
+  void error(std::string_view msg);
 
   dbChip* createChip(std::vector<dbLib*>& search_libs,
                      const char* def_file,

@@ -52,14 +52,6 @@
 
 namespace psm {
 
-struct ODBCompare
-{
-  bool operator()(odb::dbObject* lhs, odb::dbObject* rhs) const
-  {
-    return lhs->getId() < rhs->getId();
-  }
-};
-
 IRSolver::IRSolver(
     odb::dbNet* net,
     bool floorplanning,
@@ -1331,7 +1323,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
            << '\n';
   }
 
-  std::set<odb::dbInst*, ODBCompare> insts;
+  std::set<odb::dbInst*> insts;
   for (const auto& node : results.unconnected_iterms_) {
     insts.insert(node->getITerm()->getInst());
   }

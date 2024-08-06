@@ -147,13 +147,6 @@ replace_incremental_place_cmd()
 }
 
 
-void
-set_force_cpu(bool force_cpu)
-{
-  Replace* replace = getReplace();
-  replace->setForceCPU(force_cpu);
-}
-
 void set_timing_driven_mode(bool timing_driven)
 {
   Replace* replace = getReplace();

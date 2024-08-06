@@ -212,6 +212,8 @@ class PdnGen
                          std::vector<int> metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
+  PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }
+
  private:
   void trimShapes();
   void updateVias();

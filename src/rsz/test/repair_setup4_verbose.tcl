@@ -11,8 +11,9 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-report_worst_slack -max
+report_worst_slack -max -digits 3
 write_verilog_for_eqy repair_setup4_verbose before "None"
 repair_timing -verbose -setup
 run_equivalence_test repair_setup4_verbose ./Nangate45/work_around_yosys/ "None"
-report_worst_slack -max
+report_worst_slack -max -digits 3
+

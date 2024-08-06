@@ -50,6 +50,7 @@ class frVia;
 class grBlockObject;
 class grShape;
 class grVia;
+class FlexDR;
 
 class frRegionQuery
 {
@@ -139,5 +140,8 @@ class frRegionQuery
   std::unique_ptr<Impl> impl_;
 
   frRegionQuery();
+  std::vector<std::pair<frBlockObject*, Rect>> getVias(frLayerNum layer_num);
+
+  friend class FlexDR;
 };
 }  // namespace drt

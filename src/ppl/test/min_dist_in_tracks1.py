@@ -8,10 +8,14 @@ tech.readLef("Nangate45/Nangate45.lef")
 design = Design(tech)
 design.readDef("gcd.def")
 
-ppl_aux.place_pins(design, hor_layers="metal3",
-                   ver_layers="metal2",
-                   corner_avoidance=0, min_distance=1,
-                   min_distance_in_tracks=True)
+ppl_aux.place_pins(
+    design,
+    hor_layers="metal3",
+    ver_layers="metal2",
+    corner_avoidance=0,
+    min_distance=1,
+    min_distance_in_tracks=True,
+)
 
 def_file = helpers.make_result_file("min_dist_in_tracks1.def")
 design.writeDef(def_file)

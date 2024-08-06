@@ -10,13 +10,15 @@ design.readDef("testcase/ispd18_sample/ispd18_sample.input.def")
 gr = design.getGlobalRouter()
 gr.readGuides("testcase/ispd18_sample/ispd18_sample.input.guide")
 
-drt_aux.detailed_route(design,
-                       output_drc="results/single_step.output.drc.rpt",
-                       output_maze="results/single_step.output.maze.log",
-                       verbose=0,
-                       single_step_dr=True)
+drt_aux.detailed_route(
+    design,
+    output_drc="results/single_step.output.drc.rpt",
+    output_maze="results/single_step.output.maze.log",
+    verbose=0,
+    single_step_dr=True,
+)
 
-drt_aux.step_dr(design, 7,  0, 3, 8, 0, 8, 0.95, 1, True)
+drt_aux.step_dr(design, 7, 0, 3, 8, 0, 8, 0.95, 1, True)
 drt_aux.step_dr(design, 7, -2, 3, 8, 8, 8, 0.95, 1, True)
 drt_aux.step_dr(design, 7, -5, 3, 8, 8, 8, 0.95, 1, True)
 drt_aux.step_end(design)

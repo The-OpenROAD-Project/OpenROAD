@@ -18,8 +18,9 @@ design.evalTclString("source sky130hs/sky130hs.rc")
 
 rcx_aux.define_process_corner(ext_model_index=0, filename="X")
 
-rcx_aux.extract_parasitics(ext_model_file="ext_pattern.rules", max_res=0,
-                           coupling_threshold=0.1)
+rcx_aux.extract_parasitics(
+    ext_model_file="ext_pattern.rules", max_res=0, coupling_threshold=0.1
+)
 
 spef_file = helpers.make_result_file("gcd.spef")
 rcx_aux.write_spef(filename=spef_file, nets=test_nets)
