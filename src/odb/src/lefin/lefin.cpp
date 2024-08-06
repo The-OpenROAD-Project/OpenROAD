@@ -1420,14 +1420,14 @@ void lefin::obstruction(lefiObstruction* obs)
     addGeoms(_master, false, geometries);
     dbSet<dbPolygon> poly_obstructions = _master->getPolygonObstructions();
 
-    // Reverse the stored order, too match the created order.
+    // Reverse the stored order to match the created order.
     if (poly_obstructions.reversible() && poly_obstructions.orderReversed()) {
       poly_obstructions.reverse();
     }
 
     dbSet<dbBox> obstructions = _master->getObstructions();
 
-    // Reverse the stored order, too match the created order.
+    // Reverse the stored order to match the created order.
     if (obstructions.reversible() && obstructions.orderReversed())
       obstructions.reverse();
   }
@@ -1913,7 +1913,7 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
     }
 
     dbSet<dbBox> boxes = v->getBoxes();
-    // Reverse the stored order, too match the created order.
+    // Reverse the stored order to match the created order.
     if (boxes.reversible() && boxes.orderReversed())
       boxes.reverse();
   }

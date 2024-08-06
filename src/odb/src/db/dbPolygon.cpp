@@ -282,7 +282,7 @@ void _dbPolygon::decompose()
   dbPolygon* pbox = (dbPolygon*) this;
   dbSet<dbBox> geoms = pbox->getGeometry();
 
-  // Reverse the stored order, too match the created order.
+  // Reverse the stored order to match the created order.
   if (geoms.reversible() && geoms.orderReversed()) {
     geoms.reverse();
   }
