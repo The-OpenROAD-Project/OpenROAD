@@ -143,6 +143,7 @@ void ScriptWidget::flushReportBufferToOutput()
     return;
   }
 
+  std::lock_guard guard(reporting_);
   // this comes from a ->report
   addTextToOutput(report_buffer_, buffer_msg_);
   report_buffer_.clear();

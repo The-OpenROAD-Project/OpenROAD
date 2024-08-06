@@ -147,6 +147,7 @@ class ScriptWidget : public QDockWidget
   template <typename Mutex>
   class GuiSink;
   std::shared_ptr<spdlog::sinks::sink> sink_;
+  std::mutex reporting_;
   QString report_buffer_;
 
   // maximum number of character to display in a log line
