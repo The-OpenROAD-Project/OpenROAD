@@ -1209,9 +1209,9 @@ void HTreeBuilder::run()
   // clang-format on
 }
 
- bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
+bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
 {
-  if(options_->getMaxFanout()) {
+  if (options_->getMaxFanout()) {
     return numSinksPerSubRegion < options_->getMaxFanout();
   }
   return numSinksPerSubRegion < numMaxLeafSinks_;
@@ -1704,9 +1704,10 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   means.emplace_back(branchPt1.getX(), branchPt1.getY());
   means.emplace_back(branchPt2.getX(), branchPt2.getY());
 
-  const unsigned cap = options_->getMaxFanout() ?
-      (unsigned) (sinks.size() * 0.5):
-      (unsigned) (sinks.size() * options_->getClusteringCapacity());
+  const unsigned cap
+      = options_->getMaxFanout()
+            ? (unsigned) (sinks.size() * 0.5)
+            : (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
       1, means.size(), cap, 5, options_->getClusteringPower(), means);
 

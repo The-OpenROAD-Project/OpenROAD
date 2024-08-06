@@ -151,7 +151,8 @@ class CtsOptions
     clusteringCapacity_ = capacity;
   }
 
-  void setMaxFanout(unsigned maxFanout) {
+  void setMaxFanout(unsigned maxFanout)
+  {
     setSinkClusteringSize(maxFanout);
     maxFanout_ = maxFanout;
   }
