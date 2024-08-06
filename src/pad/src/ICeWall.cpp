@@ -1426,10 +1426,6 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
 
 void ICeWall::routeRDLDebugGUI(bool enable)
 {
-  if (router_ == nullptr) {
-    return;
-  }
-
   if (enable) {
     if (router_gui_ == nullptr) {
       router_gui_ = std::make_unique<RDLGui>();
@@ -1439,7 +1435,10 @@ void ICeWall::routeRDLDebugGUI(bool enable)
     }
     gui::Gui::get()->registerRenderer(router_gui_.get());
   } else {
-    gui::Gui::get()->unregisterRenderer(router_gui_.get());
+    if (router_gui_ != nullptr) {
+      gui::Gui::get()->unregisterRenderer(router_gui_.get());
+      router_gui_ = nullptr;
+    }
   }
 }
 
