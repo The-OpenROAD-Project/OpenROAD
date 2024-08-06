@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbModuleModBTermItr.h"
+#include "dbModuleBusPortModBTermItr.h"
 
 #include "dbBusPort.h"
 #include "dbModBTerm.h"
@@ -42,79 +42,71 @@ namespace odb {
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbModuleModBTermItr - Methods
+// dbModuleBusPortModBTermItr - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModBTermItr::reversible()
+bool dbModuleBusPortModBTermItr::reversible()
 {
   return true;
 }
 
-bool dbModuleModBTermItr::orderReversed()
+bool dbModuleBusPortModBTermItr::orderReversed()
 {
   return true;
 }
 
-void dbModuleModBTermItr::reverse(dbObject* parent)
+void dbModuleBusPortModBTermItr::reverse(dbObject* parent)
 {
-  // User Code Begin reverse
-  _dbModule* module = (_dbModule*) parent;
-  uint next = module->_modbterms;
-  uint prev = 0;
-  uint list = 0;
-  while (next != 0) {
-    list = next;
-    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(next);
-    next = modbterm->_next_entry;
-    modbterm->_next_entry = prev;
-    prev = list;
-  }
-  module->_modbterms = list;
-  // User Code End reverse
 }
 
-uint dbModuleModBTermItr::sequential()
+uint dbModuleBusPortModBTermItr::sequential()
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::size(dbObject* parent)
+uint dbModuleBusPortModBTermItr::size(dbObject* parent)
 {
   uint id;
   uint cnt = 0;
 
-  for (id = dbModuleModBTermItr::begin(parent);
-       id != dbModuleModBTermItr::end(parent);
-       id = dbModuleModBTermItr::next(id)) {
+  for (id = dbModuleBusPortModBTermItr::begin(parent);
+       id != dbModuleBusPortModBTermItr::end(parent);
+       id = dbModuleBusPortModBTermItr::next(id)) {
     ++cnt;
   }
 
   return cnt;
 }
 
-uint dbModuleModBTermItr::begin(dbObject* parent)
+uint dbModuleBusPortModBTermItr::begin(dbObject* parent)
 {
   // User Code Begin begin
-  _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
+  _dbBusPort* _busport = (_dbBusPort*) parent;
+  _iter = _modbterm_tbl->getPtr(_busport->_members);
+  _size = abs(_busport->_from - _busport->_to) + 1;
+  _ix = 0;
+  return _busport->_members;
   // User Code End begin
 }
 
-uint dbModuleModBTermItr::end(dbObject* /* unused: parent */)
+uint dbModuleBusPortModBTermItr::end(dbObject* /* unused: parent */)
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::next(uint id, ...)
+uint dbModuleBusPortModBTermItr::next(uint id, ...)
 {
   // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  return modbterm->_next_entry;
+  _dbModBTerm* lmodbterm = _modbterm_tbl->getPtr(id);
+  _ix++;
+  uint ret = lmodbterm->_next_entry;
+  _iter = _modbterm_tbl->getPtr(ret);
+  return ret;
   // User Code End next
 }
 
-dbObject* dbModuleModBTermItr::getObject(uint id, ...)
+dbObject* dbModuleBusPortModBTermItr::getObject(uint id, ...)
 {
   return _modbterm_tbl->getPtr(id);
 }

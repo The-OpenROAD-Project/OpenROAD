@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,11 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbVector.h"
-#include "odb/dbSet.h"
 #include "odb/odb.h"
+
 // User Code Begin Includes
-#include "dbHashTable.h"
-#include "dbModulePortItr.h"
+#include "dbModuleBusPortModBTermItr.h"
+#include "dbVector.h"
 // User Code End Includes
 
 namespace odb {
@@ -47,45 +46,39 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbInst;
-class _dbModInst;
-class _dbModNet;
 class _dbModBTerm;
+class _dbModule;
 
-class _dbModule : public _dbObject
+class _dbBusPort : public _dbObject
 {
  public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
+  _dbBusPort(_dbDatabase*, const _dbBusPort& r);
+  _dbBusPort(_dbDatabase*);
 
-  ~_dbModule();
+  ~_dbBusPort();
 
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
+  bool operator==(const _dbBusPort& rhs) const;
+  bool operator!=(const _dbBusPort& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbBusPort& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbBusPort& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
 
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
-
-  // User Code End Methods
-
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  uint _flags;
+  int _from;
+  int _to;
+  dbId<_dbModBTerm> _port;
+  dbId<_dbModBTerm> _members;
+  dbId<_dbModBTerm> _last;
+  dbId<_dbModule> _parent;
 
   // User Code Begin Fields
-  // custom iterator for traversing ports
-  dbModulePortItr* _port_iter = nullptr;
+  dbModuleBusPortModBTermItr* _members_iter = nullptr;
+  int size() { return abs(_from - _to) + 1; }
   // User Code End Fields
 };
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj);
 }  // namespace odb
    // Generator Code End Header

@@ -121,6 +121,9 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
     Nesterov
   };
 
+  void drawForce(gui::Painter& painter);
+  void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
+
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
