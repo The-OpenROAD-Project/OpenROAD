@@ -50,7 +50,8 @@ class frVia : public frRef
         owner_(in.owner_),
         tapered_(in.tapered_),
         bottomConnected_(in.bottomConnected_),
-        topConnected_(in.topConnected_)
+        topConnected_(in.topConnected_),
+        isLonely_(in.isLonely_)
   {
   }
   frVia(const drVia& in);
@@ -228,6 +229,8 @@ class frVia : public frRef
   void setTopConnected(bool c) { topConnected_ = c; }
   void setIndexInOwner(int idx) { index_in_owner_ = idx; }
   int getIndexInOwner() const { return index_in_owner_; }
+  void setIsLonely(bool in) { isLonely_ = in; }
+  bool isLonely() const { return isLonely_; }
 
  private:
   Point origin_;
@@ -238,6 +241,7 @@ class frVia : public frRef
   bool tapered_{false};
   bool bottomConnected_{false};
   bool topConnected_{false};
+  bool isLonely_{false};
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

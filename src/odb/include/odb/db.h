@@ -164,6 +164,7 @@ class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
 class dbTechLayerForbiddenSpacingRule;
 class dbTechLayerKeepOutZoneRule;
+class dbTechLayerMaxSpacingRule;
 class dbTechLayerMinCutRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
@@ -8053,6 +8054,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerEolKeepOutRule> getTechLayerEolKeepOutRules() const;
 
+  dbSet<dbTechLayerMaxSpacingRule> getTechLayerMaxSpacingRules() const;
+
   dbSet<dbTechLayerWidthTableRule> getTechLayerWidthTableRules() const;
 
   dbSet<dbTechLayerMinCutRule> getTechLayerMinCutRules() const;
@@ -8743,9 +8746,9 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   bool isEolOnly() const;
 
-  void setShortEdgeOnly(bool short_edge_only);
+  void setShortEdgeOnEol(bool short_edge_on_eol);
 
-  bool isShortEdgeOnly() const;
+  bool isShortEdgeOnEol() const;
 
   void setSideSpacingValid(bool side_spacing_valid);
 
@@ -9503,6 +9506,27 @@ class dbTechLayerKeepOutZoneRule : public dbObject
   static void destroy(dbTechLayerKeepOutZoneRule* rule);
 
   // User Code End dbTechLayerKeepOutZoneRule
+};
+
+class dbTechLayerMaxSpacingRule : public dbObject
+{
+ public:
+  void setCutClass(std::string cut_class);
+
+  std::string getCutClass() const;
+
+  void setMaxSpacing(int max_spacing);
+
+  int getMaxSpacing() const;
+
+  // User Code Begin dbTechLayerMaxSpacingRule
+  bool hasCutClass() const;
+
+  static dbTechLayerMaxSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerMaxSpacingRule* rule);
+
+  // User Code End dbTechLayerMaxSpacingRule
 };
 
 class dbTechLayerMinCutRule : public dbObject

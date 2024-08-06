@@ -230,6 +230,13 @@
     },
     {
       "first":"dbTechLayer",
+      "second":"dbTechLayerMaxSpacingRule",
+      "type":"1_n",
+      "tbl_name":"max_spacing_rules_tbl_",
+      "schema":"db_schema_max_spacing"
+    },
+    {
+      "first":"dbTechLayer",
       "second":"dbTechLayerWidthTableRule",
       "type":"1_n",
       "tbl_name":"width_table_rules_tbl_"

@@ -844,6 +844,16 @@ struct less<odb::dbTechLayerKeepOutZoneRule*>
 };
 
 template <>
+struct less<odb::dbTechLayerMaxSpacingRule*>
+{
+  bool operator()(const odb::dbTechLayerMaxSpacingRule* lhs,
+                  const odb::dbTechLayerMaxSpacingRule* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbTechLayerMinCutRule*>
 {
   bool operator()(const odb::dbTechLayerMinCutRule* lhs,

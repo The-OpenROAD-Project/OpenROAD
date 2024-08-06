@@ -70,7 +70,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 86;  // Current revision number
+const uint db_schema_minor = 87;  // Current revision number
+
+// Revision where _dbTechLayer::max_spacing_rules_tbl_ was added
+const uint db_schema_max_spacing = 87;
 
 // Revision where bus ports added to odb
 const uint db_schema_odb_busport = 86;

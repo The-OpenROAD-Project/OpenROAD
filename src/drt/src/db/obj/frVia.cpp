@@ -41,6 +41,7 @@ frVia::frVia(const drVia& in)
   setTapered(in.isTapered());
   setBottomConnected(in.isBottomConnected());
   setTopConnected(in.isTopConnected());
+  setIsLonely(in.isLonely());
 }
 
 template <class Archive>
