@@ -2034,6 +2034,12 @@ void FlexDRWorker::initNets(const frDesign* design)
   if (ENABLE_BOUNDARY_MAR_FIX) {
     initNets_boundaryArea();
   }
+  // fill ndrs_ for all nets in the worker
+  for (auto& net : nets) {
+    if (net->hasNDR()) {
+      ndrs_.emplace_back(net->getNondefaultRule());
+    }
+  }
 }
 
 void FlexDRWorker::initTrackCoords_route(
@@ -2810,6 +2816,19 @@ void FlexDRWorker::route_queue_init_queue(
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
     }
+  } else if (getRipupMode() == RipUpMode::VIASWAP) {
+    for (const auto& net : nets_) {
+      for (auto& connFig : net->getRouteConnFigs()) {
+        if (connFig->typeId() != drcVia) {
+          continue;
+        }
+        auto via = static_cast<drVia*>(connFig.get());
+        if (via->isLonely()) {
+          checks.emplace_back(net.get(), 0, false, net.get());
+        }
+      }
+    }
+    mazeIterInit_sortRerouteQueue(0, checks);
   } else {
     std::cout << "Error: unsupported ripup mode\n";
   }

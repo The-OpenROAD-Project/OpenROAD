@@ -338,6 +338,18 @@ dbDiff& dbDiff::operator<<(const Oct& o)
   return *this;
 }
 
+dbDiff& dbDiff::operator<<(const Polygon& p)
+{
+  if (_f) {
+    for (const Point& pt : p.getPoints()) {
+      fprintf(_f, "[( %d %d )]", pt.getX(), pt.getY());
+    }
+  }
+
+  _has_differences = true;
+  return *this;
+}
+
 void dbDiff::diff(const char* field, bool lhs, bool rhs)
 {
   if (lhs != rhs) {
@@ -482,6 +494,18 @@ void dbDiff::diff(const char* field, Rect lhs, Rect rhs)
   }
 }
 void dbDiff::diff(const char* field, Oct lhs, Oct rhs)
+{
+  if (lhs != rhs) {
+    report("< %s: ", field);
+    (*this) << lhs;
+    (*this) << "\n";
+    report("> %s: ", field);
+    (*this) << rhs;
+    (*this) << "\n";
+  }
+}
+
+void dbDiff::diff(const char* field, const Polygon& lhs, const Polygon& rhs)
 {
   if (lhs != rhs) {
     report("< %s: ", field);
@@ -808,6 +832,13 @@ void dbDiff::out(char side, const char* field, Rect value)
   (*this) << "\n";
 }
 void dbDiff::out(char side, const char* field, Oct value)
+{
+  report("%c %s: ", side, field);
+  (*this) << (value);
+  (*this) << "\n";
+}
+
+void dbDiff::out(char side, const char* field, const Polygon& value)
 {
   report("%c %s: ", side, field);
   (*this) << (value);

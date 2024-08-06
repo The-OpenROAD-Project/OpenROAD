@@ -36,7 +36,6 @@
 #pragma once
 
 #include <limits>
-#include <memory>
 #include <string>
 
 #include "Mpl2Observer.h"
@@ -239,9 +238,9 @@ class HierRTLMP
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
-  std::unique_ptr<ClusteringEngine> clustering_engine_;
+  std::unique_ptr<PhysicalHierarchy> tree_;
 
-  PhysicalHierarchy tree_;
+  std::unique_ptr<ClusteringEngine> clustering_engine_;
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
@@ -252,9 +251,6 @@ class HierRTLMP
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
-
-  int num_updated_macros_ = 0;
-  int num_hard_macros_cluster_ = 0;
 
   // Parameters related to macro placement
   std::string report_directory_;

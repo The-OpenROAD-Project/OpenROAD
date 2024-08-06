@@ -36,6 +36,7 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QShortcut>
 #include <QToolBar>
 #include <memory>
 
@@ -265,6 +266,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
                                  const std::string& path_group_name);
 #endif
+  void enableDeveloper();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -336,11 +338,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* show_poly_decomp_view_;
   QAction* default_ruler_style_;
   QAction* default_mouse_wheel_zoom_;
   QAction* arrow_keys_scroll_step_dialog_;
   QAction* font_;
   QAction* global_connect_;
+
+  QShortcut* enable_developer_mode_;
 
   QLabel* location_;
 

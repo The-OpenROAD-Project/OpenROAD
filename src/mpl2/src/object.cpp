@@ -643,15 +643,12 @@ bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
   return false;
 }
 
-//
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-//
-// candidate_clusters are small clusters that need to be merged,
-// any cluster not in candidate_clusters is a well-formed cluster
-//
+// Candidate clusters always need to be merged.
+// A non candidate cluster is a well-formed cluster.
 int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
                              float net_threshold)
 {
@@ -756,9 +753,10 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
 }
 
 // Macro Placement Support
-void Cluster::setSoftMacro(SoftMacro* soft_macro)
+void Cluster::setSoftMacro(std::unique_ptr<SoftMacro> soft_macro)
 {
-  soft_macro_.reset(soft_macro);
+  soft_macro_.reset();
+  soft_macro_ = std::move(soft_macro);
 }
 
 SoftMacro* Cluster::getSoftMacro() const

@@ -1,0 +1,56 @@
+{
+  "name":"dbPolygon",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name": "owner_type_",
+      "type": "uint",
+      "bits": 4,
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "layer_id_",
+      "type": "uint",
+      "bits": 9,
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name":"polygon_",
+      "type":"Polygon",
+      "flags":["no-set"]
+    },
+    {
+      "name":"design_rule_width_",
+      "type":"int",
+      "flags":["no-set"]
+    },
+    {
+      "name": "owner_",
+      "type": "uint",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "next_pbox_",
+      "type": "dbId<_dbPolygon>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "boxes_",
+      "type": "dbId<_dbBox>",
+      "flags": [
+        "private"
+      ]
+    }
+  ],
+  "h_includes": [
+    "odb/geom.h"
+  ]
+}
