@@ -239,6 +239,7 @@ void ScriptWidget::startReportTimer()
 
 void ScriptWidget::addMsgToReportBuffer(const QString& text)
 {
+  std::lock_guard guard(reporting_);
   report_buffer_ += text;
 }
 
@@ -414,12 +415,12 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
+      widget_->addMsgToReportBuffer(formatted_msg);
+
       if (QThread::currentThread() == widget_->thread()) {
         if (!widget_->report_timer_->isActive()) {
           widget_->startReportTimer();
         }
-
-        widget_->addMsgToReportBuffer(formatted_msg);
 
         // the event loop is blocked so we need to manually process
         // events so that the timer keeps going
