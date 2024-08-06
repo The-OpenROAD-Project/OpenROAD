@@ -1675,7 +1675,7 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
         inst_xfm.apply(poly);
         painter.drawPolygon(poly);
       }
-      for (auto box : mpin->getNonPolygonGeometry()) {
+      for (auto box : mpin->getGeometry(false)) {
         odb::Rect rect = box->getBox();
         inst_xfm.apply(rect);
         painter.drawRect(rect);
@@ -1917,7 +1917,7 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
       for (auto box : mpin->getPolygonGeometry()) {
         mterm_polys.push_back(box->getPolygon());
       }
-      for (auto box : mpin->getNonPolygonGeometry()) {
+      for (auto box : mpin->getGeometry(false)) {
         mterm_polys.emplace_back(box->getBox());
       }
     }

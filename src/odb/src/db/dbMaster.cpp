@@ -625,22 +625,19 @@ dbLib* dbMaster::getLib()
   return (dbLib*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMaster::getObstructions()
+dbSet<dbBox> dbMaster::getObstructions(bool include_decomposed_polygons)
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbBox>(master, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(master, master->_box_itr);
+  }
+  return dbSet<dbBox>(master, master->_pbox_box_itr);
 }
 
 dbSet<dbPolygon> dbMaster::getPolygonObstructions()
 {
   _dbMaster* master = (_dbMaster*) this;
   return dbSet<dbPolygon>(master, master->_pbox_itr);
-}
-
-dbSet<dbBox> dbMaster::getNonPolygonObstructions()
-{
-  _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbBox>(master, master->_pbox_box_itr);
 }
 
 bool dbMaster::isFrozen()

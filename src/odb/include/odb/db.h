@@ -5606,17 +5606,12 @@ class dbMaster : public dbObject
   ///
   /// Get the obstructions of this master
   ///
-  dbSet<dbBox> getObstructions();
+  dbSet<dbBox> getObstructions(bool include_decomposed_polygons = true);
 
   ///
   /// Get the polygon obstructions of this master
   ///
   dbSet<dbPolygon> getPolygonObstructions();
-
-  ///
-  /// Get the non-polygon obstructions of this master
-  ///
-  dbSet<dbBox> getNonPolygonObstructions();
 
   ///
   /// Get the placement bounding box of this master.
@@ -5846,17 +5841,12 @@ class dbMPin : public dbObject
   ///
   /// Get the geometry of this pin.
   ///
-  dbSet<dbBox> getGeometry();
+  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true);
 
   ///
   /// Get the polygon geometry of this pin.
   ///
   dbSet<dbPolygon> getPolygonGeometry();
-
-  ///
-  /// Get the non-polygon geometry of this pin.
-  ///
-  dbSet<dbBox> getNonPolygonGeometry();
 
   ///
   /// Get bbox of this pin (ie the bbox of getGeometry())

@@ -152,11 +152,14 @@ dbMaster* dbMPin::getMaster()
   return (dbMaster*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMPin::getGeometry()
+dbSet<dbBox> dbMPin::getGeometry(bool include_decomposed_polygons)
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return dbSet<dbBox>(pin, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(pin, master->_box_itr);
+  }
+  return dbSet<dbBox>(pin, master->_pbox_box_itr);
 }
 
 dbSet<dbPolygon> dbMPin::getPolygonGeometry()
@@ -164,13 +167,6 @@ dbSet<dbPolygon> dbMPin::getPolygonGeometry()
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   return dbSet<dbPolygon>(pin, master->_pbox_itr);
-}
-
-dbSet<dbBox> dbMPin::getNonPolygonGeometry()
-{
-  _dbMPin* pin = (_dbMPin*) this;
-  _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return dbSet<dbBox>(pin, master->_pbox_box_itr);
 }
 
 Rect dbMPin::getBBox()

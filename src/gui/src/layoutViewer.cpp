@@ -1346,7 +1346,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
       dbTechLayer* layer = box->getTechLayer();
       boxes[layer].obs.emplace_back(pbox_to_qpolygon(box));
     }
-    for (dbBox* box : master->getNonPolygonObstructions()) {
+    for (dbBox* box : master->getObstructions(false)) {
       dbTechLayer* layer = box->getTechLayer();
       boxes[layer].obs.emplace_back(box_to_qpolygon(box));
     }
@@ -1365,7 +1365,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
           dbTechLayer* layer = box->getTechLayer();
           boxes[layer].mterms.emplace_back(pbox_to_qpolygon(box));
         }
-        for (dbBox* box : mpin->getNonPolygonGeometry()) {
+        for (dbBox* box : mpin->getGeometry(false)) {
           dbTechLayer* layer = box->getTechLayer();
           boxes[layer].mterms.emplace_back(box_to_qpolygon(box));
         }
