@@ -2264,7 +2264,7 @@ void GlobalRouter::readSegments(const char* file_name)
   }
 }
 
-// Checks if segment is a line, i.e. only varies in one dimension 
+// Checks if segment is a line, i.e. only varies in one dimension
 // (vias are lines)
 bool GlobalRouter::segmentIsLine(const GSegment& segment)
 {
