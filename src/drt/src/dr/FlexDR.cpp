@@ -1339,7 +1339,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
     return lonely_vias;
   }
   auto vias = getRegionQuery()->getVias(layer->getLayerNum());
-  std::vector<std::pair<int, int>> via_positions;
+  std::vector<Point> via_positions;
   via_positions.reserve(vias.size());
   for (auto [obj, box] : vias) {
     via_positions.emplace_back(box.xCenter(), box.yCenter());
