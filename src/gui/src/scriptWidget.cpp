@@ -110,6 +110,10 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::commandExecuted);
+  connect(input_,
+          &TclCmdInputWidget::commandFinishedExecuting,
+          this,
+          &ScriptWidget::flushReportBufferToOuput);
   connect(output_,
           &QPlainTextEdit::textChanged,
           this,
