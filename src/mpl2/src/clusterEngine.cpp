@@ -1545,11 +1545,16 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 
           if (small_children[i]->isSameConnSignature(
                   *small_children[j], tree_->min_net_count_for_connection)) {
-            /*
-              Guaranteed merge.
-            */
             if (attemptMerge(small_children[i], small_children[j])) {
               cluster_class[j] = i;
+            } else {
+              logger_->critical(
+                  MPL,
+                  23,
+                  "Merge attempt between siblings {} and {} with same "
+                  "connection signature failed!",
+                  small_children[i]->getName(),
+                  small_children[j]->getName());
             }
           }
         }
@@ -1568,11 +1573,16 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
                 || small_children[j]->getNumStdCell() > dust_cluster_std_cell) {
               continue;
             }
-            /*
-              Guaranteed merge.
-            */
+
             if (attemptMerge(small_children[i], small_children[j])) {
               cluster_class[j] = i;
+            } else {
+              logger_->critical(
+                  MPL,
+                  24,
+                  "Merge attempt between dust siblings {} and {} failed!",
+                  small_children[i]->getName(),
+                  small_children[j]->getName());
             }
           }
         }
@@ -1996,12 +2006,15 @@ void ClusteringEngine::groupSingleMacroClusters(
                      "Merging interconnected macro clusters {} and {}",
                      macro_clusters[j]->getId(),
                      macro_clusters[i]->getId());
-
-          /*
-            Guaranteed merge.
-          */
           if (attemptMerge(macro_clusters[i], macro_clusters[j])) {
             macro_class[j] = i;
+          } else {
+            logger_->critical(MPL,
+                              28,
+                              "Merge attempt between interconnected macro "
+                              "siblings {} and {} failed!",
+                              macro_clusters[i]->getName(),
+                              macro_clusters[j]->getName());
           }
         } else {
           // We need this so we can distinguish arrays of interconnected macros
@@ -2015,11 +2028,16 @@ void ClusteringEngine::groupSingleMacroClusters(
                        "Merging same signature clusters {} and {}.",
                        macro_clusters[j]->getId(),
                        macro_clusters[i]->getId());
-            /*
-              Guaranteed merge.
-            */
             if (attemptMerge(macro_clusters[i], macro_clusters[j])) {
               macro_class[j] = i;
+            } else {
+              logger_->critical(
+                  MPL,
+                  29,
+                  "Merge attempt between macro siblings {} and {} with "
+                  "same connection signature failed!",
+                  macro_clusters[i]->getName(),
+                  macro_clusters[j]->getName());
             }
           }
         }
