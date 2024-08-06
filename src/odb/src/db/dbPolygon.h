@@ -42,7 +42,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbPolygon;
 class _dbBox;
 
 struct dbPolygonFlags
