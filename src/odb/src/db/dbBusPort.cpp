@@ -302,27 +302,6 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index)
   return nullptr;
 }
 
-void dbBusPort::setFirstMember(dbModBTerm* modbterm)
-{
-  if (modbterm) {
-    _dbBusPort* obj = (_dbBusPort*) this;
-    _dbModBTerm* mbt = (_dbModBTerm*) modbterm;
-    obj->_members = mbt->getId();
-  }
-}
-
-dbModBTerm* dbBusPort::getFirstMember()
-{
-  _dbBusPort* obj = (_dbBusPort*) this;
-  _dbBlock* block = (_dbBlock*) obj->getOwner();
-  if (obj->_members != 0) {
-    dbModBTerm* ret
-        = (dbModBTerm*) (block->_modbterm_tbl->getPtr(obj->_members));
-    return ret;
-  }
-  return nullptr;
-}
-
 int dbBusPort::getSize() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;

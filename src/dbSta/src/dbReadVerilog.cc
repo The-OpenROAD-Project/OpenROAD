@@ -402,7 +402,7 @@ void Verilog2db::makeDbModule(
             dbModBTerm* modbterm
                 = dbModBTerm::create(module, bus_bit_port.c_str());
             if (i == 0) {
-              dbbusport->setFirstMember(modbterm);
+              dbbusport->setMembers(modbterm);
             }
             if (i == size - 1) {
               dbbusport->setLast(modbterm);
