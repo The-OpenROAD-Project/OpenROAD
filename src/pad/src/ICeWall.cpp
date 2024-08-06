@@ -207,7 +207,7 @@ void ICeWall::assignBump(odb::dbInst* inst,
   const odb::dbTransform xform = inst->getTransform();
 
   odb::dbTechLayer* top_layer = nullptr;
-  odb::Rect top_shape;
+  std::set<odb::Rect> top_shapes;
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
@@ -246,15 +246,35 @@ void ICeWall::assignBump(odb::dbInst* inst,
         }
 
         if (top_layer == nullptr
-            || top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
           top_layer = layer;
-          top_shape = geom->getBox();
+          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            top_shapes.clear();
+          }
+          top_shapes.insert(geom->getBox());
         }
       }
     }
   }
 
   if (top_layer != nullptr) {
+    odb::Rect master_box;
+    inst->getMaster()->getPlacementBoundary(master_box);
+    const odb::Point center(master_box.xCenter(), master_box.yCenter());
+
+    const odb::Rect* top_shape_ptr = nullptr;
+    for (const odb::Rect& shape : top_shapes) {
+      if (shape.intersects(center)) {
+        top_shape_ptr = &shape;
+      }
+    }
+
+    if (top_shape_ptr == nullptr) {
+      top_shape_ptr = &(*top_shapes.begin());
+    }
+
+    odb::Rect top_shape = *top_shape_ptr;
+
     xform.apply(top_shape);
     makeBTerm(net, top_layer, top_shape);
   }

@@ -1123,23 +1123,25 @@ int64_t RDLRouter::distance(const odb::Point& p0, const odb::Point& p1)
   return std::sqrt(dx * dx + dy * dy);
 }
 
+odb::dbTechLayer* RDLRouter::getOtherLayer(odb::dbTechVia* via) const
+{
+  if (via != nullptr) {
+    if (via->getBottomLayer() != layer_) {
+      return via->getBottomLayer();
+    }
+    if (via->getTopLayer() != layer_) {
+      return via->getTopLayer();
+    }
+  }
+  return nullptr;
+}
+
 std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
     odb::dbNet* net) const
 {
   std::map<odb::Rect, std::pair<odb::dbITerm*, odb::dbTechLayer*>> terms;
-  auto get_other_layer = [this](odb::dbTechVia* via) -> odb::dbTechLayer* {
-    if (via != nullptr) {
-      if (via->getBottomLayer() != layer_) {
-        return via->getBottomLayer();
-      }
-      if (via->getTopLayer() != layer_) {
-        return via->getTopLayer();
-      }
-    }
-    return nullptr;
-  };
-  odb::dbTechLayer* bump_pin_layer = get_other_layer(bump_accessvia_);
-  odb::dbTechLayer* pad_pin_layer = get_other_layer(pad_accessvia_);
+  odb::dbTechLayer* bump_pin_layer = getOtherLayer(bump_accessvia_);
+  odb::dbTechLayer* pad_pin_layer = getOtherLayer(pad_accessvia_);
 
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
@@ -1216,9 +1218,13 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
     pairs.push_back({{shape0center, shape0, term0.first, term0.second},
                      {shape1center, shape1, term1.first, term1.second}});
   } else {
+    std::set<odb::dbInst*> used_instances;
     std::set<odb::Rect> used;
     for (const auto& [shape0, iterm0] : terms) {
       if (used.find(shape0) != used.end()) {
+        continue;
+      }
+      if (used_instances.find(iterm0.first->getInst()) != used_instances.end()) {
         continue;
       }
 
@@ -1255,6 +1261,9 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       odb::dbTechLayer* layer = iterm0.second;
       for (const auto& [shape1, iterm1] : terms) {
         if (used.find(shape1) != used.end() || shape0 == shape1) {
+          continue;
+        }
+        if (used_instances.find(iterm1.first->getInst()) != used_instances.end()) {
           continue;
         }
 
@@ -1297,8 +1306,10 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       }
 
       used.insert(shape0);
+      used_instances.insert(iterm0.first->getInst());
       if (!find_terminal) {
         used.insert(shape);
+        used_instances.insert(term->getInst());
       }
       pairs.push_back({{pt0, shape0, iterm0.first, iterm0.second},
                        {point, shape, term, layer}});

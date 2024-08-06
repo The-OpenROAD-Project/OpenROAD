@@ -177,6 +177,7 @@ class RDLRouter
                                          const RouteTarget& source);
 
   std::vector<TargetPair> generateRoutingPairs(odb::dbNet* net) const;
+  odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
 
   int getBloatFactor() const;
 
