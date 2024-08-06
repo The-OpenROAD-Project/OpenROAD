@@ -34,7 +34,7 @@ extensions = [
     "sphinx_copybutton",
     "myst_parser",
     "sphinxcontrib.mermaid",
-    "sphinx_tabs.tabs"
+    "sphinx_tabs.tabs",
 ]
 
 myst_enable_extensions = [
@@ -174,6 +174,7 @@ def setup(app):
 
     # also symlink readme
     import shutil
+
     if not os.path.exists("./main/README2.md"):
         shutil.copy("main/README.md", "main/README2.md")
 
