@@ -56,6 +56,11 @@ class frLayer
   void setWidth(frUInt4 widthIn) { width_ = widthIn; }
   void setMinWidth(frUInt4 minWidthIn) { minWidth_ = minWidthIn; }
   void setDefaultViaDef(frViaDef* in) { defaultViaDef_ = in; }
+  void addSecondaryViaDef(frViaDef* in) { secondaryViaDefs_.emplace_back(in); }
+  const std::vector<frViaDef*>& getSecondaryViaDefs() const
+  {
+    return secondaryViaDefs_;
+  }
   void addConstraint(frConstraint* consIn) { constraints_.push_back(consIn); }
   void addViaDef(frViaDef* viaDefIn) { viaDefs_.insert(viaDefIn); }
   void setHasVia2ViaMinStepViol(bool in) { hasMinStepViol_ = in; }
@@ -124,6 +129,10 @@ class frLayer
     return style;
   }
   frViaDef* getDefaultViaDef() const { return defaultViaDef_; }
+  frViaDef* getSecondaryViaDef(int idx) const
+  {
+    return secondaryViaDefs_.at(idx);
+  }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
   std::set<frViaDef*> getViaDefs() const { return viaDefs_; }
   dbTechLayerType getType() const
@@ -581,6 +590,22 @@ class frLayer
     return !lef58EolKeepOutConstraints_.empty();
   }
 
+  void addLef58MaxSpacingConstraint(frLef58MaxSpacingConstraint* in)
+  {
+    maxSpacingConstraints_.emplace_back(in);
+  }
+
+  const std::vector<frLef58MaxSpacingConstraint*>&
+  getLef58MaxSpacingConstraints() const
+  {
+    return maxSpacingConstraints_;
+  }
+
+  bool hasLef58MaxSpacingConstraints() const
+  {
+    return !maxSpacingConstraints_.empty();
+  }
+
   void addMetalWidthViaConstraint(frMetalWidthViaConstraint* in)
   {
     metalWidthViaConstraints_.push_back(in);
@@ -733,32 +758,45 @@ class frLayer
             lef58EncConstraints[cutClassIdx][con->getWidth()].push_back(con);
           };
     if (!con->isAboveOnly()) {
-      addToLef58EncConstraints(belowLef58EncConstraints_, con);
+      addToLef58EncConstraints(con->isEol() ? belowLef58EncEolConstraints_
+                                            : belowLef58EncConstraints_,
+                               con);
     }
     if (!con->isBelowOnly()) {
-      addToLef58EncConstraints(aboveLef58EncConstraints_, con);
+      addToLef58EncConstraints(con->isEol() ? aboveLef58EncEolConstraints_
+                                            : aboveLef58EncConstraints_,
+                               con);
     }
   }
 
-  bool hasLef58EnclosureConstraint(int cutClassIdx, bool above) const
+  bool hasLef58EnclosureConstraint(int cutClassIdx,
+                                   bool above,
+                                   bool eol = false) const
   {
-    auto& lef58EncConstraints
-        = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+    auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
+                                             : aboveLef58EncConstraints_)
+                                      : (eol ? belowLef58EncEolConstraints_
+                                             : belowLef58EncConstraints_);
     if (cutClassIdx < 0 || lef58EncConstraints.size() <= cutClassIdx) {
       return false;
     }
     return !lef58EncConstraints.at(cutClassIdx).empty();
   }
 
-  std::vector<frLef58EnclosureConstraint*>
-  getLef58EnclosureConstraints(int cutClassIdx, frCoord width, bool above) const
+  std::vector<frLef58EnclosureConstraint*> getLef58EnclosureConstraints(
+      int cutClassIdx,
+      frCoord width,
+      bool above,
+      bool eol = false) const
   {
     // initialize with empty vector
     std::vector<frLef58EnclosureConstraint*> result;
     // check class and size match first
-    if (hasLef58EnclosureConstraint(cutClassIdx, above)) {
-      auto& lef58EncConstraints
-          = above ? aboveLef58EncConstraints_ : belowLef58EncConstraints_;
+    if (hasLef58EnclosureConstraint(cutClassIdx, above, eol)) {
+      auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
+                                               : aboveLef58EncConstraints_)
+                                        : (eol ? belowLef58EncEolConstraints_
+                                               : belowLef58EncConstraints_);
       const auto& mmap = lef58EncConstraints.at(cutClassIdx);
       auto it = mmap.upper_bound(width);
       if (it != mmap.begin()) {
@@ -792,6 +830,7 @@ class frLayer
   frUInt4 wrongDirWidth_{0};
   frUInt4 minWidth_{0};
   frViaDef* defaultViaDef_{nullptr};
+  std::vector<frViaDef*> secondaryViaDefs_;
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
   std::set<frViaDef*> viaDefs_;
@@ -866,6 +905,12 @@ class frLayer
       aboveLef58EncConstraints_;
   std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
       belowLef58EncConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      aboveLef58EncEolConstraints_;
+  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
+      belowLef58EncEolConstraints_;
+  // vector of maxspacing constraints
+  std::vector<frLef58MaxSpacingConstraint*> maxSpacingConstraints_;
   drEolSpacingConstraint drEolCon_;
 
   friend class io::Parser;

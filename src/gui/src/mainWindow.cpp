@@ -94,6 +94,7 @@ MainWindow::MainWindow(QWidget* parent)
           rulers_,
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
+          [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
           [this]() -> int { return arrow_keys_scroll_step_; },
@@ -427,6 +428,8 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
   gui->unregisterDescriptor<BufferTree>();
+  gui->unregisterDescriptor<odb::dbITerm*>();
+  gui->unregisterDescriptor<odb::dbMTerm*>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -477,9 +480,11 @@ void MainWindow::init(sta::dbSta* sta)
                           viewers_->getFocusNets(),
                           viewers_->getRouteGuides(),
                           viewers_->getNetTracks()));
-  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
+  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
+      db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
-  gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
@@ -593,6 +598,13 @@ void MainWindow::createActions()
   show_dbu_->setCheckable(true);
   show_dbu_->setChecked(false);
 
+  enable_developer_mode_ = new QShortcut(QKeySequence("Ctrl+="), this);
+
+  show_poly_decomp_view_ = new QAction("Show polygon decomposition", this);
+  show_poly_decomp_view_->setCheckable(true);
+  show_poly_decomp_view_->setChecked(false);
+  show_poly_decomp_view_->setVisible(false);
+
   default_ruler_style_ = new QAction("Make euclidian rulers", this);
   default_ruler_style_->setCheckable(true);
   default_ruler_style_->setChecked(true);
@@ -647,6 +659,16 @@ void MainWindow::createActions()
           &SelectHighlightWindow::updateModels);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
   connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
+
+  connect(enable_developer_mode_,
+          &QShortcut::activated,
+          this,
+          &MainWindow::enableDeveloper);
+
+  connect(show_poly_decomp_view_,
+          &QAction::toggled,
+          viewers_,
+          &LayoutTabs::resetCache);
 
   connect(arrow_keys_scroll_step_dialog_,
           &QAction::triggered,
@@ -746,6 +768,7 @@ void MainWindow::createMenus()
   option_menu->addAction(default_mouse_wheel_zoom_);
   option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
+  option_menu->addAction(show_poly_decomp_view_);
 
   menuBar()->addAction(help_);
 }
@@ -1679,6 +1702,11 @@ void MainWindow::saveDesign()
     ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
   } catch (const std::exception&) {
   }
+}
+
+void MainWindow::enableDeveloper()
+{
+  show_poly_decomp_view_->setVisible(true);
 }
 
 #ifdef ENABLE_CHARTS

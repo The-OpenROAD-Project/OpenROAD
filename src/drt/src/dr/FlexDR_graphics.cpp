@@ -183,7 +183,9 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     costs.push_back(
         {name + " edge length", graph->getEdgeLength(x, y, z, dir)});
     costs.push_back(
-        {name + " total cost", graph->getCosts(x, y, z, dir, layer)});
+        {name + " total cost",
+         graph->getCosts(
+             x, y, z, dir, layer, data.graph->getNDR() != nullptr)});
   }
   props.insert(props.end(), costs.begin(), costs.end());
   return props;
