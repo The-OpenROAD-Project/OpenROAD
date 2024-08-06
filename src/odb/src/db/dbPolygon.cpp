@@ -251,14 +251,6 @@ Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
     return {};
   }
 
-  if (polygon[0] == polygon[polygon.size() - 1]) {
-    polygon.pop_back();
-  }
-
-  if (polygon.size() < 4) {
-    return {};
-  }
-
   return polygon;
 }
 
