@@ -180,7 +180,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
-  void setPinOffset(int pin_offset);
 
   // flow functions
   void readGuides(const char* file_name);
@@ -269,7 +268,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool findPinAccessPointPositions(
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
-  odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -316,9 +314,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
-  void computePinOffsetAdjustments();
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
+  void addResourcesForPinAccess();
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
@@ -356,10 +354,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  void createFakePin(Pin pin,
-                     odb::Point& pin_position,
-                     odb::dbTechLayer* layer,
-                     Net* net);
   odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -452,7 +446,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   int min_routing_layer_;
   int max_routing_layer_;
   int layer_for_guide_dimension_;
-  int gcells_offset_;
   int overflow_iterations_;
   int congestion_report_iter_step_;
   bool allow_congestion_;
