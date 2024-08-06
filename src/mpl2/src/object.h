@@ -230,7 +230,7 @@ class Cluster
   // Hierarchy Support
   void setParent(Cluster* parent);
   void addChild(std::unique_ptr<Cluster> child);
-  std::unique_ptr<Cluster> releaseChild(const Cluster* child);
+  std::unique_ptr<Cluster> releaseChild(const Cluster* candidate);
   void addChildren(UniqueClusterVector children);
   UniqueClusterVector releaseChildren();
   Cluster* getParent() const;
