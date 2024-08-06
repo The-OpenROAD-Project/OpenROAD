@@ -33,59 +33,39 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
-#include "dbVector.h"
-#include "odb/dbSet.h"
+#include "odb/dbIterator.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-#include "dbHashTable.h"
-#include "dbModulePortItr.h"
-// User Code End Includes
 
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbInst;
-class _dbModInst;
-class _dbModNet;
 class _dbModBTerm;
 
-class _dbModule : public _dbObject
+template <class T>
+class dbTable;
+
+class dbModulePortItr : public dbIterator
 {
  public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
+  dbModulePortItr(dbTable<_dbModBTerm>* modbterm_tbl)
+  {
+    _modbterm_tbl = modbterm_tbl;
+  }
 
-  ~_dbModule();
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
 
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
-
-  // User Code End Methods
-
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
-
+ private:
+  dbTable<_dbModBTerm>* _modbterm_tbl;
   // User Code Begin Fields
-  // custom iterator for traversing ports
   dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+
 }  // namespace odb
    // Generator Code End Header

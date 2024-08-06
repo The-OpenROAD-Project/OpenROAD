@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,62 +30,89 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
-#pragma once
-
-#include "dbCore.h"
-#include "dbVector.h"
-#include "odb/dbSet.h"
-#include "odb/odb.h"
-// User Code Begin Includes
-#include "dbHashTable.h"
+// Generator Code Begin Cpp
 #include "dbModulePortItr.h"
-// User Code End Includes
+
+#include "dbBlock.h"
+#include "dbBusPort.h"
+#include "dbModBTerm.h"
+#include "dbModule.h"
+#include "dbTable.h"
 
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbInst;
-class _dbModInst;
-class _dbModNet;
-class _dbModBTerm;
 
-class _dbModule : public _dbObject
+////////////////////////////////////////////////////////////////////
+//
+// dbModulePortItr - Methods
+//
+////////////////////////////////////////////////////////////////////
+
+bool dbModulePortItr::reversible()
 {
- public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
-  _dbModule(_dbDatabase*);
+  return true;
+}
 
-  ~_dbModule();
+bool dbModulePortItr::orderReversed()
+{
+  return true;
+}
 
-  bool operator==(const _dbModule& rhs) const;
-  bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
+void dbModulePortItr::reverse(dbObject* parent)
+{
+}
 
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
+uint dbModulePortItr::sequential()
+{
+  return 0;
+}
 
-  // User Code End Methods
+uint dbModulePortItr::size(dbObject* parent)
+{
+  uint id;
+  uint cnt = 0;
 
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  for (id = dbModulePortItr::begin(parent); id != dbModulePortItr::end(parent);
+       id = dbModulePortItr::next(id)) {
+    ++cnt;
+  }
 
-  // User Code Begin Fields
-  // custom iterator for traversing ports
-  dbModulePortItr* _port_iter = nullptr;
-  // User Code End Fields
-};
-dbIStream& operator>>(dbIStream& stream, _dbModule& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModule& obj);
+  return cnt;
+}
+
+uint dbModulePortItr::begin(dbObject* parent)
+{
+  // User Code Begin begin
+  _dbModule* _module = (_dbModule*) parent;
+  return _module->_modbterms;
+  // User Code End begin
+}
+
+uint dbModulePortItr::end(dbObject* /* unused: parent */)
+{
+  return 0;
+}
+
+uint dbModulePortItr::next(uint id, ...)
+{
+  // User Code Begin next
+  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
+  if (modbterm->_busPort != 0) {
+    _dbBlock* block = (_dbBlock*) modbterm->getOwner();
+    _dbBusPort* bus_port = block->_busport_tbl->getPtr(modbterm->_busPort);
+    if (bus_port) {
+      modbterm = _modbterm_tbl->getPtr(bus_port->_last);
+    }
+  }
+  if (modbterm) {
+    return modbterm->_next_entry;
+  }
+  return 0;
+  // User Code End next
+}
+
+dbObject* dbModulePortItr::getObject(uint id, ...)
+{
+  return _modbterm_tbl->getPtr(id);
+}
 }  // namespace odb
-   // Generator Code End Header
+// Generator Code End Cpp

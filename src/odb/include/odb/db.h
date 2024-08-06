@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbBusPort;
 class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
@@ -175,6 +176,8 @@ class dbTechLayerWrongDirSpacingRule;
 // Extraction Objects
 class dbExtControl;
 
+// Custom iterators
+class dbModuleBusPortModBTermItr;
 ///
 /// dbProperty - Property base class.
 ///
@@ -7143,6 +7146,41 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbBusPort : public dbObject
+{
+ public:
+  int getFrom() const;
+
+  int getTo() const;
+
+  dbModBTerm* getPort() const;
+
+  void setMembers(dbModBTerm* members);
+
+  dbModBTerm* getMembers() const;
+
+  void setLast(dbModBTerm* last);
+
+  dbModBTerm* getLast() const;
+
+  dbModule* getParent() const;
+
+  // User Code Begin dbBusPort
+  // get element by bit index in bus (allows for up/down)
+  // linear access
+  dbModBTerm* getBusIndexedElement(int index);
+  dbSet<dbModBTerm> getBusPortMembers();
+  int getSize() const;
+  bool getUpdown() const;
+
+  static dbBusPort* create(dbModule* parentModule,
+                           dbModBTerm* port,
+                           int from_ix,
+                           int to_ix);
+
+  // User Code End dbBusPort
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7561,11 +7599,12 @@ class dbModBTerm : public dbObject
   dbIoType getIoType();
   void connect(dbModNet* net);
   void disconnect();
-  void staSetPort(void* p);
-  void* staPort();
-
+  bool isBusPort() const;
+  void setBusPort(dbBusPort*);
+  dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
+ private:
   // User Code End dbModBTerm
 };
 
@@ -7660,7 +7699,11 @@ class dbModule : public dbObject
   dbSet<dbModInst> getChildren();
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
+  // Get the ports of a module (STA world uses ports, which contain members).
+  dbSet<dbModBTerm> getPorts();
+  // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms();
+  dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);
@@ -7672,8 +7715,7 @@ class dbModule : public dbObject
   int getModInstCount();
   int getDbInstCount();
 
-  void staSetCell(void* cell);
-  void* getStaCell();
+  const dbModBTerm* getHeadDbModBTerm() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
