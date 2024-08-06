@@ -14,6 +14,6 @@ estimate_parasitics -placement
 
 report_worst_slack -max
 write_verilog_for_eqy repair_setup4 before "None"
-repair_timing -setup -enable_buffer_removal
+repair_timing -setup -skip_buffer_removal
 run_equivalence_test repair_setup4 ./Nangate45/work_around_yosys/ "None"
 report_worst_slack -max
