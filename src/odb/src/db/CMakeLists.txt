@@ -36,6 +36,7 @@ add_library(db
     dbInstShapeItr.cpp 
     dbTransform.cpp 
     dbITermShapeItr.cpp 
+    dbPolygonItr.cpp
     dbSWire.cpp 
     dbSBox.cpp 
     dbSWireItr.cpp 
@@ -101,6 +102,7 @@ add_library(db
     dbModNet.cpp
     dbModule.cpp
     dbNetTrack.cpp
+    dbPolygon.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
     dbScanChain.cpp
