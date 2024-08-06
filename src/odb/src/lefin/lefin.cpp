@@ -736,6 +736,9 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
         KeepOutZoneParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
+        MaxSpacingParser parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {

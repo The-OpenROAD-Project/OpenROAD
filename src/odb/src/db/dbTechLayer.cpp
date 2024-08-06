@@ -52,6 +52,7 @@
 #include "dbTechLayerEolKeepOutRule.h"
 #include "dbTechLayerForbiddenSpacingRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
+#include "dbTechLayerMaxSpacingRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
@@ -161,6 +162,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_) {
+    return false;
+  }
+  if (*max_spacing_rules_tbl_ != *rhs.max_spacing_rules_tbl_) {
     return false;
   }
   if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_) {
@@ -409,6 +413,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(eol_ext_rules_tbl_);
   DIFF_TABLE(array_spacing_rules_tbl_);
   DIFF_TABLE(eol_keep_out_rules_tbl_);
+  DIFF_TABLE(max_spacing_rules_tbl_);
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
@@ -493,6 +498,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(eol_ext_rules_tbl_);
   DIFF_OUT_TABLE(array_spacing_rules_tbl_);
   DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
+  DIFF_OUT_TABLE(max_spacing_rules_tbl_);
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
@@ -614,6 +620,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerEolKeepOutRuleObj);
+  max_spacing_rules_tbl_ = new dbTable<_dbTechLayerMaxSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerMaxSpacingRuleObj);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db,
       this,
@@ -762,6 +773,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r.array_spacing_rules_tbl_);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db, this, *r.eol_keep_out_rules_tbl_);
+  max_spacing_rules_tbl_ = new dbTable<_dbTechLayerMaxSpacingRule>(
+      db, this, *r.max_spacing_rules_tbl_);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db, this, *r.width_table_rules_tbl_);
   min_cuts_rules_tbl_
@@ -855,6 +868,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+    stream >> *obj.max_spacing_rules_tbl_;
+  }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
@@ -952,6 +968,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.eol_ext_rules_tbl_;
   stream << *obj.array_spacing_rules_tbl_;
   stream << *obj.eol_keep_out_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+    stream << *obj.max_spacing_rules_tbl_;
+  }
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
@@ -1045,6 +1064,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return array_spacing_rules_tbl_;
     case dbTechLayerEolKeepOutRuleObj:
       return eol_keep_out_rules_tbl_;
+    case dbTechLayerMaxSpacingRuleObj:
+      return max_spacing_rules_tbl_;
     case dbTechLayerWidthTableRuleObj:
       return width_table_rules_tbl_;
     case dbTechLayerMinCutRuleObj:
@@ -1092,6 +1113,7 @@ _dbTechLayer::~_dbTechLayer()
   delete eol_ext_rules_tbl_;
   delete array_spacing_rules_tbl_;
   delete eol_keep_out_rules_tbl_;
+  delete max_spacing_rules_tbl_;
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
@@ -1275,6 +1297,13 @@ dbSet<dbTechLayerEolKeepOutRule> dbTechLayer::getTechLayerEolKeepOutRules()
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerEolKeepOutRule>(obj, obj->eol_keep_out_rules_tbl_);
+}
+
+dbSet<dbTechLayerMaxSpacingRule> dbTechLayer::getTechLayerMaxSpacingRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerMaxSpacingRule>(obj, obj->max_spacing_rules_tbl_);
 }
 
 dbSet<dbTechLayerWidthTableRule> dbTechLayer::getTechLayerWidthTableRules()

@@ -497,6 +497,15 @@ struct less<odb::dbAccessPoint*>
 };
 
 template <>
+struct less<odb::dbBusPort*>
+{
+  bool operator()(const odb::dbBusPort* lhs, const odb::dbBusPort* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbDft*>
 {
   bool operator()(const odb::dbDft* lhs, const odb::dbDft* rhs) const
@@ -838,6 +847,16 @@ struct less<odb::dbTechLayerKeepOutZoneRule*>
 {
   bool operator()(const odb::dbTechLayerKeepOutZoneRule* lhs,
                   const odb::dbTechLayerKeepOutZoneRule* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
+struct less<odb::dbTechLayerMaxSpacingRule*>
+{
+  bool operator()(const odb::dbTechLayerMaxSpacingRule* lhs,
+                  const odb::dbTechLayerMaxSpacingRule* rhs) const
   {
     return odb::compare_by_id(lhs, rhs);
   }
