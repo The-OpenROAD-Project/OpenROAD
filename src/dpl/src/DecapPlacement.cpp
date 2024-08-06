@@ -36,6 +36,7 @@
 
 #include "DecapObjects.h"
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
@@ -64,13 +65,17 @@ vector<int> Opendp::findDecapCellIndices(const int& gap_width,
   vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
+  const DbuX site_width = grid_->getSiteWidth();
+  const DbuX min_space = gridToDbu(
+      padding_->padGlobalRight() + padding_->padGlobalLeft(), site_width);
   for (int i = 0; i < decap_masters_.size(); i++) {
-    while (decap_masters_[i]->master->getWidth() <= (gap_width - width_acum)
-           && (cap_acum + decap_masters_[i]->capacitance)
-                  <= (target - current)) {
+    const int master_width = decap_masters_[i]->master->getWidth();
+    const double master_cap = decap_masters_[i]->capacitance;
+    while ((width_acum + master_width) <= (gap_width - min_space.v)
+           && (cap_acum + master_cap) <= (target - current)) {
       id_masters.push_back(i);
-      cap_acum += decap_masters_[i]->capacitance;
-      width_acum += decap_masters_[i]->master->getWidth();
+      cap_acum += master_cap;
+      width_acum += master_width;
       if (width_acum == gap_width) {
         return id_masters;
       }
