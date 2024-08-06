@@ -267,7 +267,7 @@ dbModule* dbBusPort::getParent() const
   element is at offset 1 in the array
   b[5:1] element is at offset 4 in the array
  */
-dbModBTerm* dbBusPort::getBusIndexedElement(int index) const
+dbModBTerm* dbBusPort::getBusIndexedElement(int index)
 {
   _dbBusPort* obj = (_dbBusPort*) this;
   _dbBlock* block_ = (_dbBlock*) obj->getOwner();
@@ -290,13 +290,13 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index) const
       return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->getId() + offset
                                                           + 1));
     }
-    dbModBTerm* cur = (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_port));
-    if (cur != nullptr) {
-      cur = cur->getPrev();
-      for (int i = 0; i < offset; i++) {
-        cur = cur->getPrev();
+    int i = 0;
+    dbSet<dbModBTerm> busport_members = getBusPortMembers();
+    for (auto cur : busport_members) {
+      if (i == offset) {
+        return cur;
       }
-      return cur;
+      i++;
     }
   }
   return nullptr;

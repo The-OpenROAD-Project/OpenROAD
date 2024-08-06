@@ -7168,10 +7168,9 @@ class dbBusPort : public dbObject
   // User Code Begin dbBusPort
   // get element by bit index in bus (allows for up/down)
   // linear access
-  dbModBTerm* getBusIndexedElement(int index) const;
+  dbModBTerm* getBusIndexedElement(int index);
   void setFirstMember(dbModBTerm*);
   dbModBTerm* getFirstMember();
-
   dbSet<dbModBTerm> getBusPortMembers();
   int getSize() const;
   bool getUpdown() const;
@@ -7605,9 +7604,6 @@ class dbModBTerm : public dbObject
   bool isBusPort() const;
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
-  dbModBTerm* getNext() const;
-  dbModBTerm* getPrev() const;
-
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
  private:
