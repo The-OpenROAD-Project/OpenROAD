@@ -2227,6 +2227,131 @@ void GlobalRouter::readSegments(const char* file_name)
           GRT, 261, "Error reading global route segments file {}.", file_name);
     }
   }
+  for (auto& [net, segments] : routes_) {
+    if (!isConnected(net)) {
+      logger_->error(
+          GRT, 262, "Net {} has disconnected segments.", net->getName());
+    }
+    for (const Pin& pin : db_net_map_[net]->getPins()) {
+      bool pin_is_covered = false;
+      for (const GSegment& seg : segments) {
+        // Pin is horizontally covered by the segment
+        if (pin.getOnGridPosition().getX() >= std::min(seg.init_x, seg.final_x)
+            && pin.getOnGridPosition().getX()
+                   <= std::max(seg.init_x, seg.final_x)
+            // Pin is vertically covered by the segment
+            && pin.getOnGridPosition().getY()
+                   >= std::min(seg.init_y, seg.final_y)
+            && pin.getOnGridPosition().getY()
+                   <= std::max(seg.init_y, seg.final_y)
+            // Pin and segment share a layer
+            && pin.getConnectionLayer()
+                   >= std::min(seg.init_layer, seg.final_layer)
+            && pin.getConnectionLayer()
+                   <= std::max(seg.init_layer, seg.final_layer)) {
+          pin_is_covered = true;
+          break;
+        }
+      }
+      if (!pin_is_covered) {
+        logger_->error(GRT,
+                       263,
+                       "Pin {} is not covered by net {}",
+                       pin.getName(),
+                       net->getName());
+      }
+    }
+  }
+}
+
+// Checks if segment is a line, i.e. only varies in one dimension 
+// (vias are lines)
+bool GlobalRouter::segmentIsLine(const GSegment& segment)
+{
+  int dimensionality = (segment.init_x != segment.final_x)
+                       + (segment.init_y != segment.final_y)
+                       + (segment.init_layer != segment.final_layer);
+  return (dimensionality == 1);
+}
+
+// Implements Union-Find algorithm to determine connectivity
+bool GlobalRouter::isConnected(odb::dbNet* net)
+{
+  std::vector<int> parent(routes_[net].size()), rank(routes_[net].size(), 0);
+  for (int i = 0; i < routes_[net].size(); i++) {
+    parent[i] = i;
+  }
+  int initialized_groups = 1;
+
+  if (!segmentIsLine(routes_[net][0])) {
+    logger_->error(
+        GRT,
+        264,
+        "Segment {} of net {} is not a horizontal/vertical line or via",
+        1,
+        net->getName());
+  }
+
+  std::function<int(int)> find = [&](int x) -> int {
+    if (parent[x] != x) {
+      parent[x] = find(parent[x]);
+    }
+    return parent[x];
+  };
+
+  std::function<void(int, int)> uniteGroups = [&](int u, int v) {
+    int rootU = find(u), rootV = find(v);
+    if (rank[rootU] > rank[rootV]) {
+      parent[rootV] = rootU;
+    } else if (rank[rootU] < rank[rootV]) {
+      parent[rootU] = rootV;
+    } else {
+      parent[rootV] = rootU;
+      rank[rootU]++;
+    }
+  };
+
+  for (int i = 1; i < routes_[net].size(); i++) {
+    if (!segmentIsLine(routes_[net][i])) {
+      logger_->error(
+          GRT,
+          265,
+          "Segment {} of net {} is not a horizontal/vertical line or via",
+          i + 1,
+          net->getName());
+    }
+
+    initialized_groups++;
+
+    for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
+      if (find(parent[i]) == find(parent[j])) {
+        continue;
+      }
+      if (segmentsConnect(routes_[net][i], routes_[net][j])) {
+        uniteGroups(i, j);
+        initialized_groups--;
+      }
+    }
+  }
+  return (initialized_groups == 1);
+}
+
+bool GlobalRouter::segmentsConnect(const GSegment& segment1,
+                                   const GSegment& segment2)
+{
+  std::function<std::pair<int, int>(int, int)> minMax
+      = [&](int a, int b) -> std::pair<int, int> {
+    return {std::min(a, b), std::max(a, b)};
+  };
+  auto [s1_min_x, s1_max_x] = minMax(segment1.init_x, segment1.final_x);
+  auto [s1_min_y, s1_max_y] = minMax(segment1.init_y, segment1.final_y);
+  auto [s1_min_z, s1_max_z] = minMax(segment1.init_layer, segment1.final_layer);
+  auto [s2_min_x, s2_max_x] = minMax(segment2.init_x, segment2.final_x);
+  auto [s2_min_y, s2_max_y] = minMax(segment2.init_y, segment2.final_y);
+  auto [s2_min_z, s2_max_z] = minMax(segment2.init_layer, segment2.final_layer);
+  return (s1_max_x >= s2_min_x && s1_min_x <= s2_max_x)
+         && (s1_max_y >= s2_min_y && s1_min_y <= s2_max_y)
+         && (s1_max_z >= s2_min_z && s1_min_z <= s2_max_z);
 }
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)

@@ -189,6 +189,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void saveGuides();
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
+  bool segmentIsLine(const GSegment& segment);
+  bool isConnected(odb::dbNet* net);
+  bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
