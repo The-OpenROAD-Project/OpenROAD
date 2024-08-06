@@ -85,6 +85,7 @@ class dbBlockCallBackObj
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
+  virtual void inDbNetMerge(dbNet*, dbNet*) {}
   // dbNet End
 
   // dbITerm Start

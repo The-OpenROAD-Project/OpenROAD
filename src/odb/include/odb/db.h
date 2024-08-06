@@ -2786,6 +2786,11 @@ class dbNet : public dbObject
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
 
+  ///
+  /// Trigger callback for nets being merged.
+  ///
+  void mergeNet(dbNet* net);
+
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();
