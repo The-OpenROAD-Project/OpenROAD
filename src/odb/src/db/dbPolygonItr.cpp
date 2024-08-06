@@ -30,26 +30,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "dbPBoxItr.h"
+#include "dbPolygonItr.h"
 
 #include "dbMPin.h"
 #include "dbMaster.h"
-#include "dbPBox.h"
+#include "dbPolygon.h"
 #include "dbTable.h"
 
 namespace odb {
 
-bool dbPBoxItr::reversible()
+bool dbPolygonItr::reversible()
 {
   return true;
 }
 
-bool dbPBoxItr::orderReversed()
+bool dbPolygonItr::orderReversed()
 {
   return true;
 }
 
-void dbPBoxItr::reverse(dbObject* parent)
+void dbPolygonItr::reverse(dbObject* parent)
 {
   switch (parent->getImpl()->getType()) {
     case dbMasterObj: {
@@ -58,7 +58,7 @@ void dbPBoxItr::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbPBox* b = pbox_tbl_->getPtr(id);
+        _dbPolygon* b = pbox_tbl_->getPtr(id);
         uint n = b->next_pbox_;
         b->next_pbox_ = list;
         list = id;
@@ -75,7 +75,7 @@ void dbPBoxItr::reverse(dbObject* parent)
       uint list = 0;
 
       while (id != 0) {
-        _dbPBox* b = pbox_tbl_->getPtr(id);
+        _dbPolygon* b = pbox_tbl_->getPtr(id);
         uint n = b->next_pbox_;
         b->next_pbox_ = list;
         list = id;
@@ -91,25 +91,25 @@ void dbPBoxItr::reverse(dbObject* parent)
   }
 }
 
-uint dbPBoxItr::sequential()
+uint dbPolygonItr::sequential()
 {
   return 0;
 }
 
-uint dbPBoxItr::size(dbObject* parent)
+uint dbPolygonItr::size(dbObject* parent)
 {
   uint id;
   uint cnt = 0;
 
-  for (id = dbPBoxItr::begin(parent); id != dbPBoxItr::end(parent);
-       id = dbPBoxItr::next(id)) {
+  for (id = dbPolygonItr::begin(parent); id != dbPolygonItr::end(parent);
+       id = dbPolygonItr::next(id)) {
     ++cnt;
   }
 
   return cnt;
 }
 
-uint dbPBoxItr::begin(dbObject* parent)
+uint dbPolygonItr::begin(dbObject* parent)
 {
   switch (parent->getImpl()->getType()) {
     case dbMasterObj: {
@@ -129,18 +129,18 @@ uint dbPBoxItr::begin(dbObject* parent)
   return 0;
 }
 
-uint dbPBoxItr::end(dbObject* /* unused: parent */)
+uint dbPolygonItr::end(dbObject* /* unused: parent */)
 {
   return 0;
 }
 
-uint dbPBoxItr::next(uint id, ...)
+uint dbPolygonItr::next(uint id, ...)
 {
-  _dbPBox* box = pbox_tbl_->getPtr(id);
+  _dbPolygon* box = pbox_tbl_->getPtr(id);
   return box->next_pbox_;
 }
 
-dbObject* dbPBoxItr::getObject(uint id, ...)
+dbObject* dbPolygonItr::getObject(uint id, ...)
 {
   return pbox_tbl_->getPtr(id);
 }

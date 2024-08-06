@@ -1,5 +1,5 @@
 {
-  "name":"dbPBox",
+  "name":"dbPolygon",
   "type":"dbObject",
   "fields":[
     {
@@ -37,7 +37,7 @@
     },
     {
       "name": "next_pbox_",
-      "type": "dbId<_dbPBox>",
+      "type": "dbId<_dbPolygon>",
       "flags": [
         "private"
       ]

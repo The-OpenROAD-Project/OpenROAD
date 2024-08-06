@@ -144,7 +144,7 @@ class dbModITerm;
 class dbModNet;
 class dbModule;
 class dbNetTrack;
-class dbPBox;
+class dbPolygon;
 class dbPowerDomain;
 class dbPowerSwitch;
 class dbScanChain;
@@ -680,7 +680,7 @@ class dbBox : public dbObject
   ///
   /// Add a wire-shape to a polygon.
   ///
-  static dbBox* create(dbPBox* pbox, int x1, int y1, int x2, int y2);
+  static dbBox* create(dbPolygon* pbox, int x1, int y1, int x2, int y2);
 
   ///
   /// Add a via obstrction to a master-pin.
@@ -5611,7 +5611,7 @@ class dbMaster : public dbObject
   ///
   /// Get the polygon obstructions of this master
   ///
-  dbSet<dbPBox> getPolygonObstructions();
+  dbSet<dbPolygon> getPolygonObstructions();
 
   ///
   /// Get the non-polygon obstructions of this master
@@ -5851,7 +5851,7 @@ class dbMPin : public dbObject
   ///
   /// Get the polygon geometry of this pin.
   ///
-  dbSet<dbPBox> getPolygonGeometry();
+  dbSet<dbPolygon> getPolygonGeometry();
 
   ///
   /// Get the non-polygon geometry of this pin.
@@ -7773,14 +7773,14 @@ class dbNetTrack : public dbObject
   // User Code End dbNetTrack
 };
 
-class dbPBox : public dbObject
+class dbPolygon : public dbObject
 {
  public:
   Polygon getPolygon() const;
 
   int getDesignRuleWidth() const;
 
-  // User Code Begin dbPBox
+  // User Code Begin dbPolygon
   dbTechLayer* getTechLayer();
   dbSet<dbBox> getGeometry();
   void setDesignRuleWidth(int design_rule_width);
@@ -7788,18 +7788,18 @@ class dbPBox : public dbObject
   ///
   /// Add an obstruction to a master.
   ///
-  static dbPBox* create(dbMaster* master,
-                        dbTechLayer* layer,
-                        const std::vector<Point>& polygon);
+  static dbPolygon* create(dbMaster* master,
+                           dbTechLayer* layer,
+                           const std::vector<Point>& polygon);
 
   ///
   /// Add a wire-shape to a master-pin.
   ///
-  static dbPBox* create(dbMPin* pin,
-                        dbTechLayer* layer,
-                        const std::vector<Point>& polygon);
+  static dbPolygon* create(dbMPin* pin,
+                           dbTechLayer* layer,
+                           const std::vector<Point>& polygon);
 
-  // User Code End dbPBox
+  // User Code End dbPolygon
 };
 
 class dbPowerDomain : public dbObject

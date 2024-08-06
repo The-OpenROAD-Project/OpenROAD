@@ -30,53 +30,34 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
-#include "odb/geom.h"
+#include "odb/dbIterator.h"
 #include "odb/odb.h"
 
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbBox;
 
-struct dbPBoxFlags
-{
-  uint owner_type_ : 4;
-  uint layer_id_ : 9;
-  uint spare_bits_ : 19;
-};
+class _dbPolygon;
+template <class T>
+class dbTable;
 
-class _dbPBox : public _dbObject
+class dbPolygonItr : public dbIterator
 {
+ protected:
+  dbTable<_dbPolygon>* pbox_tbl_;
+
  public:
-  _dbPBox(_dbDatabase*, const _dbPBox& r);
-  _dbPBox(_dbDatabase*);
+  dbPolygonItr(dbTable<_dbPolygon>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
 
-  ~_dbPBox() = default;
-
-  bool operator==(const _dbPBox& rhs) const;
-  bool operator!=(const _dbPBox& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbPBox& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbPBox& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  static Polygon checkPolygon(std::vector<Point> polygon);
-  void decompose();
-  // User Code End Methods
-
-  dbPBoxFlags flags_;
-  Polygon polygon_;
-  int design_rule_width_;
-  uint owner_;
-  dbId<_dbPBox> next_pbox_;
-  dbId<_dbBox> boxes_;
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
 };
-dbIStream& operator>>(dbIStream& stream, _dbPBox& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbPBox& obj);
+
 }  // namespace odb
-   // Generator Code End Header

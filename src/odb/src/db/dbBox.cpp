@@ -44,7 +44,7 @@
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbObstruction.h"
-#include "dbPBox.h"
+#include "dbPolygon.h"
 #include "dbRegion.h"
 #include "dbSWire.h"
 #include "dbTable.h"
@@ -956,9 +956,9 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   return (dbBox*) box;
 }
 
-dbBox* dbBox::create(dbPBox* pbox, int x1, int y1, int x2, int y2)
+dbBox* dbBox::create(dbPolygon* pbox, int x1, int y1, int x2, int y2)
 {
-  _dbPBox* pbox_ = (_dbPBox*) pbox;
+  _dbPolygon* pbox_ = (_dbPolygon*) pbox;
   _dbMaster* master = (_dbMaster*) pbox_->getOwner();
   _dbBox* box = master->_box_tbl->create();
   box->_flags._octilinear = false;

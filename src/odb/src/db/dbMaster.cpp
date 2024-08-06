@@ -41,8 +41,8 @@
 #include "dbMPin.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
-#include "dbPBox.h"
-#include "dbPBoxItr.h"
+#include "dbPolygon.h"
+#include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -276,8 +276,8 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
 
-  _poly_box_tbl = new dbTable<_dbPBox>(
-      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPBoxObj, 8, 3);
+  _poly_box_tbl = new dbTable<_dbPolygon>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPolygonObj, 8, 3);
 
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db,
@@ -289,7 +289,7 @@ _dbMaster::_dbMaster(_dbDatabase* db)
 
   _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
 
-  _pbox_itr = new dbPBoxItr(_poly_box_tbl);
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
 
   _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
@@ -334,14 +334,14 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
 
   _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
 
-  _poly_box_tbl = new dbTable<_dbPBox>(db, this, *m._poly_box_tbl);
+  _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
 
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db, this, *m._antenna_pin_model_tbl);
 
   _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
 
-  _pbox_itr = new dbPBoxItr(_poly_box_tbl);
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
 
   _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
@@ -448,7 +448,7 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
       return _target_tbl;
     case dbBoxObj:
       return _box_tbl;
-    case dbPBoxObj:
+    case dbPolygonObj:
       return _poly_box_tbl;
     case dbTechAntennaPinModelObj:
       return _antenna_pin_model_tbl;
@@ -631,10 +631,10 @@ dbSet<dbBox> dbMaster::getObstructions()
   return dbSet<dbBox>(master, master->_box_itr);
 }
 
-dbSet<dbPBox> dbMaster::getPolygonObstructions()
+dbSet<dbPolygon> dbMaster::getPolygonObstructions()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbPBox>(master, master->_pbox_itr);
+  return dbSet<dbPolygon>(master, master->_pbox_itr);
 }
 
 dbSet<dbBox> dbMaster::getNonPolygonObstructions()

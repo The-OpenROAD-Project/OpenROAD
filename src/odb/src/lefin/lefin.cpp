@@ -490,11 +490,11 @@ void lefin::createPolygon(dbObject* object,
     points.push_back(Point(x, y));
   }
 
-  dbPBox* pbox = nullptr;
+  dbPolygon* pbox = nullptr;
   if (is_pin) {
-    pbox = dbPBox::create((dbMPin*) object, layer, points);
+    pbox = dbPolygon::create((dbMPin*) object, layer, points);
   } else {
-    pbox = dbPBox::create((dbMaster*) object, layer, points);
+    pbox = dbPolygon::create((dbMaster*) object, layer, points);
   }
 
   if (pbox != nullptr) {
@@ -1418,7 +1418,7 @@ void lefin::obstruction(lefiObstruction* obs)
 
   if (geometries->numItems()) {
     addGeoms(_master, false, geometries);
-    dbSet<dbPBox> poly_obstructions = _master->getPolygonObstructions();
+    dbSet<dbPolygon> poly_obstructions = _master->getPolygonObstructions();
 
     // Reverse the stored order, too match the created order.
     if (poly_obstructions.reversible() && poly_obstructions.orderReversed()) {
@@ -1633,7 +1633,7 @@ void lefin::pin(lefiPin* pin)
       created_mpins = true;
       addGeoms(dbpin, true, geometries);
 
-      dbSet<dbPBox> poly_geoms = dbpin->getPolygonGeometry();
+      dbSet<dbPolygon> poly_geoms = dbpin->getPolygonGeometry();
       if (poly_geoms.reversible() && poly_geoms.orderReversed()) {
         poly_geoms.reverse();
       }

@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 // Generator Code Begin Cpp
-#include "dbPBox.h"
+#include "dbPolygon.h"
 
 #include <cstdint>
 #include <cstring>
@@ -52,9 +52,9 @@
 #include "odb/poly_decomp.h"
 // User Code End Includes
 namespace odb {
-template class dbTable<_dbPBox>;
+template class dbTable<_dbPolygon>;
 
-bool _dbPBox::operator==(const _dbPBox& rhs) const
+bool _dbPolygon::operator==(const _dbPolygon& rhs) const
 {
   if (flags_.owner_type_ != rhs.flags_.owner_type_) {
     return false;
@@ -81,14 +81,14 @@ bool _dbPBox::operator==(const _dbPBox& rhs) const
   return true;
 }
 
-bool _dbPBox::operator<(const _dbPBox& rhs) const
+bool _dbPolygon::operator<(const _dbPolygon& rhs) const
 {
   return true;
 }
 
-void _dbPBox::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbPBox& rhs) const
+void _dbPolygon::differences(dbDiff& diff,
+                             const char* field,
+                             const _dbPolygon& rhs) const
 {
   DIFF_BEGIN
   DIFF_FIELD(flags_.owner_type_);
@@ -101,7 +101,7 @@ void _dbPBox::differences(dbDiff& diff,
   DIFF_END
 }
 
-void _dbPBox::out(dbDiff& diff, char side, const char* field) const
+void _dbPolygon::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.owner_type_);
@@ -115,12 +115,12 @@ void _dbPBox::out(dbDiff& diff, char side, const char* field) const
   DIFF_END
 }
 
-_dbPBox::_dbPBox(_dbDatabase* db)
+_dbPolygon::_dbPolygon(_dbDatabase* db)
 {
   flags_ = {};
 }
 
-_dbPBox::_dbPBox(_dbDatabase* db, const _dbPBox& r)
+_dbPolygon::_dbPolygon(_dbDatabase* db, const _dbPolygon& r)
 {
   flags_.owner_type_ = r.flags_.owner_type_;
   flags_.layer_id_ = r.flags_.layer_id_;
@@ -132,7 +132,7 @@ _dbPBox::_dbPBox(_dbDatabase* db, const _dbPBox& r)
   boxes_ = r.boxes_;
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbPBox& obj)
+dbIStream& operator>>(dbIStream& stream, _dbPolygon& obj)
 {
   uint32_t flags_bit_field;
   stream >> flags_bit_field;
@@ -146,7 +146,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPBox& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbPBox& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbPolygon& obj)
 {
   uint32_t flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
@@ -162,43 +162,43 @@ dbOStream& operator<<(dbOStream& stream, const _dbPBox& obj)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbPBox - Methods
+// dbPolygon - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-Polygon dbPBox::getPolygon() const
+Polygon dbPolygon::getPolygon() const
 {
-  _dbPBox* obj = (_dbPBox*) this;
+  _dbPolygon* obj = (_dbPolygon*) this;
   return obj->polygon_;
 }
 
-int dbPBox::getDesignRuleWidth() const
+int dbPolygon::getDesignRuleWidth() const
 {
-  _dbPBox* obj = (_dbPBox*) this;
+  _dbPolygon* obj = (_dbPolygon*) this;
   return obj->design_rule_width_;
 }
 
-// User Code Begin dbPBoxPublicMethods
-dbTechLayer* dbPBox::getTechLayer()
+// User Code Begin dbPolygonPublicMethods
+dbTechLayer* dbPolygon::getTechLayer()
 {
-  _dbPBox* box = (_dbPBox*) this;
+  _dbPolygon* box = (_dbPolygon*) this;
   _dbMaster* master = (_dbMaster*) getImpl()->getOwner();
   _dbLib* lib = (_dbLib*) master->getOwner();
   _dbTech* tech = lib->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(box->flags_.layer_id_);
 }
 
-dbPBox* dbPBox::create(dbMaster* master_,
-                       dbTechLayer* layer_,
-                       const std::vector<Point>& polygon)
+dbPolygon* dbPolygon::create(dbMaster* master_,
+                             dbTechLayer* layer_,
+                             const std::vector<Point>& polygon)
 {
-  const Polygon poly = _dbPBox::checkPolygon(polygon);
+  const Polygon poly = _dbPolygon::checkPolygon(polygon);
   if (poly.getPoints().empty()) {
     return nullptr;
   }
 
   _dbMaster* master = (_dbMaster*) master_;
-  _dbPBox* box = master->_poly_box_tbl->create();
+  _dbPolygon* box = master->_poly_box_tbl->create();
 
   box->flags_.owner_type_ = dbBoxOwner::MASTER;
   box->owner_ = master->getOID();
@@ -213,21 +213,21 @@ dbPBox* dbPBox::create(dbMaster* master_,
   // decompose polygon
   box->decompose();
 
-  return (dbPBox*) box;
+  return (dbPolygon*) box;
 }
 
-dbPBox* dbPBox::create(dbMPin* pin_,
-                       dbTechLayer* layer_,
-                       const std::vector<Point>& polygon)
+dbPolygon* dbPolygon::create(dbMPin* pin_,
+                             dbTechLayer* layer_,
+                             const std::vector<Point>& polygon)
 {
-  const Polygon poly = _dbPBox::checkPolygon(polygon);
+  const Polygon poly = _dbPolygon::checkPolygon(polygon);
   if (poly.getPoints().empty()) {
     return nullptr;
   }
 
   _dbMPin* pin = (_dbMPin*) pin_;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  _dbPBox* box = master->_poly_box_tbl->create();
+  _dbPolygon* box = master->_poly_box_tbl->create();
 
   box->flags_.owner_type_ = dbBoxOwner::MPIN;
   box->owner_ = pin->getOID();
@@ -242,10 +242,10 @@ dbPBox* dbPBox::create(dbMPin* pin_,
   // decompose polygon
   box->decompose();
 
-  return (dbPBox*) box;
+  return (dbPolygon*) box;
 }
 
-Polygon _dbPBox::checkPolygon(std::vector<Point> polygon)
+Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
 {
   if (polygon.size() < 4) {
     return {};
@@ -266,7 +266,7 @@ Polygon _dbPBox::checkPolygon(std::vector<Point> polygon)
   return polygon;
 }
 
-void _dbPBox::decompose()
+void _dbPolygon::decompose()
 {
   std::vector<Rect> rects;
   decompose_polygon(polygon_.getPoints(), rects);
@@ -276,10 +276,10 @@ void _dbPBox::decompose()
   for (itr = rects.begin(); itr != rects.end(); ++itr) {
     Rect& r = *itr;
 
-    dbBox::create((dbPBox*) this, r.xMin(), r.yMin(), r.xMax(), r.yMax());
+    dbBox::create((dbPolygon*) this, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
 
-  dbPBox* pbox = (dbPBox*) this;
+  dbPolygon* pbox = (dbPolygon*) this;
   dbSet<dbBox> geoms = pbox->getGeometry();
 
   // Reverse the stored order, too match the created order.
@@ -288,16 +288,16 @@ void _dbPBox::decompose()
   }
 }
 
-dbSet<dbBox> dbPBox::getGeometry()
+dbSet<dbBox> dbPolygon::getGeometry()
 {
-  _dbPBox* pbox = (_dbPBox*) this;
+  _dbPolygon* pbox = (_dbPolygon*) this;
   _dbMaster* master = (_dbMaster*) pbox->getOwner();
   return dbSet<dbBox>(pbox, master->_pbox_box_itr);
 }
 
-void dbPBox::setDesignRuleWidth(int design_rule_width)
+void dbPolygon::setDesignRuleWidth(int design_rule_width)
 {
-  _dbPBox* obj = (_dbPBox*) this;
+  _dbPolygon* obj = (_dbPolygon*) this;
 
   obj->design_rule_width_ = design_rule_width;
 
@@ -306,6 +306,6 @@ void dbPBox::setDesignRuleWidth(int design_rule_width)
   }
 }
 
-// User Code End dbPBoxPublicMethods
+// User Code End dbPolygonPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

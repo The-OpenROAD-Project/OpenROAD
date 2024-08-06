@@ -38,7 +38,7 @@
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
-#include "dbPBoxItr.h"
+#include "dbPolygonItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -159,11 +159,11 @@ dbSet<dbBox> dbMPin::getGeometry()
   return dbSet<dbBox>(pin, master->_box_itr);
 }
 
-dbSet<dbPBox> dbMPin::getPolygonGeometry()
+dbSet<dbPolygon> dbMPin::getPolygonGeometry()
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return dbSet<dbPBox>(pin, master->_pbox_itr);
+  return dbSet<dbPolygon>(pin, master->_pbox_itr);
 }
 
 dbSet<dbBox> dbMPin::getNonPolygonGeometry()

@@ -39,7 +39,7 @@
 #include "dbMPin.h"
 #include "dbMaster.h"
 #include "dbNet.h"
-#include "dbPBox.h"
+#include "dbPolygon.h"
 #include "dbRegion.h"
 #include "dbTable.h"
 #include "dbTechVia.h"
@@ -165,8 +165,8 @@ void dbBoxItr::reverse(dbObject* parent)
       break;
     }
 
-    case dbPBoxObj: {
-      _dbPBox* pbox = (_dbPBox*) parent;
+    case dbPolygonObj: {
+      _dbPolygon* pbox = (_dbPolygon*) parent;
       uint id = pbox->boxes_;
       uint list = 0;
 
@@ -221,8 +221,8 @@ uint dbBoxItr::begin(dbObject* parent)
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
       if (include_polygons_ && master->_poly_obstructions) {
-        dbId<_dbPBox> pid = master->_poly_obstructions;
-        _dbPBox* pbox = _pbox_tbl->getPtr(pid);
+        dbId<_dbPolygon> pid = master->_poly_obstructions;
+        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
           pid = pbox->next_pbox_;
@@ -238,8 +238,8 @@ uint dbBoxItr::begin(dbObject* parent)
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
       if (include_polygons_ && pin->_poly_geoms) {
-        dbId<_dbPBox> pid = pin->_poly_geoms;
-        _dbPBox* pbox = _pbox_tbl->getPtr(pid);
+        dbId<_dbPolygon> pid = pin->_poly_geoms;
+        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
           pid = pbox->next_pbox_;
@@ -262,8 +262,8 @@ uint dbBoxItr::begin(dbObject* parent)
       return pin->_boxes;
     }
 
-    case dbPBoxObj: {
-      _dbPBox* box = (_dbPBox*) parent;
+    case dbPolygonObj: {
+      _dbPolygon* box = (_dbPolygon*) parent;
       return box->boxes_;
     }
 
@@ -289,11 +289,11 @@ uint dbBoxItr::next(uint id, ...)
   }
 
   if (box->_flags._owner_type == dbBoxOwner::PBOX) {
-    // if owner is dbPBox need to check for next dbPBox
-    dbId<_dbPBox> pid = box->_owner;
-    _dbPBox* box_pbox = _pbox_tbl->getPtr(pid);
+    // if owner is dbPolygon need to check for next dbPolygon
+    dbId<_dbPolygon> pid = box->_owner;
+    _dbPolygon* box_pbox = _pbox_tbl->getPtr(pid);
 
-    _dbPBox* pbox = box_pbox;
+    _dbPolygon* pbox = box_pbox;
     if (pbox->next_pbox_ != 0) {
       // move to next pbox
       pbox = _pbox_tbl->getPtr(pbox->next_pbox_);

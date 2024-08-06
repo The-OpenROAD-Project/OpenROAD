@@ -103,7 +103,7 @@ enum dbObjectType
   dbModNetObj,
   dbModuleObj,
   dbNetTrackObj,
-  dbPBoxObj,
+  dbPolygonObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
   dbScanChainObj,

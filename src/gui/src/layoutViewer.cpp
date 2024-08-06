@@ -94,7 +94,7 @@ using odb::dbMaster;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbOrientType;
-using odb::dbPBox;
+using odb::dbPolygon;
 using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
@@ -1332,7 +1332,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
     }
     return poly;
   };
-  auto pbox_to_qpolygon = [](odb::dbPBox* box) -> QPolygon {
+  auto pbox_to_qpolygon = [](odb::dbPolygon* box) -> QPolygon {
     QPolygon poly;
     for (const auto& pt : box->getPolygon().getPoints()) {
       poly.append(QPoint(pt.x(), pt.y()));
@@ -1342,7 +1342,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 
   // store obstructions
   if (!is_db_view) {
-    for (dbPBox* box : master->getPolygonObstructions()) {
+    for (dbPolygon* box : master->getPolygonObstructions()) {
       dbTechLayer* layer = box->getTechLayer();
       boxes[layer].obs.emplace_back(pbox_to_qpolygon(box));
     }
@@ -1361,7 +1361,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbMTerm* mterm : master->getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
       if (!is_db_view) {
-        for (dbPBox* box : mpin->getPolygonGeometry()) {
+        for (dbPolygon* box : mpin->getPolygonGeometry()) {
           dbTechLayer* layer = box->getTechLayer();
           boxes[layer].mterms.emplace_back(pbox_to_qpolygon(box));
         }

@@ -39,7 +39,7 @@
 namespace odb {
 
 class _dbBox;
-class _dbPBox;
+class _dbPolygon;
 template <class T>
 class dbTable;
 
@@ -47,11 +47,11 @@ class dbBoxItr : public dbIterator
 {
  protected:
   dbTable<_dbBox>* _box_tbl;
-  dbTable<_dbPBox>* _pbox_tbl;
+  dbTable<_dbPolygon>* _pbox_tbl;
 
  public:
   dbBoxItr(dbTable<_dbBox>* box_tbl,
-           dbTable<_dbPBox>* pbox_tbl,
+           dbTable<_dbPolygon>* pbox_tbl,
            bool include_polygons)
   {
     _box_tbl = box_tbl;
