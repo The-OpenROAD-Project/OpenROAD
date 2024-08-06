@@ -1618,9 +1618,10 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db,
-                                     std::function<bool(void)> usingDBView)
-    : db_(db), usingDBView_(std::move(usingDBView))
+DbITermDescriptor::DbITermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool(void)> usingPolyDecompView)
+    : db_(db), usingPolyDecompView_(std::move(usingPolyDecompView))
 {
 }
 
@@ -1663,7 +1664,7 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
-    if (usingDBView_()) {
+    if (usingPolyDecompView_()) {
       for (auto box : mpin->getGeometry()) {
         odb::Rect rect = box->getBox();
         inst_xfm.apply(rect);
@@ -1863,9 +1864,10 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbMTermDescriptor::DbMTermDescriptor(odb::dbDatabase* db,
-                                     std::function<bool(void)> usingDBView)
-    : db_(db), usingDBView_(std::move(usingDBView))
+DbMTermDescriptor::DbMTermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool(void)> usingPolyDecompView)
+    : db_(db), usingPolyDecompView_(std::move(usingPolyDecompView))
 {
 }
 
@@ -1909,7 +1911,7 @@ void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
   std::vector<odb::Polygon> mterm_polys;
 
   for (auto mpin : mterm->getMPins()) {
-    if (usingDBView_()) {
+    if (usingPolyDecompView_()) {
       for (auto box : mpin->getGeometry()) {
         mterm_polys.emplace_back(box->getBox());
       }
