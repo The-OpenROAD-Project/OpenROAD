@@ -257,7 +257,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   getNetId(db_net, netID, exists);
   if (exists) {
     net = nets_[netID];
-    clearNetRoute(netID);
+    clearNetRoute(netID, true);
     seglist_[netID].clear();
   } else {
     net = new FrNet;
@@ -284,13 +284,13 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
-void FastRouteCore::removeNet(odb::dbNet* db_net)
+void FastRouteCore::removeNet(odb::dbNet* db_net, bool release_resources)
 {
   // TODO The deleted flag is a temporary solution. Correctly delete the
   // FrNet and update the nets list
   if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
     int netID = db_net_id_map_[db_net];
-    clearNetRoute(netID);
+    clearNetRoute(netID, release_resources);
     FrNet* delete_net = nets_[netID];
     nets_[netID] = nullptr;
     delete delete_net;
@@ -305,10 +305,12 @@ void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
   net_id = exists ? itr->second : 0;
 }
 
-void FastRouteCore::clearNetRoute(const int netID)
+void FastRouteCore::clearNetRoute(const int netID, bool release_resources)
 {
   // clear used resources for the net route
-  releaseNetResources(netID);
+  if (release_resources) {
+    releaseNetResources(netID);
+  }
 
   // clear stree
   sttrees_[netID].nodes.clear();

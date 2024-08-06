@@ -3112,7 +3112,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
-  fastroute_->removeNet(db_net);
+  fastroute_->removeNet(db_net, !net->skipIncremental());
   delete net;
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
@@ -3760,6 +3760,7 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* net1, odb::dbNet* net2)
   GRoute& net2_route = routes_[net2];
   net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   db_net_map_[net1]->setSkipIncremental(true);
+  db_net_map_[net2]->setSkipIncremental(true);
 }
 
 void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
@@ -4276,15 +4277,16 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
-    if (verbose_)
-      logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
-    if (logger_->debugCheck(GRT, "incr", 2)) {
-      debugPrint(logger_, GRT, "incr", 2, "Dirty nets:");
-      for (auto net : dirty_nets_)
-        debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
-    }
 
     updateDirtyNets(dirty_nets);
+    if (verbose_) {
+      logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets.size());
+    }
+    if (logger_->debugCheck(GRT, "incr", 2)) {
+      debugPrint(logger_, GRT, "incr", 2, "Dirty nets:");
+      for (auto net : dirty_nets)
+        debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
+    }
 
     if (dirty_nets.empty()) {
       return dirty_nets;
