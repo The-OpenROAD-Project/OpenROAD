@@ -150,6 +150,7 @@ html_theme_options = {
     ],
 }
 
+
 def swap_prefix(file, old, new):
     with open(file, "r") as f:
         lines = f.read()
@@ -171,7 +172,7 @@ def setup(app):
     command = "python getMessages.py"
     _ = os.popen(command).read()
 
-    if not os.path.exists('../_readthedocs/html/doxygen_output'): 
-        os.makedirs('../_readthedocs/html/doxygen_output', exist_ok = True)
+    if not os.path.exists("../_readthedocs/html/doxygen_output"):
+        os.makedirs("../_readthedocs/html/doxygen_output", exist_ok=True)
     command = "cd .. ; doxygen"
     _ = os.popen(command).read()
