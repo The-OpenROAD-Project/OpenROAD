@@ -11,27 +11,30 @@ design.evalTclString("read_sdc timing_api_2.sdc")
 timing = Timing(design)
 
 for inst in design.getBlock().getInsts():
-  print(inst.getName(), 
+    print(
+        inst.getName(),
         inst.getMaster().getName(),
-        design.isSequential(inst.getMaster()), 
+        design.isSequential(inst.getMaster()),
         design.isInClock(inst),
         design.isBuffer(inst.getMaster()),
         design.isInverter(inst.getMaster()),
+    )
+    for corner in timing.getCorners():
+        print(
+            timing.staticPower(inst, corner),
+            timing.dynamicPower(inst, corner),
         )
-  for corner in timing.getCorners():
-    print(timing.staticPower(inst, corner),
-          timing.dynamicPower(inst, corner),
-         )
-  for iTerm in inst.getITerms():
-    if not iTerm.getNet():
-      continue
-    if not (design.isInSupply(iTerm)):
-      print(design.getITermName(iTerm), 
-            timing.getPinArrival(iTerm, Timing.Rise),
-            timing.getPinArrival(iTerm, Timing.Fall),
-            timing.getPinSlew(iTerm),
-            timing.isEndpoint(iTerm) 
+    for iTerm in inst.getITerms():
+        if not iTerm.getNet():
+            continue
+        if not (design.isInSupply(iTerm)):
+            print(
+                design.getITermName(iTerm),
+                timing.getPinArrival(iTerm, Timing.Rise),
+                timing.getPinArrival(iTerm, Timing.Fall),
+                timing.getPinSlew(iTerm),
+                timing.isEndpoint(iTerm),
             )
 
 for net in design.getBlock().getNets():
-  print(net.getName(), design.getNetRoutedLength(net))
+    print(net.getName(), design.getNetRoutedLength(net))

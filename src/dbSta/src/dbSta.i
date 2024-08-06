@@ -150,12 +150,12 @@ db_network_defined()
 }
 
 void
-report_cell_usage_cmd()
+report_cell_usage_cmd(const bool verbose)
 {
   cmdLinkedNetwork();
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  sta->report_cell_usage();
+  sta->report_cell_usage(verbose);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
@@ -168,7 +168,8 @@ write_verilog_cmd(const char *filename,
 {
   // This does NOT want the SDC (cmd) network because it wants
   // to see the sta internal names.
-  Sta *sta = Sta::sta();
+  ord::OpenRoad *openroad = ord::getOpenRoad();  
+  sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
   delete remove_cells;

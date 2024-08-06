@@ -1229,8 +1229,6 @@ uint extMain::couplingFlow(Rect& extRect,
   uint totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
-  logger_->info(RCX, 43, "{} wires to be extracted", totWireCnt);
-
   uint minRes[2];
   minRes[1] = pitchTable[1];
   minRes[0] = widthTable[1];
@@ -1348,12 +1346,14 @@ uint extMain::couplingFlow(Rect& extRect,
           = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
-          && (percent_extracted - _previous_percent_extracted >= 5.0)) {
+          && (((totWireCnt == totalWiresExtracted)
+               && (percent_extracted > _previous_percent_extracted))
+              || (percent_extracted - _previous_percent_extracted >= 5.0))) {
         logger_->info(RCX,
                       442,
-                      "{:d}% completion -- {:d} wires have been extracted",
+                      "{:d}% of {:d} wires extracted",
                       (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
-                      totalWiresExtracted);
+                      totWireCnt);
 
         _previous_percent_extracted = percent_extracted;
       }

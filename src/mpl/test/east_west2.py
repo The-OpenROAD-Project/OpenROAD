@@ -14,7 +14,7 @@ design.readDef("east_west1.def")
 
 # This appears to be the only difference from east_west1, ie, we do not
 # read in the sdc file
-#design.evalTclString('read_sdc "gcd.sdc"')
+# design.evalTclString('read_sdc "gcd.sdc"')
 
 mpl_aux.macro_placement(design, style="corner_min_wl", halo=[0.5, 0.5])
 

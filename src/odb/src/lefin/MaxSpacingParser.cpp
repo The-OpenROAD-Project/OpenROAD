@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2024, Precision Innovations Inc.
+// All rights reserved.
 //
 // BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,66 +29,46 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <functional>
+#include <iostream>
+#include <string>
 
-#include <cuda_runtime.h>
-#include <thrust/copy.h>
-#include <thrust/device_vector.h>
-#include <thrust/fill.h>
-#include <thrust/host_vector.h>
-#include <thrust/sequence.h>
-
-#include <Eigen/SparseCore>
-#include <memory>
-#include <vector>
-
-#include "cusolverSp.h"
-#include "cusparse.h"
-#include "device_launch_parameters.h"
+#include "boostParser.h"
+#include "lefLayerPropParser.h"
 #include "odb/db.h"
-#include "utl/Logger.h"
+#include "odb/lefin.h"
 
-namespace utl {
-class Logger;
+using namespace odb;
+
+void MaxSpacingParser::setMaxSpacing(dbTechLayerMaxSpacingRule* rule,
+                                     double spc)
+{
+  rule->setMaxSpacing(lefin_->dbdist(spc));
 }
 
-namespace gpl {
-
-typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
-class GpuSolver
+void MaxSpacingParser::parse(std::string s)
 {
- public:
-  GpuSolver(SMatrix& placeInstForceMatrix,
-            Eigen::VectorXf& fixedInstForceVec,
-            utl::Logger* logger);
-  void cusolverCal(Eigen::VectorXf& instLocVec);
-  float error();
-  ~GpuSolver();
+  dbTechLayerMaxSpacingRule* rule = dbTechLayerMaxSpacingRule::create(layer_);
+  qi::rule<std::string::iterator, space_type> LEF58_MAXSPACING
+      = (lit("MAXSPACING") >> double_[boost::bind(
+             &MaxSpacingParser::setMaxSpacing, this, rule, _1)]
+         >> -(lit("CUTCLASS") >> _string[boost::bind(
+                  &dbTechLayerMaxSpacingRule::setCutClass, rule, _1)])
+         >> lit(";"));
 
- private:
-  int m_;    // Rows of the SP matrix
-  int nnz_;  // non-zeros
-  utl::Logger* log_;
-  float error_;
+  auto first = s.begin();
+  auto last = s.end();
+  bool valid
+      = qi::phrase_parse(first, last, LEF58_MAXSPACING, space) && first == last;
 
-  // {d_cooRowIndex_, d_cooColIndex_, d_cooVal_} are the device vectors used to
-  // store the COO formatted triplets.
-  // https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)
-  // d_instLocVec_ and d_fixedInstForceVec_ are the device lists corresponding
-  // to instLocVec and fixedInstForceVec.
-  thrust::device_vector<int> d_cooRowIndex_, d_cooColIndex_;
-  thrust::device_vector<float> d_cooVal_, d_fixedInstForceVec_, d_instLocVec_;
-
-  // {r_cooRowIndex_, r_cooColIndex_, r_cooVal_} are the raw pointers to the
-  // device vectors above.
-  int *r_cooRowIndex_, *r_cooColIndex_;
-  float *r_cooVal_, *r_instLocVec_, *r_fixedInstForceVec_;
-
-  void cudaerror(cudaError_t code);
-  void cusparseerror(cusparseStatus_t code);
-  void cusolvererror(cusolverStatus_t code);
-};
-}  // namespace gpl
+  if (!valid && rule != nullptr) {  // fail if we did not get a full match
+    odb::dbTechLayerMaxSpacingRule::destroy(rule);
+    lefin_->warning(279,
+                    "parse mismatch in layer property LEF58_MAXSPACING for "
+                    "layer {} :\"{}\"",
+                    layer_->getName(),
+                    s);
+  }
+}

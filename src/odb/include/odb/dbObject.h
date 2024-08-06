@@ -87,6 +87,7 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbBusPortObj,
   dbDftObj,
   dbGCellGridObj,
   dbGlobalConnectObj,
@@ -122,6 +123,7 @@ enum dbObjectType
   dbTechLayerEolKeepOutRuleObj,
   dbTechLayerForbiddenSpacingRuleObj,
   dbTechLayerKeepOutZoneRuleObj,
+  dbTechLayerMaxSpacingRuleObj,
   dbTechLayerMinCutRuleObj,
   dbTechLayerMinStepRuleObj,
   dbTechLayerSpacingEolRuleObj,
@@ -168,9 +170,9 @@ class dbObject
   dbObjectType getObjectType() const;
   dbDatabase* getDb() const;
   uint getId() const;
-  const char* getObjName() const;
+  const char* getTypeName() const;
 
-  static const char* getObjName(dbObjectType type);
+  static const char* getTypeName(dbObjectType type);
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
   _dbObject* getImpl();

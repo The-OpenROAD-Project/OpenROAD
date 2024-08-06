@@ -107,9 +107,12 @@ class dbSta : public Sta, public ord::OpenRoadObserver
     TIE,
     LEF_OTHER,
     STD_CELL,
-    STD_BUFINV,
-    STD_BUFINV_CLK_TREE,
-    STD_BUFINV_TIMING_REPAIR,
+    STD_BUF,
+    STD_BUF_CLK_TREE,
+    STD_BUF_TIMING_REPAIR,
+    STD_INV,
+    STD_INV_CLK_TREE,
+    STD_INV_TIMING_REPAIR,
     STD_CLOCK_GATE,
     STD_LEVEL_SHIFT,
     STD_SEQUENTIAL,
@@ -162,7 +165,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   std::map<InstType, int> countInstancesByType();
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage();
+  void report_cell_usage(bool verbose);
 
   using Sta::netSlack;
   using Sta::replaceCell;

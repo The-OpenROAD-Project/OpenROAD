@@ -35,6 +35,8 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
+#include <odb/dbSet.h>
+
 #include <map>
 #include <string>
 
@@ -53,6 +55,7 @@ namespace ord {
 
 using odb::dbBlock;
 using odb::dbBTerm;
+using odb::dbBusPort;
 using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -188,6 +191,9 @@ class Verilog2db
   // Map file names to a unique id to avoid having to store the full file name
   // for each instance
   std::map<std::string, int> src_file_id_;
+  // We have to store dont_touch instances and apply the attribute after
+  // creating iterms; as iterms can't be added to a dont_touch inst
+  std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
 };
 
@@ -260,6 +266,9 @@ void Verilog2db::makeDbNetlist()
   makeDbNets(network_->topInstance());
   if (hierarchy_) {
     makeVModNets(inst_module_vec);
+  }
+  for (auto inst : dont_touch_insts) {
+    inst->setDoNotTouch(true);
   }
 }
 
@@ -357,29 +366,47 @@ void Verilog2db::makeDbModule(
       return;
     }
     if (hierarchy_) {
-      // make the module bterms
+      dbBusPort* dbbusport = nullptr;
+      // make the module ports
       CellPortIterator* cp_iter = network_->portIterator(cell);
       while (cp_iter->hasNext()) {
         Port* port = cp_iter->next();
-        /* Ports are prefixed by instance name*/
         if (network_->isBus(port)) {
+          // make the bus port as part of the port set for the cell.
           const char* port_name = network_->name(port);
-          const char* cell_name = network_->name(cell);
-          int from = network_->fromIndex(port);
-          int to = network_->toIndex(port);
-          string key = "bus_msb_first ";
-          key += key + port_name + " " + cell_name;
-          key += port_name;
-          odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+          dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
+          dbbusport = dbBusPort::create(module,
+                                        bmodterm,  // the root of the bus port
+                                        network_->fromIndex(port),
+                                        network_->toIndex(port));
+          bmodterm->setBusPort(dbbusport);
+          dbIoType io_type = staToDb(network_->direction(port));
+          bmodterm->setIoType(io_type);
+
+          //
           // Make a modbterm for each bus bit
-          int start_index = from < to ? from : to;
-          int end_index = from < to ? to : from;
-          for (int i = start_index; i <= end_index; i++) {
-            // use actual here
+          // Keep traversal in terms of bits
+          // These modbterms are annotated as being
+          // part of the port bus.
+          //
+
+          int from_index = network_->fromIndex(port);
+          int to_index = network_->toIndex(port);
+          bool updown = (from_index <= to_index) ? true : false;
+          int size
+              = updown ? to_index - from_index + 1 : from_index - to_index + 1;
+          for (int i = 0; i < size; i++) {
+            int ix = updown ? from_index + i : from_index - i;
             std::string bus_bit_port = port_name + std::string("[")
-                                       + std::to_string(i) + std::string("]");
-            dbModBTerm* bmodterm
+                                       + std::to_string(ix) + std::string("]");
+            dbModBTerm* modbterm
                 = dbModBTerm::create(module, bus_bit_port.c_str());
+            if (i == 0) {
+              dbbusport->setMembers(modbterm);
+            }
+            if (i == size - 1) {
+              dbbusport->setLast(modbterm);
+            }
             dbIoType io_type = staToDb(network_->direction(port));
             bmodterm->setIoType(io_type);
           }
@@ -396,6 +423,7 @@ void Verilog2db::makeDbModule(
                      bmodterm->getName());
         }
       }
+      module->getModBTerms().reverse();
       // make the instance iterms
       InstancePinIterator* ip_iter = network_->pinIterator(inst);
       while (ip_iter->hasNext()) {
@@ -468,6 +496,13 @@ void Verilog2db::makeDbModule(
         }
       }
 
+      const auto dont_touch = network_->getAttribute(child, "dont_touch");
+      if (!dont_touch.empty()) {
+        if (std::stoi(dont_touch)) {
+          dont_touch_insts.push_back(db_inst);
+        }
+      }
+
       inst_module_vec.emplace_back(child, module);
 
       if (db_inst == nullptr) {
@@ -485,6 +520,7 @@ void Verilog2db::makeDbModule(
       && module->getChildren().orderReversed()) {
     module->getChildren().reverse();
   }
+
   if (module->getInsts().reversible() && module->getInsts().orderReversed()) {
     module->getInsts().reverse();
   }

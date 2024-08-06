@@ -5,8 +5,7 @@
 #   3. `cd build`
 #   4. `cmake $CMAKE_FLAGS ..`
 {
-  # Using nixpkgs 23.05
-  pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/41de143fda10e33be0f47eab2bfe08a50f234267.tar.gz") {}
+  pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/refs/tags/24.05.tar.gz") {}
 }:
 with pkgs; let
   # Default spdlog package uses external libfmt, which causes compile issues
@@ -14,7 +13,7 @@ with pkgs; let
       cmakeFlags = builtins.filter (flag: (!lib.strings.hasPrefix "-DSPDLOG_FMT_EXTERNAL" flag)) old.cmakeFlags;
       doCheck = false;
   }));
-in (mkShell.override { stdenv = clang_14.stdenv; }) {
+in (mkShell.override { stdenv = clangStdenv; }) {
   # Runtime Dependencies
   buildInputs = [
     boost
@@ -39,13 +38,12 @@ in (mkShell.override { stdenv = clang_14.stdenv; }) {
 
   # Compile-time Dependencies
   nativeBuildInputs = [
-    swig
+    swig4
     pkg-config
     cmake
     gnumake
     flex
     bison
-    clang-tools_14
   ];
   
   # Environment variable in resulting shell

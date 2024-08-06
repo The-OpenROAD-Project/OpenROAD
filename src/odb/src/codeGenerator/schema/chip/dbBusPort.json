@@ -1,0 +1,56 @@
+{
+    "name":"dbBusPort",
+    "type":"dbObject",
+    "needs_non_default_destructor" : "true",
+    "fields": [
+        {
+            "name":"_flags",
+            "type":"uint",
+            "flags":["private"],
+            "default":"0",
+            "schema":"db_schema_update_hierarchy"            
+        },
+        {
+            "name": "_from",
+            "type": "int",
+            "flags":["no-set"],
+            "default":"0",
+            "schema":"db_schema_odb_busport"
+        },
+        {
+            "name":"_to",
+            "type":"int",
+            "flags":["no-set"],
+            "default":"0",
+            "schema":"db_schema_odb_busport"
+        },
+        {
+            "name":"_port",
+            "type":"dbId<_dbModBTerm>",
+            "flags":["no-set"],
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        },
+        {
+            "name":"_members",
+            "type":"dbId<_dbModBTerm>",
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        },
+        {
+            "name":"_last",
+            "type":"dbId<_dbModBTerm>",
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        },
+        {
+            "name":"_parent",
+            "type":"dbId<_dbModule>",
+            "flags":["no-set"],
+            "schema":"db_schema_odb_busport",
+            "parent":"dbBlock"            
+        }
+    ],
+    "constructors":[],
+    "cpp_includes":[ "dbVector.h","dbBlock.h","dbModBTerm.h","dbModule.h","dbModNet.h","dbHashTable.hpp","dbModITerm.h","dbBusPort.h", "dbModuleBusPortModBTermItr.h"]
+}

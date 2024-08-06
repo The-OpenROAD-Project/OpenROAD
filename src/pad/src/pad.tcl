@@ -58,6 +58,16 @@ proc make_io_bump_array {args} {
     lappend cmd_args $keys(-prefix)
   }
 
+  if { [llength $origin] != 2 } {
+    utl::error PAD 17 "-origin must be specified as {x y}"
+  }
+
+  if { [llength $pitch] == 1 } {
+    lappend pitch $pitch
+  } elseif { [llength $pitch] != 2 } {
+    utl::error PAD 38 "-pitch must be specified as {deltax deltay} or {delta}"
+  }
+
   pad::make_bump_array \
     $master \
     [ord::microns_to_dbu [lindex $origin 0]] \

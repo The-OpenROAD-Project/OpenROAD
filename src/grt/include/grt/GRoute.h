@@ -40,9 +40,7 @@
 #include <set>
 #include <vector>
 
-namespace odb {
-class dbNet;
-}  // namespace odb
+#include "odb/db.h"
 
 namespace grt {
 
@@ -91,11 +89,6 @@ class Capacities
   CapacitiesVec ver_capacities_;
 };
 
-struct cmpById
-{
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
-};
-
 struct TileCongestion
 {
   int capacity;
@@ -104,7 +97,7 @@ struct TileCongestion
 
 struct TileInformation
 {
-  std::set<odb::dbNet*, cmpById> nets;
+  std::set<odb::dbNet*> nets;
   TileCongestion congestion;
 };
 
@@ -114,7 +107,7 @@ struct CongestionInformation
 {
   GSegment segment;
   TileCongestion congestion;
-  std::set<odb::dbNet*, cmpById> sources;
+  std::set<odb::dbNet*> sources;
 };
 
 struct CapacityReduction
@@ -127,7 +120,7 @@ using CapacityReductionData = std::vector<std::vector<CapacityReduction>>;
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
-typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
+typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
 void print(GRoute& groute);
 
 }  // namespace grt

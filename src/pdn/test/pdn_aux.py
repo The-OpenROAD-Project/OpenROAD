@@ -7,23 +7,33 @@ from collections import defaultdict
 
 #  In tcl land, this lives in OpenRoad.tcl. However, it seems to be only called
 #  in the pdn regression tests so it is defined here instead.
-def add_global_connection(design, *,
-                          net_name=None,
-                          inst_pattern=None,
-                          pin_pattern=None,
-                          power=False,
-                          ground=False,
-                          region=None):
+def add_global_connection(
+    design,
+    *,
+    net_name=None,
+    inst_pattern=None,
+    pin_pattern=None,
+    power=False,
+    ground=False,
+    region=None,
+):
     if net_name is None:
-        utl.error(utl.PDN, 1501, "The net option for the " +
-                  "add_global_connection command is required.")
+        utl.error(
+            utl.PDN,
+            1501,
+            "The net option for the " + "add_global_connection command is required.",
+        )
 
     if inst_pattern is None:
         inst_pattern = ".*"
 
     if pin_pattern is None:
-        utl.error(utl.PDN, 1502, "The pin_pattern option for the " +
-                  "add_global_connection command is required.")
+        utl.error(
+            utl.PDN,
+            1502,
+            "The pin_pattern option for the "
+            + "add_global_connection command is required.",
+        )
 
     net = design.getBlock().findNet(net_name)
     if net is None:
@@ -52,18 +62,24 @@ def check_design_state(design, cmd):
         utl.error(utl.PDN, 1599, f"Design must be loaded before calling {cmd}.")
 
 
-def set_voltage_domain(design, *,
-                       name=None,
-                       power=None,
-                       ground=None,
-                       region_name=None,
-                       secondary_power=None,
-                       switched_power_name=None):
+def set_voltage_domain(
+    design,
+    *,
+    name=None,
+    power=None,
+    ground=None,
+    region_name=None,
+    secondary_power=None,
+    switched_power_name=None,
+):
     pdngen = design.getPdnGen()
     check_design_state(design, "set_voltage_domain")
     if design.getBlock() is None:
-        utl.error(utl.PDN, 1505, "Design must be loaded before calling " +
-                                 "set_voltage_domain.")
+        utl.error(
+            utl.PDN,
+            1505,
+            "Design must be loaded before calling " + "set_voltage_domain.",
+        )
 
     if power is None:
         utl.error(utl.PDN, 1506, "The power argument is required.")
@@ -104,27 +120,31 @@ def set_voltage_domain(design, *,
         switched_power_net_name = switched_power_name
         switched_power = design.getBlock().findNet(switched_power_net_name)
         if switched_power is None:
-            switched_power = odb.dbNet_create(design.getBlock(),
-                                              switched_power_net_name)
+            switched_power = odb.dbNet_create(
+                design.getBlock(), switched_power_net_name
+            )
             switched_power.setSpecial()
             switched_power.setSigType("POWER")
         else:
             if switched_power.getSigType() != "POWER":
-                utl.error(utl.PDN, 1512, f"Net {switched_power_net_name} " +
-                          "already exists in the design, but is of signal " +
-                          "type {switched_power.getSigType()}.")
+                utl.error(
+                    utl.PDN,
+                    1512,
+                    f"Net {switched_power_net_name} "
+                    + "already exists in the design, but is of signal "
+                    + "type {switched_power.getSigType()}.",
+                )
 
     if region is None:
         if bool(name) and name.capitalize() != "Core":
-            utl.warn(utl.PDN, 1513, "Core voltage domain will be named \"Core\".")
-        pdngen.setCoreDomain(pwr,
-                             switched_power,
-                             gnd,
-                             secondary)
+            utl.warn(utl.PDN, 1513, 'Core voltage domain will be named "Core".')
+        pdngen.setCoreDomain(pwr, switched_power, gnd, secondary)
 
     else:
-        pdngen.makeRegionVoltageDomain(name, pwr, switched_power, gnd,
-                                       secondary, region)
+        pdngen.makeRegionVoltageDomain(
+            name, pwr, switched_power, gnd, secondary, region
+        )
+
 
 def get_voltage_domains(design, names):
     pdngen = design.getPdnGen()
@@ -132,7 +152,7 @@ def get_voltage_domains(design, names):
     for name in names:
         domain = pdngen.findDomain(name)
         if domain is None:
-            utl.error( utl.PDN, 1514, f"Unable to find {name} domain.")
+            utl.error(utl.PDN, 1514, f"Unable to find {name} domain.")
         domains.append(domain)
     return domains
 
@@ -158,26 +178,30 @@ def get_obstructions(design, obstructions):
     return layers
 
 
-def define_pdn_grid_real(design, *,
-                         name=None,
-                         pins=[],
-                         obstructions=[],
-                         power_control=None,
-                         voltage_domains=None,
-                         power_switch_cell=None,
-                         starts_with_power=False,
-                         grid_over_pg_pins=False,
-                         grid_over_boundary=False,
-                         power_control_network="STAR"):  # (STAR|DAISY)]}
-    
+def define_pdn_grid_real(
+    design,
+    *,
+    name=None,
+    pins=[],
+    obstructions=[],
+    power_control=None,
+    voltage_domains=None,
+    power_switch_cell=None,
+    starts_with_power=False,
+    grid_over_pg_pins=False,
+    grid_over_boundary=False,
+    power_control_network="STAR",
+):  # (STAR|DAISY)]}
     pdngen = design.getPdnGen()
     if bool(voltage_domains):
         domains = get_voltage_domains(design, voltage_domains)
     else:
-        domains =  [pdngen.findDomain("Core")]
-      
+        domains = [pdngen.findDomain("Core")]
+
     if name is None:
-        utl.error(utl.PDN, 1516, "'name' is a required parameter for define_pdn_grid_real")
+        utl.error(
+            utl.PDN, 1516, "'name' is a required parameter for define_pdn_grid_real"
+        )
 
     if has_grid(design, name):
         utl.error(utl.PDN, 1517, f"Grid named {name} already defined.")
@@ -186,53 +210,72 @@ def define_pdn_grid_real(design, *,
     if bool(pins):
         for pin in pins:
             pin_layers.append(get_layer(design, pin))
-    
+
     if bool(obstructions):
         obstructions = get_obstructions(design, obstructions)
-    
+
     power_cell = None
     if power_switch_cell is not None:
         power_cell = pdngen.findSwitchedPowerCell(power_switch_cell)
         if power_cell is None:
-            utl.error(utl.PDN, 1519, f"Switched power cell {power_switch_cell} is not defined.")
-      
+            utl.error(
+                utl.PDN,
+                1519,
+                f"Switched power cell {power_switch_cell} is not defined.",
+            )
+
         if not bool(power_control):
-            utl.error(utl.PDN, 1520, "'power_control' must be specified with 'power_switch_cell'")
+            utl.error(
+                utl.PDN,
+                1520,
+                "'power_control' must be specified with 'power_switch_cell'",
+            )
         else:
             power_control = design.getBlock().findNet(power_control)
             if power_control is None:
-                utl.error(utl.PDN, 1521, f"Unable to find power control net: {power_control}")
+                utl.error(
+                    utl.PDN, 1521, f"Unable to find power control net: {power_control}"
+                )
 
     starts_with = pdn.POWER if starts_with_power else pdn.GROUND
     for domain in domains:
-        pdngen.makeCoreGrid(domain,
-                            name,
-                            starts_with,
-                            pin_layers,
-                            obstructions,
-                            power_cell,
-                            power_control,
-                            power_control_network)
-    
+        pdngen.makeCoreGrid(
+            domain,
+            name,
+            starts_with,
+            pin_layers,
+            obstructions,
+            power_cell,
+            power_control,
+            power_control_network,
+        )
 
-def define_pdn_grid_macro(design, *,
-                          name="",
-                          voltage_domains=None,
-                          orient=[],
-                          instances=[],  # no regex's supported in this version
-                          cells=None,
-                          halo=[0, 0, 0, 0],
-                          starts_with_power=False,    # only POWER or GROUND, no GRID
-                          obstructions=[],            # string list of layers
-                          grid_over_pg_pins=False,
-                          grid_over_boundary=False,
-                          default_grid=False,
-                          is_bump=False):
+
+def define_pdn_grid_macro(
+    design,
+    *,
+    name="",
+    voltage_domains=None,
+    orient=[],
+    instances=[],  # no regex's supported in this version
+    cells=None,
+    halo=[0, 0, 0, 0],
+    starts_with_power=False,  # only POWER or GROUND, no GRID
+    obstructions=[],  # string list of layers
+    grid_over_pg_pins=False,
+    grid_over_boundary=False,
+    default_grid=False,
+    is_bump=False,
+):
     pdngen = design.getPdnGen()
     pg_pins_to_boundary = True
     if grid_over_pg_pins and grid_over_boundary:
-        utl.error(utl.PDN, 1522, "Options 'grid_over_pg_pins' and 'grid_over_boundary' " +
-                                 "are mutually exclusive.")
+        utl.error(
+            utl.PDN,
+            1522,
+            "Options 'grid_over_pg_pins' and 'grid_over_boundary' "
+            + "are mutually exclusive.",
+        )
     elif grid_over_pg_pins:
         pg_pins_to_boundary = False
 
@@ -247,16 +290,26 @@ def define_pdn_grid_macro(design, *,
         exclusive_keys += 1
 
     if exclusive_keys > 1:
-        utl.error(utl.PDN, 1523, "Options 'instances', 'cells', and 'default_grid' are mutually exclusive.")
+        utl.error(
+            utl.PDN,
+            1523,
+            "Options 'instances', 'cells', and 'default_grid' are mutually exclusive.",
+        )
     elif exclusive_keys < 1:
-        utl.error(utl.PDN, 1524, "One of either 'instances', 'cells', or 'default_grid' must be specified.")
-    
+        utl.error(
+            utl.PDN,
+            1524,
+            "One of either 'instances', 'cells', or 'default_grid' must be specified.",
+        )
+
     if default_grid:
         # set default pattern to .*
         cells = ".*"
 
     if name == "":
-        utl.error(utl.PDN, 1524, "'name' is a required parameter for define_pdn_grid_macro")
+        utl.error(
+            utl.PDN, 1524, "'name' is a required parameter for define_pdn_grid_macro"
+        )
 
     if has_grid(design, name):
         utl.error(utl.PDN, 1525, f"Grid named {name} already defined.")
@@ -266,11 +319,11 @@ def define_pdn_grid_macro(design, *,
     if bool(voltage_domains):
         domains = get_voltage_domains(design, voltage_domains)
     else:
-        domains =  [pdngen.findDomain("Core")]
+        domains = [pdngen.findDomain("Core")]
 
-    obst_list   = get_obstructions(design, obstructions)
+    obst_list = get_obstructions(design, obstructions)
     orient_list = get_orientations(orient)
-    
+
     starts_with = pdn.POWER if starts_with_power else pdn.GROUND
 
     if bool(instances):
@@ -280,21 +333,23 @@ def define_pdn_grid_macro(design, *,
             if bool(inst):
                 insts.append(inst)
             else:
-                utl.error(utl.PDN, 1526 ,f"Unable to find instance: {inst_name}")
-                
+                utl.error(utl.PDN, 1526, f"Unable to find instance: {inst_name}")
+
         for inst in insts:
             # must match orientation, if provided
             if not bool(orient_list) or inst.getOrient() in orient_list:
                 for domain in domains:
-                    pdngen.makeInstanceGrid(domain,
-                                            name,
-                                            starts_with,
-                                            inst,
-                                            halo,
-                                            pg_pins_to_boundary,
-                                            default_grid,
-                                            obst_list,
-                                            is_bump)
+                    pdngen.makeInstanceGrid(
+                        domain,
+                        name,
+                        starts_with,
+                        inst,
+                        halo,
+                        pg_pins_to_boundary,
+                        default_grid,
+                        obst_list,
+                        is_bump,
+                    )
 
     else:
         cells = []
@@ -312,44 +367,55 @@ def define_pdn_grid_macro(design, *,
                     # must match orientation, if provided
                     if not bool(orient_list) or inst.getOrient() in orient_list:
                         for domain in domains:
-                            pdn.make_instance_grid(domain,
-                                                   name,
-                                                   starts_with,
-                                                   inst,
-                                                   halo,
-                                                   pg_pins_to_boundary,
-                                                   default_grid,
-                                                   obst_list,
-                                                   is_bump)
+                            pdn.make_instance_grid(
+                                domain,
+                                name,
+                                starts_with,
+                                inst,
+                                halo,
+                                pg_pins_to_boundary,
+                                default_grid,
+                                obst_list,
+                                is_bump,
+                            )
 
 
-def add_pdn_stripe(design, *,
-                   grid="",
-                   layer=None,
-                   width=0,
-                   pitch=0,
-                   spacing=0,
-                   offset=0,
-                   starts_with=None,
-                   number_of_straps=0,
-                   nets=None,
-                   followpins=False,
-                   extend_to_core_ring=False,
-                   extend_to_boundary=False,
-                   snap_to_grid=False):
+def add_pdn_stripe(
+    design,
+    *,
+    grid="",
+    layer=None,
+    width=0,
+    pitch=0,
+    spacing=0,
+    offset=0,
+    starts_with=None,
+    number_of_straps=0,
+    nets=None,
+    followpins=False,
+    extend_to_core_ring=False,
+    extend_to_boundary=False,
+    snap_to_grid=False,
+):
     pdngen = design.getPdnGen()
-    
+
     if layer is None:
         utl.error(utl.PDN, 1527, "The 'layer' argument is required.")
 
     if not followpins:
         if width == 0:
-            utl.error(utl.PDN, 1528,
-                      "The 'width' argument is required when followpins is false.")
+            utl.error(
+                utl.PDN,
+                1528,
+                "The 'width' argument is required when followpins is false.",
+            )
 
         if pitch == 0:
-            utl.error(utl.PDN, 1529,
-                      "The 'pitch' argument is required when followpins is false.")
+            utl.error(
+                utl.PDN,
+                1529,
+                "The 'pitch' argument is required when followpins is false.",
+            )
     nets_list = []
     if bool(nets):
         for net_name in nets:
@@ -358,16 +424,20 @@ def add_pdn_stripe(design, *,
                 utl.error(utl.PDN, 1530, f"Unable to find net {net_name}.")
             nets_list.append(net)
 
-    layer   = get_layer(design, layer)
-    width   = design.micronToDBU(width)
-    pitch   = design.micronToDBU(pitch)
+    layer = get_layer(design, layer)
+    width = design.micronToDBU(width)
+    pitch = design.micronToDBU(pitch)
     spacing = design.micronToDBU(spacing)
-    offset  = design.micronToDBU(offset)
+    offset = design.micronToDBU(offset)
 
     extend = pdn.CORE
     if extend_to_core_ring and extend_to_boundary:
-        utl.error(utl.PDN, 1531, "Options 'extend_to_core_ring' and " +
-                  "'extend_to_boundary' are mutually exclusive.")
+        utl.error(
+            utl.PDN,
+            1531,
+            "Options 'extend_to_core_ring' and "
+            + "'extend_to_boundary' are mutually exclusive.",
+        )
     elif extend_to_core_ring:
         extend = pdn.RINGS
     elif extend_to_boundary:
@@ -388,50 +458,67 @@ def add_pdn_stripe(design, *,
             utl.error(utl.PDN, 607, "Invalid starts_with. Must be POWER or GROUND")
 
         for g in pdngen.findGrid(grid):
-            pdngen.makeStrap(g,
-                             layer,
-                             width,
-                             spacing,
-                             pitch,
-                             offset,
-                             number_of_straps,
-                             snap_to_grid,
-                             starts_with,
-                             extend,
-                             nets_list)
+            pdngen.makeStrap(
+                g,
+                layer,
+                width,
+                spacing,
+                pitch,
+                offset,
+                number_of_straps,
+                snap_to_grid,
+                starts_with,
+                extend,
+                nets_list,
+            )
 
 
 valid_orientations = ["R0", "R90", "R180", "R270", "MX", "MY", "MXR90", "MYR90"]
-lef_orientations = {"N": "R0", "FN": "MY", "S": "R180", "FS": "MX", "E": "R270",
-                        "FE": "MYR90", "W": "R90", "FW": "MXR90"}
+lef_orientations = {
+    "N": "R0",
+    "FN": "MY",
+    "S": "R180",
+    "FS": "MX",
+    "E": "R270",
+    "FE": "MYR90",
+    "W": "R90",
+    "FW": "MXR90",
+}
+
 
 def get_orientations(orientations):
     if orientations == []:
         return []
     checked_orientations = []
     for orient in orientations:
-      if orient in valid_orientations:
-        checked_orientations.append(orient)
-      elif orient in lef_orientations:
-        checked_orientations.append(lef_orientations[orient])
-      else:
-        vld = " ".join(valid_orientations)
-        utl.error(utl.PDN, 1036, f"Invalid orientation {orient} specified, " +
-                                 f"must be one of {vld}")
+        if orient in valid_orientations:
+            checked_orientations.append(orient)
+        elif orient in lef_orientations:
+            checked_orientations.append(lef_orientations[orient])
+        else:
+            vld = " ".join(valid_orientations)
+            utl.error(
+                utl.PDN,
+                1036,
+                f"Invalid orientation {orient} specified, " + f"must be one of {vld}",
+            )
 
     return checked_orientations
 
 
-def add_pdn_connect(design, *,
-                    grid="",
-                    layers=None,
-                    cut_pitch=[0, 0],
-                    fixed_vias=[],
-                    max_rows=0,
-                    max_columns=0,
-                    ongrid=[],       # list of layer names that should be on grid?
-                    split_cuts={},   # dictionary of layer name to pitch
-                    dont_use_vias=""):
+def add_pdn_connect(
+    design,
+    *,
+    grid="",
+    layers=None,
+    cut_pitch=[0, 0],
+    fixed_vias=[],
+    max_rows=0,
+    max_columns=0,
+    ongrid=[],  # list of layer names that should be on grid?
+    split_cuts={},  # dictionary of layer name to pitch
+    dont_use_vias="",
+):
     pdngen = design.getPdnGen()
     check_design_state(design, "add_pdn_connect")
 
@@ -445,7 +532,7 @@ def add_pdn_connect(design, *,
 
     if len(cut_pitch) != 2:
         utl.error(utl.PDN, 1539, "The cut_pitch argument must contain two enties.")
-                   
+
     cut_pitch = [design.micronToDBU(l) for l in cut_pitch]
 
     fixed_generate_vias = []
@@ -462,15 +549,25 @@ def add_pdn_connect(design, *,
 
     ongrid_list = [get_layer(l) for l in ongrid]
 
-    split_cuts_layers  = [get_layer(l) for l in split_cuts.keys()]
+    split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
     split_cuts_dict = dict(zip(split_cuts_layers, split_cuts_pitches))
-    
+
     for g in pdngen.findGrid(grid):
-        pdngen.makeConnect(g, l0, l1, cut_pitch[0], cut_pitch[1],
-                           fixed_generate_vias, fixed_tech_vias,
-                           max_rows, max_columns, ongrid_list,
-                           split_cuts_dict, dont_use_vias)
+        pdngen.makeConnect(
+            g,
+            l0,
+            l1,
+            cut_pitch[0],
+            cut_pitch[1],
+            fixed_generate_vias,
+            fixed_tech_vias,
+            max_rows,
+            max_columns,
+            ongrid_list,
+            split_cuts_dict,
+            dont_use_vias,
+        )
 
 
 def pdngen_db(design, failed_via_report="", skip_trim=False, dont_add_pins=False):
@@ -484,19 +581,22 @@ def pdngen_db(design, failed_via_report="", skip_trim=False, dont_add_pins=False
     pdngen.resetShapes()
 
 
-def add_pdn_ring(design, *,
-                 nets=[],
-                 layers=[],        # list of size 2
-                 widths=[],        # list of size 2
-                 spacings=[],      # list of size 2
-                 grid="",
-                 pad_offsets=[],   # array of size 4
-                 core_offsets=[],  # array of size 4
-                 connect_to_pad_layers=None,
-                 starts_with=None,
-                 add_connect=False,
-                 extend_to_boundary=False,
-                 connect_to_pads=False):
+def add_pdn_ring(
+    design,
+    *,
+    nets=[],
+    layers=[],  # list of size 2
+    widths=[],  # list of size 2
+    spacings=[],  # list of size 2
+    grid="",
+    pad_offsets=[],  # array of size 4
+    core_offsets=[],  # array of size 4
+    connect_to_pad_layers=None,
+    starts_with=None,
+    add_connect=False,
+    extend_to_boundary=False,
+    connect_to_pads=False,
+):
     pdngen = design.getPdnGen()
     check_design_state(design, "add_pdn_ring")
 
@@ -508,7 +608,7 @@ def add_pdn_ring(design, *,
 
     if not bool(widths) or len(widths) != 2:
         utl.error(utl.PDN, 1543, "'widths' is a required list of size two.")
-    widths   = [design.micronToDBU(w) for w in widths]
+    widths = [design.micronToDBU(w) for w in widths]
 
     if not bool(spacings) or len(spacings) != 2:
         utl.error(utl.PDN, 1544, "'spacings' is a required list of size two.")
@@ -516,9 +616,15 @@ def add_pdn_ring(design, *,
         spacings = [design.micronToDBU(s) for s in spacings]
 
     if bool(core_offsets) and bool(pad_offsets):
-        utl.error(utl.PDN, 1545, "Only one of 'pad_offsets' or 'core_offsets' can be specified.")
+        utl.error(
+            utl.PDN,
+            1545,
+            "Only one of 'pad_offsets' or 'core_offsets' can be specified.",
+        )
     elif not bool(core_offsets) and not bool(pad_offsets):
-        utl.error(utl.PDN, 1546, "One of 'pad_offsets' or 'core_offsets' must be specified.")
+        utl.error(
+            utl.PDN, 1546, "One of 'pad_offsets' or 'core_offsets' must be specified."
+        )
 
     if bool(core_offsets):
         if len(core_offsets) != 4:
@@ -541,10 +647,16 @@ def add_pdn_ring(design, *,
     elif starts_with.upper() == "GROUND":
         starts_with = pdn.GROUND
     else:
-        utl.error(utl.PDN, 608, "Invalid starts_with. Must be unspecified or POWER or GROUND")
-        
+        utl.error(
+            utl.PDN, 608, "Invalid starts_with. Must be unspecified or POWER or GROUND"
+        )
+
     if extend_to_boundary and connect_to_pads:
-        utl.error(utl.PDN, 1547, "Only one of 'pad_offsets' or 'core_offsets' can be specified.")
+        utl.error(
+            utl.PDN,
+            1547,
+            "Only one of 'pad_offsets' or 'core_offsets' can be specified.",
+        )
 
     nets_list = []
     if bool(nets):
@@ -564,39 +676,52 @@ def add_pdn_ring(design, *,
                 if layer.getType() == "ROUTING":
                     connect_to_pad_layers.append(layer)
         else:
-            connect_to_pad_layers = [get_layer(design,l) for l in connect_to_pad_layers]
+            connect_to_pad_layers = [
+                get_layer(design, l) for l in connect_to_pad_layers
+            ]
 
     for g in pdngen.findGrid(grid):
-        pdngen.makeRing(g,
-                        l0, widths[0], spacings[0],
-                        l1, widths[1], spacings[1],
-                        starts_with,
-                        core_offsets,
-                        pad_offsets,
-                        extend_to_boundary,
-                        connect_to_pad_layers,
-                        nets_list)
+        pdngen.makeRing(
+            g,
+            l0,
+            widths[0],
+            spacings[0],
+            l1,
+            widths[1],
+            spacings[1],
+            starts_with,
+            core_offsets,
+            pad_offsets,
+            extend_to_boundary,
+            connect_to_pad_layers,
+            nets_list,
+        )
 
     if bool(add_connect):
         add_pdn_connect(design, grid, layers)
 
-        
-def define_power_switch_cell(design, *,
-                             name=None,
-                             control=None,
-                             acknowledge=None,
-                             power_switchable=None,
-                             power=None,
-                             ground=None):
+
+def define_power_switch_cell(
+    design,
+    *,
+    name=None,
+    control=None,
+    acknowledge=None,
+    power_switchable=None,
+    power=None,
+    ground=None,
+):
     pdngen = design.getPdnGen()
-    check_design_state(design,"define_power_switch_cell")
+    check_design_state(design, "define_power_switch_cell")
 
     if not bool(name):
         utl.error(utl.PDN, 31183, "The 'name' argument is required.")
     else:
         master = design.getTech().getDB().findMaster(name)
         if not bool(master):
-            utl.error(utl.PDN, 31046, f"Unable to find power switch cell master: {name}")
+            utl.error(
+                utl.PDN, 31046, f"Unable to find power switch cell master: {name}"
+            )
 
     if not bool(control):
         utl.error(utl.PDN, 31184, "The 'control' argument is required.")
@@ -632,13 +757,10 @@ def define_power_switch_cell(design, *,
         ground = master.findMTerm(ground)
         if not bool(ground):
             print(utl.PDN, 31188, f"Unable to find {ground} on {master}")
-  
-    pdngen.makeSwitchedPowerCell(master,
-                                 control,
-                                 acknowledge,
-                                 power_switchable,
-                                 power,
-                                 ground)
+
+    pdngen.makeSwitchedPowerCell(
+        master, control, acknowledge, power_switchable, power, ground
+    )
 
 
 def define_pdn_grid_existing(design, *, name="existing_grid", obstructions=[]):
@@ -647,6 +769,7 @@ def define_pdn_grid_existing(design, *, name="existing_grid", obstructions=[]):
         obstructions = get_obstructions(obstructions)
 
     pdngen.makeExistingGrid(name, obstructions)
+
 
 def repair_pdn_vias(design, *, net=None, all=False):
     pdngen = design.getPdnGen()
@@ -667,6 +790,5 @@ def repair_pdn_vias(design, *, net=None, all=False):
         for net in design.getBlock().getNets():
             if net.getSigType() == "POWER" or net.getSigType() == "GROUND":
                 nets.append(net)
-                
-    pdngen.repairVias(nets)
 
+    pdngen.repairVias(nets)
