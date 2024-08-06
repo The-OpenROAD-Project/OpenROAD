@@ -113,7 +113,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   connect(input_,
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
-          &ScriptWidget::flushReportBufferToOuput);
+          &ScriptWidget::flushReportBufferToOutput);
   connect(output_,
           &QPlainTextEdit::textChanged,
           this,
@@ -123,7 +123,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   connect(report_timer_.get(),
           &QTimer::timeout,
           this,
-          &ScriptWidget::flushReportBufferToOuput);
+          &ScriptWidget::flushReportBufferToOutput);
 
   connect(this,
           &ScriptWidget::addToOutput,
@@ -137,9 +137,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 // When displaying text in Scripting, processing events in order to
 // ensure the text is visible to the user can considerably slow down
 // the logging, so, for reports, we use a buffer.
-void ScriptWidget::flushReportBufferToOuput()
+void ScriptWidget::flushReportBufferToOutput()
 {
-  report_timer_->stop();
+  if (report_buffer_.isEmpty()) {
+    return;
+  }
 
   // this comes from a ->report
   addTextToOutput(report_buffer_, buffer_msg_);
@@ -227,11 +229,6 @@ void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
 void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 {
   addToOutput(text, color);
-}
-
-bool ScriptWidget::reportTimerIsActive()
-{
-  return report_timer_->isActive();
 }
 
 void ScriptWidget::startReportTimer()
@@ -416,7 +413,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
-      if (!widget_->reportTimerIsActive()) {
+      if (!widget_->report_timer_->isActive()) {
         widget_->startReportTimer();
       }
 

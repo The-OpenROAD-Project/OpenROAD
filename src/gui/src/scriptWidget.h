@@ -119,7 +119,7 @@ class ScriptWidget : public QDockWidget
   void setPauserToRunning();
   void resetPauser();
 
-  void flushReportBufferToOuput();
+  void flushReportBufferToOutput();
 
  protected:
   // required to ensure input command space it set to correct height
@@ -128,7 +128,6 @@ class ScriptWidget : public QDockWidget
  private:
   void triggerPauseCountDown(int timeout);
 
-  bool reportTimerIsActive();
   void startReportTimer();
   void addMsgToReportBuffer(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
