@@ -413,15 +413,17 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
-      if (!widget_->report_timer_->isActive()) {
-        widget_->startReportTimer();
+      if (QThread::currentThread() == widget_->thread()) {
+        if (!widget_->report_timer_->isActive()) {
+          widget_->startReportTimer();
+        }
+
+        widget_->addMsgToReportBuffer(formatted_msg);
+
+        // the event loop is blocked so we need to manually process
+        // events so that the timer keeps going
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
       }
-
-      widget_->addMsgToReportBuffer(formatted_msg);
-
-      // the event loop is blocked so we need to manually process
-      // events so that the timer keeps going
-      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err
