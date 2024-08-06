@@ -152,6 +152,11 @@ class ScriptWidget : public QDockWidget
   // maximum number of character to display in a log line
   const int max_output_line_length_ = 1000;
 
+  // Interval in ms between every flush of the report buffer to
+  // the output. Testing with many lines of log showed that lower
+  // frequencies don't make much more impact.
+  static constexpr int report_display_interval = 50;
+
   const QColor cmd_msg_ = Qt::black;
   const QColor error_msg_ = Qt::red;
   const QColor ok_msg_ = Qt::blue;

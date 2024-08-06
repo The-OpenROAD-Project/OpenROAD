@@ -233,7 +233,7 @@ void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
 
 void ScriptWidget::startReportTimer()
 {
-  report_timer_->start(20 /*ms*/);
+  report_timer_->start(report_display_interval);
 }
 
 void ScriptWidget::addMsgToReportBuffer(const QString& text)
