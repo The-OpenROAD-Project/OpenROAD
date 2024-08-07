@@ -21,33 +21,38 @@
     {
       "name":"polygon_",
       "type":"Polygon",
-      "flags":["no-set"]
+      "flags":["no-set"],
+      "default": "{}"
     },
     {
       "name":"design_rule_width_",
       "type":"int",
-      "flags":["no-set"]
+      "flags":["no-set"],
+      "default": "0"
     },
     {
       "name": "owner_",
       "type": "uint",
       "flags": [
         "private"
-      ]
+      ],
+      "default": "0"
     },
     {
       "name": "next_pbox_",
       "type": "dbId<_dbPolygon>",
       "flags": [
         "private"
-      ]
+      ],
+      "default": "0"
     },
     {
       "name": "boxes_",
       "type": "dbId<_dbBox>",
       "flags": [
         "private"
-      ]
+      ],
+      "default": "0"
     }
   ],
   "h_includes": [

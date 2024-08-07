@@ -19,61 +19,137 @@ struct F_DEFAULT
     db = createSimpleDB();
     block = db->getChip()->getBlock();
     lib = db->findLib("lib1");
+    and2 = lib->findMaster("and2");
+    or2 = lib->findMaster("or2");
   }
   ~F_DEFAULT() { dbDatabase::destroy(db); }
+  void in_eco(const std::function<void(void)>& func)
+  {
+    dbDatabase::beginEco(block);
+    func();
+    dbDatabase::endEco(block);
+    dbDatabase::undoEco(block);
+  }
   dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
-  std::string journal_path = testTmpPath("results", "db_jounal.eco");
+  dbMaster* and2;
+  dbMaster* or2;
 };
-BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_create, F_DEFAULT)
 {
-  dbDatabase::beginEco(block);
-  auto i1 = odb::dbInst::create(block, lib->findMaster("and2"), "i1");
-  auto i2 = odb::dbInst::create(block, lib->findMaster("and2"), "i2");
-  auto n1 = odb::dbNet::create(block, "n1");
-  auto n2 = odb::dbNet::create(block, "n2");
-  odb::dbBTerm::create(n1, "b1");
-  auto b2 = odb::dbBTerm::create(n1, "b2");
-  auto b3 = odb::dbBTerm::create(n1, "b3");
-  i1->findITerm("a")->connect(n1);
-  b2->disconnect();
-  i1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  i1->swapMaster(lib->findMaster("or2"));
-  odb::dbBTerm::destroy(b3);
-  odb::dbInst::destroy(i2);
-  odb::dbNet::destroy(n2);
-  dbDatabase::endEco(block);
-  dbDatabase::writeEco(block, journal_path.c_str());
+  in_eco([&]() { dbInst::create(block, and2, "a"); });
+  BOOST_TEST(block->findInst("a") == nullptr);
 }
-BOOST_FIXTURE_TEST_CASE(test_read, F_DEFAULT)
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_destroy, F_DEFAULT)
 {
-  dbDatabase::beginEco(block);
-  dbDatabase::readEco(block, journal_path.c_str());
-  dbDatabase::commitEco(block);
-  auto i1 = block->findInst("i1");
-  auto n1 = block->findNet("n1");
-  auto b1 = block->findBTerm("b1");
-  auto b2 = block->findBTerm("b2");
-  // test journal redo CREATE_OBJECT
-  BOOST_TEST(i1 != nullptr);
-  BOOST_TEST(n1 != nullptr);
-  BOOST_TEST(b1 != nullptr);
-  BOOST_TEST(b2 != nullptr);
-  // test journal redo DELETE_OBJECT
-  BOOST_TEST(block->findBTerm("i2") == nullptr);
-  BOOST_TEST(block->findBTerm("b3") == nullptr);
-  BOOST_TEST(block->findBTerm("n2") == nullptr);
-  // test journal redo UPDATE_FIELD
-  BOOST_TEST(i1->getPlacementStatus() == dbPlacementStatus::PLACED);
-  // test journal redo SWAP_OBJECT
-  BOOST_TEST(i1->getMaster()->getName() == "or2");
-  // test journal redo CONNECT_OBJECT
-  BOOST_TEST(b1->getNet() == n1);
-  BOOST_TEST(i1->findITerm("a")->getNet() == n1);
-  // test journal redo DISCONNECT_OBJECT
-  BOOST_TEST(b2->getNet() == nullptr);
+  auto module = dbModule::create(block, "m");
+  auto inst = dbInst::create(block, and2, "a", false, module);
+  // Ensure non-default values are restored
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  auto group = dbGroup::create(block, "g");
+  group->addInst(inst);
+  auto region = dbRegion::create(block, "r");
+  region->addInst(inst);
+
+  in_eco([&]() { dbInst::destroy(inst); });
+
+  BOOST_TEST(block->findInst("a") == inst);
+  BOOST_TEST(inst->getPlacementStatus() == dbPlacementStatus::PLACED);
+  BOOST_TEST(inst->getGroup() == group);
+  BOOST_TEST(inst->getModule() == module);
+  BOOST_TEST(inst->getRegion() == region);
 }
+
+BOOST_FIXTURE_TEST_CASE(test_undo_net_create, F_DEFAULT)
+{
+  in_eco([&]() { dbNet::create(block, "n"); });
+  BOOST_TEST(block->findNet("n") == nullptr);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy, F_DEFAULT)
+{
+  auto net = dbNet::create(block, "n");
+  // Ensure non-default values are restored
+  net->setSourceType(dbSourceType::TIMING);
+  auto ndr = dbTechNonDefaultRule::create(block, "ndr");
+  net->setNonDefaultRule(ndr);
+
+  in_eco([&]() { dbNet::destroy(net); });
+
+  BOOST_TEST(block->findNet("n") == net);
+  BOOST_TEST(net->getSourceType() == dbSourceType::TIMING);
+  BOOST_TEST(net->getNonDefaultRule() == ndr);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_swap, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  in_eco([&]() { inst->swapMaster(or2); });
+  BOOST_TEST(inst->getMaster() == and2);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_place, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  in_eco([&]() { inst->setPlacementStatus(dbPlacementStatus::PLACED); });
+  BOOST_TEST(inst->getPlacementStatus() == dbPlacementStatus::NONE);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_inst_move, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  const Point point(1000, 2000);
+  inst->setLocation(point.x(), point.y());
+  auto bbox = inst->getBBox()->getBox();
+
+  in_eco([&]() { inst->setLocation(3000, 4000); });
+
+  BOOST_TEST(inst->getLocation() == point);
+  BOOST_TEST(inst->getBBox()->getBox() == bbox);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_bterm_connect, F_DEFAULT)
+{
+  auto net1 = dbNet::create(block, "n1");
+  auto net2 = dbNet::create(block, "n2");
+  auto bterm = dbBTerm::create(net1, "b");
+  in_eco([&]() { bterm->connect(net2); });
+  BOOST_TEST(bterm->getNet() == net1);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_bterm_disconnect, F_DEFAULT)
+{
+  auto net = dbNet::create(block, "n");
+  auto bterm = dbBTerm::create(net, "b");
+  in_eco([&]() { bterm->disconnect(); });
+  BOOST_TEST(bterm->getNet() == net);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_iterm_connect, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  auto net1 = dbNet::create(block, "n1");
+  auto net2 = dbNet::create(block, "n2");
+  auto iterm = inst->findITerm("b");
+  iterm->connect(net1);
+  in_eco([&]() { iterm->connect(net2); });
+  BOOST_TEST(iterm->getNet() == net1);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_iterm_disconnect, F_DEFAULT)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  auto net = dbNet::create(block, "n");
+  auto iterm = inst->findITerm("b");
+  iterm->connect(net);
+  in_eco([&]() { iterm->disconnect(); });
+  BOOST_TEST(iterm->getNet() == net);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace

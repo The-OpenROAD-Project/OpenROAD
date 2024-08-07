@@ -139,11 +139,11 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 // the logging, so, for reports, we use a buffer.
 void ScriptWidget::flushReportBufferToOutput()
 {
+  std::lock_guard guard(reporting_);
   if (report_buffer_.isEmpty()) {
     return;
   }
 
-  std::lock_guard guard(reporting_);
   // this comes from a ->report
   addTextToOutput(report_buffer_, buffer_msg_);
   report_buffer_.clear();

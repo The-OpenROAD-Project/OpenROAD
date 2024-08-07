@@ -7449,11 +7449,11 @@ class dbLevelShifter : public dbObject
 
   dbPowerDomain* getDomain() const;
 
-  void setSource(std::string source);
+  void setSource(const std::string& source);
 
   std::string getSource() const;
 
-  void setSink(std::string sink);
+  void setSink(const std::string& sink);
 
   std::string getSink() const;
 
@@ -7461,15 +7461,15 @@ class dbLevelShifter : public dbObject
 
   bool isUseFunctionalEquivalence() const;
 
-  void setAppliesTo(std::string applies_to);
+  void setAppliesTo(const std::string& applies_to);
 
   std::string getAppliesTo() const;
 
-  void setAppliesToBoundary(std::string applies_to_boundary);
+  void setAppliesToBoundary(const std::string& applies_to_boundary);
 
   std::string getAppliesToBoundary() const;
 
-  void setRule(std::string rule);
+  void setRule(const std::string& rule);
 
   std::string getRule() const;
 
@@ -7485,39 +7485,39 @@ class dbLevelShifter : public dbObject
 
   bool isForceShift() const;
 
-  void setLocation(std::string location);
+  void setLocation(const std::string& location);
 
   std::string getLocation() const;
 
-  void setInputSupply(std::string input_supply);
+  void setInputSupply(const std::string& input_supply);
 
   std::string getInputSupply() const;
 
-  void setOutputSupply(std::string output_supply);
+  void setOutputSupply(const std::string& output_supply);
 
   std::string getOutputSupply() const;
 
-  void setInternalSupply(std::string internal_supply);
+  void setInternalSupply(const std::string& internal_supply);
 
   std::string getInternalSupply() const;
 
-  void setNamePrefix(std::string name_prefix);
+  void setNamePrefix(const std::string& name_prefix);
 
   std::string getNamePrefix() const;
 
-  void setNameSuffix(std::string name_suffix);
+  void setNameSuffix(const std::string& name_suffix);
 
   std::string getNameSuffix() const;
 
-  void setCellName(std::string cell_name);
+  void setCellName(const std::string& cell_name);
 
   std::string getCellName() const;
 
-  void setCellInput(std::string cell_input);
+  void setCellInput(const std::string& cell_input);
 
   std::string getCellInput() const;
 
-  void setCellOutput(std::string cell_output);
+  void setCellOutput(const std::string& cell_output);
 
   std::string getCellOutput() const;
 
@@ -7577,7 +7577,7 @@ class dbMetalWidthViaMap : public dbObject
 
   int getAboveLayerWidthHigh() const;
 
-  void setViaName(std::string via_name);
+  void setViaName(const std::string& via_name);
 
   std::string getViaName() const;
 
@@ -9415,7 +9415,7 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   int getWithinHigh() const;
 
-  void setClassName(std::string class_name);
+  void setClassName(const std::string& class_name);
 
   std::string getClassName() const;
 
@@ -9484,11 +9484,11 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
 class dbTechLayerKeepOutZoneRule : public dbObject
 {
  public:
-  void setFirstCutClass(std::string first_cut_class);
+  void setFirstCutClass(const std::string& first_cut_class);
 
   std::string getFirstCutClass() const;
 
-  void setSecondCutClass(std::string second_cut_class);
+  void setSecondCutClass(const std::string& second_cut_class);
 
   std::string getSecondCutClass() const;
 
@@ -9556,7 +9556,7 @@ class dbTechLayerKeepOutZoneRule : public dbObject
 class dbTechLayerMaxSpacingRule : public dbObject
 {
  public:
-  void setCutClass(std::string cut_class);
+  void setCutClass(const std::string& cut_class);
 
   std::string getCutClass() const;
 
