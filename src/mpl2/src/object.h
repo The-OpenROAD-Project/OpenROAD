@@ -37,7 +37,6 @@
 
 #include <iostream>
 #include <map>
-#include <memory>
 #include <random>
 #include <set>
 #include <string>
@@ -272,7 +271,7 @@ class Cluster
   void printBasicInformation(utl::Logger* logger) const;
 
   // Macro Placement Support
-  void setSoftMacro(SoftMacro* soft_macro);
+  void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
   void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);

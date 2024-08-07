@@ -1,6 +1,7 @@
 _comparable = [
     "Point",
     "Rect",
+    "Polygon",
     "bool",
     "char *",
     "char",
@@ -133,6 +134,10 @@ def get_hash_table_type(type_name):
 
 def is_pass_by_ref(type_name):
     return type_name.find("dbVector") == 0
+
+
+def is_set_by_ref(type_name):
+    return type_name == "std::string"
 
 
 def _is_template_type(type_name):
