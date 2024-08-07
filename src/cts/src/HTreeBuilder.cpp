@@ -1175,9 +1175,8 @@ void HTreeBuilder::run()
       logger_->info(CTS,
                     32,
                     " Stop criterion found. Max number of sinks is {}.",
-                    options_->getMaxFanout()
-                    ? options_->getMaxFanout()
-                    : numMaxLeafSinks_);
+                    options_->getMaxFanout() ? options_->getMaxFanout()
+                                             : numMaxLeafSinks_);
       break;
     }
   }
