@@ -112,6 +112,7 @@ class TritonCTS
   void forEachBuilder(
       const std::function<void(const TreeBuilder*)>& func) const;
 
+  int getBufferFanoutLimit(std::string bufferName);
   void setupCharacterization();
   void checkCharacterization();
   void findClockRoots();

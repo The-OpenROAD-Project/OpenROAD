@@ -153,7 +153,6 @@ class CtsOptions
 
   void setMaxFanout(unsigned maxFanout)
   {
-    setSinkClusteringSize(maxFanout);
     maxFanout_ = maxFanout;
   }
   unsigned getMaxFanout() const { return maxFanout_; }

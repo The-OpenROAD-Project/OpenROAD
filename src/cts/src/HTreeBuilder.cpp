@@ -1175,7 +1175,8 @@ void HTreeBuilder::run()
       logger_->info(CTS,
                     32,
                     " Stop criterion found. Max number of sinks is {}.",
-                    numMaxLeafSinks_);
+                    options_->getMaxFanout() ? options_->getMaxFanout()
+                                             : numMaxLeafSinks_);
       break;
     }
   }
@@ -1212,6 +1213,7 @@ void HTreeBuilder::run()
 bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
 {
   if (options_->getMaxFanout()) {
+    logger_->report("Ta verificando por fanout");
     return numSinksPerSubRegion < options_->getMaxFanout();
   }
   return numSinksPerSubRegion < numMaxLeafSinks_;

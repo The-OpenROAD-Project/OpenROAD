@@ -109,13 +109,78 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
   builders_->push_back(builder);
 }
 
+int TritonCTS::getBufferFanoutLimit(std::string bufferName)
+{
+  float fanout, fanoutTemp;
+  // float fanoutLibCell, fanoutLibPort;
+  bool hasMaxFanout, hasMaxFanoutTemp;
+  // bool hasMaxFanoutLibPort, hasMaxFanoutLibPort;
+  odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
+  sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
+  sta::Port* buffer_port = nullptr;
+  for (auto mterm : bufferMaster->getMTerms()) {
+    auto sig_type = mterm->getSigType();
+    if (sig_type == odb::dbSigType::GROUND
+        || sig_type == odb::dbSigType::POWER) {
+      continue;
+    }
+    auto io_type = mterm->getIoType();
+    if (io_type == odb::dbIoType::OUTPUT) {
+      buffer_port = network_->dbToSta(mterm);
+      break;
+    }
+  }
+  if (buffer_port == nullptr) {
+    return 0;
+  }
+  openSta_->sdc()->fanoutLimit(
+      buffer_port, sta::MinMax::max(), fanout, hasMaxFanout);
+  openSta_->sdc()->fanoutLimit(
+      bufferCell, sta::MinMax::max(), fanoutTemp, hasMaxFanoutTemp);
+  if (hasMaxFanoutTemp && (!hasMaxFanout || (int) fanout > (int) fanoutTemp)) {
+    fanout = fanoutTemp;
+    hasMaxFanout = hasMaxFanoutTemp;
+  }
+  sta::LibertyPort* port = network_->libertyPort(buffer_port);
+  port->fanoutLimit(sta::MinMax::max(), fanoutTemp, hasMaxFanoutTemp);
+  if (hasMaxFanoutTemp) {
+    if (!hasMaxFanout || (int) fanout > (int) fanoutTemp) {
+      fanout = fanoutTemp;
+      hasMaxFanout = hasMaxFanoutTemp;
+    }
+  } else {
+    port->libertyLibrary()->defaultMaxFanout(fanoutTemp, hasMaxFanoutTemp);
+    if ((hasMaxFanoutTemp)
+        && (!hasMaxFanout || (int) fanout > (int) fanoutTemp)) {
+      fanout = fanoutTemp;
+      hasMaxFanout = hasMaxFanoutTemp;
+    }
+  }
+  return (int) fanout;
+}
+
 void TritonCTS::setupCharacterization()
 {
+  openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
   options_->setRootBuffer(rootBuffer);
   std::string sinkBuffer = selectSinkBuffer(sinkBuffers_);
   options_->setSinkBuffer(sinkBuffer);
+
+  int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer);
+  int rootMaxFanout = getBufferFanoutLimit(rootBuffer);
+
+  if (sinkMaxFanout && (options_->getSinkClusteringSize() > sinkMaxFanout)) {
+    options_->setSinkClusteringSize(sinkMaxFanout);
+    logger_->report("New sink cluster size to respectmax fanout: {}",
+                    options_->getSinkClusteringSize());
+  }
+
+  if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
+    options_->setMaxFanout(sinkMaxFanout);
+    logger_->report("Setting max fanout for clock buffers: {}", rootMaxFanout);
+  }
 
   // A new characteriztion is always created.
   techChar_->create();
@@ -1492,6 +1557,19 @@ odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
 
   return nullptr;
 }
+
+/*odb::dbMTerms* TritonCTS::getFirstInput(odb::dbMaster* inst) const
+{
+  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm->isInputSignal()) {
+      return iterm;
+    }
+  }
+
+  return nullptr;
+}
+*/
 
 odb::dbITerm* TritonCTS::getSingleOutput(odb::dbInst* inst,
                                          odb::dbITerm* input) const

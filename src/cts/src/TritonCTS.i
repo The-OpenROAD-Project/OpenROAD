@@ -79,12 +79,6 @@ set_sink_clustering_levels(unsigned levels)
 }
 
 void
-set_max_fanout(unsigned max_fanout)
-{
-  getTritonCts()->getParms()->setMaxFanout(max_fanout);
-}
-
-void
 set_max_char_cap(double cap)
 {
   getTritonCts()->getParms()->setMaxCharCap(cap);
