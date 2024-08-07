@@ -112,9 +112,7 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
 int TritonCTS::getBufferFanoutLimit(std::string bufferName)
 {
   float fanout, fanoutTemp;
-  // float fanoutLibCell, fanoutLibPort;
   bool hasMaxFanout, hasMaxFanoutTemp;
-  // bool hasMaxFanoutLibPort, hasMaxFanoutLibPort;
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
@@ -153,7 +151,6 @@ int TritonCTS::getBufferFanoutLimit(std::string bufferName)
     if ((hasMaxFanoutTemp)
         && (!hasMaxFanout || (int) fanout > (int) fanoutTemp)) {
       fanout = fanoutTemp;
-      hasMaxFanout = hasMaxFanoutTemp;
     }
   }
   return (int) fanout;
@@ -173,13 +170,10 @@ void TritonCTS::setupCharacterization()
 
   if (sinkMaxFanout && (options_->getSinkClusteringSize() > sinkMaxFanout)) {
     options_->setSinkClusteringSize(sinkMaxFanout);
-    logger_->report("New sink cluster size to respectmax fanout: {}",
-                    options_->getSinkClusteringSize());
   }
 
   if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
     options_->setMaxFanout(sinkMaxFanout);
-    logger_->report("Setting max fanout for clock buffers: {}", rootMaxFanout);
   }
 
   // A new characteriztion is always created.
