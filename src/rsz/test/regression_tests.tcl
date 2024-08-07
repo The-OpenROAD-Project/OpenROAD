@@ -111,6 +111,7 @@ record_tests {
   repair_hold9_verbose
   set_dont_touch1
   set_dont_use1
+  repair_setup_undo
   #rsz_man_tcl_check
   #rsz_readme_msgs_check
 }

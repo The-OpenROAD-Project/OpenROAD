@@ -1622,16 +1622,13 @@ void RepairSetup::printProgress(const int iteration,
 
   if (start && !end) {
     logger_->report(
-        "Iteration | Removed | Resized | Inserted | Cloned Gates | Pin Swaps "
-        "|"
+        "Iteration | Removed | Resized | Inserted | Cloned Gates | Pin Swaps |"
         "   WNS   |   TNS   | Endpoint");
     logger_->report(
-        "          | Buffers |         | Buffers  |              |           "
-        "|"
+        "          | Buffers |         | Buffers  |              |           |"
         "         |         |");
     logger_->report(
-        "--------------------------------------------------------------------"
-        "--"
+        "----------------------------------------------------------------------"
         "---------------------------");
   }
 
