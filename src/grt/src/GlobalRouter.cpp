@@ -596,9 +596,23 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
     destroyNetWire(net);
+    std::string pins_not_covered;
     // compare new positions with last positions & add on vector
     if (pinPositionsChanged(net, last_pos) && !net->skipIncremental()) {
       dirty_nets.push_back(db_net_map_[db_net]);
+    } else if (net->skipIncremental()) {
+      if (!netIsCovered(net, routes_[db_net], pins_not_covered)) {
+        logger_->error(GRT,
+                       266,
+                       "Pin(s) not covered in net {}",
+                       pins_not_covered,
+                       net->getName());
+      }
+
+      if (!isConnected(db_net)) {
+        logger_->error(
+            GRT, 267, "Net {} has disconnected segments.", net->getName());
+      }
     }
     net->setSkipIncremental(false);
   }
