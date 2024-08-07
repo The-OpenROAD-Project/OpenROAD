@@ -374,4 +374,19 @@ class KeepOutZoneParser
   dbTechLayerKeepOutZoneRule* rule_;
 };
 
+class MaxSpacingParser
+{
+ public:
+  MaxSpacingParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin)
+  {
+  }
+  void parse(std::string);
+
+ private:
+  void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  dbTechLayer* layer_;
+  lefin* lefin_;
+};
+
 }  // namespace odb

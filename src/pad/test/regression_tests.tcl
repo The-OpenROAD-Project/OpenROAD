@@ -2,6 +2,8 @@ record_tests {
   bump_array_make
   bump_array_remove
   bump_array_remove_single
+  bump_array_make_single_pitch
+  bump_array_make_error
 
   make_corner_sites
   make_io_sites

@@ -41,6 +41,8 @@
 #include "dbMPin.h"
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
+#include "dbPolygon.h"
+#include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -128,6 +130,10 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
     return false;
   }
 
+  if (_poly_obstructions != rhs._poly_obstructions) {
+    return false;
+  }
+
   if (_lib_for_site != rhs._lib_for_site) {
     return false;
   }
@@ -153,6 +159,10 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   }
 
   if (*_box_tbl != *rhs._box_tbl) {
+    return false;
+  }
+
+  if (*_poly_box_tbl != *rhs._poly_box_tbl) {
     return false;
   }
 
@@ -184,6 +194,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_FIELD(_leq);
   DIFF_FIELD(_eeq);
   DIFF_FIELD(_obstructions);
+  DIFF_FIELD(_poly_obstructions);
   DIFF_FIELD(_lib_for_site);
   DIFF_FIELD(_site);
   DIFF_HASH_TABLE(_mterm_hash);
@@ -191,6 +202,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_TABLE_NO_DEEP(_mpin_tbl);
   DIFF_TABLE_NO_DEEP(_target_tbl);
   DIFF_TABLE_NO_DEEP(_box_tbl);
+  DIFF_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_TABLE_NO_DEEP(_antenna_pin_model_tbl);
   DIFF_END
 }
@@ -214,6 +226,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_leq);
   DIFF_OUT_FIELD(_eeq);
   DIFF_OUT_FIELD(_obstructions);
+  DIFF_OUT_FIELD(_poly_obstructions);
   DIFF_OUT_FIELD(_lib_for_site);
   DIFF_OUT_FIELD(_site);
   DIFF_OUT_HASH_TABLE(_mterm_hash);
@@ -221,6 +234,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE_NO_DEEP(_mpin_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_target_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
+  DIFF_OUT_TABLE_NO_DEEP(_poly_box_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_antenna_pin_model_tbl);
   DIFF_END
 }
@@ -262,6 +276,9 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _box_tbl = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj, 8, 3);
 
+  _poly_box_tbl = new dbTable<_dbPolygon>(
+      db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPolygonObj, 8, 3);
+
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db,
       this,
@@ -270,7 +287,11 @@ _dbMaster::_dbMaster(_dbDatabase* db)
       8,
       3);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
+
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+
+  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
 
@@ -294,6 +315,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _leq(m._leq),
       _eeq(m._eeq),
       _obstructions(m._obstructions),
+      _poly_obstructions(m._poly_obstructions),
       _lib_for_site(m._lib_for_site),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
@@ -312,10 +334,16 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
 
   _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
 
+  _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
+
   _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
       db, this, *m._antenna_pin_model_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
+
+  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+
+  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
 
   _mpin_itr = new dbMPinItr(_mpin_tbl);
 
@@ -330,8 +358,11 @@ _dbMaster::~_dbMaster()
   delete _mpin_tbl;
   delete _target_tbl;
   delete _box_tbl;
+  delete _poly_box_tbl;
   delete _antenna_pin_model_tbl;
   delete _box_itr;
+  delete _pbox_itr;
+  delete _pbox_box_itr;
   delete _mpin_itr;
   delete _target_itr;
 
@@ -355,6 +386,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._poly_obstructions;
   stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
@@ -362,12 +394,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << *master._mpin_tbl;
   stream << *master._target_tbl;
   stream << *master._box_tbl;
+  stream << *master._poly_box_tbl;
   stream << *master._antenna_pin_model_tbl;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
+  _dbDatabase* db = master.getImpl()->getDatabase();
   uint* bit_field = (uint*) &master._flags;
   stream >> *bit_field;
   stream >> master._x;
@@ -381,7 +415,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
-  _dbDatabase* db = master.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> master._poly_obstructions;
+  }
   if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
     stream >> master._lib_for_site;
   } else {
@@ -394,6 +430,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> *master._mpin_tbl;
   stream >> *master._target_tbl;
   stream >> *master._box_tbl;
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> *master._poly_box_tbl;
+  }
   stream >> *master._antenna_pin_model_tbl;
   return stream;
 }
@@ -409,6 +448,8 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
       return _target_tbl;
     case dbBoxObj:
       return _box_tbl;
+    case dbPolygonObj:
+      return _poly_box_tbl;
     case dbTechAntennaPinModelObj:
       return _antenna_pin_model_tbl;
     default:
@@ -584,10 +625,19 @@ dbLib* dbMaster::getLib()
   return (dbLib*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMaster::getObstructions()
+dbSet<dbBox> dbMaster::getObstructions(bool include_decomposed_polygons)
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbBox>(master, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(master, master->_box_itr);
+  }
+  return dbSet<dbBox>(master, master->_pbox_box_itr);
+}
+
+dbSet<dbPolygon> dbMaster::getPolygonObstructions()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return dbSet<dbPolygon>(master, master->_pbox_itr);
 }
 
 bool dbMaster::isFrozen()

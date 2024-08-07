@@ -44,6 +44,7 @@ class _dbDatabase;
 class _dbModITerm;
 class _dbModule;
 class _dbModNet;
+class _dbBusPort;
 
 class _dbModBTerm : public _dbObject
 {
@@ -68,6 +69,7 @@ class _dbModBTerm : public _dbObject
   dbId<_dbModNet> _modnet;
   dbId<_dbModBTerm> _next_net_modbterm;
   dbId<_dbModBTerm> _prev_net_modbterm;
+  dbId<_dbBusPort> _busPort;
   dbId<_dbModBTerm> _next_entry;
 
   // User Code Begin Fields

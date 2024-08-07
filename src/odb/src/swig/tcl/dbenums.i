@@ -977,6 +977,9 @@
 	 	case odb::dbBoxOwner::Value::BPIN:
 			obj = Tcl_NewStringObj("BPIN", -1);
 			break;
+	 	case odb::dbBoxOwner::Value::PBOX:
+			obj = Tcl_NewStringObj("PBOX", -1);
+			break;
 	}
 	Tcl_SetObjResult(interp, obj);
 }
@@ -1008,6 +1011,8 @@
 		$1 = odb::dbBoxOwner::Value::REGION;
 	} else if (strcasecmp(str, "BPIN") == 0) {
 		$1 = odb::dbBoxOwner::Value::BPIN;
+	} else if (strcasecmp(str, "PBOX") == 0) {
+		$1 = odb::dbBoxOwner::Value::PBOX;
 	}
 }
 %typemap(typecheck) odb::dbBoxOwner, dbBoxOwner {
@@ -1039,6 +1044,8 @@
 		} 	else if (strcasecmp(str, "REGION") == 0) {
 			found = true;
 		} 	else if (strcasecmp(str, "BPIN") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "PBOX") == 0) {
 			found = true;
 		}
 	}

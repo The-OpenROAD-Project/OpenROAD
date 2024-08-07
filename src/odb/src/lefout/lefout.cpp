@@ -133,6 +133,34 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
   }
 }
 
+template <>
+void lefout::writeBoxes(dbSet<dbPolygon>& boxes, const char* indent)
+{
+  dbTechLayer* cur_layer = nullptr;
+
+  for (dbPolygon* box : boxes) {
+    if (box == nullptr) {
+      continue;
+    }
+
+    dbTechLayer* layer = box->getTechLayer();
+
+    std::string layer_name;
+    if (_use_alias && layer->hasAlias()) {
+      layer_name = layer->getAlias();
+    } else {
+      layer_name = layer->getName();
+    }
+
+    if (cur_layer != layer) {
+      fmt::print(_out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+      cur_layer = layer;
+    }
+
+    writePolygon(indent, box);
+  }
+}
+
 void lefout::writeBox(const std::string& indent, dbBox* box)
 {
   int x1 = box->xMin();
@@ -147,6 +175,19 @@ void lefout::writeBox(const std::string& indent, dbBox* box)
              lefdist(y1),
              lefdist(x2),
              lefdist(y2));
+}
+
+void lefout::writePolygon(const std::string& indent, dbPolygon* polygon)
+{
+  fmt::print(_out, "{}  POLYGON  ", indent.c_str());
+
+  for (const Point& pt : polygon->getPolygon().getPoints()) {
+    int x = pt.x();
+    int y = pt.y();
+    fmt::print(_out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
+  }
+
+  fmt::print(_out, ";\n");
 }
 
 void lefout::writeRect(const std::string& indent,
@@ -1324,10 +1365,12 @@ void lefout::writeMaster(dbMaster* master)
     writeMTerm(mterm);
   }
 
-  dbSet<dbBox> obs = master->getObstructions();
+  dbSet<dbPolygon> poly_obs = master->getPolygonObstructions();
+  dbSet<dbBox> obs = master->getObstructions(false);
 
-  if (obs.begin() != obs.end()) {
+  if (poly_obs.begin() != poly_obs.end() || obs.begin() != obs.end()) {
     fmt::print(_out, "{}", "    OBS\n");
+    writeBoxes(poly_obs, "      ");
     writeBoxes(obs, "      ");
     fmt::print(_out, "{}", "    END\n");
   }
@@ -1360,10 +1403,13 @@ void lefout::writeMTerm(dbMTerm* mterm)
   for (pitr = pins.begin(); pitr != pins.end(); ++pitr) {
     dbMPin* pin = *pitr;
 
-    dbSet<dbBox> geoms = pin->getGeometry();
+    dbSet<dbPolygon> poly_geoms = pin->getPolygonGeometry();
+    dbSet<dbBox> geoms = pin->getGeometry(false);
 
-    if (geoms.begin() != geoms.end()) {
+    if (poly_geoms.begin() != poly_geoms.end()
+        || geoms.begin() != geoms.end()) {
       fmt::print(_out, "        PORT\n");
+      writeBoxes(poly_geoms, "            ");
       writeBoxes(geoms, "            ");
       fmt::print(_out, "        END\n");
     }

@@ -34,6 +34,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -56,6 +57,9 @@ namespace mpl2 {
 class Metrics;
 class Cluster;
 class HardMacro;
+
+using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
+using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
 
 struct DataFlowHypergraph
 {
@@ -104,8 +108,8 @@ struct PhysicalHierarchyMaps
   std::unordered_map<odb::dbInst*, int> inst_to_cluster_id;
   std::unordered_map<odb::dbBTerm*, int> bterm_to_cluster_id;
 
-  std::map<odb::dbInst*, HardMacro*> inst_to_hard;
-  std::map<const odb::dbModule*, Metrics*> module_to_metrics;
+  InstToHardMap inst_to_hard;
+  ModuleToMetricsMap module_to_metrics;
 
   // Only for designs with IO Pads
   std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
