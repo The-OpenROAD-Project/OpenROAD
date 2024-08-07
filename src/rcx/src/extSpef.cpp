@@ -1648,8 +1648,6 @@ void extSpef::writeHeaderInfo()
                 "%H:%M:%S %A %B %d, %Y",
                 std::localtime(&currentTime));
 
-  fprintf(_outFP, "*DATE \"%s\"\n", buffer);
-
   fprintf(_outFP, "*VENDOR \"The OpenROAD Project\"\n");
   fprintf(_outFP, "*PROGRAM \"OpenROAD\"\n");
   fprintf(_outFP, "*VERSION \"%s\"\n", _version);
