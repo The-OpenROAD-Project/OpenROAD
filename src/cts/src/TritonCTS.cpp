@@ -109,7 +109,7 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
   builders_->push_back(builder);
 }
 
-int TritonCTS::getBufferFanoutLimit(std::string bufferName)
+int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 {
   float fanout, fanoutTemp;
   bool hasMaxFanout, hasMaxFanoutTemp;
@@ -144,7 +144,6 @@ int TritonCTS::getBufferFanoutLimit(std::string bufferName)
   if (hasMaxFanoutTemp) {
     if (!hasMaxFanout || (int) fanout > (int) fanoutTemp) {
       fanout = fanoutTemp;
-      hasMaxFanout = hasMaxFanoutTemp;
     }
   } else {
     port->libertyLibrary()->defaultMaxFanout(fanoutTemp, hasMaxFanoutTemp);
