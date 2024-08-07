@@ -118,6 +118,11 @@ void _dbPolygon::out(dbDiff& diff, char side, const char* field) const
 _dbPolygon::_dbPolygon(_dbDatabase* db)
 {
   flags_ = {};
+  polygon_ = {};
+  design_rule_width_ = 0;
+  owner_ = 0;
+  next_pbox_ = 0;
+  boxes_ = 0;
 }
 
 _dbPolygon::_dbPolygon(_dbDatabase* db, const _dbPolygon& r)
@@ -251,25 +256,27 @@ Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
     return {};
   }
 
+  return polygon;
+}
+
+void _dbPolygon::decompose()
+{
+  std::vector<Point> polygon = polygon_.getPoints();
+
   if (polygon[0] == polygon[polygon.size() - 1]) {
     polygon.pop_back();
   }
 
   if (polygon.size() < 4) {
-    return {};
+    return;
   }
 
   if (!polygon_is_clockwise(polygon)) {
     std::reverse(polygon.begin(), polygon.end());
   }
 
-  return polygon;
-}
-
-void _dbPolygon::decompose()
-{
   std::vector<Rect> rects;
-  decompose_polygon(polygon_.getPoints(), rects);
+  decompose_polygon(polygon, rects);
 
   std::vector<Rect>::iterator itr;
 
