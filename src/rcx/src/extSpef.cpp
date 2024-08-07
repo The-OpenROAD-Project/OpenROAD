@@ -1641,12 +1641,9 @@ void extSpef::writeHeaderInfo()
 
   std::time_t currentTime = std::time(nullptr);
 
-  // Format the current time as a string
-  char buffer[128];
-  std::strftime(buffer,
-                sizeof(buffer),
-                "%H:%M:%S %A %B %d, %Y",
-                std::localtime(&currentTime));
+  // With repeatable builds being the norm now, date in output files is
+  // an anachronism. Leave an N/A string as this is a required field.
+  fprintf(_outFP, "*DATE \"N/A\"\n");
 
   fprintf(_outFP, "*VENDOR \"The OpenROAD Project\"\n");
   fprintf(_outFP, "*PROGRAM \"OpenROAD\"\n");
