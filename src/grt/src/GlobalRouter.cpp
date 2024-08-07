@@ -609,18 +609,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 
 void GlobalRouter::shrinkNetRoute(Net* net)
 {
-  GRoute& route = routes_[net->getDbNet()];
-  odb::Rect net_bbox = net->computeBBox();
-  for (auto route_it = route.begin(); route_it != route.end(); ) {
-    GSegment& seg = *route_it;
-    odb::Point pt1(seg.init_x, seg.init_y);
-    odb::Point pt2(seg.final_x, seg.final_y);
-    if (!net_bbox.intersects(pt1) || !net_bbox.intersects(pt2)) {
-      route_it = route.erase(route_it);
-    } else {
-      ++route_it;
-    }
-  }
+  // TODO
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
