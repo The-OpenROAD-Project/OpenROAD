@@ -2012,9 +2012,7 @@ void ClusteringEngine::groupSingleMacroClusters(
             logger_->critical(MPL,
                               28,
                               "Merge attempt between interconnected macro "
-                              "siblings {} and {} failed!",
-                              macro_clusters[i]->getName(),
-                              macro_clusters[j]->getName());
+                              "siblings failed!");
           }
         } else {
           // We need this so we can distinguish arrays of interconnected macros
@@ -2031,13 +2029,10 @@ void ClusteringEngine::groupSingleMacroClusters(
             if (attemptMerge(macro_clusters[i], macro_clusters[j])) {
               macro_class[j] = i;
             } else {
-              logger_->critical(
-                  MPL,
-                  29,
-                  "Merge attempt between macro siblings {} and {} with "
-                  "same connection signature failed!",
-                  macro_clusters[i]->getName(),
-                  macro_clusters[j]->getName());
+              logger_->critical(MPL,
+                                29,
+                                "Merge attempt between macro siblings with "
+                                "same connection signature failed!");
             }
           }
         }
