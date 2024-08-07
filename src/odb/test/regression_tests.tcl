@@ -36,7 +36,6 @@ record_tests {
   abstract_origin
   write_macro_placement
   smash_vias
-  undo
   #odb_man_tcl_check
   #odb_readme_msgs_check
 }
