@@ -601,7 +601,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     if (pinPositionsChanged(net, last_pos) && !net->skipIncremental()) {
       dirty_nets.push_back(db_net_map_[db_net]);
     } else if (net->skipIncremental()) {
-      if (!netIsCovered(net, routes_[db_net], pins_not_covered)) {
+      if (!netIsCovered(db_net, pins_not_covered)) {
         logger_->error(GRT,
                        266,
                        "Pin(s) not covered in net {}",
@@ -2154,7 +2154,7 @@ void GlobalRouter::readSegments(const char* file_name)
 
   std::ifstream fin(file_name);
   std::string line;
-  odb::dbNet* net = nullptr;
+  odb::dbNet* db_net = nullptr;
   std::unordered_map<odb::dbNet*, Guides> guides;
 
   if (!fin.is_open()) {
@@ -2177,8 +2177,8 @@ void GlobalRouter::readSegments(const char* file_name)
     }
 
     if (tokens.size() == 1) {
-      net = block_->findNet(tokens[0].c_str());
-      if (!net) {
+      db_net = block_->findNet(tokens[0].c_str());
+      if (!db_net) {
         logger_->error(GRT, 258, "Cannot find net {}.", tokens[0]);
       }
     } else if (tokens.size() == 6) {
@@ -2196,33 +2196,34 @@ void GlobalRouter::readSegments(const char* file_name)
                        stoi(tokens[3]),
                        stoi(tokens[4]),
                        layer2->getRoutingLevel());
-      routes_[net].push_back(segment);
+      routes_[db_net].push_back(segment);
     } else {
       logger_->error(
           GRT, 261, "Error reading global route segments file {}.", file_name);
     }
   }
-  for (auto& [net, segments] : routes_) {
-    if (!isConnected(net)) {
+  for (auto& [db_net, segments] : routes_) {
+    if (!isConnected(db_net)) {
       logger_->error(
-          GRT, 262, "Net {} has disconnected segments.", net->getName());
+          GRT, 262, "Net {} has disconnected segments.", db_net->getName());
     }
     std::string pins_not_covered;
-    if (!netIsCovered(db_net_map_[net], routes_[net], pins_not_covered)) {
+    if (!netIsCovered(db_net, pins_not_covered)) {
       logger_->error(GRT,
                      263,
                      "Pin(s) {}not covered in net {}.",
                      pins_not_covered,
-                     net->getName());
+                     db_net->getName());
     }
   }
 }
 
-bool GlobalRouter::netIsCovered(Net* net,
-                                const GRoute& segments,
+bool GlobalRouter::netIsCovered(odb::dbNet* db_net,
                                 std::string& pins_not_covered)
 {
   bool net_is_covered = true;
+  Net* net = db_net_map_[db_net];
+  const GRoute& segments = routes_[db_net];
   for (const Pin& pin : net->getPins()) {
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
