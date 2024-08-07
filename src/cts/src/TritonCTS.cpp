@@ -173,13 +173,10 @@ void TritonCTS::setupCharacterization()
 
   if (sinkMaxFanout && (options_->getSinkClusteringSize() > sinkMaxFanout)) {
     options_->setSinkClusteringSize(sinkMaxFanout);
-    logger_->report("New sink cluster size to respectmax fanout: {}",
-                    options_->getSinkClusteringSize());
   }
 
   if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
     options_->setMaxFanout(sinkMaxFanout);
-    logger_->report("Setting max fanout for clock buffers: {}", rootMaxFanout);
   }
 
   // A new characteriztion is always created.
