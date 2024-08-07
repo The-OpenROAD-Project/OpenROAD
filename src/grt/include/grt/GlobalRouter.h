@@ -303,7 +303,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
-  bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
+  bool pinPositionsChanged(Net* net, std::set<odb::Point>& last_pos);
+  bool newPinOnGrid(Net* net, std::set<odb::Point>& last_pos);
   std::vector<LayerId> findTransitionLayers();
   void adjustTransitionLayers(
       const std::vector<LayerId>& transition_layers,
@@ -387,6 +388,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  void shrinkNetRoute(Net* net);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
