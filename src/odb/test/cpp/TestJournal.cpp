@@ -53,7 +53,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_destroy, F_DEFAULT)
   group->addInst(inst);
   auto region = dbRegion::create(block, "r");
   region->addInst(inst);
-  
+
   in_eco([&]() { dbInst::destroy(inst); });
 
   BOOST_TEST(block->findInst("a") == inst);
@@ -76,7 +76,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy, F_DEFAULT)
   net->setSourceType(dbSourceType::TIMING);
   auto ndr = dbTechNonDefaultRule::create(block, "ndr");
   net->setNonDefaultRule(ndr);
-  
+
   in_eco([&]() { dbNet::destroy(net); });
 
   BOOST_TEST(block->findNet("n") == net);
