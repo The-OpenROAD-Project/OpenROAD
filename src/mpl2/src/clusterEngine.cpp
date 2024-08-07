@@ -193,7 +193,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       macro_area += inst_area;
 
       auto macro = std::make_unique<HardMacro>(
-          inst, tree_->halo_width, tree_->halo_width);
+          inst, tree_->halo_width, tree_->halo_height);
       tree_->maps.inst_to_hard[inst] = std::move(macro);
     } else {
       num_std_cell += 1;

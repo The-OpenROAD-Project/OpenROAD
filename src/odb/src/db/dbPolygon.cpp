@@ -251,25 +251,27 @@ Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
     return {};
   }
 
+  return polygon;
+}
+
+void _dbPolygon::decompose()
+{
+  std::vector<Point> polygon = polygon_.getPoints();
+
   if (polygon[0] == polygon[polygon.size() - 1]) {
     polygon.pop_back();
   }
 
   if (polygon.size() < 4) {
-    return {};
+    return;
   }
 
   if (!polygon_is_clockwise(polygon)) {
     std::reverse(polygon.begin(), polygon.end());
   }
 
-  return polygon;
-}
-
-void _dbPolygon::decompose()
-{
   std::vector<Rect> rects;
-  decompose_polygon(polygon_.getPoints(), rects);
+  decompose_polygon(polygon, rects);
 
   std::vector<Rect>::iterator itr;
 
