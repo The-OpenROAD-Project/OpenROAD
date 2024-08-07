@@ -206,7 +206,7 @@ TEST_F(BufRemTest, SlackImproves)
   odb::dbBlock* block = chip->getBlock();
 
   resizer_->journalBeginTest();
-  
+
   auto insts = std::make_unique<sta::InstanceSeq>();
   odb::dbInst* inst1 = block->findInst("b2");
   sta::Instance* sta_inst1 = db_network_->dbToSta(inst1);
@@ -219,7 +219,7 @@ TEST_F(BufRemTest, SlackImproves)
   resizer_->removeBuffers(*insts, /* recordJournal */ true);
 
   resizer_->journalRestoreTest();
-  
+
   float newArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
