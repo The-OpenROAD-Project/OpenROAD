@@ -188,7 +188,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void saveGuides();
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
-  void netIsCovered(Net* net, const GRoute& segments);
+  bool netIsCovered(Net* net,
+                    const GRoute& segments,
+                    std::string& pins_not_covered);
   bool segmentIsLine(const GSegment& segment);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);

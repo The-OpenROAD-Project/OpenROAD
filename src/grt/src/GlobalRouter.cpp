@@ -2193,12 +2193,22 @@ void GlobalRouter::readSegments(const char* file_name)
       logger_->error(
           GRT, 262, "Net {} has disconnected segments.", net->getName());
     }
-    netIsCovered(db_net_map_[net], routes_[net]);
+    std::string pins_not_covered;
+    if (!netIsCovered(db_net_map_[net], routes_[net], pins_not_covered)) {
+      logger_->error(GRT,
+                     263,
+                     "Pin(s) {}not covered in net {}.",
+                     pins_not_covered,
+                     net->getName());
+    }
   }
 }
 
-void GlobalRouter::netIsCovered(Net* net, const GRoute& segments)
+bool GlobalRouter::netIsCovered(Net* net,
+                                const GRoute& segments,
+                                std::string& pins_not_covered)
 {
+  bool net_is_covered = true;
   for (const Pin& pin : net->getPins()) {
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
@@ -2218,13 +2228,12 @@ void GlobalRouter::netIsCovered(Net* net, const GRoute& segments)
       }
     }
     if (!pin_is_covered) {
-      logger_->error(GRT,
-                     263,
-                     "Pin {} is not covered by net {}.",
-                     pin.getName(),
-                     net->getName());
+      pins_not_covered += pin.getName() + " ";
+      net_is_covered = false;
     }
   }
+
+  return net_is_covered;
 }
 
 // Checks if segment is a line, i.e. only varies in one dimension
