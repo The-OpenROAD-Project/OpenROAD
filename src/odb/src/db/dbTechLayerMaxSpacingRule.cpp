@@ -116,7 +116,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerMaxSpacingRule::setCutClass(std::string cut_class)
+void dbTechLayerMaxSpacingRule::setCutClass(const std::string& cut_class)
 {
   _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
 

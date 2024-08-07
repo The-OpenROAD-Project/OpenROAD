@@ -288,7 +288,7 @@ namespace odb {
   {% for field in klass.fields %}
   
     {% if 'no-set' not in field.flags %}
-      void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
+      void {{klass.name}}::{{field.setterFunctionName}}( {% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} )
       {
     
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
@@ -298,6 +298,7 @@ namespace odb {
           obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
     
         {% else %}
+
           obj->{{field.name}}={{field.argument}};
     
         {% endif %}
