@@ -85,6 +85,7 @@ void _dbTechLayerMaxSpacingRule::out(dbDiff& diff,
 
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
+  max_spacing_ = 0;
 }
 
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(
@@ -115,7 +116,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerMaxSpacingRule::setCutClass(std::string cut_class)
+void dbTechLayerMaxSpacingRule::setCutClass(const std::string& cut_class)
 {
   _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
 
