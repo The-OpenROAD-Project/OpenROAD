@@ -118,6 +118,11 @@ void _dbPolygon::out(dbDiff& diff, char side, const char* field) const
 _dbPolygon::_dbPolygon(_dbDatabase* db)
 {
   flags_ = {};
+  polygon_ = {};
+  design_rule_width_ = 0;
+  owner_ = 0;
+  next_pbox_ = 0;
+  boxes_ = 0;
 }
 
 _dbPolygon::_dbPolygon(_dbDatabase* db, const _dbPolygon& r)
