@@ -707,6 +707,9 @@ void ICeWall::placeInstance(odb::dbRow* row,
     if (!check_inst->isFixed()) {
       continue;
     }
+    if (check_inst->getMaster()->isCover()) {
+      continue;
+    }
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
     if (!allow_overlap && inst_rect.overlaps(check_rect)) {
       logger_->error(utl::PAD,

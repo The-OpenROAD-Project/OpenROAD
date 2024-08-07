@@ -246,6 +246,15 @@ void dbTransform::apply(Rect& r) const
   r.init(ll.x(), ll.y(), ur.x(), ur.y());
 }
 
+void dbTransform::apply(Polygon& p) const
+{
+  std::vector<Point> points = p.getPoints();
+  for (Point& pt : points) {
+    apply(pt);
+  }
+  p.setPoints(points);
+}
+
 void dbTransform::concat(const dbTransform& t, dbTransform& result)
 {
   result._offset = _offset;

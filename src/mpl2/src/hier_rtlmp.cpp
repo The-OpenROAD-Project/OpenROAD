@@ -76,7 +76,8 @@ HierRTLMP::HierRTLMP(sta::dbNetwork* network,
       db_(db),
       sta_(sta),
       logger_(logger),
-      tritonpart_(tritonpart)
+      tritonpart_(tritonpart),
+      tree_(std::make_unique<PhysicalHierarchy>())
 {
 }
 
@@ -137,18 +138,18 @@ void HierRTLMP::setGlobalFence(float fence_lx,
 
 void HierRTLMP::setHaloWidth(float halo_width)
 {
-  tree_.halo_width = halo_width;
+  tree_->halo_width = halo_width;
 }
 
 void HierRTLMP::setHaloHeight(float halo_height)
 {
-  tree_.halo_height = halo_height;
+  tree_->halo_height = halo_height;
 }
 
 // Options related to clustering
 void HierRTLMP::setNumBundledIOsPerBoundary(int num_bundled_ios)
 {
-  tree_.bundled_ios_per_edge = num_bundled_ios;
+  tree_->bundled_ios_per_edge = num_bundled_ios;
 }
 
 void HierRTLMP::setClusterSize(int max_num_macro,
@@ -156,35 +157,35 @@ void HierRTLMP::setClusterSize(int max_num_macro,
                                int max_num_inst,
                                int min_num_inst)
 {
-  tree_.base_max_macro = max_num_macro;
-  tree_.base_min_macro = min_num_macro;
-  tree_.base_max_std_cell = max_num_inst;
-  tree_.base_min_std_cell = min_num_inst;
+  tree_->base_max_macro = max_num_macro;
+  tree_->base_min_macro = min_num_macro;
+  tree_->base_max_std_cell = max_num_inst;
+  tree_->base_min_std_cell = min_num_inst;
 }
 
 void HierRTLMP::setClusterSizeTolerance(float tolerance)
 {
-  tree_.cluster_size_tolerance = tolerance;
+  tree_->cluster_size_tolerance = tolerance;
 }
 
 void HierRTLMP::setMaxNumLevel(int max_num_level)
 {
-  tree_.max_level = max_num_level;
+  tree_->max_level = max_num_level;
 }
 
 void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
 {
-  tree_.cluster_size_ratio = coarsening_ratio;
+  tree_->cluster_size_ratio = coarsening_ratio;
 }
 
 void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
 {
-  tree_.large_net_threshold = large_net_threshold;
+  tree_->large_net_threshold = large_net_threshold;
 }
 
 void HierRTLMP::setSignatureNetThreshold(int signature_net_threshold)
 {
-  tree_.min_net_count_for_connection = signature_net_threshold;
+  tree_->min_net_count_for_connection = signature_net_threshold;
 }
 
 void HierRTLMP::setPinAccessThreshold(float pin_access_th)
@@ -244,19 +245,19 @@ void HierRTLMP::run()
     return;
   }
 
-  if (!tree_.has_std_cells) {
+  if (!tree_->has_std_cells) {
     resetSAParameters();
   }
 
   runCoarseShaping();
   runHierarchicalMacroPlacement();
 
-  Pusher pusher(logger_, tree_.root, block_, boundary_to_io_blockage_);
+  Pusher pusher(logger_, tree_->root, block_, boundary_to_io_blockage_);
   pusher.pushMacrosToCoreBoundaries();
 
   updateMacrosOnDb();
 
-  generateTemporaryStdCellsPlacement(tree_.root);
+  generateTemporaryStdCellsPlacement(tree_->root);
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
@@ -282,17 +283,17 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structures
   clustering_engine_->setDesignMetrics(metrics_);
-  clustering_engine_->setTree(&tree_);
+  clustering_engine_->setTree(tree_.get());
 
   clustering_engine_->run();
 
-  if (!tree_.has_unfixed_macros) {
+  if (!tree_->has_unfixed_macros) {
     skip_macro_placement_ = true;
     return;
   }
 
   if (graphics_) {
-    graphics_->finishedClustering(tree_.root);
+    graphics_->finishedClustering(tree_->root);
   }
 }
 
@@ -309,13 +310,13 @@ void HierRTLMP::runHierarchicalMacroPlacement()
 
   if (bus_planning_on_) {
     adjustCongestionWeight();
-    runHierarchicalMacroPlacement(tree_.root);
+    runHierarchicalMacroPlacement(tree_->root);
   } else {
-    runHierarchicalMacroPlacementWithoutBusPlanning(tree_.root);
+    runHierarchicalMacroPlacementWithoutBusPlanning(tree_->root);
   }
 
   if (graphics_) {
-    graphics_->setMaxLevel(tree_.max_level);
+    graphics_->setMaxLevel(tree_->max_level);
     graphics_->drawResult();
   }
 }
@@ -339,9 +340,9 @@ void HierRTLMP::runCoarseShaping()
 {
   setRootShapes();
 
-  if (tree_.has_only_macros) {
+  if (tree_->has_only_macros) {
     logger_->warn(MPL, 27, "Design has only macros!");
-    tree_.root->setClusterType(HardMacroCluster);
+    tree_->root->setClusterType(HardMacroCluster);
     return;
   }
 
@@ -349,7 +350,7 @@ void HierRTLMP::runCoarseShaping()
     graphics_->startCoarse();
   }
 
-  calculateChildrenTilings(tree_.root);
+  calculateChildrenTilings(tree_->root);
 
   setIOClustersBlockages();
   setPlacementBlockages();
@@ -357,7 +358,7 @@ void HierRTLMP::runCoarseShaping()
 
 void HierRTLMP::setRootShapes()
 {
-  SoftMacro* root_soft_macro = new SoftMacro(tree_.root);
+  auto root_soft_macro = std::make_unique<SoftMacro>(tree_->root);
 
   const float core_lx
       = static_cast<float>(block_->dbuToMicrons(block_->getCoreArea().xMin()));
@@ -384,7 +385,7 @@ void HierRTLMP::setRootShapes()
   root_soft_macro->setWidth(root_width);  // This will set height automatically
   root_soft_macro->setX(root_lx);
   root_soft_macro->setY(root_ly);
-  tree_.root->setSoftMacro(root_soft_macro);
+  tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
 // Compare two intervals according to the product
@@ -481,7 +482,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
 
-  const Rect outline(0, 0, tree_.root->getWidth(), tree_.root->getHeight());
+  const Rect outline(0, 0, tree_->root->getWidth(), tree_->root->getHeight());
 
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
@@ -510,7 +511,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.root,
+          = std::make_unique<SACoreSoftMacro>(tree_->root,
                                               new_outline,
                                               macros,
                                               1.0,     // area weight
@@ -574,7 +575,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.root,
+          = std::make_unique<SACoreSoftMacro>(tree_->root,
                                               new_outline,
                                               macros,
                                               1.0,     // area weight
@@ -704,7 +705,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_;
 
-  const Rect outline(0, 0, tree_.root->getWidth(), tree_.root->getHeight());
+  const Rect outline(0, 0, tree_->root->getWidth(), tree_->root->getHeight());
 
   // update macros
   std::vector<HardMacro> macros;
@@ -915,17 +916,17 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
 void HierRTLMP::setIOClustersBlockages()
 {
-  if (!tree_.maps.bterm_to_inst.empty()) {
+  if (!tree_->maps.bterm_to_inst.empty()) {
     return;
   }
 
   IOSpans io_spans = computeIOSpans();
   const float depth = computeIOBlockagesDepth(io_spans);
 
-  const Rect root(tree_.root->getX(),
-                  tree_.root->getY(),
-                  tree_.root->getX() + tree_.root->getWidth(),
-                  tree_.root->getY() + tree_.root->getHeight());
+  const Rect root(tree_->root->getX(),
+                  tree_->root->getY(),
+                  tree_->root->getX() + tree_->root->getWidth(),
+                  tree_->root->getY() + tree_->root->getHeight());
 
   // Note that the range can be larger than the respective core dimension.
   // As SA only sees what is inside its current outline, this is not a problem.
@@ -1053,15 +1054,15 @@ float HierRTLMP::computeIOBlockagesDepth(const IOSpans& io_spans)
   }
 
   float std_cell_area = 0.0;
-  for (auto& cluster : tree_.root->getChildren()) {
+  for (auto& cluster : tree_->root->getChildren()) {
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_area += cluster->getArea();
     }
   }
 
   const float macro_dominance_factor
-      = tree_.macro_with_halo_area
-        / (tree_.root->getWidth() * tree_.root->getHeight());
+      = tree_->macro_with_halo_area
+        / (tree_->root->getWidth() * tree_->root->getHeight());
   const float depth = (std_cell_area / sum_length)
                       * std::pow((1 - macro_dominance_factor), 2);
 
@@ -1093,7 +1094,7 @@ void HierRTLMP::adjustCongestionWeight()
 {
   std::string snap_layer_name;
 
-  for (auto& macro : tree_.maps.inst_to_hard) {
+  for (auto& macro : tree_->maps.inst_to_hard) {
     odb::dbMaster* master = macro.first->getMaster();
     for (odb::dbMTerm* mterm : master->getMTerms()) {
       if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
@@ -1180,10 +1181,10 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    SoftMacro* macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
-    cluster->setSoftMacro(macro);
+    cluster->setSoftMacro(std::move(soft_macro));
   }
 
   // The simulated annealing outline is determined by the parent's shape
@@ -1232,11 +1233,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    SoftMacro* soft_macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
-    cluster->setSoftMacro(soft_macro);
+    cluster->setSoftMacro(std::move(soft_macro));
     // merge fences and guides for hard macros within cluster
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
@@ -1307,9 +1308,9 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
     BundledNet net(
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-        tree_.virtual_weight);
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster2]->getName()],
+        tree_->virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);
@@ -1326,13 +1327,13 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
                  2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
-                 tree_.maps.id_to_cluster[cluster_id]->getName(),
+                 tree_->maps.id_to_cluster[cluster_id]->getName(),
                  weight);
-      const std::string name = tree_.maps.id_to_cluster[cluster_id]->getName();
+      const std::string name = tree_->maps.id_to_cluster[cluster_id]->getName();
       if (soft_macro_id_map.find(name) == soft_macro_id_map.end()) {
         float new_weight = weight;
         if (macros[soft_macro_id_map[src_name]].isStdCellCluster()) {
-          new_weight *= tree_.virtual_weight;
+          new_weight *= tree_->virtual_weight;
         }
         // if the cluster_id is out of the parent cluster
         BundledNet net(
@@ -1656,7 +1657,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.root,
+          = std::make_unique<SACoreSoftMacro>(tree_->root,
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -1914,7 +1915,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
         std::unique_ptr<SACoreSoftMacro> sa = std::make_unique<SACoreSoftMacro>(
-            tree_.root,
+            tree_->root,
             outline,
             shaped_macros,
             area_weight_,
@@ -2111,7 +2112,7 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
 // half of the outline weight.
 void HierRTLMP::adjustMacroBlockageWeight()
 {
-  if (tree_.max_level == 1) {
+  if (tree_->max_level == 1) {
     float new_macro_blockage_weight = outline_weight_ / 2.0;
     debugPrint(logger_,
                MPL,
@@ -2119,7 +2120,7 @@ void HierRTLMP::adjustMacroBlockageWeight()
                1,
                "Tree max level is {}, Changing macro blockage weight from {} "
                "to {} (half of the outline weight)",
-               tree_.max_level,
+               tree_->max_level,
                macro_blockage_weight_,
                new_macro_blockage_weight);
     macro_blockage_weight_ = new_macro_blockage_weight;
@@ -2164,10 +2165,10 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    SoftMacro* macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
-    cluster->setSoftMacro(macro);
+    cluster->setSoftMacro(std::move(soft_macro));
   }
 
   // The simulated annealing outline is determined by the parent's shape
@@ -2216,11 +2217,11 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    SoftMacro* soft_macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
-    cluster->setSoftMacro(soft_macro);
+    cluster->setSoftMacro(std::move(soft_macro));
     // merge fences and guides for hard macros within cluster
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
@@ -2324,9 +2325,9 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
     BundledNet net(
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-        tree_.virtual_weight);
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster2]->getName()],
+        tree_->virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);
@@ -2343,9 +2344,9 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
                  2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
-                 tree_.maps.id_to_cluster[cluster_id]->getName(),
+                 tree_->maps.id_to_cluster[cluster_id]->getName(),
                  weight);
-      const std::string name = tree_.maps.id_to_cluster[cluster_id]->getName();
+      const std::string name = tree_->maps.id_to_cluster[cluster_id]->getName();
       if (src_id > cluster_id) {
         BundledNet net(
             soft_macro_id_map[src_name], soft_macro_id_map[name], weight);
@@ -2486,7 +2487,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.root,
+          = std::make_unique<SACoreSoftMacro>(tree_->root,
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -2662,10 +2663,10 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {  // ignore all the io clusters
       continue;
     }
-    SoftMacro* macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
     // will be deleted
-    cluster->setSoftMacro(macro);
+    cluster->setSoftMacro(std::move(soft_macro));
   }
 
   // The simulated annealing outline is determined by the parent's shape
@@ -2714,11 +2715,11 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
     }
     // for other clusters
     soft_macro_id_map[cluster->getName()] = macros.size();
-    SoftMacro* soft_macro = new SoftMacro(cluster);
+    auto soft_macro = std::make_unique<SoftMacro>(cluster);
     clustering_engine_->updateInstancesAssociation(
         cluster);  // we need this step to calculate nets
     macros.push_back(*soft_macro);
-    cluster->setSoftMacro(soft_macro);
+    cluster->setSoftMacro(std::move(soft_macro));
     // merge fences and guides for hard macros within cluster
     if (cluster->getClusterType() == StdCellCluster) {
       continue;
@@ -2821,9 +2822,9 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
     BundledNet net(
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster1]->getName()],
-        soft_macro_id_map[tree_.maps.id_to_cluster[cluster2]->getName()],
-        tree_.virtual_weight);
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster1]->getName()],
+        soft_macro_id_map[tree_->maps.id_to_cluster[cluster2]->getName()],
+        tree_->virtual_weight);
     net.src_cluster_id = cluster1;
     net.target_cluster_id = cluster2;
     nets.push_back(net);
@@ -2840,9 +2841,9 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
                  2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
-                 tree_.maps.id_to_cluster[cluster_id]->getName(),
+                 tree_->maps.id_to_cluster[cluster_id]->getName(),
                  weight);
-      const std::string name = tree_.maps.id_to_cluster[cluster_id]->getName();
+      const std::string name = tree_->maps.id_to_cluster[cluster_id]->getName();
       if (src_id > cluster_id) {
         BundledNet net(
             soft_macro_id_map[src_name], soft_macro_id_map[name], weight);
@@ -2968,7 +2969,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.root,
+          = std::make_unique<SACoreSoftMacro>(tree_->root,
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -3372,8 +3373,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
              cluster->getName());
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  num_hard_macros_cluster_ += hard_macros.size();
-
   std::vector<HardMacro> sa_macros;
   std::vector<Cluster*> macro_clusters;  // needed to calculate connections
   std::map<int, int> cluster_to_macro;
@@ -3541,7 +3540,6 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   }
 
   for (auto& hard_macro : hard_macros) {
-    num_updated_macros_++;
     hard_macro->setX(hard_macro->getX() + outline.xMin());
     hard_macro->setY(hard_macro->getY() + outline.yMin());
   }
@@ -3628,7 +3626,7 @@ void HierRTLMP::createFixedTerminals(
     if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
       continue;
     }
-    auto& temp_cluster = tree_.maps.id_to_cluster[cluster_id];
+    auto& temp_cluster = tree_->maps.id_to_cluster[cluster_id];
 
     // model other cluster as a fixed macro with zero size
     cluster_to_macro[cluster_id] = sa_macros.size();
@@ -4005,8 +4003,8 @@ void HierRTLMP::correctAllMacrosOrientation()
 
 void HierRTLMP::updateMacrosOnDb()
 {
-  for (const auto& [inst, hard_macro] : tree_.maps.inst_to_hard) {
-    updateMacroOnDb(hard_macro);
+  for (const auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+    updateMacroOnDb(hard_macro.get());
   }
 }
 
@@ -4034,7 +4032,7 @@ void HierRTLMP::commitMacroPlacementToDb()
 {
   Snapper snapper;
 
-  for (auto& [inst, hard_macro] : tree_.maps.inst_to_hard) {
+  for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
     if (!inst) {
       continue;
     }
@@ -4068,30 +4066,16 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
 void HierRTLMP::clear()
 {
-  for (auto& [module, metrics] : tree_.maps.module_to_metrics) {
-    delete metrics;
-  }
-  tree_.maps.module_to_metrics.clear();
-
-  for (auto& [inst, hard_macro] : tree_.maps.inst_to_hard) {
-    delete hard_macro;
-  }
-  tree_.maps.inst_to_hard.clear();
-
-  for (auto& [cluster_id, cluster] : tree_.maps.id_to_cluster) {
+  for (auto& [cluster_id, cluster] : tree_->maps.id_to_cluster) {
     delete cluster;
   }
-  tree_.maps.id_to_cluster.clear();
+  tree_->maps.id_to_cluster.clear();
+
+  tree_.reset();
 
   if (graphics_) {
     graphics_->eraseDrawing();
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "number of macros in HardMacroCluster : {}",
-             num_hard_macros_cluster_);
 }
 
 void HierRTLMP::setBusPlanningOn(bool bus_planning_on)

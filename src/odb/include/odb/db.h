@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbBusPort;
 class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
@@ -143,6 +144,7 @@ class dbModITerm;
 class dbModNet;
 class dbModule;
 class dbNetTrack;
+class dbPolygon;
 class dbPowerDomain;
 class dbPowerSwitch;
 class dbScanChain;
@@ -163,6 +165,7 @@ class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
 class dbTechLayerForbiddenSpacingRule;
 class dbTechLayerKeepOutZoneRule;
+class dbTechLayerMaxSpacingRule;
 class dbTechLayerMinCutRule;
 class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
@@ -175,6 +178,8 @@ class dbTechLayerWrongDirSpacingRule;
 // Extraction Objects
 class dbExtControl;
 
+// Custom iterators
+class dbModuleBusPortModBTermItr;
 ///
 /// dbProperty - Property base class.
 ///
@@ -671,6 +676,11 @@ class dbBox : public dbObject
                        int y1,
                        int x2,
                        int y2);
+
+  ///
+  /// Add a wire-shape to a polygon.
+  ///
+  static dbBox* create(dbPolygon* pbox, int x1, int y1, int x2, int y2);
 
   ///
   /// Add a via obstrction to a master-pin.
@@ -5596,7 +5606,12 @@ class dbMaster : public dbObject
   ///
   /// Get the obstructions of this master
   ///
-  dbSet<dbBox> getObstructions();
+  dbSet<dbBox> getObstructions(bool include_decomposed_polygons = true);
+
+  ///
+  /// Get the polygon obstructions of this master
+  ///
+  dbSet<dbPolygon> getPolygonObstructions();
 
   ///
   /// Get the placement bounding box of this master.
@@ -5826,7 +5841,12 @@ class dbMPin : public dbObject
   ///
   /// Get the geometry of this pin.
   ///
-  dbSet<dbBox> getGeometry();
+  dbSet<dbBox> getGeometry(bool include_decomposed_polygons = true);
+
+  ///
+  /// Get the polygon geometry of this pin.
+  ///
+  dbSet<dbPolygon> getPolygonGeometry();
 
   ///
   /// Get bbox of this pin (ie the bbox of getGeometry())
@@ -7143,6 +7163,41 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbBusPort : public dbObject
+{
+ public:
+  int getFrom() const;
+
+  int getTo() const;
+
+  dbModBTerm* getPort() const;
+
+  void setMembers(dbModBTerm* members);
+
+  dbModBTerm* getMembers() const;
+
+  void setLast(dbModBTerm* last);
+
+  dbModBTerm* getLast() const;
+
+  dbModule* getParent() const;
+
+  // User Code Begin dbBusPort
+  // get element by bit index in bus (allows for up/down)
+  // linear access
+  dbModBTerm* getBusIndexedElement(int index);
+  dbSet<dbModBTerm> getBusPortMembers();
+  int getSize() const;
+  bool getUpdown() const;
+
+  static dbBusPort* create(dbModule* parentModule,
+                           dbModBTerm* port,
+                           int from_ix,
+                           int to_ix);
+
+  // User Code End dbBusPort
+};
+
 // Top level DFT (Design for Testing) class
 class dbDft : public dbObject
 {
@@ -7561,11 +7616,12 @@ class dbModBTerm : public dbObject
   dbIoType getIoType();
   void connect(dbModNet* net);
   void disconnect();
-  void staSetPort(void* p);
-  void* staPort();
-
+  bool isBusPort() const;
+  void setBusPort(dbBusPort*);
+  dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
+ private:
   // User Code End dbModBTerm
 };
 
@@ -7660,7 +7716,11 @@ class dbModule : public dbObject
   dbSet<dbModInst> getChildren();
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
+  // Get the ports of a module (STA world uses ports, which contain members).
+  dbSet<dbModBTerm> getPorts();
+  // Get the leaf level connections on a module (flat connected view).
   dbSet<dbModBTerm> getModBTerms();
+  dbModBTerm* getModBTerm(uint id);
   dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);
@@ -7672,8 +7732,7 @@ class dbModule : public dbObject
   int getModInstCount();
   int getDbInstCount();
 
-  void staSetCell(void* cell);
-  void* getStaCell();
+  const dbModBTerm* getHeadDbModBTerm() const;
 
   static dbModule* create(dbBlock* block, const char* name);
 
@@ -7702,6 +7761,35 @@ class dbNetTrack : public dbObject
   static void destroy(dbNetTrack* guide);
 
   // User Code End dbNetTrack
+};
+
+class dbPolygon : public dbObject
+{
+ public:
+  Polygon getPolygon() const;
+
+  int getDesignRuleWidth() const;
+
+  // User Code Begin dbPolygon
+  dbTechLayer* getTechLayer();
+  dbSet<dbBox> getGeometry();
+  void setDesignRuleWidth(int design_rule_width);
+
+  ///
+  /// Add an obstruction to a master.
+  ///
+  static dbPolygon* create(dbMaster* master,
+                           dbTechLayer* layer,
+                           const std::vector<Point>& polygon);
+
+  ///
+  /// Add a wire-shape to a master-pin.
+  ///
+  static dbPolygon* create(dbMPin* pin,
+                           dbTechLayer* layer,
+                           const std::vector<Point>& polygon);
+
+  // User Code End dbPolygon
 };
 
 class dbPowerDomain : public dbObject
@@ -8010,6 +8098,8 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerArraySpacingRule> getTechLayerArraySpacingRules() const;
 
   dbSet<dbTechLayerEolKeepOutRule> getTechLayerEolKeepOutRules() const;
+
+  dbSet<dbTechLayerMaxSpacingRule> getTechLayerMaxSpacingRules() const;
 
   dbSet<dbTechLayerWidthTableRule> getTechLayerWidthTableRules() const;
 
@@ -8701,9 +8791,9 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   bool isEolOnly() const;
 
-  void setShortEdgeOnly(bool short_edge_only);
+  void setShortEdgeOnEol(bool short_edge_on_eol);
 
-  bool isShortEdgeOnly() const;
+  bool isShortEdgeOnEol() const;
 
   void setSideSpacingValid(bool side_spacing_valid);
 
@@ -9461,6 +9551,27 @@ class dbTechLayerKeepOutZoneRule : public dbObject
   static void destroy(dbTechLayerKeepOutZoneRule* rule);
 
   // User Code End dbTechLayerKeepOutZoneRule
+};
+
+class dbTechLayerMaxSpacingRule : public dbObject
+{
+ public:
+  void setCutClass(std::string cut_class);
+
+  std::string getCutClass() const;
+
+  void setMaxSpacing(int max_spacing);
+
+  int getMaxSpacing() const;
+
+  // User Code Begin dbTechLayerMaxSpacingRule
+  bool hasCutClass() const;
+
+  static dbTechLayerMaxSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerMaxSpacingRule* rule);
+
+  // User Code End dbTechLayerMaxSpacingRule
 };
 
 class dbTechLayerMinCutRule : public dbObject

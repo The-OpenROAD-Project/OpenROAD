@@ -149,6 +149,10 @@ class GuiPainter : public Painter
       painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
     }
   }
+  void drawPolygon(const odb::Polygon& polygon) override
+  {
+    drawPolygon(polygon.getPoints());
+  }
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
     QPolygon poly;
