@@ -85,6 +85,7 @@ void _dbTechLayerMaxSpacingRule::out(dbDiff& diff,
 
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
+  max_spacing_ = 0;
 }
 
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(
