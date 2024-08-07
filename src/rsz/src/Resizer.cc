@@ -365,11 +365,6 @@ bool Resizer::removeBuffer(Instance* buffer,
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-
-  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-  odb::dbNet* db_removed = db_network_->staToDb(removed);
-  db_survivor->mergeNet(db_removed);
-
   bool buffer_removed = false;
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
@@ -380,6 +375,13 @@ bool Resizer::removeBuffer(Instance* buffer,
                "remove {}",
                db_network_->name(buffer));
     buffer_removed = true;
+
+    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+    odb::dbNet* db_removed = db_network_->staToDb(removed);
+    if (removed) {
+      db_survivor->mergeNet(db_removed);
+    }
+
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
