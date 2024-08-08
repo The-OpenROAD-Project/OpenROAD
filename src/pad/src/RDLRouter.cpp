@@ -1231,10 +1231,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
   if (terms.size() == 2) {
     const auto& [shape0, term0] = *terms.begin();
     const auto& [shape1, term1] = *terms.rbegin();
-    const odb::Point shape0center(shape0.xCenter(), shape0.yCenter());
-    const odb::Point shape1center(shape1.xCenter(), shape1.yCenter());
-    pairs.push_back({{shape0center, shape0, term0.first, term0.second},
-                     {shape1center, shape1, term1.first, term1.second}});
+    pairs.push_back({{shape0.center(), shape0, term0.first, term0.second},
+                     {shape1.center(), shape1, term1.first, term1.second}});
   } else {
     std::set<odb::dbInst*> used_instances;
     std::set<odb::Rect> used;
@@ -1273,7 +1271,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       }
 
       int64_t dist = std::numeric_limits<int64_t>::max();
-      const odb::Point pt0(shape0.xCenter(), shape0.yCenter());
+      const odb::Point pt0 = shape0.center();
       odb::Rect shape = shape0;
       odb::Point point = pt0;
       odb::dbITerm* term = iterm0.first;
@@ -1296,7 +1294,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
           continue;
         }
 
-        const odb::Point pt1(shape1.xCenter(), shape1.yCenter());
+        const odb::Point pt1 = shape1.center();
         const int64_t new_dist = distance(pt0, pt1);
 
         debugPrint(logger_,
