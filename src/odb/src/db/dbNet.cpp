@@ -3123,18 +3123,12 @@ void dbNet::destroy(dbNet* net_)
   }
 
   dbSet<dbBTerm> bterms = net_->getBTerms();
-
-  dbSet<dbBTerm>::iterator bitr;
-
-  for (bitr = bterms.begin(); bitr != bterms.end();) {
+  for (auto bitr = bterms.begin(); bitr != bterms.end();) {
     bitr = dbBTerm::destroy(bitr);
   }
 
   dbSet<dbSWire> swires = net_->getSWires();
-  ;
-  dbSet<dbSWire>::iterator sitr;
-
-  for (sitr = swires.begin(); sitr != swires.end();) {
+  for (auto sitr = swires.begin(); sitr != swires.end();) {
     sitr = dbSWire::destroy(sitr);
   }
 
@@ -3146,6 +3140,11 @@ void dbNet::destroy(dbNet* net_)
   for (dbId<_dbGroup> _group_id : net->_groups) {
     dbGroup* group = (dbGroup*) block->_group_tbl->getPtr(_group_id);
     group->removeNet(net_);
+  }
+
+  dbSet<dbGuide> guides = net_->getGuides();
+  for (auto gitr = guides.begin(); gitr != guides.end();) {
+    gitr = dbGuide::destroy(gitr);
   }
 
   if (block->_journal) {
