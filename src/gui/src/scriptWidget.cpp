@@ -432,6 +432,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
                                     ? widget_->error_msg_
                                     : widget_->buffer_msg_;
 
+      widget_->flushReportBufferToOutput();
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 
