@@ -10309,7 +10309,7 @@ class dbGDSPath : public dbGDSElement
 class dbGDSSRef : public dbGDSElement
 {
  public:
-  void set_sName(std::string sName);
+  void set_sName(const std::string& sName);
 
   std::string get_sName() const;
 
@@ -10345,7 +10345,7 @@ class dbGDSText : public dbGDSElement
 
   dbGDSSTrans get_sTrans() const;
 
-  void setText(std::string text);
+  void setText(const std::string& text);
 
   std::string getText() const;
 };

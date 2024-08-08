@@ -104,7 +104,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSSRef::set_sName(std::string sName)
+void dbGDSSRef::set_sName(const std::string& sName)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 

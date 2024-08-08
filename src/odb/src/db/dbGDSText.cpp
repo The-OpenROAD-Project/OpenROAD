@@ -193,7 +193,7 @@ dbGDSSTrans dbGDSText::get_sTrans() const
   return obj->_sTrans;
 }
 
-void dbGDSText::setText(std::string text)
+void dbGDSText::setText(const std::string& text)
 {
   _dbGDSText* obj = (_dbGDSText*) this;
 
