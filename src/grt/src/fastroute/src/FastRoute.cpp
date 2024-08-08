@@ -384,7 +384,7 @@ void FastRouteCore::addAdjustment(int x1,
                                   int x2,
                                   int y2,
                                   int layer,
-                                  int reducedCap,
+                                  uint16_t reducedCap,
                                   bool isReduce)
 {
   const int k = layer - 1;
@@ -414,7 +414,11 @@ void FastRouteCore::addAdjustment(int x1,
       const int increase = reducedCap - cap;
       if (x1 < x_grid_ - 1) {
         h_edges_[y1][x1].cap += increase;
+        int new_red = h_edges_[y1][x1].red - increase;
+        h_edges_[y1][x1].red = std::max(new_red, 0);
       }
+      int new_red_3D = h_edges_3D_[k][y1][x1].red - increase;
+      h_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
@@ -448,7 +452,11 @@ void FastRouteCore::addAdjustment(int x1,
       int increase = reducedCap - cap;
       if (y1 < y_grid_ - 1) {
         v_edges_[y1][x1].cap += increase;
+        int new_red = v_edges_[y1][x1].red - increase;
+        v_edges_[y1][x1].red = std::max(new_red, 0);
       }
+      int new_red_3D = v_edges_3D_[k][y1][x1].red - increase;
+      v_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }

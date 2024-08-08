@@ -67,7 +67,7 @@ bool _dbTechLayerCutEnclosureRule::operator==(
   if (flags_.eol_only_ != rhs.flags_.eol_only_) {
     return false;
   }
-  if (flags_.short_edge_only_ != rhs.flags_.short_edge_only_) {
+  if (flags_.short_edge_on_eol_ != rhs.flags_.short_edge_on_eol_) {
     return false;
   }
   if (flags_.side_spacing_valid_ != rhs.flags_.side_spacing_valid_) {
@@ -197,7 +197,7 @@ void _dbTechLayerCutEnclosureRule::differences(
   DIFF_FIELD(flags_.below_);
   DIFF_FIELD(flags_.eol_min_length_valid_);
   DIFF_FIELD(flags_.eol_only_);
-  DIFF_FIELD(flags_.short_edge_only_);
+  DIFF_FIELD(flags_.short_edge_on_eol_);
   DIFF_FIELD(flags_.side_spacing_valid_);
   DIFF_FIELD(flags_.end_spacing_valid_);
   DIFF_FIELD(flags_.off_center_line_);
@@ -247,7 +247,7 @@ void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(flags_.below_);
   DIFF_OUT_FIELD(flags_.eol_min_length_valid_);
   DIFF_OUT_FIELD(flags_.eol_only_);
-  DIFF_OUT_FIELD(flags_.short_edge_only_);
+  DIFF_OUT_FIELD(flags_.short_edge_on_eol_);
   DIFF_OUT_FIELD(flags_.side_spacing_valid_);
   DIFF_OUT_FIELD(flags_.end_spacing_valid_);
   DIFF_OUT_FIELD(flags_.off_center_line_);
@@ -319,7 +319,7 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
   flags_.below_ = r.flags_.below_;
   flags_.eol_min_length_valid_ = r.flags_.eol_min_length_valid_;
   flags_.eol_only_ = r.flags_.eol_only_;
-  flags_.short_edge_only_ = r.flags_.short_edge_only_;
+  flags_.short_edge_on_eol_ = r.flags_.short_edge_on_eol_;
   flags_.side_spacing_valid_ = r.flags_.side_spacing_valid_;
   flags_.end_spacing_valid_ = r.flags_.end_spacing_valid_;
   flags_.off_center_line_ = r.flags_.off_center_line_;
@@ -730,18 +730,18 @@ bool dbTechLayerCutEnclosureRule::isEolOnly() const
   return obj->flags_.eol_only_;
 }
 
-void dbTechLayerCutEnclosureRule::setShortEdgeOnly(bool short_edge_only)
+void dbTechLayerCutEnclosureRule::setShortEdgeOnEol(bool short_edge_on_eol)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.short_edge_only_ = short_edge_only;
+  obj->flags_.short_edge_on_eol_ = short_edge_on_eol;
 }
 
-bool dbTechLayerCutEnclosureRule::isShortEdgeOnly() const
+bool dbTechLayerCutEnclosureRule::isShortEdgeOnEol() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.short_edge_only_;
+  return obj->flags_.short_edge_on_eol_;
 }
 
 void dbTechLayerCutEnclosureRule::setSideSpacingValid(bool side_spacing_valid)

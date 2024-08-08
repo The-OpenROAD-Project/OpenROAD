@@ -38,6 +38,7 @@
 #include "dbMPinItr.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbPolygonItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -63,6 +64,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
 {
   stream << mpin._mterm;
   stream << mpin._geoms;
+  stream << mpin._poly_geoms;
   stream << mpin._next_mpin;
   stream << mpin.aps_;
   return stream;
@@ -72,6 +74,10 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
 {
   stream >> mpin._mterm;
   stream >> mpin._geoms;
+  _dbDatabase* db = mpin.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_polygon)) {
+    stream >> mpin._poly_geoms;
+  }
   stream >> mpin._next_mpin;
   stream >> mpin.aps_;
   return stream;
@@ -146,11 +152,21 @@ dbMaster* dbMPin::getMaster()
   return (dbMaster*) getImpl()->getOwner();
 }
 
-dbSet<dbBox> dbMPin::getGeometry()
+dbSet<dbBox> dbMPin::getGeometry(bool include_decomposed_polygons)
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return dbSet<dbBox>(pin, master->_box_itr);
+  if (include_decomposed_polygons) {
+    return dbSet<dbBox>(pin, master->_box_itr);
+  }
+  return dbSet<dbBox>(pin, master->_pbox_box_itr);
+}
+
+dbSet<dbPolygon> dbMPin::getPolygonGeometry()
+{
+  _dbMPin* pin = (_dbMPin*) this;
+  _dbMaster* master = (_dbMaster*) pin->getOwner();
+  return dbSet<dbPolygon>(pin, master->_pbox_itr);
 }
 
 Rect dbMPin::getBBox()

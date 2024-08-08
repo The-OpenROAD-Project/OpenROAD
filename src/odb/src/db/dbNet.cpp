@@ -3159,6 +3159,9 @@ void dbNet::destroy(dbNet* net_)
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(net_->getName());
     block->_journal->pushParam(net->getOID());
+    uint* flags = (uint*) &net->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(net->_non_default_rule);
     block->_journal->endAction();
   }
 

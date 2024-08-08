@@ -490,34 +490,15 @@ void lefin::createPolygon(dbObject* object,
     points.push_back(Point(x, y));
   }
 
-  if (p->numPoints < 4)
-    return;
+  dbPolygon* pbox = nullptr;
+  if (is_pin) {
+    pbox = dbPolygon::create((dbMPin*) object, layer, points);
+  } else {
+    pbox = dbPolygon::create((dbMaster*) object, layer, points);
+  }
 
-  if (points[0] == points[points.size() - 1])
-    points.pop_back();
-
-  if (p->numPoints < 4)
-    return;
-
-  if (!polygon_is_clockwise(points))
-    std::reverse(points.begin(), points.end());
-
-  std::vector<Rect> rects;
-  decompose_polygon(points, rects);
-
-  std::vector<Rect>::iterator itr;
-
-  for (itr = rects.begin(); itr != rects.end(); ++itr) {
-    Rect& r = *itr;
-
-    dbBox* box;
-    if (is_pin)
-      box = dbBox::create(
-          (dbMPin*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
-    else
-      box = dbBox::create(
-          (dbMaster*) object, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
-    box->setDesignRuleWidth(design_rule_width);
+  if (pbox != nullptr) {
+    pbox->setDesignRuleWidth(design_rule_width);
   }
 }
 
@@ -754,6 +735,9 @@ void lefin::layer(lefiLayer* layer)
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
         KeepOutZoneParser parser(l, this);
+        parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
+        MaxSpacingParser parser(l, this);
         parser.parse(layer->propValue(iii));
       } else
         supported = false;
@@ -1434,9 +1418,16 @@ void lefin::obstruction(lefiObstruction* obs)
 
   if (geometries->numItems()) {
     addGeoms(_master, false, geometries);
+    dbSet<dbPolygon> poly_obstructions = _master->getPolygonObstructions();
+
+    // Reverse the stored order to match the created order.
+    if (poly_obstructions.reversible() && poly_obstructions.orderReversed()) {
+      poly_obstructions.reverse();
+    }
+
     dbSet<dbBox> obstructions = _master->getObstructions();
 
-    // Reverse the stored order, too match the created order.
+    // Reverse the stored order to match the created order.
     if (obstructions.reversible() && obstructions.orderReversed())
       obstructions.reverse();
   }
@@ -1641,6 +1632,11 @@ void lefin::pin(lefiPin* pin)
       dbMPin* dbpin = dbMPin::create(term);
       created_mpins = true;
       addGeoms(dbpin, true, geometries);
+
+      dbSet<dbPolygon> poly_geoms = dbpin->getPolygonGeometry();
+      if (poly_geoms.reversible() && poly_geoms.orderReversed()) {
+        poly_geoms.reverse();
+      }
 
       dbSet<dbBox> geoms = dbpin->getGeometry();
       if (geoms.reversible() && geoms.orderReversed())
@@ -1917,7 +1913,7 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
     }
 
     dbSet<dbBox> boxes = v->getBoxes();
-    // Reverse the stored order, too match the created order.
+    // Reverse the stored order to match the created order.
     if (boxes.reversible() && boxes.orderReversed())
       boxes.reverse();
   }

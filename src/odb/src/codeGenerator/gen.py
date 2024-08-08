@@ -21,6 +21,7 @@ from helper import (
     is_bit_fields,
     is_hash_table,
     is_pass_by_ref,
+    is_set_by_ref,
     is_ref,
     std,
 )
@@ -199,6 +200,7 @@ for klass in schema["classes"]:
         field["isHashTable"] = is_hash_table(field["type"])
         field["hashTableType"] = get_hash_table_type(field["type"])
         field["isPassByRef"] = is_pass_by_ref(field["type"])
+        field["isSetByRef"] = is_set_by_ref(field["type"])
         if "argument" not in field:
             field["argument"] = field["name"].strip("_")
         field.setdefault("flags", [])

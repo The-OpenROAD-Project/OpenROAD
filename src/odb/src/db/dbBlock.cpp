@@ -51,6 +51,7 @@
 #include "dbBlockage.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbBusPort.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCapNode.h"
@@ -212,6 +213,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _modnet_tbl = new dbTable<_dbModNet>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
 
+  _busport_tbl = new dbTable<_dbBusPort>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBusPortObj);
+
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
 
@@ -348,6 +352,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _modbterm_hash.setTable(_modbterm_tbl);
   _moditerm_hash.setTable(_moditerm_tbl);
   _modnet_hash.setTable(_modnet_tbl);
+  _busport_hash.setTable(_busport_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -363,7 +368,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -577,7 +582,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -966,6 +971,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._modbterm_hash;
     stream << block._moditerm_hash;
     stream << block._modnet_hash;
+    stream << block._busport_hash;
   }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
@@ -1085,6 +1091,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._modbterm_hash;
     stream >> block._moditerm_hash;
     stream >> block._modnet_hash;
+    stream >> block._busport_hash;
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;

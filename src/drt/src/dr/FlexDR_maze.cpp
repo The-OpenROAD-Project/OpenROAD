@@ -1681,13 +1681,61 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
+void FlexDRWorker::writeGCPatchesToDRWorker(
+    drNet* target_net,
+    const std::vector<FlexMazeIdx>& valid_indices)
+{
+  for (auto& pwire : gcWorker_->getPWires()) {
+    auto net = pwire->getNet();
+    if (!net) {
+      net = target_net;
+    }
+    if (!net) {
+      logger_->error(utl::DRT, 407, "pwire with no net");
+    }
+    net->setModified(true);
+    auto tmp_pwire = std::make_unique<drPatchWire>();
+    tmp_pwire->setLayerNum(pwire->getLayerNum());
+    tmp_pwire->setOrigin(pwire->getOrigin());
+    tmp_pwire->setOffsetBox(pwire->getOffsetBox());
+    if (!valid_indices.empty()) {
+      // Find closest path point
+      Point closest;
+      frCoord closest_dist = INT_MAX;
+      auto origin = pwire->getOrigin();
+      auto box = pwire->getOffsetBox();
+      for (auto p : valid_indices) {
+        Point pp;
+        gridGraph_.getPoint(pp, p.x(), p.y());
+        frCoord path_length = Point::squaredDistance(origin, pp);
+        if (path_length < closest_dist) {
+          closest_dist = path_length;
+          closest = pp;
+        }
+      }
+      tmp_pwire->setOrigin(closest);
+      tmp_pwire->setOffsetBox(
+          Rect(origin.getX() - closest.getX() + box.xMin(),
+               origin.getY() - closest.getY() + box.yMin(),
+               origin.getX() - closest.getX() + box.xMax(),
+               origin.getY() - closest.getY() + box.yMax()));
+    }
+    tmp_pwire->addToNet(net);
+    std::unique_ptr<drConnFig> tmp(std::move(tmp_pwire));
+    getWorkerRegionQuery().add(tmp.get());
+    net->addRoute(std::move(tmp));
+  }
+}
+
 void FlexDRWorker::route_queue()
 {
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
-    gcWorker_->setEnableSurgicalFix(false);
+    gcWorker_->setEnableSurgicalFix(true);
     gcWorker_->main();
+    writeGCPatchesToDRWorker();
+    gcWorker_->clearPWires();
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
@@ -1726,25 +1774,7 @@ void FlexDRWorker::route_queue()
   gcWorker_->setEnableSurgicalFix(true);
   gcWorker_->main();
   // write back GC patches
-  for (auto& pwire : gcWorker_->getPWires()) {
-    auto net = pwire->getNet();
-    if (!net) {
-      std::cout << "Error: pwire with no net\n";
-      exit(1);
-    }
-    net->setModified(true);
-    auto tmpPWire = std::make_unique<drPatchWire>();
-    tmpPWire->setLayerNum(pwire->getLayerNum());
-    Point origin = pwire->getOrigin();
-    tmpPWire->setOrigin(origin);
-    Rect box = pwire->getOffsetBox();
-    tmpPWire->setOffsetBox(box);
-    tmpPWire->addToNet(net);
-    std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-    auto& workerRegionQuery = getWorkerRegionQuery();
-    workerRegionQuery.add(tmp.get());
-    net->addRoute(std::move(tmp));
-  }
+  writeGCPatchesToDRWorker();
 
   gcWorker_->end();
 
@@ -1960,41 +1990,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
         drNet* currNet = net;
-        for (auto& pwire : gcWorker_->getPWires()) {
-          auto net = pwire->getNet();
-          if (!net) {
-            net = currNet;
-          }
-          auto tmpPWire = std::make_unique<drPatchWire>();
-          tmpPWire->setLayerNum(pwire->getLayerNum());
-          Point origin = pwire->getOrigin();
-          Rect box = pwire->getOffsetBox();
-          // Find closest path point
-          Point closest;
-          frCoord closestDist = INT_MAX;
-          for (auto p : paths) {
-            Point pp;
-            gridGraph_.getPoint(pp, p.x(), p.y());
-            frCoord pathLength = Point::squaredDistance(origin, pp);
-            if (pathLength < closestDist) {
-              closestDist = pathLength;
-              closest = pp;
-            }
-          }
-          tmpPWire->setOrigin(closest);
-          tmpPWire->setOffsetBox(
-              Rect(origin.getX() - closest.getX() + box.xMin(),
-                   origin.getY() - closest.getY() + box.yMin(),
-                   origin.getX() - closest.getX() + box.xMax(),
-                   origin.getY() - closest.getY() + box.yMax()));
-          tmpPWire->addToNet(net);
-          pwire->addToNet(net);
-
-          std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-          auto& workerRegionQuery = getWorkerRegionQuery();
-          workerRegionQuery.add(tmp.get());
-          net->addRoute(std::move(tmp));
-        }
+        writeGCPatchesToDRWorker(currNet, paths);
         gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
@@ -2014,24 +2010,76 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         logger_->error(DRT, 1006, "failed to setTargetNet");
       }
     } else {
-      gcWorker_->setEnableSurgicalFix(false);
-      if (obj_gc_version.find(obj) != obj_gc_version.end()
-          && obj_gc_version[obj].first == gc_version) {
-        continue;
-      }
-      if (obj->typeId() == frcNet) {
-        auto net = static_cast<frNet*>(obj);
-        if (gcWorker_->setTargetNet(net)) {
+      if (getRipupMode() == RipUpMode::VIASWAP) {
+        auto net = static_cast<drNet*>(obj);
+        bool no_solution_found = false;
+        for (auto& conn_fig : net->getRouteConnFigs()) {
+          if (conn_fig->typeId() != drcVia) {
+            continue;
+          }
+          auto old_via = static_cast<drVia*>(conn_fig.get());
+          if (old_via->isLonely()) {
+            auto cutLayer
+                = getTech()->getLayer(old_via->getViaDef()->getCutLayerNum());
+            frViaDef* replacement_via_def = nullptr;
+            if (cutLayer->getSecondaryViaDefs().size()
+                <= numReroute)  // no more secViaDefs to try
+            {
+              no_solution_found = true;
+              // fall back to the original viadef
+              replacement_via_def = cutLayer->getDefaultViaDef();
+            } else {
+              replacement_via_def = cutLayer->getSecondaryViaDef(numReroute);
+            }
+            if (replacement_via_def == old_via->getViaDef()) {
+              continue;
+            }
+            // replace via with a secondaryVia at index numReroute
+            std::unique_ptr<drConnFig> new_via_connfig
+                = std::make_unique<drVia>(*old_via);
+            auto new_via_ptr = static_cast<drVia*>(new_via_connfig.get());
+            new_via_ptr->setViaDef(replacement_via_def);
+            // remove old via
+            getWorkerRegionQuery().remove(old_via);
+            net->removeShape(old_via);
+            // add new via
+            net->addRoute(std::move(new_via_connfig));
+            getWorkerRegionQuery().add(new_via_ptr);
+          }
+        }
+        if (!no_solution_found) {
+          gcWorker_->setTargetNet(net->getFrNet());
+          gcWorker_->updateDRNet(net);
+          gcWorker_->setEnableSurgicalFix(true);
           gcWorker_->main();
-          didCheck = true;
+          if (gcWorker_->getMarkers().empty()) {
+            net->setModified(true);
+            writeGCPatchesToDRWorker();
+          } else {
+            rerouteQueue.push({net, numReroute + 1, false, net});
+          }
+          gcWorker_->clearPWires();
         }
       } else {
-        if (gcWorker_->setTargetNet(obj)) {
-          gcWorker_->main();
-          didCheck = true;
+        gcWorker_->setEnableSurgicalFix(false);
+        if (obj_gc_version.find(obj) != obj_gc_version.end()
+            && obj_gc_version[obj].first == gc_version) {
+          continue;
         }
+        if (obj->typeId() == frcNet) {
+          auto net = static_cast<frNet*>(obj);
+          if (gcWorker_->setTargetNet(net)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
+        } else {
+          if (gcWorker_->setTargetNet(obj)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
+        }
+        obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
       }
-      obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
     }
     // end
     if (didCheck) {

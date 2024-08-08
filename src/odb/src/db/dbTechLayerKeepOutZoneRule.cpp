@@ -230,7 +230,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerKeepOutZoneRule::setFirstCutClass(std::string first_cut_class)
+void dbTechLayerKeepOutZoneRule::setFirstCutClass(
+    const std::string& first_cut_class)
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
 
@@ -243,7 +244,8 @@ std::string dbTechLayerKeepOutZoneRule::getFirstCutClass() const
   return obj->first_cut_class_;
 }
 
-void dbTechLayerKeepOutZoneRule::setSecondCutClass(std::string second_cut_class)
+void dbTechLayerKeepOutZoneRule::setSecondCutClass(
+    const std::string& second_cut_class)
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
 

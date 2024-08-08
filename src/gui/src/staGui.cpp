@@ -181,7 +181,13 @@ QVariant TimingPathsModel::headerData(int section,
         // to a header item that doesn't.
         return "";
       case Skew:
-        return "Path clock skew (crpr corrected)";
+        // A rather verbose tooltip, move some of this to a help/documentation
+        // file when one is introduced into OpenROAD. Meanwhile, this is the
+        // best that can be done.
+        return "The difference in arrival times between\n"
+               "source and destination clock pins of a macro/register,\n"
+               "adjusted for CRPR and subtracting a clock period.\n"
+               "Setup and hold times account for internal clock delays.";
       case LogicDelay:
         return "Path delay from instances (excluding buffers and consecutive "
                "inverter pairs)";
