@@ -3876,14 +3876,19 @@ const char* getNetName(odb::dbNet* db_net)
 void GlobalRouter::print(GRoute& route)
 {
   for (GSegment& segment : route) {
-    logger_->report("{:6d} {:6d} {:2d} -> {:6d} {:6d} {:2d}",
-                    segment.init_x,
-                    segment.init_y,
-                    segment.init_layer,
-                    segment.final_x,
-                    segment.final_y,
-                    segment.final_layer);
+    printSegment(segment);
   }
+}
+
+void GlobalRouter::printSegment(const GSegment& segment)
+{
+  logger_->report("{:6d} {:6d} {:2d} -> {:6d} {:6d} {:2d}",
+                  segment.init_x,
+                  segment.init_y,
+                  segment.init_layer,
+                  segment.final_x,
+                  segment.final_y,
+                  segment.final_layer);
 }
 
 void GlobalRouter::reportLayerSettings(int min_routing_layer,

@@ -364,6 +364,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                           int min_routing_layer,
                           int max_routing_layer);
   void print(GRoute& route);
+  void printSegment(const GSegment& segment);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportCongestion();
