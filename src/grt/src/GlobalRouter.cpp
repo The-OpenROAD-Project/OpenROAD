@@ -3778,13 +3778,119 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
   return nets_to_route_;
 }
 
-void GlobalRouter::mergeNetsRouting(odb::dbNet* net1, odb::dbNet* net2)
+void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
-  GRoute& net1_route = routes_[net1];
-  GRoute& net2_route = routes_[net2];
+  GRoute& net1_route = routes_[db_net1];
+  GRoute& net2_route = routes_[db_net2];
   net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-  db_net_map_[net1]->setSkipIncremental(true);
-  db_net_map_[net2]->setSkipIncremental(true);
+  connectRouting(net1_route, db_net1, db_net2);
+  db_net_map_[db_net1]->setSkipIncremental(true);
+  db_net_map_[db_net2]->setSkipIncremental(true);
+}
+
+void GlobalRouter::connectRouting(GRoute& route,
+                                  odb::dbNet* db_net1,
+                                  odb::dbNet* db_net2)
+{
+  Net* net1 = db_net_map_[db_net1];
+  Net* net2 = db_net_map_[db_net2];
+
+  // find the pin positions in the buffer that connects the two nets
+  odb::Point pin_pos1;
+  odb::Point pin_pos2;
+  findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
+
+  if (pin_pos1 != pin_pos2) {
+    const int layer1 = findTopLayerOverPosition(pin_pos1, route);
+    const int layer2 = findTopLayerOverPosition(pin_pos2, route);
+    std::vector<GSegment> connection
+        = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
+    route.insert(route.end(), connection.begin(), connection.end());
+  }
+}
+
+void GlobalRouter::findBufferPinPostions(Net* net1,
+                                         Net* net2,
+                                         odb::Point& pin_pos1,
+                                         odb::Point& pin_pos2)
+{
+  for (const Pin& pin1 : net1->getPins()) {
+    if (!pin1.isPort()) {
+      for (const Pin& pin2 : net2->getPins()) {
+        if (!pin2.isPort()) {
+          if (pin1.getITerm()->getInst() == pin2.getITerm()->getInst()) {
+            pin_pos1 = pin1.getOnGridPosition();
+            pin_pos2 = pin2.getOnGridPosition();
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
+                                           const GRoute& route)
+{
+  int top_layer = -1;
+  for (const GSegment& seg : route) {
+    odb::Point pt1(seg.init_x, seg.init_y);
+    odb::Point pt2(seg.final_x, seg.final_y);
+    int layer = std::max(seg.init_layer, seg.final_layer);
+    if (pt1 == pin_pos && layer > top_layer) {
+      top_layer = layer;
+    }
+  }
+
+  return top_layer;
+}
+
+std::vector<GSegment> GlobalRouter::createConnectionForPositions(
+    const odb::Point& pin_pos1,
+    const odb::Point& pin_pos2,
+    const int layer1,
+    const int layer2)
+{
+  std::vector<GSegment> connection;
+
+  odb::dbTech* tech = db_->getTech();
+
+  auto [x1, x2] = std::minmax({pin_pos1.getX(), pin_pos2.getX()});
+  auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
+
+  int conn_layer = std::max(layer1, layer2);
+  odb::dbTechLayer* tech_conn_layer = tech->findRoutingLayer(conn_layer);
+
+  bool vertical = pin_pos1.getX() == pin_pos2.getX();
+  const auto dir = tech_conn_layer->getDirection();
+  if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
+      || (!vertical && dir != odb::dbTechLayerDir::HORIZONTAL)) {
+    conn_layer--;
+  }
+  connection.push_back(GSegment(x1, y1, conn_layer, x2, y2, conn_layer));
+
+  odb::Point via_pos1 = pin_pos1;
+  odb::Point via_pos2 = pin_pos2;
+  insertViasForConnection(connection, via_pos1, layer1, conn_layer);
+  insertViasForConnection(connection, via_pos2, layer2, conn_layer);
+
+  return connection;
+}
+
+void GlobalRouter::insertViasForConnection(std::vector<GSegment>& connection,
+                                           const odb::Point& via_pos,
+                                           const int layer,
+                                           const int conn_layer)
+{
+  auto [min_l, max_l] = std::minmax(layer, conn_layer);
+  for (int l = min_l; l < max_l; l++) {
+    connection.push_back(GSegment(via_pos.getX(),
+                                  via_pos.getY(),
+                                  l,
+                                  via_pos.getX(),
+                                  via_pos.getY(),
+                                  l + 1));
+  }
 }
 
 void GlobalRouter::getBlockage(odb::dbTechLayer* layer,

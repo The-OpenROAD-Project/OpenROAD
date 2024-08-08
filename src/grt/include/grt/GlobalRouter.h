@@ -227,7 +227,21 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
-  void mergeNetsRouting(odb::dbNet* net1, odb::dbNet* net2);
+  void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void connectRouting(GRoute& route, odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void findBufferPinPostions(Net* net1,
+                             Net* net2,
+                             odb::Point& pin_pos1,
+                             odb::Point& pin_pos2);
+  int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
+                                                     const odb::Point& pin_pos2,
+                                                     int layer1,
+                                                     int layer2);
+  void insertViasForConnection(std::vector<GSegment>& connection,
+                               const odb::Point& via_pos,
+                               int layer,
+                               int conn_layer);
 
   void getBlockage(odb::dbTechLayer* layer,
                    int x,
