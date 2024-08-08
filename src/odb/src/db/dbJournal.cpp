@@ -1466,6 +1466,13 @@ void dbJournal::undo_createObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbGuideObj: {
+      uint guide_id;
+      _log.pop(guide_id);
+      dbGuide* guide = dbGuide::getGuide(_block, guide_id);
+      dbGuide::destroy(guide);
+      break;
+    }
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -1505,6 +1512,24 @@ void dbJournal::undo_deleteObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbGuideObj: {
+      uint net_id;
+      int x_min;
+      int y_min;
+      int x_max;
+      int y_max;
+      uint layer_id;
+      _log.pop(net_id);
+      _log.pop(x_min);
+      _log.pop(y_min);
+      _log.pop(x_max);
+      _log.pop(y_max);
+      _log.pop(layer_id);
+      auto net = dbNet::getNet(_block, net_id);
+      auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
+      dbGuide::create(net, layer, {x_min, y_min, x_max, y_max});
+      break;
+    }
     case dbInstObj: {
       uint lib_id;
       uint master_id;

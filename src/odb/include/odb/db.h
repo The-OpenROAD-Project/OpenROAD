@@ -7399,6 +7399,8 @@ class dbGuide : public dbObject
 
   static void destroy(dbGuide* guide);
 
+  static dbSet<dbGuide>::iterator destroy(dbSet<dbGuide>::iterator& itr);
+
   // User Code End dbGuide
 };
 
