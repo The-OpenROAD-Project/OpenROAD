@@ -486,18 +486,14 @@ void Cluster::addChild(std::unique_ptr<Cluster> child)
 
 std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 {
-  int child_index = 0;
-  for (auto& child : children_) {
-    if (child.get() == candidate) {
-      break;
-    }
+  auto it = std::find_if(
+      children_.begin(), children_.end(), [candidate](const auto& child) {
+        return child.get() == candidate;
+      });
 
-    ++child_index;
-  }
-
-  if (child_index != static_cast<int>(children_.size())) {
-    std::unique_ptr<Cluster> released_child = std::move(children_[child_index]);
-    children_.erase(children_.begin() + child_index);
+  if (it != children_.end()) {
+    std::unique_ptr<Cluster> released_child = std::move(*it);
+    children_.erase(it);
     return released_child;
   }
 
