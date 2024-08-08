@@ -47,6 +47,8 @@ record_tests {
   read_segments_error2
   read_segments_error3
   region_adjustment
+  remove_buffers1
+  remove_buffers2
   repair_antennas1
   repair_antennas2
   repair_antennas3
