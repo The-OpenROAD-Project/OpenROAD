@@ -212,14 +212,18 @@ class RepairSetup : public sta::dbStaState
   Slack slackPenalized(const BufferedNetPtr& bnet);
   Slack slackPenalized(const BufferedNetPtr& bnet, int index);
 
-  void printProgress(int iteration, bool force, bool end) const;
+  void printProgress(int iteration,
+                     bool force,
+                     bool end,
+                     bool last_gasp,
+                     int num_viols) const;
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,
                          float& fix_rate_threshold,
                          int endpt_index,
                          int num_endpts);
-  void repairSetupLastGasp(const OptoParams& params);
+  void repairSetupLastGasp(const OptoParams& params, int& num_viols);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

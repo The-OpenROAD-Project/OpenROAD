@@ -148,6 +148,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   float initial_tns = sta_->totalNegativeSlack(max_);
   float prev_tns = initial_tns;
+  int num_viols = violating_ends.size();
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
@@ -167,7 +168,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   bool prev_termination = false;
   bool two_cons_terminations = false;
   if (verbose) {
-    printProgress(opto_iteration, false, false);
+    printProgress(opto_iteration, false, false, false, num_viols);
   }
   float fix_rate_threshold = inc_fix_rate_threshold_;
   for (const auto& end_original_slack : violating_ends) {
@@ -208,7 +209,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     while (pass <= max_passes) {
       opto_iteration++;
       if (verbose) {
-        printProgress(opto_iteration, false, false);
+        printProgress(opto_iteration, false, false, false, num_viols);
       }
       if (terminateProgress(opto_iteration,
                             initial_tns,
@@ -229,6 +230,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       }
 
       if (end_slack > setup_slack_margin) {
+        --num_viols;
         if (pass != 1) {
           debugPrint(logger_,
                      RSZ,
@@ -245,9 +247,9 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
           sta_->findRequireds();
         }
         // clang-format off
-        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} end_slack {} is larger than"
-                   " setup_slack_margin {}", end->name(network_), end_index,
-                   max_end_count);
+        debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at {}/{} "
+                   "end_slack {} is larger than setup_slack_margin {}",
+                   end_index, max_end_count, end_slack, setup_slack_margin);
         // clang-format on
         break;
       }
@@ -306,6 +308,9 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                  delayAsString(worst_slack, sta_, digits),
                  better ? "save" : "");
       if (better) {
+        if (end_slack > setup_slack_margin) {
+          --num_viols;
+        }
         prev_end_slack = end_slack;
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
@@ -358,7 +363,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       pass++;
     }  // while pass <= max_passes
     if (verbose) {
-      printProgress(opto_iteration, true, false);
+      printProgress(opto_iteration, true, false, false, num_viols);
     }
     if (two_cons_terminations) {
       // clang-format off
@@ -373,10 +378,10 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
   OptoParams params(setup_slack_margin, verbose);
   params.iteration = opto_iteration;
   params.initial_tns = initial_tns;
-  repairSetupLastGasp(params);
+  repairSetupLastGasp(params, num_viols);
 
   if (verbose) {
-    printProgress(opto_iteration, true, true);
+    printProgress(opto_iteration, true, true, false, num_viols);
   }
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
@@ -1616,20 +1621,22 @@ void RepairSetup::reportSwappablePins()
 
 void RepairSetup::printProgress(const int iteration,
                                 const bool force,
-                                const bool end) const
+                                const bool end,
+                                const bool last_gasp,
+                                const int num_viols) const
 {
   const bool start = iteration == 0;
 
   if (start && !end) {
     logger_->report(
-        "Iteration | Removed | Resized | Inserted | Cloned Gates | Pin Swaps |"
-        "   WNS   |   TNS   | Endpoint");
+        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
+        "    WNS   |   TNS      |  Viol  | Worst");
     logger_->report(
-        "          | Buffers |         | Buffers  |              |           |"
-        "         |         |");
+        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
+        "          |            | Endpts | Endpt");
     logger_->report(
-        "----------------------------------------------------------------------"
-        "---------------------------");
+        "-----------------------------------------------------------"
+        "----------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1638,16 +1645,15 @@ void RepairSetup::printProgress(const int iteration,
     sta_->worstSlack(max_, wns, worst_vertex);
     const Slack tns = sta_->totalNegativeSlack(max_);
 
-    std::string itr_field = fmt::format("{}", iteration);
+    std::string itr_field
+        = fmt::format("{}{}", iteration, (last_gasp ? "*" : ""));
     if (end) {
       itr_field = "final";
     }
 
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >12d} | {: >9d} | {: "
-        ">7s} "
-        "| {: >7s} "
-        "| {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} | {: >8s} "
+        "| {: >10s} | {: >6d} | {}",
         itr_field,
         removed_buffer_count_,
         resize_count_,
@@ -1655,15 +1661,15 @@ void RepairSetup::printProgress(const int iteration,
         cloned_gate_count_,
         swap_pin_count_,
         delayAsString(wns, sta_, 3),
-        delayAsString(tns, sta_, 3),
+        delayAsString(tns, sta_, 1),
+        max(0, num_viols),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
   }
 
   if (end) {
     logger_->report(
-        "--------------------------------------------------------------------"
-        "--"
-        "---------------------------");
+        "-----------------------------------------------------------"
+        "----------------------------------------");
   }
 }
 
@@ -1702,8 +1708,24 @@ bool RepairSetup::terminateProgress(const int iteration,
 // Perform some last fixing based on sizing only.
 // This is a greedy opto that does not degrade WNS or TNS.
 // TODO: add VT swap
-void RepairSetup::repairSetupLastGasp(const OptoParams& params)
+void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 {
+  // Sort remaining failing endpoints
+  const VertexSet* endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : *endpoints) {
+    const Slack end_slack = sta_->vertexSlack(end, max_);
+    if (end_slack < params.setup_slack_margin) {
+      violating_ends.emplace_back(end, end_slack);
+    }
+  }
+  std::stable_sort(violating_ends.begin(),
+                   violating_ends.end(),
+                   [](const auto& end_slack1, const auto& end_slack2) {
+                     return end_slack1.second < end_slack2.second;
+                   });
+  num_viols = violating_ends.size();
+
   float curr_tns = sta_->totalNegativeSlack(max_);
   if (fuzzyGreaterEqual(curr_tns, 0)) {
     // clang-format off
@@ -1722,21 +1744,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
     return;
   }
 
-  // Sort remaining failing endpoints
-  const VertexSet* endpoints = sta_->endpoints();
-  vector<pair<Vertex*, Slack>> violating_ends;
-  for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
-    if (end_slack < params.setup_slack_margin) {
-      violating_ends.emplace_back(end, end_slack);
-    }
-  }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
-
   int end_index = 0;
   int max_end_count = violating_ends.size();
   if (max_end_count == 0) {
@@ -1753,7 +1760,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
   int opto_iteration = params.iteration;
   if (params.verbose) {
-    printProgress(opto_iteration, false, false);
+    printProgress(opto_iteration, false, false, true, num_viols);
   }
 
   float prev_tns = curr_tns;
@@ -1795,9 +1802,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
         prev_termination = false;
       }
       if (params.verbose) {
-        printProgress(opto_iteration, false, false);
+        printProgress(opto_iteration, false, false, true, num_viols);
       }
       if (end_slack > params.setup_slack_margin) {
+        --num_viols;
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -1837,6 +1845,9 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
         // clang-format on
         prev_worst_slack = curr_worst_slack;
         prev_tns = curr_tns;
+        if (end_slack > params.setup_slack_margin) {
+          --num_viols;
+        }
         resizer_->journalBegin();
       } else {
         resizer_->journalRestore(resize_count_,
@@ -1857,7 +1868,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params)
       pass++;
     }  // while pass <= max_last_gasp_passes_
     if (params.verbose) {
-      printProgress(opto_iteration, true, false);
+      printProgress(opto_iteration, true, false, true, num_viols);
     }
     if (two_cons_terminations) {
       // clang-format off
