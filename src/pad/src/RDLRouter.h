@@ -175,6 +175,7 @@ class RDLRouter
 
   std::vector<Edge> insertTerminalVertex(const RouteTarget& target,
                                          const RouteTarget& source);
+  void removeTerminalEdges(const std::vector<Edge>& edges);
 
   std::vector<TargetPair> generateRoutingPairs(odb::dbNet* net) const;
 
