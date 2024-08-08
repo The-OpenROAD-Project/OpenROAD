@@ -33,10 +33,7 @@
 
 #include "clusterEngine.h"
 
-#include <queue>
-
 #include "db_sta/dbNetwork.hh"
-#include "object.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
 
@@ -74,16 +71,16 @@ void ClusteringEngine::run()
     tree_->has_std_cells = false;
     treatEachMacroAsSingleCluster();
   } else {
-    multilevelAutocluster(tree_->root);
+    multilevelAutocluster(tree_->root.get());
 
     std::vector<std::vector<Cluster*>> mixed_leaves;
-    fetchMixedLeaves(tree_->root, mixed_leaves);
+    fetchMixedLeaves(tree_->root.get(), mixed_leaves);
     breakMixedLeaves(mixed_leaves);
   }
 
   if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
     logger_->report("\nPrint Physical Hierarchy\n");
-    printPhysicalHierarchyTree(tree_->root, 0);
+    printPhysicalHierarchyTree(tree_->root.get(), 0);
   }
 
   // Map the macros in each cluster to their HardMacro objects
@@ -256,11 +253,11 @@ void ClusteringEngine::reportDesignData(const float core_area)
 
 void ClusteringEngine::createRoot()
 {
-  tree_->root = new Cluster(id_, std::string("root"), logger_);
+  tree_->root = std::make_unique<Cluster>(id_, std::string("root"), logger_);
   tree_->root->addDbModule(block_->getTopModule());
   tree_->root->setMetrics(*design_metrics_);
 
-  tree_->maps.id_to_cluster[id_++] = tree_->root;
+  tree_->maps.id_to_cluster[id_++] = tree_->root.get();
 
   // Associate all instances to root
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -357,11 +354,10 @@ void ClusteringEngine::createIOClusters()
        i++) {  // four boundaries (Left, Top, Right and Bottom in order)
     for (int j = 0; j < tree_->bundled_ios_per_edge; j++) {
       const std::string cluster_name = prefix_vec[i] + std::to_string(j);
-      Cluster* cluster = new Cluster(id_, cluster_name, logger_);
-      tree_->root->addChild(cluster);
-      cluster->setParent(tree_->root);
+      auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
+      cluster->setParent(tree_->root.get());
       cluster_io_map[id_] = false;
-      tree_->maps.id_to_cluster[id_++] = cluster;
+      tree_->maps.id_to_cluster[id_++] = cluster.get();
       int x = 0.0;
       int y = 0.0;
       int width = 0;
@@ -389,6 +385,7 @@ void ClusteringEngine::createIOClusters()
                                                       block_->dbuToMicrons(y)),
                               block_->dbuToMicrons(width),
                               block_->dbuToMicrons(height));
+      tree_->root->addChild(std::move(cluster));
     }
   }
 
@@ -478,9 +475,9 @@ void ClusteringEngine::createIOClusters()
                  "Remove IO Cluster with no pins: {}, id: {}",
                  tree_->maps.id_to_cluster[cluster_id]->getName(),
                  cluster_id);
-      tree_->maps.id_to_cluster[cluster_id]->getParent()->removeChild(
-          tree_->maps.id_to_cluster[cluster_id]);
-      delete tree_->maps.id_to_cluster[cluster_id];
+      std::unique_ptr<Cluster> released_bundled_io
+          = tree_->maps.id_to_cluster[cluster_id]->getParent()->releaseChild(
+              tree_->maps.id_to_cluster[cluster_id]);
       tree_->maps.id_to_cluster.erase(cluster_id);
     }
   }
@@ -957,10 +954,10 @@ void ClusteringEngine::treatEachMacroAsSingleCluster()
 
     if (master->isBlock()) {
       const std::string cluster_name = inst->getName();
-      Cluster* cluster = new Cluster(id_, cluster_name, logger_);
+      auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
-      incorporateNewCluster(cluster, tree_->root);
       cluster->setClusterType(HardMacroCluster);
+      incorporateNewCluster(std::move(cluster), tree_->root.get());
 
       debugPrint(logger_,
                  MPL,
@@ -976,15 +973,16 @@ void ClusteringEngine::treatEachMacroAsSingleCluster()
   }
 }
 
-void ClusteringEngine::incorporateNewCluster(Cluster* cluster, Cluster* parent)
+void ClusteringEngine::incorporateNewCluster(std::unique_ptr<Cluster> cluster,
+                                             Cluster* parent)
 {
-  updateInstancesAssociation(cluster);
-  setClusterMetrics(cluster);
-  tree_->maps.id_to_cluster[id_++] = cluster;
+  updateInstancesAssociation(cluster.get());
+  setClusterMetrics(cluster.get());
+  tree_->maps.id_to_cluster[id_++] = cluster.get();
 
   // modify physical hierarchy
   cluster->setParent(parent);
-  parent->addChild(cluster);
+  parent->addChild(std::move(cluster));
 }
 
 void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
@@ -1125,7 +1123,7 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
     updateSubTree(parent);
 
     for (auto& child : parent->getChildren()) {
-      updateInstancesAssociation(child);
+      updateInstancesAssociation(child.get());
     }
 
     for (auto& child : parent->getChildren()) {
@@ -1135,7 +1133,7 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
                  1,
                  "\tChild Cluster: {}",
                  child->getName());
-      multilevelAutocluster(child);
+      multilevelAutocluster(child.get());
     }
   } else {
     multilevelAutocluster(parent);
@@ -1195,7 +1193,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
     // Flat module that will be partitioned with TritonPart when updating
     // the subtree later on.
     if (module->getChildren().size() == 0) {
-      if (parent == tree_->root) {
+      if (parent == tree_->root.get()) {
         createFlatCluster(module, parent);
       } else {
         addModuleInstsToCluster(parent, module);
@@ -1223,25 +1221,24 @@ void ClusteringEngine::breakCluster(Cluster* parent)
   }
 
   // Recursively break down non-flat large clusters with logical modules
-  for (Cluster* child : parent->getChildren()) {
+  for (auto& child : parent->getChildren()) {
     if (!child->getDbModules().empty()) {
       if (child->getNumStdCell() > max_std_cell_
           || child->getNumMacro() > max_macro_) {
-        breakCluster(child);
+        breakCluster(child.get());
       }
     }
   }
 
-  // Merge small clusters
-  std::vector<Cluster*> candidate_clusters;
-  for (Cluster* cluster : parent->getChildren()) {
-    if (!cluster->isIOCluster() && cluster->getNumStdCell() < min_std_cell_
-        && cluster->getNumMacro() < min_macro_) {
-      candidate_clusters.push_back(cluster);
+  std::vector<Cluster*> small_children;
+  for (auto& child : parent->getChildren()) {
+    if (!child->isIOCluster() && child->getNumStdCell() < min_std_cell_
+        && child->getNumMacro() < min_macro_) {
+      small_children.push_back(child.get());
     }
   }
 
-  mergeClusters(candidate_clusters);
+  mergeChildrenBelowThresholds(small_children);
 
   // Update the cluster_id
   // This is important to maintain the clustering results
@@ -1254,15 +1251,15 @@ void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
 {
   const std::string cluster_name
       = std::string("(") + parent->getName() + ")_glue_logic";
-  Cluster* cluster = new Cluster(id_, cluster_name, logger_);
-  addModuleInstsToCluster(cluster, module);
+  auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
+  addModuleInstsToCluster(cluster.get(), module);
 
-  if (cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty()) {
-    delete cluster;
-    cluster = nullptr;
-  } else {
-    incorporateNewCluster(cluster, parent);
-  }
+  bool empty_leaf_instances
+      = cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty();
+
+  if (!empty_leaf_instances) {
+    incorporateNewCluster(std::move(cluster), parent);
+  }  // The cluster will be deleted otherwise
 }
 
 void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster,
@@ -1280,16 +1277,16 @@ void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster,
 void ClusteringEngine::createCluster(odb::dbModule* module, Cluster* parent)
 {
   const std::string cluster_name = module->getHierarchicalName();
-  Cluster* cluster = new Cluster(id_, cluster_name, logger_);
+  auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
   cluster->addDbModule(module);
-  incorporateNewCluster(cluster, parent);
+  incorporateNewCluster(std::move(cluster), parent);
 }
 
 void ClusteringEngine::createCluster(Cluster* parent)
 {
   const std::string cluster_name
       = std::string("(") + parent->getName() + ")_glue_logic";
-  Cluster* cluster = new Cluster(id_, cluster_name, logger_);
+  auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
   for (odb::dbInst* std_cell : parent->getLeafStdCells()) {
     cluster->addLeafStdCell(std_cell);
   }
@@ -1297,7 +1294,7 @@ void ClusteringEngine::createCluster(Cluster* parent)
     cluster->addLeafMacro(macro);
   }
 
-  incorporateNewCluster(cluster, parent);
+  incorporateNewCluster(std::move(cluster), parent);
 }
 
 // This function has two purposes:
@@ -1305,37 +1302,41 @@ void ClusteringEngine::createCluster(Cluster* parent)
 // 2) Call TritonPart to partition large flat clusters.
 void ClusteringEngine::updateSubTree(Cluster* parent)
 {
-  std::vector<Cluster*> children_clusters;
-  std::vector<Cluster*> internal_clusters;
-  std::queue<Cluster*> wavefront;
-  for (Cluster* child : parent->getChildren()) {
-    wavefront.push(child);
+  UniqueClusterVector children_clusters;
+  UniqueClusterVector internal_clusters;
+  UniqueClusterQueue wavefront;
+  for (auto& child : parent->releaseChildren()) {
+    wavefront.push(std::move(child));
   }
 
   while (!wavefront.empty()) {
-    Cluster* cluster = wavefront.front();
+    std::unique_ptr<Cluster> cluster = std::move(wavefront.front());
     wavefront.pop();
     if (cluster->getChildren().empty()) {
-      children_clusters.push_back(cluster);
+      children_clusters.push_back(std::move(cluster));
     } else {
-      internal_clusters.push_back(cluster);
-      for (Cluster* child : cluster->getChildren()) {
-        wavefront.push(child);
+      for (auto& child : cluster->releaseChildren()) {
+        wavefront.push(std::move(child));
       }
+      internal_clusters.push_back(std::move(cluster));
     }
   }
 
-  for (Cluster* cluster : internal_clusters) {
+  for (auto& cluster : internal_clusters) {
+    // Internal clusters will be deleted automatically.
     tree_->maps.id_to_cluster.erase(cluster->getId());
-    delete cluster;
   }
 
-  parent->removeChildren();
-  parent->addChildren(children_clusters);
-  for (Cluster* cluster : children_clusters) {
-    cluster->setParent(parent);
-    if (cluster->getNumStdCell() > max_std_cell_) {
-      breakLargeFlatCluster(cluster);
+  parent->addChildren(std::move(children_clusters));
+
+  // When breaking large flat clusters, the children will
+  // be modified, so, we need to iterate them using indexes.
+  const UniqueClusterVector& new_children = parent->getChildren();
+  for (int i = 0; i < new_children.size(); ++i) {
+    auto& child = new_children[i];
+    child->setParent(parent);
+    if (child->getNumStdCell() > max_std_cell_) {
+      breakLargeFlatCluster(child.get());
     }
   }
 }
@@ -1451,8 +1452,8 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   const std::string cluster_name = parent->getName();
   parent->setName(cluster_name + std::string("_0"));
-  Cluster* cluster_part_1
-      = new Cluster(id_, cluster_name + std::string("_1"), logger_);
+  auto cluster_part_1 = std::make_unique<Cluster>(
+      id_, cluster_name + std::string("_1"), logger_);
 
   for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
     odb::dbInst* inst = insts[i - num_other_cluster_vertices];
@@ -1463,37 +1464,28 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     }
   }
 
+  Cluster* raw_part_1 = cluster_part_1.get();
+
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
-  incorporateNewCluster(cluster_part_1, parent->getParent());
+  incorporateNewCluster(std::move(cluster_part_1), parent->getParent());
 
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
-  breakLargeFlatCluster(cluster_part_1);
+  breakLargeFlatCluster(raw_part_1);
 }
 
-// Recursively merge small clusters with the same parent cluster:
-// Example process based on connection signature:
-// Iter1 :  A, B, C, D, E, F
-// Iter2 :  A + C,  B + D,  E, F
-// Iter3 :  A + C + F, B + D, E
-// End if there is no same connection signature.
-// During the merging process, we support two types of merging
-// Type 1: merging small clusters to their closely connected clusters
-//         For example, if a small cluster A is closely connected to a
-//         well-formed cluster B, (there are also other well-formed clusters
-//         C, D), A is only connected to B and A has no connection with C, D
-// Type 2: merging small clusters with the same connection signature
-//         For example, if we merge small clusters A and B,  A and B will have
-//         exactly the same connections relative to all other clusters (both
-//         small clusters and well-formed clusters). In this case, if A and B
-//         have the same connection signature, A and C have the same connection
-//         signature, then B and C also have the same connection signature.
-// Note in both types, we only merge clusters with the same parent cluster.
-void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
+// Recursively merge children whose number of std cells and macro
+// is below the current level thresholds. There are three cases:
+// 1) Children are closely connected.
+// 2) Children have the same connection signature.
+// 3) "Dust" children that were not merged in the previous cases
+//    which are made of very few std cells (< 10)
+void ClusteringEngine::mergeChildrenBelowThresholds(
+    std::vector<Cluster*>& small_children)
 {
-  if (candidate_clusters.empty()) {
+  if (small_children.empty()) {
     return;
   }
 
@@ -1504,78 +1496,70 @@ void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
              1,
              "Merge Cluster Iter: {}",
              merge_iter++);
-  for (auto& cluster : candidate_clusters) {
+  for (auto& small_child : small_children) {
     debugPrint(logger_,
                MPL,
                "multilevel_autoclustering",
                1,
                "Cluster: {}, num std cell: {}, num macros: {}",
-               cluster->getName(),
-               cluster->getNumStdCell(),
-               cluster->getNumMacro());
+               small_child->getName(),
+               small_child->getNumStdCell(),
+               small_child->getNumMacro());
   }
 
-  int num_candidate_clusters = candidate_clusters.size();
+  int num_small_children = static_cast<int>(small_children.size());
   while (true) {
     updateConnections();  // update the connections between clusters
 
-    std::vector<int> cluster_class(num_candidate_clusters, -1);  // merge flag
-    std::vector<int> candidate_clusters_id;  // store cluster id
-    candidate_clusters_id.reserve(candidate_clusters.size());
-    for (auto& cluster : candidate_clusters) {
-      candidate_clusters_id.push_back(cluster->getId());
+    std::vector<int> cluster_class(num_small_children, -1);  // merge flag
+    std::vector<int> small_children_ids;                     // store cluster id
+    small_children_ids.reserve(num_small_children);
+    for (auto& small_child : small_children) {
+      small_children_ids.push_back(small_child->getId());
     }
     // Firstly we perform Type 1 merge
-    for (int i = 0; i < num_candidate_clusters; i++) {
-      const int cluster_id = candidate_clusters[i]->getCloseCluster(
-          candidate_clusters_id, tree_->min_net_count_for_connection);
+    for (int i = 0; i < num_small_children; i++) {
+      const int cluster_id = small_children[i]->getCloseCluster(
+          small_children_ids, tree_->min_net_count_for_connection);
       debugPrint(
           logger_,
           MPL,
           "multilevel_autoclustering",
           1,
           "Candidate cluster: {} - {}",
-          candidate_clusters[i]->getName(),
+          small_children[i]->getName(),
           (cluster_id != -1 ? tree_->maps.id_to_cluster[cluster_id]->getName()
                             : "   "));
       if (cluster_id != -1
           && !tree_->maps.id_to_cluster[cluster_id]->isIOCluster()) {
-        Cluster*& cluster = tree_->maps.id_to_cluster[cluster_id];
-        bool delete_flag = false;
-        if (cluster->mergeCluster(*candidate_clusters[i], delete_flag)) {
-          if (delete_flag) {
-            tree_->maps.id_to_cluster.erase(candidate_clusters[i]->getId());
-            delete candidate_clusters[i];
-          }
-          updateInstancesAssociation(cluster);
-          setClusterMetrics(cluster);
-          cluster_class[i] = cluster->getId();
+        Cluster* close_cluster = tree_->maps.id_to_cluster[cluster_id];
+        if (attemptMerge(close_cluster, small_children[i])) {
+          cluster_class[i] = close_cluster->getId();
         }
       }
     }
 
     // Then we perform Type 2 merge
-    std::vector<Cluster*> new_candidate_clusters;
-    for (int i = 0; i < num_candidate_clusters; i++) {
+    std::vector<Cluster*> new_small_children;
+    for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
-        // new_candidate_clusters.push_back(candidate_clusters[i]);
-        for (int j = i + 1; j < num_candidate_clusters; j++) {
+        for (int j = i + 1; j < num_small_children; j++) {
           if (cluster_class[j] != -1) {
             continue;
           }
-          bool flag = candidate_clusters[i]->isSameConnSignature(
-              *candidate_clusters[j], tree_->min_net_count_for_connection);
-          if (flag) {
-            cluster_class[j] = i;
-            bool delete_flag = false;
-            if (candidate_clusters[i]->mergeCluster(*candidate_clusters[j],
-                                                    delete_flag)) {
-              if (delete_flag) {
-                tree_->maps.id_to_cluster.erase(candidate_clusters[j]->getId());
-                delete candidate_clusters[j];
-              }
-              updateInstancesAssociation(candidate_clusters[i]);
-              setClusterMetrics(candidate_clusters[i]);
+
+          if (small_children[i]->isSameConnSignature(
+                  *small_children[j], tree_->min_net_count_for_connection)) {
+            if (attemptMerge(small_children[i], small_children[j])) {
+              cluster_class[j] = i;
+            } else {
+              logger_->critical(
+                  MPL,
+                  23,
+                  "Merge attempt between siblings {} and {} with same "
+                  "connection signature failed!",
+                  small_children[i]->getName(),
+                  small_children[j]->getName());
             }
           }
         }
@@ -1584,50 +1568,47 @@ void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
 
     // Then we perform Type 3 merge:  merge all dust cluster
     const int dust_cluster_std_cell = 10;
-    for (int i = 0; i < num_candidate_clusters; i++) {
+    for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
-        new_candidate_clusters.push_back(candidate_clusters[i]);
-        if (candidate_clusters[i]->getNumStdCell() <= dust_cluster_std_cell
-            && candidate_clusters[i]->getNumMacro() == 0) {
-          for (int j = i + 1; j < num_candidate_clusters; j++) {
-            if (cluster_class[j] != -1
-                || candidate_clusters[j]->getNumMacro() > 0
-                || candidate_clusters[j]->getNumStdCell()
-                       > dust_cluster_std_cell) {
+        new_small_children.push_back(small_children[i]);
+        if (small_children[i]->getNumStdCell() <= dust_cluster_std_cell
+            && small_children[i]->getNumMacro() == 0) {
+          for (int j = i + 1; j < num_small_children; j++) {
+            if (cluster_class[j] != -1 || small_children[j]->getNumMacro() > 0
+                || small_children[j]->getNumStdCell() > dust_cluster_std_cell) {
               continue;
             }
-            cluster_class[j] = i;
-            bool delete_flag = false;
-            if (candidate_clusters[i]->mergeCluster(*candidate_clusters[j],
-                                                    delete_flag)) {
-              if (delete_flag) {
-                tree_->maps.id_to_cluster.erase(candidate_clusters[j]->getId());
-                delete candidate_clusters[j];
-              }
-              updateInstancesAssociation(candidate_clusters[i]);
-              setClusterMetrics(candidate_clusters[i]);
+
+            if (attemptMerge(small_children[i], small_children[j])) {
+              cluster_class[j] = i;
+            } else {
+              logger_->critical(
+                  MPL,
+                  24,
+                  "Merge attempt between dust siblings {} and {} failed!",
+                  small_children[i]->getName(),
+                  small_children[j]->getName());
             }
           }
         }
       }
     }
 
-    // Update the candidate clusters
-    // Some clusters have become well-formed clusters
-    candidate_clusters.clear();
-    for (Cluster* cluster : new_candidate_clusters) {
-      if (cluster->getNumStdCell() < min_std_cell_
-          && cluster->getNumMacro() < min_macro_) {
-        candidate_clusters.push_back(cluster);
+    // Some small children have become well-formed clusters
+    small_children.clear();
+    for (Cluster* new_small_child : new_small_children) {
+      if (new_small_child->getNumStdCell() < min_std_cell_
+          && new_small_child->getNumMacro() < min_macro_) {
+        small_children.push_back(new_small_child);
       }
     }
 
     // If no more clusters have been merged, exit the merging loop
-    if (num_candidate_clusters == new_candidate_clusters.size()) {
+    if (num_small_children == static_cast<int>(new_small_children.size())) {
       break;
     }
 
-    num_candidate_clusters = candidate_clusters.size();
+    num_small_children = small_children.size();
 
     debugPrint(logger_,
                MPL,
@@ -1635,16 +1616,16 @@ void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
                1,
                "Merge Cluster Iter: {}",
                merge_iter++);
-    for (auto& cluster : candidate_clusters) {
+    for (auto& small_child : small_children) {
       debugPrint(logger_,
                  MPL,
                  "multilevel_autoclustering",
                  1,
                  "Cluster: {}",
-                 cluster->getName());
+                 small_child->getName());
     }
     // merge small clusters
-    if (candidate_clusters.empty()) {
+    if (small_children.empty()) {
       break;
     }
   }
@@ -1653,6 +1634,27 @@ void ClusteringEngine::mergeClusters(std::vector<Cluster*>& candidate_clusters)
              "multilevel_autoclustering",
              1,
              "Finished merging clusters");
+}
+
+bool ClusteringEngine::attemptMerge(Cluster* receiver, Cluster* incomer)
+{
+  // The incomer might be deleted so we need to cache
+  // its id in order to erase it from the map if so.
+  const int incomer_id = incomer->getId();
+
+  bool incomer_deleted = false;
+  if (receiver->attemptMerge(incomer, incomer_deleted)) {
+    if (incomer_deleted) {
+      tree_->maps.id_to_cluster.erase(incomer_id);
+    }
+
+    updateInstancesAssociation(receiver);
+    setClusterMetrics(receiver);
+
+    return true;
+  }
+
+  return false;
 }
 
 void ClusteringEngine::updateConnections()
@@ -1730,13 +1732,13 @@ void ClusteringEngine::fetchMixedLeaves(
 
   std::vector<Cluster*> sister_mixed_leaves;
 
-  for (Cluster* child : parent->getChildren()) {
-    updateInstancesAssociation(child);
+  for (auto& child : parent->getChildren()) {
+    updateInstancesAssociation(child.get());
     if (child->getNumMacro() > 0) {
       if (child->getChildren().empty()) {
-        sister_mixed_leaves.push_back(child);
+        sister_mixed_leaves.push_back(child.get());
       } else {
-        fetchMixedLeaves(child, mixed_leaves);
+        fetchMixedLeaves(child.get(), mixed_leaves);
       }
     } else {
       child->setClusterType(StdCellCluster);
@@ -1894,11 +1896,12 @@ void ClusteringEngine::createOneClusterForEachMacro(
 {
   for (auto& hard_macro : hard_macros) {
     const std::string cluster_name = hard_macro->getName();
-    Cluster* single_macro_cluster = new Cluster(id_, cluster_name, logger_);
+    auto single_macro_cluster
+        = std::make_unique<Cluster>(id_, cluster_name, logger_);
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
-    incorporateNewCluster(single_macro_cluster, parent);
+    macro_clusters.push_back(single_macro_cluster.get());
 
-    macro_clusters.push_back(single_macro_cluster);
+    incorporateNewCluster(std::move(single_macro_cluster), parent);
   }
 }
 
@@ -2001,53 +2004,45 @@ void ClusteringEngine::groupSingleMacroClusters(
 
       if (size_class[i] == size_class[j]) {
         if (interconn_class[i] == interconn_class[j]) {
-          macro_class[j] = i;
-
           debugPrint(logger_,
                      MPL,
                      "multilevel_autoclustering",
                      1,
                      "Merging interconnected macro clusters {} and {}",
-                     macro_clusters[j]->getName(),
-                     macro_clusters[i]->getName());
-
-          mergeMacroClustersWithinSameClass(macro_clusters[i],
-                                            macro_clusters[j]);
+                     macro_clusters[j]->getId(),
+                     macro_clusters[i]->getId());
+          if (attemptMerge(macro_clusters[i], macro_clusters[j])) {
+            macro_class[j] = i;
+          } else {
+            logger_->critical(MPL,
+                              28,
+                              "Merge attempt between interconnected macro "
+                              "siblings failed!");
+          }
         } else {
           // We need this so we can distinguish arrays of interconnected macros
           // from grouped macro clusters with same signature.
           interconn_class[i] = -1;
-
           if (signature_class[i] == signature_class[j]) {
-            macro_class[j] = i;
-
             debugPrint(logger_,
                        MPL,
                        "multilevel_autoclustering",
                        1,
                        "Merging same signature clusters {} and {}.",
-                       macro_clusters[j]->getName(),
-                       macro_clusters[i]->getName());
-
-            mergeMacroClustersWithinSameClass(macro_clusters[i],
-                                              macro_clusters[j]);
+                       macro_clusters[j]->getId(),
+                       macro_clusters[i]->getId());
+            if (attemptMerge(macro_clusters[i], macro_clusters[j])) {
+              macro_class[j] = i;
+            } else {
+              logger_->critical(MPL,
+                                29,
+                                "Merge attempt between macro siblings with "
+                                "same connection signature failed!");
+            }
           }
         }
       }
     }
-  }
-}
-
-void ClusteringEngine::mergeMacroClustersWithinSameClass(Cluster* target,
-                                                         Cluster* source)
-{
-  bool delete_merged = false;
-  target->mergeCluster(*source, delete_merged);
-
-  if (delete_merged) {
-    tree_->maps.id_to_cluster.erase(source->getId());
-    delete source;
-    source = nullptr;
   }
 }
 
@@ -2057,20 +2052,20 @@ void ClusteringEngine::addStdCellClusterToSubTree(
     std::vector<int>& virtual_conn_clusters)
 {
   std::string std_cell_cluster_name = mixed_leaf->getName();
-  Cluster* std_cell_cluster = new Cluster(id_, std_cell_cluster_name, logger_);
+  auto std_cell_cluster
+      = std::make_unique<Cluster>(id_, std_cell_cluster_name, logger_);
 
   std_cell_cluster->copyInstances(*mixed_leaf);
   std_cell_cluster->clearLeafMacros();
   std_cell_cluster->setClusterType(StdCellCluster);
 
-  setClusterMetrics(std_cell_cluster);
+  setClusterMetrics(std_cell_cluster.get());
 
-  tree_->maps.id_to_cluster[id_++] = std_cell_cluster;
-
-  // modify the physical hierachy tree
-  std_cell_cluster->setParent(parent);
-  parent->addChild(std_cell_cluster);
   virtual_conn_clusters.push_back(std_cell_cluster->getId());
+
+  tree_->maps.id_to_cluster[id_++] = std_cell_cluster.get();
+  std_cell_cluster->setParent(parent);
+  parent->addChild(std::move(std_cell_cluster));
 }
 
 // We don't modify the physical hierarchy when spliting by replacement
@@ -2107,14 +2102,17 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
   logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {
-    printPhysicalHierarchyTree(cluster, level + 1);
+    printPhysicalHierarchyTree(cluster.get(), level + 1);
   }
 }
 
-void ClusteringEngine::createClusterForEachMacro(
+// When placing the HardMacros of a macro cluster, we create temporary
+// internal macro clusters - one representing each HardMacro - so we
+// can use them to compute the connections with the fixed terminals.
+void ClusteringEngine::createTempMacroClusters(
     const std::vector<HardMacro*>& hard_macros,
     std::vector<HardMacro>& sa_macros,
-    std::vector<Cluster*>& macro_clusters,
+    UniqueClusterVector& macro_clusters,
     std::map<int, int>& cluster_to_macro,
     std::set<odb::dbMaster*>& masters)
 {
@@ -2125,16 +2123,27 @@ void ClusteringEngine::createClusterForEachMacro(
     macro_id = sa_macros.size();
     cluster_name = hard_macro->getName();
 
-    Cluster* macro_cluster = new Cluster(id_, cluster_name, logger_);
+    auto macro_cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
     macro_cluster->addLeafMacro(hard_macro->getInst());
-    updateInstancesAssociation(macro_cluster);
+    updateInstancesAssociation(macro_cluster.get());
 
     sa_macros.push_back(*hard_macro);
-    macro_clusters.push_back(macro_cluster);
     cluster_to_macro[id_] = macro_id;
     masters.insert(hard_macro->getInst()->getMaster());
 
-    tree_->maps.id_to_cluster[id_++] = macro_cluster;
+    tree_->maps.id_to_cluster[id_++] = macro_cluster.get();
+    macro_clusters.push_back(std::move(macro_cluster));
+  }
+}
+
+// As the temporary internal macro clusters are destroyed once the
+// macro placement is done. We need to remove their raw pointer
+// from the id --> cluster map to avoid deleting them twice.
+void ClusteringEngine::clearTempMacroClusterMapping(
+    const UniqueClusterVector& macro_clusters)
+{
+  for (auto& macro_cluster : macro_clusters) {
+    tree_->maps.id_to_cluster.erase(macro_cluster->getId());
   }
 }
 
