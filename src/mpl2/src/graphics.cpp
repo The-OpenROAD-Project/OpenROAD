@@ -150,7 +150,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  std::vector<Cluster*> children = parent->getChildren();
+  auto& children = parent->getChildren();
   if (children.empty()) {
     return;
   }
@@ -162,7 +162,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                         block_->micronsToDbu(outline.yMax()));
   outlines[level].push_back(dbu_outline);
 
-  for (Cluster* child : children) {
+  for (auto& child : children) {
     switch (child->getClusterType()) {
       case HardMacroCluster: {
         std::vector<mpl2::HardMacro*> hard_macros = child->getHardMacros();
@@ -175,7 +175,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         soft.push_back(*child->getSoftMacro());
         break;
       case MixedCluster: {
-        fetchSoftAndHard(child, hard, soft, outlines, (level + 1));
+        fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
       }
     }
@@ -303,8 +303,8 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 
   painter.drawRect(bbox);
 
-  for (Cluster* child : cluster->getChildren()) {
-    drawCluster(child, painter);
+  for (auto& child : cluster->getChildren()) {
+    drawCluster(child.get(), painter);
   }
 }
 
