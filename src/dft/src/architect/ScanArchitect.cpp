@@ -33,6 +33,7 @@
 #include "ScanArchitect.hh"
 
 #include "ClockDomain.hh"
+#include "ClockDomainHash.hh"
 #include "ScanArchitectHeuristic.hh"
 
 namespace dft {
