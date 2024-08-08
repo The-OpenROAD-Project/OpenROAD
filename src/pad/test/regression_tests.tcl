@@ -17,6 +17,7 @@ record_tests {
   place_pad_no_master
   place_pad_wrong_master
   assign_bumps
+  assign_bumps_two_pins
 
   connect_by_abutment
 
