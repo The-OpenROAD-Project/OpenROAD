@@ -111,18 +111,19 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
 
 int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 {
-  float fanout, fanoutTemp;
-  bool hasMaxFanout, hasMaxFanoutTemp;
+  int fanout = std::numeric_limits<int>::max();
+  float fanoutTemp;
+  bool hasMaxFanout;
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
-  for (auto mterm : bufferMaster->getMTerms()) {
-    auto sig_type = mterm->getSigType();
+  for (odb::dbMTerm* mterm : bufferMaster->getMTerms()) {
+    odb::dbSigType sig_type = mterm->getSigType();
     if (sig_type == odb::dbSigType::GROUND
         || sig_type == odb::dbSigType::POWER) {
       continue;
     }
-    auto io_type = mterm->getIoType();
+    odb::dbIoType io_type = mterm->getIoType();
     if (io_type == odb::dbIoType::OUTPUT) {
       buffer_port = network_->dbToSta(mterm);
       break;
@@ -131,25 +132,27 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   if (buffer_port == nullptr) {
     return 0;
   }
+
   openSta_->sdc()->fanoutLimit(
-      buffer_port, sta::MinMax::max(), fanout, hasMaxFanout);
-  openSta_->sdc()->fanoutLimit(
-      bufferCell, sta::MinMax::max(), fanoutTemp, hasMaxFanoutTemp);
-  if (hasMaxFanoutTemp && (!hasMaxFanout || (int) fanout > (int) fanoutTemp)) {
-    fanout = fanoutTemp;
-    hasMaxFanout = hasMaxFanoutTemp;
+      buffer_port, sta::MinMax::max(), fanoutTemp, hasMaxFanout);
+  if (hasMaxFanout) {
+    fanout = std::min(fanout, (int) fanoutTemp);
   }
+
+  openSta_->sdc()->fanoutLimit(
+      bufferCell, sta::MinMax::max(), fanoutTemp, hasMaxFanout);
+  if (hasMaxFanout) {
+    fanout = std::min(fanout, (int) fanoutTemp);
+  }
+
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
-  port->fanoutLimit(sta::MinMax::max(), fanoutTemp, hasMaxFanoutTemp);
-  if (hasMaxFanoutTemp) {
-    if (!hasMaxFanout || (int) fanout > (int) fanoutTemp) {
-      fanout = fanoutTemp;
-    }
+  port->fanoutLimit(sta::MinMax::max(), fanoutTemp, hasMaxFanout);
+  if (hasMaxFanout) {
+    fanout = std::min(fanout, (int) fanoutTemp);
   } else {
-    port->libertyLibrary()->defaultMaxFanout(fanoutTemp, hasMaxFanoutTemp);
-    if ((hasMaxFanoutTemp)
-        && (!hasMaxFanout || (int) fanout > (int) fanoutTemp)) {
-      fanout = fanoutTemp;
+    port->libertyLibrary()->defaultMaxFanout(fanoutTemp, hasMaxFanout);
+    if ((hasMaxFanout)) {
+      fanout = std::min(fanout, (int) fanoutTemp);
     }
   }
   return (int) fanout;
