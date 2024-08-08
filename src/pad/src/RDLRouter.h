@@ -65,7 +65,7 @@ class RDLGui : public gui::Renderer
 {
  public:
   RDLGui();
-  ~RDLGui();
+  ~RDLGui() override;
 
   void setRouter(RDLRouter* router);
 
