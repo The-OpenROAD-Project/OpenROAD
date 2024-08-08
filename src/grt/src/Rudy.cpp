@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "Rudy.h"
+#include "grt/Rudy.h"
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
@@ -46,8 +46,6 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
   if (grid_block_.area() == 0) {
     return;
   }
-  // TODO: Match the wire width with the paper definition
-  wire_width_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
   if (!grouter_->isInitialized()) {
     int min_layer, max_layer;
@@ -55,6 +53,23 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     grouter_->getMinMaxLayer(min_layer, max_layer);
     grouter_->initFastRoute(min_layer, max_layer);
   }
+
+  // The wire width is the harmonic average pitch divided by the number of
+  // routing layers.
+  double pitch_terms = 0;
+  const int min_routing_layer = grouter->getMinRoutingLayer();
+  const int max_routing_layer = grouter->getMaxRoutingLayer();
+  const auto tech = block_->getTech();
+  for (int layer_idx = min_routing_layer; layer_idx <= max_routing_layer;
+       ++layer_idx) {
+    const auto layer = tech->findRoutingLayer(layer_idx);
+    int pitch = layer->getPitch();
+    if (pitch == 0) {
+      pitch = layer->getWidth() + layer->getSpacing();
+    }
+    pitch_terms += 1.0 / pitch;
+  }
+  wire_width_ = 1 / pitch_terms;  // = harm. mean / num_routing_layers
 
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);

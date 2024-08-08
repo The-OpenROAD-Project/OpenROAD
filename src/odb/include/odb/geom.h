@@ -50,7 +50,7 @@ class Point
 {
  public:
   Point() = default;
-  Point(const Point& p);
+  Point(const Point& p) = default;
   Point(int x, int y);
   ~Point() = default;
   Point& operator=(const Point& rhs) = default;
@@ -315,11 +315,37 @@ class Rect
   int yhi_ = 0;
 };
 
-std::ostream& operator<<(std::ostream& os, const Rect& box);
-
-inline Point::Point(const Point& p) : Point(p.x_, p.y_)
+class Polygon
 {
-}
+ public:
+  Polygon() = default;
+  Polygon(const Polygon& r) = default;
+  Polygon(const std::vector<Point>& points);
+  Polygon(const Rect& rect);
+  Polygon(const Oct& oct);
+
+  std::vector<Point> getPoints() const;
+  void setPoints(const std::vector<Point>& points);
+
+  bool operator==(const Polygon& p) const;
+  bool operator!=(const Polygon& p) const { return !(*this == p); };
+  bool operator<(const Polygon& p) const;
+  bool operator>(const Polygon& p) const { return p < *this; }
+  bool operator<=(const Polygon& p) const { return !(*this > p); }
+  bool operator>=(const Polygon& p) const { return !(*this < p); }
+
+  Rect getRect() const;
+  int dx() const { return getRect().dx(); }
+  int dy() const { return getRect().dy(); }
+
+  friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
+  friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
+
+ private:
+  std::vector<Point> points_;
+};
+
+std::ostream& operator<<(std::ostream& os, const Rect& box);
 
 inline Point::Point(int x, int y)
 {
@@ -844,6 +870,51 @@ inline std::vector<Point> Oct::getPoints() const
                       center_high_.getY() - B);  // high oct (-A,-B)
   }
   return points;
+}
+
+inline Polygon::Polygon(const std::vector<Point>& points)
+{
+  setPoints(points);
+}
+
+inline Polygon::Polygon(const Rect& rect)
+{
+  setPoints(rect.getPoints());
+}
+
+inline Polygon::Polygon(const Oct& oct)
+{
+  setPoints(oct.getPoints());
+}
+
+inline std::vector<Point> Polygon::getPoints() const
+{
+  return points_;
+}
+
+inline void Polygon::setPoints(const std::vector<Point>& points)
+{
+  points_ = points;
+}
+
+inline Rect Polygon::getRect() const
+{
+  Rect rect;
+  rect.mergeInit();
+  for (const Point& pt : points_) {
+    rect.merge(Rect(pt, pt));
+  }
+  return rect;
+}
+
+inline bool Polygon::operator==(const Polygon& p) const
+{
+  return points_ == p.points_;
+}
+
+inline bool Polygon::operator<(const Polygon& p) const
+{
+  return points_ < p.points_;
 }
 
 #ifndef SWIG

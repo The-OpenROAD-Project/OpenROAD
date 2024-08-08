@@ -135,6 +135,11 @@ extMain::extMain()
   _modelTable = new Ath__array1D<extRCModel*>(8);
 }
 
+extMain::~extMain()
+{
+  delete _modelTable;
+}
+
 void extMain::initDgContextArray()
 {
   _dgContextDepth = 3;

@@ -127,6 +127,7 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case Arrival:
       case LogicDelay:
       case LogicDepth:
+      case Fanout:
       case Slack:
       case Skew:
         return Qt::AlignRight;
@@ -149,6 +150,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return convertDelay(timing_path->getLogicDelay(), time_units);
       case LogicDepth:
         return timing_path->getLogicDepth();
+      case Fanout:
+        return timing_path->getFanout();
       case Start:
         return QString::fromStdString(timing_path->getStartStageName());
       case End:
@@ -162,9 +165,42 @@ QVariant TimingPathsModel::headerData(int section,
                                       Qt::Orientation orientation,
                                       int role) const
 {
-  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-    return getColumnNames().at(static_cast<Column>(section));
+  Column column = static_cast<Column>(section);
+
+  if (role == Qt::ToolTipRole) {
+    switch (column) {
+      case Clock:
+      case Required:
+      case Arrival:
+      case Slack:
+      case Fanout:
+      case Start:
+      case End:
+        // return empty string so that the tooltip goes away
+        // when switching from a header item that has a tooltip
+        // to a header item that doesn't.
+        return "";
+      case Skew:
+        // A rather verbose tooltip, move some of this to a help/documentation
+        // file when one is introduced into OpenROAD. Meanwhile, this is the
+        // best that can be done.
+        return "The difference in arrival times between\n"
+               "source and destination clock pins of a macro/register,\n"
+               "adjusted for CRPR and subtracting a clock period.\n"
+               "Setup and hold times account for internal clock delays.";
+      case LogicDelay:
+        return "Path delay from instances (excluding buffers and consecutive "
+               "inverter pairs)";
+      case LogicDepth:
+        return "Path instances (excluding buffers and consecutive inverter "
+               "pairs)";
+    }
   }
+
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+    return getColumnNames().at(column);
+  }
+
   return QVariant();
 }
 
@@ -215,6 +251,11 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getLogicDepth() < path2->getLogicDepth();
     };
+  } else if (col_index == Fanout) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getFanout() < path2->getFanout();
+    };
   } else if (col_index == Start) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
@@ -245,25 +286,27 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 void TimingPathsModel::populateModel(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   beginResetModel();
   timing_paths_.clear();
-  populatePaths(from, thru, to);
+  populatePaths(from, thru, to, path_group_name);
   endResetModel();
 }
 
 bool TimingPathsModel::populatePaths(
     const std::set<const sta::Pin*>& from,
     const std::vector<std::set<const sta::Pin*>>& thru,
-    const std::set<const sta::Pin*>& to)
+    const std::set<const sta::Pin*>& to,
+    const std::string& path_group_name)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   const bool sta_max = sta_->isUseMax();
   sta_->setUseMax(is_setup_);
-  timing_paths_ = sta_->getTimingPaths(from, thru, to);
+  timing_paths_ = sta_->getTimingPaths(from, thru, to, path_group_name);
   sta_->setUseMax(sta_max);
 
   QApplication::restoreOverrideCursor();

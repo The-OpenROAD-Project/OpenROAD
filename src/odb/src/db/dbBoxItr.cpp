@@ -39,6 +39,7 @@
 #include "dbMPin.h"
 #include "dbMaster.h"
 #include "dbNet.h"
+#include "dbPolygon.h"
 #include "dbRegion.h"
 #include "dbTable.h"
 #include "dbTechVia.h"
@@ -164,6 +165,23 @@ void dbBoxItr::reverse(dbObject* parent)
       break;
     }
 
+    case dbPolygonObj: {
+      _dbPolygon* pbox = (_dbPolygon*) parent;
+      uint id = pbox->boxes_;
+      uint list = 0;
+
+      while (id != 0) {
+        _dbBox* b = _box_tbl->getPtr(id);
+        uint n = b->_next_box;
+        b->_next_box = list;
+        list = id;
+        id = n;
+      }
+
+      pbox->boxes_ = list;
+      break;
+    }
+
     default:
       break;
   }
@@ -202,11 +220,35 @@ uint dbBoxItr::begin(dbObject* parent)
 
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
+      if (include_polygons_ && master->_poly_obstructions) {
+        dbId<_dbPolygon> pid = master->_poly_obstructions;
+        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
+        while (pbox != nullptr && pbox->boxes_ == 0) {
+          // move to next pbox
+          pid = pbox->next_pbox_;
+          pbox = _pbox_tbl->getPtr(pid);
+        }
+        if (pbox != nullptr) {
+          return pbox->boxes_;
+        }
+      }
       return master->_obstructions;
     }
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
+      if (include_polygons_ && pin->_poly_geoms) {
+        dbId<_dbPolygon> pid = pin->_poly_geoms;
+        _dbPolygon* pbox = _pbox_tbl->getPtr(pid);
+        while (pbox != nullptr && pbox->boxes_ == 0) {
+          // move to next pbox
+          pid = pbox->next_pbox_;
+          pbox = _pbox_tbl->getPtr(pid);
+        }
+        if (pbox != nullptr) {
+          return pbox->boxes_;
+        }
+      }
       return pin->_geoms;
     }
 
@@ -218,6 +260,11 @@ uint dbBoxItr::begin(dbObject* parent)
     case dbBPinObj: {
       _dbBPin* pin = (_dbBPin*) parent;
       return pin->_boxes;
+    }
+
+    case dbPolygonObj: {
+      _dbPolygon* box = (_dbPolygon*) parent;
+      return box->boxes_;
     }
 
     default:
@@ -235,7 +282,49 @@ uint dbBoxItr::end(dbObject* /* unused: parent */)
 uint dbBoxItr::next(uint id, ...)
 {
   _dbBox* box = _box_tbl->getPtr(id);
-  return box->_next_box;
+
+  if (!include_polygons_ || box->_next_box != 0) {
+    // return next box if available or when not considering polygons
+    return box->_next_box;
+  }
+
+  if (box->_flags._owner_type == dbBoxOwner::PBOX) {
+    // if owner is dbPolygon need to check for next dbPolygon
+    dbId<_dbPolygon> pid = box->_owner;
+    _dbPolygon* box_pbox = _pbox_tbl->getPtr(pid);
+
+    _dbPolygon* pbox = box_pbox;
+    if (pbox->next_pbox_ != 0) {
+      // move to next pbox
+      pbox = _pbox_tbl->getPtr(pbox->next_pbox_);
+      while (pbox != nullptr && pbox->boxes_ == 0) {
+        // move to next pbox
+        pid = pbox->next_pbox_;
+        pbox = _pbox_tbl->getPtr(pid);
+      }
+      if (pbox != nullptr) {
+        return pbox->boxes_;
+      }
+    }
+
+    // end of polygons
+
+    // return non-polygon list from owner
+    if (box_pbox->flags_.owner_type_ == dbBoxOwner::MASTER) {
+      _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
+      return master->_obstructions;
+    }
+    if (box_pbox->flags_.owner_type_ == dbBoxOwner::MPIN) {
+      _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
+      _dbMPin* pin = (_dbMPin*) master->_mpin_tbl->getPtr(box_pbox->owner_);
+      return pin->_geoms;
+    }
+
+    // this should not be possible unless new types with polygons are added
+    ZASSERT(0);
+  }
+
+  return 0;
 }
 
 dbObject* dbBoxItr::getObject(uint id, ...)

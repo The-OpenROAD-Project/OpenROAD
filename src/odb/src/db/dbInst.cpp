@@ -505,10 +505,11 @@ void dbInst::setOrigin(int x, int y)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   int prev_x = inst->_x;
   int prev_y = inst->_y;
-  if (block->_flags._valid_bbox && prev_x == x && prev_y == y) {
+  const auto placement_status = getPlacementStatus();
+  if (placement_status.isPlaced() && prev_x == x && prev_y == y) {
     return;
   }
-  if (getPlacementStatus().isFixed()) {
+  if (placement_status.isFixed()) {
     inst->getLogger()->error(utl::ODB,
                              359,
                              "Attempt to change the origin of {} instance {}",
@@ -1406,6 +1407,8 @@ dbInst* dbInst::create(dbBlock* block_,
         name_);
   }
 
+  _dbInst* inst = block->_inst_tbl->create();
+
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -1418,10 +1421,10 @@ dbInst* dbInst::create(dbBlock* block_,
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
     block->_journal->pushParam(name_);
+    block->_journal->pushParam(inst->getOID());
     block->_journal->endAction();
   }
 
-  _dbInst* inst = block->_inst_tbl->create();
   inst->_name = strdup(name_);
   ZALLOCATED(inst->_name);
   inst->_inst_hdr = inst_hdr->getOID();
@@ -1544,37 +1547,22 @@ void dbInst::destroy(dbInst* inst_)
                              inst->_name);
   }
 
-  dbRegion* region = inst_->getRegion();
-
-  if (region) {
-    region->removeInst(inst_);
-  }
-
-  dbModule* module = inst_->getModule();
-  if (module) {
-    ((_dbModule*) module)->removeInst(inst_);
-  }
-
-  if (inst->_group) {
-    inst_->getGroup()->removeInst(inst_);
-  }
-
   uint i;
   uint n = inst->_iterms.size();
 
+  // Delete these in reverse order so undo creates the in
+  // the correct order.
   for (i = 0; i < n; ++i) {
-    dbId<_dbITerm> id = inst->_iterms[i];
+    dbId<_dbITerm> id = inst->_iterms[n - 1 - i];
     _dbITerm* it = block->_iterm_tbl->getPtr(id);
     ((dbITerm*) it)->disconnect();
 
-    // Bugzilla #7: notify when pins are deleted (assumption: pins
-    // are destroyed only when the related instance is destroyed)
-    // payam 01/10/2006
+    // Notify when pins are deleted (assumption: pins are destroyed only when
+    // the related instance is destroyed)
     std::list<dbBlockCallBackObj*>::iterator cbitr;
     for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
          ++cbitr) {
-      (**cbitr)().inDbITermDestroy(
-          (dbITerm*) it);  // client ECO optimization - payam
+      (**cbitr)().inDbITermDestroy((dbITerm*) it);
     }
 
     dbProperty::destroyProperties(it);
@@ -1596,15 +1584,38 @@ void dbInst::destroy(dbInst* inst_)
                "DB_ECO",
                1,
                "ECO: dbInst:destroy");
+    auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);
-    block->_journal->pushParam(inst->getId());
+    block->_journal->pushParam(master->getLib()->getId());
+    block->_journal->pushParam(master->getId());
+    block->_journal->pushParam(inst_->getName().c_str());
+    block->_journal->pushParam(inst_->getId());
+    uint* flags = (uint*) &inst->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(inst->_x);
+    block->_journal->pushParam(inst->_y);
+    block->_journal->pushParam(inst->_group);
+    block->_journal->pushParam(inst->_module);
+    block->_journal->pushParam(inst->_region);
     block->_journal->endAction();
   }
 
-  // Bugzilla #7: The notification of the the instance destruction must
-  // be done after pin manipulation is completed. The notification is
-  // now after the pin disconnection - payam 01/10/2006
+  dbRegion* region = inst_->getRegion();
+
+  if (region) {
+    region->removeInst(inst_);
+  }
+
+  dbModule* module = inst_->getModule();
+  if (module) {
+    ((_dbModule*) module)->removeInst(inst_);
+  }
+
+  if (inst->_group) {
+    inst_->getGroup()->removeInst(inst_);
+  }
+
   std::list<dbBlockCallBackObj*>::iterator cbitr;
   for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
        ++cbitr) {

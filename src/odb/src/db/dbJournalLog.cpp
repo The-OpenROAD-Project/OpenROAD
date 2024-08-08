@@ -36,107 +36,104 @@
 
 namespace odb {
 
-#define DEBUG_JOURNAL_LOG
-
-#ifdef DEBUG_JOURNAL_LOG
-#define SET_TYPE(TYPE) _data.push_back((char) TYPE)
-#define CHECK_TYPE(TYPE)                   \
-  LogDataType type = (LogDataType) next(); \
-  ZASSERT(type == TYPE)
-#else
-#define SET_TYPE(TYPE)
-#define CHECK_TYPE(TYPE)
-#endif
-
-enum LogDataType
+dbJournalLog::dbJournalLog(utl::Logger* logger)
+    : idx_(0), debug_(false), logger_(logger)
 {
-  LOG_BOOL,
-  LOG_CHAR,
-  LOG_UCHAR,
-  LOG_INT,
-  LOG_UINT,
-  LOG_FLOAT,
-  LOG_DOUBLE,
-  LOG_STRING
-};
-
-dbJournalLog::dbJournalLog() : _idx(0), _debug(0)
-{
-#ifdef DEBUG_JOURNAL_LOG
-  _debug = 1;
-#endif
+  debug_ = logger_->debugCheck(utl::ODB, "journal_check", 1);
 }
 
-dbJournalLog::~dbJournalLog()
+void dbJournalLog::set_type(LogDataType type)
 {
-  clear();
+  if (debug_) {
+    data_.push_back(static_cast<char>(type));
+  }
+}
+
+void dbJournalLog::check_type(LogDataType expected_type)
+{
+  if (debug_) {
+    const auto type = static_cast<LogDataType>(next());
+    if (type != expected_type) {
+      logger_->critical(utl::ODB,
+                        426,
+                        "In journal: expected type {} got {}.",
+                        to_string(expected_type),
+                        to_string(type));
+    }
+  }
+}
+
+void dbJournalLog::clear()
+{
+  data_.clear();
+  idx_ = 0;
 }
 
 void dbJournalLog::push(bool value)
 {
-  SET_TYPE(LOG_BOOL);
-  _data.push_back((value == true) ? 1 : 0);
+  set_type(LOG_BOOL);
+  data_.push_back((value == true) ? 1 : 0);
 }
 
 void dbJournalLog::push(char value)
 {
-  SET_TYPE(LOG_CHAR);
-  _data.push_back(value);
+  set_type(LOG_CHAR);
+  data_.push_back(value);
 }
 
 void dbJournalLog::push(unsigned char value)
 {
-  SET_TYPE(LOG_UCHAR);
-  _data.push_back(value);
+  set_type(LOG_UCHAR);
+  data_.push_back(value);
 }
 
 void dbJournalLog::push(int value)
 {
-  SET_TYPE(LOG_INT);
+  set_type(LOG_INT);
   unsigned char* v = (unsigned char*) &value;
-  _data.push_back(v[0]);
-  _data.push_back(v[1]);
-  _data.push_back(v[2]);
-  _data.push_back(v[3]);
+  data_.push_back(v[0]);
+  data_.push_back(v[1]);
+  data_.push_back(v[2]);
+  data_.push_back(v[3]);
 }
 
 void dbJournalLog::push(unsigned int value)
 {
-  SET_TYPE(LOG_UINT);
+  set_type(LOG_UINT);
   unsigned char* v = (unsigned char*) &value;
-  _data.push_back(v[0]);
-  _data.push_back(v[1]);
-  _data.push_back(v[2]);
-  _data.push_back(v[3]);
+  data_.push_back(v[0]);
+  data_.push_back(v[1]);
+  data_.push_back(v[2]);
+  data_.push_back(v[3]);
 }
 
 void dbJournalLog::push(float value)
 {
-  SET_TYPE(LOG_FLOAT);
+  set_type(LOG_FLOAT);
   unsigned char* v = (unsigned char*) &value;
-  _data.push_back(v[0]);
-  _data.push_back(v[1]);
-  _data.push_back(v[2]);
-  _data.push_back(v[3]);
+  data_.push_back(v[0]);
+  data_.push_back(v[1]);
+  data_.push_back(v[2]);
+  data_.push_back(v[3]);
 }
 
 void dbJournalLog::push(double value)
 {
-  SET_TYPE(LOG_DOUBLE);
+  set_type(LOG_DOUBLE);
   unsigned char* v = (unsigned char*) &value;
-  _data.push_back(v[0]);
-  _data.push_back(v[1]);
-  _data.push_back(v[2]);
-  _data.push_back(v[3]);
-  _data.push_back(v[4]);
-  _data.push_back(v[5]);
-  _data.push_back(v[6]);
-  _data.push_back(v[7]);
+  data_.push_back(v[0]);
+  data_.push_back(v[1]);
+  data_.push_back(v[2]);
+  data_.push_back(v[3]);
+  data_.push_back(v[4]);
+  data_.push_back(v[5]);
+  data_.push_back(v[6]);
+  data_.push_back(v[7]);
 }
 
 void dbJournalLog::push(const char* value)
 {
-  SET_TYPE(LOG_STRING);
+  set_type(LOG_STRING);
   if (value == nullptr) {
     push(-1);
   } else {
@@ -144,32 +141,45 @@ void dbJournalLog::push(const char* value)
     push(len);
 
     for (; *value != '\0'; ++value) {
-      _data.push_back(*value);
+      data_.push_back(*value);
     }
   }
 }
 
+void dbJournalLog::moveBackOneInt()
+{
+  idx_ -= sizeof(uint);
+  if (debug_) {
+    --idx_;
+  }
+}
+
+void dbJournalLog::moveToEnd()
+{
+  idx_ = size();
+}
+
 void dbJournalLog::pop(bool& value)
 {
-  CHECK_TYPE(LOG_BOOL);
+  check_type(LOG_BOOL);
   value = (next() == 1) ? true : false;
 }
 
 void dbJournalLog::pop(char& value)
 {
-  CHECK_TYPE(LOG_CHAR);
+  check_type(LOG_CHAR);
   value = next();
 }
 
 void dbJournalLog::pop(unsigned char& value)
 {
-  CHECK_TYPE(LOG_UCHAR);
+  check_type(LOG_UCHAR);
   value = next();
 }
 
 void dbJournalLog::pop(int& value)
 {
-  CHECK_TYPE(LOG_INT);
+  check_type(LOG_INT);
   unsigned char* v = (unsigned char*) &value;
   v[0] = next();
   v[1] = next();
@@ -179,7 +189,7 @@ void dbJournalLog::pop(int& value)
 
 void dbJournalLog::pop(unsigned int& value)
 {
-  CHECK_TYPE(LOG_UINT);
+  check_type(LOG_UINT);
   unsigned char* v = (unsigned char*) &value;
   v[0] = next();
   v[1] = next();
@@ -189,7 +199,7 @@ void dbJournalLog::pop(unsigned int& value)
 
 void dbJournalLog::pop(float& value)
 {
-  CHECK_TYPE(LOG_FLOAT);
+  check_type(LOG_FLOAT);
   unsigned char* v = (unsigned char*) &value;
   v[0] = next();
   v[1] = next();
@@ -199,7 +209,7 @@ void dbJournalLog::pop(float& value)
 
 void dbJournalLog::pop(double& value)
 {
-  CHECK_TYPE(LOG_DOUBLE);
+  check_type(LOG_DOUBLE);
   unsigned char* v = (unsigned char*) &value;
   v[0] = next();
   v[1] = next();
@@ -213,7 +223,7 @@ void dbJournalLog::pop(double& value)
 
 void dbJournalLog::pop(char*& value)
 {
-  CHECK_TYPE(LOG_STRING);
+  check_type(LOG_STRING);
   int len;
   pop(len);
 
@@ -234,7 +244,7 @@ void dbJournalLog::pop(char*& value)
 
 void dbJournalLog::pop(std::string& value)
 {
-  CHECK_TYPE(LOG_STRING);
+  check_type(LOG_STRING);
   int len;
   pop(len);
 
@@ -252,19 +262,45 @@ void dbJournalLog::pop(std::string& value)
   }
 }
 
+/* static*/
+std::string dbJournalLog::to_string(LogDataType type)
+{
+  switch (type) {
+    case LOG_BOOL:
+      return "BOOL";
+    case LOG_CHAR:
+      return "CHAR";
+    case LOG_UCHAR:
+      return "UCHAR";
+    case LOG_INT:
+      return "INT";
+    case LOG_UINT:
+      return "UINT";
+    case LOG_FLOAT:
+      return "FLOAT";
+    case LOG_DOUBLE:
+      return "DOUBLE";
+    case LOG_STRING:
+      return "STRING";
+  }
+  return fmt::format("UNKNOWN ({})", type);
+}
+
 dbIStream& operator>>(dbIStream& stream, dbJournalLog& log)
 {
-  uint debug;
+  bool debug;
   stream >> debug;
-  assert((int) debug == log._debug);  // debug mismatch
-  stream >> log._data;
+  if (debug != log.debug_) {
+    log.logger_->error(utl::ODB, 427, "Journal debug mode mismatch.");
+  }
+  stream >> log.data_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const dbJournalLog& log)
 {
-  stream << log._debug;
-  stream << log._data;
+  stream << log.debug_;
+  stream << log.data_;
   return stream;
 }
 

@@ -3075,6 +3075,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     return nullptr;
   }
 
+  _dbNet* net = block->_net_tbl->create();
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
@@ -3085,10 +3086,10 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbNetObj);
     block->_journal->pushParam(name_);
+    block->_journal->pushParam(net->getOID());
     block->_journal->endAction();
   }
 
-  _dbNet* net = block->_net_tbl->create();
   net->_name = strdup(name_);
   ZALLOCATED(net->_name);
   block->_net_hash.insert(net);
@@ -3156,7 +3157,11 @@ void dbNet::destroy(dbNet* net_)
                net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbNetObj);
-    block->_journal->pushParam(net->getId());
+    block->_journal->pushParam(net_->getName());
+    block->_journal->pushParam(net->getOID());
+    uint* flags = (uint*) &net->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(net->_non_default_rule);
     block->_journal->endAction();
   }
 

@@ -58,6 +58,7 @@ struct Cell
   bool isHybridParent() const;
   dbSite* getSite() const;
   DbuX xMax() const { return x_ + width_; }
+  bool isBlock() const;
 
   dbInst* db_inst_ = nullptr;
   DbuX x_{0};  // lower left wrt core DBU
@@ -69,8 +70,6 @@ struct Cell
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
-
-  static Cell dummy_cell;
 };
 
 struct Group

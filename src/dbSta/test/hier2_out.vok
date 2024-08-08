@@ -9,16 +9,16 @@ module top (a,
 
  INV_X1 _4_ (.ZN(a_int),
     .A(a));
- gate1 gate2_inst (.zn(out),
+ gate1 gate2_inst (.a1(a_int),
     .a2(b),
-    .a1(a_int));
+    .zn(out));
 endmodule
-module gate1 (zn,
+module gate1 (a1,
     a2,
-    a1);
- output zn;
- input a2;
+    zn);
  input a1;
+ input a2;
+ output zn;
 
 
  AND2_X1 \gate2_inst/_5_  (.ZN(zn),

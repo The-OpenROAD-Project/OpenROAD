@@ -797,9 +797,9 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
   if (site != nullptr) {
     props.push_back({"Site", gui->makeSelected(site)});
   }
-  std::vector<std::any> mterms;
+  SelectionSet mterms;
   for (auto mterm : master->getMTerms()) {
-    mterms.emplace_back(mterm->getConstName());
+    mterms.insert(gui->makeSelected(mterm));
   }
   props.push_back({"MTerms", mterms});
 
@@ -1618,7 +1618,10 @@ odb::dbObject* DbNetDescriptor::getSink(const std::any& object) const
 
 //////////////////////////////////////////////////
 
-DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
+DbITermDescriptor::DbITermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool(void)> usingPolyDecompView)
+    : db_(db), usingPolyDecompView_(std::move(usingPolyDecompView))
 {
 }
 
@@ -1661,10 +1664,23 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
-    for (auto box : mpin->getGeometry()) {
-      odb::Rect rect = box->getBox();
-      inst_xfm.apply(rect);
-      painter.drawRect(rect);
+    if (usingPolyDecompView_()) {
+      for (auto box : mpin->getGeometry()) {
+        odb::Rect rect = box->getBox();
+        inst_xfm.apply(rect);
+        painter.drawRect(rect);
+      }
+    } else {
+      for (auto box : mpin->getPolygonGeometry()) {
+        odb::Polygon poly = box->getPolygon();
+        inst_xfm.apply(poly);
+        painter.drawPolygon(poly);
+      }
+      for (auto box : mpin->getGeometry(false)) {
+        odb::Rect rect = box->getBox();
+        inst_xfm.apply(rect);
+        painter.drawRect(rect);
+      }
     }
   }
 }
@@ -1688,10 +1704,9 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
     }
   }
   Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
-                   {"IO type", iterm->getIoType().getString()},
                    {"Net", std::move(net_value)},
                    {"Special", iterm->isSpecial()},
-                   {"MTerm", iterm->getMTerm()->getConstName()},
+                   {"MTerm", gui->makeSelected(iterm->getMTerm())},
                    {"Access Points", aps}};
 
   populateODBProperties(props, iterm);
@@ -1844,6 +1859,135 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
   for (auto* term : block->getBTerms()) {
     objects.insert(makeSelected(term));
   }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbMTermDescriptor::DbMTermDescriptor(
+    odb::dbDatabase* db,
+    std::function<bool(void)> usingPolyDecompView)
+    : db_(db), usingPolyDecompView_(std::move(usingPolyDecompView))
+{
+}
+
+std::string DbMTermDescriptor::getName(std::any object) const
+{
+  auto mterm = std::any_cast<odb::dbMTerm*>(object);
+  return mterm->getMaster()->getName() + "/" + mterm->getName();
+}
+
+std::string DbMTermDescriptor::getShortName(std::any object) const
+{
+  auto mterm = std::any_cast<odb::dbMTerm*>(object);
+  return mterm->getName();
+}
+
+std::string DbMTermDescriptor::getTypeName() const
+{
+  return "MTerm";
+}
+
+bool DbMTermDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  auto mterm = std::any_cast<odb::dbMTerm*>(object);
+  bbox = mterm->getBBox();
+  return true;
+}
+
+void DbMTermDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto mterm = std::any_cast<odb::dbMTerm*>(object);
+
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  std::vector<odb::Polygon> mterm_polys;
+
+  for (auto mpin : mterm->getMPins()) {
+    if (usingPolyDecompView_()) {
+      for (auto box : mpin->getGeometry()) {
+        mterm_polys.emplace_back(box->getBox());
+      }
+    } else {
+      for (auto box : mpin->getPolygonGeometry()) {
+        mterm_polys.push_back(box->getPolygon());
+      }
+      for (auto box : mpin->getGeometry(false)) {
+        mterm_polys.emplace_back(box->getBox());
+      }
+    }
+  }
+  for (auto* iterm : block->getITerms()) {
+    if (iterm->getMTerm() == mterm) {
+      if (!iterm->getInst()->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+      const odb::dbTransform inst_xfm = iterm->getInst()->getTransform();
+
+      for (odb::Polygon poly : mterm_polys) {
+        inst_xfm.apply(poly);
+        painter.drawPolygon(poly);
+      }
+    }
+  }
+}
+
+Descriptor::Properties DbMTermDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto mterm = std::any_cast<odb::dbMTerm*>(object);
+  SelectionSet layers;
+  for (auto* mpin : mterm->getMPins()) {
+    for (auto* geom : mpin->getGeometry()) {
+      auto* layer = geom->getTechLayer();
+      if (layer != nullptr) {
+        layers.insert(gui->makeSelected(layer));
+      }
+    }
+  }
+  Properties props{{"Master", gui->makeSelected(mterm->getMaster())},
+                   {"IO type", mterm->getIoType().getString()},
+                   {"Signal type", mterm->getSigType().getString()},
+                   {"# Pins", mterm->getMPins().size()},
+                   {"Layers", layers}};
+
+  populateODBProperties(props, mterm);
+
+  return props;
+}
+
+Selected DbMTermDescriptor::makeSelected(std::any object) const
+{
+  if (auto mterm = std::any_cast<odb::dbMTerm*>(&object)) {
+    return Selected(*mterm, this);
+  }
+  return Selected();
+}
+
+bool DbMTermDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_mterm = std::any_cast<odb::dbMTerm*>(l);
+  auto r_mterm = std::any_cast<odb::dbMTerm*>(r);
+  return l_mterm->getId() < r_mterm->getId();
+}
+
+bool DbMTermDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      for (auto* mterm : master->getMTerms()) {
+        objects.insert(makeSelected(mterm));
+      }
+    }
+  }
+
   return true;
 }
 

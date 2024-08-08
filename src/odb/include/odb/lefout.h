@@ -103,6 +103,7 @@ class lefout
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
+  void writePolygon(const std::string& indent, dbPolygon* polygon);
   void writeRect(const std::string& indent,
                  const boost::polygon::rectangle_data<int>& rect);
   void findInstsObstructions(ObstructionMap& obstructions,

@@ -41,6 +41,7 @@
 #include <numeric>
 #include <sstream>
 
+#include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
@@ -804,6 +805,10 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   FlexDRConnectivityChecker checker(
       router_, logger_, graphics_.get(), dist_on_);
   checker.check(iter);
+  if (getDesign()->getTopBlock()->getNumMarkers() == 0
+      && getTech()->hasMaxSpacingConstraints()) {
+    fixMaxSpacing();
+  }
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,
              utl::DRT,
@@ -1230,6 +1235,160 @@ void FlexDR::reportGuideCoverage()
   }
   file.close();
 }
+void FlexDR::fixMaxSpacing()
+{
+  logger_->info(DRT, 227, "Checking For LEF58_MAXSPACING violations");
+  io::Parser parser(db_, getDesign(), logger_);
+  parser.initSecondaryVias();
+  std::vector<frVia*> lonely_vias;
+  for (const auto& layer : getTech()->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      if (!layer->hasLef58MaxSpacingConstraints()) {
+        continue;
+      }
+      for (const auto& rule : layer->getLef58MaxSpacingConstraints()) {
+        auto result = getLonelyVias(
+            layer.get(), rule->getMaxSpacing(), rule->getCutClassIdx());
+        lonely_vias.insert(lonely_vias.end(), result.begin(), result.end());
+      }
+    }
+  }
+  std::vector<Rect> lonely_vias_regions;
+  lonely_vias_regions.reserve(lonely_vias.size());
+  for (const auto& via : lonely_vias) {
+    // Create LEF58_MAXSPACING Markers for the lonely vias
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(via->getBBox());
+    auto layer = getTech()->getLayer(via->getViaDef()->getCutLayerNum());
+    marker->setLayerNum(layer->getLayerNum());
+    marker->setConstraint(layer->getLef58MaxSpacingConstraints().at(0));
+    marker->addSrc(via->getNet());
+    marker->addVictim(
+        via->getNet(),
+        std::make_tuple(layer->getLayerNum(), via->getBBox(), false));
+    marker->addAggressor(
+        via->getNet(),
+        std::make_tuple(layer->getLayerNum(), via->getBBox(), false));
+    getRegionQuery()->addMarker(marker.get());
+    getDesign()->getTopBlock()->addMarker(std::move(marker));
+    // Define the lonely via region needed for drWorker creation
+    // The region is of size 3x3 GCELLBOX with the via in the center GCELLBOX
+    auto origin = via->getOrigin();
+    auto block = getDesign()->getTopBlock();
+    auto gcell_idx = block->getGCellIdx(origin);
+    Rect region, tmp_box;
+    tmp_box = block->getGCellBox({gcell_idx.x() - 1, gcell_idx.y() - 1});
+    region.set_xlo(tmp_box.xMin());
+    region.set_ylo(tmp_box.yMin());
+    tmp_box = block->getGCellBox({gcell_idx.x() + 1, gcell_idx.y() + 1});
+    region.set_xhi(tmp_box.xMax());
+    region.set_yhi(tmp_box.yMax());
+    lonely_vias_regions.emplace_back(region);
+  }
+  // merge intersecting regions
+  std::sort(lonely_vias_regions.begin(),
+            lonely_vias_regions.end(),
+            [](const Rect& a, const Rect& b) { return a.xMin() < b.xMin(); });
+  std::vector<Rect> merged_regions;
+  for (const auto& region : lonely_vias_regions) {
+    bool found = false;
+    for (auto& merged_region : merged_regions) {
+      if (region.intersects(merged_region)) {
+        merged_region.merge(region);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      merged_regions.emplace_back(region);
+    }
+  }
+  // create drWorkers for the final regions
+  omp_set_num_threads(MAX_THREADS);
+#pragma omp parallel for schedule(dynamic)
+  for (size_t i = 0; i < merged_regions.size(); i++) {
+    auto route_box = merged_regions.at(i);
+    auto worker = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
+    Rect ext_box;
+    Rect drc_box;
+    auto minGcellIdx = getDesign()->getTopBlock()->getGCellIdx(
+        {route_box.xMin(), route_box.yMin()});
+    route_box.bloat(MTSAFEDIST, ext_box);
+    route_box.bloat(DRCSAFEDIST, drc_box);
+    worker->setRouteBox(route_box);
+    worker->setExtBox(ext_box);
+    worker->setDrcBox(drc_box);
+    worker->setDRIter(64);
+    worker->setDebugSettings(router_->getDebugSettings());
+    worker->setRipupMode(RipUpMode::VIASWAP);
+    worker->setGraphics(graphics_.get());
+    worker->main(getDesign());
+#pragma omp critical
+    {
+      worker->end(getDesign());
+    }
+  }
+}
+
+std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
+                                          int max_spc,
+                                          int cut_class)
+{
+  std::vector<frVia*> lonely_vias;
+  if (layer->getSecondaryViaDefs().empty()) {
+    return lonely_vias;
+  }
+  auto vias = getRegionQuery()->getVias(layer->getLayerNum());
+  std::vector<Point> via_positions;
+  via_positions.reserve(vias.size());
+  for (auto [obj, box] : vias) {
+    via_positions.emplace_back(box.xCenter(), box.yCenter());
+  }
+  KDTree tree(via_positions);
+  std::vector<std::atomic_bool> visited(via_positions.size());
+  std::fill(visited.begin(), visited.end(), false);
+  std::set<int> isolated_via_nodes;
+  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < via_positions.size(); i++) {
+    if (visited[i].load()) {
+      continue;
+    }
+    visited[i].store(true);
+    std::vector<int> neighbors = tree.radiusSearch(via_positions[i], max_spc);
+    // Check if there are neighbors other than the point itself
+    bool is_isolated = true;
+    for (const auto& neighbor : neighbors) {
+      if (neighbor != i) {
+        visited[neighbor].store(true);
+        is_isolated = false;
+      }
+    }
+    if (is_isolated) {
+#pragma omp critical
+      {
+        isolated_via_nodes.insert(i);
+      }
+    }
+  }
+  for (auto i : isolated_via_nodes) {
+    auto obj = vias[i].first;
+    if (obj->typeId() != frcVia) {
+      continue;
+    }
+    auto via = static_cast<frVia*>(obj);
+    auto net = via->getNet();
+    if (net == nullptr || net->isFake() || net->isSpecial()) {
+      continue;
+    }
+    if (via->getViaDef()->getCutClassIdx() != cut_class) {
+      continue;
+    }
+    via->setIsLonely(true);
+    lonely_vias.emplace_back(via);
+  }
+  return lonely_vias;
+}
 
 int FlexDR::main()
 {
@@ -1237,9 +1396,11 @@ int FlexDR::main()
   init();
   frTime t;
   bool incremental = false;
+  bool hasFixed = false;
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
     incremental |= net->hasInitialRouting();
-    if (incremental) {
+    hasFixed |= net->isFixed();
+    if (incremental && hasFixed) {
       break;
     }
   }
@@ -1254,8 +1415,10 @@ int FlexDR::main()
       clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
-    if (incremental && args.ripupMode == RipUpMode::ALL && iter_ <= 2) {
-      args.ripupMode = RipUpMode::INCR;
+    if (args.ripupMode == RipUpMode::ALL) {
+      if (hasFixed || (incremental && iter_ <= 2)) {
+        args.ripupMode = RipUpMode::INCR;
+      }
     }
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {

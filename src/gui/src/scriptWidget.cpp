@@ -56,6 +56,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
       input_(new TclCmdInputWidget(this)),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
+      report_timer_(std::make_unique<QTimer>()),
       paused_(false),
       logger_(nullptr),
       buffer_outputs_(false),
@@ -109,12 +110,20 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           &TclCmdInputWidget::commandFinishedExecuting,
           this,
           &ScriptWidget::commandExecuted);
+  connect(input_,
+          &TclCmdInputWidget::commandFinishedExecuting,
+          this,
+          &ScriptWidget::flushReportBufferToOutput);
   connect(output_,
           &QPlainTextEdit::textChanged,
           this,
           &ScriptWidget::outputChanged);
   connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
   connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
+  connect(report_timer_.get(),
+          &QTimer::timeout,
+          this,
+          &ScriptWidget::flushReportBufferToOutput);
 
   connect(this,
           &ScriptWidget::addToOutput,
@@ -123,6 +132,21 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           Qt::QueuedConnection);
 
   setWidget(container);
+}
+
+// When displaying text in Scripting, processing events in order to
+// ensure the text is visible to the user can considerably slow down
+// the logging, so, for reports, we use a buffer.
+void ScriptWidget::flushReportBufferToOutput()
+{
+  std::lock_guard guard(reporting_);
+  if (report_buffer_.isEmpty()) {
+    return;
+  }
+
+  // this comes from a ->report
+  addTextToOutput(report_buffer_, buffer_msg_);
+  report_buffer_.clear();
 }
 
 ScriptWidget::~ScriptWidget()
@@ -191,11 +215,13 @@ void ScriptWidget::addResultToOutput(const QString& result, bool is_ok)
     addToOutput(result, ok_msg_);
   } else {
     try {
-      logger_->error(utl::GUI, 70, result.toStdString());
+      auto msg = result.toStdString();
+      if (msg.find(TclCmdInputWidget::exit_string) == std::string::npos) {
+        logger_->error(utl::GUI, 70, msg);
+      }
     } catch (const std::runtime_error& e) {
       if (!is_interactive_) {
-        // rethrow error
-        throw e;
+        throw;
       }
     }
   }
@@ -206,9 +232,15 @@ void ScriptWidget::addLogToOutput(const QString& text, const QColor& color)
   addToOutput(text, color);
 }
 
-void ScriptWidget::addReportToOutput(const QString& text)
+void ScriptWidget::startReportTimer()
 {
-  addToOutput(text, buffer_msg_);
+  report_timer_->start(report_display_interval);
+}
+
+void ScriptWidget::addMsgToReportBuffer(const QString& text)
+{
+  std::lock_guard guard(reporting_);
+  report_buffer_ += text;
 }
 
 void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
@@ -383,8 +415,17 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
         std::string(formatted.data(), formatted.size()));
 
     if (msg.level == spdlog::level::level_enum::off) {
-      // this comes from a ->report
-      widget_->addReportToOutput(formatted_msg);
+      widget_->addMsgToReportBuffer(formatted_msg);
+
+      if (QThread::currentThread() == widget_->thread()) {
+        if (!widget_->report_timer_->isActive()) {
+          widget_->startReportTimer();
+        }
+
+        // the event loop is blocked so we need to manually process
+        // events so that the timer keeps going
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+      }
     } else {
       // select error message color if message level is error or above.
       const QColor& msg_color = msg.level >= spdlog::level::level_enum::err

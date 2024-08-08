@@ -42,6 +42,7 @@
 namespace odb {
 
 class _dbDatabase;
+class _dbPolygon;
 class _dbTechVia;
 class _dbTechLayer;
 class _dbVia;

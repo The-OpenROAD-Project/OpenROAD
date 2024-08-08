@@ -577,15 +577,15 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
 
     if (show_blockages) {
       painter->setBrush(color.lighter());
-      for (const auto& box : boxes->obs) {
-        painter->drawRect(box);
+      for (const auto& poly : boxes->obs) {
+        painter->drawPolygon(poly);
       }
     }
 
     if (show_pins) {
       painter->setBrush(QBrush(color, brush_pattern));
-      for (const auto& box : boxes->mterms) {
-        painter->drawRect(box);
+      for (const auto& poly : boxes->mterms) {
+        painter->drawPolygon(poly);
       }
     }
   }

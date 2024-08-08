@@ -140,6 +140,7 @@ Resizer::Resizer()
 
 Resizer::~Resizer()
 {
+  delete recover_power_;
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;
@@ -165,6 +166,10 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
+  all_sized_inst_set_ = InstanceSet(db_network_);
+  all_inserted_buffer_set_ = InstanceSet(db_network_);
+  all_swapped_pin_inst_set_ = InstanceSet(db_network_);
+  all_cloned_inst_set_ = InstanceSet(db_network_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -238,7 +243,8 @@ void Resizer::init()
   initDesignArea();
 }
 
-void Resizer::removeBuffers()
+// remove all buffers if no buffers are specified
+void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
   initBlock();
   // Disable incremental timing.
@@ -246,16 +252,28 @@ void Resizer::removeBuffers()
   search_->arrivalsInvalid();
 
   int remove_count = 0;
-  for (dbInst* db_inst : block_->getInsts()) {
-    LibertyCell* lib_cell = db_network_->libertyCell(db_inst);
-    Instance* buffer = db_network_->dbToSta(db_inst);
-    if (!db_inst->isDoNotTouch() && !db_inst->isFixed() && lib_cell
-        && lib_cell->isBuffer()
-        // Do not remove buffers connected to input/output ports
-        // because verilog netlists use the net name for the port.
-        && !bufferBetweenPorts(buffer)) {
-      if (removeBuffer(buffer)) {
+  if (insts.empty()) {
+    // remove all the buffers
+    for (dbInst* db_inst : block_->getInsts()) {
+      Instance* buffer = db_network_->dbToSta(db_inst);
+      if (removeBuffer(buffer, /* honor dont touch */ true)) {
         remove_count++;
+      }
+    }
+  } else {
+    // remove only select buffers specified by user
+    InstanceSeq::Iterator inst_iter(insts);
+    while (inst_iter.hasNext()) {
+      Instance* buffer = const_cast<Instance*>(inst_iter.next());
+      if (removeBuffer(buffer, /* don't honor dont touch */ false)) {
+        remove_count++;
+      } else {
+        logger_->warn(
+            RSZ,
+            97,
+            "Instance {} cannot be removed because it is not a buffer",
+            " or is a feedthrough port buffer",
+            db_network_->name(buffer));
       }
     }
   }
@@ -275,18 +293,62 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
   return hasPort(in_net) && hasPort(out_net);
 }
 
-bool Resizer::removeBuffer(Instance* buffer)
+// There are two buffer removal modes: auto and manual:
+// 1) auto mode: this happens during setup fixing, power recovery, buffer
+// removal
+//      Dont-touch, fixed cell and boundary buffer constraints are honored
+// 2) manual mode: this happens during manual buffer removal during ECO
+//      This ignores dont-touch and fixed cell (boundary buffer constraints are
+//      still honored)
+bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
+  if (!lib_cell || !lib_cell->isBuffer()) {
+    return false;
+  }
+  // Do not remove buffers connected to input/output ports
+  // because verilog netlists use the net name for the port.
+  if (bufferBetweenPorts(buffer)) {
+    return false;
+  }
+  dbInst* db_inst = db_network_->staToDb(buffer);
+  if (db_inst->isDoNotTouch()) {
+    if (honorDontTouchFixed) {
+      return false;
+    }
+    //  remove instance dont touch
+    db_inst->setDoNotTouch(false);
+  }
+  if (db_inst->isFixed()) {
+    if (honorDontTouchFixed) {
+      return false;
+    }
+    // change FIXED to PLACED just in case
+    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = db_network_->findPin(buffer, in_port);
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
+  dbNet* in_db_net = db_network_->staToDb(in_net);
+  dbNet* out_db_net = db_network_->staToDb(out_net);
+  // honor net dont-touch on input net or output net
+  if (in_db_net->isDoNotTouch() || out_db_net->isDoNotTouch()) {
+    if (honorDontTouchFixed) {
+      return false;
+    }
+    // remove net dont touch for manual ECO
+    in_db_net->setDoNotTouch(false);
+    out_db_net->setDoNotTouch(false);
+  }
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
+    if (hasPort(in_net)) {
+      return false;
+    }
     survivor = out_net;
     removed = in_net;
   } else {
@@ -327,6 +389,7 @@ bool Resizer::removeBuffer(Instance* buffer)
       parasitics_invalid_.erase(removed);
     }
     parasiticsInvalid(survivor);
+    updateParasitics();
   }
   return buffer_removed;
 }
@@ -1102,11 +1165,13 @@ void Resizer::swapPins(Instance* inst,
     Pin* pin = pin_iter->next();
     Net* net = network_->net(pin);
     LibertyPort* port = network_->libertyPort(pin);
-    if (port == port1) {
+    // port pointers may change after sizing
+    // if (port == port1) {
+    if (std::strcmp(port->name(), port1->name()) == 0) {
       found_pin1 = pin;
       net1 = net;
     }
-    if (port == port2) {
+    if (std::strcmp(port->name(), port2->name()) == 0) {
       found_pin2 = pin;
       net2 = net;
     }
@@ -2119,8 +2184,15 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        float in_slew = tgt_slews_[in_rf->index()];
         LibertyPort* port = arc->from();
+        float in_slew = 0.0;
+        auto it = input_slew_map_.find(port);
+        if (it != input_slew_map_.end()) {
+          const InputSlews& slew = it->second;
+          in_slew = slew[in_rf->index()];
+        } else {
+          in_slew = tgt_slews_[in_rf->index()];
+        }
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
             = arc_delay_calc_->gateDelay(nullptr,
@@ -2197,6 +2269,45 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
         const Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
+      }
+    }
+  }
+}
+
+// Rise/fall delays across all timing arcs into drvr_port.
+// Takes input slews and load cap
+void Resizer::gateDelays(const LibertyPort* drvr_port,
+                         const float load_cap,
+                         const Slew in_slews[RiseFall::index_count],
+                         const DcalcAnalysisPt* dcalc_ap,
+                         // Return values.
+                         ArcDelay delays[RiseFall::index_count],
+                         Slew out_slews[RiseFall::index_count])
+{
+  for (int rf_index : RiseFall::rangeIndex()) {
+    delays[rf_index] = -INF;
+    out_slews[rf_index] = -INF;
+  }
+  LibertyCell* cell = drvr_port->libertyCell();
+  for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        int out_rf_index = arc->toEdge()->asRiseFall()->index();
+        LoadPinIndexMap load_pin_index_map(network_);
+        ArcDcalcResult dcalc_result
+            = arc_delay_calc_->gateDelay(nullptr,
+                                         arc,
+                                         in_slews[in_rf->index()],
+                                         load_cap,
+                                         nullptr,
+                                         load_pin_index_map,
+                                         dcalc_ap);
+
+        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const Slew& drvr_slew = dcalc_result.drvrSlew();
+        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
+        out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
       }
     }
   }
@@ -2621,7 +2732,9 @@ void Resizer::repairSetup(double setup_margin,
                           int max_passes,
                           bool verbose,
                           bool skip_pin_swap,
-                          bool skip_gate_cloning)
+                          bool skip_gate_cloning,
+                          bool skip_buffering,
+                          bool skip_buffer_removal)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2632,7 +2745,9 @@ void Resizer::repairSetup(double setup_margin,
                              max_passes,
                              verbose,
                              skip_pin_swap,
-                             skip_gate_cloning);
+                             skip_gate_cloning,
+                             skip_buffering,
+                             skip_buffer_removal);
 }
 
 void Resizer::reportSwappablePins()
@@ -2743,6 +2858,7 @@ void Resizer::journalSwapPins(Instance* inst,
              port1->name(),
              port2->name());
   swapped_pins_[inst] = std::make_tuple(port1, port2);
+  all_swapped_pin_inst_set_.insert(inst);
 }
 
 void Resizer::journalInstReplaceCellBefore(Instance* inst)
@@ -2758,6 +2874,7 @@ void Resizer::journalInstReplaceCellBefore(Instance* inst)
   // Do not clobber an existing checkpoint cell.
   if (!resized_inst_map_.hasKey(inst)) {
     resized_inst_map_[inst] = lib_cell;
+    all_sized_inst_set_.insert(inst);
   }
 }
 
@@ -2771,6 +2888,7 @@ void Resizer::journalMakeBuffer(Instance* buffer)
              network_->pathName(buffer));
   inserted_buffers_.emplace_back(buffer);
   inserted_buffer_set_.insert(buffer);
+  all_inserted_buffer_set_.insert(buffer);
 }
 
 Instance* Resizer::journalCloneInstance(LibertyCell* cell,
@@ -2782,6 +2900,8 @@ Instance* Resizer::journalCloneInstance(LibertyCell* cell,
   Instance* clone_inst = makeInstance(cell, name, parent, loc);
   cloned_gates_.emplace(original_inst, clone_inst);
   cloned_inst_set_.insert(clone_inst);
+  all_cloned_inst_set_.insert(clone_inst);
+  all_cloned_inst_set_.insert(original_inst);
   return clone_inst;
 }
 

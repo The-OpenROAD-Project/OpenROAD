@@ -10,8 +10,13 @@ design.readDef("gcd.def")
 
 ppl_aux.set_io_pin_constraint(design, direction="INPUT", region="bottom:*")
 
-ppl_aux.place_pins(design, hor_layers="metal3", ver_layers="metal2",
-                   corner_avoidance=0, min_distance=0.12)
+ppl_aux.place_pins(
+    design,
+    hor_layers="metal3",
+    ver_layers="metal2",
+    corner_avoidance=0,
+    min_distance=0.12,
+)
 
 def_file = helpers.make_result_file("add_constraint2.def")
 design.writeDef(def_file)

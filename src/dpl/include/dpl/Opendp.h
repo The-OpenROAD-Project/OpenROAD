@@ -113,6 +113,10 @@ struct DbuRect;
 
 using dbMasterSeq = vector<dbMaster*>;
 
+using IRDropByPoint = std::map<odb::Point, double>;
+struct GapInfo;
+struct DecapCell;
+struct IRDrop;
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -155,6 +159,10 @@ class Opendp
   void removeFillers();
   void optimizeMirroring();
 
+  // Place decap cells
+  void addDecapMaster(dbMaster* decap_master, double decap_cap);
+  void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,
@@ -169,6 +177,9 @@ class Opendp
   using GapFillers = vector<dbMasterSeq>;
 
   using MasterByImplant = std::map<dbTechLayer*, dbMasterSeq>;
+
+  using YCoordToGap = std::map<int, vector<GapInfo*>>;
+
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
@@ -298,7 +309,6 @@ class Opendp
 
   // Lower left corner in core coordinates.
   DbuPt initialLocation(const Cell* cell, bool padded) const;
-  static bool isBlock(const Cell* cell);
   int disp(const Cell* cell) const;
   // Place fillers
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
@@ -314,6 +324,26 @@ class Opendp
   static bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(GridY row, GridX col, const GridInfo& grid_info);
+
+  // Place decaps
+  vector<int> findDecapCellIndices(const int& gap_width,
+                                   const double& current,
+                                   const double& target);
+  void insertDecapInPos(dbMaster* master,
+                        const odb::dbOrientType& orient,
+                        const int& pos_x,
+                        const int& pos_y);
+  void insertDecapInRow(const vector<GapInfo*>& gaps,
+                        int gap_y,
+                        int irdrop_x,
+                        int irdrop_y,
+                        double& total,
+                        const double& target);
+  void findGaps();
+  void findGapsInRow(GridY row, DbuY row_height, const GridInfo& grid_info);
+  void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
+                          std::vector<IRDrop>& ir_drops);
+  void prepareDecapAndGaps();
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -343,6 +373,11 @@ class Opendp
   bool have_fillers_ = false;
   bool have_one_site_cells_ = false;
 
+  // Decap placement.
+  vector<DecapCell*> decap_masters_;
+  int decap_count_ = 0;
+  YCoordToGap gaps_;
+
   // Results saved for optional reporting.
   int64_t hpwl_before_ = 0;
   int64_t displacement_avg_ = 0;
@@ -350,6 +385,7 @@ class Opendp
   int64_t displacement_max_ = 0;
 
   std::unique_ptr<DplObserver> debug_observer_;
+  std::unique_ptr<Cell> dummy_cell_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

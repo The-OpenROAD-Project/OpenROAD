@@ -26,6 +26,7 @@ The command `set_dft_config` sets the DFT configuration variables.
 ```tcl
 set_dft_config 
     [-max_length <int>]
+    [-max_chains <int>]
     [-clock_mixing <string>]
 ```
 
@@ -33,8 +34,10 @@ set_dft_config
 
 | Switch Name | Description |
 | ---- | ---- |
-| `-max_length` | The maxinum number of bits that can be in each scan chain. |
-| `-clock_mixing` | How architect will mix the scan flops based on the clock driver. `no_mix`: Creates scan chains with only one type of clock and edge. This may create unbalanced chains. `clock_mix`: Craetes scan chains mixing clocks and edges. Falling edge flops are going to be stitched before rising edge. |
+| `-max_length` | The maximum number of bits that can be in each scan chain. |
+| `-max_chains` | The maximum number of scan chains that will be generated. This takes priority over `max_length`,
+in `no_mix` clock mode it specifies a maximum number of chains per clock-edge pair. |
+| `-clock_mixing` | How architect will mix the scan flops based on the clock driver. `no_mix`: Creates scan chains with only one type of clock and edge. This may create unbalanced chains. `clock_mix`: Creates scan chains mixing clocks and edges. Falling edge flops are going to be stitched before rising edge. |
 
 ### Report DFT Config
 
@@ -45,11 +48,21 @@ Prints the current DFT configuration to be used by `preview_dft` and
 report_dft_config
 ```
 
+### Scan replace
+
+Replaces flipflops with equivalent scan flipflops. This will generally be called before
+placement, as it changes the area of cells.
+
+```tcl
+scan_replace
+```
+
 ### Preview DFT
 
 Prints a preview of the scan chains that will be stitched by `insert_dft`. Use
-this command to iterate and try different DFT configurations. This command do
-not perform any modification to the design.
+this command to iterate and try different DFT configurations. This command does
+not perform any modification to the design, and should be run after `scan_replace`
+and global placement.
 
 ```tcl
 preview_dft
@@ -64,19 +77,13 @@ preview_dft
 
 ### Insert DFT
 
-Implements the scan chains into the design by performing the following actions:
-
-1. Scan Replace.
-2. Scan Architect.
-3. Scan Stitch.
-
-The end result will be a design with scan flops connected to form the scan
-chains.
-
+Architect scan chains and connect them up in a way that minimises wirelength. As a result, this
+should be run after placement, and after `scan_replace`.
 
 ```tcl
 insert_dft
 ```
+
 
 ## Example scripts
 
@@ -86,6 +93,8 @@ scan flops in the scan chains.
 ```
 set_dft_config -max_length 10 -clock_mixing clock_mix
 report_dft_config
+scan_replace
+# Run global placement...
 preview_dft -verbose
 insert_dft
 ```

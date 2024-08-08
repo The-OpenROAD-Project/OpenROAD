@@ -59,7 +59,10 @@ class LayoutTabs : public QTabWidget
              const std::vector<std::unique_ptr<Ruler>>& rulers,
              Gui* gui,
              std::function<bool(void)> usingDBU,
+             std::function<bool(void)> usingPolyDecompView,
              std::function<bool(void)> showRulerAsEuclidian,
+             std::function<bool(void)> default_mouse_wheel_zoom,
+             std::function<int(void)> arrow_keys_scroll_step,
              QWidget* parent = nullptr);
 
   LayoutViewer* getCurrent() const { return current_viewer_; }
@@ -122,6 +125,7 @@ class LayoutTabs : public QTabWidget
   void exit();
   void commandAboutToExecute();
   void commandFinishedExecuting();
+  void resetCache();
 
   // Method forwarding
   void restoreTclCommands(std::vector<std::string>& cmds);
@@ -139,7 +143,10 @@ class LayoutTabs : public QTabWidget
   std::map<odb::dbModule*, LayoutViewer::ModuleSettings> modules_;
   Gui* gui_;
   std::function<bool(void)> usingDBU_;
+  std::function<bool(void)> usingPolyDecompView_;
   std::function<bool(void)> showRulerAsEuclidian_;
+  std::function<bool(void)> default_mouse_wheel_zoom_;
+  std::function<int(void)> arrow_keys_scroll_step_;
   utl::Logger* logger_;
   bool command_executing_ = false;
 

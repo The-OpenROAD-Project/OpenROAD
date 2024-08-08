@@ -602,12 +602,23 @@ void BinGrid::initBins()
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 
-  int64_t averagePlaceInstArea
-      = pb_->placeInstsArea() / pb_->placeInsts().size();
+  int64_t averagePlaceInstArea = 0;
+  if (!pb_->placeInsts().empty()) {
+    averagePlaceInstArea = pb_->placeInstsArea() / pb_->placeInsts().size();
+  } else {
+    log_->warn(GPL, 306, "GPL component has no placed instances.");
+  }
 
-  int64_t idealBinArea
-      = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
-  int idealBinCnt = totalBinArea / idealBinArea;
+  int64_t idealBinArea = 0;
+  if (targetDensity_ != 0) {
+    idealBinArea
+        = std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
+  }
+
+  int idealBinCnt = 0;
+  if (idealBinArea != 0) {
+    idealBinCnt = totalBinArea / idealBinArea;
+  }
   if (idealBinCnt < 4) {  // the smallest we allow is 2x2 bins
     idealBinCnt = 4;
   }
@@ -815,6 +826,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
                      ? (gcell->dUx() - lx()) / binSizeX_
                      : (gcell->dUx() - lx()) / binSizeX_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
   return std::make_pair(lowerIdx, upperIdx);
 }
@@ -826,6 +838,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
                      ? (gcell->dUy() - ly()) / binSizeY_
                      : (gcell->dUy() - ly()) / binSizeY_ + 1;
 
+  lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
   return std::make_pair(lowerIdx, upperIdx);
 }
@@ -1948,8 +1961,10 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
+  // TODO: This OpenMP parallel section is causing non-determinism. Consider
+  // revisiting this in the future to restore determinism.
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  // wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
     wireLengthGrads[i]

@@ -199,6 +199,15 @@ void Cluster::addLeafMacro(odb::dbInst* leaf_macro)
   leaf_macros_.push_back(leaf_macro);
 }
 
+void Cluster::addLeafInst(odb::dbInst* inst)
+{
+  if (inst->isBlock()) {
+    addLeafMacro(inst);
+  } else {
+    addLeafStdCell(inst);
+  }
+}
+
 void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
 {
   hard_macros_ = hard_macros;
@@ -337,6 +346,18 @@ bool Cluster::isArrayOfInterconnectedMacros() const
   return is_array_of_interconnected_macros;
 }
 
+bool Cluster::isEmpty() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && getDbModules().empty();
+}
+
+bool Cluster::correspondsToLogicalModule() const
+{
+  return getLeafStdCells().empty() && getLeafMacros().empty()
+         && (getDbModules().size() == 1);
+}
+
 // Metrics Support and Statistics
 void Cluster::setMetrics(const Metrics& metrics)
 {
@@ -447,6 +468,11 @@ const std::pair<float, float> Cluster::getLocation() const
   return soft_macro_->getLocation();
 }
 
+Rect Cluster::getBBox() const
+{
+  return soft_macro_->getBBox();
+}
+
 // Hierarchy Support
 void Cluster::setParent(Cluster* parent)
 {
@@ -555,6 +581,10 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
     }
   }
 
+  if (neighbors.empty()) {
+    return false;
+  }
+
   for (auto& [cluster_id, weight] : cluster.connection_map_) {
     if ((cluster_id != id_) && (cluster_id != cluster.id_)
         && (weight >= net_threshold)) {
@@ -593,15 +623,12 @@ bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
   return false;
 }
 
-//
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-//
-// candidate_clusters are small clusters that need to be merged,
-// any cluster not in candidate_clusters is a well-formed cluster
-//
+// Candidate clusters always need to be merged.
+// A non candidate cluster is a well-formed cluster.
 int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
                              float net_threshold)
 {
@@ -706,9 +733,10 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
 }
 
 // Macro Placement Support
-void Cluster::setSoftMacro(SoftMacro* soft_macro)
+void Cluster::setSoftMacro(std::unique_ptr<SoftMacro> soft_macro)
 {
-  soft_macro_.reset(soft_macro);
+  soft_macro_.reset();
+  soft_macro_ = std::move(soft_macro);
 }
 
 SoftMacro* Cluster::getSoftMacro() const
@@ -1210,6 +1238,11 @@ void SoftMacro::setShapes(
 float SoftMacro::getArea() const
 {
   return area_ > 0.01 ? area_ : 0.0;
+}
+
+Rect SoftMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
 }
 
 // Num Macros

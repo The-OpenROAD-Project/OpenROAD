@@ -1194,15 +1194,15 @@ bool FastRouteCore::updateRouteType2(const int net_id,
   if (E1_pos == -1) {
     int x_pos = tile_size_ * (E1x + 0.5) + x_corner_;
     int y_pos = tile_size_ * (E1y + 0.5) + y_corner_;
-    if (verbose_)
-      logger_->warn(
-          GRT,
-          170,
-          "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
-          nets_[net_id]->getName(),
-          x_pos,
-          y_pos,
-          nets_[net_id]->getNumPins());
+    debugPrint(logger_,
+               utl::GRT,
+               "maze_2d",
+               1,
+               "Net {}: Invalid index for position ({}, {}). Net degree: {}.",
+               nets_[net_id]->getName(),
+               x_pos,
+               y_pos,
+               nets_[net_id]->getNumPins());
     return false;
   }
 
@@ -1868,11 +1868,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n1A2,
                                            edge_C1C2);
           if (!route_ok) {
-            if (verbose_)
-              logger_->warn(GRT,
-                            151,
-                            "Net {} has errors during updateRouteType2.",
-                            nets_[netID]->getName());
+            debugPrint(logger_,
+                       utl::GRT,
+                       "maze_2d",
+                       1,
+                       "Net {} has errors during updateRouteType2.",
+                       nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -1989,11 +1990,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B1,
                                            edge_n2B2);
           if (!route_ok) {
-            if (verbose_)
-              logger_->warn(GRT,
-                            152,
-                            "Net {} has errors during updateRouteType1.",
-                            nets_[netID]->getName());
+            debugPrint(logger_,
+                       utl::GRT,
+                       "maze_2d",
+                       1,
+                       "Net {} has errors during updateRouteType1.",
+                       nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;
@@ -2024,11 +2026,12 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            edge_n2B2,
                                            edge_D1D2);
           if (!route_ok) {
-            if (verbose_)
-              logger_->warn(GRT,
-                            153,
-                            "Net {} has errors during updateRouteType2.",
-                            nets_[netID]->getName());
+            debugPrint(logger_,
+                       utl::GRT,
+                       "maze_2d",
+                       1,
+                       "Net {} has errors during updateRouteType2.",
+                       nets_[netID]->getName());
             reInitTree(netID);
             nidRPC--;
             break;

@@ -45,10 +45,9 @@
 
 namespace utl {
 
-int Logger::max_message_print = 1000;
-
 Logger::Logger(const char* log_filename, const char* metrics_filename)
-    : debug_on_(false)
+    : debug_on_(false), warning_count_(0), error_count_(0)
+
 {
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)

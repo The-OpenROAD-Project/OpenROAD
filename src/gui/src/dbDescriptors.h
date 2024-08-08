@@ -229,7 +229,8 @@ class DbNetDescriptor : public Descriptor
 class DbITermDescriptor : public Descriptor
 {
  public:
-  DbITermDescriptor(odb::dbDatabase* db);
+  DbITermDescriptor(odb::dbDatabase* db,
+                    std::function<bool(void)> usingPolyDecompView);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -247,6 +248,7 @@ class DbITermDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+  std::function<bool(void)> usingPolyDecompView_;
 };
 
 class DbBTermDescriptor : public Descriptor
@@ -270,6 +272,30 @@ class DbBTermDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+};
+
+class DbMTermDescriptor : public Descriptor
+{
+ public:
+  DbMTermDescriptor(odb::dbDatabase* db,
+                    std::function<bool(void)> usingPolyDecompView);
+
+  std::string getName(std::any object) const override;
+  std::string getShortName(std::any object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(std::any object, odb::Rect& bbox) const override;
+
+  void highlight(std::any object, Painter& painter) const override;
+
+  Properties getProperties(std::any object) const override;
+  Selected makeSelected(std::any object) const override;
+  bool lessThan(std::any l, std::any r) const override;
+
+  bool getAllObjects(SelectionSet& objects) const override;
+
+ private:
+  odb::dbDatabase* db_;
+  std::function<bool(void)> usingPolyDecompView_;
 };
 
 class DbViaDescriptor : public Descriptor

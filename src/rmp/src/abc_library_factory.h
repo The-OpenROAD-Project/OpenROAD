@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
@@ -18,6 +19,22 @@
 
 namespace rmp {
 
+class AbcLibrary
+{
+ public:
+  AbcLibrary(utl::deleted_unique_ptr<abc::SC_Lib> abc_library)
+      : abc_library_(std::move(abc_library))
+  {
+  }
+  ~AbcLibrary() = default;
+  abc::SC_Lib* abc_library() { return abc_library_.get(); }
+  bool IsSupportedCell(const std::string& cell_name);
+
+ private:
+  utl::deleted_unique_ptr<abc::SC_Lib> abc_library_;
+  std::set<std::string> supported_cells_;
+};
+
 // A Factory to construct an abc::SC_Lib* from an OpenSTA library.
 // It is key to reconstructing cuts from OpenROAD in ABC's AIG
 // datastructure.
@@ -26,7 +43,7 @@ class AbcLibraryFactory
  public:
   explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
-  utl::deleted_unique_ptr<abc::SC_Lib> Build();
+  AbcLibrary Build();
 
  private:
   void PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,

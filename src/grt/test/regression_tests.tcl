@@ -39,6 +39,11 @@ record_tests {
   pin_edge
   pin_track_not_aligned
   pre_routed1
+  read_segments1
+  read_segments2
+  read_segments_error1
+  read_segments_error2
+  read_segments_error3
   region_adjustment
   repair_antennas1
   repair_antennas2
@@ -63,6 +68,8 @@ record_tests {
   tracks3
   unplaced_inst
   upper_layer_net
+  write_segments1
+  write_segments2
   #grt_man_tcl_check
   #grt_readme_msgs_check
 }

@@ -33,6 +33,7 @@
 // Generator Code Begin Cpp
 #include "dbModuleModBTermItr.h"
 
+#include "dbBusPort.h"
 #include "dbModBTerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
@@ -57,6 +58,20 @@ bool dbModuleModBTermItr::orderReversed()
 
 void dbModuleModBTermItr::reverse(dbObject* parent)
 {
+  // User Code Begin reverse
+  _dbModule* module = (_dbModule*) parent;
+  uint next = module->_modbterms;
+  uint prev = 0;
+  uint list = 0;
+  while (next != 0) {
+    list = next;
+    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(next);
+    next = modbterm->_next_entry;
+    modbterm->_next_entry = prev;
+    prev = list;
+  }
+  module->_modbterms = list;
+  // User Code End reverse
 }
 
 uint dbModuleModBTermItr::sequential()

@@ -3,6 +3,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
+[WARNING GPL-0152] Using GRT FastRoute instead of default RUDY for congestion in routability driven.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
@@ -66,9 +67,6 @@
 [NesterovSolve] Iter:  260 overflow: 0.378 HPWL: 4685878
 [NesterovSolve] Iter:  270 overflow: 0.326 HPWL: 4688054
 [NesterovSolve] Iter:  280 overflow: 0.302 HPWL: 4738039
-[NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
-[NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713
-[NesterovSolve] Iter:  310 overflow: 0.202 HPWL: 4848299
 [INFO GPL-0075] Routability numCall: 1 inflationIterCnt: 1 bloatIterCnt: 0
 [INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
 [INFO GPL-0038] TileCnt:      14   14
@@ -77,61 +75,22 @@
 [INFO GPL-0063] TotalRouteOverflowH2: 0.0
 [INFO GPL-0064] TotalRouteOverflowV2: 0.0
 [INFO GPL-0065] OverflowTileCnt2: 0
-[INFO GPL-0066] 0.5%RC: 1.0000
-[INFO GPL-0067] 1.0%RC: 1.0000
-[INFO GPL-0068] 2.0%RC: 0.9439
-[INFO GPL-0069] 5.0%RC: 0.8037
+[INFO GPL-0066] 0.5%RC: 1.0
+[INFO GPL-0067] 1.0%RC: 0.9866666674613953
+[INFO GPL-0068] 2.0%RC: 0.9122807069828636
+[INFO GPL-0069] 5.0%RC: 0.7670922127175839
 [INFO GPL-0070] 0.5rcK: 1.0
 [INFO GPL-0071] 1.0rcK: 1.0
 [INFO GPL-0072] 2.0rcK: 0.0
 [INFO GPL-0073] 5.0rcK: 0.0
-[INFO GPL-0074] FinalRC: 1.0000
-[INFO GPL-0078] FinalRC lower than minRC (1e+30), min RC updated.
-[INFO GPL-0045] InflatedAreaDelta:        0.000 um^2
-[INFO GPL-0046] TargetDensity:            0.700
-[INFO GPL-0049] WhiteSpaceArea:         953.876 um^2
-[INFO GPL-0050] NesterovInstsArea:      569.772 um^2
-[INFO GPL-0051] TotalFillerArea:         97.941 um^2
-[INFO GPL-0052] TotalGCellsArea:        667.713 um^2
-[INFO GPL-0053] ExpectedGCellsArea:     667.713 um^2
-[INFO GPL-0054] NewTargetDensity:         0.700
-[INFO GPL-0055] NewWhiteSpaceArea:      953.876 um^2
-[INFO GPL-0056] MovableArea:            667.713 um^2
-[INFO GPL-0057] NewNesterovInstArea:    569.772 um^2
-[INFO GPL-0058] NewTotalFillerArea:      97.941 um^2
-[INFO GPL-0059] NewTotalGCellsArea:     667.713 um^2
-[NesterovSolve] Revert back to snapshot coordi
-[NesterovSolve] Iter:  320 overflow: 0.569 HPWL: 4622568
-[NesterovSolve] Iter:  330 overflow: 0.534 HPWL: 4678132
-[NesterovSolve] Iter:  340 overflow: 0.488 HPWL: 4696790
-[NesterovSolve] Iter:  350 overflow: 0.446 HPWL: 4684731
-[NesterovSolve] Iter:  360 overflow: 0.400 HPWL: 4669364
-[NesterovSolve] Iter:  370 overflow: 0.357 HPWL: 4655730
-[NesterovSolve] Iter:  380 overflow: 0.319 HPWL: 4686260
-[NesterovSolve] Iter:  390 overflow: 0.291 HPWL: 4736442
-[NesterovSolve] Iter:  400 overflow: 0.257 HPWL: 4786096
-[NesterovSolve] Iter:  410 overflow: 0.222 HPWL: 4822875
-[INFO GPL-0075] Routability numCall: 2 inflationIterCnt: 2 bloatIterCnt: 0
-[INFO GPL-0036] TileBBox: (    0    0 ) ( 4200 4200 ) DBU
-[INFO GPL-0038] TileCnt:      14   14
-[INFO GPL-0039] numRoutingLayers: 10
-[INFO GPL-0040] NumTiles: 196
-[INFO GPL-0063] TotalRouteOverflowH2: 0.0
-[INFO GPL-0064] TotalRouteOverflowV2: 0.0
-[INFO GPL-0065] OverflowTileCnt2: 0
-[INFO GPL-0066] 0.5%RC: 1.0000
-[INFO GPL-0067] 1.0%RC: 0.9733
-[INFO GPL-0068] 2.0%RC: 0.9333
-[INFO GPL-0069] 5.0%RC: 0.8269
-[INFO GPL-0070] 0.5rcK: 1.0
-[INFO GPL-0071] 1.0rcK: 1.0
-[INFO GPL-0072] 2.0rcK: 0.0
-[INFO GPL-0073] 5.0rcK: 0.0
-[INFO GPL-0074] FinalRC: 0.9867
+[INFO GPL-0074] FinalRC: 0.99333334
 [INFO GPL-0077] FinalRC lower than targetRC(1.0), routability not needed.
-[NesterovSolve] Iter:  420 overflow: 0.192 HPWL: 4857987
-[NesterovSolve] Iter:  430 overflow: 0.161 HPWL: 4890728
-[NesterovSolve] Iter:  440 overflow: 0.135 HPWL: 4922673
-[NesterovSolve] Iter:  450 overflow: 0.113 HPWL: 4949601
-[NesterovSolve] Finished with Overflow: 0.099315
+[NesterovSolve] Iter:  290 overflow: 0.267 HPWL: 4778698
+[NesterovSolve] Iter:  300 overflow: 0.233 HPWL: 4810713
+[NesterovSolve] Iter:  310 overflow: 0.202 HPWL: 4848299
+[NesterovSolve] Iter:  320 overflow: 0.171 HPWL: 4881515
+[NesterovSolve] Iter:  330 overflow: 0.143 HPWL: 4916941
+[NesterovSolve] Iter:  340 overflow: 0.123 HPWL: 4942028
+[NesterovSolve] Iter:  350 overflow: 0.101 HPWL: 4964095
+[NesterovSolve] Finished with Overflow: 0.099533
 No differences found.

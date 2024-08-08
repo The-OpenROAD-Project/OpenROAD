@@ -37,7 +37,6 @@
 
 #include <iostream>
 #include <map>
-#include <memory>
 #include <random>
 #include <set>
 #include <string>
@@ -184,6 +183,7 @@ class Cluster
   void addDbModule(odb::dbModule* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
   void addLeafMacro(odb::dbInst* leaf_macro);
+  void addLeafInst(odb::dbInst* inst);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
   const std::vector<odb::dbModule*> getDbModules() const;
   const std::vector<odb::dbInst*> getLeafStdCells() const;
@@ -202,6 +202,8 @@ class Cluster
   bool isIOCluster() const;
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
+  bool isEmpty() const;
+  bool correspondsToLogicalModule() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -220,6 +222,7 @@ class Cluster
   void setX(float x);
   void setY(float y);
   const std::pair<float, float> getLocation() const;
+  Rect getBBox() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
@@ -268,7 +271,7 @@ class Cluster
   void printBasicInformation(utl::Logger* logger) const;
 
   // Macro Placement Support
-  void setSoftMacro(SoftMacro* soft_macro);
+  void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
   void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);
@@ -520,6 +523,7 @@ class SoftMacro
   float getWidth() const { return width_; }
   float getHeight() const { return height_; }
   float getArea() const;
+  Rect getBBox() const;
   // Num Macros
   bool isMacroCluster() const;
   bool isStdCellCluster() const;

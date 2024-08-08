@@ -78,43 +78,43 @@ module hierclock (a_count_valid_o,
  wire \U3/_42_ ;
  wire [2:0] \U1/counter_q ;
 
- clockgen U1 (.clk2_o(clk2_int),
+ clockgen U1 (.clk_i(clk_i),
+    .rst_n_i(rst_n_i),
     .clk1_o(clk1_int),
+    .clk2_o(clk2_int));
+ counter U2 (.clk_i(clk1_int),
     .rst_n_i(rst_n_i),
-    .clk_i(clk_i));
- counter U2 (.count_valid_o(a_count_valid_o),
     .load_i(a_ld_i),
-    .rst_n_i(rst_n_i),
-    .clk_i(clk1_int),
+    .load_value_i({a_i[3],
+    a_i[2],
+    a_i[1],
+    a_i[0]}),
     .count_value_o({a_count_o[3],
     a_count_o[2],
     a_count_o[1],
     a_count_o[0]}),
-    .load_value_i({a_i[3],
-    a_i[2],
-    a_i[1],
-    a_i[0]}));
- counter-1 U3 (.count_valid_o(b_count_valid_o),
-    .load_i(b_ld_i),
+    .count_valid_o(a_count_valid_o));
+ counter-1 U3 (.clk_i(clk2_int),
     .rst_n_i(rst_n_i),
-    .clk_i(clk2_int),
+    .load_i(b_ld_i),
+    .load_value_i({b_i[3],
+    b_i[2],
+    b_i[1],
+    b_i[0]}),
     .count_value_o({b_count_o[3],
     b_count_o[2],
     b_count_o[1],
     b_count_o[0]}),
-    .load_value_i({b_i[3],
-    b_i[2],
-    b_i[1],
-    b_i[0]}));
+    .count_valid_o(b_count_valid_o));
 endmodule
-module clockgen (clk2_o,
-    clk1_o,
+module clockgen (clk_i,
     rst_n_i,
-    clk_i);
- output clk2_o;
- output clk1_o;
- input rst_n_i;
+    clk1_o,
+    clk2_o);
  input clk_i;
+ input rst_n_i;
+ output clk1_o;
+ output clk2_o;
 
 
  INV_X1 \U1/_28_  (.A(rst_n_i),
@@ -165,18 +165,18 @@ module clockgen (clk2_o,
     .Q(counter_q[3]),
     .QN(_19_));
 endmodule
-module counter (count_valid_o,
-    load_i,
+module counter (clk_i,
     rst_n_i,
-    clk_i,
+    load_i,
+    load_value_i,
     count_value_o,
-    load_value_i);
- output count_valid_o;
- input load_i;
- input rst_n_i;
+    count_valid_o);
  input clk_i;
- output [3:0] count_value_o;
+ input rst_n_i;
+ input load_i;
  input [3:0] load_value_i;
+ output [3:0] count_value_o;
+ output count_valid_o;
 
 
  INV_X1 \U2/_49_  (.A(_41_),
@@ -255,18 +255,18 @@ module counter (count_valid_o,
     .Q(counter_q[3]),
     .QN(_38_));
 endmodule
-module counter-1 (count_valid_o,
-    load_i,
+module counter-1 (clk_i,
     rst_n_i,
-    clk_i,
+    load_i,
+    load_value_i,
     count_value_o,
-    load_value_i);
- output count_valid_o;
- input load_i;
- input rst_n_i;
+    count_valid_o);
  input clk_i;
- output [3:0] count_value_o;
+ input rst_n_i;
+ input load_i;
  input [3:0] load_value_i;
+ output [3:0] count_value_o;
+ output count_valid_o;
 
 
  INV_X1 \U3/_49_  (.A(_41_),

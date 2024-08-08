@@ -150,6 +150,7 @@ class LayoutViewer : public QWidget
                Gui* gui,
                const std::function<bool(void)>& usingDBU,
                const std::function<bool(void)>& showRulerAsEuclidian,
+               const std::function<bool(void)>& showDBView,
                QWidget* parent = nullptr);
 
   odb::dbBlock* getBlock() const { return block_; }
@@ -273,6 +274,8 @@ class LayoutViewer : public QWidget
 
   void exit();
 
+  void resetCache();
+
   void commandAboutToExecute();
   void commandFinishedExecuting();
   void executionPaused();
@@ -287,8 +290,8 @@ class LayoutViewer : public QWidget
  private:
   struct Boxes
   {
-    std::vector<QRect> obs;
-    std::vector<QRect> mterms;
+    std::vector<QPolygon> obs;
+    std::vector<QPolygon> mterms;
   };
 
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
@@ -393,6 +396,7 @@ class LayoutViewer : public QWidget
 
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
+  std::function<bool(void)> showDBView_;
 
   const std::map<odb::dbModule*, ModuleSettings>& modules_;
 
@@ -463,8 +467,10 @@ class LayoutScroll : public QScrollArea
 {
   Q_OBJECT
  public:
-  LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
-
+  LayoutScroll(LayoutViewer* viewer,
+               const std::function<bool(void)>& default_mouse_wheel_zoom,
+               const std::function<int(void)>& arrow_keys_scroll_step,
+               QWidget* parent = nullptr);
   bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
@@ -479,8 +485,11 @@ class LayoutScroll : public QScrollArea
   void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
   bool eventFilter(QObject* object, QEvent* event) override;
+  void keyPressEvent(QKeyEvent* event) override;
 
  private:
+  std::function<bool(void)> default_mouse_wheel_zoom_;
+  std::function<int(void)> arrow_keys_scroll_step_;
   LayoutViewer* viewer_;
 
   bool scrolling_with_cursor_;

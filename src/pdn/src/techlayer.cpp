@@ -33,6 +33,7 @@
 #include "techlayer.h"
 
 #include <limits>
+#include <optional>
 
 #include "utl/Logger.h"
 
@@ -82,7 +83,7 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
     return pos;
   }
 
-  int delta_pos = 0;
+  std::optional<int> delta_pos;
   int delta = std::numeric_limits<int>::max();
   for (const int grid_pos : grid_) {
     if (grid_pos < greater_than) {
@@ -99,7 +100,11 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
       break;
     }
   }
-  return delta_pos;
+
+  if (delta_pos.has_value()) {
+    return delta_pos.value();
+  }
+  return pos;
 }
 
 int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,

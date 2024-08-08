@@ -70,7 +70,19 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 84;  // Current revision number
+const uint db_schema_minor = 88;  // Current revision number
+
+// Revision where odb::Polygon was added
+const uint db_schema_polygon = 88;
+
+// Revision where _dbTechLayer::max_spacing_rules_tbl_ was added
+const uint db_schema_max_spacing = 87;
+
+// Revision where bus ports added to odb
+const uint db_schema_odb_busport = 86;
+
+// Revision where constraint region was added to dbBTerm
+const uint db_schema_bterm_constraint_region = 85;
 
 // Revision where GRT layer adjustment was relocated to dbTechLayer
 const uint db_schema_layer_adjustment = 84;

@@ -238,7 +238,7 @@ int dbMetalWidthViaMap::getAboveLayerWidthHigh() const
   return obj->above_layer_width_high_;
 }
 
-void dbMetalWidthViaMap::setViaName(std::string via_name)
+void dbMetalWidthViaMap::setViaName(const std::string& via_name)
 {
   _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
 

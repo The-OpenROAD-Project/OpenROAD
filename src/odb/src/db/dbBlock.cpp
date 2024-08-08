@@ -51,6 +51,7 @@
 #include "dbBlockage.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
+#include "dbBusPort.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
 #include "dbCapNode.h"
@@ -212,6 +213,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _modnet_tbl = new dbTable<_dbModNet>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
 
+  _busport_tbl = new dbTable<_dbBusPort>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBusPortObj);
+
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
 
@@ -348,6 +352,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _modbterm_hash.setTable(_modbterm_tbl);
   _moditerm_hash.setTable(_moditerm_tbl);
   _modnet_hash.setTable(_modnet_tbl);
+  _busport_hash.setTable(_busport_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -363,7 +368,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -577,7 +582,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
 
-  _box_itr = new dbBoxItr(_box_tbl);
+  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
 
   _swire_itr = new dbSWireItr(_swire_tbl);
 
@@ -966,6 +971,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._modbterm_hash;
     stream << block._moditerm_hash;
     stream << block._modnet_hash;
+    stream << block._busport_hash;
   }
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
@@ -1085,6 +1091,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._modbterm_hash;
     stream >> block._moditerm_hash;
     stream >> block._modnet_hash;
+    stream >> block._busport_hash;
   }
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
@@ -3501,200 +3508,6 @@ void dbBlock::keepOldParasitics(std::vector<dbNet*>& nets,
         this, nets, coupled_rc, ccHaloNets, capnn[corner], rsegn[corner]);
   }
 }
-
-#if 0
-//
-// Utility to create a net comprising a single SWire and two BTerms
-// Returns pointer to net (nullptr iff not successful)
-//
-dbNet *
-dbBlock::createNetSingleSWire(const char *innm, int x1, int y1, int x2, int y2, uint rlevel)
-{
-  if (!innm)
-    return nullptr;
-
-  dbTech *intech = ((dbDatabase *) (getChip())->getOwner())->getTech();
-  dbTechLayer *inly = nullptr;
-  if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == nullptr))
-    return nullptr;
-  
-  if (x2 < x1)
-    std::swap(x1,x2);
-  if (y2 < y1)
-    std::swap(y1, y2);
-
-  dbNet *nwnet = dbNet::create(this,innm);
-  if (!nwnet)
-    return nullptr;
-
-  nwnet->setSigType(dbSigType::SIGNAL);
-
-  dbSWire *nwsw = dbSWire::create(nwnet, dbWireType::ROUTED);
-  if (!nwsw)
-    return nullptr;
-  dbSBox  *nwsbx = dbSBox::create(nwsw, inly, x1, y1, x2, y2, dbWireShapeType::NONE);
-  if (!nwsbx)
-    return nullptr;
-
-  std::pair<dbBTerm *, dbBTerm *> cktrms = nwnet->createTerms4SingleNet(x1, y1, x2, y2, inly);
-  if ((cktrms.first == nullptr) || (cktrms.second == nullptr))
-    return nullptr;
-
-  return nwnet;
-}
-
-//
-// Utility to create a net comprising a single Wire and two BTerms
-// Requires creating a suitable non-default rule for the wire if none exists.
-// Returns pointer to net (nullptr iff not successful)
-//
-dbNet *
-dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, uint rlevel, bool skipBterms, dbTechLayerDir indir)
-{
-        static int opendx = -1;
-
-	if (!innm)
-		return nullptr;
-	
-	dbTech *intech = ((dbDatabase *) (getChip())->getOwner())->getTech();
-	dbTechLayer *inly = nullptr;
-	if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == nullptr))
-		return nullptr;
-	
-	if (x2 < x1)
-		std::swap(x1,x2);
-	if (y2 < y1)
-		std::swap(y1, y2);
-	
-	dbNet *nwnet = dbNet::create(this,innm);
-	if (!nwnet)
-		return nullptr;
-	
-	nwnet->setSigType(dbSigType::SIGNAL);
-
-	std::pair<dbBTerm *, dbBTerm *> blutrms;
-	if (! skipBterms ) {
-		blutrms = nwnet->createTerms4SingleNet(x1, y1, x2, y2, inly);
-		
-		if ((blutrms.first == nullptr) || (blutrms.second == nullptr))
-			return nullptr;
-	}
-
-	dbWireEncoder ncdr;
-	ncdr.begin(dbWire::create(nwnet));
-	
-	int fwidth;
-	if (indir == dbTechLayerDir::NONE)
-	  fwidth = std::min(x2 - x1, y2 - y1);
-	else
-	  fwidth = (indir == dbTechLayerDir::VERTICAL) ? x2 - x1 : y2 - y1;
-
-	uint hwidth = fwidth/2;
-
-	if (inly->getWidth()==fwidth) {
-		ncdr.newPath(inly, dbWireType::ROUTED);
-	}
-	else {
-		dbSet<dbTechNonDefaultRule> nd_rules = intech->getNonDefaultRules();
-		dbSet<dbTechNonDefaultRule>::iterator nditr;
-		dbTechLayerRule *tst_rule;
-		dbTechNonDefaultRule  *wdth_rule = nullptr;
-		for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr)
-		{
-			tst_rule = (*nditr)->getLayerRule(inly);
-			if (tst_rule && (tst_rule->getWidth() == fwidth))
-			{
-				wdth_rule = (*nditr);
-				break;
-			}
-		}
-		
-		char  rule_name[14];
-		dbTechLayer *curly;
-		if (!wdth_rule)
-		{
-			// Find first open slot, opendx static so only search once
-			if (opendx == -1) 
-			{
-				for (opendx = 1; opendx <= 300000; ++opendx)
-				{
-					snprintf(rule_name, 14, "ADS_ND_%d", opendx);
-					if ((wdth_rule = dbTechNonDefaultRule::create(intech, rule_name)) != nullptr)
-						break;
-				}
-			}
-			else
-			{
-				snprintf(rule_name, 14, "ADS_ND_%d", ++opendx);
-				assert(wdth_rule = dbTechNonDefaultRule::create(intech, rule_name));
-			}
-			
-			if (!wdth_rule)
-			{
-        
-				getImpl()->getLogger()->warn(utl::ODB, 14, "Failed to generate non-default rule for single wire net {}", innm);
-				return nullptr;
-			}
-			
-			dbTechLayerRule *curly_rule;
-			int i;
-			for (i = 1; i <= 12; i++)   // Twelve routing layers??
-			{
-				if ((curly = intech->findRoutingLayer(i)) != nullptr)
-				{
-					curly_rule = dbTechLayerRule::create(wdth_rule, curly);
-					curly_rule->setWidth(MAX(fwidth,curly->getWidth()));
-					curly_rule->setSpacing(curly->getSpacing());
-				}
-			}
-			
-			dbTechVia  *curly_via;
-			dbSet<dbTechVia> all_vias = intech->getVias();
-			dbSet<dbTechVia>::iterator viter;
-			std::string  nd_via_name("");
-			for (viter = all_vias.begin(); viter != all_vias.end(); ++viter)
-			{
-				if (((*viter)->getNonDefaultRule() == nullptr) && ((*viter)->isDefault()))
-				{
-					nd_via_name = std::string(rule_name) + std::string("_") + std::string((*viter)->getName().c_str());
-					curly_via = dbTechVia::clone(wdth_rule, (*viter), nd_via_name.c_str());
-				}
-			}
-		}
-		
-		ncdr.newPath(inly, dbWireType::ROUTED, wdth_rule->getLayerRule(inly));
-	}
-	if (((x2-x1) == fwidth) || (indir == dbTechLayerDir::VERTICAL)) {
-		if ((y2-y1) == fwidth)
-			ncdr.addPoint(x1+hwidth, y1+hwidth);
-		else
-			ncdr.addPoint(x1+hwidth, y1, 0);
-		//ncdr.addPoint(x1+hwidth, y2);
-	}
-	else 
-		ncdr.addPoint(x1, y1+hwidth, 0);
-	
-	if (! skipBterms )
-		ncdr.addBTerm(blutrms.first);
-	
-	if (((x2-x1) == fwidth) || (indir == dbTechLayerDir::VERTICAL)) {
-		if ((y2-y1) == fwidth)
-			ncdr.addPoint(x1+hwidth, y2-hwidth+1);
-		else
-			ncdr.addPoint(x1+hwidth, y2, 0);
-		//ncdr.addPoint(x1+hwidth, y2);
-	}
-	else
-		ncdr.addPoint(x2, y1+hwidth, 0);
-	
-	if (! skipBterms )
-		ncdr.addBTerm(blutrms.second);
-
-	ncdr.end();
-	
-	return nwnet;
-}
-#endif
 
 //
 // Utility to write db file

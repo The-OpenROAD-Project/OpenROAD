@@ -160,6 +160,8 @@ class drVia : public drRef
   bool isTopConnected() const { return topConnected_; }
   void setBottomConnected(bool c) { bottomConnected_ = c; }
   void setTopConnected(bool c) { topConnected_ = c; }
+  void setIsLonely(bool in) { isLonely_ = in; }
+  bool isLonely() const { return isLonely_; }
 
  protected:
   Point origin_;
@@ -170,6 +172,7 @@ class drVia : public drRef
   bool tapered_{false};
   bool bottomConnected_{false};
   bool topConnected_{false};
+  bool isLonely_{false};
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

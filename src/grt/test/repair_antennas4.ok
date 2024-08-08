@@ -5,24 +5,6 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[WARNING ANT-0015] Net clk requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[11] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[14] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[15] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[23] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[25] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[28] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net req_msg[31] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[13] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[14] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[1] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[3] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[7] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_msg[8] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net resp_rdy requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0015] Net _229_ requires more than 10 diodes per gate to repair violations.
-[INFO GRT-0012] Found 17 antenna violations.
-[INFO GRT-0015] Inserted 286 diodes.
-[INFO GRT-0054] Using detailed placer to place 52 diodes.
+[INFO GRT-0012] Found 18 antenna violations.
+[INFO GRT-0015] Inserted 297 diodes.
+[INFO GRT-0054] Using detailed placer to place 56 diodes.

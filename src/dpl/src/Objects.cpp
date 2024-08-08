@@ -35,8 +35,6 @@
 
 namespace dpl {
 
-Cell Cell::dummy_cell;
-
 const char* Cell::name() const
 {
   return db_inst_->getConstName();
@@ -138,6 +136,11 @@ bool Cell::isStdCell() const
   }
   // gcc warniing
   return false;
+}
+
+bool Cell::isBlock() const
+{
+  return db_inst_ && db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
 }
 
 }  // namespace dpl

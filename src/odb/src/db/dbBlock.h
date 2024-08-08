@@ -93,6 +93,7 @@ class _dbModInst;
 class _dbModITerm;
 class _dbModBTerm;
 class _dbModNet;
+class _dbBusPort;
 class _dbGroup;
 class _dbAccessPoint;
 class _dbGlobalConnect;
@@ -185,6 +186,7 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbModBTerm> _modbterm_hash;
   dbHashTable<_dbModITerm> _moditerm_hash;
   dbHashTable<_dbModNet> _modnet_hash;
+  dbHashTable<_dbBusPort> _busport_hash;
 
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
@@ -243,6 +245,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbModBTerm>* _modbterm_tbl;
   dbTable<_dbModITerm>* _moditerm_tbl;
   dbTable<_dbModNet>* _modnet_tbl;
+  dbTable<_dbBusPort>* _busport_tbl;
 
   dbTable<_dbCapNode>* _cap_node_tbl;
   dbTable<_dbRSeg>* _r_seg_tbl;

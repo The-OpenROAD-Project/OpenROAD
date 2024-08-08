@@ -3,9 +3,9 @@ import sys
 from md_roff_compat import man2, man3
 
 # Test objective: if the translator script can run without errors for all the docs.
-# goal is to return an error if the header cannot be extracted. 
+# goal is to return an error if the header cannot be extracted.
 
-# check man2 
+# check man2
 SRC_BASE_PATH = "../src"
 DEST_BASE_PATH = "./md/man2"
 
