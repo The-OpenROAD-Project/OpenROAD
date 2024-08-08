@@ -267,14 +267,6 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       routes[net].push_back({route, points->target0, points->target1});
       commitRoute(route);
       points->state = RouteState::SUCCESS;
-      for (const auto& [p0, p1] : added_edges0) {
-        boost::remove_edge(
-            point_vertex_map_[p0], point_vertex_map_[p1], graph_);
-      }
-      for (const auto& [p0, p1] : added_edges1) {
-        boost::remove_edge(
-            point_vertex_map_[p0], point_vertex_map_[p1], graph_);
-      }
     } else {
       failed[net].push_back(points);
       points->state = RouteState::FAILED;
@@ -283,6 +275,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (gui_ != nullptr && logger_->debugCheck(utl::PAD, "Router", 2)) {
       gui_->pause();
     }
+
+    removeTerminalEdges(added_edges0);
+    removeTerminalEdges(added_edges1);
   }
 
   if (!failed.empty()) {
@@ -309,6 +304,13 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
   if (!failed.empty()) {
     logger_->error(utl::PAD, 7, "Failed to route {} nets.", failed.size());
+  }
+}
+
+void RDLRouter::removeTerminalEdges(const std::vector<Edge>& edges)
+{
+  for (const auto& [p0, p1] : edges) {
+    boost::remove_edge(point_vertex_map_[p0], point_vertex_map_[p1], graph_);
   }
 }
 
