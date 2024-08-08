@@ -260,7 +260,7 @@ void ICeWall::assignBump(odb::dbInst* inst,
   if (top_layer != nullptr) {
     odb::Rect master_box;
     inst->getMaster()->getPlacementBoundary(master_box);
-    const odb::Point center(master_box.xCenter(), master_box.yCenter());
+    const odb::Point center = master_box.center();
 
     const odb::Rect* top_shape_ptr = nullptr;
     for (const odb::Rect& shape : top_shapes) {
