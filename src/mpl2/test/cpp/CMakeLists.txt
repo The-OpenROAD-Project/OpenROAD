@@ -12,6 +12,7 @@ set(TEST_LIBS
   gtest_main
   odb
   mpl2_lib
+  mpl2_odb_helper
 )
 
 add_executable(TestSnapper TestSnapper.cpp)
@@ -32,4 +33,6 @@ add_dependencies(build_and_test
     mpl2_test
     TestSnapper
 )
+
+add_subdirectory(helper)
 
