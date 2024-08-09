@@ -37,6 +37,7 @@
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "odb/db.h"
+#include "utl/timer.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
@@ -94,6 +95,7 @@ bool MacroPlacer2::place(const int num_threads,
                          const bool bus_planning_on,
                          const char* report_directory)
 {
+  utl::ScopedStatistics stat(logger_, "rtl_macro_placer");
   hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
   hier_rtlmp_->setClusterSizeTolerance(tolerance);

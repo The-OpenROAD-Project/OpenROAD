@@ -180,6 +180,40 @@ proc run_test { test } {
   }
 }
 
+proc log_comparer {test log_file ok_file diff_file diff_options error_msg} {
+    global result_dir errors
+
+    # Filter dos '/r's from log file.
+    set tmp_file [file join $result_dir $test.tmp]
+    exec tr -d "\r" < $log_file > $tmp_file
+    file rename -force $tmp_file $log_file
+
+    # Create a temporary filtered log file that ignores lines with the specific pattern
+    set tmp_log_file [file join $result_dir "${test}_log.tmp"]
+
+    set sed_result [catch \
+	    {exec sed {/.*cpu.*time.*.*elapsed.*time.*memory.*peak.*/d} \
+            $log_file > $tmp_log_file} sed_error]
+    if {$sed_result != 0} {
+        puts "Error running sed"
+        puts "Error message: $sed_error"
+        incr errors(fail)
+        return 1
+    } else {
+        # Proceed with the diff operation
+        set result [catch {exec diff $diff_options $ok_file $tmp_log_file >> $diff_file}]
+        if {$result != 0} {
+            puts " *FAIL log_and_ok*$error_msg"
+            return 1
+        } else {
+            puts " pass$error_msg"
+            return 0
+        }
+    }
+    # Clean up the temporary filtered log file.
+    file delete -force $tmp_log_file
+}
+
 proc run_test_lang { test lang } {
   global result_dir diff_file errors diff_options
   
@@ -226,17 +260,11 @@ proc run_test_lang { test lang } {
       switch [test_pass_criteria $test] {
         compare_logfile {
           if { [file exists $ok_file] } {
-            # Filter dos '/r's from log file.
-            set tmp_file [file join $result_dir $test.tmp]
-            exec tr -d "\r" < $log_file > $tmp_file
-            file rename -force $tmp_file $log_file
-            if [catch [concat exec diff $diff_options $ok_file $log_file \
-                         >> $diff_file]] {
-              puts " *FAIL*$error_msg"
+            set compare_result [log_comparer $test $log_file $ok_file \
+		    $diff_file $diff_options $error_msg]
+            if {$compare_result != 0} {
               append_failure $test
               incr errors(fail)
-            } else {
-              puts " pass$error_msg"
             }
           } else {
             puts " *NO OK FILE*$error_msg"

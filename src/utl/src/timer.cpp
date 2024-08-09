@@ -35,7 +35,30 @@
 
 #include "utl/timer.h"
 
+#if defined(__unix__) || defined(__unix) || defined(unix) \
+    || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/resource.h>
+#include <unistd.h>
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+
+#elif (defined(_AIX) || defined(__TOS__AIX__)) \
+    || (defined(__sun__) || defined(__sun)     \
+        || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
+#include <fcntl.h>
+#include <procfs.h>
+
+#elif defined(__linux__) || defined(__linux) || defined(linux) \
+    || defined(__gnu_linux__)
+#include <cstdint>
+#include <cstdio>
+#endif
+
+#endif
+
 namespace utl {
+const size_t kFactor = 1024;
 
 void Timer::reset()
 {
@@ -72,6 +95,88 @@ DebugScopedTimer::DebugScopedTimer(utl::Logger* logger,
 DebugScopedTimer::~DebugScopedTimer()
 {
   debugPrint(logger_, tool_, group_.c_str(), level_, msg_, *this);
+}
+
+ScopedStatistics::ScopedStatistics(utl::Logger* logger, std::string msg)
+    : Timer(),
+      msg_(std::move(msg)),
+      start_rsz_(getStartRSZ()),
+      logger_(logger),
+      cpu_start_(clock())
+{
+}
+
+size_t ScopedStatistics::getStartRSZ()
+{
+#if defined(__APPLE__) && defined(__MACH__)
+  struct mach_task_basic_info info;
+  mach_msg_type_number_t info_count = MACH_TASK_BASIC_INFO_COUNT;
+  if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                (task_info_t) &info, &info_count) {
+    return (size_t) 0L;
+  }
+  return (size_t) info.resident_size / kFactor;
+#elif defined(__linux__) || defined(__linux) || defined(linux) \
+    || defined(__gnu_linux__)
+  int64_t rss = 0L;
+  FILE* fp = fopen("/proc/self/statm", "r");
+  if (fp == nullptr) {
+    return (size_t) 0L;
+  }
+  if (fscanf(fp, "%*s%ld", &rss) != 1) {
+    fclose(fp);
+    return (size_t) 0L;
+  }
+  fclose(fp);
+  return (size_t) rss * (size_t) sysconf(_SC_PAGESIZE) / (kFactor * kFactor);
+#else
+  return (size_t) 0L; /* Unsupported. */
+#endif
+}
+
+size_t ScopedStatistics::getPeakRSZ()
+{
+#if (defined(_AIX) || defined(__TOS__AIX__)) \
+    || (defined(__sun__) || defined(__sun)   \
+        || defined(sun) && (defined(__SVR4) || defined(__svr4__)))
+  struct psinfo psinfo;
+  int fd = -1;
+  if ((fd = open("/proc/self/psinfo", O_RDONLY)) == -1)
+    return (size_t) 0L; /* Can't open? */
+  if (read(fd, &psinfo, sizeof(psinfo)) != sizeof(psinfo)) {
+    close(fd);
+    return (size_t) 0L; /* Can't read? */
+  }
+  close(fd);
+  return (size_t) (psinfo.pr_rssize * kFactor);
+#elif defined(__unix__) || defined(__unix) || defined(unix) \
+    || (defined(__APPLE__) && defined(__MACH__))
+  struct rusage rsg;
+  if (getrusage(RUSAGE_SELF, &rsg) != 0) {
+    return (size_t) 0L;
+  }
+#elif defined(__APPLE__) && defined(__MACH__)
+  return ((size_t) rsg.ru_maxrss) / (kFactor * kFactor);
+#else
+  return (size_t) rsg.ru_maxrss / kFactor;
+#endif
+  return (size_t) 0L; /* Unsupported. */
+}
+
+ScopedStatistics::~ScopedStatistics()
+{
+  auto ts_elapsed = Timer::elapsed();
+  int hour = ts_elapsed / 3600;
+  int min = (((int) ts_elapsed % 3600) / 60);
+  int sec = (int) ts_elapsed % 60;
+
+  auto ts_cpu = (clock() - cpu_start_) / CLOCKS_PER_SEC;
+  int chour = ts_cpu / 3600;
+  int cmin = (ts_cpu % 3600) / 60;
+  int csec = ts_cpu % 60;
+
+  logger_->report(msg_ + ": cpu time = {:02}:{:02}:{:02}, elapsed time = {:02}:{:02}:{:02}, memory = {} MB, peak = {} MB",
+      chour, cmin, csec, hour, min, sec, start_rsz_, getPeakRSZ());
 }
 
 }  // namespace utl
