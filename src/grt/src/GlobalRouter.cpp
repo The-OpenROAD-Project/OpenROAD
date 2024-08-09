@@ -3854,20 +3854,33 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
   std::vector<GSegment> connection;
 
   odb::dbTech* tech = db_->getTech();
-
-  auto [x1, x2] = std::minmax({pin_pos1.getX(), pin_pos2.getX()});
-  auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
-
   int conn_layer = std::max(layer1, layer2);
   odb::dbTechLayer* tech_conn_layer = tech->findRoutingLayer(conn_layer);
 
   bool vertical = pin_pos1.getX() == pin_pos2.getX();
+  bool horizontal = pin_pos1.getY() == pin_pos2.getY();
   const auto dir = tech_conn_layer->getDirection();
-  if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
-      || (!vertical && dir != odb::dbTechLayerDir::HORIZONTAL)) {
-    conn_layer--;
+  if (vertical || horizontal) {
+    auto [x1, x2] = std::minmax({pin_pos1.getX(), pin_pos2.getX()});
+    auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
+    if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
+        || (horizontal && dir != odb::dbTechLayerDir::HORIZONTAL)) {
+      conn_layer--;
+    }
+    connection.emplace_back(x1, y1, conn_layer, x2, y2, conn_layer);
+  } else {
+    int layer_hor
+        = dir == odb::dbTechLayerDir::HORIZONTAL ? conn_layer : conn_layer - 1;
+    int layer_ver
+        = dir == odb::dbTechLayerDir::VERTICAL ? conn_layer : conn_layer - 1;
+    int x1 = pin_pos1.getX();
+    int y1 = pin_pos1.getY();
+    int x2 = pin_pos2.getX();
+    int y2 = pin_pos2.getY();
+    connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
+    connection.emplace_back(x2, y1, conn_layer - 1, x2, y1, conn_layer);
+    connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
   }
-  connection.push_back(GSegment(x1, y1, conn_layer, x2, y2, conn_layer));
 
   odb::Point via_pos1 = pin_pos1;
   odb::Point via_pos2 = pin_pos2;
@@ -3884,12 +3897,12 @@ void GlobalRouter::insertViasForConnection(std::vector<GSegment>& connection,
 {
   auto [min_l, max_l] = std::minmax(layer, conn_layer);
   for (int l = min_l; l < max_l; l++) {
-    connection.push_back(GSegment(via_pos.getX(),
-                                  via_pos.getY(),
-                                  l,
-                                  via_pos.getX(),
-                                  via_pos.getY(),
-                                  l + 1));
+    connection.emplace_back(via_pos.getX(),
+                            via_pos.getY(),
+                            l,
+                            via_pos.getX(),
+                            via_pos.getY(),
+                            l + 1);
   }
 }
 
@@ -4072,10 +4085,12 @@ void GlobalRouter::reportCongestion()
   logger_->report("");
   logger_->info(GRT, 96, "Final congestion report:");
   logger_->report(
-      "Layer         Resource        Demand        Usage (%)    Max H / Max V "
+      "Layer         Resource        Demand        Usage (%)    Max H / Max "
+      "V "
       "/ Total Overflow");
   logger_->report(
-      "------------------------------------------------------------------------"
+      "----------------------------------------------------------------------"
+      "--"
       "---------------");
 
   for (size_t l = 0; l < resources.size(); l++) {
@@ -4109,7 +4124,8 @@ void GlobalRouter::reportCongestion()
                           ? 0
                           : (float) total_demand / (float) total_resource * 100;
   logger_->report(
-      "------------------------------------------------------------------------"
+      "----------------------------------------------------------------------"
+      "--"
       "---------------");
   logger_->report(
       "Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
@@ -4450,8 +4466,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         congestion_nets.insert(it->getDbNet());
       }
       while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
-        // The nets that cross the congestion area are obtained and added to the
-        // set
+        // The nets that cross the congestion area are obtained and added to
+        // the set
         fastroute_->getCongestionNets(congestion_nets);
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
