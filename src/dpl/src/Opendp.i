@@ -98,9 +98,10 @@ void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        bool disallow_one_site_gaps,
-                       const char* report_file_name){
+                       const char* report_file_name,
+                       bool abacusRun=false){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), disallow_one_site_gaps);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), disallow_one_site_gaps, abacusRun);
 }
 
 void
@@ -164,6 +165,12 @@ optimize_mirroring_cmd()
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->optimizeMirroring();
+}
+
+void runAbacus()
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->runAbacus();
 }
 
 void
