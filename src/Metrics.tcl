@@ -479,18 +479,13 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
   report_puts "\n=========================================================================="
   report_puts "$when report_power"
   report_puts "--------------------------------------------------------------------------"
-  if {[info exists sta::CORNERS]} {
-    foreach corner $sta::CORNERS {
-      report_puts "Corner: $corner"
-      report_power -corner $corner >> $filename
-      report_power_metric -corner $corner >> $filename
-    }
-    unset corner
-  } else {
-    report_power >> $filename
-    report_power_metric >> $filename
+  
+  foreach corner $sta::CORNERS {
+    report_puts "Corner: $corner"
+    report_power -corner $corner >> $filename
+    report_power_metric -corner $corner >> $filename
   }
-
+  unset corner
   # TODO these only work to stdout, whereas we want to append to the $filename
   puts "\n=========================================================================="
   puts "$when report_design_area"
