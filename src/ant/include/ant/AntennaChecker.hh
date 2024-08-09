@@ -70,6 +70,9 @@ struct NodeInfo
   double diff_CAR;
   double diff_CSR;
 
+  double ratio_PAR;
+  double ratio_PSR;
+
   std::vector<odb::dbITerm*> iterms;
 
   NodeInfo& operator+=(const NodeInfo& a)
@@ -98,6 +101,9 @@ struct NodeInfo
     CSR = 0.0;
     diff_CAR = 0.0;
     diff_CSR = 0.0;
+
+    ratio_PAR = 1.0;
+    ratio_PSR = 1.0;
   }
 };
 
@@ -123,6 +129,7 @@ struct Violation
   int routing_level;
   std::vector<odb::dbITerm*> gates;
   int diode_count_per_gate;
+  double ratio;
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
@@ -186,7 +193,7 @@ class AntennaChecker
   void calculateCAR(GateToLayerToNodeInfo& gate_info);
   bool checkRatioViolations(odb::dbNet* db_net,
                             odb::dbTechLayer* layer,
-                            const NodeInfo& node_info,
+                            NodeInfo& node_info,
                             float ratio_margin,
                             bool verbose,
                             bool report);
@@ -204,13 +211,13 @@ class AntennaChecker
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   bool checkPAR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
-                const NodeInfo& info,
+                NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
                 bool report);
   bool checkPSR(odb::dbNet* db_net,
                 odb::dbTechLayer* tech_layer,
-                const NodeInfo& info,
+                NodeInfo& info,
                 float ratio_margin,
                 bool verbose,
                 bool report);
