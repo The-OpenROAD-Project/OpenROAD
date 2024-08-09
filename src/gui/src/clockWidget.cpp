@@ -1176,12 +1176,13 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
-        if (insDelays.hasValue()) {
-          ins_delay
-              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-                / 2.0;
+        const float rise = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::rise(), sta::MinMax::max());
+        const float fall = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+        if (rise != 0 || fall != 0) {
+          ins_delay = (rise + fall) / 2.0;
         }
       }
     }
