@@ -9,5 +9,6 @@ def swap_prefix(file, old, new):
         f.write(lines)
 
 
-swap_prefix("../README.md", "(../", "(docs/")
-swap_prefix("../README.md", "```{mermaid}\n:align: center\n", "```mermaid")
+for filename in ["../README.md", "../README2.md"]:
+    swap_prefix(filename, "(../", "(docs/")
+    swap_prefix(filename, "```{mermaid}\n:align: center\n", "```mermaid")
