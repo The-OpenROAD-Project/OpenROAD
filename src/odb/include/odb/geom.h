@@ -242,6 +242,7 @@ class Rect
   Point ul() const;
   Point ur() const;
   Point lr() const;
+  Point center() const;
 
   // Returns the low coordinate in the orientation
   int low(Orientation2D orient) const;
@@ -526,6 +527,11 @@ inline Point Rect::ur() const
 inline Point Rect::lr() const
 {
   return Point(xhi_, ylo_);
+}
+
+inline Point Rect::center() const
+{
+  return Point(xCenter(), yCenter());
 }
 
 inline void Rect::set(Orientation2D orient, Direction1D dir, int value)
