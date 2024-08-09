@@ -383,6 +383,14 @@ remove_buffers_cmd(InstanceSeq insts)
 }
 
 void
+downsize_all_cells()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->downsizeAllCells();
+}
+
+void
 balance_row_usage_cmd()
 {
   ensureLinked();
@@ -765,6 +773,14 @@ set_worst_slack_nets_percent(float percent)
 {
   Resizer *resizer = getResizer();
   resizer->setWorstSlackNetsPercent(percent);
+}
+
+void
+synthesize_buffers_cmd(int max_fanout, float gain, float slew)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->synthesizeBuffers(max_fanout, gain, slew);
 }
 
 } // namespace
