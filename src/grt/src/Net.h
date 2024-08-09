@@ -63,6 +63,8 @@ class Net
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
   void setSkipIncremental(bool skip) { skip_incremental_ = skip; }
   bool skipIncremental() const { return skip_incremental_; }
+  void setDirtyNet(bool is_dirty_net) { is_dirty_net_ = is_dirty_net; }
+  bool isDirtyNet() const { return is_dirty_net_; }
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
@@ -72,6 +74,7 @@ class Net
   float slack_;
   bool has_wires_;
   bool skip_incremental_;
+  bool is_dirty_net_;
 };
 
 }  // namespace grt

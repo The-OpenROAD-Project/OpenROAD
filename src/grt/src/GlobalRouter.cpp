@@ -604,7 +604,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       if (!netIsCovered(db_net, pins_not_covered)) {
         logger_->error(GRT,
                        266,
-                       "Pin(s) not covered in net {}",
+                       "Pin(s) {}not covered in net {}",
                        pins_not_covered,
                        net->getName());
       }
@@ -3780,12 +3780,17 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
-  GRoute& net1_route = routes_[db_net1];
-  GRoute& net2_route = routes_[db_net2];
-  net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-  connectRouting(net1_route, db_net1, db_net2);
-  db_net_map_[db_net1]->setSkipIncremental(true);
-  db_net_map_[db_net2]->setSkipIncremental(true);
+  Net* net1 = db_net_map_[db_net1];
+  Net* net2 = db_net_map_[db_net2];
+  // Do not merge the routing if the survivor net is already dirty
+  if (!net1->isDirtyNet()) {
+    GRoute& net1_route = routes_[db_net1];
+    GRoute& net2_route = routes_[db_net2];
+    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    connectRouting(net1_route, db_net1, db_net2);
+    net1->setSkipIncremental(true);
+    net2->setSkipIncremental(true);
+  }
 }
 
 void GlobalRouter::connectRouting(GRoute& route,
@@ -4420,6 +4425,7 @@ AbstractGrouteRenderer* GlobalRouter::getRenderer()
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
+  db_net_map_[net]->setDirtyNet(true);
   dirty_nets_.insert(net);
 }
 
