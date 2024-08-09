@@ -135,6 +135,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class TreeAmending;
 
 class NetHash
 {
@@ -337,6 +338,7 @@ class Resizer : public dbStaState
       double max_wire_length,  // max_wire_length zero for none (meters)
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
+      bool amend_tree,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
@@ -654,6 +656,7 @@ class Resizer : public dbStaState
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  TreeAmending* tree_amending_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -747,6 +750,7 @@ class Resizer : public dbStaState
   friend class RepairSetup;
   friend class RepairHold;
   friend class SteinerTree;
+  friend class TreeAmending;
 };
 
 }  // namespace rsz

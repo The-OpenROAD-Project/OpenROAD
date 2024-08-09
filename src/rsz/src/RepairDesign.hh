@@ -88,10 +88,12 @@ class RepairDesign : dbStaState
   void repairDesign(double max_wire_length,
                     double slew_margin,
                     double cap_margin,
+                    bool amend_tree,
                     bool verbose);
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
+                    bool amend_tree,
                     bool verbose,
                     int& repaired_net_count,
                     int& slew_violations,
@@ -116,6 +118,7 @@ class RepairDesign : dbStaState
                  bool check_fanout,
                  int max_length,  // dbu
                  bool resize_drvr,
+                 bool amend_tree,
                  int& repaired_net_count,
                  int& slew_violations,
                  int& cap_violations,

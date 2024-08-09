@@ -433,12 +433,13 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
+                                      [-amend_tree] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin} \
-    flags {-verbose}
+    flags {-verbose -amend_tree}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -448,8 +449,9 @@ proc repair_design { args } {
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
+  set amend_tree [info exists flags(-amend_tree)]
   set verbose [info exists flags(-verbose)]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $verbose
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $amend_tree $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

@@ -152,6 +152,8 @@ class BufferedNet
   // repairNet
   int maxLoadWireLength() const;
 
+  int wireLength() const;
+
   // Rebuffer
   Required required(const StaState* sta) const;
   const PathRef& requiredPath() const { return required_path_; }
@@ -187,6 +189,21 @@ class BufferedNet
   PathRef required_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
+
+public:
+  // tree amending annotations
+  BufferedNetPtr pairing_candidate_;
+  std::vector<BufferedNetPtr> pending_candidates_;
+
+  BufferedNet *place_ = NULL;
+
+  BufferedNet *upstream_ = NULL;
+  void setUpstream(BufferedNet *upstream) {
+    upstream_ = upstream;
+  }
+  BufferedNet *upstream() {
+    return upstream_;
+  }
 };
 
 }  // namespace rsz
