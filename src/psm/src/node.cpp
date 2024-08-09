@@ -120,7 +120,7 @@ std::string Node::getTypeName() const
 ///////////////////
 
 TerminalNode::TerminalNode(const odb::Rect& shape, odb::dbTechLayer* layer)
-    : Node(odb::Point(shape.xCenter(), shape.yCenter()), layer), shape_(shape)
+    : Node(odb::Point(shape.center()), layer), shape_(shape)
 {
 }
 

@@ -139,7 +139,15 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 // the logging, so, for reports, we use a buffer.
 void ScriptWidget::flushReportBufferToOutput()
 {
-  std::lock_guard guard(reporting_);
+  std::unique_lock guard(reporting_, std::try_to_lock);
+  if (!guard.owns_lock()) {
+    // failed to aquire lock
+    // return and this will be called at some point later
+    QTimer::singleShot(report_display_interval,
+                       this,
+                       &ScriptWidget::flushReportBufferToOutput);
+    return;
+  }
   if (report_buffer_.isEmpty()) {
     return;
   }
@@ -432,6 +440,7 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
                                     ? widget_->error_msg_
                                     : widget_->buffer_msg_;
 
+      widget_->flushReportBufferToOutput();
       widget_->addLogToOutput(formatted_msg, msg_color);
     }
 

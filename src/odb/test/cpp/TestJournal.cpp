@@ -84,6 +84,33 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy, F_DEFAULT)
   BOOST_TEST(net->getNonDefaultRule() == ndr);
 }
 
+BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy_guides, F_DEFAULT)
+{
+  // Ensure guides are restored on undo of dbNet destroy
+  auto net = dbNet::create(block, "n");
+  auto l1 = db->getTech()->findLayer("L1");
+  const Rect box{0, 0, 100, 100};
+  dbGuide::create(net, l1, box);
+
+  in_eco([&]() { dbNet::destroy(net); });
+
+  BOOST_TEST(net->getGuides().size() == 1);
+  const auto guide = *net->getGuides().begin();
+  BOOST_TEST(guide->getLayer() == l1);
+  BOOST_TEST(guide->getBox() == box);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_guide_create, F_DEFAULT)
+{
+  auto net = dbNet::create(block, "n");
+  auto l1 = db->getTech()->findLayer("L1");
+  const Rect box{0, 0, 100, 100};
+
+  in_eco([&]() { dbGuide::create(net, l1, box); });
+
+  BOOST_TEST(net->getGuides().size() == 0);
+}
+
 BOOST_FIXTURE_TEST_CASE(test_undo_inst_swap, F_DEFAULT)
 {
   auto inst = dbInst::create(block, and2, "a");

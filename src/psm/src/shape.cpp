@@ -161,7 +161,7 @@ std::set<Node*> Shape::cleanupNodes(
   const Node::NodeSet sorted_nodes = getNodes(layer_nodes);
   Node::NodeSet center_nodes;
   Node::NodeSet non_center_nodes;
-  const odb::Point shape_center(shape_.xCenter(), shape_.yCenter());
+  const odb::Point shape_center = shape_.center();
   for (auto* node : sorted_nodes) {
     const auto& pt = node->getPoint();
     if (pt.x() == shape_center.x() || pt.y() == shape_center.y()) {
