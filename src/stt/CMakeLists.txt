@@ -39,6 +39,7 @@ find_package(LEMON NAMES LEMON lemon REQUIRED)
 
 set(FLUTE_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/flt)
 set(PDR_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/pdr)
+set(FOARS_HOME ${PROJECT_SOURCE_DIR}/src/stt/src/foars)
 
 set(POWV9_DAT ${FLUTE_HOME}/etc/POWV9.dat)
 set(POST9_DAT ${FLUTE_HOME}/etc/POST9.dat)
@@ -67,6 +68,7 @@ add_library(stt_lib
     ${POWV9_CPP}
     ${POST9_CPP}
     ${PDR_HOME}/src/pd.cpp
+    ${FOARS_HOME}/foars.cpp
 )
 
 target_sources(stt

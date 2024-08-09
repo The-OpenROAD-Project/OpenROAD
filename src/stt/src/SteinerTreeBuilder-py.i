@@ -38,6 +38,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/pd.h"
 #include "stt/flute.h"
+#include "stt/foars.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
@@ -56,3 +57,4 @@ namespace std {
 %include "stt/SteinerTreeBuilder.h"
 %include "stt/flute.h"
 %include "stt/pd.h"
+%include "stt/foars.h"
