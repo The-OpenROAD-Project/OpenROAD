@@ -1,8 +1,9 @@
- /////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
+// Copyright (c) 2024, Antmicro
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,85 +34,69 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%include <std_string.i>
-%include <std_vector.i>
-%include <stdint.i>
+#include <algorithm>
+#include <string>
+#include <utility>
 
-%{
-
+#include "routeBase.h"
+#include "grt/GlobalRouter.h"
 #include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Timing.h"
+#include "placerBase.h"
+#include "utl/Logger.h"
 
-using odb::dbDatabase;
-using odb::dbBlock;
-using odb::dbTech;
+using std::string;
+using std::vector;
 
-// Defined by OpenRoad.i inlines
-const char *
-openroad_version();
+namespace gpl2 {
 
-const char *
-openroad_git_describe();
+/////////////////////////////////////////////
+// RouteBaseVars
 
-const bool
-openroad_dg_compiled();
-
-const bool 
-openroad_python_compiled();
-
-const bool
-openroad_gui_compiled();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%}
-
-%template(Corners) std::vector<sta::Corner*>;
-%template(MTerms) std::vector<odb::dbMTerm*>;
-%template(Masters) std::vector<odb::dbMaster*>;
-
-%include "Exception-py.i"
-%include "ord/Tech.h"
-%include "ord/Design.h"
-%include "ord/Timing.h"
-
-%newobject Design::getFloorplan();
-
-const char *
-openroad_version();
-
-const char *
-openroad_git_describe();
-
-odb::dbDatabase *
-get_db();
-
-odb::dbTech *
-get_db_tech();
-
-bool
-db_has_tech();
-
-odb::dbBlock *
-get_db_block();
-
-%inline %{
-
-namespace ord {
-  void set_thread_count(int threads);
-  int thread_count();
+RouteBaseVars::RouteBaseVars()
+{
+  reset();
 }
 
-%}
+void RouteBaseVars::reset()
+{
+  inflationRatioCoef = 2.5;
+  maxInflationRatio = 2.5;
+  maxDensity = 0.90;
+  targetRC = 1.25;
+  ignoreEdgeRatio = 0.8;
+  minInflationRatio = 1.01;
+  rcK1 = rcK2 = 1.0;
+  rcK3 = rcK4 = 0.0;
+  maxBloatIter = 1;
+  maxInflationIter = 4;
+}
+
+/////////////////////////////////////////////
+// RouteBase
+
+RouteBase::RouteBase()
+    : rbVars_(), db_(nullptr), grouter_(nullptr), nbc_(nullptr), log_(nullptr)
+{
+}
+
+RouteBase::RouteBase(RouteBaseVars rbVars,
+                           odb::dbDatabase* db,
+                           grt::GlobalRouter* grouter,
+                           std::shared_ptr<PlacerBaseCommon> nbc,
+                           std::vector<std::shared_ptr<PlacerBase>> nbVec,
+                           utl::Logger* log)
+    : RouteBase()
+{
+  rbVars_ = rbVars;
+  db_ = db;
+  grouter_ = grouter;
+  nbc_ = std::move(nbc);
+  log_ = log;
+  nbVec_ = std::move(nbVec);
+}
+
+RouteBase::~RouteBase()
+{
+}
+
+}  // namespace gpl2

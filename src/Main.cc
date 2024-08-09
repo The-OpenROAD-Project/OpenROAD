@@ -71,6 +71,10 @@
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
+#ifdef ENABLE_KOKKOS
+#include <Kokkos_Core.hpp>
+#endif
+
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::is_regular_file;
@@ -309,6 +313,9 @@ int main(int argc, char* argv[])
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
+#ifdef ENABLE_KOKKOS
+  Kokkos::finalize();
+#endif
   return 0;
 }
 
@@ -380,6 +387,9 @@ static int tclAppInit(int& argc,
     }
 #endif
 
+#ifdef ENABLE_KOKKOS
+    Kokkos::initialize();
+#endif
     ord::initOpenRoad(interp);
 
     if (!findCmdLineFlag(argc, argv, "-no_splash")) {
@@ -440,6 +450,9 @@ static int tclAppInit(int& argc,
             int result = sourceTclFile(cmd_file, false, false, interp);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+#ifdef ENABLE_KOKKOS
+              Kokkos::finalize();
+#endif
               exit(exit_code);
             }
           } else {
