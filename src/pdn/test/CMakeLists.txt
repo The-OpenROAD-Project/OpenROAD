@@ -93,6 +93,7 @@ set(TEST_NAMES
     repair_vias
     sroute_test
     bpin_removal
+    stop_at_endcaps
 )
 
 foreach(TEST_NAME IN LISTS TEST_NAMES)
