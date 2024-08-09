@@ -144,6 +144,23 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
     return;
   }
 
+  Vertex* worst_vertex = violating_ends.begin()->first;
+  const PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
+  const Slack worst_path_slack = worst_path.slack(sta_);
+  const auto worst_path_clock_period = worst_path.clock(sta_)->period();
+
+  const double hopeless_limit = 4.0;
+
+  if (std::abs(worst_path_slack / worst_path_clock_period) > hopeless_limit) {
+    logger_->error(RSZ,
+                   99,
+                   "The worst slack {} is more than {} times the clock period "
+                   "{}.  This is too large to repair.",
+                   delayAsString(worst_path_slack, sta_, 3),
+                   hopeless_limit,
+                   delayAsString(worst_path_clock_period, sta_, 3));
+  }
+
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   float initial_tns = sta_->totalNegativeSlack(max_);
