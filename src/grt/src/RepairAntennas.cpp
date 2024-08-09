@@ -811,4 +811,106 @@ double RepairAntennas::diffArea(odb::dbMTerm* mterm)
   return max_diff_area;
 }
 
+//////////////////////////////////
+void divideSegment(GSegment* seg, GRoute& route, odb::dbTechLayer* violation_layer, const int tile_size, const double ratio)
+{
+  int length;
+  bool is_horizontal = violation_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+  if (is_horizontal) {
+    length = std::abs(seg->init_x - seg->final_x);
+  } else {
+    length = std::abs(seg->init_y - seg->final_y);
+  }
+  const int n_tiles = length/tile_size;
+  const int req_tiles = (n_tiles/ratio) - 1; // sure lowest
+  const int req_size = req_tiles * tile_size;
+  const int bridge_size = 2 * tile_size;
+  const int layer_level = violation_layer->getRoutingLevel();
+  std::cerr << n_tiles <<  " " << req_tiles << " " << req_size << "\n";
+  if (is_horizontal) {
+    // create vias
+    std::cerr << "Last size: " << route.size() << " ";
+    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level, seg->init_x + req_size, seg->init_y, layer_level + 1));
+    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level + 1, seg->init_x + req_size, seg->init_y, layer_level + 2));
+    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 1));
+    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 1, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 2));
+    std::cerr << "New size: " << route.size() << std::endl;
+    // divide segment
+    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level + 2, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 2));
+    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level, seg->final_x, seg->init_y, layer_level));
+    seg->final_x = seg->init_x + req_size;
+  } else {
+    // create vias
+    std::cerr << "Last size: " << route.size() << " ";
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level, seg->init_x, seg->init_y + req_size, layer_level + 1));
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level + 1, seg->init_x, seg->init_y + req_size, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 1));
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 1, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 2));
+    std::cerr << "New size: " << route.size() << std::endl;
+    // divide segment
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level + 2, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level, seg->init_x, seg->final_y, layer_level));
+    seg->final_y = seg->init_y + req_size;
+  }
+}
+
+void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
+{
+  odb::dbTech* tech = db_->getTech();
+  for (auto const& net_violations : antenna_violations_) {
+    odb::dbNet* db_net = net_violations.first;
+    auto violations = net_violations.second;
+    std::map<int, double> routing_layer_with_violations;
+    std::map<int, std::vector<GSegment*>> segment_with_violations;
+    std::cerr << "Net " << db_net->getConstName() << "\n";
+
+    // Iterate found layers with violations
+    for (ant::Violation& violation : violations) {
+      odb::dbTechLayer* violation_layer
+                = tech->findRoutingLayer(violation.routing_level);
+      if (violation_layer->getUpperLayer()->getUpperLayer()) {
+        routing_layer_with_violations[violation.routing_level] = violation.ratio; 
+        std::cerr << "Layer " << violation_layer->getConstName() << " " << violation.ratio << "\n";
+      }
+    }
+
+    // Iterate route of net
+    GRoute& route = routing[db_net];
+    for (GSegment & seg : route) {
+      const int l1 = seg.init_layer;
+      const int l2 = seg.final_layer;
+      //if (l1 != l2) {std::cerr << seg.init_x << " " << seg.init_y << " " << seg.final_x << " " << seg.final_y << std::endl;}
+      if (l1 == l2 && l1 != 0 && routing_layer_with_violations.find(l1) != routing_layer_with_violations.end()) {
+        std::cerr << "Segment found\n";
+	segment_with_violations[l1].push_back(&seg);
+      }
+    }
+    // Iterate segments of layer with violations
+    for (auto & it: segment_with_violations) {
+      odb::dbTechLayer* violation_layer
+              = tech->findRoutingLayer(it.first);
+      if (violation_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        std::cerr << "Horizontal\n";
+        sort(it.second.begin(),
+            it.second.end(),
+            [](const GSegment* seg1, const GSegment* seg2) {
+              return std::abs(seg1->init_x - seg1->final_x) > std::abs(seg2->init_x - seg2->final_x);
+            });
+        // test only with longest segment
+        divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
+      }
+      else {
+        std::cerr << "Vertical\n";
+        sort(it.second.begin(),
+	     it.second.end(),
+             [](const GSegment* seg1, const GSegment* seg2) {
+               return std::abs(seg1->init_y - seg1->final_y) > std::abs(seg2->init_y - seg2->final_y);
+             });
+        // test only with longest segment
+        divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
+      } 
+    }
+  }
+}
+
 }  // namespace grt

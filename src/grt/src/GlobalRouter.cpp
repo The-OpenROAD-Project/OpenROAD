@@ -359,7 +359,8 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           ratio_margin,
                                                           num_threads);
     if (violations) {
-      IncrementalGRoute incr_groute(this, block_);
+      repair_antennas_->jumperInsertion(routes_, grid_->getTileSize());
+      /*IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
@@ -375,7 +376,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
-      }
+      }*/
     }
     repair_antennas_->clearViolations();
     itr++;

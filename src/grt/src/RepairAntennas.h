@@ -100,6 +100,7 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  void jumperInsertion(NetRouteMap& routing, const int tile_size);
   int illegalDiodePlacementCount() const
   {
     return illegal_diode_placement_count_;
