@@ -942,6 +942,20 @@ int TritonRoute::main()
     }
   }
   initDesign();
+  bool has_routable_nets = false;
+  for (auto net : db_->getChip()->getBlock()->getNets()) {
+    if (net->getITerms().size() + net->getBTerms().size() > 1) {
+      has_routable_nets = true;
+      break;
+    }
+  }
+  if (!has_routable_nets) {
+    logger_->warn(DRT,
+                  40,
+                  "Design does not have any routable net "
+                  "(with at least 2 terms)");
+    return 0;
+  }
   if (DO_PA) {
     FlexPA pa(getDesign(), logger_, dist_);
     pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
