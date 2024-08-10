@@ -164,19 +164,6 @@ struct ParasiticsCapacitance
   double v_cap;
 };
 
-struct BufferData
-{
-  // Need to use strings because object pointers may not be persistent after
-  // buffer removal
-  // (driver instance name, port name)
-  std::pair<std::string, std::string> driver_pin;
-  // vector of (load instance name, port name)
-  std::vector<std::pair<std::string, std::string>> load_pins;
-  LibertyCell* lib_cell;
-  Instance* parent;
-  Point location;
-};
-
 class Resizer : public dbStaState
 {
  public:
@@ -259,7 +246,7 @@ class Resizer : public dbStaState
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
-  void removeBuffers(InstanceSeq insts, bool recordJournal = false);
+  void removeBuffers(InstanceSeq insts);
   void bufferInputs();
   void bufferOutputs();
 
@@ -327,8 +314,6 @@ class Resizer : public dbStaState
                        Slew& slew);
   void setDebugPin(const Pin* pin);
   void setWorstSlackNetsPercent(float);
-  void annotateInputSlews(Instance* inst, const DcalcAnalysisPt* dcalc_ap);
-  void resetInputSlews();
 
   ////////////////////////////////////////////////////////////////
 
@@ -399,10 +384,6 @@ class Resizer : public dbStaState
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
-
-  ////////////////////////////////////////////////////////////////
-  void journalBeginTest();
-  void journalRestoreTest();
 
  protected:
   void init();
@@ -582,9 +563,7 @@ class Resizer : public dbStaState
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer,
-                    bool honorDontTouchFixed = true,
-                    bool recordJournal = false);
+  bool removeBuffer(Instance* buffer, bool honorDontTouchFixed = true);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -625,8 +604,7 @@ class Resizer : public dbStaState
   void journalEnd();
   void journalRestore(int& resize_count,
                       int& inserted_buffer_count,
-                      int& cloned_gate_count,
-                      int& removed_buffer_count);
+                      int& cloned_gate_count);
   void journalUndoGateCloning(int& cloned_gate_count);
   void journalSwapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
   void journalInstReplaceCellBefore(Instance* inst);
@@ -636,8 +614,6 @@ class Resizer : public dbStaState
                                  Instance* original_inst,
                                  Instance* parent,
                                  const Point& loc);
-  void journalRemoveBuffer(Instance* buffer);
-  void journalRestoreBuffers(int& removed_buffer_count);
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet& ends);
@@ -703,7 +679,6 @@ class Resizer : public dbStaState
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
-  int removed_buffer_count_ = 0;
   bool buffer_moved_into_core_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
@@ -721,7 +696,6 @@ class Resizer : public dbStaState
   Map<Instance*, LibertyPortTuple> swapped_pins_;
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
-  std::unordered_map<std::string, BufferData> removed_buffer_map_;
 
   // Need to track all changes for buffer removal
   InstanceSet all_sized_inst_set_;

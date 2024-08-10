@@ -201,24 +201,14 @@ TEST_F(BufRemTest, SlackImproves)
   float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
 
-  // Remove one buffer 'b2' and 'b3' from the buffer chain
+  // Remove one buffer 'b3' from the buffer chain
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
-
-  resizer_->journalBeginTest();
-
+  odb::dbInst* inst = block->findInst("b2");
+  sta::Instance* sta_inst = db_network_->dbToSta(inst);
   auto insts = std::make_unique<sta::InstanceSeq>();
-  odb::dbInst* inst1 = block->findInst("b2");
-  sta::Instance* sta_inst1 = db_network_->dbToSta(inst1);
-  insts->emplace_back(sta_inst1);
-
-  odb::dbInst* inst2 = block->findInst("b3");
-  sta::Instance* sta_inst2 = db_network_->dbToSta(inst2);
-  insts->emplace_back(sta_inst2);
-
-  resizer_->removeBuffers(*insts, /* recordJournal */ true);
-
-  resizer_->journalRestoreTest();
+  insts->emplace_back(sta_inst);
+  resizer_->removeBuffers(*insts);
 
   float newArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
