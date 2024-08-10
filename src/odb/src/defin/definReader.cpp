@@ -2138,6 +2138,9 @@ bool definReader::createBlock(const char* file)
   }
 
   defrClear();
+  dbModule* top_module = _block->getTopModule();
+  top_module->getChildren().reverse();
+  top_module->getInsts().reverse();
 
   return true;
   // 1220 return errors() == 0;
