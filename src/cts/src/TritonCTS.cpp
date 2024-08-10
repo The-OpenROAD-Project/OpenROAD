@@ -1209,7 +1209,6 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   numClkNets_ = 0;
   numFixedNets_ = 0;
   ClockSubNet* rootSubNet = nullptr;
-  std::set<ClockInst*> removedSinks;
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     bool outputPinFound = true;
     bool inputPinFound = true;
@@ -1273,7 +1272,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
       ++numFixedNets_;
       --numClkNets_;
       odb::dbInst::destroy(driver);
-      removedSinks.insert(subNet.getDriver());
+      removedSinks_.insert(subNet.getDriver());
       checkUpstreamConnections(inputNet);
     }
   });
@@ -1287,7 +1286,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   int maxPath = std::numeric_limits<int>::min();
   rootSubNet->forEachSink([&](ClockInst* inst) {
     // skip removed sinks
-    if (removedSinks.find(inst) == removedSinks.end()) {
+    if (removedSinks_.find(inst) == removedSinks_.end()) {
       if (inst->isClockBuffer()) {
         std::pair<int, int> resultsForBranch
             = branchBufferCount(inst, 1, clockNet);
@@ -1299,7 +1298,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
         }
       }
     } else {
-      rootSubNet->removeSinks(removedSinks);
+      rootSubNet->removeSinks(removedSinks_);
     }
   });
 
@@ -1680,13 +1679,15 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
 
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     subNet.forEachSink([&](ClockInst* inst) {
-      if (inst->isClockBuffer()
-          && !sta::fuzzyEqual(inst->getOutputCap(),
-                              inst->getIdealOutputCap())) {
-        odb::dbInst* dummyInst
-            = insertDummyCell(clockNet, inst, dummyCandidates);
-        if (dummyInst != nullptr) {
-          dummies.insert(dummyInst);
+      if (removedSinks_.find(inst) == removedSinks_.end()) {
+        if (inst->isClockBuffer()
+            && !sta::fuzzyEqual(inst->getOutputCap(),
+                                inst->getIdealOutputCap())) {
+          odb::dbInst* dummyInst
+              = insertDummyCell(clockNet, inst, dummyCandidates);
+          if (dummyInst != nullptr) {
+            dummies.insert(dummyInst);
+          }
         }
       }
     });
@@ -1709,12 +1710,14 @@ bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
     driver2subnet_[driver] = &subNet;
     float sinkCapTotal = 0.0;
     subNet.forEachSink([&](ClockInst* inst) {
-      odb::dbITerm* inputPin = inst->isClockBuffer()
-                                   ? getFirstInput(inst->getDbInst())
-                                   : inst->getDbInputPin();
-      float cap = getInputPinCap(inputPin);
-      // TODO: include wire caps?
-      sinkCapTotal += cap;
+      if (removedSinks_.find(inst) == removedSinks_.end()) {
+        odb::dbITerm* inputPin = inst->isClockBuffer()
+                                     ? getFirstInput(inst->getDbInst())
+                                     : inst->getDbInputPin();
+        float cap = getInputPinCap(inputPin);
+        // TODO: include wire caps?
+        sinkCapTotal += cap;
+      }
     });
     driver->setOutputCap(sinkCapTotal);
   });
@@ -1724,22 +1727,26 @@ bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
     ClockInst* driver = subNet.getDriver();
     float maxCap = std::numeric_limits<float>::min();
     subNet.forEachSink([&](ClockInst* inst) {
-      if (inst->isClockBuffer() && inst->getOutputCap() > maxCap) {
-        maxCap = inst->getOutputCap();
+      if (removedSinks_.find(inst) == removedSinks_.end()) {
+        if (inst->isClockBuffer() && inst->getOutputCap() > maxCap) {
+          maxCap = inst->getOutputCap();
+        }
       }
     });
     subNet.forEachSink([&](ClockInst* inst) {
-      if (inst->isClockBuffer()) {
-        inst->setIdealOutputCap(maxCap);
-        float cap = inst->getOutputCap();
-        if (!sta::fuzzyEqual(cap, maxCap)) {
-          needAdjust = true;
-          // clang-format off
-          debugPrint(logger_, CTS, "dummy load", 1, "{} => {} "
-                     "cap:{:0.2e} idealCap:{:0.2e} delCap:{:0.2e}",
-                     driver->getName(), inst->getName(), cap, maxCap,
-                     maxCap-cap);
-          // clang-format on
+      if (removedSinks_.find(inst) == removedSinks_.end()) {
+        if (inst->isClockBuffer()) {
+          inst->setIdealOutputCap(maxCap);
+          float cap = inst->getOutputCap();
+          if (!sta::fuzzyEqual(cap, maxCap)) {
+            needAdjust = true;
+            // clang-format off
+            debugPrint(logger_, CTS, "dummy load", 1, "{} => {} "
+                       "cap:{:0.2e} idealCap:{:0.2e} delCap:{:0.2e}",
+                       driver->getName(), inst->getName(), cap, maxCap,
+                       maxCap-cap);
+            // clang-format on
+          }
         }
       }
     });
@@ -1924,7 +1931,10 @@ void TritonCTS::printClockNetwork(const Clock& clockNet) const
     ClockInst* driver = subNet.getDriver();
     logger_->report("{} has {} sinks", driver->getName(), subNet.getNumSinks());
     subNet.forEachSink([&](const ClockInst* inst) {
-      logger_->report("{} -> {}", driver->getName(), inst->getName());
+      if (removedSinks_.find(const_cast<ClockInst*>(inst))
+          == removedSinks_.end()) {
+        logger_->report("{} -> {}", driver->getName(), inst->getName());
+      }
     });
   });
 }
@@ -1957,26 +1967,30 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
   float arrival = 0.0;
   float ins_delay = 0.0;
   clock.forEachSink([&](const ClockInst& sink) {
-    odb::dbITerm* iterm = sink.getDbInputPin();
-    odb::dbInst* inst = iterm->getInst();
-    sta::Pin* pin = network_->dbToSta(iterm);
-    // ignore arrival fall (no inverters in current clock tree)
-    arrival
-        += openSta_->pinArrival(pin, sta::RiseFall::rise(), sta::MinMax::max());
-    // add insertion delay
-    ins_delay = 0.0;
-    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
-    odb::dbMTerm* mterm = iterm->getMTerm();
-    if (libCell && mterm) {
-      sta::LibertyPort* libPort
-          = libCell->findLibertyPort(mterm->getConstName());
-      if (libPort) {
-        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
-        if (insDelays.hasValue()) {
-          ins_delay
-              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-                / 2.0;
+    if (removedSinks_.find(const_cast<ClockInst*>(&sink))
+        == removedSinks_.end()) {
+      odb::dbITerm* iterm = sink.getDbInputPin();
+      odb::dbInst* inst = iterm->getInst();
+      sta::Pin* pin = network_->dbToSta(iterm);
+      // ignore arrival fall (no inverters in current clock tree)
+      arrival += openSta_->pinArrival(
+          pin, sta::RiseFall::rise(), sta::MinMax::max());
+      // add insertion delay
+      ins_delay = 0.0;
+      sta::LibertyCell* libCell
+          = network_->libertyCell(network_->dbToSta(inst));
+      odb::dbMTerm* mterm = iterm->getMTerm();
+      if (libCell && mterm) {
+        sta::LibertyPort* libPort
+            = libCell->findLibertyPort(mterm->getConstName());
+        if (libPort) {
+          sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
+          if (insDelays.hasValue()) {
+            ins_delay
+                = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+                   + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+                  / 2.0;
+          }
         }
       }
     }
