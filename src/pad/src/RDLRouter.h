@@ -44,6 +44,7 @@
 
 #include "gui/gui.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace odb {
 class dbBlock;
@@ -129,15 +130,6 @@ class RDLRouter
 
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
 
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
-  using Box = boost::geometry::model::box<Point>;
-  using ObsValue = std::pair<Box, odb::dbNet*>;
-  using ObsTree
-      = boost::geometry::index::rtree<ObsValue,
-                                      boost::geometry::index::quadratic<16>>;
-
   using GridGraph
       = boost::adjacency_list<boost::listS,
                               boost::vecS,
@@ -149,6 +141,11 @@ class RDLRouter
       = boost::property_map<GridGraph, boost::edge_weight_t>::type;
   using grid_vertex = GridGraph::vertex_descriptor;
   using grid_edge = GridGraph::edge_descriptor;
+
+  using ObsValue = std::pair<odb::Rect, odb::dbNet*>;
+  using ObsTree
+      = boost::geometry::index::rtree<ObsValue,
+                                      boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
   const std::map<grid_vertex, odb::Point>& getVertexMap() const

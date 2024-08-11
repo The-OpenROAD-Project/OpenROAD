@@ -748,8 +748,7 @@ void RDLRouter::makeGraph()
 
 bool RDLRouter::isObstructed(const odb::Point& pt) const
 {
-  return obstructions_.qbegin(
-             boost::geometry::index::intersects(Point(pt.x(), pt.y())))
+  return obstructions_.qbegin(boost::geometry::index::intersects(pt))
          != obstructions_.qend();
 }
 
@@ -801,10 +800,10 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  using Line = boost::geometry::model::segment<Point>;
+  using Line = boost::geometry::model::segment<odb::Point>;
   if (check_obstructions
-      && obstructions_.qbegin(boost::geometry::index::intersects(Line(
-             Point(point0.x(), point0.y()), Point(point1.x(), point1.y()))))
+      && obstructions_.qbegin(
+             boost::geometry::index::intersects(Line(point0, point1)))
              != obstructions_.qend()) {
     debugPrint(logger_,
                utl::PAD,
@@ -1065,11 +1064,10 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   obstructions_.clear();
 
   const int bloat = getBloatFactor();
-  auto rect_to_poly = [bloat](const odb::Rect& rect) -> Box {
+  auto rect_to_poly = [bloat](const odb::Rect& rect) -> odb::Rect {
     odb::Rect bloated;
     rect.bloat(bloat, bloated);
-    return Box(Point(bloated.xMin(), bloated.yMin()),
-               Point(bloated.xMax(), bloated.yMax()));
+    return bloated;
   };
 
   // Get placed instanced obstructions
@@ -1377,11 +1375,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
     obs_color.a = 127;
     painter.setPenAndBrush(obs_color, true);
 
-    for (const auto& [box, ptr] : router_->getObstructions()) {
-      const odb::Rect rect(box.min_corner().x(),
-                           box.min_corner().y(),
-                           box.max_corner().x(),
-                           box.max_corner().y());
+    for (const auto& [rect, ptr] : router_->getObstructions()) {
       painter.drawRect(rect);
     }
   }
