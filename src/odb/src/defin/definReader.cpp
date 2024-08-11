@@ -2136,12 +2136,10 @@ bool definReader::createBlock(const char* file)
       _logger->warn(utl::ODB, 149, "DEF parser returns an error!");
     }
   }
-
   defrClear();
   dbModule* top_module = _block->getTopModule();
   top_module->getChildren().reverse();
   top_module->getInsts().reverse();
-
   return true;
   // 1220 return errors() == 0;
 }
