@@ -652,11 +652,14 @@ void RDLRouter::makeGraph()
 
   // filter grid points based on spacing requirements
   const int pitch = width_ + spacing_ - 1;
+  const int start = width_ / 2 + 1;
   x_grid_.clear();
   for (const auto& x : x_grid) {
     bool add = false;
     if (x_grid_.empty()) {
-      add = true;
+      if (x >= start) {
+        add = true;
+      }
     } else {
       if (*x_grid_.rbegin() + pitch < x) {
         add = true;
@@ -671,7 +674,9 @@ void RDLRouter::makeGraph()
   for (const auto& y : y_grid) {
     bool add = false;
     if (y_grid_.empty()) {
-      add = true;
+      if (y >= start) {
+        add = true;
+      }
     } else {
       if (*y_grid_.rbegin() + pitch < y) {
         add = true;
