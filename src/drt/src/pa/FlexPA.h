@@ -109,9 +109,9 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
-  uint16_t remote_port_;
+  uint16_t remote_port_ = -1;
   std::string shared_vol_;
-  int cloud_sz_;
+  int cloud_sz_ = -1;
 
   // helper functions
   frDesign* getDesign() const { return design_; }

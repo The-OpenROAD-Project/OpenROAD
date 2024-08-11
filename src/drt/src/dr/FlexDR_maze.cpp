@@ -1901,6 +1901,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     frBlockObject* obj = entry.block;
     bool doRoute = entry.doRoute;
     int numReroute = entry.numReroute;
+    frBlockObject* checking_obj = entry.checkingObj;
 
     rerouteQueue.pop();
     bool didRoute = false;
@@ -1911,12 +1912,11 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
-      if (ripupMode_ == RipUpMode::DRC && entry.checkingObj != nullptr
+      if (ripupMode_ == RipUpMode::DRC && checking_obj != nullptr
           && obj_gc_version.find(net->getFrNet()) != obj_gc_version.end()
-          && obj_gc_version.find(entry.checkingObj) != obj_gc_version.end()
+          && obj_gc_version.find(checking_obj) != obj_gc_version.end()
           && obj_gc_version[net->getFrNet()] == std::make_pair(gc_version, 0)
-          && obj_gc_version[entry.checkingObj]
-                 == std::make_pair(gc_version, 0)) {
+          && obj_gc_version[checking_obj] == std::make_pair(gc_version, 0)) {
         continue;
       }
       // init
@@ -2656,8 +2656,9 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
         auto via = getTech()->getLayer(startLayerNum + 1)->getDefaultViaDef();
-        if (gridGraph_.isSVia(startX, startY, currZ)) {
-          via = apSVia_.find(mi)->second->getAccessViaDef();
+        auto it = apSVia_.find(mi);
+        if (gridGraph_.isSVia(startX, startY, currZ) && it != apSVia_.end()) {
+          via = it->second->getAccessViaDef();
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
         if (net_ndr != nullptr
