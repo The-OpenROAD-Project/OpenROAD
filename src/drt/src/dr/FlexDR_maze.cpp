@@ -2660,9 +2660,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = apSVia_.find(mi)->second->getAccessViaDef();
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
-        if (net_ndr != nullptr
-            && net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1)) {
-          via = net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1);
+        if (net_ndr != nullptr && net_ndr->getPrefVia(startLayerNum / 2 - 1)) {
+          via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {

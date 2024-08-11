@@ -551,8 +551,8 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
     }
 
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
-        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
+      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
+        upVia = ndr->getPrefVia(lNum / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
@@ -681,8 +681,8 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
-        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
+      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
+        upVia = ndr->getPrefVia(lNum / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
