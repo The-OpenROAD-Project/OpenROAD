@@ -595,6 +595,91 @@ std::set<std::pair<odb::Point, odb::Point>> RDLRouter::commitRoute(
     }
   }
 
+  // remove intersecting edges
+  using Line = boost::geometry::model::segment<odb::Point>;
+  auto handle_rect_edge
+      = [this, &edges](const odb::Rect& rect, const grid_edge& edge) {
+          const odb::Point& lpt0 = vertex_point_map_[edge.m_source];
+          const odb::Point& lpt1 = vertex_point_map_[edge.m_target];
+          if (boost::geometry::intersects(rect, Line(lpt0, lpt1))) {
+            edges.insert(edge);
+          }
+        };
+
+  for (const auto& v : route) {
+    const odb::Point& pt = vertex_point_map_[v];
+
+    const int check_dist = width_ / 2 + spacing_ + 1;
+    const odb::Rect check_box = getPointObstruction(pt);
+
+    for (auto itr = vertex_grid_tree_.qbegin(boost::geometry::index::satisfies(
+             [this, check_dist, &pt](const GridValue& pt0) {
+               return boost::geometry::distance(pt, pt0.first) < 2 * check_dist;
+             }));
+         itr != vertex_grid_tree_.qend();
+         itr++) {
+      GridGraph::out_edge_iterator oit, oend;
+      std::tie(oit, oend) = boost::out_edges(itr->second, graph_);
+      for (; oit != oend; oit++) {
+        handle_rect_edge(check_box, *oit);
+      }
+      GridGraph::in_edge_iterator iit, iend;
+      std::tie(iit, iend) = boost::in_edges(itr->second, graph_);
+      for (; iit != iend; iit++) {
+        handle_rect_edge(check_box, *iit);
+      }
+    }
+  }
+
+  if (allow45_) {
+    // remove intersecting edges on 45 degrees
+
+    using BoostPolygon = boost::geometry::model::polygon<odb::Point>;
+    auto handle_poly_edge
+        = [this, &edges](const BoostPolygon& poly, const grid_edge& edge) {
+            const odb::Point& lpt0 = vertex_point_map_[edge.m_source];
+            const odb::Point& lpt1 = vertex_point_map_[edge.m_target];
+            if (boost::geometry::intersects(poly, Line(lpt0, lpt1))) {
+              edges.insert(edge);
+            }
+          };
+
+    for (std::size_t i = 2; i < route.size(); i++) {
+      const odb::Point& pt0 = vertex_point_map_[route[i - 1]];
+      const odb::Point& pt1 = vertex_point_map_[route[i]];
+
+      if (!is45DegreeEdge(pt0, pt1)) {
+        continue;
+      }
+
+      const int check_dist = width_ + spacing_;
+
+      const odb::Oct search_oct(pt0, pt1, 4 * check_dist);
+      const odb::Polygon check_poly = getEdgeObstruction(pt0, pt1);
+
+      BoostPolygon search;
+      boost::geometry::assign_points(search, search_oct.getPoints());
+      BoostPolygon check;
+      boost::geometry::assign_points(check, check_poly.getPoints());
+
+      for (auto itr
+           = vertex_grid_tree_.qbegin(boost::geometry::index::within(search));
+           itr != vertex_grid_tree_.qend();
+           itr++) {
+        GridGraph::out_edge_iterator oit, oend;
+        std::tie(oit, oend) = boost::out_edges(itr->second, graph_);
+        for (; oit != oend; oit++) {
+          handle_poly_edge(check, *oit);
+        }
+        GridGraph::in_edge_iterator iit, iend;
+        std::tie(iit, iend) = boost::in_edges(itr->second, graph_);
+        for (; iit != iend; iit++) {
+          handle_poly_edge(check, *iit);
+        }
+      }
+    }
+  }
+
   std::set<std::pair<odb::Point, odb::Point>> removed_edges;
   for (const auto& edge : edges) {
     removed_edges.emplace(vertex_point_map_[edge.m_source],
@@ -711,6 +796,8 @@ void RDLRouter::makeGraph()
       addGraphVertex(odb::Point(x, y));
     }
   }
+  vertex_grid_tree_
+      = GridTree(point_vertex_map_.begin(), point_vertex_map_.end());
   debugPrint(logger_,
              utl::PAD,
              "Router",

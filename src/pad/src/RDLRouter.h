@@ -150,21 +150,14 @@ class RDLRouter
 
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
 
-  using GridGraph
-      = boost::adjacency_list<boost::listS,
-                              boost::vecS,
-                              boost::undirectedS,
-                              boost::no_property,
-                              boost::property<boost::edge_weight_t, int64_t>>;
-
-  using GridWeightMap
-      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
-  using grid_vertex = GridGraph::vertex_descriptor;
-  using grid_edge = GridGraph::edge_descriptor;
-
   using ObsValue = std::pair<odb::Rect, odb::dbNet*>;
   using ObsTree
       = boost::geometry::index::rtree<ObsValue,
+                                      boost::geometry::index::quadratic<16>>;
+
+  using GridValue = std::pair<odb::Point, grid_vertex>;
+  using GridTree
+      = boost::geometry::index::rtree<GridValue,
                                       boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
@@ -246,6 +239,7 @@ class RDLRouter
 
   // Lookup tables
   std::map<odb::Point, grid_vertex> point_vertex_map_;
+  GridTree vertex_grid_tree_;
   std::map<grid_vertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
