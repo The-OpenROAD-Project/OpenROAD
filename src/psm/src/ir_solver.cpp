@@ -538,7 +538,7 @@ IRSolver::generateSourceNodesGenericBumps() const
   }
 
   if (bumps.empty()) {
-    const odb::Point die_center(die_area.xCenter(), die_area.yCenter());
+    const odb::Point die_center = die_area.center();
     bumps.emplace(die_center.x() - size / 2,
                   die_center.y() - size / 2,
                   die_center.x() + size / 2,
@@ -593,9 +593,8 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     if (!found) {
       // Since the shape didn't intersect anything, we need to pick the nearest
       // node
-      const odb::Point pt(shape.xCenter(), shape.yCenter());
       std::vector<Node*> returned_nodes;
-      top_nodes.query(boost::geometry::index::nearest(pt, 1),
+      top_nodes.query(boost::geometry::index::nearest(shape.center(), 1),
                       std::back_inserter(returned_nodes));
 
       for (Node* node : returned_nodes) {

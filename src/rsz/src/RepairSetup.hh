@@ -70,7 +70,9 @@ using sta::Net;
 using sta::PathExpanded;
 using sta::PathRef;
 using sta::Pin;
+using sta::RiseFall;
 using sta::Slack;
+using sta::Slew;
 using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
@@ -171,6 +173,14 @@ class RepairSetup : public sta::dbStaState
                   PathExpanded* expanded,
                   float setup_slack_margin);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
+  bool estimateInputSlewImpact(Instance* instance,
+                               const DcalcAnalysisPt* dcalc_ap,
+                               Slew old_in_slew[RiseFall::index_count],
+                               Slew new_in_slew[RiseFall::index_count],
+                               // delay adjustment from prev stage
+                               float delay_adjust,
+                               SlackEstimatorParams params,
+                               bool accept_if_slack_improves);
   bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
@@ -202,14 +212,18 @@ class RepairSetup : public sta::dbStaState
   Slack slackPenalized(const BufferedNetPtr& bnet);
   Slack slackPenalized(const BufferedNetPtr& bnet, int index);
 
-  void printProgress(int iteration, bool force, bool end) const;
+  void printProgress(int iteration,
+                     bool force,
+                     bool end,
+                     bool last_gasp,
+                     int num_viols) const;
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,
                          float& fix_rate_threshold,
                          int endpt_index,
                          int num_endpts);
-  void repairSetupLastGasp(const OptoParams& params);
+  void repairSetupLastGasp(const OptoParams& params, int& num_viols);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

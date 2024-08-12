@@ -246,6 +246,20 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
 {
+  bool has_routable_nets = false;
+  for (auto net : db_->getChip()->getBlock()->getNets()) {
+    if (net->getITerms().size() + net->getBTerms().size() > 1) {
+      has_routable_nets = true;
+      break;
+    }
+  }
+  if (!has_routable_nets) {
+    logger_->warn(GRT,
+                  7,
+                  "Design does not have any routable net "
+                  "(with at least 2 terms)");
+    return;
+  }
   if (start_incremental && end_incremental) {
     logger_->error(GRT,
                    251,
@@ -2902,8 +2916,17 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
       if (!layer->getV54SpacingRules().empty()) {
         min_spc_valid = true;
         int minSpc = 0;
-        for (auto rule : layer->getV54SpacingRules())
-          minSpc = rule->getSpacing();
+        for (auto rule : layer->getV54SpacingRules()) {
+          if (rule->hasRange()) {
+            uint rmin;
+            uint rmax;
+            rule->getRange(rmin, rmax);
+            if (layer_width < rmin || layer_width > rmax) {
+              continue;
+            }
+          }
+          minSpc = std::max<int>(minSpc, rule->getSpacing());
+        }
         if (up_via_valid)
           min_spc_up = minSpc;
         if (down_via_valid)

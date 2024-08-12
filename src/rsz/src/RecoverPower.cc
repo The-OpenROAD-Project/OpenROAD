@@ -195,8 +195,11 @@ void RecoverPower::recoverPower(const float recover_power_percent)
         int resize_count = 100;
         int inserted_buffer_count = 100;
         int cloned_gate_count = 100;
-        resizer_->journalRestore(
-            resize_count, inserted_buffer_count, cloned_gate_count);
+        int removed_buffer_count = 0;
+        resizer_->journalRestore(resize_count,
+                                 inserted_buffer_count,
+                                 cloned_gate_count,
+                                 removed_buffer_count);
         resizer_->updateParasitics();
         sta_->findRequireds();
         debugPrint(logger_,
