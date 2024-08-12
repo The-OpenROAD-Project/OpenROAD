@@ -7353,13 +7353,13 @@ class dbGDSElement : public dbObject
 
   int16_t getDatatype() const;
 
-  void setXy(std::vector<Point> xy);
-
-  std::vector<Point> getXy() const;
-
-  void setPropattr(std::vector<std::pair<std::int16_t, std::string>> propattr);
+  // User Code Begin dbGDSElement
 
   std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  std::vector<Point>& getXY();
+
+  // User Code End dbGDSElement
 };
 
 class dbGDSStructure : public dbObject
@@ -7381,7 +7381,7 @@ class dbGDSStructure : public dbObject
 
   dbGDSElement* getElement(int index);
 
-  dbGDSElement* operator[] (int index);
+  dbGDSElement* operator[](int index);
 
   int getNumElements();
 

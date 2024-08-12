@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(reader)
   BOOST_TEST(el->getLayer() == 236);
   BOOST_TEST(el->getDatatype() == 0);
 
-  std::vector<Point> xy = el->getXy();
+  std::vector<Point>& xy = el->getXY();
 
   BOOST_TEST(xy.size() == 5);
   BOOST_TEST((xy[0].x() == 0 && xy[0].y() == 0));
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(writer)
   BOOST_TEST(el->getLayer() == 236);
   BOOST_TEST(el->getDatatype() == 0);
 
-  std::vector<Point> xy = el->getXy();
+  std::vector<Point>& xy = el->getXY();
 
   BOOST_TEST(xy.size() == 5);
   BOOST_TEST((xy[0].x() == 0 && xy[0].y() == 0));

@@ -236,7 +236,7 @@ void GDSWriter::writeXY(dbGDSElement* el)
   record_t r;
   r.type = RecordType::XY;
   r.dataType = DataType::INT_4;
-  std::vector<odb::Point> xy = el->getXy();
+  std::vector<odb::Point>& xy = el->getXY();
   for (auto pt : xy) {
     r.data32.push_back(pt.x());
     r.data32.push_back(pt.y());

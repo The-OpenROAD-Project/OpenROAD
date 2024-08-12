@@ -15,12 +15,12 @@
       {
         "name":"_xy",
         "type":"std::vector<Point>",
-        "flags":["no-template"]
+        "flags":["no-template", "no-get", "no-set"]
       },
       {
         "name":"_propattr",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
-        "flags":["no-template"]
+        "flags":["no-template", "no-get", "no-set"]
       }
     ],
     "h_includes": [
