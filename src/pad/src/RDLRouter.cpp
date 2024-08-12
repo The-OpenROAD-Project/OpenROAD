@@ -569,7 +569,22 @@ odb::Polygon RDLRouter::getEdgeObstruction(const odb::Point& pt0,
 
   const odb::Oct check_oct(pt0, pt1, 2 * check_dist);
 
-  return check_oct;
+  std::vector<odb::Point> points = check_oct.getPoints();
+
+  if (check_oct.getDir() == odb::Oct::RIGHT) {
+    points[1].setX(check_oct.getCenterLow().x() + check_dist);
+    points[2].setY(check_oct.getCenterHigh().y() - check_dist);
+    points[5].setX(check_oct.getCenterHigh().x() - check_dist);
+    points[6].setY(check_oct.getCenterLow().y() + check_dist);
+  } else {
+    points[3].setY(check_oct.getCenterLow().y() + check_dist);
+    points[4].setX(check_oct.getCenterHigh().x() + check_dist);
+    points[7].setY(check_oct.getCenterHigh().y() - check_dist);
+    points[8].setX(check_oct.getCenterLow().x() - check_dist);
+    points[0] = points[8];
+  }
+
+  return points;
 }
 
 bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
