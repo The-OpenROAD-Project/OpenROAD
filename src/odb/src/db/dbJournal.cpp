@@ -425,8 +425,12 @@ void dbJournal::redo_deleteObject()
     case dbNetObj: {
       std::string name;
       uint net_id;
+      uint flags;
+      uint ndr_id;
       _log.pop(name);
       _log.pop(net_id);
+      _log.pop(flags);
+      _log.pop(ndr_id);
       dbNet* net = dbNet::getNet(_block, net_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -455,11 +459,23 @@ void dbJournal::redo_deleteObject()
       uint lib_id;
       uint master_id;
       uint inst_id;
+      uint flags;
       std::string name;
+      int x;
+      int y;
+      uint group_id;
+      uint module_id;
+      uint region_id;
       _log.pop(lib_id);
       _log.pop(master_id);
       _log.pop(name);
       _log.pop(inst_id);
+      _log.pop(flags);
+      _log.pop(x);
+      _log.pop(y);
+      _log.pop(group_id);
+      _log.pop(module_id);
+      _log.pop(region_id);
       dbInst* inst = dbInst::getInst(_block, inst_id);
       debugPrint(_logger,
                  utl::ODB,
@@ -1450,6 +1466,13 @@ void dbJournal::undo_createObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbGuideObj: {
+      uint guide_id;
+      _log.pop(guide_id);
+      dbGuide* guide = dbGuide::getGuide(_block, guide_id);
+      dbGuide::destroy(guide);
+      break;
+    }
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -1489,26 +1512,77 @@ void dbJournal::undo_deleteObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
+    case dbGuideObj: {
+      uint net_id;
+      int x_min;
+      int y_min;
+      int x_max;
+      int y_max;
+      uint layer_id;
+      _log.pop(net_id);
+      _log.pop(x_min);
+      _log.pop(y_min);
+      _log.pop(x_max);
+      _log.pop(y_max);
+      _log.pop(layer_id);
+      auto net = dbNet::getNet(_block, net_id);
+      auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
+      dbGuide::create(net, layer, {x_min, y_min, x_max, y_max});
+      break;
+    }
     case dbInstObj: {
       uint lib_id;
       uint master_id;
-      uint object_id;
+      uint inst_id;
       std::string name;
+      int x;
+      int y;
+      uint group_id;
+      uint module_id;
+      uint region_id;
       _log.pop(lib_id);
       _log.pop(master_id);
       _log.pop(name);
-      _log.pop(object_id);
+      _log.pop(inst_id);
       dbLib* lib = dbLib::getLib(_block->getDb(), lib_id);
       dbMaster* master = dbMaster::getMaster(lib, master_id);
-      dbInst::create(_block, master, name.c_str());
+      auto inst = dbInst::create(_block, master, name.c_str());
+      _dbInst* impl = (_dbInst*) inst;
+      uint* flags = (uint*) &impl->_flags;
+      _log.pop(*flags);
+      _log.pop(x);
+      _log.pop(y);
+      _log.pop(group_id);
+      _log.pop(module_id);
+      _log.pop(region_id);
+      inst->setLocation(x, y);
+      if (group_id != 0) {
+        auto group = dbGroup::getGroup(_block, group_id);
+        group->addInst(inst);
+      }
+      if (module_id != 0) {
+        auto module = dbModule::getModule(_block, module_id);
+        module->addInst(inst);
+      }
+      if (region_id != 0) {
+        auto region = dbRegion::getRegion(_block, region_id);
+        region->addInst(inst);
+      }
       break;
     }
     case dbNetObj: {
       std::string name;
       uint net_id;
+      uint ndr_id;
       _log.pop(name);
       _log.pop(net_id);
-      dbNet::create(_block, name.c_str());
+      auto net = dbNet::create(_block, name.c_str());
+      _dbNet* impl = (_dbNet*) net;
+      uint* flags = (uint*) &impl->_flags;
+      _log.pop(*flags);
+      _log.pop(ndr_id);
+      _dbNet* net_impl = (_dbNet*) net;
+      net_impl->_non_default_rule = ndr_id;
       break;
     }
     default: {
@@ -1561,33 +1635,33 @@ void dbJournal::undo_disconnectObject()
   auto obj_type = popObjectType();
 
   switch (obj_type) {
-    default: {
-      case dbITermObj: {
-        uint iterm_id;
-        _log.pop(iterm_id);
-        dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
-        uint net_id;
-        _log.pop(net_id);
-        dbNet* net = dbNet::getNet(_block, net_id);
-        iterm->connect(net);
-        break;
-      }
+    case dbITermObj: {
+      uint iterm_id;
+      _log.pop(iterm_id);
+      dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      dbNet* net = dbNet::getNet(_block, net_id);
+      iterm->connect(net);
+      break;
+    }
 
-      case dbBTermObj: {
-        uint bterm_id;
-        _log.pop(bterm_id);
-        dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
-        uint net_id;
-        _log.pop(net_id);
-        dbNet* net = dbNet::getNet(_block, net_id);
-        bterm->connect(net);
-        break;
-      }
-        _logger->critical(utl::ODB,
-                          443,
-                          "No undo_disconnectObject support for type {}",
-                          dbObject::getTypeName(obj_type));
-        break;
+    case dbBTermObj: {
+      uint bterm_id;
+      _log.pop(bterm_id);
+      dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
+      uint net_id;
+      _log.pop(net_id);
+      dbNet* net = dbNet::getNet(_block, net_id);
+      bterm->connect(net);
+      break;
+    }
+    default: {
+      _logger->critical(utl::ODB,
+                        443,
+                        "No undo_disconnectObject support for type {}",
+                        dbObject::getTypeName(obj_type));
+      break;
     }
   }
 }
@@ -1687,12 +1761,32 @@ void dbJournal::undo_updateInstField()
 {
   uint inst_id;
   _log.pop(inst_id);
-  //_dbInst * inst = (_dbInst *) dbInst::getInst(_block, inst_id );
+  _dbInst* inst = (_dbInst*) dbInst::getInst(_block, inst_id);
 
   int field;
   _log.pop(field);
 
   switch ((_dbInst::Field) field) {
+    case _dbInst::FLAGS: {
+      uint* flags = (uint*) &inst->_flags;
+      _log.pop(*flags);
+      uint new_flags;
+      _log.pop(new_flags);
+      break;
+    }
+
+    case _dbInst::ORIGIN: {
+      int prev_x;
+      _log.pop(prev_x);
+      int prev_y;
+      _log.pop(prev_y);
+      int current_x;
+      _log.pop(current_x);
+      int current_y;
+      _log.pop(current_y);
+      ((dbInst*) inst)->setOrigin(prev_x, prev_y);
+      break;
+    }
     default: {
       _logger->critical(
           utl::ODB, 409, "No undo_updateInstField support for field {}", field);

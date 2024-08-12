@@ -66,6 +66,9 @@ namespace mpl2 {
 struct Rect;
 class HardMacro;
 class SoftMacro;
+class Cluster;
+
+using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -226,17 +229,16 @@ class Cluster
 
   // Hierarchy Support
   void setParent(Cluster* parent);
-  void addChild(Cluster* child);
-  void removeChild(const Cluster* child);
-  void addChildren(const std::vector<Cluster*>& children);
-  void removeChildren();
+  void addChild(std::unique_ptr<Cluster> child);
+  std::unique_ptr<Cluster> releaseChild(const Cluster* candidate);
+  void addChildren(UniqueClusterVector children);
+  UniqueClusterVector releaseChildren();
   Cluster* getParent() const;
-  std::vector<Cluster*> getChildren() const;
+  const UniqueClusterVector& getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
   std::string getIsLeafString() const;
-  bool mergeCluster(Cluster& cluster,
-                    bool& delete_flag);  // return true if succeed
+  bool attemptMerge(Cluster* incomer, bool& incomer_deleted);
 
   // Connection signature support
   void initConnection();
@@ -308,8 +310,8 @@ class Cluster
 
   // Each cluster is a node in the physical hierarchy tree
   // Thus we need to define related to parent and children pointers
-  Cluster* parent_ = nullptr;       // parent of current cluster
-  std::vector<Cluster*> children_;  // children of current cluster
+  Cluster* parent_ = nullptr;  // parent of current cluster
+  UniqueClusterVector children_;
 
   // macro tilings for hard macros
   std::vector<std::pair<float, float>> macro_tilings_;  // <width, height>

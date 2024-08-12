@@ -244,7 +244,7 @@ void Resizer::init()
 }
 
 // remove all buffers if no buffers are specified
-void Resizer::removeBuffers(sta::InstanceSeq insts)
+void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
 {
   initBlock();
   // Disable incremental timing.
@@ -256,7 +256,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (removeBuffer(buffer, /* honor dont touch */ true)) {
+      if (removeBuffer(buffer, /* honor dont touch */ true, recordJournal)) {
         remove_count++;
       }
     }
@@ -265,7 +265,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (removeBuffer(buffer, /* don't honor dont touch */ false)) {
+      if (removeBuffer(
+              buffer, /* don't honor dont touch */ false, recordJournal)) {
         remove_count++;
       } else {
         logger_->warn(
@@ -300,7 +301,9 @@ bool Resizer::bufferBetweenPorts(Instance* buffer)
 // 2) manual mode: this happens during manual buffer removal during ECO
 //      This ignores dont-touch and fixed cell (boundary buffer constraints are
 //      still honored)
-bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
+bool Resizer::removeBuffer(Instance* buffer,
+                           bool honorDontTouchFixed,
+                           bool recordJournal)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   if (!lib_cell || !lib_cell->isBuffer()) {
@@ -359,6 +362,9 @@ bool Resizer::removeBuffer(Instance* buffer, bool honorDontTouchFixed)
     removed = out_net;
   }
 
+  if (recordJournal) {
+    journalRemoveBuffer(buffer);
+  }
   bool buffer_removed = false;
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
       && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
@@ -1274,7 +1280,10 @@ void Resizer::findResizeSlacks()
                                fanout_violations,
                                length_violations);
   findResizeSlacks1();
-  journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_);
+  journalRestore(resize_count_,
+                 inserted_buffer_count_,
+                 cloned_gate_count_,
+                 removed_buffer_count_);
 }
 
 void Resizer::findResizeSlacks1()
@@ -2254,7 +2263,16 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
       for (TimingArc* arc : arc_set->arcs()) {
         RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        float in_slew = tgt_slews_[in_rf->index()];
+        // use annotated slews if available
+        LibertyPort* port = arc->from();
+        float in_slew = 0.0;
+        auto it = input_slew_map_.find(port);
+        if (it != input_slew_map_.end()) {
+          const InputSlews& slew = it->second;
+          in_slew = slew[in_rf->index()];
+        } else {
+          in_slew = tgt_slews_[in_rf->index()];
+        }
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
             = arc_delay_calc_->gateDelay(nullptr,
@@ -2832,6 +2850,7 @@ void Resizer::journalBegin()
   cloned_gates_ = {};
   cloned_inst_set_.clear();
   swapped_pins_.clear();
+  removed_buffer_map_.clear();
 }
 
 void Resizer::journalEnd()
@@ -2843,6 +2862,7 @@ void Resizer::journalEnd()
   cloned_gates_ = {};
   cloned_inst_set_.clear();
   swapped_pins_.clear();
+  removed_buffer_map_.clear();
 }
 
 void Resizer::journalSwapPins(Instance* inst,
@@ -2974,9 +2994,116 @@ void Resizer::journalUndoGateCloning(int& cloned_gate_count)
   cloned_inst_set_.clear();
 }
 
+void Resizer::journalRemoveBuffer(Instance* buffer)
+{
+  LibertyCell* lib_cell = network_->libertyCell(buffer);
+  if (lib_cell == nullptr) {
+    return;
+  }
+
+  LibertyPort *in_port, *out_port;
+  lib_cell->bufferPorts(in_port, out_port);
+  if (in_port == nullptr || out_port == nullptr) {
+    return;
+  }
+  Pin* in_pin = db_network_->findPin(buffer, in_port);
+  Pin* out_pin = db_network_->findPin(buffer, out_port);
+  Net* in_net = db_network_->net(in_pin);
+  Net* out_net = db_network_->net(out_pin);
+  if (in_pin == nullptr || out_pin == nullptr || in_net == nullptr
+      || out_net == nullptr) {
+    return;
+  }
+
+  BufferData data;
+  data.lib_cell = lib_cell;
+  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(in_net);
+  const Pin* drvr_pin = nullptr;
+  while (pin_iter->hasNext()) {
+    drvr_pin = pin_iter->next();
+    if (drvr_pin != in_pin) {
+      break;
+    }
+  }
+  Instance* drvr_inst = network_->instance(drvr_pin);
+  Port* drvr_port = db_network_->port(drvr_pin);
+  data.driver_pin
+      = std::make_pair(network_->name(drvr_inst), network_->name(drvr_port));
+
+  std::pair<std::string, std::string> load_pin;  // inst name, port name
+  std::vector<std::pair<std::string, std::string>> load_pins;
+  pin_iter = network_->connectedPinIterator(out_net);
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    if (pin != out_pin) {
+      Instance* load_inst = network_->instance(pin);
+      Port* load_port = db_network_->port(pin);
+      load_pin = std::make_pair(network_->name(load_inst),
+                                network_->name(load_port));
+      load_pins.emplace_back(load_pin);
+    }
+  }
+  data.load_pins = std::move(load_pins);
+
+  odb::dbInst* db_inst = db_network_->staToDb(buffer);
+  data.location = db_inst->getLocation();
+  data.parent = db_network_->topInstance();
+  std::string name = db_network_->name(buffer);
+  removed_buffer_map_[name] = std::move(data);
+}
+
+void Resizer::journalRestoreBuffers(int& removed_buffer_count)
+{
+  // First, re-create buffer instances
+  for (const auto& pair : removed_buffer_map_) {
+    std::string name = pair.first;
+    BufferData data = pair.second;
+    makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
+    debugPrint(logger_, RSZ, "journal", 1, "journal restore buffer {}", name);
+  }
+
+  // Second, reconnect buffer input and output pins
+  for (const auto& pair : removed_buffer_map_) {
+    std::string name = pair.first;
+    BufferData data = pair.second;
+    Instance* buffer = network_->findInstance(name.c_str());
+    LibertyPort *input, *output;
+    data.lib_cell->bufferPorts(input, output);
+
+    // Reconnect buffer input pin to previous driver pin
+    Net* input_net = makeUniqueNet();
+    Instance* drvr_inst = network_->findInstance(data.driver_pin.first.c_str());
+    Pin* drvr_pin
+        = network_->findPin(drvr_inst, data.driver_pin.second.c_str());
+    Port* drvr_port = network_->port(drvr_pin);
+    sta_->disconnectPin(const_cast<Pin*>(drvr_pin));
+    sta_->connectPin(drvr_inst, drvr_port, input_net);
+    sta_->connectPin(buffer, input, input_net);
+
+    // Reconnect buffer output pin to prevoius load pins
+    Net* output_net = makeUniqueNet();
+    for (const std::pair<std::string, std::string>& load_pin_pair :
+         data.load_pins) {
+      Instance* load_inst = network_->findInstance(load_pin_pair.first.c_str());
+      Pin* load_pin
+          = network_->findPin(load_inst, load_pin_pair.second.c_str());
+      Port* load_port = network_->port(load_pin);
+      sta_->disconnectPin(const_cast<Pin*>(load_pin));
+      sta_->connectPin(load_inst, load_port, output_net);
+    }
+    sta_->connectPin(buffer, output, output_net);
+
+    parasiticsInvalid(input_net);
+    parasiticsInvalid(output_net);
+    --removed_buffer_count;
+  }
+  removed_buffer_map_.clear();
+}
+
 void Resizer::journalRestore(int& resize_count,
                              int& inserted_buffer_count,
-                             int& cloned_gate_count)
+                             int& cloned_gate_count,
+                             int& removed_buffer_count)
 {
   for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
@@ -3042,6 +3169,34 @@ void Resizer::journalRestore(int& resize_count,
   swapped_pins_.clear();
 
   journalUndoGateCloning(cloned_gate_count);
+  journalRestoreBuffers(removed_buffer_count);
+}
+
+////////////////////////////////////////////////////////////////
+void Resizer::journalBeginTest()
+{
+  journalBegin();
+}
+
+void Resizer::journalRestoreTest()
+{
+  int resize_count_old = resize_count_;
+  int inserted_buffer_count_old = inserted_buffer_count_;
+  int cloned_gate_count_old = cloned_gate_count_;
+  int removed_buffer_count_old = removed_buffer_count_;
+
+  journalRestore(resize_count_,
+                 inserted_buffer_count_,
+                 cloned_gate_count_,
+                 removed_buffer_count_);
+
+  logger_->report(
+      "journalRestoreTest restored {} sizing, {} buffering, {} "
+      "cloning, {} buffer removal",
+      resize_count_old - resize_count_,
+      inserted_buffer_count_old - inserted_buffer_count_,
+      cloned_gate_count_old - cloned_gate_count_,
+      removed_buffer_count_old - removed_buffer_count_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3187,6 +3342,34 @@ void Resizer::setDebugPin(const Pin* pin)
 void Resizer::setWorstSlackNetsPercent(float percent)
 {
   worst_slack_nets_percent_ = percent;
+}
+
+void Resizer::annotateInputSlews(Instance* inst,
+                                 const DcalcAnalysisPt* dcalc_ap)
+{
+  input_slew_map_.clear();
+  std::unique_ptr<InstancePinIterator> inst_pin_iter{
+      network_->pinIterator(inst)};
+  while (inst_pin_iter->hasNext()) {
+    Pin* pin = inst_pin_iter->next();
+    if (network_->direction(pin)->isInput()) {
+      LibertyPort* port = network_->libertyPort(pin);
+      if (port) {
+        Vertex* vertex = graph_->pinDrvrVertex(pin);
+        InputSlews slews;
+        slews[RiseFall::rise()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+        slews[RiseFall::fall()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+        input_slew_map_.emplace(port, slews);
+      }
+    }
+  }
+}
+
+void Resizer::resetInputSlews()
+{
+  input_slew_map_.clear();
 }
 
 }  // namespace rsz

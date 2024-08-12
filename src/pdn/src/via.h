@@ -183,6 +183,7 @@ class DbBaseVia : public DbVia
 
  protected:
   void incrementCount() { count_++; }
+  void incrementCount(int count) { count_ += count; }
 
  private:
   int count_ = 0;
@@ -218,12 +219,14 @@ class DbTechVia : public DbBaseVia
 
  private:
   odb::dbTechVia* via_;
+  odb::dbTechLayer* cut_layer_;
   int rows_;
   int row_pitch_;
   int cols_;
   int col_pitch_;
 
   odb::Rect via_rect_;
+  odb::Rect single_via_rect_;
   odb::Rect enc_bottom_rect_;
   odb::Rect enc_top_rect_;
 
@@ -231,6 +234,8 @@ class DbTechVia : public DbBaseVia
   odb::Rect required_top_rect_;
 
   odb::Point via_center_;
+
+  std::string getViaName(const std::set<odb::dbTechLayer*>& ongrid) const;
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
