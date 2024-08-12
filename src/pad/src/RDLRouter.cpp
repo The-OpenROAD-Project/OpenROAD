@@ -613,7 +613,7 @@ std::set<std::pair<odb::Point, odb::Point>> RDLRouter::commitRoute(
     const odb::Rect check_box = getPointObstruction(pt);
 
     for (auto itr = vertex_grid_tree_.qbegin(boost::geometry::index::satisfies(
-             [this, check_dist, &pt](const GridValue& pt0) {
+             [check_dist, &pt](const GridValue& pt0) {
                return boost::geometry::distance(pt, pt0.first) < 2 * check_dist;
              }));
          itr != vertex_grid_tree_.qend();
