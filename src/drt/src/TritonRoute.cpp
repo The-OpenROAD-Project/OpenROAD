@@ -212,10 +212,9 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(
-                  debug_.get(), design_.get(), db_, logger_)
-            : nullptr;
+      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
+            debug_.get(), design_.get(), db_, logger_)
+                                          : nullptr;
   auto worker
       = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
   worker->setViaData(viaData);
@@ -243,10 +242,9 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   ar >> viaData;
 
   std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(
-                  debug_.get(), design_.get(), db_, logger_)
-            : nullptr;
+      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
+            debug_.get(), design_.get(), db_, logger_)
+                                          : nullptr;
   std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir),
                            std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
