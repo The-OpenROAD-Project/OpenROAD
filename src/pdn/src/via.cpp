@@ -261,6 +261,7 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
                      Enclosure* required_bottom_enc,
                      Enclosure* required_top_enc)
     : via_(via),
+      cut_layer_(nullptr),
       rows_(rows),
       row_pitch_(row_pitch),
       cols_(cols),
@@ -279,6 +280,8 @@ DbTechVia::DbTechVia(odb::dbTechVia* via,
     odb::Rect rect = box->getBox();
 
     if (layer->getType() == odb::dbTechLayerType::CUT) {
+      cut_layer_ = layer;
+      single_via_rect_ = rect;
       via_rect_.merge(rect);
     } else {
       if (layer == via->getBottomLayer()) {
@@ -328,63 +331,107 @@ DbVia::ViaLayerShape DbTechVia::generate(
   TechLayer bottom(via_->getBottomLayer());
   TechLayer top(via_->getTopLayer());
 
+  bool do_bottom_snap = false;
   if (ongrid.find(bottom.getLayer()) != ongrid.end()) {
     bottom.populateGrid(block);
+    do_bottom_snap = true;
   }
+
+  bool do_top_snap = false;
   if (ongrid.find(top.getLayer()) != ongrid.end()) {
     top.populateGrid(block);
+    do_top_snap = true;
   }
 
   TechLayer* row_snap = &top;
   TechLayer* col_snap = &bottom;
+  bool* do_row_snap = &do_top_snap;
+  bool* do_col_snap = &do_bottom_snap;
   if (top.getLayer()->getDirection() == odb::dbTechLayerDir::VERTICAL) {
     std::swap(row_snap, col_snap);
+    std::swap(do_row_snap, do_col_snap);
   }
 
-  ViaLayerShape via_shapes;
+  odb::Point new_via_center;
+  odb::dbSBox* via;
 
-  odb::Rect via_rect(0, 0, (cols_ - 1) * col_pitch_, (rows_ - 1) * row_pitch_);
-  via_rect.moveTo(x - via_rect.dx() / 2, y - via_rect.dy() / 2);
+  if (rows_ > 1 || cols_ > 1) {
+    const std::string via_name = getViaName(ongrid);
+    auto* bvia = block->findVia(via_name.c_str());
 
-  int row = via_rect.yMin() - via_center_.getY();
-  for (int r = 0; r < rows_; r++) {
-    const int row_center = row + via_center_.getY();
-    const int row_use
-        = row_snap->snapToGrid(row_center, row_center - 1) - via_center_.getY();
+    if (bvia == nullptr) {
+      const int cut_width = single_via_rect_.dx();
+      const int cut_height = single_via_rect_.dy();
 
-    int col = via_rect.xMin() - via_center_.getX();
-    for (int c = 0; c < cols_; c++) {
-      const int col_center = col + via_center_.getX();
-      const int col_use = col_snap->snapToGrid(col_center, col_center - 1)
-                          - via_center_.getX();
+      bvia = odb::dbVia::create(block, via_name.c_str());
 
-      const odb::Point new_via_center(col_use, row_use);
+      odb::dbViaParams params = bvia->getViaParams();
 
-      auto* via = odb::dbSBox::create(
-          wire, via_, new_via_center.getX(), new_via_center.getY(), type);
-      auto shapes = getLayerShapes(via);
-      const odb::dbTransform xfm(new_via_center);
-      odb::Rect top_shape = required_top_rect_;
-      xfm.apply(top_shape);
-      shapes.top.insert({top_shape, via});
-      odb::Rect bottom_shape = required_bottom_rect_;
-      xfm.apply(bottom_shape);
-      shapes.bottom.insert({bottom_shape, via});
-      combineLayerShapes(shapes, via_shapes);
-      incrementCount();
+      params.setBottomLayer(via_->getBottomLayer());
+      params.setCutLayer(cut_layer_);
+      params.setTopLayer(via_->getTopLayer());
 
-      col = col_use + col_pitch_;
+      params.setXCutSize(cut_width);
+      params.setYCutSize(cut_height);
 
-      if (col > via_rect.xMax()) {
-        break;
+      // snap to track intervals
+      int x_pitch = col_pitch_;
+      if (*do_col_snap) {
+        x_pitch = col_snap->snapToGridInterval(block, col_pitch_);
       }
+      int y_pitch = row_pitch_;
+      if (*do_row_snap) {
+        y_pitch = row_snap->snapToGridInterval(block, row_pitch_);
+      }
+
+      params.setXCutSpacing(x_pitch - cut_width);
+      params.setYCutSpacing(y_pitch - cut_height);
+
+      params.setXBottomEnclosure(
+          std::min(via_rect_.xMin() - required_bottom_rect_.xMin(),
+                   required_bottom_rect_.xMax() - via_rect_.xMax()));
+      params.setYBottomEnclosure(
+          std::min(via_rect_.yMin() - required_bottom_rect_.yMin(),
+                   required_bottom_rect_.yMax() - via_rect_.yMax()));
+      params.setXTopEnclosure(
+          std::min(via_rect_.xMin() - required_top_rect_.xMin(),
+                   required_top_rect_.xMax() - via_rect_.xMax()));
+      params.setYTopEnclosure(
+          std::min(via_rect_.yMin() - required_top_rect_.yMin(),
+                   required_top_rect_.yMax() - via_rect_.yMax()));
+
+      params.setNumCutRows(rows_);
+      params.setNumCutCols(cols_);
+
+      params.setXOrigin(via_center_.x());
+      params.setYOrigin(via_center_.y());
+
+      bvia->setViaParams(params);
     }
 
-    row = row_use + row_pitch_;
-    if (row > via_rect.yMax()) {
-      break;
-    }
+    new_via_center
+        = odb::Point(col_snap->snapToGrid(x), row_snap->snapToGrid(y));
+
+    incrementCount(rows_ * cols_);
+    via = odb::dbSBox::create(
+        wire, bvia, new_via_center.x(), new_via_center.y(), type);
+  } else {
+    incrementCount();
+    new_via_center = odb::Point(col_snap->snapToGrid(x - via_center_.getX()),
+                                row_snap->snapToGrid(y - via_center_.getY()));
+    via = odb::dbSBox::create(
+        wire, via_, new_via_center.x(), new_via_center.y(), type);
   }
+
+  ViaLayerShape via_shapes = getLayerShapes(via);
+
+  const odb::dbTransform xfm(new_via_center);
+  odb::Rect top_shape = required_top_rect_;
+  xfm.apply(top_shape);
+  via_shapes.top.insert({top_shape, via});
+  odb::Rect bottom_shape = required_bottom_rect_;
+  xfm.apply(bottom_shape);
+  via_shapes.bottom.insert({bottom_shape, via});
 
   return via_shapes;
 }
@@ -409,6 +456,30 @@ odb::Rect DbTechVia::getViaRect(bool include_enclosure,
     return enc;
   }
   return via_rect_;
+}
+
+std::string DbTechVia::getViaName(
+    const std::set<odb::dbTechLayer*>& ongrid) const
+{
+  const std::string seperator = "_";
+  std::string name = via_->getName();
+  // name after rows and columns
+  name += seperator;
+  name += std::to_string(rows_);
+  name += seperator;
+  name += std::to_string(cols_);
+  // name after pitch
+  name += seperator;
+  name += std::to_string(row_pitch_);
+  name += seperator;
+  name += std::to_string(col_pitch_);
+  // name on grid layers
+  for (auto* layer : ongrid) {
+    name += seperator;
+    name += layer->getName();
+  }
+
+  return name;
 }
 
 ///////////

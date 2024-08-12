@@ -492,10 +492,9 @@ void FlexTAWorker::initIroute(frGuide* guide)
   frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum + 2) / 2
-                                                            - 1)) {
-      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
-          (layerNum + 2) / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
+      viaDef
+          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
@@ -508,9 +507,10 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   for (auto coord : downViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
-      viaDef
-          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum - 2) / 2
+                                                            - 1)) {
+      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
+          (layerNum - 2) / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
@@ -840,6 +840,10 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
 
   frCoord bloatDist
       = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
+  if (bloatDist < 0) {
+    logger_->error(
+        DRT, 140, "Layer {} has negative min spacing value.", layer->getName());
+  }
   auto& eol = layer->getDrEolSpacingConstraint();
   if (viaBox.minDXDY() < eol.eolWidth) {
     bloatDist = std::max(bloatDist, eol.eolSpace);
@@ -874,6 +878,12 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   frCoord bloatDist = width;
   if (layer->hasMinSpacing()) {
     bloatDist = layer->getMinSpacingValue(objWidth, width, prl, false);
+    if (bloatDist < 0) {
+      logger_->error(DRT,
+                     144,
+                     "Layer {} has negative min spacing value.",
+                     layer->getName());
+    }
   }
   // assuming the wire width is width
   bloatDist += width / 2;
