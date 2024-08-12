@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "Pin.h"
+#include "grt/GRoute.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -52,11 +53,18 @@ class Net
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
+  void deleteSegment(int seg_id, GRoute& routes);
   std::vector<Pin>& getPins() { return pins_; }
   int getNumPins() const { return pins_.size(); }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
   void setHasWires(bool in) { has_wires_ = in; }
+  void setSegmentParent(std::vector<uint16_t> segment_parent)
+  {
+    segment_parent_ = segment_parent;
+  }
+  std::vector<uint16_t> getSegmentParent() const { return segment_parent_; }
+  std::vector<std::vector<uint16_t>> getSegmentGraph();
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
@@ -70,6 +78,7 @@ class Net
   std::vector<Pin> pins_;
   float slack_;
   bool has_wires_;
+  std::vector<uint16_t> segment_parent_;
 };
 
 }  // namespace grt

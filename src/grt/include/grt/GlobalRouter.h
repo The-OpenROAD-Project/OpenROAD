@@ -190,6 +190,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void readSegments(const char* file_name);
   void netIsCovered(Net* net, const GRoute& segments);
   bool segmentIsLine(const GSegment& segment);
+  bool segmentCoversPin(const GSegment& segment, const Pin& pin);
+  std::vector<std::vector<int>> buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
@@ -388,7 +390,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
-  void shrinkNetRoute(Net* net);
+  void shrinkNetRoute(odb::dbNet* dbnet);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);

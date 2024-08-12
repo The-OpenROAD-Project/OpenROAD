@@ -59,9 +59,31 @@ odb::dbSigType Net::getSignalType() const
   return net_->getSigType().getString();
 }
 
+void Net::deleteSegment(int seg_id, GRoute& route)
+{
+  for (int i = 0; i < segment_parent_.size(); i++) {
+    if (segment_parent_[i] >= seg_id) {
+      segment_parent_[i]--;
+    }
+  }
+  segment_parent_.erase(segment_parent_.begin() + seg_id);
+  route.erase(route.begin() + seg_id);
+}
+
 void Net::addPin(Pin& pin)
 {
   pins_.push_back(pin);
+}
+
+std::vector<std::vector<uint16_t>> Net::getSegmentGraph()
+{
+  std::vector<std::vector<uint16_t>> graph(segment_parent_.size(),
+                                           std::vector<uint16_t>());
+  for (int i = 0; i < segment_parent_.size(); i++) {
+    graph[i].push_back(segment_parent_[i]);
+    graph[segment_parent_[i]].push_back(i);
+  }
+  return graph;
 }
 
 bool Net::isLocal()

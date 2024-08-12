@@ -601,15 +601,76 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)) {
       dirty_nets.push_back(net);
     } else {
-      shrinkNetRoute(net);
+      shrinkNetRoute(db_net);
     }
   }
   dirty_nets_.clear();
 }
 
-void GlobalRouter::shrinkNetRoute(Net* net)
+void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
 {
-  // TODO
+  Net* net = db_net_map_[dbnet];
+  GRoute segments = routes_[dbnet];
+  int total_segments = segments.size();
+  std::vector<Pin> pins = net->getPins();
+
+  int root = -1;
+  std::vector<bool> coversPin(total_segments, false);
+
+  for (int s = 0; s < total_segments; s++) {
+    for (int p = 0; p < pins.size(); p++) {
+      if (segmentCoversPin(segments[s], pins[p])) {
+        coversPin[s] = true;
+        if (pins[p].isDriver()) {
+          root = s;
+        }
+      }
+    }
+  }
+
+  std::vector<std::vector<int>> graph = buildNetGraph(dbnet);
+
+  // Runs a BFS trough the graph
+  std::vector<uint16_t> parent(total_segments, UINT16_MAX),
+      total_children(total_segments, 0);
+  std::queue<int> q, leafs;
+  q.push(root);
+  parent[root] = root;
+
+  while (q.size()) {
+    int node = q.front();
+    q.pop();
+    for (int child : graph[node]) {
+      if (parent[child] != UINT16_MAX)
+        continue;
+      parent[child] = node;
+      total_children[node]++;
+      q.push(child);
+    }
+    if (!total_children[node]) {
+      leafs.push(node);
+    }
+  }
+
+  net->setSegmentParent(parent);
+
+  // Prunes branches that dont end on leafs
+  std::set<int> segments_to_delete;
+  while (leafs.size()) {
+    int leaf = leafs.front();
+    leafs.pop();
+    if (!coversPin[leaf]) {
+      segments_to_delete.insert(leaf);
+      if (!--total_children[parent[leaf]]) {
+        leafs.push(parent[leaf]);
+      };
+    }
+  }
+
+  int total_deleted_segments = 0;
+  for (int deleted : segments_to_delete) {
+    net->deleteSegment(deleted - total_deleted_segments++, routes_[dbnet]);
+  }
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
@@ -2219,17 +2280,7 @@ void GlobalRouter::netIsCovered(Net* net, const GRoute& segments)
   for (const Pin& pin : net->getPins()) {
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
-      // Pin is horizontally covered by the segment
-      if (pin.getOnGridPosition().getX() >= std::min(seg.init_x, seg.final_x)
-          && pin.getOnGridPosition().getX() <= std::max(seg.init_x, seg.final_x)
-          // Pin is vertically covered by the segment
-          && pin.getOnGridPosition().getY() >= std::min(seg.init_y, seg.final_y)
-          && pin.getOnGridPosition().getY() <= std::max(seg.init_y, seg.final_y)
-          // Pin and segment share a layer
-          && pin.getConnectionLayer()
-                 >= std::min(seg.init_layer, seg.final_layer)
-          && pin.getConnectionLayer()
-                 <= std::max(seg.init_layer, seg.final_layer)) {
+      if (segmentCoversPin(seg, pin)) {
         pin_is_covered = true;
         break;
       }
@@ -2252,6 +2303,39 @@ bool GlobalRouter::segmentIsLine(const GSegment& segment)
                        + (segment.init_y != segment.final_y)
                        + (segment.init_layer != segment.final_layer);
   return (dimensionality == 1);
+}
+
+bool GlobalRouter::segmentCoversPin(const GSegment& segment, const Pin& pin)
+{
+  auto [min_x, max_x] = std::minmax(segment.init_x, segment.final_x);
+  auto [min_y, max_y] = std::minmax(segment.init_y, segment.final_y);
+  auto [min_layer, max_layer]
+      = std::minmax(segment.init_layer, segment.final_layer);
+  return (pin.getOnGridPosition().getX() >= min_x
+          && pin.getOnGridPosition().getX() <= max_x
+          // Pin is vertically covered by the segment
+          && pin.getOnGridPosition().getY() >= min_y
+          && pin.getOnGridPosition().getY() <= max_y
+          // Pin and segment share a layer
+          && pin.getConnectionLayer() >= min_layer
+          && pin.getConnectionLayer() <= max_layer);
+}
+
+// Builds the Net Graph in O(N²)
+std::vector<std::vector<int>> GlobalRouter::buildNetGraph(odb::dbNet* net)
+{
+  int total_segments = routes_[net].size();
+  std::vector<std::vector<int>> graph(total_segments, std::vector<int>());
+  for (int i = 0; i < total_segments; i++) {
+    for (int j = i - 1; j >= 0; j--) {
+      if (!segmentsConnect(routes_[net][i], routes_[net][j])) {
+        continue;
+      }
+      graph[i].push_back(j);
+      graph[j].push_back(i);
+    }
+  }
+  return graph;
 }
 
 // Implements Union-Find algorithm to determine connectivity
