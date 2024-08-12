@@ -30,25 +30,11 @@ enum RecordType
 
 RecordType toRecordType(uint8_t recordType);
 
+std::string recordTypeToString(RecordType recordType);
+
 uint8_t fromRecordType(RecordType recordType);
 
-static const char* recordNames[RecordType::INVALID_RT] = {
-  "HEADER",       "BGNLIB",     "LIBNAME",     "UNITS",  
-  "ENDLIB",       "BGNSTR",     "STRNAME",     "ENDSTR",
-  "BOUNDARY",     "PATH",       "SREF",        "AREF",
-  "TEXT",         "LAYER",      "DATATYPE",    "WIDTH",
-  "XY",           "ENDEL",      "SNAME",       "COLROW",
-  "TEXTNODE",     "NODE",       "TEXTTYPE",    "PRESENTATION",
-  "SPACING",      "STRING",     "STRANS",      "MAG",
-  "ANGLE",        "UINTEGER",   "USTRING",     "REFLIBS",
-  "FONTS",        "PATHTYPE",   "GENERATIONS", "ATTRTABLE",
-  "STYPTABLE",    "STRTYPE",    "ELFLAGS",     "ELKEY",
-  "LINKTYPE",     "LINKKEYS",   "NODETYPE",    "PROPATTR",
-  "PROPVALUE",    "BOX",        "BOXTYPE",     "PLEX",
-  "BGNEXTN",      "ENDEXTN",    "TAPENUM",     "TAPECODE",
-  "STRCLASS",     "RESERVED",   "FORMAT",      "MASK",
-  "ENDMASKS",     "LIBDIRSIZE", "SRFNAME",     "LIBSECUR"
-};
+extern const char* recordNames[];
 
 enum DataType {
   NO_DATA = 0, BIT_ARRAY, INT_2, INT_4, REAL_4, REAL_8, ASCII_STRING, INVALID_DT
