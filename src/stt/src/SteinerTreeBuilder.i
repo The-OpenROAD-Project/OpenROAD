@@ -40,7 +40,6 @@
 #include "LinesRenderer.h"
 #include "stt/pd.h"
 #include "stt/flute.h"
-#include "stt/foars.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
@@ -122,17 +121,6 @@ report_stt_tree(std::vector<int> x,
   auto builder = getSteinerTreeBuilder();
 
   auto tree = builder->makeSteinerTree(x, y, drvr_index, alpha);
-  stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
-}
-
-void 
-report_foars_tree(std::vector<int> x,
-                  std::vector<int> y,
-                  const int drvr_index)
-{
-  std::vector<std::pair<int, int>> blank;
-  utl::Logger* logger = ord::getLogger();
-  stt::Tree tree = foars::RunFOARS(x, y, blank, blank, drvr_index, logger);
   stt::reportSteinerTree(tree, x[drvr_index], y[drvr_index], logger);
 }
 

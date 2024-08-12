@@ -101,11 +101,6 @@ class SteinerTreeBuilder
                        const std::vector<int>& s,
                        int acc);
 
-  // run FOARS
-  Tree makeFoarsTree(const std::vector<int>& x_pin,
-                     const std::vector<int>& y_pin,
-                     int drvr_index);
-
   bool checkTree(const Tree& tree) const;
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha);
