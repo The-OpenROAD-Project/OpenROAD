@@ -1,27 +1,29 @@
+#include "gdsout.h"
+
 #include <iostream>
 
-#include "gdsout.h"
-#include "../db/dbGDSStructure.h"
 #include "../db/dbGDSBoundary.h"
+#include "../db/dbGDSElement.h"
 #include "../db/dbGDSLib.h"
 #include "../db/dbGDSPath.h"
-#include "../db/dbGDSElement.h"
 #include "../db/dbGDSSRef.h"
+#include "../db/dbGDSStructure.h"
 #include "../db/dbGDSText.h"
 
-namespace odb
-{
-  
-GDSWriter::GDSWriter() : _lib(nullptr) {}
+namespace odb {
 
-GDSWriter::~GDSWriter() 
+GDSWriter::GDSWriter() : _lib(nullptr)
+{
+}
+
+GDSWriter::~GDSWriter()
 {
   if (_file.is_open()) {
     _file.close();
   }
 }
 
-void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename) 
+void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
 {
   _lib = lib;
   _file.open(filename, std::ios::binary);
@@ -38,21 +40,17 @@ void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
 void GDSWriter::calcRecSize(record_t& r)
 {
   r.length = 4;
-  if(r.dataType == DataType::REAL_8) {
+  if (r.dataType == DataType::REAL_8) {
     r.length += r.data64.size() * 8;
-  }
-  else if (r.dataType == DataType::INT_4) {
+  } else if (r.dataType == DataType::INT_4) {
     r.length += r.data32.size() * 4;
-  }
-  else if (r.dataType == DataType::INT_2) {
+  } else if (r.dataType == DataType::INT_2) {
     r.length += r.data16.size() * 2;
-  }
-  else if (r.dataType == DataType::ASCII_STRING || r.dataType == DataType::BIT_ARRAY) {
+  } else if (r.dataType == DataType::ASCII_STRING
+             || r.dataType == DataType::BIT_ARRAY) {
     r.length += r.data8.size();
-  }
-  else if (r.dataType == DataType::NO_DATA) {
-  }
-  else {
+  } else if (r.dataType == DataType::NO_DATA) {
+  } else {
     throw std::runtime_error("Invalid data type");
   }
 }
@@ -87,22 +85,20 @@ void GDSWriter::writeRecord(record_t& r)
   writeInt8(fromRecordType(r.type));
   writeInt8(fromDataType(r.dataType));
 
-  if(r.dataType == DataType::REAL_8) {
+  if (r.dataType == DataType::REAL_8) {
     for (auto& d : r.data64) {
       writeReal8(d);
     }
-  }
-  else if (r.dataType == DataType::INT_4) {
+  } else if (r.dataType == DataType::INT_4) {
     for (auto& d : r.data32) {
       writeInt32(d);
     }
-  }
-  else if (r.dataType == DataType::INT_2) {
+  } else if (r.dataType == DataType::INT_2) {
     for (auto& d : r.data16) {
       writeInt16(d);
     }
-  }
-  else if (r.dataType == DataType::ASCII_STRING || r.dataType == DataType::BIT_ARRAY) {
+  } else if (r.dataType == DataType::ASCII_STRING
+             || r.dataType == DataType::BIT_ARRAY) {
     _file.write(r.data8.c_str(), r.data8.size());
   }
 }
@@ -121,8 +117,18 @@ void GDSWriter::writeLib()
 
   std::time_t now = std::time(nullptr);
   std::tm* lt = std::localtime(&now);
-  r.data16 = {(int16_t)lt->tm_year, (int16_t)lt->tm_mon, (int16_t)lt->tm_mday, (int16_t)lt->tm_hour, (int16_t)lt->tm_min, (int16_t)lt->tm_sec, 
-    (int16_t)lt->tm_year, (int16_t)lt->tm_mon, (int16_t)lt->tm_mday, (int16_t)lt->tm_hour, (int16_t)lt->tm_min, (int16_t)lt->tm_sec};
+  r.data16 = {(int16_t) lt->tm_year,
+              (int16_t) lt->tm_mon,
+              (int16_t) lt->tm_mday,
+              (int16_t) lt->tm_hour,
+              (int16_t) lt->tm_min,
+              (int16_t) lt->tm_sec,
+              (int16_t) lt->tm_year,
+              (int16_t) lt->tm_mon,
+              (int16_t) lt->tm_mday,
+              (int16_t) lt->tm_hour,
+              (int16_t) lt->tm_min,
+              (int16_t) lt->tm_sec};
   writeRecord(r);
 
   record_t r2;
@@ -158,8 +164,18 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 
   std::time_t now = std::time(nullptr);
   std::tm* lt = std::localtime(&now);
-  r.data16 = {(int16_t)lt->tm_year, (int16_t)lt->tm_mon, (int16_t)lt->tm_mday, (int16_t)lt->tm_hour, (int16_t)lt->tm_min, (int16_t)lt->tm_sec, 
-    (int16_t)lt->tm_year, (int16_t)lt->tm_mon, (int16_t)lt->tm_mday, (int16_t)lt->tm_hour, (int16_t)lt->tm_min, (int16_t)lt->tm_sec};
+  r.data16 = {(int16_t) lt->tm_year,
+              (int16_t) lt->tm_mon,
+              (int16_t) lt->tm_mday,
+              (int16_t) lt->tm_hour,
+              (int16_t) lt->tm_min,
+              (int16_t) lt->tm_sec,
+              (int16_t) lt->tm_year,
+              (int16_t) lt->tm_mon,
+              (int16_t) lt->tm_mday,
+              (int16_t) lt->tm_hour,
+              (int16_t) lt->tm_min,
+              (int16_t) lt->tm_sec};
   writeRecord(r);
 
   record_t r2;
@@ -168,8 +184,8 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
   r2.data8 = str->getName();
   writeRecord(r2);
 
-  for(auto el : ((_dbGDSStructure*)str)->_elements){
-    writeElement((dbGDSElement*)el);
+  for (auto el : ((_dbGDSStructure*) str)->_elements) {
+    writeElement((dbGDSElement*) el);
   }
 
   record_t r3;
@@ -180,23 +196,18 @@ void GDSWriter::writeStruct(dbGDSStructure* str)
 
 void GDSWriter::writeElement(dbGDSElement* el)
 {
-  _dbGDSElement* _el = (_dbGDSElement*)el;
-  if(dynamic_cast<_dbGDSBoundary*>(_el) != nullptr){
-    writeBoundary((dbGDSBoundary*)_el);
-  }
-  else if(dynamic_cast<_dbGDSPath*>(_el) != nullptr){
-    writePath((dbGDSPath*)_el);
-  }
-  else if(dynamic_cast<_dbGDSSRef*>(_el) != nullptr){
-    writeSRef((dbGDSSRef*)_el);
-  }
-  else if(dynamic_cast<_dbGDSSRef*>(_el)){
-    writeSRef((dbGDSSRef*)el);
-  }
-  else if(dynamic_cast<_dbGDSText*>(_el)){
-    writeText((dbGDSText*)el);
-  }
-  else{
+  _dbGDSElement* _el = (_dbGDSElement*) el;
+  if (dynamic_cast<_dbGDSBoundary*>(_el) != nullptr) {
+    writeBoundary((dbGDSBoundary*) _el);
+  } else if (dynamic_cast<_dbGDSPath*>(_el) != nullptr) {
+    writePath((dbGDSPath*) _el);
+  } else if (dynamic_cast<_dbGDSSRef*>(_el) != nullptr) {
+    writeSRef((dbGDSSRef*) _el);
+  } else if (dynamic_cast<_dbGDSSRef*>(_el)) {
+    writeSRef((dbGDSSRef*) el);
+  } else if (dynamic_cast<_dbGDSText*>(_el)) {
+    writeText((dbGDSText*) el);
+  } else {
     throw std::runtime_error("Invalid / Unsupported element type");
   }
 
@@ -207,7 +218,7 @@ void GDSWriter::writeElement(dbGDSElement* el)
 void GDSWriter::writePropAttr(dbGDSElement* el)
 {
   auto& props = el->getPropattr();
-  for(auto pair : props){
+  for (auto pair : props) {
     record_t r;
     r.type = RecordType::PROPATTR;
     r.dataType = DataType::INT_2;
@@ -298,19 +309,17 @@ void GDSWriter::writePath(dbGDSPath* path)
     r3.data32 = {path->getWidth()};
     writeRecord(r3);
   }
-  
+
   writeXY(path);
 }
 
 void GDSWriter::writeSRef(dbGDSSRef* sref)
 {
-  
   record_t r;
   auto colrow = sref->get_colRow();
   if (colrow.first == 1 && colrow.second == 1) {
     r.type = RecordType::SREF;
-  }
-  else{
+  } else {
     r.type = RecordType::AREF;
   }
   r.type = RecordType::SREF;
@@ -323,7 +332,7 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   r2.data8 = sref->get_sName();
   writeRecord(r2);
 
-  if(!sref->get_sTrans().identity()){
+  if (!sref->get_sTrans().identity()) {
     writeSTrans(sref->get_sTrans());
   }
 
@@ -338,7 +347,8 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   writeXY(sref);
 }
 
-void GDSWriter::writeText(dbGDSText* text){
+void GDSWriter::writeText(dbGDSText* text)
+{
   record_t r;
   r.type = RecordType::TEXT;
   r.dataType = DataType::NO_DATA;
@@ -354,7 +364,7 @@ void GDSWriter::writeText(dbGDSText* text){
 
   writeTextPres(text->getPresentation());
 
-  if(text->get_pathType() != 0){
+  if (text->get_pathType() != 0) {
     record_t r3;
     r3.type = RecordType::PATHTYPE;
     r3.dataType = DataType::INT_2;
@@ -362,7 +372,7 @@ void GDSWriter::writeText(dbGDSText* text){
     writeRecord(r3);
   }
 
-  if(text->getWidth() != 0){
+  if (text->getWidth() != 0) {
     record_t r4;
     r4.type = RecordType::WIDTH;
     r4.dataType = DataType::INT_4;
@@ -370,7 +380,7 @@ void GDSWriter::writeText(dbGDSText* text){
     writeRecord(r4);
   }
 
-  if(!text->get_sTrans().identity()){
+  if (!text->get_sTrans().identity()) {
     writeSTrans(text->get_sTrans());
   }
 
@@ -381,7 +391,6 @@ void GDSWriter::writeText(dbGDSText* text){
   r5.dataType = DataType::ASCII_STRING;
   r5.data8 = text->getText();
   writeRecord(r5);
-
 }
 
 void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
@@ -389,13 +398,13 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
   record_t r;
   r.type = RecordType::STRANS;
   r.dataType = DataType::BIT_ARRAY;
-  
+
   char data0 = strans._flipX << 7;
   char data1 = strans._absAngle << 2 | strans._absMag << 1;
   r.data8 = {data0, data1};
   writeRecord(r);
 
-  if(strans._mag != 1.0){
+  if (strans._mag != 1.0) {
     record_t r2;
     r2.type = RecordType::MAG;
     r2.dataType = DataType::REAL_8;
@@ -403,7 +412,7 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
     writeRecord(r2);
   }
 
-  if(strans._angle != 0.0){
+  if (strans._angle != 0.0) {
     record_t r3;
     r3.type = RecordType::ANGLE;
     r3.dataType = DataType::REAL_8;
@@ -424,7 +433,4 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   writeRecord(r);
 }
 
-} // namespace odb
-
-
-
+}  // namespace odb
