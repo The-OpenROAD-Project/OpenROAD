@@ -1311,8 +1311,6 @@ void FlexDR::fixMaxSpacing()
     auto worker = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
     Rect ext_box;
     Rect drc_box;
-    auto minGcellIdx = getDesign()->getTopBlock()->getGCellIdx(
-        {route_box.xMin(), route_box.yMin()});
     route_box.bloat(MTSAFEDIST, ext_box);
     route_box.bloat(DRCSAFEDIST, drc_box);
     worker->setRouteBox(route_box);

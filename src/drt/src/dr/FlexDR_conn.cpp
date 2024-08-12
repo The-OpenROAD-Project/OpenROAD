@@ -857,7 +857,7 @@ void FlexDRConnectivityChecker::splitPathSegs(
     auto& curr = segSpans[i];
     frPathSeg* currPs = static_cast<frPathSeg*>(netRouteObjs[curr.second]);
     if (!highestPs || curr.first.lo >= highestPs->high()) {
-      if (!splitPoints.empty()) {
+      if (!splitPoints.empty() && highestPs != nullptr) {
         splitPathSegs_commit(
             splitPoints, highestPs, first, i, segSpans, netRouteObjs);
       }

@@ -831,7 +831,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             styleWidth = layer->getWidth();
           }
         }
-        width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
+        width = tech_->name2layer_[layerName]->getWidth();
         auto defaultBeginExt = width / 2;
         auto defaultEndExt = width / 2;
 
@@ -1994,6 +1994,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());
     rptr->setCutClassIdx(
         tmpLayer->getCutClassIdx(rule->getCutClass()->getName()));
+    if (rptr->getCutClassIdx() < 0) {
+      logger_->error(DRT,
+                     148,
+                     "Invalid index for cut class {}.",
+                     rule->getCutClass()->getName());
+    }
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
