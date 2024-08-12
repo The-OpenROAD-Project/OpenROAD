@@ -33,7 +33,6 @@
 #pragma once
 
 #include <optional>
-
 #include "odb.h"
 #include "geom.h"
 #include "dbStream.h"
