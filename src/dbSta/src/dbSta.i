@@ -122,6 +122,14 @@ sta_to_db_pin(Pin *pin)
   return iterm;
 }
 
+Port *
+sta_pin_to_port(Pin *pin)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->port(pin);
+}
+
 odb::dbNet *
 sta_to_db_net(Net *net)
 {
