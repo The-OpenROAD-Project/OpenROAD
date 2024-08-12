@@ -33,9 +33,10 @@
 #pragma once
 
 #include <optional>
-#include "odb.h"
-#include "geom.h"
+
 #include "dbStream.h"
+#include "geom.h"
+#include "odb.h"
 
 namespace odb {
 
@@ -124,7 +125,6 @@ class dbOrientType
  private:
   Value _value;
 };
-
 
 class dbGDSSTrans
 {

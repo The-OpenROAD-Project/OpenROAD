@@ -88,10 +88,10 @@ uint64_t double_to_real8(double value) {
   return result;
 }
 
-std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(std::string filename){
+std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(const std::string& filename){
   std::map<std::pair<int16_t, int16_t>, std::string> layerMap;
   XML xml;
-  xml.parseXML(std::move(filename));
+  xml.parseXML(filename);
   XML* layerList = xml.findChild("layer-properties");
   if (layerList == nullptr) {
     throw std::runtime_error("Invalid .lyp file");

@@ -116,6 +116,6 @@ struct record_t
 };
 
 std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
-    std::string filename);
+    const std::string& filename);
 
 }  // namespace odb

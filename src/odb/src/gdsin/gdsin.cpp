@@ -58,7 +58,7 @@ bool GDSReader::checkRData(DataType eType, size_t eSize)
   if (_r.dataType != eType) {
     std::string error_msg = "Corrupted GDS, Expected data type: " + std::to_string(eType)
      + " Got: " + std::to_string(_r.dataType);
-    throw std::runtime_error("Corrupted GDS, Unexpected data type!");
+    throw std::runtime_error(error_msg);
   }
   return true;
 }
@@ -129,10 +129,10 @@ bool GDSReader::readRecord()
     }
   }
   
-  if(_file)
+  if(_file) {
     return true;
-  else
-    return false;
+  }
+  return false;
 }
 
 
