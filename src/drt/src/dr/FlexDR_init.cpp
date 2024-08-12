@@ -602,7 +602,9 @@ void FlexDRWorker::initNets_initDR_helper(
           }
         }
       }
-      bounds[bestIndex].emplace_back(point, lNum);
+      if (bestIndex >= 0) {
+        bounds[bestIndex].emplace_back(point, lNum);
+      }
     }
   }
   // Remove pins from graph for routeObjs/extObjs net resolution
@@ -620,7 +622,9 @@ void FlexDRWorker::initNets_initDR_helper(
   for (auto& obj : netRouteObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    routeObjs[compIdx].emplace_back(std::move(obj));
+    if (compIdx >= 0) {
+      routeObjs[compIdx].emplace_back(std::move(obj));
+    }
   }
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
@@ -1847,7 +1851,7 @@ void FlexDRWorker::initNets_numPinsIn()
           break;
         }
       }
-      if (!hasPrefAP) {
+      if (!hasPrefAP && firstAP != nullptr) {
         const Point pt = firstAP->getPoint();
         allPins.emplace_back(Rect(pt, pt), pin.get());
       }

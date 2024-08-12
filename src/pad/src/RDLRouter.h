@@ -44,6 +44,7 @@
 
 #include "gui/gui.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace odb {
 class dbBlock;
@@ -82,11 +83,25 @@ class RDLGui : public gui::Renderer
   static constexpr const char* draw_edge_ = "Edges";
   static constexpr const char* draw_obs_ = "Obstructions";
   static constexpr const char* draw_fly_wires_ = "Routing fly wires";
+  static constexpr const char* draw_routes_ = "Routes";
+  static constexpr const char* draw_route_obstructions_ = "Route obstructions";
 };
 
 class RDLRouter
 {
  public:
+  using GridGraph
+      = boost::adjacency_list<boost::listS,
+                              boost::vecS,
+                              boost::undirectedS,
+                              boost::no_property,
+                              boost::property<boost::edge_weight_t, int64_t>>;
+
+  using GridWeightMap
+      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
+  using grid_vertex = GridGraph::vertex_descriptor;
+  using grid_edge = GridGraph::edge_descriptor;
+
   enum class RouteState
   {
     PENDING,
@@ -112,6 +127,12 @@ class RDLRouter
     odb::Point pt0;
     odb::Point pt1;
   };
+  struct NetRoute
+  {
+    std::vector<grid_vertex> route;
+    RouteTarget source;
+    RouteTarget target;
+  };
 
   RDLRouter(utl::Logger* logger,
             odb::dbBlock* block,
@@ -129,26 +150,15 @@ class RDLRouter
 
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
 
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
-  using Box = boost::geometry::model::box<Point>;
-  using ObsValue = std::pair<Box, odb::dbNet*>;
+  using ObsValue = std::pair<odb::Rect, odb::dbNet*>;
   using ObsTree
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
 
-  using GridGraph
-      = boost::adjacency_list<boost::listS,
-                              boost::vecS,
-                              boost::undirectedS,
-                              boost::no_property,
-                              boost::property<boost::edge_weight_t, int64_t>>;
-
-  using GridWeightMap
-      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
-  using grid_vertex = GridGraph::vertex_descriptor;
-  using grid_edge = GridGraph::edge_descriptor;
+  using GridValue = std::pair<odb::Point, grid_vertex>;
+  using GridTree
+      = boost::geometry::index::rtree<GridValue,
+                                      boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
   const std::map<grid_vertex, odb::Point>& getVertexMap() const
@@ -161,7 +171,17 @@ class RDLRouter
     return routing_terminals_;
   }
 
+  const std::map<odb::dbNet*, std::vector<NetRoute>>& getRoutes() const
+  {
+    return routes_;
+  }
+
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
+
+  odb::Rect getPointObstruction(const odb::Point& pt) const;
+  odb::Polygon getEdgeObstruction(const odb::Point& pt0,
+                                  const odb::Point& pt1) const;
+  bool is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1) const;
 
  private:
   void makeGraph();
@@ -219,6 +239,7 @@ class RDLRouter
 
   // Lookup tables
   std::map<odb::Point, grid_vertex> point_vertex_map_;
+  GridTree vertex_grid_tree_;
   std::map<grid_vertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
@@ -226,6 +247,9 @@ class RDLRouter
   std::vector<int> x_grid_;
   std::vector<int> y_grid_;
   std::map<odb::dbNet*, std::vector<TargetPair>> routing_terminals_;
+
+  // Routing information
+  std::map<odb::dbNet*, std::vector<NetRoute>> routes_;
 
   RDLGui* gui_;
 };

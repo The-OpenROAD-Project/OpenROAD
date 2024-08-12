@@ -167,6 +167,11 @@ void io::Parser::patchGuides(frNet* net,
       closerGuideIdx = guideIdx;
     }
   }
+
+  if (closerGuideIdx < 0) {
+    logger_->warn(DRT, 145, "No guide near the gcell.");
+    return;
+  }
   //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().ll(),
   //    pl);
   //    design->getTopBlock()->getGCellIdx(guides[closerGuideIdx].getBBox().ur(),

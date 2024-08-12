@@ -3050,13 +3050,13 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
       load_pins.emplace_back(load_pin);
     }
   }
-  data.load_pins = load_pins;
+  data.load_pins = std::move(load_pins);
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
   data.location = db_inst->getLocation();
   data.parent = db_network_->topInstance();
   std::string name = db_network_->name(buffer);
-  removed_buffer_map_[name] = data;
+  removed_buffer_map_[name] = std::move(data);
 }
 
 void Resizer::journalRestoreBuffers(int& removed_buffer_count)
