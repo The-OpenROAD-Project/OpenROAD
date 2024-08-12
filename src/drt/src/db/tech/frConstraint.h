@@ -2228,7 +2228,7 @@ class frLef58EnclosureConstraint : public frConstraint
 {
  public:
   frLef58EnclosureConstraint(odb::dbTechLayerCutEnclosureRule* ruleIn)
-      : db_rule_(ruleIn), cut_class_idx_(-1);
+      : db_rule_(ruleIn), cut_class_idx_(-1)
   {
   }
   void setCutClassIdx(int in) { cut_class_idx_ = in; }
