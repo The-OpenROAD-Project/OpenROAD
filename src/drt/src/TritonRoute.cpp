@@ -212,9 +212,10 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
 {
   bool on = debug_->debugDR;
   std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
-            debug_.get(), design_.get(), db_, logger_)
-                                          : nullptr;
+      = on && FlexDRGraphics::guiActive()
+            ? std::make_unique<FlexDRGraphics>(
+                  debug_.get(), design_.get(), db_, logger_)
+            : nullptr;
   auto worker
       = FlexDRWorker::load(workerStr, logger_, design_.get(), graphics_.get());
   worker->setViaData(viaData);
@@ -242,9 +243,10 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   ar >> viaData;
 
   std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(
-            debug_.get(), design_.get(), db_, logger_)
-                                          : nullptr;
+      = on && FlexDRGraphics::guiActive()
+            ? std::make_unique<FlexDRGraphics>(
+                  debug_.get(), design_.get(), db_, logger_)
+            : nullptr;
   std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir),
                            std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
@@ -543,6 +545,10 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
+  if (db_ == nullptr || db_->getChip() == nullptr
+      || db_->getChip()->getBlock() == nullptr) {
+    logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
+  }
   io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
@@ -587,10 +593,7 @@ void TritonRoute::initDesign()
     }
   }
   parser.postProcess();
-  if (db_ != nullptr && db_->getChip() != nullptr
-      && db_->getChip()->getBlock() != nullptr) {
-    db_callback_->addOwner(db_->getChip()->getBlock());
-  }
+  db_callback_->addOwner(db_->getChip()->getBlock());
 }
 
 void TritonRoute::prep()

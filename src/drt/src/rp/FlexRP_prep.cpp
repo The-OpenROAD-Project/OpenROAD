@@ -380,7 +380,7 @@ void FlexRP::prep_cutSpcTbl()
           con->setDefaultCenterToCenter(
               dbRule->isCenterToCenter(cutClass1, cutClass2));
           con->setDefaultCenterAndEdge(
-              dbRule->isCenterAndEdge(cutClass1, cutClass2));
+              dbRule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
         }
       }
     }
@@ -429,7 +429,7 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
 }
 
 void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum& lNum,
@@ -520,7 +520,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
 }
 
 void FlexRP::prep_viaForbiddenPlanarLen_minStep(
@@ -598,9 +598,9 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr) {
-    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
   } else {
-    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
   }
 }
 
@@ -742,9 +742,9 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord, endCoord));
   }
   if (ndr) {
-    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
   } else {
-    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = std::move(forbiddenRanges);
   }
 
   if (!ndr) {
