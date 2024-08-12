@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace odb {
 
