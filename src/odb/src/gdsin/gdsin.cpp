@@ -10,7 +10,9 @@
 #include "../db/dbGDSText.h"
 #include "../db/dbGDSBox.h"
 
-#define DEBUG 0
+enum {
+  DEBUG = 0
+};
 
 namespace odb {
 

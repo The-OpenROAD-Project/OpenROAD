@@ -4,11 +4,11 @@
 
 namespace odb {
 
-XML::XML() { }
+XML::XML() = default;
 
-XML::~XML() { }
+XML::~XML() = default;
 
-void XML::parseXML(std::string filename)
+void XML::parseXML(const std::string& filename)
 {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -43,10 +43,12 @@ void XML::parseXML(std::string filename)
             }
             continue;
         }
-        else if (token[0] == '?') {  // XML declaration
+
+        if (token[0] == '?') {  // XML declaration
             continue;
         }
-        else if (token[token.length() - 1] == '/') {  // Self-closing tag
+        
+        if (token[token.length() - 1] == '/') {  // Self-closing tag
             XML newElement;
             newElement._name = token.substr(0, token.length() - 1);
             if (!elementStack.empty()) {
@@ -82,7 +84,7 @@ void XML::parseXML(std::string filename)
 
 std::string XML::to_string(int depth) const
 {
-    std::string indent(depth * 2, ' ');
+    std::string indent(depth * 2UL, ' ');
     indent += _name + ": " + _value + "\n";
     for (const auto& child : _children) {
         indent += child.to_string(depth + 1);
@@ -102,7 +104,7 @@ std::string XML::getValue(){
     return _value;
 }
 
-XML* XML::findChild(std::string name){
+XML* XML::findChild(const std::string& name){
     for(auto& child : _children){
         if(child.getName() == name){
             return &child;

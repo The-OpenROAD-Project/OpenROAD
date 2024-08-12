@@ -67,13 +67,14 @@ class _dbGDSElement : public _dbObject
                       + std::to_string(_datatype) + " XY [";
     for (int i = 0; i < _xy.size(); i++) {
       str += std::to_string(_xy[i].x()) + "," + std::to_string(_xy[i].y());
-      if (i != _xy.size() - 1)
+      if (i != _xy.size() - 1) {
         str += ",";
+      }
     }
     return str + "]";
   }
 
-  _dbGDSElement(){};
+  _dbGDSElement() = default;
 
   // User Code End Methods
 

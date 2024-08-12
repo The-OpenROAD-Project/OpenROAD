@@ -35,13 +35,8 @@
 
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
-#include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "dbHashTable.hpp"
-#include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 template class dbTable<_dbGDSLib>;
@@ -217,7 +212,7 @@ void dbGDSLib::setLibname(std::string libname)
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
 
-  obj->_libname = libname;
+  obj->_libname = std::move(libname);
 }
 
 std::string dbGDSLib::getLibname() const
@@ -269,7 +264,7 @@ void dbGDSLib::set_srfName(std::string srfName)
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
 
-  obj->_srfName = srfName;
+  obj->_srfName = std::move(srfName);
 }
 
 std::string dbGDSLib::get_srfName() const

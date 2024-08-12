@@ -98,13 +98,13 @@ static const size_t dataTypeSize[DataType::INVALID_DT] = {1, 1, 2, 4, 4, 8, 1};
 
 double real8_to_double(uint64_t real);
 
-uint64_t double_to_real8(double real);
+uint64_t double_to_real8(double value);
 
 DataType toDataType(uint8_t dataType);
 
 uint8_t fromDataType(DataType dataType);
 
-typedef struct
+struct record_t
 {
   RecordType type;
   DataType dataType;
@@ -113,7 +113,7 @@ typedef struct
   std::vector<int16_t> data16;
   std::vector<int32_t> data32;
   std::vector<double> data64;
-} record_t;
+};
 
 std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     std::string filename);

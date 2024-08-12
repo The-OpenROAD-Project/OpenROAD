@@ -19,12 +19,12 @@ class XML
   XML();
   ~XML();
 
-  void parseXML(std::string filename);
+  void parseXML(const std::string& filename);
   std::string to_string(int depth) const;
 
   std::vector<XML>& getChildren();
 
-  XML* findChild(std::string name);
+  XML* findChild(const std::string& name);
 
   std::string getName();
 

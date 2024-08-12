@@ -64,11 +64,10 @@ class _dbGDSSRef : public _dbGDSElement
   {
     if (_colRow.first == 1 && _colRow.second == 1) {
       return "SREF " + _sName + " " + _sTrans.to_string();
-    } else {
-      return "AREF " + _sName + " " + _sTrans.to_string() + " COL "
-             + std::to_string(_colRow.first) + " ROW "
-             + std::to_string(_colRow.second);
     }
+    return "AREF " + _sName + " " + _sTrans.to_string() + " COL "
+           + std::to_string(_colRow.first) + " ROW "
+           + std::to_string(_colRow.second);
   }
 
   // User Code End Methods

@@ -1,6 +1,8 @@
 #include "odb/db.h"
 #include "odb/gdsUtil.h"
 #include "odb/xml.h"
+#include <map>
+#include <utility>
 
 namespace odb {
 
@@ -67,7 +69,9 @@ double real8_to_double(uint64_t real) {
 }
 
 uint64_t double_to_real8(double value) {
-  if (value == 0) return 0;
+  if (value == 0) {
+    return 0;
+  }
   uint8_t u8_1 = 0;
   if (value < 0) {
       u8_1 = 0x80;
@@ -75,7 +79,9 @@ uint64_t double_to_real8(double value) {
   }
   const double fexp = 0.25 * log2(value);
   double exponent = ceil(fexp);
-  if (exponent == fexp) exponent++;
+  if (exponent == fexp) {
+    exponent++;
+  }
   const uint64_t mantissa = (uint64_t)(value * pow(16, 14 - exponent));
   u8_1 += (uint8_t)(64 + exponent);
   const uint64_t result = ((uint64_t)u8_1 << 56) | (mantissa & 0x00FFFFFFFFFFFFFF);
@@ -85,7 +91,7 @@ uint64_t double_to_real8(double value) {
 std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(std::string filename){
   std::map<std::pair<int16_t, int16_t>, std::string> layerMap;
   XML xml;
-  xml.parseXML(filename);
+  xml.parseXML(std::move(filename));
   XML* layerList = xml.findChild("layer-properties");
   if (layerList == nullptr) {
     throw std::runtime_error("Invalid .lyp file");
@@ -97,8 +103,8 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(std::string filen
     }
     std::string name = layer.findChild("name")->getValue();
     std::string source = layer.findChild("source")->getValue();
-    size_t at_pos = source.find("@");
-    size_t slash_pos = source.find("/");
+    size_t at_pos = source.find('@');
+    size_t slash_pos = source.find('/');
     if (at_pos == std::string::npos || slash_pos == std::string::npos) {
       throw std::runtime_error("Invalid .lyp file");
     }

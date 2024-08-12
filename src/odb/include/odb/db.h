@@ -5731,7 +5731,7 @@ class dbGDSLib : public dbObject
 
   std::string get_srfName() const;
 
-  void setUnits(double uu_per_dbu, double dbu_per_uu);
+  void setUnits(double uu_per_dbu, double dbu_per_meter);
 
   std::pair<double, double> getUnits() const;
 

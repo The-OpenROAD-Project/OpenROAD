@@ -138,7 +138,7 @@ class dbGDSSTrans
 
   dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
 
-  bool operator==(const dbGDSSTrans& t) const;
+  bool operator==(const dbGDSSTrans& rhs) const;
 
   std::string to_string() const;
 
@@ -146,7 +146,7 @@ class dbGDSSTrans
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
-dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t);
+dbOStream& operator<<(dbOStream& stream, dbGDSSTrans t);
 
 class dbGDSTextPres
 {
@@ -172,7 +172,7 @@ class dbGDSTextPres
 
   dbGDSTextPres(uint8_t fontNum, VPres vPres, HPres hPres);
 
-  bool operator==(const dbGDSTextPres& t) const;
+  bool operator==(const dbGDSTextPres& rhs) const;
 
   bool identity() const;
 
@@ -180,7 +180,7 @@ class dbGDSTextPres
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
-dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres t);
+dbOStream& operator<<(dbOStream& stream, dbGDSTextPres t);
 
 ///
 /// The dbGroup's basis.

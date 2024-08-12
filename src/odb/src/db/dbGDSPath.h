@@ -60,9 +60,9 @@ class _dbGDSPath : public _dbGDSElement
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
 
-  std::string to_string()
+  std::string to_string() override
   {
-    return "PATH" + _dbGDSElement::to_string() + " WIDTH "
+    return "PATH " + _dbGDSElement::to_string() + " WIDTH "
            + std::to_string(_width) + " PATHTYPE " + std::to_string(_pathType);
   }
 

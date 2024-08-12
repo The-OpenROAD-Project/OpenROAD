@@ -252,9 +252,10 @@ bool dbGDSSTrans::operator==(const dbGDSSTrans& rhs) const
 
 std::string dbGDSSTrans::to_string() const 
 {
-  std::string s("");
-  if(_flipX)
+  std::string s;
+  if(_flipX){
     s += std::string("FLIP_X ");
+  }
   s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
   s += std::to_string(_mag) + " ";
   s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
@@ -289,7 +290,7 @@ bool dbGDSTextPres::operator==(const dbGDSTextPres& rhs) const
 
 std::string dbGDSTextPres::to_string() const 
 {
-  std::string s("");
+  std::string s;
   s += "FONT " + std::to_string(_fontNum) + " ";
   s += (_vPres == dbGDSTextPres::VPres::TOP) ? std::string("TOP ") : std::string("BOTTOM ");
   s += (_hPres == dbGDSTextPres::HPres::LEFT) ? std::string("LEFT ") : std::string("RIGHT ");

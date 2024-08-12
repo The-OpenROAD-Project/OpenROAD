@@ -35,8 +35,8 @@
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
-#include "dbHashTable.h"
-#include "dbTable.h"
+#include "dbHashTable.hpp"
+#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/odb.h"
 // User Code Begin Includes
