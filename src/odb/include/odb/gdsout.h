@@ -44,6 +44,7 @@ class GDSWriter
   void writeXY(dbGDSElement* el);
   void writeDataType(dbGDSElement* el);
   void writeEndel();
+  void writePropAttr(dbGDSElement* el);
 
   void writeLib();
   void writeStruct(dbGDSStructure* str);

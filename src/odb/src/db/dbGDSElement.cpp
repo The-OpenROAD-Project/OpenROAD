@@ -159,8 +159,7 @@ void dbGDSElement::setPropattr(
   obj->_propattr = propattr;
 }
 
-std::vector<std::pair<std::int16_t, std::string>> dbGDSElement::getPropattr()
-    const
+std::vector<std::pair<std::int16_t, std::string>>& dbGDSElement::getPropattr()
 {
   _dbGDSElement* obj = (_dbGDSElement*) this;
   return obj->_propattr;

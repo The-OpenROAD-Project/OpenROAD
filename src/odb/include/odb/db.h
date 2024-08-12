@@ -7359,7 +7359,7 @@ class dbGDSElement : public dbObject
 
   void setPropattr(std::vector<std::pair<std::int16_t, std::string>> propattr);
 
-  std::vector<std::pair<std::int16_t, std::string>> getPropattr() const;
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
 };
 
 class dbGDSStructure : public dbObject
@@ -7374,6 +7374,16 @@ class dbGDSStructure : public dbObject
   static dbGDSStructure* create(dbGDSLib* lib, const char* name);
 
   static void destroy(dbGDSStructure* structure);
+
+  void removeElement(int index);
+
+  void addElement(dbGDSElement* element);
+
+  dbGDSElement* getElement(int index);
+
+  dbGDSElement* operator[] (int index);
+
+  int getNumElements();
 
   // User Code End dbGDSStructure
 };

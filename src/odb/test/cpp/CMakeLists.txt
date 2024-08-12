@@ -43,8 +43,8 @@ target_link_libraries(TestAccessPoint ${TEST_LIBS})
 target_link_libraries(TestGuide ${TEST_LIBS})
 target_link_libraries(TestNetTrack ${TEST_LIBS})
 target_link_libraries(TestMaster ${TEST_LIBS})
-target_link_libraries(TestGDSIn gdsin)
-target_link_libraries(TestXML gdsin)
+target_link_libraries(TestGDSIn gdsin odb_test_helper)
+target_link_libraries(TestXML gdsin odb_test_helper)
 
 # FAILING TARGETS
 # add_test(NAME TestLef58Properties COMMAND TestLef58Properties)

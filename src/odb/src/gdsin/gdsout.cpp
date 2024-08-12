@@ -199,6 +199,27 @@ void GDSWriter::writeElement(dbGDSElement* el)
   else{
     throw std::runtime_error("Invalid / Unsupported element type");
   }
+
+  writePropAttr(el);
+  writeEndel();
+}
+
+void GDSWriter::writePropAttr(dbGDSElement* el)
+{
+  auto& props = el->getPropattr();
+  for(auto pair : props){
+    record_t r;
+    r.type = RecordType::PROPATTR;
+    r.dataType = DataType::INT_2;
+    r.data16 = {pair.first};
+    writeRecord(r);
+
+    record_t r2;
+    r2.type = RecordType::PROPVALUE;
+    r2.dataType = DataType::ASCII_STRING;
+    r2.data8 = pair.second;
+    writeRecord(r2);
+  }
 }
 
 void GDSWriter::writeLayer(dbGDSElement* el)
@@ -250,7 +271,6 @@ void GDSWriter::writeBoundary(dbGDSBoundary* bnd)
   writeLayer(bnd);
   writeDataType(bnd);
   writeXY(bnd);
-  writeEndel();
 }
 
 void GDSWriter::writePath(dbGDSPath* path)
@@ -280,7 +300,6 @@ void GDSWriter::writePath(dbGDSPath* path)
   }
   
   writeXY(path);
-  writeEndel();
 }
 
 void GDSWriter::writeSRef(dbGDSSRef* sref)
@@ -317,7 +336,6 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   }
 
   writeXY(sref);
-  writeEndel();
 }
 
 void GDSWriter::writeText(dbGDSText* text){
@@ -364,7 +382,6 @@ void GDSWriter::writeText(dbGDSText* text){
   r5.data8 = text->getText();
   writeRecord(r5);
 
-  writeEndel();
 }
 
 void GDSWriter::writeSTrans(const dbGDSSTrans& strans)

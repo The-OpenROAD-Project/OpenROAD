@@ -41,6 +41,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+
 namespace odb {
 template class dbTable<_dbGDSStructure>;
 
@@ -168,6 +169,33 @@ dbGDSLib* dbGDSStructure::getGDSLib()
 {
   return (dbGDSLib*) getImpl()->getOwner();
 }
+
+void dbGDSStructure::removeElement(int index)
+{
+  auto& elements = ((_dbGDSStructure*)this)->_elements;
+  elements.erase(elements.begin() + index);
+}
+
+void dbGDSStructure::addElement(dbGDSElement* element)
+{
+  ((_dbGDSStructure*)this)->_elements.push_back((_dbGDSElement*)element);
+}
+
+dbGDSElement* dbGDSStructure::getElement(int index)
+{
+  return (dbGDSElement*)((_dbGDSStructure*)this)->_elements[index];
+}
+
+dbGDSElement* dbGDSStructure::operator[](int index)
+{
+  return getElement(index);
+}
+
+int dbGDSStructure::getNumElements()
+{
+  return ((_dbGDSStructure*)this)->_elements.size();
+}
+
 
 // User Code End dbGDSStructurePublicMethods
 }  // namespace odb

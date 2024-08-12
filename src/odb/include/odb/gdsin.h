@@ -122,10 +122,27 @@ class GDSReader
   bool processElement(dbGDSStructure& str);
 
   // Specific element types, same as processElement
-  bool processBoundary(dbGDSStructure& str);
-  bool processPath(dbGDSStructure& str);
-  bool processSRef(dbGDSStructure& str);
-  bool processText(dbGDSStructure& str);
+  dbGDSElement* processBoundary();
+  dbGDSElement* processPath();
+  dbGDSElement* processSRef();
+  dbGDSElement* processText();
+  dbGDSElement* processBox();
+  dbGDSElement* processNode();
+
+  /**
+   * Parses special attributes of a GDS Element
+   * 
+   * @param elem The GDS Element to add the attributes to
+   */
+  void processPropAttr(dbGDSElement* elem);
+
+  /**
+   * Parses the XY data of a GDS Element
+   * 
+   * @param elem The GDS Element to add the XY data to
+   * @return true if the XY data was successfully read
+   */
+  bool processXY(dbGDSElement* elem);
 
   /** 
    * Parses a GDS STrans from the GDS file 
