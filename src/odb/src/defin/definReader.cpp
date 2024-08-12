@@ -2140,10 +2140,15 @@ bool definReader::createBlock(const char* file)
 
   dbModule* top_module = _block->getTopModule();
 
-  if (top_module->getChildren().size() > 0) {
+  // sort the mod inst order so that in hierarchical
+  // mode we don't see distracting regression failures
+  // from order difference between dbVector and dbSet
+  // traversals for modinsts.
+
+  if (top_module->getChildren().size() > 1) {
     top_module->getChildren().reverse();
   }
-  if (top_module->getInsts().size() > 0) {
+  if (top_module->getInsts().size() > 1) {
     top_module->getInsts().reverse();
   }
   return true;
