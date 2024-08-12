@@ -112,19 +112,6 @@ proc report_pd_net { net alpha } {
   stt::report_pd_tree $xs $ys $drvr_index $alpha
 }
 
-proc report_foars_net { net } {
-  set pins [lassign $net net_name drvr_index]
-  puts "Net $net_name"
-  set xs {}
-  set ys {}
-  foreach pin $pins {
-    lassign $pin pin_name x y
-    lappend xs $x
-    lappend ys $y
-  }
-  stt::report_foars_tree $xs $ys $drvr_index
-}
-
 proc report_flute_net { net } {
   set pins [lassign $net net_name drvr_index]
   puts "Net $net_name"
