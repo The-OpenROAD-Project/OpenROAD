@@ -1,0 +1,26 @@
+{
+    "name":"dbGDSSRef",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_sName",
+        "type":"std::string",
+        "flags":[]
+      },
+      {
+        "name":"_sTrans",
+        "type":"dbGDSSTrans",
+        "flags":[]
+      },
+      {
+        "name":"_colRow",
+        "type":"std::pair<int16_t,int16_t>",
+        "flags":["no-template"]
+      }
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+  }
+  

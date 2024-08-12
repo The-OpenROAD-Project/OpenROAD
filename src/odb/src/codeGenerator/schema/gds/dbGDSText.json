@@ -1,0 +1,41 @@
+{
+    "name":"dbGDSText",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_textType",
+        "type":"int16_t",
+        "flags":[]
+      },
+      {
+        "name":"_presentation",
+        "type":"dbGDSTextPres",
+        "flags":[]
+      },
+      {
+        "name":"_pathType",
+        "type":"int16_t",
+        "flags":[]
+      },
+      {
+        "name":"_width",
+        "type":"int",
+        "flags":[]
+      },
+      {
+        "name":"_sTrans",
+        "type":"dbGDSSTrans",
+        "flags":[]
+      },
+      {
+        "name":"_text",
+        "type":"std::string",
+        "flags":[]
+      }
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+}
+  

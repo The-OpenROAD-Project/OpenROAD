@@ -1,0 +1,16 @@
+{
+    "name":"dbGDSNode",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_nodeType",
+        "type":"int16_t",
+        "flags":[]
+      }
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+}
+  

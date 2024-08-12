@@ -1,0 +1,16 @@
+{
+    "name":"dbGDSBox",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_boxType",
+        "type":"int16_t",
+        "flags":[]
+      }
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+}
+  
