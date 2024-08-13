@@ -5,6 +5,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
+#include "sta/Property.hh"
 #include "sta/VerilogWriter.hh"
 
 namespace ord {
@@ -20,12 +21,18 @@ using sta::Instance;
 %include "../../Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTclTypes.i"
-%include "tcl/StaTcl.i"
-%include "tcl/NetworkEdit.i"
-%include "sdf/Sdf.i"
 %include "dcalc/DelayCalc.i"
+%include "graph/Graph.i"
+%include "liberty/Liberty.i"
+%include "network/Network.i"
+%include "network/NetworkEdit.i"
 %include "parasitics/Parasitics.i"
 %include "power/Power.i"
+%include "sdc/Sdc.i"
+%include "sdf/Sdf.i"
+%include "search/Search.i"
+%include "spice/WriteSpice.i"
+%include "util/Util.i"
 
 %inline %{
 
