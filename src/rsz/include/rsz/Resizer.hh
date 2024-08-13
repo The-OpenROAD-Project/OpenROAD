@@ -538,7 +538,8 @@ class Resizer : public dbStaState
   Point location(Instance* inst);
   double area(dbMaster* master);
   double area(Cell* cell);
-  double splitWireDelayDiff(double wire_length, LibertyCell* buffer_cell,
+  double splitWireDelayDiff(double wire_length,
+                            LibertyCell* buffer_cell,
                             std::unique_ptr<dbSta>& sta);
   double maxSlewWireDiff(LibertyPort* drvr_port,
                          LibertyPort* load_port,
