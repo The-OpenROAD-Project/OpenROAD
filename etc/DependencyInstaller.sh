@@ -234,8 +234,8 @@ _installOrTools() {
     os=$1
     version=$2
     arch=$3
-    orToolsVersionBig=9.5
-    orToolsVersionSmall=${orToolsVersionBig}.2237
+    orToolsVersionBig=9.10
+    orToolsVersionSmall=${orToolsVersionBig}.4067
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
