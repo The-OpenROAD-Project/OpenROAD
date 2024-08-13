@@ -176,6 +176,9 @@ class Oct
   int yMax() const;
   std::vector<Point> getPoints() const;
 
+  Oct bloat(int margin) const;
+  Rect getRect() const;
+
   friend dbIStream& operator>>(dbIStream& stream, Oct& o);
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
 
@@ -876,6 +879,19 @@ inline std::vector<Point> Oct::getPoints() const
                       center_high_.getY() - B);  // high oct (-A,-B)
   }
   return points;
+}
+
+Oct Oct::bloat(int margin) const
+{
+  return Oct(center_low_, center_high_, A_ + margin);
+}
+
+Rect Oct::getRect() const
+{
+  return Rect(center_low_.x() - A_,
+              center_low_.y() - A_,
+              center_high_.x() + A_,
+              center_high_.y() + A_);
 }
 
 inline Polygon::Polygon(const std::vector<Point>& points)
