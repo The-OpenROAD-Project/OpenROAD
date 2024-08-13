@@ -327,7 +327,7 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
       if (new_dist < dist) {
         dist = new_dist;
       } else {
-        return {grid[i - 1], static_cast<int>(i - 1)};
+        return {grid[i - 1], static_cast<int>(i) - 1};
       }
     }
 
