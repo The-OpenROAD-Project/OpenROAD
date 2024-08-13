@@ -812,7 +812,7 @@ double RepairAntennas::diffArea(odb::dbMTerm* mterm)
 }
 
 //////////////////////////////////
-void divideSegment(GSegment* seg, GRoute& route, odb::dbTechLayer* violation_layer, const int tile_size, const double ratio)
+int divideSegment(GSegment* seg, GRoute& route, odb::dbTechLayer* violation_layer, const int tile_size, const double ratio)
 {
   int length;
   bool is_horizontal = violation_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
@@ -822,41 +822,90 @@ void divideSegment(GSegment* seg, GRoute& route, odb::dbTechLayer* violation_lay
     length = std::abs(seg->init_y - seg->final_y);
   }
   const int n_tiles = length/tile_size;
-  const int req_tiles = (n_tiles/ratio) - 1; // sure lowest
+  const int req_tiles = int(n_tiles/ratio) * 0.8;
   const int req_size = req_tiles * tile_size;
   const int bridge_size = 2 * tile_size;
   const int layer_level = violation_layer->getRoutingLevel();
+  const int bridges_number = std::ceil(double(n_tiles - req_tiles) / double(req_tiles + 2));
+  const int m_size = std::ceil(double(n_tiles - (2 * bridges_number)) / (bridges_number + 1)); //tiles
   std::cerr << n_tiles <<  " " << req_tiles << " " << req_size << "\n";
+  std::cerr << bridges_number << " " << m_size << "\n";
+
+  int jumper_count = 1;
+  // place bridge in segment begin
   if (is_horizontal) {
+    // get jumper position
+    const int bridge_init_x = seg->init_x + req_size;
+    const int bridge_final_x = bridge_init_x + bridge_size;
     // create vias
     std::cerr << "Last size: " << route.size() << " ";
-    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level, seg->init_x + req_size, seg->init_y, layer_level + 1));
-    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level + 1, seg->init_x + req_size, seg->init_y, layer_level + 2));
-    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 1));
-    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 1, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 2));
+    route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level + 1));
+    route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level + 1, bridge_init_x, seg->init_y, layer_level + 2));
+    route.push_back(GSegment(bridge_final_x, seg->init_y, layer_level, bridge_final_x, seg->init_y, layer_level + 1));
+    route.push_back(GSegment(bridge_final_x, seg->init_y, layer_level + 1, bridge_final_x, seg->init_y, layer_level + 2));
+    // divide segment (new segment is created with size = required_size)
+    route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level + 2, bridge_final_x, seg->init_y, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level));
+    seg->init_x = bridge_final_x;
     std::cerr << "New size: " << route.size() << std::endl;
-    // divide segment
-    route.push_back(GSegment(seg->init_x + req_size, seg->init_y, layer_level + 2, seg->init_x + req_size + bridge_size, seg->init_y, layer_level + 2));
-    route.push_back(GSegment(seg->init_x + req_size + bridge_size, seg->init_y, layer_level, seg->final_x, seg->init_y, layer_level));
-    seg->final_x = seg->init_x + req_size;
   } else {
+    // Get jumper position
+    const int bridge_init_y = seg->init_y + req_size;
+    const int bridge_final_y = bridge_init_y + bridge_size;
     // create vias
     std::cerr << "Last size: " << route.size() << " ";
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level, seg->init_x, seg->init_y + req_size, layer_level + 1));
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level + 1, seg->init_x, seg->init_y + req_size, layer_level + 2));
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 1));
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 1, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level, seg->init_x, bridge_init_y, layer_level + 1));
+    route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level + 1, seg->init_x, bridge_init_y, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, bridge_final_y, layer_level, seg->init_x, bridge_final_y, layer_level + 1));
+    route.push_back(GSegment(seg->init_x, bridge_final_y, layer_level + 1, seg->init_x, bridge_final_y, layer_level + 2));
+    // divide segment (new segment is created with size = required_size)
+    route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level + 2, seg->init_x, bridge_final_y, layer_level + 2));
+    route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, seg->init_x, bridge_init_y, layer_level));
+    seg->init_y = bridge_final_y;
     std::cerr << "New size: " << route.size() << std::endl;
-    // divide segment
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size, layer_level + 2, seg->init_x, seg->init_y + req_size + bridge_size, layer_level + 2));
-    route.push_back(GSegment(seg->init_x, seg->init_y + req_size + bridge_size, layer_level, seg->init_x, seg->final_y, layer_level));
-    seg->final_y = seg->init_y + req_size;
   }
+  // if need place other in segment end
+  if (bridges_number > 1) {
+    jumper_count++;
+    if (is_horizontal) {
+      // Get jumper position
+      const int bridge_init_x = seg->final_x - req_size - bridge_size;
+      const int bridge_final_x = bridge_init_x + bridge_size;
+      // create vias
+      std::cerr << "Last size: " << route.size() << " ";
+      route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level + 1));
+      route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level + 1, bridge_init_x, seg->init_y, layer_level + 2));
+      route.push_back(GSegment(bridge_final_x, seg->init_y, layer_level, bridge_final_x, seg->init_y, layer_level + 1));
+      route.push_back(GSegment(bridge_final_x, seg->init_y, layer_level + 1, bridge_final_x, seg->init_y, layer_level + 2));
+      // divide segment (new segment is created with size = old_size - required_size)
+      route.push_back(GSegment(bridge_init_x, seg->init_y, layer_level + 2, bridge_final_x, seg->init_y, layer_level + 2));
+      route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level));
+      seg->init_x = bridge_final_x;
+      std::cerr << "New size: " << route.size() << std::endl;
+    } else {
+      // Get jumper position
+      const int bridge_init_y = seg->final_y - req_size - bridge_size;
+      const int bridge_final_y = bridge_init_y + bridge_size;
+      // create vias
+      std::cerr << "Last size: " << route.size() << " ";
+      route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level, seg->init_x, bridge_init_y, layer_level + 1));
+      route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level + 1, seg->init_x, bridge_init_y, layer_level + 2));
+      route.push_back(GSegment(seg->init_x, bridge_final_y, layer_level, seg->init_x, bridge_final_y, layer_level + 1));
+      route.push_back(GSegment(seg->init_x, bridge_final_y, layer_level + 1, seg->init_x, bridge_final_y, layer_level + 2));
+      // divide segment (new segment is created with size = old_size - requires_size)
+      route.push_back(GSegment(seg->init_x, bridge_init_y, layer_level + 2, seg->init_x, bridge_final_y, layer_level + 2));
+      route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, seg->init_x, bridge_init_y, layer_level));
+      seg->init_y = bridge_final_y;
+      std::cerr << "New size: " << route.size() << std::endl;
+    }
+  }
+  return jumper_count;
 }
 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
 {
   odb::dbTech* tech = db_->getTech();
+  int total_jumper = 0;
   for (auto const& net_violations : antenna_violations_) {
     odb::dbNet* db_net = net_violations.first;
     auto violations = net_violations.second;
@@ -868,20 +917,21 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
     for (ant::Violation& violation : violations) {
       odb::dbTechLayer* violation_layer
                 = tech->findRoutingLayer(violation.routing_level);
-      if (violation_layer->getUpperLayer()->getUpperLayer()) {
+      odb::dbTechLayer* upper_layer = tech->findRoutingLayer(violation.routing_level + 2);
+      if (upper_layer) {
         routing_layer_with_violations[violation.routing_level] = violation.ratio; 
-        std::cerr << "Layer " << violation_layer->getConstName() << " " << violation.ratio << "\n";
+        std::cerr << "Layer " << violation_layer->getConstName() << " ratio: " << violation.ratio << " n_pins: " << violation.gates.size() << "\n";
       }
     }
 
-    // Iterate route of net
+    // Iterate route of net (get segments)
     GRoute& route = routing[db_net];
     for (GSegment & seg : route) {
       const int l1 = seg.init_layer;
       const int l2 = seg.final_layer;
       //if (l1 != l2) {std::cerr << seg.init_x << " " << seg.init_y << " " << seg.final_x << " " << seg.final_y << std::endl;}
       if (l1 == l2 && l1 != 0 && routing_layer_with_violations.find(l1) != routing_layer_with_violations.end()) {
-        std::cerr << "Segment found\n";
+        //std::cerr << "Segment found\n";
 	segment_with_violations[l1].push_back(&seg);
       }
     }
@@ -897,7 +947,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
               return std::abs(seg1->init_x - seg1->final_x) > std::abs(seg2->init_x - seg2->final_x);
             });
         // test only with longest segment
-        divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
+        total_jumper += divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
       }
       else {
         std::cerr << "Vertical\n";
@@ -907,10 +957,11 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
                return std::abs(seg1->init_y - seg1->final_y) > std::abs(seg2->init_y - seg2->final_y);
              });
         // test only with longest segment
-        divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
-      } 
+        total_jumper += divideSegment(it.second[0], route, violation_layer, tile_size, routing_layer_with_violations[violation_layer->getRoutingLevel()]);
+      }
     }
   }
+  std::cerr << "Total jumper inserted " << total_jumper << "\n";
 }
 
 }  // namespace grt
