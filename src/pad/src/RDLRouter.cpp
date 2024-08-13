@@ -321,13 +321,13 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
 
   auto snap = [](const int pos, const std::vector<int>& grid) -> GridSnap {
     int dist = std::numeric_limits<int>::max();
-    for (size_t i = 0; i < grid.size(); i++) {
+    for (int i = 0; i < grid.size(); i++) {
       const int p = grid[i];
       const int new_dist = std::abs(p - pos);
       if (new_dist < dist) {
         dist = new_dist;
       } else {
-        return {grid[i - 1], static_cast<int>(i - 1)};
+        return {grid[i - 1], i - 1};
       }
     }
 

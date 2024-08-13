@@ -161,7 +161,7 @@ struct TreeNode
   bool assigned;
 
   int16_t status = 0;
-  int16_t conCNT;
+  int16_t conCNT = 0;
   int16_t botL, topL;
   // heights and eID arrays size were increased after using PD
   // to create the tree topologies.
@@ -192,7 +192,7 @@ struct Route
 
   // valid for ZRoute:
   // true - the route is HVH shape, false - VHV shape
-  bool HVH;
+  bool HVH = false;
 
   // valid for ZRoute: the position of turn point for Z-shape
   int16_t Zpoint;
