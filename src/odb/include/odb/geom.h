@@ -888,7 +888,7 @@ inline std::vector<Point> Oct::getPoints() const
 
 inline Oct Oct::bloat(int margin) const
 {
-  return Oct(center_low_, center_high_, A_ + margin);
+  return Oct(center_low_, center_high_, 2 * (A_ + margin));
 }
 
 inline Rect Oct::getRect() const
