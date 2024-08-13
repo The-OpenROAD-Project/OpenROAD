@@ -212,4 +212,115 @@ struct indexed_access<odb::Rect, max_corner, Dimension>
   }
 };
 
+//
+// Make odb's Oct work with boost geometry.
+//
+
+template <>
+struct tag<odb::Oct>
+{
+  using type = polygon_tag;
+};
+
+template <>
+struct ring_mutable_type<odb::Oct>
+{
+  using type = std::vector<odb::Point>;
+};
+
+template <>
+struct ring_const_type<odb::Oct>
+{
+  using type = const std::vector<odb::Point>;
+};
+
+template <>
+struct interior_const_type<odb::Oct>
+{
+  using type = const std::vector<std::vector<odb::Point>>;
+};
+
+template <>
+struct interior_mutable_type<odb::Oct>
+{
+  using type = std::vector<std::vector<odb::Point>>;
+};
+
+template <>
+struct exterior_ring<odb::Oct>
+{
+  static std::vector<odb::Point> get(odb::Oct& o) { return o.getPoints(); }
+  static const std::vector<odb::Point> get(const odb::Oct& o)
+  {
+    return o.getPoints();
+  }
+};
+
+template <>
+struct interior_rings<odb::Oct>
+{
+  static std::vector<std::vector<odb::Point>> get(odb::Oct& o) { return {}; }
+  static const std::vector<std::vector<odb::Point>> get(const odb::Oct& o)
+  {
+    return {};
+  }
+};
+
+//
+// Make odb's Polygon work with boost geometry.
+//
+
+template <>
+struct tag<odb::Polygon>
+{
+  using type = polygon_tag;
+};
+
+template <>
+struct ring_mutable_type<odb::Polygon>
+{
+  using type = std::vector<odb::Point>;
+};
+
+template <>
+struct ring_const_type<odb::Polygon>
+{
+  using type = const std::vector<odb::Point>;
+};
+
+template <>
+struct interior_const_type<odb::Polygon>
+{
+  using type = const std::vector<std::vector<odb::Point>>;
+};
+
+template <>
+struct interior_mutable_type<odb::Polygon>
+{
+  using type = std::vector<std::vector<odb::Point>>;
+};
+
+template <>
+struct exterior_ring<odb::Polygon>
+{
+  static std::vector<odb::Point> get(odb::Polygon& p) { return p.getPoints(); }
+  static const std::vector<odb::Point> get(const odb::Polygon& p)
+  {
+    return p.getPoints();
+  }
+};
+
+template <>
+struct interior_rings<odb::Polygon>
+{
+  static std::vector<std::vector<odb::Point>> get(odb::Polygon& p)
+  {
+    return {};
+  }
+  static const std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
+  {
+    return {};
+  }
+};
+
 }  // namespace boost::geometry::traits
