@@ -582,7 +582,9 @@ void FlexDRWorker::initNets_initDR_helper(
         }
       }
     }
-    terms[bestIndex].emplace_back(netTerms.at(i));
+    if (bestIndex >= 0) {
+      terms[bestIndex].emplace_back(netTerms.at(i));
+    }
   }
   const auto it = boundaryPin_.find(net);
   if (it != boundaryPin_.end()) {
@@ -1879,7 +1881,7 @@ void FlexDRWorker::initNets_numPinsIn()
           break;
         }
       }
-      if (!hasPrefAP) {
+      if (!hasPrefAP && firstAP != nullptr) {
         pt = firstAP->getPoint();
       }
 
