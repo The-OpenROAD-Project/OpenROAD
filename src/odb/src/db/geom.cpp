@@ -45,4 +45,39 @@ Polygon Polygon::correct() const
   return Polygon(pts);
 }
 
+Polygon Polygon::bloat(int margin) const
+{
+  const odb::Polygon polygon = correct();
+
+  // convert to natice boost types
+  using pt = boost::geometry::model::d2::point_xy<int>;
+  using poly = boost::geometry::model::polygon<pt>;
+  using multipoly = boost::geometry::model::multi_polygon<poly>;
+  poly polygon_in;
+  multipoly polygons_out;
+
+  boost::geometry::assign_points(polygon_in, polygon.getPoints());
+
+  using dist = boost::geometry::strategy::buffer::distance_symmetric<int>;
+  boost::geometry::strategy::buffer::side_straight side_strategy;
+  boost::geometry::strategy::buffer::join_round join_strategy;
+  boost::geometry::strategy::buffer::end_flat end_strategy;
+  boost::geometry::strategy::buffer::point_circle point_strategy;
+
+  boost::geometry::buffer(polygon_in,
+                          polygons_out,
+                          dist(margin),
+                          side_strategy,
+                          join_strategy,
+                          end_strategy,
+                          point_strategy);
+
+  std::vector<odb::Point> out_points;
+  for (const auto& pt : polygons_out[0].outer()) {
+    out_points.emplace_back(pt.x(), pt.y());
+  }
+
+  return Polygon(out_points);
+}
+
 }  // namespace odb

@@ -345,6 +345,7 @@ class Polygon
 
   // returns a corrected Polygon with a closed form and counter-clockwise points
   Polygon correct() const;
+  Polygon bloat(int margin) const;
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
