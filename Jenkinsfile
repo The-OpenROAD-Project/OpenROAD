@@ -36,7 +36,7 @@ def baseTests(String image) {
                 stage('Unit Tests TCL') {
                     try {
                         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                            timeout(time: 25, unit: 'MINUTES') {
+                            timeout(time: 20, unit: 'MINUTES') {
                                 sh label: 'Tcl regression', script: './test/regression';
                             }
                         }
