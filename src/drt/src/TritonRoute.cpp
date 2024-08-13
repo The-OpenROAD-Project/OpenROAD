@@ -48,6 +48,7 @@
 #include "global.h"
 #include "gr/FlexGR.h"
 #include "gui/gui.h"
+#include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
@@ -535,9 +536,10 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 
 bool TritonRoute::initGuide()
 {
+  io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+  bool guideOk = guide_processor.readGuides();
+  guide_processor.processGuides();
   io::Parser parser(db_, getDesign(), logger_);
-  bool guideOk = parser.readGuide();
-  parser.postProcessGuide();
   parser.initRPin();
   return guideOk;
 }
@@ -981,10 +983,10 @@ int TritonRoute::main()
   }
   if (!initGuide()) {
     gr();
-    io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
-    parser.readGuide();
-    parser.postProcessGuide();
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    guide_processor.readGuides();
+    guide_processor.processGuides();
   }
   prep();
   ta();
@@ -1115,8 +1117,9 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
       && gcellGrid->getNumGridPatternsY() == 1) {
-    io::Parser parser(db_, getDesign(), logger_);
-    parser.buildGCellPatterns(db_);
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    guide_processor.readGuides();
+    guide_processor.buildGCellPatterns();
   } else if (!initGuide()) {
     logger_->error(DRT, 1, "GCELLGRID is undefined");
   }
