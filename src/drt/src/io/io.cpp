@@ -831,7 +831,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             styleWidth = layer->getWidth();
           }
         }
-        width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
+        width = tech_->name2layer_[layerName]->getWidth();
         auto defaultBeginExt = width / 2;
         auto defaultEndExt = width / 2;
 
@@ -1840,7 +1840,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
-    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
+    con->setDefaultCenterAndEdge(
+        rule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
@@ -1994,6 +1995,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());
     rptr->setCutClassIdx(
         tmpLayer->getCutClassIdx(rule->getCutClass()->getName()));
+    if (rptr->getCutClassIdx() < 0) {
+      logger_->error(DRT,
+                     148,
+                     "Invalid index for cut class {}.",
+                     rule->getCutClass()->getName());
+    }
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
@@ -3226,7 +3233,7 @@ void io::Writer::mergeSplitConnFigs(
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
       Point viaPoint = via->getOrigin();
       viaMergeMap[std::make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)]
-          = via;
+          = std::move(via);
       // std::cout <<"found via" <<std::endl;
     }
   }
@@ -3307,21 +3314,21 @@ void io::Writer::mergeSplitConnFigs(
 
     auto layerNum = cutLayerNum - 1;
     int isH = 1;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = y;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum - 1;
     isH = 0;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
     isH = 0;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
   }
 

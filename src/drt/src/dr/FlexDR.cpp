@@ -234,7 +234,10 @@ int FlexDRWorker::main(frDesign* design)
                                debugSettings_->box.xMin(),
                                debugSettings_->box.yMin());
     }
-    mkdir(workerPath.c_str(), 0777);
+    if (mkdir(workerPath.c_str(), 0777) != 0) {
+      logger_->error(
+          DRT, 152, "Directory {} could not be created.", workerPath);
+    }
 
     writeUpdates(fmt::format("{}/updates.bin", workerPath));
     {
@@ -483,7 +486,7 @@ void FlexDR::init()
           if (term->getBBox(true).intersects(bottomBox)) {
             std::vector<frRect> shapes;
             term->getShapes(shapes, true);
-            for (auto shape : shapes) {
+            for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
                 continue;
               }
@@ -500,7 +503,7 @@ void FlexDR::init()
           if (term->getBBox(true).intersects(topBox)) {
             std::vector<frRect> shapes;
             term->getShapes(shapes, true);
-            for (auto shape : shapes) {
+            for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
                 continue;
               }
@@ -1172,7 +1175,7 @@ void FlexDR::reportGuideCoverage()
         routingArea = gtl::area(routeSetByLayerNum[lNum]);
         coveredArea
             = gtl::area(routeSetByLayerNum[lNum] & guideSetByLayerNum[lNum]);
-        if (routingArea == 0.0) {
+        if (routingArea == 0) {
           coveredPercentage = -1.0;
         } else {
           coveredPercentage = (coveredArea / (double) routingArea) * 100;
@@ -1311,8 +1314,6 @@ void FlexDR::fixMaxSpacing()
     auto worker = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
     Rect ext_box;
     Rect drc_box;
-    auto minGcellIdx = getDesign()->getTopBlock()->getGCellIdx(
-        {route_box.xMin(), route_box.yMin()});
     route_box.bloat(MTSAFEDIST, ext_box);
     route_box.bloat(DRCSAFEDIST, drc_box);
     worker->setRouteBox(route_box);
@@ -1554,7 +1555,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
       serializeBlockObject(ar, obj);
       std::set<std::pair<Point, frLayerNum>> val;
       (ar) & val;
-      boundaryPin_[(frNet*) obj] = val;
+      boundaryPin_[(frNet*) obj] = std::move(val);
     }
     // owner2nets_
     for (auto& net : nets_) {

@@ -552,11 +552,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   }
   frVia via(viaDef);
   Rect viaBox(0, 0, 0, 0);
-  if (isUpperVia) {
-    viaBox = via.getCutBBox();
-  } else {
-    viaBox = via.getCutBBox();
-  }
+  viaBox = via.getCutBBox();
 
   FlexMazeIdx mIdx1, mIdx2;
   Rect bx, tmpBx, sViaBox;
@@ -608,11 +604,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           if (gridGraph_.isSVia(i, j, zIdx)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
             sVia.setViaDef(sViaDef);
-            if (isUpperVia) {
-              sViaBox = sVia.getCutBBox();
-            } else {
-              sViaBox = sVia.getCutBBox();
-            }
+            sViaBox = sVia.getCutBBox();
             tmpBx = sViaBox;
           }
           xform.apply(tmpBx);
@@ -1901,6 +1893,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     frBlockObject* obj = entry.block;
     bool doRoute = entry.doRoute;
     int numReroute = entry.numReroute;
+    frBlockObject* checking_obj = entry.checkingObj;
 
     rerouteQueue.pop();
     bool didRoute = false;
@@ -1911,12 +1904,11 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
-      if (ripupMode_ == RipUpMode::DRC && entry.checkingObj != nullptr
+      if (ripupMode_ == RipUpMode::DRC && checking_obj != nullptr
           && obj_gc_version.find(net->getFrNet()) != obj_gc_version.end()
-          && obj_gc_version.find(entry.checkingObj) != obj_gc_version.end()
+          && obj_gc_version.find(checking_obj) != obj_gc_version.end()
           && obj_gc_version[net->getFrNet()] == std::make_pair(gc_version, 0)
-          && obj_gc_version[entry.checkingObj]
-                 == std::make_pair(gc_version, 0)) {
+          && obj_gc_version[checking_obj] == std::make_pair(gc_version, 0)) {
         continue;
       }
       // init
@@ -2656,13 +2648,13 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
         auto via = getTech()->getLayer(startLayerNum + 1)->getDefaultViaDef();
-        if (gridGraph_.isSVia(startX, startY, currZ)) {
-          via = apSVia_.find(mi)->second->getAccessViaDef();
+        auto it = apSVia_.find(mi);
+        if (gridGraph_.isSVia(startX, startY, currZ) && it != apSVia_.end()) {
+          via = it->second->getAccessViaDef();
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
-        if (net_ndr != nullptr
-            && net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1)) {
-          via = net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1);
+        if (net_ndr != nullptr && net_ndr->getPrefVia(startLayerNum / 2 - 1)) {
+          via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {
@@ -3468,7 +3460,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         if (!prev_is_wire) {
           currArea /= 2;
         }
-        currArea += pathLength * pathWidth;
+        currArea += static_cast<frArea>(pathLength) * pathWidth;
       }
       prev_is_wire = true;
     }
