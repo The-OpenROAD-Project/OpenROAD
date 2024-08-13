@@ -45,6 +45,7 @@ namespace odb {
 
 class dbIStream;
 class dbOStream;
+class Rect;
 
 class Point
 {
@@ -341,6 +342,9 @@ class Polygon
   Rect getRect() const;
   int dx() const { return getRect().dx(); }
   int dy() const { return getRect().dy(); }
+
+  // returns a corrected Polygon with a closed form and counter-clockwise points
+  Polygon correct() const;
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
@@ -881,12 +885,12 @@ inline std::vector<Point> Oct::getPoints() const
   return points;
 }
 
-Oct Oct::bloat(int margin) const
+inline Oct Oct::bloat(int margin) const
 {
   return Oct(center_low_, center_high_, A_ + margin);
 }
 
-Rect Oct::getRect() const
+inline Rect Oct::getRect() const
 {
   return Rect(center_low_.x() - A_,
               center_low_.y() - A_,

@@ -37,6 +37,7 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
+#include <boost/geometry/geometries/register/ring.hpp>
 #include <boost/polygon/polygon.hpp>
 
 #include "odb/geom.h"
@@ -94,6 +95,10 @@ BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(odb::Point,
                                          getY,
                                          setX,
                                          setY);
+
+// Register odb's Point vector as ring.
+
+BOOST_GEOMETRY_REGISTER_RING(std::vector<odb::Point>);
 
 // Make odb's Rect work with boost polgyon
 

@@ -77,6 +77,7 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
+    geom.cpp
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
