@@ -143,10 +143,10 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t usage;  // the usage of the edge
   uint16_t red;
   int16_t last_usage;
-  float est_usage;  // the estimated usage of the edge
+  double est_usage;  // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }
-  float est_usage_red() const { return est_usage + red; }
+  double est_usage_red() const { return est_usage + red; }
 };
 
 struct Edge3D
