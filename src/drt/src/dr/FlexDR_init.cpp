@@ -547,7 +547,7 @@ void FlexDRWorker::initNets_initDR_helper(
             netExtObjs,
             netOrigGuides,
             netTerms,
-            bounds);
+            std::move(bounds));
     return;
   }
   std::vector<std::vector<std::unique_ptr<drConnFig>>> routeObjs(
@@ -629,7 +629,9 @@ void FlexDRWorker::initNets_initDR_helper(
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    extObjs[compIdx].emplace_back(std::move(obj));
+    if (compIdx >= 0) {
+      extObjs[compIdx].emplace_back(std::move(obj));
+    }
   }
   for (int i = 0; i < connectedComponents.size(); i++) {
     initNet(design_,

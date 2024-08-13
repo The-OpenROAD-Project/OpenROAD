@@ -564,8 +564,8 @@ void FlexDRConnectivityChecker::finish(
     }
 
     reverseNodeMap[idx1].clear();
-    reverseNodeMap[idx1] = newPr1;
-    reverseNodeMap[idx2] = newPr2;
+    reverseNodeMap[idx1] = std::move(newPr1);
+    reverseNodeMap[idx2] = std::move(newPr2);
 
     auto uPs2 = std::make_unique<frPathSeg>(*ps1);
     auto ps2 = uPs2.get();

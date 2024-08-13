@@ -1260,7 +1260,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
                   ygp.getSpacing());
   }
 
-  design_->getTopBlock()->setGCellPatterns({xgp, ygp});
+  design_->getTopBlock()->setGCellPatterns({std::move(xgp), std::move(ygp)});
 }
 
 void io::Parser::saveGuidesUpdates()

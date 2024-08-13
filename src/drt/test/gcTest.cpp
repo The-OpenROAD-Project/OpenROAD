@@ -1175,7 +1175,8 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
     table.push_back({{301, 301}, {301, 300}});
   }
 
-  dbRule->setSpacingTable(table, row_map, col_map);
+  dbRule->setSpacingTable(
+      std::move(table), std::move(row_map), std::move(col_map));
   makeLef58CutSpcTbl(3, dbRule);
   frNet* n1 = makeNet("n1");
 
