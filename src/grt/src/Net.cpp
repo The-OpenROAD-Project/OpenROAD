@@ -61,9 +61,9 @@ odb::dbSigType Net::getSignalType() const
 
 void Net::deleteSegment(int seg_id, GRoute& route)
 {
-  for (int i = 0; i < segment_parent_.size(); i++) {
-    if (segment_parent_[i] >= seg_id) {
-      segment_parent_[i]--;
+  for (uint16_t& parent : segment_parent_) {
+    if (parent >= seg_id) {
+      parent--;
     }
   }
   segment_parent_.erase(segment_parent_.begin() + seg_id);

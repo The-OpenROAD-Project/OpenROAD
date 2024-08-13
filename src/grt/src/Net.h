@@ -36,6 +36,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Pin.h"
@@ -61,7 +62,7 @@ class Net
   void setHasWires(bool in) { has_wires_ = in; }
   void setSegmentParent(std::vector<uint16_t> segment_parent)
   {
-    segment_parent_ = segment_parent;
+    segment_parent_ = std::move(segment_parent);
   }
   std::vector<uint16_t> getSegmentParent() const { return segment_parent_; }
   std::vector<std::vector<uint16_t>> getSegmentGraph();

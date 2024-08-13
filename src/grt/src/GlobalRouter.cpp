@@ -600,9 +600,11 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
-    std::set<odb::Point> last_pos;
+    std::set<RoutePt> last_pos;
     for (const Pin& pin : net->getPins()) {
-      last_pos.insert(pin.getOnGridPosition());
+      last_pos.insert(RoutePt(pin.getOnGridPosition().getX(),
+                              pin.getOnGridPosition().getY(),
+                              pin.getConnectionLayer()));
     }
     net->destroyPins();
     // update pin positions
@@ -632,10 +634,10 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
   std::vector<bool> coversPin(total_segments, false);
 
   for (int s = 0; s < total_segments; s++) {
-    for (int p = 0; p < pins.size(); p++) {
-      if (segmentCoversPin(segments[s], pins[p])) {
+    for (Pin& pin : pins) {
+      if (segmentCoversPin(segments[s], pin)) {
         coversPin[s] = true;
-        if (pins[p].isDriver()) {
+        if (pin.isDriver()) {
           root = s;
         }
       }
@@ -651,12 +653,13 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
   q.push(root);
   parent[root] = root;
 
-  while (q.size()) {
+  while (!q.empty()) {
     int node = q.front();
     q.pop();
     for (int child : graph[node]) {
-      if (parent[child] != UINT16_MAX)
+      if (parent[child] != UINT16_MAX) {
         continue;
+      }
       parent[child] = node;
       total_children[node]++;
       q.push(child);
@@ -670,7 +673,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
 
   // Prunes branches that dont end on leafs
   std::set<int> segments_to_delete;
-  while (leafs.size()) {
+  while (!leafs.empty()) {
     int leaf = leafs.front();
     leafs.pop();
     if (!coversPin[leaf]) {
@@ -986,14 +989,16 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::pinPositionsChanged(Net* net, std::set<odb::Point>& last_pos)
+bool GlobalRouter::pinPositionsChanged(Net* net, std::set<RoutePt>& last_pos)
 {
   bool is_diferent = false;
-  std::map<odb::Point, int> cnt_pos;
+  std::map<RoutePt, int> cnt_pos;
   for (const Pin& pin : net->getPins()) {
-    cnt_pos[pin.getOnGridPosition()]++;
+    cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
+                    pin.getOnGridPosition().getX(),
+                    pin.getConnectionLayer())]++;
   }
-  for (const odb::Point& last : last_pos) {
+  for (const RoutePt& last : last_pos) {
     cnt_pos[last]--;
   }
   for (const auto& it : cnt_pos) {
@@ -1005,10 +1010,13 @@ bool GlobalRouter::pinPositionsChanged(Net* net, std::set<odb::Point>& last_pos)
   return is_diferent;
 }
 
-bool GlobalRouter::newPinOnGrid(Net* net, std::set<odb::Point>& last_pos)
+bool GlobalRouter::newPinOnGrid(Net* net, std::set<RoutePt>& last_pos)
 {
   for (const Pin& pin : net->getPins()) {
-    if (last_pos.find(pin.getOnGridPosition()) == last_pos.end()) {
+    if (last_pos.find(RoutePt(pin.getOnGridPosition().getX(),
+                              pin.getOnGridPosition().getY(),
+                              pin.getConnectionLayer()))
+        == last_pos.end()) {
       return true;
     }
   }
