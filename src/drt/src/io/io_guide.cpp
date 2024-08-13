@@ -681,7 +681,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
   if (inst != nullptr) {
-    dbTransform shiftXform = inst->getTransform();
+    shiftXform = inst->getTransform();
     shiftXform.setOrient(dbOrientType(dbOrientType::R0));
   }
   int succesPinCnt = 0;
