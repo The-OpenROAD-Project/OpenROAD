@@ -1612,7 +1612,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
 void RDLGui::setRouter(RDLRouter* router)
 {
   router_ = router;
-  router_->setRDLGui(this);
+  if (router_) {
+    router_->setRDLGui(this);
+  }
 }
 
 void RDLGui::pause()

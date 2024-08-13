@@ -492,10 +492,9 @@ void FlexTAWorker::initIroute(frGuide* guide)
   frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum + 2) / 2
-                                                            - 1)) {
-      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
-          (layerNum + 2) / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
+      viaDef
+          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
@@ -508,9 +507,10 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   for (auto coord : downViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
-      viaDef
-          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum - 2) / 2
+                                                            - 1)) {
+      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
+          (layerNum - 2) / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();

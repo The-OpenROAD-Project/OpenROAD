@@ -3217,7 +3217,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
           edgeY = std::min(edgeY, int(gtl::length(*(corner->getPrevEdge()))));
         }
         // outside of keepout zone
-        if (edgeX * dy + edgeY * dx >= edgeX * edgeY) {
+        if (edgeX * dy + edgeY * dx >= static_cast<uint64_t>(edgeX) * edgeY) {
           continue;
         }
 

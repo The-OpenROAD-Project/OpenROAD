@@ -1861,7 +1861,7 @@ void FlexPA::prepPattern()
   if (!rowInsts.empty()) {
     instRows.push_back(rowInsts);
   }
-  prepPatternInstRows(instRows);
+  prepPatternInstRows(std::move(instRows));
 }
 
 void FlexPA::revertAccessPoints()
@@ -2679,7 +2679,7 @@ int FlexPA::getEdgeCost(
                || violAccessPoints.find(std::make_pair(currIdx1, currIdx2))
                       != violAccessPoints.end()) {
       edgeCost = 1000;
-    } else {
+    } else if (prevNodeIdx >= 0) {
       const int prevNodeCost = nodes[prevNodeIdx].getNodeCost();
       const int currNodeCost = nodes[currNodeIdx].getNodeCost();
       edgeCost = (prevNodeCost + currNodeCost) / 2;

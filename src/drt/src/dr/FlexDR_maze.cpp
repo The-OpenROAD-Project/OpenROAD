@@ -552,11 +552,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   }
   frVia via(viaDef);
   Rect viaBox(0, 0, 0, 0);
-  if (isUpperVia) {
-    viaBox = via.getCutBBox();
-  } else {
-    viaBox = via.getCutBBox();
-  }
+  viaBox = via.getCutBBox();
 
   FlexMazeIdx mIdx1, mIdx2;
   Rect bx, tmpBx, sViaBox;
@@ -608,11 +604,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           if (gridGraph_.isSVia(i, j, zIdx)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
             sVia.setViaDef(sViaDef);
-            if (isUpperVia) {
-              sViaBox = sVia.getCutBBox();
-            } else {
-              sViaBox = sVia.getCutBBox();
-            }
+            sViaBox = sVia.getCutBBox();
             tmpBx = sViaBox;
           }
           xform.apply(tmpBx);
@@ -2661,9 +2653,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = it->second->getAccessViaDef();
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
-        if (net_ndr != nullptr
-            && net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1)) {
-          via = net_ndr->getPrefVia((startLayerNum + 1) / 2 - 1);
+        if (net_ndr != nullptr && net_ndr->getPrefVia(startLayerNum / 2 - 1)) {
+          via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {
@@ -3469,7 +3460,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         if (!prev_is_wire) {
           currArea /= 2;
         }
-        currArea += pathLength * pathWidth;
+        currArea += static_cast<frArea>(pathLength) * pathWidth;
       }
       prev_is_wire = true;
     }
