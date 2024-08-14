@@ -1036,7 +1036,7 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
   if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+      && isCombinationalLogicStdCell(inst, cell)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.hasKey(inst);
@@ -1072,11 +1072,13 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
   return 0;
 }
 
-bool Resizer::isLogicStdCell(const Instance* inst)
+bool Resizer::isCombinationalLogicStdCell(const Instance* inst,
+                                          const LibertyCell* lib_cell)
 {
   return !db_network_->isTopInstance(inst)
          && db_network_->staToDb(inst)->getMaster()->getType()
-                == odb::dbMasterType::CORE;
+                == odb::dbMasterType::CORE
+         && !lib_cell->hasSequentials();
 }
 
 LibertyCell* Resizer::findTargetCell(LibertyCell* cell,

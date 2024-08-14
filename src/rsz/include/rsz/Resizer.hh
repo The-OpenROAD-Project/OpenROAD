@@ -624,7 +624,8 @@ class Resizer : public dbStaState
                       float& slack,
                       const Corner*& corner);
   void warnBufferMovedIntoCore();
-  bool isLogicStdCell(const Instance* inst);
+  bool isCombinationalLogicStdCell(const Instance* inst,
+                                   const LibertyCell* lib_cell);
   void invalidateParasitics(const Pin* pin, const Net* net);
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
