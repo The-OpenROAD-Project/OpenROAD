@@ -1105,14 +1105,13 @@ PortDirection* dbNetwork::direction(const Port* port) const
   if (bterm) {
     PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
-  } else if (modbterm) {
+  }
+  if (modbterm) {
     PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
-  } else {
-    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-    return cport->direction();
   }
-  return PortDirection::unknown();
+  const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+  return cport->direction();
 }
 
 PortDirection* dbNetwork::direction(const Pin* pin) const
@@ -1580,7 +1579,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
 
-  CellPortIterator* port_iter = portIterator(cell);
+  std::unique_ptr<CellPortIterator> port_iter{portIterator(cell)};
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
@@ -1616,7 +1615,7 @@ void dbNetwork::makeTopCell()
   });
 
   // record the top level ports
-  CellPortIterator* port_iter = portIterator(top_cell_);
+  std::unique_ptr<CellPortIterator> port_iter{portIterator(top_cell_)};
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
@@ -2104,7 +2103,7 @@ dbMTerm* dbNetwork::staToDb(const Port* port) const
 
 dbBTerm* dbNetwork::isTopPort(const Port* port) const
 {
-  CellPortIterator* port_iter = portIterator(top_cell_);
+  std::unique_ptr<CellPortIterator> port_iter{portIterator(top_cell_)};
   while (port_iter->hasNext()) {
     if (port == port_iter->next()) {
       const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);

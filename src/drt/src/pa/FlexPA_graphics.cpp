@@ -180,6 +180,9 @@ void FlexPAGraphics::startPin(frMPin* pin,
     }
   }
 
+  if (inst_term == nullptr) {
+    logger_->error(DRT, 158, "Instance for MPin {} is null.", term->getName());
+  }
   const std::string name
       = inst_term->getInst()->getName() + ':' + term->getName();
   status("Start pin: " + name);
