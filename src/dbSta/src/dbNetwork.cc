@@ -1105,14 +1105,13 @@ PortDirection* dbNetwork::direction(const Port* port) const
   if (bterm) {
     PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
-  } else if (modbterm) {
+  }
+  if (modbterm) {
     PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
-  } else {
-    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-    return cport->direction();
   }
-  return PortDirection::unknown();
+  const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+  return cport->direction();
 }
 
 PortDirection* dbNetwork::direction(const Pin* pin) const

@@ -503,7 +503,7 @@ void FlexDR::init()
           if (term->getBBox(true).intersects(topBox)) {
             std::vector<frRect> shapes;
             term->getShapes(shapes, true);
-            for (auto shape : shapes) {
+            for (const auto& shape : shapes) {
               if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
                 continue;
               }
