@@ -46,35 +46,32 @@ Polygon Polygon::bloat(int margin) const
 {
   // convert to native boost types to avoid needed a mutable access
   // to odb::Polygon
-  using pt = boost::geometry::model::d2::point_xy<int>;
-  using poly = boost::geometry::model::polygon<pt>;
-  using multipoly = boost::geometry::model::multi_polygon<poly>;
-  poly polygon_in;
-  multipoly polygons_out;
+  using BoostPolygon = boost::polygon::polygon_data<int>;
+  using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator+;
 
-  boost::geometry::assign_points(polygon_in, polygon.getPoints());
+  // convert to boost polygon
+  const BoostPolygon polygon_in(points_.begin(), points_.end());
 
-  using dist = boost::geometry::strategy::buffer::distance_symmetric<int>;
-  boost::geometry::strategy::buffer::side_straight side_strategy;
-  boost::geometry::strategy::buffer::join_round join_strategy;
-  boost::geometry::strategy::buffer::end_flat end_strategy;
-  boost::geometry::strategy::buffer::point_circle point_strategy;
+  // add to polygon set
+  BoostPolygonSet poly_in_set;
+  poly_in_set += polygon_in;
 
-  boost::geometry::buffer(polygon_in,
-                          polygons_out,
-                          dist(margin),
-                          side_strategy,
-                          join_strategy,
-                          end_strategy,
-                          point_strategy);
+  // bloat polygon set
+  const BoostPolygonSet poly_out_set = poly_in_set + margin;
 
-  // return to Polygon type
-  std::vector<odb::Point> out_points;
-  for (const auto& pt : polygons_out[0].outer()) {
-    out_points.emplace_back(pt.x(), pt.y());
+  // extract new polygon
+  std::vector<BoostPolygon> output_polygons;
+  poly_out_set.get(output_polygons);
+  const BoostPolygon& polygon_out = output_polygons[0];
+
+  std::vector<odb::Point> new_coord;
+  for (const auto& pt : polygon_out.coords_) {
+    new_coord.emplace_back(pt.x(), pt.y());
   }
 
-  return Polygon(out_points);
+  return Polygon(new_coord);
 }
 
 }  // namespace odb
