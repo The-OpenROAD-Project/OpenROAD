@@ -1776,10 +1776,9 @@ void HTreeBuilder::createClockSubNets()
   bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
-    // If the branch point is a leaf and has no sinks that will be connected to
+    // If the branch point has no sinks that will be connected to
     // it don't create a clock sub net for it
-    if (topologyForEachLevel_.size() == 1
-        && topLevelTopology.getBranchSinksLocations(idx).empty()) {
+    if (topLevelTopology.getBranchSinksLocations(idx).empty()) {
       return;
     }
     Point<double> legalBranchPoint
@@ -1830,10 +1829,9 @@ void HTreeBuilder::createClockSubNets()
     isFirstPoint = true;
     topology.forEachBranchingPoint([&](unsigned idx,
                                        Point<double> branchPoint) {
-      // If the branch point is a leaf and has no sinks that will be connected
+      // If the branch point has no sinks that will be connected
       // to it don't create a clock sub net for it
-      if ((levelIdx == topologyForEachLevel_.size() - 1)
-          && topology.getBranchSinksLocations(idx).empty()) {
+      if (topology.getBranchSinksLocations(idx).empty()) {
         return;
       }
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
