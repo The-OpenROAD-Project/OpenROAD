@@ -404,6 +404,8 @@ bool Resizer::removeBuffer(Instance* buffer,
     parasiticsInvalid(survivor);
     updateParasitics();
   }
+  if (buffer_removed) removed_buffers_++;
+  logger_->report("#Removed buffers: {}", removed_buffers_);
   return buffer_removed;
 }
 
