@@ -26,6 +26,7 @@ record_tests {
   rdl_route_assignments
   rdl_route_45
   rdl_route_45_cost
+  rdl_route_45_separate
   rdl_route_via
   rdl_route_bump_via
 
