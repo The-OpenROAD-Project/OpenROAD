@@ -599,6 +599,9 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
+    if (net->getPins().size() < 2) {
+      continue;
+    }
     // get last pin positions
     std::set<RoutePt> last_pos;
     for (const Pin& pin : net->getPins()) {
@@ -995,7 +998,7 @@ bool GlobalRouter::pinPositionsChanged(Net* net, std::set<RoutePt>& last_pos)
   std::map<RoutePt, int> cnt_pos;
   for (const Pin& pin : net->getPins()) {
     cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
-                    pin.getOnGridPosition().getX(),
+                    pin.getOnGridPosition().getY(),
                     pin.getConnectionLayer())]++;
   }
   for (const RoutePt& last : last_pos) {
