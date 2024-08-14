@@ -47,7 +47,8 @@ Polygon Polygon::bloat(int margin) const
 {
   const odb::Polygon polygon = correct();
 
-  // convert to natice boost types
+  // convert to native boost types to avoid needed a mutable access
+  // to odb::Polygon
   using pt = boost::geometry::model::d2::point_xy<int>;
   using poly = boost::geometry::model::polygon<pt>;
   using multipoly = boost::geometry::model::multi_polygon<poly>;
@@ -70,6 +71,7 @@ Polygon Polygon::bloat(int margin) const
                           end_strategy,
                           point_strategy);
 
+  // return to Polygon type
   std::vector<odb::Point> out_points;
   for (const auto& pt : polygons_out[0].outer()) {
     out_points.emplace_back(pt.x(), pt.y());
