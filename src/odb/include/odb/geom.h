@@ -893,10 +893,7 @@ inline Oct Oct::bloat(int margin) const
 
 inline Rect Oct::getRect() const
 {
-  return Rect(center_low_.x() - A_,
-              center_low_.y() - A_,
-              center_high_.x() + A_,
-              center_high_.y() + A_);
+  return Rect(xMin(), yMin(), xMax(), yMax());
 }
 
 inline Polygon::Polygon(const std::vector<Point>& points)
