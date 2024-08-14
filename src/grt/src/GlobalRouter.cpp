@@ -3814,7 +3814,6 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     connectRouting(net1_route, db_net1, db_net2);
     net1->setSkipIncremental(true);
     net2->setSkipIncremental(true);
-    merged_nets_count_++;
   }
 }
 
@@ -4535,8 +4534,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       saveGuides();
     }
   }
-
-  logger_->report("#Merged nets: {}", merged_nets_count_);
 
   return dirty_nets;
 }

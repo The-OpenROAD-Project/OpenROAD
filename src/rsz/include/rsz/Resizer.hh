@@ -747,8 +747,6 @@ class Resizer : public dbStaState
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
 
-  int removed_buffers_ = 0;
-
   friend class BufferedNet;
   friend class GateCloner;
   friend class PreChecks;
