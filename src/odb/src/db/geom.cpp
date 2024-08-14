@@ -36,17 +36,14 @@
 
 namespace odb {
 
-Polygon Polygon::correct() const
+void Polygon::setPoints(const std::vector<Point>& points)
 {
-  std::vector<Point> pts = points_;
-  boost::geometry::correct(pts);
-  return Polygon(pts);
+  points_ = points;
+  boost::geometry::correct(points_);
 }
 
 Polygon Polygon::bloat(int margin) const
 {
-  const odb::Polygon polygon = correct();
-
   // convert to native boost types to avoid needed a mutable access
   // to odb::Polygon
   using pt = boost::geometry::model::d2::point_xy<int>;

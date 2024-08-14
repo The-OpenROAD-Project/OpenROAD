@@ -344,7 +344,6 @@ class Polygon
   int dy() const { return getEnclosingRect().dy(); }
 
   // returns a corrected Polygon with a closed form and counter-clockwise points
-  Polygon correct() const;
   Polygon bloat(int margin) const;
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
@@ -914,11 +913,6 @@ inline Polygon::Polygon(const Oct& oct)
 inline std::vector<Point> Polygon::getPoints() const
 {
   return points_;
-}
-
-inline void Polygon::setPoints(const std::vector<Point>& points)
-{
-  points_ = points;
 }
 
 inline Rect Polygon::getEnclosingRect() const
