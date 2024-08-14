@@ -4362,6 +4362,11 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
          || (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ < p2.layer_);
 }
 
+bool operator==(const RoutePt& p1, const RoutePt& p2)
+{
+  return (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ == p2.layer_);
+}
+
 ////////////////////////////////////////////////////////////////
 
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)

@@ -47,7 +47,7 @@ class RoutePt
   int layer() const { return layer_; };
 
   friend bool operator<(const RoutePt& p1, const RoutePt& p2);
-  bool operator==(const RoutePt& rhs) const;
+  friend bool operator==(const RoutePt& p1, const RoutePt& p2);
 
  private:
   int x_;
@@ -56,10 +56,6 @@ class RoutePt
 };
 
 bool operator<(const RoutePt& p1, const RoutePt& p2);
-
-inline bool RoutePt::operator==(const RoutePt& rhs) const
-{
-  return std::tie(x_, y_, layer_) == std::tie(rhs.x_, rhs.y_, rhs.layer_);
-}
+bool operator==(const RoutePt& p1, const RoutePt& p2);
 
 }  // namespace grt
