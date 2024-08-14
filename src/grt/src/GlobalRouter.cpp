@@ -629,6 +629,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       }
     }
     net->setSkipIncremental(false);
+    net->setDirtyNet(false);
   }
   dirty_nets_.clear();
 }
