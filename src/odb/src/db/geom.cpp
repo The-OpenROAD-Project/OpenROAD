@@ -67,6 +67,7 @@ Polygon Polygon::bloat(int margin) const
   const BoostPolygon& polygon_out = output_polygons[0];
 
   std::vector<odb::Point> new_coord;
+  new_coord.reserve(polygon_out.coords_.size());
   for (const auto& pt : polygon_out.coords_) {
     new_coord.emplace_back(pt.x(), pt.y());
   }
