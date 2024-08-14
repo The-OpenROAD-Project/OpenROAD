@@ -585,6 +585,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
                                   interval_it.upper() - interval_it.lower()))
                               / track_space[layer - 1]);
         }
+      } else {
+        logger_->error(GRT,
+                       266,
+                       "Layer {} out of range from vertical blocked intervals.",
+                       layer);
+        return;
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
@@ -607,6 +613,13 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
                                   interval_it.upper() - interval_it.lower()))
                               / track_space[layer - 1]);
         }
+      } else {
+        logger_->error(
+            GRT,
+            267,
+            "Layer {} out of range from horizontal blocked intervals.",
+            layer);
+        return;
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
