@@ -2787,9 +2787,9 @@ class dbNet : public dbObject
   static dbNet* getValidNet(dbBlock* block, uint oid);
 
   ///
-  /// Trigger callback for nets being merged.
+  /// Merge the iterms and bterms of the in_net with this net
   ///
-  void mergeNet(dbNet* net);
+  void mergeNet(dbNet* in_net);
 
   dbSet<dbGuide> getGuides() const;
 
