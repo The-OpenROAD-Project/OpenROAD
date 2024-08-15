@@ -1208,13 +1208,13 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
 
     obstructions.emplace_back(bloat_oct.getEnclosingRect(), bloat_oct, net);
   };
-  auto insert_obstruction_poly = [this, &obstructions, bloat](
-                                     const odb::Polygon& poly,
-                                     odb::dbNet* net) {
-    const odb::Polygon bloat_poly = poly.bloat(bloat);
+  auto insert_obstruction_poly
+      = [&obstructions, bloat](const odb::Polygon& poly, odb::dbNet* net) {
+          const odb::Polygon bloat_poly = poly.bloat(bloat);
 
-    obstructions.emplace_back(bloat_poly.getEnclosingRect(), bloat_poly, net);
-  };
+          obstructions.emplace_back(
+              bloat_poly.getEnclosingRect(), bloat_poly, net);
+        };
 
   // Get placed instanced obstructions
   for (auto* inst : block_->getInsts()) {
