@@ -520,18 +520,18 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 {
  public:
   GRouteDbCbk(GlobalRouter* grouter);
-  virtual void inDbPostMoveInst(odb::dbInst* inst);
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
+  void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
 
-  virtual void inDbNetDestroy(odb::dbNet* net);
-  virtual void inDbNetCreate(odb::dbNet* net);
-  virtual void inDbNetPreMerge(odb::dbNet* preserved_net, odb::dbNet* removed_net);
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbNetCreate(odb::dbNet* net) override;
+  void inDbNetPreMerge(odb::dbNet* preserved_net, odb::dbNet* removed_net) override;
 
-  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
-  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
+  void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
 
-  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
-  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
+  void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
+  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;
 
  private:
   void instItermsDirty(odb::dbInst* inst);

@@ -4469,8 +4469,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     }
     if (logger_->debugCheck(GRT, "incr", 2)) {
       debugPrint(logger_, GRT, "incr", 2, "Dirty nets:");
-      for (auto net : dirty_nets)
+      for (auto net : dirty_nets) {
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
+      }
     }
 
     if (dirty_nets.empty()) {
