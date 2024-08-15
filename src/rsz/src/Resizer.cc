@@ -376,28 +376,15 @@ bool Resizer::removeBuffer(Instance* buffer,
                db_network_->name(buffer));
     buffer_removed = true;
 
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
     if (removed) {
+      odb::dbNet* db_survivor = db_network_->staToDb(survivor);
+      odb::dbNet* db_removed = db_network_->staToDb(removed);
       db_survivor->mergeNet(db_removed);
-    }
-
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-    sta_->deleteInstance(buffer);
-
-    if (removed) {
-      NetPinIterator* pin_iter = db_network_->pinIterator(removed);
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
-        Instance* pin_inst = db_network_->instance(pin);
-        if (pin_inst != buffer) {
-          Port* pin_port = db_network_->port(pin);
-          sta_->disconnectPin(const_cast<Pin*>(pin));
-          sta_->connectPin(pin_inst, pin_port, survivor);
-        }
-      }
-      delete pin_iter;
+      
+      sta_->disconnectPin(in_pin);
+      sta_->disconnectPin(out_pin);
+      sta_->deleteInstance(buffer);
+      
       sta_->deleteNet(removed);
       parasitics_invalid_.erase(removed);
     }
