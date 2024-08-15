@@ -612,9 +612,9 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos) && !net->skipIncremental()) {
+    if (pinPositionsChanged(net, last_pos) && !net->isMergedNet()) {
       dirty_nets.push_back(db_net_map_[db_net]);
-    } else if (net->skipIncremental()) {
+    } else if (net->isMergedNet()) {
       if (!netIsCovered(db_net, pins_not_covered)) {
         logger_->error(GRT,
                        266,
@@ -628,7 +628,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
     }
-    net->setSkipIncremental(false);
+    net->setMergedNet(false);
     net->setDirtyNet(false);
   }
   dirty_nets_.clear();
@@ -3160,7 +3160,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
-  if (net->skipIncremental()) {
+  if (net->isMergedNet()) {
     fastroute_->mergeNet(db_net);
   } else {
     fastroute_->removeNet(db_net);
@@ -3816,8 +3816,8 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     GRoute& net2_route = routes_[db_net2];
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     connectRouting(net1_route, db_net1, db_net2);
-    net1->setSkipIncremental(true);
-    net2->setSkipIncremental(true);
+    net1->setMergedNet(true);
+    net2->setMergedNet(true);
   }
 }
 

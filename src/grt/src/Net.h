@@ -61,8 +61,8 @@ class Net
   void destroyPins();
   bool hasWires() const { return has_wires_; }
   bool hasStackedVias(odb::dbTechLayer* max_routing_layer);
-  void setSkipIncremental(bool skip) { skip_incremental_ = skip; }
-  bool skipIncremental() const { return skip_incremental_; }
+  void setMergedNet(bool merged_net) { merged_net_ = merged_net; }
+  bool isMergedNet() const { return merged_net_; }
   void setDirtyNet(bool is_dirty_net) { is_dirty_net_ = is_dirty_net; }
   bool isDirtyNet() const { return is_dirty_net_; }
 
@@ -73,7 +73,7 @@ class Net
   std::vector<Pin> pins_;
   float slack_;
   bool has_wires_;
-  bool skip_incremental_;
+  bool merged_net_;
   bool is_dirty_net_;
 };
 
