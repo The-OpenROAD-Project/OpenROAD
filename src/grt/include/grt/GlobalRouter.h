@@ -525,7 +525,8 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbNetCreate(odb::dbNet* net) override;
-  void inDbNetPreMerge(odb::dbNet* preserved_net, odb::dbNet* removed_net) override;
+  void inDbNetPreMerge(odb::dbNet* preserved_net,
+                       odb::dbNet* removed_net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
