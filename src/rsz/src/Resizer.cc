@@ -380,11 +380,11 @@ bool Resizer::removeBuffer(Instance* buffer,
       odb::dbNet* db_survivor = db_network_->staToDb(survivor);
       odb::dbNet* db_removed = db_network_->staToDb(removed);
       db_survivor->mergeNet(db_removed);
-      
+
       sta_->disconnectPin(in_pin);
       sta_->disconnectPin(out_pin);
       sta_->deleteInstance(buffer);
-      
+
       sta_->deleteNet(removed);
       parasitics_invalid_.erase(removed);
     }
