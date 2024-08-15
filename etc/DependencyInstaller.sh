@@ -79,6 +79,9 @@ _installCommonDev() {
     cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
+    gtestVersion=1.13.0
+    gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -199,6 +202,20 @@ _installCommonDev() {
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
+    fi
+
+    # gtest
+    gtestPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${gtestPrefix}/include/gtest ]]; then
+        cd "${baseDir}"
+        wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
+        md5sum -c <(echo "${gtestChecksum} v${gtestVersion}.zip") || exit 1
+        unzip v${gtestVersion}.zip
+        cd googletest-${gtestVersion}
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${gtestPrefix}" -B build .
+        ${cmakePrefix}/bin/cmake --build build --target install
+    else
+        echo "gtest already installed."
     fi
 
     if [[ ${equivalenceDeps} == "yes" ]]; then

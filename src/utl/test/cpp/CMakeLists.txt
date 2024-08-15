@@ -1,8 +1,8 @@
 include("openroad")
 
 set(TEST_LIBS
-  gtest
-  gtest_main
+  GTest::gtest
+  GTest::gtest_main
   utl_lib
 )
 
