@@ -1840,7 +1840,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
-    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
+    con->setDefaultCenterAndEdge(
+        rule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
@@ -3158,7 +3159,7 @@ void io::Writer::mergeSplitConnFigs(
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
       Point viaPoint = via->getOrigin();
       viaMergeMap[std::make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)]
-          = via;
+          = std::move(via);
       // std::cout <<"found via" <<std::endl;
     }
   }
@@ -3239,21 +3240,21 @@ void io::Writer::mergeSplitConnFigs(
 
     auto layerNum = cutLayerNum - 1;
     int isH = 1;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = y;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum - 1;
     isH = 0;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
     isH = 0;
-    trackLoc = (isH == 1) ? y : x;
+    trackLoc = x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
   }
 

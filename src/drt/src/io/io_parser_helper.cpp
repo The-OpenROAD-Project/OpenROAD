@@ -1015,5 +1015,4 @@ void io::Parser::initRPin_rq()
 {
   design_->getRegionQuery()->initRPin();
 }
-
 }  // namespace drt

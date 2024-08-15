@@ -34,23 +34,23 @@ met5       Horizontal     431286        196316          54.48%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 4
+[INFO GRT-0197] Via related to pin nodes: 5
 [INFO GRT-0198] Via related Steiner nodes: 1
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 10
-[INFO GRT-0112] Final usage 3D: 359
+[INFO GRT-0112] Final usage 3D: 360
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
 met1           1166898           180            0.02%             0 /  0 /  0
-met2            778506           149            0.02%             0 /  0 /  0
+met2            778506           150            0.02%             0 /  0 /  0
 met3            583741             0            0.00%             0 /  0 /  0
 met4            196216             0            0.00%             0 /  0 /  0
 met5            196316             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total          2921677           329            0.01%             0 /  0 /  0
+Total          2921677           330            0.01%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2325 um
 [INFO GRT-0014] Routed nets: 1

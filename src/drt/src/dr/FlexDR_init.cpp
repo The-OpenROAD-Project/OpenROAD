@@ -547,7 +547,7 @@ void FlexDRWorker::initNets_initDR_helper(
             netExtObjs,
             netOrigGuides,
             netTerms,
-            bounds);
+            std::move(bounds));
     return;
   }
   std::vector<std::vector<std::unique_ptr<drConnFig>>> routeObjs(
@@ -582,7 +582,9 @@ void FlexDRWorker::initNets_initDR_helper(
         }
       }
     }
-    terms[bestIndex].emplace_back(netTerms.at(i));
+    if (bestIndex >= 0) {
+      terms[bestIndex].emplace_back(netTerms.at(i));
+    }
   }
   const auto it = boundaryPin_.find(net);
   if (it != boundaryPin_.end()) {
@@ -629,7 +631,9 @@ void FlexDRWorker::initNets_initDR_helper(
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    extObjs[compIdx].emplace_back(std::move(obj));
+    if (compIdx >= 0) {
+      extObjs[compIdx].emplace_back(std::move(obj));
+    }
   }
   for (int i = 0; i < connectedComponents.size(); i++) {
     initNet(design_,
@@ -1877,7 +1881,7 @@ void FlexDRWorker::initNets_numPinsIn()
           break;
         }
       }
-      if (!hasPrefAP) {
+      if (!hasPrefAP && firstAP != nullptr) {
         pt = firstAP->getPoint();
       }
 

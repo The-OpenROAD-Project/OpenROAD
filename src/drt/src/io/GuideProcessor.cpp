@@ -636,7 +636,8 @@ void GuideProcessor::buildGCellPatterns()
                   ygp.getSpacing());
   }
 
-  getDesign()->getTopBlock()->setGCellPatterns({xgp, ygp});
+  getDesign()->getTopBlock()->setGCellPatterns(
+      {std::move(xgp), std::move(ygp)});
 }
 
 void GuideProcessor::patchGuides_extendGuidesToCoverPin(
@@ -1119,11 +1120,14 @@ bool GuideProcessor::genGuides_gCell2APInstTermMap(
   frMTerm* trueTerm = instTerm->getTerm();
   std::string name;
   frInst* inst = instTerm->getInst();
-  dbTransform shiftXform = inst->getTransform();
-  shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+  dbTransform shiftXform;
 
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
+  if (inst != nullptr) {
+    shiftXform = inst->getTransform();
+    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+  }
   int succesPinCnt = 0;
   for (auto& pin : trueTerm->getPins()) {
     frAccessPoint* prefAp = nullptr;
@@ -1766,10 +1770,10 @@ void GuideProcessor::saveGuidesUpdates()
     dbNet->clearGuides();
     for (auto& guide : net->getGuides()) {
       auto [bp, ep] = guide->getPoints();
-      Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-      Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-      Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
-      Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
+      Point bpIdx = getDesign()->getTopBlock()->getGCellIdx(bp);
+      Point epIdx = getDesign()->getTopBlock()->getGCellIdx(ep);
+      Rect bbox = getDesign()->getTopBlock()->getGCellBox(bpIdx);
+      Rect ebox = getDesign()->getTopBlock()->getGCellBox(epIdx);
       frLayerNum bNum = guide->getBeginLayerNum();
       frLayerNum eNum = guide->getEndLayerNum();
       if (bNum != eNum) {

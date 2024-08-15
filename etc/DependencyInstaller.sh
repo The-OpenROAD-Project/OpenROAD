@@ -234,8 +234,8 @@ _installOrTools() {
     os=$1
     version=$2
     arch=$3
-    orToolsVersionBig=9.5
-    orToolsVersionSmall=${orToolsVersionBig}.2237
+    orToolsVersionBig=9.10
+    orToolsVersionSmall=${orToolsVersionBig}.4067
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -295,28 +295,32 @@ _installUbuntuPackages() {
         zlib1g-dev \
         ccache \
 
-    if _versionCompare $1 -ge 22.10; then
-        apt-get install -y --no-install-recommends \
-            libpython3.11 \
-            qt5-qmake \
-            qtbase5-dev \
-            qtbase5-dev-tools \
-            libqt5charts5-dev \
-            qtchooser
-    elif [[ $1 == 22.04 ]]; then
-        apt-get install -y --no-install-recommends \
-            libpython3.8 \
-            qt5-qmake \
-            qtbase5-dev \
-            qtbase5-dev-tools \
-            libqt5charts5-dev \
-            qtchooser
+    packages=()
+    # Chose Python version
+    if _versionCompare $1 -ge 24.04; then
+        packages+=("libpython3.12")
+    elif _versionCompare $1 -ge 22.10; then
+        packages+=("libpython3.11")
     else
-        apt-get install -y --no-install-recommends \
-            libpython3.8 \
-            libqt5charts5-dev \
-            qt5-default
+        packages+=("libpython3.8")
     fi
+
+    # Chose QT libraries
+    if _versionCompare $1 -ge 22.04; then
+        packages+=(
+            "qt5-qmake" \
+            "qtbase5-dev" \
+            "qtbase5-dev-tools" \
+            "libqt5charts5-dev" \
+            "qtchooser" \
+        )
+    else
+        packages+=(
+            "libqt5charts5-dev" \
+            "qt5-default" \
+        )
+    fi
+    apt-get install -y --no-install-recommends ${packages[@]}
 }
 
 _installRHELCleanUp() {
@@ -777,8 +781,12 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            if _versionCompare ${version} -gt 22.10; then
-                version=22.10
+            if _versionCompare ${version} -gt 24.04; then
+                version=24.04
+            elif _versionCompare ${version} -gt 22.04; then
+                version=22.04
+            else
+                version=20.04
             fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi

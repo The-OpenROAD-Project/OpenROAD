@@ -13,9 +13,9 @@ Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.09e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 1.57e-03 V
-Worstcase IR drop: 7.44e-03 V
-Percentage drop  : 0.68 %
+Average IR drop  : 1.61e-03 V
+Worstcase IR drop: 7.56e-03 V
+Percentage drop  : 0.69 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0073] Using bump pattern with x-pitch 65.0000um, y-pitch 65.0000um, and size 25.0000um with an reduction factor of 4x.
@@ -25,9 +25,9 @@ Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.08e+00 V
 Average voltage  : 1.09e+00 V
-Average IR drop  : 5.44e-03 V
-Worstcase IR drop: 1.74e-02 V
-Percentage drop  : 1.58 %
+Average IR drop  : 5.61e-03 V
+Worstcase IR drop: 1.79e-02 V
+Percentage drop  : 1.63 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0072] Using strap pattern on metal8 with pitch 4.0000um and offset 2.0000um.
@@ -37,9 +37,9 @@ Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.09e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 1.28e-03 V
-Worstcase IR drop: 7.08e-03 V
-Percentage drop  : 0.64 %
+Average IR drop  : 1.32e-03 V
+Worstcase IR drop: 7.19e-03 V
+Percentage drop  : 0.65 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0072] Using strap pattern on metal8 with pitch 12.0000um and offset 6.0000um.
@@ -49,7 +49,7 @@ Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.09e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 1.31e-03 V
-Worstcase IR drop: 7.14e-03 V
-Percentage drop  : 0.65 %
+Average IR drop  : 1.35e-03 V
+Worstcase IR drop: 7.25e-03 V
+Percentage drop  : 0.66 %
 ######################################
