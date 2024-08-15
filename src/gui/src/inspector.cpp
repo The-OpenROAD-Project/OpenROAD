@@ -39,6 +39,7 @@
 #include <QPushButton>
 
 #include "gui/gui.h"
+#include "gui_utils.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
 Q_DECLARE_METATYPE(gui::Descriptor::Editor);
@@ -108,7 +109,7 @@ void SelectedItemModel::updateObject()
     // make editor if found
     auto editor_found = editors.find(prop.name);
     if (editor_found != editors.end()) {
-      auto editor = (*editor_found).second;
+      auto& editor = (*editor_found).second;
       makeItemEditor(prop.name,
                      value_item,
                      object_,
@@ -153,6 +154,12 @@ QStandardItem* SelectedItemModel::makeItem(const QString& name)
   auto item = new QStandardItem(name);
   item->setEditable(false);
   item->setSelectable(false);
+  item->setData(Qt::AlignTop, Qt::TextAlignmentRole);
+  if (name.contains('\n')) {
+    QFont font("Monospace");
+    font.setStyleHint(QFont::Monospace);
+    item->setData(font, Qt::FontRole);
+  }
   return item;
 }
 
@@ -626,6 +633,7 @@ Inspector::Inspector(const SelectionSet& selected,
       button_prev_(
           new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
+      commands_menu_(new QMenu("Commands Menu", this)),
       highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings
@@ -665,6 +673,7 @@ Inspector::Inspector(const SelectionSet& selected,
           &Inspector::updateSelectedFields);
 
   connect(view_, &ObjectTree::clicked, this, &Inspector::clicked);
+  connect(view_, &ObjectTree::doubleClicked, this, &Inspector::doubleClicked);
 
   connect(
       button_prev_, &QPushButton::pressed, this, &Inspector::selectPrevious);
@@ -672,6 +681,7 @@ Inspector::Inspector(const SelectionSet& selected,
   connect(button_next_, &QPushButton::pressed, this, &Inspector::selectNext);
 
   view_->setMouseTracking(true);
+  view_->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(view_, &ObjectTree::entered, this, &Inspector::focusIndex);
 
   connect(view_, &ObjectTree::viewportEntered, this, &Inspector::defocus);
@@ -681,6 +691,44 @@ Inspector::Inspector(const SelectionSet& selected,
                            * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
   connect(&mouse_timer_, &QTimer::timeout, this, &Inspector::indexClicked);
+
+  setCommandsMenu();
+}
+
+void Inspector::setCommandsMenu()
+{
+  connect(view_,
+          &ObjectTree::customContextMenuRequested,
+          this,
+          &Inspector::showCommandsMenu);
+
+  connect(commands_menu_->addAction("Report Path"),
+          &QAction::triggered,
+          [this] { writePathReportCommand(); });
+}
+
+void Inspector::showCommandsMenu(const QPoint& pos)
+{
+  clicked_index_ = view_->indexAt(pos);
+
+  QStandardItem* item = model_->itemFromIndex(clicked_index_);
+  Selected selected
+      = item->data(EditorItemDelegate::selected_).value<Selected>();
+
+  if (selected) {
+    if (selected.getTypeName() == "ITerm") {
+      report_text_ = selected.getName();
+      commands_menu_->popup(view_->viewport()->mapToGlobal(pos));
+    }
+  }
+}
+
+void Inspector::writePathReportCommand()
+{
+  QString command = "report_checks -through ";
+  command += Utils::wrapInCurly(QString::fromStdString(report_text_));
+
+  emit setCommand(command);
 }
 
 void Inspector::adjustHeaders()
@@ -894,11 +942,24 @@ void Inspector::clicked(const QModelIndex& index)
   // timer to be able to tell the difference
   if (!mouse_timer_.isActive()) {
     clicked_index_ = index;
+
+    // Bypass the timer for those items for which there's
+    // no double click handling
+    QStandardItem* item = model_->itemFromIndex(index);
+    QVariant edit_data = item->data(EditorItemDelegate::editor_);
+    if (!edit_data.isValid()) {
+      indexClicked();
+      return;
+    }
+
     mouse_timer_.start();
-  } else {
-    mouse_timer_.stop();
-    emit indexDoubleClicked(index);
   }
+}
+
+void Inspector::doubleClicked(const QModelIndex& index)
+{
+  mouse_timer_.stop();
+  emit indexDoubleClicked(index);
 }
 
 void Inspector::indexClicked()
@@ -981,6 +1042,8 @@ void Inspector::update(const Selected& object)
 
 void Inspector::handleAction(QWidget* action)
 {
+  // Copy the callback as the action may be deleted from within the
+  // callback.
   auto callback = actions_[action];
   Selected new_selection;
   try {

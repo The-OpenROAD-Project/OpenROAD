@@ -34,7 +34,7 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-using namespace fr;
+namespace drt {
 
 void FlexPA::initViaRawPriority()
 {
@@ -63,7 +63,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS1 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer1Rect;
@@ -86,7 +86,7 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
     const Rect bbox = fig->getBBox();
     const gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     viaLayerPS2 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer2Rect;
@@ -158,3 +158,43 @@ void FlexPA::initTrackCoords()
     }
   }
 }
+
+void FlexPA::initSkipInstTerm()
+{
+  const auto& unique = unique_insts_.getUnique();
+
+  // Populate the map single-threaded so no further resizing is needed.
+  for (frInst* inst : unique) {
+    for (auto& instTerm : inst->getInstTerms()) {
+      auto term = instTerm->getTerm();
+      auto instClass = unique_insts_.getClass(inst);
+      skip_unique_inst_term_[{instClass, term}] = false;
+    }
+  }
+
+  const int unique_size = unique.size();
+#pragma omp parallel for schedule(dynamic)
+  for (int uniqueInstIdx = 0; uniqueInstIdx < unique_size; uniqueInstIdx++) {
+    frInst* inst = unique[uniqueInstIdx];
+    for (auto& instTerm : inst->getInstTerms()) {
+      frMTerm* term = instTerm->getTerm();
+      const UniqueInsts::InstSet* instClass = unique_insts_.getClass(inst);
+
+      // We have to be careful that the skip conditions are true not only of
+      // the unique instance but also all the equivalent instances.
+      bool skip = isSkipInstTermLocal(instTerm.get());
+      if (skip) {
+        for (frInst* inst : *instClass) {
+          frInstTerm* it = inst->getInstTerm(instTerm->getIndexInOwner());
+          skip = isSkipInstTermLocal(it);
+          if (!skip) {
+            break;
+          }
+        }
+      }
+      skip_unique_inst_term_.at({instClass, term}) = skip;
+    }
+  }
+}
+
+}  // namespace drt

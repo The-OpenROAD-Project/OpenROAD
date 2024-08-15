@@ -31,19 +31,12 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTrackPattern : public frBlockObject
 {
  public:
   // constructors
-  frTrackPattern()
-      : horizontal_(false),
-        startCoord_(0),
-        numTracks_(0),
-        trackSpacing_(0),
-        layerNum_(0)
-  {
-  }
+  frTrackPattern() = default;
   frTrackPattern(bool tmpIsH,
                  frCoord tmpSC,
                  frUInt4 tmpNT,
@@ -76,11 +69,11 @@ class frTrackPattern : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcTrackPattern; }
 
  private:
-  bool horizontal_;
-  frCoord startCoord_;
-  frUInt4 numTracks_;
-  frUInt4 trackSpacing_;
-  frLayerNum layerNum_;
+  bool horizontal_{false};
+  frCoord startCoord_{0};
+  frUInt4 numTracks_{0};
+  frUInt4 trackSpacing_{0};
+  frLayerNum layerNum_{0};
 };
 
-}  // namespace fr
+}  // namespace drt

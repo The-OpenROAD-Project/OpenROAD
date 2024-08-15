@@ -166,7 +166,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 3.0 REQUIRED)
+find_package(SWIG 4.0 REQUIRED)
 if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
   message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
 endif()
@@ -200,10 +200,26 @@ add_compile_options(
   $<$<BOOL:${ASAN}>:-fsanitize=address>
   $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
   $<$<BOOL:${ASAN}>:-g>
+  $<$<BOOL:${TSAN}>:-fsanitize=thread>
+  $<$<BOOL:${TSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fsanitize=undefined>
+  $<$<BOOL:${UBSAN}>:-g>
+  $<$<BOOL:${UBSAN}>:-fno-omit-frame-pointer>
 )
 
 if (ASAN)
   add_link_options(-fsanitize=address)
+  message(STATUS "Address Sanitizer is enabled")
+endif()
+
+if (TSAN)
+  add_link_options(-fsanitize=thread)
+  message(STATUS "Thread Sanitizer is enabled")
+endif()
+
+if (UBSAN)
+  add_link_options(-fsanitize=undefined)
+  message(STATUS "Undefined Behavior Sanitizer is enabled")
 endif()
 
 ################################################################
@@ -255,6 +271,10 @@ add_subdirectory(ifp)
 add_subdirectory(pad)
 add_subdirectory(odb)
 if (NOT USE_SYSTEM_OPENSTA)
+  if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
+    # Pass along tcl readline enablement to OpenSTA build
+    set(USE_TCL_READLINE ON)
+  endif()
   add_subdirectory(sta)
 endif()
 add_subdirectory(dbSta)
@@ -270,10 +290,8 @@ add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
 add_subdirectory(mpl)
-add_subdirectory(mpl2)
 add_subdirectory(rcx)
 add_subdirectory(psm)
-add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
@@ -282,6 +300,8 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
+add_subdirectory(mpl2)
+add_subdirectory(par)
 
 ################################################################
 
@@ -343,19 +363,14 @@ target_link_libraries(openroad
   utl
   pdn
   dft
+  mpl2
+  par
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
 
-if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # mpl2 aborts with link error on darwin and par causes abseil link error at startup on apple silicon so do not link it.
-  target_link_libraries(openroad mpl2 par)
-  target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
-  target_compile_definitions(openroad PRIVATE ENABLE_PAR)
-else()
-  message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
-endif()
+target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
@@ -424,14 +439,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
     psm_py
     pdn_py
     dft_py
+    par_py
   )
 
-  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    # par_py causes abseil link error at startup on apple silicon so do not link it.
-    target_link_libraries(openroad par_py)
-  else()
-    message(STATUS "Removing PAR_PY to avoid run time fatal error.")
-  endif()
 else()
   message(STATUS "Python3 disabled")
 endif()
@@ -465,6 +475,11 @@ endif()
 
 # executable
 install(TARGETS openroad DESTINATION bin)
+
+
+if(BUILD_MAN)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+endif()
 
 ################################################################
 

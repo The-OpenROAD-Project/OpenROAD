@@ -14,14 +14,15 @@ design.evalTclString("sta::db_network_defined")
 design.evalTclString("create_clock -period 5 clk")
 design.evalTclString("set_wire_rc -clock -layer metal5")
 
-cts_aux.clock_tree_synthesis(design,
-                             root_buf="CLKBUF_X3",
-                             buf_list="CLKBUF_X3",
-                             wire_unit=20,
-                             sink_clustering_enable=True,
-                             distance_between_buffers=100.0,
-                             sink_clustering_size=10,
-                             sink_clustering_max_diameter=60.0,
-                             num_static_layers=1,
-                             obstruction_aware=True
-                            )
+cts_aux.clock_tree_synthesis(
+    design,
+    root_buf="CLKBUF_X3",
+    buf_list="CLKBUF_X3",
+    wire_unit=20,
+    sink_clustering_enable=True,
+    distance_between_buffers=100.0,
+    sink_clustering_size=10,
+    sink_clustering_max_diameter=60.0,
+    num_static_layers=1,
+    obstruction_aware=True,
+)

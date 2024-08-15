@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_power_switch/power_switch.lef, created 1 library cells
+[INFO IFP-0001] Added 57 rows of 338 site unithd.
+[INFO IFP-0001] Added 28 rows of 338 site unithddbl.
+[INFO TAP-0005] Inserted 324 tapcells.
+[INFO PDN-0001] Inserting grid: Core
+No differences found.

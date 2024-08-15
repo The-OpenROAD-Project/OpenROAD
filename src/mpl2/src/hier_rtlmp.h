@@ -36,19 +36,14 @@
 #pragma once
 
 #include <limits>
-#include <map>
-#include <memory>
-#include <set>
 #include <string>
-#include <vector>
 
 #include "Mpl2Observer.h"
+#include "clusterEngine.h"
 
 namespace odb {
-class dbBTerm;
 class dbBlock;
 class dbDatabase;
-class dbITerm;
 class dbInst;
 class dbModule;
 }  // namespace odb
@@ -73,6 +68,9 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
+class Snapper;
+class SACoreSoftMacro;
+class SACoreHardMacro;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -82,8 +80,6 @@ class SoftMacro;
 // dataflow. Connection Signature is defined as the connection topology respect
 // to other clusters. Dataflow is defined based on sequential graph.
 // Timing-driven macro placement is based on uniform delay model.
-// We just odb::dbIntProperty::create() to cluster_id attribute for BTerms and
-// dbInsts.
 class HierRTLMP
 {
  public:
@@ -94,6 +90,7 @@ class HierRTLMP
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
 
+  void init();
   void run();
 
   // Interfaces functions for setting options
@@ -131,6 +128,9 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setDebugShowBundledNets(bool show_bundled_nets);
+  void setDebugSkipSteps(bool skip_steps);
+  void setDebugOnlyFinalResult(bool only_final_result);
   void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
@@ -138,102 +138,34 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
-  // General Hier-RTLMP flow functions
-  void initMacroPlacer();
-  void computeMetricsForModules(float core_area);
-  void reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                         float core_area,
-                                         float util,
-                                         float core_util);
-  void updateDataFlow();
-  void dataFlowDFSIOPin(int parent,
-                        int idx,
-                        std::vector<std::set<odb::dbInst*>>& insts,
-                        std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                        std::map<int, odb::dbInst*>& std_cell_vertex,
-                        std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                        std::vector<bool>& stop_flag_vec,
-                        std::vector<bool>& visited,
-                        std::vector<std::vector<int>>& vertices,
-                        std::vector<std::vector<int>>& hyperedges,
-                        bool backward_flag);
-  void dataFlowDFSMacroPin(int parent,
-                           int idx,
-                           std::vector<std::set<odb::dbInst*>>& std_cells,
-                           std::vector<std::set<odb::dbInst*>>& macros,
-                           std::map<int, odb::dbBTerm*>& io_pin_vertex,
-                           std::map<int, odb::dbInst*>& std_cell_vertex,
-                           std::map<int, odb::dbITerm*>& macro_pin_vertex,
-                           std::vector<bool>& stop_flag_vec,
-                           std::vector<bool>& visited,
-                           std::vector<std::vector<int>>& vertices,
-                           std::vector<std::vector<int>>& hyperedges,
-                           bool backward_flag);
-  Metrics* computeMetrics(odb::dbModule* module);
-  void setClusterMetrics(Cluster* cluster);
-  void calculateConnection();
-  void getHardMacros(odb::dbModule* module,
-                     std::vector<HardMacro*>& hard_macros);
-  void clear();
+  using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
+  using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
+  using IOSpans = std::map<Boundary, std::pair<float, float>>;
 
-  void printConnection();
-  void printClusters();
+  void runMultilevelAutoclustering();
+  void runHierarchicalMacroPlacement();
+
+  void resetSAParameters();
+
+  void updateMacrosOnDb();
+  void updateMacroOnDb(const HardMacro* hard_macro);
+  void commitMacroPlacementToDb();
+  void clear();
   void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
                    float outline_width,
                    float outline_height,
                    const std::string& file_name);
 
-  // Multilevel Autoclustering
-  void runMultilevelAutoclustering();
-  void initPhysicalHierarchy();
-  void setDefaultThresholds();
-  void createIOClusters();
-  void mapIOPads();
-  void createDataFlow();
-  void treatEachMacroAsSingleCluster();
-  void resetSAParameters();
-  void multilevelAutocluster(Cluster* parent);
-  void printPhysicalHierarchyTree(Cluster* parent, int level);
-  void setInstProperty(Cluster* cluster);
-  void setInstProperty(odb::dbModule* module,
-                       int cluster_id,
-                       bool include_macro);
-  void breakCluster(Cluster* parent);
-  void mergeClusters(std::vector<Cluster*>& candidate_clusters);
-  void updateSubTree(Cluster* parent);
-  void breakLargeFlatCluster(Cluster* parent);
-
-  void fetchMixedLeaves(Cluster* parent,
-                        std::vector<std::vector<Cluster*>>& mixed_leaves);
-  void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
-
-  void breakMixedLeaf(Cluster* mixed_leaf);
-  void mapMacroInCluster2HardMacro(Cluster* cluster);
-  void createOneClusterForEachMacro(Cluster* parent,
-                                    const std::vector<HardMacro*>& hard_macros,
-                                    std::vector<Cluster*>& macro_clusters);
-  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
-                            std::vector<int>& size_class);
-  void classifyMacrosByConnSignature(
-      const std::vector<Cluster*>& macro_clusters,
-      std::vector<int>& signature_class);
-  void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
-                                const std::vector<int>& size_class,
-                                const std::vector<int>& signature_class,
-                                std::vector<int>& macro_class);
-  void addStdCellClusterToSubTree(Cluster* parent,
-                                  Cluster* mixed_leaf,
-                                  std::vector<int>& virtual_conn_clusters);
-  void replaceByStdCellCluster(Cluster* mixed_leaf,
-                               std::vector<int>& virtual_conn_clusters);
-
   // Coarse Shaping
   void runCoarseShaping();
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
+  IOSpans computeIOSpans();
+  float computeIOBlockagesDepth(const IOSpans& io_spans);
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -245,6 +177,8 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void runHierarchicalMacroPlacement(Cluster* parent);
+  void adjustMacroBlockageWeight();
+  void reportSAWeights();
   void runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent);
   void runEnhancedHierarchicalMacroPlacement(Cluster* parent);
 
@@ -262,10 +196,23 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
-  void hardMacroClusterMacroPlacement(Cluster* cluster);
+  void placeMacros(Cluster* cluster);
+  void computeFencesAndGuides(const std::vector<HardMacro*>& hard_macros,
+                              const Rect& outline,
+                              std::map<int, Rect>& fences,
+                              std::map<int, Rect>& guides);
+  void createFixedTerminals(const Rect& outline,
+                            const UniqueClusterVector& macro_clusters,
+                            std::map<int, int>& cluster_to_macro,
+                            std::vector<HardMacro>& sa_macros);
+  std::vector<BundledNet> computeBundledNets(
+      const UniqueClusterVector& macro_clusters,
+      const std::map<int, int>& cluster_to_macro);
+  void setArrayTilingSequencePair(Cluster* cluster,
+                                  int macros_to_place,
+                                  SequencePair& initial_seq_pair);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
@@ -280,6 +227,10 @@ class HierRTLMP
   // Bus Planning
   void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                        std::vector<BundledNet>& nets_old);
+  void adjustCongestionWeight();
+
+  // Aux for conversion
+  odb::Rect micronsToDbu(const Rect& micron_rect);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -287,6 +238,9 @@ class HierRTLMP
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
+  std::unique_ptr<PhysicalHierarchy> tree_;
+
+  std::unique_ptr<ClusteringEngine> clustering_engine_;
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
@@ -298,14 +252,6 @@ class HierRTLMP
   // ASASP7, you should turn off this option.
   bool bus_planning_on_ = false;
 
-  // technology-related variables
-  float dbu_ = 0.0;
-  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
-                                // will be over written by the tech lef value
-
-  int num_updated_macros_ = 0;
-  int num_hard_macros_cluster_ = 0;
-
   // Parameters related to macro placement
   std::string report_directory_;
   std::string macro_placement_file_;
@@ -315,9 +261,6 @@ class HierRTLMP
   float global_fence_ly_ = std::numeric_limits<float>::max();
   float global_fence_ux_ = 0.0;
   float global_fence_uy_ = 0.0;
-
-  float halo_width_ = 0.0;
-  float halo_height_ = 0.0;
 
   const int num_runs_ = 10;    // number of runs for SA
   int num_threads_ = 10;       // number of threads
@@ -342,8 +285,6 @@ class HierRTLMP
   float notch_h_th_ = 10.0;
 
   int snap_layer_ = 4;
-  float pitch_x_ = 0.0;
-  float pitch_y_ = 0.0;
 
   // SA related parameters
   // weight for different penalty
@@ -361,19 +302,12 @@ class HierRTLMP
   std::map<std::string, Rect> guides_;  // macro_name, guide
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
+  std::map<Boundary, Rect> boundary_to_io_blockage_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
   const int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  const int k_ = 5000000;
-  const int c_ = 1000.0;
-
-  // the virtual weight between std cell part and corresponding macro part
-  // to force them stay together
-  float virtual_weight_ = 10.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.2;
@@ -383,96 +317,92 @@ class HierRTLMP
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
-  // design-related variables
-  // core area (in float)
-  float floorplan_lx_ = 0.0;
-  float floorplan_ly_ = 0.0;
-  float floorplan_ux_ = 0.0;
-  float floorplan_uy_ = 0.0;
-
-  // dataflow parameters and store the dataflow
-  int max_num_ff_dist_ = 5;  // maximum number of FF distances between
-  float dataflow_factor_ = 2.0;
-  float dataflow_weight_ = 1;
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_ffs_conn_map_;
-  std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
-      io_ffs_conn_map_;
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_macro_conn_map_;
-
   // statistics of the design
-  // Here when we calculate macro area, we do not include halo_width
   Metrics* metrics_ = nullptr;
-  // store the metrics for each hierarchical logical module
-  std::map<const odb::dbModule*, Metrics*> logical_module_map_;
-  // associate each Macro to the HardMacro object
-  std::map<odb::dbInst*, HardMacro*> hard_macro_map_;
 
-  // user-specified variables
-  int num_bundled_IOs_ = 3;  // number of bundled IOs on each boundary
-  int max_num_macro_base_ = 0;
-  int min_num_macro_base_ = 0;
-  int max_num_inst_base_ = 0;
-  int min_num_inst_base_ = 0;
-
-  // we define the tolerance for num_insts to improve the
-  // robustness of the clustering engine
-  float tolerance_ = 0.1;
-  int max_num_macro_ = 0;
-  int min_num_macro_ = 0;
-  int max_num_inst_ = 0;
-  int min_num_inst_ = 0;
-
-  // Multilevel support
-  int max_num_level_ = 2;
-  int level_ = 0;
-  float coarsening_ratio_ = 5.0;
-
-  // connection signature
-  // minimum number of connections between two clusters
-  // for them to be identified as connected
-  int signature_net_threshold_ = 20;
-  // We ignore global nets during clustering
-  int large_net_threshold_ = 100;
-  // we only consider bus when we do bus planning
-  const int bus_net_threshold_ = 32;
-  // the weight used for balance timing and congestion
-  float congestion_weight_ = 0.5;
-
-  // Determine if the cluster is macro dominated
-  // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
-  // then the cluster is macro-dominated cluster
-  const float macro_dominated_cluster_threshold_ = 0.01;
+  const int bus_net_threshold_ = 32;  // only for bus planning
+  float congestion_weight_ = 0.5;     // for balance timing and congestion
 
   // since we convert from the database unit to the micrometer
   // during calculation, we may loss some accuracy.
   const float conversion_tolerance_ = 0.01;
 
-  // Physical hierarchy tree
-  int cluster_id_ = 0;
-  // root cluster does not correspond to top design
-  // it's a special node in the physical hierachy tree
-  // Our physical hierarchy tree is as following:
-  //             root_cluster_ (top design)
-  //            *    *    *    *    *   *
-  //           L    T     M1   M2    B    T  (L, T, B, T are clusters for
-  //           bundled IOs)
-  //                    *   *
-  //                   M3    M4     (M1, M2, M3 and M4 are clusters for logical
-  //                   modules
-  Cluster* root_cluster_ = nullptr;      // cluster_id = 0 for root cluster
-  std::map<int, Cluster*> cluster_map_;  // cluster_id, cluster
-
-  // All the bundled IOs are children of root_cluster_
-  // Bundled IO (Pads)
-  // In the bundled IO clusters, we don't store the ios in their corresponding
-  // clusters However, we store the instances in their corresponding clusters
-  // map IO pins to Pads (for designs with IO pads)
-  std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
-  bool design_has_io_clusters_ = true;
-  bool design_has_only_macros_ = false;
+  bool skip_macro_placement_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
+
+class Pusher
+{
+ public:
+  Pusher(utl::Logger* logger,
+         Cluster* root,
+         odb::dbBlock* block,
+         const std::map<Boundary, Rect>& boundary_to_io_blockage);
+
+  void pushMacrosToCoreBoundaries();
+
+ private:
+  void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  bool designHasSingleCentralizedMacroArray();
+  void pushMacroClusterToCoreBoundaries(
+      Cluster* macro_cluster,
+      const std::map<Boundary, int>& boundaries_distance);
+  void fetchMacroClusters(Cluster* parent,
+                          std::vector<Cluster*>& macro_clusters);
+  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster);
+  void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
+  void moveMacroClusterBox(odb::Rect& cluster_box,
+                           Boundary boundary,
+                           int distance);
+  bool overlapsWithHardMacro(
+      const odb::Rect& cluster_box,
+      const std::vector<HardMacro*>& cluster_hard_macros);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
+
+  utl::Logger* logger_;
+
+  Cluster* root_;
+  odb::dbBlock* block_;
+  odb::Rect core_;
+
+  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;
+  std::vector<HardMacro*> hard_macros_;
+};
+
+// The parameters necessary to compute one coordinate of the new
+// origin for aligning the macros' pins to the track-grid
+struct SnapParameters
+{
+  int offset = 0;
+  int pitch = 0;
+  int pin_width = 0;
+  int lower_left_to_first_pin = 0;
+};
+
+class Snapper
+{
+ public:
+  Snapper();
+  Snapper(odb::dbInst* inst);
+
+  void setMacro(odb::dbInst* inst) { inst_ = inst; }
+  void snapMacro();
+
+ private:
+  odb::Point computeSnapOrigin();
+  SnapParameters computeSnapParameters(odb::dbTechLayer* layer,
+                                       odb::dbBox* box,
+                                       bool vertical_layer);
+  void getTrackGrid(odb::dbTrackGrid* track_grid,
+                    std::vector<int>& coordinate_grid,
+                    bool vertical_layer);
+  int getPitch(odb::dbTechLayer* layer, bool vertical_layer);
+  int getOffset(odb::dbTechLayer* layer, bool vertical_layer);
+  int getPinWidth(odb::dbBox* box, bool vertical_layer);
+  int getPinToLowerLeftDistance(odb::dbBox* box, bool vertical_layer);
+
+  odb::dbInst* inst_;
+};
+
 }  // namespace mpl2

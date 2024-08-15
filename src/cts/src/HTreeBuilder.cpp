@@ -1691,9 +1691,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
-#ifndef NDEBUG
-  const double targetDist = computeDist(branchPt2, rootLocation);
-#endif
 
   std::vector<std::pair<float, float>> means;
   means.emplace_back(branchPt1.getX(), branchPt1.getY());
@@ -1744,10 +1741,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
                sinks.size(),
                movedSinks);
   }
-
-  assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
-         && std::abs(computeDist(branchPt2, rootLocation) - targetDist)
-                < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
@@ -1783,6 +1776,11 @@ void HTreeBuilder::createClockSubNets()
   bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
+    // If the branch point has no sinks that will be connected to
+    // it don't create a clock sub net for it
+    if (topLevelTopology.getBranchSinksLocations(idx).empty()) {
+      return;
+    }
     Point<double> legalBranchPoint
         = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
     commitMoveLoc(branchPoint, legalBranchPoint);
@@ -1831,6 +1829,11 @@ void HTreeBuilder::createClockSubNets()
     isFirstPoint = true;
     topology.forEachBranchingPoint([&](unsigned idx,
                                        Point<double> branchPoint) {
+      // If the branch point has no sinks that will be connected
+      // to it don't create a clock sub net for it
+      if (topology.getBranchSinksLocations(idx).empty()) {
+        return;
+      }
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
       LevelTopology& parentTopology = topologyForEachLevel_[levelIdx - 1];
       Point<double> parentPoint = parentTopology.getBranchingPoint(parentIdx);
@@ -1887,6 +1890,12 @@ void HTreeBuilder::createClockSubNets()
   leafTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
         ClockSubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
+        // If no clock sub net was created for a leaf branch point no sinks
+        // connect to it, so just skip.
+        if (subNet == nullptr) {
+          return;
+        }
+
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs

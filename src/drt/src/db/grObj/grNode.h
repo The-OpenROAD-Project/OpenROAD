@@ -31,31 +31,20 @@
 #include <iostream>
 #include <memory>
 
-#include "frBaseTypes.h"
-// #include "db/obj/frNode.h"
 #include "db/grObj/grBlockObject.h"
+#include "db/infra/frPoint.h"
+#include "db/obj/frNode.h"
+#include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNet;
-class frNode;
 
 class grNode : public grBlockObject
 {
  public:
   // constructor
-  grNode()
-      : grBlockObject(),
-        net(nullptr),
-        loc(),
-        layerNum(0),
-        connFig(nullptr),
-        pin(nullptr),
-        type(frNodeTypeEnum::frcSteiner),
-        /*fNode(nullptr),*/ parent(nullptr),
-        children()
-  {
-  }
+  grNode() = default;
   grNode(grNode& in)
       : grBlockObject(),
         net(in.net),
@@ -69,15 +58,7 @@ class grNode : public grBlockObject
   {
   }
   grNode(frNode& in)
-      : grBlockObject(),
-        net(nullptr),
-        loc(in.loc),
-        layerNum(in.layerNum),
-        connFig(nullptr),
-        pin(in.pin),
-        type(in.type),
-        parent(nullptr),
-        children()
+      : loc(in.loc), layerNum(in.layerNum), pin(in.pin), type(in.type)
   {
   }
 
@@ -138,19 +119,20 @@ class grNode : public grBlockObject
   frBlockObjectEnum typeId() const override { return grcNode; }
 
  protected:
-  grNet* net;
+  grNet* net{nullptr};
   Point loc;
-  frLayerNum layerNum;
-  grBlockObject* connFig;  // wire / via / patch to parent
-  frBlockObject* pin;      // term / instTerm / null if boundary pin or steiner
-  frNodeTypeEnum type;
+  frLayerNum layerNum{0};
+  grBlockObject* connFig{nullptr};  // wire / via / patch to parent
+  frBlockObject* pin{
+      nullptr};  // term / instTerm / null if boundary pin or steiner
+  frNodeTypeEnum type{frNodeTypeEnum::frcSteiner};
 
   // frNode *fNode; // corresponding frNode
-  grNode* parent;
+  grNode* parent{nullptr};
   std::list<grNode*> children;
 
   frListIter<std::unique_ptr<grNode>> iter;
 
   friend class frNode;
 };
-}  // namespace fr
+}  // namespace drt

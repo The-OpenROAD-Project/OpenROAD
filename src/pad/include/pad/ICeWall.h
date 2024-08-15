@@ -41,23 +41,10 @@
 #include <string>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
-
-namespace odb {
-class dbDatabase;
-class dbBlock;
-class dbInst;
-class dbITerm;
-class dbMaster;
-class dbNet;
-class dbRow;
-class dbSite;
-class dbTechLayer;
-class dbTechVia;
-class Point;
-}  // namespace odb
 
 namespace utl {
 class Logger;

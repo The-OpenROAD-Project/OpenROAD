@@ -43,7 +43,7 @@
 #include <vector>
 
 #include "Util.h"
-#include "db.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;
@@ -243,6 +243,7 @@ class Clock
   }
 
   std::string getName() const { return netName_; }
+  std::string getSdcName() const { return sdcClockName_; }
   unsigned getNumSinks() const { return sinks_.size(); }
 
   Box<int> computeSinkRegion();

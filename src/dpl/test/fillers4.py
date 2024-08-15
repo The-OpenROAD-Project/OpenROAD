@@ -9,6 +9,6 @@ design = Design(tech)
 design.readDef("fillers4.def")
 
 dpl_aux.detailed_placement(design, disallow_one_site_gaps=True)
-masters=["FILLCELL_X2", "FILLCELL_X3", "FILLCELL_X4", "FILLCELL_X8"]
+masters = ["FILLCELL_X2", "FILLCELL_X3", "FILLCELL_X4", "FILLCELL_X8"]
 dpl_aux.filler_placement(design, masters=masters)
 design.getOpendp().checkPlacement(False)

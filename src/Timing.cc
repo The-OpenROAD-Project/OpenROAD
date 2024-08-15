@@ -42,8 +42,9 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Search.hh"
-//#include "ord/Tech.h"
+// #include "ord/Tech.h"
 #include "ord/Design.h"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/TimingArc.hh"
@@ -68,7 +69,9 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
   sta::dbNetwork* db_network = openroad->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return std::make_pair(iterm, bterm);
 }
 
@@ -260,6 +263,22 @@ std::vector<sta::Corner*> Timing::getCorners()
   return {corners->begin(), corners->end()};
 }
 
+sta::Corner* Timing::cmdCorner()
+{
+  return getSta()->cmdCorner();
+}
+
+sta::Corner* Timing::findCorner(const char* name)
+{
+  for (auto* corner : getCorners()) {
+    if (strcmp(corner->name(), name) == 0) {
+      return corner;
+    }
+  }
+
+  return nullptr;
+}
+
 float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
@@ -343,6 +362,42 @@ float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
   return sta->capacitance(lib_port, corner, getMinMax(minmax));
 }
 
+float Timing::getMaxCapLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxCap = 0.0;
+  bool maxCapExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (!maxCapExists) {
+      lib->defaultMaxCapacitance(maxCap, maxCapExists);
+    }
+  }
+  return maxCap;
+}
+
+float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Port* port = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  float maxSlew = 0.0;
+  bool maxSlewExists = false;
+  if (!pin->getSigType().isSupply()) {
+    lib_port->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExists);
+    if (!maxSlewExists) {
+      lib->defaultMaxSlew(maxSlew, maxSlewExists);
+    }
+  }
+  return maxSlew;
+}
+
 float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
 {
   sta::dbSta* sta = getSta();
@@ -369,4 +424,31 @@ float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
   return (power.internal() + power.switching());
 }
 
+void Timing::makeEquivCells()
+{
+  auto app = OpenRoad::openRoad();
+  rsz::Resizer* resizer = app->getResizer();
+  resizer->makeEquivCells();
+}
+
+std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  std::vector<odb::dbMaster*> masterSeq;
+  if (cell) {
+    sta::LibertyCell* libcell = network->libertyCell(cell);
+    sta::LibertyCellSeq* equiv_cells = sta->equivCells(libcell);
+    if (equiv_cells) {
+      for (sta::LibertyCell* equiv_cell : *equiv_cells) {
+        odb::dbMaster* equiv_master = network->staToDb(equiv_cell);
+        masterSeq.emplace_back(equiv_master);
+      }
+    } else {
+      masterSeq.emplace_back(master);
+    }
+  }
+  return masterSeq;
+}
 }  // namespace ord

@@ -33,14 +33,15 @@
 #pragma once
 
 #include "dbCore.h"
-#include "dbId.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/dbId.h"
+#include "odb/odb.h"
 
 namespace odb {
 
 class _dbMTerm;
 class _dbBox;
+class _dbPolygon;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
@@ -53,6 +54,7 @@ class _dbMPin : public _dbObject
   // PERSISTANT-MEMBERS
   dbId<_dbMTerm> _mterm;
   dbId<_dbBox> _geoms;
+  dbId<_dbPolygon> _poly_geoms;
   dbId<_dbMPin> _next_mpin;
   dbVector<dbVector<dbId<_dbAccessPoint>>>
       aps_;  // A vector of access points for each unique instance(master,

@@ -101,7 +101,10 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
       sta::Net* net = network->net(output_pin);
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      network->staToDb(output_pin, iterm, bterm);
+      odb::dbModBTerm* modbterm;
+      odb::dbModITerm* moditerm;
+
+      network->staToDb(output_pin, iterm, bterm, moditerm, modbterm);
       descriptor->highlight(
           DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
     }
@@ -564,7 +567,7 @@ QPainterPath ClockRootNodeGraphicsViewItem::shape() const
 
 ////////////////
 
-ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
+ClockLeafNodeGraphicsViewItem::ClockLeafNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
@@ -576,7 +579,7 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
   menu_.addAction(highlight_path_);
 }
 
-QPolygonF ClockRegisterNodeGraphicsViewItem::getClockInputPolygon() const
+QPolygonF ClockLeafNodeGraphicsViewItem::getClockInputPolygon() const
 {
   const qreal size = getSize();
   QPolygonF poly;
@@ -587,7 +590,7 @@ QPolygonF ClockRegisterNodeGraphicsViewItem::getClockInputPolygon() const
   return poly;
 }
 
-QRectF ClockRegisterNodeGraphicsViewItem::getOutlineRect() const
+QRectF ClockLeafNodeGraphicsViewItem::getOutlineRect() const
 {
   const qreal size = getSize();
   const QPointF ll(-size / 2, size);
@@ -596,17 +599,17 @@ QRectF ClockRegisterNodeGraphicsViewItem::getOutlineRect() const
   return rect.normalized();
 }
 
-QRectF ClockRegisterNodeGraphicsViewItem::boundingRect() const
+QRectF ClockLeafNodeGraphicsViewItem::boundingRect() const
 {
   return getOutlineRect();
 }
 
-void ClockRegisterNodeGraphicsViewItem::paint(
+void ClockLeafNodeGraphicsViewItem::paint(
     QPainter* painter,
     const QStyleOptionGraphicsItem* option,
     QWidget* widget)
 {
-  const QColor outline = leaf_color_;
+  const QColor outline = getColor();
   const QColor fill(outline.lighter());
 
   QPen pen(outline);
@@ -627,7 +630,7 @@ void ClockRegisterNodeGraphicsViewItem::paint(
   painter->drawPolygon(getClockInputPolygon());
 }
 
-void ClockRegisterNodeGraphicsViewItem::contextMenuEvent(
+void ClockLeafNodeGraphicsViewItem::contextMenuEvent(
     QGraphicsSceneContextMenuEvent* event)
 {
   event->accept();
@@ -726,7 +729,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
                              utl::Logger* logger,
                              QWidget* parent)
     : QGraphicsView(new ClockTreeScene(parent), parent),
-      tree_(tree),
+      tree_(std::move(tree)),
       renderer_(std::make_unique<ClockTreeRenderer>(tree_.get())),
       renderer_state_(RendererState::OnlyShowOnActiveWidget),
       scene_(nullptr),
@@ -1129,7 +1132,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(output_pin.pin, iterm, bterm);
+  odb::dbModBTerm* modbterm;
+  odb::dbModITerm* moditerm;
+
+  network->staToDb(output_pin.pin, iterm, bterm, moditerm, modbterm);
 
   ClockNodeGraphicsViewItem* node = nullptr;
   if (iterm != nullptr) {
@@ -1153,14 +1159,44 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(input_pin.pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
 
-  ClockRegisterNodeGraphicsViewItem* node
-      = new ClockRegisterNodeGraphicsViewItem(iterm);
+  network->staToDb(input_pin.pin, iterm, bterm, moditerm, modbterm);
+
+  // distinguish between registers and macros
+  ClockLeafNodeGraphicsViewItem* node;
+  odb::dbInst* inst = iterm->getInst();
+  float ins_delay = 0.0;
+  if (inst->getMaster()->getType().isBlock()) {
+    // add insertion delay at macro cell input pin
+    sta::LibertyCell* libCell = network->libertyCell(network->dbToSta(inst));
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    if (libCell && mterm) {
+      sta::LibertyPort* libPort
+          = libCell->findLibertyPort(mterm->getConstName());
+      if (libPort) {
+        const float rise = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::rise(), sta::MinMax::max());
+        const float fall = libPort->clkTreeDelay(
+            0.0, sta::RiseFall::fall(), sta::MinMax::max());
+
+        if (rise != 0 || fall != 0) {
+          ins_delay = (rise + fall) / 2.0;
+        }
+      }
+    }
+
+    node
+        = new ClockMacroNodeGraphicsViewItem(iterm, convertDelayToY(ins_delay));
+  } else {
+    node = new ClockRegisterNodeGraphicsViewItem(iterm);
+  }
   node->scaleSize(leaf_scale_);
 
   node->setPos({x, convertDelayToY(input_pin.delay)});
-  node->setExtraToolTip("Arrival: " + convertDelayToString(input_pin.delay));
+  node->setExtraToolTip("Arrival: "
+                        + convertDelayToString(input_pin.delay + ins_delay));
   scene_->addItem(node);
 
   connect(node->getHighlightAction(), &QAction::triggered, [this, iterm]() {
@@ -1168,6 +1204,15 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   });
 
   return node;
+}
+
+QRectF ClockMacroNodeGraphicsViewItem::getOutlineRect() const
+{
+  const qreal size = getSize();
+  const QPointF ll(-size / 2, std::max(size, insertion_delay_as_height_));
+  const QPointF ur(size / 2, 0);
+  QRectF rect(ll, ur);
+  return rect.normalized();
 }
 
 ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
@@ -1179,7 +1224,9 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
   auto convert_pin = [&network](const sta::Pin* pin) -> odb::dbITerm* {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    network->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
     return iterm;
   };
 
@@ -1302,6 +1349,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       sta_(nullptr),
       stagui_(nullptr),
       update_button_(new QPushButton("Update", this)),
+      fit_button_(new QPushButton("Fit", this)),
       corner_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
 {
@@ -1312,6 +1360,7 @@ ClockWidget::ClockWidget(QWidget* parent)
   QHBoxLayout* button_layout = new QHBoxLayout;
   button_layout->addWidget(corner_box_);
   button_layout->addWidget(update_button_);
+  button_layout->addWidget(fit_button_);
 
   corner_box_->setToolTip("Timing corner");
 
@@ -1323,7 +1372,10 @@ ClockWidget::ClockWidget(QWidget* parent)
   setWidget(container);
 
   connect(update_button_, &QPushButton::clicked, [=] { populate(); });
+  connect(fit_button_, &QPushButton::clicked, this, &ClockWidget::fit);
+
   update_button_->setEnabled(false);
+  fit_button_->setEnabled(false);
 
   connect(clocks_tab_,
           &QTabWidget::currentChanged,
@@ -1358,6 +1410,7 @@ void ClockWidget::setLogger(utl::Logger* logger)
 void ClockWidget::setBlock(odb::dbBlock* block)
 {
   update_button_->setEnabled(block != nullptr);
+  fit_button_->setEnabled(block != nullptr);
   block_ = block;
 }
 
@@ -1460,6 +1513,7 @@ void ClockWidget::saveImage(const std::string& clock_name,
       if (height_px.has_value()) {
         view_size.setHeight(height_px.value());
       }
+      print_view.scale(1, 1);  // mysteriously necessary sometimes
       print_view.resize(view_size);
       // Ensure the new view is sized correctly by Qt by processing the event
       // so fit will work
@@ -1480,6 +1534,13 @@ void ClockWidget::currentClockChanged(int index)
 {
   for (const auto& view : views_) {
     view->updateRendererState();
+  }
+}
+
+void ClockWidget::fit()
+{
+  if (!views_.empty() && clocks_tab_->currentIndex() < views_.size()) {
+    views_[clocks_tab_->currentIndex()]->fit();
   }
 }
 

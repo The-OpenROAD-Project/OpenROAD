@@ -39,8 +39,7 @@
 #include "global.h"
 #include "io/io.h"
 
-using namespace fr;
-using namespace boost::polygon::operators;
+namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
@@ -82,7 +81,7 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
   for (auto& userDefinedVia : design_->getUserSelectedVias()) {
-    if (tech_->name2via.find(userDefinedVia) == tech_->name2via.end()) {
+    if (tech_->name2via_.find(userDefinedVia) == tech_->name2via_.end()) {
       logger_->error(
           DRT, 608, "Could not find user defined via {}", userDefinedVia);
     }
@@ -209,8 +208,138 @@ void io::Parser::initDefaultVias()
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
         viaDef->setAddedByRouter(true);
-        tech_->getLayer(layerNum)->setDefaultViaDef(viaDef.get());
-        tech_->addVia(std::move(viaDef));
+        auto vdfPtr = tech_->addVia(std::move(viaDef));
+        if (vdfPtr == nullptr) {
+          logger_->error(
+              utl::DRT, 336, "Duplicated via definition for {}", viaDefName);
+        }
+        tech_->getLayer(layerNum)->setDefaultViaDef(vdfPtr);
+      }
+    }
+  }
+}
+
+namespace {
+std::pair<frCoord, frCoord> getBloatingDist(frTechObject* tech,
+                                            const frVia& via,
+                                            bool above)
+{
+  auto cut_layer = tech->getLayer(via.getViaDef()->getCutLayerNum());
+  auto enc_box = above ? via.getLayer2BBox() : via.getLayer1BBox();
+  auto cut_box = via.getCutBBox();
+  frCoord horz_overhang = 0;
+  frCoord vert_overhang = 0;
+  horz_overhang = std::min(enc_box.xMax() - cut_box.xMax(),
+                           cut_box.xMin() - enc_box.xMin());
+  vert_overhang = std::min(enc_box.yMax() - cut_box.yMax(),
+                           cut_box.yMin() - enc_box.yMin());
+  bool eol_is_horz = enc_box.dx() < enc_box.dy();
+  for (auto con : cut_layer->getLef58EnclosureConstraints(
+           via.getViaDef()->getCutClassIdx(), 0, above, true)) {
+    if (!con->isEolOnly()) {
+      break;
+    }
+    if ((eol_is_horz ? enc_box.dx() : enc_box.dy()) > con->getEolLength()) {
+      continue;
+    }
+    std::pair<frCoord, frCoord> bloats;
+    if (eol_is_horz) {
+      bloats = {std::max(0, con->getFirstOverhang() - vert_overhang),
+                std::max(0, con->getSecondOverhang() - horz_overhang)};
+    } else {
+      bloats = {std::max(0, con->getSecondOverhang() - vert_overhang),
+                std::max(0, con->getFirstOverhang() - horz_overhang)};
+    }
+    return bloats;
+  }
+  return std::make_pair(0, 0);
+}
+
+}  // namespace
+
+void io::Parser::initSecondaryVias()
+{
+  for (auto layerNum = design_->getTech()->getBottomLayerNum();
+       layerNum <= design_->getTech()->getTopLayerNum();
+       ++layerNum) {
+    auto layer = design_->getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::CUT) {
+      continue;
+    }
+    const auto default_viadef = layer->getDefaultViaDef();
+    const bool has_default_viadef = default_viadef != nullptr;
+    const bool has_max_spacing_constraints
+        = layer->hasLef58MaxSpacingConstraints();
+    if (!has_default_viadef || !has_max_spacing_constraints) {
+      continue;
+    }
+    std::set<frViaDef*> viadefs = layer->getViaDefs();
+    if (!viadefs.empty()) {
+      std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts_to_viadefs;
+      for (auto& viadef : viadefs) {
+        int cut_num = int(viadef->getCutFigs().size());
+        viaRawPriorityTuple priority;
+        getViaRawPriority(viadef, priority);
+        cuts_to_viadefs[cut_num][priority] = viadef;
+      }
+      for (auto [cuts, viadefs] : cuts_to_viadefs) {
+        for (auto [priority, viadef] : viadefs) {
+          if (viadef->getCutClassIdx() == default_viadef->getCutClassIdx()) {
+            continue;
+          }
+          frVia secondary_via(viadef);
+          auto layer1_bloats = getBloatingDist(tech_, secondary_via, false);
+          auto layer2_bloats = getBloatingDist(tech_, secondary_via, true);
+          int dx = secondary_via.getCutBBox().xCenter();
+          int dy = secondary_via.getCutBBox().yCenter();
+          if (layer1_bloats != std::pair<int, int>(0, 0)
+              || layer2_bloats != std::pair<int, int>(0, 0) || dx != 0
+              || dy != 0) {
+            std::string viadef_name = viadef->getName() + "_FR";
+            std::unique_ptr<frShape> u_botfig = std::make_unique<frRect>();
+            auto botfig = static_cast<frRect*>(u_botfig.get());
+            std::unique_ptr<frShape> u_topfig = std::make_unique<frRect>();
+            auto topfig = static_cast<frRect*>(u_topfig.get());
+            Rect layer1_box = secondary_via.getLayer1BBox();
+            Rect layer2_box = secondary_via.getLayer2BBox();
+            layer1_box = layer1_box.bloat(layer1_bloats.first,
+                                          odb::Orientation2D::Vertical);
+            layer1_box = layer1_box.bloat(layer1_bloats.second,
+                                          odb::Orientation2D::Horizontal);
+            layer2_box = layer2_box.bloat(layer2_bloats.first,
+                                          odb::Orientation2D::Vertical);
+            layer2_box = layer2_box.bloat(layer2_bloats.second,
+                                          odb::Orientation2D::Horizontal);
+            layer1_box.moveDelta(-dx, -dy);
+            layer2_box.moveDelta(-dx, -dy);
+            frLayerNum layer1Num = viadef->getLayer1Num();
+            frLayerNum layer2Num = viadef->getLayer2Num();
+            botfig->setBBox(layer1_box);
+            topfig->setBBox(layer2_box);
+            botfig->setLayerNum(layer1Num);
+            topfig->setLayerNum(layer2Num);
+            // cut layer shape
+            std::unique_ptr<frShape> u_cutfig = std::make_unique<frRect>();
+            auto cutfig = static_cast<frRect*>(u_cutfig.get());
+            Rect cut_box = secondary_via.getCutBBox();
+            cut_box.moveDelta(-dx, -dy);
+            cutfig->setBBox(cut_box);
+            cutfig->setLayerNum(viadef->getCutLayerNum());
+
+            // create via
+            auto new_viadef = std::make_unique<frViaDef>(viadef_name);
+            new_viadef->addLayer1Fig(std::move(u_botfig));
+            new_viadef->addLayer2Fig(std::move(u_topfig));
+            new_viadef->addCutFig(std::move(u_cutfig));
+            new_viadef->setAddedByRouter(true);
+            auto vdf_ptr = tech_->addVia(std::move(new_viadef));
+            if (vdf_ptr != nullptr) {
+              layer->addSecondaryViaDef(vdf_ptr);
+            }
+          } else {
+            layer->addSecondaryViaDef(viadef);
+          }
+        }
       }
     }
   }
@@ -330,21 +459,6 @@ void io::Parser::initCutLayerWidth()
         auto cutRect = static_cast<frRect*>(cutFig);
         auto viaWidth = cutRect->width();
         layer->setWidth(viaWidth);
-        if (viaDef->getNumCut() == 1) {
-          if (cutRect->width() != cutRect->length()) {
-            logger_->warn(DRT,
-                          240,
-                          "CUT layer {} does not have square single-cut via, "
-                          "cut layer width may be set incorrectly.",
-                          layer->getName());
-          }
-        } else {
-          logger_->warn(DRT,
-                        241,
-                        "CUT layer {} does not have single-cut via, cut layer "
-                        "width may be set incorrectly.",
-                        layer->getName());
-        }
       } else {
         if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
@@ -355,21 +469,10 @@ void io::Parser::initCutLayerWidth()
       }
     } else {
       auto viaDef = layer->getDefaultViaDef();
-      int cutLayerWidth = layer->getWidth();
       if (viaDef) {
         auto cutFig = viaDef->getCutFigs()[0].get();
         if (cutFig->typeId() != frcRect) {
           logger_->error(DRT, 243, "Non-rectangular shape in via definition.");
-        }
-        auto cutRect = static_cast<frRect*>(cutFig);
-        int viaWidth = cutRect->width();
-        if (cutLayerWidth < viaWidth) {
-          logger_->warn(
-              DRT,
-              244,
-              "CUT layer {} has smaller width defined in LEF compared "
-              "to default via.",
-              layer->getName());
         }
       }
     }
@@ -385,6 +488,7 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
   using PolygonSet = std::vector<boost::polygon::polygon_90_data<int>>;
   PolygonSet viaLayerPS1;
 
+  using boost::polygon::operators::operator+=;
   for (auto& fig : viaDef->getLayer1Figs()) {
     Rect bbox = fig->getBBox();
     Rectangle bboxRect(bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
@@ -544,10 +648,12 @@ void io::Parser::convertLef58MinCutConstraints()
   auto topLayerNum = tech_->getTopLayerNum();
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
     frLayer* layer = tech_->getLayer(lNum);
-    if (layer->getType() != dbTechLayerType::ROUTING)
+    if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
-    if (!layer->hasLef58Minimumcut())
+    }
+    if (!layer->hasLef58Minimumcut()) {
       continue;
+    }
     for (auto con : layer->getLef58MinimumcutConstraints()) {
       auto dbRule = con->getODBRule();
       std::unique_ptr<frConstraint> uCon
@@ -555,14 +661,16 @@ void io::Parser::convertLef58MinCutConstraints()
       auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
       if (dbRule->isPerCutClass()) {
         frViaDef* viaDefBelow = nullptr;
-        if (lNum > bottomLayerNum)
+        if (lNum > bottomLayerNum) {
           viaDefBelow = tech_->getLayer(lNum - 1)->getDefaultViaDef();
+        }
         frViaDef* viaDefAbove = nullptr;
-        if (lNum < topLayerNum)
+        if (lNum < topLayerNum) {
           viaDefAbove = tech_->getLayer(lNum + 1)->getDefaultViaDef();
+        }
         bool found = false;
         rptr->setNumCuts(dbRule->getNumCuts());
-        for (auto [cutclass, numcuts] : dbRule->getCutClassCutsMap()) {
+        for (const auto& [cutclass, numcuts] : dbRule->getCutClassCutsMap()) {
           if (viaDefBelow && !dbRule->isFromAbove()
               && viaDefBelow->getCutClass()->getName() == cutclass) {
             found = true;
@@ -577,8 +685,9 @@ void io::Parser::convertLef58MinCutConstraints()
             break;
           }
         }
-        if (!found)
+        if (!found) {
           continue;
+        }
       }
 
       if (dbRule->isLengthValid()) {
@@ -586,12 +695,15 @@ void io::Parser::convertLef58MinCutConstraints()
         rptr->setLength(dbRule->getLength(), dbRule->getLengthWithinDist());
       }
       rptr->setWidth(dbRule->getWidth());
-      if (dbRule->isWithinCutDistValid())
+      if (dbRule->isWithinCutDistValid()) {
         rptr->setWithin(dbRule->getWithinCutDist());
-      if (dbRule->isFromAbove())
+      }
+      if (dbRule->isFromAbove()) {
         rptr->setConnection(frMinimumcutConnectionEnum::FROMABOVE);
-      if (dbRule->isFromBelow())
+      }
+      if (dbRule->isFromBelow()) {
         rptr->setConnection(frMinimumcutConnectionEnum::FROMBELOW);
+      }
       tech_->addUConstraint(std::move(uCon));
       layer->addMinimumcutConstraint(rptr);
     }
@@ -678,7 +790,7 @@ void io::Parser::checkFig(frPinFig* uFig,
         foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
       } else {
         foundTracks |= !vertTracks.empty();
-        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+        foundCenterTracks |= vertTracks.find(box.xCenter()) != vertTracks.end();
       }
     }
     if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
@@ -765,7 +877,7 @@ void io::Parser::checkPins()
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
                     422,
-                    "No routing tracks pass through the center of Term {}",
+                    "No routing tracks pass through the center of Term {}.",
                     bTerm->getName());
     }
   }
@@ -831,8 +943,9 @@ void io::Parser::postProcess()
 
 void io::Parser::postProcessGuide()
 {
-  if (tmpGuides_.empty())
+  if (tmpGuides_.empty()) {
     return;
+  }
   ProfileTask profile("IO:postProcessGuide");
   if (VERBOSE > 0) {
     logger_->info(DRT, 169, "Post process guides.");
@@ -841,23 +954,17 @@ void io::Parser::postProcessGuide()
 
   design_->getRegionQuery()->initOrigGuide(tmpGuides_);
   int cnt = 0;
-  // for (auto &[netName, rects]:tmpGuides) {
-  //   if (design_->getTopBlock()->name2net.find(netName) ==
-  //   design_->getTopBlock()->name2net.end()) {
-  //     std::cout <<"Error: postProcessGuide cannot find net" <<std::endl;
-  //     exit(1);
-  //   }
   for (auto& [net, rects] : tmpGuides_) {
     net->setOrigGuides(rects);
     genGuides(net, rects);
     cnt++;
     if (VERBOSE > 0) {
-      if (cnt < 100000) {
-        if (cnt % 10000 == 0) {
+      if (cnt < 1000000) {
+        if (cnt % 100000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       } else {
-        if (cnt % 100000 == 0) {
+        if (cnt % 1000000 == 0) {
           logger_->report("  complete {} nets.", cnt);
         }
       }
@@ -920,8 +1027,9 @@ void io::Parser::initRPin_rpin()
             prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
                           ->getAccessPoints())[0]
                          .get();
-          } else
+          } else {
             continue;
+          }
         }
 
         if (prefAp == nullptr) {
@@ -1001,20 +1109,16 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
   }
   frCoord tmpGCELLGRIDX = -1, tmpGCELLGRIDY = -1;
   int tmpGCELLGRIDXCnt = -1, tmpGCELLGRIDYCnt = -1;
-  for (auto mapIt = guideGridXMap.begin(); mapIt != guideGridXMap.end();
-       ++mapIt) {
-    auto cnt = mapIt->second;
+  for (const auto [coord, cnt] : guideGridXMap) {
     if (cnt > tmpGCELLGRIDXCnt) {
       tmpGCELLGRIDXCnt = cnt;
-      tmpGCELLGRIDX = mapIt->first;
+      tmpGCELLGRIDX = coord;
     }
   }
-  for (auto mapIt = guideGridYMap.begin(); mapIt != guideGridYMap.end();
-       ++mapIt) {
-    auto cnt = mapIt->second;
+  for (const auto [coord, cnt] : guideGridYMap) {
     if (cnt > tmpGCELLGRIDYCnt) {
       tmpGCELLGRIDYCnt = cnt;
-      tmpGCELLGRIDY = mapIt->first;
+      tmpGCELLGRIDY = coord;
     }
   }
   if (tmpGCELLGRIDX != -1) {
@@ -1060,20 +1164,16 @@ void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
   }
   frCoord tmpGCELLOFFSETX = -1, tmpGCELLOFFSETY = -1;
   int tmpGCELLOFFSETXCnt = -1, tmpGCELLOFFSETYCnt = -1;
-  for (auto mapIt = guideOffsetXMap.begin(); mapIt != guideOffsetXMap.end();
-       ++mapIt) {
-    auto cnt = mapIt->second;
+  for (const auto [coord, cnt] : guideOffsetXMap) {
     if (cnt > tmpGCELLOFFSETXCnt) {
       tmpGCELLOFFSETXCnt = cnt;
-      tmpGCELLOFFSETX = mapIt->first;
+      tmpGCELLOFFSETX = coord;
     }
   }
-  for (auto mapIt = guideOffsetYMap.begin(); mapIt != guideOffsetYMap.end();
-       ++mapIt) {
-    auto cnt = mapIt->second;
+  for (const auto [coord, cnt] : guideOffsetYMap) {
     if (cnt > tmpGCELLOFFSETYCnt) {
       tmpGCELLOFFSETYCnt = cnt;
-      tmpGCELLOFFSETY = mapIt->first;
+      tmpGCELLOFFSETY = coord;
     }
   }
   if (tmpGCELLOFFSETX != -1) {
@@ -1160,43 +1260,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
                   ygp.getSpacing());
   }
 
-  design_->getTopBlock()->setGCellPatterns({xgp, ygp});
-
-  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
-       layerNum += 2) {
-    for (int i = 0; i < (int) xgp.getCount(); i++) {
-      for (int j = 0; j < (int) ygp.getCount(); j++) {
-        Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(i, j));
-        bool isH = (tech_->getLayers().at(layerNum)->getDir()
-                    == dbTechLayerDir::HORIZONTAL);
-        frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
-        frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
-        for (auto& tp : design_->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
-               && tp->isHorizontal() == false)
-              || (tech_->getLayer(layerNum)->getDir()
-                      == dbTechLayerDir::VERTICAL
-                  && tp->isHorizontal() == true)) {
-            int trackNum
-                = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-            if (trackNum < 0) {
-              trackNum = 0;
-            }
-            if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                < gcLow) {
-              trackNum++;
-            }
-            for (;
-                 trackNum < (int) tp->getNumTracks()
-                 && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
-                        < gcHigh;
-                 trackNum++) {
-            }
-          }
-        }
-      }
-    }
-  }
+  design_->getTopBlock()->setGCellPatterns({std::move(xgp), std::move(ygp)});
 }
 
 void io::Parser::saveGuidesUpdates()
@@ -1219,7 +1283,10 @@ void io::Parser::saveGuidesUpdates()
              lNum += 2) {
           auto layer = tech_->getLayer(lNum);
           auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(dbNet, dbLayer, bbox);
+          odb::dbGuide::create(
+              dbNet,
+              dbLayer,
+              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
         }
       } else {
         auto layerName = tech_->getLayer(bNum)->getName();
@@ -1231,7 +1298,10 @@ void io::Parser::saveGuidesUpdates()
       }
     }
     auto dbGuides = dbNet->getGuides();
-    if (dbGuides.orderReversed() && dbGuides.reversible())
+    if (dbGuides.orderReversed() && dbGuides.reversible()) {
       dbGuides.reverse();
+    }
   }
 }
+
+}  // namespace drt

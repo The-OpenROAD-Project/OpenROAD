@@ -38,7 +38,8 @@ sta::define_cmd_args "define_process_corner" {
 }
 
 proc define_process_corner { args } {
-  sta::parse_key_args "define_process_corner" args keys {-ext_model_index}
+  sta::parse_key_args "define_process_corner" args \
+    keys {-ext_model_index} flags {}
   sta::check_argc_eq1 "define_process_corner" $args
 
   set ext_model_index 0
@@ -64,16 +65,16 @@ sta::define_cmd_args "extract_parasitics" {
 }
 
 proc extract_parasitics { args } {
-  sta::parse_key_args "extract_parasitics" args keys \
-      { -ext_model_file
-        -corner_cnt
-        -max_res
-        -coupling_threshold
-        -debug_net_id
-        -context_depth
-        -cc_model } \
-      flags { -lef_res
-              -no_merge_via_res }
+  sta::parse_key_args "extract_parasitics" args \
+    keys { -ext_model_file
+           -corner_cnt
+           -max_res
+           -coupling_threshold
+           -debug_net_id
+           -context_depth
+           -cc_model } \
+    flags { -lef_res
+            -no_merge_via_res }
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
@@ -105,37 +106,38 @@ proc extract_parasitics { args } {
   if { [info exists keys(-cc_model)] } {
     set cc_model $keys(-cc_model)
   }
-  
+
   set depth 5
   if { [info exists keys(-context_depth)] } {
     set depth $keys(-context_depth)
     sta::check_positive_integer "-context_depth" $depth
   }
 
-  set debug_net_id "" 
+  set debug_net_id ""
   if { [info exists keys(-debug_net_id)] } {
     set debug_net_id $keys(-debug_net_id)
   }
 
   rcx::extract $ext_model_file $corner_cnt $max_res \
-      $coupling_threshold $cc_model \
-      $depth $debug_net_id $lef_res $no_merge_via_res
+    $coupling_threshold $cc_model \
+    $depth $debug_net_id $lef_res $no_merge_via_res
 }
 
-sta::define_cmd_args "write_spef" { 
+sta::define_cmd_args "write_spef" {
   [-net_id net_id]
-  [-nets nets] filename }
+  [-nets nets]
+  [-coordinates]
+  filename }
 
 proc write_spef { args } {
-  sta::parse_key_args "write_spef" args keys \
-      { -net_id 
-        -nets } \
-      flags { -coordinates }
+  sta::parse_key_args "write_spef" args \
+    keys { -net_id -nets } \
+    flags { -coordinates }
   sta::check_argc_eq1 "write_spef" $args
 
   set spef_file $args
 
-  set nets "" 
+  set nets ""
   if { [info exists keys(-nets)] } {
     set nets $keys(-nets)
   }
@@ -157,10 +159,11 @@ sta::define_cmd_args "adjust_rc" {
 }
 
 proc adjust_rc { args } {
-  sta::parse_key_args "adjust_rc" args keys \
-      { -res_factor
-        -cc_factor
-        -gndc_factor }
+  sta::parse_key_args "adjust_rc" args \
+    keys { -res_factor
+           -cc_factor
+           -gndc_factor } \
+    flags {}
 
   set res_factor 1.0
   if { [info exists keys(-res_factor)] } {
@@ -180,7 +183,7 @@ proc adjust_rc { args } {
     sta::check_positive_float "-gndc_factor" $gndc_factor
   }
 
-   rcx::adjust_rc $res_factor $cc_factor $gndc_factor
+  rcx::adjust_rc $res_factor $cc_factor $gndc_factor
 }
 
 sta::define_cmd_args "diff_spef" {
@@ -192,11 +195,11 @@ sta::define_cmd_args "diff_spef" {
 }
 
 proc diff_spef { args } {
-  sta::parse_key_args "diff_spef" args keys \
-      { -file } \
-      flags { -r_res -r_cap -r_cc_cap -r_conn }
-  
-  set filename "" 
+  sta::parse_key_args "diff_spef" args \
+    keys { -file } \
+    flags { -r_res -r_cap -r_cc_cap -r_conn }
+
+  set filename ""
   if { [info exists keys(-file)] } {
     set filename [file nativename $keys(-file)]
   }
@@ -224,10 +227,10 @@ sta::define_cmd_args "bench_wires" {
 }
 
 proc bench_wires { args } {
-  sta::parse_key_args "bench_wires" args keys \
-      { -met_cnt -cnt -len -under_met
-        -w_list -s_list -over_dist -under_dist } \
-      flags { -diag -over -all -db_only }
+  sta::parse_key_args "bench_wires" args \
+    keys { -met_cnt -cnt -len -under_met
+           -w_list -s_list -over_dist -under_dist } \
+    flags { -diag -over -all -db_only }
 
   if { ![ord::db_has_tech] } {
     utl::error RCX 357 "No LEF technology has been read."
@@ -238,7 +241,7 @@ proc bench_wires { args } {
   set diag [info exists flags(-diag)]
   set db_only [info exists flags(-db_only)]
 
-  set met_cnt 1000 
+  set met_cnt 1000
   if { [info exists keys(-met_cnt)] } {
     set met_cnt $keys(-met_cnt)
   }
@@ -262,7 +265,7 @@ proc bench_wires { args } {
   if { [info exists keys(-w_list)] } {
     set w_list $keys(-w_list)
   }
-  
+
   set s_list "1 2 2.5 3 3.5 4 4.5 5 6 8 10 12"
   if { [info exists keys(-s_list)] } {
     set s_list $keys(-s_list)
@@ -278,12 +281,14 @@ proc bench_wires { args } {
     set under_dist $keys(-under_dist)
   }
 
-  rcx::bench_wires $db_only $over $diag $all $met_cnt $cnt $len $under_met $w_list $s_list $over_dist $under_dist
+  rcx::bench_wires $db_only $over $diag $all $met_cnt $cnt $len \
+    $under_met $w_list $s_list $over_dist $under_dist
 }
 
 sta::define_cmd_args "bench_verilog" { filename }
 
 proc bench_verilog { args } {
+  sta::parse_key_args "bench_verilog" args keys {} flags{}
   sta::check_argc_eq1 "bench_verilog" $args
   rcx::bench_verilog $args
 }
@@ -291,6 +296,7 @@ proc bench_verilog { args } {
 sta::define_cmd_args "bench_read_spef" { filename }
 
 proc bench_read_spef { args } {
+  sta::parse_key_args "bench_read_spef" args keys {} flags{}
   sta::check_argc_eq1 "bench_read_spef" $args
   rcx::read_spef $args
 }
@@ -300,24 +306,25 @@ sta::define_cmd_args "write_rules" {
     [-dir dir]
     [-name name]
     [-pattern pattern]
+    [-db]
 }
 
 proc write_rules { args } {
-  sta::parse_key_args "write_rules" args keys \
-      { -file -dir -name -pattern } \
-      flags { -db }
-  
-  set filename "extRules" 
+  sta::parse_key_args "write_rules" args \
+    keys { -file -dir -name -pattern } \
+    flags { -db }
+
+  set filename "extRules"
   if { [info exists keys(-file)] } {
     set filename $keys(-file)
   }
 
-  set dir "./" 
+  set dir "./"
   if { [info exists keys(-dir)] } {
     set dir $keys(-dir)
   }
-  
-  set name "TYP" 
+
+  set name "TYP"
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
@@ -330,6 +337,6 @@ proc write_rules { args } {
     utl::warn RCX 149 "-db is deprecated."
   }
 
- rcx::write_rules $filename $dir $name $pattern
+  rcx::write_rules $filename $dir $name $pattern
 }
 

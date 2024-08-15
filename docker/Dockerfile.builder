@@ -4,7 +4,7 @@
 # instead use etc/DockerHelper.sh
 
 # https://github.com/moby/moby/issues/38379#issuecomment-448445652
-ARG fromImage=openroad/centos7-dev:latest
+ARG fromImage=openroad/ubuntu22.04-dev:latest
 
 FROM $fromImage
 

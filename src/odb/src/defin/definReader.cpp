@@ -32,14 +32,12 @@
 
 #include "definReader.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <string>
 
-#include "db.h"
-#include "dbShape.h"
 #include "definBlockage.h"
 #include "definComponent.h"
 #include "definComponentMaskShift.h"
@@ -57,6 +55,8 @@
 #include "definTracks.h"
 #include "definVia.h"
 #include "defzlib.hpp"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 
 #define UNSUPPORTED(msg)              \
@@ -72,13 +72,110 @@
   }
 namespace odb {
 
+namespace {
+
+// Helper function to get the correct number of bits of a cell for scandef.
+int calculateBitsForCellInScandef(const int bits, dbInst* inst)
+{
+  // -1 is no bits were provided in the scandef
+  if (bits != -1) {
+    return bits;
+  }
+  // -1 means that the bits are not set in the scandef
+  // We need to check if the inst is sequential to decide what is a
+  // reasonable default value
+  dbMaster* master = inst->getMaster();
+  if (master->isSequential()) {
+    // the default number of bits for sequential elements is 1
+    return 1;
+  }
+  // the default number of bits for combinational logic is 0
+  return 0;
+}
+
+dbITerm* findScanITerm(definReader* reader,
+                       dbInst* inst,
+                       const char* pin_name,
+                       const char* common_pin)
+{
+  if (!pin_name) {
+    if (!common_pin) {
+      reader->error(
+          fmt::format("SCANDEF is missing either component pin or a "
+                      "COMMONSCANPINS for instance {}",
+                      inst->getName()));
+      return nullptr;
+    }
+    // using the common pin name
+    return inst->findITerm(common_pin);
+  }
+  return inst->findITerm(pin_name);
+}
+
+std::optional<std::variant<dbBTerm*, dbITerm*>>
+findScanTerm(definReader* reader, dbBlock* block, const char* pin_name)
+{
+  dbBTerm* bterm = block->findBTerm(pin_name);
+  if (bterm) {
+    return bterm;
+  }
+
+  dbITerm* iterm = block->findITerm(pin_name);
+  if (iterm) {
+    return iterm;
+  }
+  reader->error(
+      fmt::format("SCANDEF START/STOP pin {} does not exist", pin_name));
+  return std::nullopt;
+}
+
+void populateScanInst(definReader* reader,
+                      dbBlock* block,
+                      defiScanchain* scan_chain,
+                      dbScanList* db_scan_list,
+                      const char* inst_name,
+                      const char* in_pin_name,
+                      const char* out_pin_name,
+                      const int bits)
+{
+  dbInst* inst = block->findInst(inst_name);
+  if (!inst) {
+    reader->error(fmt::format("SCANDEF Inst {} does not exist", inst_name));
+    return;
+  }
+
+  dbScanInst* scan_inst = db_scan_list->add(inst);
+
+  dbITerm* scan_in
+      = findScanITerm(reader, inst, in_pin_name, scan_chain->commonInPin());
+  if (!scan_in) {
+    reader->error(fmt::format(
+        "SCANDEF IN pin {} does not exist in cell {}", in_pin_name, inst_name));
+  }
+
+  dbITerm* scan_out
+      = findScanITerm(reader, inst, out_pin_name, scan_chain->commonOutPin());
+  if (!scan_out) {
+    reader->error(fmt::format("SCANDEF OUT pin {} does not exist in cell {}",
+                              out_pin_name,
+                              inst_name));
+  }
+
+  if (!scan_in || !scan_out) {
+    return;
+  }
+
+  scan_inst->setAccessPins({.scan_in = scan_in, .scan_out = scan_out});
+  scan_inst->setBits(calculateBitsForCellInScandef(bits, inst));
+}
+
+}  // namespace
+
 definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db = db;
-  _block_name = nullptr;
   parent_ = nullptr;
   _continue_on_errors = false;
-  version_ = nullptr;
   hier_delimeter_ = 0;
   left_bus_delimeter_ = 0;
   right_bus_delimeter_ = 0;
@@ -140,9 +237,6 @@ definReader::~definReader()
   delete _non_default_ruleR;
   delete _prop_defsR;
   delete _pin_propsR;
-
-  if (_block_name)
-    free((void*) _block_name);
 }
 
 int definReader::errors()
@@ -150,8 +244,9 @@ int definReader::errors()
   int e = _errors;
 
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     e += (*itr)->_errors;
+  }
 
   return e;
 }
@@ -208,11 +303,7 @@ void definReader::setAssemblyMode()
 
 void definReader::useBlockName(const char* name)
 {
-  if (_block_name)
-    free((void*) _block_name);
-
-  _block_name = strdup(name);
-  assert(_block_name);
+  _block_name = name;
 }
 
 void definReader::init()
@@ -231,16 +322,18 @@ void definReader::setTech(dbTech* tech)
   definBase::setTech(tech);
 
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     (*itr)->setTech(tech);
+  }
 }
 
 void definReader::setBlock(dbBlock* block)
 {
   definBase::setBlock(block);
   std::vector<definBase*>::iterator itr;
-  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr)
+  for (itr = _interfaces.begin(); itr != _interfaces.end(); ++itr) {
     (*itr)->setBlock(block);
+  }
 }
 
 // Generic handler for transfering properties from the
@@ -275,8 +368,9 @@ static std::string renameBlock(dbBlock* parent, const char* old_name)
     std::string name(old_name);
     name += n;
 
-    if (!parent->findChild(name.c_str()))
+    if (!parent->findChild(name.c_str())) {
       return name;
+    }
   }
 }
 
@@ -285,7 +379,7 @@ int definReader::versionCallback(defrCallbackType_e /* unused: type */,
                                  defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->version_ = strdup(value);
+  reader->version_ = value;
   return PARSE_OK;
 }
 
@@ -321,15 +415,16 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   std::string block_name;
-  if (reader->_block_name)
+  if (!reader->_block_name.empty()) {
     block_name = reader->_block_name;
-  else
+  } else {
     block_name = design;
+  }
   if (reader->parent_ != nullptr) {
     if (reader->parent_->findChild(block_name.c_str())) {
-      if (reader->_mode != defin::DEFAULT)
+      if (reader->_mode != defin::DEFAULT) {
         reader->_block = reader->parent_->findChild(block_name.c_str());
-      else {
+      } else {
         std::string new_name = renameBlock(reader->parent_, block_name.c_str());
         reader->_logger->warn(
             utl::ODB,
@@ -342,22 +437,25 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
                                          reader->_tech,
                                          reader->hier_delimeter_);
       }
-    } else
+    } else {
       reader->_block = dbBlock::create(reader->parent_,
                                        block_name.c_str(),
                                        reader->_tech,
                                        reader->hier_delimeter_);
+    }
   } else {
     dbChip* chip = reader->_db->getChip();
-    if (reader->_mode != defin::DEFAULT)
+    if (reader->_mode != defin::DEFAULT) {
       reader->_block = chip->getBlock();
-    else
+    } else {
       reader->_block = dbBlock::create(
           chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
+    }
   }
-  if (reader->_mode == defin::DEFAULT)
+  if (reader->_mode == defin::DEFAULT) {
     reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
                                      reader->right_bus_delimeter_);
+  }
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);
   reader->setBlock(reader->_block);
@@ -564,17 +662,21 @@ int definReader::dieAreaCallback(defrCallbackType_e /* unused: type */,
         int x = p.getX();
         int y = p.getY();
 
-        if (x < xmin)
+        if (x < xmin) {
           xmin = x;
+        }
 
-        if (y < ymin)
+        if (y < ymin) {
           ymin = y;
+        }
 
-        if (x > xmax)
+        if (x > xmax) {
           xmax = x;
+        }
 
-        if (y > ymax)
+        if (y > ymax) {
           ymax = y;
+        }
       }
 
       Rect r(xmin, ymin, xmax, ymax);
@@ -676,8 +778,9 @@ int definReader::groupCallback(defrCallbackType_e /* unused: type */,
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definGroup* groupR = reader->_groupR;
-  if (group->hasRegionName())
+  if (group->hasRegionName()) {
     groupR->region(group->regionName());
+  }
   handle_props(group, groupR);
   groupR->end();
 
@@ -1017,7 +1120,8 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
         } else {
           assert(0);
         }
-        dbOrientType orient = reader->translate_orientation(port->orient());
+        dbOrientType orient
+            = odb::definReader::translate_orientation(port->orient());
         pinR->pinPlacement(
             type, port->placementX(), port->placementY(), orient);
       }
@@ -1058,7 +1162,8 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
       } else {
         assert(0);
       }
-      dbOrientType orient = reader->translate_orientation(pin->orient());
+      dbOrientType orient
+          = odb::definReader::translate_orientation(pin->orient());
       pinR->pinPlacement(type, pin->placementX(), pin->placementY(), orient);
     }
 
@@ -1270,7 +1375,7 @@ int definReader::rowCallback(defrCallbackType_e /* unused: type */,
               row->macro(),
               row->x(),
               row->y(),
-              reader->translate_orientation(row->orient()),
+              odb::definReader::translate_orientation(row->orient()),
               dir,
               num_sites,
               spacing);
@@ -1282,12 +1387,113 @@ int definReader::rowCallback(defrCallbackType_e /* unused: type */,
   return PARSE_OK;
 }
 
+int definReader::scanchainsStartCallback(defrCallbackType_e /* unused: type */,
+                                         int chain_count,
+                                         defiUserData data)
+{
+  definReader* reader = (definReader*) data;
+  CHECKBLOCK
+  // unused callback. see scanchainsCallback
+  return PARSE_OK;
+}
+
 int definReader::scanchainsCallback(defrCallbackType_e /* unused: type */,
-                                    int /* unused: count */,
+                                    LefDefParser::defiScanchain* scan_chain,
                                     defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  UNSUPPORTED("SCANCHAINS are unsupported");
+  CHECKBLOCK
+
+  dbBlock* block = reader->_block;
+  dbDft* dft = block->getDft();
+
+  dbScanChain* db_scan_chain = dbScanChain::create(dft);
+  db_scan_chain->setName(scan_chain->name());
+
+  dbScanPartition* db_scan_partition = dbScanPartition::create(db_scan_chain);
+  db_scan_partition->setName(scan_chain->partitionName());
+
+  char* unused;
+  char* start_pin_name;
+  char* stop_pin_name;
+  scan_chain->start(&unused, &start_pin_name);
+  scan_chain->stop(&unused, &stop_pin_name);
+
+  auto scan_in_pin = findScanTerm(reader, block, start_pin_name);
+  auto scan_out_pin = findScanTerm(reader, block, stop_pin_name);
+  if (!scan_in_pin.has_value()) {
+    reader->error(fmt::format("Can't parse SCANIN pin"));
+    return PARSE_ERROR;
+  }
+  if (!scan_out_pin.has_value()) {
+    reader->error(fmt::format("Can't parse SCANOUT pin"));
+    return PARSE_ERROR;
+  }
+
+  std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanIn(pin); },
+             *scan_in_pin);
+  std::visit([db_scan_chain](auto&& pin) { db_scan_chain->setScanOut(pin); },
+             *scan_out_pin);
+
+  // Get floating elements, each floating element is in its own dbScanList
+  int floating_size = 0;
+  char** floating_inst = nullptr;
+  char** floating_in_pin = nullptr;
+  char** floating_out_pin = nullptr;
+  int* floating_bits = nullptr;
+  scan_chain->floating(&floating_size,
+                       &floating_inst,
+                       &floating_in_pin,
+                       &floating_out_pin,
+                       &floating_bits);
+
+  for (int i = 0; i < floating_size; ++i) {
+    dbScanList* db_scan_list = dbScanList::create(db_scan_partition);
+    const char* inst_name = floating_inst[i];
+    const char* in_pin_name = floating_in_pin[i];
+    const char* out_pin_name = floating_out_pin[i];
+    populateScanInst(reader,
+                     block,
+                     scan_chain,
+                     db_scan_list,
+                     inst_name,
+                     in_pin_name,
+                     out_pin_name,
+                     floating_bits[i]);
+  }
+
+  // Get the ordered elements
+  const int number_ordered = scan_chain->numOrderedLists();
+  for (int index = 0; index < number_ordered; ++index) {
+    int size = 0;
+    char** insts = nullptr;
+    char** in_pins = nullptr;
+    char** out_pins = nullptr;
+    int* bits = nullptr;
+    scan_chain->ordered(index, &size, &insts, &in_pins, &out_pins, &bits);
+
+    if (size == 0) {
+      continue;
+    }
+
+    dbScanList* db_scan_list = dbScanList::create(db_scan_partition);
+
+    // creating a dbScanList with the components
+    for (int i = 0; i < size; ++i) {
+      const char* inst_name = insts[i];
+      const char* in_pin_name = in_pins[i];
+      const char* out_pin_name = out_pins[i];
+      populateScanInst(reader,
+                       block,
+                       scan_chain,
+                       db_scan_list,
+                       inst_name,
+                       in_pin_name,
+                       out_pin_name,
+                       bits[i]);
+    }
+  }
+
   return PARSE_OK;
 }
 
@@ -1345,24 +1551,24 @@ int definReader::unitsCallback(defrCallbackType_e, double d, defiUserData data)
 
   // Truncation error
   if (d > reader->_tech->getDbUnitsPerMicron()) {
-    char buf[256];
-    sprintf(buf,
-            "The DEF UNITS DISTANCE MICRONS convert factor (%d) is "
-            "greater than the database units per micron (%d) value.",
-            (int) d,
-            reader->_tech->getDbUnitsPerMicron());
-    UNSUPPORTED(buf);
+    UNSUPPORTED(
+        fmt::format("The DEF UNITS DISTANCE MICRONS convert factor ({}) is "
+                    "greater than the database units per micron ({}) value.",
+                    d,
+                    reader->_tech->getDbUnitsPerMicron()));
   }
 
   reader->units(d);
 
   std::vector<definBase*>::iterator itr;
   for (itr = reader->_interfaces.begin(); itr != reader->_interfaces.end();
-       ++itr)
+       ++itr) {
     (*itr)->units(d);
+  }
 
-  if (!reader->_update)
+  if (!reader->_update) {
     reader->_block->setDefUnits(d);
+  }
   return PARSE_OK;
 }
 
@@ -1660,16 +1866,16 @@ void definReader::line(int line_num)
   _logger->info(utl::ODB, 125, "lines processed: {}", line_num);
 }
 
-void definReader::error(const char* msg)
+void definReader::error(std::string_view msg)
 {
   _logger->warn(utl::ODB, 126, "error: {}", msg);
   ++_errors;
 }
 
-void definReader::setLibs(std::vector<dbLib*>& libs)
+void definReader::setLibs(std::vector<dbLib*>& lib_names)
 {
-  _componentR->setLibs(libs);
-  _rowR->setLibs(libs);
+  _componentR->setLibs(lib_names);
+  _rowR->setLibs(lib_names);
 }
 
 dbChip* definReader::createChip(std::vector<dbLib*>& libs,
@@ -1680,8 +1886,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   setLibs(libs);
   dbChip* chip = _db->getChip();
   if (_mode != defin::DEFAULT) {
-    if (chip == nullptr)
+    if (chip == nullptr) {
       _logger->error(utl::ODB, 250, "Chip does not exist");
+    }
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return nullptr;
@@ -1699,43 +1906,50 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
     return nullptr;
   }
 
-  if (_pinR->_bterm_cnt)
+  if (_pinR->_bterm_cnt) {
     _logger->info(utl::ODB, 130, "    Created {} pins.", _pinR->_bterm_cnt);
+  }
 
-  if (_pinR->_update_cnt)
+  if (_pinR->_update_cnt) {
     _logger->info(utl::ODB, 252, "    Updated {} pins.", _pinR->_update_cnt);
+  }
 
-  if (_componentR->_inst_cnt)
+  if (_componentR->_inst_cnt) {
     _logger->info(utl::ODB,
                   131,
                   "    Created {} components and {} component-terminals.",
                   _componentR->_inst_cnt,
                   _componentR->_iterm_cnt);
+  }
 
-  if (_componentR->_update_cnt)
+  if (_componentR->_update_cnt) {
     _logger->info(
         utl::ODB, 253, "    Updated {} components.", _componentR->_update_cnt);
+  }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(utl::ODB,
                   132,
                   "    Created {} special nets and {} connections.",
                   _snetR->_snet_cnt,
                   _snetR->_snet_iterm_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB,
                   133,
                   "    Created {} nets and {} connections.",
                   _netR->_net_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
-  if (_netR->_update_cnt)
+  if (_netR->_update_cnt) {
     _logger->info(utl::ODB,
                   254,
                   "    Updated {} nets and {} connections.",
                   _netR->_update_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
   return chip;
@@ -1758,29 +1972,33 @@ dbBlock* definReader::createBlock(dbBlock* parent,
     return nullptr;
   }
 
-  if (_pinR->_bterm_cnt)
+  if (_pinR->_bterm_cnt) {
     _logger->info(utl::ODB, 138, "    Created {} pins.", _pinR->_bterm_cnt);
+  }
 
-  if (_componentR->_inst_cnt)
+  if (_componentR->_inst_cnt) {
     _logger->info(utl::ODB,
                   139,
                   "    Created {} components and {} component-terminals.",
                   _componentR->_inst_cnt,
                   _componentR->_iterm_cnt);
+  }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(utl::ODB,
                   140,
                   "    Created {} special nets and {} connections.",
                   _snetR->_snet_cnt,
                   _snetR->_snet_iterm_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB,
                   141,
                   "    Created {} nets and {} connections.",
                   _netR->_net_cnt,
                   _netR->_net_iterm_cnt);
+  }
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
@@ -1801,12 +2019,14 @@ bool definReader::replaceWires(dbBlock* block, const char* def_file)
     return false;
   }
 
-  if (_snetR->_snet_cnt)
+  if (_snetR->_snet_cnt) {
     _logger->info(
         utl::ODB, 145, "    Processed {} special nets.", _snetR->_snet_cnt);
+  }
 
-  if (_netR->_net_cnt)
+  if (_netR->_net_cnt) {
     _logger->info(utl::ODB, 146, "    Processed {} nets.", _netR->_net_cnt);
+  }
 
   _logger->info(utl::ODB, 147, "Finished DEF file: {}", def_file);
   return errors() == 0;
@@ -1864,13 +2084,16 @@ bool definReader::createBlock(const char* file)
     defrSetHistoryCbk(historyCallback);
 
     defrSetRegionCbk(regionCallback);
-
-    defrSetScanchainsStartCbk(scanchainsCallback);
     defrSetSlotStartCbk(slotsCallback);
 
     defrSetStartPinsCbk(pinsStartCallback);
     defrSetStylesStartCbk(stylesCallback);
     defrSetTechnologyCbk(technologyCallback);
+  }
+
+  if (_mode == defin::INCREMENTAL || _mode == defin::DEFAULT) {
+    defrSetScanchainsStartCbk(scanchainsStartCallback);
+    defrSetScanchainCbk(scanchainsCallback);
   }
 
   bool isZipped = hasSuffix(file, ".gz");

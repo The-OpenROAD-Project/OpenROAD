@@ -1,7 +1,4 @@
-[INFO ODB-0222] Reading LEF file: example1.lef
-[INFO ODB-0223]     Created 2 technology layers
-[INFO ODB-0225]     Created 6 library cells
-[INFO ODB-0226] Finished LEF file:  example1.lef
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 6 library cells
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 5 components and 24 component-terminals.
@@ -36,64 +33,62 @@ Path Type: max
            9.83   slack (MET)
 
 
- r 0.1796:0.1796 f 0.2263:0.2263
+ r 0.0321:0.0321 f 0.0417:0.0417
 A -> Z combinational
-  ^ -> ^ 0.0139:0.0139
-  v -> v 0.0192:0.0192
+  ^ -> ^ 0.0163:0.0163
+  v -> v 0.0208:0.0208
 Z -> b2/A wire
-  ^ -> ^ 0.1388:0.1388
-  v -> v 0.1388:0.1388
+  ^ -> ^ 0.0000:0.0000
+  v -> v 0.0000:0.0000
 Library: example1
 Cell: BUF_X1
 Arc sense: positive_unate
 Arc type: combinational
 A ^ -> Z ^
-Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1345
 P = 1.0000 V = 1.1000 T = 25.0000
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1345
+|       total_output_net_capacitance = 0.9747
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0151     0.0193
 0.0047 | 0.0166     0.0208
-Table value = 0.0139
+Table value = 0.0163
 PVT scale factor = 1.0000
-Delay = 0.0139
+Delay = 0.0163
 
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1345
+|       total_output_net_capacitance = 0.9747
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0043     0.0075
 0.0047 | 0.0043     0.0075
-Table value = 0.0038
+Table value = 0.0056
 PVT scale factor = 1.0000
-Slew = 0.0038
+Slew = 0.0056
 
 .............................................
 
 A v -> Z v
-Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1361
 P = 1.0000 V = 1.1000 T = 25.0000
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1361
+|       total_output_net_capacitance = 0.8752
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0202     0.0236
 0.0047 | 0.0217     0.0251
-Table value = 0.0192
+Table value = 0.0208
 PVT scale factor = 1.0000
-Delay = 0.0192
+Delay = 0.0208
 
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1361
+|       total_output_net_capacitance = 0.8752
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0043     0.0059
 0.0047 | 0.0043     0.0059
-Table value = 0.0040
+Table value = 0.0048
 PVT scale factor = 1.0000
-Slew = 0.0040
+Slew = 0.0048
 
 .............................................
 

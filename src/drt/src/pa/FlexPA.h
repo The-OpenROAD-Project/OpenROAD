@@ -47,7 +47,7 @@ namespace boost::serialization {
 class access;
 }
 
-namespace fr {
+namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
 using ViaRawPriorityTuple
@@ -99,6 +99,8 @@ class FlexPA
       uniqueInstPatterns_;
 
   UniqueInsts unique_insts_;
+  using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
+  std::map<UniqueMTerm, bool> skip_unique_inst_term_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
@@ -107,9 +109,9 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
-  uint16_t remote_port_;
+  uint16_t remote_port_ = -1;
   std::string shared_vol_;
-  int cloud_sz_;
+  int cloud_sz_ = -1;
 
   // helper functions
   frDesign* getDesign() const { return design_; }
@@ -121,6 +123,7 @@ class FlexPA
   }
   void applyPatternsFile(const char* file_path);
   void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
+  bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
 
@@ -128,12 +131,13 @@ class FlexPA
   void init();
   void initTrackCoords();
   void initViaRawPriority();
+  void initSkipInstTerm();
   // prep
   void prep();
   void prepPoint();
   void getViasFromMetalWidthMap(
       const Point& pt,
-      const frLayerNum layerNum,
+      frLayerNum layerNum,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       std::vector<std::pair<int, frViaDef*>>& viaDefs);
   template <typename T>
@@ -284,9 +288,7 @@ class FlexPA
 
   void prepPattern();
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
-  int prepPattern_inst(frInst* inst,
-                       const int currUniqueInstIdx,
-                       const double xWeight);
+  int prepPattern_inst(frInst* inst, int currUniqueInstIdx, double xWeight);
   int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   int currUniqueInstIdx);
   void genPatterns_init(
@@ -341,7 +343,7 @@ class FlexPA
   bool genPatterns_gc(
       const std::set<frBlockObject*>& targetObjs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-      const PatternType patternType,
+      PatternType patternType,
       std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
@@ -372,21 +374,6 @@ class FlexPA
 class FlexPinAccessPattern
 {
  public:
-  // constructor
-  FlexPinAccessPattern()
-      : pattern_(),
-        left_(nullptr),
-        right_(nullptr),
-        cost_(std::numeric_limits<int>::max())
-  {
-  }
-  FlexPinAccessPattern(const FlexPinAccessPattern& rhs)
-      : pattern_(rhs.pattern_),
-        left_(rhs.left_),
-        right_(rhs.right_),
-        cost_(rhs.cost_)
-  {
-  }
   // getter
   const std::vector<frAccessPoint*>& getPattern() const { return pattern_; }
   frAccessPoint* getBoundaryAP(bool isLeft) const
@@ -408,18 +395,19 @@ class FlexPinAccessPattern
   {
     cost_ = 0;
     for (auto& ap : pattern_) {
-      if (ap)
+      if (ap) {
         cost_ += ap->getCost();
+      }
     }
   }
 
  private:
   std::vector<frAccessPoint*> pattern_;
-  frAccessPoint* left_;
-  frAccessPoint* right_;
-  int cost_;
+  frAccessPoint* left_ = nullptr;
+  frAccessPoint* right_ = nullptr;
+  int cost_ = std::numeric_limits<int>::max();
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
 
@@ -427,14 +415,6 @@ class FlexPinAccessPattern
 class FlexDPNode
 {
  public:
-  // constructor
-  FlexDPNode()
-      : pathCost_(std::numeric_limits<int>::max()),
-        nodeCost_(std::numeric_limits<int>::max()),
-        prevNodeIdx_(-1)
-  {
-  }
-
   // getters
   int getPathCost() const { return pathCost_; }
   int getNodeCost() const { return nodeCost_; }
@@ -446,8 +426,8 @@ class FlexDPNode
   void setPrevNodeIdx(int in) { prevNodeIdx_ = in; }
 
  private:
-  int pathCost_;
-  int nodeCost_;
-  int prevNodeIdx_;
+  int pathCost_ = std::numeric_limits<int>::max();
+  int nodeCost_ = std::numeric_limits<int>::max();
+  int prevNodeIdx_ = -1;
 };
-}  // namespace fr
+}  // namespace drt

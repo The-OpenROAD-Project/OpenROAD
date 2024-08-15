@@ -37,21 +37,11 @@
 #include <set>
 #include <vector>
 
+#include "odb/db.h"
 #include "shape.h"
-
-namespace odb {
-class dbVia;
-class dbTechViaGenerateRule;
-class dbTechLayer;
-class dbTechVia;
-class dbSWire;
-class Rect;
-}  // namespace odb
+#include "via.h"
 
 namespace pdn {
-
-class DbVia;
-class ViaGenerator;
 
 class Connect
 {

@@ -1,15 +1,13 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: long_wire
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-[WARNING RSZ-0010] Signal/clock wire resistance is 0.
-[WARNING RSZ-0011] Signal/clock wire capacitance is 0.
+[WARNING RSZ-0010] Signal/clock horizontal wire resistance is 0.
+[WARNING RSZ-0011] Signal/clock vertical wire resistance is 0.
+[WARNING RSZ-0012] Signal/clock horizontal wire capacitance is 0.
+[WARNING RSZ-0013] Signal/clock vertical wire capacitance is 0.
 [WARNING RSZ-0014] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Driver    length delay
 u2/Z manhtn 1998.8 steiner 1998.8 0.00

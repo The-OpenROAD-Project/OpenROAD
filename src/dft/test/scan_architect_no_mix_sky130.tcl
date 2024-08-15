@@ -12,6 +12,7 @@ create_clock -name clock2 -period 2.0000 -waveform {0.0000 1.0000} [get_ports {c
 
 set_dft_config -max_length 5
 
+scan_replace
 
 set verilog_file_before_preview [make_result_file scan_architect_no_mix_sky130_before_preview.v]
 write_verilog -sort $verilog_file_before_preview

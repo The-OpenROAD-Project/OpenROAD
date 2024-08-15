@@ -34,7 +34,6 @@
 
 #include <spdlog/fmt/ostr.h>
 
-#include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbMPinItr.h"
@@ -43,7 +42,8 @@
 #include "dbTable.hpp"
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
-#include "lefout.h"
+#include "odb/db.h"
+#include "odb/lefout.h"
 
 namespace odb {
 
@@ -51,53 +51,69 @@ template class dbTable<_dbMTerm>;
 
 bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 {
-  if (_flags._io_type != rhs._flags._io_type)
+  if (_flags._io_type != rhs._flags._io_type) {
     return false;
+  }
 
-  if (_flags._sig_type != rhs._flags._sig_type)
+  if (_flags._sig_type != rhs._flags._sig_type) {
     return false;
+  }
 
-  if (_flags._shape_type != rhs._flags._shape_type)
+  if (_flags._shape_type != rhs._flags._shape_type) {
     return false;
+  }
 
-  if (_order_id != rhs._order_id)
+  if (_order_id != rhs._order_id) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
-  if (_next_mterm != rhs._next_mterm)
+  if (_next_mterm != rhs._next_mterm) {
     return false;
+  }
 
-  if (_pins != rhs._pins)
+  if (_pins != rhs._pins) {
     return false;
+  }
 
-  if (_targets != rhs._targets)
+  if (_targets != rhs._targets) {
     return false;
+  }
 
-  if (_oxide1 != rhs._oxide1)
+  if (_oxide1 != rhs._oxide1) {
     return false;
+  }
 
-  if (_oxide2 != rhs._oxide2)
+  if (_oxide2 != rhs._oxide2) {
     return false;
+  }
 
-  if (_par_met_area != rhs._par_met_area)
+  if (_par_met_area != rhs._par_met_area) {
     return false;
+  }
 
-  if (_par_met_sidearea != rhs._par_met_sidearea)
+  if (_par_met_sidearea != rhs._par_met_sidearea) {
     return false;
+  }
 
-  if (_par_cut_area != rhs._par_cut_area)
+  if (_par_cut_area != rhs._par_cut_area) {
     return false;
+  }
 
-  if (_diffarea != rhs._diffarea)
+  if (_diffarea != rhs._diffarea) {
     return false;
+  }
 
   return true;
 }
@@ -192,27 +208,34 @@ _dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
     _diffarea.push_back(e);
   }
 }
-/*
-inline _dbMTerm::~_dbMTerm()
+
+_dbMTerm::~_dbMTerm()
 {
-    if ( _name )
-        free( (void *) _name );
+  if (_name) {
+    free((void*) _name);
+  }
 
-    dbVector<_dbTechAntennaAreaElement *>::iterator  antitr;
-    for (antitr = _par_met_area.begin(); antitr != _par_met_area.end();
-antitr++) delete *antitr; _par_met_area.clear();
+  for (auto elem : _par_met_area) {
+    delete elem;
+  }
+  _par_met_area.clear();
 
-    for (antitr = _par_met_sidearea.begin(); antitr != _par_met_sidearea.end();
-antitr++) delete *antitr; _par_met_sidearea.clear();
+  for (auto elem : _par_met_sidearea) {
+    delete elem;
+  }
+  _par_met_sidearea.clear();
 
-    for (antitr = _par_cut_area.begin(); antitr != _par_cut_area.end();
-antitr++) delete *antitr; _par_cut_area.clear();
+  for (auto elem : _par_cut_area) {
+    delete elem;
+  }
+  _par_cut_area.clear();
 
-    for (antitr = _diffarea.begin(); antitr != _diffarea.end(); antitr++)
-      delete *antitr;
-    _diffarea.clear();
+  for (auto elem : _diffarea) {
+    delete elem;
+  }
+  _diffarea.clear();
 }
-*/
+
 dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 {
   uint* bit_field = (uint*) &mterm._flags;
@@ -276,19 +299,21 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
   char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
   uint ii = 0;
   block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
-  if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0')
+  if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0') {
     return mtname;
+  }
   master->getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
     while (mtname[ii] != '\0') {
-      if (mtname[ii] == lib_left_bus_del)
+      if (mtname[ii] == lib_left_bus_del) {
         ttname[ii] = blk_left_bus_del;
-      else if (mtname[ii] == lib_right_bus_del)
+      } else if (mtname[ii] == lib_right_bus_del) {
         ttname[ii] = blk_right_bus_del;
-      else
+      } else {
         ttname[ii] = mtname[ii];
+      }
       ii++;
     }
     ttname[ii] = '\0';
@@ -463,8 +488,9 @@ dbTechAntennaPinModel* dbMTerm::getDefaultAntennaModel() const
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
 
-  if (mterm->_oxide1 == 0)
+  if (mterm->_oxide1 == 0) {
     return nullptr;
+  }
 
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(
@@ -475,8 +501,9 @@ dbTechAntennaPinModel* dbMTerm::getOxide2AntennaModel() const
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
 
-  if (mterm->_oxide2 == 0)
+  if (mterm->_oxide2 == 0) {
     return nullptr;
+  }
 
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(
@@ -502,25 +529,30 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
 
   for (ant_iter = mterm->_par_met_area.begin();
        ant_iter != mterm->_par_met_area.end();
-       ant_iter++)
+       ant_iter++) {
     (*ant_iter)->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
+  }
 
   for (ant_iter = mterm->_par_met_sidearea.begin();
        ant_iter != mterm->_par_met_sidearea.end();
-       ant_iter++)
+       ant_iter++) {
     (*ant_iter)->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
+  }
 
   for (ant_iter = mterm->_par_cut_area.begin();
        ant_iter != mterm->_par_cut_area.end();
-       ant_iter++)
+       ant_iter++) {
     (*ant_iter)->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
+  }
 
   for (ant_iter = mterm->_diffarea.begin(); ant_iter != mterm->_diffarea.end();
-       ant_iter++)
+       ant_iter++) {
     (*ant_iter)->writeLef("ANTENNADIFFAREA", tech, writer);
+  }
 
-  if (hasDefaultAntennaModel())
+  if (hasDefaultAntennaModel()) {
     getDefaultAntennaModel()->writeLef(tech, writer);
+  }
 
   if (hasOxide2AntennaModel()) {
     fmt::print(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
@@ -536,8 +568,9 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
 {
   _dbMaster* master = (_dbMaster*) master_;
 
-  if (master->_flags._frozen || master->_mterm_hash.hasMember(name_))
+  if (master->_flags._frozen || master->_mterm_hash.hasMember(name_)) {
     return nullptr;
+  }
 
   _dbMTerm* mterm = master->_mterm_tbl->create();
   mterm->_name = strdup(name_);
@@ -545,8 +578,9 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
   mterm->_flags._io_type = io_type_.getValue();
   mterm->_flags._sig_type = sig_type_.getValue();
   mterm->_flags._shape_type = shape_type_;
-  if (sig_type_ == dbSigType::CLOCK)
+  if (sig_type_ == dbSigType::CLOCK) {
     master_->setSequential(1);
+  }
   master->_mterm_hash.insert(mterm);
   master->_mterm_cnt++;
   return (dbMTerm*) mterm;

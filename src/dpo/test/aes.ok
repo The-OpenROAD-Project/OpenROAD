@@ -1,20 +1,16 @@
-[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
-[INFO ODB-0223]     Created 22 technology layers
-[INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 135 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 391 pins.
 [INFO ODB-0131]     Created 21340 components and 108388 component-terminals.
 [INFO ODB-0133]     Created 19675 nets and 65708 connections.
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 21340 cells, 391 terminals, 19675 edges and 66099 pins.
+[INFO DPO-0100] Creating network with 21340 cells, 391 terminals, 19675 edges, 66099 pins, and 0 blockages.
 [INFO DPO-0109] Network stats: inst 21731, edges 19675, pins 66099
 [INFO DPO-0110] Number of regions is 1
 [INFO DPO-0401] Setting random seed to 1.
 [INFO DPO-0402] Setting maximum displacement 0 0 to 2354480 2354480 units.
-[INFO DPO-0320] Collected 2848 fixed cells (excluded terminal_NI).
+[INFO DPO-0320] Collected 2848 fixed cells.
 [INFO DPO-0318] Collected 18883 single height cells.
 [INFO DPO-0321] Collected 0 wide cells.
 [INFO DPO-0322] Image (28000, 28000) - (1205240, 1010800)

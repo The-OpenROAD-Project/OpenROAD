@@ -34,11 +34,11 @@
 
 #include <vector>
 
-#include "ZException.h"
 #include "dbCore.h"
-#include "dbIterator.h"
 #include "dbVector.h"
-#include "odb.h"
+#include "odb/ZException.h"
+#include "odb/dbIterator.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -181,5 +181,20 @@ dbOStream& operator<<(dbOStream& stream, const dbTable<T>& table);
 
 template <class T>
 dbIStream& operator>>(dbIStream& stream, dbTable<T>& table);
+
+// Useful if you want to write the table in a named scope
+template <class T>
+struct NamedTable
+{
+  NamedTable(const char* name, const dbTable<T>* table)
+      : name(name), table(table)
+  {
+  }
+  const char* name;
+  const dbTable<T>* table;
+};
+
+template <class T>
+dbOStream& operator<<(dbOStream& stream, const NamedTable<T>& named_table);
 
 }  // namespace odb

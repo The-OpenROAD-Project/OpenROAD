@@ -93,8 +93,9 @@ uint dbRegionInstItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbRegionInstItr::begin(parent); id != dbRegionInstItr::end(parent);
-       id = dbRegionInstItr::next(id))
+       id = dbRegionInstItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

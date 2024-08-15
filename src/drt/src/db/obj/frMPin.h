@@ -31,19 +31,16 @@
 
 #include "db/obj/frPin.h"
 
-namespace fr {
+namespace drt {
 class frMTerm;
 
 class frMPin : public frPin
 {
  public:
   // constructors
-  frMPin() : frPin(), term_(nullptr) {}
-  frMPin(const frMPin& in) : frPin(in), term_(in.term_) {}
-  frMPin(const frMPin& in, const dbTransform& xform)
-      : frPin(in, xform), term_(in.term_)
-  {
-  }
+  frMPin() = default;
+  frMPin(const frMPin& in) = delete;
+  frMPin& operator=(const frMPin&) = delete;
 
   // getters
   frMTerm* getTerm() const { return term_; }
@@ -55,6 +52,6 @@ class frMPin : public frPin
   frBlockObjectEnum typeId() const override { return frcMPin; }
 
  protected:
-  frMTerm* term_;
+  frMTerm* term_{nullptr};
 };
-}  // namespace fr
+}  // namespace drt

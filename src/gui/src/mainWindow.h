@@ -36,6 +36,7 @@
 #include <QCloseEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QShortcut>
 #include <QToolBar>
 #include <memory>
 
@@ -52,7 +53,11 @@ class dbDatabase;
 namespace utl {
 class Logger;
 }
-
+#ifdef ENABLE_CHARTS
+namespace sta {
+class Pin;
+}
+#endif
 namespace gui {
 
 class LayoutViewer;
@@ -253,8 +258,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void setUseDBU(bool use_dbu);
   void setClearLocation();
   void showApplicationFont();
+  void showArrowKeysScrollStep();
   void showGlobalConnect();
   void openDesign();
+  void saveDesign();
+#ifdef ENABLE_CHARTS
+  void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
+                                 const std::string& path_group_name);
+#endif
+  void enableDeveloper();
 
  protected:
   // used to check if user intends to close Openroad or just the GUI.
@@ -286,6 +298,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   HighlightSet highlighted_;
   Rulers rulers_;
 
+  int arrow_keys_scroll_step_;
+
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
@@ -310,6 +324,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QToolBar* view_tool_bar_;
 
   QAction* open_;
+  QAction* save_;
   QAction* exit_;
   QAction* hide_option_;
   QAction* hide_;
@@ -323,9 +338,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;
+  QAction* show_poly_decomp_view_;
   QAction* default_ruler_style_;
+  QAction* default_mouse_wheel_zoom_;
+  QAction* arrow_keys_scroll_step_dialog_;
   QAction* font_;
   QAction* global_connect_;
+
+  QShortcut* enable_developer_mode_;
 
   QLabel* location_;
 
@@ -337,6 +357,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
+  static constexpr const char* window_title_ = "OpenROAD";
 };
 
 }  // namespace gui

@@ -96,8 +96,9 @@ uint dbNetBTermItr::size(dbObject* parent)
   uint cnt = 0;
 
   for (id = dbNetBTermItr::begin(parent); id != dbNetBTermItr::end(parent);
-       id = dbNetBTermItr::next(id))
+       id = dbNetBTermItr::next(id)) {
     ++cnt;
+  }
 
   return cnt;
 }

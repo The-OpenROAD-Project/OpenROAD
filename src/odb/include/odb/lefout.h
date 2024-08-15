@@ -96,13 +96,14 @@ class lefout
   void writePropertyDefinition(dbProperty* prop);
   void writePropertyDefinitions(dbLib* lib);
   void writeVersion(const std::string& version);
-  void writeNameCaseSensitive(const dbOnOffType on_off_type);
+  void writeNameCaseSensitive(dbOnOffType on_off_type);
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);
   void writeDividerChar(char hier_delimeter);
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
+  void writePolygon(const std::string& indent, dbPolygon* polygon);
   void writeRect(const std::string& indent,
                  const boost::polygon::rectangle_data<int>& rect);
   void findInstsObstructions(ObstructionMap& obstructions,

@@ -1,16 +1,11 @@
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
-[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
-[INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 Power Domains List:
-PowerDomain: PD_TOP, Elements: .
-PowerDomain: PD_D1, Elements: d1
-PowerDomain: PD_D2, Elements: d2
-PowerDomain: PD_D3, Elements: d3
-PowerDomain: PD_D4, Elements: d4
+PowerDomain: PD_TOP, Elements: ., Area: unset
+PowerDomain: PD_D1, Elements: d1, Area: 27000 27000 60000 60000
+PowerDomain: PD_D2, Elements: d2, Area: 100000 100000 180000 180000
+PowerDomain: PD_D3, Elements: d3, Area: 200000 200000 300000 300000
+PowerDomain: PD_D4, Elements: d4, Area: 300000 300000 400000 400000
 Instance: _1_ - 
 Instance: _2_ - 
 Instance: _3_ - 
@@ -46,7 +41,7 @@ Instance: d4/_1_ -
 Instance: d4/_2_ - 
  -> d4_out2 -> _3_
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
-[INFO IFP-0001] Added 110 rows of 651 site unithd with height 1.
+[INFO IFP-0001] Added 110 rows of 651 site unithd.
 Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _2_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _3_ - () : sky130_fd_sc_hd__xnor2_1 

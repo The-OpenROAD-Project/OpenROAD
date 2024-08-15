@@ -94,12 +94,14 @@ target_sources(drt
     src/gc/FlexGC_eol.cpp
     src/gc/FlexGC_inf.cpp
     src/gc/FlexGC_cut.cpp
+    src/gc/FlexGC_metspc.cpp
     src/db/drObj/drAccessPattern.cpp
     src/db/drObj/drPin.cpp
     src/db/drObj/drShape.cpp
     src/db/drObj/drVia.cpp
     src/db/infra/frTime_helper.cpp
     src/db/infra/frTime.cpp
+    src/db/infra/KDTree.cpp
     src/db/taObj/taShape.cpp
     src/db/obj/frShape.cpp
     src/db/obj/frInst.cpp
@@ -257,3 +259,5 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 
 endif()
+
+add_subdirectory(test)

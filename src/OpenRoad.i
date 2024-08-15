@@ -161,7 +161,7 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
-triton_route::TritonRoute *
+drt::TritonRoute *
 getTritonRoute()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -303,6 +303,30 @@ openroad_git_describe()
   return ord::OpenRoad::getGitDescribe();
 }
 
+const bool 
+openroad_gpu_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
+const bool
+openroad_python_compiled()
+{
+  return ord::OpenRoad::getPythonCompileOption();
+}
+
+const bool
+openroad_gui_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
+const bool
+openroad_charts_compiled()
+{
+  return ord::OpenRoad::getChartsCompileOption();
+}
+
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
@@ -401,10 +425,10 @@ read_verilog_cmd(const char *filename)
 }
 
 void
-link_design_db_cmd(const char *design_name)
+link_design_db_cmd(const char *design_name,bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(design_name);
+  ord->linkDesign(design_name, hierarchy);
 }
 
 void

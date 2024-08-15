@@ -192,7 +192,8 @@ void IOPlacer::randomPlacement()
           constraint, netlist_io_pins_.get(), mirrored_pins);
       pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
     }
-    randomPlacement(pin_indices, valid_slots, top_layer, false);
+    randomPlacement(
+        std::move(pin_indices), std::move(valid_slots), top_layer, false);
   }
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
@@ -202,7 +203,7 @@ void IOPlacer::randomPlacement()
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.pin_indices, valid_slots, false, true);
+    randomPlacement(io_group.pin_indices, std::move(valid_slots), false, true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -215,7 +216,7 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(std::move(pin_indices), valid_slots, false, false);
+  randomPlacement(std::move(pin_indices), std::move(valid_slots), false, false);
   placeFallbackPins(true);
 }
 
@@ -387,8 +388,8 @@ int IOPlacer::placeFallbackPins(bool random)
                            "constrained region {:.2f}-{:.2f} at {} edge. "
                            "First pin of the group is {}.",
                            group.first.size(),
-                           dbuToMicrons(interval.getBegin()),
-                           dbuToMicrons(interval.getEnd()),
+                           getBlock()->dbuToMicrons(interval.getBegin()),
+                           getBlock()->dbuToMicrons(interval.getEnd()),
                            getEdgeString(interval.getEdge()),
                            io_pin.getName());
           }
@@ -670,22 +671,6 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   }
 }
 
-double IOPlacer::dbuToMicrons(int64_t dbu)
-{
-  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
-}
-
-int IOPlacer::micronsToDbu(double microns)
-{
-  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
-}
-
-double IOPlacer::areaDbuToMicrons(int64_t dbu)
-{
-  const int units_per_micron = getBlock()->getDbUnitsPerMicron();
-  return static_cast<double>(dbu) / (units_per_micron * units_per_micron);
-}
-
 void IOPlacer::writePinPlacement(const char* file_name)
 {
   std::string filename = file_name;
@@ -709,8 +694,10 @@ void IOPlacer::writePinPlacement(const char* file_name)
         odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
         const odb::Point& pos = io_pin.getPosition();
         out << "place_pin -pin_name " << io_pin.getName() << " -layer "
-            << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
-            << " " << dbuToMicrons(pos.y()) << "} -force_to_die_boundary\n";
+            << tech_layer->getName() << " -location {"
+            << getBlock()->dbuToMicrons(pos.x()) << " "
+            << getBlock()->dbuToMicrons(pos.y())
+            << "} -force_to_die_boundary\n";
       }
     }
   }
@@ -814,8 +801,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     if (offset == -1) {
       offset = num_tracks_offset_ * tech_min_dst;
       // limit default offset to 1um
-      if (offset > micronsToDbu(1.0)) {
-        offset = micronsToDbu(1.0);
+      if (offset > getBlock()->micronsToDbu(1.0)) {
+        offset = getBlock()->micronsToDbu(1.0);
       }
     }
 
@@ -941,8 +928,8 @@ void IOPlacer::defineSlots()
         "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
         regular_pin_count,
         slots_.size(),
-        dbuToMicrons(die_margin),
-        dbuToMicrons(new_margin));
+        getBlock()->dbuToMicrons(die_margin),
+        getBlock()->dbuToMicrons(new_margin));
   }
 
   if (top_layer_pins_count_ > top_layer_slots_.size()) {
@@ -1251,10 +1238,10 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
                     "{})-({}, {}) at edge {} to place the pin "
                     "group of size {}.",
                     available_slots,
-                    dbuToMicrons(section_begin.getX()),
-                    dbuToMicrons(section_begin.getY()),
-                    dbuToMicrons(section_end.getX()),
-                    dbuToMicrons(section_end.getY()),
+                    getBlock()->dbuToMicrons(section_begin.getX()),
+                    getBlock()->dbuToMicrons(section_begin.getY()),
+                    getBlock()->dbuToMicrons(section_end.getX()),
+                    getBlock()->dbuToMicrons(section_end.getY()),
                     edge_str,
                     group_size);
     }
@@ -1553,8 +1540,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      "Pin {} area {:2.4f}um^2 is lesser than the minimum "
                      "required area {:2.4f}um^2.",
                      pin.getName(),
-                     dbuToMicrons(dbuToMicrons(pin.getArea())),
-                     dbuToMicrons(dbuToMicrons(required_min_area)));
+                     getBlock()->dbuAreaToMicrons(pin.getArea()),
+                     getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
     int pin_width = top_grid_->pin_width;
@@ -1637,8 +1624,8 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
                1,
                "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
-               dbuToMicrons(begin),
-               dbuToMicrons(end),
+               getBlock()->dbuToMicrons(begin),
+               getBlock()->dbuToMicrons(end),
                getEdgeString(edge));
   } else {
     logger_->info(
@@ -1646,8 +1633,8 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
         48,
         "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
         pin_names,
-        dbuToMicrons(begin),
-        dbuToMicrons(end),
+        getBlock()->dbuToMicrons(begin),
+        getBlock()->dbuToMicrons(end),
         getEdgeString(edge));
   }
 
@@ -1818,11 +1805,11 @@ void IOPlacer::initConstraints(bool annealing)
                       "to at least {:.2f}um.",
                       constraint.pin_list.size(),
                       num_slots,
-                      dbuToMicrons(region_begin),
-                      dbuToMicrons(region_end),
+                      getBlock()->dbuToMicrons(region_begin),
+                      getBlock()->dbuToMicrons(region_end),
                       region_edge,
-                      dbuToMicrons(interval_length),
-                      dbuToMicrons(new_length));
+                      getBlock()->dbuToMicrons(interval_length),
+                      getBlock()->dbuToMicrons(new_length));
         constraints_no_slots++;
       }
     } else {
@@ -2079,11 +2066,13 @@ void IOPlacer::run(bool random_mode)
     // add groups to fallback
     for (const auto& io_group : netlist_io_pins_->getIOGroups()) {
       if (io_group.pin_indices.size() > slots_per_section_) {
-        logger_->warn(PPL,
-                      92,
-                      "Pin group of size {} does not fit any section. Adding "
-                      "to fallback mode.",
-                      io_group.pin_indices.size());
+        debugPrint(logger_,
+                   utl::PPL,
+                   "pin_groups",
+                   1,
+                   "Pin group of size {} does not fit any section. Adding "
+                   "to fallback mode.",
+                   io_group.pin_indices.size());
         addGroupToFallback(io_group.pin_indices, io_group.order);
       }
     }
@@ -2110,8 +2099,10 @@ void IOPlacer::run(bool random_mode)
               "at edge {}. Not "
               "enough space in the defined region.",
               constraint.pin_list.size(),
-              static_cast<float>(dbuToMicrons(constraint.interval.getBegin())),
-              static_cast<float>(dbuToMicrons(constraint.interval.getEnd())),
+              static_cast<float>(
+                  getBlock()->dbuToMicrons(constraint.interval.getBegin())),
+              static_cast<float>(
+                  getBlock()->dbuToMicrons(constraint.interval.getEnd())),
               edge_str);
         }
 
@@ -2276,7 +2267,7 @@ void IOPlacer::reportHPWL()
   logger_->info(PPL,
                 12,
                 "I/O nets HPWL: {:.2f} um.",
-                static_cast<float>(dbuToMicrons(total_hpwl)));
+                static_cast<float>(getBlock()->dbuToMicrons(total_hpwl)));
 }
 
 void IOPlacer::placePin(odb::dbBTerm* bterm,
@@ -2332,8 +2323,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
         "Pin {} has dimension {:.2f}u which is less than the min width "
         "{:.2f}u of layer {}.",
         bterm->getName(),
-        dbuToMicrons(pin_width),
-        dbuToMicrons(layer->getWidth()),
+        getBlock()->dbuToMicrons(pin_width),
+        getBlock()->dbuToMicrons(layer->getWidth()),
         layer->getName());
   }
 
@@ -2413,8 +2404,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                 70,
                 "Pin {} placed at ({:.2f}um, {:.2f}um).",
                 bterm->getName(),
-                dbuToMicrons(pos.x()),
-                dbuToMicrons(pos.y()));
+                getBlock()->dbuToMicrons(pos.x()),
+                getBlock()->dbuToMicrons(pos.y()));
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,
@@ -2811,11 +2802,73 @@ void IOPlacer::initNetlist()
   }
 }
 
+void IOPlacer::findConstraintRegion(const Interval& interval,
+                                    const Rect& constraint_box,
+                                    Rect& region)
+{
+  const Rect& die_bounds = core_->getBoundary();
+  if (interval.getEdge() == Edge::bottom) {
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMin(),
+                  interval.getEnd(),
+                  die_bounds.yMin());
+  } else if (interval.getEdge() == Edge::top) {
+    region = Rect(interval.getBegin(),
+                  die_bounds.yMax(),
+                  interval.getEnd(),
+                  die_bounds.yMax());
+  } else if (interval.getEdge() == Edge::left) {
+    region = Rect(die_bounds.xMin(),
+                  interval.getBegin(),
+                  die_bounds.xMin(),
+                  interval.getEnd());
+  } else if (interval.getEdge() == Edge::right) {
+    region = Rect(die_bounds.xMax(),
+                  interval.getBegin(),
+                  die_bounds.xMax(),
+                  interval.getEnd());
+  } else {
+    region = constraint_box;
+  }
+}
+
+void IOPlacer::commitConstraintsToDB()
+{
+  for (Constraint& constraint : constraints_) {
+    for (odb::dbBTerm* bterm : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      Rect constraint_region;
+      const Interval& interval = constraint.interval;
+      findConstraintRegion(interval, constraint.box, constraint_region);
+      bterm->setConstraintRegion(constraint_region);
+
+      if (io_pin.isMirrored()) {
+        IOPin& mirrored_pin
+            = netlist_io_pins_->getIoPin(io_pin.getMirrorPinIdx());
+        odb::dbBTerm* mirrored_bterm
+            = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+        Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+        Rect mirrored_constraint_region;
+        Interval mirrored_interval(mirrored_edge,
+                                   interval.getBegin(),
+                                   interval.getEnd(),
+                                   interval.getLayer());
+        findConstraintRegion(
+            mirrored_interval, constraint.box, mirrored_constraint_region);
+        mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
+      }
+    }
+  }
+}
+
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   for (const IOPin& pin : assignment) {
     commitIOPinToDB(pin);
   }
+
+  commitConstraintsToDB();
 }
 
 void IOPlacer::commitIOPinToDB(const IOPin& pin)

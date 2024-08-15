@@ -93,7 +93,7 @@ void lefiError(int check, int msgNum, const char* str)
     fprintf(stderr, "%s", str);
 }
 
-static char lefiShift[]
+static const char lefiShift[]
     = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
        '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
        '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', ' ',  '!',  '"',  '#',

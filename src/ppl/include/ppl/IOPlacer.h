@@ -35,12 +35,13 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
 
@@ -266,9 +267,6 @@ class IOPlacer
                                              const odb::Rect& box);
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
-  double dbuToMicrons(int64_t dbu);
-  int micronsToDbu(double microns);
-  double areaDbuToMicrons(int64_t dbu);
   Edge getMirroredEdge(const Edge& edge);
   int computeNewRegionLength(const Interval& interval, int num_pins);
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
@@ -276,6 +274,10 @@ class IOPlacer
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
                         const std::set<int>& ver_layer_idx);
+  void findConstraintRegion(const Interval& interval,
+                            const Rect& constraint_box,
+                            Rect& region);
+  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,

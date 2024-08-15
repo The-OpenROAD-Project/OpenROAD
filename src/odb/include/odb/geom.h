@@ -45,12 +45,13 @@ namespace odb {
 
 class dbIStream;
 class dbOStream;
+class Rect;
 
 class Point
 {
  public:
   Point() = default;
-  Point(const Point& p);
+  Point(const Point& p) = default;
   Point(int x, int y);
   ~Point() = default;
   Point& operator=(const Point& rhs) = default;
@@ -156,13 +157,13 @@ class Oct
   };
   Oct() = default;
   Oct(const Oct& r) = default;
-  Oct(const Point p1, const Point p2, int width);
+  Oct(Point p1, Point p2, int width);
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
   bool operator==(const Oct& r) const;
   bool operator!=(const Oct& r) const { return !(*this == r); };
-  void init(const Point p1, const Point p2, int width);
+  void init(Point p1, Point p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
   Point getCenterLow() const;
@@ -175,6 +176,9 @@ class Oct
   int xMax() const;
   int yMax() const;
   std::vector<Point> getPoints() const;
+
+  Oct bloat(int margin) const;
+  Rect getEnclosingRect() const;
 
   friend dbIStream& operator>>(dbIStream& stream, Oct& o);
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
@@ -191,7 +195,7 @@ class Rect
  public:
   Rect() = default;
   Rect(const Rect& r) = default;
-  Rect(const Point p1, const Point p2);
+  Rect(Point p1, Point p2);
   Rect(int x1, int y1, int x2, int y2);
 
   Rect& operator=(const Rect& r) = default;
@@ -242,6 +246,7 @@ class Rect
   Point ul() const;
   Point ur() const;
   Point lr() const;
+  Point center() const;
 
   // Returns the low coordinate in the orientation
   int low(Orientation2D orient) const;
@@ -271,7 +276,7 @@ class Rect
   bool inside(const Rect& r) const;
 
   // Return the point inside rect that is closest to pt.
-  Point closestPtInside(const Point pt) const;
+  Point closestPtInside(Point pt) const;
 
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
@@ -315,11 +320,40 @@ class Rect
   int yhi_ = 0;
 };
 
-std::ostream& operator<<(std::ostream& os, const Rect& box);
-
-inline Point::Point(const Point& p) : Point(p.x_, p.y_)
+class Polygon
 {
-}
+ public:
+  Polygon() = default;
+  Polygon(const Polygon& r) = default;
+  Polygon(const std::vector<Point>& points);
+  Polygon(const Rect& rect);
+  Polygon(const Oct& oct);
+
+  std::vector<Point> getPoints() const;
+  void setPoints(const std::vector<Point>& points);
+
+  bool operator==(const Polygon& p) const;
+  bool operator!=(const Polygon& p) const { return !(*this == p); };
+  bool operator<(const Polygon& p) const;
+  bool operator>(const Polygon& p) const { return p < *this; }
+  bool operator<=(const Polygon& p) const { return !(*this > p); }
+  bool operator>=(const Polygon& p) const { return !(*this < p); }
+
+  Rect getEnclosingRect() const;
+  int dx() const { return getEnclosingRect().dx(); }
+  int dy() const { return getEnclosingRect().dy(); }
+
+  // returns a corrected Polygon with a closed form and counter-clockwise points
+  Polygon bloat(int margin) const;
+
+  friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
+  friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
+
+ private:
+  std::vector<Point> points_;
+};
+
+std::ostream& operator<<(std::ostream& os, const Rect& box);
 
 inline Point::Point(int x, int y)
 {
@@ -500,6 +534,11 @@ inline Point Rect::ur() const
 inline Point Rect::lr() const
 {
   return Point(xhi_, ylo_);
+}
+
+inline Point Rect::center() const
+{
+  return Point(xCenter(), yCenter());
 }
 
 inline void Rect::set(Orientation2D orient, Direction1D dir, int value)
@@ -844,6 +883,56 @@ inline std::vector<Point> Oct::getPoints() const
                       center_high_.getY() - B);  // high oct (-A,-B)
   }
   return points;
+}
+
+inline Oct Oct::bloat(int margin) const
+{
+  return Oct(center_low_, center_high_, 2 * (A_ + margin));
+}
+
+inline Rect Oct::getEnclosingRect() const
+{
+  return Rect(xMin(), yMin(), xMax(), yMax());
+}
+
+inline Polygon::Polygon(const std::vector<Point>& points)
+{
+  setPoints(points);
+}
+
+inline Polygon::Polygon(const Rect& rect)
+{
+  setPoints(rect.getPoints());
+}
+
+inline Polygon::Polygon(const Oct& oct)
+{
+  setPoints(oct.getPoints());
+}
+
+inline std::vector<Point> Polygon::getPoints() const
+{
+  return points_;
+}
+
+inline Rect Polygon::getEnclosingRect() const
+{
+  Rect rect;
+  rect.mergeInit();
+  for (const Point& pt : points_) {
+    rect.merge(Rect(pt, pt));
+  }
+  return rect;
+}
+
+inline bool Polygon::operator==(const Polygon& p) const
+{
+  return points_ == p.points_;
+}
+
+inline bool Polygon::operator<(const Polygon& p) const
+{
+  return points_ < p.points_;
 }
 
 #ifndef SWIG

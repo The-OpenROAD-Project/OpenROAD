@@ -16,10 +16,18 @@ pdn_aux.add_global_connection(design, net_name="VSS", pin_pattern="^VSS$", groun
 pdn_aux.set_voltage_domain(design, power="VDD", ground="VSS")
 pdn_aux.define_pdn_grid_real(design, name="top", voltage_domains=["Core"])
 
-pdn_aux.add_pdn_stripe(design, grid="top", layer="M1", width=0.018, pitch=0.54, offset=0, followpins=True)
-pdn_aux.add_pdn_stripe(design, grid="top", layer="M2", width=0.018, pitch=0.54, offset=0, followpins=True)
-pdn_aux.add_pdn_stripe(design, grid="top", layer="M5", width=0.12,  spacing=0.072, pitch=11.88, offset=0.300)
-pdn_aux.add_pdn_stripe(design, grid="top", layer="M6", width=0.288, spacing=0.096, pitch=12.0, offset=0.513)
+pdn_aux.add_pdn_stripe(
+    design, grid="top", layer="M1", width=0.018, pitch=0.54, offset=0, followpins=True
+)
+pdn_aux.add_pdn_stripe(
+    design, grid="top", layer="M2", width=0.018, pitch=0.54, offset=0, followpins=True
+)
+pdn_aux.add_pdn_stripe(
+    design, grid="top", layer="M5", width=0.12, spacing=0.072, pitch=11.88, offset=0.300
+)
+pdn_aux.add_pdn_stripe(
+    design, grid="top", layer="M6", width=0.288, spacing=0.096, pitch=12.0, offset=0.513
+)
 
 pdn_aux.add_pdn_connect(design, grid="top", layers=["M1", "M2"])
 pdn_aux.add_pdn_connect(design, grid="top", layers=["M2", "M5"])

@@ -58,7 +58,6 @@ class Logger;
 namespace gui {
 class HeatMapDataSource;
 class PlacementDensityDataSource;
-class RUDYDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -201,6 +200,7 @@ class Painter
   // height of the X.
   virtual void drawX(int x, int y, int size) = 0;
 
+  virtual void drawPolygon(const odb::Polygon& polygon) = 0;
   virtual void drawPolygon(const std::vector<odb::Point>& points) = 0;
 
   enum Anchor
@@ -265,7 +265,7 @@ class Descriptor
   virtual std::string getName(std::any object) const = 0;
   virtual std::string getShortName(std::any object) const
   {
-    return getName(object);
+    return getName(std::move(object));
   }
   virtual std::string getTypeName() const = 0;
   virtual std::string getTypeName(std::any /* object */) const
@@ -356,7 +356,7 @@ class Selected
   Selected() : object_({}), descriptor_(nullptr) {}
 
   Selected(std::any object, const Descriptor* descriptor)
-      : object_(object), descriptor_(descriptor)
+      : object_(std::move(object)), descriptor_(descriptor)
   {
   }
 
@@ -797,7 +797,6 @@ class Gui
   std::set<Renderer*> renderers_;
 
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<RUDYDataSource> rudy_heat_map_;
 
   static Gui* singleton_;
 };

@@ -3,7 +3,7 @@
 # NOTE: don't use this file directly unless you know what you are doing,
 # instead use etc/DockerHelper.sh
 
-FROM openroad/ubuntu22.04-dev:latest
+FROM openroad/ubuntu22.04-dev:0990b2
 
 # Install clang
 RUN apt-get install -y lsb-release wget software-properties-common gnupg \

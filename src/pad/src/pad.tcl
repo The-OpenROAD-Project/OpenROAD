@@ -58,6 +58,16 @@ proc make_io_bump_array {args} {
     lappend cmd_args $keys(-prefix)
   }
 
+  if { [llength $origin] != 2 } {
+    utl::error PAD 17 "-origin must be specified as {x y}"
+  }
+
+  if { [llength $pitch] == 1 } {
+    lappend pitch $pitch
+  } elseif { [llength $pitch] != 2 } {
+    utl::error PAD 38 "-pitch must be specified as {deltax deltay} or {delta}"
+  }
+
   pad::make_bump_array \
     $master \
     [ord::microns_to_dbu [lindex $origin 0]] \
@@ -138,13 +148,14 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_horizontal rotation] \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
-                                      [-ring_index index]}
+                                      [-ring_index index]
+};# checker off
 
 proc make_io_sites {args} {
   sta::parse_key_args "make_io_sites" args \
     keys {-horizontal_site -vertical_site -corner_site -offset -rotation \
       -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
-    flags {}
+    flags {}; # checker off
 
   sta::check_argc_eq0 "make_io_sites" $args
   set index -1
@@ -206,8 +217,7 @@ sta::define_cmd_args "place_corners" {[-ring_index index] \
 
 proc place_corners {args} {
   sta::parse_key_args "place_corners" args \
-    keys {} \
-    flags {}
+    keys {-ring_index} flags {}
 
   sta::check_argc_eq1 "place_corners" $args
 
@@ -331,7 +341,8 @@ proc place_bondpad {args} {
     $offset_y
 }
 
-sta::define_cmd_args "place_io_terminals" {inst_terms}
+sta::define_cmd_args "place_io_terminals" {inst_terms
+                                        [-allow_non_top_layer]}
 
 proc place_io_terminals {args} {
   sta::parse_key_args "place_io_terminals" args \
@@ -346,9 +357,9 @@ proc place_io_terminals {args} {
   pad::place_terminals $iterms [info exists flags(-allow_non_top_layer)]
 }
 
-sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
-                                                 -width width \
-                                                 -height height}
+sta::define_cmd_args "make_fake_io_site" {-name name \
+                                          -width width \
+                                          -height height}
 
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \

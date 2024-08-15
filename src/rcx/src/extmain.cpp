@@ -45,7 +45,6 @@ using odb::dbRSeg;
 using odb::dbSet;
 using odb::dbTech;
 using odb::dbTechLayer;
-using odb::SEQ;
 using utl::RCX;
 
 void extMain::init(odb::dbDatabase* db, Logger* logger)
@@ -134,6 +133,11 @@ void extMain::setupMapping(uint itermCnt)
 extMain::extMain()
 {
   _modelTable = new Ath__array1D<extRCModel*>(8);
+}
+
+extMain::~extMain()
+{
+  delete _modelTable;
 }
 
 void extMain::initDgContextArray()

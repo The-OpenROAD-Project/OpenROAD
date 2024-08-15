@@ -134,7 +134,7 @@ void pin_access_cmd(const char* dbProcessNode,
                     int minAccessPoints)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  triton_route::ParamStruct params;
+  drt::ParamStruct params;
   params.dbProcessNode = dbProcessNode;
   params.bottomRoutingLayer = bottomRoutingLayer;
   params.topRoutingLayer = topRoutingLayer;
@@ -227,7 +227,11 @@ void detailed_route_step_drt(int size,
                  workerMarkerCost, workerFixedShapeCost,
                  workerMarkerDecay, ripupMode, followGuide);
 }
-
+void fix_max_spacing_cmd()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->fixMaxSpacing();
+}
 void step_end()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

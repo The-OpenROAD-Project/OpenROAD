@@ -28,7 +28,7 @@
 
 #include "ta/FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 void FlexTAWorker::initTracks()
 {
@@ -492,10 +492,9 @@ void FlexTAWorker::initIroute(frGuide* guide)
   frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum + 2) / 2
-                                                            - 1)) {
-      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
-          (layerNum + 2) / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
+      viaDef
+          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
@@ -508,9 +507,10 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   for (auto coord : downViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
-      viaDef
-          = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
+        && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum - 2) / 2
+                                                            - 1)) {
+      viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
+          (layerNum - 2) / 2 - 1);
     } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
@@ -635,7 +635,8 @@ void FlexTAWorker::sortIroutes()
 void FlexTAWorker::initFixedObjs_helper(const Rect& box,
                                         frCoord bloatDist,
                                         frLayerNum lNum,
-                                        frNet* net)
+                                        frNet* net,
+                                        bool isViaCost)
 {
   Rect bloatBox;
   box.bloat(bloatDist, bloatBox);
@@ -664,7 +665,11 @@ void FlexTAWorker::initFixedObjs_helper(const Rect& box,
     } else {
       tmpBox.init(trackLoc, bloatBox.yMin(), trackLoc, bloatBox.yMax());
     }
-    workerRegionQuery.addCost(tmpBox, lNum, net, con);
+    if (isViaCost) {
+      workerRegionQuery.addViaCost(tmpBox, lNum, net, con);
+    } else {
+      workerRegionQuery.addCost(tmpBox, lNum, net, con);
+    }
   }
 }
 
@@ -722,7 +727,7 @@ void FlexTAWorker::initFixedObjs()
             if (viaWidth > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
+              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
             }
           }
           // up-via
@@ -737,7 +742,7 @@ void FlexTAWorker::initFixedObjs()
             if (viaWidth > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
+              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
             }
           }
         }
@@ -777,16 +782,16 @@ void FlexTAWorker::initFixedObjs()
 
             Rect borderBox(
                 bloatBox.xMin(), bloatBox.yMin(), box.xMin(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 bloatBox.xMin(), box.yMax(), bloatBox.xMax(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 box.xMax(), bloatBox.yMin(), bloatBox.xMax(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 bloatBox.xMin(), bloatBox.yMin(), bloatBox.xMax(), box.yMin());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             break;
           }
           default:
@@ -835,6 +840,10 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
 
   frCoord bloatDist
       = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
+  if (bloatDist < 0) {
+    logger_->error(
+        DRT, 140, "Layer {} has negative min spacing value.", layer->getName());
+  }
   auto& eol = layer->getDrEolSpacingConstraint();
   if (viaBox.minDXDY() < eol.eolWidth) {
     bloatDist = std::max(bloatDist, eol.eolSpace);
@@ -869,6 +878,12 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   frCoord bloatDist = width;
   if (layer->hasMinSpacing()) {
     bloatDist = layer->getMinSpacingValue(objWidth, width, prl, false);
+    if (bloatDist < 0) {
+      logger_->error(DRT,
+                     144,
+                     "Layer {} has negative min spacing value.",
+                     layer->getName());
+    }
   }
   // assuming the wire width is width
   bloatDist += width / 2;
@@ -884,4 +899,4 @@ void FlexTAWorker::init()
   initCosts();
 }
 
-}  // namespace fr
+}  // namespace drt

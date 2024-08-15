@@ -32,11 +32,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "dpl/OptMirror.h"
+
 #include <cstdlib>
 #include <unordered_set>
 
 #include "dpl/Opendp.h"
 #include "odb/dbTypes.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -73,9 +76,13 @@ void NetBox::restoreBox()
 
 ////////////////////////////////////////////////////////////////
 
-void Opendp::optimizeMirroring()
+OptimizeMirroring::OptimizeMirroring(Logger* logger, odb::dbDatabase* db)
+    : logger_(logger), db_(db), block_(db_->getChip()->getBlock())
 {
-  block_ = db_->getChip()->getBlock();
+}
+
+void OptimizeMirroring::run()
+{
   findNetBoxes();
 
   NetBoxes sorted_boxes;
@@ -91,24 +98,29 @@ void Opendp::optimizeMirroring()
        });
 
   vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
-  int64_t hpwl_before = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  int64_t hpwl_before = eval.hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
 
   if (mirror_count > 0) {
     logger_->info(DPL, 20, "Mirrored {} instances", mirror_count);
-    double hpwl_after = hpwl();
-    logger_->info(
-        DPL, 21, "HPWL before          {:8.1f} u", dbuToMicrons(hpwl_before));
-    logger_->info(
-        DPL, 22, "HPWL after           {:8.1f} u", dbuToMicrons(hpwl_after));
-    double hpwl_delta = (hpwl_before != 0.0)
+    double hpwl_after = eval.hpwl();
+    logger_->info(DPL,
+                  21,
+                  "HPWL before          {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_before));
+    logger_->info(DPL,
+                  22,
+                  "HPWL after           {:8.1f} u",
+                  block_->dbuToMicrons(hpwl_after));
+    double hpwl_delta = (hpwl_before != 0)
                             ? (hpwl_after - hpwl_before) / hpwl_before * 100
                             : 0.0;
     logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
   }
 }
 
-void Opendp::findNetBoxes()
+void OptimizeMirroring::findNetBoxes()
 {
   net_box_map_.clear();
   auto nets = block_->getNets();
@@ -129,7 +141,7 @@ void Opendp::findNetBoxes()
   }
 }
 
-vector<dbInst*> Opendp::findMirrorCandidates(NetBoxes& net_boxes)
+vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
 {
   vector<dbInst*> mirror_candidates;
   unordered_set<dbInst*> existing;
@@ -162,7 +174,7 @@ vector<dbInst*> Opendp::findMirrorCandidates(NetBoxes& net_boxes)
   return mirror_candidates;
 }
 
-int Opendp::mirrorCandidates(vector<dbInst*>& mirror_candidates)
+int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 {
   int mirror_count = 0;
   for (dbInst* inst : mirror_candidates) {
@@ -191,7 +203,7 @@ int Opendp::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 // apply mirror about Y axis to orient
 static dbOrientType orientMirrorY(const dbOrientType& orient)
 {
-  switch (orient) {
+  switch (orient.getValue()) {
     case dbOrientType::R0:
       return dbOrientType::MY;
     case dbOrientType::MX:
@@ -214,7 +226,7 @@ static dbOrientType orientMirrorY(const dbOrientType& orient)
   return dbOrientType::R0;
 }
 
-int64_t Opendp::hpwl(dbInst* inst)
+int64_t OptimizeMirroring::hpwl(dbInst* inst)
 {
   int64_t inst_hpwl = 0;
   for (dbITerm* iterm : inst->getITerms()) {
@@ -229,7 +241,7 @@ int64_t Opendp::hpwl(dbInst* inst)
   return inst_hpwl;
 }
 
-void Opendp::updateNetBoxes(dbInst* inst)
+void OptimizeMirroring::updateNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -242,7 +254,7 @@ void Opendp::updateNetBoxes(dbInst* inst)
   }
 }
 
-void Opendp::saveNetBoxes(dbInst* inst)
+void OptimizeMirroring::saveNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -252,7 +264,7 @@ void Opendp::saveNetBoxes(dbInst* inst)
   }
 }
 
-void Opendp::restoreNetBoxes(dbInst* inst)
+void OptimizeMirroring::restoreNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();

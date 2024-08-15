@@ -34,7 +34,7 @@
 
 #include "FlexPA.h"
 
-namespace fr {
+namespace drt {
 
 FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
                                frDesign* design,
@@ -53,12 +53,13 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
-  layer_map_.resize(odb_tech->getLayerCount(), -1);
+  layer_map_.resize(odb_tech->getLayerCount(), std::make_pair(-1, "none"));
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
     auto odb_layer = tr_layer->getDbLayer();
     if (odb_layer) {
-      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
+      layer_map_[odb_layer->getNumber()]
+          = std::make_pair(tr_layer->getLayerNum(), odb_layer->getName());
     }
   }
 
@@ -82,8 +83,9 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
       inst_ = nullptr;
     } else {
       inst_ = design->getTopBlock()->getInst(inst_name);
-      if (!inst_)
+      if (!inst_) {
         logger_->warn(DRT, 5000, "INST NOT FOUND!");
+      }
     }
   }
 
@@ -94,7 +96,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   frLayerNum layerNum;
   if (!shapes_.empty()) {
-    layerNum = layer_map_.at(layer->getNumber());
+    layerNum = layer_map_.at(layer->getNumber()).first;
     for (auto& b : shapes_) {
       if (b.second != layerNum) {
         continue;
@@ -108,7 +110,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  layerNum = layer_map_.at(layer->getNumber());
+  layerNum = layer_map_.at(layer->getNumber()).first;
   if (layerNum < 0) {
     return;
   }
@@ -157,7 +159,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
     painter.setPen(color, /* cosmetic */ true);
 
-    Point pt = ap.getPoint();
+    const Point& pt = ap.getPoint();
     painter.drawX(pt.x(), pt.y(), 50);
   }
 }
@@ -178,6 +180,9 @@ void FlexPAGraphics::startPin(frMPin* pin,
     }
   }
 
+  if (inst_term == nullptr) {
+    logger_->error(DRT, 158, "Instance for MPin {} is null.", term->getName());
+  }
   const std::string name
       = inst_term->getInst()->getName() + ':' + term->getName();
   status("Start pin: " + name);
@@ -242,7 +247,7 @@ void FlexPAGraphics::setAPs(
 
   // We make a copy of the aps
   for (auto& ap : aps) {
-    aps_.emplace_back(*ap.get());
+    aps_.emplace_back(*ap);
   }
   status("add " + std::to_string(aps.size()) + " ( " + to_string(lower_type)
          + " / " + to_string(upper_type) + " ) "
@@ -267,6 +272,13 @@ void FlexPAGraphics::setViaAP(
   pa_markers_ = &markers;
   for (auto& marker : markers) {
     Rect bbox = marker->getBBox();
+    std::string layer_name;
+    for (auto& layer : layer_map_) {
+      if (layer.first == marker->getLayerNum()) {
+        layer_name = layer.second;
+        break;
+      }
+    }
     logger_->info(DRT,
                   119,
                   "Marker ({}, {}) ({}, {}) on {}:",
@@ -274,7 +286,7 @@ void FlexPAGraphics::setViaAP(
                   bbox.yMin(),
                   bbox.xMax(),
                   bbox.yMax(),
-                  marker->getLayerNum());
+                  layer_name);
     marker->getConstraint()->report(logger_);
   }
 
@@ -376,4 +388,4 @@ bool FlexPAGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-}  // namespace fr
+}  // namespace drt

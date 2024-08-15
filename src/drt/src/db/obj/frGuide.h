@@ -31,33 +31,13 @@
 #include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frGuide : public frConnFig
 {
  public:
-  frGuide()
-      : frConnFig(),
-        begin_(),
-        end_(),
-        beginLayer_(0),
-        endLayer_(0),
-        routeObj_(),
-        net_(nullptr),
-        index_in_owner_(0)
-  {
-  }
-  frGuide(const frGuide& in)
-      : frConnFig(),
-        begin_(in.begin_),
-        end_(in.end_),
-        beginLayer_(in.beginLayer_),
-        endLayer_(in.endLayer_),
-        routeObj_(),
-        net_(nullptr),
-        index_in_owner_(0)
-  {
-  }
+  frGuide() = default;
+  frGuide(const frGuide& in) = delete;
   // getters
   std::pair<Point, Point> getPoints() const { return {begin_, end_}; }
 
@@ -116,10 +96,10 @@ class frGuide : public frConnFig
  private:
   Point begin_;
   Point end_;
-  frLayerNum beginLayer_;
-  frLayerNum endLayer_;
+  frLayerNum beginLayer_{0};
+  frLayerNum endLayer_{0};
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
-  frNet* net_;
-  int index_in_owner_;
+  frNet* net_{nullptr};
+  int index_in_owner_{0};
 };
-}  // namespace fr
+}  // namespace drt

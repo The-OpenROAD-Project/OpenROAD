@@ -39,6 +39,8 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 utl::metric "IFP::ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "IFP::instance_count" [sta::network_instance_count]
@@ -196,7 +198,7 @@ pin_access -bottom_routing_layer $min_routing_layer \
 
 set route_guide [make_result_file ${design}_${platform}.route_guide]
 global_route -guide_file $route_guide \
-  -congestion_iterations 100
+  -congestion_iterations 100 -verbose
 
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
@@ -226,7 +228,6 @@ write_db $fill_db
 pin_access -bottom_routing_layer $min_routing_layer \
            -top_routing_layer $max_routing_layer
 
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
                -output_maze [make_result_file "${design}_${platform}_maze.log"] \
                -no_pin_access \

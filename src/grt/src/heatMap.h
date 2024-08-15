@@ -37,15 +37,11 @@
 
 namespace grt {
 
-class RoutingCongestionDataSource : public gui::HeatMapDataSource,
+class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
                                     public AbstractRoutingCongestionDataSource
 {
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
 
   void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
   void update() override { gui::HeatMapDataSource::update(); }
@@ -75,14 +71,24 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource,
     Capacity
   };
 
+  bool populateMapForLayer(odb::dbTechLayer* layer, odb::dbGCellGrid* grid);
+  bool populateMapForDirection(Direction direction, odb::dbGCellGrid* grid);
+  double defineValue(int capacity,
+                     int usage,
+                     double congestion,
+                     bool show_data);
+  void setCongestionValues(const odb::dbGCellGrid::GCellData& hor_cong_data,
+                           const odb::dbGCellGrid::GCellData& ver_cong_data,
+                           int& capacity,
+                           int& usage,
+                           double& congestion);
+
   odb::dbDatabase* db_;
   Direction direction_;
   odb::dbTechLayer* layer_;
 
   MapType type_;
   double max_;
-
-  static constexpr double default_grid_ = 10.0;
 };
 
 }  // namespace grt

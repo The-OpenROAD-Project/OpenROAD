@@ -129,6 +129,7 @@ class dbDiff : public dbObject
   dbDiff& operator<<(const Point& p);
   dbDiff& operator<<(const Rect& r);
   dbDiff& operator<<(const Oct& o);
+  dbDiff& operator<<(const Polygon& p);
 
   void diff(const char* field, bool lhs, bool rhs);
   void diff(const char* field, char lhs, char rhs);
@@ -143,6 +144,7 @@ class dbDiff : public dbObject
   void diff(const char* field, Point lhs, Point rhs);
   void diff(const char* field, Rect lhs, Rect rhs);
   void diff(const char* field, Oct lhs, Oct rhs);
+  void diff(const char* field, const Polygon& lhs, const Polygon& rhs);
 
   void diff(const char* field, const char* lhs, const char* rhs);
   void diff(const char* field, std::string lhs, std::string rhs);
@@ -189,6 +191,7 @@ class dbDiff : public dbObject
   void out(char side, const char* field, Point value);
   void out(char side, const char* field, Rect value);
   void out(char side, const char* field, Oct value);
+  void out(char side, const char* field, const Polygon& value);
   void out(char side, const char* field, const char* value);
   void out(char side, const char* field, std::string value);
   void out(char side, const char* field, dbOrientType::Value value);
@@ -210,11 +213,11 @@ class dbDiff : public dbObject
 
 #define DIFF_BEGIN \
   { /* } */        \
-    diff.begin(field, getObjName(), getId());
+    diff.begin(field, getTypeName(), getId());
 
 #define DIFF_OUT_BEGIN \
   { /* } */            \
-    diff.begin(side, field, getObjName(), getId());
+    diff.begin(side, field, getTypeName(), getId());
 
 #define DIFF_END             \
   diff.end_object(); /* { */ \

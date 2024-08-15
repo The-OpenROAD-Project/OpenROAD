@@ -18,6 +18,7 @@ record_tests {
   dump_nets
   lef_mask
   write_lef_and_def
+  write_lef_polygon
   lef_data_access
   gcd_def_access
   gcd_pdn_def_access
@@ -33,6 +34,10 @@ record_tests {
   gcd_abstract_lef
   gcd_abstract_lef_with_power
   abstract_origin
+  write_macro_placement
+  smash_vias
+  #odb_man_tcl_check
+  #odb_readme_msgs_check
 }
 
 record_pass_fail_tests {

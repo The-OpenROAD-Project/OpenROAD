@@ -6,6 +6,11 @@ class {{klass.name}};
 //Generator Code Begin ClassDefinition
 {% for klass in schema.classes|sort(attribute='name') %}
 
+{% if klass.description %}
+  {% for line in klass.description %}
+    // {{ line }}
+  {% endfor %}
+{% endif %}
 class {{klass.name}} : public dbObject
 {
  public:
@@ -34,7 +39,7 @@ class {{klass.name}} : public dbObject
   // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
+      void {{field.setterFunctionName}} ({% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}

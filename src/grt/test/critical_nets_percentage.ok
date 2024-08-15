@@ -1,15 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs.tlef
-[INFO ODB-0223]     Created 13 technology layers
-[INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs.tlef
-[INFO ODB-0222] Reading LEF file: sky130hs/sky130hs_std_cell.lef
-[INFO ODB-0225]     Created 390 library cells
-[INFO ODB-0226] Finished LEF file:  sky130hs/sky130hs_std_cell.lef
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
 [INFO ODB-0133]     Created 348 nets and 1021 connections.
-[WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
@@ -25,6 +20,7 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 [INFO GRT-0003] Macros: 0
+[INFO GRT-0043] No OR_DEFAULT vias defined.
 [INFO GRT-0004] Blockages: 70
 
 [INFO GRT-0053] Routing resources analysis:
@@ -33,31 +29,31 @@ Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
 met1       Horizontal      32472          4924          84.84%
-met2       Vertical        25584          3308          87.07%
-met3       Horizontal      15416          1688          89.05%
+met2       Vertical        25584          3360          86.87%
+met3       Horizontal      15416          1720          88.84%
 met4       Vertical        10332          1680          83.74%
 met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2181
-[INFO GRT-0198] Via related Steiner nodes: 89
+[INFO GRT-0197] Via related to pin nodes: 2140
+[INFO GRT-0198] Via related Steiner nodes: 91
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3110
-[INFO GRT-0112] Final usage 3D: 11541
+[INFO GRT-0111] Final number of vias: 3028
+[INFO GRT-0112] Final usage 3D: 11390
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              4924           718           14.58%             0 /  0 /  0
-met2              3308           823           24.88%             0 /  0 /  0
-met3              1688           328           19.43%             0 /  0 /  0
-met4              1680           188           11.19%             0 /  0 /  0
-met5              1640           154            9.39%             0 /  0 /  0
+met1              4924           760           15.43%             0 /  0 /  0
+met2              3360           832           24.76%             0 /  0 /  0
+met3              1720           311           18.08%             0 /  0 /  0
+met4              1680           227           13.51%             0 /  0 /  0
+met5              1640           176           10.73%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            13240          2211           16.70%             0 /  0 /  0
+Total            13324          2306           17.31%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 25776 um
+[INFO GRT-0018] Total wirelength: 24199 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.
