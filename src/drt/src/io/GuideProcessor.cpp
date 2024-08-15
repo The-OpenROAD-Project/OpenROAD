@@ -39,15 +39,12 @@ namespace {
 /**
  * @brief Returns the closest point on the perimeter of the rectangle r to the
  * point p
- * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
 Point getClosestPoint(const frRect& r, const Point& p)
 {
-  int px = p.getX();
-  int py = p.getY();
-  Rect b = r.getBBox();
-  int x = (px < b.xMin()) ? b.xMin() : (px > b.xMax()) ? b.xMax() : px;
-  int y = (py < b.yMin()) ? b.yMin() : (py > b.yMax()) ? b.yMax() : py;
+  const Rect b = r.getBBox();
+  const int x = std::clamp(p.getX(), b.xMin(), b.xMax());
+  const int y = std::clamp(p.getY(), b.yMin(), b.yMax());
   return Point(x, y);
 }
 /**
@@ -100,13 +97,13 @@ std::string getPinName(frBlockObject* pin)
  * @param guides The lookup list of guides
  *
  */
-void findIntersectingGuides(int x,
-                            int y,
+void findIntersectingGuides(const int x,
+                            const int y,
                             std::set<int>& out_guides,
                             const std::vector<frRect>& guides,
                             frDesign* design)
 {
-  Point g_cell = design->getTopBlock()->getGCellCenter({x, y});
+  const Point g_cell = design->getTopBlock()->getGCellCenter({x, y});
   for (int i = 0; i < (int) guides.size(); i++) {
     if (guides[i].getBBox().intersects(g_cell)) {
       out_guides.insert(i);
@@ -139,8 +136,8 @@ Point3D findBestPinLocation(frDesign* design,
                 pin_bbox.yMax() - 1);
 
   // set pin_bbox to gCell coords
-  Point ll_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ll());
-  Point ur_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ur());
+  const Point ll_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ll());
+  const Point ur_gcell = design->getTopBlock()->getGCellIdx(pin_bbox.ur());
 
   // finds the gCell with higher pinShape overlapping area (approximate)
   frArea best_area = 0, area = 0;
@@ -148,15 +145,15 @@ Point3D findBestPinLocation(frDesign* design,
   std::vector<frRect> pin_shapes = getPinShapes(pin);
   for (int x = ll_gcell.x(); x <= ur_gcell.x(); x++) {
     for (int y = ll_gcell.y(); y <= ur_gcell.y(); y++) {
-      Point gcell(x, y);
-      Rect gcell_box = design->getTopBlock()->getGCellBox(gcell);
+      const Point gcell_center(x, y);
+      const Rect gcell_box = design->getTopBlock()->getGCellBox(gcell_center);
       for (int z = 0; z < (int) design->getTech()->getLayers().size(); z++) {
         if (design->getTech()->getLayer(z)->getType()
             != dbTechLayerType::ROUTING) {
           continue;
         }
         area = 0;
-        for (auto& pinRect : pin_shapes) {
+        for (const auto& pinRect : pin_shapes) {
           if (pinRect.getLayerNum() != z) {
             continue;
           }
@@ -193,15 +190,17 @@ Point3D findBestPinLocation(frDesign* design,
  */
 int findClosestGuide(const Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
-                     const std::set<int>& candidate_guides_indices)
+                     const std::set<int>& candidate_guides_indices,
+                     const frCoord layer_change_penalty)
 {
   int closest_guide_idx = -1;
   int dist = 0;
   int min_dist = std::numeric_limits<int>::max();
-  for (auto& guideIdx : candidate_guides_indices) {
+  for (const auto& guideIdx : candidate_guides_indices) {
     dist = odb::manhattanDistance(guides[guideIdx].getBBox(),
                                   best_pin_loc_coords);
-    dist += abs(guides[guideIdx].getLayerNum() - best_pin_loc_coords.z());
+    dist += abs(guides[guideIdx].getLayerNum() - best_pin_loc_coords.z())
+            * layer_change_penalty;
     if (dist < min_dist) {
       min_dist = dist;
       closest_guide_idx = guideIdx;
@@ -231,25 +230,19 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
  */
 void adjustGuidePoint(Point3D& guide_pt,
                       const Rect& guide_bbox,
-                      frCoord gcell_half_size_horz,
-                      frCoord gcell_half_size_vert)
+                      const frCoord gcell_half_size_horz,
+                      const frCoord gcell_half_size_vert)
 {
-  if (guide_pt.x() == guide_bbox.xMin()
-      || std::abs(guide_bbox.xMin() - guide_pt.x())
-             <= std::abs(guide_bbox.xMax() - guide_pt.x())) {
+  if (std::abs(guide_bbox.xMin() - guide_pt.x())
+      <= std::abs(guide_bbox.xMax() - guide_pt.x())) {
     guide_pt.setX(guide_bbox.xMin() + gcell_half_size_horz);
-  } else if (guide_pt.x() == guide_bbox.xMax()
-             || std::abs(guide_bbox.xMax() - guide_pt.x())
-                    <= std::abs(guide_bbox.xMin() - guide_pt.x())) {
+  } else {
     guide_pt.setX(guide_bbox.xMax() - gcell_half_size_horz);
   }
-  if (guide_pt.y() == guide_bbox.yMin()
-      || std::abs(guide_bbox.yMin() - guide_pt.y())
-             <= std::abs(guide_bbox.yMax() - guide_pt.y())) {
+  if (std::abs(guide_bbox.yMin() - guide_pt.y())
+      <= std::abs(guide_bbox.yMax() - guide_pt.y())) {
     guide_pt.setY(guide_bbox.yMin() + gcell_half_size_vert);
-  } else if (guide_pt.y() == guide_bbox.yMax()
-             || std::abs(guide_bbox.yMax() - guide_pt.y())
-                    <= std::abs(guide_bbox.yMin() - guide_pt.y())) {
+  } else {
     guide_pt.setY(guide_bbox.yMax() - gcell_half_size_vert);
   }
 }
@@ -281,8 +274,8 @@ void adjustGuidePoint(Point3D& guide_pt,
  */
 void extendGuide(frDesign* design,
                  const Point& best_pin_loc_coords,
-                 frCoord gcell_half_size_horz,
-                 frCoord gcell_half_size_vert,
+                 const frCoord gcell_half_size_horz,
+                 const frCoord gcell_half_size_vert,
                  frRect& guide,
                  Point3D& guide_pt)
 {
@@ -322,14 +315,15 @@ void extendGuide(frDesign* design,
  * @param gcell_half_size_vert Half the vertical size of the gcell
  */
 void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
-                     int start_z,
-                     frCoord gcell_half_size_horz,
-                     frCoord gcell_half_size_vert,
+                     const int start_z,
+                     const frCoord gcell_half_size_horz,
+                     const frCoord gcell_half_size_vert,
                      frNet* net,
                      std::vector<frRect>& guides)
 {
-  int inc = start_z < best_pin_loc_coords.z() ? 2 : -2;
-  for (frLayerNum curr_z = start_z + inc; curr_z <= best_pin_loc_coords.z();
+  const int inc = start_z < best_pin_loc_coords.z() ? 2 : -2;
+  for (frLayerNum curr_z = start_z + inc;
+       curr_z != best_pin_loc_coords.z() + inc;
        curr_z += inc) {
     guides.emplace_back(best_pin_loc_coords.x() - gcell_half_size_horz,
                         best_pin_loc_coords.y() - gcell_half_size_vert,
@@ -354,18 +348,17 @@ void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
  */
 void connectGuidesWithBestPinLoc(const Point3D& guide_pt,
                                  const Point& best_pin_loc_coords,
-                                 frCoord gcell_half_size_horz,
-                                 frCoord gcell_half_size_vert,
+                                 const frCoord gcell_half_size_horz,
+                                 const frCoord gcell_half_size_vert,
                                  frNet* net,
                                  std::vector<frRect>& guides)
 {
   if (guide_pt.x() != best_pin_loc_coords.x()
       || guide_pt.y() != best_pin_loc_coords.y()) {
-    Point pl, ph;
-    pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
-          std::min(best_pin_loc_coords.y(), guide_pt.y())};
-    ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
-          std::max(best_pin_loc_coords.y(), guide_pt.y())};
+    const Point pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
+                      std::min(best_pin_loc_coords.y(), guide_pt.y())};
+    const Point ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
+                      std::max(best_pin_loc_coords.y(), guide_pt.y())};
 
     guides.emplace_back(pl.x() - gcell_half_size_horz,
                         pl.y() - gcell_half_size_vert,
@@ -651,15 +644,15 @@ void GuideProcessor::patchGuides_extendGuidesToCoverPin(
     std::vector<frRect>& guides,
     const Point3D& best_pin_loc_idx,
     const Point3D& best_pin_loc_coords,
-    int closest_guide_idx)
+    const int closest_guide_idx)
 {
   Point3D guide_pt(
       getClosestPoint(guides[closest_guide_idx], best_pin_loc_coords),
       guides[closest_guide_idx].getLayerNum());
   const Rect& guide_bbox = guides[closest_guide_idx].getBBox();
-  frCoord gcell_half_size_horz
+  const frCoord gcell_half_size_horz
       = getDesign()->getTopBlock()->getGCellSizeHorizontal() / 2;
-  frCoord gcell_half_size_vert
+  const frCoord gcell_half_size_vert
       = getDesign()->getTopBlock()->getGCellSizeVertical() / 2;
   adjustGuidePoint(
       guide_pt, guide_bbox, gcell_half_size_horz, gcell_half_size_vert);
@@ -692,17 +685,17 @@ void GuideProcessor::patchGuides(frNet* net,
                                  frBlockObject* pin,
                                  std::vector<frRect>& guides)
 {
-  std::string name = getPinName(pin);
+  const std::string name = getPinName(pin);
   logger_->info(DRT,
                 1000,
                 "Pin {} not in any guide. Attempting to patch guides to cover "
                 "(at least part of) the pin.",
                 name);
   std::set<int> candidate_guides_indices;
-  Point3D best_pin_loc_idx
+  const Point3D best_pin_loc_idx
       = findBestPinLocation(getDesign(), pin, guides, candidate_guides_indices);
   // The x/y/z coordinates of best_pin_loc_idx
-  Point3D best_pin_loc_coords(
+  const Point3D best_pin_loc_coords(
       getDesign()->getTopBlock()->getGCellCenter(best_pin_loc_idx),
       best_pin_loc_idx.z());
   if (candidate_guides_indices.empty()) {
@@ -710,8 +703,9 @@ void GuideProcessor::patchGuides(frNet* net,
     return;
   }
   // get the guide that is closest to the gCell
-  int closest_guide_idx
-      = findClosestGuide(best_pin_loc_coords, guides, candidate_guides_indices);
+  // TODO: test passing layer_change_penalty = gcell size
+  const int closest_guide_idx = findClosestGuide(
+      best_pin_loc_coords, guides, candidate_guides_indices, 1);
   // gets the point in the closer guide that is closer to the bestPinLoc
   patchGuides_extendGuidesToCoverPin(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);

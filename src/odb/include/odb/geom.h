@@ -926,10 +926,10 @@ inline bool Polygon::operator<(const Polygon& p) const
 // Returns the manhattan distance from Point p to Rect r
 inline int manhattanDistance(const Rect& r, const Point& p)
 {
-  int x = p.getX();
-  int y = p.getY();
-  int dx = (x < r.xMin()) ? r.xMin() - x : (x > r.xMax()) ? x - r.xMax() : 0;
-  int dy = (y < r.yMin()) ? r.yMin() - y : (y > r.yMax()) ? y - r.yMax() : 0;
+  const int x = p.getX();
+  const int y = p.getY();
+  const int dx = std::abs(x - std::clamp(x, r.xMin(), r.xMax()));
+  const int dy = std::abs(y - std::clamp(y, r.yMin(), r.yMax()));
   return dx + dy;
 }
 
