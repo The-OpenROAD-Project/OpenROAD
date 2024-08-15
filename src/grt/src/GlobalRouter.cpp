@@ -4584,7 +4584,7 @@ void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
   grouter_->removeNet(net);
 }
 
-void GRouteDbCbk::inDbNetMerge(odb::dbNet* preserved_net,
+void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
                                odb::dbNet* removed_net)
 {
   grouter_->mergeNetsRouting(preserved_net, removed_net);

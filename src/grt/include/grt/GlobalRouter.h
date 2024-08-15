@@ -525,7 +525,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   virtual void inDbNetDestroy(odb::dbNet* net);
   virtual void inDbNetCreate(odb::dbNet* net);
-  virtual void inDbNetMerge(odb::dbNet* preserved_net, odb::dbNet* removed_net);
+  virtual void inDbNetPreMerge(odb::dbNet* preserved_net, odb::dbNet* removed_net);
 
   virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
   virtual void inDbITermPostConnect(odb::dbITerm* iterm);
