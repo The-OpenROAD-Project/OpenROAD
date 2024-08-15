@@ -37,7 +37,6 @@
 #include "FastRoute.h"
 
 #include <algorithm>
-#include <cmath>
 #include <unordered_set>
 
 #include "AbstractFastRouteRenderer.h"
@@ -581,9 +580,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
         for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
+          reduce += ceil(static_cast<float>(std::abs(interval_it.upper()
+                                                     - interval_it.lower()))
+                         / track_space[layer - 1]);
         }
       } else {
         logger_->error(GRT,
@@ -609,9 +608,9 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
         for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
+          reduce += ceil(static_cast<float>(std::abs(interval_it.upper()
+                                                     - interval_it.lower()))
+                         / track_space[layer - 1]);
         }
       } else {
         logger_->error(
