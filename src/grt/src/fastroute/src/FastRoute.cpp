@@ -37,6 +37,7 @@
 #include "FastRoute.h"
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 
 #include "AbstractFastRouteRenderer.h"
@@ -592,10 +593,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
@@ -603,6 +606,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
+
   // Calculate reduce for horizontal tiles
   for (const auto& [tile, intervals] : horizontal_blocked_intervals_) {
     int x = std::get<0>(tile);
@@ -611,10 +615,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)

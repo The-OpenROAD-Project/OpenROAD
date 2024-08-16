@@ -58,10 +58,14 @@ _equivalenceDeps() {
 
 _installCommonDev() {
     lastDir="$(pwd)"
+    arch=$(uname -m)
     # tools versions
     osName="linux"
-    cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
-    cmakeChecksumAarch64="6a6af752af4b1eae175e1dd0459ec850"
+    if [[ "${arch}" == "aarch64" ]]; then
+        cmakeChecksum="6a6af752af4b1eae175e1dd0459ec850"
+    else
+        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+    fi
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
     pcreVersion=10.42
@@ -85,10 +89,6 @@ _installCommonDev() {
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
     cmakeBin=${cmakePrefix}/bin/cmake
-    arch=$(uname -m)
-    if [[ "$arch" == "aarch64" ]]; then
-        cmakeChecksum="${cmakeChecksumAarch64}"
-    fi
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
@@ -259,8 +259,8 @@ _installOrTools() {
             echo "Installing  OR-Tools for aarch64..."
             git clone https://github.com/google/or-tools.git
             cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_INSTALL_PREFIX=$orToolsPath
-            sudo ${cmakePrefix}/bin/cmake --build build --config Release --target install -v
+            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_INSTALL_PREFIX=${orToolsPath}
+            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v
         else
             echo "OR-Tools is already installed"
         fi
@@ -631,7 +631,7 @@ _installCI() {
 
     # Add the repository to Apt sources:
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" | \
         tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     apt-get -y update
@@ -673,7 +673,7 @@ Usage: $0
                                 #     with sudo or with root access.
        $0 -local
                                 # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
+                                #    "${HOME}/.local". Only used with
                                 #    -common. This flag cannot be used with
                                 #    sudo or with root access.
        $0 -ci
