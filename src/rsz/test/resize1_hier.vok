@@ -1,0 +1,54 @@
+module top (clk1,
+    clk2,
+    clk3,
+    in1,
+    in2,
+    out);
+ input clk1;
+ input clk2;
+ input clk3;
+ input in1;
+ input in2;
+ output out;
+
+ wire \u1/r1q ;
+ wire \u1/r2q ;
+ wire \u1/u1z ;
+ wire \u1/u2z ;
+
+ u1 u1 (.in1(in1),
+    .in2(in2),
+    .clk1(clk1),
+    .clk2(clk2),
+    .clk3(clk3),
+    .out(out));
+endmodule
+module u1 (in1,
+    in2,
+    clk1,
+    clk2,
+    clk3,
+    out);
+ input in1;
+ input in2;
+ input clk1;
+ input clk2;
+ input clk3;
+ output out;
+
+
+ DFF_X2 \u1/r1  (.D(in1),
+    .CK(clk1),
+    .Q(r1q));
+ DFF_X1 \u1/r2  (.D(in2),
+    .CK(clk2),
+    .Q(r2q));
+ DFF_X1 \u1/r3  (.D(u2z),
+    .CK(clk3),
+    .Q(out));
+ BUF_X1 \u1/u1  (.A(r2q),
+    .Z(u1z));
+ AND2_X1 \u1/u2  (.A1(r1q),
+    .A2(u1z),
+    .ZN(u2z));
+endmodule
