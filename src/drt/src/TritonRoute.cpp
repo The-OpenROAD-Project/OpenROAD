@@ -543,6 +543,10 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
+  if (db_ == nullptr || db_->getChip() == nullptr
+      || db_->getChip()->getBlock() == nullptr) {
+    logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
+  }
   io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
@@ -587,10 +591,7 @@ void TritonRoute::initDesign()
     }
   }
   parser.postProcess();
-  if (db_ != nullptr && db_->getChip() != nullptr
-      && db_->getChip()->getBlock() != nullptr) {
-    db_callback_->addOwner(db_->getChip()->getBlock());
-  }
+  db_callback_->addOwner(db_->getChip()->getBlock());
 }
 
 void TritonRoute::prep()

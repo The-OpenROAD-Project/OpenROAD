@@ -676,11 +676,14 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
   frMTerm* trueTerm = instTerm->getTerm();
   std::string name;
   frInst* inst = instTerm->getInst();
-  dbTransform shiftXform = inst->getTransform();
-  shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+  dbTransform shiftXform;
 
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
+  if (inst != nullptr) {
+    shiftXform = inst->getTransform();
+    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+  }
   int succesPinCnt = 0;
   for (auto& pin : trueTerm->getPins()) {
     frAccessPoint* prefAp = nullptr;
