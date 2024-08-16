@@ -100,6 +100,7 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
+  void getPinNumberNearEndPoint(const GSegment* seg, const std::vector<odb::dbITerm*>& gates, int& init_c, int& final_c, double& init_area, double& final_area);
   void jumperInsertion(NetRouteMap& routing, const int tile_size);
   int illegalDiodePlacementCount() const
   {
