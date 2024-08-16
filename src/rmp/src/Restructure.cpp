@@ -51,6 +51,7 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/blif.h"
+#include "sta/Corner.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -62,7 +63,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
-#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 using utl::RMP;
@@ -676,33 +676,34 @@ bool Restructure::readAbcLog(std::string abc_file_name,
   return status;
 }
 
-
 //
-//Cut Based Restructuring code
+// Cut Based Restructuring code
 //---------------------------
-//with abc source integration 
+// with abc source integration
 //
 //
-//Flags:
-//head_pin -- if set, start cut from pin (single output cut)
+// Flags:
+// head_pin -- if set, start cut from pin (single output cut)
 //         -- if null,generate a blob.
-//unconstrained:
-//         -- if true, walk back to primary inputs/state elements in cut generation
+// unconstrained:
+//         -- if true, walk back to primary inputs/state elements in cut
+//         generation
 //            else walk back through inverters to first level of logic. Generate
 //            cut as cartesian product.
 //
 
-void Restructure::cutresynthrun(char* target_library,//todo: pass in library object
-                                char* script,       //optional script
-				sta::Pin* head_pin, //passed in by user. ok to be null !
-				bool unconstrained, //controls cut generation 
-                                bool verbose)
+void Restructure::cutresynthrun(
+    char* target_library,  // todo: pass in library object
+    char* script,          // optional script
+    sta::Pin* head_pin,    // passed in by user. ok to be null !
+    bool unconstrained,    // controls cut generation
+    bool verbose)
 {
-  bool single_op=false;
+  bool single_op = false;
   if (head_pin)
     single_op = true;
-  (void)single_op;
-  
+  (void) single_op;
+
   reset();
   logger_->report("Cut based Restructuring.");
 
@@ -720,7 +721,7 @@ void Restructure::cutresynthrun(char* target_library,//todo: pass in library obj
     fclose(cond_file);
   }
 #endif
-  
+
   LibRead liberty_library(logger_, target_library, verbose);
 
   Cut* cut_to_remap = nullptr;
@@ -729,10 +730,10 @@ void Restructure::cutresynthrun(char* target_library,//todo: pass in library obj
   std::vector<Cut*> cut_set;
 
   //
-  //Just generate any cuts for discussion with Cho.
+  // Just generate any cuts for discussion with Cho.
   //
   generateUnconstrainedCuts(cut_set);
-  
+
   logger_->report("Generated {} cuts.", cut_set.size());
 
   //
@@ -760,7 +761,6 @@ void Restructure::cutresynthrun(char* target_library,//todo: pass in library obj
         best_cut->leaves_.size());
     cut_to_remap = best_cut;
 
-
     // Get the timing numbers for the cut from the sta
     std::vector<std::pair<const sta::Pin*, TimingRecord*>> timing_requirements;
     annotateCutTiming(cut_to_remap, timing_requirements);
@@ -774,22 +774,21 @@ void Restructure::cutresynthrun(char* target_library,//todo: pass in library obj
       script_present = true;
     }
     logger_->report("PhysRemapping cut {}.", cut_to_remap->id_);
-    PhysRemap prm(logger_,
-                  network,
-                  cut_to_remap, //the cut to remap
-                  timing_requirements, //the actual timing requirements for the cut
-                  target_library,
-                  liberty_library,
-                  script_present,
-                  script_name,
-                  true);
+    PhysRemap prm(
+        logger_,
+        network,
+        cut_to_remap,         // the cut to remap
+        timing_requirements,  // the actual timing requirements for the cut
+        target_library,
+        liberty_library,
+        script_present,
+        script_name,
+        true);
     prm.Remap();
   }
 }
 
-
-
-//Homebrew way of getting start/end points for cut generation
+// Homebrew way of getting start/end points for cut generation
 
 class AccumulateSortedSlackEndPoints : public sta::VertexVisitor
 {
@@ -859,10 +858,10 @@ bool Restructure::isRegInput(sta::Network* nwk, sta::Vertex* v)
   sta::LibertyPort* port = nwk->libertyPort(v->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    for (auto arc_set : cell->timingArcSets(nullptr, port)){
-        if (arc_set->role()->genericRole() == sta::TimingRole::setup())
-          return true;
-      }
+    for (auto arc_set : cell->timingArcSets(nullptr, port)) {
+      if (arc_set->role()->genericRole() == sta::TimingRole::setup())
+        return true;
+    }
   }
   return false;
 }
@@ -872,7 +871,7 @@ bool Restructure::isRegOutput(sta::Network* nwk, sta::Vertex* v)
   sta::LibertyPort* port = nwk->libertyPort(v->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    for (auto arc_set : cell->timingArcSets(nullptr, port)){
+    for (auto arc_set : cell->timingArcSets(nullptr, port)) {
       if (arc_set->role()->genericRole() == sta::TimingRole::regClkToQ())
         return true;
     }
@@ -912,13 +911,16 @@ void Restructure::annotateCutTiming(
     sta::Vertex* v = graph->vertex(v_id);
     tr = nullptr;
     if (v) {
-      //TODO: check out how to get the max arrival time without going through all the path refs
+      // TODO: check out how to get the max arrival time without going through
+      // all the path refs
       sta::MinMax* min_max_arrival;
       sta::MinMax* min_max = sta::MinMax::find("max");
       sta::RiseFall* rf_arrival_rise = sta::RiseFall::find("rise");
       sta::RiseFall* rf_arrival_fall = sta::RiseFall::find("fall");
-      max_arrival_rise = 0;//sta->vertexArrival(v, rf_arrival_rise, min_max,path);
-      max_arrival_fall = 0;//sta->vertexArrival(v, rf_arrival_fall, min_max,path);
+      max_arrival_rise
+          = 0;  // sta->vertexArrival(v, rf_arrival_rise, min_max,path);
+      max_arrival_fall
+          = 0;  // sta->vertexArrival(v, rf_arrival_fall, min_max,path);
       for (auto clk : *clock_seq) {
         sta::ClockEdge* clk_edge_fall = clk->edge(rf_arrival_fall);
         sta::ClockEdge* clk_edge_rise = clk->edge(rf_arrival_rise);
@@ -989,43 +991,40 @@ void Restructure::annotateCutTiming(
   }
 }
 
-
 //
-//Cut Generation interfaces
+// Cut Generation interfaces
 //
-
 
 /*
   Single output cut generation
   ----------------------------
-  Walk back through instance input, building cut set. 
+  Walk back through instance input, building cut set.
   Constrained to last level of non-inverter type gates
 */
 
-//start from an instance
+// start from an instance
 void Restructure::generateWaveFrontSingleOpCutSet(sta::Network* nwk,
-						  sta::Instance* root,
-						  std::vector<Cut*>& cut_set)
+                                                  sta::Instance* root,
+                                                  std::vector<Cut*>& cut_set)
 {
   CutGen cut_generator(nwk, nullptr);
   cut_generator.GenerateInstanceWaveFrontCutSet(root, cut_set);
 }
 
-//start from a pin
+// start from a pin
 void Restructure::generateWaveFrontSingleOpCutSet(sta::Network* nwk,
-                                      sta::Pin* root,
-                                      std::vector<Cut*>& cut_set)
+                                                  sta::Pin* root,
+                                                  std::vector<Cut*>& cut_set)
 {
   if (nwk->direction(root)->isOutput()) {
-    sta::Instance* cur_inst = nwk ->instance(root);
-    generateWaveFrontSingleOpCutSet(nwk,cur_inst, cut_set);
+    sta::Instance* cur_inst = nwk->instance(root);
+    generateWaveFrontSingleOpCutSet(nwk, cur_inst, cut_set);
   }
 }
 
 //
-//Generate a big cut (like a blob)l
+// Generate a big cut (like a blob)l
 //
-
 
 /*
   Generic Timing Driven Multiple output cut generation
@@ -1033,7 +1032,7 @@ void Restructure::generateWaveFrontSingleOpCutSet(sta::Network* nwk,
   1. queue = Set up end points sorted by criticallity
   2. Pick most critical end point
   3. Walk back to invariant drivers. Set up cut Leaves
-  4. Walk forwards to end points. Set up cut roots. 
+  4. Walk forwards to end points. Set up cut roots.
      (note we might have to then add some extra leaves).
   5. Extract cut and add to cut set.
   6. Remove cut roots from queue.
@@ -1056,75 +1055,106 @@ void Restructure::generateUnconstrainedCuts(std::vector<Cut*>& cut_set)
   std::multimap<sta::Vertex*, float> vertex_slack_times;  // vertex -> slack
 
   // visitor
-  AccumulateSortedSlackEndPoints accumulate_sorted_slack_end_points(
-      nwk, sorted_slack_times, vertex_slack_times, end_points);
+  // AccumulateSortedSlackEndPoints accumulate_sorted_slack_end_points(
+  //      nwk, sorted_slack_times, vertex_slack_times, end_points);
   sta::Sta* sta = sta::Sta::sta();
 
   // accumulate the start and end points
-  open_sta_->visitEndpoints(&accumulate_sorted_slack_end_points);
-#ifdef DEBUG_RESTRUCT
-  printf("Dump of end points\n");
-  for (auto sst : sorted_slack_times)
-    printf("Vertex %d slack time %s\n",
-           graph->id(sst.second),
-           delayAsString(sst.first, sta));
-#endif
-  AccumulateSortedSlackStartPoints accumulate_sorted_slack_start_points(
-      end_points);
-  open_sta_->visitStartpoints(&accumulate_sorted_slack_start_points);
+  // open_sta_->visitEndpoints(&accumulate_sorted_slack_end_points);
+  sta::PinSet endpointPins = open_sta_->endpointPins();
+  for (const sta::Pin* pin : endpointPins) {
+    sta::Slack max_s = sta->pinSlack(pin, sta::MinMax::max());
+    sta::Slack min_s = sta->pinSlack(pin, sta::MinMax::min());
+    sta::Slack s = (max_s == sta::INF || max_s == -sta::INF) ? min_s : max_s;
 
-#ifdef DEBUG_RESTRUCT
-  printf("Starting cut construction for end point list of size %d\n",
-         vertex_slack_times.size());
-#endif
+    debugPrint(logger_,
+               utl::RMP,
+               "remap",
+               1,
+               "Design Worst Slack time {}",
+               delayAsString(s, sta));
+
+    sta::Vertex* v = graph->vertex(nwk->vertexId(pin));
+    if (isRegInput(nwk, v) || isPrimary(nwk, v)) {
+      sorted_slack_times.insert(std::make_pair(s, v));
+      vertex_slack_times.insert(std::make_pair(v, s));
+      end_points_.insert(v);
+    }
+  }
+
+  if (logger_->debugCheck(utl::RMP, "remap", 1)) {
+    logger_->report("Dump of end points");
+    for (auto sst : sorted_slack_times) {
+      logger_->report("Pin slack time{}",
+                      // sst.second,
+                      delayAsString(sst.first, sta));
+    }
+  }
+
+  // AccumulateSortedSlackStartPoints accumulate_sorted_slack_start_points(
+  //  end_points);
+  //  open_sta_->visitStartpoints(&accumulate_sorted_slack_start_points);
+  sta::PinSet startpointPins = open_sta_->startpointPins();
+  for (const sta::Pin* pin : startpointPins) {
+    sta::Vertex* v = graph->vertex(nwk->vertexId(pin));
+    end_points_.insert(v);
+  }
+
+  debugPrint(logger_,
+             utl::RMP,
+             "remap",
+             1,
+             "Starting cut construction for end point list of size {}",
+             vertex_slack_times.size());
 
   logger_->report("Worst slack {}  Best slack {} Size of end point list {}",
-                    delayAsString((*sorted_slack_times.begin()).first, sta),
-                    delayAsString((*sorted_slack_times.end()).first, sta),
-                    vertex_slack_times.size());
-    // map stores smallest item first, so this is by default the least slack
-    sta::Vertex* head_vertex = (*sorted_slack_times.begin()).second;
-    sta::Pin* cur_pin = head_vertex->pin();
-#ifdef DEBUG_RESTRUCT
-    printf("Generating cut from pin %s on instance %s\n",
-           nwk->pathName(cur_pin),
-           nwk->name(nwk->instance(cur_pin)));
-#endif
-    
-      ResetCutTemporaries();
-      // harvest the leaves
-      walkBackwardsToTimingEndPointsR(graph, nwk, cur_pin, 0);
-      pin_visited_.clear();
-      // walk forward from each leaf. Harvest the volume in forward pass
-      for (auto leaf_pin_int : leaves_) {
-        walkForwardsToTimingEndPointsR(graph, nwk, leaf_pin_int.first, 0);
-      }
-      //as we walked forwards there might be orphaned inputs,
-      //these are the incidental inputs not in the original
-      //leaf set, add them to the leaf set
-      AmendCutForEscapeLeaves(nwk);
-      
-      // check if cut degenerate.
-      Cut* cut = extractCut(cut_id);
-      logger_->report(
-          "Extracted cut {} with {} roots and {} leaves and Volume {} ",
-          cut->id_,
-          cut->roots_.size(),
-          cut->leaves_.size(),
-          cut->volume_.size());
-      if (!cut || cut->roots_.size() == 0) {
-        logger_->report("done with cut generation. Generated {} cuts", cut_id);
-        return;
-      }
-      cut_set.push_back(cut);
-      cut_id++;
-      // Check cut meets all required rules
-      cut->Check(nwk);
-      // just consider one cut for now.
-      // so break from loop. Original idea:
-      // keep on generating cuts until we have covered the
-      // whole chip -- we repeatedly remove from the end vertex set..
-      return;
+                  delayAsString((*sorted_slack_times.begin()).first, sta),
+                  delayAsString((*sorted_slack_times.end()).first, sta),
+                  vertex_slack_times.size());
+  // map stores smallest item first, so this is by default the least slack
+  sta::Vertex* head_vertex = (*sorted_slack_times.begin()).second;
+  sta::Pin* cur_pin = head_vertex->pin();
+  debugPrint(logger_,
+             utl::RMP,
+             "remap",
+             1,
+             "Generating cut from pin {} on instance {}",
+             nwk->pathName(cur_pin),
+             nwk->name(nwk->instance(cur_pin)));
+
+  ResetCutTemporaries();
+  // harvest the leaves
+  walkBackwardsToTimingEndPointsR(graph, nwk, cur_pin, 0);
+  pin_visited_.clear();
+  // walk forward from each leaf. Harvest the volume in forward pass
+  for (auto leaf_pin_int : leaves_) {
+    walkForwardsToTimingEndPointsR(graph, nwk, leaf_pin_int.first, 0);
+  }
+  // as we walked forwards there might be orphaned inputs,
+  // these are the incidental inputs not in the original
+  // leaf set, add them to the leaf set
+  AmendCutForEscapeLeaves(nwk);
+
+  // check if cut degenerate.
+  Cut* cut = extractCut(cut_id);
+  logger_->report("Extracted cut {} with {} roots and {} leaves and Volume {} ",
+                  cut->id_,
+                  cut->roots_.size(),
+                  cut->leaves_.size(),
+                  cut->volume_.size());
+  if (!cut || cut->roots_.size() == 0) {
+    logger_->report("done with cut generation. Generated {} cuts", cut_id);
+    return;
+  }
+  cut_set.push_back(cut);
+  cut_id++;
+  // Check cut meets all required rules
+  cut->Check(nwk);
+  // just consider one cut for now.
+  // so break from loop. Original idea:
+  // keep on generating cuts until we have covered the
+  // whole chip -- we repeatedly remove from the end vertex set..
+  return;
 }
 
 void Restructure::AmendCutForEscapeLeaves(sta::Network* nwk)
@@ -1160,7 +1190,6 @@ void Restructure::AmendCutForEscapeLeaves(sta::Network* nwk)
     }
   }
 }
-
 
 Cut* Restructure::extractCut(int cut_id)
 {
@@ -1359,6 +1388,5 @@ void Restructure::walkForwardsToTimingEndPointsR(sta::Graph* graph,
     }
   }
 }
-
 
 }  // namespace rmp

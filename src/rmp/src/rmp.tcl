@@ -135,3 +135,41 @@ proc restructure { args } {
   rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value \
     $depth_threshold_value $workdir_name $abc_logfile
 }
+
+sta::define_cmd_args "remap" { [-target_lib library] \
+                               [-script script] \
+                               [-unconstrained] \
+                               [-verbose] \
+                             }
+
+proc remap { args } {
+  sta::parse_key_args "remap" args \
+      keys {-target_lib -script} \
+      flags {-unconstrained -verbose}
+
+  if { [info exists keys(-target_lib)] } {
+    set target_lib $keys(-target_lib)
+  } else {
+    utl::error RMP 13 "-target_lib argument is required"
+  }
+
+  if { [info exists keys(-script)] } {
+    set script $keys(-script)
+  } else {
+    set script ""
+  }
+
+  if { [info exists flags(-unconstrained)] } {
+    set unconstrained true
+  } else {
+    set unconstrained false
+  }
+    
+  if { [info exists flags(-verbose)] } {
+    set verbose true
+  } else {
+    set verbose false
+  }
+
+  rmp::remap_cmd $target_lib $script $unconstrained $verbose
+}
