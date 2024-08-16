@@ -3812,18 +3812,13 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   Net* net2 = db_net_map_[db_net2];
   // Do not merge the routing if the survivor net is already dirty
   if (!net1->isDirtyNet()) {
-    GRoute& net1_route = routes_[db_net1];
-    GRoute& net2_route = routes_[db_net2];
-    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-    connectRouting(net1_route, db_net1, db_net2);
+    connectRouting(db_net1, db_net2);
     net1->setMergedNet(true);
     net2->setMergedNet(true);
   }
 }
 
-void GlobalRouter::connectRouting(GRoute& route,
-                                  odb::dbNet* db_net1,
-                                  odb::dbNet* db_net2)
+void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
@@ -3833,12 +3828,17 @@ void GlobalRouter::connectRouting(GRoute& route,
   odb::Point pin_pos2;
   findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
 
+  GRoute& net1_route = routes_[db_net1];
+  GRoute& net2_route = routes_[db_net2];
   if (pin_pos1 != pin_pos2) {
-    const int layer1 = findTopLayerOverPosition(pin_pos1, route);
-    const int layer2 = findTopLayerOverPosition(pin_pos2, route);
+    const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
+    const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
-    route.insert(route.end(), connection.begin(), connection.end());
+    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+  } else {
+    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
 }
 

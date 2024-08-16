@@ -228,7 +228,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
-  void connectRouting(GRoute& route, odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
