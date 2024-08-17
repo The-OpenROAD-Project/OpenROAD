@@ -34,6 +34,7 @@ set(TEST_NAMES
     ndr
     gcd_abstract_lef
     gcd_abstract_lef_with_power
+    read_abstract_lef
     abstract_origin
     write_macro_placement
 )

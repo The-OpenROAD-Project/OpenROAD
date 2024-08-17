@@ -72,7 +72,7 @@ class lefout
   bool bloat_occupied_layers_;
 
   template <typename GenericBox>
-  void writeBoxes(dbSet<GenericBox>& boxes, const char* indent);
+  void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
 
   using ObstructionMap
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
@@ -80,7 +80,7 @@ class lefout
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
-  void writeBlockVia(dbVia* via);
+  void writeBlockVia(dbBlock* db_block, dbVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
   void writeLibBody(dbLib* lib);
