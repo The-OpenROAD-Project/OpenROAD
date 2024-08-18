@@ -20,6 +20,7 @@ record_tests {
   assign_bumps_two_pins
 
   connect_by_abutment
+  connect_by_abutment_with_single_pinnet
 
   rdl_route
   rdl_route_failed
