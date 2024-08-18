@@ -315,26 +315,49 @@ class DbInstanceNetIterator : public InstanceNetIterator
   const dbNetwork* network_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
+  dbSet<dbModNet>::iterator mod_net_iter_;
+  dbSet<dbModNet>::iterator mod_net_end_;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
                                              const dbNetwork* network)
     : network_(network)
 {
-  if (instance == network->topInstance()) {
-    dbSet<dbNet> nets = network->block()->getNets();
-    iter_ = nets.begin();
-    end_ = nets.end();
+  if (network_->hasHierarchy()) {
+    dbInst* db_inst;
+    dbModInst* mod_inst;
+    network_->staToDb(instance, db_inst, mod_inst);
+    if (mod_inst) {
+      dbModule* master = mod_inst->getMaster();
+      dbSet<dbModNet> nets = master->getModNets();
+      mod_net_iter_ = nets.begin();
+      mod_net_end_ = nets.end();
+    }
+  } else {
+    if (instance == network->topInstance()) {
+      dbSet<dbNet> nets = network->block()->getNets();
+      iter_ = nets.begin();
+      end_ = nets.end();
+    }
   }
 }
 
 bool DbInstanceNetIterator::hasNext()
 {
-  return iter_ != end_;
+  if (network_->hasHierarchy()) {
+    return mod_net_iter_ != mod_net_end_;
+  } else {
+    return iter_ != end_;
+  }
 }
 
 Net* DbInstanceNetIterator::next()
 {
+  if (network_->hasHierarchy()) {
+    dbModNet* net = *mod_net_iter_;
+    mod_net_iter_++;
+    return network_->dbToSta(net);
+  }
   dbNet* net = *iter_;
   iter_++;
   return network_->dbToSta(net);
@@ -808,6 +831,22 @@ Instance* dbNetwork::parent(const Instance* instance) const
   }
 
   return top_instance_;
+}
+
+Port* dbNetwork::findPort(const Cell* cell, const char* name) const
+{
+  if (hierarchy_) {
+    dbMaster* db_master;
+    dbModule* db_module;
+    staToDb(cell, db_master, db_module);
+    if (db_module) {
+      dbModBTerm* mod_bterm = db_module->findModBTerm(name);
+      Port* ret = dbToSta(mod_bterm);
+      return ret;
+    }
+  }
+  const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
+  return reinterpret_cast<Port*>(ccell->findPort(name));
 }
 
 bool dbNetwork::isLeaf(const Instance* instance) const
@@ -1720,11 +1759,21 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
                                   const char* name,
                                   Instance* parent)
 {
+  const char* cell_name = cell->name();
   if (parent == top_instance_) {
-    const char* cell_name = cell->name();
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
+      return dbToSta(inst);
+    }
+  } else {
+    dbInst* db_inst = nullptr;
+    dbModInst* mod_inst = nullptr;
+    staToDb(parent, db_inst, mod_inst);
+    if (mod_inst) {
+      dbMaster* master = db_->findMaster(cell_name);
+      dbModule* parent = mod_inst->getMaster();
+      dbInst* inst = dbInst::create(block_, master, name, false, parent);
       return dbToSta(inst);
     }
   }
@@ -2062,7 +2111,6 @@ void dbNetwork::staToDb(const Term* term,
   }
 }
 
-// Primary -- needs concrete test
 void dbNetwork::staToDb(const Cell* cell,
                         dbMaster*& master,
                         dbModule*& module) const
