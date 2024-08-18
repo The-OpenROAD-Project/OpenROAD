@@ -346,9 +346,8 @@ bool DbInstanceNetIterator::hasNext()
 {
   if (network_->hasHierarchy()) {
     return mod_net_iter_ != mod_net_end_;
-  } else {
-    return iter_ != end_;
   }
+  return iter_ != end_;
 }
 
 Net* DbInstanceNetIterator::next()
