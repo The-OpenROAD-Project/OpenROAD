@@ -1308,18 +1308,24 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCells_.push_back(gCell);
   }
 
-  // add filler cells to gCells_
+  // add filler cells to gCells_, at this point gCellStor_ has only filler cells
+  // instantiated at initFillerGcells()
   for (auto& gCell : gCellStor_) {
     gCells_.push_back(&gCell);
+    gCellFillers_.push_back(&gCell);
   }
 
-  for (auto& gCell : gCells_) {
-    if (gCell->isInstance()) {
-      gCellInsts_.push_back(gCell);
-    } else if (gCell->isFiller()) {
-      gCellFillers_.push_back(gCell);
-    }
-  }
+// Changes made: 
+// 1. gcellInsts_ is used nowhere(other than a never called function: cutFillerCells()
+// 2. gCellFillers_ used to point to gCells_ (made of pointers to gCells), makes more sense to 
+//    point to actual objects in gCellStor_
+//  for (auto& gCell : gCells_) {
+//    if (gCell->isInstance()) {
+////      gCellInsts_.push_back(gCell);
+//    } else if (gCell->isFiller()) {
+//      gCellFillers_.push_back(gCell);
+//    }
+//  }
 
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
   log_->info(
@@ -1676,40 +1682,40 @@ void NesterovBase::updateAreas()
 }
 
 // cut the filler cells
-void NesterovBase::cutFillerCells(int64_t targetFillerArea)
-{
-  std::vector<GCell*> newGCells = gCellInsts_;
-  std::vector<GCell*> newGCellFillers;
-
-  int64_t curFillerArea = 0;
-  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
-
-  for (auto& gCellFiller : gCellFillers_) {
-    curFillerArea += static_cast<int64_t>(gCellFiller->dx())
-                     * static_cast<int64_t>(gCellFiller->dy());
-
-    if (curFillerArea >= targetFillerArea) {
-      curFillerArea -= static_cast<int64_t>(gCellFiller->dx())
-                       * static_cast<int64_t>(gCellFiller->dy());
-      break;
-    }
-
-    newGCells.push_back(gCellFiller);
-    newGCellFillers.push_back(gCellFiller);
-  }
-
-  // update totalFillerArea_
-  totalFillerArea_ = curFillerArea;
-  dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL,
-             35,
-             "{:20} {:10.3f} um^2",
-             "NewTotalFillerArea:",
-             block->dbuAreaToMicrons(totalFillerArea_));
-
-  gCells_.swap(newGCells);
-  gCellFillers_.swap(newGCellFillers);
-}
+//void NesterovBase::cutFillerCells(int64_t targetFillerArea)
+//{
+//  std::vector<GCell*> newGCells = gCellInsts_;
+//  std::vector<GCell*> newGCellFillers;
+//
+//  int64_t curFillerArea = 0;
+//  log_->info(GPL, 34, "{:20} {:10.3f}", "gCellFiller:", gCellFillers_.size());
+//
+//  for (auto& gCellFiller : gCellFillers_) {
+//    curFillerArea += static_cast<int64_t>(gCellFiller->dx())
+//                     * static_cast<int64_t>(gCellFiller->dy());
+//
+//    if (curFillerArea >= targetFillerArea) {
+//      curFillerArea -= static_cast<int64_t>(gCellFiller->dx())
+//                       * static_cast<int64_t>(gCellFiller->dy());
+//      break;
+//    }
+//
+//    newGCells.push_back(gCellFiller);
+//    newGCellFillers.push_back(gCellFiller);
+//  }
+//
+//  // update totalFillerArea_
+//  totalFillerArea_ = curFillerArea;
+//  dbBlock* block = pb_->db()->getChip()->getBlock();
+//  log_->info(GPL,
+//             35,
+//             "{:20} {:10.3f} um^2",
+//             "NewTotalFillerArea:",
+//             block->dbuAreaToMicrons(totalFillerArea_));
+//
+//  gCells_.swap(newGCells);
+//  gCellFillers_.swap(newGCellFillers);
+//}
 
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
 {

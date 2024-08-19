@@ -863,7 +863,7 @@ class NesterovBase
   ~NesterovBase();
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
-  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
+//  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
   float getSumOverflow() const { return sumOverflow_; }
@@ -931,7 +931,7 @@ class NesterovBase
   void setTargetDensity(float targetDensity);
 
   // RD can shrink the number of fillerCells.
-  void cutFillerCells(int64_t targetFillerArea);
+//  void cutFillerCells(int64_t targetFillerArea);
 
   void updateDensityCoordiLayoutInside(GCell* gcell);
 
@@ -1024,7 +1024,7 @@ class NesterovBase
   std::vector<GCell> gCellStor_;
 
   std::vector<GCell*> gCells_;
-  std::vector<GCell*> gCellInsts_;
+//  std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
   float sumPhi_ = 0;
