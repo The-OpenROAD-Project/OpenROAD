@@ -599,9 +599,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
-    if (net->getPins().size() < 2) {
-      continue;
-    }
     // get last pin positions
     std::set<RoutePt> last_pos;
     for (const Pin& pin : net->getPins()) {
@@ -619,20 +616,23 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     // check if pins that changed positions are new positions
     if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)) {
       dirty_nets.push_back(net);
-    } else {
+    } else if (net->getPins().size() >= 2) {
       shrinkNetRoute(db_net);
     }
   }
   dirty_nets_.clear();
 }
 
-void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
+void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 {
-  Net* net = db_net_map_[dbnet];
-  GRoute segments = routes_[dbnet];
+  Net* net = db_net_map_[db_net];
+  GRoute segments = routes_[db_net];
+  bool showme = ("_199_" == net->getName());
+  logger_->report("Net {}", db_net->getName());
   int total_segments = segments.size();
   std::vector<Pin> pins = net->getPins();
 
+  netIsCovered(db_net);
   int root = -1;
   std::vector<bool> coversPin(total_segments, false);
 
@@ -647,7 +647,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
     }
   }
 
-  std::vector<std::vector<int>> graph = buildNetGraph(dbnet);
+  std::vector<std::vector<int>> graph = buildNetGraph(db_net);
 
   // Runs a BFS trough the graph
   std::vector<uint16_t> parent(total_segments, UINT16_MAX),
@@ -689,8 +689,11 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* dbnet)
 
   int total_deleted_segments = 0;
   for (int deleted : segments_to_delete) {
-    net->deleteSegment(deleted - total_deleted_segments++, routes_[dbnet]);
+    net->deleteSegment(deleted - total_deleted_segments++, routes_[db_net]);
   }
+
+  if (showme)
+    logger_->report("Ping5");
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
@@ -963,7 +966,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
     utl::shuffle(nets.begin(), nets.end(), g);
   }
-
+  // Bookmark
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
@@ -2296,13 +2299,21 @@ void GlobalRouter::readSegments(const char* file_name)
       logger_->error(
           GRT, 262, "Net {} has disconnected segments.", net->getName());
     }
-    netIsCovered(db_net_map_[net], routes_[net]);
+    netIsCovered(net);
   }
 }
 
-void GlobalRouter::netIsCovered(Net* net, const GRoute& segments)
+int GlobalRouter::netIsCovered(odb::dbNet* db_net)
 {
-  for (const Pin& pin : net->getPins()) {
+  Net* net = db_net_map_[db_net];
+  GRoute segments = routes_[db_net];
+  int driver = -1;
+  std::vector<Pin> pins = net->getPins();
+  for (int p = 0; p < pins.size(); p++) {
+    Pin& pin = pins[p];
+    if (pin.isDriver()) {
+      driver = p;
+    }
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
       if (segmentCoversPin(seg, pin)) {
@@ -2318,6 +2329,10 @@ void GlobalRouter::netIsCovered(Net* net, const GRoute& segments)
                      net->getName());
     }
   }
+  if (driver == -1) {
+    logger_->error(GRT, 266, "Net {} has no driver pin.", net->getName());
+  }
+  return driver;
 }
 
 // Checks if segment is a line, i.e. only varies in one dimension
