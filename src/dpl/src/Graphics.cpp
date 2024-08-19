@@ -81,9 +81,9 @@ void Graphics::binSearch(const Cell* cell,
   }
   Rect core = dp_->grid_->getCore();
   int xl_dbu = core.xMin() + gridToDbu(xl, dp_->grid_->getSiteWidth()).v;
-  int yl_dbu = core.yMin() + gridToDbu(yl, dp_->grid_->getRowHeight(cell)).v;
+  int yl_dbu = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
   int xh_dbu = core.xMin() + gridToDbu(xh, dp_->grid_->getSiteWidth()).v;
-  int yh_dbu = core.yMin() + gridToDbu(yh, dp_->grid_->getRowHeight(cell)).v;
+  int yh_dbu = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
   searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
 
@@ -107,7 +107,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
     // Compare the squared distances to save calling sqrt
-    float min_length = min_displacement_ * dp_->grid_->getRowHeight(&cell).v;
+    float min_length = min_displacement_ * dp_->grid_->gridHeight(&cell).v;
     min_length *= min_length;
     DbuX lx{core.xMin() + cell.x_};
     DbuY ly{core.yMin() + cell.y_};
