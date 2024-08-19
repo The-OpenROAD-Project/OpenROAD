@@ -4116,8 +4116,7 @@ void GlobalRouter::reportCongestion()
       "/ Total Overflow");
   logger_->report(
       "----------------------------------------------------------------------"
-      "--"
-      "---------------");
+      "-----------------");
 
   for (size_t l = 0; l < resources.size(); l++) {
     float usage_percentage;
@@ -4151,8 +4150,7 @@ void GlobalRouter::reportCongestion()
                           : (float) total_demand / (float) total_resource * 100;
   logger_->report(
       "----------------------------------------------------------------------"
-      "--"
-      "---------------");
+      "-----------------");
   logger_->report(
       "Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
       "{:2}",
