@@ -308,6 +308,10 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
+  if (!block_) {
+    logger_->error(utl::GUI, 104, "No database has been loaded");
+  }
+
   // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
   QString filename = QFileDialog::getOpenFileName(
       this,
