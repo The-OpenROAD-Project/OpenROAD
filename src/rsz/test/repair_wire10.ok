@@ -39,6 +39,10 @@ Driver    length delay
 u2/Z manhtn 1998.2 steiner 1998.2 0.00
 u3/Z manhtn 1.3 steiner 1.3 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
+Net n1
+Net net1
+Net n2
+Net net2
 [INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 2 long wires.
@@ -56,20 +60,20 @@ Path Type: max
            0.00    0.00    0.00 v u1/A (BUF_X1)
   11.19    0.01    0.04    0.04 v u1/Z (BUF_X1)
            0.01    0.00    0.04 v u2/A (BUF_X16)
-  49.90    0.01    0.03    0.07 v u2/Z (BUF_X16)
-           0.05    0.04    0.11 v wire2/A (BUF_X1)
-   0.88    0.01    0.04    0.15 v wire2/Z (BUF_X1)
-           0.01    0.00    0.15 v wire1/A (BUF_X1)
-   0.88    0.00    0.02    0.18 v wire1/Z (BUF_X1)
-           0.00    0.00    0.18 v u3/A (BUF_X1)
-   0.24    0.00    0.02    0.20 v u3/Z (BUF_X1)
-           0.00    0.00    0.20 v out1 (out)
-                           0.20   data arrival time
+  52.03    0.01    0.03    0.07 v u2/Z (BUF_X16)
+           0.06    0.05    0.11 v wire2/A (BUF_X4)
+  50.21    0.01    0.05    0.16 v wire2/Z (BUF_X4)
+           0.06    0.05    0.21 v wire1/A (BUF_X8)
+  58.05    0.01    0.05    0.26 v wire1/Z (BUF_X8)
+           0.07    0.06    0.32 v u3/A (BUF_X1)
+   0.24    0.01    0.05    0.36 v u3/Z (BUF_X1)
+           0.01    0.00    0.36 v out1 (out)
+                           0.36   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-wire1/Z manhtn 759.6 steiner 759.6 0.00
+wire1/Z manhtn 758.4 steiner 758.4 0.00
 u2/Z manhtn 647.6 steiner 647.6 0.00
-wire2/Z manhtn 587.8 steiner 587.8 0.00
+wire2/Z manhtn 587.4 steiner 587.4 0.00
