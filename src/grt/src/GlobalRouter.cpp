@@ -627,8 +627,6 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
   GRoute segments = routes_[db_net];
-  bool showme = ("_199_" == net->getName());
-  logger_->report("Net {}", db_net->getName());
   int total_segments = segments.size();
   std::vector<Pin> pins = net->getPins();
 
@@ -691,9 +689,6 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
   for (int deleted : segments_to_delete) {
     net->deleteSegment(deleted - total_deleted_segments++, routes_[db_net]);
   }
-
-  if (showme)
-    logger_->report("Ping5");
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
