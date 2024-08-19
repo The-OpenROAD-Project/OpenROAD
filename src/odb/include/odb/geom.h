@@ -935,6 +935,16 @@ inline bool Polygon::operator<(const Polygon& p) const
   return points_ < p.points_;
 }
 
+// Returns the manhattan distance from Point p to Rect r
+inline int manhattanDistance(const Rect& r, const Point& p)
+{
+  const int x = p.getX();
+  const int y = p.getY();
+  const int dx = std::abs(x - std::clamp(x, r.xMin(), r.xMax()));
+  const int dy = std::abs(y - std::clamp(y, r.yMin(), r.yMax()));
+  return dx + dy;
+}
+
 #ifndef SWIG
 using utl::format_as;
 #endif

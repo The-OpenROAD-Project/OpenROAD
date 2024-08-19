@@ -283,24 +283,39 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         }
 
         if (geom->isVia()) {
-          continue;
+          for (const auto& [layer, shapes] : pin_shapes) {
+            std::vector<odb::Rect> via_rects;
+            shapes.get_rectangles(via_rects);
+            for (const auto& pin_shape : via_rects) {
+              has_routing_term = true;
+
+              // create iterm nodes
+              auto center = std::make_unique<TerminalNode>(pin_shape, layer);
+              terminals.push_back(center.get());
+
+              connections_.push_back(std::make_unique<TermConnection>(
+                  base_node.get(), center.get()));
+
+              nodes_[layer].push_back(std::move(center));
+            }
+          }
+        } else {
+          auto* layer = geom->getTechLayer();
+
+          has_routing_term = true;
+
+          odb::Rect pin_shape = geom->getBox();
+          transform.apply(pin_shape);
+
+          // create iterm nodes
+          auto center = std::make_unique<TerminalNode>(pin_shape, layer);
+          terminals.push_back(center.get());
+
+          connections_.push_back(
+              std::make_unique<TermConnection>(base_node.get(), center.get()));
+
+          nodes_[layer].push_back(std::move(center));
         }
-
-        auto* layer = geom->getTechLayer();
-
-        has_routing_term = true;
-
-        odb::Rect pin_shape = geom->getBox();
-        transform.apply(pin_shape);
-
-        // create iterm nodes
-        auto center = std::make_unique<TerminalNode>(pin_shape, layer);
-        terminals.push_back(center.get());
-
-        connections_.push_back(
-            std::make_unique<TermConnection>(base_node.get(), center.get()));
-
-        nodes_[layer].push_back(std::move(center));
       }
     }
 
