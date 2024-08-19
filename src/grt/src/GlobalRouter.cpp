@@ -961,7 +961,6 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
     utl::shuffle(nets.begin(), nets.end(), g);
   }
-  // Bookmark
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
