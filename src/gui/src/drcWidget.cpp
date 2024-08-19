@@ -647,7 +647,7 @@ void DRCWidget::loadTRReport(const QString& filename)
       std::string item_type = single_source.substr(0, ident);
       std::string item_name = single_source.substr(ident + 1);
 
-      std::any item = nullptr;
+      std::any item;
 
       if (item_type == "net") {
         odb::dbNet* net = block_->findNet(item_name.c_str());

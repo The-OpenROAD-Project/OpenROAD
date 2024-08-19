@@ -20,12 +20,14 @@ record_tests {
   assign_bumps_two_pins
 
   connect_by_abutment
+  connect_by_abutment_with_single_pinnet
 
   rdl_route
   rdl_route_failed
   rdl_route_assignments
   rdl_route_45
   rdl_route_45_cost
+  rdl_route_45_separate
   rdl_route_via
   rdl_route_bump_via
 

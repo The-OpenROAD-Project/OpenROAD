@@ -1193,6 +1193,26 @@ std::set<odb::dbNet*> ICeWall::connectByAbutment(
   std::set<odb::dbNet*> special_nets;
   bool changed = false;
   int iter = 0;
+
+  // remove nets with a single iterm/bterm connection
+  for (const auto& [iterm0, iterm1] : connections) {
+    auto* net0 = iterm0->getNet();
+    if (net0 != nullptr) {
+      const int connections = net0->getITermCount() + net0->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net0);
+      }
+    }
+
+    auto* net1 = iterm1->getNet();
+    if (net1 != nullptr) {
+      const int connections = net1->getITermCount() + net1->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net1);
+      }
+    }
+  }
+
   do {
     changed = false;
     debugPrint(logger_,
