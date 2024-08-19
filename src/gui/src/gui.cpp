@@ -287,10 +287,11 @@ Selected Gui::makeSelected(const std::any& object)
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
   }
-  logger_->warn(utl::GUI,
-                33,
-                "No descriptor is registered for {}.",
-                object.type().name());
+  char* type_name
+      = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
+  logger_->warn(
+      utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
+  free(type_name);
   return Selected();  // FIXME: null descriptor
 }
 
