@@ -40,7 +40,11 @@
 namespace grt {
 
 Net::Net(odb::dbNet* net, bool has_wires)
-    : net_(net), slack_(0), has_wires_(has_wires)
+    : net_(net),
+      slack_(0),
+      has_wires_(has_wires),
+      merged_net_(false),
+      is_dirty_net_(false)
 {
 }
 
@@ -153,22 +157,6 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
   }
 
   return true;
-}
-
-odb::Rect Net::computeBBox()
-{
-  int llx = std::numeric_limits<int>::max();
-  int lly = std::numeric_limits<int>::max();
-  int urx = std::numeric_limits<int>::min();
-  int ury = std::numeric_limits<int>::min();
-  for (const Pin& pin : pins_) {
-    const odb::Point& pos_on_grid = pin.getOnGridPosition();
-    llx = std::min(pos_on_grid.getX(), llx);
-    lly = std::min(pos_on_grid.getY(), lly);
-    urx = std::max(pos_on_grid.getX(), urx);
-    ury = std::max(pos_on_grid.getY(), ury);
-  }
-  return odb::Rect(llx, lly, urx, ury);
 }
 
 }  // namespace grt
