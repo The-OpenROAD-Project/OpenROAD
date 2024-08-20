@@ -9,6 +9,4 @@ Instance u1/r1
  Output pins:
   Q output r1q
   QN output (unconnected)
-Differences found at line 14.
- wire \u1/r1q ;
-
+No differences found.
