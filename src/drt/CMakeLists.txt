@@ -116,7 +116,7 @@ target_sources(drt
     src/frRegionQuery.cpp
     src/io/io_pin.cpp
     src/io/io.cpp
-    src/io/io_guide.cpp
+    src/io/GuideProcessor.cpp
     src/io/io_parser_helper.cpp
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp

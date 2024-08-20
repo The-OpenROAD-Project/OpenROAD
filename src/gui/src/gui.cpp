@@ -287,10 +287,11 @@ Selected Gui::makeSelected(const std::any& object)
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
   }
-  logger_->warn(utl::GUI,
-                33,
-                "No descriptor is registered for {}.",
-                object.type().name());
+  char* type_name
+      = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
+  logger_->warn(
+      utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
+  free(type_name);
   return Selected();  // FIXME: null descriptor
 }
 
@@ -1269,6 +1270,23 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_->registerHeatMap();
 }
 
+class SafeApplication : public QApplication
+{
+ public:
+  using QApplication::QApplication;
+
+  bool notify(QObject* receiver, QEvent* event) override
+  {
+    try {
+      return QApplication::notify(receiver, event);
+    } catch (std::exception& ex) {
+      // Ignored here as the message will be logged in the GUI
+    }
+
+    return false;
+  }
+};
+
 //////////////////////////////////////////////////
 
 // This is the main entry point to start the GUI.  It only
@@ -1283,7 +1301,7 @@ int startGui(int& argc,
   // ensure continue after close is false
   gui->clearContinueAfterClose();
 
-  QApplication app(argc, argv);
+  SafeApplication app(argc, argv);
   application = &app;
 
   // Default to 12 point for easier reading
