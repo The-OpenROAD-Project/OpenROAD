@@ -219,6 +219,132 @@ void io::Parser::initDefaultVias()
   }
 }
 
+namespace {
+std::pair<frCoord, frCoord> getBloatingDist(frTechObject* tech,
+                                            const frVia& via,
+                                            bool above)
+{
+  auto cut_layer = tech->getLayer(via.getViaDef()->getCutLayerNum());
+  auto enc_box = above ? via.getLayer2BBox() : via.getLayer1BBox();
+  auto cut_box = via.getCutBBox();
+  frCoord horz_overhang = 0;
+  frCoord vert_overhang = 0;
+  horz_overhang = std::min(enc_box.xMax() - cut_box.xMax(),
+                           cut_box.xMin() - enc_box.xMin());
+  vert_overhang = std::min(enc_box.yMax() - cut_box.yMax(),
+                           cut_box.yMin() - enc_box.yMin());
+  bool eol_is_horz = enc_box.dx() < enc_box.dy();
+  for (auto con : cut_layer->getLef58EnclosureConstraints(
+           via.getViaDef()->getCutClassIdx(), 0, above, true)) {
+    if (!con->isEolOnly()) {
+      break;
+    }
+    if ((eol_is_horz ? enc_box.dx() : enc_box.dy()) > con->getEolLength()) {
+      continue;
+    }
+    std::pair<frCoord, frCoord> bloats;
+    if (eol_is_horz) {
+      bloats = {std::max(0, con->getFirstOverhang() - vert_overhang),
+                std::max(0, con->getSecondOverhang() - horz_overhang)};
+    } else {
+      bloats = {std::max(0, con->getSecondOverhang() - vert_overhang),
+                std::max(0, con->getFirstOverhang() - horz_overhang)};
+    }
+    return bloats;
+  }
+  return std::make_pair(0, 0);
+}
+
+}  // namespace
+
+void io::Parser::initSecondaryVias()
+{
+  for (auto layerNum = design_->getTech()->getBottomLayerNum();
+       layerNum <= design_->getTech()->getTopLayerNum();
+       ++layerNum) {
+    auto layer = design_->getTech()->getLayer(layerNum);
+    if (layer->getType() != dbTechLayerType::CUT) {
+      continue;
+    }
+    const auto default_viadef = layer->getDefaultViaDef();
+    const bool has_default_viadef = default_viadef != nullptr;
+    const bool has_max_spacing_constraints
+        = layer->hasLef58MaxSpacingConstraints();
+    if (!has_default_viadef || !has_max_spacing_constraints) {
+      continue;
+    }
+    std::set<frViaDef*> viadefs = layer->getViaDefs();
+    if (!viadefs.empty()) {
+      std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts_to_viadefs;
+      for (auto& viadef : viadefs) {
+        int cut_num = int(viadef->getCutFigs().size());
+        viaRawPriorityTuple priority;
+        getViaRawPriority(viadef, priority);
+        cuts_to_viadefs[cut_num][priority] = viadef;
+      }
+      for (auto [cuts, viadefs] : cuts_to_viadefs) {
+        for (auto [priority, viadef] : viadefs) {
+          if (viadef->getCutClassIdx() == default_viadef->getCutClassIdx()) {
+            continue;
+          }
+          frVia secondary_via(viadef);
+          auto layer1_bloats = getBloatingDist(tech_, secondary_via, false);
+          auto layer2_bloats = getBloatingDist(tech_, secondary_via, true);
+          int dx = secondary_via.getCutBBox().xCenter();
+          int dy = secondary_via.getCutBBox().yCenter();
+          if (layer1_bloats != std::pair<int, int>(0, 0)
+              || layer2_bloats != std::pair<int, int>(0, 0) || dx != 0
+              || dy != 0) {
+            std::string viadef_name = viadef->getName() + "_FR";
+            std::unique_ptr<frShape> u_botfig = std::make_unique<frRect>();
+            auto botfig = static_cast<frRect*>(u_botfig.get());
+            std::unique_ptr<frShape> u_topfig = std::make_unique<frRect>();
+            auto topfig = static_cast<frRect*>(u_topfig.get());
+            Rect layer1_box = secondary_via.getLayer1BBox();
+            Rect layer2_box = secondary_via.getLayer2BBox();
+            layer1_box = layer1_box.bloat(layer1_bloats.first,
+                                          odb::Orientation2D::Vertical);
+            layer1_box = layer1_box.bloat(layer1_bloats.second,
+                                          odb::Orientation2D::Horizontal);
+            layer2_box = layer2_box.bloat(layer2_bloats.first,
+                                          odb::Orientation2D::Vertical);
+            layer2_box = layer2_box.bloat(layer2_bloats.second,
+                                          odb::Orientation2D::Horizontal);
+            layer1_box.moveDelta(-dx, -dy);
+            layer2_box.moveDelta(-dx, -dy);
+            frLayerNum layer1Num = viadef->getLayer1Num();
+            frLayerNum layer2Num = viadef->getLayer2Num();
+            botfig->setBBox(layer1_box);
+            topfig->setBBox(layer2_box);
+            botfig->setLayerNum(layer1Num);
+            topfig->setLayerNum(layer2Num);
+            // cut layer shape
+            std::unique_ptr<frShape> u_cutfig = std::make_unique<frRect>();
+            auto cutfig = static_cast<frRect*>(u_cutfig.get());
+            Rect cut_box = secondary_via.getCutBBox();
+            cut_box.moveDelta(-dx, -dy);
+            cutfig->setBBox(cut_box);
+            cutfig->setLayerNum(viadef->getCutLayerNum());
+
+            // create via
+            auto new_viadef = std::make_unique<frViaDef>(viadef_name);
+            new_viadef->addLayer1Fig(std::move(u_botfig));
+            new_viadef->addLayer2Fig(std::move(u_topfig));
+            new_viadef->addCutFig(std::move(u_cutfig));
+            new_viadef->setAddedByRouter(true);
+            auto vdf_ptr = tech_->addVia(std::move(new_viadef));
+            if (vdf_ptr != nullptr) {
+              layer->addSecondaryViaDef(vdf_ptr);
+            }
+          } else {
+            layer->addSecondaryViaDef(viadef);
+          }
+        }
+      }
+    }
+  }
+}
+
 // initialize secondLayerNum for rules that apply, reset the samenet rule if
 // corresponding diffnet rule does not exist
 void io::Parser::initConstraintLayerIdx()
@@ -815,60 +941,6 @@ void io::Parser::postProcess()
   design_->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
-void io::Parser::postProcessGuide()
-{
-  if (tmpGuides_.empty()) {
-    return;
-  }
-  ProfileTask profile("IO:postProcessGuide");
-  if (VERBOSE > 0) {
-    logger_->info(DRT, 169, "Post process guides.");
-  }
-  buildGCellPatterns(db_);
-
-  design_->getRegionQuery()->initOrigGuide(tmpGuides_);
-  int cnt = 0;
-  for (auto& [net, rects] : tmpGuides_) {
-    net->setOrigGuides(rects);
-    genGuides(net, rects);
-    cnt++;
-    if (VERBOSE > 0) {
-      if (cnt < 1000000) {
-        if (cnt % 100000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
-        }
-      } else {
-        if (cnt % 1000000 == 0) {
-          logger_->report("  complete {} nets.", cnt);
-        }
-      }
-    }
-  }
-
-  // global unique id for guides
-  int currId = 0;
-  for (auto& net : design_->getTopBlock()->getNets()) {
-    for (auto& guide : net->getGuides()) {
-      guide->setId(currId);
-      currId++;
-    }
-  }
-
-  logger_->info(DRT, 178, "Init guide query.");
-  design_->getRegionQuery()->initGuide();
-  design_->getRegionQuery()->printGuide();
-  logger_->info(DRT, 179, "Init gr pin query.");
-  design_->getRegionQuery()->initGRPin(tmpGRPins_);
-
-  if (!SAVE_GUIDE_UPDATES) {
-    if (VERBOSE > 0) {
-      logger_->info(DRT, 245, "skipped writing guide updates to database.");
-    }
-  } else {
-    saveGuidesUpdates();
-  }
-}
-
 // instantiate RPin and region query for RPin
 void io::Parser::initRPin()
 {
@@ -943,239 +1015,4 @@ void io::Parser::initRPin_rq()
 {
   design_->getRegionQuery()->initRPin();
 }
-
-void io::Parser::buildGCellPatterns_helper(frCoord& GCELLGRIDX,
-                                           frCoord& GCELLGRIDY,
-                                           frCoord& GCELLOFFSETX,
-                                           frCoord& GCELLOFFSETY)
-{
-  buildGCellPatterns_getWidth(GCELLGRIDX, GCELLGRIDY);
-  buildGCellPatterns_getOffset(
-      GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
-}
-
-void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
-                                             frCoord& GCELLGRIDY)
-{
-  std::map<frCoord, int> guideGridXMap, guideGridYMap;
-  // get GCell size information loop
-  for (auto& [netName, rects] : tmpGuides_) {
-    for (auto& rect : rects) {
-      frLayerNum layerNum = rect.getLayerNum();
-      Rect guideBBox = rect.getBBox();
-      frCoord guideWidth
-          = (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
-                ? guideBBox.dy()
-                : guideBBox.dx();
-      if (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-        if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
-          guideGridYMap[guideWidth] = 0;
-        }
-        guideGridYMap[guideWidth]++;
-      } else if (tech_->getLayer(layerNum)->getDir()
-                 == dbTechLayerDir::VERTICAL) {
-        if (guideGridXMap.find(guideWidth) == guideGridXMap.end()) {
-          guideGridXMap[guideWidth] = 0;
-        }
-        guideGridXMap[guideWidth]++;
-      }
-    }
-  }
-  frCoord tmpGCELLGRIDX = -1, tmpGCELLGRIDY = -1;
-  int tmpGCELLGRIDXCnt = -1, tmpGCELLGRIDYCnt = -1;
-  for (const auto [coord, cnt] : guideGridXMap) {
-    if (cnt > tmpGCELLGRIDXCnt) {
-      tmpGCELLGRIDXCnt = cnt;
-      tmpGCELLGRIDX = coord;
-    }
-  }
-  for (const auto [coord, cnt] : guideGridYMap) {
-    if (cnt > tmpGCELLGRIDYCnt) {
-      tmpGCELLGRIDYCnt = cnt;
-      tmpGCELLGRIDY = coord;
-    }
-  }
-  if (tmpGCELLGRIDX != -1) {
-    GCELLGRIDX = tmpGCELLGRIDX;
-  } else {
-    logger_->error(DRT, 170, "No GCELLGRIDX.");
-  }
-  if (tmpGCELLGRIDY != -1) {
-    GCELLGRIDY = tmpGCELLGRIDY;
-  } else {
-    logger_->error(DRT, 171, "No GCELLGRIDY.");
-  }
-}
-
-void io::Parser::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
-                                              frCoord GCELLGRIDY,
-                                              frCoord& GCELLOFFSETX,
-                                              frCoord& GCELLOFFSETY)
-{
-  std::map<frCoord, int> guideOffsetXMap, guideOffsetYMap;
-  // get GCell offset information loop
-  for (auto& [netName, rects] : tmpGuides_) {
-    for (auto& rect : rects) {
-      // frLayerNum layerNum = rect.getLayerNum();
-      Rect guideBBox = rect.getBBox();
-      frCoord guideXOffset = guideBBox.xMin() % GCELLGRIDX;
-      frCoord guideYOffset = guideBBox.yMin() % GCELLGRIDY;
-      if (guideXOffset < 0) {
-        guideXOffset = GCELLGRIDX - guideXOffset;
-      }
-      if (guideYOffset < 0) {
-        guideYOffset = GCELLGRIDY - guideYOffset;
-      }
-      if (guideOffsetXMap.find(guideXOffset) == guideOffsetXMap.end()) {
-        guideOffsetXMap[guideXOffset] = 0;
-      }
-      guideOffsetXMap[guideXOffset]++;
-      if (guideOffsetYMap.find(guideYOffset) == guideOffsetYMap.end()) {
-        guideOffsetYMap[guideYOffset] = 0;
-      }
-      guideOffsetYMap[guideYOffset]++;
-    }
-  }
-  frCoord tmpGCELLOFFSETX = -1, tmpGCELLOFFSETY = -1;
-  int tmpGCELLOFFSETXCnt = -1, tmpGCELLOFFSETYCnt = -1;
-  for (const auto [coord, cnt] : guideOffsetXMap) {
-    if (cnt > tmpGCELLOFFSETXCnt) {
-      tmpGCELLOFFSETXCnt = cnt;
-      tmpGCELLOFFSETX = coord;
-    }
-  }
-  for (const auto [coord, cnt] : guideOffsetYMap) {
-    if (cnt > tmpGCELLOFFSETYCnt) {
-      tmpGCELLOFFSETYCnt = cnt;
-      tmpGCELLOFFSETY = coord;
-    }
-  }
-  if (tmpGCELLOFFSETX != -1) {
-    GCELLOFFSETX = tmpGCELLOFFSETX;
-  } else {
-    logger_->error(DRT, 172, "No GCELLGRIDX.");
-  }
-  if (tmpGCELLOFFSETY != -1) {
-    GCELLOFFSETY = tmpGCELLOFFSETY;
-  } else {
-    logger_->error(DRT, 173, "No GCELLGRIDY.");
-  }
-}
-
-void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
-{
-  // horizontal = false is gcell lines along y direction (x-grid)
-  frGCellPattern xgp, ygp;
-  frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
-  auto gcellGrid = db->getChip()->getBlock()->getGCellGrid();
-  if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
-      && gcellGrid->getNumGridPatternsY() == 1) {
-    frCoord COUNTX, COUNTY;
-    gcellGrid->getGridPatternX(0, GCELLOFFSETX, COUNTX, GCELLGRIDX);
-    gcellGrid->getGridPatternY(0, GCELLOFFSETY, COUNTY, GCELLGRIDY);
-    xgp.setStartCoord(GCELLOFFSETX);
-    xgp.setSpacing(GCELLGRIDX);
-    xgp.setCount(COUNTX);
-    xgp.setHorizontal(false);
-
-    ygp.setStartCoord(GCELLOFFSETY);
-    ygp.setSpacing(GCELLGRIDY);
-    ygp.setCount(COUNTY);
-    ygp.setHorizontal(true);
-
-  } else {
-    Rect dieBox = design_->getTopBlock()->getDieBox();
-    buildGCellPatterns_helper(
-        GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
-    xgp.setHorizontal(false);
-    // find first coord >= dieBox.xMin()
-    frCoord startCoordX
-        = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
-          + GCELLOFFSETX;
-    if (startCoordX > dieBox.xMin()) {
-      startCoordX -= (frCoord) GCELLGRIDX;
-    }
-    xgp.setStartCoord(startCoordX);
-    xgp.setSpacing(GCELLGRIDX);
-    if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
-      logger_->error(DRT, 174, "GCell cnt x < 1.");
-    }
-    xgp.setCount((dieBox.xMax() - (frCoord) startCoordX)
-                 / (frCoord) GCELLGRIDX);
-
-    ygp.setHorizontal(true);
-    // find first coord >= dieBox.yMin()
-    frCoord startCoordY
-        = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
-          + GCELLOFFSETY;
-    if (startCoordY > dieBox.yMin()) {
-      startCoordY -= (frCoord) GCELLGRIDY;
-    }
-    ygp.setStartCoord(startCoordY);
-    ygp.setSpacing(GCELLGRIDY);
-    if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
-      logger_->error(DRT, 175, "GCell cnt y < 1.");
-    }
-    ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
-  }
-
-  if (VERBOSE > 0 || logger_->debugCheck(DRT, "autotuner", 1)) {
-    logger_->info(DRT,
-                  176,
-                  "GCELLGRID X {} DO {} STEP {} ;",
-                  xgp.getStartCoord(),
-                  xgp.getCount(),
-                  xgp.getSpacing());
-    logger_->info(DRT,
-                  177,
-                  "GCELLGRID Y {} DO {} STEP {} ;",
-                  ygp.getStartCoord(),
-                  ygp.getCount(),
-                  ygp.getSpacing());
-  }
-
-  design_->getTopBlock()->setGCellPatterns({xgp, ygp});
-}
-
-void io::Parser::saveGuidesUpdates()
-{
-  auto block = db_->getChip()->getBlock();
-  auto dbTech = db_->getTech();
-  for (auto& net : design_->topBlock_->getNets()) {
-    auto dbNet = block->findNet(net->getName().c_str());
-    dbNet->clearGuides();
-    for (auto& guide : net->getGuides()) {
-      auto [bp, ep] = guide->getPoints();
-      Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-      Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-      Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
-      Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
-      frLayerNum bNum = guide->getBeginLayerNum();
-      frLayerNum eNum = guide->getEndLayerNum();
-      if (bNum != eNum) {
-        for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
-             lNum += 2) {
-          auto layer = tech_->getLayer(lNum);
-          auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(
-              dbNet,
-              dbLayer,
-              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
-        }
-      } else {
-        auto layerName = tech_->getLayer(bNum)->getName();
-        auto dbLayer = dbTech->findLayer(layerName.c_str());
-        odb::dbGuide::create(
-            dbNet,
-            dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
-      }
-    }
-    auto dbGuides = dbNet->getGuides();
-    if (dbGuides.orderReversed() && dbGuides.reversible()) {
-      dbGuides.reverse();
-    }
-  }
-}
-
 }  // namespace drt

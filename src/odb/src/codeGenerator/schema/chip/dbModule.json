@@ -1,6 +1,7 @@
 {
     "name":"dbModule",
     "type":"dbObject",
+    "needs_non_default_destructor" : "true",    
     "fields":[
 	{
 	    "name":"_name",
@@ -39,11 +40,11 @@
 	{
 	    "name":"_modbterms",
 	    "type":"dbId<_dbModBTerm>",
-	    "flags":["no-set","no-get"],
+	    "flags":["no-set","no-get"],            
 	    "schema":"db_schema_update_hierarchy"	    	    	    
 	}
     ],
-    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h"],
+    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h"],
     "h_includes": [
 	"dbVector.h",
 	"odb/dbSet.h"

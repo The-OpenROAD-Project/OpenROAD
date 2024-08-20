@@ -37,6 +37,7 @@
 #include "FastRoute.h"
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 
 #include "AbstractFastRouteRenderer.h"
@@ -284,17 +285,31 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
+void FastRouteCore::deleteNet(odb::dbNet* db_net)
+{
+  const int net_id = db_net_id_map_[db_net];
+  FrNet* delete_net = nets_[net_id];
+  nets_[net_id] = nullptr;
+  delete delete_net;
+  db_net_id_map_.erase(db_net);
+}
+
 void FastRouteCore::removeNet(odb::dbNet* db_net)
 {
-  // TODO The deleted flag is a temporary solution. Correctly delete the
-  // FrNet and update the nets list
   if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
-    int netID = db_net_id_map_[db_net];
-    clearNetRoute(netID);
-    FrNet* delete_net = nets_[netID];
-    nets_[netID] = nullptr;
-    delete delete_net;
-    db_net_id_map_.erase(db_net);
+    const int net_id = db_net_id_map_[db_net];
+    clearNetRoute(net_id);
+    deleteNet(db_net);
+  }
+}
+
+void FastRouteCore::mergeNet(odb::dbNet* db_net)
+{
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    const int net_id = db_net_id_map_[db_net];
+    sttrees_[net_id].nodes.clear();
+    sttrees_[net_id].edges.clear();
+    deleteNet(db_net);
   }
 }
 
@@ -384,7 +399,7 @@ void FastRouteCore::addAdjustment(int x1,
                                   int x2,
                                   int y2,
                                   int layer,
-                                  int reducedCap,
+                                  uint16_t reducedCap,
                                   bool isReduce)
 {
   const int k = layer - 1;
@@ -414,7 +429,11 @@ void FastRouteCore::addAdjustment(int x1,
       const int increase = reducedCap - cap;
       if (x1 < x_grid_ - 1) {
         h_edges_[y1][x1].cap += increase;
+        int new_red = h_edges_[y1][x1].red - increase;
+        h_edges_[y1][x1].red = std::max(new_red, 0);
       }
+      int new_red_3D = h_edges_3D_[k][y1][x1].red - increase;
+      h_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
@@ -448,7 +467,11 @@ void FastRouteCore::addAdjustment(int x1,
       int increase = reducedCap - cap;
       if (y1 < y_grid_ - 1) {
         v_edges_[y1][x1].cap += increase;
+        int new_red = v_edges_[y1][x1].red - increase;
+        v_edges_[y1][x1].red = std::max(new_red, 0);
       }
+      int new_red_3D = v_edges_3D_[k][y1][x1].red - increase;
+      v_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }
@@ -570,10 +593,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
@@ -581,6 +606,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
+
   // Calculate reduce for horizontal tiles
   for (const auto& [tile, intervals] : horizontal_blocked_intervals_) {
     int x = std::get<0>(tile);
@@ -589,10 +615,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)

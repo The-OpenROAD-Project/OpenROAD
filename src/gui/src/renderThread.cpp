@@ -577,15 +577,17 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
 
     if (show_blockages) {
       painter->setBrush(color.lighter());
-      for (const auto& box : boxes->obs) {
-        painter->drawRect(box);
+      for (const auto& poly : boxes->obs) {
+        painter->drawPolygon(poly);
       }
     }
 
     if (show_pins) {
       painter->setBrush(QBrush(color, brush_pattern));
-      for (const auto& box : boxes->mterms) {
-        painter->drawRect(box);
+      for (const auto& [mterm, polys] : boxes->mterms) {
+        for (const auto& poly : polys) {
+          painter->drawPolygon(poly);
+        }
       }
     }
   }
@@ -979,10 +981,11 @@ void RenderThread::drawLayer(QPainter* painter,
         if (!viewer_->isNetVisible(net)) {
           continue;
         }
-        const int size = poly.outer().size();
-        QPolygon qpoly(size);
-        for (int i = 0; i < size; i++) {
-          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+        const auto& points = poly.getPoints();
+        QPolygon qpoly(points.size());
+        for (int i = 0; i < points.size(); i++) {
+          const auto& pt = points[i];
+          qpoly.setPoint(i, pt.x(), pt.y());
         }
         painter->drawPolygon(qpoly);
       }

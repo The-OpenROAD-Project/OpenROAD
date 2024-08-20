@@ -1547,21 +1547,6 @@ void dbInst::destroy(dbInst* inst_)
                              inst->_name);
   }
 
-  dbRegion* region = inst_->getRegion();
-
-  if (region) {
-    region->removeInst(inst_);
-  }
-
-  dbModule* module = inst_->getModule();
-  if (module) {
-    ((_dbModule*) module)->removeInst(inst_);
-  }
-
-  if (inst->_group) {
-    inst_->getGroup()->removeInst(inst_);
-  }
-
   uint i;
   uint n = inst->_iterms.size();
 
@@ -1606,12 +1591,31 @@ void dbInst::destroy(dbInst* inst_)
     block->_journal->pushParam(master->getId());
     block->_journal->pushParam(inst_->getName().c_str());
     block->_journal->pushParam(inst_->getId());
+    uint* flags = (uint*) &inst->_flags;
+    block->_journal->pushParam(*flags);
+    block->_journal->pushParam(inst->_x);
+    block->_journal->pushParam(inst->_y);
+    block->_journal->pushParam(inst->_group);
+    block->_journal->pushParam(inst->_module);
+    block->_journal->pushParam(inst->_region);
     block->_journal->endAction();
   }
 
-  // Bugzilla #7: The notification of the the instance destruction must
-  // be done after pin manipulation is completed. The notification is
-  // now after the pin disconnection - payam 01/10/2006
+  dbRegion* region = inst_->getRegion();
+
+  if (region) {
+    region->removeInst(inst_);
+  }
+
+  dbModule* module = inst_->getModule();
+  if (module) {
+    ((_dbModule*) module)->removeInst(inst_);
+  }
+
+  if (inst->_group) {
+    inst_->getGroup()->removeInst(inst_);
+  }
+
   std::list<dbBlockCallBackObj*>::iterator cbitr;
   for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
        ++cbitr) {

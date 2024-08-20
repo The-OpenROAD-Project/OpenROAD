@@ -41,7 +41,14 @@ record_tests {
   pre_routed1
   read_segments1
   read_segments2
+  read_segments3
+  read_segments4
+  read_segments_error1
+  read_segments_error2
+  read_segments_error3
   region_adjustment
+  remove_buffers1
+  remove_buffers2
   repair_antennas1
   repair_antennas2
   repair_antennas3

@@ -39,6 +39,7 @@
 #include "odb/odb.h"
 // User Code Begin Includes
 #include "dbHashTable.h"
+#include "dbModulePortItr.h"
 // User Code End Includes
 
 namespace odb {
@@ -80,7 +81,8 @@ class _dbModule : public _dbObject
   dbId<_dbModBTerm> _modbterms;
 
   // User Code Begin Fields
-  void* _sta_cell = nullptr;
+  // custom iterator for traversing ports
+  dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj);

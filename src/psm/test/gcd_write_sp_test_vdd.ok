@@ -12,9 +12,9 @@ Corner           : default
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.10e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 2.84e-04 V
-Worstcase IR drop: 4.55e-04 V
-Percentage drop  : 0.04 %
+Average IR drop  : 3.14e-04 V
+Worstcase IR drop: 5.04e-04 V
+Percentage drop  : 0.05 %
 ######################################
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 No differences found.
