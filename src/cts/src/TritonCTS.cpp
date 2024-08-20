@@ -112,8 +112,8 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
 int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 {
   int fanout = std::numeric_limits<int>::max();
-  float fanoutTemp;
-  bool hasMaxFanout;
+  float tempFanout;
+  bool existMaxFanout;
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
@@ -134,25 +134,25 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   }
 
   openSta_->sdc()->fanoutLimit(
-      buffer_port, sta::MinMax::max(), fanoutTemp, hasMaxFanout);
-  if (hasMaxFanout) {
-    fanout = std::min(fanout, (int) fanoutTemp);
+      buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
   }
 
   openSta_->sdc()->fanoutLimit(
-      bufferCell, sta::MinMax::max(), fanoutTemp, hasMaxFanout);
-  if (hasMaxFanout) {
-    fanout = std::min(fanout, (int) fanoutTemp);
+      bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
   }
 
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
-  port->fanoutLimit(sta::MinMax::max(), fanoutTemp, hasMaxFanout);
-  if (hasMaxFanout) {
-    fanout = std::min(fanout, (int) fanoutTemp);
+  port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
   } else {
-    port->libertyLibrary()->defaultMaxFanout(fanoutTemp, hasMaxFanout);
-    if ((hasMaxFanout)) {
-      fanout = std::min(fanout, (int) fanoutTemp);
+    port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
+    if ((existMaxFanout)) {
+      fanout = std::min(fanout, (int) tempFanout);
     }
   }
   return (int) fanout;
