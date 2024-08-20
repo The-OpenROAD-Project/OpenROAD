@@ -43,7 +43,6 @@
 
 #include "fft.h"
 #include "nesterovPlace.h"
-#include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 
@@ -1299,19 +1298,25 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
     int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
 
+    //searches based on pbInst in nbc map
     GCell* gCell = nbc_->pbToNb(inst);
 
     inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
     gCell->clearInstances();
     gCell->setInstance(inst);
+    GCellState emptyState;
     gCells_.push_back(gCell);
+    newGCells_[gCell] = emptyState;
+    db_inst_map_[gCell->instance()->dbInst()] = gCell;
   }
 
   // add filler cells to gCells_, at this point gCellStor_ has only filler cells
   // instantiated at initFillerGcells()
   for (auto& gCell : gCellStor_) {
+    GCellState emptyState;
     gCells_.push_back(&gCell);
+    newGCells_[&gCell] = emptyState;
     gCellFillers_.push_back(&gCell);
   }
 
@@ -1327,6 +1332,11 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 //    }
 //  }
 
+  //TODO this should be debuglogger
+  log_->info(GPL, 555, "{:20} {:9}", "db_inst_map.size():", db_inst_map_.size());
+  log_->info(GPL, 556, "{:20} {:9}", "gCellFillers_.size():", gCellFillers_.size());
+  log_->info(GPL, 557, "{:20} {:9}", "sum =", (db_inst_map_.size()+gCellFillers_.size()) );
+  log_->info(GPL, 558, "{:20} {:9}", "FillerInit:NewGCells:", newGCells_.size());
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
   log_->info(
       GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
@@ -1913,6 +1923,8 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
                          / static_cast<float>(nesterovInstsArea());
 
+  //to change this function and the ones called by it, just iterate over gcells,
+  // and get their coordi values instead of sending the coordi vectors.
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 

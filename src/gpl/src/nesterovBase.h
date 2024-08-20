@@ -35,9 +35,12 @@
 
 #include <memory>
 #include <string>
+//#include <map>
 #include <unordered_map>
+#include <list>
 #include <vector>
 
+#include "odb/db.h"
 #include "point.h"
 
 namespace odb {
@@ -52,6 +55,7 @@ class Logger;
 }
 
 namespace gpl {
+    struct GCellState{};
 
 class Instance;
 class Die;
@@ -1021,8 +1025,10 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
+  std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
   std::vector<GCell> gCellStor_;
 
+  std::map<GCell*, GCellState> newGCells_;
   std::vector<GCell*> gCells_;
 //  std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
