@@ -358,6 +358,7 @@ static void getRegisteredCommands(
 
 static int command_track = 0;
 static bool is_enabled = false;
+bool print_out = false;
 
 // Tracing Tcl commands enter step
 static int tclCmdCommandTracingEnter(ClientData,
@@ -416,6 +417,60 @@ static int tclCmdCommandTracingLeave(ClientData,
   return TCL_OK;
 }
 
+#define TCL_TRACE_CMD 0x01 /* Tracing command execution */
+int CommandTrace(ClientData,
+                 Tcl_Interp* interp,
+                 int,
+                 const char* command,
+                 Tcl_Command,
+                 int,
+                 Tcl_Obj* const[])
+{
+  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  if (print_out) {
+    std::string log_report_str = command;
+
+    while (log_report_str.find('$') != std::string::npos) {
+      size_t startPos = log_report_str.find('$');
+
+      size_t endPos = std::string::npos;
+      size_t spacePos = log_report_str.find(' ', startPos);
+      size_t bracketPos = log_report_str.find(']', startPos);
+
+      if (spacePos != std::string::npos
+          && (spacePos < bracketPos || bracketPos == std::string::npos)) {
+        endPos = spacePos;
+      } else if (bracketPos != std::string::npos) {
+        endPos = bracketPos;
+      }
+      std::string command_to_eval;
+      if (endPos == std::string::npos) {
+        command_to_eval = log_report_str.substr(startPos + 1);
+      } else {
+        command_to_eval
+            = log_report_str.substr(startPos + 1, endPos - startPos - 1);
+      }
+      const char* value
+          = Tcl_GetVar(interp, command_to_eval.c_str(), TCL_GLOBAL_ONLY);
+
+      if (value != nullptr) {
+        if (std::string(value).find("_p_") != std::string::npos)
+          break;
+        std::size_t pos = log_report_str.find(command_to_eval);
+        if (pos != std::string::npos) {
+          log_report_str.replace(pos - 1, command_to_eval.length() + 1, value);
+        }
+      } else {
+        break;
+      }
+    }
+    logger->report("OpenROAD> {}", log_report_str);
+  }
+  print_out = false;
+
+  return TCL_OK;
+}
+
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
                       char* argv[],
@@ -467,19 +522,27 @@ static int tclAppInit(int& argc,
 
     const int TCL_TRACE_LEAVE_EXEC = 2;
     const int TCL_TRACE_ENTER_DURING_EXEC = 4;
-    Tcl_CreateObjTrace(interp,
-                       0,
-                       TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_ENTER_DURING_EXEC,
-                       tclCmdCommandTracingEnter,
-                       nullptr,
-                       nullptr);
+    Tcl_CreateObjTrace(
+        interp,
+        0,
+        TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_ENTER_DURING_EXEC,
+        tclCmdCommandTracingEnter,
+        nullptr,
+        nullptr);
     Tcl_CreateObjTrace(interp,
                        0,
                        TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_LEAVE_EXEC,
                        tclCmdCommandTracingLeave,
                        nullptr,
                        nullptr);
-                       
+    Tcl_CreateObjTrace(interp,
+                       0,
+                       TCL_ALLOW_INLINE_COMPILATION | TCL_TRACE_CMD
+                           | TCL_TRACE_ENTER_DURING_EXEC,
+                       CommandTrace,
+                       nullptr,
+                       nullptr);
+
     if (!findCmdLineFlag(argc, argv, "-no_splash")) {
       showSplash();
     }
