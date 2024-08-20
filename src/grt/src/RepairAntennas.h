@@ -80,6 +80,7 @@ struct RoutePtPins
 };
 
 using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
+using SegmentByViolation = std::unordered_map<int, std::vector<GSegment*>>;
 
 class RepairAntennas
 {
@@ -100,7 +101,8 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  void getPinNumberNearEndPoint(const GSegment* seg, const std::vector<odb::dbITerm*>& gates, int& init_c, int& final_c, double& init_area, double& final_area);
+  SegmentByViolation getSegmentsWithViolation(odb::dbNet* db_net, GRoute& route, int& max_layer, std::map<int, int>& layer_with_violation);
+  void getPinNumberNearEndPoint(std::vector<GSegment*>& segments, const std::vector<odb::dbITerm*>& gates, int& init_c, int& final_c, double& init_area, double& final_area);
   void jumperInsertion(NetRouteMap& routing, const int tile_size);
   int illegalDiodePlacementCount() const
   {
