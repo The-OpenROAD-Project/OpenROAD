@@ -606,23 +606,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
                               pin.getOnGridPosition().getY(),
                               pin.getConnectionLayer()));
     }
-    logger_->report("Net {}", net->getName());
-    bool showme = ("_12548_" == db_net->getName());
-    if (showme)
-      logger_->report(
-          "Net {} of size {}", db_net->getName(), routes_[db_net].size());
-    if (showme)
-      print(routes_[db_net]);
-    if (showme)
-      logger_->report("n_pis={}", net->getNumPins());
-    if (showme) {
-      for (Pin& pin : net->getPins())
-        logger_->report("Pin {} at {} {} driver={}",
-                        pin.getName(),
-                        pin.getOnGridPosition(),
-                        pin.getConnectionLayer(),
-                        pin.isDriver());
-    }
     net->destroyPins();
     // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
@@ -631,7 +614,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos)
+    if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
     } else if (net->isMergedNet()) {
@@ -639,7 +622,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
         logger_->error(
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
-    } else if (net->getPins().size() >= 2) {
+    } else if (!newPinOnGrid(net, last_pos) && net->getPins().size() >= 2) {
       shrinkNetRoute(db_net);
     }
     net->setMergedNet(false);
@@ -651,21 +634,22 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
-  GRoute segments = routes_[db_net];
-  int total_segments = segments.size();
-  std::vector<Pin> pins = net->getPins();
+  GRoute& segments = routes_[db_net];
+  const int total_segments = segments.size();
 
   std::string dump;
-  netIsCovered(db_net, dump);
-  int root = -1;
-  int b_root = -1;
-  std::vector<bool> coversPin(total_segments, false);
+  if (!netIsCovered(db_net, dump)) {
+    logger_->error(
+        GRT, 266, "Net {} does not cover all its pins.", net->getName());
+  }
+  int root = -1, alternate_root = -1;
+  std::vector<bool> covers_pin(total_segments, false);
 
   for (int s = 0; s < total_segments; s++) {
-    for (Pin& pin : pins) {
+    for (Pin& pin : net->getPins()) {
       if (segmentCoversPin(segments[s], pin)) {
-        b_root = true;
-        coversPin[s] = true;
+        covers_pin[s] = true;
+        alternate_root = s;
         if (pin.isDriver()) {
           root = s;
         }
@@ -673,17 +657,18 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     }
   }
 
-  // if (root == -1) logger_->error(GRT, 266, "Net {} has no driver pin",
-  // net->getName());
   if (root == -1) {
-    logger_->report("Net {} is driverless", net->getName());
-    root = b_root;
+    root = alternate_root;
+    // If driverless nets issue is fixed there should be no alternate_root and
+    // this should become an Error
+    logger_->warn(GRT, 266, "Net {} has no driver pin.", net->getName());
   }
-  std::vector<std::vector<int>> graph = buildNetGraph(db_net);
+  adjacencyList graph = buildNetGraph(db_net);
 
   // Runs a BFS trough the graph
-  std::vector<uint16_t> parent(total_segments, UINT16_MAX),
-      total_children(total_segments, 0);
+  std::vector<uint16_t> parent(total_segments,
+                               std::numeric_limits<uint16_t>::max());
+  std::vector<uint16_t> total_children(total_segments, 0);
   std::queue<int> q, leafs;
   q.push(root);
   parent[root] = root;
@@ -692,7 +677,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     int node = q.front();
     q.pop();
     for (int child : graph[node]) {
-      if (parent[child] != UINT16_MAX) {
+      if (parent[child] != std::numeric_limits<uint16_t>::max()) {
         continue;
       }
       parent[child] = node;
@@ -711,7 +696,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
   while (!leafs.empty()) {
     int leaf = leafs.front();
     leafs.pop();
-    if (!coversPin[leaf]) {
+    if (!covers_pin[leaf]) {
       segments_to_delete.insert(leaf);
       if (!--total_children[parent[leaf]]) {
         leafs.push(parent[leaf]);
@@ -721,7 +706,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 
   int total_deleted_segments = 0;
   for (int deleted : segments_to_delete) {
-    net->deleteSegment(deleted - total_deleted_segments++, routes_[db_net]);
+    net->deleteSegment(deleted - total_deleted_segments++, segments);
   }
 }
 
@@ -2388,13 +2373,14 @@ bool GlobalRouter::segmentCoversPin(const GSegment& segment, const Pin& pin)
 }
 
 // Builds the Net Graph in O(N²)
-std::vector<std::vector<int>> GlobalRouter::buildNetGraph(odb::dbNet* net)
+adjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
 {
-  int total_segments = routes_[net].size();
-  std::vector<std::vector<int>> graph(total_segments, std::vector<int>());
+  const GRoute& segments = routes_[net];
+  const int total_segments = segments.size();
+  adjacencyList graph(total_segments, std::vector<int>());
   for (int i = 0; i < total_segments; i++) {
     for (int j = i - 1; j >= 0; j--) {
-      if (!segmentsConnect(routes_[net][i], routes_[net][j])) {
+      if (!segmentsConnect(segments[i], segments[j])) {
         continue;
       }
       graph[i].push_back(j);

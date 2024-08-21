@@ -43,6 +43,8 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 
+typedef uint16_t segmentIndex;
+
 namespace grt {
 
 class Net
@@ -54,18 +56,21 @@ class Net
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
-  void deleteSegment(int seg_id, GRoute& routes);
+  void deleteSegment(const int seg_id, GRoute& routes);
   std::vector<Pin>& getPins() { return pins_; }
   int getNumPins() const { return pins_.size(); }
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
   void setHasWires(bool in) { has_wires_ = in; }
-  void setSegmentParent(std::vector<uint16_t> segment_parent)
+  void setSegmentParent(std::vector<segmentIndex> segment_parent)
   {
-    segment_parent_ = std::move(segment_parent);
+    parent_segment_indices_ = std::move(segment_parent);
   }
-  std::vector<uint16_t> getSegmentParent() const { return segment_parent_; }
-  std::vector<std::vector<uint16_t>> getSegmentGraph();
+  std::vector<segmentIndex> getSegmentParent() const
+  {
+    return parent_segment_indices_;
+  }
+  std::vector<std::vector<segmentIndex>> buildSegmentsGraph();
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
@@ -82,7 +87,7 @@ class Net
   std::vector<Pin> pins_;
   float slack_;
   bool has_wires_;
-  std::vector<uint16_t> segment_parent_;
+  std::vector<segmentIndex> parent_segment_indices_;
   bool merged_net_;
   bool is_dirty_net_;
 };

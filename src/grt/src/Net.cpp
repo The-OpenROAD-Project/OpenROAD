@@ -63,14 +63,14 @@ odb::dbSigType Net::getSignalType() const
   return net_->getSigType().getString();
 }
 
-void Net::deleteSegment(int seg_id, GRoute& route)
+void Net::deleteSegment(const int seg_id, GRoute& route)
 {
-  for (uint16_t& parent : segment_parent_) {
+  for (segmentIndex& parent : parent_segment_indices_) {
     if (parent >= seg_id) {
       parent--;
     }
   }
-  segment_parent_.erase(segment_parent_.begin() + seg_id);
+  parent_segment_indices_.erase(parent_segment_indices_.begin() + seg_id);
   route.erase(route.begin() + seg_id);
 }
 
@@ -79,13 +79,13 @@ void Net::addPin(Pin& pin)
   pins_.push_back(pin);
 }
 
-std::vector<std::vector<uint16_t>> Net::getSegmentGraph()
+std::vector<std::vector<segmentIndex>> Net::buildSegmentsGraph()
 {
-  std::vector<std::vector<uint16_t>> graph(segment_parent_.size(),
-                                           std::vector<uint16_t>());
-  for (int i = 0; i < segment_parent_.size(); i++) {
-    graph[i].push_back(segment_parent_[i]);
-    graph[segment_parent_[i]].push_back(i);
+  std::vector<std::vector<segmentIndex>> graph(parent_segment_indices_.size(),
+                                               std::vector<segmentIndex>());
+  for (int i = 0; i < parent_segment_indices_.size(); i++) {
+    graph[i].push_back(parent_segment_indices_[i]);
+    graph[parent_segment_indices_[i]].push_back(i);
   }
   return graph;
 }
