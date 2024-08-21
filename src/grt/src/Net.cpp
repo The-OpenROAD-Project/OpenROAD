@@ -65,7 +65,7 @@ odb::dbSigType Net::getSignalType() const
 
 void Net::deleteSegment(const int seg_id, GRoute& route)
 {
-  for (segmentIndex& parent : parent_segment_indices_) {
+  for (SegmentIndex& parent : parent_segment_indices_) {
     if (parent >= seg_id) {
       parent--;
     }
@@ -79,10 +79,10 @@ void Net::addPin(Pin& pin)
   pins_.push_back(pin);
 }
 
-std::vector<std::vector<segmentIndex>> Net::buildSegmentsGraph()
+std::vector<std::vector<SegmentIndex>> Net::buildSegmentsGraph()
 {
-  std::vector<std::vector<segmentIndex>> graph(parent_segment_indices_.size(),
-                                               std::vector<segmentIndex>());
+  std::vector<std::vector<SegmentIndex>> graph(parent_segment_indices_.size(),
+                                               std::vector<SegmentIndex>());
   for (int i = 0; i < parent_segment_indices_.size(); i++) {
     graph[i].push_back(parent_segment_indices_[i]);
     graph[parent_segment_indices_[i]].push_back(i);

@@ -43,8 +43,6 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 
-typedef uint16_t segmentIndex;
-
 namespace grt {
 
 class Net
@@ -62,15 +60,15 @@ class Net
   float getSlack() const { return slack_; }
   void setSlack(float slack) { slack_ = slack; }
   void setHasWires(bool in) { has_wires_ = in; }
-  void setSegmentParent(std::vector<segmentIndex> segment_parent)
+  void setSegmentParent(std::vector<SegmentIndex> segment_parent)
   {
     parent_segment_indices_ = std::move(segment_parent);
   }
-  std::vector<segmentIndex> getSegmentParent() const
+  std::vector<SegmentIndex> getSegmentParent() const
   {
     return parent_segment_indices_;
   }
-  std::vector<std::vector<segmentIndex>> buildSegmentsGraph();
+  std::vector<std::vector<SegmentIndex>> buildSegmentsGraph();
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
@@ -87,7 +85,7 @@ class Net
   std::vector<Pin> pins_;
   float slack_;
   bool has_wires_;
-  std::vector<segmentIndex> parent_segment_indices_;
+  std::vector<SegmentIndex> parent_segment_indices_;
   bool merged_net_;
   bool is_dirty_net_;
 };

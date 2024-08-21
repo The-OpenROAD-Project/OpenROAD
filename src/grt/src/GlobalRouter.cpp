@@ -663,12 +663,12 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     // this should become an Error
     logger_->warn(GRT, 266, "Net {} has no driver pin.", net->getName());
   }
-  adjacencyList graph = buildNetGraph(db_net);
+  AdjacencyList graph = buildNetGraph(db_net);
 
   // Runs a BFS trough the graph
-  std::vector<uint16_t> parent(total_segments,
-                               std::numeric_limits<uint16_t>::max());
-  std::vector<uint16_t> total_children(total_segments, 0);
+  std::vector<SegmentIndex> parent(total_segments,
+                                   std::numeric_limits<SegmentIndex>::max());
+  std::vector<SegmentIndex> total_children(total_segments, 0);
   std::queue<int> q, leafs;
   q.push(root);
   parent[root] = root;
@@ -2373,11 +2373,11 @@ bool GlobalRouter::segmentCoversPin(const GSegment& segment, const Pin& pin)
 }
 
 // Builds the Net Graph in O(N²)
-adjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
+AdjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
 {
   const GRoute& segments = routes_[net];
   const int total_segments = segments.size();
-  adjacencyList graph(total_segments, std::vector<int>());
+  AdjacencyList graph(total_segments, std::vector<int>());
   for (int i = 0; i < total_segments; i++) {
     for (int j = i - 1; j >= 0; j--) {
       if (!segmentsConnect(segments[i], segments[j])) {

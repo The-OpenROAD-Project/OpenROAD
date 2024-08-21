@@ -50,7 +50,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
 
-typedef std::vector<std::vector<int>> adjacencyList;
+using AdjacencyList = std::vector<std::vector<int>>;
 
 namespace utl {
 class Logger;
@@ -193,7 +193,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
   bool segmentIsLine(const GSegment& segment);
   bool segmentCoversPin(const GSegment& segment, const Pin& pin);
-  adjacencyList buildNetGraph(odb::dbNet* net);
+  AdjacencyList buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
