@@ -202,6 +202,7 @@ class dbNetwork : public ConcreteNetwork
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
   bool isLeaf(const Instance* instance) const override;
+  Port* findPort(const Cell* cell, const char* name) const override;
   Instance* findInstance(const char* path_name) const override;
   Instance* findChild(const Instance* parent, const char* name) const override;
   InstanceChildIterator* childIterator(const Instance* instance) const override;

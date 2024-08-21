@@ -174,10 +174,8 @@ void populateScanInst(definReader* reader,
 definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db = db;
-  _block_name = nullptr;
   parent_ = nullptr;
   _continue_on_errors = false;
-  version_ = nullptr;
   hier_delimeter_ = 0;
   left_bus_delimeter_ = 0;
   right_bus_delimeter_ = 0;
@@ -239,10 +237,6 @@ definReader::~definReader()
   delete _non_default_ruleR;
   delete _prop_defsR;
   delete _pin_propsR;
-
-  if (_block_name) {
-    free((void*) _block_name);
-  }
 }
 
 int definReader::errors()
@@ -309,12 +303,7 @@ void definReader::setAssemblyMode()
 
 void definReader::useBlockName(const char* name)
 {
-  if (_block_name) {
-    free((void*) _block_name);
-  }
-
-  _block_name = strdup(name);
-  assert(_block_name);
+  _block_name = name;
 }
 
 void definReader::init()
@@ -390,7 +379,7 @@ int definReader::versionCallback(defrCallbackType_e /* unused: type */,
                                  defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->version_ = strdup(value);
+  reader->version_ = value;
   return PARSE_OK;
 }
 
@@ -426,7 +415,7 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   std::string block_name;
-  if (reader->_block_name) {
+  if (!reader->_block_name.empty()) {
     block_name = reader->_block_name;
   } else {
     block_name = design;
