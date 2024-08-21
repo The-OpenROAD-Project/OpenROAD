@@ -90,6 +90,7 @@ void RepairDesign::init()
 void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
+                                double buffer_gain,
                                 bool verbose)
 {
   init();
@@ -98,6 +99,7 @@ void RepairDesign::repairDesign(double max_wire_length,
   repairDesign(max_wire_length,
                slew_margin,
                cap_margin,
+               buffer_gain,
                verbose,
                repaired_net_count,
                slew_violations,
@@ -133,6 +135,7 @@ void RepairDesign::repairDesign(
     double max_wire_length,  // zero for none (meters)
     double slew_margin,
     double cap_margin,
+    double buffer_gain,
     bool verbose,
     int& repaired_net_count,
     int& slew_violations,
@@ -143,6 +146,8 @@ void RepairDesign::repairDesign(
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
+  buffer_gain_ = buffer_gain;
+  bool gain_buffering = (buffer_gain_ != 0.0);
 
   slew_violations = 0;
   cap_violations = 0;
@@ -153,9 +158,25 @@ void RepairDesign::repairDesign(
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
+  if (gain_buffering) {
+    // If gain-based buffering is enabled, we need to override slews in order to get
+    // good required time estimates.
+    for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+      Vertex* drvr = resizer_->level_drvr_vertices_[i];
+      for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
+        sta_->setAnnotatedSlew(drvr, resizer_->tgt_slew_corner_,
+                               sta::MinMaxAll::all(), rf->asRiseFallBoth(),
+                               resizer_->tgt_slews_[rf->index()]);
+      }
+    }
+    findBufferSizes();
+  }
+
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
+  sta_->searchPreamble();
+  search_->findAllArrivals();
 
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
@@ -183,6 +204,9 @@ void RepairDesign::repairDesign(
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     }
+    if (gain_buffering) {
+      search_->findRequireds(drvr->level() + 1);
+    }
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
@@ -203,6 +227,15 @@ void RepairDesign::repairDesign(
     }
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 0);
+    }
+
+    if (gain_buffering) {
+      for (auto mm : sta::MinMaxAll::all()->range()) {
+        for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
+          const DcalcAnalysisPt *dcalc_ap = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
+          drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
+        }
+      }
     }
   }
   resizer_->updateParasitics();
@@ -225,6 +258,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
   init();
   slew_margin_ = 0.0;
   cap_margin_ = 0.0;
+  buffer_gain_ = 0.0;
 
   // Need slews to resize inserted buffers.
   sta_->findDelays();
@@ -292,6 +326,7 @@ void RepairDesign::repairNet(Net* net,
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
+  buffer_gain_ = 0.0;
 
   int slew_violations = 0;
   int cap_violations = 0;
@@ -359,6 +394,212 @@ void RepairDesign::repairNet(Net* net,
   }
 }
 
+bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
+{
+  Instance* inst = network_->instance(drvr_pin);
+  LibertyCell* cell = network_->libertyCell(inst);
+  if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
+      && resizer_->isLogicStdCell(inst)) {
+    sta::LibertyCellPortIterator port_iter(cell);
+    int nports = 0;
+    while (port_iter.hasNext()) {
+      const LibertyPort* port = port_iter.next();
+      if (port->direction() == sta::PortDirection::input()) {
+        cin += port->capacitance();
+        nports++;
+      }
+    }
+    if (!nports) {
+      return false;
+    }
+    cin /= nports;
+    return true;
+  }
+  return false;
+}
+
+static float bufferCin(const LibertyCell *cell)
+{
+  LibertyPort *a, *y;
+  cell->bufferPorts(a, y);
+  return a->capacitance();
+}
+
+void RepairDesign::findBufferSizes()
+{
+  buffer_sizes_.clear();
+  buffer_sizes_ = resizer_->buffer_cells_;
+  std::sort(buffer_sizes_.begin(), buffer_sizes_.end(),
+            [=](LibertyCell *a, LibertyCell *b) {
+    return bufferCin(a) < bufferCin(b);
+  });
+}
+
+void RepairDesign::performGainBuffering(Net* net,
+                                        const Pin *drvr_pin,
+                                        int max_fanout)
+{
+  struct EnqueuedPin {
+    Pin *pin;
+    PathRef required_path;
+    Delay required_delay;
+    int level;
+
+    Required required(const StaState *sta) const
+    {
+      if (required_path.isNull()) {
+        return INF;
+      }
+      return required_path.required(sta) - required_delay;
+    }
+
+    std::pair<Required, int> sort_label(const StaState *sta) const
+    {
+      return std::make_tuple(required(sta), -level);
+    }
+
+    float capacitance(const Network *network)
+    {
+      return network->libertyPort(pin)->capacitance();
+    }
+  };
+
+  class PinRequiredHigher
+  {
+  private:
+    const Network *network_;
+
+  public:
+    PinRequiredHigher(const Network *network) : network_(network) {};
+
+    bool operator()(const EnqueuedPin &a, const EnqueuedPin &b) const {
+      auto la = a.sort_label(network_), lb = b.sort_label(network_);
+      if (la > lb)
+        return true;
+      else if (la < lb)
+        return false;
+      else
+        return sta::stringLess(network_->pathName(a.pin),
+                               network_->pathName(b.pin));
+    }
+  };
+
+  // Collect all sinks
+  std::vector<EnqueuedPin> sinks;
+
+  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    if (pin != drvr_pin && !network_->isTopLevelPort(pin) &&
+        network_->direction(pin) == sta::PortDirection::input() && network_->libertyPort(pin)) {
+      Vertex* vertex = graph_->pinLoadVertex(pin);
+      PathRef req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+      sinks.push_back({
+        const_cast<Pin*>(pin),
+        req_path,
+        0.0,
+        0
+      });
+    }
+  }
+  delete pin_iter;
+
+  float cin;
+  if (getCin(drvr_pin, cin)) {
+    float load = 0.0;
+    for (auto &sink : sinks) {
+      load += sink.capacitance(network_);
+    }
+    std::sort(sinks.begin(), sinks.end(), PinRequiredHigher(network_));
+
+    // Iterate until we satisfy both the gain condition and max_fanout
+    // on drvr_pin
+    while (sinks.size() > max_fanout || load > cin * buffer_gain_) {
+      float max_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
+
+      float load_acc = 0;
+      auto it = sinks.begin();
+      for (; it != sinks.end(); it++) {
+        if (it - sinks.begin() == max_fanout) {
+          break;
+        }
+        float sink_load = it->capacitance(network_);
+        if (load_acc + sink_load > max_load
+            // always include at least one load
+            && it != sinks.begin()) {
+          break;
+        }
+        load_acc += sink_load;
+      }
+      auto group_end = it;
+
+      // Find the smallest buffer satisfying the gain condition on
+      // its output pin
+      auto size = buffer_sizes_.begin();
+      for (; size != buffer_sizes_.end() - 1; size++) {
+        if (bufferCin(*size) > load_acc / buffer_gain_) {
+          break;
+        }
+      }
+
+      if (bufferCin(*size) >= 0.9f * load_acc) {
+        // We are getting dimishing returns on inserting a buffer, stop
+        // the algorithm here (we might have been called with a low gain value)
+        break;
+      }
+
+      Net *new_net = resizer_->makeUniqueNet();
+      dbNet* net_db = db_network_->staToDb(net);
+      dbNet* new_net_db = db_network_->staToDb(new_net);
+      new_net_db->setSigType(net_db->getSigType());
+
+      string buffer_name = resizer_->makeUniqueInstName("gain");
+      const Point drvr_loc = db_network_->location(drvr_pin);
+      Instance *inst = resizer_->makeBuffer(*size, buffer_name.c_str(),
+                                            // TODO: non-top module handling?
+                                            db_network_->topInstance(),
+                                            drvr_loc);
+      LibertyPort *size_in, *size_out;
+      (*size)->bufferPorts(size_in, size_out);
+      sta_->connectPin(inst, size_in, net);
+      sta_->connectPin(inst, size_out, new_net);
+
+      int max_level = 0;
+      for (auto it = sinks.begin(); it != group_end; it++) {
+        LibertyPort* sink_port = network_->libertyPort(it->pin);
+        Instance* sink_inst = network_->instance(it->pin);
+        load -= sink_port->capacitance();
+        if (it->level > max_level) {
+          max_level = it->level;
+        }
+        sta_->disconnectPin(it->pin);
+        sta_->connectPin(sink_inst, sink_port, new_net);
+      }
+
+      Pin *new_input_pin = network_->findPin(inst, size_in);
+
+      Delay buffer_delay = resizer_->bufferDelay(
+        *size,
+        load_acc,
+        resizer_->tgt_slew_dcalc_ap_
+      );
+
+      auto new_pin = EnqueuedPin{
+        new_input_pin,
+        (group_end - 1)->required_path,
+        (group_end - 1)->required_delay + buffer_delay,
+        max_level + 1
+      };
+
+      sinks.erase(sinks.begin(), group_end);
+      sinks.insert(std::upper_bound(sinks.begin(), sinks.end(), new_pin,
+                                    PinRequiredHigher(network_)), new_pin);
+
+      load += size_in->capacitance();
+    }
+  }
+}
+
 void RepairDesign::repairNet(Net* net,
                              const Pin* drvr_pin,
                              Vertex* drvr,
@@ -383,6 +624,21 @@ void RepairDesign::repairNet(Net* net,
                sdc_network_->pathName(drvr_pin));
     const Corner* corner = sta_->cmdCorner();
     bool repaired_net = false;
+
+    if (buffer_gain_ != 0.0) {
+      float fanout, max_fanout, fanout_slack;
+      // TODO: is it correct to unconditionally use max_fanout? what's fanout_slack?
+      sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
+
+      int resized = resizer_->resizeToTargetSlew(drvr_pin);
+      performGainBuffering(net, drvr_pin, max_fanout);
+      // Resize again post buffering as the load changed
+      resized += resizer_->resizeToTargetSlew(drvr_pin);
+      if (resized > 0) {
+        resize_count_ += 1;
+      }
+    }
+
     if (check_fanout) {
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
