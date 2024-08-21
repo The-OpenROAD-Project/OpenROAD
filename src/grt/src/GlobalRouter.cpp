@@ -661,7 +661,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     root = alternate_root;
     // If driverless nets issue is fixed there should be no alternate_root and
     // this should become an Error
-    logger_->warn(GRT, 266, "Net {} has no driver pin.", net->getName());
+    logger_->warn(GRT, 268, "Net {} has no driver pin.", net->getName());
   }
   AdjacencyList graph = buildNetGraph(db_net);
 
