@@ -10293,17 +10293,11 @@ class dbGDSBoundary : public dbGDSElement
 class dbGDSBox : public dbGDSElement
 {
  public:
-  void set_boxType(int16_t boxType);
-
-  int16_t get_boxType() const;
 };
 
 class dbGDSNode : public dbGDSElement
 {
  public:
-  void set_nodeType(int16_t nodeType);
-
-  int16_t get_nodeType() const;
 };
 
 class dbGDSPath : public dbGDSElement
@@ -10337,10 +10331,6 @@ class dbGDSSRef : public dbGDSElement
 class dbGDSText : public dbGDSElement
 {
  public:
-  void set_textType(int16_t textType);
-
-  int16_t get_textType() const;
-
   void setPresentation(dbGDSTextPres presentation);
 
   dbGDSTextPres getPresentation() const;

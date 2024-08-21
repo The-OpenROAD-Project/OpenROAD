@@ -57,7 +57,16 @@ class _dbGDSBox : public _dbGDSElement
   void differences(dbDiff& diff, const char* field, const _dbGDSBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  int16_t _boxType;
+  // User Code Begin Methods
+
+  std::string to_string() override
+  {
+    std::string str = "BOX BOXTYPE " + std::to_string(_datatype);
+    str += _dbGDSElement::to_string();
+    return str;
+  }
+
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj);

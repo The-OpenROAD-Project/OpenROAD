@@ -44,9 +44,6 @@ template class dbTable<_dbGDSText>;
 
 bool _dbGDSText::operator==(const _dbGDSText& rhs) const
 {
-  if (_textType != rhs._textType) {
-    return false;
-  }
   if (_pathType != rhs._pathType) {
     return false;
   }
@@ -70,7 +67,6 @@ void _dbGDSText::differences(dbDiff& diff,
                              const _dbGDSText& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_textType);
   DIFF_FIELD(_pathType);
   DIFF_FIELD(_width);
   DIFF_FIELD(_text);
@@ -80,7 +76,6 @@ void _dbGDSText::differences(dbDiff& diff,
 void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_textType);
   DIFF_OUT_FIELD(_pathType);
   DIFF_OUT_FIELD(_width);
   DIFF_OUT_FIELD(_text);
@@ -94,7 +89,6 @@ _dbGDSText::_dbGDSText(_dbDatabase* db)
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 {
-  _textType = r._textType;
   _pathType = r._pathType;
   _width = r._width;
   _text = r._text;
@@ -102,7 +96,6 @@ _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 {
-  stream >> obj._textType;
   stream >> obj._presentation;
   stream >> obj._pathType;
   stream >> obj._width;
@@ -113,7 +106,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
 {
-  stream << obj._textType;
   stream << obj._presentation;
   stream << obj._pathType;
   stream << obj._width;
@@ -127,19 +119,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
 // dbGDSText - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-void dbGDSText::set_textType(int16_t textType)
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-
-  obj->_textType = textType;
-}
-
-int16_t dbGDSText::get_textType() const
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-  return obj->_textType;
-}
 
 void dbGDSText::setPresentation(dbGDSTextPres presentation)
 {

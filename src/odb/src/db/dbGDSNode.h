@@ -59,7 +59,16 @@ class _dbGDSNode : public _dbGDSElement
                    const _dbGDSNode& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  int16_t _nodeType;
+  // User Code Begin Methods
+
+  std::string to_string() override
+  {
+    std::string str = "NODE NODETYPE " + std::to_string(_datatype);
+    str += _dbGDSElement::to_string();
+    return str;
+  }
+
+  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj);

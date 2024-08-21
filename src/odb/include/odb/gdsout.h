@@ -85,6 +85,8 @@ class GDSWriter
   void writePath(dbGDSPath* path);
   void writeSRef(dbGDSSRef* sref);
   void writeText(dbGDSText* text);
+  void writeBox(dbGDSBox* box);
+  void writeNode(dbGDSNode* node);
 
   void writeSTrans(const dbGDSSTrans& strans);
   void writeTextPres(const dbGDSTextPres& pres);

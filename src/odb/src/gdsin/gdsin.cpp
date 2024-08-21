@@ -414,7 +414,7 @@ dbGDSElement* GDSReader::processText()
 
   readRecord();
   checkRType(RecordType::TEXTTYPE);
-  text->_textType = _r.data16[0];
+  text->_datatype = _r.data16[0];
 
   readRecord();
   if (_r.type == RecordType::PRESENTATION) {
@@ -455,7 +455,7 @@ dbGDSElement* GDSReader::processBox()
 
   readRecord();
   checkRType(RecordType::BOXTYPE);
-  box->_boxType = _r.data16[0];
+  box->_datatype = _r.data16[0];
 
   readRecord();
   processXY((dbGDSElement*) box);

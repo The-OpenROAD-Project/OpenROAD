@@ -44,10 +44,6 @@ template class dbTable<_dbGDSBox>;
 
 bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
 {
-  if (_boxType != rhs._boxType) {
-    return false;
-  }
-
   return true;
 }
 
@@ -61,17 +57,13 @@ void _dbGDSBox::differences(dbDiff& diff,
                             const _dbGDSBox& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_boxType);
   DIFF_END
 }
 
-void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_boxType);
+void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const {
+    DIFF_OUT_BEGIN
 
-  DIFF_END
-}
+        DIFF_END}
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
@@ -79,18 +71,15 @@ _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
 {
-  _boxType = r._boxType;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
-  stream >> obj._boxType;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
-  stream << obj._boxType;
   return stream;
 }
 
@@ -99,19 +88,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 // dbGDSBox - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-void dbGDSBox::set_boxType(int16_t boxType)
-{
-  _dbGDSBox* obj = (_dbGDSBox*) this;
-
-  obj->_boxType = boxType;
-}
-
-int16_t dbGDSBox::get_boxType() const
-{
-  _dbGDSBox* obj = (_dbGDSBox*) this;
-  return obj->_boxType;
-}
 
 }  // namespace odb
    // Generator Code End Cpp

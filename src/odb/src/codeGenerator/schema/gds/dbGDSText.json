@@ -3,11 +3,6 @@
     "type":"dbGDSElement",
     "fields":[
       {
-        "name":"_textType",
-        "type":"int16_t",
-        "flags":[]
-      },
-      {
         "name":"_presentation",
         "type":"dbGDSTextPres",
         "flags":[]

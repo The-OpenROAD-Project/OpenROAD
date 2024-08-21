@@ -44,10 +44,6 @@ template class dbTable<_dbGDSNode>;
 
 bool _dbGDSNode::operator==(const _dbGDSNode& rhs) const
 {
-  if (_nodeType != rhs._nodeType) {
-    return false;
-  }
-
   return true;
 }
 
@@ -61,17 +57,13 @@ void _dbGDSNode::differences(dbDiff& diff,
                              const _dbGDSNode& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_nodeType);
   DIFF_END
 }
 
-void _dbGDSNode::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_nodeType);
+void _dbGDSNode::out(dbDiff& diff, char side, const char* field) const {
+    DIFF_OUT_BEGIN
 
-  DIFF_END
-}
+        DIFF_END}
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db)
 {
@@ -79,18 +71,15 @@ _dbGDSNode::_dbGDSNode(_dbDatabase* db)
 
 _dbGDSNode::_dbGDSNode(_dbDatabase* db, const _dbGDSNode& r)
 {
-  _nodeType = r._nodeType;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSNode& obj)
 {
-  stream >> obj._nodeType;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj)
 {
-  stream << obj._nodeType;
   return stream;
 }
 
@@ -99,19 +88,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSNode& obj)
 // dbGDSNode - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-void dbGDSNode::set_nodeType(int16_t nodeType)
-{
-  _dbGDSNode* obj = (_dbGDSNode*) this;
-
-  obj->_nodeType = nodeType;
-}
-
-int16_t dbGDSNode::get_nodeType() const
-{
-  _dbGDSNode* obj = (_dbGDSNode*) this;
-  return obj->_nodeType;
-}
 
 }  // namespace odb
    // Generator Code End Cpp

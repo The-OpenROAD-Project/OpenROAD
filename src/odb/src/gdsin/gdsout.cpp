@@ -391,7 +391,7 @@ void GDSWriter::writeText(dbGDSText* text)
   record_t r2;
   r2.type = RecordType::TEXTTYPE;
   r2.dataType = DataType::INT_2;
-  r2.data16 = {text->get_textType()};
+  r2.data16 = {text->getDatatype()};
   writeRecord(r2);
 
   writeTextPres(text->getPresentation());
@@ -423,6 +423,35 @@ void GDSWriter::writeText(dbGDSText* text)
   r5.dataType = DataType::ASCII_STRING;
   r5.data8 = text->getText();
   writeRecord(r5);
+}
+
+void GDSWriter::writeBox(dbGDSBox* box)
+{
+  record_t r;
+  r.type = RecordType::BOX;
+  r.dataType = DataType::NO_DATA;
+  writeRecord(r);
+
+  writeLayer(box);
+
+  record_t r2;
+  r2.type = RecordType::BOXTYPE;
+  r2.dataType = DataType::INT_2;
+  r2.data16 = {box->getDatatype()};
+  writeRecord(r2);
+
+  writeXY(box);
+}
+
+void GDSWriter::writeNode(dbGDSNode* node)
+{
+  record_t r;
+  r.type = RecordType::NODE;
+  r.dataType = DataType::NO_DATA;
+  writeRecord(r);
+
+  writeLayer(node);
+  writeXY(node);
 }
 
 void GDSWriter::writeSTrans(const dbGDSSTrans& strans)

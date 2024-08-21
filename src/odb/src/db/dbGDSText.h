@@ -62,7 +62,7 @@ class _dbGDSText : public _dbGDSElement
 
   std::string to_string() override
   {
-    std::string str = "TEXT TEXTTYPE " + std::to_string(_textType) + " PRES "
+    std::string str = "TEXT TEXTTYPE " + std::to_string(_datatype) + " PRES "
                       + _presentation.to_string() + " PATHTYPE "
                       + std::to_string(_pathType) + " WIDTH "
                       + std::to_string(_width);
@@ -76,7 +76,6 @@ class _dbGDSText : public _dbGDSElement
 
   // User Code End Methods
 
-  int16_t _textType;
   dbGDSTextPres _presentation;
   int16_t _pathType;
   int _width;
