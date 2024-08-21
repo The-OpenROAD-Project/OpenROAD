@@ -54,7 +54,7 @@ class Net
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
-  void deleteSegment(const int seg_id, GRoute& routes);
+  void deleteSegment(int seg_id, GRoute& routes);
   std::vector<Pin>& getPins() { return pins_; }
   int getNumPins() const { return pins_.size(); }
   float getSlack() const { return slack_; }
