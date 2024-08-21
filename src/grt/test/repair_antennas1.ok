@@ -11,7 +11,5 @@
 [INFO GRT-0015] Inserted 11 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
-Differences found at line 3912.
-165600 259200 172800 266400 met1
-165600 259200 273600 266400 met1
+No differences found.
 No differences found.
