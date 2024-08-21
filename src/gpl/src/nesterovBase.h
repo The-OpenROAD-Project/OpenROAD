@@ -55,7 +55,29 @@ class Logger;
 }
 
 namespace gpl {
-    struct GCellState{};
+struct GCellState {
+    FloatPoint curSLPCoordi;
+    FloatPoint curSLPWireLengthGrads;
+    FloatPoint curSLPDensityGrads;
+    FloatPoint curSLPSumGrads;
+
+    FloatPoint nextSLPCoordi;
+    FloatPoint nextSLPWireLengthGrads;
+    FloatPoint nextSLPDensityGrads;
+    FloatPoint nextSLPSumGrads;
+
+    FloatPoint prevSLPCoordi;
+    FloatPoint prevSLPWireLengthGrads;
+    FloatPoint prevSLPDensityGrads;
+    FloatPoint prevSLPSumGrads;
+
+    FloatPoint curCoordi;
+    FloatPoint nextCoordi;
+
+    FloatPoint initCoordi;
+    float densityPenalty;
+};
+
 
 class Instance;
 class Die;
@@ -674,7 +696,8 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+//  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
+  void updateBinsGCellDensityArea(const std::unordered_map<GCell*, GCellState>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -881,7 +904,8 @@ class NesterovBase
   // update gCells with cx, cy
   void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
 
-  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
+//  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
+  void updateGCellDensityCenterLocation(FloatPoint GCellState::*coordPtr);
 
   int binCntX() const;
   int binCntY() const;
@@ -965,11 +989,15 @@ class NesterovBase
     isMaxPhiCoefChanged_ = maxPhiCoefChanged;
   }
 
-  void updateGradients(std::vector<FloatPoint>& sumGrads,
-                       std::vector<FloatPoint>& wireLengthGrads,
-                       std::vector<FloatPoint>& densityGrads,
-                       float wlCoeffX,
-                       float wlCoeffY);
+//  void updateGradients(std::vector<FloatPoint>& sumGrads,
+//                       std::vector<FloatPoint>& wireLengthGrads,
+//                       std::vector<FloatPoint>& densityGrads,
+//                       float wlCoeffX,
+//                       float wlCoeffY);
+  void updateGradients(FloatPoint GCellState::* sumGradsPtr,
+                                   FloatPoint GCellState::* wireLengthGradsPtr,
+                                   FloatPoint GCellState::* densityGradsPtr,
+                                   float wlCoeffX, float wlCoeffY);
 
   void updateInitialPrevSLPCoordi();
 
@@ -1028,7 +1056,7 @@ class NesterovBase
   std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
   std::vector<GCell> gCellStor_;
 
-  std::map<GCell*, GCellState> newGCells_;
+  std::unordered_map<GCell*, GCellState> newGCells_;
   std::vector<GCell*> gCells_;
 //  std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
