@@ -95,8 +95,8 @@ bool GDSReader::checkRData(DataType eType, size_t eSize)
 {
   if (_r.dataType != eType) {
     std::string error_msg
-        = "Corrupted GDS, Expected data type: " + std::to_string(eType)
-          + " Got: " + std::to_string(_r.dataType);
+        = "Corrupted GDS, Expected data type: " + std::to_string((int) eType)
+          + " Got: " + std::to_string((int) _r.dataType);
     throw std::runtime_error(error_msg);
   }
   return true;
@@ -134,12 +134,12 @@ bool GDSReader::readRecord()
 {
   uint16_t recordLength = readInt16();
   uint8_t recordType = readInt8();
-  uint8_t dataType = readInt8();
+  DataType dataType = toDataType(readInt8());
   _r.type = toRecordType(recordType);
-  _r.dataType = toDataType(dataType);
+  _r.dataType = dataType;
   // printf("Record Length: %d Record Type: %s Data Type: %d\n", recordLength,
   // recordNames[recordType], dataType);
-  if ((recordLength - 4) % dataTypeSize[_r.dataType] != 0) {
+  if ((recordLength - 4) % dataTypeSize[(int) dataType] != 0) {
     throw std::runtime_error(
         "Corrupted GDS, Data size is not a multiple of data type size!");
   }

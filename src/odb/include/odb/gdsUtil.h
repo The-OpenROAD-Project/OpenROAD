@@ -42,7 +42,7 @@
 
 namespace odb {
 
-enum RecordType
+enum class RecordType : uint8_t
 {
   HEADER = 0,
   BGNLIB = 1,
@@ -115,7 +115,7 @@ uint8_t fromRecordType(RecordType recordType);
 
 extern const char* recordNames[];
 
-enum DataType
+enum class DataType : uint8_t
 {
   NO_DATA = 0,
   BIT_ARRAY,
@@ -127,7 +127,8 @@ enum DataType
   INVALID_DT
 };
 
-static const size_t dataTypeSize[DataType::INVALID_DT] = {1, 1, 2, 4, 4, 8, 1};
+static const size_t dataTypeSize[(int) DataType::INVALID_DT]
+    = {1, 1, 2, 4, 4, 8, 1};
 
 double real8_to_double(uint64_t real);
 

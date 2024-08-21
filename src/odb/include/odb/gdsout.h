@@ -54,33 +54,87 @@ class dbGDSStructure;
 class GDSWriter
 {
  public:
+  /**
+   * Constructor for GDSReader
+   * No operations are performed in the constructor
+   */
   GDSWriter();
 
+  /**
+   * Destructor
+   *
+   * Does not free the dbGDSLib objects, as they are owned by the database
+   */
   ~GDSWriter();
 
+  /**
+   * Writes a dbGDSLib object to a GDS file
+   *
+   * @param filename The path to the output file
+   * @param lib The dbGDSLib object to write
+   * @throws std::runtime_error if the file cannot be opened, or if the GDS is
+   * corrupted
+   */
   void write_gds(dbGDSLib* lib, const std::string& filename);
 
  private:
+  /** Output filestream */
   std::ofstream _file;
+  /** Current dbGDSLib object */
   dbGDSLib* _lib;
 
+  /**
+   * Calculates and sets the size of a record
+   * 
+   * @param r The record to evaluate
+   */
   void calcRecSize(record_t& r);
+
+  /**
+   * Writes a record to the output file stream
+   * 
+   * @param r The record to write
+   */
   void writeRecord(record_t& r);
 
+  /**
+   * Writes a real8 to _file
+   *
+   * NOTE: real8 is not the same as double. This conversion is not lossless.
+   */
   void writeReal8(double real);
+
+  /** Writes an int32 to _file */
   void writeInt32(int32_t i);
+
+  /** Writes an int16 to _file */
   void writeInt16(int16_t i);
+
+  /** Writes an int8 to _file */
   void writeInt8(int8_t i);
 
+  /** Helper function to write layer record of a dbGDSElement to _file */
   void writeLayer(dbGDSElement* el);
+  /** Helper function to write XY record  of a dbGDSElement to _file */
   void writeXY(dbGDSElement* el);
+  /** Helper function to write the datatype record of a dbGDSElement to _file */
   void writeDataType(dbGDSElement* el);
+  /** Helper function to end an element in _file */
   void writeEndel();
+
+  /** Helper function a property attribute to _file */
   void writePropAttr(dbGDSElement* el);
 
+  /** Writes _lib to the _file */
   void writeLib();
+
+  /** Writes a dbGDSStructure to _file */
   void writeStruct(dbGDSStructure* str);
+
+  /** Writes a dbGDSElement to _file */
   void writeElement(dbGDSElement* el);
+
+  /** Writes different variants of dbGDSElement to _file */
   void writeBoundary(dbGDSBoundary* bnd);
   void writePath(dbGDSPath* path);
   void writeSRef(dbGDSSRef* sref);
@@ -88,7 +142,10 @@ class GDSWriter
   void writeBox(dbGDSBox* box);
   void writeNode(dbGDSNode* node);
 
+  /** Writes a Transform to _file */
   void writeSTrans(const dbGDSSTrans& strans);
+
+  /** Writes a Text Presentation to _file */
   void writeTextPres(const dbGDSTextPres& pres);
 };
 

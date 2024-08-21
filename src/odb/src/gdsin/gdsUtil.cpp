@@ -40,7 +40,7 @@
 
 namespace odb {
 
-const char* recordNames[RecordType::INVALID_RT]
+const char* recordNames[(int) RecordType::INVALID_RT]
     = {"HEADER",    "BGNLIB",    "LIBNAME",    "UNITS",        "ENDLIB",
        "BGNSTR",    "STRNAME",   "ENDSTR",     "BOUNDARY",     "PATH",
        "SREF",      "AREF",      "TEXT",       "LAYER",        "DATATYPE",
@@ -58,7 +58,7 @@ const char* recordNames[RecordType::INVALID_RT]
 
 RecordType toRecordType(uint8_t recordType)
 {
-  if (recordType >= RecordType::INVALID_RT) {
+  if (recordType >= (uint8_t) RecordType::INVALID_RT) {
     throw std::runtime_error("Corrupted GDS, Invalid record type!");
   }
   return static_cast<RecordType>(recordType);
@@ -82,7 +82,7 @@ uint8_t fromRecordType(RecordType recordType)
 
 DataType toDataType(uint8_t dataType)
 {
-  if (dataType >= DataType::INVALID_DT) {
+  if (dataType >= (uint8_t) DataType::INVALID_DT) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<DataType>(dataType);
