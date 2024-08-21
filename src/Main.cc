@@ -454,8 +454,9 @@ int CommandTrace(ClientData,
           = Tcl_GetVar(interp, command_to_eval.c_str(), TCL_GLOBAL_ONLY);
 
       if (value != nullptr) {
-        if (std::string(value).find("_p_") != std::string::npos)
+        if (std::string(value).find("_p_") != std::string::npos) {
           break;
+        }
         std::size_t pos = log_report_str.find(command_to_eval);
         if (pos != std::string::npos) {
           log_report_str.replace(pos - 1, command_to_eval.length() + 1, value);
