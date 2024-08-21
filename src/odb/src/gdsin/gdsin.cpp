@@ -219,7 +219,8 @@ bool GDSReader::processLib()
   while (readRecord()) {
     if (_r.type == RecordType::ENDLIB) {
       return true;
-    } else if (_r.type == RecordType::BGNSTR) {
+    }
+    if (_r.type == RecordType::BGNSTR) {
       if (!processStruct()) {
         break;
       }
@@ -246,13 +247,13 @@ bool GDSReader::processStruct()
 
   while (readRecord()) {
     if (_r.type == RecordType::ENDSTR) {
-      if (DEBUG)
+      if (DEBUG) {
         std::cout << ((_dbGDSStructure*) str)->to_string() << std::endl;
-      return true;
-    } else {
-      if (!processElement(*str)) {
-        break;
       }
+      return true;
+    }
+    if (!processElement(*str)) {
+      break;
     }
   }
 
@@ -268,7 +269,7 @@ bool GDSReader::processXY(dbGDSElement* elem)
         "Corrupted GDS, XY data size is not a multiple of 2");
   }
   for (int i = 0; i < _r.data32.size(); i += 2) {
-    ((_dbGDSElement*) elem)->_xy.push_back({_r.data32[i], _r.data32[i + 1]});
+    ((_dbGDSElement*) elem)->_xy.emplace_back(_r.data32[i], _r.data32[i + 1]);
   }
   return true;
 }
@@ -287,7 +288,7 @@ void GDSReader::processPropAttr(dbGDSElement* elem)
     checkRType(RecordType::PROPVALUE);
     std::string value = _r.data8;
 
-    elem->getPropattr().push_back({attr, value});
+    elem->getPropattr().emplace_back(attr, value);
   }
 }
 
