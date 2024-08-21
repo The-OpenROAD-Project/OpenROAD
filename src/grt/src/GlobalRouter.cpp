@@ -606,6 +606,23 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
                               pin.getOnGridPosition().getY(),
                               pin.getConnectionLayer()));
     }
+    logger_->report("Net {}", net->getName());
+    bool showme = ("_12548_" == db_net->getName());
+    if (showme)
+      logger_->report(
+          "Net {} of size {}", db_net->getName(), routes_[db_net].size());
+    if (showme)
+      print(routes_[db_net]);
+    if (showme)
+      logger_->report("n_pis={}", net->getNumPins());
+    if (showme) {
+      for (Pin& pin : net->getPins())
+        logger_->report("Pin {} at {} {} driver={}",
+                        pin.getName(),
+                        pin.getOnGridPosition(),
+                        pin.getConnectionLayer(),
+                        pin.isDriver());
+    }
     net->destroyPins();
     // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
@@ -641,11 +658,13 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
   std::string dump;
   netIsCovered(db_net, dump);
   int root = -1;
+  int b_root = -1;
   std::vector<bool> coversPin(total_segments, false);
 
   for (int s = 0; s < total_segments; s++) {
     for (Pin& pin : pins) {
       if (segmentCoversPin(segments[s], pin)) {
+        b_root = true;
         coversPin[s] = true;
         if (pin.isDriver()) {
           root = s;
@@ -654,6 +673,12 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     }
   }
 
+  // if (root == -1) logger_->error(GRT, 266, "Net {} has no driver pin",
+  // net->getName());
+  if (root == -1) {
+    logger_->report("Net {} is driverless", net->getName());
+    root = b_root;
+  }
   std::vector<std::vector<int>> graph = buildNetGraph(db_net);
 
   // Runs a BFS trough the graph
