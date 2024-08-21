@@ -58,7 +58,6 @@ class _dbGDSNode : public _dbGDSElement
                    const char* field,
                    const _dbGDSNode& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
   // User Code Begin Methods
 
   std::string to_string() override

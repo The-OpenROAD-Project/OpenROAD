@@ -56,7 +56,6 @@ class _dbGDSBox : public _dbGDSElement
   bool operator<(const _dbGDSBox& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbGDSBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
   // User Code Begin Methods
 
   std::string to_string() override
