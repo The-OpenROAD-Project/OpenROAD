@@ -85,14 +85,14 @@ class GDSWriter
 
   /**
    * Calculates and sets the size of a record
-   * 
+   *
    * @param r The record to evaluate
    */
   void calcRecSize(record_t& r);
 
   /**
    * Writes a record to the output file stream
-   * 
+   *
    * @param r The record to write
    */
   void writeRecord(record_t& r);
