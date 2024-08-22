@@ -1213,7 +1213,6 @@ void HTreeBuilder::run()
 bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
 {
   if (options_->getMaxFanout()) {
-    logger_->report("Ta verificando por fanout");
     return numSinksPerSubRegion < options_->getMaxFanout();
   }
   return numSinksPerSubRegion < numMaxLeafSinks_;
