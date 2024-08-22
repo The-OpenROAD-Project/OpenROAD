@@ -1049,14 +1049,15 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     report_file.open(report_file_name_, std::ofstream::out);
   }
 
-  bool grt_routes = global_route_source_->haveRoutes();
   bool drt_routes = haveRoutedNets();
+  bool grt_routes = false;
+  if (!drt_routes) {
+    logger_->warn(ANT, 15, "No detailed routing found for nets.");
+    grt_routes = global_route_source_->haveRoutes();
+  }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
-    logger_->error(ANT,
-                   8,
-                   "No detailed or global routing found. Run global_route or "
-                   "detailed_route first.");
+    logger_->error(ANT, 8, "Run global_route or detailed_route first.");
   }
 
   if (use_grt_routes) {
