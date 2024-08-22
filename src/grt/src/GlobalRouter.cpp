@@ -226,7 +226,7 @@ void GlobalRouter::saveCongestion()
 bool GlobalRouter::haveRoutes()
 {
   if (routes_.empty()) {
-    loadGuidesFromDB();
+    logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
   return !routes_.empty();
