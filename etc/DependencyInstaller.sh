@@ -274,10 +274,10 @@ _installOrTools() {
         if [ ${#LIST[@]} -eq 0 ]; then
             echo "OR-TOOLS NOT FOUND"
             echo "Installing  OR-Tools for aarch64..."
-            git clone https://github.com/google/or-tools.git
+            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
             cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_INSTALL_PREFIX=${orToolsPath}
-            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v
+            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
         else
             echo "OR-Tools is already installed"
         fi
