@@ -1,4 +1,4 @@
-@Library('utils@or-v2.0.1') _
+@Library('utils@or-dev') _
 
 def baseTests(String image) {
     Map base_tests = [failFast: false];
