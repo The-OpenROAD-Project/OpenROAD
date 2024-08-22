@@ -173,6 +173,11 @@ _push() {
         2>&1 | tee build/create-${os}-dev-${tag}.log
 
     docker push "${imageName}:${tag}"
+
+    if [[ "${target}" == "master" ]]; then
+        docker tag "${imageName}:${tag}" "${imageName}:latest"
+    fi
+
 }
 
 #
