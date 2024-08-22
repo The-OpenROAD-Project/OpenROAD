@@ -1554,19 +1554,6 @@ odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-/*odb::dbMTerms* TritonCTS::getFirstInput(odb::dbMaster* inst) const
-{
-  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-  for (odb::dbITerm* iterm : iterms) {
-    if (iterm->isInputSignal()) {
-      return iterm;
-    }
-  }
-
-  return nullptr;
-}
-*/
-
 odb::dbITerm* TritonCTS::getSingleOutput(odb::dbInst* inst,
                                          odb::dbITerm* input) const
 {
