@@ -32,11 +32,12 @@
 
 #include "odb/gdsUtil.h"
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <map>
 #include <utility>
 
 #include "odb/db.h"
-#include "odb/xml.h"
 
 namespace odb {
 
@@ -131,19 +132,22 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     const std::string& filename)
 {
   std::map<std::pair<int16_t, int16_t>, std::string> layerMap;
-  XML xml;
-  xml.parseXML(filename);
-  XML* layerList = xml.findChild("layer-properties");
-  if (layerList == nullptr) {
+  boost::property_tree::ptree xml;
+  boost::property_tree::read_xml(filename, xml);
+  boost::property_tree::ptree layerList;
+
+  layerList = xml.get_child("layer-properties", layerList);
+  if (layerList.empty()) {
     throw std::runtime_error("Invalid .lyp file");
   }
 
-  for (auto& layer : layerList->getChildren()) {
-    if (layer.getName() != "properties") {
+  for (auto& pairs : layerList) {
+    if (pairs.first != "properties") {
       continue;
     }
-    std::string name = layer.findChild("name")->getValue();
-    std::string source = layer.findChild("source")->getValue();
+    boost::property_tree::ptree& layer = pairs.second;
+    std::string name = layer.get<std::string>("name", "");
+    std::string source = layer.get<std::string>("source", "");
     size_t at_pos = source.find('@');
     size_t slash_pos = source.find('/');
     if (at_pos == std::string::npos || slash_pos == std::string::npos) {

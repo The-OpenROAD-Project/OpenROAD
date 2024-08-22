@@ -42,6 +42,9 @@
 
 namespace odb {
 
+/**
+ * Enum representing the different types of records in a GDSII file
+ */
 enum class RecordType : uint8_t
 {
   HEADER = 0,
@@ -107,14 +110,19 @@ enum class RecordType : uint8_t
   INVALID_RT = 60
 };
 
+/** Converts between uint8_t and recordType */
 RecordType toRecordType(uint8_t recordType);
-
-std::string recordTypeToString(RecordType recordType);
-
 uint8_t fromRecordType(RecordType recordType);
 
+/** Get a string of the RecordType for pretty printing */
+std::string recordTypeToString(RecordType recordType);
+
+/** Constant array holding all record names */
 extern const char* recordNames[];
 
+/**
+ * Enum representing the different datatypes in a GDSII file
+ */
 enum class DataType : uint8_t
 {
   NO_DATA = 0,
@@ -127,17 +135,31 @@ enum class DataType : uint8_t
   INVALID_DT
 };
 
+/** dataType sizes in number of bytes */
 static const size_t dataTypeSize[(int) DataType::INVALID_DT]
     = {1, 1, 2, 4, 4, 8, 1};
 
+/**
+ * Converts real8 format to double
+ *
+ * @note Lossy conversion!!
+ */
 double real8_to_double(uint64_t real);
 
+/**
+ * Converts double to real8 formatt
+ *
+ * @note Lossy conversion!!
+ */
 uint64_t double_to_real8(double value);
 
+/** Converts between uint8_t and DataType */
 DataType toDataType(uint8_t dataType);
-
 uint8_t fromDataType(DataType dataType);
 
+/**
+ * Struct representing a GDSII record
+ */
 struct record_t
 {
   RecordType type;
@@ -149,6 +171,16 @@ struct record_t
   std::vector<double> data64;
 };
 
+/**
+ * Read an .lyp file for GDSII layer mapping
+ *
+ * This functions reads a .lyp file and uses to source and name fields of the
+ * layers to map layer and datatype to a name. This could be used to
+ * fetch a dbTechLayer from layer numbers.
+ *
+ * @param filename The path to the .lyp file
+ * @return A map of layer/datatype -> layer name
+ */
 std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     const std::string& filename);
 
