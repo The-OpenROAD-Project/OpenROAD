@@ -1,9 +1,9 @@
 include("openroad")
 
 set(TEST_LIBS
-  gtest
-  gmock
-  gtest_main
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
   odb
   dft_base_scan_cell_lib
   dft_config_lib

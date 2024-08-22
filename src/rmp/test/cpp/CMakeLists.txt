@@ -3,9 +3,9 @@ include(openroad)
 add_executable(RmpGTests TestAbc.cc)
 target_link_libraries(RmpGTests 
         OpenSTA
-        gtest
-        gmock
-        gtest_main
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
         rmp_abc_library
         dbSta_lib
         utl_lib
