@@ -3,9 +3,9 @@ include(openroad)
 add_executable(TestBufRem1 TestBufferRemoval.cc)
 target_link_libraries(TestBufRem1
         OpenSTA
-        gtest
-        gmock
-        gtest_main
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
         dbSta_lib
         utl_lib
         rsz_lib
