@@ -706,8 +706,42 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 
   int total_deleted_segments = 0;
   for (int deleted : segments_to_delete) {
-    net->deleteSegment(deleted - total_deleted_segments++, segments);
+    const int adjusted_seg_id = deleted - total_deleted_segments;
+    deleteSegment(net, segments, adjusted_seg_id);
+    total_deleted_segments++;
   }
+}
+
+void GlobalRouter::deleteSegment(Net* net, GRoute& segments, const int seg_id)
+{
+  GSegment& seg = segments[seg_id];
+  if (seg.init_layer == seg.final_layer) {
+    bool is_horizontal = (seg.init_x != seg.final_x);
+    bool is_vertical = (seg.init_y != seg.final_y);
+    const int tile_size = grid_->getTileSize();
+    auto [min_x, max_x]
+        = std::minmax((int) ((seg.init_x - grid_->getXMin()) / tile_size),
+                      (int) ((seg.final_x - grid_->getXMin()) / tile_size));
+    auto [min_y, max_y]
+        = std::minmax((int) ((seg.init_y - grid_->getYMin()) / tile_size),
+                      (int) ((seg.final_y - grid_->getYMin()) / tile_size));
+    int x0 = min_x, y0 = min_y;
+
+    while (x0 <= max_x && y0 <= max_y) {
+      const int x1 = x0 + (is_horizontal ? 1 : 0);
+      const int y1 = y0 + (is_vertical ? 1 : 0);
+      const int edge_cap
+          = fastroute_->getEdgeCapacity(x0, y0, x1, y1, seg.init_layer);
+      fastroute_->addAdjustment(
+          x0, y0, x1, y1, seg.init_layer, edge_cap + 1, false);
+      if (is_horizontal) {
+        x0++;
+      } else if (is_vertical) {
+        y0++;
+      }
+    }
+  }
+  net->deleteSegment(seg_id, segments);
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
