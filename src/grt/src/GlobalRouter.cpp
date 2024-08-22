@@ -719,25 +719,26 @@ void GlobalRouter::deleteSegment(Net* net, GRoute& segments, const int seg_id)
     bool is_horizontal = (seg.init_x != seg.final_x);
     bool is_vertical = (seg.init_y != seg.final_y);
     const int tile_size = grid_->getTileSize();
-    auto [min_x, max_x] = std::minmax(seg.init_x, seg.final_x);
-    auto [min_y, max_y] = std::minmax(seg.init_y, seg.final_y);
+    auto [min_x, max_x]
+        = std::minmax((int) ((seg.init_x - grid_->getXMin()) / tile_size),
+                      (int) ((seg.final_x - grid_->getXMin()) / tile_size));
+    auto [min_y, max_y]
+        = std::minmax((int) ((seg.init_y - grid_->getYMin()) / tile_size),
+                      (int) ((seg.final_y - grid_->getYMin()) / tile_size));
+    int x0 = min_x, y0 = min_y;
 
-    for (int x = min_x, y = min_y; x <= max_x && y <= max_y;
-         x += is_horizontal * tile_size, y += is_vertical * tile_size) {
-      const int pos_x = (int) ((x - grid_->getXMin()) / tile_size);
-      const int pos_y = (int) ((y - grid_->getYMin()) / tile_size);
-      const int edge_cap = fastroute_->getEdgeCapacity(pos_x,
-                                                       pos_y,
-                                                       pos_x + is_horizontal,
-                                                       pos_y + is_vertical,
-                                                       seg.init_layer);
-      fastroute_->addAdjustment(pos_x,
-                                pos_y,
-                                pos_x + is_horizontal,
-                                pos_y + is_vertical,
-                                seg.init_layer,
-                                edge_cap + 1,
-                                false);
+    while (x0 <= max_x && y0 <= max_y) {
+      const int x1 = x0 + (is_horizontal ? 1 : 0);
+      const int y1 = y0 + (is_vertical ? 1 : 0);
+      const int edge_cap
+          = fastroute_->getEdgeCapacity(x0, y0, x1, y1, seg.init_layer);
+      fastroute_->addAdjustment(
+          x0, y0, x1, y1, seg.init_layer, edge_cap + 1, false);
+      if (is_horizontal) {
+        x0++;
+      } else if (is_vertical) {
+        y0++;
+      }
     }
   }
   net->deleteSegment(seg_id, segments);
