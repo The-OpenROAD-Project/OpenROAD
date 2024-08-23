@@ -608,11 +608,16 @@ _installDebianPackages() {
         libomp-dev \
         libpcre2-dev \
         libpcre3-dev \
+        libpython3.8 \
         libreadline-dev \
         libtcl \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
+        qt5-qmake \
+        qtbase5-dev \
+        qtbase5-dev-tools \
+        qtchooser \
         tcl \
         tcl-dev \
         tcl-tclreadline \
@@ -620,20 +625,6 @@ _installDebianPackages() {
         unzip \
         wget \
         zlib1g-dev
-
-    if [[ $1 == 10 ]]; then
-        apt-get install -y --no-install-recommends \
-            libpython3.7 \
-            qt5-default
-
-    else
-        apt-get install -y --no-install-recommends \
-            libpython3.8 \
-            qtbase5-dev \
-            qtchooser \
-            qt5-qmake \
-            qtbase5-dev-tools
-    fi
 }
 
 _installCI() {

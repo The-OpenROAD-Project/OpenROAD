@@ -18,7 +18,7 @@ usage: $0 [CMD] [OPTIONS]
   push                          Push the docker image to Docker Hub
 
   OPTIONS:
-  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, rhel, opensuse, debian10 and debian11.
+  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, rhel, opensuse, debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -57,9 +57,6 @@ _setup() {
             ;;
         "opensuse")
             osBaseImage="opensuse/leap"
-            ;;
-        "debian10")
-            osBaseImage="debian:buster"
             ;;
         "debian11")
             osBaseImage="debian:bullseye"
