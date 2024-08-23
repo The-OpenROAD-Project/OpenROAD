@@ -21,7 +21,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang fron RHEL8
+        # e.g., gcc and clang from RHEL8
         make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
@@ -158,7 +158,7 @@ _installCommonDev() {
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+    if [[ ! -f ${cuddPrefix}/include/cudd.h ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
         cd cudd
@@ -571,7 +571,7 @@ EOF
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
-    # Some systems neeed this to correclty find OpenMP package during build
+    # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
