@@ -1,0 +1,17 @@
+OpenROAD> source test_command_loging.tcl
+OpenROAD> read_lef ../../odb/test/Nangate45/fake_macros.lef
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0176] error: undefined layer (metal1) referenced
+[WARNING ODB-0186] macro MOCK_SINGLE references unknown site FreePDK45_38x28_10R_NP_162NW_34O
+[INFO ODB-0227] LEF file: ../../odb/test/Nangate45/fake_macros.lef, created 9 library cells
+OpenROAD> write_db results/test_command_loging.odb

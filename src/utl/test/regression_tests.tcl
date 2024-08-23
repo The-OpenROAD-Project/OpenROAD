@@ -6,6 +6,7 @@ record_tests {
     #utl_man_tcl_check
     #utl_readme_msgs_check
     #test_error_exception
+    test_command_loging
 }
 
 record_pass_fail_tests {
