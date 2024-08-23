@@ -593,6 +593,7 @@ _installDebianPackages() {
         binutils \
         bison \
         build-essential \
+        ccache \
         clang \
         debhelper \
         devscripts \
@@ -602,6 +603,7 @@ _installDebianPackages() {
         git \
         groff \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -611,6 +613,7 @@ _installDebianPackages() {
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
+        tcl \
         tcl-dev \
         tcl-tclreadline \
         tcllib \
