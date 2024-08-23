@@ -2003,7 +2003,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
 
       if (start->dcalcAnalysisPt(openSta_)->delayMinMax()
           != sta::MinMax::max()) {
-	continue;
+	      continue;
         // only populate with max delay
       }
 
@@ -2014,8 +2014,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       network_->staToDb(start->pin(openSta_), term, port, moditerm, modbterm);
       if (term) {
         path_start_net = term->getNet();
-	
-        
       }
       if (port) {
         path_start_net = port->getNet();
@@ -2024,7 +2022,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       if (path_start_net == topNet) {
         clkPathArrival = path->arrival(openSta_);
         paths_accepted += 1;
-	return clkPathArrival;
+	      return clkPathArrival;
       }	
     }
   }
