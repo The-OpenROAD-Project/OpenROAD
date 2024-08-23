@@ -931,18 +931,18 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 void STAGuiInterface::updatePathGroups()
 {
   sta::Search* search = sta_->search();
-  search->updatePathGroups(1,         /* group count */
-                           1,         /* endpoint count*/
-                           false,     /* unique pins */
-                           -sta::INF, /* min slack */
-                           sta::INF,  /* max slack*/
-                           nullptr,   /* group names */
-                           true,      /* setup */
-                           true,      /* hold */
-                           true,      /* recovery */
-                           true,      /* removal */
-                           true,      /* clk gating setup */
-                           true /* clk gating hold*/);
+  search->makePathGroups(1,         /* group count */
+                         1,         /* endpoint count*/
+                         false,     /* unique pins */
+                         -sta::INF, /* min slack */
+                         sta::INF,  /* max slack*/
+                         nullptr,   /* group names */
+                         true,      /* setup */
+                         true,      /* hold */
+                         true,      /* recovery */
+                         true,      /* removal */
+                         true,      /* clk gating setup */
+                         true /* clk gating hold*/);
 }
 
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
@@ -990,13 +990,14 @@ std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
 
 TimingPathList STAGuiInterface::getTimingPaths(const sta::Pin* thru) const
 {
-  return getTimingPaths({}, {{thru}}, {});
+  return getTimingPaths({}, {{thru}}, {}, "" /* path group name */);
 }
 
 TimingPathList STAGuiInterface::getTimingPaths(
     const StaPins& from,
     const std::vector<StaPins>& thrus,
-    const StaPins& to) const
+    const StaPins& to,
+    const std::string& path_group_name) const
 {
   TimingPathList paths;
 
@@ -1063,7 +1064,13 @@ TimingPathList STAGuiInterface::getTimingPaths(
           false,
           false);
 
+  sta::PathGroup* path_group
+      = search->findPathGroup(path_group_name.c_str(), sta::MinMax::max());
   for (auto& path_end : path_ends) {
+    if (path_group && path_group != search->pathGroup(path_end)) {
+      continue;
+    }
+
     TimingPath* timing_path = new TimingPath();
     sta::Path* path = path_end->path();
 

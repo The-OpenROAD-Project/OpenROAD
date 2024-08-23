@@ -33,7 +33,6 @@ void PathRenderer::drawObjects(gui::Painter& painter)
     return;
   }
   dbNetwork* network = sta_->getDbNetwork();
-  odb::Point prev_pt;
   for (unsigned int i = 0; i < path_->size(); i++) {
     PathRef* path = path_->path(i);
     TimingArc* prev_arc = path_->prevArc(i);

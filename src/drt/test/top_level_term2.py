@@ -11,10 +11,9 @@ design.readDef("top_level_term2.def")
 gr = design.getGlobalRouter()
 gr.readGuides("top_level_term2.guide")
 
-drt_aux.detailed_route(design,
-                       bottom_routing_layer="met1",
-                       top_routing_layer="met3",
-                       verbose=0)
+drt_aux.detailed_route(
+    design, bottom_routing_layer="met1", top_routing_layer="met3", verbose=0
+)
 
 def_file = helpers.make_result_file("top_level_term2.def")
 design.writeDef(def_file)

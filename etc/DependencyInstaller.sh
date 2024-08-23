@@ -58,9 +58,14 @@ _equivalenceDeps() {
 
 _installCommonDev() {
     lastDir="$(pwd)"
+    arch=$(uname -m)
     # tools versions
     osName="linux"
-    cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+    if [[ "${arch}" == "aarch64" ]]; then
+        cmakeChecksum="6a6af752af4b1eae175e1dd0459ec850"
+    else
+        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+    fi
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
     pcreVersion=10.42
@@ -71,8 +76,12 @@ _installCommonDev() {
     boostVersionSmall=${boostVersionBig}.0
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
+    cuddVersion=3.0.0
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
+    gtestVersion=1.13.0
+    gtestChecksum="a1279c6fb5bf7d4a5e0d0b2a4adb39ac"
+
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -85,10 +94,10 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
-        md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
-        chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
-        ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=${cmakePrefix}
+        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
+        chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
     else
         echo "CMake already installed."
     fi
@@ -106,10 +115,10 @@ _installCommonDev() {
 
         # Check if pcre2 is installed
         if [[ -z $(pcre2-config --version) ]]; then
-          tarName="pcre2-${pcreVersion}.tar.gz"
-          wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
-          md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
-          ./Tools/pcre-build.sh
+            tarName="pcre2-${pcreVersion}.tar.gz"
+            wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+            md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
+            ./Tools/pcre-build.sh
         fi
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
@@ -147,6 +156,19 @@ _installCommonDev() {
         echo "Eigen already installed."
     fi
 
+    # cudd
+    cuddPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+        cd "${baseDir}"
+        git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
+        cd cudd
+        autoreconf
+        ./configure --prefix=${cuddPrefix}
+        make -j $(nproc) install
+    else
+        echo "Cudd already installed."
+    fi
+
     # CUSP
     cuspPrefix=${PREFIX:-"/usr/local/include"}
     if [[ ! -d ${cuspPrefix}/cusp/ ]]; then
@@ -182,6 +204,20 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
+    # gtest
+    gtestPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${gtestPrefix}/include/gtest ]]; then
+        cd "${baseDir}"
+        wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
+        md5sum -c <(echo "${gtestChecksum} v${gtestVersion}.zip") || exit 1
+        unzip v${gtestVersion}.zip
+        cd googletest-${gtestVersion}
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${gtestPrefix}" -B build .
+        ${cmakePrefix}/bin/cmake --build build --target install
+    else
+        echo "gtest already installed."
+    fi
+
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
     fi
@@ -207,8 +243,8 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 
     if [[ ! -z ${PREFIX} ]]; then
-      # Emit an environment setup script
-      cat > ${PREFIX}/env.sh <<EOF
+        # Emit an environment setup script
+        cat > ${PREFIX}/env.sh <<EOF
 depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
 PATH=\${depRoot}/bin:\${PATH}
 LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
@@ -220,23 +256,42 @@ _installOrTools() {
     os=$1
     version=$2
     arch=$3
-    orToolsVersionBig=9.5
-    orToolsVersionSmall=${orToolsVersionBig}.2237
+    orToolsVersionBig=9.10
+    orToolsVersionSmall=${orToolsVersionBig}.4067
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
-    orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
-    wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath=${PREFIX:-"/opt/or-tools"}
-    if command -v brew &> /dev/null; then
-        orToolsPath="$(brew --prefix or-tools)"
+    if [ "$(uname -m)" == "aarch64" ]; then
+        # Disable exit on error for 'find' command, as it might return non zero
+        set +euo pipefail
+        LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+        # Bring back exit on error
+        set -euo pipefail
+        if [ ${#LIST[@]} -eq 0 ]; then
+            echo "OR-TOOLS NOT FOUND"
+            echo "Installing  OR-Tools for aarch64..."
+            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
+            cd or-tools
+            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
+        else
+            echo "OR-Tools is already installed"
+        fi
+    else
+        orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
+        wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
+        orToolsPath=${PREFIX:-"/opt/or-tools"}
+        if command -v brew &> /dev/null; then
+            orToolsPath="$(brew --prefix or-tools)"
+        fi
+        mkdir -p ${orToolsPath}
+        tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
+        rm -rf ${baseDir}
     fi
-    mkdir -p ${orToolsPath}
-    tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
-    rm -rf ${baseDir}
 }
 
 _installUbuntuCleanUp() {
@@ -254,6 +309,7 @@ _installUbuntuPackages() {
         binutils \
         bison \
         build-essential \
+        ccache \
         clang \
         debhelper \
         devscripts \
@@ -277,32 +333,36 @@ _installUbuntuPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
-        zlib1g-dev \
-        ccache \
+        zlib1g-dev
 
-    if _versionCompare $1 -ge 22.10; then
-        apt-get install -y --no-install-recommends \
-            libpython3.11 \
-            qt5-qmake \
-            qtbase5-dev \
-            qtbase5-dev-tools \
-            libqt5charts5-dev \
-            qtchooser
-    elif [[ $1 == 22.04 ]]; then
-        apt-get install -y --no-install-recommends \
-            libpython3.8 \
-            qt5-qmake \
-            qtbase5-dev \
-            qtbase5-dev-tools \
-            libqt5charts5-dev \
-            qtchooser
+    packages=()
+    # Chose Python version
+    if _versionCompare $1 -ge 24.04; then
+        packages+=("libpython3.12")
+    elif _versionCompare $1 -ge 22.10; then
+        packages+=("libpython3.11")
     else
-        apt-get install -y --no-install-recommends \
-            libpython3.8 \
-            libqt5charts5-dev \
-            qt5-default
+        packages+=("libpython3.8")
     fi
+
+    # Chose QT libraries
+    if _versionCompare $1 -ge 22.04; then
+        packages+=(
+            "qt5-qmake" \
+            "qtbase5-dev" \
+            "qtbase5-dev-tools" \
+            "libqt5charts5-dev" \
+            "qtchooser" \
+        )
+    else
+        packages+=(
+            "libqt5charts5-dev" \
+            "qt5-default" \
+        )
+    fi
+    apt-get install -y --no-install-recommends ${packages[@]}
 }
 
 _installRHELCleanUp() {
@@ -363,8 +423,8 @@ _installRHELPackages() {
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 
-    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
-    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
+    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
     rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
@@ -419,7 +479,7 @@ _installCentosPackages() {
         wget \
         ccache \
         zlib-devel
-    }
+}
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
@@ -463,6 +523,7 @@ _installOpenSusePackages() {
         tcllib \
         wget \
         zlib-devel
+
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -492,18 +553,18 @@ _installHomebrewPackage() {
 
 _installDarwin() {
     if ! command -v brew &> /dev/null; then
-      echo "Homebrew is not found. Please install homebrew before continuing."
-      exit 1
-      fi
+        echo "Homebrew is not found. Please install homebrew before continuing."
+        exit 1
+    fi
     if ! xcode-select -p &> /dev/null; then
-      # xcode-select does not pause execution, so the user must handle it
-      cat <<EOF
+        # xcode-select does not pause execution, so the user must handle it
+        cat <<EOF
 Xcode command line tools not installed.
 Run the following command to install them:
   xcode-select --install
 Then, rerun this script.
 EOF
-      exit 1
+    exit 1
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
@@ -560,6 +621,7 @@ _installDebianPackages() {
         apt-get install -y --no-install-recommends \
             libpython3.7 \
             qt5-default
+
     else
         apt-get install -y --no-install-recommends \
             libpython3.8 \
@@ -578,18 +640,18 @@ _installCI() {
         curl \
         jq \
         parallel \
-        software-properties-common \
-        unzip
+        software-properties-common
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
         -o /etc/apt/keyrings/docker.asc
+
     chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add the repository to Apt sources:
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" | \
         tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     apt-get -y update
@@ -631,7 +693,7 @@ Usage: $0
                                 #     with sudo or with root access.
        $0 -local
                                 # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
+                                #    "${HOME}/.local". Only used with
                                 #    -common. This flag cannot be used with
                                 #    sudo or with root access.
        $0 -ci
@@ -763,8 +825,12 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-            if _versionCompare ${version} -gt 22.10; then
-                version=22.10
+            if _versionCompare ${version} -gt 24.04; then
+                version=24.04
+            elif _versionCompare ${version} -gt 22.04; then
+                version=22.04
+            else
+                version=20.04
             fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi

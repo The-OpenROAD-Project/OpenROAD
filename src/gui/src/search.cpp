@@ -452,18 +452,11 @@ void Search::addSNet(
         }
         via_shapes[layer].emplace_back(box, net);
       } else {
-        std::vector<odb::Point> points;
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
-          points = box->getOct().getPoints();
+          net_shapes[box->getTechLayer()].emplace_back(box, box->getOct(), net);
         } else {
-          const odb::Rect rect = box->getBox();
-          points = rect.getPoints();
+          net_shapes[box->getTechLayer()].emplace_back(box, box->getBox(), net);
         }
-        Polygon poly;
-        for (const auto& point : points) {
-          bg::append(poly.outer(), point);
-        }
-        net_shapes[box->getTechLayer()].emplace_back(box, poly, net);
       }
     }
   }
@@ -532,6 +525,32 @@ class Search::MinSizePredicate
 
  private:
   int min_size_;
+};
+
+template <typename T>
+class Search::PolygonIntersectPredicate
+{
+ public:
+  PolygonIntersectPredicate(const odb::Rect& region) : region_(region) {}
+  bool operator()(const SNetValue<T>& o) const
+  {
+    return checkPolygon(std::get<1>(o));
+  }
+
+  bool operator()(const RectValue<T>& o) const { return checkPolygon(o.first); }
+
+  bool operator()(const RouteBoxValue<T>& o) const
+  {
+    return checkPolygon(std::get<0>(o));
+  }
+
+  bool checkPolygon(const odb::Polygon& poly) const
+  {
+    return boost::geometry::intersects(region_, poly);
+  }
+
+ private:
+  odb::Rect region_;
 };
 
 template <typename T>
@@ -656,11 +675,16 @@ Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
     return SNetShapeRange(
         rtree.qbegin(
             bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
+            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
+            && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
         rtree.qend());
   }
 
-  return SNetShapeRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return SNetShapeRange(
+      rtree.qbegin(
+          bgi::intersects(query)
+          && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
+      rtree.qend());
 }
 
 Search::FillRange Search::searchFills(odb::dbBlock* block,

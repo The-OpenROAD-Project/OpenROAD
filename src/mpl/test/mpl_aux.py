@@ -33,17 +33,26 @@
 #############################################################################
 import utl
 
-def macro_placement(design, *, halo=None, channel=None, fence_region=None, snap_layer=None, style=None):
+
+def macro_placement(
+    design, *, halo=None, channel=None, fence_region=None, snap_layer=None, style=None
+):
     if halo != None:
         if len(halo) != 2:
-            utl.error(utl.MPL, 192, f"halo receives a list with 2 values, {len(halo)} given.")
+            utl.error(
+                utl.MPL, 192, f"halo receives a list with 2 values, {len(halo)} given."
+            )
         halo_x, halo_y = halo
         if is_pos_float(halo_x) and is_pos_float(halo_y):
             design.getMacroPlacer().setHalo(halo_x, halo_y)
 
     if channel != None:
         if length(channel) != 2:
-            utl.error(utl.MPL, 193, f"channel receives a list with 2 values, {len(channel)} given.")
+            utl.error(
+                utl.MPL,
+                193,
+                f"channel receives a list with 2 values, {len(channel)} given.",
+            )
 
         channel_x, channel_y = channel
         if is_pos_float(channel_x) and is_pos_float(channel_y):
@@ -61,12 +70,18 @@ def macro_placement(design, *, halo=None, channel=None, fence_region=None, snap_
 
     if fence_region != None:
         if len(fence_region) != 4:
-            utl.error(utl.MPL, 194, f"fence_region receives a list with 4 values, {len(fence_region)} given.")
+            utl.error(
+                utl.MPL,
+                194,
+                f"fence_region receives a list with 4 values, {len(fence_region)} given.",
+            )
 
         lx, ly, ux, uy = fence_region
 
         if lx < core_lx or ly < core_ly or ux > core_ux or uy > core_uy:
-            utl.warn(utl.MPL, 185, "fence_region outside of core area. Using core area.")
+            utl.warn(
+                utl.MPL, 185, "fence_region outside of core area. Using core area."
+            )
             design.getMacroPlacer().setFenceRegion(core_lx, core_ly, core_ux, core_uy)
         else:
             design.getMacroPlacer().setFenceRegion(lx, ly, ux, uy)
@@ -92,23 +107,27 @@ def macro_placement(design, *, halo=None, channel=None, fence_region=None, snap_
     elif style == "corner_min_wl":
         design.getMacroPlacer().placeMacrosCornerMinWL()
     else:
-        utl.error(utl.MPL, 196, "Unknown placement style. Use one of 'corner_max_wl' or 'corner_min_wl'.")
+        utl.error(
+            utl.MPL,
+            196,
+            "Unknown placement style. Use one of 'corner_max_wl' or 'corner_min_wl'.",
+        )
 
 
 def is_pos_int(x):
     if x == None:
         return False
-    elif isinstance(x, int) and x > 0 :
+    elif isinstance(x, int) and x > 0:
         return True
     else:
         utl.error(utl.GPL, 507, f"TypeError: {x} is not a positive integer")
     return False
 
-        
+
 def is_pos_float(x):
     if x == None:
         return False
-    elif isinstance(x, float) and x >= 0 :
+    elif isinstance(x, float) and x >= 0:
         return True
     else:
         utl.error(utl.MPL, 202, f"TypeError: {x} is not a positive float")

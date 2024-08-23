@@ -40,6 +40,7 @@
 #include "dbInst.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
+#include "dbModulePortItr.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -213,6 +214,23 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+const dbModBTerm* dbModule::getHeadDbModBTerm() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  _dbBlock* block_ = (_dbBlock*) obj->getOwner();
+  if (obj->_modbterms == 0) {
+    return nullptr;
+  }
+  // note that the odb objects are "pre-pended"
+  // so first object is at tail. This means we are returning
+  // last object added. The application calling this routine
+  // needs to be aware of this (and possibly skip to the end
+  // of the list and then use prev to reconstruct creation order).
+  else {
+    return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
+  }
+}
+
 int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
@@ -347,11 +365,38 @@ dbSet<dbModInst> dbModule::getModInsts()
   return dbSet<dbModInst>(module, block->_module_modinst_itr);
 }
 
+//
+// The ports include higher level views. These have a special
+// iterator which knows about how to skip the contents
+// of the hierarchical objects (busports)
+//
+
+dbSet<dbModBTerm> dbModule::getPorts()
+{
+  _dbModule* obj = (_dbModule*) this;
+  if (obj->_port_iter == nullptr) {
+    _dbBlock* block = (_dbBlock*) obj->getOwner();
+    obj->_port_iter = new dbModulePortItr(block->_modbterm_tbl);
+  }
+  return dbSet<dbModBTerm>(this, obj->_port_iter);
+}
+
+//
+// The modbterms are the leaf level connections
+//"flat view"
+//
 dbSet<dbModBTerm> dbModule::getModBTerms()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
   return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
+}
+
+dbModBTerm* dbModule::getModBTerm(uint id)
+{
+  _dbModule* module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) module->getOwner();
+  return (dbModBTerm*) (block->_modbterm_tbl->getObject(id));
 }
 
 dbSet<dbInst> dbModule::getInsts()
@@ -482,18 +527,6 @@ std::string dbModule::getHierarchicalName() const
     return inst->getHierarchicalName();
   }
   return "<top>";
-}
-
-void* dbModule::getStaCell()
-{
-  _dbModule* module = (_dbModule*) this;
-  return module->_sta_cell;
-}
-
-void dbModule::staSetCell(void* cell)
-{
-  _dbModule* module = (_dbModule*) this;
-  module->_sta_cell = cell;
 }
 
 dbBlock* dbModule::getOwner()

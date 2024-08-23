@@ -229,7 +229,8 @@ class DbNetDescriptor : public Descriptor
 class DbITermDescriptor : public Descriptor
 {
  public:
-  DbITermDescriptor(odb::dbDatabase* db);
+  DbITermDescriptor(odb::dbDatabase* db,
+                    std::function<bool(void)> usingPolyDecompView);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -247,6 +248,7 @@ class DbITermDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+  std::function<bool(void)> usingPolyDecompView_;
 };
 
 class DbBTermDescriptor : public Descriptor
@@ -275,7 +277,8 @@ class DbBTermDescriptor : public Descriptor
 class DbMTermDescriptor : public Descriptor
 {
  public:
-  DbMTermDescriptor(odb::dbDatabase* db);
+  DbMTermDescriptor(odb::dbDatabase* db,
+                    std::function<bool(void)> usingPolyDecompView);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -292,6 +295,7 @@ class DbMTermDescriptor : public Descriptor
 
  private:
   odb::dbDatabase* db_;
+  std::function<bool(void)> usingPolyDecompView_;
 };
 
 class DbViaDescriptor : public Descriptor

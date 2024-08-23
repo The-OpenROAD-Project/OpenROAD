@@ -39,7 +39,7 @@ class {{klass.name}} : public dbObject
   // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
+      void {{field.setterFunctionName}} ({% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}

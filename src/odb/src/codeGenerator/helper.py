@@ -1,6 +1,7 @@
 _comparable = [
     "Point",
     "Rect",
+    "Polygon",
     "bool",
     "char *",
     "char",
@@ -135,6 +136,10 @@ def is_pass_by_ref(type_name):
     return type_name.find("dbVector") == 0
 
 
+def is_set_by_ref(type_name):
+    return type_name == "std::string"
+
+
 def _is_template_type(type_name):
     open_bracket = type_name.find("<")
     if open_bracket == -1:
@@ -152,7 +157,6 @@ def get_template_type(type_name):
 
     open_bracket = type_name.find("<")
     for i in range(open_bracket + 1, len(type_name)):
-
         if type_name[i] == "<":
             num_brackets += 1
         elif type_name[i] == ">":

@@ -180,13 +180,18 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
-  void setPinOffset(int pin_offset);
 
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  void writeSegments(const char* file_name);
+  void readSegments(const char* file_name);
+  bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
+  bool segmentIsLine(const GSegment& segment);
+  bool isConnected(odb::dbNet* net);
+  bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
@@ -222,6 +227,21 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
+  void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void findBufferPinPostions(Net* net1,
+                             Net* net2,
+                             odb::Point& pin_pos1,
+                             odb::Point& pin_pos2);
+  int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
+                                                     const odb::Point& pin_pos2,
+                                                     int layer1,
+                                                     int layer2);
+  void insertViasForConnection(std::vector<GSegment>& connection,
+                               const odb::Point& via_pos,
+                               int layer,
+                               int conn_layer);
 
   void getBlockage(odb::dbTechLayer* layer,
                    int x,
@@ -267,7 +287,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool findPinAccessPointPositions(
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
-  odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -314,9 +333,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
-  void computePinOffsetAdjustments();
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
+  void addResourcesForPinAccess();
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
@@ -354,15 +373,12 @@ class GlobalRouter : public ant::GlobalRouteSource
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  void createFakePin(Pin pin,
-                     odb::Point& pin_position,
-                     odb::dbTechLayer* layer,
-                     Net* net);
   odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net*>& nets,
                           int min_routing_layer,
                           int max_routing_layer);
   void print(GRoute& route);
+  void printSegment(const GSegment& segment);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportCongestion();
@@ -440,7 +456,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
 
-  std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
+  std::map<odb::dbNet*, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks> routing_tracks_;
@@ -450,7 +466,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   int min_routing_layer_;
   int max_routing_layer_;
   int layer_for_guide_dimension_;
-  int gcells_offset_;
   int overflow_iterations_;
   int congestion_report_iter_step_;
   bool allow_congestion_;
@@ -505,17 +520,19 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 {
  public:
   GRouteDbCbk(GlobalRouter* grouter);
-  virtual void inDbPostMoveInst(odb::dbInst* inst);
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
+  void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
 
-  virtual void inDbNetDestroy(odb::dbNet* net);
-  virtual void inDbNetCreate(odb::dbNet* net);
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbNetCreate(odb::dbNet* net) override;
+  void inDbNetPreMerge(odb::dbNet* preserved_net,
+                       odb::dbNet* removed_net) override;
 
-  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
-  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
+  void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
 
-  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
-  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
+  void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
+  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;
 
  private:
   void instItermsDirty(odb::dbInst* inst);

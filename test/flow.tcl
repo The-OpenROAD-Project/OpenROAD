@@ -39,6 +39,8 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
+set_thread_count [exec getconf _NPROCESSORS_ONLN]
+
 utl::metric "IFP::ord_version" [ord::openroad_git_describe]
 # Note that sta::network_instance_count is not valid after tapcells are added.
 utl::metric "IFP::instance_count" [sta::network_instance_count]
@@ -221,10 +223,6 @@ write_db $fill_db
 
 ################################################################
 # Detailed routing
-
-# set multithreading only for detailed route due to instability
-# in repair_antennas
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
 
 # Run pin access again after inserting diodes and moving cells
 pin_access -bottom_routing_layer $min_routing_layer \

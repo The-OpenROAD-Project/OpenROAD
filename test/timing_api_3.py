@@ -11,19 +11,21 @@ design.evalTclString("read_sdc timing_api_3.sdc")
 timing = Timing(design)
 
 for inst in design.getBlock().getInsts():
-  for iTerm in inst.getITerms():
-    if not iTerm.getNet():
-      continue
-    if (design.isInSupply(iTerm)):
-      continue
-    print(design.getITermName(iTerm), 
-          timing.getPinSlack(iTerm, Timing.Rise, Timing.Max),
-          timing.getPinSlack(iTerm, Timing.Fall, Timing.Max),
-          timing.getPinSlack(iTerm, Timing.Rise, Timing.Min),
-          timing.getPinSlack(iTerm, Timing.Fall, Timing.Min),
-          )
-    for i, corner in enumerate(timing.getCorners()):
-      print(f"Corner {i}", 
-            timing.getPortCap(iTerm, corner, Timing.Max),
-            timing.getPortCap(iTerm, corner, Timing.Min),
-      )
+    for iTerm in inst.getITerms():
+        if not iTerm.getNet():
+            continue
+        if design.isInSupply(iTerm):
+            continue
+        print(
+            design.getITermName(iTerm),
+            timing.getPinSlack(iTerm, Timing.Rise, Timing.Max),
+            timing.getPinSlack(iTerm, Timing.Fall, Timing.Max),
+            timing.getPinSlack(iTerm, Timing.Rise, Timing.Min),
+            timing.getPinSlack(iTerm, Timing.Fall, Timing.Min),
+        )
+        for i, corner in enumerate(timing.getCorners()):
+            print(
+                f"Corner {i}",
+                timing.getPortCap(iTerm, corner, Timing.Max),
+                timing.getPortCap(iTerm, corner, Timing.Min),
+            )

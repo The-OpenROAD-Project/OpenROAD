@@ -32,18 +32,18 @@ metal1     Horizontal      33840         33120          2.13%
 metal2     Vertical        25163         24628          2.13%
 metal3     Horizontal      33840         33120          2.13%
 metal4     Vertical        16039         15698          2.13%
-metal5     Horizontal      15792         15452          2.15%
+metal5     Horizontal      15792         15456          2.13%
 metal6     Vertical        16039         15698          2.13%
-metal7     Horizontal       4512          4412          2.22%
+metal7     Horizontal       4512          4416          2.13%
 metal8     Vertical         4610          4512          2.13%
-metal9     Horizontal       2256          2204          2.30%
+metal9     Horizontal       2256          2208          2.13%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 0
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 0
-[INFO GRT-0112] Final usage 3D: 126
+[INFO GRT-0112] Final usage 3D: 138
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -52,13 +52,13 @@ metal1           33120             0            0.00%             0 /  0 /  0
 metal2           24628             0            0.00%             0 /  0 /  0
 metal3           33120             0            0.00%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
-metal5           15452            42            0.27%             0 /  0 /  0
+metal5           15456            46            0.30%             0 /  0 /  0
 metal6           15698             0            0.00%             0 /  0 /  0
-metal7            4412            42            0.95%             0 /  0 /  0
+metal7            4416            46            1.04%             0 /  0 /  0
 metal8            4512             0            0.00%             0 /  0 /  0
-metal9            2204            42            1.91%             0 /  0 /  0
+metal9            2208            46            2.08%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           148844           126            0.08%             0 /  0 /  0
+Total           148856           138            0.09%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 296 um
 [INFO GRT-0014] Routed nets: 3

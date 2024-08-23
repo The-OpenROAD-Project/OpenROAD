@@ -23,8 +23,14 @@ tielo = "LOGIC0_X1/Z"
 
 set_thread_count(3)
 
-rmp_aux.restructure(design, liberty_file_name="Nangate45/Nangate45_typ.lib", target="area",
-                    abc_logfile="results/abc_rcon.log", tielo_port=tielo, tiehi_port=tiehi,
-                    workdir_name="./results")
+rmp_aux.restructure(
+    design,
+    liberty_file_name="Nangate45/Nangate45_typ.lib",
+    target="area",
+    abc_logfile="results/abc_rcon.log",
+    tielo_port=tielo,
+    tiehi_port=tiehi,
+    workdir_name="./results",
+)
 
 design.evalTclString("report_design_area")

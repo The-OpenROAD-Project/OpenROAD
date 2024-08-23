@@ -479,24 +479,38 @@ void Cluster::setParent(Cluster* parent)
   parent_ = parent;
 }
 
-void Cluster::addChild(Cluster* child)
+void Cluster::addChild(std::unique_ptr<Cluster> child)
 {
-  children_.push_back(child);
+  children_.push_back(std::move(child));
 }
 
-void Cluster::removeChild(const Cluster* child)
+std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 {
-  children_.erase(std::find(children_.begin(), children_.end(), child));
+  auto it = std::find_if(
+      children_.begin(), children_.end(), [candidate](const auto& child) {
+        return child.get() == candidate;
+      });
+
+  if (it != children_.end()) {
+    std::unique_ptr<Cluster> released_child = std::move(*it);
+    children_.erase(it);
+    return released_child;
+  }
+
+  return nullptr;
 }
 
-void Cluster::addChildren(const std::vector<Cluster*>& children)
+void Cluster::addChildren(UniqueClusterVector children)
 {
-  std::copy(children.begin(), children.end(), std::back_inserter(children_));
+  std::move(children.begin(), children.end(), std::back_inserter(children_));
 }
 
-void Cluster::removeChildren()
+UniqueClusterVector Cluster::releaseChildren()
 {
+  UniqueClusterVector released_children = std::move(children_);
   children_.clear();
+
+  return released_children;
 }
 
 Cluster* Cluster::getParent() const
@@ -504,7 +518,7 @@ Cluster* Cluster::getParent() const
   return parent_;
 }
 
-std::vector<Cluster*> Cluster::getChildren() const
+const UniqueClusterVector& Cluster::getChildren() const
 {
   return children_;
 }
@@ -514,34 +528,36 @@ bool Cluster::isLeaf() const
   return children_.empty();
 }
 
-// We only merge clusters with the same parent cluster
-// We only merge clusters with the same parent cluster
-bool Cluster::mergeCluster(Cluster& cluster, bool& delete_flag)
+bool Cluster::attemptMerge(Cluster* incomer, bool& incomer_deleted)
 {
-  if (parent_ != cluster.parent_) {
+  if (parent_ != incomer->parent_) {
     return false;
   }
 
-  parent_->removeChild(&cluster);
-  metrics_.addMetrics(cluster.metrics_);
-  // modify name
-  name_ += "||" + cluster.name_;
-  // if current cluster is a leaf cluster
+  // If the ownership is not passed to the receiver. The incomer
+  // is destroyed.
+  std::unique_ptr<Cluster> released_incomer = parent_->releaseChild(incomer);
+
+  metrics_.addMetrics(incomer->metrics_);
+  name_ += "||" + incomer->name_;
+
   leaf_macros_.insert(leaf_macros_.end(),
-                      cluster.leaf_macros_.begin(),
-                      cluster.leaf_macros_.end());
+                      incomer->leaf_macros_.begin(),
+                      incomer->leaf_macros_.end());
   leaf_std_cells_.insert(leaf_std_cells_.end(),
-                         cluster.leaf_std_cells_.begin(),
-                         cluster.leaf_std_cells_.end());
+                         incomer->leaf_std_cells_.begin(),
+                         incomer->leaf_std_cells_.end());
   db_modules_.insert(db_modules_.end(),
-                     cluster.db_modules_.begin(),
-                     cluster.db_modules_.end());
-  delete_flag = true;
-  // if current cluster is not a leaf cluster
+                     incomer->db_modules_.begin(),
+                     incomer->db_modules_.end());
+  incomer_deleted = true;
+
+  // If the receiver is not a leaf, the incomer becomes another
+  // one of its children.
   if (!children_.empty()) {
-    children_.push_back(&cluster);
-    cluster.setParent(this);
-    delete_flag = false;
+    incomer->setParent(this);
+    children_.push_back(std::move(released_incomer));
+    incomer_deleted = false;
   }
   return true;
 }
@@ -623,15 +639,12 @@ bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
   return false;
 }
 
-//
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-//
-// candidate_clusters are small clusters that need to be merged,
-// any cluster not in candidate_clusters is a well-formed cluster
-//
+// Candidate clusters always need to be merged.
+// A non candidate cluster is a well-formed cluster.
 int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
                              float net_threshold)
 {
@@ -736,9 +749,10 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
 }
 
 // Macro Placement Support
-void Cluster::setSoftMacro(SoftMacro* soft_macro)
+void Cluster::setSoftMacro(std::unique_ptr<SoftMacro> soft_macro)
 {
-  soft_macro_.reset(soft_macro);
+  soft_macro_.reset();
+  soft_macro_ = std::move(soft_macro);
 }
 
 SoftMacro* Cluster::getSoftMacro() const

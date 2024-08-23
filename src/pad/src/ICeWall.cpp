@@ -207,7 +207,7 @@ void ICeWall::assignBump(odb::dbInst* inst,
   const odb::dbTransform xform = inst->getTransform();
 
   odb::dbTechLayer* top_layer = nullptr;
-  odb::Rect top_shape;
+  std::set<odb::Rect> top_shapes;
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
@@ -246,15 +246,35 @@ void ICeWall::assignBump(odb::dbInst* inst,
         }
 
         if (top_layer == nullptr
-            || top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
           top_layer = layer;
-          top_shape = geom->getBox();
+          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            top_shapes.clear();
+          }
+          top_shapes.insert(geom->getBox());
         }
       }
     }
   }
 
   if (top_layer != nullptr) {
+    odb::Rect master_box;
+    inst->getMaster()->getPlacementBoundary(master_box);
+    const odb::Point center = master_box.center();
+
+    const odb::Rect* top_shape_ptr = nullptr;
+    for (const odb::Rect& shape : top_shapes) {
+      if (shape.intersects(center)) {
+        top_shape_ptr = &shape;
+      }
+    }
+
+    if (top_shape_ptr == nullptr) {
+      top_shape_ptr = &(*top_shapes.begin());
+    }
+
+    odb::Rect top_shape = *top_shape_ptr;
+
     xform.apply(top_shape);
     makeBTerm(net, top_layer, top_shape);
   }
@@ -315,29 +335,81 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                      die.xMax() - east_offset,
                      die.yMax() - north_offset);
 
+  const double dbus = block->getDbUnitsPerMicron();
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "Outer bounds ({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
+             outer_io.xMin() / dbus,
+             outer_io.yMin() / dbus,
+             outer_io.xMax() / dbus,
+             outer_io.yMax() / dbus);
+
+  const odb::Rect corner_box(
+      0, 0, corner_site->getWidth(), corner_site->getHeight());
+  const odb::Rect horizontal_box(
+      0, 0, horizontal_site->getWidth(), horizontal_site->getHeight());
+  const odb::Rect vertical_box(
+      0, 0, vertical_site->getWidth(), vertical_site->getHeight());
+
   const int cheight = corner_site->getHeight();
   const int cwidth
       = std::max(horizontal_site->getHeight(), corner_site->getWidth());
 
   const int x_sites = std::floor(static_cast<double>(outer_io.dx() - 2 * cwidth)
-                                 / vertical_site->getWidth());
+                                 / vertical_box.minDXDY());
   outer_io.set_xhi(outer_io.xMin() + 2 * cwidth
-                   + x_sites * vertical_site->getWidth());
+                   + x_sites * vertical_box.minDXDY());
   const int y_sites
       = std::floor(static_cast<double>(outer_io.dy() - 2 * cheight)
-                   / horizontal_site->getWidth());
+                   / horizontal_box.minDXDY());
   outer_io.set_yhi(outer_io.yMin() + 2 * cheight
-                   + y_sites * horizontal_site->getWidth());
+                   + y_sites * horizontal_box.minDXDY());
 
   const odb::Rect corner_origins(outer_io.xMin(),
                                  outer_io.yMin(),
                                  outer_io.xMax() - cwidth,
                                  outer_io.yMax() - cheight);
 
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             2,
+             "x-sites {} at {:.4f}",
+             x_sites,
+             vertical_box.minDXDY() / dbus);
+
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             2,
+             "y-sites {} at {:.4f}",
+             y_sites,
+             horizontal_box.minDXDY() / dbus);
+
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "Corner origins ({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
+             corner_origins.xMin() / dbus,
+             corner_origins.yMin() / dbus,
+             corner_origins.xMax() / dbus,
+             corner_origins.yMax() / dbus);
+
   // Create corners
-  const int corner_sites
-      = std::max(horizontal_site->getHeight(), corner_site->getWidth())
-        / corner_site->getWidth();
+  const int corner_sites = std::max(static_cast<uint>(horizontal_box.maxDXDY()),
+                                    corner_site->getWidth())
+                           / corner_site->getWidth();
+  debugPrint(logger_,
+             utl::PAD,
+             "Rows",
+             1,
+             "corner-sites {} at {:.4f}",
+             corner_sites,
+             corner_site->getWidth() / dbus);
+
   auto create_corner
       = [this, block, corner_site, corner_sites, ring_index, &rotation_cor](
             const std::string& name,
@@ -372,7 +444,8 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                                   const odb::Point& origin,
                                   const odb::dbOrientType& orient,
                                   const odb::dbOrientType& row_rotation,
-                                  const odb::dbRowDir& direction) {
+                                  const odb::dbRowDir& direction,
+                                  int site_width) {
           const std::string row_name = getRowName(name, ring_index);
           odb::dbTransform rotation(orient);
           rotation.concat(row_rotation);
@@ -384,16 +457,17 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                              rotation.getOrient(),
                              direction,
                              sites,
-                             site->getWidth());
+                             site_width);
         };
   create_row(row_north_,
              vertical_site,
              x_sites,
              {nw->getBBox().xMax(),
-              outer_io.yMax() - static_cast<int>(vertical_site->getHeight())},
+              outer_io.yMax() - static_cast<int>(vertical_box.maxDXDY())},
              odb::dbOrientType::MX,
              rotation_ver,
-             odb::dbRowDir::HORIZONTAL);
+             odb::dbRowDir::HORIZONTAL,
+             vertical_box.minDXDY());
   odb::dbOrientType east_rotation_hor = odb::dbOrientType::R90;
   if (vertical_site != horizontal_site) {
     east_rotation_hor = odb::dbOrientType::R0;
@@ -401,18 +475,20 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
   create_row(row_east_,
              horizontal_site,
              y_sites,
-             {outer_io.xMax() - static_cast<int>(horizontal_site->getHeight()),
+             {outer_io.xMax() - static_cast<int>(horizontal_box.maxDXDY()),
               se->getBBox().yMax()},
              east_rotation_hor,
              rotation_hor,
-             odb::dbRowDir::VERTICAL);
+             odb::dbRowDir::VERTICAL,
+             horizontal_box.minDXDY());
   create_row(row_south_,
              vertical_site,
              x_sites,
              {sw->getBBox().xMax(), outer_io.yMin()},
              odb::dbOrientType::R0,
              rotation_ver,
-             odb::dbRowDir::HORIZONTAL);
+             odb::dbRowDir::HORIZONTAL,
+             vertical_box.minDXDY());
   const odb::dbOrientType west_rotation_hor = east_rotation_hor.flipY();
   create_row(row_west_,
              horizontal_site,
@@ -420,7 +496,8 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              {outer_io.xMin(), sw->getBBox().yMax()},
              west_rotation_hor,
              rotation_hor,
-             odb::dbRowDir::VERTICAL);
+             odb::dbRowDir::VERTICAL,
+             horizontal_box.minDXDY());
 }
 
 void ICeWall::removeIORows()
@@ -650,6 +727,9 @@ void ICeWall::placeInstance(odb::dbRow* row,
     if (!check_inst->isFixed()) {
       continue;
     }
+    if (check_inst->getMaster()->isCover()) {
+      continue;
+    }
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
     if (!allow_overlap && inst_rect.overlaps(check_rect)) {
       logger_->error(utl::PAD,
@@ -761,7 +841,8 @@ void ICeWall::placeFiller(
 
   row_interval -= placed_io;
 
-  const int site_width = row->getSite()->getWidth();
+  const int site_width
+      = std::min(row->getSite()->getWidth(), row->getSite()->getHeight());
   int fill_group = 0;
   for (Interval::iterator it = row_interval.begin(); it != row_interval.end();
        it++) {
@@ -1112,6 +1193,26 @@ std::set<odb::dbNet*> ICeWall::connectByAbutment(
   std::set<odb::dbNet*> special_nets;
   bool changed = false;
   int iter = 0;
+
+  // remove nets with a single iterm/bterm connection
+  for (const auto& [iterm0, iterm1] : connections) {
+    auto* net0 = iterm0->getNet();
+    if (net0 != nullptr) {
+      const int connections = net0->getITermCount() + net0->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net0);
+      }
+    }
+
+    auto* net1 = iterm1->getNet();
+    if (net1 != nullptr) {
+      const int connections = net1->getITermCount() + net1->getBTermCount();
+      if (connections == 1) {
+        odb::dbNet::destroy(net1);
+      }
+    }
+  }
+
   do {
     changed = false;
     debugPrint(logger_,
@@ -1345,10 +1446,6 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
 
 void ICeWall::routeRDLDebugGUI(bool enable)
 {
-  if (router_ == nullptr) {
-    return;
-  }
-
   if (enable) {
     if (router_gui_ == nullptr) {
       router_gui_ = std::make_unique<RDLGui>();
@@ -1358,7 +1455,10 @@ void ICeWall::routeRDLDebugGUI(bool enable)
     }
     gui::Gui::get()->registerRenderer(router_gui_.get());
   } else {
-    gui::Gui::get()->unregisterRenderer(router_gui_.get());
+    if (router_gui_ != nullptr) {
+      gui::Gui::get()->unregisterRenderer(router_gui_.get());
+      router_gui_ = nullptr;
+    }
   }
 }
 
