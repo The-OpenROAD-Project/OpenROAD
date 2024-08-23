@@ -5,7 +5,6 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[WARNING ANT-0015] No detailed routing found for nets.
 Net: clk
   Pin:   clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
     Layer: mcon
