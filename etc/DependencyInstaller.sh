@@ -575,6 +575,9 @@ EOF
 
     # Install swig 4.1.1
     _installHomebrewPackage "swig" "c83c8aaa6505c3ea28c35bc45a54234f79e46c5d" "s/"
+
+    # Install gtest 1.13.0
+    _installHomebrewPackage "googletest" "c3df14c9d6e05ec81029c0b1e2f3c3b9a7bd237b"
 }
 
 _installDebianCleanUp() {
