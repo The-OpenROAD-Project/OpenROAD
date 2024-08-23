@@ -309,6 +309,7 @@ _installUbuntuPackages() {
         binutils \
         bison \
         build-essential \
+        ccache \
         clang \
         debhelper \
         devscripts \
@@ -332,9 +333,9 @@ _installUbuntuPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
-        zlib1g-dev \
-        ccache
+        zlib1g-dev
 
     packages=()
     # Chose Python version
@@ -639,8 +640,7 @@ _installCI() {
         curl \
         jq \
         parallel \
-        software-properties-common \
-        unzip
+        software-properties-common
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
