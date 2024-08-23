@@ -3073,7 +3073,12 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     std::string name = pair.first;
     BufferData data = pair.second;
     makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
-    debugPrint(logger_, RSZ, "journal", 1, "journal restore buffer {}", name);
+    debugPrint(logger_,
+               RSZ,
+               "journal",
+               1,
+               "journal restore buffer: re-created instance {}",
+               name);
   }
 
   // Second, reconnect buffer input and output pins
@@ -3085,14 +3090,51 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     data.lib_cell->bufferPorts(input, output);
 
     // Reconnect buffer input pin to previous driver pin
+    // Watch out for any side load insts
+    //
+    // Before restore
+    // drvr_inst -> load_inst1
+    //           -> load_inst2
+    //           -> side_load_inst3
+    //           -> side_load_inst4
+    //
+    // After restore
+    // drvr_inst -> buffer -> load_inst1
+    //           |         -> load_inst2
+    //           -> side_load_inst3
+    //           -> side_load_inst4
+    //
     Net* input_net = makeUniqueNet();
     Instance* drvr_inst = network_->findInstance(data.driver_pin.first.c_str());
     Pin* drvr_pin
         = network_->findPin(drvr_inst, data.driver_pin.second.c_str());
     Port* drvr_port = network_->port(drvr_pin);
+    // Remember original loads including side loads
+    std::set<const Pin*> side_load_pins;
+    Net* orig_input_net = db_network_->net(drvr_pin);
+    NetConnectedPinIterator* net_pin_iter
+        = network_->connectedPinIterator(orig_input_net);
+    while (net_pin_iter->hasNext()) {
+      const Pin* side_load_pin = net_pin_iter->next();
+      if (side_load_pin != drvr_pin) {
+        side_load_pins.insert(side_load_pin);
+      }
+    }
+
+    if (logger_->debugCheck(RSZ, "journal", 1)) {
+      logger_->report("<<< before restoring buffer {}", name);
+      logger_->report("  drvr pin {}, net {}",
+                      network_->name(drvr_pin),
+                      network_->name(orig_input_net));
+      for (const Pin* pin : side_load_pins) {
+        logger_->report("    -> {}", network_->name(pin));
+      }
+    }
+
     sta_->disconnectPin(const_cast<Pin*>(drvr_pin));
     sta_->connectPin(drvr_inst, drvr_port, input_net);
     sta_->connectPin(buffer, input, input_net);
+    db_network_->deleteNet(orig_input_net);
 
     // Reconnect buffer output pin to prevoius load pins
     Net* output_net = makeUniqueNet();
@@ -3102,10 +3144,43 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
       Pin* load_pin
           = network_->findPin(load_inst, load_pin_pair.second.c_str());
       Port* load_port = network_->port(load_pin);
+      side_load_pins.erase(load_pin);  // load_inst1, load_inst2, ...
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load_inst, load_port, output_net);
     }
     sta_->connectPin(buffer, output, output_net);
+
+    // Take care of original side loads (side_load_inst3, side_load_inst4 from
+    // above)
+    for (const Pin* side_load_pin : side_load_pins) {
+      Instance* side_load_inst = network_->instance(side_load_pin);
+      Port* side_load_port = network_->port(side_load_pin);
+      sta_->connectPin(side_load_inst, side_load_port, input_net);
+    }
+
+    if (logger_->debugCheck(RSZ, "journal", 1)) {
+      logger_->report(">>> after restoring buffer {}", name);
+      NetConnectedPinIterator* pin_iter
+          = network_->connectedPinIterator(input_net);
+      logger_->report("  drvr pin {}, net {}",
+                      network_->name(drvr_pin),
+                      network_->name(input_net));
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        if (pin != drvr_pin) {
+          logger_->report("  -> {}", network_->name(pin));
+        }
+      }
+      logger_->report(
+          "  -> buffer {}, net {}", name, network_->name(output_net));
+      pin_iter = network_->connectedPinIterator(output_net);
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        if (network_->direction(pin)->isInput()) {
+          logger_->report("    -> {}", network_->name(pin));
+        }
+      }
+    }
 
     parasiticsInvalid(input_net);
     parasiticsInvalid(output_net);

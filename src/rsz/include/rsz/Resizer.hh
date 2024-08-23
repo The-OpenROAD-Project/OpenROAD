@@ -403,6 +403,7 @@ class Resizer : public dbStaState
   ////////////////////////////////////////////////////////////////
   void journalBeginTest();
   void journalRestoreTest();
+  Logger* logger() const { return logger_; }
 
  protected:
   void init();
@@ -654,8 +655,6 @@ class Resizer : public dbStaState
   bool isRegOutput(Vertex* vertex);
   bool isRegister(Vertex* vertex);
   ////////////////////////////////////////////////////////////////
-
-  Logger* logger() const { return logger_; }
 
   // Components
   RecoverPower* recover_power_;
