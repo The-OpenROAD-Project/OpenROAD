@@ -115,10 +115,10 @@ _installCommonDev() {
 
         # Check if pcre2 is installed
         if [[ -z $(pcre2-config --version) ]]; then
-          tarName="pcre2-${pcreVersion}.tar.gz"
-          wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
-          md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
-          ./Tools/pcre-build.sh
+            tarName="pcre2-${pcreVersion}.tar.gz"
+            wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+            md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
+            ./Tools/pcre-build.sh
         fi
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
@@ -243,8 +243,8 @@ _installCommonDev() {
     rm -rf "${baseDir}"
 
     if [[ ! -z ${PREFIX} ]]; then
-      # Emit an environment setup script
-      cat > ${PREFIX}/env.sh <<EOF
+        # Emit an environment setup script
+        cat > ${PREFIX}/env.sh <<EOF
 depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
 PATH=\${depRoot}/bin:\${PATH}
 LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
@@ -274,10 +274,10 @@ _installOrTools() {
         if [ ${#LIST[@]} -eq 0 ]; then
             echo "OR-TOOLS NOT FOUND"
             echo "Installing  OR-Tools for aarch64..."
-            git clone https://github.com/google/or-tools.git
+            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
             cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DCMAKE_INSTALL_PREFIX=${orToolsPath}
-            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v
+            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
         else
             echo "OR-Tools is already installed"
         fi
@@ -309,6 +309,7 @@ _installUbuntuPackages() {
         binutils \
         bison \
         build-essential \
+        ccache \
         clang \
         debhelper \
         devscripts \
@@ -332,9 +333,9 @@ _installUbuntuPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
-        zlib1g-dev \
-        ccache \
+        zlib1g-dev
 
     packages=()
     # Chose Python version
@@ -422,8 +423,8 @@ _installRHELPackages() {
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 
-    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
-    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
+    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
     rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
@@ -478,7 +479,7 @@ _installCentosPackages() {
         wget \
         ccache \
         zlib-devel
-    }
+}
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
@@ -522,6 +523,7 @@ _installOpenSusePackages() {
         tcllib \
         wget \
         zlib-devel
+
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -551,18 +553,18 @@ _installHomebrewPackage() {
 
 _installDarwin() {
     if ! command -v brew &> /dev/null; then
-      echo "Homebrew is not found. Please install homebrew before continuing."
-      exit 1
-      fi
+        echo "Homebrew is not found. Please install homebrew before continuing."
+        exit 1
+    fi
     if ! xcode-select -p &> /dev/null; then
-      # xcode-select does not pause execution, so the user must handle it
-      cat <<EOF
+        # xcode-select does not pause execution, so the user must handle it
+        cat <<EOF
 Xcode command line tools not installed.
 Run the following command to install them:
   xcode-select --install
 Then, rerun this script.
 EOF
-      exit 1
+    exit 1
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
@@ -619,6 +621,7 @@ _installDebianPackages() {
         apt-get install -y --no-install-recommends \
             libpython3.7 \
             qt5-default
+
     else
         apt-get install -y --no-install-recommends \
             libpython3.8 \
@@ -637,13 +640,13 @@ _installCI() {
         curl \
         jq \
         parallel \
-        software-properties-common \
-        unzip
+        software-properties-common
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
         -o /etc/apt/keyrings/docker.asc
+
     chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add the repository to Apt sources:
