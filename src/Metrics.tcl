@@ -262,12 +262,43 @@ proc report_puts { out } {
   close $fileId
 }
 
-define_cmd_args "report_metrics" {[-stage][-when][-include_erc][-include_clock_skew][-metrics_report_dir dir]}
-proc report_metrics { stage when {include_erc true} {include_clock_skew true} {metrics_report_dir "."}} {
+define_cmd_args "report_metrics" {[-stage stage]\
+                                  [-when when]\
+                                  [-include_erc]\
+                                  [-include_clock_skew]\
+                                  [-metrics_report_dir]
+}
+proc report_metrics { args } {
+  parse_key_args "report_metrics" args \
+    keys {-stage -when} flags {-include_erc -include_clock_skew -metrics_report_dir}
+  
+  set stage -1
+  if { [info exists keys(-stage)] } {
+    set stage $keys(-stage)
+  }
+  set when "NULL"
+  if { [info exists keys(-when)] } {
+    set when $keys(-when)
+  }
+  set include_erc "true"
+  if { [info exists keys(-include_erce)] } {
+    set include_erc $keys(-include_erc)
+  }
+  set include_clock_skew "true"
+  if { [info exists keys(-include_clock_skew)] } {
+    set include_clock_skew $keys(-include_clock_skew)
+  }
+  set metrics_report_dir ""
+  if { [info exists keys(-metrics_report_dir)] } {
+    set metrics_report_dir $keys(-metrics_report_dir)
+  }
+  if {[info exists ::env(SKIP_REPORT_METRICS)] && $::env(SKIP_REPORT_METRICS) == 1} {
+    return
+  }
+  puts "Report metrics stage $stage, $when..."
   if {$metrics_report_dir eq ""} {
     set metrics_report_dir [file join  $::env(HOME) "OpenROAD" "results"]
   }
-  puts "Report metrics stage $stage, $when..."
   if {![file isdirectory $metrics_report_dir]} {
     file mkdir $metrics_report_dir
   }
@@ -418,17 +449,17 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
     report_puts "\n=========================================================================="
     report_puts "$when report_checks -path_delay max reg to reg"
     report_puts "--------------------------------------------------------------------------"
-    report_checks -path_delay max -from [all_registers] -to [all_registers] -format full_clock_expanded >> $filename
+    report_checks -path_delay max -from [all_registers] -to [all_registers] -format full_clock_expanded >> $filename    
     report_puts "\n=========================================================================="
     report_puts "$when report_checks -path_delay min reg to reg"
     report_puts "--------------------------------------------------------------------------"
-    report_checks -path_delay min -from [all_registers] -to [all_registers]  -format full_clock_expanded >> $filename
+    report_checks -path_delay min -from [all_registers] -to [all_registers]  -format full_clock_expanded >> $filename         
 
     set inp_to_reg_critical_path [lindex [find_timing_paths -path_delay max -from [all_inputs] -to [all_registers]] 0]
     if {$inp_to_reg_critical_path != ""} {
       set target_clock_latency_max [sta::format_time [$inp_to_reg_critical_path target_clk_delay] 4]
     } else {
-      set target_clock_latency_max 0
+      set target_clock_latency_max 0	
     }
 
 
@@ -437,10 +468,10 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
       set target_clock_latency_min [sta::format_time [$inp_to_reg_critical_path target_clk_delay] 4]
       set source_clock_latency [sta::format_time [$inp_to_reg_critical_path source_clk_latency] 4]
     } else {
-      set target_clock_latency_min 0
+      set target_clock_latency_min 0	
       set source_clock_latency 0
     }
-
+      
     report_puts "\n=========================================================================="
     report_puts "$when critical path target clock latency max path"
     report_puts "--------------------------------------------------------------------------"
@@ -459,7 +490,7 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
     puts "No registers in design"
     }
     # end if all_registers
-
+      
     report_puts "\n=========================================================================="
     report_puts "$when critical path delay"
     report_puts "--------------------------------------------------------------------------"
@@ -480,10 +511,10 @@ proc report_metrics { stage when {include_erc true} {include_clock_skew true} {m
   report_puts "$when report_power"
   report_puts "--------------------------------------------------------------------------"
   
-  foreach corner $sta::CORNERS {
-    report_puts "Corner: $corner"
-    report_power -corner $corner >> $filename
-    report_power_metric -corner $corner >> $filename
+  foreach corner [sta::corners] {
+    report_puts "Corner: [$corner name]"
+    report_power -corner [$corner name] >> $filename
+    report_power_metric -corner [$corner name] >> $filename
   }
   unset corner
   # TODO these only work to stdout, whereas we want to append to the $filename
