@@ -234,6 +234,9 @@ bool GlobalRouter::haveRoutes()
 
 bool GlobalRouter::haveDetailedRoutes()
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   for (odb::dbNet* db_net : block_->getNets()) {
     if (isDetailedRouted(db_net)) {
       return true;
