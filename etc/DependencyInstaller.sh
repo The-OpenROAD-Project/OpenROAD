@@ -614,6 +614,7 @@ _installDebianPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
+        unzip \
         wget \
         zlib1g-dev
 
