@@ -77,9 +77,9 @@ endforeach()
 
 add_executable(dpl_test dpl_test.cc)
 
-target_link_libraries(dpl_test 
-    gtest 
-    gtest_main
+target_link_libraries(dpl_test
+    GTest::gtest
+    GTest::gtest_main
     dpl_lib
 )
 
