@@ -719,15 +719,17 @@ void GlobalRouter::deleteSegment(Net* net, GRoute& segments, const int seg_id)
     bool is_horizontal = (seg.init_x != seg.final_x);
     bool is_vertical = (seg.init_y != seg.final_y);
     const int tile_size = grid_->getTileSize();
-    auto [min_x, max_x]
+    // For some reason I do not understand using [auto min_x, min_y] sometimes
+    // break here
+    std::pair<int, int> x_bound
         = std::minmax((int) ((seg.init_x - grid_->getXMin()) / tile_size),
                       (int) ((seg.final_x - grid_->getXMin()) / tile_size));
-    auto [min_y, max_y]
+    std::pair<int, int> y_bound
         = std::minmax((int) ((seg.init_y - grid_->getYMin()) / tile_size),
                       (int) ((seg.final_y - grid_->getYMin()) / tile_size));
-    int x0 = min_x, y0 = min_y;
+    int x0 = x_bound.first, y0 = y_bound.first;
 
-    while (x0 <= max_x && y0 <= max_y) {
+    while (x0 <= x_bound.second && y0 <= y_bound.second) {
       const int x1 = x0 + (is_horizontal ? 1 : 0);
       const int y1 = y0 + (is_vertical ? 1 : 0);
       const int edge_cap
