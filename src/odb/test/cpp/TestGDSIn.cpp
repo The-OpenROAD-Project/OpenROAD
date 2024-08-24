@@ -12,6 +12,8 @@
 namespace odb {
 namespace {
 
+using namespace gds;
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 BOOST_AUTO_TEST_CASE(reader)
 {
@@ -102,25 +104,65 @@ BOOST_AUTO_TEST_CASE(writer)
   BOOST_TEST(text->get_sTrans()._angle == 90);
 }
 
-// int main(int argc, char* argv[])
-// {
-//   if(argc != 3)
-//   {
-//     std::cerr << "Usage: " << argv[0] << " <input file> <output file>" <<
-//     std::endl; return 1;
-//   }
-//   odb::GDSReader reader;
-//   odb::dbDatabase* db = odb::dbDatabase::create();
-//   odb::dbGDSLib* lib = reader.read_gds(argv[1], db);
-//   std::cout << "Library: " << lib->getLibname() << std::endl;
-//   std::cout << "Units: " << lib->getUnits().first << " " <<
-//   lib->getUnits().second << std::endl;
+BOOST_AUTO_TEST_CASE(edit)
+{
+  dbDatabase* db = dbDatabase::create();
+  std::string libname = "test_lib";
+  dbGDSLib* lib = createEmptyGDSLib(db, libname);
 
-//   odb::GDSWriter writer;
-//   writer.write_gds(lib, argv[2]);
+  dbGDSStructure* str1 = createEmptyGDSStructure(lib, "str1");
+  dbGDSStructure* str2 = createEmptyGDSStructure(lib, "str2");
 
-//   delete lib;
-// }
+  dbGDSStructure::destroy(str2);
+
+  dbGDSBox* box = createEmptyGDSBox(db);
+  box->setLayer(3);
+  box->setDatatype(4);
+  box->getXY().emplace_back(0, 0);
+  box->getXY().emplace_back(0, 1000);
+  box->getXY().emplace_back(1000, 1000);
+  box->getXY().emplace_back(1000, 0);
+
+  box->getPropattr().emplace_back(12, "test");
+
+  str1->addElement(box);
+
+  dbGDSNode* node = createEmptyGDSNode(db);
+  node->setLayer(6);
+  node->setDatatype(7);
+
+  node->getXY().emplace_back(2, 3);
+  node->getXY().emplace_back(4, 5);
+
+  str1->addElement(node);
+
+  std::string outpath = testTmpPath("results", "edit_test_out.gds");
+
+  GDSWriter writer;
+  writer.write_gds(lib, outpath);
+
+  GDSReader reader;
+  dbGDSLib* lib2 = reader.read_gds(outpath, db);
+
+  BOOST_TEST(lib2->getLibname() == libname);
+  BOOST_TEST(lib2->getGDSStructures().size() == 1);
+
+  dbGDSStructure* str1_read = lib2->findGDSStructure("str1");
+  BOOST_TEST(str1_read != nullptr);
+  BOOST_TEST(str1_read->getNumElements() == 2);
+
+  dbGDSBox* box_read = (dbGDSBox*) str1_read->getElement(0);
+  BOOST_TEST(box_read->getLayer() == 3);
+  BOOST_TEST(box_read->getDatatype() == 4);
+  BOOST_TEST(box_read->getXY().size() == 4);
+  BOOST_TEST(box_read->getPropattr().size() == 1);
+  BOOST_TEST(box_read->getPropattr()[0].first == 12);
+  BOOST_TEST(box_read->getPropattr()[0].second == "test");
+
+  dbGDSNode* node_read = (dbGDSNode*) str1_read->getElement(1);
+  BOOST_TEST(node_read->getLayer() == 6);
+  BOOST_TEST(node_read->getDatatype() == 7);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

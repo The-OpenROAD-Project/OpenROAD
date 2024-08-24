@@ -33,6 +33,7 @@
 #pragma once
 
 #include <endian.h>
+#include <odb/db.h>
 
 #include <cstdint>
 #include <fstream>
@@ -41,6 +42,8 @@
 #include <vector>
 
 namespace odb {
+
+namespace gds {
 
 /**
  * Enum representing the different types of records in a GDSII file
@@ -184,4 +187,43 @@ struct record_t
 std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
     const std::string& filename);
 
+/**
+ * Create an empty GDSII library object
+ *
+ * @param db The database to add the library to
+ * @param libname The name of the library
+ */
+dbGDSLib* createEmptyGDSLib(dbDatabase* db, std::string& libname);
+
+/**
+ * Sets timestamp on a GDSII library object to the current time
+ */
+void stampGDSLib(dbGDSLib* lib, bool modified = true);
+
+/**
+ * Create an empty GDSII structure object and add it to a library
+ *
+ * Equivalent to: dbGDSStructure::create(), to remove a struct from a library,
+ * use dbGDSStructure::destroy()
+ *
+ * @param lib The dbGDSLib object to add the structure to
+ * @param name The name of the structure
+ */
+dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name);
+
+/**
+ * Create an empty GDSII element (boundary, box, text, path, sref, node)
+ *
+ * The element is not added to a structure upon creation, use
+ * dbGDSStructure::addElement() to add the element to a structure and
+ * dbGDSStructure::removeElement() to remove it
+ */
+dbGDSBoundary* createEmptyGDSBoundary(dbDatabase* db);
+dbGDSBox* createEmptyGDSBox(dbDatabase* db);
+dbGDSText* createEmptyGDSText(dbDatabase* db);
+dbGDSPath* createEmptyGDSPath(dbDatabase* db);
+dbGDSSRef* createEmptyGDSSRef(dbDatabase* db);
+dbGDSNode* createEmptyGDSNode(dbDatabase* db);
+
+}  // namespace gds
 }  // namespace odb

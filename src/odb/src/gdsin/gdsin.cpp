@@ -50,6 +50,8 @@ enum
 
 namespace odb {
 
+namespace gds {
+
 GDSReader::GDSReader() : _lib(nullptr)
 {
 }
@@ -476,6 +478,7 @@ dbGDSElement* GDSReader::processNode()
   checkRType(RecordType::NODETYPE);
   elem->_datatype = _r.data16[0];
 
+  readRecord();
   processXY((dbGDSElement*) elem);
 
   return (dbGDSElement*) elem;
@@ -518,4 +521,5 @@ dbGDSTextPres GDSReader::processTextPres()
       font, (dbGDSTextPres::VPres) vpres, (dbGDSTextPres::HPres) hpres);
 }
 
+}  // namespace gds
 }  // namespace odb

@@ -51,6 +51,8 @@ class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
 
+namespace gds {
+
 class GDSWriter
 {
  public:
@@ -149,4 +151,5 @@ class GDSWriter
   void writeTextPres(const dbGDSTextPres& pres);
 };
 
+}  // namespace gds
 }  // namespace odb

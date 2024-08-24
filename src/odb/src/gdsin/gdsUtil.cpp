@@ -34,12 +34,23 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <ctime>
 #include <map>
 #include <utility>
 
+#include "../db/dbGDSBoundary.h"
+#include "../db/dbGDSBox.h"
+#include "../db/dbGDSElement.h"
+#include "../db/dbGDSLib.h"
+#include "../db/dbGDSNode.h"
+#include "../db/dbGDSPath.h"
+#include "../db/dbGDSSRef.h"
+#include "../db/dbGDSStructure.h"
+#include "../db/dbGDSText.h"
 #include "odb/db.h"
 
 namespace odb {
+namespace gds {
 
 const char* recordNames[(int) RecordType::INVALID_RT]
     = {"HEADER",    "BGNLIB",    "LIBNAME",    "UNITS",        "ENDLIB",
@@ -161,4 +172,51 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
   return layerMap;
 }
 
+dbGDSLib* createEmptyGDSLib(dbDatabase* db, std::string& libname)
+{
+  dbGDSLib* lib = (dbGDSLib*) (new _dbGDSLib((_dbDatabase*) db));
+  lib->setLibname(libname.c_str());
+  time_t now = std::time(0);
+  std::tm now_tm = *std::localtime(&now);
+  lib->set_lastAccessed(now_tm);
+  lib->set_lastModified(now_tm);
+  return lib;
+}
+
+dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name)
+{
+  return dbGDSStructure::create(lib, name.c_str());
+}
+
+dbGDSBoundary* createEmptyGDSBoundary(dbDatabase* db)
+{
+  return (dbGDSBoundary*) (new _dbGDSBoundary((_dbDatabase*) db));
+}
+
+dbGDSBox* createEmptyGDSBox(dbDatabase* db)
+{
+  return (dbGDSBox*) (new _dbGDSBox((_dbDatabase*) db));
+}
+
+dbGDSText* createEmptyGDSText(dbDatabase* db)
+{
+  return (dbGDSText*) (new _dbGDSText((_dbDatabase*) db));
+}
+
+dbGDSPath* createEmptyGDSPath(dbDatabase* db)
+{
+  return (dbGDSPath*) (new _dbGDSPath((_dbDatabase*) db));
+}
+
+dbGDSSRef* createEmptyGDSSRef(dbDatabase* db)
+{
+  return (dbGDSSRef*) (new _dbGDSSRef((_dbDatabase*) db));
+}
+
+dbGDSNode* createEmptyGDSNode(dbDatabase* db)
+{
+  return (dbGDSNode*) (new _dbGDSNode((_dbDatabase*) db));
+}
+
+}  // namespace gds
 }  // namespace odb

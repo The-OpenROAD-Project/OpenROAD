@@ -51,6 +51,8 @@ class dbGDSPath;
 class dbGDSSRef;
 class dbGDSStructure;
 
+namespace gds {
+
 class GDSReader
 {
  public:
@@ -191,4 +193,5 @@ class GDSReader
   dbGDSTextPres processTextPres();
 };
 
+}  // namespace gds
 }  // namespace odb

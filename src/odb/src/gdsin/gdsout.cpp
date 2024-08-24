@@ -35,14 +35,17 @@
 #include <iostream>
 
 #include "../db/dbGDSBoundary.h"
+#include "../db/dbGDSBox.h"
 #include "../db/dbGDSElement.h"
 #include "../db/dbGDSLib.h"
+#include "../db/dbGDSNode.h"
 #include "../db/dbGDSPath.h"
 #include "../db/dbGDSSRef.h"
 #include "../db/dbGDSStructure.h"
 #include "../db/dbGDSText.h"
 
 namespace odb {
+namespace gds {
 
 GDSWriter::GDSWriter() : _lib(nullptr)
 {
@@ -239,6 +242,10 @@ void GDSWriter::writeElement(dbGDSElement* el)
     writeSRef((dbGDSSRef*) el);
   } else if (dynamic_cast<_dbGDSText*>(_el)) {
     writeText((dbGDSText*) el);
+  } else if (dynamic_cast<_dbGDSBox*>(_el)) {
+    writeBox((dbGDSBox*) el);
+  } else if (dynamic_cast<_dbGDSNode*>(_el)) {
+    writeNode((dbGDSNode*) el);
   } else {
     throw std::runtime_error("Invalid / Unsupported element type");
   }
@@ -451,6 +458,13 @@ void GDSWriter::writeNode(dbGDSNode* node)
   writeRecord(r);
 
   writeLayer(node);
+
+  record_t r2;
+  r2.type = RecordType::NODETYPE;
+  r2.dataType = DataType::INT_2;
+  r2.data16 = {node->getDatatype()};
+  writeRecord(r2);
+
   writeXY(node);
 }
 
@@ -493,5 +507,7 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   r.data8[1] |= pres._hPres;
   writeRecord(r);
 }
+
+}  // namespace gds
 
 }  // namespace odb
