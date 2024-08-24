@@ -145,6 +145,8 @@ BOOST_AUTO_TEST_CASE(edit)
 
   std::string outpath = testTmpPath("results", "edit_test_out.gds");
 
+  stampGDSLib(lib);
+
   GDSWriter writer;
   writer.write_gds(lib, outpath);
 

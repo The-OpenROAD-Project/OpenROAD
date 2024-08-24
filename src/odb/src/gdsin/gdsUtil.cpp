@@ -183,6 +183,16 @@ dbGDSLib* createEmptyGDSLib(dbDatabase* db, std::string& libname)
   return lib;
 }
 
+void stampGDSLib(dbGDSLib* lib, bool modified)
+{
+  time_t now = std::time(0);
+  std::tm now_tm = *std::localtime(&now);
+  lib->set_lastAccessed(now_tm);
+  if (modified) {
+    lib->set_lastModified(now_tm);
+  }
+}
+
 dbGDSStructure* createEmptyGDSStructure(dbGDSLib* lib, const std::string& name)
 {
   return dbGDSStructure::create(lib, name.c_str());
