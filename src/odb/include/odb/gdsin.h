@@ -81,17 +81,8 @@ class GDSReader
   dbGDSLib* read_gds(const std::string& filename, dbDatabase* db);
 
  private:
-  /** Current filestream */
-  std::ifstream _file;
-  /** Most recently read record */
-  record_t _r;
-  /** Current ODB Database */
-  dbDatabase* _db;
-  /** Current GDS Lib object */
-  dbGDSLib* _lib;
-
   /**
-   * Checks if the _r is the expected type
+   * Checks if the read record is the expected type
    *
    * Currently functions as an assert statement for the record type.
    * Used after readRecord() to check if the record type is the expected type.
@@ -103,7 +94,7 @@ class GDSReader
   bool checkRType(RecordType expect);
 
   /**
-   * Checks if the _r is the expected data type
+   * Checks if the read record is the expected data type
    *
    * Currently functions as an assert statement for the data type.
    * Used after readRecord() to check if the data type is the expected type.
@@ -191,6 +182,21 @@ class GDSReader
    * @return The parsed STrans
    */
   dbGDSTextPres processTextPres();
+
+  /**
+   * This function is called after the entire GDS file has been read to bind all
+   * SRefs with the pointers to the referenced structures.
+   */
+  void bindAllSRefs();
+
+  /** Current filestream */
+  std::ifstream _file;
+  /** Most recently read record */
+  record_t _r;
+  /** Current ODB Database */
+  dbDatabase* _db;
+  /** Current GDS Lib object */
+  dbGDSLib* _lib;
 };
 
 }  // namespace gds

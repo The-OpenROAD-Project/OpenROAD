@@ -10319,13 +10319,19 @@ class dbGDSSRef : public dbGDSElement
 
   std::string get_sName() const;
 
-  void set_sTrans(dbGDSSTrans sTrans);
+  void setTransform(dbGDSSTrans transform);
 
-  dbGDSSTrans get_sTrans() const;
+  dbGDSSTrans getTransform() const;
 
   void set_colRow(std::pair<int16_t, int16_t> colRow);
 
   std::pair<int16_t, int16_t> get_colRow() const;
+
+  // User Code Begin dbGDSSRef
+
+  dbGDSStructure* getStructure() const;
+
+  // User Code End dbGDSSRef
 };
 
 class dbGDSText : public dbGDSElement
@@ -10335,17 +10341,13 @@ class dbGDSText : public dbGDSElement
 
   dbGDSTextPres getPresentation() const;
 
-  void set_pathType(int16_t pathType);
-
-  int16_t get_pathType() const;
-
   void setWidth(int width);
 
   int getWidth() const;
 
-  void set_sTrans(dbGDSSTrans sTrans);
+  void setTransform(dbGDSSTrans transform);
 
-  dbGDSSTrans get_sTrans() const;
+  dbGDSSTrans getTransform() const;
 
   void setText(const std::string& text);
 

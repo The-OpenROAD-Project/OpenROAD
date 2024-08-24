@@ -163,13 +163,12 @@ class dbGDSTextPres
     RIGHT = 2
   };
 
-  uint8_t _fontNum;
   VPres _vPres;
   HPres _hPres;
 
   dbGDSTextPres();
 
-  dbGDSTextPres(uint8_t fontNum, VPres vPres, HPres hPres);
+  dbGDSTextPres(VPres vPres, HPres hPres);
 
   bool operator==(const dbGDSTextPres& rhs) const;
 

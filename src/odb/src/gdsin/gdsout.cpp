@@ -371,8 +371,8 @@ void GDSWriter::writeSRef(dbGDSSRef* sref)
   r2.data8 = sref->get_sName();
   writeRecord(r2);
 
-  if (!sref->get_sTrans().identity()) {
-    writeSTrans(sref->get_sTrans());
+  if (!sref->getTransform().identity()) {
+    writeSTrans(sref->getTransform());
   }
 
   if (colrow.first != 1 || colrow.second != 1) {
@@ -403,14 +403,6 @@ void GDSWriter::writeText(dbGDSText* text)
 
   writeTextPres(text->getPresentation());
 
-  if (text->get_pathType() != 0) {
-    record_t r3;
-    r3.type = RecordType::PATHTYPE;
-    r3.dataType = DataType::INT_2;
-    r3.data16 = {text->get_pathType()};
-    writeRecord(r3);
-  }
-
   if (text->getWidth() != 0) {
     record_t r4;
     r4.type = RecordType::WIDTH;
@@ -419,8 +411,8 @@ void GDSWriter::writeText(dbGDSText* text)
     writeRecord(r4);
   }
 
-  if (!text->get_sTrans().identity()) {
-    writeSTrans(text->get_sTrans());
+  if (!text->getTransform().identity()) {
+    writeSTrans(text->getTransform());
   }
 
   writeXY(text);
@@ -502,7 +494,6 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   r.type = RecordType::PRESENTATION;
   r.dataType = DataType::BIT_ARRAY;
   r.data8 = {0, 0};
-  r.data8[1] |= pres._fontNum << 4;
   r.data8[1] |= pres._vPres << 2;
   r.data8[1] |= pres._hPres;
   writeRecord(r);

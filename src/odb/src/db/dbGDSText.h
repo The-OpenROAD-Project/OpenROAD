@@ -63,11 +63,10 @@ class _dbGDSText : public _dbGDSElement
   std::string to_string() override
   {
     std::string str = "TEXT TEXTTYPE " + std::to_string(_datatype) + " PRES "
-                      + _presentation.to_string() + " PATHTYPE "
-                      + std::to_string(_pathType) + " WIDTH "
+                      + _presentation.to_string() + " WIDTH "
                       + std::to_string(_width);
-    if (!_sTrans.identity()) {
-      str += " STRANS " + _sTrans.to_string();
+    if (!_transform.identity()) {
+      str += " STRANS " + _transform.to_string();
     }
     str += _dbGDSElement::to_string();
     str += " STRING " + _text;
@@ -77,9 +76,8 @@ class _dbGDSText : public _dbGDSElement
   // User Code End Methods
 
   dbGDSTextPres _presentation;
-  int16_t _pathType;
   int _width;
-  dbGDSSTrans _sTrans;
+  dbGDSSTrans _transform;
   std::string _text;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj);

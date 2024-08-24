@@ -8,17 +8,12 @@
         "flags":[]
       },
       {
-        "name":"_pathType",
-        "type":"int16_t",
-        "flags":[]
-      },
-      {
         "name":"_width",
         "type":"int",
         "flags":[]
       },
       {
-        "name":"_sTrans",
+        "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
       },

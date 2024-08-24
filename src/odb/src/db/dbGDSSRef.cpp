@@ -85,7 +85,7 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db, const _dbGDSSRef& r)
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
   stream >> obj._sName;
-  stream >> obj._sTrans;
+  stream >> obj._transform;
   stream >> obj._colRow;
   return stream;
 }
@@ -93,7 +93,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 {
   stream << obj._sName;
-  stream << obj._sTrans;
+  stream << obj._transform;
   stream << obj._colRow;
   return stream;
 }
@@ -117,17 +117,17 @@ std::string dbGDSSRef::get_sName() const
   return obj->_sName;
 }
 
-void dbGDSSRef::set_sTrans(dbGDSSTrans sTrans)
+void dbGDSSRef::setTransform(dbGDSSTrans transform)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
-  obj->_sTrans = sTrans;
+  obj->_transform = transform;
 }
 
-dbGDSSTrans dbGDSSRef::get_sTrans() const
+dbGDSSTrans dbGDSSRef::getTransform() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_sTrans;
+  return obj->_transform;
 }
 
 void dbGDSSRef::set_colRow(std::pair<int16_t, int16_t> colRow)
@@ -143,5 +143,14 @@ std::pair<int16_t, int16_t> dbGDSSRef::get_colRow() const
   return obj->_colRow;
 }
 
+// User Code Begin dbGDSSRefPublicMethods
+
+dbGDSStructure* dbGDSSRef::getStructure() const
+{
+  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  return obj->_stucture;
+}
+
+// User Code End dbGDSSRefPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

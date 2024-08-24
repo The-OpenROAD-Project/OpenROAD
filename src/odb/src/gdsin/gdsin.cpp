@@ -78,6 +78,8 @@ dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
     _file.close();
   }
   _db = nullptr;
+
+  bindAllSRefs();
   return _lib;
 }
 
@@ -392,10 +394,8 @@ dbGDSElement* GDSReader::processSRef()
 
   readRecord();
   if (_r.type == RecordType::STRANS) {
-    sref->_sTrans = processSTrans();
+    sref->_transform = processSTrans();
   }
-
-  processXY((dbGDSElement*) sref);
 
   readRecord();
   if (_r.type == RecordType::COLROW) {
@@ -403,6 +403,8 @@ dbGDSElement* GDSReader::processSRef()
   } else {
     sref->_colRow = {1, 1};
   }
+
+  processXY((dbGDSElement*) sref);
 
   return (dbGDSElement*) sref;
 }
@@ -426,8 +428,7 @@ dbGDSElement* GDSReader::processText()
   }
 
   if (_r.type == RecordType::PATHTYPE) {
-    text->_pathType = _r.data16[0];
-    readRecord();
+    readRecord();  // Ignore PATHTYPE
   }
 
   if (_r.type == RecordType::WIDTH) {
@@ -436,7 +437,7 @@ dbGDSElement* GDSReader::processText()
   }
 
   if (_r.type == RecordType::STRANS) {
-    text->_sTrans = processSTrans();
+    text->_transform = processSTrans();
   }
 
   processXY((dbGDSElement*) text);
@@ -513,12 +514,29 @@ dbGDSTextPres GDSReader::processTextPres()
   checkRType(RecordType::PRESENTATION);
   uint8_t hpres = _r.data8[1] & 0x3;
   uint8_t vpres = (_r.data8[1] & 0xC) >> 2;
-  uint8_t font = (_r.data8[1] & 0x30) >> 4;
 
   // printf("\nFONT PRES DATA: %u \n", _r.data8[1]);
 
-  return dbGDSTextPres(
-      font, (dbGDSTextPres::VPres) vpres, (dbGDSTextPres::HPres) hpres);
+  return dbGDSTextPres((dbGDSTextPres::VPres) vpres,
+                       (dbGDSTextPres::HPres) hpres);
+}
+
+void GDSReader::bindAllSRefs()
+{
+  for (auto str : _lib->getGDSStructures()) {
+    _dbGDSStructure* s = (_dbGDSStructure*) str;
+    for (auto el : s->_elements) {
+      _dbGDSSRef* sref = dynamic_cast<_dbGDSSRef*>(el);
+      if (sref != nullptr) {
+        dbGDSStructure* ref = _lib->findGDSStructure(sref->_sName.c_str());
+        if (ref == nullptr) {
+          throw std::runtime_error(
+              "Corrupted GDS, SRef to non-existent struct");
+        }
+        sref->_stucture = ref;
+      }
+    }
+  }
 }
 
 }  // namespace gds

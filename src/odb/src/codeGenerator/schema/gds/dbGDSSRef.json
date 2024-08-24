@@ -8,7 +8,7 @@
         "flags":[]
       },
       {
-        "name":"_sTrans",
+        "name":"_transform",
         "type":"dbGDSSTrans",
         "flags":[]
       },
@@ -19,7 +19,8 @@
       }
     ],
     "h_includes": [
-      "dbGDSElement.h"
+      "dbGDSElement.h",
+      "dbGDSStructure.h"
     ],
     "cpp_includes": ["odb/dbTypes.h"]
   }

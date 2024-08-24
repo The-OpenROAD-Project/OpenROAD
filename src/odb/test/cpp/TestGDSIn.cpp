@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_CASE(reader)
 
   BOOST_TEST(text->getLayer() == 83);
   BOOST_TEST(text->getText().c_str() == "inv_1");
-  BOOST_TEST(text->get_sTrans()._mag == 0.1);
-  BOOST_TEST(text->get_sTrans()._angle == 90);
+  BOOST_TEST(text->getTransform()._mag == 0.1);
+  BOOST_TEST(text->getTransform()._angle == 90);
 }
 
 BOOST_AUTO_TEST_CASE(writer)
@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE(writer)
 
   BOOST_TEST(text->getLayer() == 83);
   BOOST_TEST(text->getText().c_str() == "inv_1");
-  BOOST_TEST(text->get_sTrans()._mag == 0.1);
-  BOOST_TEST(text->get_sTrans()._angle == 90);
+  BOOST_TEST(text->getTransform()._mag == 0.1);
+  BOOST_TEST(text->getTransform()._angle == 90);
 }
 
 BOOST_AUTO_TEST_CASE(edit)
@@ -112,6 +112,7 @@ BOOST_AUTO_TEST_CASE(edit)
 
   dbGDSStructure* str1 = createEmptyGDSStructure(lib, "str1");
   dbGDSStructure* str2 = createEmptyGDSStructure(lib, "str2");
+  dbGDSStructure* str3 = createEmptyGDSStructure(lib, "str3");
 
   dbGDSStructure::destroy(str2);
 
@@ -136,6 +137,12 @@ BOOST_AUTO_TEST_CASE(edit)
 
   str1->addElement(node);
 
+  dbGDSSRef* sref = createEmptyGDSSRef(db);
+  sref->set_sName("str1");
+  sref->setTransform(dbGDSSTrans(false, false, false, 2.0, 90));
+
+  str3->addElement(sref);
+
   std::string outpath = testTmpPath("results", "edit_test_out.gds");
 
   GDSWriter writer;
@@ -145,7 +152,7 @@ BOOST_AUTO_TEST_CASE(edit)
   dbGDSLib* lib2 = reader.read_gds(outpath, db);
 
   BOOST_TEST(lib2->getLibname() == libname);
-  BOOST_TEST(lib2->getGDSStructures().size() == 1);
+  BOOST_TEST(lib2->getGDSStructures().size() == 2);
 
   dbGDSStructure* str1_read = lib2->findGDSStructure("str1");
   BOOST_TEST(str1_read != nullptr);
@@ -162,6 +169,20 @@ BOOST_AUTO_TEST_CASE(edit)
   dbGDSNode* node_read = (dbGDSNode*) str1_read->getElement(1);
   BOOST_TEST(node_read->getLayer() == 6);
   BOOST_TEST(node_read->getDatatype() == 7);
+
+  dbGDSStructure* str3_read = lib2->findGDSStructure("str3");
+  BOOST_TEST(str3_read != nullptr);
+  BOOST_TEST(str3_read->getNumElements() == 1);
+
+  dbGDSSRef* sref_read = (dbGDSSRef*) str3_read->getElement(0);
+  BOOST_TEST(sref_read->get_sName() == "str1");
+  BOOST_TEST(sref_read->getTransform()._mag == 2.0);
+  BOOST_TEST(sref_read->getTransform()._angle == 90);
+
+  dbGDSStructure* ref_str = sref_read->getStructure();
+
+  BOOST_TEST(ref_str != nullptr);
+  BOOST_TEST(ref_str == str1_read);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

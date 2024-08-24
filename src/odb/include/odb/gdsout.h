@@ -80,11 +80,6 @@ class GDSWriter
   void write_gds(dbGDSLib* lib, const std::string& filename);
 
  private:
-  /** Output filestream */
-  std::ofstream _file;
-  /** Current dbGDSLib object */
-  dbGDSLib* _lib;
-
   /**
    * Calculates and sets the size of a record
    *
@@ -149,6 +144,11 @@ class GDSWriter
 
   /** Writes a Text Presentation to _file */
   void writeTextPres(const dbGDSTextPres& pres);
+
+  /** Output filestream */
+  std::ofstream _file;
+  /** Current dbGDSLib object */
+  dbGDSLib* _lib;
 };
 
 }  // namespace gds

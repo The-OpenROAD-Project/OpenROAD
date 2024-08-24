@@ -44,9 +44,6 @@ template class dbTable<_dbGDSText>;
 
 bool _dbGDSText::operator==(const _dbGDSText& rhs) const
 {
-  if (_pathType != rhs._pathType) {
-    return false;
-  }
   if (_width != rhs._width) {
     return false;
   }
@@ -67,7 +64,6 @@ void _dbGDSText::differences(dbDiff& diff,
                              const _dbGDSText& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(_pathType);
   DIFF_FIELD(_width);
   DIFF_FIELD(_text);
   DIFF_END
@@ -76,7 +72,6 @@ void _dbGDSText::differences(dbDiff& diff,
 void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_pathType);
   DIFF_OUT_FIELD(_width);
   DIFF_OUT_FIELD(_text);
 
@@ -89,7 +84,6 @@ _dbGDSText::_dbGDSText(_dbDatabase* db)
 
 _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 {
-  _pathType = r._pathType;
   _width = r._width;
   _text = r._text;
 }
@@ -97,9 +91,8 @@ _dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 {
   stream >> obj._presentation;
-  stream >> obj._pathType;
   stream >> obj._width;
-  stream >> obj._sTrans;
+  stream >> obj._transform;
   stream >> obj._text;
   return stream;
 }
@@ -107,9 +100,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
 {
   stream << obj._presentation;
-  stream << obj._pathType;
   stream << obj._width;
-  stream << obj._sTrans;
+  stream << obj._transform;
   stream << obj._text;
   return stream;
 }
@@ -133,19 +125,6 @@ dbGDSTextPres dbGDSText::getPresentation() const
   return obj->_presentation;
 }
 
-void dbGDSText::set_pathType(int16_t pathType)
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-
-  obj->_pathType = pathType;
-}
-
-int16_t dbGDSText::get_pathType() const
-{
-  _dbGDSText* obj = (_dbGDSText*) this;
-  return obj->_pathType;
-}
-
 void dbGDSText::setWidth(int width)
 {
   _dbGDSText* obj = (_dbGDSText*) this;
@@ -159,17 +138,17 @@ int dbGDSText::getWidth() const
   return obj->_width;
 }
 
-void dbGDSText::set_sTrans(dbGDSSTrans sTrans)
+void dbGDSText::setTransform(dbGDSSTrans transform)
 {
   _dbGDSText* obj = (_dbGDSText*) this;
 
-  obj->_sTrans = sTrans;
+  obj->_transform = transform;
 }
 
-dbGDSSTrans dbGDSText::get_sTrans() const
+dbGDSSTrans dbGDSText::getTransform() const
 {
   _dbGDSText* obj = (_dbGDSText*) this;
-  return obj->_sTrans;
+  return obj->_transform;
 }
 
 void dbGDSText::setText(const std::string& text)

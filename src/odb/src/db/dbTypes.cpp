@@ -235,7 +235,11 @@ dbGDSSTrans::dbGDSSTrans()
   _angle = 0.0;
 }
 
-dbGDSSTrans::dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle)
+dbGDSSTrans::dbGDSSTrans(bool flipX,
+                         bool absMag,
+                         bool absAngle,
+                         double mag,
+                         double angle)
 {
   _flipX = flipX;
   _absMag = absMag;
@@ -246,14 +250,15 @@ dbGDSSTrans::dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, dou
 
 bool dbGDSSTrans::operator==(const dbGDSSTrans& rhs) const
 {
-  return (_flipX == rhs._flipX) && (_absMag == rhs._absMag) && (_absAngle == rhs._absAngle)
-         && (_mag == rhs._mag) && (_angle == rhs._angle);
+  return (_flipX == rhs._flipX) && (_absMag == rhs._absMag)
+         && (_absAngle == rhs._absAngle) && (_mag == rhs._mag)
+         && (_angle == rhs._angle);
 }
 
-std::string dbGDSSTrans::to_string() const 
+std::string dbGDSSTrans::to_string() const
 {
   std::string s;
-  if(_flipX){
+  if (_flipX) {
     s += std::string("FLIP_X ");
   }
   s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
@@ -266,34 +271,36 @@ std::string dbGDSSTrans::to_string() const
 
 bool dbGDSSTrans::identity() const
 {
-  return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0) && (_angle == 0.0);
+  return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0)
+         && (_angle == 0.0);
 }
 
 dbGDSTextPres::dbGDSTextPres()
 {
-  _fontNum = 0;
   _vPres = dbGDSTextPres::VPres::TOP;
   _hPres = dbGDSTextPres::HPres::LEFT;
 }
 
-dbGDSTextPres::dbGDSTextPres(uint8_t fontNum, dbGDSTextPres::VPres vPres, dbGDSTextPres::HPres hPres)
+dbGDSTextPres::dbGDSTextPres(dbGDSTextPres::VPres vPres,
+                             dbGDSTextPres::HPres hPres)
 {
-  _fontNum = fontNum;
   _vPres = vPres;
   _hPres = hPres;
 }
 
 bool dbGDSTextPres::operator==(const dbGDSTextPres& rhs) const
 {
-  return (_fontNum == rhs._fontNum) && (_vPres == rhs._vPres) && (_hPres == rhs._hPres);
+  return (_vPres == rhs._vPres) && (_hPres == rhs._hPres);
 }
 
-std::string dbGDSTextPres::to_string() const 
+std::string dbGDSTextPres::to_string() const
 {
   std::string s;
-  s += "FONT " + std::to_string(_fontNum) + " ";
-  s += (_vPres == dbGDSTextPres::VPres::TOP) ? std::string("TOP ") : std::string("BOTTOM ");
-  s += (_hPres == dbGDSTextPres::HPres::LEFT) ? std::string("LEFT ") : std::string("RIGHT ");
+  s += "FONT ";
+  s += (_vPres == dbGDSTextPres::VPres::TOP) ? std::string("TOP ")
+                                             : std::string("BOTTOM ");
+  s += (_hPres == dbGDSTextPres::HPres::LEFT) ? std::string("LEFT ")
+                                              : std::string("RIGHT ");
   return s;
 }
 
@@ -320,7 +327,6 @@ dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
 dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t)
 {
   uint8_t vPresTemp, hPresTemp;
-  stream >> t._fontNum;
   stream >> vPresTemp;
   stream >> hPresTemp;
   t._vPres = static_cast<dbGDSTextPres::VPres>(vPresTemp);
@@ -330,7 +336,6 @@ dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t)
 
 dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres t)
 {
-  stream << t._fontNum;
   stream << static_cast<uint8_t>(t._vPres);
   stream << static_cast<uint8_t>(t._hPres);
   return stream;

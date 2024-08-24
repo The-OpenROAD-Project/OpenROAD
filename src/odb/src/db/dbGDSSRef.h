@@ -35,6 +35,7 @@
 
 #include "dbCore.h"
 #include "dbGDSElement.h"
+#include "dbGDSStructure.h"
 #include "odb/odb.h"
 
 namespace odb {
@@ -63,17 +64,19 @@ class _dbGDSSRef : public _dbGDSElement
   std::string to_string() override
   {
     if (_colRow.first == 1 && _colRow.second == 1) {
-      return "SREF " + _sName + " " + _sTrans.to_string();
+      return "SREF " + _sName + " " + _transform.to_string();
     }
-    return "AREF " + _sName + " " + _sTrans.to_string() + " COL "
+    return "AREF " + _sName + " " + _transform.to_string() + " COL "
            + std::to_string(_colRow.first) + " ROW "
            + std::to_string(_colRow.second);
   }
 
+  dbGDSStructure* _stucture;
+
   // User Code End Methods
 
   std::string _sName;
-  dbGDSSTrans _sTrans;
+  dbGDSSTrans _transform;
   std::pair<int16_t, int16_t> _colRow;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
