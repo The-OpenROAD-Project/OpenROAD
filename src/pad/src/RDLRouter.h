@@ -150,12 +150,12 @@ class RDLRouter
 
   static int64_t distance(const odb::Point& p0, const odb::Point& p1);
 
-  using ObsValue = std::pair<odb::Rect, odb::dbNet*>;
+  using ObsValue = std::tuple<odb::Rect, odb::Polygon, odb::dbNet*>;
   using ObsTree
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
 
-  using GridValue = std::pair<odb::Point, grid_vertex>;
+  using GridValue = std::pair<odb::Rect, grid_vertex>;
   using GridTree
       = boost::geometry::index::rtree<GridValue,
                                       boost::geometry::index::quadratic<16>>;
@@ -207,9 +207,9 @@ class RDLRouter
                             bool is_horizontal,
                             const odb::Rect& target) const;
 
-  std::set<odb::Rect> getITermShapes(odb::dbITerm* iterm) const;
+  std::set<odb::Polygon> getITermShapes(odb::dbITerm* iterm) const;
   void populateObstructions(const std::vector<odb::dbNet*>& nets);
-  bool isObstructed(const odb::Point& pt) const;
+  bool isEdgeObstructed(const odb::Point& pt0, const odb::Point& pt1) const;
 
   std::vector<Edge> insertTerminalVertex(const RouteTarget& target,
                                          const RouteTarget& source);
@@ -217,6 +217,7 @@ class RDLRouter
 
   std::vector<TargetPair> generateRoutingPairs(odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
+  std::set<grid_edge> getVertexEdges(const grid_vertex& vertex) const;
 
   int getBloatFactor() const;
 

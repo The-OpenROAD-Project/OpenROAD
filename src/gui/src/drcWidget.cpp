@@ -308,6 +308,10 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
+  if (!block_) {
+    logger_->error(utl::GUI, 104, "No database has been loaded");
+  }
+
   // OpenLane uses .drc and OpenROAD-flow-scripts uses .rpt
   QString filename = QFileDialog::getOpenFileName(
       this,
@@ -647,7 +651,7 @@ void DRCWidget::loadTRReport(const QString& filename)
       std::string item_type = single_source.substr(0, ident);
       std::string item_name = single_source.substr(ident + 1);
 
-      std::any item = nullptr;
+      std::any item;
 
       if (item_type == "net") {
         odb::dbNet* net = block_->findNet(item_name.c_str());
