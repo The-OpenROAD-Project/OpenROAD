@@ -175,7 +175,7 @@ void TritonCTS::setupCharacterization()
   }
 
   if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
-    options_->setMaxFanout(sinkMaxFanout);
+    options_->setMaxFanout(rootMaxFanout);
   }
 
   // A new characteriztion is always created.
