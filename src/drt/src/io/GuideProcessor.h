@@ -39,6 +39,10 @@
 #include "utl/Logger.h"
 
 namespace drt::io {
+
+using TrackIntervals = std::map<frCoord, boost::icl::interval_set<frCoord>>;
+using TrackIntervalsByLayer = std::vector<TrackIntervals>;
+
 class GuideProcessor
 {
  public:
@@ -46,6 +50,10 @@ class GuideProcessor
                  odb::dbDatabase* dbIn,
                  utl::Logger* loggerIn)
       : design_(designIn), logger_(loggerIn), db_(dbIn){};
+  /**
+   * @brief Reads guides from odb and fill the tmp_guides_ list of unprocessed
+   * guides
+   */
   bool readGuides();
   void buildGCellPatterns();
   void processGuides();
@@ -67,11 +75,7 @@ class GuideProcessor
 
   void genGuides(frNet* net, std::vector<frRect>& rects);
   void genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects);
-  template <typename T>
-  void genGuides_addCoverGuide_helper(frBlockObject* term,
-                                      T* trueTerm,
-                                      frInst* inst,
-                                      dbTransform& shiftXform,
+  void genGuides_addCoverGuide_helper(frInstTerm* term,
                                       std::vector<frRect>& rects);
   /**
    * @brief Creates/Extends guides to cover a pin shape at best_pin_loc_coords
@@ -104,16 +108,53 @@ class GuideProcessor
    * @param guides list of gr guides of the net
    */
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& guides);
+  /**
+   * @brief Checks if any of the net pins is not covered by the guides and
+   *
+   * patches the guides if needed.
+   * The function calls `checkPinForGuideEnclosure` for all net pins
+   * @param net the current net whose pins we are checking with the nets guides
+   * @param guides list of gr guides of the net before any processing
+   */
   void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
+  /**
+   * @brief Checks if the given pin is covered by any of the guides.If not it
+   * patches the guides.
+   *
+   * The function checks all the pin shapes against the guides to see if any of
+   * them overlap with the guides. If net, the function patches the guides in
+   * order to cover the pin by calling `patchGuides` function.
+   * @param net the current net whose pins we are checking with the nets guides
+   * @param guides list of gr guides of the net
+   * @param pin an ITerm or BTerm of the net
+   */
   void checkPinForGuideEnclosure(frBlockObject* pin,
                                  frNet* net,
                                  std::vector<frRect>& guides);
-  void genGuides_merge(
-      std::vector<frRect>& rects,
-      std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
+  /**
+   * @brief Prepares guides for a star traversal
+   *
+   * The function transforms guides to an easier to manage data strcture;
+   * TrackIntervalsByLayer. For each layer, it adds track indicies, where there
+   * are guides, to intvs map. Each entry in the map has a set of intervals of
+   * the indices where the guides span on. By construction, the function merges
+   * touching guides; for example it merges a guide on vertical index 1 that
+   * spans from horizontal index 5 to 10 with a guide on the same vertical index
+   * spanning from 10 to 15 into 1 entry on vertical index 1 with begin index 5
+   * and end index 15. It also manages touching guides on consecutive tracks by
+   * adding a bridge guide on the upper or lower layer that connects them if
+   * needed.
+   * @note The index is the gcell index.
+   * @param rects list of guides of the current net.
+   * @param intvs vector of trackIntervals. TrackIntervals key is the track
+   * index (vertically or horizontally depending on the layer direction).
+   * TrackIntervals value is a set of intervals of indices.
+   */
+  void genGuides_prep(const std::vector<frRect>& rects,
+                      TrackIntervalsByLayer& intvs);
   void genGuides_split(
       std::vector<frRect>& rects,
-      std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
+      TrackIntervalsByLayer& intvs,
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       std::map<frBlockObject*,
@@ -176,7 +217,7 @@ class GuideProcessor
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmpGuides_;
+  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
   std::vector<std::pair<frBlockObject*, Point>> tmpGRPins_;
 };
 }  // namespace drt::io
