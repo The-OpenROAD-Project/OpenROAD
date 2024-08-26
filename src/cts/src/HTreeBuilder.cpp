@@ -1175,7 +1175,8 @@ void HTreeBuilder::run()
       logger_->info(CTS,
                     32,
                     " Stop criterion found. Max number of sinks is {}.",
-                    numMaxLeafSinks_);
+                    options_->getMaxFanout() ? options_->getMaxFanout()
+                                             : numMaxLeafSinks_);
       break;
     }
   }
@@ -1207,6 +1208,14 @@ void HTreeBuilder::run()
   debugPrint(logger_, CTS, "legalizer", 3, "Run 'obsAwareCts.py cts.clk.buffer'"
 	     "to produce cts.clk.buffer.png");
   // clang-format on
+}
+
+bool HTreeBuilder::isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
+{
+  if (options_->getMaxFanout()) {
+    return numSinksPerSubRegion < options_->getMaxFanout();
+  }
+  return numSinksPerSubRegion < numMaxLeafSinks_;
 }
 
 std::string HTreeBuilder::plotHTree()
@@ -1697,7 +1706,9 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   means.emplace_back(branchPt2.getX(), branchPt2.getY());
 
   const unsigned cap
-      = (unsigned) (sinks.size() * options_->getClusteringCapacity());
+      = options_->getMaxFanout()
+            ? (unsigned) (sinks.size() * 0.5)
+            : (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
       1, means.size(), cap, 5, options_->getClusteringPower(), means);
 

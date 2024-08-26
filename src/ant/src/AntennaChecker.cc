@@ -1057,8 +1057,11 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
     report_file.open(report_file_name_, std::ofstream::out);
   }
 
-  bool grt_routes = global_route_source_->haveRoutes();
   bool drt_routes = haveRoutedNets();
+  bool grt_routes = false;
+  if (!drt_routes) {
+    grt_routes = global_route_source_->haveRoutes();
+  }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
     logger_->error(ANT,
