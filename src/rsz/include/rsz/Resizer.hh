@@ -234,8 +234,8 @@ class Resizer : public dbStaState
   double wireClkCapacitance(const Corner* corner) const;
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src);
-  void estimateWireParasitics();
+  void estimateParasitics(ParasiticsSrc src, const char* file_path);
+  void estimateWireParasitics(const char* path = "");
   void estimateWireParasitic(const Net* net);
   void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
   bool haveEstimatedParasitics() const;
@@ -403,6 +403,16 @@ class Resizer : public dbStaState
   ////////////////////////////////////////////////////////////////
   void journalBeginTest();
   void journalRestoreTest();
+
+  void openSpefFile(const char* path);
+  void closeSpefFile();
+  void writeSpefHeader(Corner* corner, dbNetwork* network);
+  void writeSpefPorts(Corner* corner, dbNetwork* network);
+  void writeSpefNet(Corner* corner,
+                    const Net* net,
+                    Parasitic* parasitic,
+                    dbNetwork* network,
+                    Parasitics* parasitics);
 
  protected:
   void init();
@@ -738,6 +748,9 @@ class Resizer : public dbStaState
   InstanceSet all_cloned_inst_set_;
 
   dpl::Opendp* opendp_ = nullptr;
+
+  std::map<Corner*, std::ofstream> spef_file;
+  bool write_spef_file;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
