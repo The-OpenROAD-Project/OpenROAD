@@ -214,6 +214,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                       int iterations,
                       float ratio_margin,
                       int num_threads = 1);
+  bool hasCapacity(bool is_horizontal, const int& pos_x, const int& pos_y, const int& layer_level);
 
   // Incremental global routing functions.
   // See class IncrementalGRoute.
