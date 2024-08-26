@@ -257,7 +257,7 @@ lefrData::lefrData()
   }
 
   lef_nlines = 1;
-  last = current_buffer - 1;
+  last = &current_buffer[0] - 1;
   next = current_buffer;
   encrypted = 0;
   first_buffer = 1;
