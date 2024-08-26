@@ -234,7 +234,7 @@ class Resizer : public dbStaState
   double wireClkCapacitance(const Corner* corner) const;
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src, const char* file_path);
+  void estimateParasitics(ParasiticsSrc src, const char* file_path = "");
   void estimateWireParasitics(const char* path = "");
   void estimateWireParasitic(const Net* net);
   void estimateWireParasitic(const Pin* drvr_pin, const Net* net);

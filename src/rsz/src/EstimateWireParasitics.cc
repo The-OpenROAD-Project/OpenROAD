@@ -268,8 +268,7 @@ void Resizer::ensureParasitics()
 {
   estimateParasitics(global_router_->haveRoutes()
                          ? ParasiticsSrc::global_routing
-                         : ParasiticsSrc::placement,
-                     nullptr);
+                         : ParasiticsSrc::placement);
 }
 
 void Resizer::estimateParasitics(ParasiticsSrc src, const char* file_path)
@@ -745,6 +744,11 @@ void Resizer::parasiticsInvalid(const dbNet* net)
 
 void Resizer::openSpefFile(const char* path)
 {
+  if (path == nullptr) {
+    write_spef_file = false;
+    return;
+  }
+
   std::string file_path(path);
   write_spef_file = !file_path.empty();
   if (write_spef_file) {
@@ -810,12 +814,13 @@ void Resizer::writeSpefPorts(Corner* corner, dbNetwork* network)
     network->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
     spef_file[corner] << bterm->getName() << " ";
-    if (bterm->getIoType() == odb::dbIoType::INPUT)
+    if (bterm->getIoType() == odb::dbIoType::INPUT) {
       spef_file[corner] << "I";
-    else if (bterm->getIoType() == odb::dbIoType::OUTPUT)
+    } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
       spef_file[corner] << "O";
-    else
+    } else {
       spef_file[corner] << "B";
+    }
     spef_file[corner] << '\n';
   }
   spef_file[corner] << '\n';
@@ -827,8 +832,10 @@ void Resizer::writeSpefNet(Corner* corner,
                            dbNetwork* network,
                            Parasitics* parasitics)
 {
-  if (!write_spef_file)
+  if (!write_spef_file) {
     return;
+  }
+
   spef_file[corner] << "*D_NET " << network->staToDb(net)->getName() << " ";
   spef_file[corner] << parasitics->capacitance(parasitic) << '\n';
 
@@ -844,22 +851,24 @@ void Resizer::writeSpefNet(Corner* corner,
 
       if (iterm != nullptr) {
         spef_file[corner] << "*I " << parasitics->name(node) << " ";
-        if (iterm->getIoType() == odb::dbIoType::INPUT)
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
           spef_file[corner] << "I";
-        else if (iterm->getIoType() == odb::dbIoType::OUTPUT)
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
           spef_file[corner] << "O";
-        else
+        } else {
           spef_file[corner] << "B";
+        }
         spef_file[corner] << " *D " << iterm->getInst()->getMaster()->getName();
         spef_file[corner] << '\n';
       } else {
         spef_file[corner] << "*P " << parasitics->name(node) << " ";
-        if (bterm->getIoType() == odb::dbIoType::INPUT)
+        if (bterm->getIoType() == odb::dbIoType::INPUT) {
           spef_file[corner] << "I";
-        else if (bterm->getIoType() == odb::dbIoType::OUTPUT)
+        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
           spef_file[corner] << "O";
-        else
+        } else {
           spef_file[corner] << "B";
+        }
         spef_file[corner] << '\n';
       }
     }
@@ -867,7 +876,7 @@ void Resizer::writeSpefNet(Corner* corner,
 
   int count = 1;
   bool label = false;
-  for (auto node : parasitics->nodes(parasitic))
+  for (auto node : parasitics->nodes(parasitic)) {
     if (parasitics->pin(node) == nullptr) {
       if (!label) {
         label = true;
@@ -879,6 +888,7 @@ void Resizer::writeSpefNet(Corner* corner,
                         << parasitics->nodeGndCap(node);
       spef_file[corner] << '\n';
     }
+  }
   for (auto cap : parasitics->capacitors(parasitic)) {
     if (!label) {
       label = true;
