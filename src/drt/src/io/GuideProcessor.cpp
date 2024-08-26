@@ -51,13 +51,13 @@ Point getClosestPoint(const frRect& r, const Point& p)
  * @brief Returns the shapes of the given pin on all layers.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-std::vector<frRect> getPinShapes(frBlockObject* pin)
+std::vector<frRect> getPinShapes(const frBlockObject* pin)
 {
   std::vector<frRect> pinShapes;
   if (pin->typeId() == frcBTerm) {
-    static_cast<frBTerm*>(pin)->getShapes(pinShapes);
+    static_cast<const frBTerm*>(pin)->getShapes(pinShapes);
   } else {
-    static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+    static_cast<const frInstTerm*>(pin)->getShapes(pinShapes, true);
   }
   return pinShapes;
 }
@@ -66,26 +66,43 @@ std::vector<frRect> getPinShapes(frBlockObject* pin)
  * @brief Returns bounding box of the given pin.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-Rect getPinBBox(frBlockObject* pin)
+Rect getPinBBox(const frBlockObject* pin)
 {
   if (pin->typeId() == frcBTerm) {
-    return static_cast<frBTerm*>(pin)->getBBox();
+    return static_cast<const frBTerm*>(pin)->getBBox();
   } else {
-    return static_cast<frInstTerm*>(pin)->getBBox(true);
+    return static_cast<const frInstTerm*>(pin)->getBBox(true);
   }
 }
 /**
  * @brief Returns name of the given pin.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-std::string getPinName(frBlockObject* pin)
+std::string getPinName(const frBlockObject* pin)
 {
   if (pin->typeId() == frcBTerm) {
-    return static_cast<frBTerm*>(pin)->getName();
+    return static_cast<const frBTerm*>(pin)->getName();
   } else {
-    return static_cast<frInstTerm*>(pin)->getName();
+    return static_cast<const frInstTerm*>(pin)->getName();
   }
 }
+
+bool isPinCoveredByGuides(const frBlockObject* pin,
+                          const std::vector<frRect>& guides)
+{
+  std::vector<frRect> pin_shapes = getPinShapes(pin);
+  // checks if there is a guide that overlaps with any of the pin shapes
+  for (const auto& pin_rect : pin_shapes) {
+    for (const auto& guide : guides) {
+      if (guide.getLayerNum() == pin_rect.getLayerNum()
+          && guide.getBBox().overlaps(pin_rect.getBBox())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * @brief Finds intersecting guides with point(x,y).
  *
@@ -402,7 +419,7 @@ void logGuidesRead(const int num_guides, utl::Logger* logger)
  * @param layer_num The layer_num of the guide returned by this function if it
  * is a valid layer
  * @returns True if the guide is valid by the previous criteria and False
- * otherwise
+ * if above top routing layer for a net with bterms above top routing layer
  */
 bool isValidGuideLayerNum(odb::dbGuide* db_guide,
                           frTechObject* tech,
@@ -414,7 +431,6 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
   if (layer == nullptr) {
     logger->error(
         DRT, 154, "Cannot find layer {}.", db_guide->getLayer()->getName());
-    return false;
   }
   layer_num = layer->getLayerNum();
 
@@ -441,7 +457,6 @@ bool isValidGuideLayerNum(odb::dbGuide* db_guide,
                   TOP_ROUTING_LAYER,
                   tech->getLayer(VIA_ACCESS_LAYERNUM)->getName(),
                   VIA_ACCESS_LAYERNUM);
-    return false;
   }
   return true;
 }
@@ -525,6 +540,8 @@ bool hasGuideInterval(const frCoord begin_idx,
  * The function identifies touching guides on the same layer on consecutive
  * track indices. It adds a bridge guide on the upper or lower layer that
  * connects both guides if such one does not exist.
+ * @note The function prefers bridging using the upper layer than the lower
+ * layer.
  */
 void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
 {
@@ -560,35 +577,35 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
           const auto end_idx = intv.upper();
           bool has_bridge = false;
           // lower layer intersection
+          std::optional<frLayerNum> bridge_layer_num;
           if (layer_num - 2 >= 0) {
+            bridge_layer_num = layer_num - 2;
             has_bridge = hasGuideInterval(begin_idx,
                                           end_idx,
                                           curr_track_idx,
                                           prev_track_idx,
-                                          layer_num - 2,
+                                          bridge_layer_num.value(),
                                           intvs);
           }
           if (layer_num + 2 < (int) intvs.size() && !has_bridge) {
+            bridge_layer_num = layer_num + 2;
             has_bridge = hasGuideInterval(begin_idx,
                                           end_idx,
                                           curr_track_idx,
                                           prev_track_idx,
-                                          layer_num + 2,
+                                          bridge_layer_num.value(),
                                           intvs);
           }
           if (!has_bridge) {
             // add bridge guide;
-            frLayerNum bridge_layer_num;
-            if (layer_num + 2 < (int) intvs.size()) {
-              bridge_layer_num = layer_num + 2;
-            } else if (layer_num - 2 >= 0) {
-              bridge_layer_num = layer_num - 2;
-            } else {
+            if (!bridge_layer_num.has_value()) {
               logger->error(
                   DRT, 228, "genGuides_merge cannot find bridge layer.");
             }
-            bridge_guides.emplace_back(
-                begin_idx, prev_track_idx, curr_track_idx, bridge_layer_num);
+            bridge_guides.emplace_back(begin_idx,
+                                       prev_track_idx,
+                                       curr_track_idx,
+                                       bridge_layer_num.value());
           }
         }
       }
@@ -830,12 +847,11 @@ void GuideProcessor::buildGCellPatterns()
       {std::move(xgp), std::move(ygp)});
 }
 
-void GuideProcessor::patchGuides_extendGuidesToCoverPin(
-    frNet* net,
-    std::vector<frRect>& guides,
-    const Point3D& best_pin_loc_idx,
-    const Point3D& best_pin_loc_coords,
-    const int closest_guide_idx)
+void GuideProcessor::patchGuides_helper(frNet* net,
+                                        std::vector<frRect>& guides,
+                                        const Point3D& best_pin_loc_idx,
+                                        const Point3D& best_pin_loc_coords,
+                                        const int closest_guide_idx)
 {
   Point3D guide_pt(
       getClosestPoint(guides[closest_guide_idx], best_pin_loc_coords),
@@ -876,6 +892,15 @@ void GuideProcessor::patchGuides(frNet* net,
                                  frBlockObject* pin,
                                  std::vector<frRect>& guides)
 {
+  if (pin->typeId() != frcBTerm && pin->typeId() != frcInstTerm) {
+    logger_->error(DRT, 1007, "patchGuides invoked with non-term object.");
+  }
+  if (isPinCoveredByGuides(pin, guides)) {
+    return;
+  }
+  // no guide was found that overlaps with any of the pin shapes, then we patch
+  // the guides
+
   const std::string name = getPinName(pin);
   logger_->info(DRT,
                 1000,
@@ -898,7 +923,7 @@ void GuideProcessor::patchGuides(frNet* net,
   const int closest_guide_idx = findClosestGuide(
       best_pin_loc_coords, guides, candidate_guides_indices, 1);
   // gets the point in the closer guide that is closer to the bestPinLoc
-  patchGuides_extendGuidesToCoverPin(
+  patchGuides_helper(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
 }
 
@@ -906,34 +931,11 @@ void GuideProcessor::genGuides_pinEnclosure(frNet* net,
                                             std::vector<frRect>& guides)
 {
   for (auto pin : net->getInstTerms()) {
-    checkPinForGuideEnclosure(pin, net, guides);
+    patchGuides(net, pin, guides);
   }
   for (auto pin : net->getBTerms()) {
-    checkPinForGuideEnclosure(pin, net, guides);
+    patchGuides(net, pin, guides);
   }
-}
-
-void GuideProcessor::checkPinForGuideEnclosure(frBlockObject* pin,
-                                               frNet* net,
-                                               std::vector<frRect>& guides)
-{
-  if (pin->typeId() != frcBTerm && pin->typeId() != frcInstTerm) {
-    logger_->error(
-        DRT, 1007, "checkPinForGuideEnclosure invoked with non-term object.");
-  }
-  std::vector<frRect> pin_shapes = getPinShapes(pin);
-  // checks if there is a guide that overlaps with any of the pin shapes
-  for (const auto& pin_rect : pin_shapes) {
-    for (const auto& guide : guides) {
-      if (pin_rect.getLayerNum() == guide.getLayerNum()
-          && guide.getBBox().overlaps(pin_rect.getBBox())) {
-        return;
-      }
-    }
-  }
-  // no guide was found that overlaps with any of the pin shapes, then we patch
-  // the guides
-  patchGuides(net, pin, guides);
 }
 
 void GuideProcessor::genGuides_prep(const std::vector<frRect>& rects,

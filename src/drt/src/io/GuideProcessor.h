@@ -82,7 +82,9 @@ class GuideProcessor
    * through its closest guide.
    *
    * This is a helper function to patchGuides() function. it extends/bloats the
-   * guide at closest guide index in order to connect to best_pin_loc_coords.
+   * guide at closest guide index in order to connect to best_pin_loc_coords. It
+   * also creates new guides to connect the chosen closest guide with the
+   * best_pin_loc_coords if needed.
    * @param net the current net whose guides we are processing
    * @param guides list of gr guides of the net
    * @param best_pin_loc_idx The index of the gcell holding the major part of
@@ -91,17 +93,17 @@ class GuideProcessor
    * @param closest_guide_idx The index of the guide that is closest to the
    * best_pin_loc_coords in the guides list
    */
-  void patchGuides_extendGuidesToCoverPin(frNet* net,
-                                          std::vector<frRect>& guides,
-                                          const Point3D& best_pin_loc_idx,
-                                          const Point3D& best_pin_loc_coords,
-                                          const int closest_guide_idx);
+  void patchGuides_helper(frNet* net,
+                          std::vector<frRect>& guides,
+                          const Point3D& best_pin_loc_idx,
+                          const Point3D& best_pin_loc_coords,
+                          const int closest_guide_idx);
   /**
-   * @brief Creates/Extends guides to cover pin.
+   * @brief Patches guides to cover part of the pin if needed.
    *
-   * This function checks extends the exisiting guides in the guides list to
-   * cover/overlap a pin shape in the pin. It can also create new guides and
-   * append them to the guides list.
+   * The function checks all the pin shapes against the guides to see if any of
+   * them overlap with the guides. If not, it extends the existing guides to
+   * overlap with a pin shape.
    * @param net the current net whose guides we are processing
    * @param pin a pin in the net which we are attempting to connect to the
    * guides
@@ -109,28 +111,14 @@ class GuideProcessor
    */
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& guides);
   /**
-   * @brief Checks if any of the net pins is not covered by the guides and
+   * @brief Adds patch guides to cover net pins if needed.
    *
-   * patches the guides if needed.
-   * The function calls `checkPinForGuideEnclosure` for all net pins
+   * The function calls `patchGuides` for all net pins
    * @param net the current net whose pins we are checking with the nets guides
-   * @param guides list of gr guides of the net before any processing
+   * @param guides list of gr guides of the net before any processing. The list
+   * is modified by patchGuides if needed.
    */
   void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
-  /**
-   * @brief Checks if the given pin is covered by any of the guides.If not it
-   * patches the guides.
-   *
-   * The function checks all the pin shapes against the guides to see if any of
-   * them overlap with the guides. If net, the function patches the guides in
-   * order to cover the pin by calling `patchGuides` function.
-   * @param net the current net whose pins we are checking with the nets guides
-   * @param guides list of gr guides of the net
-   * @param pin an ITerm or BTerm of the net
-   */
-  void checkPinForGuideEnclosure(frBlockObject* pin,
-                                 frNet* net,
-                                 std::vector<frRect>& guides);
   /**
    * @brief Prepares guides for a star traversal
    *
