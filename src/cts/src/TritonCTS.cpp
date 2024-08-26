@@ -114,13 +114,74 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
   builders_->push_back(builder);
 }
 
+int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
+{
+  int fanout = std::numeric_limits<int>::max();
+  float tempFanout;
+  bool existMaxFanout;
+  odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
+  sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
+  sta::Port* buffer_port = nullptr;
+  for (odb::dbMTerm* mterm : bufferMaster->getMTerms()) {
+    odb::dbSigType sig_type = mterm->getSigType();
+    if (sig_type == odb::dbSigType::GROUND
+        || sig_type == odb::dbSigType::POWER) {
+      continue;
+    }
+    odb::dbIoType io_type = mterm->getIoType();
+    if (io_type == odb::dbIoType::OUTPUT) {
+      buffer_port = network_->dbToSta(mterm);
+      break;
+    }
+  }
+  if (buffer_port == nullptr) {
+    return 0;
+  }
+
+  openSta_->sdc()->fanoutLimit(
+      buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
+  openSta_->sdc()->fanoutLimit(
+      bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
+  sta::LibertyPort* port = network_->libertyPort(buffer_port);
+  port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  } else {
+    port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
+    if ((existMaxFanout)) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+  }
+  return (int) fanout;
+}
+
 void TritonCTS::setupCharacterization()
 {
+  openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
   options_->setRootBuffer(rootBuffer);
   std::string sinkBuffer = selectSinkBuffer(sinkBuffers_);
   options_->setSinkBuffer(sinkBuffer);
+
+  int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer);
+  int rootMaxFanout = getBufferFanoutLimit(rootBuffer);
+
+  if (sinkMaxFanout && (options_->getSinkClusteringSize() > sinkMaxFanout)) {
+    options_->setSinkClusteringSize(sinkMaxFanout);
+  }
+
+  if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
+    options_->setMaxFanout(rootMaxFanout);
+  }
 
   // A new characteriztion is always created.
   techChar_->create();
