@@ -227,7 +227,7 @@ void GlobalRouter::saveCongestion()
 bool GlobalRouter::haveRoutes()
 {
   if (routes_.empty()) {
-    loadGuidesFromDB();
+    logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
   return !routes_.empty();
@@ -235,6 +235,9 @@ bool GlobalRouter::haveRoutes()
 
 bool GlobalRouter::haveDetailedRoutes()
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   for (odb::dbNet* db_net : block_->getNets()) {
     if (isDetailedRouted(db_net)) {
       return true;
