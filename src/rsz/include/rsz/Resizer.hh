@@ -518,7 +518,6 @@ class Resizer : public dbStaState
   void cellWireDelay(LibertyPort* drvr_port,
                      LibertyPort* load_port,
                      double wire_length,  // meters
-                     std::unique_ptr<dbSta>& sta,
                      // Return values.
                      Delay& delay,
                      Slew& slew);
@@ -538,18 +537,11 @@ class Resizer : public dbStaState
   Point location(Instance* inst);
   double area(dbMaster* master);
   double area(Cell* cell);
-  double splitWireDelayDiff(double wire_length,
-                            LibertyCell* buffer_cell,
-                            std::unique_ptr<dbSta>& sta);
+  double splitWireDelayDiff(double wire_length, LibertyCell* buffer_cell);
   double maxSlewWireDiff(LibertyPort* drvr_port,
                          LibertyPort* load_port,
                          double wire_length,
                          double max_slew);
-  void bufferWireDelay(LibertyCell* buffer_cell,
-                       double wire_length,  // meters
-                       std::unique_ptr<dbSta>& sta,
-                       Delay& delay,
-                       Slew& slew);
   void findCellInstances(LibertyCell* cell,
                          // Return value.
                          InstanceSeq& insts);

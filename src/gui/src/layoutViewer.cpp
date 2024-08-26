@@ -643,14 +643,12 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
         }
       }
       if (inst_pins_visible) {
-        for (const auto& [mterm, boxes] : inst_boxes->mterms) {
-          for (const auto& box : boxes) {
-            const QRect rect = box.boundingRect();
-            odb::Rect trans_box(
-                rect.left(), rect.bottom(), rect.right(), rect.top());
-            inst_xfm.apply(trans_box);
-            check_rect(trans_box);
-          }
+        for (auto& box : inst_boxes->mterms) {
+          const QRect rect = box.boundingRect();
+          odb::Rect trans_box(
+              rect.left(), rect.bottom(), rect.right(), rect.top());
+          inst_xfm.apply(trans_box);
+          check_rect(trans_box);
         }
       }
     }
@@ -952,18 +950,17 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
         const odb::dbTransform xform = inst->getTransform();
-        for (const auto& [layer, boxes] : cell_boxes_[inst->getMaster()]) {
-          if (options_->isVisible(layer) && options_->isSelectable(layer)) {
-            for (const auto& [mterm, geoms] : boxes.mterms) {
-              odb::dbITerm* iterm = inst->getITerm(mterm);
-              for (const auto& geom : geoms) {
-                std::vector<odb::Point> points(geom.size());
-                for (const auto& pt : geom) {
-                  points.emplace_back(pt.x(), pt.y());
-                }
-                odb::Polygon poly(points);
-                xform.apply(poly);
-                if (boost::geometry::intersects(poly, region)) {
+        for (auto* iterm : inst->getITerms()) {
+          for (auto* mpin : iterm->getMTerm()->getMPins()) {
+            for (auto* geom : mpin->getGeometry()) {
+              const auto layer = geom->getTechLayer();
+              if (layer == nullptr) {
+                continue;
+              }
+              if (options_->isVisible(layer) && options_->isSelectable(layer)) {
+                Rect pin_rect = geom->getBox();
+                xform.apply(pin_rect);
+                if (region.intersects(pin_rect)) {
                   selections.push_back(gui_->makeSelected(iterm));
                 }
               }
@@ -1366,11 +1363,11 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
       if (!is_db_view) {
         for (dbPolygon* box : mpin->getPolygonGeometry()) {
           dbTechLayer* layer = box->getTechLayer();
-          boxes[layer].mterms[mterm].emplace_back(pbox_to_qpolygon(box));
+          boxes[layer].mterms.emplace_back(pbox_to_qpolygon(box));
         }
         for (dbBox* box : mpin->getGeometry(false)) {
           dbTechLayer* layer = box->getTechLayer();
-          boxes[layer].mterms[mterm].emplace_back(box_to_qpolygon(box));
+          boxes[layer].mterms.emplace_back(box_to_qpolygon(box));
         }
       }
       for (dbBox* box : mpin->getGeometry()) {
@@ -1385,7 +1382,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
             odb::Rect box_rect = via_box->getBox();
             dbTechLayer* layer = via_box->getTechLayer();
             via_transform.apply(box_rect);
-            boxes[layer].mterms[mterm].emplace_back(
+            boxes[layer].mterms.emplace_back(
                 QRect{box_rect.xMin(),
                       box_rect.yMin(),
                       box_rect.xMax() - box_rect.xMin(),
@@ -1394,7 +1391,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
         } else if (is_db_view) {
           odb::Rect box_rect = box->getBox();
           dbTechLayer* layer = box->getTechLayer();
-          boxes[layer].mterms[mterm].emplace_back(
+          boxes[layer].mterms.emplace_back(
               QRect{box_rect.xMin(),
                     box_rect.yMin(),
                     box_rect.xMax() - box_rect.xMin(),

@@ -100,7 +100,6 @@ class SteinerTreeBuilder
                        const std::vector<int>& y,
                        const std::vector<int>& s,
                        int acc);
-
   bool checkTree(const Tree& tree) const;
   float getAlpha() const { return alpha_; }
   void setAlpha(float alpha);

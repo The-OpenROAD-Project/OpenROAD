@@ -431,7 +431,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
   frCoord maxSpc;
 
   if (width == length) {
-    maxSpc = dbRule->getMaxSpacing(std::move(cutClass), false);
+    maxSpc = dbRule->getMaxSpacing(cutClass, false);
   } else {
     maxSpc = std::max(dbRule->getMaxSpacing(cutClass, true),
                       dbRule->getMaxSpacing(cutClass, false));

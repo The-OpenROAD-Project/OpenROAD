@@ -1,0 +1,21 @@
+{
+    "name":"dbGDSPath",
+    "type":"dbGDSElement",
+    "fields":[
+      {
+        "name":"_width",
+        "type":"int",
+        "flags":[]
+      },
+      {
+        "name":"_pathType",
+        "type":"int16_t",
+        "flags":[]
+      }
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h", "odb/geom.h"]
+  }
+  

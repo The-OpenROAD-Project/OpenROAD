@@ -1578,12 +1578,8 @@ bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        const float rise = libPort->clkTreeDelay(
-            0.0, sta::RiseFall::rise(), sta::MinMax::max());
-        const float fall = libPort->clkTreeDelay(
-            0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-        if (rise != 0 || fall != 0) {
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
+        if (insDelays.hasValue()) {
           return true;
         }
       }
@@ -1606,15 +1602,14 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   if (libCell) {
     sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
     if (libPort) {
-      const float rise = libPort->clkTreeDelay(
-          0.0, sta::RiseFall::rise(), sta::MinMax::max());
-      const float fall = libPort->clkTreeDelay(
-          0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-      if (rise != 0 || fall != 0) {
+      sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
+      if (insDelays.hasValue()) {
         // use average of max rise and max fall
         // TODO: do we need to look at min insertion delays?
-        double delayPerSec = (rise + fall) / 2.0;
+        double delayPerSec
+            = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+               + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+              / 2.0;
         // convert delay to length because HTree uses lengths
         sta::Corner* corner = openSta_->cmdCorner();
         double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
@@ -1976,13 +1971,12 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
       sta::LibertyPort* libPort
           = libCell->findLibertyPort(mterm->getConstName());
       if (libPort) {
-        const float rise = libPort->clkTreeDelay(
-            0.0, sta::RiseFall::rise(), sta::MinMax::max());
-        const float fall = libPort->clkTreeDelay(
-            0.0, sta::RiseFall::fall(), sta::MinMax::max());
-
-        if (rise != 0 || fall != 0) {
-          ins_delay = (rise + fall) / 2.0;
+        sta::RiseFallMinMax insDelays = libPort->clkTreeDelays();
+        if (insDelays.hasValue()) {
+          ins_delay
+              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+                / 2.0;
         }
       }
     }

@@ -180,7 +180,7 @@ void dbSdcNetwork::findMatchingPins(const Instance* instance,
 {
   if (instance != network_->topInstance()) {
     Cell* cell = network_->cell(instance);
-    std::unique_ptr<CellPortIterator> port_iter{network_->portIterator(cell)};
+    CellPortIterator* port_iter = network_->portIterator(cell);
     while (port_iter->hasNext()) {
       Port* port = port_iter->next();
       const char* port_name = network_->name(port);
@@ -214,6 +214,7 @@ void dbSdcNetwork::findMatchingPins(const Instance* instance,
         }
       }
     }
+    delete port_iter;
   }
 }
 

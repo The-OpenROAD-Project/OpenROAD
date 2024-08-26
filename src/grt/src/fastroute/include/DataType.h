@@ -143,10 +143,10 @@ struct Edge  // An Edge is the routing track holder between two adjacent
   uint16_t usage;  // the usage of the edge
   uint16_t red;
   int16_t last_usage;
-  double est_usage;  // the estimated usage of the edge
+  float est_usage;  // the estimated usage of the edge
 
   uint16_t usage_red() const { return usage + red; }
-  double est_usage_red() const { return est_usage + red; }
+  float est_usage_red() const { return est_usage + red; }
 };
 
 struct Edge3D
@@ -161,7 +161,7 @@ struct TreeNode
   bool assigned;
 
   int16_t status = 0;
-  int16_t conCNT = 0;
+  int16_t conCNT;
   int16_t botL, topL;
   // heights and eID arrays size were increased after using PD
   // to create the tree topologies.
@@ -192,7 +192,7 @@ struct Route
 
   // valid for ZRoute:
   // true - the route is HVH shape, false - VHV shape
-  bool HVH = false;
+  bool HVH;
 
   // valid for ZRoute: the position of turn point for Z-shape
   int16_t Zpoint;

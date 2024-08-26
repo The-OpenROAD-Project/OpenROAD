@@ -156,9 +156,9 @@ cluster_flops
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-tray_weight` | Tray weight, default value is 32.0, type `float`. |
-| `-timing_weight` | Timing weight, default value is 0.1, type `float`. |
-| `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
+| `-tray_weight` | Tray weight, default value is 20.0, type `float`. |
+| `-timing_weight` | Timing weight, default value is 1.0, type `float`. |
+| `-max_split_size` | Maximum split size, default value is -1, type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
 
 
@@ -265,10 +265,7 @@ about this tool.
     (2015), pp. 685-698. [(.pdf)](https://cseweb.ucsd.edu/~jlu/papers/eplace-ms-tcad14/paper.pdf)
 -   A. B. Kahng, J. Li and L. Wang,   
     "Improved Flop Tray-Based Design Implementation for Power Reduction",   
-    IEEE/ACM ICCAD, 2016, pp. 20:1-20:8.    
--   A. B. Kahng, S. Kundu, S. Thumathy,    
-    "Scalable Flip-Flop Clustering Using Divide and Conquer For Capacitated K-Means".   
-    ACM GLSVLSI, 2024, pp. 177-184.[(.pdf)](https://vlsicad.ucsd.edu/Publications/Conferences/409/c409.pdf)      
+    IEEE/ACM ICCAD, 2016, pp. 20:1-20:8.   
 -   The timing-driven mode has been implemented by
     Mingyu Woo (only available in [legacy repo in standalone
     branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/standalone).)

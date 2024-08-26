@@ -1852,6 +1852,10 @@ void lefin::version(double num)
 
 void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
 {
+  if (!_create_tech && !via->hasViaRule()) {
+    return;
+  }
+
   if (_tech->findVia(via->name())) {
     debugPrint(_logger,
                utl::ODB,

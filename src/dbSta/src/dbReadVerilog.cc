@@ -278,7 +278,7 @@ void Verilog2db::recordBusPortsOrder()
   // Use a property to annotate the bus names as msb or lsb first for writing
   // verilog.
   Cell* top_cell = network_->cell(network_->topInstance());
-  std::unique_ptr<CellPortIterator> bus_iter{network_->portIterator(top_cell)};
+  CellPortIterator* bus_iter = network_->portIterator(top_cell);
   while (bus_iter->hasNext()) {
     Port* port = bus_iter->next();
     if (network_->isBus(port)) {
@@ -290,6 +290,7 @@ void Verilog2db::recordBusPortsOrder()
       odb::dbBoolProperty::create(block_, key.c_str(), from > to);
     }
   }
+  delete bus_iter;
 }
 
 dbModule* Verilog2db::makeUniqueDbModule(const char* name)
@@ -367,7 +368,7 @@ void Verilog2db::makeDbModule(
     if (hierarchy_) {
       dbBusPort* dbbusport = nullptr;
       // make the module ports
-      std::unique_ptr<CellPortIterator> cp_iter{network_->portIterator(cell)};
+      CellPortIterator* cp_iter = network_->portIterator(cell);
       while (cp_iter->hasNext()) {
         Port* port = cp_iter->next();
         if (network_->isBus(port)) {

@@ -831,7 +831,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
             styleWidth = layer->getWidth();
           }
         }
-        width = tech_->name2layer_[layerName]->getWidth();
+        width = (width) ? width : tech_->name2layer_[layerName]->getWidth();
         auto defaultBeginExt = width / 2;
         auto defaultEndExt = width / 2;
 
@@ -1840,8 +1840,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
-    con->setDefaultCenterAndEdge(
-        rule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
+    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
@@ -1995,12 +1994,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto rptr = static_cast<frLef58EnclosureConstraint*>(uCon.get());
     rptr->setCutClassIdx(
         tmpLayer->getCutClassIdx(rule->getCutClass()->getName()));
-    if (rptr->getCutClassIdx() < 0) {
-      logger_->error(DRT,
-                     148,
-                     "Invalid index for cut class {}.",
-                     rule->getCutClass()->getName());
-    }
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58EnclosureConstraint(rptr);
   }
@@ -3011,6 +3004,80 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   }
 }
 
+bool io::Parser::readGuide()
+{
+  ProfileTask profile("IO:readGuide");
+  int numGuides = 0;
+  auto block = db_->getChip()->getBlock();
+  for (auto dbNet : block->getNets()) {
+    if (dbNet->getGuides().empty()) {
+      continue;
+    }
+    frNet* net = design_->topBlock_->findNet(dbNet->getName());
+    if (net == nullptr) {
+      logger_->error(DRT, 153, "Cannot find net {}.", dbNet->getName());
+    }
+    for (auto dbGuide : dbNet->getGuides()) {
+      frLayer* layer = design_->tech_->getLayer(dbGuide->getLayer()->getName());
+      if (layer == nullptr) {
+        logger_->error(
+            DRT, 154, "Cannot find layer {}.", dbGuide->getLayer()->getName());
+      }
+      frLayerNum layerNum = layer->getLayerNum();
+
+      // get the top layer for a pin of the net
+      bool isAboveTopLayer = false;
+      for (const auto& bterm : net->getBTerms()) {
+        isAboveTopLayer = bterm->isAboveTopLayer();
+      }
+
+      // update the layer of the guides above the top routing layer
+      // if the guides are used to access a pin above the top routing layer
+      if (layerNum > TOP_ROUTING_LAYER && isAboveTopLayer) {
+        continue;
+      }
+      if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
+          || layerNum > TOP_ROUTING_LAYER) {
+        logger_->error(DRT,
+                       155,
+                       "Guide in net {} uses layer {} ({})"
+                       " that is outside the allowed routing range "
+                       "[{} ({}), {} ({})] with via access on [{} ({})].",
+                       net->getName(),
+                       layer->getName(),
+                       layerNum,
+                       tech_->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
+                       BOTTOM_ROUTING_LAYER,
+                       tech_->getLayer(TOP_ROUTING_LAYER)->getName(),
+                       TOP_ROUTING_LAYER,
+                       tech_->getLayer(VIA_ACCESS_LAYERNUM)->getName(),
+                       VIA_ACCESS_LAYERNUM);
+      }
+
+      frRect rect;
+      rect.setBBox(dbGuide->getBox());
+      rect.setLayerNum(layerNum);
+      tmpGuides_[net].push_back(rect);
+      ++numGuides;
+      if (numGuides < 1000000) {
+        if (numGuides % 100000 == 0) {
+          logger_->info(DRT, 156, "guideIn read {} guides.", numGuides);
+        }
+      } else {
+        if (numGuides % 1000000 == 0) {
+          logger_->info(DRT, 157, "guideIn read {} guides.", numGuides);
+        }
+      }
+    }
+  }
+  if (VERBOSE > 0) {
+    logger_->report("");
+    logger_->report("Number of guides:     {}", numGuides);
+    logger_->report("");
+  }
+  return !tmpGuides_.empty();
+}
+
 void io::Parser::updateDesign()
 {
   auto block = db_->getChip()->getBlock();
@@ -3159,7 +3226,7 @@ void io::Writer::mergeSplitConnFigs(
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
       Point viaPoint = via->getOrigin();
       viaMergeMap[std::make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)]
-          = std::move(via);
+          = via;
       // std::cout <<"found via" <<std::endl;
     }
   }
@@ -3240,21 +3307,21 @@ void io::Writer::mergeSplitConnFigs(
 
     auto layerNum = cutLayerNum - 1;
     int isH = 1;
-    trackLoc = y;
+    trackLoc = (isH == 1) ? y : x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum - 1;
     isH = 0;
-    trackLoc = x;
+    trackLoc = (isH == 1) ? y : x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
-    trackLoc = x;
+    trackLoc = (isH == 1) ? y : x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
 
     layerNum = cutLayerNum + 1;
     isH = 0;
-    trackLoc = x;
+    trackLoc = (isH == 1) ? y : x;
     splitVia_helper(layerNum, isH, trackLoc, x, y, mergedPathSegs);
   }
 

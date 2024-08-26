@@ -345,9 +345,9 @@ proc cluster_flops { args } {
     utl::error GPL 104 "No design block found."
   }
 
-  set tray_weight 32.0
-  set timing_weight 0.1
-  set max_split_size 500
+  set tray_weight 20.0
+  set timing_weight 1.0
+  set max_split_size 250
   set num_paths 0
 
   if { [info exists keys(-tray_weight)] } {

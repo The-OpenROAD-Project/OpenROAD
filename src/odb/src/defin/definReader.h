@@ -82,8 +82,8 @@ class definReader : public definBase
   std::vector<definBase*> _interfaces;
   bool _update;
   bool _continue_on_errors;
-  std::string _block_name;
-  std::string version_;
+  const char* _block_name;
+  const char* version_;
   char hier_delimeter_;
   char left_bus_delimeter_;
   char right_bus_delimeter_;

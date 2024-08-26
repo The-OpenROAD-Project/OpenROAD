@@ -84,9 +84,7 @@ void lefout::writeVersion(const std::string& version)
 }
 
 template <typename GenericBox>
-void lefout::writeBoxes(dbBlock* block,
-                        dbSet<GenericBox>& boxes,
-                        const char* indent)
+void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
 
@@ -105,7 +103,7 @@ void lefout::writeBoxes(dbBlock* block,
         via_name = box->getTechVia()->getName();
       }
       if (box->getBlockVia()) {
-        via_name = block->getName() + "_" + box->getBlockVia()->getName();
+        via_name = box->getBlockVia()->getName();
       }
 
       int x, y;
@@ -136,9 +134,7 @@ void lefout::writeBoxes(dbBlock* block,
 }
 
 template <>
-void lefout::writeBoxes(dbBlock* block,
-                        dbSet<dbPolygon>& boxes,
-                        const char* indent)
+void lefout::writeBoxes(dbSet<dbPolygon>& boxes, const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
 
@@ -423,9 +419,9 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fmt::print(_out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
 }
 
-void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
+void lefout::writeBlockVia(dbVia* via)
 {
-  std::string name = db_block->getName() + "_" + via->getName();
+  std::string name = via->getName();
 
   if (via->isDefault()) {
     fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
@@ -437,7 +433,7 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(db_block, boxes, "    ");
+    writeBoxes(boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
@@ -502,7 +498,7 @@ void lefout::writeBlock(dbBlock* db_block)
   double size_y = lefdist(bounding_box->yMax());
 
   for (auto via : db_block->getVias()) {
-    writeBlockVia(db_block, via);
+    writeBlockVia(via);
   }
 
   fmt::print(_out, "\nMACRO {}\n", db_block->getName().c_str());
@@ -556,7 +552,7 @@ void lefout::writeBlockTerms(dbBlock* db_block)
     for (dbBPin* db_b_pin : b_term->getBPins()) {
       fmt::print(_out, "{}", "    PORT\n");
       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
-      writeBoxes(db_block, term_pins, "      ");
+      writeBoxes(term_pins, "      ");
       fmt::print(_out, "{}", "    END\n");
     }
     fmt::print(_out, "  END {}\n", b_term->getName().c_str());
@@ -580,7 +576,7 @@ void lefout::writePowerPins(dbBlock* db_block)
     for (dbSWire* special_wire : net->getSWires()) {
       fmt::print(_out, "    PORT\n");
       dbSet<dbSBox> wires = special_wire->getWires();
-      writeBoxes(db_block, wires, /*indent=*/"      ");
+      writeBoxes(wires, /*indent=*/"      ");
       fmt::print(_out, "    END\n");
     }
     fmt::print(_out, "  END {}\n", net->getName().c_str());
@@ -1161,7 +1157,7 @@ void lefout::writeVia(dbTechVia* via)
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(nullptr, boxes, "    ");
+    writeBoxes(boxes, "    ");
   } else {
     std::string rname = rule->getName();
     fmt::print(_out, "\n    VIARULE {} \n", rname.c_str());
@@ -1374,8 +1370,8 @@ void lefout::writeMaster(dbMaster* master)
 
   if (poly_obs.begin() != poly_obs.end() || obs.begin() != obs.end()) {
     fmt::print(_out, "{}", "    OBS\n");
-    writeBoxes(nullptr, poly_obs, "      ");
-    writeBoxes(nullptr, obs, "      ");
+    writeBoxes(poly_obs, "      ");
+    writeBoxes(obs, "      ");
     fmt::print(_out, "{}", "    END\n");
   }
 
@@ -1413,8 +1409,8 @@ void lefout::writeMTerm(dbMTerm* mterm)
     if (poly_geoms.begin() != poly_geoms.end()
         || geoms.begin() != geoms.end()) {
       fmt::print(_out, "        PORT\n");
-      writeBoxes(nullptr, poly_geoms, "            ");
-      writeBoxes(nullptr, geoms, "            ");
+      writeBoxes(poly_geoms, "            ");
+      writeBoxes(geoms, "            ");
       fmt::print(_out, "        END\n");
     }
   }

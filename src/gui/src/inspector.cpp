@@ -710,12 +710,8 @@ void Inspector::setCommandsMenu()
 void Inspector::showCommandsMenu(const QPoint& pos)
 {
   clicked_index_ = view_->indexAt(pos);
+
   QStandardItem* item = model_->itemFromIndex(clicked_index_);
-
-  if (!item) {
-    return;
-  }
-
   Selected selected
       = item->data(EditorItemDelegate::selected_).value<Selected>();
 
