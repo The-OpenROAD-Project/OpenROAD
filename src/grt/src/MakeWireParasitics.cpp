@@ -105,6 +105,7 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     makeRouteParasitics(
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
+    resizer_->writeSpefNet(corner, sta_net, parasitic, network_, parasitics_);
     arc_delay_calc_->reduceParasitic(
         parasitic, sta_net, corner, sta::MinMaxAll::all());
   }

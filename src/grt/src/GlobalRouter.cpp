@@ -65,6 +65,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
+#include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -461,7 +462,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC()
+void GlobalRouter::estimateRC(const char* path)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -471,14 +472,17 @@ void GlobalRouter::estimateRC()
 
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
-  for (auto& net_route : routes_) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
+
+  resizer_->openSpefFile(path);
+
+  for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
       builder.estimateParasitcs(db_net, net->getPins(), route);
     }
   }
+
+  resizer_->closeSpefFile();
 }
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
