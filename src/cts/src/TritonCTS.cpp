@@ -2023,14 +2023,23 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
   // Visit builders from bottom up such that latencies are adjusted near bottom
   // trees first
+  openSta_->ensureGraph();
+  openSta_->searchPreamble();
+  openSta_->ensureClkNetwork();
+  openSta_->ensureClkArrivals();
+  sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
     TreeBuilder* registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
-        computeAveSinkArrivals(registerBuilder);
-        computeAveSinkArrivals(macroBuilder);
+        computeAveSinkArrivals(registerBuilder, graph);
+        computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
+        // Update graph information after possible buffers inserted
+        openSta_->updateTiming(false);
+        openSta_->ensureClkNetwork();
+        openSta_->ensureClkArrivals();
       }
     }
   }
@@ -2043,17 +2052,6 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
   int paths_accepted = 0;
   while (path_iter.hasNext()) {
     sta::Path* path = path_iter.next();
-    bool path_transition = true;
-    bool path_min_max = true;
-    if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
-      // only populate with rising edges
-      path_transition = false; 
-    }
-    if (path->dcalcAnalysisPt(openSta_)->delayMinMax()
-        != sta::MinMax::max()) {
-      // only populate with max delay
-      path_min_max = false;
-    }
 
     sta::PathExpanded expand(path, openSta_);
 
@@ -2101,12 +2099,8 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
   return clkPathArrival;
 }
 
-void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
+void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph)
 {
-  openSta_->ensureGraph();
-  openSta_->searchPreamble();
-  openSta_->ensureClkNetwork();
-  openSta_->ensureClkArrivals();
   Clock clock = builder->getClock();
   odb::dbNet* topInputClockNet = clock.getNetObj();
   if (builder->getTopInputNet() != nullptr) {
@@ -2117,7 +2111,7 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
   unsigned numSinks = 0;
   clock.forEachSink([&](const ClockInst& sink) {
     odb::dbITerm* iterm = sink.getDbInputPin();
-    computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks);
+    computeSinkArrivalRecur(topInputClockNet, iterm, sumArrivals, numSinks, graph);
   });
   float aveArrival = sumArrivals / (float) numSinks;
   builder->setAveSinkArrival(aveArrival);
@@ -2135,7 +2129,8 @@ void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
 void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                         odb::dbITerm* iterm,
                                         float& sumArrivals,
-                                        unsigned& numSinks)
+                                        unsigned& numSinks,
+                                        sta::Graph* graph)
 {
   if (iterm) {
     odb::dbInst* inst = iterm->getInst();
@@ -2144,12 +2139,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         // either register or macro input pin
         sta::Pin* pin = network_->dbToSta(iterm);
         if (pin) {
-          sta::Graph* graph = openSta_->graph();
           sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
           float arrival = getVertexClkArrival(drvr_vertex, topClokcNet, iterm);
-          // ignore arrival fall (no inverters in current clock tree)
-          float pin_arrival = openSta_->pinArrival(
-              pin, sta::RiseFall::rise(), sta::MinMax::max());
 
           // add insertion delay
           float insDelay = 0.0;
@@ -2186,7 +2177,7 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
               odb::dbITerm* inTerm = *iter;
               if (inTerm->getIoType() == odb::dbIoType::INPUT) {
                 computeSinkArrivalRecur(
-                    topClokcNet, inTerm, sumArrivals, numSinks);
+                    topClokcNet, inTerm, sumArrivals, numSinks, graph);
               }
             }
           }

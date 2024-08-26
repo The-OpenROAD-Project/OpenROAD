@@ -59,6 +59,7 @@ class dbNetwork;
 class Unit;
 class LibertyCell;
 class Vertex;
+class Graph;
 }  // namespace sta
 
 namespace stt {
@@ -210,11 +211,12 @@ class TritonCTS
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
   float getVertexClkArrival(sta::Vertex* sink_vertex, odb::dbNet* topNet, odb::dbITerm* iterm);
-  void computeAveSinkArrivals(TreeBuilder* builder);
+  void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
                                float& sumArrivals,
-                               unsigned& numSinks);
+                               unsigned& numSinks,
+                               sta::Graph* graph);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
