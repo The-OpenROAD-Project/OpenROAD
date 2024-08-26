@@ -268,17 +268,18 @@ void Resizer::ensureParasitics()
 {
   estimateParasitics(global_router_->haveRoutes()
                          ? ParasiticsSrc::global_routing
-                         : ParasiticsSrc::placement);
+                         : ParasiticsSrc::placement,
+                     nullptr);
 }
 
-void Resizer::estimateParasitics(ParasiticsSrc src)
+void Resizer::estimateParasitics(ParasiticsSrc src, const char* file_path)
 {
   switch (src) {
     case ParasiticsSrc::placement:
-      estimateWireParasitics();
+      estimateWireParasitics(file_path);
       break;
     case ParasiticsSrc::global_routing:
-      global_router_->estimateRC();
+      global_router_->estimateRC(file_path);
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::none:
@@ -386,7 +387,7 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::estimateWireParasitics()
+void Resizer::estimateWireParasitics(const char* path)
 {
   initBlock();
   if (!wire_signal_cap_.empty()) {
@@ -394,12 +395,16 @@ void Resizer::estimateWireParasitics()
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
 
+    openSpefFile(path);
+
     NetIterator* net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
       Net* net = net_iter->next();
       estimateWireParasitic(net);
     }
     delete net_iter;
+
+    closeSpefFile();
 
     parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
@@ -457,6 +462,7 @@ void Resizer::makePadParasitic(const Net* net)
 
     // Use a small resistor to keep the connectivity intact.
     parasitics_->makeResistor(parasitic, 1, .001, n1, n2);
+    writeSpefNet(corner, net, parasitic, db_network_, parasitics_);
     arc_delay_calc_->reduceParasitic(
         parasitic, net, corner, sta::MinMaxAll::all());
   }
@@ -541,6 +547,7 @@ void Resizer::estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net)
         parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, resistor_id);
         parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, resistor_id);
       }
+      writeSpefNet(corner, net, parasitic, db_network_, parasitics_);
       arc_delay_calc_->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());
     }
@@ -734,6 +741,175 @@ void Resizer::parasiticsInvalid(const Net* net)
 void Resizer::parasiticsInvalid(const dbNet* net)
 {
   parasiticsInvalid(db_network_->dbToSta(net));
+}
+
+void Resizer::openSpefFile(const char* path)
+{
+  std::string file_path(path);
+  write_spef_file = !file_path.empty();
+  if (write_spef_file) {
+    for (sta::Corner* corner : *sta_->corners()) {
+      file_path = path;
+      std::string suffix("_");
+      suffix.append(corner->name());
+      if (file_path.find(".spef") != std::string::npos
+          || file_path.find(".SPEF") != std::string::npos) {
+        file_path.insert(file_path.size() - 5, suffix);
+      } else {
+        file_path.append(suffix);
+      }
+
+      spef_file[corner].open(file_path, std::ofstream::out);
+      writeSpefHeader(corner, db_network_);
+      writeSpefPorts(corner, db_network_);
+    }
+  }
+}
+
+void Resizer::closeSpefFile()
+{
+  if (write_spef_file) {
+    for (sta::Corner* corner : *sta_->corners()) {
+      spef_file[corner].close();
+    }
+    spef_file.clear();
+  }
+}
+
+void Resizer::writeSpefHeader(Corner* corner, dbNetwork* network)
+{
+  spef_file[corner] << "*SPEF \"ieee 1481-1999\"" << '\n';
+  spef_file[corner] << "*DESIGN \"" << network->block()->getName() << "\""
+                    << '\n';
+  spef_file[corner] << "*DATE \"11:11:11 Fri 11 11, 1111\"" << '\n';
+  spef_file[corner] << "*VENDOR \"The OpenROAD Project\"" << '\n';
+  spef_file[corner] << "*PROGRAM \"OpenROAD\"" << '\n';
+  spef_file[corner] << "*VERSION \"1.0\"" << '\n';
+  spef_file[corner] << "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\""
+                    << '\n';
+  spef_file[corner] << "*DIVIDER /" << '\n';
+  spef_file[corner] << "*DELIMITER :" << '\n';
+  spef_file[corner] << "*BUS_DELIMITER []" << '\n';
+  spef_file[corner] << "*T_UNIT 1 NS" << '\n';
+  spef_file[corner] << "*C_UNIT 1 PF" << '\n';
+  spef_file[corner] << "*R_UNIT 1 OHM" << '\n';
+  spef_file[corner] << "*L_UNIT 1 HENRY" << '\n';
+  spef_file[corner] << '\n';
+}
+
+void Resizer::writeSpefPorts(Corner* corner, dbNetwork* network)
+{
+  auto pin_iter = network->pinIterator(network->topInstance());
+  spef_file[corner] << "*PORTS" << '\n';
+  while (pin_iter->hasNext()) {
+    sta::Pin* pin = pin_iter->next();
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm = nullptr;
+    odb::dbModBTerm* modbterm = nullptr;
+    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+    spef_file[corner] << bterm->getName() << " ";
+    if (bterm->getIoType() == odb::dbIoType::INPUT)
+      spef_file[corner] << "I";
+    else if (bterm->getIoType() == odb::dbIoType::OUTPUT)
+      spef_file[corner] << "O";
+    else
+      spef_file[corner] << "B";
+    spef_file[corner] << '\n';
+  }
+  spef_file[corner] << '\n';
+}
+
+void Resizer::writeSpefNet(Corner* corner,
+                           const Net* net,
+                           Parasitic* parasitic,
+                           dbNetwork* network,
+                           Parasitics* parasitics)
+{
+  if (!write_spef_file)
+    return;
+  spef_file[corner] << "*D_NET " << network->staToDb(net)->getName() << " ";
+  spef_file[corner] << parasitics->capacitance(parasitic) << '\n';
+
+  spef_file[corner] << "*CONN" << '\n';
+  for (auto node : parasitics->nodes(parasitic)) {
+    auto pin = parasitics->pin(node);
+    if (pin != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+      if (iterm != nullptr) {
+        spef_file[corner] << "*I " << parasitics->name(node) << " ";
+        if (iterm->getIoType() == odb::dbIoType::INPUT)
+          spef_file[corner] << "I";
+        else if (iterm->getIoType() == odb::dbIoType::OUTPUT)
+          spef_file[corner] << "O";
+        else
+          spef_file[corner] << "B";
+        spef_file[corner] << " *D " << iterm->getInst()->getMaster()->getName();
+        spef_file[corner] << '\n';
+      } else {
+        spef_file[corner] << "*P " << parasitics->name(node) << " ";
+        if (bterm->getIoType() == odb::dbIoType::INPUT)
+          spef_file[corner] << "I";
+        else if (bterm->getIoType() == odb::dbIoType::OUTPUT)
+          spef_file[corner] << "O";
+        else
+          spef_file[corner] << "B";
+        spef_file[corner] << '\n';
+      }
+    }
+  }
+
+  int count = 1;
+  bool label = false;
+  for (auto node : parasitics->nodes(parasitic))
+    if (parasitics->pin(node) == nullptr) {
+      if (!label) {
+        label = true;
+        spef_file[corner] << "*CAP" << '\n';
+      }
+
+      spef_file[corner] << count++ << " ";
+      spef_file[corner] << parasitics->name(node) << " "
+                        << parasitics->nodeGndCap(node);
+      spef_file[corner] << '\n';
+    }
+  for (auto cap : parasitics->capacitors(parasitic)) {
+    if (!label) {
+      label = true;
+      spef_file[corner] << "*CAP" << '\n';
+    }
+    spef_file[corner] << count++ << " ";
+
+    auto n1 = parasitics->node1(cap);
+    spef_file[corner] << parasitics->name(n1) << " ";
+    auto n2 = parasitics->node2(cap);
+    spef_file[corner] << parasitics->name(n2) << " ";
+    spef_file[corner] << parasitics->value(cap) << '\n';
+  }
+
+  count = 1;
+  label = false;
+  for (auto res : parasitics->resistors(parasitic)) {
+    if (!label) {
+      label = true;
+      spef_file[corner] << "*RES" << '\n';
+    }
+    spef_file[corner] << count++ << " ";
+
+    auto n1 = parasitics->node1(res);
+    spef_file[corner] << parasitics->name(n1) << " ";
+    auto n2 = parasitics->node2(res);
+    spef_file[corner] << parasitics->name(n2) << " ";
+    spef_file[corner] << parasitics->value(res) << '\n';
+  }
+
+  spef_file[corner] << "*END" << '\n' << '\n';
 }
 
 }  // namespace rsz

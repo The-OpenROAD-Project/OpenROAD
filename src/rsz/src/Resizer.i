@@ -331,12 +331,12 @@ wire_clk_capacitance(const Corner *corner)
   return resizer->wireClkCapacitance(corner);
 }
 
-void
-estimate_parasitics_cmd(ParasiticsSrc src)
+void 
+estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->estimateParasitics(src);
+  Resizer* resizer = getResizer();
+  resizer->estimateParasitics(src, path);
 }
 
 // For debugging. Does not protect against annotating power/gnd.
