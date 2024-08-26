@@ -881,13 +881,33 @@ int getSegmentPos(std::vector<GSegment*>& segments, int& req_size, int bridge_si
   return cand;
 }
 
+void addSegmentHorizontal(GSegment* seg, GRoute& route, const int& init_x, const int& final_x, const int& layer_level)
+{
+  std::cerr << "Last size: " << route.size() << " ";
+  addSegments(route, init_x, seg->init_y, final_x, seg->final_y, layer_level);
+  route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, init_x, seg->init_y, layer_level));
+  seg->init_x = final_x;
+  std::cerr << "New size: " << route.size() << std::endl;
+}
+
+void addSegmentVertical(GSegment* seg, GRoute& route, const int& init_y, const int& final_y, const int& layer_level)
+{
+  std::cerr << "Last size: " << route.size() << " ";
+  addSegments(route, seg->init_x, init_y, seg->final_x, final_y, layer_level);
+  route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, seg->init_x, init_y, layer_level));
+  seg->init_y = final_y;
+  std::cerr << "New size: " << route.size() << std::endl;
+}
+
 int RepairAntennas::divideSegment(std::vector<GSegment*>& segments, GRoute& route, odb::dbTechLayer* violation_layer, const int& tile_size, const double& ratio, const int& init_c, const int& final_c, const double& init_area, const double& final_area)
 {
   int length = 0;
   bool is_horizontal = violation_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+  // Get total length of segments
   for (const auto& it : segments) {
     length += it->length();
   }
+  // Get the required wirelength to avoid violation
   const int n_tiles = length/tile_size;
   int req_tiles = int(n_tiles/ratio) * 0.8;
   if (init_c != 0 && final_c != 0) {
@@ -896,10 +916,8 @@ int RepairAntennas::divideSegment(std::vector<GSegment*>& segments, GRoute& rout
   int req_size = req_tiles * tile_size;
   const int bridge_size = 2 * tile_size;
   const int layer_level = violation_layer->getRoutingLevel();
-  const int bridges_number = std::ceil(double(n_tiles - req_tiles) / double(req_tiles + 2));
-  const int m_size = std::ceil(double(n_tiles - (2 * bridges_number)) / (bridges_number + 1)); //tiles
+
   std::cerr << "tiles of segment: " << n_tiles <<  " tiles required: " << req_tiles << " size required: " << req_tiles * tile_size << "\n";
-  std::cerr << "jumpers need: " << bridges_number << " size of subseg: " << m_size << "\n";
 
   int jumper_count = 0;
   // place bridge in segment begin
@@ -913,24 +931,14 @@ int RepairAntennas::divideSegment(std::vector<GSegment*>& segments, GRoute& rout
       const int bridge_init_x = seg->init_x + req_size;
       const int bridge_final_x = bridge_init_x + bridge_size;
       if (verifyCapacityForJumper(is_horizontal, tile_size, bridge_init_x, seg->init_y, bridge_final_x, seg->final_y, layer_level)) {
-        // create vias
-        std::cerr << "Last size: " << route.size() << " ";
-        addSegments(route, bridge_init_x, seg->init_y, bridge_final_x, seg->final_y, layer_level);
-        route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level));
-        seg->init_x = bridge_final_x;
-        std::cerr << "New size: " << route.size() << std::endl;
+        addSegmentHorizontal(seg, route, bridge_init_x, bridge_final_x, layer_level);
       }
     } else {
       // Get jumper position
       const int bridge_init_y = seg->init_y + req_size;
       const int bridge_final_y = bridge_init_y + bridge_size;
       if (verifyCapacityForJumper(is_horizontal, tile_size, seg->init_x, bridge_init_y, seg->final_x, bridge_final_y, layer_level)) {
-        // create vias
-        std::cerr << "Last size: " << route.size() << " ";
-        addSegments(route, seg->init_x, bridge_init_y, seg->final_x, bridge_final_y, layer_level);
-        route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, seg->init_x, bridge_init_y, layer_level));
-        seg->init_y = bridge_final_y;
-        std::cerr << "New size: " << route.size() << std::endl;
+        addSegmentVertical(seg, route, bridge_init_y, bridge_final_y, layer_level);
       }
     }
   }
@@ -945,31 +953,21 @@ int RepairAntennas::divideSegment(std::vector<GSegment*>& segments, GRoute& rout
       const int bridge_init_x = seg->final_x - req_size - bridge_size;
       const int bridge_final_x = bridge_init_x + bridge_size;
       if (verifyCapacityForJumper(is_horizontal, tile_size, bridge_init_x, seg->init_y, bridge_final_x, seg->final_y, layer_level)) {
-        // create vias
-        std::cerr << "Last size: " << route.size() << " ";
-        addSegments(route, bridge_init_x, seg->init_y, bridge_final_x, seg->final_y, layer_level);
-        route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, bridge_init_x, seg->init_y, layer_level));
-        seg->init_x = bridge_final_x;
-        std::cerr << "New size: " << route.size() << std::endl;
+        addSegmentHorizontal(seg, route, bridge_init_x, bridge_final_x, layer_level);
       }
     } else {
       // Get jumper position
       const int bridge_init_y = seg->final_y - req_size - bridge_size;
       const int bridge_final_y = bridge_init_y + bridge_size;
       if (verifyCapacityForJumper(is_horizontal, tile_size, seg->init_x, bridge_init_y, seg->final_x, bridge_final_y, layer_level)) {
-        // create vias
-        std::cerr << "Last size: " << route.size() << " ";
-        addSegments(route, seg->init_x, bridge_init_y, seg->final_x, bridge_final_y, layer_level);
-        route.push_back(GSegment(seg->init_x, seg->init_y, layer_level, seg->init_x, bridge_init_y, layer_level));
-        seg->init_y = bridge_final_y;
-        std::cerr << "New size: " << route.size() << std::endl;
+        addSegmentVertical(seg, route, bridge_init_y, bridge_final_y, layer_level);
       }
     }
   }
   return jumper_count;
 }
 
-int manhattanDistance(int x1, int y1, int x2, int y2)
+int manhattanDistance(const int& x1, const int& y1, const int& x2, const int& y2)
 {
   return std::abs(x1-x2) + std::abs(y1-y2);
 }
@@ -1034,7 +1032,7 @@ struct SegInfo
   int id = -1;
   GSegment* seg;
   odb::Rect rect;
-  std::vector<std::pair<odb::dbTechLayer*,int>> low_adj;
+  std::vector<std::pair<odb::dbTechLayer*,int>> adj;
   std::unordered_set<std::string> gates;
   SegInfo(int id_, GSegment* seg_, odb::Rect rect_)
   {
@@ -1049,7 +1047,7 @@ void getSegmentsWithOverlap(SegInfo& seg_info, const std::vector<SegInfo>& low_s
   int index = 0;
   for (const SegInfo& seg_it : low_segs) {
     if (seg_info.rect.overlaps(seg_it.rect)) {
-      seg_info.low_adj.push_back({layer, index});
+      seg_info.adj.push_back({layer, index});
     }
     index++;
   }
@@ -1110,34 +1108,15 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(odb::dbNet* db_net, 
         if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue; 
         } 
-        // get lower and upper layer (avoid vias)
-        odb::dbTechLayer* upper_layer = tech_layer->getUpperLayer();
-        odb::dbTechLayer* lower_layer = tech_layer->getLowerLayer(); 
-    
+
         odb::Rect pin_rect = box->getBox();
         transform.apply(pin_rect);
-
+        // get segment in same layer overlap the pin_rect
 	for (const SegInfo& it: segment_by_layer[tech_layer]) {
           if (it.rect.overlaps(pin_rect)) {
             seg_connected[pin_name].insert(it.id);
 	   }
         }
-        // optional
-        if (upper_layer) {
-	  for (const SegInfo& it: segment_by_layer[upper_layer]) {
-            if (it.rect.overlaps(pin_rect)) {
-              seg_connected[pin_name].insert(it.id);
-	    }
-	  }
-	}
-
-	if (lower_layer) {
-          for (const SegInfo& it: segment_by_layer[lower_layer]) {
-            if (it.rect.overlaps(pin_rect)) {
-              seg_connected[pin_name].insert(it.id);
-	    }
-	  }
-	}
       }
     }
   }
@@ -1161,7 +1140,7 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(odb::dbNet* db_net, 
     for (auto& seg_it : segment_by_layer[layer_iter]) {
       int id_u = seg_it.id;
       // get neighbors and union
-      for (const auto& lower_it : seg_it.low_adj) {
+      for (const auto& lower_it : seg_it.adj) {
         int id_v = segment_by_layer[lower_it.first][lower_it.second].id;
         // if they are on different sets then union
         if (dsu.find_set(id_u) != dsu.find_set(id_v)) {
