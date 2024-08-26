@@ -151,6 +151,9 @@ class CtsOptions
     clusteringCapacity_ = capacity;
   }
 
+  void setMaxFanout(unsigned maxFanout) { maxFanout_ = maxFanout; }
+  unsigned getMaxFanout() const { return maxFanout_; }
+
   // BufferDistance is in DBU
   int32_t getBufferDistance() const
   {
@@ -266,6 +269,7 @@ class CtsOptions
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;
+  unsigned maxFanout_ = 0;
   unsigned maxSlew_ = 4;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
