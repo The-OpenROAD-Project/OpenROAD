@@ -931,18 +931,18 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 void STAGuiInterface::updatePathGroups()
 {
   sta::Search* search = sta_->search();
-  search->makePathGroups(1,         /* group count */
-                         1,         /* endpoint count*/
-                         false,     /* unique pins */
-                         -sta::INF, /* min slack */
-                         sta::INF,  /* max slack*/
-                         nullptr,   /* group names */
-                         true,      /* setup */
-                         true,      /* hold */
-                         true,      /* recovery */
-                         true,      /* removal */
-                         true,      /* clk gating setup */
-                         true /* clk gating hold*/);
+  search->updatePathGroups(1,         /* group count */
+                           1,         /* endpoint count*/
+                           false,     /* unique pins */
+                           -sta::INF, /* min slack */
+                           sta::INF,  /* max slack*/
+                           nullptr,   /* group names */
+                           true,      /* setup */
+                           true,      /* hold */
+                           true,      /* recovery */
+                           true,      /* removal */
+                           true,      /* clk gating setup */
+                           true /* clk gating hold*/);
 }
 
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(

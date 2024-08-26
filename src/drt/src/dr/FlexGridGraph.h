@@ -1078,7 +1078,7 @@ class FlexGridGraph
   Rect dieBox_;
   frUInt4 ggDRCCost_ = 0;
   frUInt4 ggMarkerCost_ = 0;
-  frUInt4 ggFixedShapeCost_ = 0;
+  frUInt4 ggFixedShapeCost_;
   // temporary variables
   FlexWavefront wavefront_;
   const std::vector<std::pair<frCoord, frCoord>>* halfViaEncArea_

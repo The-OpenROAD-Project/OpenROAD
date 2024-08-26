@@ -375,16 +375,22 @@ bool Resizer::removeBuffer(Instance* buffer,
                "remove {}",
                db_network_->name(buffer));
     buffer_removed = true;
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteInstance(buffer);
 
     if (removed) {
-      odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-      odb::dbNet* db_removed = db_network_->staToDb(removed);
-      db_survivor->mergeNet(db_removed);
-
-      sta_->disconnectPin(in_pin);
-      sta_->disconnectPin(out_pin);
-      sta_->deleteInstance(buffer);
-
+      NetPinIterator* pin_iter = db_network_->pinIterator(removed);
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        Instance* pin_inst = db_network_->instance(pin);
+        if (pin_inst != buffer) {
+          Port* pin_port = db_network_->port(pin);
+          sta_->disconnectPin(const_cast<Pin*>(pin));
+          sta_->connectPin(pin_inst, pin_port, survivor);
+        }
+      }
+      delete pin_iter;
       sta_->deleteNet(removed);
       parasitics_invalid_.erase(removed);
     }
@@ -2404,11 +2410,6 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
   if (db_network_->staToDb(cell) == nullptr) {
     logger_->error(RSZ, 70, "no LEF cell for {}.", cell->name());
   }
-  // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block
-      = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
-  std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
-
   double drvr_r = drvr_port->driveResistance();
   // wire_length1 lower bound
   // wire_length2 upper bound
@@ -2416,17 +2417,17 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
   // Initial guess with wire resistance same as driver resistance.
   double wire_length2 = drvr_r / wireSignalResistance(corner);
   double tol = .01;  // 1%
-  double diff1 = splitWireDelayDiff(wire_length2, cell, sta);
+  double diff1 = splitWireDelayDiff(wire_length2, cell);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2)
          > max(wire_length1, wire_length2) * tol) {
     if (diff1 < 0.0) {
       wire_length1 = wire_length2;
       wire_length2 *= 2;
-      diff1 = splitWireDelayDiff(wire_length2, cell, sta);
+      diff1 = splitWireDelayDiff(wire_length2, cell);
     } else {
       double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff2 = splitWireDelayDiff(wire_length3, cell, sta);
+      double diff2 = splitWireDelayDiff(wire_length3, cell);
       if (diff2 < 0.0) {
         wire_length1 = wire_length3;
       } else {
@@ -2435,47 +2436,28 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
       }
     }
   }
-  dbBlock::destroy(block);
   return wire_length1;
 }
 
 // objective function
-double Resizer::splitWireDelayDiff(double wire_length,
-                                   LibertyCell* buffer_cell,
-                                   std::unique_ptr<dbSta>& sta)
+double Resizer::splitWireDelayDiff(double wire_length, LibertyCell* buffer_cell)
 {
   Delay delay1, delay2;
   Slew slew1, slew2;
-  bufferWireDelay(buffer_cell, wire_length, sta, delay1, slew1);
-  bufferWireDelay(buffer_cell, wire_length / 2, sta, delay2, slew2);
+  bufferWireDelay(buffer_cell, wire_length, delay1, slew1);
+  bufferWireDelay(buffer_cell, wire_length / 2, delay2, slew2);
   return delay1 - delay2 * 2;
 }
 
-// For tcl accessor.
 void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
                               double wire_length,  // meters
-                              // Return values.
-                              Delay& delay,
-                              Slew& slew)
-{
-  // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block
-      = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
-  std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
-  bufferWireDelay(buffer_cell, wire_length, sta, delay, slew);
-  dbBlock::destroy(block);
-}
-
-void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
-                              double wire_length,  // meters
-                              std::unique_ptr<dbSta>& sta,
                               // Return values.
                               Delay& delay,
                               Slew& slew)
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
-  return cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
+  return cellWireDelay(drvr_port, load_port, wire_length, delay, slew);
 }
 
 // Cell delay plus wire delay.
@@ -2484,11 +2466,14 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
 void Resizer::cellWireDelay(LibertyPort* drvr_port,
                             LibertyPort* load_port,
                             double wire_length,  // meters
-                            std::unique_ptr<dbSta>& sta,
                             // Return values.
                             Delay& delay,
                             Slew& slew)
 {
+  // Make a (hierarchical) block to use as a scratchpad.
+  dbBlock* block
+      = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
+  std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   Parasitics* parasitics = sta->parasitics();
   Network* network = sta->network();
   ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
@@ -2552,6 +2537,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
+  dbBlock::destroy(block);
 }
 
 void Resizer::makeWireParasitic(Net* net,

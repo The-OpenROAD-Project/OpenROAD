@@ -48,7 +48,6 @@
 #include "global.h"
 #include "gr/FlexGR.h"
 #include "gui/gui.h"
-#include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
@@ -536,19 +535,14 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 
 bool TritonRoute::initGuide()
 {
-  io::GuideProcessor guide_processor(getDesign(), db_, logger_);
-  bool guideOk = guide_processor.readGuides();
-  guide_processor.processGuides();
   io::Parser parser(db_, getDesign(), logger_);
+  bool guideOk = parser.readGuide();
+  parser.postProcessGuide();
   parser.initRPin();
   return guideOk;
 }
 void TritonRoute::initDesign()
 {
-  if (db_ == nullptr || db_->getChip() == nullptr
-      || db_->getChip()->getBlock() == nullptr) {
-    logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
-  }
   io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
@@ -593,7 +587,10 @@ void TritonRoute::initDesign()
     }
   }
   parser.postProcess();
-  db_callback_->addOwner(db_->getChip()->getBlock());
+  if (db_ != nullptr && db_->getChip() != nullptr
+      && db_->getChip()->getBlock() != nullptr) {
+    db_callback_->addOwner(db_->getChip()->getBlock());
+  }
 }
 
 void TritonRoute::prep()
@@ -984,10 +981,10 @@ int TritonRoute::main()
   }
   if (!initGuide()) {
     gr();
+    io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
-    guide_processor.readGuides();
-    guide_processor.processGuides();
+    parser.readGuide();
+    parser.postProcessGuide();
   }
   prep();
   ta();
@@ -1118,9 +1115,8 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
       && gcellGrid->getNumGridPatternsY() == 1) {
-    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
-    guide_processor.readGuides();
-    guide_processor.buildGCellPatterns();
+    io::Parser parser(db_, getDesign(), logger_);
+    parser.buildGCellPatterns(db_);
   } else if (!initGuide()) {
     logger_->error(DRT, 1, "GCELLGRID is undefined");
   }

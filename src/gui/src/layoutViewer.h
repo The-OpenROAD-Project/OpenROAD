@@ -291,7 +291,7 @@ class LayoutViewer : public QWidget
   struct Boxes
   {
     std::vector<QPolygon> obs;
-    std::map<odb::dbMTerm*, std::vector<QPolygon>> mterms;
+    std::vector<QPolygon> mterms;
   };
 
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;

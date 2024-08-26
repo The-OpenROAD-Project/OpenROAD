@@ -19,6 +19,64 @@ module hierclock (a_count_valid_o,
  output [3:0] b_count_o;
  input [3:0] b_i;
 
+ wire clk1_int;
+ wire clk2_int;
+ wire \U1/_03_ ;
+ wire \U1/_04_ ;
+ wire \U1/_05_ ;
+ wire \U1/_06_ ;
+ wire \U1/_11_ ;
+ wire \U1/_12_ ;
+ wire \U1/_13_ ;
+ wire \U1/_14_ ;
+ wire \U1/_15_ ;
+ wire \U1/_19_ ;
+ wire \U1/_20_ ;
+ wire \U1/_21_ ;
+ wire \U1/_22_ ;
+ wire \U2/_12_ ;
+ wire \U2/_13_ ;
+ wire \U2/_14_ ;
+ wire \U2/_15_ ;
+ wire \U2/_16_ ;
+ wire \U2/_26_ ;
+ wire \U2/_27_ ;
+ wire \U2/_28_ ;
+ wire \U2/_29_ ;
+ wire \U2/_30_ ;
+ wire \U2/_31_ ;
+ wire \U2/_32_ ;
+ wire \U2/_33_ ;
+ wire \U2/_34_ ;
+ wire \U2/_35_ ;
+ wire \U2/_36_ ;
+ wire \U2/_38_ ;
+ wire \U2/_39_ ;
+ wire \U2/_40_ ;
+ wire \U2/_41_ ;
+ wire \U2/_42_ ;
+ wire \U3/_12_ ;
+ wire \U3/_13_ ;
+ wire \U3/_14_ ;
+ wire \U3/_15_ ;
+ wire \U3/_16_ ;
+ wire \U3/_26_ ;
+ wire \U3/_27_ ;
+ wire \U3/_28_ ;
+ wire \U3/_29_ ;
+ wire \U3/_30_ ;
+ wire \U3/_31_ ;
+ wire \U3/_32_ ;
+ wire \U3/_33_ ;
+ wire \U3/_34_ ;
+ wire \U3/_35_ ;
+ wire \U3/_36_ ;
+ wire \U3/_38_ ;
+ wire \U3/_39_ ;
+ wire \U3/_40_ ;
+ wire \U3/_41_ ;
+ wire \U3/_42_ ;
+ wire [2:0] \U1/counter_q ;
 
  clockgen U1 (.clk_i(clk_i),
     .rst_n_i(rst_n_i),
@@ -58,19 +116,6 @@ module clockgen (clk_i,
  output clk1_o;
  output clk2_o;
 
- wire _19_;
- wire _20_;
- wire _21_;
- wire _06_;
- wire _15_;
- wire _05_;
- wire _14_;
- wire _13_;
- wire _12_;
- wire _03_;
- wire _22_;
- wire _11_;
- wire [3:0] counter_q;
 
  INV_X1 \U1/_28_  (.A(rst_n_i),
     .ZN(_11_));
@@ -133,26 +178,6 @@ module counter (clk_i,
  output [3:0] count_value_o;
  output count_valid_o;
 
- wire _38_;
- wire _39_;
- wire _40_;
- wire _42_;
- wire count_valid_q;
- wire _16_;
- wire _36_;
- wire _35_;
- wire _33_;
- wire _32_;
- wire _14_;
- wire _31_;
- wire _30_;
- wire _29_;
- wire _13_;
- wire _28_;
- wire _27_;
- wire _26_;
- wire _41_;
- wire [3:0] counter_q;
 
  INV_X1 \U2/_49_  (.A(_41_),
     .ZN(_26_));
@@ -243,27 +268,6 @@ module counter-1 (clk_i,
  output [3:0] count_value_o;
  output count_valid_o;
 
- wire _38_;
- wire _39_;
- wire _40_;
- wire _42_;
- wire count_valid_q;
- wire _16_;
- wire _36_;
- wire _35_;
- wire _15_;
- wire _33_;
- wire _32_;
- wire _14_;
- wire _31_;
- wire _30_;
- wire _29_;
- wire _13_;
- wire _28_;
- wire _12_;
- wire _26_;
- wire _41_;
- wire [3:0] counter_q;
 
  INV_X1 \U3/_49_  (.A(_41_),
     .ZN(_26_));

@@ -315,48 +315,26 @@ class DbInstanceNetIterator : public InstanceNetIterator
   const dbNetwork* network_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
-  dbSet<dbModNet>::iterator mod_net_iter_;
-  dbSet<dbModNet>::iterator mod_net_end_;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
                                              const dbNetwork* network)
     : network_(network)
 {
-  if (network_->hasHierarchy()) {
-    dbInst* db_inst;
-    dbModInst* mod_inst;
-    network_->staToDb(instance, db_inst, mod_inst);
-    if (mod_inst) {
-      dbModule* master = mod_inst->getMaster();
-      dbSet<dbModNet> nets = master->getModNets();
-      mod_net_iter_ = nets.begin();
-      mod_net_end_ = nets.end();
-    }
-  } else {
-    if (instance == network->topInstance()) {
-      dbSet<dbNet> nets = network->block()->getNets();
-      iter_ = nets.begin();
-      end_ = nets.end();
-    }
+  if (instance == network->topInstance()) {
+    dbSet<dbNet> nets = network->block()->getNets();
+    iter_ = nets.begin();
+    end_ = nets.end();
   }
 }
 
 bool DbInstanceNetIterator::hasNext()
 {
-  if (network_->hasHierarchy()) {
-    return mod_net_iter_ != mod_net_end_;
-  }
   return iter_ != end_;
 }
 
 Net* DbInstanceNetIterator::next()
 {
-  if (network_->hasHierarchy()) {
-    dbModNet* net = *mod_net_iter_;
-    mod_net_iter_++;
-    return network_->dbToSta(net);
-  }
   dbNet* net = *iter_;
   iter_++;
   return network_->dbToSta(net);
@@ -832,22 +810,6 @@ Instance* dbNetwork::parent(const Instance* instance) const
   return top_instance_;
 }
 
-Port* dbNetwork::findPort(const Cell* cell, const char* name) const
-{
-  if (hierarchy_) {
-    dbMaster* db_master;
-    dbModule* db_module;
-    staToDb(cell, db_master, db_module);
-    if (db_module) {
-      dbModBTerm* mod_bterm = db_module->findModBTerm(name);
-      Port* ret = dbToSta(mod_bterm);
-      return ret;
-    }
-  }
-  const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  return reinterpret_cast<Port*>(ccell->findPort(name));
-}
-
 bool dbNetwork::isLeaf(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -1143,13 +1105,14 @@ PortDirection* dbNetwork::direction(const Port* port) const
   if (bterm) {
     PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
-  }
-  if (modbterm) {
+  } else if (modbterm) {
     PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
+  } else {
+    const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
+    return cport->direction();
   }
-  const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-  return cport->direction();
+  return PortDirection::unknown();
 }
 
 PortDirection* dbNetwork::direction(const Pin* pin) const
@@ -1617,7 +1580,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
     }
   }
 
-  std::unique_ptr<CellPortIterator> port_iter{portIterator(cell)};
+  CellPortIterator* port_iter = portIterator(cell);
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
@@ -1653,7 +1616,7 @@ void dbNetwork::makeTopCell()
   });
 
   // record the top level ports
-  std::unique_ptr<CellPortIterator> port_iter{portIterator(top_cell_)};
+  CellPortIterator* port_iter = portIterator(top_cell_);
   while (port_iter->hasNext()) {
     Port* cur_port = port_iter->next();
     registerConcretePort(cur_port);
@@ -1758,21 +1721,11 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
                                   const char* name,
                                   Instance* parent)
 {
-  const char* cell_name = cell->name();
   if (parent == top_instance_) {
+    const char* cell_name = cell->name();
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
       dbInst* inst = dbInst::create(block_, master, name);
-      return dbToSta(inst);
-    }
-  } else {
-    dbInst* db_inst = nullptr;
-    dbModInst* mod_inst = nullptr;
-    staToDb(parent, db_inst, mod_inst);
-    if (mod_inst) {
-      dbMaster* master = db_->findMaster(cell_name);
-      dbModule* parent = mod_inst->getMaster();
-      dbInst* inst = dbInst::create(block_, master, name, false, parent);
       return dbToSta(inst);
     }
   }
@@ -2110,6 +2063,7 @@ void dbNetwork::staToDb(const Term* term,
   }
 }
 
+// Primary -- needs concrete test
 void dbNetwork::staToDb(const Cell* cell,
                         dbMaster*& master,
                         dbModule*& module) const
@@ -2150,7 +2104,7 @@ dbMTerm* dbNetwork::staToDb(const Port* port) const
 
 dbBTerm* dbNetwork::isTopPort(const Port* port) const
 {
-  std::unique_ptr<CellPortIterator> port_iter{portIterator(top_cell_)};
+  CellPortIterator* port_iter = portIterator(top_cell_);
   while (port_iter->hasNext()) {
     if (port == port_iter->next()) {
       const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);

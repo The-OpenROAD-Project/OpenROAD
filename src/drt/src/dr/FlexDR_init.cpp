@@ -547,7 +547,7 @@ void FlexDRWorker::initNets_initDR_helper(
             netExtObjs,
             netOrigGuides,
             netTerms,
-            std::move(bounds));
+            bounds);
     return;
   }
   std::vector<std::vector<std::unique_ptr<drConnFig>>> routeObjs(
@@ -582,9 +582,7 @@ void FlexDRWorker::initNets_initDR_helper(
         }
       }
     }
-    if (bestIndex >= 0) {
-      terms[bestIndex].emplace_back(netTerms.at(i));
-    }
+    terms[bestIndex].emplace_back(netTerms.at(i));
   }
   const auto it = boundaryPin_.find(net);
   if (it != boundaryPin_.end()) {
@@ -604,9 +602,7 @@ void FlexDRWorker::initNets_initDR_helper(
           }
         }
       }
-      if (bestIndex >= 0) {
-        bounds[bestIndex].emplace_back(point, lNum);
-      }
+      bounds[bestIndex].emplace_back(point, lNum);
     }
   }
   // Remove pins from graph for routeObjs/extObjs net resolution
@@ -624,16 +620,12 @@ void FlexDRWorker::initNets_initDR_helper(
   for (auto& obj : netRouteObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    if (compIdx >= 0) {
-      routeObjs[compIdx].emplace_back(std::move(obj));
-    }
+    routeObjs[compIdx].emplace_back(std::move(obj));
   }
   for (auto& obj : netExtObjs) {
     auto compIdx = initNets_initDR_helper_getObjComponent(
         obj.get(), connectedComponents, netGuides);
-    if (compIdx >= 0) {
-      extObjs[compIdx].emplace_back(std::move(obj));
-    }
+    extObjs[compIdx].emplace_back(std::move(obj));
   }
   for (int i = 0; i < connectedComponents.size(); i++) {
     initNet(design_,
@@ -1855,7 +1847,7 @@ void FlexDRWorker::initNets_numPinsIn()
           break;
         }
       }
-      if (!hasPrefAP && firstAP != nullptr) {
+      if (!hasPrefAP) {
         const Point pt = firstAP->getPoint();
         allPins.emplace_back(Rect(pt, pt), pin.get());
       }
@@ -1881,7 +1873,7 @@ void FlexDRWorker::initNets_numPinsIn()
           break;
         }
       }
-      if (!hasPrefAP && firstAP != nullptr) {
+      if (!hasPrefAP) {
         pt = firstAP->getPoint();
       }
 

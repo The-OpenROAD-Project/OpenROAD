@@ -81,6 +81,7 @@ class MBFF
        sta::dbSta* sta,
        utl::Logger* log,
        int threads,
+       int knn,
        int multistart,
        int num_paths,
        bool debug_graphics = false);
@@ -99,7 +100,6 @@ class MBFF
 
   // MBFF functions
   float GetDist(const Point& a, const Point& b);
-  float GetDistAR(const Point& a, const Point& b, float AR);
   int GetRows(int slot_cnt, std::vector<int> array_mask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
@@ -172,12 +172,9 @@ class MBFF
                 const std::vector<Tray>& trays,
                 const std::vector<std::pair<int, int>>& clusters);
 
+  // K-Means++ for pointset decomposition (fixed K=4 for now)
   void KMeans(const std::vector<Flop>& flops,
-              int knn,
-              std::vector<std::vector<Flop>>& clusters,
-              std::vector<int>& rand_nums);
-  float GetKSilh(const std::vector<std::vector<Flop>>& clusters,
-                 const std::vector<Point>& centers);
+              std::vector<std::vector<Flop>>& clusters);
   void KMeansDecomp(const std::vector<Flop>& flops,
                     int max_sz,
                     std::vector<std::vector<Flop>>& pointsets);
@@ -204,7 +201,6 @@ class MBFF
                 const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 float alpha,
-                float beta,
                 std::vector<int> array_mask);
   // calculate beta (1.00) * sum(relative displacements)
   float GetPairDisplacements();
@@ -238,6 +234,7 @@ class MBFF
   utl::Logger* log_;
   std::unique_ptr<Graphics> graphics_;
   int num_threads_;
+  int knn_;
   int multistart_;
   int num_paths_;
   float multiplier_;
@@ -255,7 +252,8 @@ class MBFF
   std::map<std::string, int> name_to_idx_;
   std::map<int, int> tray_sizes_used_;
   std::vector<std::vector<int>> paths_;
-  std::vector<std::set<int>> unique_;
+  std::set<int> path_points_;
+  std::vector<int> occs_;
 
   // MBFF vars
   template <typename T>

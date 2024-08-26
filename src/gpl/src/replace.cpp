@@ -259,7 +259,7 @@ void Replace::runMBFF(int max_sz,
                       int threads,
                       int num_paths)
 {
-  MBFF pntset(db_, sta_, log_, threads, 20, num_paths, gui_debug_);
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, num_paths, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 

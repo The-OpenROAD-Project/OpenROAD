@@ -379,8 +379,8 @@ void FlexRP::prep_cutSpcTbl()
                    odb::dbTechLayerCutSpacingTableDefRule::SECOND)});
           con->setDefaultCenterToCenter(
               dbRule->isCenterToCenter(cutClass1, cutClass2));
-          con->setDefaultCenterAndEdge(dbRule->isCenterAndEdge(
-              std::move(cutClass1), std::move(cutClass2)));
+          con->setDefaultCenterAndEdge(
+              dbRule->isCenterAndEdge(cutClass1, cutClass2));
         }
       }
     }
@@ -429,8 +429,7 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx]
-      = std::move(forbiddenRanges);
+  tech_->line2LineForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum& lNum,
@@ -521,8 +520,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx]
-      = std::move(forbiddenRanges);
+  tech_->viaForbiddenPlanarLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_viaForbiddenPlanarLen_minStep(
@@ -553,8 +551,8 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
     }
 
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
-        upVia = ndr->getPrefVia(lNum / 2 - 1);
+      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
+        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
@@ -600,11 +598,9 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord + 1, endCoord - 1));
   }
   if (ndr) {
-    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx]
-        = std::move(forbiddenRanges);
+    ndr->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   } else {
-    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx]
-        = std::move(forbiddenRanges);
+    tech->viaForbiddenTurnLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
 }
 
@@ -685,8 +681,8 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia(lNum / 2 - 1)) {
-        upVia = ndr->getPrefVia(lNum / 2 - 1);
+      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
+        upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
       } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
       }
@@ -746,11 +742,9 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
     forbiddenRanges.push_back(std::make_pair(beginCoord, endCoord));
   }
   if (ndr) {
-    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx]
-        = std::move(forbiddenRanges);
+    ndr->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   } else {
-    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx]
-        = std::move(forbiddenRanges);
+    tech->via2ViaForbiddenLen_[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
 
   if (!ndr) {

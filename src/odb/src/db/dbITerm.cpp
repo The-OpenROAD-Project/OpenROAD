@@ -241,10 +241,6 @@ dbInst* dbITerm::getInst() const
   _dbITerm* iterm = (_dbITerm*) this;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
-  if (inst == nullptr) {
-    iterm->getLogger()->critical(
-        utl::ODB, 446, "dbITerm does not have dbInst.");
-  }
   return (dbInst*) inst;
 }
 

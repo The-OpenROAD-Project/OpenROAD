@@ -45,7 +45,6 @@ namespace odb {
 
 class dbIStream;
 class dbOStream;
-class Rect;
 
 class Point
 {
@@ -176,9 +175,6 @@ class Oct
   int xMax() const;
   int yMax() const;
   std::vector<Point> getPoints() const;
-
-  Oct bloat(int margin) const;
-  Rect getEnclosingRect() const;
 
   friend dbIStream& operator>>(dbIStream& stream, Oct& o);
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
@@ -339,12 +335,9 @@ class Polygon
   bool operator<=(const Polygon& p) const { return !(*this > p); }
   bool operator>=(const Polygon& p) const { return !(*this < p); }
 
-  Rect getEnclosingRect() const;
-  int dx() const { return getEnclosingRect().dx(); }
-  int dy() const { return getEnclosingRect().dy(); }
-
-  // returns a corrected Polygon with a closed form and counter-clockwise points
-  Polygon bloat(int margin) const;
+  Rect getRect() const;
+  int dx() const { return getRect().dx(); }
+  int dy() const { return getRect().dy(); }
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
@@ -885,16 +878,6 @@ inline std::vector<Point> Oct::getPoints() const
   return points;
 }
 
-inline Oct Oct::bloat(int margin) const
-{
-  return Oct(center_low_, center_high_, 2 * (A_ + margin));
-}
-
-inline Rect Oct::getEnclosingRect() const
-{
-  return Rect(xMin(), yMin(), xMax(), yMax());
-}
-
 inline Polygon::Polygon(const std::vector<Point>& points)
 {
   setPoints(points);
@@ -915,7 +898,12 @@ inline std::vector<Point> Polygon::getPoints() const
   return points_;
 }
 
-inline Rect Polygon::getEnclosingRect() const
+inline void Polygon::setPoints(const std::vector<Point>& points)
+{
+  points_ = points;
+}
+
+inline Rect Polygon::getRect() const
 {
   Rect rect;
   rect.mergeInit();
@@ -933,16 +921,6 @@ inline bool Polygon::operator==(const Polygon& p) const
 inline bool Polygon::operator<(const Polygon& p) const
 {
   return points_ < p.points_;
-}
-
-// Returns the manhattan distance from Point p to Rect r
-inline int manhattanDistance(const Rect& r, const Point& p)
-{
-  const int x = p.getX();
-  const int y = p.getY();
-  const int dx = std::abs(x - std::clamp(x, r.xMin(), r.xMax()));
-  const int dy = std::abs(y - std::clamp(y, r.yMin(), r.yMax()));
-  return dx + dy;
 }
 
 #ifndef SWIG

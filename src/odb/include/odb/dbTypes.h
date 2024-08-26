@@ -34,6 +34,8 @@
 
 #include <optional>
 
+#include "dbStream.h"
+#include "geom.h"
 #include "odb.h"
 
 namespace odb {
@@ -123,6 +125,61 @@ class dbOrientType
  private:
   Value _value;
 };
+
+class dbGDSSTrans
+{
+ public:
+  bool _flipX;
+  bool _absMag, _absAngle;
+  double _mag, _angle;
+
+  dbGDSSTrans();
+
+  dbGDSSTrans(bool flipX, bool absMag, bool absAngle, double mag, double angle);
+
+  bool operator==(const dbGDSSTrans& rhs) const;
+
+  std::string to_string() const;
+
+  bool identity() const;
+};
+
+dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
+dbOStream& operator<<(dbOStream& stream, dbGDSSTrans t);
+
+class dbGDSTextPres
+{
+ public:
+  enum VPres
+  {
+    TOP = 0,
+    MIDDLE = 1,
+    BOTTOM = 2
+  };
+  enum HPres
+  {
+    LEFT = 0,
+    CENTER = 1,
+    RIGHT = 2
+  };
+
+  uint8_t _fontNum;
+  VPres _vPres;
+  HPres _hPres;
+
+  dbGDSTextPres();
+
+  dbGDSTextPres(uint8_t fontNum, VPres vPres, HPres hPres);
+
+  bool operator==(const dbGDSTextPres& rhs) const;
+
+  bool identity() const;
+
+  std::string to_string() const;
+};
+
+dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
+dbOStream& operator<<(dbOStream& stream, dbGDSTextPres t);
 
 ///
 /// The dbGroup's basis.

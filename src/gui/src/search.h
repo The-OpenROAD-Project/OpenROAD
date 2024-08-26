@@ -63,19 +63,19 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   class MinHeightPredicate;
 
-  template <typename T>
-  class PolygonIntersectPredicate;
-
  public:
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
 
+  using Polygon
+      = bg::model::polygon<odb::Point,
+                           false>;  // counterclockwise(clockwise=false)
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
   template <typename T>
   using RouteBoxValue = std::tuple<odb::Rect, bool, T>;
   template <typename T>
-  using SNetValue = std::tuple<odb::dbSBox*, odb::Polygon, T>;
+  using SNetValue = std::tuple<odb::dbSBox*, Polygon, T>;
   template <typename T>
   using SNetDBoxValue = std::pair<odb::dbSBox*, T>;
   ;

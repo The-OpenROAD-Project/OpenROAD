@@ -90,7 +90,7 @@ void GridGraphDescriptor::highlight(std::any object,
                                     gui::Painter& painter) const
 {
   odb::Rect bbox;
-  getBBox(std::move(object), bbox);
+  getBBox(object, bbox);
   auto x = bbox.xMin();
   auto y = bbox.yMin();
   bbox.init(x - 20, y - 20, x + 20, y + 20);

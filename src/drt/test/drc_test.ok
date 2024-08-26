@@ -89,9 +89,6 @@ Number of nets:           428
 [INFO DRT-0033] metal9 shape region query size = 0.
 [INFO DRT-0033] via9 shape region query size = 0.
 [INFO DRT-0033] metal10 shape region query size = 0.
-
-Number of guides:     0
-
 [INFO DRT-0176] GCELLGRID X 0 DO 47 STEP 4200 ;
 [INFO DRT-0177] GCELLGRID Y 0 DO 48 STEP 4200 ;
 No differences found.
