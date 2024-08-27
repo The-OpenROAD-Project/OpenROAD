@@ -272,7 +272,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
         logger_->warn(
             RSZ,
             97,
-            "Instance {} cannot be removed because it is not a buffer,"
+            "Instance {} cannot be removed because it is not a buffer, "
             "functions as a feedthrough port buffer, or is constrained",
             db_network_->name(buffer));
       }
