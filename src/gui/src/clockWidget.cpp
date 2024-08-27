@@ -831,7 +831,7 @@ std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
     const SelectionSet& selections)
 {
   std::set<ClockNodeGraphicsViewItem*> nodes;
-  for (auto selection : selections) {
+  for (const auto& selection : selections) {
     ClockNodeGraphicsViewItem* item = getItemFromName(selection.getName());
     if (item != nullptr) {
       nodes.insert(item);
