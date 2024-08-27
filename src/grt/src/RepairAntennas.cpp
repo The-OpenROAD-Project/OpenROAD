@@ -156,9 +156,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
     GRoute& route,
     std::map<int, odb::dbTechVia*>& default_vias)
 {
-  if (db_net->getName() == "_13305_") {
-    logger_->report("Making wires for net _13305_");
-  }
   odb::dbWire* wire = odb::dbWire::create(db_net);
   if (wire) {
     Net* net = grouter_->getNet(db_net);
@@ -437,9 +434,6 @@ void RepairAntennas::destroyNetWires(
   for (odb::dbNet* db_net : nets_to_repair) {
     odb::dbWire* wire = db_net->getWire();
     if (wire) {
-      if (db_net->getName() == "_13305_") {
-        logger_->report("Destroying wires for net _13305_");
-      }
       odb::dbWire::destroy(wire);
     }
   }
