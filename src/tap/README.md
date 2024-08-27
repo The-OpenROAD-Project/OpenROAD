@@ -33,6 +33,7 @@ tapcell
     [-disallow_one_site_gaps]
     [-halo_width_x halo_x]
     [-halo_width_y halo_y]
+    [-row_min_width min_width]
     [-tap_nwin2_master tap_nwin2_master]
     [-tap_nwin3_master tap_nwin3_master]
     [-tap_nwout2_master tap_nwout2_master]
@@ -60,6 +61,7 @@ tapcell
 | `-disallow_one_site_gaps` | KIV. |
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
+| `-row_min_width` | Minimum width (in microns) that a row must have during cut rows. |
 | `-tap_nwintie_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. |
 | `-tap_nwin2_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwintie_master` |
 | `-tap_nwin3_master` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwin2_master`. |
@@ -83,6 +85,7 @@ cut_rows
     [-endcap_master endcap_master]
     [-halo_width_x halo_x]
     [-halo_width_y halo_y]
+    [-row_min_width min_width]
 ```
 
 #### Options
@@ -92,6 +95,7 @@ cut_rows
 | `-endcap_master` | Master used as an endcap. |
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
+| `-row_min_width` | Minimum width (in microns) that a row must have during cut rows. |
 
 ### Only adding boundary/endcap cells
 
