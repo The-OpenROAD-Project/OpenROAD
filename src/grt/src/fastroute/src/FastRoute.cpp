@@ -313,6 +313,14 @@ void FastRouteCore::mergeNet(odb::dbNet* db_net)
   }
 }
 
+void FastRouteCore::clearNetRoute(odb::dbNet* db_net)
+{
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    const int net_id = db_net_id_map_[db_net];
+    clearNetRoute(net_id);
+  }
+}
+
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
 {
   auto itr = db_net_id_map_.find(db_net);
