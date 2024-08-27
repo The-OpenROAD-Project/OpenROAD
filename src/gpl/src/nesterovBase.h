@@ -76,6 +76,11 @@ struct GCellState {
 
     FloatPoint initCoordi;
     float densityPenalty;
+    
+    //Saving state for routability snapshot
+    FloatPoint snapshotCoordi;
+    FloatPoint snapshotSLPCoordi;
+    FloatPoint snapshotSLPSumGrads;
 };
 
 
@@ -889,7 +894,8 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
+  const std::unordered_map<GCell*,GCellState>& newGCells() const { return newGCells_; }
+//  const std::vector<GCell*>& gCells() const { return gCells_; }
 //  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1001,10 +1007,11 @@ class NesterovBase
 
   void updateInitialPrevSLPCoordi();
 
-  float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
-                      const std::vector<FloatPoint>& prevSLPSumGrads_,
-                      const std::vector<FloatPoint>& curSLPCoordi_,
-                      const std::vector<FloatPoint>& curSLPSumGrads_);
+//  float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
+//                      const std::vector<FloatPoint>& prevSLPSumGrads_,
+//                      const std::vector<FloatPoint>& curSLPCoordi_,
+//                      const std::vector<FloatPoint>& curSLPSumGrads_);
+  float getStepLength();
 
   void updateNextIter(int iter);
   float getPhiCoef(float scaledDiffHpwl) const;
@@ -1057,7 +1064,7 @@ class NesterovBase
   std::vector<GCell> gCellStor_;
 
   std::unordered_map<GCell*, GCellState> newGCells_;
-  std::vector<GCell*> gCells_;
+//  std::vector<GCell*> gCells_;
 //  std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 

@@ -222,6 +222,34 @@ void Graphics::drawCells(const std::vector<GCell*>& cells,
   }
 }
 
+void Graphics::drawCells(const std::unordered_map<GCell*, GCellState>& cells, gui::Painter& painter) {
+    for (const auto& pair : cells) {
+        GCell* gCell = pair.first;
+        const int gcx = gCell->dCx();
+        const int gcy = gCell->dCy();
+
+        int xl = gcx - gCell->dx() / 2;
+        int yl = gcy - gCell->dy() / 2;
+        int xh = gcx + gCell->dx() / 2;
+        int yh = gcy + gCell->dy() / 2;
+
+        gui::Painter::Color color;
+        if (gCell->isInstance()) {
+            color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan : gui::Painter::dark_green;
+        } else if (gCell->isFiller()) {
+            color = gui::Painter::dark_magenta;
+        }
+
+        if (gCell == selected_) {
+            color = gui::Painter::yellow;
+        }
+
+        color.a = 180;
+        painter.setBrush(color);
+        painter.drawRect({xl, yl, xh, yh});
+    }
+}
+
 void Graphics::drawNesterov(gui::Painter& painter)
 {
   drawBounds(painter);
@@ -250,7 +278,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
   painter.setPen(gui::Painter::white);
   drawCells(nbc_->gCells(), painter);
   for (const auto& nb : nbVec_) {
-    drawCells(nb->gCells(), painter);
+//    drawCells(nb->gCells(), painter);
+    drawCells(nb->newGCells(),painter);
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
