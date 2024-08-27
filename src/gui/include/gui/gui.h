@@ -600,7 +600,8 @@ class Gui
              const std::string& attribute = "",
              const std::any& value = "",
              bool filter_case_sensitive = true,
-             int highlight_group = -1);
+             int highlight_group = -1,
+             bool find_in_cts = false);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
