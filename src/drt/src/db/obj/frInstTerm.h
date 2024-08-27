@@ -66,8 +66,8 @@ class frInstTerm : public frBlockObject
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   void getShapes(std::vector<frRect>& outShapes,
-                 const bool updatedTransform = false) const;
-  Rect getBBox(const bool updatedTransform) const;
+                 bool updatedTransform = false) const;
+  Rect getBBox(bool updatedTransform) const;
   void setIndexInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }
 
