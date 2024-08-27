@@ -3200,7 +3200,7 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
 }
 
 // Check if all original driver and loads exist
-bool Resizer::canRestoreBuffer(BufferData data)
+bool Resizer::canRestoreBuffer(const BufferData& data)
 {
   // Does original driver exist?
   if (network_->findInstance(data.driver_pin.first.c_str()) == nullptr) {
