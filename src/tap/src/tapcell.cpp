@@ -106,8 +106,8 @@ void Tapcell::cutRows(const Options& options)
   const int halo_x = options.halo_x >= 0 ? options.halo_x : defaultDistance();
   const int halo_y = options.halo_y >= 0 ? options.halo_y : defaultDistance();
   int min_row_width = (options.endcap_master != nullptr)
-                                ? 2 * options.endcap_master->getWidth()
-                                : 0;
+                          ? 2 * options.endcap_master->getWidth()
+                          : 0;
   min_row_width = std::max(min_row_width, options.row_min_width);
   odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
 }
