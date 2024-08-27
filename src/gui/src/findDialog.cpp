@@ -88,5 +88,4 @@ int FindObjectDialog::exec()
   return QDialog::exec();
 }
 
-
 }  // namespace gui
