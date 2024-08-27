@@ -374,7 +374,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
 
   if (violations) {
-    repair_antennas_->jumperInsertion(routes_, grid_->getTileSize());
+    repair_antennas_->jumperInsertion(routes_, grid_->getTileSize(), max_routing_layer_);
     repair_antennas_->clearViolations();
   }
 

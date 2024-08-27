@@ -1185,7 +1185,7 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(odb::dbNet* db_net, 
   return segment_with_violations;
 }
 
-void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
+void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size, const int& max_routing_layer)
 {
   odb::dbTech* tech = db_->getTech();
   int total_jumper = 0;
@@ -1202,7 +1202,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size)
       odb::dbTechLayer* violation_layer
                 = tech->findRoutingLayer(violation.routing_level);
       odb::dbTechLayer* upper_layer = tech->findRoutingLayer(violation.routing_level + 2);
-      if (upper_layer && violation_layer->getType() == odb::dbTechLayerType::ROUTING) { // avoid other layers 
+      if (upper_layer && upper_layer->getRoutingLevel() <= max_routing_layer && violation_layer->getType() == odb::dbTechLayerType::ROUTING) { // avoid other layers 
         routing_layer_with_violations[violation.routing_level] = violation_id;
         max_layer = std::max(max_layer, violation.routing_level);	
         //std::cerr << "Layer " << violation_layer->getConstName() << " ratio: " << violation.ratio << " n_pins: " << violation.gates.size() << "\n";
