@@ -272,8 +272,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
         logger_->warn(
             RSZ,
             97,
-            "Instance {} cannot be removed because it is not a buffer",
-            " or is a feedthrough port buffer",
+            "Instance {} cannot be removed because it is not a buffer,"
+            "functions as a feedthrough port buffer, or is constrained",
             db_network_->name(buffer));
       }
     }
@@ -3069,16 +3069,26 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
 void Resizer::journalRestoreBuffers(int& removed_buffer_count)
 {
   // First, re-create buffer instances
-  for (const auto& pair : removed_buffer_map_) {
-    std::string name = pair.first;
-    BufferData data = pair.second;
-    makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
-    debugPrint(logger_,
-               RSZ,
-               "journal",
-               1,
-               "journal restore buffer: re-created instance {}",
-               name);
+  for (auto it = removed_buffer_map_.begin();
+       it != removed_buffer_map_.end();) {
+    std::string name = it->first;
+    BufferData data = it->second;
+    // RSZ journal restore doesn't fully honor transform order history
+    // Restore buffer only if all original driver and loads exist
+    if (canRestoreBuffer(data)) {
+      makeInstance(data.lib_cell, name.c_str(), data.parent, data.location);
+      // clang-format off
+      debugPrint(logger_, RSZ, "journal", 1,
+                 "journal restore buffer: re-created buffer {}", name);
+      // clang-format on
+      ++it;
+    } else {
+      // clang-format off
+      debugPrint(logger_, RSZ, "journal", 1,
+                 "journal restore buffer: can't restore buffer {}", name);
+      // clang-format on
+      it = removed_buffer_map_.erase(it);
+    }
   }
 
   // Second, reconnect buffer input and output pins
@@ -3187,6 +3197,25 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
     --removed_buffer_count;
   }
   removed_buffer_map_.clear();
+}
+
+// Check if all original driver and loads exist
+bool Resizer::canRestoreBuffer(BufferData data)
+{
+  // Does original driver exist?
+  if (network_->findInstance(data.driver_pin.first.c_str()) == nullptr) {
+    return false;
+  }
+
+  // Do original loads exist?
+  for (const std::pair<std::string, std::string>& load_pin_pair :
+       data.load_pins) {
+    if (network_->findInstance(load_pin_pair.first.c_str()) == nullptr) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void Resizer::journalRestore(int& resize_count,

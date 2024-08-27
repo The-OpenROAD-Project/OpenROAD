@@ -647,6 +647,7 @@ class Resizer : public dbStaState
                                  const Point& loc);
   void journalRemoveBuffer(Instance* buffer);
   void journalRestoreBuffers(int& removed_buffer_count);
+  bool canRestoreBuffer(BufferData data);
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet& ends);
