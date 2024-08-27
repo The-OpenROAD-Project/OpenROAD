@@ -472,7 +472,7 @@ class ClockTreeView : public QGraphicsView
                                             sta::dbNetwork* network);
   void addNode(qreal x,
                ClockNodeGraphicsViewItem* node,
-               QString tooltip,
+               const QString& tooltip,
                sta::Delay delay);
 
   constexpr static int default_scene_height_
