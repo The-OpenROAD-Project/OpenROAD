@@ -436,7 +436,8 @@ int Gui::select(const std::string& type,
                 const std::string& attribute,
                 const std::any& value,
                 bool filter_case_sensitive,
-                int highlight_group)
+                int highlight_group,
+                bool find_in_cts)
 {
   for (auto& [object_type, descriptor] : descriptors_) {
     if (descriptor->getTypeName() == type) {
@@ -492,7 +493,7 @@ int Gui::select(const std::string& type,
           }
         }
 
-        main_window->addSelected(selected_set);
+        main_window->addSelected(selected_set, find_in_cts);
         if (highlight_group != -1) {
           main_window->addHighlighted(selected_set, highlight_group);
         }

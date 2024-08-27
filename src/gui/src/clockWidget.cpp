@@ -368,19 +368,27 @@ QString ClockNodeGraphicsViewItem::getITermName(odb::dbITerm* term)
   return QString::fromStdString(term->getName());
 }
 
+QString ClockNodeGraphicsViewItem::getITermInstName(odb::dbITerm* term)
+{
+  return QString::fromStdString(term->getInst()->getName());
+}
+
 void ClockNodeGraphicsViewItem::setName(odb::dbITerm* term)
 {
   name_ = getITermName(term);
+  inst_name_ = getITermInstName(term);
 }
 
 void ClockNodeGraphicsViewItem::setName(odb::dbBTerm* term)
 {
   name_ = term->getConstName();
+  inst_name_ = name_;
 }
 
 void ClockNodeGraphicsViewItem::setName(odb::dbInst* inst)
 {
   name_ = inst->getConstName();
+  inst_name_ = name_;
 }
 
 void ClockNodeGraphicsViewItem::addDelayFin(QPainterPath& path,
@@ -809,6 +817,58 @@ void ClockTreeView::fit()
   fitInView(scene_->sceneRect(), Qt::KeepAspectRatio);
 }
 
+ClockNodeGraphicsViewItem* ClockTreeView::getItemFromName(
+    const std::string& name)
+{
+  if (items_.find(name) == items_.end()) {
+    return nullptr;
+  }
+
+  return items_[name];
+}
+
+std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
+    const SelectionSet& selections)
+{
+  std::set<ClockNodeGraphicsViewItem*> nodes;
+  for (auto selection : selections) {
+    ClockNodeGraphicsViewItem* item = getItemFromName(selection.getName());
+    if (item != nullptr) {
+      nodes.insert(item);
+    }
+  }
+
+  return nodes;
+}
+
+int ClockTreeView::findInCts(const SelectionSet& selections)
+{
+  std::set<ClockNodeGraphicsViewItem*> nodes = getNodes(selections);
+  if (!nodes.empty()) {
+    // remove old selection
+    clearSelection();
+    for (auto node : nodes) {
+      node->setSelected(true);
+    }
+    fitSelection();
+  }
+  return (int) nodes.size();
+}
+
+void ClockTreeView::fitSelection()
+{
+  QList<QGraphicsItem*> items = scene_->selectedItems();
+  if (items.empty()) {
+    return;
+  }
+
+  QRectF selection_area;
+  for (auto item : items) {
+    selection_area = selection_area.united(item->sceneBoundingRect());
+  }
+  fitInView(selection_area, Qt::KeepAspectRatio);
+}
+
 void ClockTreeView::mouseMoveEvent(QMouseEvent* event)
 {
   if (!rubber_band_.isNull()) {
@@ -1144,10 +1204,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
     node = new ClockRootNodeGraphicsViewItem(bterm);
   }
 
-  node->setPos(x, convertDelayToY(output_pin.delay));
-  scene_->addItem(node);
+  QString tooltip;
+  tooltip += "Launch: " + convertDelayToString(output_pin.delay);
 
-  node->setExtraToolTip("Launch: " + convertDelayToString(output_pin.delay));
+  addNode(x, node, tooltip, output_pin.delay);
 
   return node;
 }
@@ -1194,10 +1254,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   }
   node->scaleSize(leaf_scale_);
 
-  node->setPos({x, convertDelayToY(input_pin.delay)});
-  node->setExtraToolTip("Arrival: "
-                        + convertDelayToString(input_pin.delay + ins_delay));
-  scene_->addItem(node);
+  QString tooltip;
+  tooltip += "Arrival: " + convertDelayToString(input_pin.delay + ins_delay);
+
+  addNode(x, node, tooltip, input_pin.delay);
 
   connect(node->getHighlightAction(), &QAction::triggered, [this, iterm]() {
     emit highlightTo(iterm);
@@ -1271,9 +1331,6 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     node = gate_node;
   }
 
-  node->setPos({x, convertDelayToY(input_pin.delay)});
-  scene_->addItem(node);
-
   QString tooltip;
   tooltip += "Input: " + ClockNodeGraphicsViewItem::getITermName(input_term);
   tooltip += "\n";
@@ -1282,9 +1339,23 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
   tooltip += "Output: " + ClockNodeGraphicsViewItem::getITermName(output_term);
   tooltip += "\n";
   tooltip += "Output launch: " + convertDelayToString(output_pin.delay);
-  node->setExtraToolTip(tooltip);
+
+  addNode(x, node, tooltip, input_pin.delay);
 
   return node;
+}
+
+void ClockTreeView::addNode(qreal x,
+                            ClockNodeGraphicsViewItem* node,
+                            QString tooltip,
+                            sta::Delay delay)
+{
+  node->setPos({x, convertDelayToY(delay)});
+  node->setExtraToolTip(tooltip);
+  scene_->addItem(node);
+
+  items_[node->getInstName().toStdString()] = node;
+  // getInst()->getName()
 }
 
 void ClockTreeView::highlightTo(odb::dbITerm* term)
@@ -1541,6 +1612,53 @@ void ClockWidget::fit()
 {
   if (!views_.empty() && clocks_tab_->currentIndex() < views_.size()) {
     views_[clocks_tab_->currentIndex()]->fit();
+  }
+}
+
+void ClockWidget::findInCts(const Selected& selection)
+{
+  if (!selection) {
+    return;
+  }
+  findInCts(SelectionSet({
+      selection,
+  }));
+}
+
+void ClockWidget::findInCts(const SelectionSet& selections)
+{
+  if (views_.empty()) {
+    return;
+  }
+  if (selections.empty()) {
+    return;
+  }
+
+  std::set<int> found;
+  std::set<int> not_found;
+  int min_found = -1;
+  // ClockTreeView* finded_view;
+  for (int i = 0; i < views_.size(); i++) {
+    int n_found = views_[i]->findInCts(selections);
+
+    if (n_found) {
+      found.insert(i);
+      if (min_found == -1) {
+        min_found = i;
+      }
+    } else {
+      not_found.insert(i);
+    }
+  }
+
+  if (!found.empty()) {
+    if (found.find(clocks_tab_->currentIndex()) == found.end()) {
+      // change the current tab
+      clocks_tab_->setCurrentIndex(min_found);
+    }
+    for (int i : not_found) {
+      views_[i]->clearSelection();
+    }
   }
 }
 
