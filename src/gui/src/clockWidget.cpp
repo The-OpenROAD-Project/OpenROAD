@@ -1347,7 +1347,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
 
 void ClockTreeView::addNode(qreal x,
                             ClockNodeGraphicsViewItem* node,
-                            QString tooltip,
+                            const QString& tooltip,
                             sta::Delay delay)
 {
   node->setPos({x, convertDelayToY(delay)});
