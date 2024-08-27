@@ -53,7 +53,7 @@ bool frInstTerm::hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 }
 
 void frInstTerm::getShapes(std::vector<frRect>& outShapes,
-                           bool updatedTransform)
+                           const bool updatedTransform) const
 {
   term_->getShapes(outShapes);
   for (auto& shape : outShapes) {
@@ -67,7 +67,7 @@ void frInstTerm::getShapes(std::vector<frRect>& outShapes,
   }
 }
 
-Rect frInstTerm::getBBox(bool updatedTransform)
+Rect frInstTerm::getBBox(const bool updatedTransform) const
 {
   Rect bbox(term_->getBBox());
   dbTransform trans;
