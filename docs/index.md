@@ -61,7 +61,7 @@ Legend:
 | Debian 11    | `Y` | `Y` | `Y` | `-` |
 | RHEL         | `Y` | `-` | `Y` | `-` |
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
-| macOS        | `Y*` | `-` | `Y` | `-` |
+| macOS        | `Y` | `-` | `Y` | `-` |
 
 
 ## Code of conduct
