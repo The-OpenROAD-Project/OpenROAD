@@ -58,7 +58,6 @@ Legend:
 | Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
 | Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
 | CentOS 8     | `Y` | `-` | `Y` | `-` |
-| Debian 10    | `Y` | `Y` | `Y` | `-` |
 | Debian 11    | `Y` | `Y` | `Y` | `-` |
 | RHEL         | `Y` | `-` | `Y` | `-` |
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
