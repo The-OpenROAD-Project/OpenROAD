@@ -822,9 +822,8 @@ ClockNodeGraphicsViewItem* ClockTreeView::getItemFromName(
   const auto& item_found = items_.find(name);
   if (item_found == items_.end()) {
     return nullptr;
-  } else {
-    return item_found->second;
-  }
+  }     return item_found->second;
+ 
 }
 
 std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
