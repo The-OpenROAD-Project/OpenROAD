@@ -562,7 +562,7 @@ int select(const std::string& type,
            const std::string& value = "",
            bool case_sensitive = true,
            int highlight_group = -1,
-           bool find_in_cts = true)
+           bool find_in_cts = false)
 {
   if (!check_gui("select")) {
     return 0;

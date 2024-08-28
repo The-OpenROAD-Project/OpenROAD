@@ -403,7 +403,7 @@ class ClockTreeView : public QGraphicsView
   ClockNodeGraphicsViewItem* getItemFromName(const std::string& name);
   void clearSelection() { scene_->clearSelection(); };
   std::set<ClockNodeGraphicsViewItem*> getNodes(const SelectionSet& selections);
-  int findInCts(const SelectionSet& selections);
+  bool changeSelection(const SelectionSet& selections);
   void fitSelection();
 
  signals:
