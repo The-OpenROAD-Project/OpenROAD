@@ -295,7 +295,6 @@ void ClockNetGraphicsViewItem::addLeafPath(const QPointF& start,
 
   const QPointF mid0(start.x() + x_offset, y_trunk);
   const QPointF control0(start.x(), y_trunk);
-  //  path_.lineTo(control0);
 
   const QPointF mid1(end.x() - x_offset, y_trunk);
   const QPointF control1(end.x(), y_trunk);
@@ -820,11 +819,12 @@ void ClockTreeView::fit()
 ClockNodeGraphicsViewItem* ClockTreeView::getItemFromName(
     const std::string& name)
 {
-  if (items_.find(name) == items_.end()) {
+  const auto& item_found = items_.find(name);
+  if (item_found == items_.end()) {
     return nullptr;
+  } else {
+    return item_found->second;
   }
-
-  return items_[name];
 }
 
 std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
@@ -841,7 +841,7 @@ std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
   return nodes;
 }
 
-int ClockTreeView::findInCts(const SelectionSet& selections)
+bool ClockTreeView::changeSelection(const SelectionSet& selections)
 {
   std::set<ClockNodeGraphicsViewItem*> nodes = getNodes(selections);
   if (!nodes.empty()) {
@@ -850,9 +850,9 @@ int ClockTreeView::findInCts(const SelectionSet& selections)
     for (auto node : nodes) {
       node->setSelected(true);
     }
-    fitSelection();
+    return true;
   }
-  return (int) nodes.size();
+  return false;
 }
 
 void ClockTreeView::fitSelection()
@@ -1355,7 +1355,6 @@ void ClockTreeView::addNode(qreal x,
   scene_->addItem(node);
 
   items_[node->getInstName().toStdString()] = node;
-  // getInst()->getName()
 }
 
 void ClockTreeView::highlightTo(odb::dbITerm* term)
@@ -1634,29 +1633,27 @@ void ClockWidget::findInCts(const SelectionSet& selections)
     return;
   }
 
-  std::set<int> found;
-  std::set<int> not_found;
-  int min_found = -1;
-  // ClockTreeView* finded_view;
-  for (int i = 0; i < views_.size(); i++) {
-    int n_found = views_[i]->findInCts(selections);
+  std::set<int> changed_views;
+  std::set<int> not_changed_views;
 
-    if (n_found) {
-      found.insert(i);
-      if (min_found == -1) {
-        min_found = i;
-      }
+  for (int i = 0; i < views_.size(); i++) {
+    bool selection_changed = views_[i]->changeSelection(selections);
+
+    if (selection_changed) {
+      views_[i]->fitSelection();
+      changed_views.insert(i);
     } else {
-      not_found.insert(i);
+      not_changed_views.insert(i);
     }
   }
 
-  if (!found.empty()) {
-    if (found.find(clocks_tab_->currentIndex()) == found.end()) {
-      // change the current tab
-      clocks_tab_->setCurrentIndex(min_found);
+  if (!changed_views.empty()) {
+    if (changed_views.find(clocks_tab_->currentIndex())
+        == changed_views.end()) {
+      // change the current view
+      clocks_tab_->setCurrentIndex(*(changed_views.begin()));
     }
-    for (int i : not_found) {
+    for (int i : not_changed_views) {
       views_[i]->clearSelection();
     }
   }
