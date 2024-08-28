@@ -152,7 +152,8 @@ enum class ParasiticsSrc
 {
   none,
   placement,
-  global_routing
+  global_routing,
+  detailed_routing
 };
 
 struct ParasiticsResistance

@@ -294,6 +294,9 @@ void Resizer::estimateParasitics(ParasiticsSrc src,
       global_router_->estimateRC(spef_writer.get());
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
+    case ParasiticsSrc::detailed_routing:
+      parasitics_src_ = ParasiticsSrc::detailed_routing;
+      break;
     case ParasiticsSrc::none:
       break;
   }
@@ -310,6 +313,7 @@ void Resizer::incrementalParasiticsBegin()
     case ParasiticsSrc::placement:
       break;
     case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing:
       incr_groute_ = new IncrementalGRoute(global_router_, block_);
       // Don't print verbose messages for incremental routing
       global_router_->setVerbose(false);
@@ -326,6 +330,7 @@ void Resizer::incrementalParasiticsEnd()
     case ParasiticsSrc::placement:
       break;
     case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::detailed_routing:
       delete incr_groute_;
       incr_groute_ = nullptr;
       break;
@@ -352,6 +357,7 @@ void Resizer::updateParasitics(bool save_guides)
       parasitics_invalid_.clear();
       break;
     }
+    case ParasiticsSrc::detailed_routing:
     case ParasiticsSrc::none:
       break;
   }
@@ -391,6 +397,8 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
         parasitics_invalid_.erase(net);
         break;
       }
+      case ParasiticsSrc::detailed_routing:
+        break;
       case ParasiticsSrc::none:
         break;
     }
