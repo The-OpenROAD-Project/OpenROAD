@@ -60,8 +60,8 @@ class GuideProcessor
 
  private:
   // getters
-  frTechObject* getTech() { return design_->getTech(); }
-  frDesign* getDesign() { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
+  frDesign* getDesign() const { return design_; }
   // processGuides helper functions
   void buildGCellPatterns_getWidth(frCoord& GCELLGRIDX, frCoord& GCELLGRIDY);
   void buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
@@ -140,47 +140,32 @@ class GuideProcessor
    */
   void genGuides_prep(const std::vector<frRect>& rects,
                       TrackIntervalsByLayer& intvs);
-  void genGuides_split(
-      std::vector<frRect>& rects,
-      TrackIntervalsByLayer& intvs,
-      std::map<std::pair<Point, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2GCellMap,
-      bool isRetry);
+  void genGuides_split(std::vector<frRect>& rects,
+                       TrackIntervalsByLayer& intvs,
+                       std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+                       frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+                       bool isRetry);
   void genGuides_gCell2PinMap(
-      frNet* net,
-      std::map<std::pair<Point, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap);
-  template <typename T>
+      const frNet* net,
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const;
   void genGuides_gCell2TermMap(
-      std::map<std::pair<Point, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      T* term,
-      frBlockObject* origTerm,
-      const dbTransform& xform);
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBlockObject* term) const;
   bool genGuides_gCell2APInstTermMap(
-      std::map<std::pair<Point, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frInstTerm* instTerm);
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frInstTerm* instTerm) const;
   bool genGuides_gCell2APTermMap(
-      std::map<std::pair<Point, frLayerNum>,
-               std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-      frBTerm* term);
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBTerm* term) const;
   void genGuides_initPin2GCellMap(
       frNet* net,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2GCellMap);
+      frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   void genGuides_buildNodeMap(
       std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
       int& gCnt,
       int& nCnt,
       std::vector<frRect>& rects,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2GCellMap);
+      frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   bool genGuides_astar(
       frNet* net,
       std::vector<bool>& adjVisited,
@@ -196,9 +181,7 @@ class GuideProcessor
                        std::vector<int>& adjPrevIdx,
                        int gCnt,
                        int nCnt,
-                       std::map<frBlockObject*,
-                                std::set<std::pair<Point, frLayerNum>>,
-                                frBlockObjectComp>& pin2GCellMap);
+                       frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   // write guide
   void saveGuidesUpdates();
 
