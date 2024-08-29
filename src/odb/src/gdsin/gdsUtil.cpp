@@ -172,20 +172,17 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
   return layerMap;
 }
 
-dbGDSLib* createEmptyGDSLib(dbDatabase* db, std::string& libname)
+dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname)
 {
   dbGDSLib* lib = (dbGDSLib*) (new _dbGDSLib((_dbDatabase*) db));
-  lib->setLibname(libname.c_str());
-  time_t now = std::time(0);
-  std::tm now_tm = *std::localtime(&now);
-  lib->set_lastAccessed(now_tm);
-  lib->set_lastModified(now_tm);
+  lib->setLibname(libname);
+  stampGDSLib(lib, true);
   return lib;
 }
 
 void stampGDSLib(dbGDSLib* lib, bool modified)
 {
-  time_t now = std::time(0);
+  time_t now = std::time(nullptr);
   std::tm now_tm = *std::localtime(&now);
   lib->set_lastAccessed(now_tm);
   if (modified) {

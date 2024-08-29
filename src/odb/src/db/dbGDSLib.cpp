@@ -58,12 +58,10 @@ bool _dbGDSLib::operator==(const _dbGDSLib& rhs) const
   if (_dbu_per_meter != rhs._dbu_per_meter) {
     return false;
   }
-  if(*_structure_tbl != *rhs._structure_tbl)
-  {
+  if (*_structure_tbl != *rhs._structure_tbl) {
     return false;
   }
-  if(_structure_hash != rhs._structure_hash)
-  {
+  if (_structure_hash != rhs._structure_hash) {
     return false;
   }
   return true;
@@ -134,12 +132,14 @@ _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
       _srfName(r._srfName),
       _uu_per_dbu(r._uu_per_dbu),
       _dbu_per_meter(r._dbu_per_meter),
-      _structure_hash(r._structure_hash) {}
-
-_dbGDSLib::~_dbGDSLib(){
-  delete _structure_tbl;
+      _structure_hash(r._structure_hash)
+{
 }
 
+_dbGDSLib::~_dbGDSLib()
+{
+  delete _structure_tbl;
+}
 
 dbIStream& operator>>(dbIStream& stream, std::tm& tm)
 {
@@ -297,6 +297,6 @@ dbSet<dbGDSStructure> dbGDSLib::getGDSStructures()
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
   return dbSet<dbGDSStructure>(obj, obj->_structure_tbl);
-}  
-} // namespace odb
-  // Generator Code End Cpp
+}
+}  // namespace odb
+   // Generator Code End Cpp

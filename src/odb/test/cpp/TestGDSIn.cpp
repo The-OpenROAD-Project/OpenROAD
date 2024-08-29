@@ -10,9 +10,8 @@
 #include "odb/gdsout.h"
 
 namespace odb {
+namespace gds {
 namespace {
-
-using namespace gds;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 BOOST_AUTO_TEST_CASE(reader)
@@ -190,4 +189,5 @@ BOOST_AUTO_TEST_CASE(edit)
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
+}  // namespace gds
 }  // namespace odb

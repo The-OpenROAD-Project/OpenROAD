@@ -193,7 +193,7 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
  * @param db The database to add the library to
  * @param libname The name of the library
  */
-dbGDSLib* createEmptyGDSLib(dbDatabase* db, std::string& libname);
+dbGDSLib* createEmptyGDSLib(dbDatabase* db, const std::string& libname);
 
 /**
  * Sets timestamp on a GDSII library object to the current time
