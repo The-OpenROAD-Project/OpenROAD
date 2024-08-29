@@ -85,7 +85,9 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->gCells()) {
+//    for (GCell* cell : nbc_->gCells()) {
+    for (auto& pair : nbc_->gCells()) {
+      GCell* cell = pair.first;   
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
         selected_ = cell;
@@ -192,35 +194,35 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-void Graphics::drawCells(const std::vector<GCell*>& cells,
-                         gui::Painter& painter)
-{
-  for (auto* gCell : cells) {
-    const int gcx = gCell->dCx();
-    const int gcy = gCell->dCy();
-
-    int xl = gcx - gCell->dx() / 2;
-    int yl = gcy - gCell->dy() / 2;
-    int xh = gcx + gCell->dx() / 2;
-    int yh = gcy + gCell->dy() / 2;
-
-    gui::Painter::Color color;
-    if (gCell->isInstance()) {
-      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
-                                            : gui::Painter::dark_green;
-    } else if (gCell->isFiller()) {
-      color = gui::Painter::dark_magenta;
-    }
-
-    if (gCell == selected_) {
-      color = gui::Painter::yellow;
-    }
-
-    color.a = 180;
-    painter.setBrush(color);
-    painter.drawRect({xl, yl, xh, yh});
-  }
-}
+//void Graphics::drawCells(const std::vector<GCell*>& cells,
+//                         gui::Painter& painter)
+//{
+//  for (auto* gCell : cells) {
+//    const int gcx = gCell->dCx();
+//    const int gcy = gCell->dCy();
+//
+//    int xl = gcx - gCell->dx() / 2;
+//    int yl = gcy - gCell->dy() / 2;
+//    int xh = gcx + gCell->dx() / 2;
+//    int yh = gcy + gCell->dy() / 2;
+//
+//    gui::Painter::Color color;
+//    if (gCell->isInstance()) {
+//      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+//                                            : gui::Painter::dark_green;
+//    } else if (gCell->isFiller()) {
+//      color = gui::Painter::dark_magenta;
+//    }
+//
+//    if (gCell == selected_) {
+//      color = gui::Painter::yellow;
+//    }
+//
+//    color.a = 180;
+//    painter.setBrush(color);
+//    painter.drawRect({xl, yl, xh, yh});
+//  }
+//}
 
 void Graphics::drawCells(const std::unordered_map<GCell*, GCellState>& cells, gui::Painter& painter) {
     for (const auto& pair : cells) {
@@ -402,7 +404,9 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->gCells()) {
+//  for (GCell* cell : nbc_->gCells()) {
+  for (auto& pair : nbc_->gCells()) {
+    GCell* cell = pair.first;
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 

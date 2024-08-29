@@ -931,12 +931,14 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCell ptr init
-  gCells_.reserve(gCellStor_.size());
+//  gCells_.reserve(gCellStor_.size());
   for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
-    gCells_.push_back(&gCell);
+//    gCells_.push_back(&gCell);
+    GCellState emptyState;
+    newGCells_[&gCell] = emptyState;
     gCellMap_[gCell.instance()] = &gCell;
   }
 
@@ -1251,10 +1253,13 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
-  assert(omp_get_thread_num() == 0);
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+//  assert(omp_get_thread_num() == 0);
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
+//    auto& gCell = *it;  // old-style loop for old OpenMP
+    
+  for (auto& pair : newGCells_) {
+    GCell* gCell = pair.first; 
     if (gCell->isInstance()) {
       odb::dbInst* inst = gCell->instance()->dbInst();
       inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -1887,7 +1892,7 @@ void NesterovBase::updateDensityForceBin()
                * static_cast<float>(bin.nonPlaceArea() + bin.instPlacedArea()
                                     + bin.fillerArea());
   }
-  log_->report(" NesterovBase::updateDensityForceBin()-> sumPhi_: {}", sumPhi_);
+//  log_->report(" NesterovBase::updateDensityForceBin()-> sumPhi_: {}", sumPhi_);
 }
 
 
@@ -2046,7 +2051,7 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
 //    const std::vector<FloatPoint>& curSLPSumGrads_)
 float NesterovBase::getStepLength()
 {
-  log_->report("getStepLength()-> newGCells_.size(): {}", newGCells_.size());
+//  log_->report("getStepLength()-> newGCells_.size(): {}", newGCells_.size());
 //  for (const auto& pair : newGCells_) {
 //        const FloatPoint& prevCoord = pair.second.prevSLPCoordi;
 //        const FloatPoint& curCoord = pair.second.curSLPCoordi;
@@ -2258,13 +2263,13 @@ void NesterovBase::updateGradients(FloatPoint GCellState::* sumGradsPtr,
 //        count++;
     }
 
-    log_->report("updateGradients() -> WireLengthGradSum: {:g}", wireLengthGradSum_);
-    log_->report("updateGradients() -> DensityGradSum: {:g}", densityGradSum_);
-    log_->report("updateGradients() -> GradSum: {:g}", gradSum);
+//    log_->report("updateGradients() -> WireLengthGradSum: {:g}", wireLengthGradSum_);
+//    log_->report("updateGradients() -> DensityGradSum: {:g}", densityGradSum_);
+//    log_->report("updateGradients() -> GradSum: {:g}", gradSum);
     
-//    debugPrint(log_, GPL, "updateGrad", 1, "WireLengthGradSum: {:g}", wireLengthGradSum_);
-//    debugPrint(log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
-//    debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
+    debugPrint(log_, GPL, "updateGrad", 1, "WireLengthGradSum: {:g}", wireLengthGradSum_);
+    debugPrint(log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+    debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 }
 
 void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
@@ -2703,6 +2708,8 @@ bool NesterovBase::revertDivergence()
         state.curSLPCoordi = state.snapshotSLPCoordi;
         state.curSLPSumGrads = state.snapshotSLPSumGrads;
     }  
+  densityPenalty_ = snapshotDensityPenalty_;
+  stepLength_ = snapshotStepLength_;  
 
 //  updateGCellDensityCenterLocation(curCoordi_);
   updateGCellDensityCenterLocation(&GCellState::curCoordi);

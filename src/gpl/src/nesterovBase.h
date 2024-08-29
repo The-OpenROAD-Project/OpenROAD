@@ -75,12 +75,12 @@ struct GCellState {
     FloatPoint nextCoordi;
 
     FloatPoint initCoordi;
-    float densityPenalty;
     
     //Saving state for routability snapshot
     FloatPoint snapshotCoordi;
     FloatPoint snapshotSLPCoordi;
     FloatPoint snapshotSLPSumGrads;
+    std::pair<int, int> minRcCellSize;
 };
 
 
@@ -814,7 +814,8 @@ class NesterovBaseCommon
                      utl::Logger* log,
                      int num_threads);
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
+//  const std::vector<GCell*>& gCells() const { return gCells_; }
+  std::unordered_map<GCell*, GCellState>& gCells() { return newGCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -870,7 +871,8 @@ class NesterovBaseCommon
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
-  std::vector<GCell*> gCells_;
+//  std::vector<GCell*> gCells_;
+  std::unordered_map<GCell*, GCellState> newGCells_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -1101,7 +1103,7 @@ class NesterovBase
   std::vector<FloatPoint> initCoordi_;
 
   // densityPenalty stor
-  std::vector<float> densityPenaltyStor_;
+//  std::vector<float> densityPenaltyStor_;
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1137,9 +1139,9 @@ class NesterovBase
   bool isConverged_ = false;
 
   // Snapshot data
-  std::vector<FloatPoint> snapshotCoordi_;
-  std::vector<FloatPoint> snapshotSLPCoordi_;
-  std::vector<FloatPoint> snapshotSLPSumGrads_;
+//  std::vector<FloatPoint> snapshotCoordi_;
+//  std::vector<FloatPoint> snapshotSLPCoordi_;
+//  std::vector<FloatPoint> snapshotSLPSumGrads_;
   float snapshotDensityPenalty_ = 0;
   float snapshotStepLength_ = 0;
 
