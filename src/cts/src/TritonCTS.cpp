@@ -2037,9 +2037,9 @@ void TritonCTS::balanceMacroRegisterLatencies()
         computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
         // Update graph information after possible buffers inserted
-        openSta_->updateTiming(false);
         openSta_->ensureClkNetwork();
         openSta_->ensureClkArrivals();
+        openSta_->updateTiming(false);
       }
     }
   }
