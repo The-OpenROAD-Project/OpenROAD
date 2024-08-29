@@ -135,7 +135,7 @@ class TritonCTS
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clockNet);
+  void createClockBuffers(Clock& clockNet, odb::dbModule* parent);
   HTreeBuilder* initClockTreeForMacrosAndRegs(
       odb::dbNet*& net,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,

@@ -1,4 +1,5 @@
 record_tests {
+  simple_test_hier
   check_buffers
   check_buffers_blockages
   check_charBuf
