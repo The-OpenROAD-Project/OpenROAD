@@ -74,7 +74,6 @@ class _dbGDSLib : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
 
   _dbGDSStructure* findStructure(const char* name);
-  
 };
 
 dbIStream& operator>>(dbIStream& stream, std::tm& tm);
@@ -82,4 +81,4 @@ dbOStream& operator<<(dbOStream& stream, const std::tm& tm);
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj);
-} // namespace odb
+}  // namespace odb
