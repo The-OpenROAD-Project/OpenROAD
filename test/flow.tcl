@@ -252,6 +252,38 @@ set routed_def [make_result_file ${design}_${platform}_route.def]
 write_def $routed_def
 
 ################################################################
+# Repair antennas post-DRT
+
+set repair_antennas_iters 0
+remove_fillers
+while {[check_antennas] && $repair_antennas_iters < 5} {
+  # ensure that detail place will not touch nets that were not
+  # modified by repair_antennas
+  foreach inst [[ord::get_db_block] getInsts] {
+    $inst setPlacementStatus "FIRM"
+  }
+
+  repair_antennas
+
+  detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
+                 -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
+                 -save_guide_updates \
+                 -bottom_routing_layer $min_routing_layer \
+                 -top_routing_layer $max_routing_layer \
+                 -verbose 0
+
+  incr repair_antennas_iters
+}
+
+filler_placement $filler_cells
+
+check_antennas
+utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
+
+set repair_antennas_db [make_result_file ${design}_${platform}_repaired_route.odb]
+write_db $repair_antennas_db
+
+################################################################
 # Extraction
 
 if { $rcx_rules_file != "" } {
