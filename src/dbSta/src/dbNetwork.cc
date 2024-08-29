@@ -1351,7 +1351,60 @@ NetTermIterator* dbNetwork::termIterator(const Net* net) const
   return new DbNetTermIterator(net, this);
 }
 
+class AccumulatePins : public PinVisitor
+{
+ public:
+  AccumulatePins(const sta::Network* network) { network_ = network; }
+  virtual void operator()(const sta::Pin* pin)
+  {
+    accumulated_pins_.insert(pin);
+  }
+  std::set<const sta::Pin*> accumulated_pins_;
+  const sta::Network* network_;
+};
+
+/* find equivalent modnet for a dbnet */
+dbModNet* dbNetwork::getDbModNetFromDbNet(dbNet* db_net)
+{
+  NetSet visited_nets;
+  AccumulatePins visitor(this);
+  sta::Net* cur_net = dbToSta(db_net);
+  visitConnectedPins(cur_net, visitor, visited_nets);
+  for (auto pin : visitor.accumulated_pins_) {
+    dbITerm* iterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModITerm* moditerm = nullptr;
+    dbModBTerm* modbterm = nullptr;
+
+    staToDb(pin, iterm, bterm, moditerm, modbterm);
+    if (iterm) {
+      dbModNet* mnet = iterm->getModNet();
+      if (mnet) {
+        return mnet;
+      }
+    }
+    if (moditerm) {
+      dbModNet* mnet = moditerm->getModNet();
+      return mnet;
+    }
+    if (bterm) {
+      dbModNet* mnet = bterm->getModNet();
+      return mnet;
+    }
+  }
+  return nullptr;
+}
+
 // override ConcreteNetwork::visitConnectedPins
+// public api
+
+void dbNetwork::visitConnectedPins(const Net* net, PinVisitor& visitor) const
+
+{
+  NetSet visited_nets;
+  visitConnectedPins(net, visitor, visited_nets);
+}
+
 void dbNetwork::visitConnectedPins(const Net* net,
                                    PinVisitor& visitor,
                                    NetSet& visited_nets) const
@@ -2559,6 +2612,145 @@ dbNetworkObserver::~dbNetworkObserver()
 {
   if (owner_ != nullptr) {
     owner_->removeObserver(this);
+  }
+}
+
+/*
+  Hierarchical network api connections
+ */
+
+dbModule* dbNetwork::getParentModule(dbNet* net)
+{
+  if (hasHierarchy()) {
+    // get sink driver instance and return its parent
+    int drivingITerm = net->getDrivingITerm();
+    if (drivingITerm != 0 && drivingITerm != -1) {
+      dbITerm* iterm = block_->getITerm(drivingITerm);
+      dbModNet* modnet = iterm->getModNet();
+      if (modnet != nullptr) {
+        return modnet->getParent();
+      }
+    }
+    // default to top module
+    return block_->getTopModule();
+  }
+  return nullptr;
+}
+
+void dbNetwork::getInstanceTree(dbModule* start_module,
+                                std::vector<dbModule*>& instance_tree)
+{
+  dbModule* top_module = block_->getTopModule();
+  dbModule* cur_module = start_module;
+  while (cur_module) {
+    instance_tree.push_back(cur_module);
+    if (cur_module == top_module)
+      return;
+    cur_module = start_module->getModInst()->getParent();
+  }
+}
+
+dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
+                                             std::vector<dbModule*>& itree2)
+{
+  for (auto i : itree1) {
+    for (auto j : itree2) {
+      if (i == j)
+        return i;
+    }
+  }
+  return nullptr;
+}
+
+void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
+                                    dbITerm* dest_pin,
+                                    const char* connection_name)
+{
+  dbModule* top_module = block_->getTopModule();
+  dbModule* source_db_module = source_pin->getInst()->getModule();
+  dbModule* dest_db_module = dest_pin->getInst()->getModule();
+  dbModNet* source_db_mod_net = source_pin->getModNet();
+  dbModNet* dest_db_mod_net = dest_pin->getModNet();
+
+  if (source_db_module == dest_db_module) {
+    if (!source_db_mod_net) {
+      source_db_mod_net = dbModNet::create(top_module, connection_name);
+      source_pin->connect(source_db_mod_net);
+      dest_pin->connect(source_db_mod_net);
+    } else {
+      dest_pin->connect(source_db_mod_net);
+    }
+  } else {
+    std::vector<dbModule*> source_instance_tree;
+    std::vector<dbModule*> dest_instance_tree;
+    getInstanceTree(source_db_module, source_instance_tree);
+    getInstanceTree(dest_db_module, dest_instance_tree);
+    dbModule* highest_common_module = nullptr;
+    if (source_instance_tree.size() > dest_instance_tree.size())
+      highest_common_module
+          = findHighestCommonModule(source_instance_tree, dest_instance_tree);
+    else
+      highest_common_module
+          = findHighestCommonModule(dest_instance_tree, source_instance_tree);
+    dbModNet* top_net = source_db_mod_net;
+    dbModITerm* top_mod_dest = nullptr;
+
+    // make source hierarchy
+    dbModule* cur_module = source_db_module;
+    while (cur_module != highest_common_module) {
+      std::string connection_name_o
+          = std::string(connection_name) + std::string("_o");
+      dbModBTerm* mod_bterm
+          = dbModBTerm::create(cur_module, connection_name_o.c_str());
+      mod_bterm->connect(source_db_mod_net);
+      mod_bterm->setIoType(dbIoType::OUTPUT);
+      mod_bterm->setSigType(dbSigType::SIGNAL);
+      dbModInst* parent_inst = cur_module->getModInst();
+      cur_module = parent_inst->getParent();
+      dbModITerm* mod_iterm
+          = dbModITerm::create(parent_inst, connection_name_o.c_str());
+      source_db_mod_net = dbModNet::create(cur_module, connection_name);
+      mod_iterm->connect(source_db_mod_net);
+      top_net = source_db_mod_net;
+    }
+    // make dest hierarchy
+    cur_module = dest_db_module;
+    while (cur_module != highest_common_module) {
+      std::string connection_name_i
+          = std::string(connection_name) + std::string("_i");
+      dbModBTerm* mod_bterm
+          = dbModBTerm::create(cur_module, connection_name_i.c_str());
+      if (!dest_db_mod_net) {
+        dest_db_mod_net
+            = dbModNet::create(cur_module, connection_name_i.c_str());
+        dest_pin->connect(dest_db_mod_net);
+      }
+      mod_bterm->connect(dest_db_mod_net);
+      mod_bterm->setIoType(dbIoType::INPUT);
+      mod_bterm->setSigType(dbSigType::SIGNAL);
+      dbModInst* parent_inst = cur_module->getModInst();
+      cur_module = parent_inst->getParent();
+      dbModITerm* mod_iterm
+          = dbModITerm::create(parent_inst, connection_name_i.c_str());
+      if (cur_module != highest_common_module) {
+        dest_db_mod_net = dbModNet::create(cur_module, connection_name);
+        mod_iterm->connect(dest_db_mod_net);
+      }
+      top_mod_dest = mod_iterm;
+    }
+    if (top_mod_dest) {
+      // if we don't have a top net (case when we are connecting source at top
+      // to hierarchically created pin), create one.
+      if (!top_net) {
+        source_db_mod_net = dbModNet::create(source_db_module, connection_name);
+        top_mod_dest->connect(source_db_mod_net);
+        source_pin->connect(source_db_mod_net);
+      } else {
+        top_mod_dest->connect(top_net);
+      }
+    } else {
+      dest_pin->connect(top_net);
+    }
   }
 }
 

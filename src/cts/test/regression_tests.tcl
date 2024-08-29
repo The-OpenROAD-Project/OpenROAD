@@ -20,6 +20,7 @@ record_tests {
   simple_test
   simple_test_clustered
   simple_test_clustered_max_cap
+  simple_test_hier
   lvt_lib
   #cts_readme_msgs_check
   #cts_man_tcl_check

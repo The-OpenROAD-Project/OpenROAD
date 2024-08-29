@@ -1178,6 +1178,14 @@ Clock TritonCTS::forkRegisterClockNetwork(
   secondNet = odb::dbNet::create(block_, newClockName.c_str());
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
+  odb::dbModule* first_net_module = network_->getParentModule(firstNet);
+  odb::dbModule* second_net_module = network_->getParentModule(secondNet);
+  odb::dbModule* target_module = nullptr;
+  if ((first_net_module != nullptr)
+      && (first_net_module == second_net_module)) {
+    target_module = first_net_module;
+  }
+
   // move register sinks from previous clock net to new clock net
   for (auto elem : registerSinks) {
     odb::dbInst* inst = elem.first;
@@ -1190,7 +1198,10 @@ Clock TritonCTS::forkRegisterClockNetwork(
   // create a new clock buffer
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   std::string cellName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
+
+  odb::dbInst* clockBuf = odb::dbInst::create(
+      block_, master, cellName.c_str(), false, target_module);
+
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -1239,6 +1250,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
+  odb::dbModule* top_module = network_->getParentModule(topClockNet);
 
   const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
   odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
@@ -1254,7 +1266,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
     getFirstInput(topRegBuffer)->connect(topNet);
   }
 
-  createClockBuffers(clockNet);
+  createClockBuffers(clockNet, top_module);
 
   // connect top buffer on the clock pin
   std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
@@ -1279,6 +1291,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
     }
     odb::dbNet* clkSubNet
         = odb::dbNet::create(block_, subNet.getName().c_str());
+
     ++numClkNets_;
     clkSubNet->setSigType(odb::dbSigType::CLOCK);
 
@@ -1312,8 +1325,15 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
           inputPinFound = false;
         }
       }
+
       if (inputPinFound) {
         inputPin->connect(clkSubNet);
+        // get module for input pin
+        // resolve connection in hierarchy
+        if (network_->hasHierarchy()) {
+          network_->hierarchicalConnect(
+              outputPin, inputPin, clkSubNet->getName().c_str());
+        }
       }
     });
 
@@ -1521,13 +1541,13 @@ void TritonCTS::checkUpstreamConnections(odb::dbNet* net)
   }
 }
 
-void TritonCTS::createClockBuffers(Clock& clockNet)
+void TritonCTS::createClockBuffers(Clock& clockNet, odb::dbModule* parent)
 {
   unsigned numBuffers = 0;
   clockNet.forEachClockBuffer([&](ClockInst& inst) {
     odb::dbMaster* master = db_->findMaster(inst.getMaster().c_str());
-    odb::dbInst* newInst
-        = odb::dbInst::create(block_, master, inst.getName().c_str());
+    odb::dbInst* newInst = odb::dbInst::create(
+        block_, master, inst.getName().c_str(), false, parent);
     newInst->setSourceType(odb::dbSourceType::TIMING);
     inst.setInstObj(newInst);
     inst2clkbuf_[newInst] = &inst;
@@ -2197,6 +2217,7 @@ odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
       = "delaybuf_" + std::to_string(index) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
+
   newBuf->setSourceType(odb::dbSourceType::TIMING);
   newBuf->setLocation(locX, locY);
   newBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
