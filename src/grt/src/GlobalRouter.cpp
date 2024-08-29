@@ -172,6 +172,7 @@ GlobalRouter::~GlobalRouter()
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
+  fastroute_->clear();
   ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
@@ -342,7 +343,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   float ratio_margin,
                                   const int num_threads)
 {
-  if (!initialized_) {
+  if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
