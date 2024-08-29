@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "point.h"
 
 namespace odb {
@@ -1164,6 +1165,28 @@ class biNormalParameters
   float ly;
   float ux;
   float uy;
+};
+
+class nesterovBaseDbCbk : public odb::dbBlockCallBackObj
+{
+ public:
+  nesterovBaseDbCbk(NesterovBase* nesterov_base);
+//  virtual void inDbPostMoveInst(odb::dbInst* inst);
+  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
+//
+//  virtual void inDbNetDestroy(odb::dbNet* net);
+//  virtual void inDbNetCreate(odb::dbNet* net);
+//
+//  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
+//  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
+//
+//  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
+//  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
+
+ private:
+//  void instItermsDirty(odb::dbInst* inst);
+
+  NesterovBase* nesterov_base_;
 };
 
 }  // namespace gpl

@@ -1298,6 +1298,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
+  nesterov_base_cbk_ = new GRouteDbCbk(this);
 
   // Set a fixed seed
   srand(42);
@@ -2902,4 +2903,9 @@ static float getSecondNorm(const std::unordered_map<GCell*, GCellState>& cells, 
 //  }
 //  return std::sqrt(norm / (2.0 * a.size()));
 //}
+
+nesterovBaseDbCbk::nesterovBaseDbCbk(NesterovBase* nesterov_base) : nesterov_base_(nesterov_base)
+{
+}
+
 }  // namespace gpl
