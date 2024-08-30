@@ -1396,14 +1396,6 @@ dbModNet* dbNetwork::getDbModNetFromDbNet(dbNet* db_net)
 }
 
 // override ConcreteNetwork::visitConnectedPins
-// public api
-
-void dbNetwork::visitConnectedPins(const Net* net, PinVisitor& visitor) const
-
-{
-  NetSet visited_nets;
-  visitConnectedPins(net, visitor, visited_nets);
-}
 
 void dbNetwork::visitConnectedPins(const Net* net,
                                    PinVisitor& visitor,
