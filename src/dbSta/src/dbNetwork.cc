@@ -2645,6 +2645,7 @@ void dbNetwork::getInstanceTree(dbModule* start_module,
 dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
                                              std::vector<dbModule*>& itree2)
 {
+  // order lowest to highest (push_back in getInstanceTree)
   for (auto i : itree1) {
     for (auto j : itree2) {
       if (i == j)
@@ -2658,32 +2659,39 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
                                     dbITerm* dest_pin,
                                     const char* connection_name)
 {
-  dbModule* top_module = block_->getTopModule();
   dbModule* source_db_module = source_pin->getInst()->getModule();
   dbModule* dest_db_module = dest_pin->getInst()->getModule();
+  // it is possible that one or other of the pins is not involved
+  // in hierarchy, which is ok, and the source/dest modnet will be null
   dbModNet* source_db_mod_net = source_pin->getModNet();
   dbModNet* dest_db_mod_net = dest_pin->getModNet();
-
+  // case 1: source/dest in same module
   if (source_db_module == dest_db_module) {
     if (!source_db_mod_net) {
-      source_db_mod_net = dbModNet::create(top_module, connection_name);
+      source_db_mod_net = dbModNet::create(source_db_module, connection_name);
       source_pin->connect(source_db_mod_net);
       dest_pin->connect(source_db_mod_net);
     } else {
       dest_pin->connect(source_db_mod_net);
     }
   } else {
+    // case 2: source/dest in different modules. Find highest
+    // common module, traverse up adding pins/nets and make
+    // connection in highest common module
     std::vector<dbModule*> source_instance_tree;
     std::vector<dbModule*> dest_instance_tree;
     getInstanceTree(source_db_module, source_instance_tree);
     getInstanceTree(dest_db_module, dest_instance_tree);
     dbModule* highest_common_module = nullptr;
-    if (source_instance_tree.size() > dest_instance_tree.size())
+    // arrange so first argument to findHighestCommonModule has deepest
+    // hierarchy.
+    if (source_instance_tree.size() > dest_instance_tree.size()) {
       highest_common_module
           = findHighestCommonModule(source_instance_tree, dest_instance_tree);
-    else
+    } else {
       highest_common_module
           = findHighestCommonModule(dest_instance_tree, source_instance_tree);
+    }
     dbModNet* top_net = source_db_mod_net;
     dbModITerm* top_mod_dest = nullptr;
 
@@ -2712,11 +2720,15 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
           = std::string(connection_name) + std::string("_i");
       dbModBTerm* mod_bterm
           = dbModBTerm::create(cur_module, connection_name_i.c_str());
-      if (!dest_db_mod_net) {
+      // We may have a destination mod net (see first part), but check to make
+      // sure it is in this module. If not, create one and hook it to the
+      // destination pin also hook up the modbterm to it.
+      if ((dest_db_mod_net == nullptr)
+          || (dest_db_mod_net->getParent() != cur_module)) {
         dest_db_mod_net
             = dbModNet::create(cur_module, connection_name_i.c_str());
-        dest_pin->connect(dest_db_mod_net);
       }
+      dest_pin->connect(dest_db_mod_net);
       mod_bterm->connect(dest_db_mod_net);
       mod_bterm->setIoType(dbIoType::INPUT);
       mod_bterm->setSigType(dbSigType::SIGNAL);
@@ -2728,13 +2740,17 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
       }
+      // save the top level destination pin for final connection
       top_mod_dest = mod_iterm;
     }
+
+    // Finally do the connection in the highest common module
     if (top_mod_dest) {
       // if we don't have a top net (case when we are connecting source at top
-      // to hierarchically created pin), create one.
+      // to hierarchically created pin), create one in the highest module
       if (!top_net) {
-        source_db_mod_net = dbModNet::create(source_db_module, connection_name);
+        source_db_mod_net
+            = dbModNet::create(highest_common_module, connection_name);
         top_mod_dest->connect(source_db_mod_net);
         source_pin->connect(source_db_mod_net);
       } else {
