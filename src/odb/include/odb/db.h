@@ -977,12 +977,11 @@ class dbBlock : public dbObject
   dbSet<dbITerm> getITerms();
 
   dbITerm* getITerm(int);
-  
+
   ///
   /// Get the instances of this block.
   ///
   dbSet<dbInst> getInsts();
-
 
   ///
   /// Get the modules of this block.
