@@ -138,6 +138,11 @@ float Metrics::getArea() const
   return std_cell_area_ + macro_area_;
 }
 
+bool Metrics::empty() const
+{
+  return num_macro_ == 0 && num_std_cell_ == 0;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // Cluster Class
 // Constructors and Destructors
