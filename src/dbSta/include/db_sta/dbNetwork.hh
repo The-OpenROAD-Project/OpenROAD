@@ -312,8 +312,6 @@ class dbNetwork : public ConcreteNetwork
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
 
-  void visitConnectedPins(const Net* net, PinVisitor& visitor) const override;
-
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;
