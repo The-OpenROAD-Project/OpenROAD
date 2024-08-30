@@ -1,9 +1,6 @@
 module test_16_sinks (clk);
  input clk;
 
- wire clknet_0_clk;
- wire clknet_1_0__leaf_clk;
- wire clknet_1_1__leaf_clk;
 
  INV_X1 clkload0 (.A(clknet_1_1__leaf_clk));
  CLKBUF_X3 clkbuf_1_1__f_clk (.A(clknet_0_clk),
