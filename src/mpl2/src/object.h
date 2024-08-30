@@ -147,6 +147,7 @@ class Metrics
   float getStdCellArea() const;
   float getMacroArea() const;
   float getArea() const;
+  bool empty() const;
 
  private:
   // In the hierarchical autoclustering part,

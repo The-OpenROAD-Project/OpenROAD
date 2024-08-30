@@ -188,7 +188,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void saveGuides();
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
-  void netIsCovered(Net* net, const GRoute& segments);
+  bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
   bool segmentIsLine(const GSegment& segment);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
@@ -222,11 +222,27 @@ class GlobalRouter : public ant::GlobalRouteSource
   // check_antennas
   bool haveRoutes() override;
   bool haveDetailedRoutes();
+  bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
   void makeNetWires() override;
   void destroyNetWires() override;
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
+  void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  void findBufferPinPostions(Net* net1,
+                             Net* net2,
+                             odb::Point& pin_pos1,
+                             odb::Point& pin_pos2);
+  int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
+                                                     const odb::Point& pin_pos2,
+                                                     int layer1,
+                                                     int layer2);
+  void insertViasForConnection(std::vector<GSegment>& connection,
+                               const odb::Point& via_pos,
+                               int layer,
+                               int conn_layer);
 
   void getBlockage(odb::dbTechLayer* layer,
                    int x,
@@ -363,6 +379,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                           int min_routing_layer,
                           int max_routing_layer);
   void print(GRoute& route);
+  void printSegment(const GSegment& segment);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportCongestion();
@@ -504,17 +521,19 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 {
  public:
   GRouteDbCbk(GlobalRouter* grouter);
-  virtual void inDbPostMoveInst(odb::dbInst* inst);
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
+  void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
 
-  virtual void inDbNetDestroy(odb::dbNet* net);
-  virtual void inDbNetCreate(odb::dbNet* net);
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbNetCreate(odb::dbNet* net) override;
+  void inDbNetPreMerge(odb::dbNet* preserved_net,
+                       odb::dbNet* removed_net) override;
 
-  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
-  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
+  void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
 
-  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
-  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
+  void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
+  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;
 
  private:
   void instItermsDirty(odb::dbInst* inst);

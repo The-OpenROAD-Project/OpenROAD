@@ -11,9 +11,10 @@ set(TEST_LIBS
   cdl
   ${TCL_LIBRARY}
   Boost::boost
-  utl_lib gtest
-  gmock
-  gtest_main
+  utl_lib
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
   odb_test_helper
 )
 

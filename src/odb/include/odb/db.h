@@ -2788,6 +2788,11 @@ class dbNet : public dbObject
   ///
   static dbNet* getValidNet(dbBlock* block, uint oid);
 
+  ///
+  /// Merge the iterms and bterms of the in_net with this net
+  ///
+  void mergeNet(dbNet* in_net);
+
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();

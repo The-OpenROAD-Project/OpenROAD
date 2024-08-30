@@ -60,6 +60,7 @@ struct Options
   int dist = -1;    // default = 2um
   int halo_x = -1;  // default = 2um
   int halo_y = -1;  // default = 2um
+  int row_min_width = -1;
   odb::dbMaster* cnrcap_nwin_master = nullptr;
   odb::dbMaster* cnrcap_nwout_master = nullptr;
   odb::dbMaster* tap_nwintie_master = nullptr;
