@@ -39,22 +39,6 @@ delta HPWL                    0 %
 [INFO CTS-0052] The following clock buffers will be used for CTS:
                     CLKBUF_X3
 [INFO CTS-0049] Characterization buffer is CLKBUF_X3.
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
-BAD mod net found !
 [INFO CTS-0007] Net "clk" found for clock "clk".
 [INFO CTS-0010]  Clock net "clk" has 16 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
