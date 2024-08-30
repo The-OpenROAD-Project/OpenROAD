@@ -206,22 +206,12 @@ set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
 ################################################################
-# Antenna repair
+# Repair antennas post-GRT
 
 repair_antennas -iterations 5
 
 check_antennas
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
-
-################################################################
-# Filler placement
-
-filler_placement $filler_cells
-check_placement -verbose
-
-# checkpoint
-set fill_db [make_result_file ${design}_${platform}_fill.db]
-write_db $fill_db
 
 ################################################################
 # Detailed routing
@@ -242,9 +232,6 @@ write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
 
-check_antennas
-utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
-
 set routed_db [make_result_file ${design}_${platform}_route.db]
 write_db $routed_db
 
@@ -255,7 +242,6 @@ write_def $routed_def
 # Repair antennas post-DRT
 
 set repair_antennas_iters 0
-remove_fillers
 while {[check_antennas] && $repair_antennas_iters < 5} {
   # ensure that detail place will not touch nets that were not
   # modified by repair_antennas
@@ -275,13 +261,21 @@ while {[check_antennas] && $repair_antennas_iters < 5} {
   incr repair_antennas_iters
 }
 
-filler_placement $filler_cells
-
 check_antennas
 utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
 
 set repair_antennas_db [make_result_file ${design}_${platform}_repaired_route.odb]
 write_db $repair_antennas_db
+
+################################################################
+# Filler placement
+
+filler_placement $filler_cells
+check_placement -verbose
+
+# checkpoint
+set fill_db [make_result_file ${design}_${platform}_fill.db]
+write_db $fill_db
 
 ################################################################
 # Extraction
