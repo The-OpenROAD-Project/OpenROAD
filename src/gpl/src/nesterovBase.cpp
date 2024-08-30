@@ -63,8 +63,8 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-static float getDistance(const std::vector<FloatPoint>& a,
-                         const std::vector<FloatPoint>& b);
+//static float getDistance(const std::vector<FloatPoint>& a,
+//                         const std::vector<FloatPoint>& b);
 static float getDistance(const std::unordered_map<GCell*, GCellState>& cells,
                          FloatPoint GCellState::* aCoord,
                          FloatPoint GCellState::* bCoord);
@@ -906,11 +906,34 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   log_ = log;
 
   // gCellStor init
-  gCellStor_.reserve(pbc_->placeInsts().size());
+//  gCellStor_.reserve(pbc_->placeInsts().size());
 
   for (auto& inst : pbc_->placeInsts()) {
-    gCellStor_.emplace_back(inst);
+     GCell* gCell = new GCell(inst);
+//    gCellStor_.emplace_back(inst);
+//    if (!gCell.isInstance()) {
+//      continue;
+//    }
+    GCellState emptyState;    
+    newGCells_[gCell] = emptyState;
+    gCellMap_[gCell->instance()] = gCell;
   }
+  log_->report("nbc: newGCells_.size(): {}", newGCells_.size());
+//  for (auto& inst : pbc_->placeInsts()) {
+//    gCellStor_.emplace_back(inst);
+//  }
+//  
+//  // gCell ptr init
+////  gCells_.reserve(gCellStor_.size());
+//  for (auto& gCell : gCellStor_) {
+//    if (!gCell.isInstance()) {
+//      continue;
+//    }
+////    gCells_.push_back(&gCell);
+//    GCellState emptyState;
+//    newGCells_[&gCell] = emptyState;
+//    gCellMap_[gCell.instance()] = &gCell;
+//  }
 
   // TODO:
   // at this moment, GNet and GPin is equal to
@@ -930,18 +953,6 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     gNetStor_.push_back(myGNet);
   }
 
-  // gCell ptr init
-//  gCells_.reserve(gCellStor_.size());
-  for (auto& gCell : gCellStor_) {
-    if (!gCell.isInstance()) {
-      continue;
-    }
-//    gCells_.push_back(&gCell);
-    GCellState emptyState;
-    newGCells_[&gCell] = emptyState;
-    gCellMap_[gCell.instance()] = &gCell;
-  }
-
   // gPin ptr init
   gPins_.reserve(gPinStor_.size());
   for (auto& gPin : gPinStor_) {
@@ -957,16 +968,27 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCellStor_'s pins_ fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
-
-    if (gCell.isFiller()) {
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
+//    auto& gCell = *it;  // old-style loop for old OpenMP
+//
+//    if (gCell.isFiller()) {
+//      continue;
+//    }
+//
+//    for (auto& pin : gCell.instance()->pins()) {
+//      gCell.addGPin(pbToNb(pin));
+//    }
+//  }
+  
+//  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
+  for(auto& pair : newGCells_) {
+    auto gCell = pair.first;
+    if (gCell->isFiller()) {
       continue;
     }
-
-    for (auto& pin : gCell.instance()->pins()) {
-      gCell.addGPin(pbToNb(pin));
+    for (auto& pin : gCell->instance()->pins()) {
+      gCell->addGPin(pbToNb(pin));
     }
   }
 
@@ -1298,7 +1320,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
-  nesterov_base_cbk_ = new GRouteDbCbk(this);
+//  nesterov_base_cbk_ = new nesterovBaseDbCbk(this);
 
   // Set a fixed seed
   srand(42);
@@ -1331,21 +1353,20 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     db_inst_map_[gCell->instance()->dbInst()] = gCell;
   }
   log_->report("newGCells_.size():{}", newGCells_.size());
-  log_->report("gCellFillers_.size():{}",gCellFillers_.size());
+//  log_->report("gCellFillers_.size():{}",gCellFillers_.size());
   
   // add filler cells to gCells_, at this point gCellStor_ has only filler cells
   // instantiated at initFillerGcells()
-  for (auto& gCell : gCellStor_) {
-    GCellState emptyState;
-    newGCells_[&gCell] = emptyState;
-    //gCells_.push_back(&gCell);        
-  }
-  log_->report("newGCells_.size():{}", newGCells_.size());
-  log_->report("gCellFillers_.size():{}",gCellFillers_.size());
+//  for (auto& gCell : gCellStor_) {
+//    GCellState emptyState;
+//    newGCells_[&gCell] = emptyState;
+//    //gCells_.push_back(&gCell);        
+//  }
   
   for(auto& pair : newGCells_) {
-    if(!pair.first->isInstance()){
-      gCellFillers_.push_back(pair.first);
+    if(pair.first->isFiller()){
+//      gCellFillers_.push_back(pair.first);
+      ++fillersCount;
     }
   }
 
@@ -1366,8 +1387,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   //TODO this should be debuglogger
   log_->info(GPL, 555, "{:20} {:9}", "db_inst_map.size():", db_inst_map_.size());
-  log_->info(GPL, 556, "{:20} {:9}", "gCellFillers_.size():", gCellFillers_.size());
-  log_->info(GPL, 557, "{:20} {:9}", "sum =", (db_inst_map_.size()+gCellFillers_.size()) );
+//  log_->info(GPL, 556, "{:20} {:9}", "gCellFillers_.size():", gCellFillers_.size());
+  log_->info(GPL, 557, "{:20} {:9}", "db_inst_map_:", (db_inst_map_.size()));//+gCellFillers_.size()) );
   log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", newGCells_.size());
   //log_->info(GPL, xx, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
   log_->info(
@@ -1400,7 +1421,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 }
 
 // virtual filler GCells
-void NesterovBase::initFillerGCells()
+void NesterovBase::initFillerGCells()//std::unordered_map<GCell*, GCellState>& newGCells_)
 {
   // extract average dx/dy in range (10%, 90%)
   std::vector<int> dxStor;
@@ -1515,13 +1536,15 @@ void NesterovBase::initFillerGCells()
 
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    GCell myGCell(randX % pb_->die().coreDx() + pb_->die().coreLx(),
+    GCell* myGCell = new GCell(randX % pb_->die().coreDx() + pb_->die().coreLx(),
                   randY % pb_->die().coreDy() + pb_->die().coreLy(),
                   fillerDx_,
                   fillerDy_);
 
-    log_->report("initFiller: myGcell, cx: {}, cy: {}",myGCell.cx(),myGCell.cy());
-    gCellStor_.push_back(myGCell);
+//    log_->report("initFiller: myGcell, cx: {}, cy: {}",myGCell->cx(),myGCell->cy());
+//    gCellStor_.push_back(myGCell);
+    GCellState emptyState;
+    newGCells_[myGCell] = emptyState; 
   }
 }
 
@@ -1616,7 +1639,8 @@ int NesterovBase::fillerDy() const
 
 int NesterovBase::fillerCnt() const
 {
-  return static_cast<int>(gCellFillers_.size());
+//  return static_cast<int>(gCellFillers_.size());
+  return fillersCount;
 }
 
 int64_t NesterovBase::fillerCellArea() const
@@ -1706,8 +1730,7 @@ void NesterovBase::updateAreas()
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-//    reduction(+ : stdInstsArea_, macroInstsArea_)
+//#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ : stdInstsArea_, macroInstsArea_)
 //  for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
 //    auto& gCell = *it;  // old-style loop for old OpenMP
   for (auto& pair : newGCells_) {
@@ -2622,7 +2645,7 @@ void NesterovBase::snapshot()
 //  snapshotSLPCoordi_ = curSLPCoordi_;
 //  snapshotSLPSumGrads_ = curSLPSumGrads_;
     for (auto& pair : newGCells_) {
-      GCell* gCell = pair.first;
+//      GCell* gCell = pair.first;
       GCellState& state = pair.second;
 
       state.snapshotCoordi = state.curCoordi;
@@ -2702,7 +2725,7 @@ bool NesterovBase::revertDivergence()
 //  stepLength_ = snapshotStepLength_;
   
       for (auto& pair : newGCells_) {
-        GCell* gCell = pair.first;
+//        GCell* gCell = pair.first;
         GCellState& state = pair.second;
 
         state.curCoordi = state.snapshotCoordi;
@@ -2904,8 +2927,8 @@ static float getSecondNorm(const std::unordered_map<GCell*, GCellState>& cells, 
 //  return std::sqrt(norm / (2.0 * a.size()));
 //}
 
-nesterovBaseDbCbk::nesterovBaseDbCbk(NesterovBase* nesterov_base) : nesterov_base_(nesterov_base)
-{
-}
+//nesterovBaseDbCbk::nesterovBaseDbCbk(NesterovBase* nesterov_base) : nesterov_base_(nesterov_base)
+//{
+//}
 
 }  // namespace gpl

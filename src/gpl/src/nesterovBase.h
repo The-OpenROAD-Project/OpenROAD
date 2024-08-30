@@ -96,6 +96,7 @@ class Net;
 
 class GPin;
 class FFT;
+class nesterovBaseDbCbk;
 
 class GCell
 {
@@ -868,7 +869,7 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::vector<GCell> gCellStor_;
+//  std::vector<GCell> gCellStor_;
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
@@ -900,7 +901,7 @@ class NesterovBase
   const std::unordered_map<GCell*,GCellState>& newGCells() const { return newGCells_; }
 //  const std::vector<GCell*>& gCells() const { return gCells_; }
 //  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
-  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
+//  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -911,7 +912,7 @@ class NesterovBase
   float getDensityGradSum() const { return densityGradSum_; }
 
   // update gCells with cx, cy
-  void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
+//  void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
 
 //  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
   void updateGCellDensityCenterLocation(FloatPoint GCellState::*coordPtr);
@@ -1050,6 +1051,7 @@ class NesterovBase
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_ = nullptr;
+  nesterovBaseDbCbk* nesterov_base_cbk_;
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
@@ -1064,12 +1066,13 @@ class NesterovBase
   int64_t macroInstsArea_ = 0;
 
   std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
-  std::vector<GCell> gCellStor_;
+//  std::vector<GCell> gCellStor_;
 
   std::unordered_map<GCell*, GCellState> newGCells_;
 //  std::vector<GCell*> gCells_;
 //  std::vector<GCell*> gCellInsts_;
-  std::vector<GCell*> gCellFillers_;
+//  std::vector<GCell*> gCellFillers_;
+  int fillersCount = 0;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
@@ -1079,29 +1082,29 @@ class NesterovBase
   // SLP is Step Length Prediction.
   //
   // y_st, y_dst, y_wdst, w_pdst
-  std::vector<FloatPoint> curSLPCoordi_;
-  std::vector<FloatPoint> curSLPWireLengthGrads_;
-  std::vector<FloatPoint> curSLPDensityGrads_;
-  std::vector<FloatPoint> curSLPSumGrads_;
-
-  // y0_st, y0_dst, y0_wdst, y0_pdst
-  std::vector<FloatPoint> nextSLPCoordi_;
-  std::vector<FloatPoint> nextSLPWireLengthGrads_;
-  std::vector<FloatPoint> nextSLPDensityGrads_;
-  std::vector<FloatPoint> nextSLPSumGrads_;
-
-  // z_st, z_dst, z_wdst, z_pdst
-  std::vector<FloatPoint> prevSLPCoordi_;
-  std::vector<FloatPoint> prevSLPWireLengthGrads_;
-  std::vector<FloatPoint> prevSLPDensityGrads_;
-  std::vector<FloatPoint> prevSLPSumGrads_;
-
-  // x_st and x0_st
-  std::vector<FloatPoint> curCoordi_;
-  std::vector<FloatPoint> nextCoordi_;
-
-  // save initial coordinates -- needed for RD
-  std::vector<FloatPoint> initCoordi_;
+//  std::vector<FloatPoint> curSLPCoordi_;
+//  std::vector<FloatPoint> curSLPWireLengthGrads_;
+//  std::vector<FloatPoint> curSLPDensityGrads_;
+//  std::vector<FloatPoint> curSLPSumGrads_;
+//
+//  // y0_st, y0_dst, y0_wdst, y0_pdst
+//  std::vector<FloatPoint> nextSLPCoordi_;
+//  std::vector<FloatPoint> nextSLPWireLengthGrads_;
+//  std::vector<FloatPoint> nextSLPDensityGrads_;
+//  std::vector<FloatPoint> nextSLPSumGrads_;
+//
+//  // z_st, z_dst, z_wdst, z_pdst
+//  std::vector<FloatPoint> prevSLPCoordi_;
+//  std::vector<FloatPoint> prevSLPWireLengthGrads_;
+//  std::vector<FloatPoint> prevSLPDensityGrads_;
+//  std::vector<FloatPoint> prevSLPSumGrads_;
+//
+//  // x_st and x0_st
+//  std::vector<FloatPoint> curCoordi_;
+//  std::vector<FloatPoint> nextCoordi_;
+//
+//  // save initial coordinates -- needed for RD
+//  std::vector<FloatPoint> initCoordi_;
 
   // densityPenalty stor
 //  std::vector<float> densityPenaltyStor_;
@@ -1147,6 +1150,8 @@ class NesterovBase
   float snapshotStepLength_ = 0;
 
   void initFillerGCells();
+  
+  friend class nesterovBaseDbCbk;
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
