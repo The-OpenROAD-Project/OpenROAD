@@ -613,7 +613,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
-    std::set<RoutePt> last_pos;
+    std::multiset<RoutePt> last_pos;
     for (const Pin& pin : net->getPins()) {
       last_pos.insert(RoutePt(pin.getOnGridPosition().getX(),
                               pin.getOnGridPosition().getY(),
@@ -627,7 +627,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net, last_pos) && newPinOnGrid(net, last_pos)
+    if (pinPositionsChanged(net, last_pos)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       fastroute_->clearNetRoute(db_net);
@@ -636,8 +636,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
         logger_->error(
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
-    } else if (!newPinOnGrid(net, last_pos) && net->getPins().size() >= 2) {
-      shrinkNetRoute(db_net);
     }
     net->setMergedNet(false);
     net->setDirtyNet(false);
@@ -645,11 +643,16 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   dirty_nets_.clear();
 }
 
+// This function is not currently enabled
 void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
   GRoute& segments = routes_[db_net];
   const int total_segments = segments.size();
+
+  if (net->getNumPins() < 2) {
+    return;
+  }
 
   std::string dump;
   if (!netIsCovered(db_net, dump)) {
@@ -1058,7 +1061,8 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::pinPositionsChanged(Net* net, std::set<RoutePt>& last_pos)
+bool GlobalRouter::pinPositionsChanged(Net* net,
+                                       std::multiset<RoutePt>& last_pos)
 {
   bool is_diferent = false;
   std::map<RoutePt, int> cnt_pos;
@@ -1079,7 +1083,7 @@ bool GlobalRouter::pinPositionsChanged(Net* net, std::set<RoutePt>& last_pos)
   return is_diferent;
 }
 
-bool GlobalRouter::newPinOnGrid(Net* net, std::set<RoutePt>& last_pos)
+bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
 {
   for (const Pin& pin : net->getPins()) {
     if (last_pos.find(RoutePt(pin.getOnGridPosition().getX(),
