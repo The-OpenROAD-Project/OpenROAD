@@ -741,8 +741,6 @@ class Resizer : public dbStaState
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  // Prim/Dijkstra gets out of hand with bigger nets.
-  static constexpr int max_steiner_pin_count_ = 200000;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;

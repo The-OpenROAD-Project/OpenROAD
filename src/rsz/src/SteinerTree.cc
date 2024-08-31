@@ -81,14 +81,7 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   });
   int pin_count = pinlocs.size();
   bool is_placed = true;
-  // Warn if there are too many pins (>10000)
-  if (pin_count > max_steiner_pin_count_) {
-    logger_->warn(RSZ,
-                  69,
-                  "skipping net {} with {} pins.",
-                  sdc_network->pathName(net),
-                  pin_count);
-  } else if (pin_count >= 2) {
+  if (pin_count >= 2) {
     vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
     int drvr_idx = 0;  // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
