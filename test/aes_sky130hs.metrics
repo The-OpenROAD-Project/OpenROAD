@@ -96,6 +96,6 @@
 	"DRT::max_fanout_slack": "100.0",
 	"DRT::max_capacitance_slack": "-11.019552646321989",
 	"DRT::clock_period": "2.811000",
-	"flow__warnings__count": 32,
+	"flow__warnings__count": 36,
 	"flow__errors__count": 0
 }

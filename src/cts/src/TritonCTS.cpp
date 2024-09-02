@@ -601,6 +601,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       }
     }
   }
+  delete lib_iter;
 
   // second, look for all buffers with name CLKBUF or clkbuf
   if (buffers.empty()) {
@@ -618,6 +619,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
         }
       }
     }
+    delete lib_iter;
   }
 
   // third, look for all buffers with name BUF or buf
@@ -636,6 +638,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
         }
       }
     }
+    delete lib_iter;
   }
 
   // abandon attributes & name patterns, just look for all buffers
@@ -649,6 +652,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
         }
       }
     }
+    delete lib_iter;
 
     if (buffers.empty()) {
       logger_->error(
@@ -1846,6 +1850,7 @@ void TritonCTS::findCandidateDummyCells(
       }
     }
   }
+  delete lib_iter;
 
   // second, look for all inverters with name CLKINV or clkinv
   if (inverters.empty()) {
@@ -1864,6 +1869,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // third, look for all inverters with name INV or inv
@@ -1882,6 +1888,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // abandon attributes & name patterns, just look for all inverters
@@ -1896,6 +1903,7 @@ void TritonCTS::findCandidateDummyCells(
         }
       }
     }
+    delete lib_iter;
   }
 
   // Sort cells in ascending order of input cap
