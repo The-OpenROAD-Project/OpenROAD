@@ -376,6 +376,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     nets_to_repair.push_back(db_net);
   }
 
+  int total_diodes_count = 0;
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -389,6 +390,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
+      total_diodes_count += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
       int illegal_diode_placement_count
@@ -408,6 +410,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     repair_antennas_->clearViolations();
     itr++;
   }
+  logger_->metric("antenna_diodes_count", total_diodes_count);
   saveGuides();
 }
 
