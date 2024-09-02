@@ -878,7 +878,7 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
   auto db_tech = db_->getTech();
-  for (int k = min_routing_layer - 1; k < max_routing_layer - 1; k++) {
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
     auto layer = db_tech->findRoutingLayer(k + 1);
     if (layer == nullptr) {
       continue;
