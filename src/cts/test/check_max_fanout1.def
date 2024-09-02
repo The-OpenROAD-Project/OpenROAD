@@ -355,7 +355,7 @@ PINS 1 ;
   + FIXED ( 110000 220000 ) S ;
 END PINS
 
-NETS 2 ;
+NETS 1 ;
 - clk
   ( PIN clk ) ( ff0 CLK ) ( ff2 CLK ) ( ff4 CLK )
   ( ff6 CLK ) ( ff8 CLK ) ( ff10 CLK )
@@ -408,9 +408,6 @@ NETS 2 ;
   ( ff288 CLK ) ( ff289 CLK ) ( ff290 CLK )
   ( ff291 CLK ) ( ff292 CLK ) ( ff293 CLK )
   ( ff294 CLK ) ( ff295 CLK ) ( ff296 CLK ) ( ff297 CLK )
- ;
-- net1
- ( ff288 Q ) ( ff289 D )
  ;
 END NETS
 

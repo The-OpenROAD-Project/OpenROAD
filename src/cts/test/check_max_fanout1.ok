@@ -3,7 +3,7 @@
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 170 components and 1190 component-terminals.
-[INFO ODB-0133]     Created 2 nets and 172 connections.
+[INFO ODB-0133]     Created 1 nets and 170 connections.
 [INFO CTS-0050] Root buffer is sg13g2_buf_4.
 [INFO CTS-0051] Sink buffer is sg13g2_buf_4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
