@@ -602,20 +602,20 @@ void TritonRoute::prep()
   rp.main();
 }
 
-void TritonRoute::gr()
+void TritonRoute::tritonGlobalRoute()
 {
-  FlexGR gr(getDesign(), logger_, stt_builder_);
-  gr.main(db_);
+  FlexGR triton_global_router(getDesign(), logger_, stt_builder_);
+  triton_global_router.main(db_);
 }
 
-void TritonRoute::ta()
+void TritonRoute::trackAssign()
 {
-  FlexTA ta(getDesign(), logger_, distributed_);
-  ta.setDebug(debug_.get(), db_);
-  ta.main();
+  FlexTA track_assigner(getDesign(), logger_, distributed_);
+  track_assigner.setDebug(debug_.get(), db_);
+  track_assigner.main();
 }
 
-void TritonRoute::dr()
+void TritonRoute::detailedRoute()
 {
   num_drvs_ = -1;
   dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
@@ -960,11 +960,12 @@ int TritonRoute::main()
     return 0;
   }
   if (DO_PA) {
-    FlexPA pa(getDesign(), logger_, dist_);
-    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
-    pa.setDebug(debug_.get(), db_);
+    FlexPA pin_access_oracle(getDesign(), logger_, dist_);
+    pin_access_oracle.setDistributed(
+        dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    pin_access_oracle.setDebug(debug_.get(), db_);
     pa_pool.join();
-    pa.main();
+    pin_access_oracle.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(this, logger_);
       writer.updateDb(db_, true);
@@ -983,19 +984,19 @@ int TritonRoute::main()
         fmt::format("{}/design.odb", debug_->dumpDir).c_str());
   }
   if (!initGuide()) {
-    gr();
+    tritonGlobalRoute();
     ENABLE_VIA_GEN = true;
     io::GuideProcessor guide_processor(getDesign(), db_, logger_);
     guide_processor.readGuides();
     guide_processor.processGuides();
   }
   prep();
-  ta();
+  trackAssign();
   if (distributed_) {
     asio::post(dist_pool_,
                boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
-  dr();
+  detailedRoute();
   if (!SINGLE_STEP_DR) {
     endFR();
   }
@@ -1020,14 +1021,15 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_, dist_);
-  pa.setTargetInstances(target_insts);
-  pa.setDebug(debug_.get(), db_);
+  FlexPA pin_access_oracle(getDesign(), logger_, dist_);
+  pin_access_oracle.setTargetInstances(target_insts);
+  pin_access_oracle.setDebug(debug_.get(), db_);
   if (distributed_) {
-    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    pin_access_oracle.setDistributed(
+        dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     dist_pool_.join();
   }
-  pa.main();
+  pin_access_oracle.main();
   io::Writer writer(this, logger_);
   writer.updateDb(db_, true);
 }

@@ -212,9 +212,9 @@ class TritonRoute
   boost::asio::thread_pool dist_pool_{1};
 
   void initDesign();
-  void gr();
-  void ta();
-  void dr();
+  void tritonGlobalRoute();
+  void trackAssign();
+  void detailedRoute();
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
