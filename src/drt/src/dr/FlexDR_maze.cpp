@@ -2557,7 +2557,9 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()),
                               gridGraph_.yCoord(points[0].y()),
                               gridGraph_.getLayerNum(points[0].z()))) {
-      addApPathSegs(points[0], net);
+      if (!addApPathSegs(points[0], net)) {
+        addApExtFigUpdate(net, points[0]);
+      }
     }
   }
   for (int i = 0; i < (int) points.size() - 1; ++i) {
@@ -2699,6 +2701,47 @@ void FlexDRWorker::routeNet_postAstarWritePath(
       std::cout << "Warning: zero-length path in updateFlexPin\n";
     } else {
       std::cout << "Error: non-collinear path in updateFlexPin\n";
+    }
+  }
+}
+void FlexDRWorker::addApExtFigUpdate(drNet* net,
+                                     const FlexMazeIdx& ap_idx) const
+{
+  frLayerNum layer_num = gridGraph_.getLayerNum(ap_idx.z());
+  Point3D real_point;
+  gridGraph_.getPoint(real_point, ap_idx.x(), ap_idx.y());
+  real_point.setZ(layer_num);
+  for (const auto& ext_obj : net->getExtConnFigs()) {
+    if (ext_obj->typeId() == drcPathSeg) {
+      const drPathSeg* path_seg = static_cast<const drPathSeg*>(ext_obj.get());
+      const auto [bp, ep] = path_seg->getPoints();
+      if (path_seg->getLayerNum() != layer_num) {
+        continue;
+      }
+      frSegStyle style = path_seg->getStyle();
+      if (bp == real_point) {
+        style.setBeginStyle(frcTruncateEndStyle, 0);
+        net->updateExtFigStyle(real_point, style);
+        return;
+      } else if (ep == real_point) {
+        style.setEndStyle(frcTruncateEndStyle, 0);
+        net->updateExtFigStyle(real_point, style);
+        return;
+      }
+    } else if (ext_obj->typeId() == drcVia) {
+      auto via = static_cast<const drVia*>(ext_obj.get());
+      Point via_point = via->getOrigin();
+      if (via_point != real_point) {
+        continue;
+      }
+      auto via_def = via->getViaDef();
+      if (via_def->getLayer1Num() == layer_num) {
+        net->updateExtFigConnected(real_point, true, via->isTopConnected());
+        return;
+      } else if (via_def->getLayer2Num() == layer_num) {
+        net->updateExtFigConnected(real_point, via->isBottomConnected(), true);
+        return;
+      }
     }
   }
 }

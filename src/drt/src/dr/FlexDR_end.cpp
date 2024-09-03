@@ -513,7 +513,80 @@ void FlexDRWorker::endAddNets_merge(
     }
   }
 }
+namespace {
+void replacePathSeg(frRegionQuery* region_query,
+                    std::unique_ptr<frPathSeg> new_seg,
+                    frPathSeg* old_seg)
+{
+  auto net = old_seg->getNet();
+  new_seg->addToNet(net);
+  auto new_seg_ptr = new_seg.get();
+  region_query->removeDRObj(old_seg);
+  net->removeShape(old_seg);
+  net->addShape(std::move(new_seg));
+  region_query->addDRObj(new_seg_ptr);
+}
+void replaceVia(frRegionQuery* region_query,
+                std::unique_ptr<frVia> new_via,
+                frVia* old_via)
+{
+  auto net = old_via->getNet();
+  new_via->addToNet(net);
+  auto new_via_ptr = new_via.get();
+  region_query->removeDRObj(old_via);
+  net->removeVia(old_via);
+  net->addVia(std::move(new_via));
+  region_query->addDRObj(new_via_ptr);
+}
+}  // namespace
+void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
+{
+  std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
+  auto region_query = design_->getRegionQuery();
+  for (auto pt : locs) {
+    frRegionQuery::Objects<frBlockObject> result;
+    region_query->queryDRObj({pt, pt}, pt.z(), result);
+    bool is_via = net->isExtFigUpdateVia(pt);
+    for (const auto& [_, obj] : result) {
+      if (is_via && obj->typeId() == frcVia) {
+        auto via = static_cast<frVia*>(obj);
+        if (via->getNet() != net->getFrNet() || via->getOrigin() != pt) {
+          continue;
+        }
+        const auto via_def = via->getViaDef();
+        if (via_def->getLayer1Num() != pt.z()
+            && via_def->getLayer2Num() != pt.z()) {
+          continue;
+        }
 
+        std::unique_ptr<frVia> new_via = std::make_unique<frVia>(*via);
+        bool is_bottom_connected, is_top_connected;
+        net->getExtFigUpdate(pt, is_bottom_connected, is_top_connected);
+        new_via->setBottomConnected(is_bottom_connected);
+        new_via->setTopConnected(is_top_connected);
+        replaceVia(region_query, std::move(new_via), via);
+        break;
+      } else if (!is_via && obj->typeId() == frcPathSeg) {
+        auto path_seg = static_cast<frPathSeg*>(obj);
+        if (path_seg->getNet() != net->getFrNet()
+            || path_seg->getLayerNum() != pt.z()) {
+          continue;
+        }
+        const auto [bp, ep] = path_seg->getPoints();
+        if (bp != pt && ep != pt) {
+          continue;
+        }
+        std::unique_ptr<frPathSeg> new_seg
+            = std::make_unique<frPathSeg>(*path_seg);
+        frSegStyle updated_style;
+        net->getExtFigUpdate(pt, updated_style);
+        new_seg->setStyle(updated_style);
+        replacePathSeg(region_query, std::move(new_seg), path_seg);
+        break;
+      }
+    }
+  }
+}
 void FlexDRWorker::endAddNets(
     frDesign* design,
     std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
@@ -534,6 +607,9 @@ void FlexDRWorker::endAddNets(
       } else {
         std::cout << "Error: endAddNets unsupported type" << std::endl;
       }
+    }
+    if (net->hasExtFigUpdates()) {
+      endAddNets_updateExtFigs(net.get());
     }
   }
   for (auto& [net, bPts] : boundPts) {

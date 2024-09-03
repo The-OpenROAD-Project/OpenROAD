@@ -924,6 +924,23 @@ class FlexDRWorker
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
       const std::set<FlexMazeIdx>& apMazeIdx);
   bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
+  /**
+   * Updates external figures to connect to access-point if needed.
+   *
+   * While routing, there could be a case where we are routing a boundary pin to
+   * an access point at the same location of the boundary pin. In this case, the
+   * path would consist only of one point. The router may fail to addApPathSegs
+   * if planar access is not allowed. In that case, we should update the
+   * external object connected to the boundary pin to connect to the
+   * access-point directly. For each net we keep a list of such updates under
+   * drNet::ext_figs_updates_. This function modifies this list by going through
+   * all external objects of the net and updating the one that begins or ends at
+   * the current access-point/boundary-pin
+   * @param net The current net being routed
+   * @param ap_idx The graph idx of the access-point which is the same as the
+   * boundary pin idx. This is the one point that constructs the current path.
+   */
+  void addApExtFigUpdate(drNet* net, const FlexMazeIdx& ap_idx) const;
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
                    frMIdx startX,
@@ -1028,7 +1045,15 @@ class FlexDRWorker
   void endAddNets_merge(frDesign* design,
                         frNet* net,
                         std::set<std::pair<Point, frLayerNum>>& boundPts);
-
+  /**
+   * Commits updates made by FlexDRWorker::addApExtFigUpdate to the design.
+   *
+   * This function goes through the ext_figs_updates_ of each net and applies
+   * the required updates to the external objects.
+   *
+   * @param net The currently being modified drNet
+   */
+  void endAddNets_updateExtFigs(drNet* net);
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 
