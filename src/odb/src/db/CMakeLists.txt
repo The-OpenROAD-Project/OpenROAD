@@ -174,4 +174,5 @@ target_link_libraries(db
 messages(
   TARGET db
   OUTPUT_DIR ../..
+  SOURCE_DIR ../..
 )
