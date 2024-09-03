@@ -500,8 +500,13 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
       } else
         repair_failures = true;
     }
-    if (inserted_diodes)
+    if (inserted_diodes) {
+      if (db_net->hasJumpers()) {
+        printf("Net %s has jumpers but required diodes.\n", db_net->getConstName());
+	//db_net->setJumpers(false);
+      }
       grouter_->addDirtyNet(db_net);
+    }
   }
   if (repair_failures)
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
@@ -1188,13 +1193,17 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(odb::dbNet* db_net, 
 void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size, const int& max_routing_layer)
 {
   odb::dbTech* tech = db_->getTech();
-  int total_jumper = 0;
+  int total_jumpers = 0;
+  int jumpers_by_net;
+  int jumpers_by_layer;
+  int net_with_jumpers = 0;
   for (auto const& net_violations : antenna_violations_) {
     odb::dbNet* db_net = net_violations.first;
     const auto violations = net_violations.second;
     std::map<int, int> routing_layer_with_violations;
     //std::cerr << "Net " << db_net->getConstName() << "\n";
 
+    jumpers_by_net = 0;
     int max_layer = 1;
     // Iterate found layers with violations
     int violation_id = 0;
@@ -1227,10 +1236,17 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing, const int tile_size, 
       init_area = 0.0;
       final_area = 0.0;
       getPinNumberNearEndPoint(segment_with_violations[it.second], violations[it.second].gates, init_c, final_c, init_area, final_area);
-      total_jumper += divideSegment(segment_with_violations[it.second], route, tech->findRoutingLayer(it.first), tile_size, violations[it.second].ratio, init_c, final_c, init_area, final_area);
+      jumpers_by_layer = divideSegment(segment_with_violations[it.second], route, tech->findRoutingLayer(it.first), tile_size, violations[it.second].ratio, init_c, final_c, init_area, final_area);
+      jumpers_by_net += jumpers_by_layer;
+    }
+    if (jumpers_by_net) {
+      net_with_jumpers++;
+      total_jumpers += jumpers_by_net;
+      db_net->setJumpers(true);
+      printf("Add %d jumper(s) in net %s.\n", jumpers_by_net, db_net->getConstName());
     }
   }
-  logger_->info(GRT, 302, "Inserted {} jumpers.", total_jumper);
+  logger_->info(GRT, 302, "Inserted {} jumpers for {} nets.", total_jumpers, net_with_jumpers);
 }
 
 }  // namespace grt
