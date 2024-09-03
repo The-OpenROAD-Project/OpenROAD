@@ -2442,6 +2442,18 @@ Rect dbBlock::getDieArea()
   return block->_die_area;
 }
 
+void dbBlock::addBlockedRegionForPins(const Rect& region)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_blocked_regions_for_pins.push_back(region);
+}
+
+const std::vector<Rect>& dbBlock::getBlockedRegionsForPins()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_blocked_regions_for_pins;
+}
+
 Rect dbBlock::getCoreArea()
 {
   Rect rect;

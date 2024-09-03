@@ -1406,6 +1406,16 @@ class dbBlock : public dbObject
   Rect getCoreArea();
 
   ///
+  /// Add region in the die area where IO pins cannot be placed
+  ///
+  void addBlockedRegionForPins(const Rect& region);
+
+  ///
+  /// Get the regions in the die area where IO pins cannot be placed
+  ///
+  const std::vector<Rect>& getBlockedRegionsForPins();
+
+  ///
   /// Set the extmain instance.
   ///
   void setExtmi(void* ext);
