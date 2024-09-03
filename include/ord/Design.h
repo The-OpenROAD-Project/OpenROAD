@@ -150,7 +150,9 @@ class Design
                bool child = false);
   void link(const std::string& design_name);
 
+  void readDb(std::istream& stream);
   void readDb(const std::string& file_name);
+  void writeDb(std::ostream& stream);
   void writeDb(const std::string& file_name);
   void writeDef(const std::string& file_name);
 
