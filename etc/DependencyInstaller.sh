@@ -94,7 +94,7 @@ _installCommonDev() {
     cmakeBin=${cmakePrefix}/bin/cmake
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
-        wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
+        eval wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-${arch}.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-${arch}.sh
         ./cmake-${cmakeVersionSmall}-${osName}-${arch}.sh --skip-license --prefix=${cmakePrefix}
@@ -108,7 +108,7 @@ _installCommonDev() {
     if [[ ! -f ${swigBin} || -z $(${swigBin} -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         tarName="v${swigVersion}.tar.gz"
-        wget https://github.com/swig/swig/archive/${tarName}
+        eval wget https://github.com/swig/swig/archive/${tarName}
         md5sum -c <(echo "${swigChecksum} ${tarName}") || exit 1
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
@@ -116,7 +116,7 @@ _installCommonDev() {
         # Check if pcre2 is installed
         if [[ -z $(pcre2-config --version) ]]; then
             tarName="pcre2-${pcreVersion}.tar.gz"
-            wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+            eval wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
             md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
             ./Tools/pcre-build.sh
         fi
@@ -133,8 +133,8 @@ _installCommonDev() {
     if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
-        wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
-        # wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
+        eval wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
+        # eval wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
@@ -208,7 +208,7 @@ _installCommonDev() {
     gtestPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${gtestPrefix}/include/gtest ]]; then
         cd "${baseDir}"
-        wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
+        eval wget https://github.com/google/googletest/archive/refs/tags/v${gtestVersion}.zip
         md5sum -c <(echo "${gtestChecksum} v${gtestVersion}.zip") || exit 1
         unzip v${gtestVersion}.zip
         cd googletest-${gtestVersion}
@@ -230,7 +230,7 @@ _installCommonDev() {
         ninjaBin=${ninjaPrefix}/bin/ninja
         if [[ ! -d ${ninjaBin} ]]; then
             cd "${baseDir}"
-            wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
+            eval wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
             md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
             unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
             chmod +x ${ninjaBin}
@@ -283,7 +283,7 @@ _installOrTools() {
         fi
     else
         orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
-        wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
+        eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         orToolsPath=${PREFIX:-"/opt/or-tools"}
         if command -v brew &> /dev/null; then
             orToolsPath="$(brew --prefix or-tools)"
@@ -423,7 +423,7 @@ _installRHELPackages() {
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 
-    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
+    eval wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz
     tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/
     rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
@@ -698,6 +698,8 @@ Usage: $0
                                 #    sudo or with root access.
        $0 -ci
                                 # Installs dependencies required to run CI
+       $0 -nocert
+                                # Disable certificate checks
 
 EOF
     exit "${1:-1}"
@@ -759,6 +761,11 @@ while [ "$#" -gt 0 ]; do
                 export isLocal="false"
             fi
             export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
+            ;;
+        -nocert)
+            shopt -s expand_aliases
+            alias wget="wget --no-check-certificate"
+            export GIT_SSL_NO_VERIFY=true
             ;;
         *)
             echo "unknown option: ${1}" >&2
