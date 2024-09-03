@@ -72,7 +72,7 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 89;  // Current revision number
 
-// Revision where odb::Polygon was added
+// Revision where blocked regions for IO pins were added to dbBlock
 const uint db_schema_dbblock_blocked_regions_for_pins = 89;
 
 // Revision where odb::Polygon was added
