@@ -33,6 +33,7 @@
 ##
 ###############################################################################
 {
+  flake,
   lib,
   clangStdenv,
   fetchFromGitHub,
@@ -62,6 +63,7 @@
   flex,
   bison,
   clang-tools_14,
+  gtest,
   # or-tools
   stdenv,
   overrideSDK,
@@ -87,7 +89,7 @@
   self = clangStdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
-    src = ./.;
+    src = flake;
 
     cmakeFlags = [
       "-DTCL_LIBRARY=${tcl}/lib/libtcl${clangStdenv.hostPlatform.extensions.sharedLibrary}"
@@ -95,6 +97,10 @@
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
     ];
+    
+    postPatch = ''
+      patchShebangs .
+    '';
     
     qt5Libs = [
       libsForQt5.qt5.qtbase
@@ -124,6 +130,7 @@
       clp
       cbc
       re2
+      gtest
     ];
 
     nativeBuildInputs = [

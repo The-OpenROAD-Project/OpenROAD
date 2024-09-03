@@ -34,7 +34,7 @@
 
 #include "frProfileTask.h"
 namespace drt::io {
-
+using Interval = boost::icl::interval<frCoord>;
 namespace {
 /**
  * @brief Returns the closest point on the perimeter of the rectangle r to the
@@ -51,13 +51,13 @@ Point getClosestPoint(const frRect& r, const Point& p)
  * @brief Returns the shapes of the given pin on all layers.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-std::vector<frRect> getPinShapes(frBlockObject* pin)
+std::vector<frRect> getPinShapes(const frBlockObject* pin)
 {
   std::vector<frRect> pinShapes;
   if (pin->typeId() == frcBTerm) {
-    static_cast<frBTerm*>(pin)->getShapes(pinShapes);
+    static_cast<const frBTerm*>(pin)->getShapes(pinShapes);
   } else {
-    static_cast<frInstTerm*>(pin)->getShapes(pinShapes, true);
+    static_cast<const frInstTerm*>(pin)->getShapes(pinShapes, true);
   }
   return pinShapes;
 }
@@ -66,26 +66,43 @@ std::vector<frRect> getPinShapes(frBlockObject* pin)
  * @brief Returns bounding box of the given pin.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-Rect getPinBBox(frBlockObject* pin)
+Rect getPinBBox(const frBlockObject* pin)
 {
   if (pin->typeId() == frcBTerm) {
-    return static_cast<frBTerm*>(pin)->getBBox();
+    return static_cast<const frBTerm*>(pin)->getBBox();
   } else {
-    return static_cast<frInstTerm*>(pin)->getBBox(true);
+    return static_cast<const frInstTerm*>(pin)->getBBox(true);
   }
 }
 /**
  * @brief Returns name of the given pin.
  * @note Assumes pin's typeId() is either frcBTerm or frcInstTerm
  */
-std::string getPinName(frBlockObject* pin)
+std::string getPinName(const frBlockObject* pin)
 {
   if (pin->typeId() == frcBTerm) {
-    return static_cast<frBTerm*>(pin)->getName();
+    return static_cast<const frBTerm*>(pin)->getName();
   } else {
-    return static_cast<frInstTerm*>(pin)->getName();
+    return static_cast<const frInstTerm*>(pin)->getName();
   }
 }
+
+bool isPinCoveredByGuides(const frBlockObject* pin,
+                          const std::vector<frRect>& guides)
+{
+  std::vector<frRect> pin_shapes = getPinShapes(pin);
+  // checks if there is a guide that overlaps with any of the pin shapes
+  for (const auto& pin_rect : pin_shapes) {
+    for (const auto& guide : guides) {
+      if (guide.getLayerNum() == pin_rect.getLayerNum()
+          && guide.getBBox().overlaps(pin_rect.getBBox())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * @brief Finds intersecting guides with point(x,y).
  *
@@ -369,80 +386,269 @@ void connectGuidesWithBestPinLoc(const Point3D& guide_pt,
   }
 }
 
+/**
+ * @brief logs the number of guides read so far
+ *
+ * If the number of guides read is less than 1M guides, the function reports
+ * every 100k guides, otherwise it reports every 1M guides read
+ * @param num_guides number of guides read so far
+ */
+void logGuidesRead(const int num_guides, utl::Logger* logger)
+{
+  bool log = false;
+  if (num_guides < 1000000) {
+    log = (num_guides % 100000 == 0);
+  } else {
+    log = (num_guides % 1000000 == 0);
+  }
+  if (log) {
+    logger->info(DRT, 156, "guideIn read {} guides.", num_guides);
+  }
+}
+/**
+ * @brief Checks the validity of the odb guide layer
+ *
+ * The db_guide layer is invalid if it is any of the following conditions:
+ * - Not in the DRT layer database
+ * - Above the sepecified top routing layer
+ * - Below the specified bottom routing layer and the via access layer
+ * @note If a layer is invalid, this produces an error unless it is above the
+ * top routing layer for a net that has pins above the top routing layer. In the
+ * latest case, we just ignore the guide and the pin is handled by
+ * io::Parser::setBTerms_addPinFig_helper
+ * @param layer_num The layer_num of the guide returned by this function if it
+ * is a valid layer
+ * @returns True if the guide is valid by the previous criteria and False
+ * if above top routing layer for a net with bterms above top routing layer
+ */
+bool isValidGuideLayerNum(odb::dbGuide* db_guide,
+                          frTechObject* tech,
+                          frNet* net,
+                          utl::Logger* logger,
+                          frLayerNum& layer_num)
+{
+  frLayer* layer = tech->getLayer(db_guide->getLayer()->getName());
+  if (layer == nullptr) {
+    logger->error(
+        DRT, 154, "Cannot find layer {}.", db_guide->getLayer()->getName());
+  }
+  layer_num = layer->getLayerNum();
+
+  // Ignore guide as invalid if above top routing layer for a net with bterms
+  // above top routing layer
+  const bool guide_above_top_routing_layer = layer_num > TOP_ROUTING_LAYER;
+  if (guide_above_top_routing_layer && net->hasBTermsAboveTopLayer()) {
+    return false;
+  }
+  const bool guide_below_bottom_routing_layer
+      = layer_num < BOTTOM_ROUTING_LAYER && layer_num != VIA_ACCESS_LAYERNUM;
+  if (guide_below_bottom_routing_layer || guide_above_top_routing_layer) {
+    logger->error(DRT,
+                  155,
+                  "Guide in net {} uses layer {} ({})"
+                  " that is outside the allowed routing range "
+                  "[{} ({}), {} ({})] with via access on [{} ({})].",
+                  net->getName(),
+                  layer->getName(),
+                  layer_num,
+                  tech->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
+                  BOTTOM_ROUTING_LAYER,
+                  tech->getLayer(TOP_ROUTING_LAYER)->getName(),
+                  TOP_ROUTING_LAYER,
+                  tech->getLayer(VIA_ACCESS_LAYERNUM)->getName(),
+                  VIA_ACCESS_LAYERNUM);
+  }
+  return true;
+}
+
+/**
+ * @brief Initializes guide intervals for genGuides_merge.
+ *
+ * The function iterates over all the net guides and identifies each one's
+ * coverage of the gcell indices. The data structure merges touching guides as
+ * they intersect in their intervals. For a guide on a horizontal layer spanning
+ * from index(1, 10) to (10, 12). It adds the following entries to
+ * intvs[layer_num]:
+ * - Track 10 begin_idx 1 end_idx 10 : intvs[layer_num][10].insert(1, 10)
+ * - Track 11 begin_idx 1 end_idx 10 : intvs[layer_num][11].insert(1, 10)
+ * - Track 12 begin_idx 1 end_idx 10 : intvs[layer_num][12].insert(1, 10)
+ * As you can see the map key/track idx is the vertical index because this is a
+ * horizontal layer.
+ * @param rects The list of guides of the net.
+ * @param intvs The map of guide intervals.
+ */
+void initGuideIntervals(const std::vector<frRect>& rects,
+                        const frDesign* design,
+                        TrackIntervalsByLayer& intvs)
+{
+  for (const auto& rect : rects) {
+    const Rect box = rect.getBBox();
+    const Point pt1(box.ll());
+    const Point idx1 = design->getTopBlock()->getGCellIdx(pt1);
+    const frCoord x1 = idx1.x();
+    const frCoord y1 = idx1.y();
+    const Point pt2(box.xMax() - 1, box.yMax() - 1);
+    const Point idx2 = design->getTopBlock()->getGCellIdx(pt2);
+    const frCoord x2 = idx2.x();
+    const frCoord y2 = idx2.y();
+    const frLayerNum layer_num = rect.getLayerNum();
+    const bool is_horizontal = design->getTech()->getLayer(layer_num)->getDir()
+                               == dbTechLayerDir::HORIZONTAL;
+    if (is_horizontal) {
+      for (auto track_idx = y1; track_idx <= y2; track_idx++) {
+        intvs[layer_num][track_idx].insert(Interval::closed(x1, x2));
+      }
+    } else {
+      for (auto track_idx = x1; track_idx <= x2; track_idx++) {
+        intvs[layer_num][track_idx].insert(Interval::closed(y1, y2));
+      }
+    }
+  }
+}
+/**
+ * @brief Checks if there exists an interval with the specified passed arguments
+ *
+ * The function checks if there exists an interval on layer_num with any track
+ * index from begin_idx to end_idx that contains both indices; track_idx1 and
+ * track_idx2. This is used for discovering bridge guides over touching guides
+ * on consecutive track indices.
+ * @param begin_idx The lower bound of track indices for searching.
+ * @param end_idx The upper bound of track indices for searching.
+ * @returns True if it finds a bridge with the specified criteria and False
+ * otherwise
+ */
+bool hasGuideInterval(const frCoord begin_idx,
+                      const frCoord end_idx,
+                      const frCoord track_idx1,
+                      const frCoord track_idx2,
+                      const frLayerNum layer_num,
+                      const TrackIntervalsByLayer& intvs)
+{
+  for (auto it = intvs[layer_num].lower_bound(begin_idx);
+       it != intvs[layer_num].end() && it->first <= end_idx;
+       it++) {
+    if (boost::icl::contains(it->second, track_idx1)
+        && boost::icl::contains(it->second, track_idx2)) {
+      return true;
+    }
+  }
+  return false;
+}
+/**
+ * @brief Adds Bridge guides for touching guides on the same layer if needed.
+ *
+ * The function identifies touching guides on the same layer on consecutive
+ * track indices. It adds a bridge guide on the upper or lower layer that
+ * connects both guides if such one does not exist.
+ * @note The function prefers bridging on the upper layer to the lower layer.
+ */
+void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
+{
+  struct BridgeGuide
+  {
+    frCoord track_idx{-1};
+    frCoord begin_idx{-1};
+    frCoord end_idx{-1};
+    frLayerNum layer_num{-1};
+    BridgeGuide(frCoord track_idx_in,
+                frCoord begin_idx_in,
+                frCoord end_idx_in,
+                frLayerNum layer_num_in)
+        : track_idx(track_idx_in),
+          begin_idx(begin_idx_in),
+          end_idx(end_idx_in),
+          layer_num(layer_num_in)
+    {
+    }
+  };
+
+  std::vector<BridgeGuide> bridge_guides;
+  // append touching edges
+  for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
+    const auto& curr_layer_intvs = intvs[layer_num];
+    int prev_track_idx = -2;
+    for (const auto& [curr_track_idx, curr_track_intvs] : curr_layer_intvs) {
+      if (curr_track_idx == prev_track_idx + 1) {
+        const auto& prev_track_intvs = curr_layer_intvs.at(prev_track_idx);
+        const auto intvs_intersection = curr_track_intvs & prev_track_intvs;
+        for (const auto& intv : intvs_intersection) {
+          const auto begin_idx = intv.lower();
+          const auto end_idx = intv.upper();
+          bool has_bridge = false;
+          // lower layer intersection
+          std::optional<frLayerNum> bridge_layer_num;
+          if (layer_num - 2 >= 0) {
+            bridge_layer_num = layer_num - 2;
+            has_bridge = hasGuideInterval(begin_idx,
+                                          end_idx,
+                                          curr_track_idx,
+                                          prev_track_idx,
+                                          bridge_layer_num.value(),
+                                          intvs);
+          }
+          if (layer_num + 2 < (int) intvs.size() && !has_bridge) {
+            bridge_layer_num = layer_num + 2;
+            has_bridge = hasGuideInterval(begin_idx,
+                                          end_idx,
+                                          curr_track_idx,
+                                          prev_track_idx,
+                                          bridge_layer_num.value(),
+                                          intvs);
+          }
+          if (!has_bridge) {
+            // add bridge guide;
+            if (!bridge_layer_num.has_value()) {
+              logger->error(
+                  DRT, 228, "genGuides_merge cannot find bridge layer.");
+            }
+            bridge_guides.emplace_back(begin_idx,
+                                       prev_track_idx,
+                                       curr_track_idx,
+                                       bridge_layer_num.value());
+          }
+        }
+      }
+      prev_track_idx = curr_track_idx;
+    }
+  }
+
+  for (const auto& bridge : bridge_guides) {
+    intvs[bridge.layer_num][bridge.track_idx].insert(
+        Interval::closed(bridge.begin_idx, bridge.end_idx));
+  }
+}
+
 }  // namespace
 
 bool GuideProcessor::readGuides()
 {
   ProfileTask profile("IO:readGuide");
-  int numGuides = 0;
-  auto block = db_->getChip()->getBlock();
-  for (auto dbNet : block->getNets()) {
-    if (dbNet->getGuides().empty()) {
-      continue;
-    }
-    frNet* net = getDesign()->getTopBlock()->findNet(dbNet->getName());
+  int num_guides = 0;
+  const auto block = db_->getChip()->getBlock();
+  for (const auto db_net : block->getNets()) {
+    frNet* net = getDesign()->getTopBlock()->findNet(db_net->getName());
     if (net == nullptr) {
-      logger_->error(DRT, 153, "Cannot find net {}.", dbNet->getName());
+      logger_->error(DRT, 153, "Cannot find net {}.", db_net->getName());
     }
-    for (auto dbGuide : dbNet->getGuides()) {
-      frLayer* layer = getTech()->getLayer(dbGuide->getLayer()->getName());
-      if (layer == nullptr) {
-        logger_->error(
-            DRT, 154, "Cannot find layer {}.", dbGuide->getLayer()->getName());
-      }
-      frLayerNum layerNum = layer->getLayerNum();
-
-      // get the top layer for a pin of the net
-      bool isAboveTopLayer = false;
-      for (const auto& bterm : net->getBTerms()) {
-        isAboveTopLayer = bterm->isAboveTopLayer();
-      }
-
-      // update the layer of the guides above the top routing layer
-      // if the guides are used to access a pin above the top routing layer
-      if (layerNum > TOP_ROUTING_LAYER && isAboveTopLayer) {
+    for (auto db_guide : db_net->getGuides()) {
+      frLayerNum layer_num;
+      if (!isValidGuideLayerNum(db_guide, getTech(), net, logger_, layer_num)) {
         continue;
       }
-      if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
-          || layerNum > TOP_ROUTING_LAYER) {
-        logger_->error(DRT,
-                       155,
-                       "Guide in net {} uses layer {} ({})"
-                       " that is outside the allowed routing range "
-                       "[{} ({}), {} ({})] with via access on [{} ({})].",
-                       net->getName(),
-                       layer->getName(),
-                       layerNum,
-                       getTech()->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
-                       BOTTOM_ROUTING_LAYER,
-                       getTech()->getLayer(TOP_ROUTING_LAYER)->getName(),
-                       TOP_ROUTING_LAYER,
-                       getTech()->getLayer(VIA_ACCESS_LAYERNUM)->getName(),
-                       VIA_ACCESS_LAYERNUM);
-      }
-
       frRect rect;
-      rect.setBBox(dbGuide->getBox());
-      rect.setLayerNum(layerNum);
-      tmpGuides_[net].push_back(rect);
-      ++numGuides;
-      if (numGuides < 1000000) {
-        if (numGuides % 100000 == 0) {
-          logger_->info(DRT, 156, "guideIn read {} guides.", numGuides);
-        }
-      } else {
-        if (numGuides % 1000000 == 0) {
-          logger_->info(DRT, 157, "guideIn read {} guides.", numGuides);
-        }
-      }
+      rect.setBBox(db_guide->getBox());
+      rect.setLayerNum(layer_num);
+      tmp_guides_[net].emplace_back(rect);
+      ++num_guides;
+      logGuidesRead(num_guides, logger_);
     }
   }
   if (VERBOSE > 0) {
     logger_->report("");
-    logger_->report("Number of guides:     {}", numGuides);
+    logger_->info(utl::DRT, 157, "Number of guides:     {}", num_guides);
     logger_->report("");
   }
-  return !tmpGuides_.empty();
+  return !tmp_guides_.empty();
 }
 
 void GuideProcessor::buildGCellPatterns_helper(frCoord& GCELLGRIDX,
@@ -460,7 +666,7 @@ void GuideProcessor::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
 {
   std::map<frCoord, int> guideGridXMap, guideGridYMap;
   // get GCell size information loop
-  for (auto& [netName, rects] : tmpGuides_) {
+  for (auto& [netName, rects] : tmp_guides_) {
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
       Rect guideBBox = rect.getBBox();
@@ -516,7 +722,7 @@ void GuideProcessor::buildGCellPatterns_getOffset(frCoord GCELLGRIDX,
 {
   std::map<frCoord, int> guideOffsetXMap, guideOffsetYMap;
   // get GCell offset information loop
-  for (auto& [netName, rects] : tmpGuides_) {
+  for (auto& [netName, rects] : tmp_guides_) {
     for (auto& rect : rects) {
       // frLayerNum layerNum = rect.getLayerNum();
       Rect guideBBox = rect.getBBox();
@@ -640,12 +846,11 @@ void GuideProcessor::buildGCellPatterns()
       {std::move(xgp), std::move(ygp)});
 }
 
-void GuideProcessor::patchGuides_extendGuidesToCoverPin(
-    frNet* net,
-    std::vector<frRect>& guides,
-    const Point3D& best_pin_loc_idx,
-    const Point3D& best_pin_loc_coords,
-    const int closest_guide_idx)
+void GuideProcessor::patchGuides_helper(frNet* net,
+                                        std::vector<frRect>& guides,
+                                        const Point3D& best_pin_loc_idx,
+                                        const Point3D& best_pin_loc_coords,
+                                        const int closest_guide_idx)
 {
   Point3D guide_pt(
       getClosestPoint(guides[closest_guide_idx], best_pin_loc_coords),
@@ -686,6 +891,15 @@ void GuideProcessor::patchGuides(frNet* net,
                                  frBlockObject* pin,
                                  std::vector<frRect>& guides)
 {
+  if (pin->typeId() != frcBTerm && pin->typeId() != frcInstTerm) {
+    logger_->error(DRT, 1007, "patchGuides invoked with non-term object.");
+  }
+  if (isPinCoveredByGuides(pin, guides)) {
+    return;
+  }
+  // no guide was found that overlaps with any of the pin shapes, then we patch
+  // the guides
+
   const std::string name = getPinName(pin);
   logger_->info(DRT,
                 1000,
@@ -708,7 +922,7 @@ void GuideProcessor::patchGuides(frNet* net,
   const int closest_guide_idx = findClosestGuide(
       best_pin_loc_coords, guides, candidate_guides_indices, 1);
   // gets the point in the closer guide that is closer to the bestPinLoc
-  patchGuides_extendGuidesToCoverPin(
+  patchGuides_helper(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
 }
 
@@ -716,135 +930,23 @@ void GuideProcessor::genGuides_pinEnclosure(frNet* net,
                                             std::vector<frRect>& guides)
 {
   for (auto pin : net->getInstTerms()) {
-    checkPinForGuideEnclosure(pin, net, guides);
+    patchGuides(net, pin, guides);
   }
   for (auto pin : net->getBTerms()) {
-    checkPinForGuideEnclosure(pin, net, guides);
+    patchGuides(net, pin, guides);
   }
 }
 
-void GuideProcessor::checkPinForGuideEnclosure(frBlockObject* pin,
-                                               frNet* net,
-                                               std::vector<frRect>& guides)
+void GuideProcessor::genGuides_prep(const std::vector<frRect>& rects,
+                                    TrackIntervalsByLayer& intvs)
 {
-  if (pin->typeId() != frcBTerm && pin->typeId() != frcInstTerm) {
-    logger_->error(
-        DRT, 1007, "checkPinForGuideEnclosure invoked with non-term object.");
-  }
-  std::vector<frRect> pinShapes = getPinShapes(pin);
-  for (auto& pinRect : pinShapes) {
-    for (auto& guide : guides) {
-      if (pinRect.getLayerNum() == guide.getLayerNum()
-          && guide.getBBox().overlaps(pinRect.getBBox())) {
-        return;
-      }
-    }
-  }
-  patchGuides(net, pin, guides);
-}
-
-void GuideProcessor::genGuides_merge(
-    std::vector<frRect>& rects,
-    std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
-{
-  for (auto& rect : rects) {
-    if (rect.getLayerNum() > TOP_ROUTING_LAYER) {
-      logger_->error(DRT,
-                     3000,
-                     "Guide in layer {} which is above max routing layer {}",
-                     rect.getLayerNum(),
-                     TOP_ROUTING_LAYER);
-    }
-    Rect box = rect.getBBox();
-    Point pt(box.ll());
-    Point idx = getDesign()->getTopBlock()->getGCellIdx(pt);
-    frCoord x1 = idx.x();
-    frCoord y1 = idx.y();
-    pt = {box.xMax() - 1, box.yMax() - 1};
-    idx = getDesign()->getTopBlock()->getGCellIdx(pt);
-    frCoord x2 = idx.x();
-    frCoord y2 = idx.y();
-    auto layerNum = rect.getLayerNum();
-    if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-      for (auto i = y1; i <= y2; i++) {
-        intvs[layerNum][i].insert(
-            boost::icl::interval<frCoord>::closed(x1, x2));
-      }
-    } else {
-      for (auto i = x1; i <= x2; i++) {
-        intvs[layerNum][i].insert(
-            boost::icl::interval<frCoord>::closed(y1, y2));
-      }
-    }
-  }
-  // trackIdx, beginIdx, endIdx, layerNum
-  std::vector<std::tuple<frCoord, frCoord, frCoord, frLayerNum>> touchGuides;
-  // append touching edges
-  for (int lNum = 0; lNum < (int) intvs.size(); lNum++) {
-    auto& m = intvs[lNum];
-    int prevTrackIdx = -2;
-    for (auto& [trackIdx, intvS] : m) {
-      if (trackIdx == prevTrackIdx + 1) {
-        auto& prevIntvS = m[prevTrackIdx];
-        auto newIntv = intvS & prevIntvS;
-        for (const auto& intv : newIntv) {
-          auto beginIdx = intv.lower();
-          auto endIdx = intv.upper();
-          bool haveLU = false;
-          // lower layer intersection
-          if (lNum - 2 >= 0) {
-            auto nbrLayerNum = lNum - 2;
-            for (auto it2 = intvs[nbrLayerNum].lower_bound(beginIdx);
-                 it2 != intvs[nbrLayerNum].end() && it2->first <= endIdx;
-                 it2++) {
-              if (boost::icl::contains(it2->second, trackIdx)
-                  && boost::icl::contains(it2->second, prevTrackIdx)) {
-                haveLU = true;
-                break;
-              }
-            }
-          }
-          if (lNum + 2 < (int) intvs.size() && !haveLU) {
-            auto nbrLayerNum = lNum + 2;
-            for (auto it2 = intvs[nbrLayerNum].lower_bound(beginIdx);
-                 it2 != intvs[nbrLayerNum].end() && it2->first <= endIdx;
-                 it2++) {
-              if (boost::icl::contains(it2->second, trackIdx)
-                  && boost::icl::contains(it2->second, prevTrackIdx)) {
-                haveLU = true;
-                break;
-              }
-            }
-          }
-          if (!haveLU) {
-            // add touching guide;
-            // std::cout <<"found touching guide" <<std::endl;
-            if (lNum + 2 < (int) intvs.size()) {
-              touchGuides.emplace_back(
-                  beginIdx, prevTrackIdx, trackIdx, lNum + 2);
-            } else if (lNum - 2 >= 0) {
-              touchGuides.emplace_back(
-                  beginIdx, prevTrackIdx, trackIdx, lNum - 2);
-            } else {
-              logger_->error(
-                  DRT, 228, "genGuides_merge cannot find touching layer.");
-            }
-          }
-        }
-      }
-      prevTrackIdx = trackIdx;
-    }
-  }
-
-  for (auto& [trackIdx, beginIdx, endIdx, lNum] : touchGuides) {
-    intvs[lNum][trackIdx].insert(
-        boost::icl::interval<frCoord>::closed(beginIdx, endIdx));
-  }
+  initGuideIntervals(rects, getDesign(), intvs);
+  addTouchingGuidesBridges(intvs, logger_);
 }
 
 void GuideProcessor::genGuides_split(
     std::vector<frRect>& rects,
-    std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
+    TrackIntervalsByLayer& intvs,
     std::map<std::pair<Point, frLayerNum>,
              std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     std::map<frBlockObject*,
@@ -1216,95 +1318,54 @@ void GuideProcessor::genGuides_initPin2GCellMap(
 void GuideProcessor::genGuides_addCoverGuide(frNet* net,
                                              std::vector<frRect>& rects)
 {
-  std::vector<frBlockObject*> terms;
   for (auto& instTerm : net->getInstTerms()) {
-    terms.push_back(instTerm);
-  }
-  for (auto& term : net->getBTerms()) {
-    terms.push_back(term);
-  }
-
-  for (auto term : terms) {
-    // ap
-    dbTransform instXform;  // (0,0), R0
-    dbTransform shiftXform;
-    frInst* inst = nullptr;
-    switch (term->typeId()) {
-      case frcInstTerm: {
-        inst = static_cast<frInstTerm*>(term)->getInst();
-        shiftXform = inst->getTransform();
-        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-        instXform = inst->getUpdatedXform();
-        auto trueTerm = static_cast<frInstTerm*>(term)->getTerm();
-
-        genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
-        break;
-      }
-      case frcBTerm: {
-        auto trueTerm = static_cast<frBTerm*>(term);
-        genGuides_addCoverGuide_helper(term, trueTerm, inst, shiftXform, rects);
-        break;
-      }
-      default:
-        break;
-    }
+    genGuides_addCoverGuide_helper(instTerm, rects);
   }
 }
 
-template <typename T>
-void GuideProcessor::genGuides_addCoverGuide_helper(frBlockObject* term,
-                                                    T* trueTerm,
-                                                    frInst* inst,
-                                                    dbTransform& shiftXform,
+void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* term,
                                                     std::vector<frRect>& rects)
 {
-  int pinIdx = 0;
-  int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-  for (auto& pin : trueTerm->getPins()) {
-    frAccessPoint* prefAp = nullptr;
-    if (inst) {
-      prefAp = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
-    }
+  const frInst* inst = term->getInst();
+  dbTransform transform = inst->getTransform();
+  transform.setOrient(dbOrientType(dbOrientType::R0));
+  int pin_idx = 0;
+  const int pin_access_idx = inst->getPinAccessIdx();
+  for (const auto& pin : term->getTerm()->getPins()) {
     if (!pin->hasPinAccess()) {
       continue;
     }
-    if (pinAccessIdx == -1) {
-      continue;
-    }
-
-    if (!prefAp) {
-      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-        prefAp = ap.get();
-        break;
+    frAccessPoint* pref_ap = term->getAccessPoint(pin_idx);
+    if (!pref_ap) {
+      const auto pa = pin->getPinAccess(pin_access_idx);
+      if (pa->getNumAccessPoints() != 0) {
+        pref_ap = pa->getAccessPoint(0);
       }
     }
 
-    if (prefAp) {
-      Point bp = prefAp->getPoint();
-      auto bNum = prefAp->getLayerNum();
-      shiftXform.apply(bp);
-
-      Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
-      Rect llBox = getDesign()->getTopBlock()->getGCellBox(
+    if (pref_ap) {
+      Point pt = pref_ap->getPoint();
+      transform.apply(pt);
+      const Point idx = getDesign()->getTopBlock()->getGCellIdx(pt);
+      const Rect ll_box = getDesign()->getTopBlock()->getGCellBox(
           Point(idx.x() - 1, idx.y() - 1));
-      Rect urBox = getDesign()->getTopBlock()->getGCellBox(
+      const Rect ur_box = getDesign()->getTopBlock()->getGCellBox(
           Point(idx.x() + 1, idx.y() + 1));
-      Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
-      frLayerNum beginLayerNum = bNum;
-      frLayerNum endLayerNum = std::min(bNum + 4, getTech()->getTopLayerNum());
+      const Rect cover_box(
+          ll_box.xMin(), ll_box.yMin(), ur_box.xMax(), ur_box.yMax());
+      const frLayerNum begin_layer_num = pref_ap->getLayerNum();
+      const frLayerNum end_layer_num
+          = std::min(begin_layer_num + 4, getTech()->getTopLayerNum());
 
-      for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
-        for (int xIdx = -1; xIdx <= 1; xIdx++) {
-          for (int yIdx = -1; yIdx <= 1; yIdx++) {
-            frRect coverGuideRect;
-            coverGuideRect.setBBox(coverBox);
-            coverGuideRect.setLayerNum(lNum);
-            rects.push_back(coverGuideRect);
-          }
-        }
+      for (auto layer_num = begin_layer_num; layer_num <= end_layer_num;
+           layer_num += 2) {
+        frRect cover_guide;
+        cover_guide.setBBox(cover_box);
+        cover_guide.setLayerNum(layer_num);
+        rects.push_back(cover_guide);
       }
     }
-    pinIdx++;
+    pin_idx++;
   }
 }
 
@@ -1313,16 +1374,17 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
   net->clearGuides();
 
   genGuides_pinEnclosure(net, rects);
+
   int size = (int) getTech()->getLayers().size();
   if (TOP_ROUTING_LAYER < std::numeric_limits<int>::max()
       && TOP_ROUTING_LAYER >= 0) {
     size = std::min(size, TOP_ROUTING_LAYER + 1);
   }
-  std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>> intvs(size);
+  TrackIntervalsByLayer intvs(size);
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
-  genGuides_merge(rects, intvs);  // merge and add touching guide
+  genGuides_prep(rects, intvs);
 
   std::map<std::pair<Point, frLayerNum>,
            std::set<frBlockObject*, frBlockObjectComp>>
@@ -1804,7 +1866,7 @@ void GuideProcessor::saveGuidesUpdates()
 
 void GuideProcessor::processGuides()
 {
-  if (tmpGuides_.empty()) {
+  if (tmp_guides_.empty()) {
     return;
   }
   ProfileTask profile("IO:postProcessGuide");
@@ -1813,9 +1875,9 @@ void GuideProcessor::processGuides()
   }
   buildGCellPatterns();
 
-  getDesign()->getRegionQuery()->initOrigGuide(tmpGuides_);
+  getDesign()->getRegionQuery()->initOrigGuide(tmp_guides_);
   int cnt = 0;
-  for (auto& [net, rects] : tmpGuides_) {
+  for (auto& [net, rects] : tmp_guides_) {
     net->setOrigGuides(rects);
     genGuides(net, rects);
     cnt++;

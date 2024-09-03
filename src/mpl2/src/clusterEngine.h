@@ -189,7 +189,7 @@ class ClusteringEngine
   void updateSizeThresholds();
   void breakCluster(Cluster* parent);
   void createFlatCluster(odb::dbModule* module, Cluster* parent);
-  void addModuleInstsToCluster(Cluster* cluster, odb::dbModule* module);
+  void addModuleLeafInstsToCluster(Cluster* cluster, odb::dbModule* module);
   void createCluster(odb::dbModule* module, Cluster* parent);
   void createCluster(Cluster* parent);
   void updateSubTree(Cluster* parent);

@@ -50,6 +50,8 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
 
+using AdjacencyList = std::vector<std::vector<int>>;
+
 namespace utl {
 class Logger;
 }
@@ -190,6 +192,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void readSegments(const char* file_name);
   bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
   bool segmentIsLine(const GSegment& segment);
+  bool segmentCoversPin(const GSegment& segment, const Pin& pin);
+  AdjacencyList buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
@@ -222,6 +226,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // check_antennas
   bool haveRoutes() override;
   bool haveDetailedRoutes();
+  bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
   void makeNetWires() override;
   void destroyNetWires() override;
 
@@ -318,7 +323,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
-  bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
+  bool pinPositionsChanged(Net* net, std::multiset<RoutePt>& last_pos);
+  bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
   std::vector<LayerId> findTransitionLayers();
   void adjustTransitionLayers(
       const std::vector<LayerId>& transition_layers,
@@ -403,6 +409,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  void shrinkNetRoute(odb::dbNet* db_net);
+  void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
