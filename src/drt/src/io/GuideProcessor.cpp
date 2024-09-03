@@ -1767,6 +1767,7 @@ void GuideProcessor::saveGuidesUpdates()
   auto dbTech = db_->getTech();
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     auto dbNet = block->findNet(net->getName().c_str());
+    //if (dbNet->hasJumpers()) continue;
     dbNet->clearGuides();
     for (auto& guide : net->getGuides()) {
       auto [bp, ep] = guide->getPoints();
