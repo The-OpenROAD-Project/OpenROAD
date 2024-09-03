@@ -742,6 +742,9 @@ Usage: $0
        $0 -save-deps-prefixes=FILE
                                 # Dumps OpenROAD build arguments and variables
                                 # to FILE
+       $0 -constant-build-dir
+                                # Use constant build directory, instead of
+                                #    random one.
 
 EOF
     exit "${1:-1}"
@@ -797,6 +800,14 @@ while [ "$#" -gt 0 ]; do
             fi
             export PREFIX="${HOME}/.local"
             export isLocal="true"
+            ;;
+        -constant-build-dir)
+            if [[ -d "$baseDir" ]]; then
+                echo "INFO: removing old building directory $baseDir"
+                rm -r "$baseDir"
+            fi
+            baseDir="/tmp/DependencyInstaller-OpenROAD"
+            mkdir -p "$baseDir"
             ;;
         -prefix=*)
             if [[ ! -z ${PREFIX} ]]; then
