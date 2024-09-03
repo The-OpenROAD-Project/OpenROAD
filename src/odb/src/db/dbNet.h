@@ -129,6 +129,7 @@ class _dbNet : public _dbObject
   uint _ccAdjustOrder;
   // NON PERSISTANT-MEMBERS
   int _drivingIterm;
+  bool _has_jumpers;
 
   _dbNet(_dbDatabase*);
   _dbNet(_dbDatabase*, const _dbNet& n);
