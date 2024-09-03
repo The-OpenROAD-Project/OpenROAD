@@ -954,6 +954,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
+  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+    stream << block._blocked_regions_for_pins;
+  }
   stream << block._tech;
   stream << block._chip;
   stream << block._bbox;
@@ -1070,6 +1073,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._corner_name_list;
   stream >> block._name;
   stream >> block._die_area;
+  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+    stream >> block._blocked_regions_for_pins;
+  }
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   if (db->isSchema(db_schema_block_tech)) {
