@@ -109,6 +109,7 @@ class dbMaster;
 class dbMTerm;
 class dbMPin;
 class dbTarget;
+class dbGDSLib;
 
 // Tech objects
 class dbTech;
@@ -131,6 +132,14 @@ class dbAccessPoint;
 class dbBusPort;
 class dbDft;
 class dbGCellGrid;
+class dbGDSBoundary;
+class dbGDSBox;
+class dbGDSElement;
+class dbGDSNode;
+class dbGDSPath;
+class dbGDSSRef;
+class dbGDSStructure;
+class dbGDSText;
 class dbGlobalConnect;
 class dbGroup;
 class dbGuide;
@@ -5714,6 +5723,38 @@ class dbMaster : public dbObject
   void staSetCell(void* cell);
 };
 
+class dbGDSLib : public dbObject
+{
+ public:
+  void setLibname(std::string libname);
+
+  std::string getLibname() const;
+
+  void set_lastAccessed(std::tm lastAccessed);
+
+  std::tm get_lastAccessed() const;
+
+  void set_lastModified(std::tm lastModified);
+
+  std::tm get_lastModified() const;
+
+  void set_libDirSize(int16_t libDirSize);
+
+  int16_t get_libDirSize() const;
+
+  void set_srfName(std::string srfName);
+
+  std::string get_srfName() const;
+
+  void setUnits(double uu_per_dbu, double dbu_per_meter);
+
+  std::pair<double, double> getUnits() const;
+
+  dbGDSStructure* findGDSStructure(const char* name) const;
+
+  dbSet<dbGDSStructure> getGDSStructures();
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// A MTerm is the element that represents a terminal on a Master.
@@ -7314,6 +7355,52 @@ class dbGCellGrid : public dbObject
   dbMatrix<dbGCellGrid::GCellData> getDirectionCongestionMap(
       const dbTechLayerDir& direction);
   // User Code End dbGCellGrid
+};
+
+class dbGDSElement : public dbObject
+{
+ public:
+  void setLayer(int16_t layer);
+
+  int16_t getLayer() const;
+
+  void setDatatype(int16_t datatype);
+
+  int16_t getDatatype() const;
+
+  // User Code Begin dbGDSElement
+
+  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+
+  std::vector<Point>& getXY();
+
+  // User Code End dbGDSElement
+};
+
+class dbGDSStructure : public dbObject
+{
+ public:
+  char* getName() const;
+
+  // User Code Begin dbGDSStructure
+
+  dbGDSLib* getGDSLib();
+
+  static dbGDSStructure* create(dbGDSLib* lib, const char* name);
+
+  static void destroy(dbGDSStructure* structure);
+
+  void removeElement(int index);
+
+  void addElement(dbGDSElement* element);
+
+  dbGDSElement* getElement(int index);
+
+  dbGDSElement* operator[](int index);
+
+  int getNumElements();
+
+  // User Code End dbGDSStructure
 };
 
 class dbGlobalConnect : public dbObject
@@ -10211,6 +10298,75 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 
   static void destroy(dbTechLayerWrongDirSpacingRule* rule);
   // User Code End dbTechLayerWrongDirSpacingRule
+};
+
+class dbGDSBoundary : public dbGDSElement
+{
+ public:
+};
+
+class dbGDSBox : public dbGDSElement
+{
+ public:
+};
+
+class dbGDSNode : public dbGDSElement
+{
+ public:
+};
+
+class dbGDSPath : public dbGDSElement
+{
+ public:
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void set_pathType(int16_t pathType);
+
+  int16_t get_pathType() const;
+};
+
+class dbGDSSRef : public dbGDSElement
+{
+ public:
+  void set_sName(const std::string& sName);
+
+  std::string get_sName() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void set_colRow(std::pair<int16_t, int16_t> colRow);
+
+  std::pair<int16_t, int16_t> get_colRow() const;
+
+  // User Code Begin dbGDSSRef
+
+  dbGDSStructure* getStructure() const;
+
+  // User Code End dbGDSSRef
+};
+
+class dbGDSText : public dbGDSElement
+{
+ public:
+  void setPresentation(dbGDSTextPres presentation);
+
+  dbGDSTextPres getPresentation() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setTransform(dbGDSSTrans transform);
+
+  dbGDSSTrans getTransform() const;
+
+  void setText(const std::string& text);
+
+  std::string getText() const;
 };
 
 // Generator Code End ClassDefinition
