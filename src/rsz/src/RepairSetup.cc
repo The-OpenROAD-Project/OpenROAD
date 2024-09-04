@@ -1399,7 +1399,7 @@ void RepairSetup::splitLoads(PathRef* drvr_path,
       sta_->connectPin(load, load_port, out_net);
     }
   }
-  Pin* buffer_out_pin = network_->findPin(buffer, output);
+  const Pin* buffer_out_pin = network_->findPin(buffer, output);
   resizer_->resizeToTargetSlew(buffer_out_pin);
   resizer_->parasiticsInvalid(net);
   resizer_->parasiticsInvalid(out_net);

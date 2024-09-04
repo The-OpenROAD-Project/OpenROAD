@@ -1025,7 +1025,7 @@ void Resizer::makeEquivCells()
   sta_->makeEquivCells(&libs, nullptr);
 }
 
-int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const Pin* &drvr_pin)
 {
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
@@ -1057,7 +1057,9 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
                    sdc_network_->pathName(drvr_pin),
                    cell->name(),
                    target_cell->name());
+        Port *port = network_->port(drvr_pin);
         if (replaceCell(inst, target_cell, true) && !revisiting_inst) {
+          drvr_pin = network_->findPin(inst, port);
           return 1;
         }
       }

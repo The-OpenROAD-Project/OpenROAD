@@ -580,7 +580,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     }
   }
 
-  Pin* buffer_out_pin = network_->findPin(buffer, output);
+  const Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
