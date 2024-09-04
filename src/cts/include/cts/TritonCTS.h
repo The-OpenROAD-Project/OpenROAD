@@ -96,9 +96,6 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& buffers);
-  std::vector<std::string> findMatchingSubset(
-      const std::string& pattern,
-      const std::vector<std::string>& buffers);
   bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
