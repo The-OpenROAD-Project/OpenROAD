@@ -1853,7 +1853,7 @@ void RepairDesign::makeRepeater(const char* reason,
 
   // Resize repeater as we back up by levels.
   if (resize) {
-    const Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
+    Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
     resizer_->resizeToTargetSlew(buffer_out_pin);
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);

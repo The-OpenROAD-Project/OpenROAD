@@ -458,7 +458,7 @@ class Resizer : public dbStaState
   void resizePreamble();
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const Pin* &drvr_pin);
+  int resizeToTargetSlew(const Pin* drvr_pin);
 
   ////////////////////////////////////////////////////////////////
 
