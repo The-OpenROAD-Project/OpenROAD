@@ -159,13 +159,15 @@ void RepairDesign::repairDesign(
   resizer_->resized_multi_output_insts_.clear();
 
   if (gain_buffering) {
-    // If gain-based buffering is enabled, we need to override slews in order to get
-    // good required time estimates.
+    // If gain-based buffering is enabled, we need to override slews in order to
+    // get good required time estimates.
     for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
       Vertex* drvr = resizer_->level_drvr_vertices_[i];
       for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
-        sta_->setAnnotatedSlew(drvr, resizer_->tgt_slew_corner_,
-                               sta::MinMaxAll::all(), rf->asRiseFallBoth(),
+        sta_->setAnnotatedSlew(drvr,
+                               resizer_->tgt_slew_corner_,
+                               sta::MinMaxAll::all(),
+                               rf->asRiseFallBoth(),
                                resizer_->tgt_slews_[rf->index()]);
       }
     }
@@ -232,7 +234,8 @@ void RepairDesign::repairDesign(
     if (gain_buffering) {
       for (auto mm : sta::MinMaxAll::all()->range()) {
         for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-          const DcalcAnalysisPt *dcalc_ap = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
+          const DcalcAnalysisPt* dcalc_ap
+              = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
           drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
         }
       }
@@ -418,7 +421,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
   return false;
 }
 
-static float bufferCin(const LibertyCell *cell)
+static float bufferCin(const LibertyCell* cell)
 {
   LibertyPort *a, *y;
   cell->bufferPorts(a, y);
@@ -429,23 +432,25 @@ void RepairDesign::findBufferSizes()
 {
   buffer_sizes_.clear();
   buffer_sizes_ = resizer_->buffer_cells_;
-  std::sort(buffer_sizes_.begin(), buffer_sizes_.end(),
-            [=](LibertyCell *a, LibertyCell *b) {
-    return bufferCin(a) < bufferCin(b);
-  });
+  std::sort(buffer_sizes_.begin(),
+            buffer_sizes_.end(),
+            [=](LibertyCell* a, LibertyCell* b) {
+              return bufferCin(a) < bufferCin(b);
+            });
 }
 
 void RepairDesign::performGainBuffering(Net* net,
-                                        const Pin *drvr_pin,
+                                        const Pin* drvr_pin,
                                         int max_fanout)
 {
-  struct EnqueuedPin {
-    Pin *pin;
+  struct EnqueuedPin
+  {
+    Pin* pin;
     PathRef required_path;
     Delay required_delay;
     int level;
 
-    Required required(const StaState *sta) const
+    Required required(const StaState* sta) const
     {
       if (required_path.isNull()) {
         return INF;
@@ -453,12 +458,12 @@ void RepairDesign::performGainBuffering(Net* net,
       return required_path.required(sta) - required_delay;
     }
 
-    std::pair<Required, int> sort_label(const StaState *sta) const
+    std::pair<Required, int> sort_label(const StaState* sta) const
     {
       return std::make_tuple(required(sta), -level);
     }
 
-    float capacitance(const Network *network)
+    float capacitance(const Network* network)
     {
       return network->libertyPort(pin)->capacitance();
     }
@@ -466,21 +471,23 @@ void RepairDesign::performGainBuffering(Net* net,
 
   class PinRequiredHigher
   {
-  private:
-    const Network *network_;
+   private:
+    const Network* network_;
 
-  public:
-    PinRequiredHigher(const Network *network) : network_(network) {};
+   public:
+    PinRequiredHigher(const Network* network) : network_(network){};
 
-    bool operator()(const EnqueuedPin &a, const EnqueuedPin &b) const {
+    bool operator()(const EnqueuedPin& a, const EnqueuedPin& b) const
+    {
       auto la = a.sort_label(network_), lb = b.sort_label(network_);
-      if (la > lb)
+      if (la > lb) {
         return true;
-      else if (la < lb)
+      }
+      if (la < lb) {
         return false;
-      else
-        return sta::stringLess(network_->pathName(a.pin),
-                               network_->pathName(b.pin));
+      }
+      return sta::stringLess(network_->pathName(a.pin),
+                             network_->pathName(b.pin));
     }
   };
 
@@ -490,28 +497,24 @@ void RepairDesign::performGainBuffering(Net* net,
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-    if (pin != drvr_pin && !network_->isTopLevelPort(pin) &&
-        network_->direction(pin) == sta::PortDirection::input() && network_->libertyPort(pin)) {
+    if (pin != drvr_pin && !network_->isTopLevelPort(pin)
+        && network_->direction(pin) == sta::PortDirection::input()
+        && network_->libertyPort(pin)) {
       Vertex* vertex = graph_->pinLoadVertex(pin);
       PathRef req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
-      sinks.push_back({
-        const_cast<Pin*>(pin),
-        req_path,
-        0.0,
-        0
-      });
+      sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
     }
   }
   delete pin_iter;
 
   // Keep track of the vertices at the boundary of the tree so we know where
   // to ask for delays to be recomputed
-  std::vector<Vertex *> tree_boundary;
+  std::vector<Vertex*> tree_boundary;
 
   float cin;
   if (getCin(drvr_pin, cin)) {
     float load = 0.0;
-    for (auto &sink : sinks) {
+    for (auto& sink : sinks) {
       load += sink.capacitance(network_);
     }
     std::sort(sinks.begin(), sinks.end(), PinRequiredHigher(network_));
@@ -552,14 +555,15 @@ void RepairDesign::performGainBuffering(Net* net,
         break;
       }
 
-      Net *new_net = resizer_->makeUniqueNet();
+      Net* new_net = resizer_->makeUniqueNet();
       dbNet* net_db = db_network_->staToDb(net);
       dbNet* new_net_db = db_network_->staToDb(new_net);
       new_net_db->setSigType(net_db->getSigType());
 
       string buffer_name = resizer_->makeUniqueInstName("gain");
       const Point drvr_loc = db_network_->location(drvr_pin);
-      Instance *inst = resizer_->makeBuffer(*size, buffer_name.c_str(),
+      Instance* inst = resizer_->makeBuffer(*size,
+                                            buffer_name.c_str(),
                                             // TODO: non-top module handling?
                                             db_network_->topInstance(),
                                             drvr_loc);
@@ -581,29 +585,26 @@ void RepairDesign::performGainBuffering(Net* net,
         sta_->disconnectPin(it->pin);
         sta_->connectPin(sink_inst, sink_port, new_net);
         if (it->level == 0) {
-          Pin *new_pin = network_->findPin(sink_inst, sink_port);
+          Pin* new_pin = network_->findPin(sink_inst, sink_port);
           tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
         }
       }
 
-      Pin *new_input_pin = network_->findPin(inst, size_in);
+      Pin* new_input_pin = network_->findPin(inst, size_in);
 
       Delay buffer_delay = resizer_->bufferDelay(
-        *size,
-        load_acc,
-        resizer_->tgt_slew_dcalc_ap_
-      );
+          *size, load_acc, resizer_->tgt_slew_dcalc_ap_);
 
-      auto new_pin = EnqueuedPin{
-        new_input_pin,
-        (group_end - 1)->required_path,
-        (group_end - 1)->required_delay + buffer_delay,
-        max_level + 1
-      };
+      auto new_pin = EnqueuedPin{new_input_pin,
+                                 (group_end - 1)->required_path,
+                                 (group_end - 1)->required_delay + buffer_delay,
+                                 max_level + 1};
 
       sinks.erase(sinks.begin(), group_end);
-      sinks.insert(std::upper_bound(sinks.begin(), sinks.end(), new_pin,
-                                    PinRequiredHigher(network_)), new_pin);
+      sinks.insert(
+          std::upper_bound(
+              sinks.begin(), sinks.end(), new_pin, PinRequiredHigher(network_)),
+          new_pin);
 
       load += size_in->capacitance();
     }
@@ -645,7 +646,8 @@ void RepairDesign::repairNet(Net* net,
 
     if (buffer_gain_ != 0.0) {
       float fanout, max_fanout, fanout_slack;
-      // TODO: is it correct to unconditionally use max_fanout? what's fanout_slack?
+      // TODO: is it correct to unconditionally use max_fanout? what's
+      // fanout_slack?
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
       int resized = resizer_->resizeToTargetSlew(drvr_pin);
