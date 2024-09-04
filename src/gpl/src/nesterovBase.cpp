@@ -904,13 +904,13 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-
-  // gCellStor init
-//  gCellStor_.reserve(pbc_->placeInsts().size());
+//  db_cbk_ = new nesterovBaseDbCbk(this);
+//  db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
 
   for (auto& inst : pbc_->placeInsts()) {
      GCell* gCell = new GCell(inst);
-//    gCellStor_.emplace_back(inst);
+     // This condition is from the previous code. Can this ever happen? 
+     // Would only happen if inst is a nullptr!
 //    if (!gCell.isInstance()) {
 //      continue;
 //    }
@@ -919,6 +919,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     gCellMap_[gCell->instance()] = gCell;
   }
   log_->report("nbc: newGCells_.size(): {}", newGCells_.size());
+  
+    // gCellStor init
+//  gCellStor_.reserve(pbc_->placeInsts().size());
 //  for (auto& inst : pbc_->placeInsts()) {
 //    gCellStor_.emplace_back(inst);
 //  }
@@ -935,36 +938,46 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
 //    gCellMap_[gCell.instance()] = &gCell;
 //  }
 
-  // TODO:
-  // at this moment, GNet and GPin is equal to
-  // Net and Pin
-
   // gPinStor init
-  gPinStor_.reserve(pbc_->pins().size());
+//  gPinStor_.reserve(pbc_->pins().size());
+//  for (auto& pin : pbc_->pins()) {
+//    GPin myGPin(pin);
+//    gPinStor_.push_back(myGPin);
+//  }
+//
+//  // gPin ptr init
+//  gPins_.reserve(gPinStor_.size());
+//  for (auto& gPin : gPinStor_) {
+//    gPins_.push_back(&gPin);
+//    gPinMap_[gPin.pin()] = &gPin;
+//  }
+  
   for (auto& pin : pbc_->pins()) {
-    GPin myGPin(pin);
-    gPinStor_.push_back(myGPin);
+    GPin* myGPin = new GPin(pin);
+    gPins_.insert(myGPin);
+    gPinMap_[myGPin->pin()] = myGPin;
   }
-
+  
+  
+  
   // gNetStor init
-  gNetStor_.reserve(pbc_->nets().size());
+//  gNetStor_.reserve(pbc_->nets().size());
+//  for (auto& net : pbc_->nets()) {
+//    GNet myGNet(net);
+//    gNetStor_.push_back(myGNet);
+//  }
+//
+//  // gNet ptr init
+//  gNets_.reserve(gNetStor_.size());
+//  for (auto& gNet : gNetStor_) {
+//    gNets_.push_back(&gNet);
+//    gNetMap_[gNet.net()] = &gNet;
+//  }
+  
   for (auto& net : pbc_->nets()) {
-    GNet myGNet(net);
-    gNetStor_.push_back(myGNet);
-  }
-
-  // gPin ptr init
-  gPins_.reserve(gPinStor_.size());
-  for (auto& gPin : gPinStor_) {
-    gPins_.push_back(&gPin);
-    gPinMap_[gPin.pin()] = &gPin;
-  }
-
-  // gNet ptr init
-  gNets_.reserve(gNetStor_.size());
-  for (auto& gNet : gNetStor_) {
-    gNets_.push_back(&gNet);
-    gNetMap_[gNet.net()] = &gNet;
+    GNet* myGNet = new GNet(net);
+    gNets_.insert(myGNet);
+    gNetMap_[myGNet->net()] = myGNet;
   }
 
   // gCellStor_'s pins_ fill
@@ -993,21 +1006,31 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gPinStor_' GNet and GCell fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
-
-    gPin.setGCell(pbToNb(gPin.pin()->instance()));
-    gPin.setGNet(pbToNb(gPin.pin()->net()));
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
+//    auto& gPin = *it;  // old-style loop for old OpenMP
+//
+//    gPin.setGCell(pbToNb(gPin.pin()->instance()));
+//    gPin.setGNet(pbToNb(gPin.pin()->net()));
+//  }
+  for(auto& gPin : gPins_){
+    gPin->setGCell(pbToNb(gPin->pin()->instance()));
+    gPin->setGNet(pbToNb(gPin->pin()->net()));    
   }
 
   // gNetStor_'s GPin fill
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
-
-    for (auto& pin : gNet.net()->pins()) {
-      gNet.addGPin(pbToNb(pin));
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
+//    auto& gNet = *it;  // old-style loop for old OpenMP
+//
+//    for (auto& pin : gNet.net()->pins()) {
+//      gNet.addGPin(pbToNb(pin));
+//    }
+//  }
+//}
+  for (GNet* gNet : gNets_) {
+    for (auto& pin : gNet->net()->pins()) {
+      gNet->addGPin(pbToNb(pin));
     }
   }
 }
@@ -1061,16 +1084,21 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // in ePlace paper.
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
-  assert(omp_get_thread_num() == 0);
-  // clear all WA variables.
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
-    // old-style loop for old OpenMP
-    gPin->clearWaVars();
-  }
+//  assert(omp_get_thread_num() == 0);
+//  // clear all WA variables.
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
+//    // old-style loop for old OpenMP
+//    gPin->clearWaVars();
+//  }
+  
+    for(auto& gPin : gPins_){
+      gPin->clearWaVars();
+    }
 
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
+//#pragma omp parallel for num_threads(num_threads_)
+//  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
+  for (GNet* gNet : gNets_) {
     // old-style loop for old OpenMP
 
     gNet->clearWaVars();
@@ -1297,10 +1325,11 @@ void NesterovBaseCommon::updateDbGCells()
 
 int64_t NesterovBaseCommon::getHpwl()
 {
-  assert(omp_get_thread_num() == 0);
+//  assert(omp_get_thread_num() == 0);
   int64_t hpwl = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
+//#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
+//  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
+  for (GNet* gNet : gNets_) {
     // old-style loop for old OpenMP
     gNet->updateBox();
     hpwl += gNet->hpwl();
@@ -1320,7 +1349,6 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
-//  nesterov_base_cbk_ = new nesterovBaseDbCbk(this);
 
   // Set a fixed seed
   srand(42);
@@ -2746,6 +2774,21 @@ bool NesterovBase::revertDivergence()
   return true;
 }
 
+
+void NesterovBaseCommon::createGCell(odb::dbInst* db_inst){
+  //TODO: for now pbc and pb does not support dynamic creation of instances
+  Instance* gpl_inst = new Instance(db_inst,
+                    pbc_->padLeft() * pbc_->siteSizeX(),
+                    pbc_->padRight() * pbc_->siteSizeX(),
+                    pbc_->siteSizeY(),
+                    log_);  
+  GCell* gCell = new GCell(gpl_inst);
+  GCellState emptyState;    
+  newGCells_[gCell] = emptyState;
+  gCellMap_[gCell->instance()] = gCell;
+//  log_->report("nbc: newGCells_.size(): {}", newGCells_.size());
+}
+
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int fastModulo(const int input, const int ceil)
 {
@@ -2927,8 +2970,12 @@ static float getSecondNorm(const std::unordered_map<GCell*, GCellState>& cells, 
 //  return std::sqrt(norm / (2.0 * a.size()));
 //}
 
-//nesterovBaseDbCbk::nesterovBaseDbCbk(NesterovBase* nesterov_base) : nesterov_base_(nesterov_base)
-//{
-//}
+nesterovBaseDbCbk::nesterovBaseDbCbk(NesterovBaseCommon* nesterov_base_common) : nesterov_base_common_(nesterov_base_common)
+{
+}
+
+void nesterovBaseDbCbk::inDbInstCreate(odb::dbInst* db_inst){
+  nesterov_base_common_->createGCell(db_inst);
+}
 
 }  // namespace gpl

@@ -111,7 +111,7 @@ class GCell
   Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
-
+//  const std::set<GPin*>& gPins() const { return gPins_; }
   void addGPin(GPin* gPin);
 
   void setClusteredInstance(const std::vector<Instance*>& insts);
@@ -264,6 +264,7 @@ class GNet
   GNet(const std::vector<Net*>& nets);
 
   Net* net() const;
+  //TODO this will probably have to change with added and removed cells, I assume.
   const std::vector<Net*>& nets() const { return nets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -815,11 +816,19 @@ class NesterovBaseCommon
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
                      int num_threads);
+  
+  ~NesterovBaseCommon() {
+    for (auto gPin : gPins_) {
+        delete gPin;
+    }
+}
 
 //  const std::vector<GCell*>& gCells() const { return gCells_; }
   std::unordered_map<GCell*, GCellState>& gCells() { return newGCells_; }
-  const std::vector<GNet*>& gNets() const { return gNets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+//  const std::vector<GNet*>& gNets() const { return gNets_; }
+  const std::set<GNet*>& gNets() const { return gNets_; }
+//  const std::vector<GPin*>& gPins() const { return gPins_; }
+  const std::set<GPin*>& gPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
@@ -863,6 +872,8 @@ class NesterovBaseCommon
 
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
+  
+  void createGCell(odb::dbInst* db_inst);
 
  private:
   NesterovBaseVars nbVars_;
@@ -870,19 +881,23 @@ class NesterovBaseCommon
   utl::Logger* log_ = nullptr;
 
 //  std::vector<GCell> gCellStor_;
-  std::vector<GNet> gNetStor_;
-  std::vector<GPin> gPinStor_;
+//  std::vector<GNet> gNetStor_;
+//  std::vector<GPin> gPinStor_;
 
 //  std::vector<GCell*> gCells_;
   std::unordered_map<GCell*, GCellState> newGCells_;
-  std::vector<GNet*> gNets_;
-  std::vector<GPin*> gPins_;
+//  std::vector<GNet*> gNets_;
+  std::set<GNet*> gNets_;
+//  std::vector<GPin*> gPins_;
+  std::set<GPin*> gPins_;
 
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
+  nesterovBaseDbCbk* db_cbk_;
+//  friend class nesterovBaseDbCbk;
 };
 
 // Stores instances belonging to a specific power domain
@@ -1045,13 +1060,14 @@ class NesterovBase
   void printStepLength() { printf("stepLength = %f\n", stepLength_); }
 
   bool isDiverged() const { return isDiverged_; }
+  
+  void createGCell(odb::dbInst* db_inst);
 
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_ = nullptr;
-  nesterovBaseDbCbk* nesterov_base_cbk_;
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
@@ -1150,8 +1166,6 @@ class NesterovBase
   float snapshotStepLength_ = 0;
 
   void initFillerGCells();
-  
-  friend class nesterovBaseDbCbk;
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1175,23 +1189,10 @@ class biNormalParameters
 class nesterovBaseDbCbk : public odb::dbBlockCallBackObj
 {
  public:
-  nesterovBaseDbCbk(NesterovBase* nesterov_base);
-//  virtual void inDbPostMoveInst(odb::dbInst* inst);
-  virtual void inDbInstSwapMasterAfter(odb::dbInst* inst);
-//
-//  virtual void inDbNetDestroy(odb::dbNet* net);
-//  virtual void inDbNetCreate(odb::dbNet* net);
-//
-//  virtual void inDbITermPreDisconnect(odb::dbITerm* iterm);
-//  virtual void inDbITermPostConnect(odb::dbITerm* iterm);
-//
-//  virtual void inDbBTermPostConnect(odb::dbBTerm* bterm);
-//  virtual void inDbBTermPreDisconnect(odb::dbBTerm* bterm);
-
+  nesterovBaseDbCbk(NesterovBaseCommon* nesterov_base_common);
+  virtual void inDbInstCreate(odb::dbInst*);
  private:
-//  void instItermsDirty(odb::dbInst* inst);
-
-  NesterovBase* nesterov_base_;
+  NesterovBaseCommon* nesterov_base_common_;
 };
 
 }  // namespace gpl
