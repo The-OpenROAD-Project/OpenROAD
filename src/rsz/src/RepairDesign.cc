@@ -469,7 +469,7 @@ void RepairDesign::performGainBuffering(Net* net,
 
     std::pair<Required, int> sort_label(const StaState* sta) const
     {
-      return std::make_tuple(required(sta), -level);
+      return std::make_pair(required(sta), -level);
     }
 
     float capacitance(const Network* network)
