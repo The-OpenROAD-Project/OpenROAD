@@ -437,7 +437,11 @@ void AntennaChecker::calculateAreas(const LayerToGraphNodes& node_by_layer_map,
         if (!gate.isITerm) {
           continue;
         }
-        info.iterms.push_back(gate.iterm);
+        // Avoid adding driver to the list of iterms
+        // The area of the driver is the only necessary data
+        if (isValidGate(gate.iterm->getMTerm())) {
+          info.iterms.push_back(gate.iterm);
+        }
         info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
         info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         gates_count++;
@@ -1035,6 +1039,7 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
            pin_violation_count,
            antenna_violations);
 
+  net_to_report_.clear();
   return antenna_violations;
 }
 
