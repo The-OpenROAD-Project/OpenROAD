@@ -219,6 +219,7 @@ repair_design
     [-slew_margin slew_margin]
     [-cap_margin cap_margin]
     [-max_utilization util]
+    [-buffer_gain gain_ratio]
     [-verbose]
 ```
 
@@ -230,6 +231,7 @@ repair_design
 | `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-max_utilization` | Defines the percentage of core area used. |
+| `-buffer_gain` | Enables gain-based buffering with the given gain value. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 ### Repair Tie Fanout

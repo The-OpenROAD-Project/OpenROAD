@@ -433,6 +433,7 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
+                                      [-buffer_gain gain] \
                                       [-verbose]}
 
 proc repair_design { args } {
