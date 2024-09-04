@@ -158,17 +158,24 @@ void RepairDesign::repairDesign(
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
+  // keep track of user annotations so we don't remove them
+  std::set<std::pair<Vertex*, int>> slew_user_annotated;
+
   if (gain_buffering) {
     // If gain-based buffering is enabled, we need to override slews in order to
     // get good required time estimates.
     for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
       Vertex* drvr = resizer_->level_drvr_vertices_[i];
       for (auto rf : {RiseFall::rise(), RiseFall::fall()}) {
-        sta_->setAnnotatedSlew(drvr,
-                               resizer_->tgt_slew_corner_,
-                               sta::MinMaxAll::all(),
-                               rf->asRiseFallBoth(),
-                               resizer_->tgt_slews_[rf->index()]);
+        if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
+          sta_->setAnnotatedSlew(drvr,
+                                 resizer_->tgt_slew_corner_,
+                                 sta::MinMaxAll::all(),
+                                 rf->asRiseFallBoth(),
+                                 resizer_->tgt_slews_[rf->index()]);
+        } else {
+          slew_user_annotated.insert(std::make_pair(drvr, rf->index()));
+        }
       }
     }
     findBufferSizes();
@@ -234,9 +241,11 @@ void RepairDesign::repairDesign(
     if (gain_buffering) {
       for (auto mm : sta::MinMaxAll::all()->range()) {
         for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-          const DcalcAnalysisPt* dcalc_ap
-              = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
-          drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
+          if (!slew_user_annotated.count(std::make_pair(drvr, rf->index()))) {
+            const DcalcAnalysisPt* dcalc_ap
+                = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
+            drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
+          }
         }
       }
     }
