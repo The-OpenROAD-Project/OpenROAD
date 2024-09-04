@@ -972,12 +972,12 @@ void io::Parser::setNets(odb::dbBlock* block)
     if (is_special) {
       uNetIn->setIsSpecial(true);
     }
-    std::cout << "Adding net " << net->getConstName();
+    //std::cout << "Adding net " << net->getConstName();
     if (net->hasJumpers()) {
-      std::cout << " with jumpers\n";
+      //std::cout << " with jumpers";
       uNetIn->setHasJumpers(net->hasJumpers());
     }
-    std::cout << std::endl << std::flush;
+    //std::cout << std::endl << std::flush;
     updateNetRouting(netIn, net);
     netIn->setType(net->getSigType());
     if (is_special) {
