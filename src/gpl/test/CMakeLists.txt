@@ -44,8 +44,8 @@ target_include_directories(fft_test
 )
 
 target_link_libraries(fft_test
-  gtest
-  gtest_main
+  GTest::gtest
+  GTest::gtest_main
   spdlog::spdlog
 )
 

@@ -1890,8 +1890,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
       _logger->error(utl::ODB, 250, "Chip does not exist");
     }
   } else if (chip != nullptr) {
-    fprintf(stderr, "Error: Chip already exists\n");
-    return nullptr;
+    _logger->error(utl::ODB, 251, "Chip already exists");
   } else {
     chip = dbChip::create(_db);
   }

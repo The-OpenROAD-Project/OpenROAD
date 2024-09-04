@@ -117,7 +117,10 @@ class FastRouteCore
                 int max_layer,
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
+  void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void mergeNet(odb::dbNet* db_net);
+  void clearNetRoute(odb::dbNet* db_net);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -238,7 +241,7 @@ class FastRouteCore
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
-  void clearNetRoute(const int netID);
+  void clearNetRoute(int netID);
   void clearNets();
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
