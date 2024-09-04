@@ -90,6 +90,14 @@ enum dbObjectType
   dbBusPortObj,
   dbDftObj,
   dbGCellGridObj,
+  dbGDSBoundaryObj,
+  dbGDSBoxObj,
+  dbGDSElementObj,
+  dbGDSNodeObj,
+  dbGDSPathObj,
+  dbGDSSRefObj,
+  dbGDSStructureObj,
+  dbGDSTextObj,
   dbGlobalConnectObj,
   dbGroupObj,
   dbGuideObj,
@@ -136,6 +144,7 @@ enum dbObjectType
 
   // Lib Objects
   dbLibObj,
+  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,

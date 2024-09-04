@@ -87,7 +87,7 @@ bool RepairAntennas::checkAntennaViolations(
     antenna_violations_[db_net];
   }
 
-  bool destroy_wires = !grouter_->haveDetailedRoutes();
+  bool destroy_wires = !grouter_->haveDetailedRoutes(nets_to_repair);
 
   makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
