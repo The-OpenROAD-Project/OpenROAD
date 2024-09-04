@@ -21,6 +21,7 @@ add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/cdl)
+add_subdirectory(src/gdsin)
 
 if(ENABLE_TESTS)
   add_subdirectory(test)
@@ -37,6 +38,7 @@ target_link_libraries(odb
     lefout
     zutil
     utl_lib
+    gdsin
     ${TCL_LIBRARY}
 )
 
