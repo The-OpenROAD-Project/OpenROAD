@@ -605,7 +605,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   // second, look for all buffers with name CLKBUF or clkbuf
   if (buffers.empty()) {
-    sta::PatternMatch patternClkBuf("*CLKBUF*",
+    sta::PatternMatch patternClkBuf(".*CLKBUF.*",
                                     /* is_regexp */ true,
                                     /* nocase */ true,
                                     /* Tcl_interp* */ nullptr);
@@ -624,7 +624,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   // third, look for all buffers with name BUF or buf
   if (buffers.empty()) {
-    sta::PatternMatch patternBuf("*BUF*",
+    sta::PatternMatch patternBuf(".*BUF.*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
                                  /* Tcl_interp* */ nullptr);
@@ -660,29 +660,6 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
           110,
           "No clock buffer candidates could be found from any libraries.");
     }
-
-    // it's possible that pattern-based lib cell search missed
-    // clock buffers (because they are not loaded or linked?)
-    std::string pattern("clkbuf");
-    std::vector<std::string> clockBuffers
-        = findMatchingSubset(pattern, buffers);
-    // clang-format off
-    debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'clkbuf' "
-               "have been found", clockBuffers.size());
-    // clang-format on
-    if (!clockBuffers.empty()) {
-      buffers = std::move(clockBuffers);
-    } else {
-      pattern = std::string("buf");
-      clockBuffers = findMatchingSubset(pattern, buffers);
-      // clang-format off
-      debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'buf' "
-                 "have been found", clockBuffers.size());
-      // clang-format on
-      if (!clockBuffers.empty()) {
-        buffers = std::move(clockBuffers);
-      }
-    }
   }
 
   options_->setBufferListInferred(true);
@@ -699,21 +676,6 @@ std::string toLowerCase(std::string str)
     return std::tolower(c);
   });
   return str;
-}
-
-std::vector<std::string> TritonCTS::findMatchingSubset(
-    const std::string& pattern,
-    const std::vector<std::string>& buffers)
-{
-  std::vector<std::string> subset;
-  std::copy_if(buffers.begin(),
-               buffers.end(),
-               std::back_inserter(subset),
-               [&pattern](const std::string& str) {
-                 std::string lowerCaseStr = toLowerCase(str);
-                 return lowerCaseStr.find(pattern) != std::string::npos;
-               });
-  return subset;
 }
 
 bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
