@@ -111,9 +111,9 @@ class RepairDesign : dbStaState
  protected:
   void init();
 
-  bool getCin(const Pin *drvr_pin, float& cin);
+  bool getCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
-  bool performGainBuffering(Net *net, const Pin *drvr_pin, int max_fanout);
+  bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
 
   void repairNet(Net* net,
                  const Pin* drvr_pin,
@@ -256,7 +256,7 @@ class RepairDesign : dbStaState
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Gain buffering
-  std::vector<LibertyCell *> buffer_sizes_;
+  std::vector<LibertyCell*> buffer_sizes_;
 
   // Implicit arguments to repairNet bnet recursion.
   const Pin* drvr_pin_ = nullptr;
