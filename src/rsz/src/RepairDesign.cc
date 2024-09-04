@@ -646,8 +646,6 @@ void RepairDesign::repairNet(Net* net,
 
     if (buffer_gain_ != 0.0) {
       float fanout, max_fanout, fanout_slack;
-      // TODO: is it correct to unconditionally use max_fanout? what's
-      // fanout_slack?
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
       int resized = resizer_->resizeToTargetSlew(drvr_pin);
