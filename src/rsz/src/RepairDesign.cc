@@ -504,6 +504,10 @@ void RepairDesign::performGainBuffering(Net* net,
   }
   delete pin_iter;
 
+  // Keep track of the vertices at the boundary of the tree so we know where
+  // to ask for delays to be recomputed
+  std::vector<Vertex *> tree_boundary;
+
   float cin;
   if (getCin(drvr_pin, cin)) {
     float load = 0.0;
@@ -564,6 +568,8 @@ void RepairDesign::performGainBuffering(Net* net,
       sta_->connectPin(inst, size_in, net);
       sta_->connectPin(inst, size_out, new_net);
 
+      inserted_buffer_count_++;
+
       int max_level = 0;
       for (auto it = sinks.begin(); it != group_end; it++) {
         LibertyPort* sink_port = network_->libertyPort(it->pin);
@@ -574,6 +580,10 @@ void RepairDesign::performGainBuffering(Net* net,
         }
         sta_->disconnectPin(it->pin);
         sta_->connectPin(sink_inst, sink_port, new_net);
+        if (it->level == 0) {
+          Pin *new_pin = network_->findPin(sink_inst, sink_port);
+          tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
+        }
       }
 
       Pin *new_input_pin = network_->findPin(inst, size_in);
@@ -598,6 +608,14 @@ void RepairDesign::performGainBuffering(Net* net,
       load += size_in->capacitance();
     }
   }
+
+  sta_->ensureLevelized();
+  sta::Level max_level = 0;
+  for (auto vertex : tree_boundary) {
+    max_level = std::max(vertex->level(), max_level);
+  }
+  sta_->findDelays(max_level);
+  search_->findArrivals(max_level);
 }
 
 void RepairDesign::repairNet(Net* net,
