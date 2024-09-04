@@ -82,6 +82,7 @@ struct _dbNetFlags
   dbSourceType::Value _source : 4;
   uint _rc_disconnected : 1;
   uint _block_rule : 1;
+  uint _has_jumpers : 1;
 };
 
 class _dbNet : public _dbObject
@@ -129,7 +130,6 @@ class _dbNet : public _dbObject
   uint _ccAdjustOrder;
   // NON PERSISTANT-MEMBERS
   int _drivingIterm;
-  bool _has_jumpers;
 
   _dbNet(_dbDatabase*);
   _dbNet(_dbDatabase*, const _dbNet& n);

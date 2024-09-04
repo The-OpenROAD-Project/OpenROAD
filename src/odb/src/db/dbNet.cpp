@@ -98,8 +98,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
       _weight(n._weight),
       _xtalk(n._xtalk),
       _ccAdjustFactor(n._ccAdjustFactor),
-      _ccAdjustOrder(n._ccAdjustOrder),
-      _has_jumpers(false)
+      _ccAdjustOrder(n._ccAdjustOrder)
 
 {
   if (n._name) {
@@ -141,7 +140,6 @@ _dbNet::_dbNet(_dbDatabase* db)
   _ccAdjustFactor = -1;
   _ccAdjustOrder = 0;
   _drivingIterm = -1;
-  _has_jumpers = false;
 }
 
 _dbNet::~_dbNet()
@@ -3321,7 +3319,7 @@ bool dbNet::hasJumpers()
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(db_schema_has_jumpers)) {
-    has_jumpers = net->_has_jumpers;
+    has_jumpers = net->_flags._has_jumpers == 1;
   }
   return has_jumpers;
 }
@@ -3331,7 +3329,7 @@ void dbNet::setJumpers(bool has_jumpers)
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(db_schema_has_jumpers)) {
-    net->_has_jumpers = has_jumpers;
+    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
   }
 }
 
