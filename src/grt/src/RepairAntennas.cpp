@@ -503,7 +503,7 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     if (inserted_diodes) {
       if (db_net->hasJumpers()) {
         printf("Net %s has jumpers but required diodes.\n", db_net->getConstName());
-	//db_net->setJumpers(false);
+	db_net->setJumpers(false);
       }
       grouter_->addDirtyNet(db_net);
     }
