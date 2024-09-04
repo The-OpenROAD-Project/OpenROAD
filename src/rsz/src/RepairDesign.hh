@@ -113,7 +113,7 @@ class RepairDesign : dbStaState
 
   bool getCin(const Pin *drvr_pin, float& cin);
   void findBufferSizes();
-  void performGainBuffering(Net *net, const Pin *drvr_pin, int max_fanout);
+  bool performGainBuffering(Net *net, const Pin *drvr_pin, int max_fanout);
 
   void repairNet(Net* net,
                  const Pin* drvr_pin,

@@ -449,7 +449,7 @@ void RepairDesign::findBufferSizes()
             });
 }
 
-void RepairDesign::performGainBuffering(Net* net,
+bool RepairDesign::performGainBuffering(Net* net,
                                         const Pin* drvr_pin,
                                         int max_fanout)
 {
@@ -528,6 +528,7 @@ void RepairDesign::performGainBuffering(Net* net,
   std::vector<Vertex*> tree_boundary;
 
   float cin;
+  bool repaired_net = false;
   if (getCin(drvr_pin, cin)) {
     float load = 0.0;
     for (auto& sink : sinks) {
@@ -588,6 +589,7 @@ void RepairDesign::performGainBuffering(Net* net,
       sta_->connectPin(inst, size_in, net);
       sta_->connectPin(inst, size_out, new_net);
 
+      repaired_net = true;
       inserted_buffer_count_++;
 
       int max_level = 0;
@@ -633,6 +635,8 @@ void RepairDesign::performGainBuffering(Net* net,
   }
   sta_->findDelays(max_level);
   search_->findArrivals(max_level);
+
+  return repaired_net;
 }
 
 void RepairDesign::repairNet(Net* net,
@@ -665,10 +669,13 @@ void RepairDesign::repairNet(Net* net,
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
       int resized = resizer_->resizeToTargetSlew(drvr_pin);
-      performGainBuffering(net, drvr_pin, max_fanout);
+      if (performGainBuffering(net, drvr_pin, max_fanout)) {
+        repaired_net = true;
+      }
       // Resize again post buffering as the load changed
       resized += resizer_->resizeToTargetSlew(drvr_pin);
       if (resized > 0) {
+        repaired_net = true;
         resize_count_ += 1;
       }
     }
