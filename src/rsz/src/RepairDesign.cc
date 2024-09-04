@@ -410,6 +410,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
 {
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
+  cin = 0;
   if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
       && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellPortIterator port_iter(cell);
