@@ -510,9 +510,15 @@ void RepairDesign::performGainBuffering(Net* net,
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
         && network_->direction(pin) == sta::PortDirection::input()
         && network_->libertyPort(pin)) {
-      Vertex* vertex = graph_->pinLoadVertex(pin);
-      PathRef req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
-      sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
+      Instance *inst = network_->instance(pin);
+      if (!resizer_->dontTouch(inst)) {
+        Vertex* vertex = graph_->pinLoadVertex(pin);
+        PathRef req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
+      } else {
+        logger_->warn(RSZ, 143, "dont-touch instance {} ignored when buffering net {}",
+                      network_->name(inst), network_->name(net));
+      }
     }
   }
   delete pin_iter;
