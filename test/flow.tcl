@@ -208,9 +208,11 @@ write_verilog -remove_cells $filler_cells $verilog_file
 ################################################################
 # Repair antennas post-GRT
 
+utl::set_metrics_stage "grt__{}"
 repair_antennas -iterations 5
 
 check_antennas
+utl::clear_metrics_stage
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 
 ################################################################
@@ -242,7 +244,9 @@ write_def $routed_def
 # Repair antennas post-DRT
 
 set repair_antennas_iters 0
+utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
 while {[check_antennas] && $repair_antennas_iters < 5} {
+  utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
   # ensure that detail place will not touch nets that were not
   # modified by repair_antennas
   foreach inst [[ord::get_db_block] getInsts] {
@@ -261,7 +265,10 @@ while {[check_antennas] && $repair_antennas_iters < 5} {
   incr repair_antennas_iters
 }
 
+utl::set_metrics_stage "drt__{}"
 check_antennas
+
+utl::clear_metrics_stage
 utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
 
 set repair_antennas_db [make_result_file ${design}_${platform}_repaired_route.odb]
