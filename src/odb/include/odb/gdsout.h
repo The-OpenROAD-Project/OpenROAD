@@ -32,8 +32,6 @@
 
 #pragma once
 
-#include <endian.h>
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
