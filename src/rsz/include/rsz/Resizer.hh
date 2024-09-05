@@ -337,6 +337,7 @@ class Resizer : public dbStaState
       double max_wire_length,  // max_wire_length zero for none (meters)
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
+      double buffer_gain,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
