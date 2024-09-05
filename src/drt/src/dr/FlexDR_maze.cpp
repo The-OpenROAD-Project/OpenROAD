@@ -2723,7 +2723,8 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
         style.setBeginStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
-      } else if (ep == real_point) {
+      }
+      if (ep == real_point) {
         style.setEndStyle(frcTruncateEndStyle, 0);
         net->updateExtFigStyle(real_point, style);
         return;
