@@ -531,6 +531,8 @@ bool RepairDesign::performGainBuffering(Net* net,
   // to ask for delays to be recomputed
   std::vector<Vertex*> tree_boundary;
 
+  const float max_buf_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
+
   float cin;
   bool repaired_net = false;
   if (getCin(drvr_pin, cin)) {
@@ -543,8 +545,6 @@ bool RepairDesign::performGainBuffering(Net* net,
     // Iterate until we satisfy both the gain condition and max_fanout
     // on drvr_pin
     while (sinks.size() > max_fanout || load > cin * buffer_gain_) {
-      float max_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
-
       float load_acc = 0;
       auto it = sinks.begin();
       for (; it != sinks.end(); it++) {
@@ -552,7 +552,7 @@ bool RepairDesign::performGainBuffering(Net* net,
           break;
         }
         float sink_load = it->capacitance(network_);
-        if (load_acc + sink_load > max_load
+        if (load_acc + sink_load > max_buf_load
             // always include at least one load
             && it != sinks.begin()) {
           break;
