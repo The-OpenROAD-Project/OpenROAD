@@ -2034,14 +2034,14 @@ void TritonCTS::balanceMacroRegisterLatencies()
   openSta_->ensureGraph();
   openSta_->searchPreamble();
   openSta_->ensureClkNetwork();
-  openSta_->ensureClkArrivals();
+  openSta_->updateTiming(false);
   sta::Graph* graph = openSta_->graph();
   for (auto iter = builders_->rbegin(); iter != builders_->rend(); ++iter) {
     TreeBuilder* registerBuilder = *iter;
     if (registerBuilder->getTreeType() == TreeType::RegisterTree) {
       TreeBuilder* macroBuilder = registerBuilder->getParent();
       if (macroBuilder) {
-        computeAveSinkArrivals(registerBuilder, graph);
+        computeAveSinkArrivals(registerBuilder, graph);// -> computeSinkArrivalRecur -> getVertexClkArrival
         computeAveSinkArrivals(macroBuilder, graph);
         adjustLatencies(macroBuilder, registerBuilder);
         // Update graph information after possible buffers inserted
@@ -2053,21 +2053,22 @@ void TritonCTS::balanceMacroRegisterLatencies()
   }
 }
 
-float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
+float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
 {
-  sta::VertexPathIterator path_iter(sinVertex, openSta_);
+  //logger_->report("Sink: {}", iterm->getName());
+  sta::VertexPathIterator pathIter(sinkVertex, openSta_);
   float clkPathArrival = 0.0;
-  int paths_accepted = 0;
-  while (path_iter.hasNext()) {
-    sta::Path* path = path_iter.next();
+  int pathsAccepted = 0;
+  while (pathIter.hasNext()) {
+    sta::Path* path = pathIter.next();
 
     sta::PathExpanded expand(path, openSta_);
 
     const sta::Clock* clock = path->clock(openSta_);
-    if (clock) {
+    if (clock || !clock) {
       const sta::PathRef* start = expand.startPath();
 
-      odb::dbNet* path_start_net;
+      odb::dbNet* pathStartNet = nullptr;
       if (start->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
         // only populate with rising edges
         continue;
@@ -2085,24 +2086,24 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinVertex, odb::dbNet* topNet,
       odb::dbModBTerm* modbterm;
       network_->staToDb(start->pin(openSta_), term, port, moditerm, modbterm);
       if (term) {
-        path_start_net = term->getNet();
+        pathStartNet = term->getNet();
       }
       if (port) {
-        path_start_net = port->getNet();
+        pathStartNet = port->getNet();
 	
       }
-      if (path_start_net == topNet) {
+      if (pathStartNet == topNet) {
         clkPathArrival = path->arrival(openSta_);
-        paths_accepted += 1;
-	      return clkPathArrival;
-      }	
+        pathsAccepted += 1;
+        return clkPathArrival;
+      }
     }
   }
-  if (paths_accepted > 1 || paths_accepted == 0) {
+  if (pathsAccepted > 1 || pathsAccepted == 0) {
     
     logger_->report("Number of clock paths is not 1 for pin {}. Number of clock paths: {}",
                    iterm->getName(),
-                   paths_accepted);
+                   pathsAccepted);
   }
   return clkPathArrival;
 }
@@ -2147,9 +2148,13 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         // either register or macro input pin
         sta::Pin* pin = network_->dbToSta(iterm);
         if (pin) {
-          sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
-          float arrival = getVertexClkArrival(drvr_vertex, topClokcNet, iterm);
-
+          sta::Vertex* regVertex = graph->pinDrvrVertex(pin);
+          float arrival = getVertexClkArrival(regVertex, topClokcNet, iterm);
+          float inputArrival = openSta_->pinArrival(
+              pin, sta::RiseFall::rise(), sta::MinMax::max());
+          if(arrival != inputArrival) {
+            logger_->report("arrival: {}, pin Arrival: {}", arrival, inputArrival);
+          }
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell

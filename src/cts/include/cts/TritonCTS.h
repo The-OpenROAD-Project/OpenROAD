@@ -210,7 +210,7 @@ class TritonCTS
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
   void balanceMacroRegisterLatencies();
-  float getVertexClkArrival(sta::Vertex* sink_vertex, odb::dbNet* topNet, odb::dbITerm* iterm);
+  float getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet, odb::dbITerm* iterm);
   void computeAveSinkArrivals(TreeBuilder* builder, sta::Graph* graph);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
