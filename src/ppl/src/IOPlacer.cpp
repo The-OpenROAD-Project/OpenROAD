@@ -1594,6 +1594,10 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   Interval excluded_interv = Interval(edge, begin, end);
 
   excluded_intervals_.push_back(excluded_interv);
+
+  odb::Rect excluded_region;
+  findConstraintRegion(excluded_interv, excluded_region, excluded_region);
+  getBlock()->addBlockedRegionForPins(excluded_region);
 }
 
 void IOPlacer::excludeInterval(Interval interval)
@@ -2806,7 +2810,7 @@ void IOPlacer::findConstraintRegion(const Interval& interval,
                                     const Rect& constraint_box,
                                     Rect& region)
 {
-  const Rect& die_bounds = core_->getBoundary();
+  const Rect& die_bounds = getBlock()->getDieArea();
   if (interval.getEdge() == Edge::bottom) {
     region = Rect(interval.getBegin(),
                   die_bounds.yMin(),
