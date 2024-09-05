@@ -438,7 +438,9 @@ void AntennaChecker::calculateAreas(const LayerToGraphNodes& node_by_layer_map,
           continue;
         }
 
-        info.iterms.push_back(gate.iterm);
+        if (isValidGate(gate.iterm->getMTerm())) {
+          info.iterms.push_back(gate.iterm);
+        }
         info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
         info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         gates_count++;
