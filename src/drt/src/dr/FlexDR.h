@@ -1054,6 +1054,35 @@ class FlexDRWorker
    * @param net The currently being modified drNet
    */
   void endAddNets_updateExtFigs(drNet* net);
+  /**
+   * Applies update to external pathsegs.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a pathseg update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param path_seg The external pathseg being updated.
+   * @returns True if the updates apply to the passed pathseg and False
+   * otherwise.
+   */
+  bool endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                        const Point3D& update_pt,
+                                        frPathSeg* path_seg);
+  /**
+   * Applies update to external via.
+   *
+   * This is a helper function for endAddNets_updateExtFigs that is responsible
+   * for handling a via update.
+   *
+   * @param update_pt The boundary point that should touch the external
+   * path_seg.
+   * @param via The external via being updated.
+   * @returns True if the updates apply to the passed via and False otherwise.
+   */
+  bool endAddNets_updateExtFigs_via(drNet* net,
+                                    const Point3D& update_pt,
+                                    frVia* via);
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);
 

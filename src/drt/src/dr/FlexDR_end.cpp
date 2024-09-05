@@ -513,76 +513,82 @@ void FlexDRWorker::endAddNets_merge(
     }
   }
 }
-namespace {
-void replacePathSeg(frRegionQuery* region_query,
-                    std::unique_ptr<frPathSeg> new_seg,
-                    frPathSeg* old_seg)
+
+bool FlexDRWorker::endAddNets_updateExtFigs_pathSeg(drNet* net,
+                                                    const Point3D& update_pt,
+                                                    frPathSeg* path_seg)
 {
-  auto net = old_seg->getNet();
-  new_seg->addToNet(net);
-  auto new_seg_ptr = new_seg.get();
-  region_query->removeDRObj(old_seg);
-  net->removeShape(old_seg);
-  net->addShape(std::move(new_seg));
-  region_query->addDRObj(new_seg_ptr);
+  frNet* fr_net = net->getFrNet();
+  if (path_seg->getNet() != fr_net) {
+    return false;
+  }
+  const auto [bp, ep] = path_seg->getPoints();
+  if (bp != update_pt && ep != update_pt) {
+    return false;
+  }
+  // remove from rq before updating bbox
+  getDesign()->getRegionQuery()->removeDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::REMOVE_FROM_RQ, fr_net, path_seg->getIndexInOwner());
+    getDesign()->addUpdate(update);
+  }
+  // update path_seg style
+  frSegStyle updated_style;
+  net->getExtFigUpdate(update_pt, updated_style);
+  path_seg->setStyle(updated_style);
+  // add to rq after updating bbox
+  getDesign()->getRegionQuery()->addDRObj(path_seg);
+  if (save_updates_) {
+    drUpdate update(
+        drUpdate::UPDATE_SHAPE, fr_net, path_seg->getIndexInOwner());
+    // UPDATE_SHAPE with pathSeg adds to rq
+    update.setPathSeg(*path_seg);
+    getDesign()->addUpdate(update);
+  }
+  return true;
 }
-void replaceVia(frRegionQuery* region_query,
-                std::unique_ptr<frVia> new_via,
-                frVia* old_via)
+
+bool FlexDRWorker::endAddNets_updateExtFigs_via(drNet* net,
+                                                const Point3D& update_pt,
+                                                frVia* via)
 {
-  auto net = old_via->getNet();
-  new_via->addToNet(net);
-  auto new_via_ptr = new_via.get();
-  region_query->removeDRObj(old_via);
-  net->removeVia(old_via);
-  net->addVia(std::move(new_via));
-  region_query->addDRObj(new_via_ptr);
+  frNet* fr_net = net->getFrNet();
+  if (via->getNet() != fr_net || via->getOrigin() != update_pt) {
+    return false;
+  }
+  // update via connections
+  bool is_bottom_connected, is_top_connected;
+  net->getExtFigUpdate(update_pt, is_bottom_connected, is_top_connected);
+  via->setBottomConnected(is_bottom_connected);
+  via->setTopConnected(is_top_connected);
+  if (save_updates_) {
+    drUpdate update(drUpdate::UPDATE_SHAPE, fr_net, via->getIndexInOwner());
+    update.setVia(*via);
+    getDesign()->addUpdate(update);
+  }
+  return true;
 }
-}  // namespace
+
 void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
 {
-  std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
+  const std::vector<Point3D> locs = net->getExtFigsUpdatesLocs();
   auto region_query = design_->getRegionQuery();
-  for (auto pt : locs) {
+  for (const auto& pt : locs) {
     frRegionQuery::Objects<frBlockObject> result;
     region_query->queryDRObj({pt, pt}, pt.z(), result);
-    bool is_via = net->isExtFigUpdateVia(pt);
+    const bool is_via = net->isExtFigUpdateVia(pt);
     for (const auto& [_, obj] : result) {
       if (is_via && obj->typeId() == frcVia) {
         auto via = static_cast<frVia*>(obj);
-        if (via->getNet() != net->getFrNet() || via->getOrigin() != pt) {
-          continue;
+        if (endAddNets_updateExtFigs_via(net, pt, via)) {
+          break;
         }
-        const auto via_def = via->getViaDef();
-        if (via_def->getLayer1Num() != pt.z()
-            && via_def->getLayer2Num() != pt.z()) {
-          continue;
-        }
-
-        std::unique_ptr<frVia> new_via = std::make_unique<frVia>(*via);
-        bool is_bottom_connected, is_top_connected;
-        net->getExtFigUpdate(pt, is_bottom_connected, is_top_connected);
-        new_via->setBottomConnected(is_bottom_connected);
-        new_via->setTopConnected(is_top_connected);
-        replaceVia(region_query, std::move(new_via), via);
-        break;
       } else if (!is_via && obj->typeId() == frcPathSeg) {
         auto path_seg = static_cast<frPathSeg*>(obj);
-        if (path_seg->getNet() != net->getFrNet()
-            || path_seg->getLayerNum() != pt.z()) {
-          continue;
+        if (endAddNets_updateExtFigs_pathSeg(net, pt, path_seg)) {
+          break;
         }
-        const auto [bp, ep] = path_seg->getPoints();
-        if (bp != pt && ep != pt) {
-          continue;
-        }
-        std::unique_ptr<frPathSeg> new_seg
-            = std::make_unique<frPathSeg>(*path_seg);
-        frSegStyle updated_style;
-        net->getExtFigUpdate(pt, updated_style);
-        new_seg->setStyle(updated_style);
-        replacePathSeg(region_query, std::move(new_seg), path_seg);
-        break;
       }
     }
   }

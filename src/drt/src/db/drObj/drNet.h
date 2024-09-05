@@ -247,6 +247,12 @@ class drNet : public drBlockObject
     bool is_bottom_connected{false};
     bool is_top_connected{false};
     bool is_via{false};
+
+   private:
+    template <class Archive>
+    void serialize(Archive& ar, unsigned int version);
+
+    friend class boost::serialization::access;
   };
   std::map<Point3D, ExtFigUpdate> ext_figs_updates_;
 
