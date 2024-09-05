@@ -2738,7 +2738,8 @@ void FlexDRWorker::addApExtFigUpdate(drNet* net,
       if (via_def->getLayer1Num() == layer_num) {
         net->updateExtFigConnected(real_point, true, via->isTopConnected());
         return;
-      } else if (via_def->getLayer2Num() == layer_num) {
+      }
+      if (via_def->getLayer2Num() == layer_num) {
         net->updateExtFigConnected(real_point, via->isBottomConnected(), true);
         return;
       }

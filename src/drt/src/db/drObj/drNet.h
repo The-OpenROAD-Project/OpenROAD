@@ -174,12 +174,12 @@ class drNet : public drBlockObject
                                   frCoord y,
                                   frLayerNum lNum,
                                   frBlockObject** owner = nullptr);
-  void updateExtFigStyle(Point3D pt, frSegStyle style)
+  void updateExtFigStyle(const Point3D& pt, const frSegStyle& style)
   {
     ext_figs_updates_[pt].is_via = false;
     ext_figs_updates_[pt].updated_style = style;
   }
-  void updateExtFigConnected(Point3D pt,
+  void updateExtFigConnected(const Point3D& pt,
                              const bool is_bottom_connected,
                              const bool is_top_connected)
   {
