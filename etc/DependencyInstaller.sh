@@ -642,6 +642,14 @@ _installCI() {
         parallel \
         software-properties-common
 
+    if command -v docker &> /dev/null; then
+        # The user can uninstall docker if they want to reinstall it,
+        # and also this allows the user to choose drop in replacements
+        # for docker, such as podman-docker
+        echo "Docker is already installed, skip docker reinstall."
+        return 0
+    fi
+
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
