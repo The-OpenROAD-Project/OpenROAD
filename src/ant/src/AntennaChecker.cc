@@ -1042,7 +1042,6 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
            pin_violation_count,
            antenna_violations);
 
-  net_to_report_.clear();
   return antenna_violations;
 }
 
@@ -1050,6 +1049,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
 {
+  net_to_report_.clear();
   initAntennaRules();
 
   std::ofstream report_file;
