@@ -777,11 +777,10 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     bool pin_has_violation = false;
 
     odb::dbMTerm* mterm = node->getMTerm();
-    std::string node_name = fmt::format("  {}/{} ({})",
-                                        node->getInst()->getConstName(),
-                                        mterm->getConstName(),
-                                        mterm->getMaster()->getConstName());
-    std::string pin_name = fmt::format("  Pin: {}", node_name);
+    std::string pin_name = fmt::format("  Pin:   {}/{} ({})",
+                                       node->getInst()->getConstName(),
+                                       mterm->getConstName(),
+                                       mterm->getMaster()->getConstName());
     net_to_report_.at(db_net).report += pin_name + "\n";
 
     for (const auto& [layer, node_info] : layer_to_node) {
