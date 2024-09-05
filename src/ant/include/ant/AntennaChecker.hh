@@ -128,10 +128,10 @@ struct Violation
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
-using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
+using GateToLayerToNodeInfo = std::map<odb::dbITerm*, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
 using GateToViolationLayers
-    = std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>;
+    = std::unordered_map<odb::dbITerm*, std::unordered_set<odb::dbTechLayer*>>;
 
 class AntennaChecker
 {
