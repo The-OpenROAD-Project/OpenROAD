@@ -15,9 +15,11 @@ db = openroad.get_db()
 for corner in timing.getCorners():
     for net in design.getBlock().getNets():
         print(
-            net.getName(),
-            timing.getNetCap(net, corner, Timing.Max),
-            timing.getNetCap(net, corner, Timing.Min),
+            "{} {:.3g} {:.3g}".format(
+                net.getName(),
+                timing.getNetCap(net, corner, Timing.Max),
+                timing.getNetCap(net, corner, Timing.Min),
+            )
         )
 
 for inst in design.getBlock().getInsts():
@@ -32,7 +34,11 @@ for lib in tech.getDB().getLibs():
         print(master.getName())
         for mterm in master.getMTerms():
             print(
-                f"{mterm.getName()}  {timing.getMaxCapLimit(mterm):12.5e} {timing.getMaxSlewLimit(mterm):12.5e}"
+                "{}  {:.3g} {:.3g}".format(
+                    mterm.getName(),
+                    timing.getMaxCapLimit(mterm),
+                    timing.getMaxSlewLimit(mterm),
+                )
             )
             for m in timing.getTimingFanoutFrom(mterm):
                 print("    ", m.getName())
