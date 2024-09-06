@@ -745,9 +745,6 @@ class Resizer : public dbStaState
 
   dpl::Opendp* opendp_ = nullptr;
 
-  std::map<Corner*, std::ofstream> spef_file;
-  bool write_spef_file;
-
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   // Prim/Dijkstra gets out of hand with bigger nets.
