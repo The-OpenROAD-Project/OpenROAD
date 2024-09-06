@@ -56,11 +56,7 @@ using sta::dbSta;
 using sta::Net;
 using sta::NetSeq;
 using sta::Parasitic;
-using sta::ParasiticAnalysisPt;
-using sta::ParasiticNode;
 using sta::Parasitics;
-using sta::Unit;
-using sta::Units;
 
 class SpefWriter
 {

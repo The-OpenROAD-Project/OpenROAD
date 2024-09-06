@@ -60,9 +60,7 @@ SpefWriter::SpefWriter(Logger* logger,
 {
 }
 
-SpefWriter::~SpefWriter()
-{
-}
+SpefWriter::~SpefWriter() = default;
 
 void SpefWriter::writeSpefHeader(Corner* corner)
 {
