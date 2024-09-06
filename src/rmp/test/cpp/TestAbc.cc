@@ -366,12 +366,12 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog("/usr/local/google/home/ethanmoon/OpenROAD/test/aes_nangate45.v");
+  LoadVerilog("side_outputs_extract_logic_depth.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
-    if (std::string(vertex->name(network)) == "_33204_/D") {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
       flop_input_vertex = vertex;
     }
   }
