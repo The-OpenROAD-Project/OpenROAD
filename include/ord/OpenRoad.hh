@@ -234,7 +234,9 @@ class OpenRoad
   // to notify the tools (eg dbSta, gui).
   void designCreated();
 
+  void readDb(std::istream& stream);
   void readDb(const char* filename);
+  void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
   void diffDbs(const char* filename1, const char* filename2, const char* diffs);

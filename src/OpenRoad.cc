@@ -439,25 +439,36 @@ void OpenRoad::writeCdl(const char* outFilename,
 
 void OpenRoad::readDb(const char* filename)
 {
+  std::ifstream stream;
+  stream.open(filename, std::ios::binary);
+  try {
+    readDb(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
+}
+
+void OpenRoad::readDb(std::istream& stream)
+{
   if (db_->getChip() && db_->getChip()->getBlock()) {
     logger_->error(
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
 
-  std::ifstream stream;
   stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
                     | std::ios::eofbit);
-  stream.open(filename, std::ios::binary);
 
-  try {
-    db_->read(stream);
-  } catch (const std::ios_base::failure& f) {
-    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
-  }
+  db_->read(stream);
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
+}
+
+void OpenRoad::writeDb(std::ostream& stream)
+{
+  stream.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  db_->write(stream);
 }
 
 void OpenRoad::writeDb(const char* filename)

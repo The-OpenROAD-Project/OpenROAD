@@ -206,22 +206,14 @@ set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
 ################################################################
-# Antenna repair
+# Repair antennas post-GRT
 
+utl::set_metrics_stage "grt__{}"
 repair_antennas -iterations 5
 
 check_antennas
+utl::clear_metrics_stage
 utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
-
-################################################################
-# Filler placement
-
-filler_placement $filler_cells
-check_placement -verbose
-
-# checkpoint
-set fill_db [make_result_file ${design}_${platform}_fill.db]
-write_db $fill_db
 
 ################################################################
 # Detailed routing
@@ -242,14 +234,55 @@ write_guides [make_result_file "${design}_${platform}_output_guide.mod"]
 set drv_count [detailed_route_num_drvs]
 utl::metric "DRT::drv" $drv_count
 
-check_antennas
-utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
-
 set routed_db [make_result_file ${design}_${platform}_route.db]
 write_db $routed_db
 
 set routed_def [make_result_file ${design}_${platform}_route.def]
 write_def $routed_def
+
+################################################################
+# Repair antennas post-DRT
+
+set repair_antennas_iters 0
+utl::set_metrics_stage "drt__repair_antennas__pre_repair__{}"
+while {[check_antennas] && $repair_antennas_iters < 5} {
+  utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
+  # ensure that detail place will not touch nets that were not
+  # modified by repair_antennas
+  foreach inst [[ord::get_db_block] getInsts] {
+    $inst setPlacementStatus "FIRM"
+  }
+
+  repair_antennas
+
+  detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
+                 -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
+                 -save_guide_updates \
+                 -bottom_routing_layer $min_routing_layer \
+                 -top_routing_layer $max_routing_layer \
+                 -verbose 0
+
+  incr repair_antennas_iters
+}
+
+utl::set_metrics_stage "drt__{}"
+check_antennas
+
+utl::clear_metrics_stage
+utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
+
+set repair_antennas_db [make_result_file ${design}_${platform}_repaired_route.odb]
+write_db $repair_antennas_db
+
+################################################################
+# Filler placement
+
+filler_placement $filler_cells
+check_placement -verbose
+
+# checkpoint
+set fill_db [make_result_file ${design}_${platform}_fill.db]
+write_db $fill_db
 
 ################################################################
 # Extraction

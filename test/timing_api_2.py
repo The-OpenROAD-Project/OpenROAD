@@ -21,20 +21,23 @@ for inst in design.getBlock().getInsts():
     )
     for corner in timing.getCorners():
         print(
-            timing.staticPower(inst, corner),
-            timing.dynamicPower(inst, corner),
+            "{:.3g} {:.3g}".format(
+                timing.staticPower(inst, corner), timing.dynamicPower(inst, corner)
+            )
         )
     for iTerm in inst.getITerms():
         if not iTerm.getNet():
             continue
         if not (design.isInSupply(iTerm)):
             print(
-                design.getITermName(iTerm),
-                timing.getPinArrival(iTerm, Timing.Rise),
-                timing.getPinArrival(iTerm, Timing.Fall),
-                timing.getPinSlew(iTerm),
-                timing.isEndpoint(iTerm),
+                "{} {:.3g} {:.3g} {:.3g} {}".format(
+                    design.getITermName(iTerm),
+                    timing.getPinArrival(iTerm, Timing.Rise),
+                    timing.getPinArrival(iTerm, Timing.Fall),
+                    timing.getPinSlew(iTerm),
+                    timing.isEndpoint(iTerm),
+                )
             )
 
 for net in design.getBlock().getNets():
-    print(net.getName(), design.getNetRoutedLength(net))
+    print("{} {}".format(net.getName(), design.getNetRoutedLength(net)))
