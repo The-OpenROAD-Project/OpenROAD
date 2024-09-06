@@ -359,4 +359,44 @@ TEST_F(AbcTest, ExtractSideOutputsCorrectly)
   EXPECT_THAT(primary_output_names, Contains("output_flop/D"));
   EXPECT_THAT(primary_output_names, Contains("output_flop2/D"));
 }
+
+TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("/usr/local/google/home/ethanmoon/OpenROAD/test/aes_nangate45.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_33204_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get());
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  abc::Abc_NtkSetName(abc_network.get(), strdup("temp_network_name"));
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> logic_network(
+      abc::Abc_NtkToLogic(abc_network.get()), &abc::Abc_NtkDelete);
+
+  std::array<int, 2> input_vector = {1, 1};
+  utl::deleted_unique_ptr<int> output_vector(
+      abc::Abc_NtkVerifySimulatePattern(logic_network.get(),
+                                        input_vector.data()),
+      &free);
+
+  // Both outputs are just the and gate.
+  EXPECT_EQ(output_vector.get()[0], 0);  // Expect that !(1 & 1) == 0
+  EXPECT_EQ(output_vector.get()[1], 0);  // Expect that !(1 & 1) == 0
+}
 }  // namespace rmp

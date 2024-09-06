@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
+#include <iostream>
 
 #include "abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
@@ -110,16 +111,15 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
 
-  std::unordered_set<const sta::Pin*> cut_set_vertices;
+  sta::PinSet cut_set_vertices(network);
   for (sta::Vertex* vertex : cut_vertices) {
     cut_set_vertices.insert(vertex->pin());
   }
 
-  std::vector<sta::Pin*> primary_outputs;
-  primary_outputs.reserve(endpoints_.size());
+  sta::PinSet primary_outputs(network);
   // Append any and all endpoints to the primary outputs.
   for (sta::Vertex* vertex : endpoints_) {
-    primary_outputs.push_back(vertex->pin());
+    primary_outputs.insert(vertex->pin());
   }
 
   for (sta::Vertex* vertex : cut_vertices) {
@@ -138,12 +138,16 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
       if (cut_set_vertices.find(connected_pin) == cut_set_vertices.end()) {
         sta::VertexId vertex_id = network->vertexId(connected_pin);
         sta::Vertex* vertex = network->graph()->vertex(vertex_id);
-        primary_outputs.push_back(vertex->pin());
+        primary_outputs.insert(vertex->pin());
       }
     }
   }
 
-  return primary_outputs;
+  std::vector<sta::Pin*> final_output;
+  for (const sta::Pin* pin : primary_outputs) {
+    final_output.push_back(const_cast<sta::Pin*>(pin));
+  }
+  return final_output;
 }
 
 std::unordered_set<sta::Instance*> LogicExtractorFactory::GetCutInstances(

@@ -10,8 +10,12 @@
 #include <utility>
 #include <vector>
 
+#include "abc_library_factory.h"
+#include "base/abc/abc.h"
+#include "db_sta/dbNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
+#include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace rmp {
@@ -47,6 +51,11 @@ class LogicCut
     return primary_inputs_.empty() && primary_outputs_.empty()
            && cut_instances_.empty();
   }
+
+  utl::deleted_unique_ptr<abc::Abc_Ntk_t> BuildMappedAbcNetwork(
+      AbcLibrary& abc_library,
+      sta::dbNetwork* network,
+      utl::Logger* logger);
 
  private:
   std::vector<sta::Pin*> primary_inputs_;
