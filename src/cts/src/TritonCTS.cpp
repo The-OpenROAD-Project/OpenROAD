@@ -160,6 +160,23 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 
 void TritonCTS::setupCharacterization()
 {
+  // Check if CTS library is valid
+  if (options_->isCtsLibrarySet()) {
+    sta::Library* lib = network_->findLibrary(options_->getCtsLibrary());
+    if (lib == nullptr) {
+      logger_->error(CTS,
+                     209,
+                     "Library {} cannot be found because it is not "
+                     "loaded or name is incorrect",
+                     options_->getCtsLibrary());
+    } else {
+      logger_->info(CTS,
+                    210,
+                    "Clock buffers will be chosen from library {}",
+                    options_->getCtsLibrary());
+    }
+  }
+
   openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
@@ -591,6 +608,10 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
+    if (options_->isCtsLibrarySet()
+        && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+      continue;
+    }
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
         buffers.emplace_back(buffer->name());
@@ -612,6 +633,10 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
@@ -631,6 +656,10 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
@@ -646,6 +675,10 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (isClockCellCandidate(buffer)) {
           buffers.emplace_back(buffer->name());
