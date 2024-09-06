@@ -75,35 +75,10 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
 {
 }
 
-MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
-                                       rsz::Resizer* resizer,
-                                       rsz::SpefWriter* spef_writer,
-                                       sta::dbSta* sta,
-                                       odb::dbTech* tech,
-                                       odb::dbBlock* block,
-                                       GlobalRouter* grouter)
-    : grouter_(grouter),
-      tech_(tech),
-      block_(block),
-      logger_(logger),
-      resizer_(resizer),
-      spef_writer_(spef_writer),
-      sta_(sta),
-      network_(sta_->getDbNetwork()),
-      parasitics_(sta_->parasitics()),
-      arc_delay_calc_(sta_->arcDelayCalc()),
-      min_max_(sta::MinMax::max()),
-      resistor_id_(1)
-{
-  for (sta::Corner* corner : *sta_->corners()) {
-    spef_writer_->writeSpefHeader(corner);
-    spef_writer_->writeSpefPorts(corner);
-  }
-}
-
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
                                            std::vector<Pin>& pins,
-                                           GRoute& route)
+                                           GRoute& route,
+                                           rsz::SpefWriter* spef_writer)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -133,8 +108,8 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
 
-    if (spef_writer_) {
-      spef_writer_->writeSpefNet(corner, sta_net, parasitic);
+    if (spef_writer) {
+      spef_writer->writeSpefNet(corner, sta_net, parasitic);
     }
 
     arc_delay_calc_->reduceParasitic(

@@ -281,17 +281,26 @@ void Resizer::estimateParasitics(ParasiticsSrc src)
 void Resizer::estimateParasitics(ParasiticsSrc src,
                                  std::map<Corner*, std::ostream*>& spef_files)
 {
+  spef_writer_ = new SpefWriter(logger_, sta_, spef_files);
+  for (auto& [corner, _] : spef_files) {
+    spef_writer_->writeSpefHeader(corner);
+    spef_writer_->writeSpefPorts(corner);
+  }
+
   switch (src) {
     case ParasiticsSrc::placement:
-      estimateWireParasitics(spef_files);
+      estimateWireParasitics();
       break;
     case ParasiticsSrc::global_routing:
-      global_router_->estimateRC(spef_files);
+      global_router_->estimateRC(spef_writer_);
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::none:
       break;
   }
+
+  delete spef_writer_;
+  spef_writer_ = nullptr;
 }
 
 bool Resizer::haveEstimatedParasitics() const
@@ -396,21 +405,8 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
 
 void Resizer::estimateWireParasitics()
 {
-  std::map<Corner*, std::ostream*> spef_files;
-  estimateWireParasitics(spef_files);
-}
-
-void Resizer::estimateWireParasitics(
-    std::map<Corner*, std::ostream*>& spef_files)
-{
   initBlock();
   if (!wire_signal_cap_.empty()) {
-    spef_writer_ = new SpefWriter(logger_, sta_, spef_files);
-    for (Corner* corner : *sta_->corners()) {
-      spef_writer_->writeSpefHeader(corner);
-      spef_writer_->writeSpefPorts(corner);
-    }
-
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
@@ -424,9 +420,6 @@ void Resizer::estimateWireParasitics(
 
     parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
-
-    delete spef_writer_;
-    spef_writer_ = nullptr;
   }
 }
 
