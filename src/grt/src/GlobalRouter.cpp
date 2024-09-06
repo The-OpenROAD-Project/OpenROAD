@@ -463,13 +463,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC()
-{
-  std::map<sta::Corner*, std::ostream*> spef_files;
-  estimateRC(spef_files);
-}
-
-void GlobalRouter::estimateRC(std::map<sta::Corner*, std::ostream*>& spef_files)
+void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -477,15 +471,13 @@ void GlobalRouter::estimateRC(std::map<sta::Corner*, std::ostream*>& spef_files)
   // Make separate parasitics for each corner.
   sta_->setParasiticAnalysisPts(true);
 
-  rsz::SpefWriter spef_writer(logger_, sta_, spef_files);
-
   MakeWireParasitics builder(
-      logger_, resizer_, &spef_writer, sta_, db_->getTech(), block_, this);
+      logger_, resizer_, sta_, db_->getTech(), block_, this);
 
   for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route);
+      builder.estimateParasitcs(db_net, net->getPins(), route, spef_writer);
     }
   }
 }

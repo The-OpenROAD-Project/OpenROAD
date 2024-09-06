@@ -79,16 +79,10 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                      odb::dbTech* tech,
                      odb::dbBlock* block,
                      GlobalRouter* grouter);
-  MakeWireParasitics(utl::Logger* logger,
-                     rsz::Resizer* resizer,
-                     rsz::SpefWriter* spef_writer,
-                     sta::dbSta* sta,
-                     odb::dbTech* tech,
-                     odb::dbBlock* block,
-                     GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
-                         GRoute& route);
+                         GRoute& route,
+                         rsz::SpefWriter* spef_writer = nullptr);
   void estimateParasitcs(odb::dbNet* net, GRoute& route) override;
 
   void clearParasitics() override;
@@ -154,7 +148,6 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   odb::dbBlock* block_;
   utl::Logger* logger_;
   rsz::Resizer* resizer_;
-  rsz::SpefWriter* spef_writer_ = nullptr;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;

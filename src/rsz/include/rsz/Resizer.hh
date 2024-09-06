@@ -240,7 +240,6 @@ class Resizer : public dbStaState
   void estimateParasitics(ParasiticsSrc src,
                           std::map<Corner*, std::ostream*>& spef_files);
   void estimateWireParasitics();
-  void estimateWireParasitics(std::map<Corner*, std::ostream*>& spef_files);
   void estimateWireParasitic(const Net* net);
   void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
   bool haveEstimatedParasitics() const;
