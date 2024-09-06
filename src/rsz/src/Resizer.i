@@ -39,6 +39,7 @@
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -336,7 +337,37 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  resizer->estimateParasitics(src, path);
+  std::map<Corner*, std::ostream*> spef_files;
+  if (path != nullptr && std::strlen(path) > 0) {
+    std::string file_path(path);
+    if (!file_path.empty()) {
+      for (Corner* corner : *resizer->getDbNetwork()->corners()) {
+        file_path = path;
+        std::string suffix("_");
+        suffix.append(corner->name());
+        if (file_path.find(".spef") != std::string::npos
+            || file_path.find(".SPEF") != std::string::npos) {
+          file_path.insert(file_path.size() - 5, suffix);
+        } else {
+          file_path.append(suffix);
+        }
+
+        std::ofstream* file = new std::ofstream(file_path);
+
+        if (file->is_open()) {
+          spef_files[corner] = std::move(file);
+        }
+      }
+    }
+  }
+
+  resizer->estimateParasitics(src, spef_files);
+
+  for (auto [_, file] : spef_files) {
+    file->flush();
+    delete file;
+  }
+  spef_files.clear();
 }
 
 // For debugging. Does not protect against annotating power/gnd.

@@ -38,6 +38,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
@@ -65,6 +66,7 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
       block_(block),
       logger_(logger),
       resizer_(resizer),
+      spef_writer_(nullptr),
       sta_(sta),
       network_(sta_->getDbNetwork()),
       parasitics_(sta_->parasitics()),
@@ -72,6 +74,32 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
       min_max_(sta::MinMax::max()),
       resistor_id_(1)
 {
+}
+
+MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
+                                       rsz::Resizer* resizer,
+                                       rsz::SpefWriter* spef_writer,
+                                       sta::dbSta* sta,
+                                       odb::dbTech* tech,
+                                       odb::dbBlock* block,
+                                       GlobalRouter* grouter)
+    : grouter_(grouter),
+      tech_(tech),
+      block_(block),
+      logger_(logger),
+      resizer_(resizer),
+      spef_writer_(spef_writer),
+      sta_(sta),
+      network_(sta_->getDbNetwork()),
+      parasitics_(sta_->parasitics()),
+      arc_delay_calc_(sta_->arcDelayCalc()),
+      min_max_(sta::MinMax::max()),
+      resistor_id_(1)
+{
+  for (sta::Corner* corner : *sta_->corners()) {
+    spef_writer_->writeSpefHeader(corner);
+    spef_writer_->writeSpefPorts(corner);
+  }
 }
 
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
@@ -105,7 +133,11 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     makeRouteParasitics(
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
-    resizer_->writeSpefNet(corner, sta_net, parasitic, network_, parasitics_);
+
+    if (spef_writer_) {
+      spef_writer_->writeSpefNet(corner, sta_net, parasitic);
+    }
+
     arc_delay_calc_->reduceParasitic(
         parasitic, sta_net, corner, sta::MinMaxAll::all());
   }

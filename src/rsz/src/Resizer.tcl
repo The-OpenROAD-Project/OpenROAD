@@ -314,25 +314,25 @@ proc set_wire_rc { args } {
 }
 
 sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
-                                            [-spef_file]}
+                                            [-spef_file filename]}
 
 proc estimate_parasitics { args } {
   sta::parse_key_args "estimate_parasitics" args \
     keys {-spef_file} flags {-placement -global_routing}
 
-  set path ""
+  set filename ""
   if { [info exists keys(-spef_file)] } {
-    set path $keys(-spef_file)
+    set filename $keys(-spef_file)
   }
 
   if { [info exists flags(-placement)] } {
     if { [rsz::check_corner_wire_cap] } {
-      rsz::estimate_parasitics_cmd "placement" $path
+      rsz::estimate_parasitics_cmd "placement" $filename
     }
   } elseif { [info exists flags(-global_routing)] } {
     if { [grt::have_routes] } {
       # should check for layer rc
-      rsz::estimate_parasitics_cmd "global_routing" $path
+      rsz::estimate_parasitics_cmd "global_routing" $filename
     } else {
       utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
     }

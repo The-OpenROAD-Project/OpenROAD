@@ -136,6 +136,8 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 
+class SpefWriter;
+
 class NetHash
 {
  public:
@@ -234,8 +236,11 @@ class Resizer : public dbStaState
   double wireClkCapacitance(const Corner* corner) const;
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src, const char* file_path = "");
-  void estimateWireParasitics(const char* path = "");
+  void estimateParasitics(ParasiticsSrc src);
+  void estimateParasitics(ParasiticsSrc src,
+                          std::map<Corner*, std::ostream*>& spef_files);
+  void estimateWireParasitics();
+  void estimateWireParasitics(std::map<Corner*, std::ostream*>& spef_files);
   void estimateWireParasitic(const Net* net);
   void estimateWireParasitic(const Pin* drvr_pin, const Net* net);
   bool haveEstimatedParasitics() const;
@@ -403,16 +408,6 @@ class Resizer : public dbStaState
   ////////////////////////////////////////////////////////////////
   void journalBeginTest();
   void journalRestoreTest();
-
-  void openSpefFile(const char* path);
-  void closeSpefFile();
-  void writeSpefHeader(Corner* corner, dbNetwork* network);
-  void writeSpefPorts(Corner* corner, dbNetwork* network);
-  void writeSpefNet(Corner* corner,
-                    const Net* net,
-                    Parasitic* parasitic,
-                    dbNetwork* network,
-                    Parasitics* parasitics);
 
  protected:
   void init();
@@ -688,6 +683,7 @@ class Resizer : public dbStaState
 
   Logger* logger_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
+  SpefWriter* spef_writer_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
   dbNetwork* db_network_ = nullptr;
