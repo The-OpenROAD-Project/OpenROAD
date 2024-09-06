@@ -780,18 +780,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHlb,
                                          int ripupTHub)
 {
-  directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
-  corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
-  pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
-
-  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
-  pop_heap2_3D_.resize(total_size, false);
-
-  // allocate memory for priority queue
-  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
-  src_heap_3D_.resize(total_size);
-  dest_heap_3D_.resize(total_size);
-
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       in_region_[i][j] = false;
@@ -799,9 +787,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   }
 
   const int endIND = tree_order_pv_.size() * 0.9;
-
-  d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
-  d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
