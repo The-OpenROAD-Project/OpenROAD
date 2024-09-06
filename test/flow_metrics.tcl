@@ -133,6 +133,7 @@ define_metric "DRT::max_slew_slack" "max" "slew" 4 "%3.0f%%" ">=" {min(0, $value
 define_metric "DRT::max_capacitance_slack" "max" "cap" 4 "%3.0f%%" ">=" {min(0, $value * 1.2)}
 define_metric "DRT::max_fanout_slack" "max" "fanout" 6 "%5.0f%%" ">=" {min(0, $value * 1.2)}
 define_metric "DRT::clock_period" "" "" 0 "%5.2f" "<=" {$value}
+define_metric "DRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 
 ################################################################
 

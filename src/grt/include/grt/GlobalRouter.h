@@ -482,6 +482,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
   bool initialized_;
+  int total_diodes_count_;
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

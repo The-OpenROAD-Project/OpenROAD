@@ -437,7 +437,10 @@ void AntennaChecker::calculateAreas(const LayerToGraphNodes& node_by_layer_map,
         if (!gate.isITerm) {
           continue;
         }
-        info.iterms.push_back(gate.iterm);
+
+        if (isValidGate(gate.iterm->getMTerm())) {
+          info.iterms.push_back(gate.iterm);
+        }
         info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
         info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         gates_count++;
@@ -463,10 +466,11 @@ void AntennaChecker::calculateAreas(const LayerToGraphNodes& node_by_layer_map,
           continue;
         }
         // check if has another node with gate in the layer, then merge area
-        if (gate_info[gate.name].find(it.first) != gate_info[gate.name].end()) {
-          gate_info[gate.name][it.first] += info;
+        if (gate_info[gate.iterm].find(it.first)
+            != gate_info[gate.iterm].end()) {
+          gate_info[gate.iterm][it.first] += info;
         } else {
-          gate_info[gate.name][it.first] = info;
+          gate_info[gate.iterm][it.first] = info;
         }
       }
     }
@@ -776,7 +780,11 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
   for (auto& [node, layer_to_node] : gate_info) {
     bool pin_has_violation = false;
 
-    std::string pin_name = fmt::format("  Pin: {}", node);
+    odb::dbMTerm* mterm = node->getMTerm();
+    std::string pin_name = fmt::format("  Pin:   {}/{} ({})",
+                                       node->getInst()->getConstName(),
+                                       mterm->getConstName(),
+                                       mterm->getMaster()->getConstName());
     net_to_report_.at(db_net).report += pin_name + "\n";
 
     for (auto& [layer, node_info] : layer_to_node) {
@@ -802,7 +810,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net).report += "\n";
   }
 
-  std::unordered_map<odb::dbTechLayer*, std::unordered_set<std::string>>
+  std::unordered_map<odb::dbTechLayer*, std::unordered_set<odb::dbITerm*>>
       pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
@@ -870,14 +878,15 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
               }
             }
           }
-          // save the iterms of repaired node
-          for (const auto& iterm_iter : gates) {
-            pin_added[violation_layer].insert(iterm_iter->getName());
-          }
+          pin_added[violation_layer].insert(gate);
+          std::vector<odb::dbITerm*> gates_for_diode_insertion;
+          gates_for_diode_insertion.push_back(gate);
           // save antenna violation
           if (violated) {
-            antenna_violations.push_back(
-                {layer->getRoutingLevel(), gates, diode_count_per_gate, ratio});
+            antenna_violations.push_back({layer->getRoutingLevel(),
+                                          gates_for_diode_insertion,
+                                          diode_count_per_gate,
+					  ratio});
           }
 
           bool car_violation
@@ -890,7 +899,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           // best approach. as a first implementation, insert one diode per net.
           // TODO: implement a proper approach for CAR violations
           if (car_violation || csr_violation) {
-            std::vector<odb::dbITerm*> gates_for_diode_insertion;
+            gates_for_diode_insertion.clear();
             for (auto gate : gates) {
               odb::dbMaster* gate_master = gate->getMTerm()->getMaster();
               if (gate_master->getType()
@@ -1050,6 +1059,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
 {
+  net_to_report_.clear();
   initAntennaRules();
 
   std::ofstream report_file;

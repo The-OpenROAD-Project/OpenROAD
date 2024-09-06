@@ -282,6 +282,9 @@ _installOrTools() {
             echo "OR-Tools is already installed"
         fi
     else
+        if [[ $version == rodete ]]; then
+            version=11
+        fi
         orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         orToolsPath=${PREFIX:-"/opt/or-tools"}
@@ -587,6 +590,11 @@ _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install --no-install-recommends tzdata
+    if [[ $1 == rodete ]]; then
+        tclver=8.6
+    else
+        tclver=
+    fi
     apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
@@ -607,7 +615,7 @@ _installDebianPackages() {
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
-        libtcl \
+        libtcl${tclver} \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -623,8 +631,13 @@ _installDebianPackages() {
             qt5-default
 
     else
+        if [[ $1 == rodete ]]; then
+            pythonver=3.12
+        else
+            pythonver=3.8
+        fi
         apt-get install -y --no-install-recommends \
-            libpython3.8 \
+            libpython${pythonver} \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
@@ -895,8 +908,11 @@ To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
-    "Debian GNU/Linux" )
+    "Debian GNU/Linux" | "Debian GNU/Linux rodete" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ -z ${version} ]]; then
+            version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi

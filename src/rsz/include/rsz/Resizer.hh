@@ -337,6 +337,7 @@ class Resizer : public dbStaState
       double max_wire_length,  // max_wire_length zero for none (meters)
       double slew_margin,      // 0.0-1.0
       double cap_margin,       // 0.0-1.0
+      double buffer_gain,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
@@ -741,8 +742,6 @@ class Resizer : public dbStaState
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
-  // Prim/Dijkstra gets out of hand with bigger nets.
-  static constexpr int max_steiner_pin_count_ = 200000;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;

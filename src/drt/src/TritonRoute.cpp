@@ -507,6 +507,13 @@ void TritonRoute::applyUpdates(
               regionQuery->addDRObj(seg);
               break;
             }
+            case frcVia: {
+              auto via = static_cast<frVia*>(pinfig);
+              frVia updatedVia = update.getVia();
+              via->setBottomConnected(updatedVia.isBottomConnected());
+              via->setTopConnected(updatedVia.isTopConnected());
+              break;
+            }
             default:
               break;
           }
