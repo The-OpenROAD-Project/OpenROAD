@@ -66,6 +66,7 @@
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
+#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -462,7 +463,13 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(const char* path)
+void GlobalRouter::estimateRC()
+{
+  std::map<sta::Corner*, std::ostream*> spef_files;
+  estimateRC(spef_files);
+}
+
+void GlobalRouter::estimateRC(std::map<sta::Corner*, std::ostream*>& spef_files)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -470,10 +477,10 @@ void GlobalRouter::estimateRC(const char* path)
   // Make separate parasitics for each corner.
   sta_->setParasiticAnalysisPts(true);
 
-  MakeWireParasitics builder(
-      logger_, resizer_, sta_, db_->getTech(), block_, this);
+  rsz::SpefWriter spef_writer(logger_, sta_, spef_files);
 
-  resizer_->openSpefFile(path);
+  MakeWireParasitics builder(
+      logger_, resizer_, &spef_writer, sta_, db_->getTech(), block_, this);
 
   for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
@@ -481,8 +488,6 @@ void GlobalRouter::estimateRC(const char* path)
       builder.estimateParasitcs(db_net, net->getPins(), route);
     }
   }
-
-  resizer_->closeSpefFile();
 }
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)

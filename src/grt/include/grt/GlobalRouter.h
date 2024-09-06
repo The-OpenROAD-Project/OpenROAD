@@ -78,7 +78,8 @@ class Opendp;
 
 namespace rsz {
 class Resizer;
-}
+class SpefWriter;
+}  // namespace rsz
 
 namespace sta {
 class dbSta;
@@ -199,7 +200,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC(const char* path = "");
+  void estimateRC();
+  void estimateRC(std::map<sta::Corner*, std::ostream*>& spef_files);
   void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.

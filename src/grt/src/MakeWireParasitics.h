@@ -65,7 +65,8 @@ class Logger;
 
 namespace rsz {
 class Resizer;
-}
+class SpefWriter;
+}  // namespace rsz
 
 namespace grt {
 
@@ -74,6 +75,13 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
  public:
   MakeWireParasitics(utl::Logger* logger,
                      rsz::Resizer* resizer,
+                     sta::dbSta* sta,
+                     odb::dbTech* tech,
+                     odb::dbBlock* block,
+                     GlobalRouter* grouter);
+  MakeWireParasitics(utl::Logger* logger,
+                     rsz::Resizer* resizer,
+                     rsz::SpefWriter* spef_writer,
                      sta::dbSta* sta,
                      odb::dbTech* tech,
                      odb::dbBlock* block,
@@ -146,6 +154,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   odb::dbBlock* block_;
   utl::Logger* logger_;
   rsz::Resizer* resizer_;
+  rsz::SpefWriter* spef_writer_ = nullptr;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;
