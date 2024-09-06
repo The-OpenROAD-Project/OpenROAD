@@ -1351,50 +1351,6 @@ NetTermIterator* dbNetwork::termIterator(const Net* net) const
   return new DbNetTermIterator(net, this);
 }
 
-class AccumulatePins : public PinVisitor
-{
- public:
-  AccumulatePins(const sta::Network* network) { network_ = network; }
-  virtual void operator()(const sta::Pin* pin)
-  {
-    accumulated_pins_.insert(pin);
-  }
-  std::set<const sta::Pin*> accumulated_pins_;
-  const sta::Network* network_;
-};
-
-/* find equivalent modnet for a dbnet */
-dbModNet* dbNetwork::getDbModNetFromDbNet(dbNet* db_net)
-{
-  NetSet visited_nets;
-  AccumulatePins visitor(this);
-  sta::Net* cur_net = dbToSta(db_net);
-  visitConnectedPins(cur_net, visitor, visited_nets);
-  for (auto pin : visitor.accumulated_pins_) {
-    dbITerm* iterm = nullptr;
-    dbBTerm* bterm = nullptr;
-    dbModITerm* moditerm = nullptr;
-    dbModBTerm* modbterm = nullptr;
-
-    staToDb(pin, iterm, bterm, moditerm, modbterm);
-    if (iterm) {
-      dbModNet* mnet = iterm->getModNet();
-      if (mnet) {
-        return mnet;
-      }
-    }
-    if (moditerm) {
-      dbModNet* mnet = moditerm->getModNet();
-      return mnet;
-    }
-    if (bterm) {
-      dbModNet* mnet = bterm->getModNet();
-      return mnet;
-    }
-  }
-  return nullptr;
-}
-
 // override ConcreteNetwork::visitConnectedPins
 
 void dbNetwork::visitConnectedPins(const Net* net,
@@ -2629,13 +2585,13 @@ dbModule* dbNetwork::getParentModule(dbNet* net)
   return nullptr;
 }
 
-void dbNetwork::getInstanceTree(dbModule* start_module,
-                                std::vector<dbModule*>& instance_tree)
+void dbNetwork::getParentHierarchy(dbModule* start_module,
+                                   std::vector<dbModule*>& parent_hierarchy)
 {
   dbModule* top_module = block_->getTopModule();
   dbModule* cur_module = start_module;
   while (cur_module) {
-    instance_tree.push_back(cur_module);
+    parent_hierarchy.push_back(cur_module);
     if (cur_module == top_module)
       return;
     cur_module = start_module->getModInst()->getParent();
@@ -2645,19 +2601,38 @@ void dbNetwork::getInstanceTree(dbModule* start_module,
 dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
                                              std::vector<dbModule*>& itree2)
 {
-  // order lowest to highest (push_back in getInstanceTree)
-  for (auto i : itree1) {
-    for (auto j : itree2) {
-      if (i == j)
-        return i;
+  int ix1 = itree1.size();
+  int ix2 = itree2.size();
+  int limit = std::min(ix1, ix2);
+  dbModule* top_module = block_->getTopModule();
+
+  // reverse traversal. (note hierarchy stored so top is end of list)
+  // get to first divergence
+  std::vector<dbModule*>::reverse_iterator itree1_iter = itree1.rbegin();
+  std::vector<dbModule*>::reverse_iterator itree2_iter = itree2.rbegin();
+  dbModule* common_module = top_module;
+  if (limit > 0) {
+    for (int i = 0; i != limit; i++) {
+      if (*itree1_iter != *itree2_iter) {
+        return common_module;
+      } else {
+        common_module = *itree1_iter;
+      }
+      itree1_iter++;
+      itree2_iter++;
     }
   }
-  return nullptr;
+  return common_module;  // default to top
 }
 
+/*
+Connect any two leaf instance pins anywhere in hierarchy
+adding pins/nets/ports on the hierarchical objects
+*/
 void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
                                     dbITerm* dest_pin,
                                     const char* connection_name)
+
 {
   dbModule* source_db_module = source_pin->getInst()->getModule();
   dbModule* dest_db_module = dest_pin->getInst()->getModule();
@@ -2678,24 +2653,16 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     // case 2: source/dest in different modules. Find highest
     // common module, traverse up adding pins/nets and make
     // connection in highest common module
-    std::vector<dbModule*> source_instance_tree;
-    std::vector<dbModule*> dest_instance_tree;
-    getInstanceTree(source_db_module, source_instance_tree);
-    getInstanceTree(dest_db_module, dest_instance_tree);
-    dbModule* highest_common_module = nullptr;
-    // arrange so first argument to findHighestCommonModule has deepest
-    // hierarchy.
-    if (source_instance_tree.size() > dest_instance_tree.size()) {
-      highest_common_module
-          = findHighestCommonModule(source_instance_tree, dest_instance_tree);
-    } else {
-      highest_common_module
-          = findHighestCommonModule(dest_instance_tree, source_instance_tree);
-    }
+    std::vector<dbModule*> source_parent_tree;
+    std::vector<dbModule*> dest_parent_tree;
+    getParentHierarchy(source_db_module, source_parent_tree);
+    getParentHierarchy(dest_db_module, dest_parent_tree);
+    dbModule* highest_common_module
+        = findHighestCommonModule(source_parent_tree, dest_parent_tree);
     dbModNet* top_net = source_db_mod_net;
     dbModITerm* top_mod_dest = nullptr;
 
-    // make source hierarchy
+    // make source hierarchy (bottom to top).
     dbModule* cur_module = source_db_module;
     while (cur_module != highest_common_module) {
       std::string connection_name_o
@@ -2740,6 +2707,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
       }
+
       // save the top level destination pin for final connection
       top_mod_dest = mod_iterm;
     }
@@ -2758,6 +2726,26 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       }
     } else {
       dest_pin->connect(top_net);
+    }
+
+    // During the addition of new ports and new wiring we may
+    // leave orphaned pins, clean them up.
+    std::set<dbModInst*> cleaned_up;
+    for (auto module_to_clean_up : source_parent_tree) {
+      dbModInst* mi = module_to_clean_up->getModInst();
+      if (mi) {
+        mi->RemoveUnusedPortsAndPins();
+        cleaned_up.insert(mi);
+      }
+    }
+    for (auto module_to_clean_up : dest_parent_tree) {
+      dbModInst* mi = module_to_clean_up->getModInst();
+      if (mi) {
+        if (cleaned_up.find(mi) == cleaned_up.end()) {
+          mi->RemoveUnusedPortsAndPins();
+          cleaned_up.insert(mi);
+        }
+      }
     }
   }
 }
