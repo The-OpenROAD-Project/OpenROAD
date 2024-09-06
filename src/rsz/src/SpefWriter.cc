@@ -60,8 +60,6 @@ SpefWriter::SpefWriter(Logger* logger,
 {
 }
 
-SpefWriter::~SpefWriter() = default;
-
 void SpefWriter::writeSpefHeader(Corner* corner)
 {
   auto it = spef_files_.find(corner);

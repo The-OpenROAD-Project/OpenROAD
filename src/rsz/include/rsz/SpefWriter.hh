@@ -64,7 +64,7 @@ class SpefWriter
   SpefWriter(Logger* logger,
              dbSta* sta,
              std::map<Corner*, std::ostream*>& spef_files);
-  ~SpefWriter();
+  ~SpefWriter() = default;
   void writeSpefHeader(Corner* corner);
   void writeSpefPorts(Corner* corner);
   void writeSpefNet(Corner* corner, const Net* net, Parasitic* parasitic);
