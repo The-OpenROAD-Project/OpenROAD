@@ -967,6 +967,9 @@ class dbBlock : public dbObject
   ///
   dbSet<dbITerm> getITerms();
 
+  ///
+  /// Get iterm from block
+  ///
   dbITerm* getITerm(int);
 
   ///
@@ -7615,6 +7618,7 @@ class dbModBTerm : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModBTerm
+
   void setParentModITerm(dbModITerm* parent_pin);
   dbModITerm* getParentModITerm() const;
   void setModNet(dbModNet* modNet);
@@ -7629,6 +7633,7 @@ class dbModBTerm : public dbObject
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
+  static void destroy(dbModBTerm*);
 
  private:
   // User Code End dbModBTerm
@@ -7652,6 +7657,8 @@ class dbModInst : public dbObject
   dbModITerm* findModITerm(const char* name);
 
   dbSet<dbModITerm> getModITerms();
+
+  void RemoveUnusedPortsAndPins();
 
   static dbModInst* create(dbModule* parentModule,
                            dbModule* masterModule,
@@ -7681,7 +7688,7 @@ class dbModITerm : public dbObject
   void connect(dbModNet* modnet);
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
-
+  static void destroy(dbModITerm*);
   // User Code End dbModITerm
 };
 
@@ -7698,6 +7705,7 @@ class dbModNet : public dbObject
 
   const char* getName() const;
   static dbModNet* create(dbModule* parentModule, const char* name);
+  static void destroy(dbModNet*);
   // User Code End dbModNet
 };
 

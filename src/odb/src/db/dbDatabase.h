@@ -72,6 +72,10 @@ const uint db_schema_initial = 57;
 
 const uint db_schema_minor = 88;  // Current revision number
 
+// Revision where odb::modITerm,modBTerm,modNet made doubly linked for
+// hiearchical port removal
+const uint db_schema_hier_port_removal = 89;
+
 // Revision where odb::Polygon was added
 const uint db_schema_polygon = 88;
 

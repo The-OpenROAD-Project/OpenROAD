@@ -185,8 +185,9 @@ class dbNetwork : public ConcreteNetwork
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
-  void getInstanceTree(dbModule* start_module,
-                       std::vector<dbModule*>& instance_tree);
+
+  void getParentHierarchy(dbModule* start_module,
+                          std::vector<dbModule*>& parent_hierarchy);
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
 

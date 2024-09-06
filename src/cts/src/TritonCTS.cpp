@@ -1251,6 +1251,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
                                    std::set<odb::dbNet*>& clkLeafNets)
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
+  // gets the module for the driver for the net
   odb::dbModule* top_module = network_->getParentModule(topClockNet);
 
   const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
