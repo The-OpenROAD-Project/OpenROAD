@@ -3178,14 +3178,12 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
   //  ProfileTask profile("DR:routeNet");
 
   // check if net has jumpers
+  bool route_with_jumpers = false;
   if (net->getFrNet()->hasJumpers()) {
     //std::cout << "Net " << net->getFrNet()->getName().c_str();
     //std::cout << " has jumpers";
     //std::cout << std::endl << std::flush;
-    GUIDECOST = 5;
-  }
-  else {
-    GUIDECOST = 1;
+    route_with_jumpers = true;
   }
   if (net->getPins().size() <= 1) {
     return true;
@@ -3238,7 +3236,8 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
                           ccMazeIdx1,
                           ccMazeIdx2,
                           centerPt,
-                          mazeIdx2TaperBox)) {
+                          mazeIdx2TaperBox,
+			  route_with_jumpers)) {
       routeNet_postAstarUpdate(
           path, connComps, unConnPins, mazeIdx2unConnPins, isFirstConn);
       routeNet_postAstarWritePath(

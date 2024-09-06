@@ -185,7 +185,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     costs.push_back(
         {name + " total cost",
          graph->getCosts(
-             x, y, z, dir, layer, data.graph->getNDR() != nullptr)});
+             x, y, z, dir, layer, data.graph->getNDR() != nullptr, false)}); // how to detect jumper?
   }
   props.insert(props.end(), costs.begin(), costs.end());
   return props;
