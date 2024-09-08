@@ -2615,9 +2615,8 @@ dbModule* dbNetwork::findHighestCommonModule(std::vector<dbModule*>& itree1,
     for (int i = 0; i != limit; i++) {
       if (*itree1_iter != *itree2_iter) {
         return common_module;
-      } else {
-        common_module = *itree1_iter;
       }
+      common_module = *itree1_iter;
       itree1_iter++;
       itree2_iter++;
     }
