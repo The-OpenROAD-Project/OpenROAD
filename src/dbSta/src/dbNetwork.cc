@@ -2567,7 +2567,7 @@ dbNetworkObserver::~dbNetworkObserver()
   Hierarchical network api connections
  */
 
-dbModule* dbNetwork::getParentModule(dbNet* net)
+dbModule* dbNetwork::getNetDriverParentModule(dbNet* net)
 {
   if (hasHierarchy()) {
     // get sink driver instance and return its parent
@@ -2592,8 +2592,9 @@ void dbNetwork::getParentHierarchy(dbModule* start_module,
   dbModule* cur_module = start_module;
   while (cur_module) {
     parent_hierarchy.push_back(cur_module);
-    if (cur_module == top_module)
+    if (cur_module == top_module){
       return;
+    }
     cur_module = start_module->getModInst()->getParent();
   }
 }
@@ -2644,10 +2645,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
     if (!source_db_mod_net) {
       source_db_mod_net = dbModNet::create(source_db_module, connection_name);
       source_pin->connect(source_db_mod_net);
-      dest_pin->connect(source_db_mod_net);
-    } else {
-      dest_pin->connect(source_db_mod_net);
     }
+    dest_pin->connect(source_db_mod_net);
   } else {
     // case 2: source/dest in different modules. Find highest
     // common module, traverse up adding pins/nets and make
