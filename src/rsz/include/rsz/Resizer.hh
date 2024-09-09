@@ -238,7 +238,7 @@ class Resizer : public dbStaState
   double wireClkVCapacitance(const Corner* corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_files);
+                          std::map<Corner*, std::ostream*>& spef_streams_);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net* net);
   void estimateWireParasitic(const Pin* drvr_pin, const Net* net);

@@ -49,6 +49,8 @@ namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
 getResizer();
+utl::Logger* 
+getLogger();
 void
 ensureLinked();
 }
@@ -356,6 +358,11 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 
         if (file->is_open()) {
           spef_files[corner] = std::move(file);
+        } else {
+          Logger* logger = ord::getLogger();
+          logger->error(utl::RSZ,
+                        7,
+                        "Can't open file " + file_path);
         }
       }
     }

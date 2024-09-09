@@ -274,17 +274,19 @@ void Resizer::ensureParasitics()
 
 void Resizer::estimateParasitics(ParasiticsSrc src)
 {
-  std::map<Corner*, std::ostream*> spef_files;
-  estimateParasitics(src, spef_files);
+  std::map<Corner*, std::ostream*> spef_streams;
+  estimateParasitics(src, spef_streams);
 }
 
 void Resizer::estimateParasitics(ParasiticsSrc src,
-                                 std::map<Corner*, std::ostream*>& spef_files)
+                                 std::map<Corner*, std::ostream*>& spef_streams)
 {
-  spef_writer_ = new SpefWriter(logger_, sta_, spef_files);
-  for (auto& [corner, _] : spef_files) {
-    spef_writer_->writeSpefHeader(corner);
-    spef_writer_->writeSpefPorts(corner);
+  if (!spef_streams.empty()) {
+    spef_writer_ = new SpefWriter(logger_, sta_, spef_streams);
+    for (auto& [corner, _] : spef_streams) {
+      spef_writer_->writeSpefHeader(corner);
+      spef_writer_->writeSpefPorts(corner);
+    }
   }
 
   switch (src) {
@@ -299,8 +301,10 @@ void Resizer::estimateParasitics(ParasiticsSrc src,
       break;
   }
 
-  delete spef_writer_;
-  spef_writer_ = nullptr;
+  if (spef_writer_) {
+    delete spef_writer_;
+    spef_writer_ = nullptr;
+  }
 }
 
 bool Resizer::haveEstimatedParasitics() const

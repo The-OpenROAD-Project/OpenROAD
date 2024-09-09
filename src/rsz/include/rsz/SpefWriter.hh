@@ -63,7 +63,7 @@ class SpefWriter
  public:
   SpefWriter(Logger* logger,
              dbSta* sta,
-             std::map<Corner*, std::ostream*>& spef_files);
+             std::map<Corner*, std::ostream*>& spef_streams);
   ~SpefWriter() = default;
   void writeSpefHeader(Corner* corner);
   void writeSpefPorts(Corner* corner);
@@ -75,7 +75,7 @@ class SpefWriter
   dbNetwork* network_;
   Parasitics* parasitics_;
 
-  std::map<Corner*, std::ostream*>& spef_files_;
+  std::map<Corner*, std::ostream*>& spef_streams_;
 };
 
 }  // namespace rsz
