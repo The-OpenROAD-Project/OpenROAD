@@ -1533,7 +1533,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos = it - src_heap.begin();
               updateHeap(src_heap, pos);
             } else {
-              logger_->error(GRT, 608, "Position not found in heap");
+              logger_->error(GRT, 607, "Position not found in heap");
             }
           }
         }
