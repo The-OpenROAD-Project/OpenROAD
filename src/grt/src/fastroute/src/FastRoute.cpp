@@ -553,11 +553,8 @@ void FastRouteCore::addVerticalAdjustments(
     const interval<int>::type& last_tile_reduce_interval)
 {
   // add intervals to set for each tile
-  for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
-    if (y >= y_grid_) {
-      continue;
-    }
-    for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
+    for (int y = first_tile.getY(); y < last_tile.getY() && y < y_grid_; y++) {
       if (x == first_tile.getX()) {
         vertical_blocked_intervals_[std::make_tuple(x, y, layer)]
             += first_tile_reduce_interval;
@@ -579,10 +576,7 @@ void FastRouteCore::addHorizontalAdjustments(
     const interval<int>::type& last_tile_reduce_interval)
 {
   // add intervals to each tiles
-  for (int x = first_tile.getX(); x <= last_tile.getX(); x++) {
-    if (x >= x_grid_) {
-      continue;
-    }
+  for (int x = first_tile.getX(); x < last_tile.getX() && x < x_grid_; x++) {
     for (int y = first_tile.getY(); y <= last_tile.getY(); y++) {
       if (y == first_tile.getY()) {
         horizontal_blocked_intervals_[std::make_tuple(x, y, layer)]
