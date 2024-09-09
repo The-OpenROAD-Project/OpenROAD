@@ -51,19 +51,19 @@ using utl::RSZ;
 
 SpefWriter::SpefWriter(Logger* logger,
                        dbSta* sta,
-                       std::map<Corner*, std::ostream*>& spef_files)
+                       std::map<Corner*, std::ostream*>& spef_streams)
     : logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
       parasitics_(sta_->parasitics()),
-      spef_files_(spef_files)
+      spef_streams_(spef_streams)
 {
 }
 
 void SpefWriter::writeSpefHeader(Corner* corner)
 {
-  auto it = spef_files_.find(corner);
-  if (it == spef_files_.end()) {
+  auto it = spef_streams_.find(corner);
+  if (it == spef_streams_.end()) {
     return;
   }
   std::ostream& stream = *it->second;
@@ -95,13 +95,15 @@ void SpefWriter::writeSpefHeader(Corner* corner)
 
 void SpefWriter::writeSpefPorts(Corner* corner)
 {
-  auto it = spef_files_.find(corner);
-  if (it == spef_files_.end()) {
+  auto it = spef_streams_.find(corner);
+  if (it == spef_streams_.end()) {
     return;
   }
   std::ostream& stream = *it->second;
 
-  auto pin_iter = network_->pinIterator(network_->topInstance());
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network_->pinIterator(network_->topInstance()));
+
   stream << "*PORTS" << '\n';
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
@@ -134,21 +136,19 @@ void SpefWriter::writeSpefPorts(Corner* corner)
     } else {
       logger_->error(
           RSZ,
-          7,
+          8,
           "Got a modTerm instead of iTerm or bTerm while writing SPEF ports.");
     }
   }
   stream << '\n';
-
-  delete pin_iter;
 }
 
 void SpefWriter::writeSpefNet(Corner* corner,
                               const Net* net,
                               Parasitic* parasitic)
 {
-  auto it = spef_files_.find(corner);
-  if (it == spef_files_.end()) {
+  auto it = spef_streams_.find(corner);
+  if (it == spef_streams_.end()) {
     return;
   }
   std::ostream& stream = *it->second;
@@ -189,7 +189,7 @@ void SpefWriter::writeSpefNet(Corner* corner,
         stream << '\n';
       } else {
         logger_->error(RSZ,
-                       8,
+                       9,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF net connections.");
       }
