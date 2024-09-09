@@ -2592,7 +2592,7 @@ void dbNetwork::getParentHierarchy(dbModule* start_module,
   dbModule* cur_module = start_module;
   while (cur_module) {
     parent_hierarchy.push_back(cur_module);
-    if (cur_module == top_module){
+    if (cur_module == top_module) {
       return;
     }
     cur_module = start_module->getModInst()->getParent();
