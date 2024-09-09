@@ -2573,7 +2573,7 @@ dbModule* dbNetwork::getNetDriverParentModule(dbNet* net)
     // get sink driver instance and return its parent
     int drivingITerm = net->getDrivingITerm();
     if (drivingITerm != 0 && drivingITerm != -1) {
-      dbITerm* iterm = block_->getITerm(drivingITerm);
+      dbITerm* iterm = dbITerm::getITerm(block_, drivingITerm);
       dbModNet* modnet = iterm->getModNet();
       if (modnet != nullptr) {
         return modnet->getParent();
