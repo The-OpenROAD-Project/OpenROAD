@@ -1871,6 +1871,10 @@ void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
     getHardMacros(module, hard_macros);
   }
   cluster->specifyHardMacros(hard_macros);
+
+  for (HardMacro* hard_macro : hard_macros) {
+    hard_macro->setCluster(cluster);
+  }
 }
 
 // Get all the hard macros in a logical module

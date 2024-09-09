@@ -356,6 +356,9 @@ class HardMacro
   bool operator<(const HardMacro& macro) const;
   bool operator==(const HardMacro& macro) const;
 
+  void setCluster(Cluster* cluster) { cluster_ = cluster; }
+  Cluster* getCluster() const { return cluster_; }
+
   // Get Physical Information
   // Note that the default X and Y include halo_width
   void setLocation(const std::pair<float, float>& location);
@@ -444,6 +447,8 @@ class HardMacro
 
   odb::dbInst* inst_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+
+  Cluster* cluster_ = nullptr;
 };
 
 // We have three types of SoftMacros
