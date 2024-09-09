@@ -97,6 +97,7 @@ GlobalRouter::GlobalRouter()
       allow_congestion_(false),
       macro_extension_(0),
       initialized_(false),
+      total_diodes_count_(0),
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
@@ -172,6 +173,7 @@ GlobalRouter::~GlobalRouter()
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
+  fastroute_->clear();
   ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
@@ -226,7 +228,7 @@ void GlobalRouter::saveCongestion()
 bool GlobalRouter::haveRoutes()
 {
   if (routes_.empty()) {
-    loadGuidesFromDB();
+    logger_->warn(GRT, 97, "No global routing found for nets.");
   }
 
   return !routes_.empty();
@@ -234,7 +236,20 @@ bool GlobalRouter::haveRoutes()
 
 bool GlobalRouter::haveDetailedRoutes()
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   for (odb::dbNet* db_net : block_->getNets()) {
+    if (isDetailedRouted(db_net)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
+{
+  for (odb::dbNet* db_net : db_nets) {
     if (isDetailedRouted(db_net)) {
       return true;
     }
@@ -329,7 +344,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                   float ratio_margin,
                                   const int num_threads)
 {
-  if (!initialized_) {
+  if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
@@ -375,6 +390,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
+      total_diodes_count_ += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
       int illegal_diode_placement_count
@@ -394,6 +410,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     repair_antennas_->clearViolations();
     itr++;
   }
+  logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides();
 }
 
@@ -600,9 +617,11 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
-    std::vector<odb::Point> last_pos;
+    std::multiset<RoutePt> last_pos;
     for (const Pin& pin : net->getPins()) {
-      last_pos.push_back(pin.getOnGridPosition());
+      last_pos.insert(RoutePt(pin.getOnGridPosition().getX(),
+                              pin.getOnGridPosition().getY(),
+                              pin.getConnectionLayer()));
     }
     net->destroyPins();
     // update pin positions
@@ -615,6 +634,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     if (pinPositionsChanged(net, last_pos)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
+      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
@@ -625,6 +645,126 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     net->setDirtyNet(false);
   }
   dirty_nets_.clear();
+}
+
+// This function is not currently enabled
+void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
+{
+  Net* net = db_net_map_[db_net];
+  GRoute& segments = routes_[db_net];
+  const int total_segments = segments.size();
+
+  if (net->getNumPins() < 2) {
+    return;
+  }
+
+  std::string dump;
+  if (!netIsCovered(db_net, dump)) {
+    logger_->error(
+        GRT, 266, "Net {} does not cover all its pins.", net->getName());
+  }
+  int root = -1, alternate_root = -1;
+  std::vector<bool> covers_pin(total_segments, false);
+
+  for (int s = 0; s < total_segments; s++) {
+    for (Pin& pin : net->getPins()) {
+      if (segmentCoversPin(segments[s], pin)) {
+        covers_pin[s] = true;
+        alternate_root = s;
+        if (pin.isDriver()) {
+          root = s;
+        }
+      }
+    }
+  }
+
+  if (root == -1) {
+    root = alternate_root;
+    // If driverless nets issue is fixed there should be no alternate_root and
+    // this should become an Error
+    logger_->warn(GRT, 268, "Net {} has no driver pin.", net->getName());
+  }
+  AdjacencyList graph = buildNetGraph(db_net);
+
+  // Runs a BFS trough the graph
+  std::vector<SegmentIndex> parent(total_segments,
+                                   std::numeric_limits<SegmentIndex>::max());
+  std::vector<SegmentIndex> total_children(total_segments, 0);
+  std::queue<int> q, leafs;
+  q.push(root);
+  parent[root] = root;
+
+  while (!q.empty()) {
+    int node = q.front();
+    q.pop();
+    for (int child : graph[node]) {
+      if (parent[child] != std::numeric_limits<uint16_t>::max()) {
+        continue;
+      }
+      parent[child] = node;
+      total_children[node]++;
+      q.push(child);
+    }
+    if (!total_children[node]) {
+      leafs.push(node);
+    }
+  }
+
+  net->setSegmentParent(parent);
+
+  // Prunes branches that dont end on leafs
+  std::set<int> segments_to_delete;
+  while (!leafs.empty()) {
+    int leaf = leafs.front();
+    leafs.pop();
+    if (!covers_pin[leaf]) {
+      segments_to_delete.insert(leaf);
+      if (!--total_children[parent[leaf]]) {
+        leafs.push(parent[leaf]);
+      };
+    }
+  }
+
+  int total_deleted_segments = 0;
+  for (int deleted : segments_to_delete) {
+    const int adjusted_seg_id = deleted - total_deleted_segments;
+    deleteSegment(net, segments, adjusted_seg_id);
+    total_deleted_segments++;
+  }
+}
+
+void GlobalRouter::deleteSegment(Net* net, GRoute& segments, const int seg_id)
+{
+  GSegment& seg = segments[seg_id];
+  if (seg.init_layer == seg.final_layer) {
+    bool is_horizontal = (seg.init_x != seg.final_x);
+    bool is_vertical = (seg.init_y != seg.final_y);
+    const int tile_size = grid_->getTileSize();
+    // For some reason I do not understand using [auto min_x, min_y] sometimes
+    // break here
+    std::pair<int, int> x_bound
+        = std::minmax((int) ((seg.init_x - grid_->getXMin()) / tile_size),
+                      (int) ((seg.final_x - grid_->getXMin()) / tile_size));
+    std::pair<int, int> y_bound
+        = std::minmax((int) ((seg.init_y - grid_->getYMin()) / tile_size),
+                      (int) ((seg.final_y - grid_->getYMin()) / tile_size));
+    int x0 = x_bound.first, y0 = y_bound.first;
+
+    while (x0 <= x_bound.second && y0 <= y_bound.second) {
+      const int x1 = x0 + (is_horizontal ? 1 : 0);
+      const int y1 = y0 + (is_vertical ? 1 : 0);
+      const int edge_cap
+          = fastroute_->getEdgeCapacity(x0, y0, x1, y1, seg.init_layer);
+      fastroute_->addAdjustment(
+          x0, y0, x1, y1, seg.init_layer, edge_cap + 1, false);
+      if (is_horizontal) {
+        x0++;
+      } else if (is_vertical) {
+        y0++;
+      }
+    }
+  }
+  net->deleteSegment(seg_id, segments);
 }
 
 void GlobalRouter::destroyNetWire(Net* net)
@@ -897,7 +1037,6 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
     utl::shuffle(nets.begin(), nets.end(), g);
   }
-
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
@@ -927,14 +1066,16 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 }
 
 bool GlobalRouter::pinPositionsChanged(Net* net,
-                                       std::vector<odb::Point>& last_pos)
+                                       std::multiset<RoutePt>& last_pos)
 {
   bool is_diferent = false;
-  std::map<odb::Point, int> cnt_pos;
+  std::map<RoutePt, int> cnt_pos;
   for (const Pin& pin : net->getPins()) {
-    cnt_pos[pin.getOnGridPosition()]++;
+    cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
+                    pin.getOnGridPosition().getY(),
+                    pin.getConnectionLayer())]++;
   }
-  for (const odb::Point& last : last_pos) {
+  for (const RoutePt& last : last_pos) {
     cnt_pos[last]--;
   }
   for (const auto& it : cnt_pos) {
@@ -944,6 +1085,20 @@ bool GlobalRouter::pinPositionsChanged(Net* net,
     }
   }
   return is_diferent;
+}
+
+bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
+{
+  for (const Pin& pin : net->getPins()) {
+    if (last_pos.find(RoutePt(pin.getOnGridPosition().getX(),
+                              pin.getOnGridPosition().getY(),
+                              pin.getConnectionLayer()))
+        == last_pos.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool GlobalRouter::makeFastrouteNet(Net* net)
@@ -2235,17 +2390,7 @@ bool GlobalRouter::netIsCovered(odb::dbNet* db_net,
   for (const Pin& pin : net->getPins()) {
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
-      // Pin is horizontally covered by the segment
-      if (pin.getOnGridPosition().getX() >= std::min(seg.init_x, seg.final_x)
-          && pin.getOnGridPosition().getX() <= std::max(seg.init_x, seg.final_x)
-          // Pin is vertically covered by the segment
-          && pin.getOnGridPosition().getY() >= std::min(seg.init_y, seg.final_y)
-          && pin.getOnGridPosition().getY() <= std::max(seg.init_y, seg.final_y)
-          // Pin and segment share a layer
-          && pin.getConnectionLayer()
-                 >= std::min(seg.init_layer, seg.final_layer)
-          && pin.getConnectionLayer()
-                 <= std::max(seg.init_layer, seg.final_layer)) {
+      if (segmentCoversPin(seg, pin)) {
         pin_is_covered = true;
         break;
       }
@@ -2267,6 +2412,40 @@ bool GlobalRouter::segmentIsLine(const GSegment& segment)
                        + (segment.init_y != segment.final_y)
                        + (segment.init_layer != segment.final_layer);
   return (dimensionality == 1);
+}
+
+bool GlobalRouter::segmentCoversPin(const GSegment& segment, const Pin& pin)
+{
+  auto [min_x, max_x] = std::minmax(segment.init_x, segment.final_x);
+  auto [min_y, max_y] = std::minmax(segment.init_y, segment.final_y);
+  auto [min_layer, max_layer]
+      = std::minmax(segment.init_layer, segment.final_layer);
+  return (pin.getOnGridPosition().getX() >= min_x
+          && pin.getOnGridPosition().getX() <= max_x
+          // Pin is vertically covered by the segment
+          && pin.getOnGridPosition().getY() >= min_y
+          && pin.getOnGridPosition().getY() <= max_y
+          // Pin and segment share a layer
+          && pin.getConnectionLayer() >= min_layer
+          && pin.getConnectionLayer() <= max_layer);
+}
+
+// Builds the Net Graph in O(N²)
+AdjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
+{
+  const GRoute& segments = routes_[net];
+  const int total_segments = segments.size();
+  AdjacencyList graph(total_segments, std::vector<int>());
+  for (int i = 0; i < total_segments; i++) {
+    for (int j = i - 1; j >= 0; j--) {
+      if (!segmentsConnect(segments[i], segments[j])) {
+        continue;
+      }
+      graph[i].push_back(j);
+      graph[j].push_back(i);
+    }
+  }
+  return graph;
 }
 
 // Implements Union-Find algorithm to determine connectivity
@@ -4412,6 +4591,11 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
 {
   return (p1.x_ < p2.x_) || (p1.x_ == p2.x_ && p1.y_ < p2.y_)
          || (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ < p2.layer_);
+}
+
+bool operator==(const RoutePt& p1, const RoutePt& p2)
+{
+  return (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ == p2.layer_);
 }
 
 ////////////////////////////////////////////////////////////////

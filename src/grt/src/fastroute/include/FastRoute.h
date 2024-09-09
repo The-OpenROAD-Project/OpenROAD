@@ -120,6 +120,7 @@ class FastRouteCore
   void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   void mergeNet(odb::dbNet* db_net);
+  void clearNetRoute(odb::dbNet* db_net);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,

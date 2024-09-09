@@ -13,6 +13,7 @@ record_tests {
   no_endcap
   symmetry
   cut_rows
+  cut_rows_min_width
   cut_rows_with_endcaps
   boundary_macros_separate
   boundary_macros_auto_select

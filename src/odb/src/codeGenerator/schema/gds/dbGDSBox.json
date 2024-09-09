@@ -1,0 +1,11 @@
+{
+    "name":"dbGDSBox",
+    "type":"dbGDSElement",
+    "fields":[
+    ],
+    "h_includes": [
+      "dbGDSElement.h"
+    ],
+    "cpp_includes": ["odb/dbTypes.h"]
+}
+  

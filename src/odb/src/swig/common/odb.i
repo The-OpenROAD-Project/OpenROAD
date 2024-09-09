@@ -76,6 +76,8 @@ using namespace odb;
 %ignore odb::Point::set(Orientation2D orient, int value);
 %ignore odb::Rect::bloat(int margin, Orientation2D orient) const;
 
+%ignore odb::dbGDSStructure::operator[];
+
 %include "dbenums.i"
 %include "parserenums.i"
 %include "dbtypes.i"

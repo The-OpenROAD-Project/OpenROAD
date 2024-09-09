@@ -540,8 +540,7 @@ bool hasGuideInterval(const frCoord begin_idx,
  * The function identifies touching guides on the same layer on consecutive
  * track indices. It adds a bridge guide on the upper or lower layer that
  * connects both guides if such one does not exist.
- * @note The function prefers bridging using the upper layer than the lower
- * layer.
+ * @note The function prefers bridging on the upper layer to the lower layer.
  */
 void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
 {

@@ -13,6 +13,10 @@ set(TEST_LIBS
         Boost::boost
         utl_lib
         odb_test_helper
+        gdsin
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
 )
 
 add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc)
@@ -27,8 +31,10 @@ add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
 add_executable(TestNetTrack TestNetTrack.cpp)
 add_executable(TestMaster TestMaster.cpp)
+add_executable(TestGDSIn TestGDSIn.cpp)
+#add_executable(TestXML TestXML.cpp)
 
-target_link_libraries(OdbGTests odb gtest gmock gtest_main)
+target_link_libraries(OdbGTests ${TEST_LIBS})
 target_link_libraries(TestCallBacks ${TEST_LIBS})
 target_link_libraries(TestGeom ${TEST_LIBS})
 target_link_libraries(TestModule ${TEST_LIBS})
@@ -40,6 +46,8 @@ target_link_libraries(TestAccessPoint ${TEST_LIBS})
 target_link_libraries(TestGuide ${TEST_LIBS})
 target_link_libraries(TestNetTrack ${TEST_LIBS})
 target_link_libraries(TestMaster ${TEST_LIBS})
+target_link_libraries(TestGDSIn gdsin odb_test_helper)
+#target_link_libraries(TestXML gdsin odb_test_helper)
 
 # FAILING TARGETS
 # add_test(NAME TestLef58Properties COMMAND TestLef58Properties)

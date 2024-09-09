@@ -1196,7 +1196,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
       if (parent == tree_->root.get()) {
         createFlatCluster(module, parent);
       } else {
-        addModuleInstsToCluster(parent, module);
+        addModuleLeafInstsToCluster(parent, module);
         parent->clearDbModules();
         updateInstancesAssociation(parent);
       }
@@ -1245,14 +1245,13 @@ void ClusteringEngine::breakCluster(Cluster* parent)
   updateInstancesAssociation(parent);
 }
 
-// This cluster won't be associated with the module. It will only
-// contain its macros and std cells as leaves.
+// A flat cluster is a cluster created from the leaf instances of a module.
 void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
 {
   const std::string cluster_name
       = std::string("(") + parent->getName() + ")_glue_logic";
   auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
-  addModuleInstsToCluster(cluster.get(), module);
+  addModuleLeafInstsToCluster(cluster.get(), module);
 
   bool empty_leaf_instances
       = cluster->getLeafStdCells().empty() && cluster->getLeafMacros().empty();
@@ -1262,8 +1261,8 @@ void ClusteringEngine::createFlatCluster(odb::dbModule* module, Cluster* parent)
   }  // The cluster will be deleted otherwise
 }
 
-void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster,
-                                               odb::dbModule* module)
+void ClusteringEngine::addModuleLeafInstsToCluster(Cluster* cluster,
+                                                   odb::dbModule* module)
 {
   for (odb::dbInst* inst : module->getInsts()) {
     odb::dbMaster* master = inst->getMaster();
@@ -1274,8 +1273,14 @@ void ClusteringEngine::addModuleInstsToCluster(Cluster* cluster,
   }
 }
 
+// Map a module to a cluster.
 void ClusteringEngine::createCluster(odb::dbModule* module, Cluster* parent)
 {
+  Metrics* module_metrics = tree_->maps.module_to_metrics.at(module).get();
+  if (module_metrics->empty()) {
+    return;
+  }
+
   const std::string cluster_name = module->getHierarchicalName();
   auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
   cluster->addDbModule(module);

@@ -97,7 +97,7 @@ class GuideProcessor
                           std::vector<frRect>& guides,
                           const Point3D& best_pin_loc_idx,
                           const Point3D& best_pin_loc_coords,
-                          const int closest_guide_idx);
+                          int closest_guide_idx);
   /**
    * @brief Patches guides to cover part of the pin if needed.
    *
