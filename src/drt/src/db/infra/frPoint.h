@@ -57,6 +57,13 @@ class Point3D : public Point
   }
 
   bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
+  bool operator<(const Point3D& rhs) const
+  {
+    if (Point::operator!=(rhs)) {
+      return Point::operator<(rhs);
+    }
+    return z_ < rhs.z_;
+  }
 
  private:
   int z_{0};
