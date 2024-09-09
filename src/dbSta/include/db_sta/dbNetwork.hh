@@ -181,7 +181,7 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchical wiring support.
   dbModNet* getDbModNetFromDbNet(dbNet* db_net);
-  dbModule* getParentModule(dbNet* net);
+  dbModule* getNetDriverParentModule(dbNet* net);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
