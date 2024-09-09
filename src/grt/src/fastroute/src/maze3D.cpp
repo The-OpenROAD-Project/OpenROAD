@@ -914,11 +914,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::West;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp) {
-                  ind++;
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT, 601, "Position not found in heap.");
                 }
-                updateHeap3D(src_heap_3D_, ind);
               }
             }
           }
@@ -952,11 +955,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::East;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp) {
-                  ind++;
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT, 602, "Position not found in heap.");
                 }
-                updateHeap3D(src_heap_3D_, ind);
               }
             }
           }
@@ -990,11 +996,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::North;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp) {
-                  ind++;
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT, 603, "Position not found in heap.");
                 }
-                updateHeap3D(src_heap_3D_, ind);
               }
             }
           }
@@ -1026,11 +1035,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::South;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp) {
-                  ind++;
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT, 604, "Position not found in heap.");
                 }
-                updateHeap3D(src_heap_3D_, ind);
               }
             }
           }
@@ -1061,11 +1073,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Down;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            int ind = 0;
-            while (src_heap_3D_[ind] != dtmp) {
-              ind++;
+            const auto it
+                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            if (it != src_heap_3D_.end()) {
+              const int pos = it - src_heap_3D_.begin();
+              updateHeap3D(src_heap_3D_, pos);
+            } else {
+              logger_->error(GRT, 605, "Position not found in heap.");
             }
-            updateHeap3D(src_heap_3D_, ind);
           }
         }
 
@@ -1094,11 +1109,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Up;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            int ind = 0;
-            while (src_heap_3D_[ind] != dtmp) {
-              ind++;
+            const auto it
+                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            if (it != src_heap_3D_.end()) {
+              const int pos = it - src_heap_3D_.begin();
+              updateHeap3D(src_heap_3D_, pos);
+            } else {
+              logger_->error(GRT, 606, "Position not found in heap.");
             }
-            updateHeap3D(src_heap_3D_, ind);
           }
         }
 
