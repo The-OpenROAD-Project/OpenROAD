@@ -1937,15 +1937,6 @@ dbBTerm* dbBlock::findBTerm(const char* name)
   return (dbBTerm*) block->_bterm_hash.find(name);
 }
 
-dbITerm* dbBlock::getITerm(int id)
-{
-  if (id == 0) {
-    return nullptr;
-  }
-  _dbBlock* block = (_dbBlock*) this;
-  return (dbITerm*) (block->_iterm_tbl->getPtr(id));
-}
-
 dbSet<dbITerm> dbBlock::getITerms()
 {
   _dbBlock* block = (_dbBlock*) this;
