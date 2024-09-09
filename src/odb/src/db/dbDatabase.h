@@ -75,6 +75,10 @@ const uint db_schema_minor = 89;  // Current revision number
 // Revision where blocked regions for IO pins were added to dbBlock
 const uint db_schema_dbblock_blocked_regions_for_pins = 89;
 
+// Revision where odb::modITerm,modBTerm,modNet made doubly linked for
+// hiearchical port removal
+const uint db_schema_hier_port_removal = 89;
+
 // Revision where odb::Polygon was added
 const uint db_schema_polygon = 88;
 
