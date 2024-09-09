@@ -93,6 +93,12 @@ struct DebugSetting
 
 using stt::Tree;
 
+struct parent3D
+{
+  short l;
+  int x, y;
+};
+
 class FastRouteCore
 {
  public:
@@ -641,11 +647,6 @@ class FastRouteCore
   std::vector<int> net_ids_;
 
   // Maze 3D variables
-  struct parent3D
-  {
-    short l;
-    int x, y;
-  };
   multi_array<Direction, 3> directions_3D_;
   multi_array<int, 3> corr_edge_3D_;
   multi_array<parent3D, 3> pr_3D_;

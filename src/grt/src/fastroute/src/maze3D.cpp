@@ -892,8 +892,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
               const int tmpX = curX - 1;  // the left neighbor
 
-              if (d1_3D_[curL][curY][tmpX] >= BIG_INT)  // left neighbor not been
-                                                       // put into src_heap_3D
+              if (d1_3D_[curL][curY][tmpX]
+                  >= BIG_INT)  // left neighbor not been
+                               // put into src_heap_3D
               {
                 d1_3D_[curL][curY][tmpX] = tmp;
                 pr_3D_[curL][curY][tmpX].l = curL;
