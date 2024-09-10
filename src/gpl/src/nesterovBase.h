@@ -96,7 +96,6 @@ class Net;
 
 class GPin;
 class FFT;
-class nesterovBaseDbCbk;
 
 class GCell
 {
@@ -111,7 +110,6 @@ class GCell
   Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
-//  const std::set<GPin*>& gPins() const { return gPins_; }
   void addGPin(GPin* gPin);
 
   void setClusteredInstance(const std::vector<Instance*>& insts);
@@ -265,7 +263,7 @@ class GNet
 
   Net* net() const;
   const std::vector<Net*>& nets() const { return nets_; }
-  const std::set<GPin*>& gPins() const { return gNet_gPins_; }
+  const std::set<GPin*>& gPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -703,7 +701,6 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-//  void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
   void updateBinsGCellDensityArea(const std::unordered_map<GCell*, GCellState>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
@@ -822,11 +819,8 @@ class NesterovBaseCommon
     }
 }
 
-//  const std::vector<GCell*>& gCells() const { return gCells_; }
   std::unordered_map<GCell*, GCellState>& gCells() { return newGCells_; }
-//  const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::set<GNet*>& gNets() const { return gNets_; }
-//  const std::vector<GPin*>& gPins() const { return gPins_; }
   const std::set<GPin*>& gPins() const { return gPins_; }
 
   //
@@ -879,15 +873,8 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-//  std::vector<GCell> gCellStor_;
-//  std::vector<GNet> gNetStor_;
-//  std::vector<GPin> gPinStor_;
-
-//  std::vector<GCell*> gCells_;
   std::unordered_map<GCell*, GCellState> newGCells_;
-//  std::vector<GNet*> gNets_;
   std::set<GNet*> gNets_;
-//  std::vector<GPin*> gPins_;
   std::set<GPin*> gPins_;
 
   std::unordered_map<Instance*, GCell*> gCellMap_;
@@ -895,8 +882,6 @@ class NesterovBaseCommon
   std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
-  nesterovBaseDbCbk* db_cbk_;
-//  friend class nesterovBaseDbCbk;
 };
 
 // Stores instances belonging to a specific power domain
@@ -913,9 +898,6 @@ class NesterovBase
   ~NesterovBase();
 
   const std::unordered_map<GCell*,GCellState>& newGCells() const { return newGCells_; }
-//  const std::vector<GCell*>& gCells() const { return gCells_; }
-//  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
-//  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -925,10 +907,6 @@ class NesterovBase
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
 
-  // update gCells with cx, cy
-//  void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
-
-//  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
   void updateGCellDensityCenterLocation(FloatPoint GCellState::*coordPtr);
 
   int binCntX() const;
@@ -990,9 +968,6 @@ class NesterovBase
   float getDensityCoordiLayoutInsideX(const GCell* gCell, float cx) const;
   float getDensityCoordiLayoutInsideY(const GCell* gCell, float cy) const;
 
-  // FloatPoint getRegionGradient(const GCell* gCell, FloatPoint nextLocation)
-  // const;
-
   // for preconditioner
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
 
@@ -1013,11 +988,6 @@ class NesterovBase
     isMaxPhiCoefChanged_ = maxPhiCoefChanged;
   }
 
-//  void updateGradients(std::vector<FloatPoint>& sumGrads,
-//                       std::vector<FloatPoint>& wireLengthGrads,
-//                       std::vector<FloatPoint>& densityGrads,
-//                       float wlCoeffX,
-//                       float wlCoeffY);
   void updateGradients(FloatPoint GCellState::* sumGradsPtr,
                                    FloatPoint GCellState::* wireLengthGradsPtr,
                                    FloatPoint GCellState::* densityGradsPtr,
@@ -1025,10 +995,6 @@ class NesterovBase
 
   void updateInitialPrevSLPCoordi();
 
-//  float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
-//                      const std::vector<FloatPoint>& prevSLPSumGrads_,
-//                      const std::vector<FloatPoint>& curSLPCoordi_,
-//                      const std::vector<FloatPoint>& curSLPSumGrads_);
   float getStepLength();
 
   void updateNextIter(int iter);
@@ -1081,48 +1047,13 @@ class NesterovBase
   int64_t macroInstsArea_ = 0;
 
   std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
-//  std::vector<GCell> gCellStor_;
 
   std::unordered_map<GCell*, GCellState> newGCells_;
-//  std::vector<GCell*> gCells_;
-//  std::vector<GCell*> gCellInsts_;
-//  std::vector<GCell*> gCellFillers_;
   int fillersCount = 0;
 
   float sumPhi_ = 0;
   float targetDensity_ = 0;
   float uniformTargetDensity_ = 0;
-
-  // Nesterov loop data for each region
-  // SLP is Step Length Prediction.
-  //
-  // y_st, y_dst, y_wdst, w_pdst
-//  std::vector<FloatPoint> curSLPCoordi_;
-//  std::vector<FloatPoint> curSLPWireLengthGrads_;
-//  std::vector<FloatPoint> curSLPDensityGrads_;
-//  std::vector<FloatPoint> curSLPSumGrads_;
-//
-//  // y0_st, y0_dst, y0_wdst, y0_pdst
-//  std::vector<FloatPoint> nextSLPCoordi_;
-//  std::vector<FloatPoint> nextSLPWireLengthGrads_;
-//  std::vector<FloatPoint> nextSLPDensityGrads_;
-//  std::vector<FloatPoint> nextSLPSumGrads_;
-//
-//  // z_st, z_dst, z_wdst, z_pdst
-//  std::vector<FloatPoint> prevSLPCoordi_;
-//  std::vector<FloatPoint> prevSLPWireLengthGrads_;
-//  std::vector<FloatPoint> prevSLPDensityGrads_;
-//  std::vector<FloatPoint> prevSLPSumGrads_;
-//
-//  // x_st and x0_st
-//  std::vector<FloatPoint> curCoordi_;
-//  std::vector<FloatPoint> nextCoordi_;
-//
-//  // save initial coordinates -- needed for RD
-//  std::vector<FloatPoint> initCoordi_;
-
-  // densityPenalty stor
-//  std::vector<float> densityPenaltyStor_;
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1158,9 +1089,6 @@ class NesterovBase
   bool isConverged_ = false;
 
   // Snapshot data
-//  std::vector<FloatPoint> snapshotCoordi_;
-//  std::vector<FloatPoint> snapshotSLPCoordi_;
-//  std::vector<FloatPoint> snapshotSLPSumGrads_;
   float snapshotDensityPenalty_ = 0;
   float snapshotStepLength_ = 0;
 
@@ -1183,15 +1111,6 @@ class biNormalParameters
   float ly;
   float ux;
   float uy;
-};
-
-class nesterovBaseDbCbk : public odb::dbBlockCallBackObj
-{
- public:
-  nesterovBaseDbCbk(NesterovBaseCommon* nesterov_base_common);
-  virtual void inDbInstCreate(odb::dbInst*);
- private:
-  NesterovBaseCommon* nesterov_base_common_;
 };
 
 }  // namespace gpl

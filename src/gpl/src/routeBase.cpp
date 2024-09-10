@@ -294,9 +294,6 @@ void RouteBase::reset()
   minRcTargetDensity_ = 0;
   minRcViolatedCnt_ = 0;
 
-//  minRcCellSize_.clear();
-//  minRcCellSize_.shrink_to_fit();
-
   resetRoutabilityResources();
 }
 
@@ -317,7 +314,6 @@ void RouteBase::init()
   tg_ = std::move(tg);
 
   tg_->setLogger(log_);
-//  minRcCellSize_.resize(nbc_->gCells().size(), std::make_pair(0, 0));
 }
 
 void RouteBase::getRudyResult()
@@ -600,23 +596,14 @@ std::pair<bool, bool> RouteBase::routability()
     minRcViolatedCnt_ = 0;
 
     // save cell size info
-//    for (auto& gCell : nbc_->gCells()) {
-//      if (!gCell->isStdInstance()) {
-//        continue;
-//      }
-//
-//      minRcCellSize_[&gCell - nbc_->gCells().data()]
-//          = std::make_pair(gCell->dx(), gCell->dy());
-//    }
   for (auto& pair : nbc_->gCells()) {
     GCell* gCell = pair.first;
     GCellState& state = pair.second;
 
     if (!gCell->isStdInstance()) {
-      continue; // Skip non-standard instances
+      continue;
     }
 
-    // Directly update the minRcCellSize within the GCellState
     state.minRcCellSize = std::make_pair(gCell->dx(), gCell->dy());
   }
 
@@ -641,7 +628,6 @@ std::pair<bool, bool> RouteBase::routability()
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_
-//  for (auto& gCell : nbc_->gCells()) {
   for (auto& pair : nbc_->gCells()) {
     GCell* gCell = pair.first;
     // only care about "standard cell"
@@ -823,20 +809,6 @@ std::pair<bool, bool> RouteBase::routability()
 
   return std::make_pair(true, true);
 }
-
-//void RouteBase::revertGCellSizeToMinRc()
-//{
-//  // revert back the gcell sizes
-//  for (auto& gCell : nbc_->gCells()) {
-//    if (!gCell->isStdInstance()) {
-//      continue;
-//    }
-//
-//    int idx = &gCell - nbc_->gCells().data();
-//
-//    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
-//  }
-//}
 
 void RouteBase::revertGCellSizeToMinRc()
 {

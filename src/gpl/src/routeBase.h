@@ -226,7 +226,6 @@ class RouteBase
   float minRc_ = 1e30;
   float minRcTargetDensity_ = 0;
   int minRcViolatedCnt_ = 0;
-//  std::vector<std::pair<int, int>> minRcCellSize_;
 
   void init();
   void reset();
