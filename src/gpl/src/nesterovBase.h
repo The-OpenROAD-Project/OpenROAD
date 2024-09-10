@@ -264,9 +264,8 @@ class GNet
   GNet(const std::vector<Net*>& nets);
 
   Net* net() const;
-  //TODO this will probably have to change with added and removed cells, I assume.
   const std::vector<Net*>& nets() const { return nets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  const std::set<GPin*>& gPins() const { return gNet_gPins_; }
 
   int lx() const;
   int ly() const;
@@ -315,7 +314,7 @@ class GNet
   float waYExpMaxSumY() const;
 
  private:
-  std::vector<GPin*> gPins_;
+  std::set<GPin*> gPins_;
   std::vector<Net*> nets_;
   int lx_ = 0;
   int ly_ = 0;
