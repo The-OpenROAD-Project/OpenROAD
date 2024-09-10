@@ -330,162 +330,70 @@ void ClusteringEngine::setBaseThresholds()
 void ClusteringEngine::createIOClusters()
 {
   mapIOPads();
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Creating bundledIO clusters...");
 
-  // Get the floorplan information and get the range of bundled IO regions
+  std::vector<Boundary> boundaries = getBoundaries();
   const odb::Rect die = block_->getDieArea();
-  const odb::Rect core = block_->getCoreArea();
-  const int x_base = (die.xMax() - die.xMin()) / tree_->bundled_ios_per_edge;
-  const int y_base = (die.yMax() - die.yMin()) / tree_->bundled_ios_per_edge;
-  const int cluster_id_base = id_;
+  const int number_of_boundaries = static_cast<int>(boundaries.size());
 
-  // Map all the BTerms / Pads to Bundled IOs (cluster)
-  std::vector<std::string> prefix_vec;
-  prefix_vec.emplace_back("L");
-  prefix_vec.emplace_back("T");
-  prefix_vec.emplace_back("R");
-  prefix_vec.emplace_back("B");
-  std::map<int, bool> cluster_io_map;
-  for (int i = 0; i < 4;
-       i++) {  // four boundaries (Left, Top, Right and Bottom in order)
-    for (int j = 0; j < tree_->bundled_ios_per_edge; j++) {
-      const std::string cluster_name = prefix_vec[i] + std::to_string(j);
-      auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
-      cluster->setParent(tree_->root.get());
-      cluster_io_map[id_] = false;
-      tree_->maps.id_to_cluster[id_++] = cluster.get();
-      int x = 0.0;
-      int y = 0.0;
-      int width = 0;
-      int height = 0;
-      if (i == 0) {  // Left boundary
-        x = die.xMin();
-        y = die.yMin() + y_base * j;
-        height = y_base;
-      } else if (i == 1) {  // Top boundary
-        x = die.xMin() + x_base * j;
-        y = die.yMax();
-        width = x_base;
-      } else if (i == 2) {  // Right boundary
-        x = die.xMax();
-        y = die.yMax() - y_base * (j + 1);
-        height = y_base;
-      } else {  // Bottom boundary
-        x = die.xMax() - x_base * (j + 1);
-        y = die.yMin();
-        width = x_base;
-      }
+  for (int i = 0; i < number_of_boundaries; i++) {
+    auto cluster
+        = std::make_unique<Cluster>(id_, toString(boundaries[i]), logger_);
+    cluster->setParent(tree_->root.get());
+    tree_->maps.id_to_cluster[id_++] = cluster.get();
 
-      // set the cluster to a IO cluster
-      cluster->setAsIOCluster(std::pair<float, float>(block_->dbuToMicrons(x),
-                                                      block_->dbuToMicrons(y)),
-                              block_->dbuToMicrons(width),
-                              block_->dbuToMicrons(height));
-      tree_->root->addChild(std::move(cluster));
-    }
+    int x = 0, y = 0;
+    int width = die.dx(), height = die.dy();
+    setIoConstraintsClustersDimensions(die, boundaries[i], x, y, width, height);
+
+    cluster->setAsIOCluster(std::pair<float, float>(block_->dbuToMicrons(x),
+                                                    block_->dbuToMicrons(y)),
+                            block_->dbuToMicrons(width),
+                            block_->dbuToMicrons(height));
+
+    tree_->root->addChild(std::move(cluster));
   }
 
-  // Map all the BTerms to bundled IOs
-  for (auto term : block_->getBTerms()) {
-    int lx = std::numeric_limits<int>::max();
-    int ly = std::numeric_limits<int>::max();
-    int ux = 0;
-    int uy = 0;
-    // If the design has IO pads, these block terms
-    // will not have block pins.
-    // Otherwise, the design will have IO pins.
-    for (const auto pin : term->getBPins()) {
-      for (const auto box : pin->getBoxes()) {
-        lx = std::min(lx, box->xMin());
-        ly = std::min(ly, box->yMin());
-        ux = std::max(ux, box->xMax());
-        uy = std::max(uy, box->yMax());
-      }
-    }
-    // remove power pins
-    if (term->getSigType().isSupply()) {
-      continue;
-    }
-
-    // If the term has a connected pad, get the bbox from the pad inst
-    if (tree_->maps.bterm_to_inst.find(term)
-        != tree_->maps.bterm_to_inst.end()) {
-      lx = tree_->maps.bterm_to_inst[term]->getBBox()->xMin();
-      ly = tree_->maps.bterm_to_inst[term]->getBBox()->yMin();
-      ux = tree_->maps.bterm_to_inst[term]->getBBox()->xMax();
-      uy = tree_->maps.bterm_to_inst[term]->getBBox()->yMax();
-      if (lx <= core.xMin()) {
-        lx = die.xMin();
-      }
-      if (ly <= core.yMin()) {
-        ly = die.yMin();
-      }
-      if (ux >= core.xMax()) {
-        ux = die.xMax();
-      }
-      if (uy >= core.yMax()) {
-        uy = die.yMax();
-      }
-    }
-    // calculate cluster id based on the location of IO Pins / Pads
-    int cluster_id = -1;
-    if (lx <= die.xMin()) {
-      // The IO is on the left boundary
-      cluster_id = cluster_id_base
-                   + std::floor(((ly + uy) / 2.0 - die.yMin()) / y_base);
-    } else if (uy >= die.yMax()) {
-      // The IO is on the top boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge
-                   + std::floor(((lx + ux) / 2.0 - die.xMin()) / x_base);
-    } else if (ux >= die.xMax()) {
-      // The IO is on the right boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge * 2
-                   + std::floor((die.yMax() - (ly + uy) / 2.0) / y_base);
-    } else if (ly <= die.yMin()) {
-      // The IO is on the bottom boundary
-      cluster_id = cluster_id_base + tree_->bundled_ios_per_edge * 3
-                   + std::floor((die.xMax() - (lx + ux) / 2.0) / x_base);
-    }
-
-    // Check if the IO pins / Pads exist
-    if (cluster_id == -1) {
-      logger_->error(
-          MPL,
-          2,
-          "Floorplan has not been initialized? Pin location error for {}.",
-          term->getName());
-    } else {
-      tree_->maps.bterm_to_cluster_id[term] = cluster_id;
-    }
-
-    cluster_io_map[cluster_id] = true;
-  }
-
-  // delete the IO clusters that do not have any pins assigned to them
-  for (auto& [cluster_id, flag] : cluster_io_map) {
-    if (!flag) {
-      debugPrint(logger_,
-                 MPL,
-                 "multilevel_autoclustering",
-                 1,
-                 "Remove IO Cluster with no pins: {}, id: {}",
-                 tree_->maps.id_to_cluster[cluster_id]->getName(),
-                 cluster_id);
-      std::unique_ptr<Cluster> released_bundled_io
-          = tree_->maps.id_to_cluster[cluster_id]->getParent()->releaseChild(
-              tree_->maps.id_to_cluster[cluster_id]);
-      tree_->maps.id_to_cluster.erase(cluster_id);
-    }
-  }
-
-  // At this point the cluster map has only the root (id = 0) and bundledIOs
   if (tree_->maps.id_to_cluster.size() == 1) {
     logger_->warn(MPL, 26, "Design has no IO pins!");
     tree_->has_io_clusters = false;
+  }
+}
+
+std::vector<Boundary> ClusteringEngine::getBoundaries()
+{
+  std::vector<Boundary> boundaries;
+
+  boundaries.push_back(L);
+  boundaries.push_back(T);
+  boundaries.push_back(R);
+  boundaries.push_back(B);
+
+  return boundaries;
+}
+void ClusteringEngine::setIoConstraintsClustersDimensions(
+    const odb::Rect& die,
+    const Boundary boundary,
+    int& x,
+    int& y,
+    int& width,
+    int& height)
+{
+  if (boundary == L) {
+    x = die.xMin();
+    y = die.yMin();
+    width = 0;
+  } else if (boundary == T) {
+    x = die.xMin();
+    y = die.yMax();
+    height = 0;
+  } else if (boundary == R) {
+    x = die.xMax();
+    y = die.yMin();
+    width = 0;
+  } else {  // Bottom
+    x = die.xMin();
+    y = die.yMin();
+    height = 0;
   }
 }
 
@@ -878,12 +786,12 @@ void ClusteringEngine::updateDataFlow()
 
   // bterm, macros or ffs
   for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
-    if (tree_->maps.bterm_to_cluster_id.find(bterm)
-        == tree_->maps.bterm_to_cluster_id.end()) {
+    const auto itr = tree_->maps.bterm_to_cluster_id.find(bterm);
+    if (itr == tree_->maps.bterm_to_cluster_id.end()) {
       continue;
     }
 
-    const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
+    const int driver_id = itr->second;
 
     for (int hops = 0; hops < max_num_of_hops_; hops++) {
       std::set<int> sink_clusters = computeSinks(insts[hops]);
@@ -1414,7 +1322,19 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
       continue;
     }
 
+    bool debug_ignore = false;
     for (odb::dbBTerm* bterm : net->getBTerms()) {
+      /*
+        This check does NOT need to exist. It's here
+        to help validate the implementation from the
+        beginning where there are not IO Clusters anymore.
+      */
+      if (tree_->maps.bterm_to_cluster_id.find(bterm)
+          == tree_->maps.bterm_to_cluster_id.end()) {
+        debug_ignore = true;
+        break;
+      }
+
       const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_vertex_id_map[cluster_id];
@@ -1422,6 +1342,11 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
         loads_id.insert(cluster_vertex_id_map[cluster_id]);
       }
     }
+
+    if (debug_ignore) {
+      continue;
+    }
+
     loads_id.insert(driver_id);
     if (driver_id != -1 && loads_id.size() > 1
         && loads_id.size() < tree_->large_net_threshold) {
@@ -1699,8 +1624,19 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-
+    bool debug_ignore = false;
     for (odb::dbBTerm* bterm : net->getBTerms()) {
+      /*
+        This check does NOT need to exist. It's here
+        to help validate the implementation from the
+        beginning where there are not IO Clusters anymore.
+      */
+      if (tree_->maps.bterm_to_cluster_id.find(bterm)
+          == tree_->maps.bterm_to_cluster_id.end()) {
+        debug_ignore = true;
+        break;
+      }
+
       const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
       net_has_io_pin = true;
 
@@ -1709,6 +1645,10 @@ void ClusteringEngine::updateConnections()
       } else {
         load_clusters_ids.push_back(cluster_id);
       }
+    }
+
+    if (debug_ignore) {
+      continue;
     }
 
     if (driver_cluster_id != -1 && !load_clusters_ids.empty()

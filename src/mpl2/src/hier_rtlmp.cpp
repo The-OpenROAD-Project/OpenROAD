@@ -352,7 +352,7 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
-  setIOClustersBlockages();
+  // setIOClustersBlockages();
   setPlacementBlockages();
 }
 

@@ -325,14 +325,11 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-// Bundled IO (Pads) cluster support
-// The position is the center of IO pads in the cluster
 void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
                              const float width,
                              const float height)
 {
   is_io_cluster_ = true;
-  // Create a SoftMacro representing the IO cluster
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 

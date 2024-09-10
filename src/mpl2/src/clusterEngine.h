@@ -181,6 +181,13 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  std::vector<Boundary> getBoundaries();
+  void setIoConstraintsClustersDimensions(const odb::Rect& die,
+                                          const Boundary boundary,
+                                          int& x,
+                                          int& y,
+                                          int& width,
+                                          int& height);
   void mapIOPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
