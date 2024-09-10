@@ -53,6 +53,9 @@ foreach inst $insts {
     }
 }
 
+foreach bterm [$block getBTerms] {
+  puts "bterm [$bterm getName]"
+}
 
 initialize_floorplan -die_area { 0 0 500 500 } \
     -core_area { 100 100 400 400 } \
@@ -84,4 +87,8 @@ foreach inst $insts {
         }
 
     }
+}
+
+foreach bterm [$block getBTerms] {
+  puts "bterm [$bterm getName]"
 }

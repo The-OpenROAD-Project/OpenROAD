@@ -68,6 +68,7 @@ class _dbModITerm : public _dbObject
   dbId<_dbModITerm> _next_net_moditerm;
   dbId<_dbModITerm> _prev_net_moditerm;
   dbId<_dbModITerm> _next_entry;
+  dbId<_dbModITerm> _prev_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj);
