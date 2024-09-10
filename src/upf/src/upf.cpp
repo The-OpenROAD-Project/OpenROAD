@@ -527,7 +527,7 @@ static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
                    port->getName());
       success = false;
     }
-    if (!odb::dbBTerm::create(net, port->getName())) {
+    if (success && !odb::dbBTerm::create(net, port->getName())) {
       logger->warn(utl::UPF,
                    45,
                    "Creation of '{}' dbBTerm from UPF Logic Port failed",
