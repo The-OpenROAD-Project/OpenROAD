@@ -51,7 +51,7 @@ using utl::RSZ;
 
 SpefWriter::SpefWriter(Logger* logger,
                        dbSta* sta,
-                       std::map<Corner*, std::ostream*> spef_streams)
+                       std::map<Corner*, std::ostream*>& spef_streams)
     : logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
