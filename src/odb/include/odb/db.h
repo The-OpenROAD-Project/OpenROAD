@@ -5505,6 +5505,11 @@ class dbMaster : public dbObject
   void setHeight(uint height);
 
   ///
+  /// Get the area of this master cell.
+  ///
+  int64_t getArea() const;
+
+  ///
   /// is filler cell
   ///
   bool isFiller();
