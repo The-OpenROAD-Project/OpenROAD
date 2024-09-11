@@ -869,6 +869,7 @@ int getSegmentPos(std::vector<GSegment*>& segments, int& req_size, int bridge_si
       size_acum += segments[pos]->length();
       if (size_acum > req_size && size_acum >= req_size + bridge_size) {
         req_size -= (size_acum - segments[pos]->length());
+	req_size = std::max(req_size, 0);
         cand = pos;
 	break;
       }
@@ -878,7 +879,8 @@ int getSegmentPos(std::vector<GSegment*>& segments, int& req_size, int bridge_si
       size_acum += segments[pos]->length();
       if (size_acum > req_size && size_acum >= req_size + bridge_size) {
         req_size -= (size_acum - segments[pos]->length());
-        cand = pos;
+        req_size = std::max(req_size, 0);
+	cand = pos;
 	break;
       }
     }
