@@ -327,30 +327,34 @@ void ClusteringEngine::setBaseThresholds()
       tree_->base_min_std_cell);
 }
 
+// Group IOs with the same constraints:
+// 1. If an IO has a constraint region in a certain boundary,
+//    it is constrained to that entire boundary.
+// 2. If an IO has no constraints, it is constrained to all boundaries.
 void ClusteringEngine::createIOClusters()
 {
   mapIOPads();
 
-  std::vector<Boundary> boundaries = getBoundaries();
+  // Boundary with constrained IOs -> cluster
+  std::map<Boundary, Cluster*> boundary_to_cluster;
   const odb::Rect die = block_->getDieArea();
-  const int number_of_boundaries = static_cast<int>(boundaries.size());
 
-  for (int i = 0; i < number_of_boundaries; i++) {
-    auto cluster
-        = std::make_unique<Cluster>(id_, toString(boundaries[i]), logger_);
-    cluster->setParent(tree_->root.get());
-    tree_->maps.id_to_cluster[id_++] = cluster.get();
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    Boundary constraint_boundary = NONE;
 
-    int x = 0, y = 0;
-    int width = die.dx(), height = die.dy();
-    setIoConstraintsClustersDimensions(die, boundaries[i], x, y, width, height);
+    auto constraint_region = bterm->getConstraintRegion();
+    if (constraint_region) {
+      constraint_boundary
+          = getConstraintBoundary(die, constraint_region.value());
+    }
 
-    cluster->setAsIOCluster(std::pair<float, float>(block_->dbuToMicrons(x),
-                                                    block_->dbuToMicrons(y)),
-                            block_->dbuToMicrons(width),
-                            block_->dbuToMicrons(height));
-
-    tree_->root->addChild(std::move(cluster));
+    const auto itr = boundary_to_cluster.find(constraint_boundary);
+    if (itr != boundary_to_cluster.end()) {
+      Cluster* io_cluster = itr->second;
+      tree_->maps.bterm_to_cluster_id[bterm] = io_cluster->getId();
+    } else {
+      createIOCluster(die, constraint_boundary, boundary_to_cluster);
+    }
   }
 
   if (tree_->maps.id_to_cluster.size() == 1) {
@@ -359,17 +363,49 @@ void ClusteringEngine::createIOClusters()
   }
 }
 
-std::vector<Boundary> ClusteringEngine::getBoundaries()
+Boundary ClusteringEngine::getConstraintBoundary(
+    const odb::Rect& die,
+    const odb::Rect& constraint_region)
 {
-  std::vector<Boundary> boundaries;
-
-  boundaries.push_back(L);
-  boundaries.push_back(T);
-  boundaries.push_back(R);
-  boundaries.push_back(B);
-
-  return boundaries;
+  if (constraint_region.xMin() == constraint_region.xMax()) {
+    if (constraint_region.xMin() == die.xMin()) {
+      return L;
+    } else {
+      return R;
+    }
+  } else {
+    if (constraint_region.yMin() == die.yMin()) {
+      return B;
+    } else {
+      return T;
+    }
+  }
 }
+
+void ClusteringEngine::createIOCluster(
+    const odb::Rect& die,
+    const Boundary constraint_boundary,
+    std::map<Boundary, Cluster*>& boundary_to_cluster)
+{
+  auto cluster
+      = std::make_unique<Cluster>(id_, toString(constraint_boundary), logger_);
+  tree_->maps.id_to_cluster[id_++] = cluster.get();
+
+  boundary_to_cluster[constraint_boundary] = cluster.get();
+
+  int x = 0, y = 0;
+  int width = die.dx(), height = die.dy();
+  setIoConstraintsClustersDimensions(
+      die, constraint_boundary, x, y, width, height);
+
+  cluster->setAsIOCluster(
+      std::pair<float, float>(block_->dbuToMicrons(x), block_->dbuToMicrons(y)),
+      block_->dbuToMicrons(width),
+      block_->dbuToMicrons(height),
+      constraint_boundary);
+  tree_->root->addChild(std::move(cluster));
+}
+
 void ClusteringEngine::setIoConstraintsClustersDimensions(
     const odb::Rect& die,
     const Boundary boundary,

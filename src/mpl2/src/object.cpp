@@ -327,9 +327,11 @@ void Cluster::copyInstances(const Cluster& cluster)
 
 void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
                              const float width,
-                             const float height)
+                             const float height,
+                             const Boundary constraint_boundary)
 {
   is_io_cluster_ = true;
+  constraint_boundary_ = constraint_boundary;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 

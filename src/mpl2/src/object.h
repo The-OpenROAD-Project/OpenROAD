@@ -202,7 +202,8 @@ class Cluster
   // Position must be specified when setting an IO cluster
   void setAsIOCluster(const std::pair<float, float>& pos,
                       float width,
-                      float height);
+                      float height,
+                      Boundary constraint_boundary);
   bool isIOCluster() const;
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -300,6 +301,8 @@ class Cluster
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
+  Boundary constraint_boundary_ = NONE;
+
   bool is_array_of_interconnected_macros = false;
 
   // Each cluster uses metrics to store its statistics

@@ -181,7 +181,11 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
-  std::vector<Boundary> getBoundaries();
+  Boundary getConstraintBoundary(const odb::Rect& die,
+                                 const odb::Rect& constraint_region);
+  void createIOCluster(const odb::Rect& die,
+                       const Boundary constraint_boundary,
+                       std::map<Boundary, Cluster*>& boundary_to_cluster);
   void setIoConstraintsClustersDimensions(const odb::Rect& die,
                                           const Boundary boundary,
                                           int& x,
