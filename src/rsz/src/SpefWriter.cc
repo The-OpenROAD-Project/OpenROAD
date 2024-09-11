@@ -100,7 +100,7 @@ void SpefWriter::writeHeader()
   }
 }
 
-std::string getIoDirectionText(odb::dbIoType ioType)
+std::string getIoDirectionText(const odb::dbIoType& ioType)
 {
   if (ioType == odb::dbIoType::INPUT) {
     return "I";
