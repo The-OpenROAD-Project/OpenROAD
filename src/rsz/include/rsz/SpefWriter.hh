@@ -63,8 +63,8 @@ class SpefWriter
  public:
   SpefWriter(Logger* logger,
              dbSta* sta,
-             std::map<Corner*, std::ostream*>& spef_streams);
-  ~SpefWriter();
+             std::map<Corner*, std::ostream*> spef_streams);
+  ~SpefWriter() = default;
   void writeHeader();
   void writePorts();
   void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
