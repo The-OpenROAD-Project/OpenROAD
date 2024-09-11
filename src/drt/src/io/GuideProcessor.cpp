@@ -1678,7 +1678,7 @@ GuidePathFinder::getInitSearchQueue(bool first_traversal)
         } else if (isForceFeedThrough() && isPinIdx(i)) {
           // penalize feedthrough in fallback mode
           queue.push({i, prev_idx_[i], 10});
-        } else if (isGuideIdx(i)) {
+        } else {
           queue.push({i, prev_idx_[i], 0});
         }
       }
