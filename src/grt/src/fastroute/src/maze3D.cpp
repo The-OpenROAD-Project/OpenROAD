@@ -920,7 +920,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
                 } else {
-                  logger_->error(GRT, 601, "Position not found in heap.");
+                  logger_->error(GRT,
+                                 601,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
                 }
               }
             }
@@ -961,7 +965,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
                 } else {
-                  logger_->error(GRT, 602, "Position not found in heap.");
+                  logger_->error(GRT,
+                                 602,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
                 }
               }
             }
@@ -1002,7 +1010,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
                 } else {
-                  logger_->error(GRT, 603, "Position not found in heap.");
+                  logger_->error(GRT,
+                                 603,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
                 }
               }
             }
@@ -1041,7 +1053,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
                 } else {
-                  logger_->error(GRT, 604, "Position not found in heap.");
+                  logger_->error(GRT,
+                                 604,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
                 }
               }
             }
@@ -1079,7 +1095,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);
             } else {
-              logger_->error(GRT, 605, "Position not found in heap.");
+              logger_->error(
+                  GRT,
+                  605,
+                  "Unable to update: position not found in 3D heap for net {}.",
+                  net->getName());
             }
           }
         }
@@ -1115,7 +1135,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);
             } else {
-              logger_->error(GRT, 606, "Position not found in heap.");
+              logger_->error(
+                  GRT,
+                  606,
+                  "Unable to update: position not found in 3D heap for net {}.",
+                  net->getName());
             }
           }
         }
