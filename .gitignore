@@ -38,3 +38,5 @@ debug/
 
 coverage-output
 .metals/
+
+etc/openroad_deps_prefixes.txt
