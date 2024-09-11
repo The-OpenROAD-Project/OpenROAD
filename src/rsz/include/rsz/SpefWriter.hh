@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,55 +30,51 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-// Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
-#include "odb/odb.h"
+#include <map>
 
-namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbModITerm;
-class _dbModule;
-class _dbModNet;
-class _dbBusPort;
+#include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 
-class _dbModBTerm : public _dbObject
+namespace grt {
+class GlobalRouter;
+class MakeWireParasitics;
+}  // namespace grt
+
+namespace rsz {
+
+class Resizer;
+using utl::Logger;
+
+using sta::Corner;
+using sta::dbNetwork;
+using sta::dbSta;
+using sta::Net;
+using sta::NetSeq;
+using sta::Parasitic;
+using sta::Parasitics;
+
+class SpefWriter
 {
  public:
-  _dbModBTerm(_dbDatabase*, const _dbModBTerm& r);
-  _dbModBTerm(_dbDatabase*);
+  SpefWriter(Logger* logger,
+             dbSta* sta,
+             std::map<Corner*, std::ostream*>& spef_streams);
+  void writeHeader();
+  void writePorts();
+  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
 
-  ~_dbModBTerm();
+ private:
+  Logger* logger_;
+  dbSta* sta_;
+  dbNetwork* network_;
+  Parasitics* parasitics_;
 
-  bool operator==(const _dbModBTerm& rhs) const;
-  bool operator!=(const _dbModBTerm& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModBTerm& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbModBTerm& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-
-  char* _name;
-  uint _flags;
-  dbId<_dbModITerm> _parent_moditerm;
-  dbId<_dbModule> _parent;
-  dbId<_dbModNet> _modnet;
-  dbId<_dbModBTerm> _next_net_modbterm;
-  dbId<_dbModBTerm> _prev_net_modbterm;
-  dbId<_dbBusPort> _busPort;
-  dbId<_dbModBTerm> _next_entry;
-  dbId<_dbModBTerm> _prev_entry;
-
-  // User Code Begin Fields
-  void* _sta_port = nullptr;
-  // User Code End Fields
+  std::map<Corner*, std::ostream*> spef_streams_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj);
-}  // namespace odb
-   // Generator Code End Header
+
+}  // namespace rsz
