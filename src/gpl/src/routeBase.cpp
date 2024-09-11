@@ -596,10 +596,8 @@ std::pair<bool, bool> RouteBase::routability()
     minRcViolatedCnt_ = 0;
 
     // save cell size info
-  for (auto& pair : nbc_->gCells()) {
-    GCell* gCell = pair.first;
-    GCellState& state = pair.second;
-
+  for (auto& gCell : nbc_->gCells()) {
+    GCellState& state = gCell->state;
     if (!gCell->isStdInstance()) {
       continue;
     }
@@ -628,8 +626,7 @@ std::pair<bool, bool> RouteBase::routability()
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_
-  for (auto& pair : nbc_->gCells()) {
-    GCell* gCell = pair.first;
+  for (auto& gCell : nbc_->gCells()) {
     // only care about "standard cell"
     if (!gCell->isStdInstance()) {
       continue;
@@ -813,9 +810,8 @@ std::pair<bool, bool> RouteBase::routability()
 void RouteBase::revertGCellSizeToMinRc()
 {
   // revert back the gcell sizes
-  for (auto& pair : nbc_->gCells()) {
-    GCell* gCell = pair.first;
-    GCellState& state = pair.second;
+  for (auto& gCell : nbc_->gCells()) {
+    GCellState& state = gCell->state;
 
     if (!gCell->isStdInstance()) {
         continue;

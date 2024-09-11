@@ -55,7 +55,7 @@ namespace utl {
 class Logger;
 }
 
-namespace gpl {
+namespace gpl {  
 struct GCellState {
     FloatPoint curSLPCoordi;
     FloatPoint curSLPWireLengthGrads;
@@ -101,11 +101,11 @@ class GCell
 {
  public:
   // instance cells
-  GCell(Instance* inst);
-  GCell(const std::vector<Instance*>& insts);
+  GCell(Instance* inst, uint id);
+//  GCell(const std::vector<Instance*>& insts);
 
   // filler cells
-  GCell(int cx, int cy, int dx, int dy);
+  GCell(int cx, int cy, int dx, int dy, uint id);
 
   Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -157,8 +157,12 @@ class GCell
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+  
+  uint getId() { return id; }
+  GCellState state;
 
  private:
+  uint id;
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
   int lx_ = 0;
@@ -174,6 +178,12 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
+};
+
+  struct GCellComparator {
+    bool operator()(const std::shared_ptr<GCell>& lhs, const std::shared_ptr<GCell>& rhs) const {
+        return lhs->getId() < rhs->getId();
+    }
 };
 
 inline int GCell::lx() const
@@ -701,7 +711,8 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::unordered_map<GCell*, GCellState>& cells);
+//  void updateBinsGCellDensityArea(const std::map<GCell*, GCellState>& cells);
+  void updateBinsGCellDensityArea(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -812,21 +823,17 @@ class NesterovBaseCommon
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
                      int num_threads);
-  
-  ~NesterovBaseCommon() {
-    for (auto gPin : gPins_) {
-        delete gPin;
-    }
-}
 
-  std::unordered_map<GCell*, GCellState>& gCells() { return newGCells_; }
+//  std::map<GCell*, GCellState>& gCells() { return newGCells_; }
+  std::set<std::shared_ptr<GCell>, GCellComparator>& gCells() { return newGCells_; }
   const std::set<GNet*>& gNets() const { return gNets_; }
   const std::set<GPin*>& gPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
   //
-  GCell* pbToNb(Instance* inst) const;
+//  GCell* pbToNb(Instance* inst) const;
+  std::shared_ptr<GCell> pbToNb(Instance* inst) const;
   GPin* pbToNb(Pin* pin) const;
   GNet* pbToNb(Net* net) const;
 
@@ -873,11 +880,14 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::unordered_map<GCell*, GCellState> newGCells_;
+//  std::map<GCell*, GCellState> newGCells_;
+//  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
   std::set<GNet*> gNets_;
   std::set<GPin*> gPins_;
 
-  std::unordered_map<Instance*, GCell*> gCellMap_;
+//  std::unordered_map<Instance*, GCell*> gCellMap_;
+  std::unordered_map<Instance*, std::shared_ptr<GCell>> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
@@ -897,7 +907,8 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::unordered_map<GCell*,GCellState>& newGCells() const { return newGCells_; }
+//  const std::map<GCell*, GCellState>& newGCells() const { return newGCells_; }
+  const std::set<std::shared_ptr<GCell>, GCellComparator>& newGCells() const { return newGCells_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -1046,9 +1057,9 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::unordered_map<odb::dbInst*, GCell*> db_inst_map_;
-
-  std::unordered_map<GCell*, GCellState> newGCells_;
+  //custom comparator
+//  std::map<GCell*, GCellState> newGCells_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
   int fillersCount = 0;
 
   float sumPhi_ = 0;

@@ -45,7 +45,6 @@
 #include "utl/Logger.h"
 
 namespace gpl {
-
 Graphics::Graphics(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
@@ -85,11 +84,12 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (auto& pair : nbc_->gCells()) {
-      GCell* cell = pair.first;   
+//    for (auto& pair : nbc_->gCells()) {
+//      GCell* cell = pair.first;   
+    for (auto& cell : nbc_->gCells()) {
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
-        selected_ = cell;
+        selected_ = cell.get();
         break;
       }
     }
@@ -193,9 +193,12 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-void Graphics::drawCells(const std::unordered_map<GCell*, GCellState>& cells, gui::Painter& painter) {
-    for (const auto& pair : cells) {
-        GCell* gCell = pair.first;
+//void Graphics::drawCells(const std::map<GCell*, GCellState>& cells, gui::Painter& painter) {
+//    for (const auto& pair : cells) {
+//        GCell* gCell = pair.first;
+void Graphics::drawCells(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells, gui::Painter& painter) {
+    for (const auto& shared_gCell : cells) {
+      GCell* gCell = shared_gCell.get();
         const int gcx = gCell->dCx();
         const int gcy = gCell->dCy();
 
@@ -372,8 +375,9 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     return gui::SelectionSet();
   }
 
-  for (auto& pair : nbc_->gCells()) {
-    GCell* cell = pair.first;
+//  for (auto& pair : nbc_->gCells()) {
+//    GCell* cell = pair.first;
+  for (auto& cell : nbc_->gCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -387,7 +391,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
       continue;
     }
 
-    selected_ = cell;
+    selected_ = cell.get();
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
