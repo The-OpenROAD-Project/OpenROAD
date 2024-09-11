@@ -1533,7 +1533,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos = it - src_heap.begin();
               updateHeap(src_heap, pos);
             } else {
-              logger_->error(GRT, 607, "Position not found in heap");
+              logger_->error(
+                  GRT,
+                  607,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
             }
           }
         }
@@ -1597,7 +1601,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos = it - src_heap.begin();
               updateHeap(src_heap, pos);
             } else {
-              logger_->error(GRT, 608, "Position not found in heap");
+              logger_->error(
+                  GRT,
+                  608,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
             }
           }
         }
@@ -1660,7 +1668,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos = it - src_heap.begin();
               updateHeap(src_heap, pos);
             } else {
-              logger_->error(GRT, 609, "Position not found in heap");
+              logger_->error(
+                  GRT,
+                  609,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
             }
           }
         }
@@ -1724,7 +1736,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos = it - src_heap.begin();
               updateHeap(src_heap, pos);
             } else {
-              logger_->error(GRT, 610, "Position not found in heap");
+              logger_->error(
+                  GRT,
+                  610,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
             }
           }
         }
