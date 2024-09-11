@@ -146,8 +146,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   if (!core_area.contains(macro_new_bbox)) {
     logger_->error(MPL,
                    34,
-                   "Specified location results in illegal placement. Cannot "
-                   "place macro outside of the core.");
+                   "Cannot place {} at {}, outside of the core {}.",
+                   inst->getName(),
+                   macro_new_bbox,
+                   core_area);
   }
 
   // Orientation must be set before location so we don't end up flipping
