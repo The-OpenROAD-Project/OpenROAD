@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, Precision Innovations Inc.
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -64,10 +64,10 @@ class SpefWriter
   SpefWriter(Logger* logger,
              dbSta* sta,
              std::map<Corner*, std::ostream*>& spef_streams);
-  ~SpefWriter() = default;
-  void writeSpefHeader(Corner* corner);
-  void writeSpefPorts(Corner* corner);
-  void writeSpefNet(Corner* corner, const Net* net, Parasitic* parasitic);
+  ~SpefWriter();
+  void writeHeader();
+  void writePorts();
+  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
 
  private:
   Logger* logger_;
@@ -75,7 +75,7 @@ class SpefWriter
   dbNetwork* network_;
   Parasitics* parasitics_;
 
-  std::map<Corner*, std::ostream*>& spef_streams_;
+  std::map<Corner*, std::ostream*> spef_streams_;
 };
 
 }  // namespace rsz

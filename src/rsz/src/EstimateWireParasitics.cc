@@ -281,29 +281,26 @@ void Resizer::estimateParasitics(ParasiticsSrc src)
 void Resizer::estimateParasitics(ParasiticsSrc src,
                                  std::map<Corner*, std::ostream*>& spef_streams)
 {
+  SpefWriter* spef_writer = nullptr;
   if (!spef_streams.empty()) {
-    spef_writer_ = new SpefWriter(logger_, sta_, spef_streams);
-    for (auto& [corner, _] : spef_streams) {
-      spef_writer_->writeSpefHeader(corner);
-      spef_writer_->writeSpefPorts(corner);
-    }
+    spef_writer = new SpefWriter(logger_, sta_, spef_streams);
   }
 
   switch (src) {
     case ParasiticsSrc::placement:
-      estimateWireParasitics();
+      estimateWireParasitics(spef_writer);
       break;
     case ParasiticsSrc::global_routing:
-      global_router_->estimateRC(spef_writer_);
+      global_router_->estimateRC(spef_writer);
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::none:
       break;
   }
 
-  if (spef_writer_) {
-    delete spef_writer_;
-    spef_writer_ = nullptr;
+  if (spef_writer) {
+    delete spef_writer;
+    spef_writer = nullptr;
   }
 }
 
@@ -407,7 +404,7 @@ void Resizer::ensureWireParasitic(const Pin* drvr_pin, const Net* net)
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::estimateWireParasitics()
+void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
 {
   initBlock();
   if (!wire_signal_cap_.empty()) {
@@ -418,7 +415,7 @@ void Resizer::estimateWireParasitics()
     NetIterator* net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
       Net* net = net_iter->next();
-      estimateWireParasitic(net);
+      estimateWireParasitic(net, spef_writer);
     }
     delete net_iter;
 
@@ -427,17 +424,19 @@ void Resizer::estimateWireParasitics()
   }
 }
 
-void Resizer::estimateWireParasitic(const Net* net)
+void Resizer::estimateWireParasitic(const Net* net, SpefWriter* spef_writer)
 {
   PinSet* drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
     PinSet::Iterator drvr_iter(drivers);
     const Pin* drvr_pin = drvr_iter.next();
-    estimateWireParasitic(drvr_pin, net);
+    estimateWireParasitic(drvr_pin, net, spef_writer);
   }
 }
 
-void Resizer::estimateWireParasitic(const Pin* drvr_pin, const Net* net)
+void Resizer::estimateWireParasitic(const Pin* drvr_pin,
+                                    const Net* net,
+                                    SpefWriter* spef_writer)
 {
   if (!network_->isPower(net) && !network_->isGround(net)
       && !sta_->isIdealClock(drvr_pin)
@@ -446,9 +445,9 @@ void Resizer::estimateWireParasitic(const Pin* drvr_pin, const Net* net)
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
-      makePadParasitic(net);
+      makePadParasitic(net, spef_writer);
     } else {
-      estimateWireParasiticSteiner(drvr_pin, net);
+      estimateWireParasiticSteiner(drvr_pin, net, spef_writer);
     }
   }
 }
@@ -462,7 +461,7 @@ bool Resizer::isPadNet(const Net* net) const
              || (network_->isTopLevelPort(pin2) && isPadPin(pin1)));
 }
 
-void Resizer::makePadParasitic(const Net* net)
+void Resizer::makePadParasitic(const Net* net, SpefWriter* spef_writer)
 {
   const Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
@@ -478,8 +477,8 @@ void Resizer::makePadParasitic(const Net* net)
 
     // Use a small resistor to keep the connectivity intact.
     parasitics_->makeResistor(parasitic, 1, .001, n1, n2);
-    if (spef_writer_) {
-      spef_writer_->writeSpefNet(corner, net, parasitic);
+    if (spef_writer) {
+      spef_writer->writeNet(corner, net, parasitic);
     }
     arc_delay_calc_->reduceParasitic(
         parasitic, net, corner, sta::MinMaxAll::all());
@@ -487,7 +486,9 @@ void Resizer::makePadParasitic(const Net* net)
   parasitics_->deleteParasiticNetworks(net);
 }
 
-void Resizer::estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net)
+void Resizer::estimateWireParasiticSteiner(const Pin* drvr_pin,
+                                           const Net* net,
+                                           SpefWriter* spef_writer)
 {
   SteinerTree* tree = makeSteinerTree(drvr_pin);
   if (tree) {
@@ -565,8 +566,8 @@ void Resizer::estimateWireParasiticSteiner(const Pin* drvr_pin, const Net* net)
         parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, resistor_id);
         parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, resistor_id);
       }
-      if (spef_writer_) {
-        spef_writer_->writeSpefNet(corner, net, parasitic);
+      if (spef_writer) {
+        spef_writer->writeNet(corner, net, parasitic);
       }
       arc_delay_calc_->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, Precision Innovations Inc.
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -58,98 +58,101 @@ SpefWriter::SpefWriter(Logger* logger,
       parasitics_(sta_->parasitics()),
       spef_streams_(spef_streams)
 {
+  writeHeader();
+  writePorts();
 }
 
-void SpefWriter::writeSpefHeader(Corner* corner)
+SpefWriter::~SpefWriter()
 {
-  auto it = spef_streams_.find(corner);
-  if (it == spef_streams_.end()) {
-    return;
-  }
-  std::ostream& stream = *it->second;
-  stream << "*SPEF \"ieee 1481-1999\"" << '\n';
-  stream << "*DESIGN \"" << network_->block()->getName() << "\"" << '\n';
-  stream << "*DATE \"11:11:11 Fri 11 11, 1111\"" << '\n';
-  stream << "*VENDOR \"The OpenROAD Project\"" << '\n';
-  stream << "*PROGRAM \"OpenROAD\"" << '\n';
-  stream << "*VERSION \"1.0\"" << '\n';
-  stream << "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"" << '\n';
-  stream << "*DIVIDER /" << '\n';
-  stream << "*DELIMITER :" << '\n';
-  stream << "*BUS_DELIMITER []" << '\n';
-
-  auto units = network_->units();
-  std::string time_unit = std::string(units->timeUnit()->suffix());
-  std::string cap_unit = std::string(units->capacitanceUnit()->suffix());
-  std::string res_unit = std::string(units->resistanceUnit()->suffix());
-  std::transform(
-      time_unit.begin(), time_unit.end(), time_unit.begin(), ::toupper);
-  std::transform(cap_unit.begin(), cap_unit.end(), cap_unit.begin(), ::toupper);
-  std::transform(res_unit.begin(), res_unit.end(), res_unit.begin(), ::toupper);
-
-  stream << "*T_UNIT 1 " << time_unit << '\n';
-  stream << "*C_UNIT 1 " << cap_unit << '\n';
-  stream << "*R_UNIT 1 " << res_unit << '\n';
-  stream << '\n';
+  spef_streams_.clear();
 }
 
-void SpefWriter::writeSpefPorts(Corner* corner)
+void SpefWriter::writeHeader()
 {
-  auto it = spef_streams_.find(corner);
-  if (it == spef_streams_.end()) {
-    return;
+  for (auto [_, it] : spef_streams_) {
+    std::ostream& stream = *it;
+    stream << "*SPEF \"ieee 1481-1999\"" << '\n';
+    stream << "*DESIGN \"" << network_->block()->getName() << "\"" << '\n';
+    stream << "*DATE \"11:11:11 Fri 11 11, 1111\"" << '\n';
+    stream << "*VENDOR \"The OpenROAD Project\"" << '\n';
+    stream << "*PROGRAM \"OpenROAD\"" << '\n';
+    stream << "*VERSION \"1.0\"" << '\n';
+    stream << "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"" << '\n';
+    stream << "*DIVIDER /" << '\n';
+    stream << "*DELIMITER :" << '\n';
+    stream << "*BUS_DELIMITER []" << '\n';
+
+    auto units = network_->units();
+    std::string time_unit = std::string(units->timeUnit()->suffix());
+    std::string cap_unit = std::string(units->capacitanceUnit()->suffix());
+    std::string res_unit = std::string(units->resistanceUnit()->suffix());
+    std::transform(
+        time_unit.begin(), time_unit.end(), time_unit.begin(), ::toupper);
+    std::transform(
+        cap_unit.begin(), cap_unit.end(), cap_unit.begin(), ::toupper);
+    std::transform(
+        res_unit.begin(), res_unit.end(), res_unit.begin(), ::toupper);
+
+    stream << "*T_UNIT 1 " << time_unit << '\n';
+    stream << "*C_UNIT 1 " << cap_unit << '\n';
+    stream << "*R_UNIT 1 " << res_unit << '\n';
+    stream << '\n';
   }
-  std::ostream& stream = *it->second;
+}
 
-  std::unique_ptr<sta::InstancePinIterator> pin_iter(
-      network_->pinIterator(network_->topInstance()));
+std::string getIoDirectionText(odb::dbIoType ioType)
+{
+  if (ioType == odb::dbIoType::INPUT) {
+    return "I";
+  }
+  if (ioType == odb::dbIoType::OUTPUT) {
+    return "O";
+  }
+  return "B";
+}
 
-  stream << "*PORTS" << '\n';
-  while (pin_iter->hasNext()) {
-    sta::Pin* pin = pin_iter->next();
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
-    odb::dbModITerm* moditerm = nullptr;
-    odb::dbModBTerm* modbterm = nullptr;
-    network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+void SpefWriter::writePorts()
+{
+  for (auto [_, it] : spef_streams_) {
+    std::ostream& stream = *it;
 
-    if (iterm != nullptr) {
-      stream << iterm->getName() << " ";
-      if (iterm->getIoType() == odb::dbIoType::INPUT) {
-        stream << "I";
-      } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        stream << "O";
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network_->pinIterator(network_->topInstance()));
+
+    stream << "*PORTS" << '\n';
+    while (pin_iter->hasNext()) {
+      sta::Pin* pin = pin_iter->next();
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+      if (iterm != nullptr) {
+        stream << iterm->getName() << " ";
+        stream << getIoDirectionText(iterm->getIoType());
+        stream << '\n';
+      } else if (bterm != nullptr) {
+        stream << bterm->getName() << " ";
+        stream << getIoDirectionText(bterm->getIoType());
+        stream << '\n';
       } else {
-        stream << "B";
+        logger_->error(RSZ,
+                       8,
+                       "Got a modTerm instead of iTerm or bTerm while writing "
+                       "SPEF ports.");
       }
-      stream << '\n';
-    } else if (bterm != nullptr) {
-      stream << bterm->getName() << " ";
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        stream << "I";
-      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        stream << "O";
-      } else {
-        stream << "B";
-      }
-      stream << '\n';
-    } else {
-      logger_->error(
-          RSZ,
-          8,
-          "Got a modTerm instead of iTerm or bTerm while writing SPEF ports.");
     }
+    stream << '\n';
   }
-  stream << '\n';
 }
 
-void SpefWriter::writeSpefNet(Corner* corner,
-                              const Net* net,
-                              Parasitic* parasitic)
+void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 {
   auto it = spef_streams_.find(corner);
   if (it == spef_streams_.end()) {
-    return;
+    logger_->error(
+        RSZ, 14, "Tried to write net SPEF info for corner that was not set");
   }
   std::ostream& stream = *it->second;
 
@@ -168,24 +171,12 @@ void SpefWriter::writeSpefNet(Corner* corner,
 
       if (iterm != nullptr) {
         stream << "*I " << parasitics_->name(node) << " ";
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          stream << "I";
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          stream << "O";
-        } else {
-          stream << "B";
-        }
+        stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
       } else if (bterm != nullptr) {
         stream << "*P " << parasitics_->name(node) << " ";
-        if (bterm->getIoType() == odb::dbIoType::INPUT) {
-          stream << "I";
-        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-          stream << "O";
-        } else {
-          stream << "B";
-        }
+        stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
         logger_->error(RSZ,
