@@ -281,26 +281,21 @@ void Resizer::estimateParasitics(ParasiticsSrc src)
 void Resizer::estimateParasitics(ParasiticsSrc src,
                                  std::map<Corner*, std::ostream*>& spef_streams)
 {
-  SpefWriter* spef_writer = nullptr;
+  std::unique_ptr<SpefWriter> spef_writer;
   if (!spef_streams.empty()) {
-    spef_writer = new SpefWriter(logger_, sta_, spef_streams);
+    spef_writer = std::make_unique<SpefWriter>(logger_, sta_, spef_streams);
   }
 
   switch (src) {
     case ParasiticsSrc::placement:
-      estimateWireParasitics(spef_writer);
+      estimateWireParasitics(spef_writer.get());
       break;
     case ParasiticsSrc::global_routing:
-      global_router_->estimateRC(spef_writer);
+      global_router_->estimateRC(spef_writer.get());
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::none:
       break;
-  }
-
-  if (spef_writer) {
-    delete spef_writer;
-    spef_writer = nullptr;
   }
 }
 

@@ -51,7 +51,7 @@ using utl::RSZ;
 
 SpefWriter::SpefWriter(Logger* logger,
                        dbSta* sta,
-                       std::map<Corner*, std::ostream*>& spef_streams)
+                       std::map<Corner*, std::ostream*> spef_streams)
     : logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
@@ -60,11 +60,6 @@ SpefWriter::SpefWriter(Logger* logger,
 {
   writeHeader();
   writePorts();
-}
-
-SpefWriter::~SpefWriter()
-{
-  spef_streams_.clear();
 }
 
 void SpefWriter::writeHeader()
@@ -100,15 +95,15 @@ void SpefWriter::writeHeader()
   }
 }
 
-std::string getIoDirectionText(const odb::dbIoType& ioType)
+char getIoDirectionText(const odb::dbIoType& ioType)
 {
   if (ioType == odb::dbIoType::INPUT) {
-    return "I";
+    return 'I';
   }
   if (ioType == odb::dbIoType::OUTPUT) {
-    return "O";
+    return 'O';
   }
-  return "B";
+  return 'B';
 }
 
 void SpefWriter::writePorts()
