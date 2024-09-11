@@ -399,9 +399,9 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              corner_origins.yMax() / dbus);
 
   // Create corners
-  const int corner_sites = std::max(static_cast<uint>(horizontal_box.maxDXDY()),
-                                    corner_site->getWidth())
-                           / corner_site->getWidth();
+  const int corner_sites
+      = std::max(horizontal_box.maxDXDY(), corner_site->getWidth())
+        / corner_site->getWidth();
   debugPrint(logger_,
              utl::PAD,
              "Rows",
