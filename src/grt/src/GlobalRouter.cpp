@@ -1615,9 +1615,12 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   if (!vertical) {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
-    if (first_tile.getX() == last_tile.getX()
-        && last_tile.getX() + 1 < grid_limit) {
-      int last_tile_x = last_tile.getX() + 1;
+    if (first_tile.getX() > 0) {
+      const int first_tile_x = first_tile.getX() - 1;
+      first_tile.setX(first_tile_x);
+    }
+    if (last_tile.getX() + 1 < grid_limit) {
+      const int last_tile_x = last_tile.getX() + 1;
       last_tile.setX(last_tile_x);
     }
     fastroute_->addHorizontalAdjustments(first_tile,
@@ -1628,9 +1631,12 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
   } else {
     // if obstruction is inside a single gcell, block the edge between current
     // gcell and the adjacent gcell
-    if (first_tile.getY() == last_tile.getY()
-        && last_tile.getY() + 1 < grid_limit) {
-      int last_tile_y = last_tile.getY() + 1;
+    if (first_tile.getY() > 0) {
+      const int first_tile_x = first_tile.getY() - 1;
+      first_tile.setY(first_tile_x);
+    }
+    if (last_tile.getY() + 1 < grid_limit) {
+      const int last_tile_y = last_tile.getY() + 1;
       last_tile.setY(last_tile_y);
     }
     fastroute_->addVerticalAdjustments(first_tile,
