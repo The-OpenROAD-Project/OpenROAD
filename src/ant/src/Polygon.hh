@@ -52,7 +52,7 @@ struct GraphNode
   bool isVia;
   Polygon pol;
   std::vector<int> low_adj;
-  std::set<PinType, PinTypeHash> gates;
+  std::set<PinType, PinTypeCmp> gates;
   GraphNode() = default;
   GraphNode(int id_, bool isVia_, const Polygon& pol_)
   {
