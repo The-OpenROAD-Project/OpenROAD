@@ -137,6 +137,9 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
+  void addBoundaryDistToWirelength(const T& macro,
+                                   const T& io,
+                                   float net_weight);
   void calGuidancePenalty();
   void calFencePenalty();
 

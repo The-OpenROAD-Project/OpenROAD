@@ -272,6 +272,19 @@ void SimulatedAnnealingCore<T>::calWirelength()
   }
 
   for (const auto& net : nets_) {
+    T& source = macros_[net.terminals.first];
+    T& target = macros_[net.terminals.second];
+
+    /*
+      TO DO: See if this can't be a single cal
+             (ios may be always in first or second)
+    */
+    if (source.isIOCluster()) {
+      addBoundaryDistToWirelength(target, source, net.weight);
+    } else if (target.isIOCluster()) {
+      addBoundaryDistToWirelength(source, target, net.weight);
+    }
+
     const float x1 = macros_[net.terminals.first].getPinX();
     const float y1 = macros_[net.terminals.first].getPinY();
     const float x2 = macros_[net.terminals.second].getPinX();
@@ -285,6 +298,39 @@ void SimulatedAnnealingCore<T>::calWirelength()
 
   if (graphics_) {
     graphics_->setWirelength(wirelength_);
+  }
+}
+
+/*
+  TO DO: test this
+*/
+template <class T>
+void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
+    const T& macro,
+    const T& io,
+    const float net_weight)
+{
+  Cluster* io_cluster = io.getCluster();
+  const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+
+  const float x1 = macro.getPinX();
+  const float y1 = macro.getPinY();
+
+  if (constraint_boundary == NONE) {
+    const Rect die = io_cluster->getBBox();
+
+    const float dist_to_left = std::abs(x1 - die.xMin());
+    const float dist_to_right = std::abs(x1 - die.xMax());
+    const float dist_to_bottom = std::abs(y1 - die.yMin());
+    const float dist_to_top = std::abs(y1 - die.yMax());
+
+    wirelength_
+        += std::min({dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
+  } else {
+    const float x2 = io.getPinX();
+    const float y2 = io.getPinY();
+
+    wirelength_ += net_weight * std::min(std::abs(y2 - y1), std::abs(x2 - x1));
   }
 }
 
