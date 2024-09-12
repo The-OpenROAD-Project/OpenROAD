@@ -52,7 +52,7 @@ struct GraphNode
   bool isVia;
   Polygon pol;
   std::vector<int> low_adj;
-  std::unordered_set<PinType, PinTypeHash> gates;
+  std::set<PinType, PinTypeHash> gates;
   GraphNode() = default;
   GraphNode(int id_, bool isVia_, const Polygon& pol_)
   {
@@ -67,9 +67,9 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
                                            const Polygon& pol);
 void wiresToPolygonSetMap(
     odb::dbWire* wires,
-    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
 void avoidPinIntersection(
     odb::dbNet* db_net,
-    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
 
 }  // namespace ant

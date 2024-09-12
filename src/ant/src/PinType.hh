@@ -64,9 +64,9 @@ struct PinType
 class PinTypeHash
 {
  public:
-  size_t operator()(const PinType& t) const
+  size_t operator()(const PinType& t1, const PinType& t2) const
   {
-    return std::hash<std::string>{}(t.name);
+    return (t1.name < t2.name);
   }
 };
 

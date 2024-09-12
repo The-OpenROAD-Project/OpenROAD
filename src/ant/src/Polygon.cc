@@ -68,7 +68,7 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
 
 void wiresToPolygonSetMap(
     odb::dbWire* wires,
-    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
+    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
 {
   odb::dbShape shape;
   odb::dbWireShapeItr shapes_it;
@@ -101,7 +101,7 @@ void wiresToPolygonSetMap(
 
 void avoidPinIntersection(
     odb::dbNet* db_net,
-    std::unordered_map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
+    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
 {
   // iterate all instance pin
   for (odb::dbITerm* iterm : db_net->getITerms()) {
