@@ -539,6 +539,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
+  bool isIOCluster() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;

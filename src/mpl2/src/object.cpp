@@ -1352,6 +1352,15 @@ bool SoftMacro::isMixedCluster() const
   return (cluster_->getClusterType() == MixedCluster);
 }
 
+bool SoftMacro::isIOCluster() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isIOCluster();
+}
+
 void SoftMacro::setLocationF(float x, float y)
 {
   x_ = x;
