@@ -1256,23 +1256,20 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea();
-
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
   // update gFillerCells
-  initFillerGCells();
+  initFillerGCells(pb_->placeInsts().size());
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
     int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
     int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
     //searches based on pbInst in nbc map
 //    GCell* gCell = nbc_->pbToNb(inst);
     std::shared_ptr<GCell> gCell = nbc_->pbToNb(inst);
-
-    inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
-
     gCell->clearInstances();
     gCell->setInstance(inst);
 //    GCellState emptyState;
@@ -1289,8 +1286,9 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "NesterovInit #GCells:", newGCells_.size());
-  log_->info(GPL, 32, "{:20} {:10}", "NesterovInit #GNets:", nbc_->gNets().size());
-  log_->info(GPL, 33, "{:20} {:10}", "NesterovInit #GPins:", nbc_->gPins().size());
+  log_->info(GPL, 32, "{:20} {:9}", "NesterovInit #Filler:", fillersCount);
+  log_->info(GPL, 33, "{:20} {:10}", "NesterovInit #GNets:", nbc_->gNets().size());
+  log_->info(GPL, 34, "{:20} {:10}", "NesterovInit #GPins:", nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1317,7 +1315,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 }
 
 // virtual filler GCells
-void NesterovBase::initFillerGCells()
+void NesterovBase::initFillerGCells(uint initial_gcell_id)
 {
   // extract average dx/dy in range (10%, 90%)
   std::vector<int> dxStor;
@@ -1425,7 +1423,7 @@ void NesterovBase::initFillerGCells()
   // rand()'s RAND_MAX is only 32767.
   //
   std::mt19937 randVal(0);
-  uint id_counter = newGCells_.size();
+  uint id_counter = initial_gcell_id;
   for (int i = 0; i < fillerCnt; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();

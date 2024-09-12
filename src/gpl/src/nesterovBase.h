@@ -1103,7 +1103,7 @@ class NesterovBase
   float snapshotDensityPenalty_ = 0;
   float snapshotStepLength_ = 0;
 
-  void initFillerGCells();
+  void initFillerGCells(uint);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
