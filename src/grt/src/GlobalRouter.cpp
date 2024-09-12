@@ -635,7 +635,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     if (pinPositionsChanged(net, last_pos)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
-      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
