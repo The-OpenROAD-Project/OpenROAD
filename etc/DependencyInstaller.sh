@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+CMAKE_PACKAGE_ROOT_ARGS=""
+
 _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
@@ -21,7 +23,7 @@ _equivalenceDeps() {
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang fron RHEL8
+        # e.g., gcc and clang from RHEL8
         make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
@@ -127,6 +129,7 @@ _installCommonDev() {
     else
         echo "Swig already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D SWIG_ROOT=$(realpath $swigPrefix) "
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
@@ -143,6 +146,7 @@ _installCommonDev() {
     else
         echo "Boost already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath $boostPrefix) "
 
     # eigen
     eigenPrefix=${PREFIX:-"/usr/local"}
@@ -155,10 +159,11 @@ _installCommonDev() {
     else
         echo "Eigen already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath $eigenPrefix) "
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${cuddPrefix}/include/cudd.h ]]; then
+    if [[ ! -f ${cuddPrefix}/include/cudd.h ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${cuddVersion} https://github.com/The-OpenROAD-Project/cudd.git
         cd cudd
@@ -191,6 +196,7 @@ _installCommonDev() {
     else
         echo "Lemon already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D LEMON_ROOT=$(realpath $lemonPrefix) "
 
     # spdlog
     spdlogPrefix=${PREFIX:-"/usr/local"}
@@ -203,6 +209,7 @@ _installCommonDev() {
     else
         echo "spdlog already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath $spdlogPrefix) "
 
     # gtest
     gtestPrefix=${PREFIX:-"/usr/local"}
@@ -217,6 +224,7 @@ _installCommonDev() {
     else
         echo "gtest already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath $gtestPrefix) "
 
     if [[ ${equivalenceDeps} == "yes" ]]; then
         _equivalenceDeps
@@ -264,24 +272,32 @@ _installOrTools() {
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
 
+    # Disable exit on error for 'find' command, as it might return non zero
+    set +euo pipefail
+    LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+    # Bring back exit on error
+    set -euo pipefail
+    # Return if right version of or-tools is installed
+    for lib in ${LIST[@]}; do
+        if [[ "$lib" =~ .*"/libortools.so.${orToolsVersionSmall}" ]]; then
+            echo "OR-Tools is already installed"
+            CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $(dirname $lib)/..) "
+            return
+        fi
+    done
+
     orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        # Disable exit on error for 'find' command, as it might return non zero
-        set +euo pipefail
-        LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
-        # Bring back exit on error
-        set -euo pipefail
-        if [ ${#LIST[@]} -eq 0 ]; then
-            echo "OR-TOOLS NOT FOUND"
-            echo "Installing  OR-Tools for aarch64..."
-            git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
-            cd or-tools
-            ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-            ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
-        else
-            echo "OR-Tools is already installed"
-        fi
+        echo "OR-TOOLS NOT FOUND"
+        echo "Installing  OR-Tools for aarch64..."
+        git clone --depth=1 -b "v${orToolsVersionBig}" https://github.com/google/or-tools.git
+        cd or-tools
+        ${cmakePrefix}/bin/cmake -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX=${orToolsPath} -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
+        ${cmakePrefix}/bin/cmake --build build --config Release --target install -v -j $(nproc)
     else
+        if [[ $version == rodete ]]; then
+            version=11
+        fi
         orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         orToolsPath=${PREFIX:-"/opt/or-tools"}
@@ -292,6 +308,7 @@ _installOrTools() {
         tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
         rm -rf ${baseDir}
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath $orToolsPath) "
 }
 
 _installUbuntuCleanUp() {
@@ -568,7 +585,7 @@ EOF
     fi
     brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pyqt5 python spdlog tcl-tk zlib
 
-    # Some systems neeed this to correclty find OpenMP package during build
+    # Some systems need this to correctly find OpenMP package during build
     brew link --force libomp
 
     # Lemon is not in the homebrew-core repo
@@ -587,6 +604,11 @@ _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
     apt-get -y install --no-install-recommends tzdata
+    if [[ $1 == rodete ]]; then
+        tclver=8.6
+    else
+        tclver=
+    fi
     apt-get -y install --no-install-recommends \
         automake \
         autotools-dev \
@@ -607,7 +629,7 @@ _installDebianPackages() {
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
-        libtcl \
+        libtcl${tclver} \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -623,8 +645,13 @@ _installDebianPackages() {
             qt5-default
 
     else
+        if [[ $1 == rodete ]]; then
+            pythonver=3.12
+        else
+            pythonver=3.8
+        fi
         apt-get install -y --no-install-recommends \
-            libpython3.8 \
+            libpython${pythonver} \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
@@ -641,6 +668,14 @@ _installCI() {
         jq \
         parallel \
         software-properties-common
+
+    if command -v docker &> /dev/null; then
+        # The user can uninstall docker if they want to reinstall it,
+        # and also this allows the user to choose drop in replacements
+        # for docker, such as podman-docker
+        echo "Docker is already installed, skip docker reinstall."
+        return 0
+    fi
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
@@ -700,6 +735,9 @@ Usage: $0
                                 # Installs dependencies required to run CI
        $0 -nocert
                                 # Disable certificate checks
+       $0 -save-deps-prefixes=FILE
+                                # Dumps OpenROAD build arguments and variables
+                                # to FILE
 
 EOF
     exit "${1:-1}"
@@ -711,6 +749,7 @@ option="all"
 isLocal="false"
 equivalenceDeps="no"
 CI="no"
+saveDepsPrefixes=""
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -767,6 +806,9 @@ while [ "$#" -gt 0 ]; do
             alias wget="wget --no-check-certificate"
             export GIT_SSL_NO_VERIFY=true
             ;;
+        -save-deps-prefixes=*)
+            saveDepsPrefixes=$(realpath ${1#-save-deps-prefixes=})
+            ;;
         *)
             echo "unknown option: ${1}" >&2
             _help
@@ -774,6 +816,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ -z "${saveDepsPrefixes}" ]]; then
+    DIR="$(dirname $(readlink -f $0))"
+    saveDepsPrefixes="$DIR/openroad_deps_prefixes.txt"
+fi
 
 platform="$(uname -s)"
 case "${platform}" in
@@ -887,8 +934,11 @@ To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
         ;;
-    "Debian GNU/Linux" )
+    "Debian GNU/Linux" | "Debian GNU/Linux rodete" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+        if [[ -z ${version} ]]; then
+            version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
@@ -907,3 +957,7 @@ EOF
         _help
         ;;
 esac
+if [[ ! -z ${saveDepsPrefixes} ]]; then
+    mkdir -p "$(dirname $saveDepsPrefixes)"
+    echo "$CMAKE_PACKAGE_ROOT_ARGS" > $saveDepsPrefixes
+fi

@@ -1,0 +1,121 @@
+*SPEF "ieee 1481-1999"
+*DESIGN "reg1"
+*DATE "11:11:11 Fri 11 11, 1111"
+*VENDOR "The OpenROAD Project"
+*PROGRAM "OpenROAD"
+*VERSION "1.0"
+*DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER []
+*T_UNIT 1 S
+*C_UNIT 1 F
+*R_UNIT 1 OHM
+
+*PORTS
+in1 I
+clk I
+out O
+
+*D_NET in1 2.8971e-14
+*CONN
+*I r1/D I *D DFF_X1
+*P in1 I
+*I r2/D I *D DFF_X1
+*CAP
+1 in1:0 7.2699e-15
+2 in1:1 3.6078e-15
+3 in1:2 3.6078e-15
+4 in1:3 1.44855e-14
+*RES
+1 in1:0 in1:0 0.001
+2 in1:0 in1 0.001
+3 in1:0 in1 0.001
+4 in1:1 in1:3 651.6
+5 in1:1 r1/D 0.001
+6 in1:2 in1:3 651.6
+7 in1:2 r2/D 0.001
+8 in1:3 in1:0 1313.01
+9 in1:0 in1 0.001
+*END
+
+*D_NET out 3.39494e-14
+*CONN
+*P out O
+*I r3/Q O *D DFF_X1
+*CAP
+1 out:0 1.69747e-14
+2 out:1 1.69747e-14
+*RES
+1 out:0 out:1 3065.78
+2 out:0 out 0.001
+3 out:1 r3/Q 0.001
+4 out:1 out:1 0.001
+5 out:1 r3/Q 0.001
+6 out:1 r3/Q 0.001
+*END
+
+*D_NET r1q 1.46426e-14
+*CONN
+*I r1/Q O *D DFF_X1
+*I u2/A1 I *D AND2_X1
+*CAP
+1 r1q:0 7.32131e-15
+2 r1q:1 7.32131e-15
+*RES
+1 r1q:0 r1q:1 1322.29
+2 r1q:0 u2/A1 0.001
+3 r1q:1 r1/Q 0.001
+4 r1q:1 r1q:1 0.001
+5 r1q:1 r1/Q 0.001
+6 r1q:1 r1/Q 0.001
+*END
+
+*D_NET r2q 1.422e-14
+*CONN
+*I r2/Q O *D DFF_X1
+*I u1/A I *D BUF_X1
+*CAP
+1 r2q:0 7.10998e-15
+2 r2q:1 7.10998e-15
+*RES
+1 r2q:0 r2q:0 0.001
+2 r2q:0 r2/Q 0.001
+3 r2q:0 r2/Q 0.001
+4 r2q:1 r2q:0 1284.12
+5 r2q:1 u1/A 0.001
+6 r2q:0 r2/Q 0.001
+*END
+
+*D_NET u1z 4.3297e-14
+*CONN
+*I u1/Z O *D BUF_X1
+*I u2/A2 I *D AND2_X1
+*CAP
+1 u1z:0 2.16485e-14
+2 u1z:1 2.16485e-14
+*RES
+1 u1z:0 u1z:1 3909.91
+2 u1z:0 u2/A2 0.001
+3 u1z:1 u1/Z 0.001
+4 u1z:1 u1z:1 0.001
+5 u1z:1 u1/Z 0.001
+6 u1z:1 u1/Z 0.001
+*END
+
+*D_NET u2z 2.16713e-14
+*CONN
+*I r3/D I *D DFF_X1
+*I u2/ZN O *D AND2_X1
+*CAP
+1 u2z:0 1.08357e-14
+2 u2z:1 1.08357e-14
+*RES
+1 u2z:0 u2z:0 0.001
+2 u2z:0 u2/ZN 0.001
+3 u2z:0 u2/ZN 0.001
+4 u2z:1 u2z:0 1957.02
+5 u2z:1 r3/D 0.001
+6 u2z:0 u2/ZN 0.001
+*END
+

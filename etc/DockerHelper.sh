@@ -7,6 +7,7 @@ cd "$(dirname $(readlink -f $0))/../"
 baseDir="$(pwd)"
 # docker hub organization/user from where to pull/push images
 org=openroad
+depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
 
 _help() {
     cat <<EOF
@@ -18,8 +19,8 @@ usage: $0 [CMD] [OPTIONS]
   push                          Push the docker image to Docker Hub
 
   OPTIONS:
-  -os=OS_NAME                   Choose beween ubuntu22.04 (default), ubuntu20.04, rhel, opensuse, debian10 and debian11.
-  -target=TARGET                Choose target fo the Docker image:
+  -os=OS_NAME                   Choose between ubuntu22.04 (default), ubuntu20.04, rhel, opensuse, debian10 and debian11.
+  -target=TARGET                Choose target for the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
                                              copy source code and build app
@@ -34,6 +35,7 @@ usage: $0 [CMD] [OPTIONS]
   -local                        Installs with prefix /home/openroad-deps
   -username                     Docker Username
   -password                     Docker Password
+  -deps-prefixes-path=PATH      Path where the file with dependency prefixes should be stored (in Docker image)
 
 EOF
     exit "${1:-1}"
@@ -84,6 +86,7 @@ _setup() {
             context="."
             buildArgs="--build-arg compiler=${compiler}"
             buildArgs="${buildArgs} --build-arg numThreads=${numThreads}"
+            buildArgs="${buildArgs} --build-arg depsPrefixFile=${depsPrefixesFile}"
             if [[ "${isLocal}" == "yes" ]]; then
                 buildArgs="${buildArgs} --build-arg LOCAL_PATH=${LOCAL_PATH}/bin"
             fi
@@ -92,9 +95,9 @@ _setup() {
         "dev" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
-            buildArgs=""
+            buildArgs="-save-deps-prefixes=${depsPrefixesFile}"
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="-prefix=${LOCAL_PATH}"
+                buildArgs="${buildArgs} -prefix=${LOCAL_PATH}"
             fi
             if [[ "${equivalenceDeps}" == "yes" ]]; then
                 buildArgs="${buildArgs} -eqy"
@@ -244,7 +247,10 @@ while [ "$#" -gt 0 ]; do
         -tag=* )
             tag="${1#*=}"
             ;;
-        -os | -target | -compiler | -threads | -username | -password | -tag )
+        -deps-prefixes-path=* )
+            depsPrefixesFile="${1#-deps-prefixes-path=}"
+            ;;
+        -os | -target | -compiler | -threads | -username | -password | -tag | -deps-prefixes-path )
             echo "${1} requires an argument" >&2
             _help
             ;;

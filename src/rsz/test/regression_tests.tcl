@@ -11,6 +11,7 @@ record_tests {
   eqy_repair_setup2
   eqy_repair_setup5
   fanin_fanout1
+  gain_buffering1
   make_parasitics1
   make_parasitics2
   make_parasitics3

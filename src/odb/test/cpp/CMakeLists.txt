@@ -14,6 +14,9 @@ set(TEST_LIBS
         utl_lib
         odb_test_helper
         gdsin
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
 )
 
 add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc)
@@ -31,7 +34,7 @@ add_executable(TestMaster TestMaster.cpp)
 add_executable(TestGDSIn TestGDSIn.cpp)
 #add_executable(TestXML TestXML.cpp)
 
-target_link_libraries(OdbGTests odb gtest gmock gtest_main)
+target_link_libraries(OdbGTests ${TEST_LIBS})
 target_link_libraries(TestCallBacks ${TEST_LIBS})
 target_link_libraries(TestGeom ${TEST_LIBS})
 target_link_libraries(TestModule ${TEST_LIBS})
