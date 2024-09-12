@@ -5362,22 +5362,22 @@ class dbSite : public dbObject
   ///
   /// Get the width of this site
   ///
-  uint getWidth();
+  int getWidth();
 
   ///
   /// Set the width of this site
   ///
-  void setWidth(uint width);
+  void setWidth(int width);
 
   ///
   /// Get the height of this site
   ///
-  uint getHeight() const;
+  int getHeight() const;
 
   ///
   /// Set the height of this site
   ///
-  void setHeight(uint height);
+  void setHeight(int height);
 
   ///
   /// Get the class of this site.
@@ -5503,6 +5503,11 @@ class dbMaster : public dbObject
   /// Set the height of this master cell.
   ///
   void setHeight(uint height);
+
+  ///
+  /// Get the area of this master cell.
+  ///
+  int64_t getArea() const;
 
   ///
   /// is filler cell
