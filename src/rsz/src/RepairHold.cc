@@ -526,48 +526,116 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
 
 void RepairHold::makeHoldDelay(Vertex* drvr,
                                PinSeq& load_pins,
-                               bool loads_have_out_port,
+                               bool loads_have_out_port,  // top level port
                                LibertyCell* buffer_cell,
                                const Point& loc)
 {
   Pin* drvr_pin = drvr->pin();
-  Instance* parent = db_network_->topInstance();
-  Net* drvr_net = network_->isTopLevelPort(drvr_pin)
-                      ? db_network_->net(db_network_->term(drvr_pin))
-                      : db_network_->net(drvr_pin);
-  Net *in_net, *out_net;
+
+  odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver
+  dbNet* db_drvr_net = nullptr;           // regular flat driver
+
+  db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
+
+  // Get the parent of the driver pin and put the new buffer there
+  Instance* inst = db_network_->instance(drvr_pin);
+  dbInst* db_inst;
+  odb::dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  odb::dbModule* module = nullptr;
+  if (db_inst) {
+    module = db_inst->getModule();
+  } else if (mod_inst) {
+    module = mod_inst->getParent();
+  }
+  Instance* parent = (module == (db_network_->block()->getTopModule()))
+                         ? db_network_->topInstance()
+                         : db_network_->dbToSta(module->getModInst());
+
+  Net *in_net = nullptr, *out_net = nullptr;
+
   if (loads_have_out_port) {
     // Verilog uses nets as ports, so the net connected to an output port has
     // to be preserved.
     // Move the driver pin over to gensym'd net.
+    // TODO:make this branch work with hierarchical nets
+    //
     in_net = resizer_->makeUniqueNet();
     Port* drvr_port = network_->port(drvr_pin);
     Instance* drvr_inst = network_->instance(drvr_pin);
     sta_->disconnectPin(drvr_pin);
     sta_->connectPin(drvr_inst, drvr_port, in_net);
-    out_net = drvr_net;
+    out_net = db_network_->dbToSta(db_drvr_net);
   } else {
-    in_net = drvr_net;
-    out_net = resizer_->makeUniqueNet();
+    in_net = db_network_->dbToSta(db_drvr_net);
+    // make the output net, put in same module as buffer
+    std::string net_name = resizer_->makeUniqueNetName();
+    out_net = db_network_->makeNet(net_name.c_str(), parent);
+    // hook the moddrvrnet to the output of the buffer to be created
+    // so disconnect from its current pin and add to the buffer output
+    // pin
+    if (mod_drvr_net) {
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm) {
+        iterm->disconnectFromModNet();
+      }
+      if (moditerm) {
+        moditerm->disconnect();
+      }
+      if (modbterm) {
+        modbterm->disconnect();
+      }
+    }
   }
 
   resizer_->parasiticsInvalid(in_net);
 
   Net* buf_in_net = in_net;
+
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
+
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+
   string buffer_name = resizer_->makeUniqueInstName("hold");
+
+  // make the buffer in the driver pin's module
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, loc);
   inserted_buffer_count_++;
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
+  // wire in the buffer
   sta_->connectPin(buffer, input, buf_in_net);
   sta_->connectPin(buffer, output, out_net);
+
+  // patch in the output of the new buffer to the hierarchical net, if any
+  if (mod_drvr_net != nullptr) {
+    Pin* ip_pin = nullptr;
+    Pin* op_pin = nullptr;
+    resizer_->getBufferPins(buffer, ip_pin, op_pin);
+    (void) ip_pin;
+    if (op_pin) {
+      // get the iterm of the op_pin and connect to the hierarchical net.
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
+      db_network_->staToDb(op_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm) {
+        iterm->connect(mod_drvr_net);
+      }
+    }
+  }
+
   resizer_->parasiticsInvalid(out_net);
 
+  // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
@@ -577,6 +645,17 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       Port* load_port = db_network_->port(load_pin);
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load, load_port, out_net);
+      // hook to modnet to preserve original hierarchical connection, if any
+      if (mod_drvr_net) {
+        odb::dbITerm* iterm;
+        odb::dbBTerm* bterm;
+        odb::dbModITerm* moditerm;
+        odb::dbModBTerm* modbterm;
+        db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
+        if (iterm) {
+          iterm->connect(mod_drvr_net);
+        }
+      }
     }
   }
 
