@@ -234,7 +234,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
                                LayerToGraphNodes& node_by_layer_map,
                                const int node_count)
 {
-  std::map<PinType, std::vector<int>, PinTypeHash> pin_nbrs;
+  std::map<PinType, std::vector<int>, PinTypeCmp> pin_nbrs;
   std::vector<int> ids;
   // iterate all instance pins
   for (odb::dbITerm* iterm : db_net->getITerms()) {

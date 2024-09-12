@@ -61,7 +61,7 @@ struct PinType
   bool operator==(const PinType& t) const { return (this->name == t.name); }
 };
 
-class PinTypeHash
+class PinTypeCmp
 {
  public:
   size_t operator()(const PinType& t1, const PinType& t2) const
