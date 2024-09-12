@@ -3319,6 +3319,25 @@ void Resizer::journalRestoreTest()
       removed_buffer_count_old - removed_buffer_count_);
 }
 
+void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
+{
+  ip = nullptr;
+  op = nullptr;
+
+  InstancePinIterator* pin_iter = network_->pinIterator(buffer);
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+    sta::PortDirection* dir = network_->direction(pin);
+    if (dir->isAnyOutput()) {
+      op = pin;
+    }
+    if (dir->isAnyInput()) {
+      ip = pin;
+    }
+  }
+  delete pin_iter;
+}
+
 ////////////////////////////////////////////////////////////////
 Instance* Resizer::makeBuffer(LibertyCell* cell,
                               const char* name,

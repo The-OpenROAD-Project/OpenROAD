@@ -1179,9 +1179,9 @@ Clock TritonCTS::forkRegisterClockNetwork(
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
   odb::dbModule* first_net_module
-      = network_->getNetDriverParentModule(firstNet);
+      = network_->getNetDriverParentModule(network_->dbToSta(firstNet));
   odb::dbModule* second_net_module
-      = network_->getNetDriverParentModule(secondNet);
+      = network_->getNetDriverParentModule(network_->dbToSta(secondNet));
   odb::dbModule* target_module = nullptr;
   if ((first_net_module != nullptr)
       && (first_net_module == second_net_module)) {
@@ -1253,7 +1253,8 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
   // gets the module for the driver for the net
-  odb::dbModule* top_module = network_->getNetDriverParentModule(topClockNet);
+  odb::dbModule* top_module
+      = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
 
   const std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getSdcName();
   odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());

@@ -3561,9 +3561,15 @@ class dbITerm : public dbObject
 
   ///
   /// Disconnect this iterm from the net it is connected to.
+  /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
 
+  ///
+  /// Disconnect this iterm from the mod net, if any, it is connect to.
+  //
+
+  void disconnectFromModNet();
   ///
   /// Get the average of the centers for the iterm shapes
   /// Returns false if iterm has no shapes

@@ -459,6 +459,7 @@ void dbITerm::connect(dbNet* net_)
 
   net->_iterms = iterm->getOID();
 
+  
   for (auto callback : block->_callbacks) {
     callback->inDbITermPostConnect(this);
   }
@@ -511,6 +512,42 @@ void dbITerm::connect(dbModNet* mod_net)
   iterm->_prev_modnet_iterm = 0;
   _mod_net->_iterms = iterm->getOID();
 }
+
+void dbITerm::disconnectFromModNet(){
+  _dbITerm* iterm = (_dbITerm*) this;
+  _dbInst* inst = iterm->getInst();
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        389,
+        "Attempt to disconnect iterm of dont_touch instance {}",
+        inst->_name);
+  }
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  if (iterm->_mnet == 0) {
+    return;
+  }
+  _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
+  uint id = iterm->getOID();
+  if (mod_net->_iterms == id) {
+    mod_net->_iterms = iterm->_next_modnet_iterm;
+    if (mod_net->_iterms != 0) {
+      _dbITerm* t = block->_iterm_tbl->getPtr(mod_net->_iterms);
+      t->_prev_modnet_iterm = 0;
+    }
+  } else {
+    if (iterm->_next_modnet_iterm != 0) {
+      _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_modnet_iterm);
+      next->_prev_modnet_iterm = iterm->_prev_modnet_iterm;
+    }
+    if (iterm->_prev_modnet_iterm != 0) {
+      _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_modnet_iterm);
+      prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
+    }
+  }
+  iterm->_mnet = 0;
+}
+
 
 void dbITerm::disconnect()
 {
