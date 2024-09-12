@@ -162,7 +162,7 @@ class GCell
   GCellState state;
 
  private:
-  uint id;
+  uint id = 0;
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
   int lx_ = 0;
@@ -178,12 +178,6 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
-};
-
-  struct GCellComparator {
-    bool operator()(const std::shared_ptr<GCell>& lhs, const std::shared_ptr<GCell>& rhs) const {
-        return lhs->getId() < rhs->getId();
-    }
 };
 
 inline int GCell::lx() const
@@ -268,7 +262,7 @@ inline int GCell::dDy() const
 class GNet
 {
  public:
-  GNet(Net* net);
+  GNet(Net* net, uint);
   GNet(const std::vector<Net*>& nets);
 
   Net* net() const;
@@ -320,8 +314,11 @@ class GNet
 
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
+  
+  uint getId() { return id; }
 
  private:
+  uint id = 0;
   std::set<GPin*> gPins_;
   std::vector<Net*> nets_;
   int lx_ = 0;
@@ -476,7 +473,7 @@ inline float GNet::waYExpMaxSumY() const
 class GPin
 {
  public:
-  GPin(Pin* pin);
+  GPin(Pin* pin, uint);
   GPin(const std::vector<Pin*>& pins);
 
   Pin* pin() const;
@@ -512,8 +509,11 @@ class GPin
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
+  
+  uint getId() { return id; }
 
  private:
+  uint id = 0;
   GCell* gCell_ = nullptr;
   GNet* gNet_ = nullptr;
   std::vector<Pin*> pins_;
@@ -545,6 +545,22 @@ class GPin
 
   bool hasMinExpSumX_ = false;
   bool hasMinExpSumY_ = false;
+};
+
+  struct GCellComparator {
+    bool operator()(const std::shared_ptr<GCell>& lhs, const std::shared_ptr<GCell>& rhs) const {
+        return lhs->getId() < rhs->getId();
+    }
+  };
+  struct GPinComparator {
+    bool operator()(const std::shared_ptr<GPin>& lhs, const std::shared_ptr<GPin>& rhs) const {
+        return lhs->getId() < rhs->getId();
+    }
+  };    
+  struct GNetComparator {
+  bool operator()(const std::shared_ptr<GNet>& lhs, const std::shared_ptr<GNet>& rhs) const {
+        return lhs->getId() < rhs->getId();
+    }    
 };
 
 class Bin
@@ -826,16 +842,15 @@ class NesterovBaseCommon
 
 //  std::map<GCell*, GCellState>& gCells() { return newGCells_; }
   std::set<std::shared_ptr<GCell>, GCellComparator>& gCells() { return newGCells_; }
-  const std::set<GNet*>& gNets() const { return gNets_; }
-  const std::set<GPin*>& gPins() const { return gPins_; }
+  const std::set<std::shared_ptr<GNet>, GNetComparator >& gNets() const { return gNets_; }
+  const std::set<std::shared_ptr<GPin>, GPinComparator >& gPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
   //
-//  GCell* pbToNb(Instance* inst) const;
   std::shared_ptr<GCell> pbToNb(Instance* inst) const;
-  GPin* pbToNb(Pin* pin) const;
-  GNet* pbToNb(Net* net) const;
+  std::shared_ptr<GPin> pbToNb(Pin* pin) const;
+  std::shared_ptr<GNet> pbToNb(Net* net) const;
 
   //
   // OpenDB To NesterovBase functions
@@ -880,16 +895,14 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-//  std::map<GCell*, GCellState> newGCells_;
-//  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
-  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
-  std::set<GNet*> gNets_;
-  std::set<GPin*> gPins_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;  
+  std::set<std::shared_ptr<GPin>, GPinComparator > gPins_;
+  std::set<std::shared_ptr<GNet>, GNetComparator > gNets_;
 
-//  std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Instance*, std::shared_ptr<GCell>> gCellMap_;
-  std::unordered_map<Pin*, GPin*> gPinMap_;
-  std::unordered_map<Net*, GNet*> gNetMap_;
+  std::unordered_map<Pin*, std::shared_ptr<GPin> > gPinMap_;
+  std::unordered_map<Net*, std::shared_ptr<GNet> > gNetMap_;
+  
 
   int num_threads_;
 };

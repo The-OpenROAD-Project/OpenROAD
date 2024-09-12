@@ -255,9 +255,10 @@ bool GCell::isStdInstance() const
 ////////////////////////////////////////////////
 // GNet
 
-GNet::GNet(Net* net)
+GNet::GNet(Net* net, uint input_id)
 {
   nets_.push_back(net);
+  id = input_id;
 }
 
 GNet::GNet(const std::vector<Net*>& nets)
@@ -338,13 +339,14 @@ bool GNet::isDontCare() const
 ////////////////////////////////////////////////
 // GPin
 
-GPin::GPin(Pin* pin)
+GPin::GPin(Pin* pin, uint input_id)
 {
   pins_.push_back(pin);
   cx_ = pin->cx();
   cy_ = pin->cy();
   offsetCx_ = pin->offsetCx();
   offsetCy_ = pin->offsetCy();
+  id = input_id;
 }
 
 GPin::GPin(const std::vector<Pin*>& pins)
@@ -897,68 +899,63 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   pbc_ = std::move(pbc);
   log_ = log;
 
-  uint id_counter = 0;
+  uint gcell_id = 0;
+  uint gpin_id = 0;
+  uint gnet_id = 0;
   for (auto& gpl_inst : pbc_->placeInsts()) {
-    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(gpl_inst, id_counter++);
+    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(gpl_inst, gcell_id++);
     gCellMap_[gCell->instance()] = gCell;
-    newGCells_.insert(gCell);
+    newGCells_.insert(std::move(gCell));
   }
    
-  for (auto& pin : pbc_->pins()) {
-    GPin* myGPin = new GPin(pin);
-    gPins_.insert(myGPin);
-    gPinMap_[myGPin->pin()] = myGPin;
+  for (auto& gpl_pin : pbc_->pins()) {
+    std::shared_ptr<GPin> gPin = std::make_shared<GPin>(gpl_pin, gpin_id++);
+    gPinMap_[gPin->pin()] = gPin;
+    gPins_.insert(std::move(gPin));
   }
 
-  for (auto& net : pbc_->nets()) {
-    GNet* myGNet = new GNet(net);
-    gNets_.insert(myGNet);
-    gNetMap_[myGNet->net()] = myGNet;
+  for (auto& gpl_net : pbc_->nets()) {
+    std::shared_ptr<GNet> gNet = std::make_shared<GNet>(gpl_net, gnet_id++);
+    gNetMap_[gNet->net()] = gNet;
+    gNets_.insert(std::move(gNet));
   }
 
 //#pragma omp parallel for num_threads(num_threads_)
-//  for(auto& pair : newGCells_) {
-//    auto gCell = pair.first;
   for(auto& gCell : newGCells_) {
     if (gCell->isFiller()) {
       continue;
     }
     for (auto& pin : gCell->instance()->pins()) {
-      gCell->addGPin(pbToNb(pin));
+      gCell->addGPin(pbToNb(pin).get());
     }
   }
 
 //#pragma omp parallel for num_threads(num_threads_)
   for(auto& gPin : gPins_){
     gPin->setGCell(pbToNb(gPin->pin()->instance()).get());
-    gPin->setGNet(pbToNb(gPin->pin()->net()));    
+    gPin->setGNet(pbToNb(gPin->pin()->net()).get());    
   }
 
 //#pragma omp parallel for num_threads(num_threads_)
-  for (GNet* gNet : gNets_) {
+  for (auto& gNet : gNets_) {
     for (auto& pin : gNet->net()->pins()) {
-      gNet->addGPin(pbToNb(pin));
+      gNet->addGPin(pbToNb(pin).get());
     }
   }
 }
 
-//GCell* NesterovBaseCommon::pbToNb(Instance* inst) const
-//{
-//  auto gcPtr = gCellMap_.find(inst);
-//  return (gcPtr == gCellMap_.end()) ? nullptr : gcPtr->second;
-//}
 std::shared_ptr<GCell> NesterovBaseCommon::pbToNb(Instance* inst) const {
   auto gcPtr = gCellMap_.find(inst);
   return (gcPtr == gCellMap_.end()) ? nullptr : gcPtr->second;
 }
 
-GPin* NesterovBaseCommon::pbToNb(Pin* pin) const
+std::shared_ptr<GPin> NesterovBaseCommon::pbToNb(Pin* pin) const
 {
   auto gpPtr = gPinMap_.find(pin);
   return (gpPtr == gPinMap_.end()) ? nullptr : gpPtr->second;
 }
 
-GNet* NesterovBaseCommon::pbToNb(Net* net) const
+std::shared_ptr<GNet> NesterovBaseCommon::pbToNb(Net* net) const
 {
   auto gnPtr = gNetMap_.find(net);
   return (gnPtr == gNetMap_.end()) ? nullptr : gnPtr->second;
@@ -973,19 +970,19 @@ GCell* NesterovBaseCommon::dbToNb(odb::dbInst* inst) const
 GPin* NesterovBaseCommon::dbToNb(odb::dbITerm* pin) const
 {
   Pin* pbPin = pbc_->dbToPb(pin);
-  return pbToNb(pbPin);
+  return pbToNb(pbPin).get();
 }
 
 GPin* NesterovBaseCommon::dbToNb(odb::dbBTerm* pin) const
 {
   Pin* pbPin = pbc_->dbToPb(pin);
-  return pbToNb(pbPin);
+  return pbToNb(pbPin).get();
 }
 
 GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 {
   Net* pbNet = pbc_->dbToPb(net);
-  return pbToNb(pbNet);
+  return pbToNb(pbNet).get();
 }
 
 //
@@ -1002,7 +999,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
     }
 
 //#pragma omp parallel for num_threads(num_threads_)
-  for (GNet* gNet : gNets_) {
+  for (auto& gNet : gNets_) {
     // old-style loop for old OpenMP
 
     gNet->clearWaVars();
@@ -1230,7 +1227,7 @@ int64_t NesterovBaseCommon::getHpwl()
 //  assert(omp_get_thread_num() == 0);
   int64_t hpwl = 0;
 //#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-  for (GNet* gNet : gNets_) {
+  for (auto& gNet : gNets_) {
     // old-style loop for old OpenMP
     gNet->updateBox();
     hpwl += gNet->hpwl();
@@ -1268,17 +1265,12 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
     //searches based on pbInst in nbc map
-//    GCell* gCell = nbc_->pbToNb(inst);
     std::shared_ptr<GCell> gCell = nbc_->pbToNb(inst);
     gCell->clearInstances();
     gCell->setInstance(inst);
-//    GCellState emptyState;
-//    newGCells_[gCell] = emptyState;
     newGCells_.insert(gCell);
   }
   
-//  for(auto& pair : newGCells_) {
-//    if(pair.first->isFiller()){
   for(auto& gCell : newGCells_) {
     if(gCell->isFiller()){
       ++fillersCount;
