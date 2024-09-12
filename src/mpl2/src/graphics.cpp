@@ -361,6 +361,16 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
+    Cluster* cluster = macro.getCluster();
+
+    if (!cluster) {
+      continue;
+    }
+
+    if (cluster->isIOCluster()) {
+      continue;
+    }
+
     setSoftMacroBrush(painter, macro);
 
     const int lx = block_->micronsToDbu(macro.getX());

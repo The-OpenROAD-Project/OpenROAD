@@ -353,7 +353,7 @@ void ClusteringEngine::createIOClusters()
       Cluster* io_cluster = itr->second;
       tree_->maps.bterm_to_cluster_id[bterm] = io_cluster->getId();
     } else {
-      createIOCluster(die, constraint_boundary, boundary_to_cluster);
+      createIOCluster(die, constraint_boundary, boundary_to_cluster, bterm);
     }
   }
 
@@ -385,18 +385,23 @@ Boundary ClusteringEngine::getConstraintBoundary(
 void ClusteringEngine::createIOCluster(
     const odb::Rect& die,
     const Boundary constraint_boundary,
-    std::map<Boundary, Cluster*>& boundary_to_cluster)
+    std::map<Boundary, Cluster*>& boundary_to_cluster,
+    odb::dbBTerm* bterm)
 {
   auto cluster
       = std::make_unique<Cluster>(id_, toString(constraint_boundary), logger_);
+  tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();
 
   boundary_to_cluster[constraint_boundary] = cluster.get();
 
-  int x = 0, y = 0;
+  int x = die.xMin(), y = die.yMin();
   int width = die.dx(), height = die.dy();
-  setIoConstraintsClustersDimensions(
-      die, constraint_boundary, x, y, width, height);
+
+  if (constraint_boundary != NONE) {
+    setIoConstraintsClustersDimensions(
+        die, constraint_boundary, x, y, width, height);
+  }
 
   cluster->setAsIOCluster(
       std::pair<float, float>(block_->dbuToMicrons(x), block_->dbuToMicrons(y)),
@@ -1358,19 +1363,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
       continue;
     }
 
-    bool debug_ignore = false;
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      /*
-        This check does NOT need to exist. It's here
-        to help validate the implementation from the
-        beginning where there are not IO Clusters anymore.
-      */
-      if (tree_->maps.bterm_to_cluster_id.find(bterm)
-          == tree_->maps.bterm_to_cluster_id.end()) {
-        debug_ignore = true;
-        break;
-      }
-
       const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
         driver_id = cluster_vertex_id_map[cluster_id];
@@ -1378,11 +1371,6 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
         loads_id.insert(cluster_vertex_id_map[cluster_id]);
       }
     }
-
-    if (debug_ignore) {
-      continue;
-    }
-
     loads_id.insert(driver_id);
     if (driver_id != -1 && loads_id.size() > 1
         && loads_id.size() < tree_->large_net_threshold) {
@@ -1660,19 +1648,7 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-    bool debug_ignore = false;
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      /*
-        This check does NOT need to exist. It's here
-        to help validate the implementation from the
-        beginning where there are not IO Clusters anymore.
-      */
-      if (tree_->maps.bterm_to_cluster_id.find(bterm)
-          == tree_->maps.bterm_to_cluster_id.end()) {
-        debug_ignore = true;
-        break;
-      }
-
       const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
       net_has_io_pin = true;
 
@@ -1681,10 +1657,6 @@ void ClusteringEngine::updateConnections()
       } else {
         load_clusters_ids.push_back(cluster_id);
       }
-    }
-
-    if (debug_ignore) {
-      continue;
     }
 
     if (driver_cluster_id != -1 && !load_clusters_ids.empty()
