@@ -954,8 +954,7 @@ void GuideProcessor::patchGuides(frNet* net,
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
 }
 
-void GuideProcessor::genGuides_pinEnclosure(frNet* net,
-                                            std::vector<frRect>& guides)
+void GuideProcessor::coverPins(frNet* net, std::vector<frRect>& guides)
 {
   for (auto pin : net->getInstTerms()) {
     patchGuides(net, pin, guides);
@@ -1209,7 +1208,7 @@ void GuideProcessor::genGuides_split(
   rects.shrink_to_fit();
 }
 
-void GuideProcessor::initGCellPinMap_helper(
+void GuideProcessor::mapPinShapesToGCells(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* term) const
 {
@@ -1235,21 +1234,21 @@ void GuideProcessor::initGCellPinMap(
 {
   for (auto instTerm : net->getInstTerms()) {
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-        && initGCellPinMap_AP(gcell_pin_map, instTerm)) {
+        && mapITermAccessPointsToGCells(gcell_pin_map, instTerm)) {
       continue;
     }
-    initGCellPinMap_helper(gcell_pin_map, instTerm);
+    mapPinShapesToGCells(gcell_pin_map, instTerm);
   }
   for (auto term : net->getBTerms()) {
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
-        && initGCellPinMap_AP(gcell_pin_map, term)) {
+        && mapBTermAccessPointsToGCells(gcell_pin_map, term)) {
       continue;
     }
-    initGCellPinMap_helper(gcell_pin_map, term);
+    mapPinShapesToGCells(gcell_pin_map, term);
   }
 }
 
-bool GuideProcessor::initGCellPinMap_AP(
+bool GuideProcessor::mapITermAccessPointsToGCells(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frInstTerm* inst_term) const
 {
@@ -1273,7 +1272,7 @@ bool GuideProcessor::initGCellPinMap_AP(
   return (pins_covered == num_pins);
 }
 
-bool GuideProcessor::initGCellPinMap_AP(
+bool GuideProcessor::mapBTermAccessPointsToGCells(
     std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
     frBTerm* term) const
 {
@@ -1354,7 +1353,7 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
 {
   net->clearGuides();
 
-  genGuides_pinEnclosure(net, rects);
+  coverPins(net, rects);
 
   int size = (int) getTech()->getLayers().size();
   if (TOP_ROUTING_LAYER < std::numeric_limits<int>::max()
@@ -1691,8 +1690,7 @@ bool GuidePathFinder::traverseGraph()
 {
   clearAll();
   constructAdjList();
-  for (auto _ : adj_list_)
-    is_on_path_.resize(getNodeCount(), false);
+  is_on_path_.resize(getNodeCount(), false);
   visited_.resize(getNodeCount(), false);
   prev_idx_.resize(getNodeCount(), -1);
 
