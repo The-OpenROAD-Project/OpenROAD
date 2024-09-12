@@ -205,6 +205,8 @@ class Cluster
                       float height,
                       Boundary constraint_boundary);
   bool isIOCluster() const;
+  Boundary getConstraintBoundary() const { return constraint_boundary_; }
+
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
   bool isEmpty() const;
