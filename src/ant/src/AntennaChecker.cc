@@ -804,8 +804,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net).report += "\n";
   }
 
-  std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>>
-      pin_added;
+  std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
     for (const auto& [gate, violation_layers] : gates_with_violations) {
