@@ -55,7 +55,14 @@ class GuideProcessor
    * guides
    */
   bool readGuides();
+  /**
+   * @brief Creates the GCELLGRID from either the DEF or the guides.
+   */
   void buildGCellPatterns();
+  /**
+   * Processes the guides, checks their correctness, and clean them up.
+   * @throws Error if the guides are not correct.
+   */
   void processGuides();
 
  private:
@@ -103,7 +110,7 @@ class GuideProcessor
    *
    * The function checks all the pin shapes against the guides to see if any of
    * them overlap with the guides. If not, it extends the existing guides to
-   * overlap with a pin shape.
+   * overlap with patchGuides_helpera pin shape.
    * @param net the current net whose guides we are processing
    * @param pin a pin in the net which we are attempting to connect to the
    * guides
@@ -118,7 +125,7 @@ class GuideProcessor
    * @param guides list of gr guides of the net before any processing. The list
    * is modified by patchGuides if needed.
    */
-  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
+  void coverPins(frNet* net, std::vector<frRect>& guides);
   /**
    * @brief Prepares guides for a star traversal
    *
@@ -189,14 +196,13 @@ class GuideProcessor
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
    */
-  void initGCellPinMap_helper(
-      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-      frBlockObject* term) const;
+  void mapPinShapesToGCells(std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+                            frBlockObject* term) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed ITerm
    * based on preferred access points.
    *
-   * Does a similar job to `initGCellPinMap_helper`. But instead of relying on
+   * Does a similar job to `mapPinShapesToGCells`. But instead of relying on
    * pin shapes and their intersection with gcells, it relies on the preferred
    * access point of each pin shape.
    *
@@ -204,8 +210,9 @@ class GuideProcessor
    * @param term The current pin we are processing.
    * @returns True if all pins preffered access points are considier.
    */
-  bool initGCellPinMap_AP(std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                          frInstTerm* instTerm) const;
+  bool mapITermAccessPointsToGCells(
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frInstTerm* instTerm) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed BTerm
    * based on preferred access points.
@@ -214,8 +221,9 @@ class GuideProcessor
    * @param term The current pin we are processing.
    * @returns True if all pins preffered access points are considier.
    */
-  bool initGCellPinMap_AP(std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                          frBTerm* term) const;
+  bool mapBTermAccessPointsToGCells(
+      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBTerm* term) const;
   void initPinGCellMap(frNet* net,
                        frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   // write guide
