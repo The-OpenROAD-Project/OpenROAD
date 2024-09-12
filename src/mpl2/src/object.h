@@ -361,6 +361,7 @@ class HardMacro
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
+  bool isIOCluster() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width

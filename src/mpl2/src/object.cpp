@@ -859,6 +859,17 @@ bool HardMacro::operator==(const HardMacro& macro) const
   return (width_ == macro.width_) && (height_ == macro.height_);
 }
 
+// Cluster support to identify if a fixed terminal correponds
+// to an IO cluster when running HardMacro SA.
+bool HardMacro::isIOCluster() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isIOCluster();
+}
+
 // Get Physical Information
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<float, float>& location)
