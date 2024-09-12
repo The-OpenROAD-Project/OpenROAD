@@ -359,6 +359,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   if (diode_mterm == nullptr) {
     diode_mterm = repair_antennas_->findDiodeMTerm();
     if (diode_mterm == nullptr) {
+      logger_->metric("antenna_diodes_count", total_diodes_count_);
       logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
       return;
@@ -4513,10 +4514,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool " << "net " << "total_wl " << "#pins ";
 
   if (verbose) {
     out << "#vias ";
