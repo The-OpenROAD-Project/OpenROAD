@@ -90,7 +90,7 @@ void GridGraphDescriptor::highlight(std::any object,
                                     gui::Painter& painter) const
 {
   odb::Rect bbox;
-  getBBox(object, bbox);
+  getBBox(std::move(object), bbox);
   auto x = bbox.xMin();
   auto y = bbox.yMin();
   bbox.init(x - 20, y - 20, x + 20, y + 20);
@@ -183,7 +183,9 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
     costs.push_back(
         {name + " edge length", graph->getEdgeLength(x, y, z, dir)});
     costs.push_back(
-        {name + " total cost", graph->getCosts(x, y, z, dir, layer)});
+        {name + " total cost",
+         graph->getCosts(
+             x, y, z, dir, layer, data.graph->getNDR() != nullptr)});
   }
   props.insert(props.end(), costs.begin(), costs.end());
   return props;

@@ -42,14 +42,11 @@
 #include <set>
 #include <string>
 
+#include "odb/db.h"
+
 namespace ord {
 class OpenRoad;
 }  // namespace ord
-
-namespace odb {
-class dbInst;
-class dbBlock;
-}  // namespace odb
 
 namespace utl {
 class Logger;

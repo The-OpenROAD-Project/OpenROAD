@@ -50,7 +50,7 @@ MACRO POWER_SWITCH
     USE SIGNAL ;
     PORT
       LAYER met1 ; 
-        RECT 4.0 3.2 4.2 3.6 ;
+        RECT 3.0 4.0 3.2 4.4 ;
     END
   END SLEEP_OUT
 END POWER_SWITCH

@@ -37,6 +37,7 @@
 #include "FastRoute.h"
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 
 #include "AbstractFastRouteRenderer.h"
@@ -211,6 +212,22 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_hvh_test_.resize(y_range_);  // Vertical first Z
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
+
+  // maze3D variables
+  directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+
+  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  pop_heap2_3D_.resize(total_size, false);
+
+  // allocate memory for priority queue
+  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
+  src_heap_3D_.resize(total_size);
+  dest_heap_3D_.resize(total_size);
+
+  d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
 void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
@@ -284,17 +301,39 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
+void FastRouteCore::deleteNet(odb::dbNet* db_net)
+{
+  const int net_id = db_net_id_map_[db_net];
+  FrNet* delete_net = nets_[net_id];
+  nets_[net_id] = nullptr;
+  delete delete_net;
+  db_net_id_map_.erase(db_net);
+}
+
 void FastRouteCore::removeNet(odb::dbNet* db_net)
 {
-  // TODO The deleted flag is a temporary solution. Correctly delete the
-  // FrNet and update the nets list
   if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
-    int netID = db_net_id_map_[db_net];
-    clearNetRoute(netID);
-    FrNet* delete_net = nets_[netID];
-    nets_[netID] = nullptr;
-    delete delete_net;
-    db_net_id_map_.erase(db_net);
+    const int net_id = db_net_id_map_[db_net];
+    clearNetRoute(net_id);
+    deleteNet(db_net);
+  }
+}
+
+void FastRouteCore::mergeNet(odb::dbNet* db_net)
+{
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    const int net_id = db_net_id_map_[db_net];
+    sttrees_[net_id].nodes.clear();
+    sttrees_[net_id].edges.clear();
+    deleteNet(db_net);
+  }
+}
+
+void FastRouteCore::clearNetRoute(odb::dbNet* db_net)
+{
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    const int net_id = db_net_id_map_[db_net];
+    clearNetRoute(net_id);
   }
 }
 
@@ -330,13 +369,15 @@ void FastRouteCore::initEdges()
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
-      h_edges_[i][j].cap = h_capacity_;
-      h_edges_[i][j].usage = 0;
-      h_edges_[i][j].est_usage = 0;
-      h_edges_[i][j].red = 0;
-      h_edges_[i][j].last_usage = 0;
+      if (j < x_grid_ - 1) {
+        h_edges_[i][j].cap = h_capacity_;
+        h_edges_[i][j].usage = 0;
+        h_edges_[i][j].est_usage = 0;
+        h_edges_[i][j].red = 0;
+        h_edges_[i][j].last_usage = 0;
+      }
 
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
@@ -346,14 +387,16 @@ void FastRouteCore::initEdges()
       }
     }
   }
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
-      v_edges_[i][j].cap = v_capacity_;
-      v_edges_[i][j].usage = 0;
-      v_edges_[i][j].est_usage = 0;
-      v_edges_[i][j].red = 0;
-      v_edges_[i][j].last_usage = 0;
+      if (i < y_grid_ - 1) {
+        v_edges_[i][j].cap = v_capacity_;
+        v_edges_[i][j].usage = 0;
+        v_edges_[i][j].est_usage = 0;
+        v_edges_[i][j].red = 0;
+        v_edges_[i][j].last_usage = 0;
+      }
 
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
@@ -380,7 +423,7 @@ void FastRouteCore::addAdjustment(int x1,
                                   int x2,
                                   int y2,
                                   int layer,
-                                  int reducedCap,
+                                  uint16_t reducedCap,
                                   bool isReduce)
 {
   const int k = layer - 1;
@@ -408,13 +451,21 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
-      h_edges_[y1][x1].cap += increase;
+      if (x1 < x_grid_ - 1) {
+        h_edges_[y1][x1].cap += increase;
+        int new_red = h_edges_[y1][x1].red - increase;
+        h_edges_[y1][x1].red = std::max(new_red, 0);
+      }
+      int new_red_3D = h_edges_3D_[k][y1][x1].red - increase;
+      h_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       h_edges_3D_[k][y1][x1].red += reduce;
     }
 
-    h_edges_[y1][x1].cap -= reduce;
-    h_edges_[y1][x1].red += reduce;
+    if (x1 < x_grid_ - 1) {
+      h_edges_[y1][x1].cap -= reduce;
+      h_edges_[y1][x1].red += reduce;
+    }
 
   } else if (x1 == x2) {  // vertical edge
     const int cap = v_edges_3D_[k][y1][x1].cap;
@@ -438,13 +489,21 @@ void FastRouteCore::addAdjustment(int x1,
 
     if (!isReduce) {
       int increase = reducedCap - cap;
-      v_edges_[y1][x1].cap += increase;
+      if (y1 < y_grid_ - 1) {
+        v_edges_[y1][x1].cap += increase;
+        int new_red = v_edges_[y1][x1].red - increase;
+        v_edges_[y1][x1].red = std::max(new_red, 0);
+      }
+      int new_red_3D = v_edges_3D_[k][y1][x1].red - increase;
+      v_edges_3D_[k][y1][x1].red = std::max(new_red_3D, 0);
     } else {
       v_edges_3D_[k][y1][x1].red += reduce;
     }
 
-    v_edges_[y1][x1].cap -= reduce;
-    v_edges_[y1][x1].red += reduce;
+    if (y1 < y_grid_ - 1) {
+      v_edges_[y1][x1].cap -= reduce;
+      v_edges_[y1][x1].red += reduce;
+    }
   }
 }
 
@@ -558,10 +617,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
@@ -569,6 +630,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
+
   // Calculate reduce for horizontal tiles
   for (const auto& [tile, intervals] : horizontal_blocked_intervals_) {
     int x = std::get<0>(tile);
@@ -577,10 +639,12 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x + 1, y, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (const auto& interval_it : intervals) {
-        reduce += ceil(static_cast<float>(
-                           std::abs(interval_it.upper() - interval_it.lower()))
-                       / track_space[layer - 1]);
+      if (layer > 0 && layer <= track_space.size()) {
+        for (const auto& interval_it : intervals) {
+          reduce += std::ceil(static_cast<float>(std::abs(
+                                  interval_it.upper() - interval_it.lower()))
+                              / track_space[layer - 1]);
+        }
       }
       edge_cap -= reduce;
       if (edge_cap < 0)
@@ -830,7 +894,7 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
   auto db_tech = db_->getTech();
-  for (int k = min_routing_layer - 1; k < max_routing_layer - 1; k++) {
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
     auto layer = db_tech->findRoutingLayer(k + 1);
     if (layer == nullptr) {
       continue;

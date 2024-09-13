@@ -51,41 +51,6 @@ class dbITerm;
 
 class dbJournal
 {
-  dbJournalLog _log;
-  dbBlock* _block;
-  utl::Logger* _logger;
-  bool _start_action;
-  uint _action_idx;
-  unsigned char _cur_action;
-
-  void redo_createObject();
-  void redo_deleteObject();
-  void redo_connectObject();
-  void redo_disconnectObject();
-  void redo_swapObject();
-  void redo_updateField();
-  void redo_updateBlockField();
-  void redo_updateNetField();
-  void redo_updateInstField();
-  void redo_updateITermField();
-  void redo_updateRSegField();
-  void redo_updateCapNodeField();
-  void redo_updateCCSegField();
-  void redo_updateBTermField();
-
-  void undo_createObject();
-  void undo_deleteObject();
-  void undo_connectObject();
-  void undo_disconnectObject();
-  void undo_swapObject();
-  void undo_updateField();
-  void undo_updateNetField();
-  void undo_updateInstField();
-  void undo_updateITermField();
-  void undo_updateRSegField();
-  void undo_updateCapNodeField();
-  void undo_updateCCSegField();
-
  public:
   enum Action
   {
@@ -99,10 +64,9 @@ class dbJournal
   };
 
   dbJournal(dbBlock* block);
-  ~dbJournal();
-  void clear();
 
-  int size() { return _log.size(); }
+  void clear();
+  int size() const { return _log.size(); }
 
   //
   // Methods to push entries into the transaction log.
@@ -124,6 +88,7 @@ class dbJournal
   void pushParam(float value);
   void pushParam(double value);
   void pushParam(const char* value);
+  void pushParam(const std::string& value);
   void endAction();
 
   //
@@ -175,11 +140,50 @@ class dbJournal
   // undo the transaction log
   void undo();
 
-  bool empty() { return _log.empty(); }
+  bool empty() const { return _log.empty(); }
+
+ private:
+  friend class dbDatabase;
+
+  void redo_createObject();
+  void redo_deleteObject();
+  void redo_connectObject();
+  void redo_disconnectObject();
+  void redo_swapObject();
+  void redo_updateField();
+  void redo_updateBlockField();
+  void redo_updateNetField();
+  void redo_updateInstField();
+  void redo_updateITermField();
+  void redo_updateRSegField();
+  void redo_updateCapNodeField();
+  void redo_updateCCSegField();
+  void redo_updateBTermField();
+
+  void undo_createObject();
+  void undo_deleteObject();
+  void undo_connectObject();
+  void undo_disconnectObject();
+  void undo_swapObject();
+  void undo_updateField();
+  void undo_updateNetField();
+  void undo_updateInstField();
+  void undo_updateITermField();
+  void undo_updateRSegField();
+  void undo_updateCapNodeField();
+  void undo_updateCCSegField();
+
+  dbObjectType popObjectType();
 
   friend dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);
   friend dbOStream& operator<<(dbOStream& stream, const dbJournal& jrnl);
-  friend class dbDatabase;
+
+  dbBlock* _block;
+  utl::Logger* _logger;
+  dbJournalLog _log;
+  bool _start_action;
+  uint _action_idx;
+  unsigned char _cur_action;
 };
 
 dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);

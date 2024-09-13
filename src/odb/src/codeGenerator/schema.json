@@ -1,6 +1,26 @@
 {
-  "classes_dir": "schema",
-  "iterators":[
+    "classes_dir": "schema",
+    "iterators":[
+    {
+        "name": "dbModulePortItr",
+        "parentObject": "dbModBTerm",
+        "tableName": "modbterm_tbl",
+        "reversible": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
+        "sequential": 0,
+        "includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h", "dbBlock.h"]
+    },
+    {
+        "name": "dbModuleModBTermItr",
+        "parentObject": "dbModBTerm",
+        "tableName": "modbterm_tbl",
+        "reversible": "true",
+	"orderReversed": "true",
+        "flags":["private"],	
+        "sequential": 0,
+        "includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h"]
+    },
     {
       "name": "dbModuleInstItr",
       "parentObject": "dbInst",
@@ -16,26 +36,26 @@
       "tableName": "modinst_tbl",
       "reversible": "true",
       "orderReversed": "true",
-      "sequential": 0,
-	"includes": ["dbModInst.h", "dbModule.h"]
+        "sequential": 0,
+        "includes": ["dbModInst.h", "dbModule.h"]
     },
     {
-      "name": "dbModuleModBTermItr",
-      "parentObject": "dbModBTerm",
-      "tableName": "modbterm_tbl",
-      "reversible": "true",
+        "name": "dbModuleBusPortModBTermItr",
+        "parentObject": "dbModBTerm",
+        "tableName": "modbterm_tbl",
+        "reversible": "true",
 	"orderReversed": "true",
         "flags":["private"],	
-      "sequential": 0,
-	"includes": ["dbModBTerm.h", "dbModule.h"]
+        "sequential": 0,
+	"includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h"]
     },
     {
-      "name": "dbModuleModInstModITermItr",
-      "parentObject": "dbModITerm",
-      "tableName": "moditerm_tbl",
-      "reversible": "true",
-      "orderReversed": "true",
-      "sequential": 0,
+        "name": "dbModuleModInstModITermItr",
+        "parentObject": "dbModITerm",
+        "tableName": "moditerm_tbl",
+        "reversible": "true",
+        "orderReversed": "true",
+        "sequential": 0,
 	"includes": ["dbModITerm.h", "dbModule.h", "dbModInst.h"]
     },
     {
@@ -207,6 +227,13 @@
       "second":"dbTechLayerEolKeepOutRule",
       "type":"1_n",
       "tbl_name":"eol_keep_out_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerMaxSpacingRule",
+      "type":"1_n",
+      "tbl_name":"max_spacing_rules_tbl_",
+      "schema":"db_schema_max_spacing"
     },
     {
       "first":"dbTechLayer",

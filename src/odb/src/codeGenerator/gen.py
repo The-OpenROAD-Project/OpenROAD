@@ -21,6 +21,7 @@ from helper import (
     is_bit_fields,
     is_hash_table,
     is_pass_by_ref,
+    is_set_by_ref,
     is_ref,
     std,
 )
@@ -199,6 +200,7 @@ for klass in schema["classes"]:
         field["isHashTable"] = is_hash_table(field["type"])
         field["hashTableType"] = get_hash_table_type(field["type"])
         field["isPassByRef"] = is_pass_by_ref(field["type"])
+        field["isSetByRef"] = is_set_by_ref(field["type"])
         if "argument" not in field:
             field["argument"] = field["name"].strip("_")
         field.setdefault("flags", [])
@@ -335,8 +337,14 @@ for klass in schema["classes"]:
         with open(out_file, "w", encoding="ascii") as file:
             file.write(text)
 
-includes = ["db.h", "dbObject.h"]
-for template_file in ["db.h", "dbObject.h", "CMakeLists.txt", "dbObject.cpp"]:
+includes = ["db.h", "dbObject.h", "dbCompare.h"]
+for template_file in [
+    "db.h",
+    "dbObject.h",
+    "CMakeLists.txt",
+    "dbObject.cpp",
+    "dbCompare.h",
+]:
     template = env.get_template(template_file)
     text = template.render(schema=schema)
     out_file = os.path.join("generated", template_file)

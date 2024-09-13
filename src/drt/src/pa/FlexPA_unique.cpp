@@ -152,8 +152,14 @@ void UniqueInsts::computeUnique(
     const Point origin = inst->getOrigin();
     const Rect boundaryBBox = inst->getBoundaryBBox();
     const dbOrientType orient = inst->getOrient();
-    const auto [minLayerNum, maxLayerNum]
-        = master2PinLayerRange.find(inst->getMaster())->second;
+    auto it = master2PinLayerRange.find(inst->getMaster());
+    if (it == master2PinLayerRange.end()) {
+      logger_->error(DRT,
+                     146,
+                     "Master {} not found in master2PinLayerRange",
+                     inst->getMaster()->getName());
+    }
+    const auto [minLayerNum, maxLayerNum] = it->second;
     offset.clear();
     for (auto& tp : prefTrackPatterns) {
       if (tp->getLayerNum() >= minLayerNum

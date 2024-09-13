@@ -496,4 +496,9 @@ proc check_drc { args } {
   drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
 }
 
+proc fix_max_spacing { args } {
+  sta::check_argc_eq0 "fix_max_spacing" $args
+  drt::fix_max_spacing_cmd
+}
+
 }

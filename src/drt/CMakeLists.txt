@@ -101,6 +101,7 @@ target_sources(drt
     src/db/drObj/drVia.cpp
     src/db/infra/frTime_helper.cpp
     src/db/infra/frTime.cpp
+    src/db/infra/KDTree.cpp
     src/db/taObj/taShape.cpp
     src/db/obj/frShape.cpp
     src/db/obj/frInst.cpp
@@ -109,13 +110,14 @@ target_sources(drt
     src/db/obj/frRPin.cpp
     src/db/obj/frNode.cpp
     src/db/obj/frInstTerm.cpp
+    src/db/obj/frNet.cpp
     src/db/tech/frConstraint.cc
     src/db/obj/frMarker.cpp
     src/db/tech/frLayer.cc
     src/frRegionQuery.cpp
     src/io/io_pin.cpp
     src/io/io.cpp
-    src/io/io_guide.cpp
+    src/io/GuideProcessor.cpp
     src/io/io_parser_helper.cpp
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp

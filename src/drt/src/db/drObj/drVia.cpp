@@ -39,7 +39,8 @@ drVia::drVia(const frVia& in)
       viaDef_(in.getViaDef()),
       tapered_(in.isTapered()),
       bottomConnected_(in.isBottomConnected()),
-      topConnected_(in.isTopConnected())
+      topConnected_(in.isTopConnected()),
+      isLonely_(in.isLonely())
 {
 }
 

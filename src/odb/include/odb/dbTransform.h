@@ -90,6 +90,9 @@ class dbTransform
   // Apply transform to this Rect
   void apply(Rect& r) const;
 
+  // Apply transform to this polygon
+  void apply(Polygon& p) const;
+
   // Post multiply transform.
   void concat(const dbTransform& t);
 

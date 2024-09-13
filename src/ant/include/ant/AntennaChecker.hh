@@ -33,7 +33,7 @@
 
 #include <map>
 #include <queue>
-#include <unordered_set>
+#include <set>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -101,11 +101,6 @@ struct NodeInfo
   }
 };
 
-struct cmpById
-{
-  bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
-};
-
 struct ViolationReport
 {
   bool violated;
@@ -132,11 +127,11 @@ struct Violation
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
-using LayerToGraphNodes = std::unordered_map<odb::dbTechLayer*, GraphNodes>;
-using GateToLayerToNodeInfo = std::map<std::string, LayerToNodeInfo>;
+using LayerToGraphNodes = std::map<odb::dbTechLayer*, GraphNodes>;
+using GateToLayerToNodeInfo = std::map<odb::dbITerm*, LayerToNodeInfo>;
 using Violations = std::vector<Violation>;
 using GateToViolationLayers
-    = std::unordered_map<std::string, std::unordered_set<odb::dbTechLayer*>>;
+    = std::map<odb::dbITerm*, std::set<odb::dbTechLayer*>>;
 
 class AntennaChecker
 {
@@ -238,7 +233,7 @@ class AntennaChecker
   int net_violation_count_{0};
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
-  std::map<odb::dbNet*, ViolationReport, cmpById> net_to_report_;
+  std::map<odb::dbNet*, ViolationReport> net_to_report_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };

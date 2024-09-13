@@ -226,6 +226,121 @@ bool dbOrientType::isRightAngleRotation() const
   return false;
 }
 
+dbGDSSTrans::dbGDSSTrans()
+{
+  _flipX = false;
+  _absMag = false;
+  _absAngle = false;
+  _mag = 1.0;
+  _angle = 0.0;
+}
+
+dbGDSSTrans::dbGDSSTrans(bool flipX,
+                         bool absMag,
+                         bool absAngle,
+                         double mag,
+                         double angle)
+{
+  _flipX = flipX;
+  _absMag = absMag;
+  _absAngle = absAngle;
+  _mag = mag;
+  _angle = angle;
+}
+
+bool dbGDSSTrans::operator==(const dbGDSSTrans& rhs) const
+{
+  return (_flipX == rhs._flipX) && (_absMag == rhs._absMag)
+         && (_absAngle == rhs._absAngle) && (_mag == rhs._mag)
+         && (_angle == rhs._angle);
+}
+
+std::string dbGDSSTrans::to_string() const
+{
+  std::string s;
+  if (_flipX) {
+    s += std::string("FLIP_X ");
+  }
+  s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
+  s += std::to_string(_mag) + " ";
+  s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
+  s += std::to_string(_angle);
+  s += " ";
+  return s;
+}
+
+bool dbGDSSTrans::identity() const
+{
+  return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0)
+         && (_angle == 0.0);
+}
+
+dbGDSTextPres::dbGDSTextPres()
+{
+  _vPres = dbGDSTextPres::VPres::TOP;
+  _hPres = dbGDSTextPres::HPres::LEFT;
+}
+
+dbGDSTextPres::dbGDSTextPres(dbGDSTextPres::VPres vPres,
+                             dbGDSTextPres::HPres hPres)
+{
+  _vPres = vPres;
+  _hPres = hPres;
+}
+
+bool dbGDSTextPres::operator==(const dbGDSTextPres& rhs) const
+{
+  return (_vPres == rhs._vPres) && (_hPres == rhs._hPres);
+}
+
+std::string dbGDSTextPres::to_string() const
+{
+  std::string s;
+  s += "FONT ";
+  s += (_vPres == dbGDSTextPres::VPres::TOP) ? std::string("TOP ")
+                                             : std::string("BOTTOM ");
+  s += (_hPres == dbGDSTextPres::HPres::LEFT) ? std::string("LEFT ")
+                                              : std::string("RIGHT ");
+  return s;
+}
+
+dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
+{
+  stream >> t._flipX;
+  stream >> t._absMag;
+  stream >> t._absAngle;
+  stream >> t._mag;
+  stream >> t._angle;
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
+{
+  stream << t._flipX;
+  stream << t._absMag;
+  stream << t._absAngle;
+  stream << t._mag;
+  stream << t._angle;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t)
+{
+  uint8_t vPresTemp, hPresTemp;
+  stream >> vPresTemp;
+  stream >> hPresTemp;
+  t._vPres = static_cast<dbGDSTextPres::VPres>(vPresTemp);
+  t._hPres = static_cast<dbGDSTextPres::HPres>(hPresTemp);
+  return stream;
+}
+
+dbOStream& operator<<(dbOStream& stream, const dbGDSTextPres t)
+{
+  stream << static_cast<uint8_t>(t._vPres);
+  stream << static_cast<uint8_t>(t._hPres);
+  return stream;
+}
+
 dbGroupType::dbGroupType(const char* orient)
 {
   if (strcasecmp(orient, "PHYSICAL_CLUSTER") == 0) {
@@ -1314,6 +1429,9 @@ dbBoxOwner::dbBoxOwner(const char* value)
   } else if (strcasecmp(value, "REGION") == 0) {
     _value = REGION;
 
+  } else if (strcasecmp(value, "PBOX") == 0) {
+    _value = PBOX;
+
   } else {
     // mismatch with noarg constructor: BLOCK
     _value = UNKNOWN;
@@ -1390,6 +1508,10 @@ const char* dbBoxOwner::getString() const
 
     case REGION:
       value = "REGION";
+      break;
+
+    case PBOX:
+      value = "PBOX";
       break;
   }
 

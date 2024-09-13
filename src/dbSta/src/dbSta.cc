@@ -488,47 +488,53 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, int> dbSta::countInstancesByType()
+std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType()
 {
   auto insts = db_->getChip()->getBlock()->getInsts();
-  std::map<InstType, int> inst_type_count;
+  std::map<InstType, TypeStats> inst_type_stats;
 
   for (auto inst : insts) {
     InstType type = getInstanceType(inst);
-    inst_type_count[type] = inst_type_count[type] + 1;
+    auto& stats = inst_type_stats[type];
+    stats.count++;
+    auto master = inst->getMaster();
+    stats.area += master->getArea();
   }
-  return inst_type_count;
+  return inst_type_stats;
 }
 
 void dbSta::report_cell_usage(const bool verbose)
 {
-  std::map<InstType, int> instances_types = countInstancesByType();
-  auto insts = db_->getChip()->getBlock()->getInsts();
+  auto instances_types = countInstancesByType();
+  auto block = db_->getChip()->getBlock();
+  auto insts = block->getInsts();
   const int total_usage = insts.size();
+  int64_t total_area = 0;
+  const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
 
-  const char* format = "  {:35} {:>7}";
-  logger_->report("Cell type report:");
-  for (auto [type, count] : instances_types) {
+  const char* header_format = "{:37} {:>7} {:>10}";
+  const char* format = "  {:35} {:>7} {:>10.2f}";
+  logger_->report(header_format, "Cell type report:", "Count", "Area");
+  for (auto [type, stats] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
-    logger_->report(format, type_name, count);
+    logger_->report(
+        format, type_name, stats.count, stats.area / area_to_microns);
+    total_area += stats.area;
   }
-  logger_->report(format, "Total", total_usage);
+  logger_->report(format, "Total", total_usage, total_area / area_to_microns);
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    struct CmpById
-    {
-      bool operator()(odb::dbMaster* lhs, odb::dbMaster* rhs) const
-      {
-        return lhs->getId() < rhs->getId();
-      }
-    };
-    std::map<dbMaster*, int, CmpById> usage_count;
+    std::map<dbMaster*, TypeStats> usage_count;
     for (auto inst : insts) {
-      usage_count[inst->getMaster()]++;
+      auto master = inst->getMaster();
+      auto& stats = usage_count[master];
+      stats.count++;
+      stats.area += master->getArea();
     }
-    for (auto [master, count] : usage_count) {
-      logger_->report(format, master->getName(), count);
+    for (auto [master, stats] : usage_count) {
+      logger_->report(
+          format, master->getName(), stats.count, stats.area / area_to_microns);
     }
   }
 }

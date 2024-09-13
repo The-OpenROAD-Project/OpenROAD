@@ -93,6 +93,12 @@ struct DebugSetting
 
 using stt::Tree;
 
+struct parent3D
+{
+  int16_t layer;
+  int x, y;
+};
+
 class FastRouteCore
 {
  public:
@@ -117,7 +123,10 @@ class FastRouteCore
                 int max_layer,
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
+  void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void mergeNet(odb::dbNet* db_net);
+  void clearNetRoute(odb::dbNet* db_net);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -125,7 +134,7 @@ class FastRouteCore
                      int x2,
                      int y2,
                      int layer,
-                     int reducedCap,
+                     uint16_t reducedCap,
                      bool isReduce);
   void applyVerticalAdjustments(const odb::Point& first_tile,
                                 const odb::Point& last_tile,
@@ -179,6 +188,14 @@ class FastRouteCore
   {
     last_row_h_capacity_3D_[layer] = cap;
   }
+  const std::vector<int16_t>& getLastColumnVerticalCapacities()
+  {
+    return last_col_v_capacity_3D_;
+  }
+  const std::vector<int16_t>& getLastRowHorizontalCapacities()
+  {
+    return last_row_h_capacity_3D_;
+  }
   void setRegularX(bool regular_x) { regular_x_ = regular_x; }
   void setRegularY(bool regular_y) { regular_y_ = regular_y; }
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
@@ -230,7 +247,7 @@ class FastRouteCore
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
-  void clearNetRoute(const int netID);
+  void clearNetRoute(int netID);
   void clearNets();
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -287,10 +304,10 @@ class FastRouteCore
   void convertToMazerouteNet(const int netID);
   void setupHeap(const int netID,
                  const int edgeID,
-                 std::vector<float*>& src_heap,
-                 std::vector<float*>& dest_heap,
-                 multi_array<float, 2>& d1,
-                 multi_array<float, 2>& d2,
+                 std::vector<double*>& src_heap,
+                 std::vector<double*>& dest_heap,
+                 multi_array<double, 2>& d1,
+                 multi_array<double, 2>& d2,
                  const int regionX1,
                  const int regionX2,
                  const int regionY1,
@@ -428,8 +445,8 @@ class FastRouteCore
   void spiralRoute(int netID, int edgeID);
   void routeMonotonic(int netID,
                       int edgeID,
-                      multi_array<float, 2>& d1,
-                      multi_array<float, 2>& d2,
+                      multi_array<double, 2>& d1,
+                      multi_array<double, 2>& d2,
                       int threshold,
                       int enlarge);
 
@@ -569,17 +586,17 @@ class FastRouteCore
   std::vector<short> h_capacity_3D_;
   std::vector<short> last_col_v_capacity_3D_;
   std::vector<short> last_row_h_capacity_3D_;
-  std::vector<float> cost_hvh_;       // Horizontal first Z
-  std::vector<float> cost_vhv_;       // Vertical first Z
-  std::vector<float> cost_h_;         // Horizontal segment cost
-  std::vector<float> cost_v_;         // Vertical segment cost
-  std::vector<float> cost_lr_;        // Left and right boundary cost
-  std::vector<float> cost_tb_;        // Top and bottom boundary cost
-  std::vector<float> cost_hvh_test_;  // Vertical first Z
-  std::vector<float> cost_v_test_;    // Vertical segment cost
-  std::vector<float> cost_tb_test_;   // Top and bottom boundary cost
-  std::vector<float> h_cost_table_;
-  std::vector<float> v_cost_table_;
+  std::vector<double> cost_hvh_;       // Horizontal first Z
+  std::vector<double> cost_vhv_;       // Vertical first Z
+  std::vector<double> cost_h_;         // Horizontal segment cost
+  std::vector<double> cost_v_;         // Vertical segment cost
+  std::vector<double> cost_lr_;        // Left and right boundary cost
+  std::vector<double> cost_tb_;        // Top and bottom boundary cost
+  std::vector<double> cost_hvh_test_;  // Vertical first Z
+  std::vector<double> cost_v_test_;    // Vertical segment cost
+  std::vector<double> cost_tb_test_;   // Top and bottom boundary cost
+  std::vector<double> h_cost_table_;
+  std::vector<double> v_cost_table_;
   std::vector<int> xcor_;
   std::vector<int> ycor_;
   std::vector<int> dcor_;
@@ -628,6 +645,16 @@ class FastRouteCore
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
   std::vector<int> net_ids_;
+
+  // Maze 3D variables
+  multi_array<Direction, 3> directions_3D_;
+  multi_array<int, 3> corr_edge_3D_;
+  multi_array<parent3D, 3> pr_3D_;
+  std::vector<bool> pop_heap2_3D_;
+  std::vector<int*> src_heap_3D_;
+  std::vector<int*> dest_heap_3D_;
+  multi_array<int, 3> d1_3D_;
+  multi_array<int, 3> d2_3D_;
 };
 
 }  // namespace grt

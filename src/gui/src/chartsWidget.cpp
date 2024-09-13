@@ -46,6 +46,7 @@
 
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Units.hh"
 #endif
 
@@ -300,7 +301,12 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(StaPins& end_points)
 
       ++pin_iter;
     } else {
-      unconstrained_count++;
+      auto network = sta_->getDbNetwork();
+      // Don't count dangling outputs (eg clk loads)
+      if (!network->direction(*pin_iter)->isOutput()
+          || network->net(*pin_iter)) {
+        unconstrained_count++;
+      }
       pin_iter = end_points.erase(pin_iter);
     }
   }

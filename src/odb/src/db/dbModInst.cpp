@@ -44,6 +44,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbGroup.h"
+#include "dbModBTerm.h"
 #include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {
@@ -350,6 +351,49 @@ dbModITerm* dbModInst::findModITerm(const char* name)
     }
   }
   return nullptr;
+}
+
+void dbModInst::RemoveUnusedPortsAndPins()
+{
+  std::set<dbModITerm*> kill_set;
+  dbModule* module = this->getMaster();
+  dbSet<dbModITerm> moditerms = getModITerms();
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+
+  for (dbModITerm* mod_iterm : moditerms) {
+    dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    dbModNet* mod_net = mod_bterm->getModNet();
+    dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
+    dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
+    dbSet<dbITerm> dest_iterms = mod_net->getITerms();
+    if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
+        && dest_iterms.size() == 0) {
+      kill_set.insert(mod_iterm);
+    }
+  }
+  moditerms = getModITerms();
+  modbterms = module->getModBTerms();
+  for (auto mod_iterm : kill_set) {
+    dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
+    dbModNet* modbterm_m_net = mod_bterm->getModNet();
+    mod_bterm->disconnect();
+    dbModBTerm::destroy(mod_bterm);
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
+    mod_iterm->disconnect();
+    dbModITerm::destroy(mod_iterm);
+    if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
+        && modbterm_m_net->getITerms().size() == 0
+        && modbterm_m_net->getModITerms().size() == 0
+        && modbterm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(modbterm_m_net);
+    }
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+  }
 }
 
 // User Code End dbModInstPublicMethods

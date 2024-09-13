@@ -1,4 +1,5 @@
 record_tests {
+  resize1_hier
   buffer_ports1
   buffer_ports3
   buffer_ports4
@@ -10,6 +11,7 @@ record_tests {
   eqy_repair_setup2
   eqy_repair_setup5
   fanin_fanout1
+  gain_buffering1
   make_parasitics1
   make_parasitics2
   make_parasitics3
@@ -111,6 +113,7 @@ record_tests {
   repair_hold9_verbose
   set_dont_touch1
   set_dont_use1
+  repair_setup_undo
   #rsz_man_tcl_check
   #rsz_readme_msgs_check
 }

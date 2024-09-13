@@ -40,7 +40,11 @@
 namespace grt {
 
 Net::Net(odb::dbNet* net, bool has_wires)
-    : net_(net), slack_(0), has_wires_(has_wires)
+    : net_(net),
+      slack_(0),
+      has_wires_(has_wires),
+      merged_net_(false),
+      is_dirty_net_(false)
 {
 }
 
@@ -59,9 +63,31 @@ odb::dbSigType Net::getSignalType() const
   return net_->getSigType().getString();
 }
 
+void Net::deleteSegment(const int seg_id, GRoute& route)
+{
+  for (SegmentIndex& parent : parent_segment_indices_) {
+    if (parent >= seg_id) {
+      parent--;
+    }
+  }
+  parent_segment_indices_.erase(parent_segment_indices_.begin() + seg_id);
+  route.erase(route.begin() + seg_id);
+}
+
 void Net::addPin(Pin& pin)
 {
   pins_.push_back(pin);
+}
+
+std::vector<std::vector<SegmentIndex>> Net::buildSegmentsGraph()
+{
+  std::vector<std::vector<SegmentIndex>> graph(parent_segment_indices_.size(),
+                                               std::vector<SegmentIndex>());
+  for (int i = 0; i < parent_segment_indices_.size(); i++) {
+    graph[i].push_back(parent_segment_indices_[i]);
+    graph[parent_segment_indices_[i]].push_back(i);
+  }
+  return graph;
 }
 
 bool Net::isLocal()

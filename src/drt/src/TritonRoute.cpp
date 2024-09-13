@@ -48,6 +48,7 @@
 #include "global.h"
 #include "gr/FlexGR.h"
 #include "gui/gui.h"
+#include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
@@ -506,6 +507,13 @@ void TritonRoute::applyUpdates(
               regionQuery->addDRObj(seg);
               break;
             }
+            case frcVia: {
+              auto via = static_cast<frVia*>(pinfig);
+              frVia updatedVia = update.getVia();
+              via->setBottomConnected(updatedVia.isBottomConnected());
+              via->setTopConnected(updatedVia.isTopConnected());
+              break;
+            }
             default:
               break;
           }
@@ -535,14 +543,19 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 
 bool TritonRoute::initGuide()
 {
+  io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+  bool guideOk = guide_processor.readGuides();
+  guide_processor.processGuides();
   io::Parser parser(db_, getDesign(), logger_);
-  bool guideOk = parser.readGuide();
-  parser.postProcessGuide();
   parser.initRPin();
   return guideOk;
 }
 void TritonRoute::initDesign()
 {
+  if (db_ == nullptr || db_->getChip() == nullptr
+      || db_->getChip()->getBlock() == nullptr) {
+    logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
+  }
   io::Parser parser(db_, getDesign(), logger_);
   if (getDesign()->getTopBlock() != nullptr) {
     parser.updateDesign();
@@ -587,10 +600,7 @@ void TritonRoute::initDesign()
     }
   }
   parser.postProcess();
-  if (db_ != nullptr && db_->getChip() != nullptr
-      && db_->getChip()->getBlock() != nullptr) {
-    db_callback_->addOwner(db_->getChip()->getBlock());
-  }
+  db_callback_->addOwner(db_->getChip()->getBlock());
 }
 
 void TritonRoute::prep()
@@ -942,6 +952,20 @@ int TritonRoute::main()
     }
   }
   initDesign();
+  bool has_routable_nets = false;
+  for (auto net : db_->getChip()->getBlock()->getNets()) {
+    if (net->getITerms().size() + net->getBTerms().size() > 1) {
+      has_routable_nets = true;
+      break;
+    }
+  }
+  if (!has_routable_nets) {
+    logger_->warn(DRT,
+                  40,
+                  "Design does not have any routable net "
+                  "(with at least 2 terms)");
+    return 0;
+  }
   if (DO_PA) {
     FlexPA pa(getDesign(), logger_, dist_);
     pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
@@ -967,10 +991,10 @@ int TritonRoute::main()
   }
   if (!initGuide()) {
     gr();
-    io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
-    parser.readGuide();
-    parser.postProcessGuide();
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    guide_processor.readGuides();
+    guide_processor.processGuides();
   }
   prep();
   ta();
@@ -1013,6 +1037,18 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   pa.main();
   io::Writer writer(this, logger_);
   writer.updateDb(db_, true);
+}
+
+void TritonRoute::fixMaxSpacing()
+{
+  initDesign();
+  initGuide();
+  prep();
+  dr_ = std::make_unique<FlexDR>(this, getDesign(), logger_, db_);
+  dr_->init();
+  dr_->fixMaxSpacing();
+  io::Writer writer(this, logger_);
+  writer.updateDb(db_);
 }
 
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
@@ -1089,8 +1125,9 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
       && gcellGrid->getNumGridPatternsY() == 1) {
-    io::Parser parser(db_, getDesign(), logger_);
-    parser.buildGCellPatterns(db_);
+    io::GuideProcessor guide_processor(getDesign(), db_, logger_);
+    guide_processor.readGuides();
+    guide_processor.buildGCellPatterns();
   } else if (!initGuide()) {
     logger_->error(DRT, 1, "GCELLGRID is undefined");
   }

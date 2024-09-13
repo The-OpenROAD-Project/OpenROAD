@@ -283,24 +283,39 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
         }
 
         if (geom->isVia()) {
-          continue;
+          for (const auto& [layer, shapes] : pin_shapes) {
+            std::vector<odb::Rect> via_rects;
+            shapes.get_rectangles(via_rects);
+            for (const auto& pin_shape : via_rects) {
+              has_routing_term = true;
+
+              // create iterm nodes
+              auto center = std::make_unique<TerminalNode>(pin_shape, layer);
+              terminals.push_back(center.get());
+
+              connections_.push_back(std::make_unique<TermConnection>(
+                  base_node.get(), center.get()));
+
+              nodes_[layer].push_back(std::move(center));
+            }
+          }
+        } else {
+          auto* layer = geom->getTechLayer();
+
+          has_routing_term = true;
+
+          odb::Rect pin_shape = geom->getBox();
+          transform.apply(pin_shape);
+
+          // create iterm nodes
+          auto center = std::make_unique<TerminalNode>(pin_shape, layer);
+          terminals.push_back(center.get());
+
+          connections_.push_back(
+              std::make_unique<TermConnection>(base_node.get(), center.get()));
+
+          nodes_[layer].push_back(std::move(center));
         }
-
-        auto* layer = geom->getTechLayer();
-
-        has_routing_term = true;
-
-        odb::Rect pin_shape = geom->getBox();
-        transform.apply(pin_shape);
-
-        // create iterm nodes
-        auto center = std::make_unique<TerminalNode>(pin_shape, layer);
-        terminals.push_back(center.get());
-
-        connections_.push_back(
-            std::make_unique<TermConnection>(base_node.get(), center.get()));
-
-        nodes_[layer].push_back(std::move(center));
       }
     }
 
@@ -341,7 +356,6 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
         auto* layer = geom->getTechLayer();
         const odb::Rect pin_shape = geom->getBox();
-        const odb::Point center(pin_shape.xCenter(), pin_shape.yCenter());
 
         // create bpin nodes
         auto term = std::make_unique<TerminalNode>(pin_shape, layer);
@@ -405,14 +419,14 @@ void IRNetwork::processPolygonToRectangles(
          search++) {
       if (search->intersects(rect)) {
         const odb::Rect intersect = search->intersect(rect);
-        nodes.emplace(intersect.xCenter(), intersect.yCenter());
+        nodes.emplace(intersect.center());
       }
     }
 
     auto shape = std::make_unique<Shape>(rect, layer);
 
     // Create starter nodes
-    nodes.emplace(rect.xCenter(), rect.yCenter());
+    nodes.emplace(rect.center());
     for (const auto& pt : nodes) {
       auto node = std::make_unique<Node>(pt, layer);
 
@@ -602,10 +616,9 @@ void IRNetwork::generateCutNodesForSBox(
   } else {
     for (const auto& shape : via_shapes) {
       const odb::Rect via = shape.getBox();
-      const odb::Point pt(via.xCenter(), via.yCenter());
 
-      auto bottom_node = std::make_unique<Node>(pt, bottom);
-      auto top_node = std::make_unique<Node>(pt, top);
+      auto bottom_node = std::make_unique<Node>(via.center(), bottom);
+      auto top_node = std::make_unique<Node>(via.center(), top);
 
       new_connections.push_back(std::make_unique<ViaConnection>(
           bottom_node.get(), top_node.get(), getEffectiveNumberOfCuts(shape)));

@@ -520,13 +520,13 @@ void FastRouteCore::convertToMazeroute()
 }
 
 // non recursive version of heapify
-static void heapify(std::vector<float*>& array)
+static void heapify(std::vector<double*>& array)
 {
   bool stop = false;
   const int heapSize = array.size();
   int i = 0;
 
-  float* tmp = array[i];
+  double* tmp = array[i];
   do {
     const int l = left_index(i);
     const int r = right_index(i);
@@ -551,9 +551,9 @@ static void heapify(std::vector<float*>& array)
   } while (!stop);
 }
 
-static void updateHeap(std::vector<float*>& array, int i)
+static void updateHeap(std::vector<double*>& array, int i)
 {
-  float* tmpi = array[i];
+  double* tmpi = array[i];
   while (i > 0 && *(array[parent_index(i)]) > *tmpi) {
     const int parent = parent_index(i);
     array[i] = array[parent];
@@ -563,7 +563,7 @@ static void updateHeap(std::vector<float*>& array, int i)
 }
 
 // remove the entry with minimum distance from Priority queue
-static void removeMin(std::vector<float*>& array)
+static void removeMin(std::vector<double*>& array)
 {
   array[0] = array.back();
   heapify(array);
@@ -730,10 +730,10 @@ void FastRouteCore::updateCongestionHistory(const int upType,
 // dest_heap - the heap storing the addresses for d2
 void FastRouteCore::setupHeap(const int netID,
                               const int edgeID,
-                              std::vector<float*>& src_heap,
-                              std::vector<float*>& dest_heap,
-                              multi_array<float, 2>& d1,
-                              multi_array<float, 2>& d2,
+                              std::vector<double*>& src_heap,
+                              std::vector<double*>& dest_heap,
+                              multi_array<double, 2>& d1,
+                              multi_array<double, 2>& d2,
                               const int regionX1,
                               const int regionX2,
                               const int regionY1,
@@ -1346,13 +1346,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     StNetOrder();
   }
 
-  std::vector<float*> src_heap;
-  std::vector<float*> dest_heap;
+  std::vector<double*> src_heap;
+  std::vector<double*> dest_heap;
   src_heap.reserve(y_grid_ * x_grid_);
   dest_heap.reserve(y_grid_ * x_grid_);
 
-  multi_array<float, 2> d1(boost::extents[y_range_][x_range_]);
-  multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
+  multi_array<double, 2> d1(boost::extents[y_range_][x_range_]);
+  multi_array<double, 2> d2(boost::extents[y_range_][x_range_]);
 
   std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
 
@@ -1527,16 +1527,23 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_x3_[curY][tmpX] = curX;
             parent_y3_[curY][tmpX] = curY;
             hv_[curY][tmpX] = false;
-            float* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            double* dtmp = &d1[curY][tmpX];
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  607,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // right
         if (curX < regionX2) {
-          float tmp, cost1, cost2;
+          double tmp, cost1, cost2;
           const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
@@ -1588,16 +1595,23 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_x3_[curY][tmpX] = curX;
             parent_y3_[curY][tmpX] = curY;
             hv_[curY][tmpX] = false;
-            float* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            double* dtmp = &d1[curY][tmpX];
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  608,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // bottom
         if (curY > regionY1) {
-          float tmp, cost1, cost2;
+          double tmp, cost1, cost2;
           const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
@@ -1648,16 +1662,23 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_x1_[tmpY][curX] = curX;
             parent_y1_[tmpY][curX] = curY;
             hv_[tmpY][curX] = true;
-            float* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            double* dtmp = &d1[tmpY][curX];
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  609,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // top
         if (curY < regionY2) {
-          float tmp, cost1, cost2;
+          double tmp, cost1, cost2;
           const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
@@ -1709,11 +1730,18 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_x1_[tmpY][curX] = curX;
             parent_y1_[tmpY][curX] = curY;
             hv_[tmpY][curX] = true;
-            float* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            double* dtmp = &d1[tmpY][curX];
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  610,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
 

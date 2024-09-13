@@ -162,7 +162,12 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   void highlight(PathRef* path);
 
   // Report Instances Type
-  std::map<InstType, int> countInstancesByType();
+  struct TypeStats
+  {
+    int count{0};
+    int64_t area{0};
+  };
+  std::map<InstType, TypeStats> countInstancesByType();
   std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
   void report_cell_usage(bool verbose);

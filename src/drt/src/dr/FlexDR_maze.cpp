@@ -281,20 +281,64 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
                                            bool resetHorz,
                                            bool resetVert)
 {
+  // calculate costs for non-NDR nets
+  frCoord default_width
+      = getTech()->getLayer(gridGraph_.getLayerNum(z))->getWidth();
+  frCoord default_spacing = 0;
+  if (ndr) {
+    default_spacing = ndr->getSpacing(z);
+  }
+  modMinSpacingCostPlanarHelper(box,
+                                z,
+                                type,
+                                default_width,
+                                default_spacing,
+                                isBlockage,
+                                isMacroPin,
+                                resetHorz,
+                                resetVert,
+                                false);
+  // caclulate costs for NDR nets
+  // get all unique width,spacing pairs from ndrs
+  for (auto ndr : ndrs_) {
+    frCoord ndr_width = default_width;
+    if (ndr->getWidth(z) != 0) {
+      ndr_width = ndr->getWidth(z);
+    }
+    frCoord ndr_min_spc = std::max(default_spacing, ndr->getSpacing(z));
+    modMinSpacingCostPlanarHelper(box,
+                                  z,
+                                  type,
+                                  ndr_width,
+                                  ndr_min_spc,
+                                  isBlockage,
+                                  isMacroPin,
+                                  resetHorz,
+                                  resetVert,
+                                  true);
+  }
+}
+
+void FlexDRWorker::modMinSpacingCostPlanarHelper(const Rect& box,
+                                                 frMIdx z,
+                                                 ModCostType type,
+                                                 frCoord width2,
+                                                 frCoord minSpacing,
+                                                 bool isBlockage,
+                                                 bool isMacroPin,
+                                                 bool resetHorz,
+                                                 bool resetVert,
+                                                 bool ndr)
+{
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.minDXDY();
-  frCoord length1 = box.maxDXDY();
   // layer default width
-  frCoord width2 = getTech()->getLayer(lNum)->getWidth();
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
-      width1, width2, length1, use_min_spacing);
-
-  if (ndr) {
-    bloatDist = std::max(bloatDist, ndr->getSpacing(z));
-  }
+      width1, width2, box.maxDXDY(), use_min_spacing);
+  bloatDist = std::max(bloatDist, minSpacing);
   frSquaredDistance bloatDistSquare = bloatDist;
   bloatDistSquare *= bloatDist;
 
@@ -329,32 +373,37 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
       if (distSquare < bloatDistSquare) {
         switch (type) {
           case subRouteShape:
-            gridGraph_.subRouteShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.subRouteShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case addRouteShape:
-            gridGraph_.addRouteShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.addRouteShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case subFixedShape:
-            gridGraph_.subFixedShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.subFixedShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case addFixedShape:
-            gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
+            gridGraph_.addFixedShapeCostPlanar(i, j, z, ndr);  // safe access
             break;
           case resetFixedShape:
             if (resetHorz) {
               gridGraph_.setFixedShapeCostPlanarHorz(
-                  i, j, z, 0);  // safe access
+                  i, j, z, 0, ndr);  // safe access
             }
             if (resetVert) {
               gridGraph_.setFixedShapeCostPlanarVert(
-                  i, j, z, 0);  // safe access
+                  i, j, z, 0, ndr);  // safe access
             }
             break;
           case setFixedShape:
-            gridGraph_.setFixedShapeCostPlanarHorz(i, j, z, 1);  // safe access
-            gridGraph_.setFixedShapeCostPlanarVert(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarHorz(
+                i, j, z, 1, ndr);  // safe access
+            gridGraph_.setFixedShapeCostPlanarVert(
+                i, j, z, 1, ndr);  // safe access
             break;
           case resetBlocked:
+            if (ndr) {
+              return;
+            }
             if (isMacroPin) {
               if (j >= mPinLL.y() && j <= mPinUR.y()) {
                 gridGraph_.resetBlocked(i, j, z, frDirEnum::E);
@@ -380,6 +429,9 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             }
             break;
           case setBlocked:  // set blocked
+            if (ndr) {
+              return;
+            }
             gridGraph_.setBlocked(i, j, z, frDirEnum::E);
             gridGraph_.setBlocked(i, j, z, frDirEnum::N);
             if (i == 0) {
@@ -402,22 +454,23 @@ void FlexDRWorker::modMinSpacingCostVia_eol_helper(const Rect& box,
                                                    bool isUpperVia,
                                                    frMIdx i,
                                                    frMIdx j,
-                                                   frMIdx z)
+                                                   frMIdx z,
+                                                   bool ndr)
 {
   frMIdx zIdx = isUpperVia ? z : z - 1;
   if (testBox.overlaps(box)) {
     switch (type) {
       case subRouteShape:
-        gridGraph_.subRouteShapeCostVia(i, j, zIdx);
+        gridGraph_.subRouteShapeCostVia(i, j, zIdx, ndr);
         break;
       case addRouteShape:
-        gridGraph_.addRouteShapeCostVia(i, j, zIdx);
+        gridGraph_.addRouteShapeCostVia(i, j, zIdx, ndr);
         break;
       case subFixedShape:
-        gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+        gridGraph_.subFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
         break;
       case addFixedShape:
-        gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+        gridGraph_.addFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
         break;
       default:;
     }
@@ -431,7 +484,8 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                                             const drEolSpacingConstraint& drCon,
                                             frMIdx i,
                                             frMIdx j,
-                                            frMIdx z)
+                                            frMIdx z,
+                                            bool ndr)
 {
   if (drCon.eolSpace == 0) {
     return;
@@ -446,13 +500,15 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                  tmpBx.yMax(),
                  tmpBx.xMax() + eolWithin,
                  tmpBx.yMax() + eolSpace);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
 
     testBox.init(tmpBx.xMin() - eolWithin,
                  tmpBx.yMin() - eolSpace,
                  tmpBx.xMax() + eolWithin,
                  tmpBx.yMin());
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
   }
   // eol to left and right
   if (tmpBx.dy() <= eolWidth) {
@@ -460,13 +516,15 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
                  tmpBx.yMin() - eolWithin,
                  tmpBx.xMax() + eolSpace,
                  tmpBx.yMax() + eolWithin);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
 
     testBox.init(tmpBx.xMin() - eolSpace,
                  tmpBx.yMin() - eolWithin,
                  tmpBx.xMin(),
                  tmpBx.yMax() + eolWithin);
-    modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
+    modMinSpacingCostVia_eol_helper(
+        box, testBox, type, isUpperVia, i, j, z, ndr);
   }
 }
 
@@ -481,11 +539,11 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   // default via dimension
   frViaDef* viaDef = nullptr;
   if (isUpperVia) {
-    viaDef = (lNum < getTech()->getTopLayerNum())
+    viaDef = (lNum < gridGraph_.getMaxLayerNum())
                  ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
                  : nullptr;
   } else {
-    viaDef = (lNum > getTech()->getBottomLayerNum())
+    viaDef = (lNum > gridGraph_.getMinLayerNum())
                  ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
                  : nullptr;
   }
@@ -494,11 +552,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   }
   frVia via(viaDef);
   Rect viaBox(0, 0, 0, 0);
-  if (isUpperVia) {
-    viaBox = via.getCutBBox();
-  } else {
-    viaBox = via.getCutBBox();
-  }
+  viaBox = via.getCutBBox();
 
   FlexMazeIdx mIdx1, mIdx2;
   Rect bx, tmpBx, sViaBox;
@@ -550,11 +604,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           if (gridGraph_.isSVia(i, j, zIdx)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
             sVia.setViaDef(sViaDef);
-            if (isUpperVia) {
-              sViaBox = sVia.getCutBBox();
-            } else {
-              sViaBox = sVia.getCutBBox();
-            }
+            sViaBox = sVia.getCutBBox();
             tmpBx = sViaBox;
           }
           xform.apply(tmpBx);
@@ -608,20 +658,79 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
                                         bool isBlockage,
                                         frNonDefaultRule* ndr)
 {
+  // mod costs for non-NDR nets
   auto lNum = gridGraph_.getLayerNum(z);
-  frCoord width1 = box.minDXDY();
-  frCoord length1 = box.maxDXDY();
-  // default via dimension
-  frViaDef* viaDef = nullptr;
+  frViaDef* defaultViaDef = nullptr;
   if (isUpperVia) {
-    viaDef = (lNum < getTech()->getTopLayerNum())
-                 ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
-                 : nullptr;
+    defaultViaDef = (lNum < gridGraph_.getMaxLayerNum())
+                        ? getTech()->getLayer(lNum + 1)->getDefaultViaDef()
+                        : nullptr;
   } else {
-    viaDef = (lNum > getTech()->getBottomLayerNum())
-                 ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
-                 : nullptr;
+    defaultViaDef = (lNum > gridGraph_.getMinLayerNum())
+                        ? getTech()->getLayer(lNum - 1)->getDefaultViaDef()
+                        : nullptr;
   }
+  frCoord defaultMinSpacing = 0;
+  drEolSpacingConstraint drCon;
+  if (ndr) {
+    defaultMinSpacing = ndr->getSpacing(z);
+    drCon = ndr->getDrEolSpacingConstraint(z);
+  }
+  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
+  modMinSpacingCostViaHelper(box,
+                             z,
+                             type,
+                             defaultWidth,
+                             defaultMinSpacing,
+                             defaultViaDef,
+                             drCon,
+                             isUpperVia,
+                             isCurrPs,
+                             isBlockage,
+                             false);
+  // mod costs for ndrs
+  for (auto ndr : ndrs_) {
+    frCoord width = defaultWidth;
+    frViaDef* viadef = defaultViaDef;
+    frCoord minSpacing = defaultMinSpacing;
+    drEolSpacingConstraint ndrDrCon = ndr->getDrEolSpacingConstraint(z);
+    if (isUpperVia && lNum < gridGraph_.getMaxLayerNum()
+        && ndr->getPrefVia(z) != nullptr) {
+      viadef = ndr->getPrefVia(z);
+    } else if (!isUpperVia && lNum > gridGraph_.getMinLayerNum()
+               && ndr->getPrefVia(z - 1) != nullptr) {
+      viadef = ndr->getPrefVia(z - 1);
+    }
+    if (ndr->getWidth(z) != 0) {
+      width = ndr->getWidth(z);
+    }
+    minSpacing = std::max(minSpacing, ndr->getSpacing(z));
+    modMinSpacingCostViaHelper(box,
+                               z,
+                               type,
+                               width,
+                               minSpacing,
+                               viadef,
+                               ndrDrCon,
+                               isUpperVia,
+                               isCurrPs,
+                               isBlockage,
+                               true);
+  }
+}
+
+void FlexDRWorker::modMinSpacingCostViaHelper(const Rect& box,
+                                              frMIdx z,
+                                              ModCostType type,
+                                              frCoord width,
+                                              frCoord minSpacing,
+                                              frViaDef* viaDef,
+                                              drEolSpacingConstraint drCon,
+                                              bool isUpperVia,
+                                              bool isCurrPs,
+                                              bool isBlockage,
+                                              bool ndr)
+{
   if (viaDef == nullptr) {
     return;
   }
@@ -636,36 +745,30 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord length2 = viaBox.maxDXDY();
 
   // via prl should check min area patch metal if not fat via
-  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
+  auto lNum = gridGraph_.getLayerNum(z);
   bool isH
       = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
-  bool isFatVia
-      = (isH) ? (viaBox.dy() > defaultWidth) : (viaBox.dx() > defaultWidth);
+  bool isFatVia = (isH) ? (viaBox.dy() > width) : (viaBox.dx() > width);
 
   frCoord length2_mar = length2;
   frCoord patchLength = 0;
   if (!isFatVia) {
     auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
     auto minArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
-    patchLength = frCoord(ceil(1.0 * minArea / defaultWidth
+    patchLength = frCoord(ceil(1.0 * minArea / width
                                / getTech()->getManufacturingGrid()))
                   * frCoord(getTech()->getManufacturingGrid());
     length2_mar = std::max(length2_mar, patchLength);
   }
 
   // spacing value needed
+  frCoord width1 = box.minDXDY();
+  frCoord length1 = box.maxDXDY();
   frCoord prl = isCurrPs ? (length2_mar) : std::min(length1, length2_mar);
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
   frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
       width1, width2, prl, use_min_spacing);
-
-  drEolSpacingConstraint drCon;
-  if (ndr) {
-    bloatDist = std::max(bloatDist, ndr->getSpacing(z));
-    drCon = ndr->getDrEolSpacingConstraint(z);
-  }
-  // other obj eol spc to curr obj
-  // no need to bloat eolWithin because eolWithin always < minSpacing
+  bloatDist = std::max(minSpacing, bloatDist);
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
   if (drCon.eolWidth == 0) {
@@ -733,29 +836,27 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
       bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
       frCoord reqDist = getTech()->getLayer(lNum)->getMinSpacingValue(
           width1, width2, prl, use_min_spacing);
-
-      if (ndr) {
-        reqDist = std::max(reqDist, ndr->getSpacing(z));
-      }
+      reqDist = std::max(reqDist, minSpacing);
       if (distSquare < (frSquaredDistance) reqDist * reqDist) {
         switch (type) {
           case subRouteShape:
-            gridGraph_.subRouteShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.subRouteShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case addRouteShape:
-            gridGraph_.addRouteShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.addRouteShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case subFixedShape:
-            gridGraph_.subFixedShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.subFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           case addFixedShape:
-            gridGraph_.addFixedShapeCostVia(i, j, zIdx);  // safe access
+            gridGraph_.addFixedShapeCostVia(i, j, zIdx, ndr);  // safe access
             break;
           default:;
         }
       }
       // eol, other obj to curr obj
-      modMinSpacingCostVia_eol(box, tmpBx, type, isUpperVia, drCon, i, j, z);
+      modMinSpacingCostVia_eol(
+          box, tmpBx, type, isUpperVia, drCon, i, j, z, ndr);
     }
   }
 }
@@ -1572,13 +1673,61 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
 }
 
+void FlexDRWorker::writeGCPatchesToDRWorker(
+    drNet* target_net,
+    const std::vector<FlexMazeIdx>& valid_indices)
+{
+  for (auto& pwire : gcWorker_->getPWires()) {
+    auto net = pwire->getNet();
+    if (!net) {
+      net = target_net;
+    }
+    if (!net) {
+      logger_->error(utl::DRT, 407, "pwire with no net");
+    }
+    net->setModified(true);
+    auto tmp_pwire = std::make_unique<drPatchWire>();
+    tmp_pwire->setLayerNum(pwire->getLayerNum());
+    tmp_pwire->setOrigin(pwire->getOrigin());
+    tmp_pwire->setOffsetBox(pwire->getOffsetBox());
+    if (!valid_indices.empty()) {
+      // Find closest path point
+      Point closest;
+      frCoord closest_dist = INT_MAX;
+      auto origin = pwire->getOrigin();
+      auto box = pwire->getOffsetBox();
+      for (auto p : valid_indices) {
+        Point pp;
+        gridGraph_.getPoint(pp, p.x(), p.y());
+        frCoord path_length = Point::squaredDistance(origin, pp);
+        if (path_length < closest_dist) {
+          closest_dist = path_length;
+          closest = pp;
+        }
+      }
+      tmp_pwire->setOrigin(closest);
+      tmp_pwire->setOffsetBox(
+          Rect(origin.getX() - closest.getX() + box.xMin(),
+               origin.getY() - closest.getY() + box.yMin(),
+               origin.getX() - closest.getX() + box.xMax(),
+               origin.getY() - closest.getY() + box.yMax()));
+    }
+    tmp_pwire->addToNet(net);
+    std::unique_ptr<drConnFig> tmp(std::move(tmp_pwire));
+    getWorkerRegionQuery().add(tmp.get());
+    net->addRoute(std::move(tmp));
+  }
+}
+
 void FlexDRWorker::route_queue()
 {
   std::queue<RouteQueueEntry> rerouteQueue;
 
   if (needRecheck_) {
-    gcWorker_->setEnableSurgicalFix(false);
+    gcWorker_->setEnableSurgicalFix(true);
     gcWorker_->main();
+    writeGCPatchesToDRWorker();
+    gcWorker_->clearPWires();
     setMarkers(gcWorker_->getMarkers());
   }
   if (getDRIter() >= beginDebugIter) {
@@ -1617,25 +1766,7 @@ void FlexDRWorker::route_queue()
   gcWorker_->setEnableSurgicalFix(true);
   gcWorker_->main();
   // write back GC patches
-  for (auto& pwire : gcWorker_->getPWires()) {
-    auto net = pwire->getNet();
-    if (!net) {
-      std::cout << "Error: pwire with no net\n";
-      exit(1);
-    }
-    net->setModified(true);
-    auto tmpPWire = std::make_unique<drPatchWire>();
-    tmpPWire->setLayerNum(pwire->getLayerNum());
-    Point origin = pwire->getOrigin();
-    tmpPWire->setOrigin(origin);
-    Rect box = pwire->getOffsetBox();
-    tmpPWire->setOffsetBox(box);
-    tmpPWire->addToNet(net);
-    std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-    auto& workerRegionQuery = getWorkerRegionQuery();
-    workerRegionQuery.add(tmp.get());
-    net->addRoute(std::move(tmp));
-  }
+  writeGCPatchesToDRWorker();
 
   gcWorker_->end();
 
@@ -1762,6 +1893,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     frBlockObject* obj = entry.block;
     bool doRoute = entry.doRoute;
     int numReroute = entry.numReroute;
+    frBlockObject* checking_obj = entry.checkingObj;
 
     rerouteQueue.pop();
     bool didRoute = false;
@@ -1772,12 +1904,11 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       if (numReroute != net->getNumReroutes()) {
         continue;
       }
-      if (ripupMode_ == RipUpMode::DRC && entry.checkingObj != nullptr
+      if (ripupMode_ == RipUpMode::DRC && checking_obj != nullptr
           && obj_gc_version.find(net->getFrNet()) != obj_gc_version.end()
-          && obj_gc_version.find(entry.checkingObj) != obj_gc_version.end()
+          && obj_gc_version.find(checking_obj) != obj_gc_version.end()
           && obj_gc_version[net->getFrNet()] == std::make_pair(gc_version, 0)
-          && obj_gc_version[entry.checkingObj]
-                 == std::make_pair(gc_version, 0)) {
+          && obj_gc_version[checking_obj] == std::make_pair(gc_version, 0)) {
         continue;
       }
       // init
@@ -1851,41 +1982,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
         drNet* currNet = net;
-        for (auto& pwire : gcWorker_->getPWires()) {
-          auto net = pwire->getNet();
-          if (!net) {
-            net = currNet;
-          }
-          auto tmpPWire = std::make_unique<drPatchWire>();
-          tmpPWire->setLayerNum(pwire->getLayerNum());
-          Point origin = pwire->getOrigin();
-          Rect box = pwire->getOffsetBox();
-          // Find closest path point
-          Point closest;
-          frCoord closestDist = INT_MAX;
-          for (auto p : paths) {
-            Point pp;
-            gridGraph_.getPoint(pp, p.x(), p.y());
-            frCoord pathLength = Point::squaredDistance(origin, pp);
-            if (pathLength < closestDist) {
-              closestDist = pathLength;
-              closest = pp;
-            }
-          }
-          tmpPWire->setOrigin(closest);
-          tmpPWire->setOffsetBox(
-              Rect(origin.getX() - closest.getX() + box.xMin(),
-                   origin.getY() - closest.getY() + box.yMin(),
-                   origin.getX() - closest.getX() + box.xMax(),
-                   origin.getY() - closest.getY() + box.yMax()));
-          tmpPWire->addToNet(net);
-          pwire->addToNet(net);
-
-          std::unique_ptr<drConnFig> tmp(std::move(tmpPWire));
-          auto& workerRegionQuery = getWorkerRegionQuery();
-          workerRegionQuery.add(tmp.get());
-          net->addRoute(std::move(tmp));
-        }
+        writeGCPatchesToDRWorker(currNet, paths);
         gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
@@ -1905,24 +2002,76 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         logger_->error(DRT, 1006, "failed to setTargetNet");
       }
     } else {
-      gcWorker_->setEnableSurgicalFix(false);
-      if (obj_gc_version.find(obj) != obj_gc_version.end()
-          && obj_gc_version[obj].first == gc_version) {
-        continue;
-      }
-      if (obj->typeId() == frcNet) {
-        auto net = static_cast<frNet*>(obj);
-        if (gcWorker_->setTargetNet(net)) {
+      if (getRipupMode() == RipUpMode::VIASWAP) {
+        auto net = static_cast<drNet*>(obj);
+        bool no_solution_found = false;
+        for (auto& conn_fig : net->getRouteConnFigs()) {
+          if (conn_fig->typeId() != drcVia) {
+            continue;
+          }
+          auto old_via = static_cast<drVia*>(conn_fig.get());
+          if (old_via->isLonely()) {
+            auto cutLayer
+                = getTech()->getLayer(old_via->getViaDef()->getCutLayerNum());
+            frViaDef* replacement_via_def = nullptr;
+            if (cutLayer->getSecondaryViaDefs().size()
+                <= numReroute)  // no more secViaDefs to try
+            {
+              no_solution_found = true;
+              // fall back to the original viadef
+              replacement_via_def = cutLayer->getDefaultViaDef();
+            } else {
+              replacement_via_def = cutLayer->getSecondaryViaDef(numReroute);
+            }
+            if (replacement_via_def == old_via->getViaDef()) {
+              continue;
+            }
+            // replace via with a secondaryVia at index numReroute
+            std::unique_ptr<drConnFig> new_via_connfig
+                = std::make_unique<drVia>(*old_via);
+            auto new_via_ptr = static_cast<drVia*>(new_via_connfig.get());
+            new_via_ptr->setViaDef(replacement_via_def);
+            // remove old via
+            getWorkerRegionQuery().remove(old_via);
+            net->removeShape(old_via);
+            // add new via
+            net->addRoute(std::move(new_via_connfig));
+            getWorkerRegionQuery().add(new_via_ptr);
+          }
+        }
+        if (!no_solution_found) {
+          gcWorker_->setTargetNet(net->getFrNet());
+          gcWorker_->updateDRNet(net);
+          gcWorker_->setEnableSurgicalFix(true);
           gcWorker_->main();
-          didCheck = true;
+          if (gcWorker_->getMarkers().empty()) {
+            net->setModified(true);
+            writeGCPatchesToDRWorker();
+          } else {
+            rerouteQueue.push({net, numReroute + 1, false, net});
+          }
+          gcWorker_->clearPWires();
         }
       } else {
-        if (gcWorker_->setTargetNet(obj)) {
-          gcWorker_->main();
-          didCheck = true;
+        gcWorker_->setEnableSurgicalFix(false);
+        if (obj_gc_version.find(obj) != obj_gc_version.end()
+            && obj_gc_version[obj].first == gc_version) {
+          continue;
         }
+        if (obj->typeId() == frcNet) {
+          auto net = static_cast<frNet*>(obj);
+          if (gcWorker_->setTargetNet(net)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
+        } else {
+          if (gcWorker_->setTargetNet(obj)) {
+            gcWorker_->main();
+            didCheck = true;
+          }
+        }
+        obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
       }
-      obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
     }
     // end
     if (didCheck) {
@@ -2408,7 +2557,9 @@ void FlexDRWorker::routeNet_postAstarWritePath(
     if (net->getFrAccessPoint(gridGraph_.xCoord(points[0].x()),
                               gridGraph_.yCoord(points[0].y()),
                               gridGraph_.getLayerNum(points[0].z()))) {
-      addApPathSegs(points[0], net);
+      if (!addApPathSegs(points[0], net)) {
+        addApExtFigUpdate(net, points[0]);
+      }
     }
   }
   for (int i = 0; i < (int) points.size() - 1; ++i) {
@@ -2499,13 +2650,13 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
         auto via = getTech()->getLayer(startLayerNum + 1)->getDefaultViaDef();
-        if (gridGraph_.isSVia(startX, startY, currZ)) {
-          via = apSVia_.find(mi)->second->getAccessViaDef();
+        auto it = apSVia_.find(mi);
+        if (gridGraph_.isSVia(startX, startY, currZ) && it != apSVia_.end()) {
+          via = it->second->getAccessViaDef();
         }
         auto net_ndr = net->getFrNet()->getNondefaultRule();
-        if (net_ndr != nullptr
-            && net_ndr->getPrefVia((startLayerNum + 1) / 2)) {
-          via = net_ndr->getPrefVia((startLayerNum + 1) / 2);
+        if (net_ndr != nullptr && net_ndr->getPrefVia(startLayerNum / 2 - 1)) {
+          via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {
@@ -2550,6 +2701,49 @@ void FlexDRWorker::routeNet_postAstarWritePath(
       std::cout << "Warning: zero-length path in updateFlexPin\n";
     } else {
       std::cout << "Error: non-collinear path in updateFlexPin\n";
+    }
+  }
+}
+void FlexDRWorker::addApExtFigUpdate(drNet* net,
+                                     const FlexMazeIdx& ap_idx) const
+{
+  frLayerNum layer_num = gridGraph_.getLayerNum(ap_idx.z());
+  Point3D real_point;
+  gridGraph_.getPoint(real_point, ap_idx.x(), ap_idx.y());
+  real_point.setZ(layer_num);
+  for (const auto& ext_obj : net->getExtConnFigs()) {
+    if (ext_obj->typeId() == drcPathSeg) {
+      const drPathSeg* path_seg = static_cast<const drPathSeg*>(ext_obj.get());
+      const auto [bp, ep] = path_seg->getPoints();
+      if (path_seg->getLayerNum() != layer_num) {
+        continue;
+      }
+      frSegStyle style = path_seg->getStyle();
+      if (bp == real_point) {
+        style.setBeginStyle(frcTruncateEndStyle, 0);
+        net->updateExtFigStyle(real_point, style);
+        return;
+      }
+      if (ep == real_point) {
+        style.setEndStyle(frcTruncateEndStyle, 0);
+        net->updateExtFigStyle(real_point, style);
+        return;
+      }
+    } else if (ext_obj->typeId() == drcVia) {
+      auto via = static_cast<const drVia*>(ext_obj.get());
+      Point via_point = via->getOrigin();
+      if (via_point != real_point) {
+        continue;
+      }
+      auto via_def = via->getViaDef();
+      if (via_def->getLayer1Num() == layer_num) {
+        net->updateExtFigConnected(real_point, true, via->isTopConnected());
+        return;
+      }
+      if (via_def->getLayer2Num() == layer_num) {
+        net->updateExtFigConnected(real_point, via->isBottomConnected(), true);
+        return;
+      }
     }
   }
 }
@@ -3311,7 +3505,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
         if (!prev_is_wire) {
           currArea /= 2;
         }
-        currArea += pathLength * pathWidth;
+        currArea += static_cast<frArea>(pathLength) * pathWidth;
       }
       prev_is_wire = true;
     }
