@@ -70,10 +70,7 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 90;  // Current revision number
-
-// Revision where dbNet::_has_jumpers was added
-const uint db_schema_has_jumpers = 90;
+const uint db_schema_minor = 89;  // Current revision number
 
 // Revision where blocked regions for IO pins were added to dbBlock
 const uint db_schema_dbblock_blocked_regions_for_pins = 89;

@@ -3313,24 +3313,4 @@ void dbNet::clearTracks()
   }
 }
 
-bool dbNet::hasJumpers()
-{
-  bool has_jumpers = false;
-  _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
-    has_jumpers = net->_flags._has_jumpers == 1;
-  }
-  return has_jumpers;
-}
-
-void dbNet::setJumpers(bool has_jumpers)
-{
-  _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
-    net->_flags._has_jumpers = has_jumpers ? 1 : 0;
-  }
-}
-
 }  // namespace odb

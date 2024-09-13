@@ -2817,10 +2817,6 @@ class dbNet : public dbObject
   dbSet<dbNetTrack> getTracks() const;
 
   void clearTracks();
-
-  bool hasJumpers();
-
-  void setJumpers(bool has_jumpers);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5507,6 +5503,11 @@ class dbMaster : public dbObject
   /// Set the height of this master cell.
   ///
   void setHeight(uint height);
+
+  ///
+  /// Get the area of this master cell.
+  ///
+  int64_t getArea() const;
 
   ///
   /// is filler cell

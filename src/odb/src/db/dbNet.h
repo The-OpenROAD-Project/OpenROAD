@@ -82,7 +82,6 @@ struct _dbNetFlags
   dbSourceType::Value _source : 4;
   uint _rc_disconnected : 1;
   uint _block_rule : 1;
-  uint _has_jumpers : 1;
 };
 
 class _dbNet : public _dbObject
