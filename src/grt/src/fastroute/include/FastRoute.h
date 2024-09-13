@@ -93,6 +93,12 @@ struct DebugSetting
 
 using stt::Tree;
 
+struct parent3D
+{
+  int16_t layer;
+  int x, y;
+};
+
 class FastRouteCore
 {
  public:
@@ -639,6 +645,16 @@ class FastRouteCore
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
   std::vector<int> net_ids_;
+
+  // Maze 3D variables
+  multi_array<Direction, 3> directions_3D_;
+  multi_array<int, 3> corr_edge_3D_;
+  multi_array<parent3D, 3> pr_3D_;
+  std::vector<bool> pop_heap2_3D_;
+  std::vector<int*> src_heap_3D_;
+  std::vector<int*> dest_heap_3D_;
+  multi_array<int, 3> d1_3D_;
+  multi_array<int, 3> d2_3D_;
 };
 
 }  // namespace grt

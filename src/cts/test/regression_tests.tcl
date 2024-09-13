@@ -1,4 +1,5 @@
 record_tests {
+  simple_test_hier
   array
   array_no_blockages
   array_ins_delay

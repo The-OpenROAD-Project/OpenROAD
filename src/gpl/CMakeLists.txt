@@ -45,6 +45,8 @@ find_package(ortools REQUIRED)
 find_package(LEMON NAMES LEMON lemon REQUIRED)
 find_package(OpenMP REQUIRED)
 
+message(STATUS "Found OR-Tools: ${ortools_DIR} (version: ${ortools_VERSION})")
+
 swig_lib(NAME      gpl
          NAMESPACE gpl
          I_FILE    src/replace.i

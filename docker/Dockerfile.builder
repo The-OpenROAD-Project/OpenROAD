@@ -10,6 +10,7 @@ FROM $fromImage
 
 ARG compiler=gcc
 ARG numThreads=$(nproc)
+ARG depsPrefixFile="/etc/openroad_deps_prefixes.txt"
 ARG LOCAL_PATH=""
 
 COPY . /OpenROAD
@@ -17,4 +18,4 @@ WORKDIR /OpenROAD
 
 ENV PATH=${LOCAL_PATH}:${PATH}
 
-RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads}
+RUN ./etc/Build.sh -compiler=${compiler} -threads=${numThreads} -deps-prefixes-file=${depsPrefixFile}

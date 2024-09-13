@@ -851,7 +851,7 @@ COMPONENTS 751 ;
     - _544_ sky130_fd_sc_hd__dfxtp_1 ;
     - _545_ sky130_fd_sc_hd__dfxtp_1 ;
 END COMPONENTS
-PINS 56 ;
+PINS 57 ;
     - VDD_SW + NET VDD_SW + SPECIAL + DIRECTION INOUT + USE POWER
       + PORT
         + LAYER met1 ( -70 -240 ) ( 70 240 )
@@ -917,6 +917,7 @@ PINS 56 ;
         + LAYER met1 ( -70 -152560 ) ( 70 -152080 )
         + FIXED ( 70 152320 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
+    - nPWRUP + NET nPWRUP + DIRECTION INPUT + USE SIGNAL ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL ;
     - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL ;
@@ -4627,7 +4628,7 @@ NETS 462 ;
     - dpath.a_lt_b$in1\[8\] ( _522_ Q ) ( _400_ A0 ) ( _352_ D ) ( _277_ A ) ( _247_ A ) + USE SIGNAL ;
     - dpath.a_lt_b$in1\[9\] ( _523_ Q ) ( _485_ A ) ( _475_ A1 ) ( _470_ C1 ) ( _403_ A0 ) ( _351_ D ) ( _279_ A1 )
       ( _255_ B ) ( _254_ A_N ) + USE SIGNAL ;
-    - nPWRUP ( PSW_ROW_57_0 SLEEP ) + USE SIGNAL ;
+    - nPWRUP ( PIN nPWRUP ) ( PSW_ROW_57_0 SLEEP ) + USE SIGNAL ;
     - req_msg[0] ( PIN req_msg[0] ) ( _376_ B ) + USE SIGNAL ;
     - req_msg[10] ( PIN req_msg[10] ) ( _407_ B ) + USE SIGNAL ;
     - req_msg[11] ( PIN req_msg[11] ) ( _410_ B ) + USE SIGNAL ;

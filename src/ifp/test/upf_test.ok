@@ -40,6 +40,11 @@ Instance: d4/_1_ -
  -> d4_out1 -> _4_
 Instance: d4/_2_ - 
  -> d4_out2 -> _3_
+bterm in1
+bterm in2
+bterm out1
+bterm out2
+bterm out3
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
 [INFO IFP-0001] Added 110 rows of 651 site unithd.
 Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
@@ -124,3 +129,12 @@ Instance: d4/_0__d4_out3_d4_out3_o_isolation_inv_out - () : sky130_fd_sc_hd__clk
  -> d4_out3_o -> _2_ 
 Instance: d4/_0__d4_out3_d4_out3_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
  -> d4/_0__d4_out3_d4_out3_o_isolation_inv_control -> d4/_0__d4_out3_d4_out3_o_isolation 
+bterm in1
+bterm in2
+bterm out1
+bterm out2
+bterm out3
+bterm d1_iso_control
+bterm d2_iso_control
+bterm d3_iso_control
+bterm d4_iso_control

@@ -519,10 +519,18 @@ static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
   bool success = true;
   auto lps = block->getLogicPorts();
   for (auto&& port : lps) {
-    if (!odb::dbNet::create(block, port->getName())) {
+    auto net = odb::dbNet::create(block, port->getName());
+    if (!net) {
       logger->warn(utl::UPF,
                    23,
                    "Creation of '{}' dbNet from UPF Logic Port failed",
+                   port->getName());
+      success = false;
+    }
+    if (success && !odb::dbBTerm::create(net, port->getName())) {
+      logger->warn(utl::UPF,
+                   45,
+                   "Creation of '{}' dbBTerm from UPF Logic Port failed",
                    port->getName());
       success = false;
     }

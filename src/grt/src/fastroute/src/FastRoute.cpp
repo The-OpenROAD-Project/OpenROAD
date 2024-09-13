@@ -212,6 +212,22 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_hvh_test_.resize(y_range_);  // Vertical first Z
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
+
+  // maze3D variables
+  directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+
+  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  pop_heap2_3D_.resize(total_size, false);
+
+  // allocate memory for priority queue
+  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
+  src_heap_3D_.resize(total_size);
+  dest_heap_3D_.resize(total_size);
+
+  d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
 void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
