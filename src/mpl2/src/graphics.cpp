@@ -482,25 +482,141 @@ void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
   for (const auto& bundled_net : bundled_nets_) {
-    const int x1
-        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinX());
-    const int y1
-        = block_->micronsToDbu(macros[bundled_net.terminals.first].getPinY());
+    const T& source = macros[bundled_net.terminals.first];
+    const T& target = macros[bundled_net.terminals.second];
+
+    if (target.isIOCluster()) {
+      drawDistToIoConstraintBoundary(painter, source, target);
+      continue;
+    }
+
+    const int x1 = block_->micronsToDbu(source.getPinX());
+    const int y1 = block_->micronsToDbu(source.getPinY());
     odb::Point from(x1, y1);
 
-    const int x2
-        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinX());
-    const int y2
-        = block_->micronsToDbu(macros[bundled_net.terminals.second].getPinY());
+    const int x2 = block_->micronsToDbu(target.getPinX());
+    const int y2 = block_->micronsToDbu(target.getPinY());
     odb::Point to(x2, y2);
 
-    from.addX(outline_.xMin());
-    from.addY(outline_.yMin());
-    to.addX(outline_.xMin());
-    to.addY(outline_.yMin());
-
+    addOutlineOffsetToLine(from, to);
     painter.drawLine(from, to);
   }
+}
+
+template <typename T>
+void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                              const T& macro,
+                                              const T& io)
+{
+  Cluster* io_cluster = io.getCluster();
+
+  const int x1 = block_->micronsToDbu(macro.getPinX());
+  const int y1 = block_->micronsToDbu(macro.getPinY());
+  odb::Point from(x1, y1);
+
+  odb::Point to;
+  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+
+  if (constraint_boundary == Boundary::L
+      || constraint_boundary == Boundary::R) {
+    const int x2 = block_->micronsToDbu(io.getPinX());
+    const int y2 = block_->micronsToDbu(macro.getPinY());
+    to.setX(x2);
+    to.setY(y2);
+  } else if (constraint_boundary == Boundary::B
+             || constraint_boundary == Boundary::T) {
+    const int x2 = block_->micronsToDbu(macro.getPinX());
+    const int y2 = block_->micronsToDbu(io.getPinY());
+    to.setX(x2);
+    to.setY(y2);
+  } else {
+    to = getClosestBoundaryPoint(macro, io_cluster);
+  }
+
+  addOutlineOffsetToLine(from, to);
+
+  painter.drawLine(from, to);
+  painter.drawString(to.getX(),
+                     to.getY(),
+                     gui::Painter::CENTER,
+                     toString(constraint_boundary));
+}
+
+template <typename T>
+odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
+                                             Cluster* io_cluster)
+{
+  // For NONE, the shape of the io cluster is the die area.
+  const Rect die = io_cluster->getBBox();
+  Boundary closest_boundary = getClosestBoundary(macro, die);
+  odb::Point to;
+
+  /*
+    TO DO:
+      1. See if some sort of offset dark magic interferes
+    with the annealing internals.  
+      2. Guarantee that when the macros are outside the 
+      outline we'll have no problems.
+  */
+
+  // We have to manually decompensate the offset of the coordinate
+  // that comes from the cluster.
+  if (closest_boundary == Boundary::L) {
+    to.setX(block_->micronsToDbu(die.xMin()));
+    to.setY(block_->micronsToDbu(macro.getPinY()));
+    to.addX(-outline_.xMin());
+  } else if (closest_boundary == Boundary::R) {
+    to.setX(block_->micronsToDbu(die.xMax()));
+    to.setY(block_->micronsToDbu(macro.getPinY()));
+    to.addX(-outline_.xMin());
+  } else if (closest_boundary == Boundary::B) {
+    to.setX(block_->micronsToDbu(macro.getPinX()));
+    to.setY(block_->micronsToDbu(die.yMin()));
+    to.addY(-outline_.yMin());
+  } else { // Top
+    to.setX(block_->micronsToDbu(macro.getPinX()));
+    to.setY(block_->micronsToDbu(die.yMax()));
+    to.addY(-outline_.yMin());    
+  }
+
+  return to;
+}
+
+void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
+{
+  from.addX(outline_.xMin());
+  from.addY(outline_.yMin());
+  to.addX(outline_.xMin());
+  to.addY(outline_.yMin());  
+}
+
+template <typename T>
+Boundary Graphics::getClosestBoundary(const T& macro, const Rect& die)
+{
+  const float macro_x = macro.getPinX();
+  const float macro_y = macro.getPinY();
+  
+  const float dist_to_left = std::abs(macro_x - die.xMin());
+  float shortest_distance = dist_to_left;
+  Boundary closest_boundary = Boundary::L;
+
+  const float dist_to_right = std::abs(macro_x - die.xMax());
+  if (dist_to_right < shortest_distance) {
+    closest_boundary = Boundary::R;
+    shortest_distance = dist_to_right;
+  }
+
+  const float dist_to_bottom = std::abs(macro_y - die.yMin());
+  if (dist_to_bottom < shortest_distance) {
+    closest_boundary = Boundary::B;
+  }
+
+  const float dist_to_top = std::abs(macro_y - die.yMax());
+  if (dist_to_top < shortest_distance) {
+    closest_boundary = Boundary::T;
+  }
+
+  return closest_boundary;
 }
 
 // Give some transparency to mixed and hard so we can see overlap with

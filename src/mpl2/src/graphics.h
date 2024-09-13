@@ -96,6 +96,15 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  template <typename T>
+  void drawDistToIoConstraintBoundary(gui::Painter& painter,
+                                      const T& macro,
+                                      const T& io);
+  template <typename T>
+  odb::Point getClosestBoundaryPoint(const T& macro, Cluster* io_cluster);
+  template <typename T>
+  Boundary getClosestBoundary(const T& macro, const Rect& die);
+  void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
                         std::vector<HardMacro>& hard,
