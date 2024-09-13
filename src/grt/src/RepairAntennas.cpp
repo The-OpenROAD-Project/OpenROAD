@@ -82,6 +82,7 @@ bool RepairAntennas::checkAntennaViolations(
     float ratio_margin,
     const int num_threads)
 {
+  antenna_violations_.clear();
   for (odb::dbNet* db_net : nets_to_repair) {
     antenna_violations_[db_net];
   }

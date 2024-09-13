@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,68 +30,51 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "dbCore.h"
-#include "dbHashTable.h"
-#include "dbVector.h"
-#include "odb/dbId.h"
-#include "odb/dbTypes.h"
-#include "odb/odb.h"
+#include <map>
 
-namespace odb {
+#include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 
-template <class T>
-class dbTable;
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbLib;
-class _dbSite;
+namespace grt {
+class GlobalRouter;
+class MakeWireParasitics;
+}  // namespace grt
 
-struct dbSiteFlags
-{
-  uint _x_symmetry : 1;
-  uint _y_symmetry : 1;
-  uint _R90_symmetry : 1;
-  dbSiteClass::Value _class : 4;
-  uint _is_hybrid : 1;
-  uint _spare_bits : 24;
-};
+namespace rsz {
 
-struct OrientedSiteInternal
-{
-  dbId<_dbLib> lib;
-  dbId<_dbSite> site;
-  dbOrientType orientation;
-  bool operator==(const OrientedSiteInternal& rhs) const;
-};
+class Resizer;
+using utl::Logger;
 
-dbOStream& operator<<(dbOStream& stream, const OrientedSiteInternal& s);
-dbIStream& operator>>(dbIStream& stream, OrientedSiteInternal& s);
+using sta::Corner;
+using sta::dbNetwork;
+using sta::dbSta;
+using sta::Net;
+using sta::NetSeq;
+using sta::Parasitic;
+using sta::Parasitics;
 
-class _dbSite : public _dbObject
+class SpefWriter
 {
  public:
-  // PERSISTANT-MEMBERS
-  dbSiteFlags _flags;
-  char* _name;
-  int _height;
-  int _width;
-  dbId<_dbSite> _next_entry;
-  dbVector<OrientedSiteInternal> _row_pattern;
+  SpefWriter(Logger* logger,
+             dbSta* sta,
+             std::map<Corner*, std::ostream*>& spef_streams);
+  void writeHeader();
+  void writePorts();
+  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
 
-  _dbSite(_dbDatabase*, const _dbSite& s);
-  _dbSite(_dbDatabase*);
-  ~_dbSite();
+ private:
+  Logger* logger_;
+  dbSta* sta_;
+  dbNetwork* network_;
+  Parasitics* parasitics_;
 
-  bool operator==(const _dbSite& rhs) const;
-  bool operator!=(const _dbSite& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbSite& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  std::map<Corner*, std::ostream*> spef_streams_;
 };
 
-dbOStream& operator<<(dbOStream& stream, const _dbSite& site);
-dbIStream& operator>>(dbIStream& stream, _dbSite& site);
-}  // namespace odb
+}  // namespace rsz
