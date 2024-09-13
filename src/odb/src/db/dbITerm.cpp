@@ -533,7 +533,7 @@ void dbITerm::disconnect(bool db_net, bool mod_net)
 
   if (net->_flags._dont_touch) {
     inst->getLogger()->error(utl::ODB,
-                             401,
+                             447,
                              "Attempt to disconnect iterm of dont_touch net {}",
                              net->_name);
   }

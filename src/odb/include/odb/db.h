@@ -3567,7 +3567,7 @@ class dbITerm : public dbObject
 
   ///
   /// Selectively disconnect db_net/mod_net
-  //
+  ///
   void disconnect(bool db_net, bool mod_net);
   ///
   /// Get the average of the centers for the iterm shapes
