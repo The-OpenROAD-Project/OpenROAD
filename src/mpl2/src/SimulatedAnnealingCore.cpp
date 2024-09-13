@@ -330,6 +330,9 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const float x2 = io.getPinX();
     const float y2 = io.getPinY();
 
+    /*
+      TO DO: This is just wrong. We need to see X dist for L || R , Y dist for T || B
+    */
     wirelength_ += net_weight * std::min(std::abs(y2 - y1), std::abs(x2 - x1));
   }
 }
