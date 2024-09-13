@@ -500,9 +500,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
         repair_failures = true;
     }
     if (inserted_diodes) {
-      if (db_net->hasJumpers()) {
-        db_net->setJumpers(false);
-      }
+      //if (db_net->hasJumpers()) {
+        //db_net->setJumpers(false);
+      //}
       grouter_->addDirtyNet(db_net);
     }
   }
@@ -1340,7 +1340,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
     if (jumpers_by_net) {
       net_with_jumpers++;
       total_jumpers += jumpers_by_net;
-      db_net->setJumpers(true);
+      //db_net->setJumpers(true);
     }
   }
   logger_->info(GRT,
