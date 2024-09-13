@@ -1991,14 +1991,8 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 
 Net* dbNetwork::makeNet(const char* name, Instance* parent)
 {
-  if (parent == top_instance_) {
-    dbNet* dnet = dbNet::create(block_, name, false);
-    return dbToSta(dnet);
-  } else {
-    dbNet* dnet = dbNet::create(block_, name, false);
-    return dbToSta(dnet);
-  }
-  return nullptr;
+  dbNet* dnet = dbNet::create(block_, name, false);
+  return dbToSta(dnet);
 }
 
 void dbNetwork::deleteNet(Net* net)

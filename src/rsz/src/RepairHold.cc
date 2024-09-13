@@ -565,49 +565,33 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     sta_->disconnectPin(drvr_pin);
     sta_->connectPin(drvr_inst, drvr_port, in_net);
     out_net = db_network_->dbToSta(db_drvr_net);
-    if (mod_drvr_net) {
-      odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
-      if (iterm) {
-        // only disconnect the modnet from the iterm
-        // we add it later to the new output
-        iterm->disconnect(false, true);
-      }
-      if (moditerm) {
-        moditerm->disconnect();
-      }
-      if (modbterm) {
-        modbterm->disconnect();
-      }
-    }
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
     std::string net_name = resizer_->makeUniqueNetName();
     out_net = db_network_->makeNet(net_name.c_str(), parent);
-    // hook the moddrvrnet to the output of the buffer to be created
-    // so disconnect from its current pin and add to the buffer output
-    // pin
-    if (mod_drvr_net) {
-      odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
-      if (iterm) {
-        // only disconnect the modnet from the iterm
-        // we add it later to the new output
-        iterm->disconnect(false, true);
-      }
-      if (moditerm) {
-        moditerm->disconnect();
-      }
-      if (modbterm) {
-        modbterm->disconnect();
-      }
+  }
+  //
+  // hook the moddrvrnet to the output of the buffer to be created
+  // so disconnect from its current pin and add to the buffer output
+  // pin
+  //
+  if (mod_drvr_net) {
+    odb::dbModITerm* moditerm = nullptr;
+    odb::dbModBTerm* modbterm = nullptr;
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
+    if (iterm) {
+      // only disconnect the modnet from the iterm
+      // we add it later to the new output
+      iterm->disconnect(false, true);
+    }
+    if (moditerm) {
+      moditerm->disconnect();
+    }
+    if (modbterm) {
+      modbterm->disconnect();
     }
   }
 
