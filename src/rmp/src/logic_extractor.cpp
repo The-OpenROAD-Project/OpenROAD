@@ -3,7 +3,6 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
-#include <iostream>
 
 #include "abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
@@ -185,21 +184,29 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
     std::vector<sta::Pin*>& primary_outputs,
     std::unordered_set<sta::Instance*>& cut_instances)
 {
-  std::vector<sta::Pin*> filtered_output_pins;
-
   sta::dbNetwork* network = open_sta_->getDbNetwork();
+  sta::PinSet filtered_pin_set(network);
+
   for (sta::Pin* pin : primary_outputs) {
-    auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
-        network->connectedPinIterator(pin));
-    while (pin_iterator->hasNext()) {
-      const sta::Pin* connected_pin = pin_iterator->next();
+    sta::PinSet* pin_iterator = network->drivers(pin);
+    for(const sta::Pin* connected_pin : *pin_iterator) {
+      if(network->isTopLevelPort(connected_pin)) {
+        filtered_pin_set.insert(pin);
+        continue;
+      }
       sta::Instance* connected_instance = network->instance(connected_pin);
 
       // Output pin is driven by something in the cutset. Keep it.
       if (cut_instances.find(connected_instance) != cut_instances.end()) {
-        filtered_output_pins.push_back(pin);
+        filtered_pin_set.insert(pin);
       }
     }
+  }
+
+  std::vector<sta::Pin*> filtered_output_pins;
+  filtered_output_pins.reserve(filtered_pin_set.size());
+  for (const sta::Pin* pin : filtered_pin_set) {
+    filtered_output_pins.push_back(const_cast<sta::Pin*>(pin));
   }
 
   return filtered_output_pins;

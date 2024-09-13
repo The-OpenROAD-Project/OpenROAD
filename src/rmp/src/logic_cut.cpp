@@ -8,7 +8,6 @@
 
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
@@ -134,7 +133,6 @@ void ConnectPinToDriver(
     abc::Abc_Ntk_t& abc_network,
     const std::unordered_map<sta::Instance*, abc::Abc_Obj_t*>& abc_instances)
 {
-  std::cout << network->name(output_pin) << "\n";
   // The instance / pin that will recieve a singal from a driver.
   abc::Abc_Obj_t* abc_fanin_reciever;
   if (abc_primary_output_pins.find(output_pin)
