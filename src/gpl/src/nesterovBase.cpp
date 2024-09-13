@@ -63,13 +63,14 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-//static float getDistance(const std::map<GCell*, GCellState>& cells,
-static float getDistance(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-                         FloatPoint GCellState::* aCoord,
-                         FloatPoint GCellState::* bCoord);
+static float getDistance(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+    FloatPoint GCellState::*aCoord,
+    FloatPoint GCellState::*bCoord);
 
-//static float getSecondNorm(const std::map<GCell*, GCellState>& cells, FloatPoint GCellState::* coordPtr);
-static float getSecondNorm(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells, FloatPoint GCellState::* coordPtr);
+static float getSecondNorm(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+    FloatPoint GCellState::*coordPtr);
 
 // Note that
 // int64_t is ideal in the following function, but
@@ -89,12 +90,11 @@ GCell::GCell(Instance* inst, uint input_id)
   id = input_id;
 }
 
-//GCell::GCell(const std::vector<Instance*>& insts)
-//{
-//  setClusteredInstance(insts);
-//}
-
-GCell::GCell(const int cx, const int cy, const int dx, const int dy, uint input_id)
+GCell::GCell(const int cx,
+             const int cy,
+             const int dx,
+             const int dy,
+             uint input_id)
 {
   dLx_ = lx_ = cx - dx / 2;
   dLy_ = ly_ = cy - dy / 2;
@@ -740,16 +740,14 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 }
 
-//void BinGrid::updateBinsGCellDensityArea(const std::map<GCell*, GCellState>& cells)
-void BinGrid::updateBinsGCellDensityArea(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells)
+void BinGrid::updateBinsGCellDensityArea(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells)
 {
   for (Bin& bin : bins_) {
-      bin.setInstPlacedAreaUnscaled(0);
-      bin.setFillerArea(0);
+    bin.setInstPlacedAreaUnscaled(0);
+    bin.setFillerArea(0);
   }
 
-//  for (const auto& pair : cells) {
-//    GCell* cell = pair.first;
   for (const auto& cell : cells) {
     std::pair<int, int> pairX = getDensityMinMaxIdxX(cell.get());
     std::pair<int, int> pairY = getDensityMinMaxIdxY(cell.get());
@@ -903,11 +901,12 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   uint gpin_id = 0;
   uint gnet_id = 0;
   for (auto& gpl_inst : pbc_->placeInsts()) {
-    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(gpl_inst, gcell_id++);
+    std::shared_ptr<GCell> gCell
+        = std::make_shared<GCell>(gpl_inst, gcell_id++);
     gCellMap_[gCell->instance()] = gCell;
     newGCells_.insert(std::move(gCell));
   }
-   
+
   for (auto& gpl_pin : pbc_->pins()) {
     std::shared_ptr<GPin> gPin = std::make_shared<GPin>(gpl_pin, gpin_id++);
     gPinMap_[gPin->pin()] = gPin;
@@ -920,8 +919,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     gNets_.insert(std::move(gNet));
   }
 
-//#pragma omp parallel for num_threads(num_threads_)
-  for(auto& gCell : newGCells_) {
+  //#pragma omp parallel for num_threads(num_threads_)
+  for (auto& gCell : newGCells_) {
     if (gCell->isFiller()) {
       continue;
     }
@@ -930,13 +929,13 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     }
   }
 
-//#pragma omp parallel for num_threads(num_threads_)
-  for(auto& gPin : gPins_){
+  //#pragma omp parallel for num_threads(num_threads_)
+  for (auto& gPin : gPins_) {
     gPin->setGCell(pbToNb(gPin->pin()->instance()).get());
-    gPin->setGNet(pbToNb(gPin->pin()->net()).get());    
+    gPin->setGNet(pbToNb(gPin->pin()->net()).get());
   }
 
-//#pragma omp parallel for num_threads(num_threads_)
+  //#pragma omp parallel for num_threads(num_threads_)
   for (auto& gNet : gNets_) {
     for (auto& pin : gNet->net()->pins()) {
       gNet->addGPin(pbToNb(pin).get());
@@ -944,7 +943,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 }
 
-std::shared_ptr<GCell> NesterovBaseCommon::pbToNb(Instance* inst) const {
+std::shared_ptr<GCell> NesterovBaseCommon::pbToNb(Instance* inst) const
+{
   auto gcPtr = gCellMap_.find(inst);
   return (gcPtr == gCellMap_.end()) ? nullptr : gcPtr->second;
 }
@@ -992,13 +992,13 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // in ePlace paper.
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
-//  assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(num_threads_)  
-    for(auto& gPin : gPins_){
-      gPin->clearWaVars();
-    }
+  //  assert(omp_get_thread_num() == 0);
+  //#pragma omp parallel for num_threads(num_threads_)
+  for (auto& gPin : gPins_) {
+    gPin->clearWaVars();
+  }
 
-//#pragma omp parallel for num_threads(num_threads_)
+  //#pragma omp parallel for num_threads(num_threads_)
   for (auto& gNet : gNets_) {
     // old-style loop for old OpenMP
 
@@ -1204,10 +1204,8 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
-//  assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(num_threads_)    
-//  for (auto& pair : newGCells_) {
-//    GCell* gCell = pair.second;
+  //  assert(omp_get_thread_num() == 0);
+  //#pragma omp parallel for num_threads(num_threads_)
   for (auto& gCell : newGCells_) {
     if (gCell->isInstance()) {
       odb::dbInst* inst = gCell->instance()->dbInst();
@@ -1224,9 +1222,9 @@ void NesterovBaseCommon::updateDbGCells()
 
 int64_t NesterovBaseCommon::getHpwl()
 {
-//  assert(omp_get_thread_num() == 0);
+  //  assert(omp_get_thread_num() == 0);
   int64_t hpwl = 0;
-//#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
+  //#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
   for (auto& gNet : gNets_) {
     // old-style loop for old OpenMP
     gNet->updateBox();
@@ -1264,23 +1262,25 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
     inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
-    //searches based on pbInst in nbc map
+    // searches based on pbInst in nbc map
     std::shared_ptr<GCell> gCell = nbc_->pbToNb(inst);
     gCell->clearInstances();
     gCell->setInstance(inst);
     newGCells_.insert(gCell);
   }
-  
-  for(auto& gCell : newGCells_) {
-    if(gCell->isFiller()){
+
+  for (auto& gCell : newGCells_) {
+    if (gCell->isFiller()) {
       ++fillersCount;
     }
   }
 
   log_->info(GPL, 31, "{:20} {:9}", "NesterovInit #GCells:", newGCells_.size());
   log_->info(GPL, 32, "{:20} {:9}", "NesterovInit #Filler:", fillersCount);
-  log_->info(GPL, 33, "{:20} {:10}", "NesterovInit #GNets:", nbc_->gNets().size());
-  log_->info(GPL, 34, "{:20} {:10}", "NesterovInit #GPins:", nbc_->gPins().size());
+  log_->info(
+      GPL, 33, "{:20} {:10}", "NesterovInit #GNets:", nbc_->gNets().size());
+  log_->info(
+      GPL, 34, "{:20} {:10}", "NesterovInit #GPins:", nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1423,36 +1423,30 @@ void NesterovBase::initFillerGCells(uint initial_gcell_id)
 
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-//    GCell* gCell = new GCell(randX % pb_->die().coreDx() + pb_->die().coreLx(),
-//                  randY % pb_->die().coreDy() + pb_->die().coreLy(),
-//                  fillerDx_,
-//                  fillerDy_);
-    
-    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(randX % pb_->die().coreDx() + pb_->die().coreLx(),
-                  randY % pb_->die().coreDy() + pb_->die().coreLy(),
-                  fillerDx_, fillerDy_, id_counter++);
-
-//    GCellState emptyState;
-//    newGCells_[gCell] = emptyState; 
+    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(
+        randX % pb_->die().coreDx() + pb_->die().coreLx(),
+        randY % pb_->die().coreDy() + pb_->die().coreLy(),
+        fillerDx_,
+        fillerDy_,
+        id_counter++);
     newGCells_.insert(gCell);
   }
 }
 
 NesterovBase::~NesterovBase() = default;
 
-void NesterovBase::updateGCellDensityCenterLocation(FloatPoint GCellState::*coordPtr) {
-//    for (auto& pair : newGCells_) {
-//        GCell* gCell = pair.first;
+void NesterovBase::updateGCellDensityCenterLocation(
+    FloatPoint GCellState::*coordPtr)
+{
   for (auto& gCell : newGCells_) {
-//        GCellState& state = pair.second;
-      GCellState& state = gCell->state;
+    GCellState& state = gCell->state;
 
-        FloatPoint selectedCoord = state.*coordPtr;
+    FloatPoint selectedCoord = state.*coordPtr;
 
-        gCell->setDensityCenterLocation(selectedCoord.x, selectedCoord.y);
-    }
+    gCell->setDensityCenterLocation(selectedCoord.x, selectedCoord.y);
+  }
 
-    bg_.updateBinsGCellDensityArea(newGCells_);
+  bg_.updateBinsGCellDensityArea(newGCells_);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -1564,10 +1558,8 @@ float NesterovBase::targetDensity() const
 // update densitySize and densityScale in each gCell
 void NesterovBase::updateDensitySize()
 {
-//  assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
-//  for (auto& pair : newGCells_) {
-//    GCell* gCell = pair.first;
+  //  assert(omp_get_thread_num() == 0);
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : newGCells_) {
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
@@ -1596,13 +1588,12 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-//  assert(omp_get_thread_num() == 0);
+  //  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-//#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ : stdInstsArea_, macroInstsArea_)
-//  for (auto& pair : newGCells_) {
-//    GCell* gCell = pair.first;
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  //stdInstsArea_, macroInstsArea_)
   for (auto& gCell : newGCells_) {
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
@@ -1751,9 +1742,6 @@ void NesterovBase::updateDensityForceBin()
 
 void NesterovBase::initDensity1()
 {
-//  for (auto& pair : newGCells_) {
-//    GCell* gCell = pair.first;
-//    GCellState& state = pair.second;
   for (auto& gCell : newGCells_) {
     GCellState& state = gCell->state;
     updateDensityCoordiLayoutInside(gCell.get());
@@ -1763,11 +1751,11 @@ void NesterovBase::initDensity1()
 
     std::string type = "Unknown";
     if (gCell->isInstance()) {
-        type = "StdCell";
+      type = "StdCell";
     } else if (gCell->isMacroInstance()) {
-        type = "Macro";
+      type = "Macro";
     } else if (gCell->isFiller()) {
-        type = "Filler";
+      type = "Filler";
     }
   }
 
@@ -1786,7 +1774,7 @@ void NesterovBase::initDensity1()
                  / static_cast<float>(nesterovInstsArea());
 
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
-                         / static_cast<float>(nesterovInstsArea());  
+                         / static_cast<float>(nesterovInstsArea());
 }
 
 float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
@@ -1807,21 +1795,17 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
                          / static_cast<float>(nesterovInstsArea());
 
-  stepLength_ = getStepLength();    
+  stepLength_ = getStepLength();
   return stepLength_;
 }
 
 float NesterovBase::getStepLength()
 {
-  float coordiDistance = getDistance(newGCells_,
-                             &GCellState::prevSLPCoordi,
-                             &GCellState::curSLPCoordi);
-  float gradDistance = getDistance(newGCells_,
-                            &GCellState::prevSLPSumGrads,
-                            &GCellState::curSLPSumGrads);
+  float coordiDistance = getDistance(
+      newGCells_, &GCellState::prevSLPCoordi, &GCellState::curSLPCoordi);
+  float gradDistance = getDistance(
+      newGCells_, &GCellState::prevSLPSumGrads, &GCellState::curSLPSumGrads);
 
-//  log_->report("GradientDistance: {:g}", gradDistance);
-//  log_->report("CoordinateDistance: {:g}",coordiDistance);
   debugPrint(log_,
              GPL,
              "getStepLength",
@@ -1830,108 +1814,164 @@ float NesterovBase::getStepLength()
              coordiDistance);
   debugPrint(
       log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
-  
 
   return coordiDistance / gradDistance;
 }
 
-void NesterovBase::updateGradients(FloatPoint GCellState::* sumGradsPtr,
-                                   FloatPoint GCellState::* wireLengthGradsPtr,
-                                   FloatPoint GCellState::* densityGradsPtr,
-                                   float wlCoeffX, float wlCoeffY)
+void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
+                                   FloatPoint GCellState::*wireLengthGradsPtr,
+                                   FloatPoint GCellState::*densityGradsPtr,
+                                   float wlCoeffX,
+                                   float wlCoeffY)
 {
-    if (isConverged_) {
-        return;
+  if (isConverged_) {
+    return;
+  }
+  wireLengthGradSum_ = 0;
+  densityGradSum_ = 0;
+  float gradSum = 0;
+
+  debugPrint(
+      log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
+
+  for (auto& gCell : newGCells_) {
+    GCellState& state = gCell->state;
+    state.*wireLengthGradsPtr
+        = nbc_->getWireLengthGradientWA(gCell.get(), wlCoeffX, wlCoeffY);
+    state.*densityGradsPtr = getDensityGradient(gCell.get());
+
+    wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).x);
+    wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).y);
+
+    densityGradSum_ += std::fabs((state.*densityGradsPtr).x);
+    densityGradSum_ += std::fabs((state.*densityGradsPtr).y);
+
+    state.*sumGradsPtr
+        = FloatPoint((state.*wireLengthGradsPtr).x
+                         + densityPenalty_ * (state.*densityGradsPtr).x,
+                     (state.*wireLengthGradsPtr).y
+                         + densityPenalty_ * (state.*densityGradsPtr).y);
+
+    FloatPoint wireLengthPreCondi
+        = nbc_->getWireLengthPreconditioner(gCell.get());
+    FloatPoint densityPrecondi = getDensityPreconditioner(gCell.get());
+
+    FloatPoint sumPrecondi(
+        wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
+        wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
+
+    (state.*sumGradsPtr).x
+        = (sumPrecondi.x <= npVars_->minPreconditioner)
+              ? (state.*sumGradsPtr).x / npVars_->minPreconditioner
+              : (state.*sumGradsPtr).x / sumPrecondi.x;
+    (state.*sumGradsPtr).y
+        = (sumPrecondi.y <= npVars_->minPreconditioner)
+              ? (state.*sumGradsPtr).y / npVars_->minPreconditioner
+              : (state.*sumGradsPtr).y / sumPrecondi.y;
+
+    gradSum += std::fabs((state.*sumGradsPtr).x)
+               + std::fabs((state.*sumGradsPtr).y);
+
+    if (gCell->instance()) {
+      debugPrint(log_,
+                 GPL,
+                 "updateGrad",
+                 2,
+                 "GCell name: {}",
+                 gCell->instance()->dbInst()->getName());
+    } else {
+      debugPrint(log_, GPL, "updateGrad", 2, "GCell name: FILLER");
+      debugPrint(log_,
+                 GPL,
+                 "updateGrad",
+                 2,
+                 "WireLengthGrads: ({}, {}), DensityGrads: ({}, {})",
+                 (state.*wireLengthGradsPtr).x,
+                 (state.*wireLengthGradsPtr).y,
+                 (state.*densityGradsPtr).x,
+                 (state.*densityGradsPtr).y);
+      debugPrint(log_,
+                 GPL,
+                 "updateGrad",
+                 2,
+                 "Preconditioners: WireLength: ({}, {}), Density: ({}, {})",
+                 wireLengthPreCondi.x,
+                 wireLengthPreCondi.y,
+                 densityPrecondi.x,
+                 densityPrecondi.y);
+      debugPrint(log_,
+                 GPL,
+                 "updateGrad",
+                 2,
+                 "SumPrecondi: ({}, {}), SumGrads: ({}, {})",
+                 sumPrecondi.x,
+                 sumPrecondi.y,
+                 (state.*sumGradsPtr).x,
+                 (state.*sumGradsPtr).y);
+      debugPrint(log_, GPL, "updateGrad", 2, "Current GradSum: {}", gradSum);
     }
-    wireLengthGradSum_ = 0;
-    densityGradSum_ = 0;
-    float gradSum = 0;
-
-    debugPrint(log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
-    
-//    for (auto& pair : newGCells_) {
-//        GCell* gCell = pair.first;
-//        GCellState& state = pair.second;
-    for (auto& gCell : newGCells_) {
-        GCellState& state = gCell->state;
-        state.*wireLengthGradsPtr = nbc_->getWireLengthGradientWA(gCell.get(), wlCoeffX, wlCoeffY);
-        state.*densityGradsPtr = getDensityGradient(gCell.get());
-
-        wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).x);
-        wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).y);
-
-        densityGradSum_ += std::fabs((state.*densityGradsPtr).x);
-        densityGradSum_ += std::fabs((state.*densityGradsPtr).y);
-
-        state.*sumGradsPtr = FloatPoint((state.*wireLengthGradsPtr).x + densityPenalty_ * (state.*densityGradsPtr).x,
-                                        (state.*wireLengthGradsPtr).y + densityPenalty_ * (state.*densityGradsPtr).y);
-
-        FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell.get());
-        FloatPoint densityPrecondi = getDensityPreconditioner(gCell.get());
-
-        FloatPoint sumPrecondi(wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
-                               wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
-
-        (state.*sumGradsPtr).x = (sumPrecondi.x <= npVars_->minPreconditioner) ? (state.*sumGradsPtr).x / npVars_->minPreconditioner : (state.*sumGradsPtr).x / sumPrecondi.x;
-        (state.*sumGradsPtr).y = (sumPrecondi.y <= npVars_->minPreconditioner) ? (state.*sumGradsPtr).y / npVars_->minPreconditioner : (state.*sumGradsPtr).y / sumPrecondi.y;
-
-
-        gradSum += std::fabs((state.*sumGradsPtr).x) + std::fabs((state.*sumGradsPtr).y);
-        
-        if(gCell->instance()) {
-          debugPrint(log_, GPL, "updateGrad", 2,"GCell name: {}", gCell->instance()->dbInst()->getName());
-        } else {
-          debugPrint(log_, GPL, "updateGrad", 2,"GCell name: FILLER");
-            debugPrint(log_, GPL, "updateGrad", 2,"WireLengthGrads: ({}, {}), DensityGrads: ({}, {})", 
-                 (state.*wireLengthGradsPtr).x, (state.*wireLengthGradsPtr).y, 
-                 (state.*densityGradsPtr).x, (state.*densityGradsPtr).y);
-            debugPrint(log_, GPL, "updateGrad", 2,"Preconditioners: WireLength: ({}, {}), Density: ({}, {})", 
-                         wireLengthPreCondi.x, wireLengthPreCondi.y, densityPrecondi.x, densityPrecondi.y);
-            debugPrint(log_, GPL, "updateGrad", 2,"SumPrecondi: ({}, {}), SumGrads: ({}, {})", 
-                         sumPrecondi.x, sumPrecondi.y, (state.*sumGradsPtr).x, (state.*sumGradsPtr).y);
-            debugPrint(log_, GPL, "updateGrad", 2,"Current GradSum: {}", gradSum);
-        }
-    }        
-    debugPrint(log_, GPL, "updateGrad", 1, "WireLengthGradSum: {:g}", wireLengthGradSum_);
-    debugPrint(log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
-    debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
+  }
+  debugPrint(log_,
+             GPL,
+             "updateGrad",
+             1,
+             "WireLengthGradSum: {:g}",
+             wireLengthGradSum_);
+  debugPrint(
+      log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+  debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 }
 
-void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY) {
-    updateGradients(&GCellState::prevSLPSumGrads, &GCellState::prevSLPWireLengthGrads, &GCellState::prevSLPDensityGrads, wlCoeffX, wlCoeffY);
+void NesterovBase::updatePrevGradient(float wlCoeffX, float wlCoeffY)
+{
+  updateGradients(&GCellState::prevSLPSumGrads,
+                  &GCellState::prevSLPWireLengthGrads,
+                  &GCellState::prevSLPDensityGrads,
+                  wlCoeffX,
+                  wlCoeffY);
 }
 
-void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY) {
-    updateGradients(&GCellState::curSLPSumGrads, &GCellState::curSLPWireLengthGrads, &GCellState::curSLPDensityGrads, wlCoeffX, wlCoeffY);
+void NesterovBase::updateCurGradient(float wlCoeffX, float wlCoeffY)
+{
+  updateGradients(&GCellState::curSLPSumGrads,
+                  &GCellState::curSLPWireLengthGrads,
+                  &GCellState::curSLPDensityGrads,
+                  wlCoeffX,
+                  wlCoeffY);
 }
 
-void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY) {
-    updateGradients(&GCellState::nextSLPSumGrads, &GCellState::nextSLPWireLengthGrads, &GCellState::nextSLPDensityGrads, wlCoeffX, wlCoeffY);
+void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
+{
+  updateGradients(&GCellState::nextSLPSumGrads,
+                  &GCellState::nextSLPWireLengthGrads,
+                  &GCellState::nextSLPDensityGrads,
+                  wlCoeffX,
+                  wlCoeffY);
 }
-
 
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
-//  assert(omp_get_thread_num() == 0);
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
-//  for (auto& pair : newGCells_) {
-//    GCell* curGCell = pair.first;
-//    GCellState& state = pair.second;
+  //  assert(omp_get_thread_num() == 0);
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& curGCell : newGCells_) {
     GCellState& state = curGCell->state;
-    float prevCoordiX = state.curSLPCoordi.x
-                        - npVars_->initialPrevCoordiUpdateCoef * state.curSLPSumGrads.x;
-    float prevCoordiY = state.curSLPCoordi.y
-                        - npVars_->initialPrevCoordiUpdateCoef * state.curSLPSumGrads.y;
+    float prevCoordiX
+        = state.curSLPCoordi.x
+          - npVars_->initialPrevCoordiUpdateCoef * state.curSLPSumGrads.x;
+    float prevCoordiY
+        = state.curSLPCoordi.y
+          - npVars_->initialPrevCoordiUpdateCoef * state.curSLPSumGrads.y;
 
-    FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell.get(), prevCoordiX),
-                         getDensityCoordiLayoutInsideY(curGCell.get(), prevCoordiY));
+    FloatPoint newCoordi(
+        getDensityCoordiLayoutInsideX(curGCell.get(), prevCoordiX),
+        getDensityCoordiLayoutInsideY(curGCell.get(), prevCoordiY));
 
     state.prevSLPCoordi = newCoordi;
   }
 }
 
-void NesterovBase::updateDensityCenterPrevSLP() {
+void NesterovBase::updateDensityCenterPrevSLP()
+{
   updateGCellDensityCenterLocation(&GCellState::prevSLPCoordi);
 }
 
@@ -1957,13 +1997,11 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
 
 void NesterovBase::updateNextIter(const int iter)
 {
-//  assert(omp_get_thread_num() == 0);
+  //  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return;
   }
 
-//  for (auto& pair : newGCells_) {
-//    GCellState& state = pair.second;
   for (auto& gCell : newGCells_) {
     GCellState& state = gCell->state;
     std::swap(state.prevSLPCoordi, state.curSLPCoordi);
@@ -1971,12 +2009,9 @@ void NesterovBase::updateNextIter(const int iter)
     std::swap(state.prevSLPDensityGrads, state.curSLPDensityGrads);
     std::swap(state.prevSLPSumGrads, state.curSLPSumGrads);
   }
-  
-    // Prevent locked instances from moving
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
-//  for (auto& pair : newGCells_) {
-//    GCell* gCell = pair.first;
-//    GCellState& state = pair.second;
+
+  // Prevent locked instances from moving
+  //#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : newGCells_) {
     GCellState& state = gCell->state;
     if (gCell->isInstance() && gCell->instance()->isLocked()) {
@@ -1988,8 +2023,6 @@ void NesterovBase::updateNextIter(const int iter)
     }
   }
 
-//  for (auto& pair : newGCells_) {
-//    GCellState& state = pair.second;
   for (auto& gCell : newGCells_) {
     GCellState& state = gCell->state;
     std::swap(state.curSLPCoordi, state.nextSLPCoordi);
@@ -2021,7 +2054,7 @@ void NesterovBase::updateNextIter(const int iter)
              1,
              "Gradient: {:g}",
              getSecondNorm(newGCells_, &GCellState::curSLPSumGrads));
-  
+
   debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", sumPhi());
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
@@ -2093,26 +2126,25 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // Fill in nextCoordinates with given stepLength_ and coeff
-//    for (auto& pair : newGCells_) {
-//        GCell* curGCell = pair.first;
-//        GCellState& state = pair.second;
-    for (auto& curGCell : newGCells_) {
-        GCellState& state = curGCell->state;
-        FloatPoint nextCoordi(
-            state.curSLPCoordi.x + stepLength_ * state.curSLPSumGrads.x,
-            state.curSLPCoordi.y + stepLength_ * state.curSLPSumGrads.y);
+  for (auto& curGCell : newGCells_) {
+    GCellState& state = curGCell->state;
+    FloatPoint nextCoordi(
+        state.curSLPCoordi.x + stepLength_ * state.curSLPSumGrads.x,
+        state.curSLPCoordi.y + stepLength_ * state.curSLPSumGrads.y);
 
-        FloatPoint nextSLPCoordi(
-            nextCoordi.x + coeff * (nextCoordi.x - state.curCoordi.x),
-            nextCoordi.y + coeff * (nextCoordi.y - state.curCoordi.y));
+    FloatPoint nextSLPCoordi(
+        nextCoordi.x + coeff * (nextCoordi.x - state.curCoordi.x),
+        nextCoordi.y + coeff * (nextCoordi.y - state.curCoordi.y));
 
-        state.nextCoordi = FloatPoint(getDensityCoordiLayoutInsideX(curGCell.get(), nextCoordi.x),
-                                      getDensityCoordiLayoutInsideY(curGCell.get(), nextCoordi.y));
+    state.nextCoordi = FloatPoint(
+        getDensityCoordiLayoutInsideX(curGCell.get(), nextCoordi.x),
+        getDensityCoordiLayoutInsideY(curGCell.get(), nextCoordi.y));
 
-        state.nextSLPCoordi = FloatPoint(getDensityCoordiLayoutInsideX(curGCell.get(), nextSLPCoordi.x),
-                                         getDensityCoordiLayoutInsideY(curGCell.get(), nextSLPCoordi.y));
-    }
-  
+    state.nextSLPCoordi = FloatPoint(
+        getDensityCoordiLayoutInsideX(curGCell.get(), nextSLPCoordi.x),
+        getDensityCoordiLayoutInsideY(curGCell.get(), nextSLPCoordi.y));
+  }
+
   updateGCellDensityCenterLocation(&GCellState::nextSLPCoordi);
   updateDensityForceBin();
 }
@@ -2137,23 +2169,21 @@ void NesterovBase::snapshot()
   if (isConverged_) {
     return;
   }
-//  // save snapshots for routability-driven
-//    for (auto& pair : newGCells_) {
-//      GCellState& state = pair.second;
-    for (auto& gCell : newGCells_) {
-      GCellState& state = gCell->state;
-      state.snapshotCoordi = state.curCoordi;
-      state.snapshotSLPCoordi = state.curSLPCoordi;
-      state.snapshotSLPSumGrads = state.curSLPSumGrads;
-    }  
-  
+  //  // save snapshots for routability-driven
+  for (auto& gCell : newGCells_) {
+    GCellState& state = gCell->state;
+    state.snapshotCoordi = state.curCoordi;
+    state.snapshotSLPCoordi = state.curSLPCoordi;
+    state.snapshotSLPSumGrads = state.curSLPSumGrads;
+  }
+
   snapshotDensityPenalty_ = densityPenalty_;
-  snapshotStepLength_ = stepLength_;  
+  snapshotStepLength_ = stepLength_;
 }
 
 bool NesterovBase::checkConvergence()
 {
-//  assert(omp_get_thread_num() == 0);
+  //  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return true;
   }
@@ -2168,12 +2198,10 @@ bool NesterovBase::checkConvergence()
                    sumOverflowUnscaled_);
     }
 
-//#pragma omp parallel for num_threads(nbc_->getNumThreads())
-//    for (auto it = newGCells_.begin(); it != newGCells_.end(); ++it) {
-//        GCell* gCell = it->first;
+    //#pragma omp parallel for num_threads(nbc_->getNumThreads())
     for (auto& gCell : newGCells_) {
       if (!gCell->isInstance()) {
-          continue;
+        continue;
       }
       gCell->instance()->lock();
     }
@@ -2203,17 +2231,15 @@ bool NesterovBase::revertDivergence()
 {
   if (isConverged_) {
     return true;
-  } 
-//      for (auto& pair : newGCells_) {
-//        GCellState& state = pair.second;
-    for (auto& gCell : newGCells_) {
-        GCellState& state = gCell->state;
-        state.curCoordi = state.snapshotCoordi;
-        state.curSLPCoordi = state.snapshotSLPCoordi;
-        state.curSLPSumGrads = state.snapshotSLPSumGrads;
-    }  
+  }
+  for (auto& gCell : newGCells_) {
+    GCellState& state = gCell->state;
+    state.curCoordi = state.snapshotCoordi;
+    state.curSLPCoordi = state.snapshotSLPCoordi;
+    state.curSLPSumGrads = state.snapshotSLPSumGrads;
+  }
   densityPenalty_ = snapshotDensityPenalty_;
-  stepLength_ = snapshotStepLength_;  
+  stepLength_ = snapshotStepLength_;
 
   updateGCellDensityCenterLocation(&GCellState::curCoordi);
   updateDensityForceBin();
@@ -2224,7 +2250,6 @@ bool NesterovBase::revertDivergence()
 
   return true;
 }
-
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int fastModulo(const int input, const int ceil)
@@ -2351,43 +2376,50 @@ static float fastExp(float exp)
   return exp;
 }
 
-//static float getDistance(const std::map<GCell*, GCellState>& cells,
-static float getDistance(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-                         FloatPoint GCellState::* aCoord,
-                         FloatPoint GCellState::* bCoord)
+// static float getDistance(const std::map<GCell*, GCellState>& cells,
+static float getDistance(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+    FloatPoint GCellState::*aCoord,
+    FloatPoint GCellState::*bCoord)
 {
-    float sumDistance = 0.0f;
-    size_t count = 0;
+  float sumDistance = 0.0f;
+  size_t count = 0;
 
-    for (const auto& gCell : cells) {
-      auto& state = gCell->state;
-        const FloatPoint& a = state.*aCoord;
-        const FloatPoint& b = state.*bCoord;
+  for (const auto& gCell : cells) {
+    auto& state = gCell->state;
+    const FloatPoint& a = state.*aCoord;
+    const FloatPoint& b = state.*bCoord;
 
-        sumDistance += (a.x - b.x) * (a.x - b.x);
-        sumDistance += (a.y - b.y) * (a.y - b.y);
-        count++;
-    }
+    sumDistance += (a.x - b.x) * (a.x - b.x);
+    sumDistance += (a.y - b.y) * (a.y - b.y);
+    count++;
+  }
 
-    if (count == 0) return 0.0f;
+  if (count == 0)
+    return 0.0f;
 
-    return std::sqrt(sumDistance / (2.0 * count));
+  return std::sqrt(sumDistance / (2.0 * count));
 }
 
-//static float getSecondNorm(const std::map<GCell*, GCellState>& cells, FloatPoint GCellState::* coordPtr) {
-static float getSecondNorm(const   std::set<std::shared_ptr<GCell>, GCellComparator>& cells, FloatPoint GCellState::* coordPtr) {
-    float norm = 0.0;
-    size_t count = 0;
+// static float getSecondNorm(const std::map<GCell*, GCellState>& cells,
+// FloatPoint GCellState::* coordPtr) {
+static float getSecondNorm(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+    FloatPoint GCellState::*coordPtr)
+{
+  float norm = 0.0;
+  size_t count = 0;
 
-    for (const auto& gCell : cells) {
-      GCellState& state = gCell->state;
-        const FloatPoint& coordi = state.*coordPtr;
-        norm += coordi.x * coordi.x + coordi.y * coordi.y;
-        ++count;
-    }
+  for (const auto& gCell : cells) {
+    GCellState& state = gCell->state;
+    const FloatPoint& coordi = state.*coordPtr;
+    norm += coordi.x * coordi.x + coordi.y * coordi.y;
+    ++count;
+  }
 
-    if (count == 0) return 0.0;
-    return std::sqrt(norm / (2.0 * count));
+  if (count == 0)
+    return 0.0;
+  return std::sqrt(norm / (2.0 * count));
 }
 
 }  // namespace gpl

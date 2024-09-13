@@ -596,14 +596,14 @@ std::pair<bool, bool> RouteBase::routability()
     minRcViolatedCnt_ = 0;
 
     // save cell size info
-  for (auto& gCell : nbc_->gCells()) {
-    GCellState& state = gCell->state;
-    if (!gCell->isStdInstance()) {
-      continue;
-    }
+    for (auto& gCell : nbc_->gCells()) {
+      GCellState& state = gCell->state;
+      if (!gCell->isStdInstance()) {
+        continue;
+      }
 
-    state.minRcCellSize = std::make_pair(gCell->dx(), gCell->dy());
-  }
+      state.minRcCellSize = std::make_pair(gCell->dx(), gCell->dy());
+    }
 
   } else {
     minRcViolatedCnt_++;
@@ -814,7 +814,7 @@ void RouteBase::revertGCellSizeToMinRc()
     GCellState& state = gCell->state;
 
     if (!gCell->isStdInstance()) {
-        continue;
+      continue;
     }
 
     gCell->setSize(state.minRcCellSize.first, state.minRcCellSize.second);

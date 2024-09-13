@@ -33,15 +33,12 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
-//#include <map>
 #include <unordered_map>
-#include <list>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
 #include "point.h"
 
 namespace odb {
@@ -55,35 +52,35 @@ namespace utl {
 class Logger;
 }
 
-namespace gpl {  
-struct GCellState {
-    FloatPoint curSLPCoordi;
-    FloatPoint curSLPWireLengthGrads;
-    FloatPoint curSLPDensityGrads;
-    FloatPoint curSLPSumGrads;
+namespace gpl {
+struct GCellState
+{
+  FloatPoint curSLPCoordi;
+  FloatPoint curSLPWireLengthGrads;
+  FloatPoint curSLPDensityGrads;
+  FloatPoint curSLPSumGrads;
 
-    FloatPoint nextSLPCoordi;
-    FloatPoint nextSLPWireLengthGrads;
-    FloatPoint nextSLPDensityGrads;
-    FloatPoint nextSLPSumGrads;
+  FloatPoint nextSLPCoordi;
+  FloatPoint nextSLPWireLengthGrads;
+  FloatPoint nextSLPDensityGrads;
+  FloatPoint nextSLPSumGrads;
 
-    FloatPoint prevSLPCoordi;
-    FloatPoint prevSLPWireLengthGrads;
-    FloatPoint prevSLPDensityGrads;
-    FloatPoint prevSLPSumGrads;
+  FloatPoint prevSLPCoordi;
+  FloatPoint prevSLPWireLengthGrads;
+  FloatPoint prevSLPDensityGrads;
+  FloatPoint prevSLPSumGrads;
 
-    FloatPoint curCoordi;
-    FloatPoint nextCoordi;
+  FloatPoint curCoordi;
+  FloatPoint nextCoordi;
 
-    FloatPoint initCoordi;
-    
-    //Saving state for routability snapshot
-    FloatPoint snapshotCoordi;
-    FloatPoint snapshotSLPCoordi;
-    FloatPoint snapshotSLPSumGrads;
-    std::pair<int, int> minRcCellSize;
+  FloatPoint initCoordi;
+
+  // Saving state for routability snapshot
+  FloatPoint snapshotCoordi;
+  FloatPoint snapshotSLPCoordi;
+  FloatPoint snapshotSLPSumGrads;
+  std::pair<int, int> minRcCellSize;
 };
-
 
 class Instance;
 class Die;
@@ -102,7 +99,6 @@ class GCell
  public:
   // instance cells
   GCell(Instance* inst, uint id);
-//  GCell(const std::vector<Instance*>& insts);
 
   // filler cells
   GCell(int cx, int cy, int dx, int dy, uint id);
@@ -157,7 +153,7 @@ class GCell
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
-  
+
   uint getId() { return id; }
   GCellState state;
 
@@ -314,7 +310,7 @@ class GNet
 
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
-  
+
   uint getId() { return id; }
 
  private:
@@ -509,7 +505,7 @@ class GPin
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
-  
+
   uint getId() { return id; }
 
  private:
@@ -547,20 +543,29 @@ class GPin
   bool hasMinExpSumY_ = false;
 };
 
-  struct GCellComparator {
-    bool operator()(const std::shared_ptr<GCell>& lhs, const std::shared_ptr<GCell>& rhs) const {
-        return lhs->getId() < rhs->getId();
-    }
-  };
-  struct GPinComparator {
-    bool operator()(const std::shared_ptr<GPin>& lhs, const std::shared_ptr<GPin>& rhs) const {
-        return lhs->getId() < rhs->getId();
-    }
-  };    
-  struct GNetComparator {
-  bool operator()(const std::shared_ptr<GNet>& lhs, const std::shared_ptr<GNet>& rhs) const {
-        return lhs->getId() < rhs->getId();
-    }    
+struct GCellComparator
+{
+  bool operator()(const std::shared_ptr<GCell>& lhs,
+                  const std::shared_ptr<GCell>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+struct GPinComparator
+{
+  bool operator()(const std::shared_ptr<GPin>& lhs,
+                  const std::shared_ptr<GPin>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+struct GNetComparator
+{
+  bool operator()(const std::shared_ptr<GNet>& lhs,
+                  const std::shared_ptr<GNet>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
 };
 
 class Bin
@@ -727,8 +732,8 @@ class BinGrid
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
-//  void updateBinsGCellDensityArea(const std::map<GCell*, GCellState>& cells);
-  void updateBinsGCellDensityArea(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells);
+  void updateBinsGCellDensityArea(
+      const std::set<std::shared_ptr<GCell>, GCellComparator>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -839,11 +844,18 @@ class NesterovBaseCommon
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
                      int num_threads);
-
-//  std::map<GCell*, GCellState>& gCells() { return newGCells_; }
-  std::set<std::shared_ptr<GCell>, GCellComparator>& gCells() { return newGCells_; }
-  const std::set<std::shared_ptr<GNet>, GNetComparator >& gNets() const { return gNets_; }
-  const std::set<std::shared_ptr<GPin>, GPinComparator >& gPins() const { return gPins_; }
+  std::set<std::shared_ptr<GCell>, GCellComparator>& gCells()
+  {
+    return newGCells_;
+  }
+  const std::set<std::shared_ptr<GNet>, GNetComparator>& gNets() const
+  {
+    return gNets_;
+  }
+  const std::set<std::shared_ptr<GPin>, GPinComparator>& gPins() const
+  {
+    return gPins_;
+  }
 
   //
   // placerBase To NesterovBase functions
@@ -887,7 +899,7 @@ class NesterovBaseCommon
 
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
-  
+
   void createGCell(odb::dbInst* db_inst);
 
  private:
@@ -895,14 +907,13 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;  
-  std::set<std::shared_ptr<GPin>, GPinComparator > gPins_;
-  std::set<std::shared_ptr<GNet>, GNetComparator > gNets_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
+  std::set<std::shared_ptr<GPin>, GPinComparator> gPins_;
+  std::set<std::shared_ptr<GNet>, GNetComparator> gNets_;
 
   std::unordered_map<Instance*, std::shared_ptr<GCell>> gCellMap_;
-  std::unordered_map<Pin*, std::shared_ptr<GPin> > gPinMap_;
-  std::unordered_map<Net*, std::shared_ptr<GNet> > gNetMap_;
-  
+  std::unordered_map<Pin*, std::shared_ptr<GPin>> gPinMap_;
+  std::unordered_map<Net*, std::shared_ptr<GNet>> gNetMap_;
 
   int num_threads_;
 };
@@ -920,8 +931,10 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-//  const std::map<GCell*, GCellState>& newGCells() const { return newGCells_; }
-  const std::set<std::shared_ptr<GCell>, GCellComparator>& newGCells() const { return newGCells_; }
+  const std::set<std::shared_ptr<GCell>, GCellComparator>& newGCells() const
+  {
+    return newGCells_;
+  }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -985,7 +998,7 @@ class NesterovBase
   void setTargetDensity(float targetDensity);
 
   // RD can shrink the number of fillerCells.
-//  void cutFillerCells(int64_t targetFillerArea);
+  //  void cutFillerCells(int64_t targetFillerArea);
 
   void updateDensityCoordiLayoutInside(GCell* gcell);
 
@@ -1012,10 +1025,11 @@ class NesterovBase
     isMaxPhiCoefChanged_ = maxPhiCoefChanged;
   }
 
-  void updateGradients(FloatPoint GCellState::* sumGradsPtr,
-                                   FloatPoint GCellState::* wireLengthGradsPtr,
-                                   FloatPoint GCellState::* densityGradsPtr,
-                                   float wlCoeffX, float wlCoeffY);
+  void updateGradients(FloatPoint GCellState::*sumGradsPtr,
+                       FloatPoint GCellState::*wireLengthGradsPtr,
+                       FloatPoint GCellState::*densityGradsPtr,
+                       float wlCoeffX,
+                       float wlCoeffY);
 
   void updateInitialPrevSLPCoordi();
 
@@ -1049,7 +1063,7 @@ class NesterovBase
   void printStepLength() { printf("stepLength = %f\n", stepLength_); }
 
   bool isDiverged() const { return isDiverged_; }
-  
+
   void createGCell(odb::dbInst* db_inst);
 
  private:
@@ -1070,8 +1084,6 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  //custom comparator
-//  std::map<GCell*, GCellState> newGCells_;
   std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
   int fillersCount = 0;
 

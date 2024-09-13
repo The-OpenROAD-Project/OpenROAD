@@ -84,8 +84,6 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-//    for (auto& pair : nbc_->gCells()) {
-//      GCell* cell = pair.first;   
     for (auto& cell : nbc_->gCells()) {
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
@@ -193,35 +191,36 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
-//void Graphics::drawCells(const std::map<GCell*, GCellState>& cells, gui::Painter& painter) {
-//    for (const auto& pair : cells) {
-//        GCell* gCell = pair.first;
-void Graphics::drawCells(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells, gui::Painter& painter) {
-    for (const auto& shared_gCell : cells) {
-      GCell* gCell = shared_gCell.get();
-        const int gcx = gCell->dCx();
-        const int gcy = gCell->dCy();
+void Graphics::drawCells(
+    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+    gui::Painter& painter)
+{
+  for (const auto& shared_gCell : cells) {
+    GCell* gCell = shared_gCell.get();
+    const int gcx = gCell->dCx();
+    const int gcy = gCell->dCy();
 
-        int xl = gcx - gCell->dx() / 2;
-        int yl = gcy - gCell->dy() / 2;
-        int xh = gcx + gCell->dx() / 2;
-        int yh = gcy + gCell->dy() / 2;
+    int xl = gcx - gCell->dx() / 2;
+    int yl = gcy - gCell->dy() / 2;
+    int xh = gcx + gCell->dx() / 2;
+    int yh = gcy + gCell->dy() / 2;
 
-        gui::Painter::Color color;
-        if (gCell->isInstance()) {
-            color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan : gui::Painter::dark_green;
-        } else if (gCell->isFiller()) {
-            color = gui::Painter::dark_magenta;
-        }
-
-        if (gCell == selected_) {
-            color = gui::Painter::yellow;
-        }
-
-        color.a = 180;
-        painter.setBrush(color);
-        painter.drawRect({xl, yl, xh, yh});
+    gui::Painter::Color color;
+    if (gCell->isInstance()) {
+      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+                                            : gui::Painter::dark_green;
+    } else if (gCell->isFiller()) {
+      color = gui::Painter::dark_magenta;
     }
+
+    if (gCell == selected_) {
+      color = gui::Painter::yellow;
+    }
+
+    color.a = 180;
+    painter.setBrush(color);
+    painter.drawRect({xl, yl, xh, yh});
+  }
 }
 
 void Graphics::drawNesterov(gui::Painter& painter)
@@ -252,7 +251,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   painter.setPen(gui::Painter::white);
   drawCells(nbc_->gCells(), painter);
   for (const auto& nb : nbVec_) {
-    drawCells(nb->newGCells(),painter);
+    drawCells(nb->newGCells(), painter);
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
@@ -375,8 +374,6 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     return gui::SelectionSet();
   }
 
-//  for (auto& pair : nbc_->gCells()) {
-//    GCell* cell = pair.first;
   for (auto& cell : nbc_->gCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
