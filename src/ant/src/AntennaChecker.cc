@@ -40,8 +40,6 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 #include "Polygon.hh"
@@ -236,7 +234,7 @@ void AntennaChecker::saveGates(odb::dbNet* db_net,
                                LayerToGraphNodes& node_by_layer_map,
                                const int node_count)
 {
-  std::unordered_map<PinType, std::vector<int>, PinTypeHash> pin_nbrs;
+  std::map<PinType, std::vector<int>, PinTypeCmp> pin_nbrs;
   std::vector<int> ids;
   // iterate all instance pins
   for (odb::dbITerm* iterm : db_net->getITerms()) {
@@ -806,8 +804,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net).report += "\n";
   }
 
-  std::unordered_map<odb::dbTechLayer*, std::unordered_set<odb::dbITerm*>>
-      pin_added;
+  std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
     for (const auto& [gate, violation_layers] : gates_with_violations) {
@@ -914,7 +911,7 @@ void AntennaChecker::buildLayerMaps(odb::dbNet* db_net,
 {
   odb::dbWire* wires = db_net->getWire();
 
-  std::unordered_map<odb::dbTechLayer*, PolygonSet> set_by_layer;
+  std::map<odb::dbTechLayer*, PolygonSet> set_by_layer;
 
   wiresToPolygonSetMap(wires, set_by_layer);
   avoidPinIntersection(db_net, set_by_layer);
