@@ -2595,12 +2595,12 @@ dbNetworkObserver::~dbNetworkObserver()
 /*
   Hierarchical support api
  */
-Instance* dbNetwork::getOwningInstanceParent(Pin* pin)
+Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
 {
   Instance* inst = instance(drvr_pin);
   dbInst* db_inst = nullptr;
   odb::dbModInst* mod_inst = nullptr;
-  db_network_->staToDb(inst, db_inst, mod_inst);
+  staToDb(inst, db_inst, mod_inst);
   odb::dbModule* module = nullptr;
   if (db_inst) {
     module = db_inst->getModule();
@@ -2608,8 +2608,8 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* pin)
     module = mod_inst->getParent();
   }
   Instance* parent = (module == (block_->getTopModule()))
-                         ? db_network_->topInstance()
-                         : db_network_->dbToSta(module->getModInst());
+                         ? topInstance()
+                         : dbToSta(module->getModInst());
   return parent;
 }
 
