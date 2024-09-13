@@ -581,7 +581,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       odb::dbBTerm* bterm = nullptr;
       db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
       if (iterm) {
-        iterm->disconnectFromModNet();
+        // only disconnect to the modnet.
+        iterm->disconnect(false, true);
       }
       if (moditerm) {
         moditerm->disconnect();
@@ -640,25 +641,34 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
                         : network_->net(load_pin);
+
+    odb::dbModNet* original_load_mod_net;
+    odb::dbNet* original_load_flat_net;
+    db_network_->net(load_pin, original_load_flat_net, original_load_mod_net);
+
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
       Port* load_port = db_network_->port(load_pin);
+      // record the original connections
+      odb::dbModNet* original_mod_net;
+      odb::dbNet* original_flat_net;
+      db_network_->net(load_pin, original_flat_net, original_mod_net);
+      (void) original_flat_net;
+      // Remove all the connections on load_pin
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
+      // Connect it to the correct output driver net
       sta_->connectPin(load, load_port, out_net);
-      // hook to modnet to preserve original hierarchical connection, if any
-      if (mod_drvr_net) {
-        odb::dbITerm* iterm;
-        odb::dbBTerm* bterm;
-        odb::dbModITerm* moditerm;
-        odb::dbModBTerm* modbterm;
-        db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
-        if (iterm) {
-          iterm->connect(mod_drvr_net);
-        }
+      // restore the original load  modnet.
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
+      db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm && original_mod_net) {
+        iterm->connect(original_mod_net);
       }
     }
   }
-
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();

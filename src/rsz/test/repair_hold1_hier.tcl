@@ -17,3 +17,6 @@ report_slack r3/D
 rsz::repair_hold_pin [get_pins r3/D] 0.0 0.0 0 1.0 100
 
 report_slack r3/D
+set verilog_file [make_result_file repair_hold1_hier_out.v]
+write_verilog $verilog_file
+diff_files $verilog_file repair_hold1_hier_out.vok
