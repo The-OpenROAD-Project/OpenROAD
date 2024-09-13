@@ -86,7 +86,7 @@ class AbcTest : public ::testing::Test
     power_unit_ = units->powerUnit();
   }
 
-  void LoadVerilog(const std::string& file_name)
+  void LoadVerilog(const std::string& file_name, const std::string& top = "top")
   {
     // Assumes module name is "top" and clock name is "clk"
     sta::dbNetwork* network = sta_->getDbNetwork();
@@ -94,7 +94,7 @@ class AbcTest : public ::testing::Test
     verilog_network.init(network);
     ord::dbReadVerilog(file_name.c_str(), &verilog_network);
     ord::dbLinkDesign(
-        "top", &verilog_network, db_.get(), &logger_, /*hierarchy = */ false);
+        top.c_str(), &verilog_network, db_.get(), &logger_, /*hierarchy = */ false);
 
     sta_->postReadDb(db_.get());
 
@@ -398,5 +398,29 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   // Both outputs are just the and gate.
   EXPECT_EQ(output_vector.get()[0], 0);  // Expect that !(1 & 1) == 0
   EXPECT_EQ(output_vector.get()[1], 0);  // Expect that !(1 & 1) == 0
+}
+
+TEST_F(AbcTest, BuildComplexLogicCone)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_32989_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get());
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  EXPECT_NO_THROW(cut.BuildMappedAbcNetwork(abc_library, network, &logger_));
 }
 }  // namespace rmp
