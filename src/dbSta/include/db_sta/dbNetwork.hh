@@ -179,9 +179,10 @@ class dbNetwork : public ConcreteNetwork
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
-  // hierarchical wiring support.
-  dbModNet* getDbModNetFromDbNet(dbNet* db_net);
+  // hierarchical support functions
   dbModule* getNetDriverParentModule(Net* net);
+  Instance* getOwningInstanceParent(Pin* pin);
+
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
