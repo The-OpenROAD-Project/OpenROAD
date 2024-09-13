@@ -82,6 +82,14 @@ struct RoutePtPins
 using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
 using SegmentByViolation = std::unordered_map<int, std::vector<GSegment*>>;
 
+struct ViolationInfo
+{
+  int pin_num_near_to_start_ = 0;
+  int pin_num_near_to_end_ = 0;
+  double pin_area_near_to_start_ = 0;
+  double pin_area_near_to_end_ = 0;
+};
+
 class RepairAntennas
 {
  public:
@@ -101,11 +109,30 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  int divideSegment(std::vector<GSegment*>& segments, GRoute& route, odb::dbTechLayer* violation_layer, const int& tile_size, const double& ratio, const int& init_c, const int& final_c, const double& init_area, const double& final_area);
-  bool verifyCapacityForJumper(bool is_horizontal, const int& tile_size, const int& init_x, const int& init_y, const int& final_x, const int& final_y, const int& layer_level);
-  SegmentByViolation getSegmentsWithViolation(odb::dbNet* db_net, GRoute& route, int& max_layer, std::map<int, int>& layer_with_violation);
-  void getPinNumberNearEndPoint(std::vector<GSegment*>& segments, const std::vector<odb::dbITerm*>& gates, int& init_c, int& final_c, double& init_area, double& final_area);
-  void jumperInsertion(NetRouteMap& routing, const int tile_size, const int& max_routing_layer);
+  int divideSegment(std::vector<GSegment*>& segments,
+                    GRoute& route,
+                    odb::dbTechLayer* violation_layer,
+                    const int& tile_size,
+                    const double& ratio,
+                    const ViolationInfo& info);
+  bool verifyCapacityForJumper(bool is_horizontal,
+                               const int& tile_size,
+                               const int& init_x,
+                               const int& init_y,
+                               const int& final_x,
+                               const int& final_y,
+                               const int& layer_level);
+  SegmentByViolation getSegmentsWithViolation(
+      odb::dbNet* db_net,
+      GRoute& route,
+      int& max_layer,
+      std::map<int, int>& layer_with_violation);
+  void getPinNumberNearEndPoint(std::vector<GSegment*>& segments,
+                                const std::vector<odb::dbITerm*>& gates,
+                                ViolationInfo& info);
+  void jumperInsertion(NetRouteMap& routing,
+                       const int tile_size,
+                       const int& max_routing_layer);
   int illegalDiodePlacementCount() const
   {
     return illegal_diode_placement_count_;
