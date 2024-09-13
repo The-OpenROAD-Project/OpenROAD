@@ -43,6 +43,7 @@
 
 #include "fft.h"
 #include "nesterovPlace.h"
+#include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"
 
@@ -281,7 +282,7 @@ void GNet::setCustomWeight(float customWeight)
   customWeight_ = customWeight;
 }
 
-void GNet::addGPin(GPin* gPin)
+void GNet::addGPin(std::shared_ptr<GPin> gPin)
 {
   gPins_.insert(gPin);
 }

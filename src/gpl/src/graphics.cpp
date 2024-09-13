@@ -269,7 +269,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
       if (!net) {
         continue;
       }
-      for (GPin* other_pin : net->gPins()) {
+      for (auto& other_pin : net->gPins()) {
         GCell* neighbor = other_pin->gCell();
         if (neighbor == selected_) {
           continue;

@@ -35,6 +35,7 @@
 
 #include <list>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -90,9 +91,95 @@ class PlacerBase;
 class Instance;
 class Pin;
 class Net;
-
-class GPin;
 class FFT;
+class GCell;
+class GNet;
+
+class GPin
+{
+ public:
+  GPin(Pin* pin, uint);
+  GPin(const std::vector<Pin*>& pins);
+
+  Pin* pin() const;
+  const std::vector<Pin*>& pins() const { return pins_; }
+
+  GCell* gCell() const { return gCell_; }
+  GNet* gNet() const { return gNet_; }
+
+  void setGCell(GCell* gCell);
+  void setGNet(GNet* gNet);
+
+  int cx() const { return cx_; }
+  int cy() const { return cy_; }
+
+  // clear WA(Weighted Average) variables.
+  void clearWaVars();
+
+  void setMaxExpSumX(float maxExpSumX);
+  void setMaxExpSumY(float maxExpSumY);
+  void setMinExpSumX(float minExpSumX);
+  void setMinExpSumY(float minExpSumY);
+
+  float maxExpSumX() const { return maxExpSumX_; }
+  float maxExpSumY() const { return maxExpSumY_; }
+  float minExpSumX() const { return minExpSumX_; }
+  float minExpSumY() const { return minExpSumY_; }
+
+  bool hasMaxExpSumX() const { return hasMaxExpSumX_; }
+  bool hasMaxExpSumY() const { return hasMaxExpSumY_; }
+  bool hasMinExpSumX() const { return hasMinExpSumX_; }
+  bool hasMinExpSumY() const { return hasMinExpSumY_; }
+
+  void setCenterLocation(int cx, int cy);
+  void updateLocation(const GCell* gCell);
+  void updateDensityLocation(const GCell* gCell);
+
+  uint getId() { return id; }
+
+ private:
+  uint id = 0;
+  GCell* gCell_ = nullptr;
+  GNet* gNet_ = nullptr;
+  std::vector<Pin*> pins_;
+
+  int offsetCx_ = 0;
+  int offsetCy_ = 0;
+  int cx_ = 0;
+  int cy_ = 0;
+
+  // weighted average WL vals stor for better indexing
+  // Please check the equation (4) in the ePlace-MS paper.
+  //
+  // maxExpSum_: holds exp(x_i/gamma)
+  // minExpSum_: holds exp(-x_i/gamma)
+  // the x_i is equal to cx_ variable.
+  //
+  float maxExpSumX_ = 0;
+  float maxExpSumY_ = 0;
+
+  float minExpSumX_ = 0;
+  float minExpSumY_ = 0;
+
+  // flag variables
+  //
+  // check whether
+  // this pin is considered in a WA models.
+  bool hasMaxExpSumX_ = false;
+  bool hasMaxExpSumY_ = false;
+
+  bool hasMinExpSumX_ = false;
+  bool hasMinExpSumY_ = false;
+};
+
+struct GPinComparator
+{
+  bool operator()(const std::shared_ptr<GPin>& lhs,
+                  const std::shared_ptr<GPin>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
 
 class GCell
 {
@@ -280,7 +367,7 @@ class GNet
   float timingWeight() const { return timingWeight_; }
   float customWeight() const { return customWeight_; }
 
-  void addGPin(GPin* gPin);
+  void addGPin(std::shared_ptr<GPin> gPin);
   void updateBox();
   int64_t hpwl() const;
 
@@ -469,83 +556,6 @@ inline float GNet::waYExpMaxSumY() const
   return waYExpMaxSumY_;
 }
 
-class GPin
-{
- public:
-  GPin(Pin* pin, uint);
-  GPin(const std::vector<Pin*>& pins);
-
-  Pin* pin() const;
-  const std::vector<Pin*>& pins() const { return pins_; }
-
-  GCell* gCell() const { return gCell_; }
-  GNet* gNet() const { return gNet_; }
-
-  void setGCell(GCell* gCell);
-  void setGNet(GNet* gNet);
-
-  int cx() const { return cx_; }
-  int cy() const { return cy_; }
-
-  // clear WA(Weighted Average) variables.
-  void clearWaVars();
-
-  void setMaxExpSumX(float maxExpSumX);
-  void setMaxExpSumY(float maxExpSumY);
-  void setMinExpSumX(float minExpSumX);
-  void setMinExpSumY(float minExpSumY);
-
-  float maxExpSumX() const { return maxExpSumX_; }
-  float maxExpSumY() const { return maxExpSumY_; }
-  float minExpSumX() const { return minExpSumX_; }
-  float minExpSumY() const { return minExpSumY_; }
-
-  bool hasMaxExpSumX() const { return hasMaxExpSumX_; }
-  bool hasMaxExpSumY() const { return hasMaxExpSumY_; }
-  bool hasMinExpSumX() const { return hasMinExpSumX_; }
-  bool hasMinExpSumY() const { return hasMinExpSumY_; }
-
-  void setCenterLocation(int cx, int cy);
-  void updateLocation(const GCell* gCell);
-  void updateDensityLocation(const GCell* gCell);
-
-  uint getId() { return id; }
-
- private:
-  uint id = 0;
-  GCell* gCell_ = nullptr;
-  GNet* gNet_ = nullptr;
-  std::vector<Pin*> pins_;
-
-  int offsetCx_ = 0;
-  int offsetCy_ = 0;
-  int cx_ = 0;
-  int cy_ = 0;
-
-  // weighted average WL vals stor for better indexing
-  // Please check the equation (4) in the ePlace-MS paper.
-  //
-  // maxExpSum_: holds exp(x_i/gamma)
-  // minExpSum_: holds exp(-x_i/gamma)
-  // the x_i is equal to cx_ variable.
-  //
-  float maxExpSumX_ = 0;
-  float maxExpSumY_ = 0;
-
-  float minExpSumX_ = 0;
-  float minExpSumY_ = 0;
-
-  // flag variables
-  //
-  // check whether
-  // this pin is considered in a WA models.
-  bool hasMaxExpSumX_ = false;
-  bool hasMaxExpSumY_ = false;
-
-  bool hasMinExpSumX_ = false;
-  bool hasMinExpSumY_ = false;
-};
-
 struct GCellComparator
 {
   bool operator()(const std::shared_ptr<GCell>& lhs,
@@ -554,14 +564,7 @@ struct GCellComparator
     return lhs->getId() < rhs->getId();
   }
 };
-struct GPinComparator
-{
-  bool operator()(const std::shared_ptr<GPin>& lhs,
-                  const std::shared_ptr<GPin>& rhs) const
-  {
-    return lhs->getId() < rhs->getId();
-  }
-};
+
 struct GNetComparator
 {
   bool operator()(const std::shared_ptr<GNet>& lhs,
