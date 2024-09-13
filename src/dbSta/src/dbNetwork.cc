@@ -2597,20 +2597,23 @@ dbNetworkObserver::~dbNetworkObserver()
  */
 Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
 {
-  Instance* inst = instance(drvr_pin);
-  dbInst* db_inst = nullptr;
-  odb::dbModInst* mod_inst = nullptr;
-  staToDb(inst, db_inst, mod_inst);
-  odb::dbModule* module = nullptr;
-  if (db_inst) {
-    module = db_inst->getModule();
-  } else if (mod_inst) {
-    module = mod_inst->getParent();
+  if (hasHierarchy()) {
+    Instance* inst = instance(drvr_pin);
+    dbInst* db_inst = nullptr;
+    odb::dbModInst* mod_inst = nullptr;
+    staToDb(inst, db_inst, mod_inst);
+    odb::dbModule* module = nullptr;
+    if (db_inst) {
+      module = db_inst->getModule();
+    } else if (mod_inst) {
+      module = mod_inst->getParent();
+    }
+    Instance* parent = (module == (block_->getTopModule()))
+                           ? topInstance()
+                           : dbToSta(module->getModInst());
+    return parent;
   }
-  Instance* parent = (module == (block_->getTopModule()))
-                         ? topInstance()
-                         : dbToSta(module->getModInst());
-  return parent;
+  return topInstance();
 }
 
 dbModule* dbNetwork::getNetDriverParentModule(Net* net)
