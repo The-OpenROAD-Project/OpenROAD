@@ -938,7 +938,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   //#pragma omp parallel for num_threads(num_threads_)
   for (auto& gNet : gNets_) {
     for (auto& pin : gNet->net()->pins()) {
-      gNet->addGPin(pbToNb(pin).get());
+      gNet->addGPin(pbToNb(pin));
     }
   }
 }
@@ -1593,7 +1593,7 @@ void NesterovBase::updateAreas()
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
   //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
-  //stdInstsArea_, macroInstsArea_)
+  // stdInstsArea_, macroInstsArea_)
   for (auto& gCell : newGCells_) {
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
@@ -2376,7 +2376,6 @@ static float fastExp(float exp)
   return exp;
 }
 
-// static float getDistance(const std::map<GCell*, GCellState>& cells,
 static float getDistance(
     const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
     FloatPoint GCellState::*aCoord,
@@ -2401,8 +2400,6 @@ static float getDistance(
   return std::sqrt(sumDistance / (2.0 * count));
 }
 
-// static float getSecondNorm(const std::map<GCell*, GCellState>& cells,
-// FloatPoint GCellState::* coordPtr) {
 static float getSecondNorm(
     const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
     FloatPoint GCellState::*coordPtr)

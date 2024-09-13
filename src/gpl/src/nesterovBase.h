@@ -263,7 +263,10 @@ class GNet
 
   Net* net() const;
   const std::vector<Net*>& nets() const { return nets_; }
-  const std::set<GPin*>& gPins() const { return gPins_; }
+  const std::set<std::shared_ptr<GPin>, GPinComparator>& gPins() const
+  {
+    return gPins_;
+  }
 
   int lx() const;
   int ly() const;
@@ -315,7 +318,7 @@ class GNet
 
  private:
   uint id = 0;
-  std::set<GPin*> gPins_;
+  std::set<std::shared_ptr<GPin>, GPinComparator> gPins_;
   std::vector<Net*> nets_;
   int lx_ = 0;
   int ly_ = 0;
