@@ -82,30 +82,33 @@ class FlexPA
   frDesign* design_;
   Logger* logger_;
   dst::Distributed* dist_;
+  const std::array<frDirEnum, 4> cardinal_dirs_
+      = {frDirEnum::E, frDirEnum::W, frDirEnum::S, frDirEnum::N};
 
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
 
-  int stdCellPinGenApCnt_ = 0;
-  int stdCellPinValidPlanarApCnt_ = 0;
-  int stdCellPinValidViaApCnt_ = 0;
-  int stdCellPinNoApCnt_ = 0;
-  int instTermValidViaApCnt_ = 0;
-  int macroCellPinGenApCnt_ = 0;
-  int macroCellPinValidPlanarApCnt_ = 0;
-  int macroCellPinValidViaApCnt_ = 0;
-  int macroCellPinNoApCnt_ = 0;
+  // TODO: Check if all this variables are relevant, they are used like, thrice
+  int std_cell_pin_gen_ap_cnt_ = 0;
+  int std_cell_pin_valid_planar_ap_cnt_ = 0;
+  int std_cell_pin_valid_via_ap_cnt_ = 0;
+  int std_cell_pin_no_ap_cnt_ = 0;
+  int inst_term_valid_via_ap_cnt_ = 0;
+  int macro_cell_pin_gen_ap_cnt_ = 0;
+  int macro_cell_pin_valid_planar_ap_cnt_ = 0;
+  int macro_cell_pin_valid_via_ap_cnt_ = 0;
+  int macro_cell_pin_no_ap_cnt_ = 0;
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
-      uniqueInstPatterns_;
+      unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
   using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
   std::map<UniqueMTerm, bool> skip_unique_inst_term_;
 
   // helper structures
-  std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
+  std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
   std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
-      layerNum2ViaDefs_;
+      layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
@@ -122,7 +125,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
+  ViaRawPriorityTuple getViaRawPriority(frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
@@ -134,236 +137,413 @@ class FlexPA
   void initSkipInstTerm();
   // prep
   void prep();
-  void prepPoint();
+
+  /**
+   * @brief initializes all access points of all unique instances
+   */
+  void initAllAccessPoints();
   void getViasFromMetalWidthMap(
       const Point& pt,
-      frLayerNum layerNum,
+      frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<std::pair<int, frViaDef*>>& viaDefs);
+      std::vector<std::pair<int, frViaDef*>>& via_defs);
+
+  /**
+   * @brief fully initializes a pin access points
+   *
+   * @param pin the pin
+   * @param inst_term terminal related to the pin
+   *
+   * @return the number of access points generated
+   */
   template <typename T>
-  int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
+  int initPinAccess(T* pin, frInstTerm* inst_term = nullptr);
+
+  /**
+   * @brief Contructs a vector with all pin figures in each layer
+   *
+   * @param pin pin object which will have figures merged by layer
+   * @param inst_term instance terminal from which to get xfrom
+   * @param is_shrink if polygons will be shrinked
+   *
+   * @return A vector of pin shapes in each layer
+   */
   template <typename T>
-  void prepPoint_pin_mergePinShapes(
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      T* pin,
-      frInstTerm* instTerm,
-      bool isShrink = false);
+  std::vector<gtl::polygon_90_set_data<frCoord>>
+  mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
+
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
+  /**
+   * @brief Generates all necessary access points from all pin_shapes (pin)
+   *
+   * @param aps map of access points that will be filled
+   * @param apset set of access points data (auxilary)
+   * @param pin pin object
+   * @param inst_term instance terminal, owner of the access points
+   * @param pin_shapes pin shapes on that layer
+   * @param lower_type TODO: not sure
+   * @param upper_type TODO: not sure
+   */
   template <typename T>
-  void prepPoint_pin_genPoints(
+  void getAPsFromPinShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       T* pin,
-      frInstTerm* instTerm,
-      const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
-      frAccessPointEnum lowerType,
-      frAccessPointEnum upperType);
-  void prepPoint_pin_genPoints_layerShapes(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      frInstTerm* instTerm,
-      const gtl::polygon_90_set_data<frCoord>& layerShapes,
-      frLayerNum layerNum,
-      bool allowVia,
-      frAccessPointEnum lowerType,
-      frAccessPointEnum upperType);
+      frInstTerm* inst_term,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
   bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
-                                   frLayerNum layerNum);
-  void prepPoint_pin_genPoints_rect(
+                                   frLayerNum layer_num);
+  /**
+   * @brief Generates all necessary access points from all layer_shapes (pin)
+   *
+   * @param aps map of access points that will be filled
+   * @param apset set of access points data (auxilary)
+   * @param inst_term instance terminal, owner of the access points
+   * @param layer_shapes pin shapes on that layer
+   * @param layer_num layer in which the rectangle exists
+   * @param allow_via if via access is allowed
+   * @param lower_type TODO: not sure
+   * @param upper_type TODO: not sure
+   */
+  void genAPsFromLayerShapes(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      frInstTerm* inst_term,
+      const gtl::polygon_90_set_data<frCoord>& layer_shapes,
+      frLayerNum layer_num,
+      bool allow_via,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
+  /**
+   * @brief Generates all necessary access points from an rectangle shape (pin
+   * fig)
+   *
+   * @param aps map of access points that will be filled
+   * @param apset set of access points data (auxilary)
+   * @param layer_num layer in which the rectangle exists
+   * @param allow_planar if planar access is allowed
+   * @param allow_via if via access is allowed
+   * @param lower_type TODO: not sure
+   * @param upper_type TODO: not sure
+   * @param is_macro_cell_pin TODO: not sure
+   */
+  void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                      std::set<std::pair<Point, frLayerNum>>& apset,
+                      const gtl::rectangle_data<frCoord>& rect,
+                      frLayerNum layer_num,
+                      bool allow_planar,
+                      bool allow_via,
+                      frAccessPointEnum lower_type,
+                      frAccessPointEnum upper_type,
+                      bool is_macro_cell_pin);
+  /**
+   * @brief Generates an OnGrid access point (on or half track)
+   *
+   * @param coords map of access points
+   * @param track_coords all possible track coords with cost
+   * @param low lower range of coordinates considered
+   * @param high higher range of coordinates considered
+   * @param use_nearby_grid if the associated cost should be NearbGrid or the
+   * track cost
+   */
+  void genAPOnTrack(std::map<frCoord, frAccessPointEnum>& coords,
+                    const std::map<frCoord, frAccessPointEnum>& track_coords,
+                    frCoord low,
+                    frCoord high,
+                    bool use_nearby_grid = false);
+
+  /**
+   * @brief If there are less than 3 OnGrid coords between low and high
+   * will generate an Centered access point to compensate
+   *
+   * @param coords map of candidate access points
+   * @param layer_num number of the layer
+   * @param low lower range of coordinates considered
+   * @param higher higher range of coordinates considered
+   */
+  void genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
+                     frLayerNum layer_num,
+                     frCoord low,
+                     frCoord high);
+  /**
+   * @brief Generates an Enclosed Boundary access point
+   *
+   * @param coords map o access points
+   * @param rect pin rectangle to which via is bounded
+   * @param layer_num number of the layer
+   */
+  void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
+                             const gtl::rectangle_data<frCoord>& rect,
+                             frLayerNum layer_num,
+                             bool is_curr_layer_horz);
+  void initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
-      frLayerNum layerNum,
-      bool allowPlanar,
-      bool allowVia,
-      frAccessPointEnum lowerType,
-      frAccessPointEnum upperType,
-      bool isMacroCellPin);
-  void prepPoint_pin_genPoints_rect_genGrid(
-      std::map<frCoord, frAccessPointEnum>& coords,
-      const std::map<frCoord, frAccessPointEnum>& trackCoords,
-      frCoord low,
-      frCoord high,
-      bool useNearbyGrid = false);
-  void prepPoint_pin_genPoints_rect_genCenter(
-      std::map<frCoord, frAccessPointEnum>& coords,
-      frLayerNum layerNum,
-      frCoord low,
-      frCoord high);
-  void prepPoint_pin_genPoints_rect_genEnc(
-      std::map<frCoord, frAccessPointEnum>& coords,
-      const gtl::rectangle_data<frCoord>& rect,
-      frLayerNum layerNum,
-      bool isCurrLayerHorz);
-  void prepPoint_pin_genPoints_rect_ap(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      const gtl::rectangle_data<frCoord>& rect,
-      frLayerNum layerNum,
-      bool allowPlanar,
-      bool allowVia,
-      bool isLayer1Horz,
-      const std::map<frCoord, frAccessPointEnum>& xCoords,
-      const std::map<frCoord, frAccessPointEnum>& yCoords,
-      frAccessPointEnum lowerType,
-      frAccessPointEnum upperType);
-  void prepPoint_pin_genPoints_rect_ap_helper(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      const gtl::rectangle_data<frCoord>& maxrect,
-      frCoord x,
-      frCoord y,
-      frLayerNum layerNum,
-      bool allowPlanar,
-      bool allowVia,
-      frAccessPointEnum lowCost,
-      frAccessPointEnum highCost);
+      frLayerNum layer_num,
+      bool allow_planar,
+      bool allow_via,
+      bool is_layer1_horz,
+      const std::map<frCoord, frAccessPointEnum>& x_coords,
+      const std::map<frCoord, frAccessPointEnum>& y_coords,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
+  /**
+   * @brief Generates an access point and adds it to aps and apset
+   *
+   * @param aps Vector containing the access points
+   * @param apset Set containing access points data (auxilary)
+   * @param maxrect Rect limiting where the point can be
+   * @param x access point x coord
+   * @param y access point y coord
+   * @param layer_num access point layer
+   * @param allow_planar if the access point allows planar access
+   * @param allow_via if the access point allows via access
+   * @param low_cost TODO: not sure
+   * @param high_cost TODO: not sure
+   */
+  void createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                         std::set<std::pair<Point, frLayerNum>>& apset,
+                         const gtl::rectangle_data<frCoord>& maxrect,
+                         frCoord x,
+                         frCoord y,
+                         frLayerNum layer_num,
+                         bool allow_planar,
+                         bool allow_via,
+                         frAccessPointEnum low_cost,
+                         frAccessPointEnum high_cost);
+
+  /**
+   * @brief Set the accesses of the access points of a given pin.
+   *
+   * @param aps vector of access points of the
+   * @param pin_shapes vector of pin shapes of the pin
+   * @param pin the pin
+   * @param inst_term terminal
+   * @param is_std_cell_pin if the pin if from a std_cell
+   */
   template <typename T>
-  void prepPoint_pin_checkPoints(
+  void setAPsAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
-      frInstTerm* instTerm,
-      const bool& isStdCellPin);
+      frInstTerm* inst_term,
+      const bool& is_std_cell_pin);
+
+  /**
+   * @brief Adds accesses to the access point
+   *
+   * @param ap access point
+   * @param polyset set of polygons related to ap (auxilary)
+   * @param polys polygon shapes relate to the ap
+   * @param pin access pin
+   * @param inst_term terminal
+   * @param deep_search TODO: not sure
+   */
   template <typename T>
-  void prepPoint_pin_checkPoint(
+  void addAccess(frAccessPoint* ap,
+                 const gtl::polygon_90_set_data<frCoord>& polyset,
+                 const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+                 T* pin,
+                 frInstTerm* inst_term,
+                 bool deep_search = false);
+
+  /**
+   * @brief Try to add a planar access to in the direction.
+   *
+   * @param ap access point
+   * @param layer_polys pin polygons on the specified layer
+   * @param dir candidate dir to the access
+   * @param pin access pin
+   * @param inst_term terminal
+   */
+  template <typename T>
+  void addPlanarAccess(
       frAccessPoint* ap,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
+      frDirEnum dir,
+      T* pin,
+      frInstTerm* inst_term);
+
+  /**
+   * @brief Determines coordinates of an End Point given a Begin Point.
+   *
+   * @param end_point the End Point to be filled
+   * @param layer_polys a vector with all the pin polygons on the point layer
+   * @param begin_point the Begin Point
+   * @param layer_num the number of the layer where the pin is
+   * @param dir the direction the End Point is from the Begin Point
+   * @param is_block if the figures in this pin is a single block
+   *
+   * @return if any polygon on the layer contains the End Point
+   */
+  bool endPointIsOutside(
+      Point& end_point,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
+      const Point& begin_point,
+      frLayerNum layer_num,
+      frDirEnum dir,
+      bool is_block);
+  template <typename T>
+  void addViaAccess(
+      frAccessPoint* ap,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      T* pin,
-      frInstTerm* instTerm,
-      bool deepSearch = false);
-  template <typename T>
-  void prepPoint_pin_checkPoint_planar(
-      frAccessPoint* ap,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       frDirEnum dir,
       T* pin,
-      frInstTerm* instTerm);
-  bool prepPoint_pin_checkPoint_planar_ep(
-      Point& ep,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
-      const Point& bp,
-      frLayerNum layerNum,
-      frDirEnum dir,
-      bool isBlock);
+      frInstTerm* inst_term,
+      bool deep_search = false);
+
+  /**
+   * @brief Checks if a Via Access Point is legal
+   *
+   * @param ap Access Point
+   * @param via Via checked
+   * @param pin Pin checked
+   * @param inst_term Instance Terminal
+   * @param layer_polys The Pin polygons in the pertinent layer
+   *
+   * @return If the Via Access Point is legal
+   */
   template <typename T>
-  void prepPoint_pin_checkPoint_via(
-      frAccessPoint* ap,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      frDirEnum dir,
-      T* pin,
-      frInstTerm* instTerm,
-      bool deepSearch = false);
-  template <typename T>
-  bool prepPoint_pin_checkPoint_via_helper(
+  bool checkViaAccess(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
-      frInstTerm* instTerm,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys);
+      frInstTerm* inst_term,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
+
+  /**
+   * @brief Checks if a Via Access Point from the given dir is Legal
+   *
+   * @param ap Access Point
+   * @param via Via checked
+   * @param pin Pin checked
+   * @param inst_term Instance Terminal
+   * @param layer_polys The Pin polygons in the pertinent layer
+   * @param dir The dir that the via will be accessed
+   *
+   * @return If an access from that direction will cause any DRV
+   */
   template <typename T>
-  bool prepPoint_pin_checkPoint_viaDir_helper(
+  bool checkDirectionalViaAccess(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
-      frInstTerm* instTerm,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+      frInstTerm* inst_term,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
   template <typename T>
-  void prepPoint_pin_updateStat(
-      const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,
+  void updatePinStats(
+      const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* inst_term);
+
+  /**
+   * @brief initializes the accesses of a given pin cost bounded
+   *
+   * @param aps access points of the pin
+   * @param apset data of the access points (auxilary)
+   * @param pin_shapes shapes of the pin
+   * @param pin the pin
+   * @param inst_term terminal
+   * @param lower_type lower bound cost
+   * @param upper_type upper bound cost
+   *
+   * @return if the initialization was sucessful
+   */
   template <typename T>
-  bool prepPoint_pin_helper(
+  bool initPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
+      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
-      frInstTerm* instTerm,
-      frAccessPointEnum lowerType,
-      frAccessPointEnum upperType);
+      frInstTerm* inst_term,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
 
   void prepPattern();
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
-  int prepPattern_inst(frInst* inst, int currUniqueInstIdx, double xWeight);
+  int prepPatternInst(frInst* inst, int curr_unique_inst_idx, double x_weight);
   int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                  int currUniqueInstIdx);
-  void genPatterns_init(
+                  int curr_unique_inst_idx);
+  void genPatternsInit(std::vector<FlexDPNode>& nodes,
+                       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
+                       std::set<std::vector<int>>& inst_access_patterns,
+                       std::set<std::pair<int, int>>& used_access_points,
+                       std::set<std::pair<int, int>>& viol_access_points,
+                       int max_access_point_size);
+  void genPatternsReset(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      std::set<std::vector<int>>& instAccessPatterns,
-      std::set<std::pair<int, int>>& usedAccessPoints,
-      std::set<std::pair<int, int>>& violAccessPoints,
-      int maxAccessPointSize);
-  void genPatterns_reset(
+      int max_access_point_size);
+  void genPatternsPerform(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int maxAccessPointSize);
-  void genPatterns_perform(
-      std::vector<FlexDPNode>& nodes,
-      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      std::vector<int>& vioEdges,
-      const std::set<std::pair<int, int>>& usedAccessPoints,
-      const std::set<std::pair<int, int>>& violAccessPoints,
-      int currUniqueInstIdx,
-      int maxAccessPointSize);
-  int getEdgeCost(int prevNodeIdx,
-                  int currNodeIdx,
+      std::vector<int>& vio_edges,
+      const std::set<std::pair<int, int>>& used_access_points,
+      const std::set<std::pair<int, int>>& viol_access_points,
+      int curr_unique_inst_idx,
+      int max_access_point_size);
+  int getEdgeCost(int prev_node_idx,
+                  int curr_node_idx,
                   const std::vector<FlexDPNode>& nodes,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                  std::vector<int>& vioEdges,
-                  const std::set<std::pair<int, int>>& usedAccessPoints,
-                  const std::set<std::pair<int, int>>& violAccessPoints,
-                  int currUniqueInstIdx,
-                  int maxAccessPointSize);
-  bool genPatterns_commit(
+                  std::vector<int>& vio_edges,
+                  const std::set<std::pair<int, int>>& used_access_points,
+                  const std::set<std::pair<int, int>>& viol_access_points,
+                  int curr_unique_inst_idx,
+                  int max_access_point_size);
+  bool genPatternsCommit(
       const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      bool& isValid,
-      std::set<std::vector<int>>& instAccessPatterns,
-      std::set<std::pair<int, int>>& usedAccessPoints,
-      std::set<std::pair<int, int>>& violAccessPoints,
-      int currUniqueInstIdx,
-      int maxAccessPointSize);
-  void genPatterns_print_debug(
+      bool& is_valid,
+      std::set<std::vector<int>>& inst_access_patterns,
+      std::set<std::pair<int, int>>& used_access_points,
+      std::set<std::pair<int, int>>& viol_access_points,
+      int curr_unique_inst_idx,
+      int max_access_point_size);
+  void genPatternsPrintDebug(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int maxAccessPointSize);
-  void genPatterns_print(
+      int max_access_point_size);
+  void genPatternsPrint(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-      int maxAccessPointSize);
-  int getFlatIdx(int idx1, int idx2, int idx2Dim);
-  void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);
-  int getFlatEdgeIdx(int prevIdx1, int prevIdx2, int currIdx2, int idx2Dim);
+      int max_access_point_size);
+  int getFlatIdx(int idx_1, int idx_2, int idx_2_dim);
+  void getNestedIdx(int flat_idx, int& idx_1, int& idx_2, int idx_2_dim);
+  int getFlatEdgeIdx(int prev_idx_1,
+                     int prev_idx_2,
+                     int curr_idx_2,
+                     int idx_2_dim);
 
-  bool genPatterns_gc(
-      const std::set<frBlockObject*>& targetObjs,
+  bool genPatternsGC(
+      const std::set<frBlockObject*>& target_objs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-      PatternType patternType,
+      PatternType pattern_type,
       std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
   void genInstRowPattern(std::vector<frInst*>& insts);
-  void genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
-                              const std::vector<frInst*>& insts);
-  void genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
-                                 const std::vector<frInst*>& insts);
-  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternInit(std::vector<FlexDPNode>& nodes,
+                             const std::vector<frInst*>& insts);
+  void genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
                                 const std::vector<frInst*>& insts);
-  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
+  void genInstRowPatternCommit(std::vector<FlexDPNode>& nodes,
                                const std::vector<frInst*>& insts);
-  int getEdgeCost(int prevNodeIdx,
-                  int currNodeIdx,
+  void genInstRowPatternPrint(std::vector<FlexDPNode>& nodes,
+                              const std::vector<frInst*>& insts);
+  int getEdgeCost(int prev_node_idx,
+                  int curr_node_idx,
                   const std::vector<FlexDPNode>& nodes,
                   const std::vector<frInst*>& insts);
   void revertAccessPoints();
   void addAccessPatternObj(
       frInst* inst,
-      FlexPinAccessPattern* accessPattern,
+      FlexPinAccessPattern* access_pattern,
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
@@ -418,16 +598,16 @@ class FlexDPNode
   // getters
   int getPathCost() const { return pathCost_; }
   int getNodeCost() const { return nodeCost_; }
-  int getPrevNodeIdx() const { return prevNodeIdx_; }
+  int getPrevNodeIdx() const { return prev_node_idx_; }
 
   // setters
   void setPathCost(int in) { pathCost_ = in; }
   void setNodeCost(int in) { nodeCost_ = in; }
-  void setPrevNodeIdx(int in) { prevNodeIdx_ = in; }
+  void setPrevNodeIdx(int in) { prev_node_idx_ = in; }
 
  private:
   int pathCost_ = std::numeric_limits<int>::max();
   int nodeCost_ = std::numeric_limits<int>::max();
-  int prevNodeIdx_ = -1;
+  int prev_node_idx_ = -1;
 };
 }  // namespace drt

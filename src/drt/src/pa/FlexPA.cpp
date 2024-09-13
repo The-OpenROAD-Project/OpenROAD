@@ -97,19 +97,19 @@ void FlexPA::init()
 
 void FlexPA::applyPatternsFile(const char* file_path)
 {
-  uniqueInstPatterns_.clear();
+  unique_inst_patterns_.clear();
   std::ifstream file(file_path);
   frIArchive ar(file);
   ar.setDesign(design_);
   registerTypes(ar);
-  ar >> uniqueInstPatterns_;
+  ar >> unique_inst_patterns_;
   file.close();
 }
 
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
-  prepPoint();
+  initAllAccessPoints();
   revertAccessPoints();
   if (isDistributed()) {
     std::vector<paUpdate> updates;
@@ -184,34 +184,37 @@ int FlexPA::main()
   init();
   prep();
 
-  int stdCellPinCnt = 0;
+  int std_cell_pin_cnt = 0;
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
     if (inst->getMaster()->getMasterType() != dbMasterType::CORE) {
       continue;
     }
-    for (auto& instTerm : inst->getInstTerms()) {
-      if (isSkipInstTerm(instTerm.get())) {
+    for (auto& inst_term : inst->getInstTerms()) {
+      if (isSkipInstTerm(inst_term.get())) {
         continue;
       }
-      if (instTerm->hasNet()) {
-        stdCellPinCnt++;
+      if (inst_term->hasNet()) {
+        std_cell_pin_cnt++;
       }
     }
   }
 
   if (VERBOSE > 0) {
     unique_insts_.report();
-    logger_->report("#stdCellGenAp          = {}", stdCellPinGenApCnt_);
-    logger_->report("#stdCellValidPlanarAp  = {}", stdCellPinValidPlanarApCnt_);
-    logger_->report("#stdCellValidViaAp     = {}", stdCellPinValidViaApCnt_);
-    logger_->report("#stdCellPinNoAp        = {}", stdCellPinNoApCnt_);
-    logger_->report("#stdCellPinCnt         = {}", stdCellPinCnt);
-    logger_->report("#instTermValidViaApCnt = {}", instTermValidViaApCnt_);
-    logger_->report("#macroGenAp            = {}", macroCellPinGenApCnt_);
+    logger_->report("#stdCellGenAp          = {}", std_cell_pin_gen_ap_cnt_);
+    logger_->report("#stdCellValidPlanarAp  = {}",
+                    std_cell_pin_valid_planar_ap_cnt_);
+    logger_->report("#stdCellValidViaAp     = {}",
+                    std_cell_pin_valid_via_ap_cnt_);
+    logger_->report("#stdCellPinNoAp        = {}", std_cell_pin_no_ap_cnt_);
+    logger_->report("#std_cell_pin_cnt         = {}", std_cell_pin_cnt);
+    logger_->report("#instTermValidViaApCnt = {}", inst_term_valid_via_ap_cnt_);
+    logger_->report("#macroGenAp            = {}", macro_cell_pin_gen_ap_cnt_);
     logger_->report("#macroValidPlanarAp    = {}",
-                    macroCellPinValidPlanarApCnt_);
-    logger_->report("#macroValidViaAp       = {}", macroCellPinValidViaApCnt_);
-    logger_->report("#macroNoAp             = {}", macroCellPinNoApCnt_);
+                    macro_cell_pin_valid_planar_ap_cnt_);
+    logger_->report("#macroValidViaAp       = {}",
+                    macro_cell_pin_valid_via_ap_cnt_);
+    logger_->report("#macroNoAp             = {}", macro_cell_pin_no_ap_cnt_);
   }
 
   if (VERBOSE > 0) {

@@ -51,6 +51,9 @@ class UniqueInsts
               const frCollection<odb::dbInst*>& target_insts,
               Logger* logger);
 
+  /**
+   * @brief Initializes Unique Instances and Pin Acess data.
+   */
   void init();
 
   // Get's the index corresponding to the inst's unique instance
@@ -69,24 +72,73 @@ class UniqueInsts
   void setDesign(frDesign* design) { design_ = design; }
 
  private:
-  using LayerRange = std::tuple<frLayerNum, frLayerNum>;
+  using LayerRange = std::pair<frLayerNum, frLayerNum>;
   using MasterLayerRange = std::map<frMaster*, LayerRange, frBlockObjectComp>;
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
+  /**
+   * @brief Checks if any terminal has a NonDefaultRule.
+   *
+   * @param inst A cell instance.
+   *
+   * @return If instance contains a NonDefaultRule net connected to any
+   * terminal.
+   * */
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
+  /**
+   * @brief Creates a vector of preferred track patterns.
+   *
+   * Not every track pattern is a preferred one,
+   * this function acts as filter of design_->getTopBlock()->getTrackPatterns()
+   * to only take the preferred ones.
+   *
+   * @return A vector of track patterns objects.
+   */
+  std::vector<frTrackPattern*> getPrefTrackPatterns();
   void applyPatternsFile(const char* file_path);
 
+  /**
+   * @brief Computes all unique instances data structures
+   *
+   * Proxies computeUnique, only starting the input data strcutures before.
+   *
+   * @todo This function can probabilly be eliminated
+   */
   void initUniqueInstance();
+
+  /**
+   * @brief Initializes pin access structures
+   * Fills unique_to_pa_idx_adds pin access unique pointes to pins
+   */
   void initPinAccess();
 
-  void initMaster2PinLayerRange(MasterLayerRange& master2PinLayerRange);
+  /**
+   * @brief Creates a map from Master instance to LayerRanges.
+   *
+   * LayerRange represents the lower and upper layer of a Master instance.
+   *
+   * @return A map from Master instance to LayerRange.
+   */
+  MasterLayerRange initMasterToPinLayerRange();
 
-  void computeUnique(const MasterLayerRange& master2PinLayerRange,
-                     const std::vector<frTrackPattern*>& prefTrackPatterns);
+  /**
+   * @brief Computes all unique instances data structures.
+   *
+   * @param master_to_pin_layer_range Map from a master instance to layerRange.
+   * @param pref_track_patterns Vector of preffered track patterns.
+   * Fills: master_OT_to_insts_, inst_to_unique_, inst_to_class_ and
+   * unique_to_idx_.
+   */
+  void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
+                     const std::vector<frTrackPattern*>& pref_track_patterns);
+  /**
+   * @brief Raises erros if the pin shape is offgrid;
+   *
+   * @param pin Pin to be checked.
+   */
   void checkFigsOnGrid(const frMPin* pin);
 
   frDesign* design_;
@@ -96,18 +148,18 @@ class UniqueInsts
   // All the unique instances
   std::vector<frInst*> unique_;
   // Mapp all instances to their representative unique instance
-  std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
+  std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
-  std::unordered_map<frInst*, InstSet*> inst2Class_;
+  std::unordered_map<frInst*, InstSet*> inst_to_class_;
   // Maps a unique instance to its pin access index
-  std::map<frInst*, int, frBlockObjectComp> unique2paidx_;
+  std::map<frInst*, int, frBlockObjectComp> unique_to_pa_idx_;
   // Maps a unique instance to its index in unique_
-  std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
+  std::map<frInst*, int, frBlockObjectComp> unique_to_idx_;
   // master orient track-offset to instances
   std::map<frMaster*,
            std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
            frBlockObjectComp>
-      masterOT2Insts_;
+      master_OT_to_insts_;
 };
 
 }  // namespace drt
