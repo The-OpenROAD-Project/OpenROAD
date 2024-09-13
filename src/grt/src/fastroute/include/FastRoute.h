@@ -95,7 +95,7 @@ using stt::Tree;
 
 struct parent3D
 {
-  short l;
+  int16_t layer;
   int x, y;
 };
 
