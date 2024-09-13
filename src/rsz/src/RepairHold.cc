@@ -537,20 +537,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
 
-  // Get the parent of the driver pin and put the new buffer there
-  Instance* inst = db_network_->instance(drvr_pin);
-  dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  db_network_->staToDb(inst, db_inst, mod_inst);
-  odb::dbModule* module = nullptr;
-  if (db_inst) {
-    module = db_inst->getModule();
-  } else if (mod_inst) {
-    module = mod_inst->getParent();
-  }
-  Instance* parent = (module == (db_network_->block()->getTopModule()))
-                         ? db_network_->topInstance()
-                         : db_network_->dbToSta(module->getModInst());
+  // Get the parent instance (owning the instance of the driver pin)
+  // and put the new buffer there
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
   Net *in_net = nullptr, *out_net = nullptr;
 
