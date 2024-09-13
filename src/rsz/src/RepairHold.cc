@@ -558,7 +558,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // Verilog uses nets as ports, so the net connected to an output port has
     // to be preserved.
     // Move the driver pin over to gensym'd net.
-    // TODO:make this branch work with hierarchical nets
     //
     in_net = resizer_->makeUniqueNet();
     Port* drvr_port = network_->port(drvr_pin);
@@ -566,6 +565,24 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     sta_->disconnectPin(drvr_pin);
     sta_->connectPin(drvr_inst, drvr_port, in_net);
     out_net = db_network_->dbToSta(db_drvr_net);
+    if (mod_drvr_net) {
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
+      if (iterm) {
+        // only disconnect the modnet from the iterm
+        // we add it later to the new output
+        iterm->disconnect(false, true);
+      }
+      if (moditerm) {
+        moditerm->disconnect();
+      }
+      if (modbterm) {
+        modbterm->disconnect();
+      }
+    }
   } else {
     in_net = db_network_->dbToSta(db_drvr_net);
     // make the output net, put in same module as buffer
@@ -581,7 +598,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       odb::dbBTerm* bterm = nullptr;
       db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
       if (iterm) {
-        // only disconnect to the modnet.
+        // only disconnect the modnet from the iterm
+        // we add it later to the new output
         iterm->disconnect(false, true);
       }
       if (moditerm) {
