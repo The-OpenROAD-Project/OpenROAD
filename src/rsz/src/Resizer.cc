@@ -3323,8 +3323,8 @@ void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
 {
   ip = nullptr;
   op = nullptr;
-
-  InstancePinIterator* pin_iter = network_->pinIterator(buffer);
+  auto pin_iter
+      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
     Pin* pin = pin_iter->next();
     sta::PortDirection* dir = network_->direction(pin);
@@ -3335,7 +3335,6 @@ void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
       ip = pin;
     }
   }
-  delete pin_iter;
 }
 
 ////////////////////////////////////////////////////////////////
