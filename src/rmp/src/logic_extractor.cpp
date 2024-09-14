@@ -190,12 +190,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
   for (sta::Pin* pin : primary_outputs) {
     sta::PinSet* pin_iterator = network->drivers(pin);
     for(const sta::Pin* connected_pin : *pin_iterator) {
-      if(network->isTopLevelPort(connected_pin)) {
-        filtered_pin_set.insert(pin);
-        continue;
-      }
       sta::Instance* connected_instance = network->instance(connected_pin);
-
       // Output pin is driven by something in the cutset. Keep it.
       if (cut_instances.find(connected_instance) != cut_instances.end()) {
         filtered_pin_set.insert(pin);
