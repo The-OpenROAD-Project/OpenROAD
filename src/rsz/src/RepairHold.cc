@@ -531,7 +531,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                const Point& loc)
 {
   Pin* drvr_pin = drvr->pin();
-  odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver
+  odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver, default none
   dbNet* db_drvr_net = nullptr;           // regular flat driver
 
   Instance* parent = nullptr;
@@ -548,6 +548,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
           = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
     }
   } else {
+    // original flat code (which handles exception case at top level &
+    // defaults to top level instance as parent).
     db_drvr_net = db_network_->staToDb(
         network_->isTopLevelPort(drvr_pin)
             ? db_network_->net(db_network_->term(drvr_pin))
@@ -575,8 +577,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
   //
-  // hook the moddrvrnet to the output of the buffer to be created
-  // so disconnect from its current pin and add to the buffer output
+  // hook hierarchical moddrvrnet to the output of the buffer to be created
+  // so disconnect from its original pin and add to the buffer output
   // pin
   //
   if (mod_drvr_net) {
@@ -586,9 +588,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     odb::dbBTerm* bterm;
     db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
     if (iterm) {
-      // only disconnect the modnet from the iterm
+      // disconnect the iterm from the modnet
       // we add it later to the new output
-      iterm->disconnect(false, true);
+      iterm->disconnect(false /*leave dbNet*/, true /*disconnect modnet*/);
     }
     if (moditerm) {
       moditerm->disconnect();
@@ -665,7 +667,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       // Connect it to the correct output driver net
       sta_->connectPin(load, load_port, out_net);
-      // restore the original load  modnet on the iterm.
+      // connect the original load  modnet (hierarchical net), if any,
+      // on the iterm of the buffer created.
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
       odb::dbModITerm* moditerm;
