@@ -79,7 +79,7 @@ MioGateToPortOrder(abc::Mio_Library_t* library)
     abc::Mio_Pin_t* current_pin = abc::Mio_GateReadPins(current_gate);
     std::vector<std::string> pin_order;
     while (current_pin) {
-      pin_order.push_back(abc::Mio_PinReadName(current_pin));
+      pin_order.emplace_back(abc::Mio_PinReadName(current_pin));
       current_pin = abc::Mio_PinReadNext(current_pin);
     }
     result[current_gate] = std::move(pin_order);
