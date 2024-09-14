@@ -1051,7 +1051,9 @@ Net* dbNetwork::net(const Pin* pin) const
   }
   // only pins which act as bterms are top levels and have no net
   if (bterm) {
-    return nullptr;
+    //    dbNet* dnet = bterm -> getNet();
+    //    return dbToSta(dnet);
+    ;
   }
   if (moditerm) {
     dbModNet* mnet = moditerm->getModNet();
