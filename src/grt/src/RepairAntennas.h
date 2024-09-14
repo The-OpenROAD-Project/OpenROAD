@@ -137,7 +137,8 @@ class RepairAntennas
                    r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
-  void setDiodesAndGatesPlacementStatus(odb::dbPlacementStatus placement_status);
+  void setDiodesAndGatesPlacementStatus(
+      odb::dbPlacementStatus placement_status);
   void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
