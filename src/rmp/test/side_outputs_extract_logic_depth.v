@@ -15,7 +15,8 @@ module top(clk, a, b, c, d);
   
   wire flop_net;
   wire and_output;
-  wire _unconnected_;
+  wire _unconnected_1;
+  wire _unconnected_2;
 
   AND2_X1 _403_ (
     .A1(a),
@@ -32,14 +33,14 @@ module top(clk, a, b, c, d);
     .CK(clk),
     .D(flop_net),
     .Q(c),
-    .QN(_unconnected_)
+    .QN(_unconnected_1)
   );
 
   DFF_X1 output_flop2 (
     .CK(clk),
     .D(flop_net),
     .Q(d),
-    .QN(_unconnected_)
+    .QN(_unconnected_2)
   );
 
 endmodule
