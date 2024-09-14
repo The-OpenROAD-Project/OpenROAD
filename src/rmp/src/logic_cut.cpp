@@ -103,7 +103,7 @@ std::unordered_map<sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
   for (sta::Instance* instance : cut_instances) {
     abc::Abc_Obj_t* abc_cell = abc::Abc_NtkCreateNode(&abc_network);
 
-    // Assign this node it's standard cell. This is what makes this node
+    // Assign this node its standard cell. This is what makes this node
     // an AND gate or whatever.
     sta::LibertyCell* cell = network->libertyCell(instance);
     std::string cell_name = cell->name();
