@@ -536,10 +536,17 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   Instance* parent = nullptr;
   if (db_network_->hasHierarchy()) {
+    // get the nets on the driver pin (possibly both flat and hierarchical)
     db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
     // Get the parent instance (owning the instance of the driver pin)
-    // and put the new buffer there
+    // we will put the new buffer in that parent
     parent = db_network_->getOwningInstanceParent(drvr_pin);
+    // exception case: drvr pin is a top level, fix the db_drvr_net to be
+    // the lower level net
+    if (network_->isTopLevelPort(drvr_pin)) {
+      db_drvr_net
+          = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
+    }
   } else {
     db_drvr_net = db_network_->staToDb(
         network_->isTopLevelPort(drvr_pin)
@@ -602,7 +609,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   string buffer_name = resizer_->makeUniqueInstName("hold");
 
-  // make the buffer in the driver pin's module
+  // make the buffer in the driver pin's parent
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, loc);
   inserted_buffer_count_++;
@@ -620,12 +627,14 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     resizer_->getBufferPins(buffer, ip_pin, op_pin);
     (void) ip_pin;
     if (op_pin) {
-      // get the iterm of the op_pin and connect to the hierarchical net.
+      // get the iterm of the op_pin of the buffer (a dbInst)
+      // and connect to the hierarchical net.
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
       odb::dbModITerm* moditerm;
       odb::dbModBTerm* modbterm;
       db_network_->staToDb(op_pin, iterm, bterm, moditerm, modbterm);
+      // we only need to look at the iterm, the buffer is a dbInst
       if (iterm) {
         iterm->connect(mod_drvr_net);
       }
