@@ -835,6 +835,12 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
 
   populateODBProperties(props, master);
 
+  auto liberty
+      = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
+  if (liberty) {
+    props.push_back({"Liberty", gui->makeSelected(liberty)});
+  }
+
   return props;
 }
 
