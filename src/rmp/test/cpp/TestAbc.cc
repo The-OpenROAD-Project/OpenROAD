@@ -93,8 +93,11 @@ class AbcTest : public ::testing::Test
     ord::dbVerilogNetwork verilog_network;
     verilog_network.init(network);
     ord::dbReadVerilog(file_name.c_str(), &verilog_network);
-    ord::dbLinkDesign(
-        top.c_str(), &verilog_network, db_.get(), &logger_, /*hierarchy = */ false);
+    ord::dbLinkDesign(top.c_str(),
+                      &verilog_network,
+                      db_.get(),
+                      &logger_,
+                      /*hierarchy = */ false);
 
     sta_->postReadDb(db_.get());
 
