@@ -535,11 +535,18 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   dbNet* db_drvr_net = nullptr;           // regular flat driver
 
   Instance* parent = nullptr;
-
-  db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
-  // Get the parent instance (owning the instance of the driver pin)
-  // and put the new buffer there
-  parent = db_network_->getOwningInstanceParent(drvr_pin);
+  if (db_network_->hasHierarchy()) {
+    db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
+    // Get the parent instance (owning the instance of the driver pin)
+    // and put the new buffer there
+    parent = db_network_->getOwningInstanceParent(drvr_pin);
+  } else {
+    db_drvr_net = db_network_->staToDb(
+        network_->isTopLevelPort(drvr_pin)
+            ? db_network_->net(db_network_->term(drvr_pin))
+            : db_network_->net(drvr_pin));
+    parent = db_network_->topInstance();
+  }
 
   Net *in_net = nullptr, *out_net = nullptr;
 
