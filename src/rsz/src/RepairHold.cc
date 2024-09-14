@@ -531,26 +531,15 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                const Point& loc)
 {
   Pin* drvr_pin = drvr->pin();
-  static int debug;
-  debug++;
-
   odb::dbModNet* mod_drvr_net = nullptr;  // hierarchical driver
   dbNet* db_drvr_net = nullptr;           // regular flat driver
 
   Instance* parent = nullptr;
 
-  if (db_network_->hasHierarchy()) {
-    db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
-    // Get the parent instance (owning the instance of the driver pin)
-    // and put the new buffer there
-    parent = db_network_->getOwningInstanceParent(drvr_pin);
-  } else {
-    db_drvr_net = db_network_->staToDb(
-        network_->isTopLevelPort(drvr_pin)
-            ? db_network_->net(db_network_->term(drvr_pin))
-            : db_network_->net(drvr_pin));
-    parent = db_network_->topInstance();
-  }
+  db_network_->net(drvr_pin, db_drvr_net, mod_drvr_net);
+  // Get the parent instance (owning the instance of the driver pin)
+  // and put the new buffer there
+  parent = db_network_->getOwningInstanceParent(drvr_pin);
 
   Net *in_net = nullptr, *out_net = nullptr;
 
@@ -577,10 +566,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   // pin
   //
   if (mod_drvr_net) {
-    odb::dbModITerm* moditerm = nullptr;
-    odb::dbModBTerm* modbterm = nullptr;
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
     db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
     if (iterm) {
       // only disconnect the modnet from the iterm
@@ -625,10 +614,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     (void) ip_pin;
     if (op_pin) {
       // get the iterm of the op_pin and connect to the hierarchical net.
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
       db_network_->staToDb(op_pin, iterm, bterm, moditerm, modbterm);
       if (iterm) {
         iterm->connect(mod_drvr_net);
@@ -660,11 +649,11 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       sta_->disconnectPin(const_cast<Pin*>(load_pin));
       // Connect it to the correct output driver net
       sta_->connectPin(load, load_port, out_net);
-      // restore the original load  modnet.
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
+      // restore the original load  modnet on the iterm.
+      odb::dbITerm* iterm;
+      odb::dbBTerm* bterm;
+      odb::dbModITerm* moditerm;
+      odb::dbModBTerm* modbterm;
       db_network_->staToDb(load_pin, iterm, bterm, moditerm, modbterm);
       if (iterm && original_mod_net) {
         iterm->connect(original_mod_net);
