@@ -396,15 +396,6 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       total_diodes_count_ += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
-      int illegal_diode_placement_count
-          = repair_antennas_->illegalDiodePlacementCount();
-      if (illegal_diode_placement_count > 0) {
-        logger_->info(GRT,
-                      54,
-                      "Using detailed placer to place {} diodes.",
-                      illegal_diode_placement_count);
-      }
-      repair_antennas_->legalizePlacedCells();
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
