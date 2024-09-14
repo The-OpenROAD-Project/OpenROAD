@@ -100,10 +100,6 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  int illegalDiodePlacementCount() const
-  {
-    return illegal_diode_placement_count_;
-  }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)

@@ -502,8 +502,20 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     if (inserted_diodes)
       grouter_->addDirtyNet(db_net);
   }
-  if (repair_failures)
+  if (repair_failures) {
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
+  }
+
+  if (illegal_diode_placement_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "repair_antennas",
+               2,
+               "using detailed placer to place {} diodes.",
+               illegal_diode_placement_count_);
+  }
+  
+  legalizePlacedCells();
 }
 
 void RepairAntennas::legalizePlacedCells()
