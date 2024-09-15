@@ -31,6 +31,7 @@ record_tests {
   core_grid_with_routing_obstructions
   core_grid_adjacentcuts
   core_grid_with_fixed_pins
+  core_grid_bad_metal_specs
 
   core_grid_obstruction
 
