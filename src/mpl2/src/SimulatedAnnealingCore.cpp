@@ -310,6 +310,11 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& io,
     const float net_weight)
 {
+  /*
+    TO DO: check if the macro is inside the outline, if not,
+    use HPWL of the die are as penalty to guide SA.
+  */
+
   Cluster* io_cluster = io.getCluster();
   const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
@@ -318,6 +323,11 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
 
   if (constraint_boundary == NONE) {
     const Rect die = io_cluster->getBBox();
+
+    /*
+      TO DO: Use information of which boundary is forbidden based on
+      the global exclude constraints for the edges
+    */
 
     const float dist_to_left = std::abs(x1 - die.xMin());
     const float dist_to_right = std::abs(x1 - die.xMax());
