@@ -105,13 +105,13 @@ class UniqueInsts
    *
    * Proxies computeUnique, only starting the input data strcutures before.
    *
-   * @todo This function can probabilly be eliminated
+   * @todo This function can probably be eliminated
    */
   void initUniqueInstance();
 
   /**
    * @brief Initializes pin access structures
-   * Fills unique_to_pa_idx_adds pin access unique pointes to pins
+   * Fills unique_to_pa_idx_adds pin access unique points to pins
    */
   void initPinAccess();
 
@@ -135,7 +135,10 @@ class UniqueInsts
   void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
                      const std::vector<frTrackPattern*>& pref_track_patterns);
   /**
-   * @brief Raises erros if the pin shape is offgrid;
+   * @brief Error Raiser for pin shape
+   *
+   * @throws DRT 320/321 if the term has offgrid pin shape
+   * @throws DRT 322 if the pin figure is unsuported (not Rect of Polygon)
    *
    * @param pin Pin to be checked.
    */

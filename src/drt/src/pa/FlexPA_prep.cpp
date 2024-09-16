@@ -78,6 +78,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
   for (auto& shape : pin->getFigs()) {
     if (shape->typeId() == frcRect) {
+      // logger_->report("[BNMFW] Rect Shape");
       auto obj = static_cast<frRect*>(shape.get());
       auto layer_num = obj->getLayerNum();
       if (tech->getLayer(layer_num)->getType() != dbTechLayerType::ROUTING) {
@@ -98,7 +99,8 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += rect;
     } else if (shape->typeId() == frcPolygon) {
-      // TODO: See if this is necessary
+      // BNMFW-TODO: See if this is necessary
+      // logger_->report("[BNMFW] Poly Shape");
       auto obj = static_cast<frPolygon*>(shape.get());
       auto layer_num = obj->getLayerNum();
       std::vector<gtl::point_data<frCoord>> points;
@@ -120,12 +122,17 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 }
 
 /**
+ *
+ * @details This follows the Tao of PAO paper cost structure.
+ * On track and half track are the preffered access points,
+ * this function is responsible for generating them
+ *
  * TODO:
  * This function doesn't seem to be getting the best access point.
  * it iterates through every track contained between low and high
  * and takes the first one (closest to low) not the best one (lowest cost).
  * note that std::map.insert() will not override and entry.
- * it should prioritize OnGrid
+ * it should prioritize OnGrid access points
  */
 void FlexPA::genAPOnTrack(
     std::map<frCoord, frAccessPointEnum>& coords,
@@ -149,7 +156,10 @@ void FlexPA::genAPOnTrack(
 }
 
 // will not generate center for wider edge
-// TAO of PAO algorithm 1 line 11 is here
+/**
+ * @details This follows the Tao of PAO paper cost structure.
+ * Centered Access points are on the center of their pin shape (low, high)
+ */
 
 void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
                            const frLayerNum layer_num,
@@ -182,7 +192,72 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
   }
 }
 
-// Responsible for checking if and AP is valid and configuring it
+/**
+ * @details This follows the Tao of PAO paper cost structure.
+ * Enclosed Boundary APs satisfy via-in-pin requirement.
+ * This is the worst access point adressed in the paper
+ */
+
+void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
+                                   const gtl::rectangle_data<frCoord>& rect,
+                                   const frLayerNum layer_num,
+                                   const bool is_curr_layer_horz)
+{
+  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
+  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
+  const int max_num_via_trial = 2;
+  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
+    return;
+  }
+  // hardcode first two single vias
+  std::vector<frViaDef*> via_defs;
+  int cnt = 0;
+  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
+    via_defs.push_back(via);
+    cnt++;
+    if (cnt >= max_num_via_trial) {
+      break;
+    }
+  }
+  for (auto& via_def : via_defs) {
+    frVia via(via_def);
+    const Rect box = via.getLayer1BBox();
+    const auto via_width = box.dx();
+    const auto via_height = box.dy();
+    if (via_width > rect_width || via_height > rect_height) {
+      continue;
+    }
+    if (is_curr_layer_horz) {
+      auto coord = gtl::yh(rect) - (box.yMax() - 0);
+      if (coords.find(coord) == coords.end()) {
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+      } else {
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+      }
+      coord = gtl::yl(rect) + (0 - box.yMin());
+      if (coords.find(coord) == coords.end()) {
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+      } else {
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+      }
+    } else {
+      auto coord = gtl::xh(rect) - (box.xMax() - 0);
+      if (coords.find(coord) == coords.end()) {
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+      } else {
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+      }
+      coord = gtl::xl(rect) + (0 - box.xMin());
+      if (coords.find(coord) == coords.end()) {
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+      } else {
+        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+      }
+    }
+  }
+}
+
+// Responsible for checking if an AP is valid and configuring it
 void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                                std::set<std::pair<Point, frLayerNum>>& apset,
                                const gtl::rectangle_data<frCoord>& maxrect,
@@ -332,65 +407,6 @@ void FlexPA::initializeAccessPoints(
   }
 }
 
-void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
-                                   const gtl::rectangle_data<frCoord>& rect,
-                                   const frLayerNum layer_num,
-                                   const bool is_curr_layer_horz)
-{
-  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
-  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
-  const int max_num_via_trial = 2;
-  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
-    return;
-  }
-  // hardcode first two single vias
-  std::vector<frViaDef*> via_defs;
-  int cnt = 0;
-  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    via_defs.push_back(via);
-    cnt++;
-    if (cnt >= max_num_via_trial) {
-      break;
-    }
-  }
-  for (auto& via_def : via_defs) {
-    frVia via(via_def);
-    const Rect box = via.getLayer1BBox();
-    const auto via_width = box.dx();
-    const auto via_height = box.dy();
-    if (via_width > rect_width || via_height > rect_height) {
-      continue;
-    }
-    if (is_curr_layer_horz) {
-      auto coord = gtl::yh(rect) - (box.yMax() - 0);
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-      coord = gtl::yl(rect) + (0 - box.yMin());
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-    } else {
-      auto coord = gtl::xh(rect) - (box.xMax() - 0);
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-      coord = gtl::xl(rect) + (0 - box.xMin());
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
-    }
-  }
-}
-
 bool FlexPA::enclosesOnTrackPlanarAccess(
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum layer_num)
@@ -437,6 +453,10 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
   return true;
 }
 
+/**
+ * @details Generates all necessary access points from an rectangle shape
+ * In this case a rectangle is one of the pin shapes of the pin
+ */
 void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                             std::set<std::pair<Point, frLayerNum>>& apset,
                             const gtl::rectangle_data<frCoord>& rect,

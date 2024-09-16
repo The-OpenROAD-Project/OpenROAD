@@ -149,9 +149,9 @@ class FlexPA
       std::vector<std::pair<int, frViaDef*>>& via_defs);
 
   /**
-   * @brief fully initializes a pin access points
+   * @brief fully initializes a pin's access points
    *
-   * @param pin the pin
+   * @param pin the pin (frBPin)
    * @param inst_term terminal related to the pin
    *
    * @return the number of access points generated
@@ -163,8 +163,8 @@ class FlexPA
    * @brief Contructs a vector with all pin figures in each layer
    *
    * @param pin pin object which will have figures merged by layer
-   * @param inst_term instance terminal from which to get xfrom
-   * @param is_shrink if polygons will be shrinked
+   * @param inst_term instance terminal from which to get xform
+   * @param is_shrink if polygons will be shrunk
    *
    * @return A vector of pin shapes in each layer
    */
@@ -176,11 +176,11 @@ class FlexPA
   /**
    * @brief Generates all necessary access points from all pin_shapes (pin)
    *
-   * @param aps map of access points that will be filled
+   * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
    * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
-   * @param pin_shapes pin shapes on that layer
+   * @param pin_shapes vector of pin shapes in every layer
    * @param lower_type TODO: not sure
    * @param upper_type TODO: not sure
    */
@@ -198,11 +198,11 @@ class FlexPA
   /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
    *
-   * @param aps map of access points that will be filled
+   * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
-   * @param layer_num layer in which the rectangle exists
+   * @param layer_num layer in which the shapes exists
    * @param allow_via if via access is allowed
    * @param lower_type TODO: not sure
    * @param upper_type TODO: not sure
@@ -217,10 +217,10 @@ class FlexPA
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
   /**
-   * @brief Generates all necessary access points from an rectangle shape (pin
+   * @brief Generates all necessary access points from a rectangle shape (pin
    * fig)
    *
-   * @param aps map of access points that will be filled
+   * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
    * @param layer_num layer in which the rectangle exists
    * @param allow_planar if planar access is allowed
@@ -241,11 +241,11 @@ class FlexPA
   /**
    * @brief Generates an OnGrid access point (on or half track)
    *
-   * @param coords map of access points
+   * @param coords map from access points to their cost
    * @param track_coords all possible track coords with cost
    * @param low lower range of coordinates considered
    * @param high higher range of coordinates considered
-   * @param use_nearby_grid if the associated cost should be NearbGrid or the
+   * @param use_nearby_grid if the associated cost should be NearbyGrid or the
    * track cost
    */
   void genAPOnTrack(std::map<frCoord, frAccessPointEnum>& coords,
@@ -256,12 +256,12 @@ class FlexPA
 
   /**
    * @brief If there are less than 3 OnGrid coords between low and high
-   * will generate an Centered access point to compensate
+   * will generate a Centered access point to compensate
    *
-   * @param coords map of candidate access points
+   * @param coords map from candidate access points to their cost
    * @param layer_num number of the layer
    * @param low lower range of coordinates considered
-   * @param higher higher range of coordinates considered
+   * @param high higher range of coordinates considered
    */
   void genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
                      frLayerNum layer_num,
@@ -270,7 +270,7 @@ class FlexPA
   /**
    * @brief Generates an Enclosed Boundary access point
    *
-   * @param coords map o access points
+   * @param coords map from access points to their cost
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
@@ -290,8 +290,10 @@ class FlexPA
       const std::map<frCoord, frAccessPointEnum>& y_coords,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
+
   /**
-   * @brief Generates an access point and adds it to aps and apset
+   * @brief Created an access point from x,y and layer num and adds it to aps
+   * and apset. Also sets its accesses
    *
    * @param aps Vector containing the access points
    * @param apset Set containing access points data (auxilary)
@@ -316,13 +318,13 @@ class FlexPA
                          frAccessPointEnum high_cost);
 
   /**
-   * @brief Set the accesses of the access points of a given pin.
+   * @brief Sets the allowed accesses of the access points of a given pin.
    *
-   * @param aps vector of access points of the
+   * @param aps vector of access points of the pin
    * @param pin_shapes vector of pin shapes of the pin
    * @param pin the pin
    * @param inst_term terminal
-   * @param is_std_cell_pin if the pin if from a std_cell
+   * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
   void setAPsAccesses(
@@ -336,8 +338,8 @@ class FlexPA
    * @brief Adds accesses to the access point
    *
    * @param ap access point
-   * @param polyset set of polygons related to ap (auxilary)
-   * @param polys polygon shapes relate to the ap
+   * @param polyset polys auxilary set (same information as polys)
+   * @param polys a vector of pin shapes on all layers of the current pin
    * @param pin access pin
    * @param inst_term terminal
    * @param deep_search TODO: not sure
@@ -351,10 +353,10 @@ class FlexPA
                  bool deep_search = false);
 
   /**
-   * @brief Try to add a planar access to in the direction.
+   * @brief Tries to add a planar access to in the direction.
    *
    * @param ap access point
-   * @param layer_polys pin polygons on the specified layer
+   * @param layer_polys vector of pin polygons on every layer
    * @param dir candidate dir to the access
    * @param pin access pin
    * @param inst_term terminal
@@ -371,11 +373,11 @@ class FlexPA
    * @brief Determines coordinates of an End Point given a Begin Point.
    *
    * @param end_point the End Point to be filled
-   * @param layer_polys a vector with all the pin polygons on the point layer
+   * @param layer_polys a vector with all the pin polygons
    * @param begin_point the Begin Point
-   * @param layer_num the number of the layer where the pin is
+   * @param layer_num the number of the layer where begin_point is
    * @param dir the direction the End Point is from the Begin Point
-   * @param is_block if the figures in this pin is a single block
+   * @param is_block if the instance is a macro block.
    *
    * @return if any polygon on the layer contains the End Point
    */
@@ -416,16 +418,17 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   /**
-   * @brief Checks if a Via Access Point from the given dir is Legal
+   * @brief Checks if a the Via Access can be subsequently accesses from the
+   * given dir
    *
    * @param ap Access Point
    * @param via Via checked
    * @param pin Pin checked
    * @param inst_term Instance Terminal
-   * @param layer_polys The Pin polygons in the pertinent layer
+   * @param layer_polys The Pin polygons in the access point layer
    * @param dir The dir that the via will be accessed
    *
-   * @return If an access from that direction will cause any DRV
+   * @return If an access from that direction causes no DRV
    */
   template <typename T>
   bool checkDirectionalViaAccess(
@@ -442,7 +445,8 @@ class FlexPA
       frInstTerm* inst_term);
 
   /**
-   * @brief initializes the accesses of a given pin cost bounded
+   * @brief initializes the accesses of a given pin but only considered
+   * acccesses costed bounded between lower and upper cost.
    *
    * @param aps access points of the pin
    * @param apset data of the access points (auxilary)

@@ -75,8 +75,11 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
+  // logger_->report("[BNMFW] Pin Acess Init");
   for (auto& master : design_->getMasters()) {
     for (auto& term : master->getTerms()) {
+      // logger_->report("[BNMFW] Master={} Term={}", master->getName(),
+      // term->getName());
       for (auto& pin : term->getPins()) {
         pin->clearPinAccess();
       }
@@ -201,13 +204,14 @@ int FlexPA::main()
 
   if (VERBOSE > 0) {
     unique_insts_.report();
+    //clang-format off
     logger_->report("#stdCellGenAp          = {}", std_cell_pin_gen_ap_cnt_);
     logger_->report("#stdCellValidPlanarAp  = {}",
                     std_cell_pin_valid_planar_ap_cnt_);
     logger_->report("#stdCellValidViaAp     = {}",
                     std_cell_pin_valid_via_ap_cnt_);
     logger_->report("#stdCellPinNoAp        = {}", std_cell_pin_no_ap_cnt_);
-    logger_->report("#std_cell_pin_cnt         = {}", std_cell_pin_cnt);
+    logger_->report("#stdCellPinCnt         = {}", std_cell_pin_cnt);
     logger_->report("#instTermValidViaApCnt = {}", inst_term_valid_via_ap_cnt_);
     logger_->report("#macroGenAp            = {}", macro_cell_pin_gen_ap_cnt_);
     logger_->report("#macroValidPlanarAp    = {}",
@@ -215,6 +219,7 @@ int FlexPA::main()
     logger_->report("#macroValidViaAp       = {}",
                     macro_cell_pin_valid_via_ap_cnt_);
     logger_->report("#macroNoAp             = {}", macro_cell_pin_no_ap_cnt_);
+    //clang-format on
   }
 
   if (VERBOSE > 0) {
