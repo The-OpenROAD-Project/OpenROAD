@@ -99,7 +99,7 @@ static void populateODBProperties(Descriptor::Properties& props,
   }
 }
 
-static std::string convertUnits(double value, bool area = false)
+std::string Descriptor::convertUnits(const double value, const bool area)
 {
   double log_value = value;
   if (area) {
