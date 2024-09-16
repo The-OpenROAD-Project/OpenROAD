@@ -56,8 +56,7 @@ void FindObjectDialog::accept()
                        "",
                        0,
                        match_case,
-                       addToHighlightCheckBox->isChecked() ? 0 : -1,
-                       true);
+                       addToHighlightCheckBox->isChecked() ? 0 : -1);
   } else if (findObjType->currentText() == "Net") {
     Gui::get()->select("Net",
                        pattern_to_find,

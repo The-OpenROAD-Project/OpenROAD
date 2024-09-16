@@ -561,15 +561,14 @@ int select(const std::string& type,
            const std::string& attribute = "",
            const std::string& value = "",
            bool case_sensitive = true,
-           int highlight_group = -1,
-           bool find_in_cts = false)
+           int highlight_group = -1)
 {
   if (!check_gui("select")) {
     return 0;
   }
 
   auto gui = gui::Gui::get();
-  return gui->select(type, name_filter, attribute, value, case_sensitive, highlight_group, find_in_cts);
+  return gui->select(type, name_filter, attribute, value, case_sensitive, highlight_group);
 }
 
 void selection_animate(int repeat = 0)
