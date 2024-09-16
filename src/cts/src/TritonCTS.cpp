@@ -1181,8 +1181,9 @@ Clock TritonCTS::forkRegisterClockNetwork(
 
   // create a new clock buffer
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  std::string cellName = "clkbuf_regs_0_" + clockNet.getSdcName();
-  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, cellName.c_str(), false, target_module);
+  topBufferName = "clkbuf_regs_" + std::to_string(regTreeRootBufIndex_++) + "_"
+                  + clockNet.getSdcName();
+  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, topBufferName.c_str(), false, target_module);
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -2042,7 +2043,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
 
 float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex, odb::dbNet* topNet, odb::dbITerm* iterm)
 {
-  //logger_->report("Sink: {}", iterm->getName());
+
   sta::VertexPathIterator pathIter(sinkVertex, openSta_);
   float clkPathArrival = 0.0;
   int pathsAccepted = 0;
