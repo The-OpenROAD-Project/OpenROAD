@@ -244,11 +244,6 @@ void Resizer::init()
   initDesignArea();
 }
 
-void Resizer::setExcludeClockBuffers(bool exclude_clock_buffers)
-{
-  exclude_clock_buffers_ = exclude_clock_buffers;
-}
-
 // remove all buffers if no buffers are specified
 void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
 {
@@ -2838,12 +2833,13 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  buffer_cells_.clear();
+
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty
   // higher and we'll need fewer insertions.
-  buffer_cells_.clear();
-  setExcludeClockBuffers(false);
+  exclude_clock_buffers_ = false;
 
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2856,7 +2852,8 @@ void Resizer::repairHold(
                            max_passes,
                            verbose);
 
-  // Needed so the subsequent RSZ operation can exclude clock buffers.
+  // Reset buffer selection strategy for the subsequent RSZ operation.
+  exclude_clock_buffers_ = true;
   buffer_cells_.clear();
 }
 
@@ -2867,9 +2864,10 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
-  // See comment on previous method.
   buffer_cells_.clear();
-  setExcludeClockBuffers(false);
+
+  // See comments on previous method.
+  exclude_clock_buffers_ = false;
 
   resizePreamble();
   repair_hold_->repairHold(end_pin,
@@ -2880,6 +2878,7 @@ void Resizer::repairHold(const Pin* end_pin,
                            max_passes);
 
   // Ditto.
+  exclude_clock_buffers_ = true;
   buffer_cells_.clear();
 }
 

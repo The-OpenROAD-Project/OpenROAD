@@ -262,7 +262,6 @@ class Resizer : public dbStaState
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
-  void setExcludeClockBuffers(bool exclude_clock_buffers);
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
