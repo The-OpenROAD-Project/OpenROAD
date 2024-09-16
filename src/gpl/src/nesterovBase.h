@@ -367,7 +367,7 @@ class GNet
   float timingWeight() const { return timingWeight_; }
   float customWeight() const { return customWeight_; }
 
-  void addGPin(std::shared_ptr<GPin> gPin);
+  void addGPin(const std::shared_ptr<GPin>& gPin);
   void updateBox();
   int64_t hpwl() const;
 

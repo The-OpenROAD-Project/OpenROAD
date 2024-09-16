@@ -282,7 +282,7 @@ void GNet::setCustomWeight(float customWeight)
   customWeight_ = customWeight;
 }
 
-void GNet::addGPin(std::shared_ptr<GPin> gPin)
+void GNet::addGPin(const std::shared_ptr<GPin>& gPin)
 {
   gPins_.insert(gPin);
 }
@@ -2395,8 +2395,9 @@ static float getDistance(
     count++;
   }
 
-  if (count == 0)
+  if (count == 0) {
     return 0.0f;
+  }
 
   return std::sqrt(sumDistance / (2.0 * count));
 }
@@ -2415,8 +2416,9 @@ static float getSecondNorm(
     ++count;
   }
 
-  if (count == 0)
+  if (count == 0) {
     return 0.0;
+  }
   return std::sqrt(norm / (2.0 * count));
 }
 
