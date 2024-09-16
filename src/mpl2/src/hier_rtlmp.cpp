@@ -219,6 +219,16 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
   report_directory_ = report_directory;
 }
 
+/*
+  TO DO:
+    1. Remove all "bundledIO related things"
+    2. Add IO count to preamble and display it in the tree for
+    clustering debug level
+    3. See how are we going to make sure that the orientantion
+    improvement does the right thing, now that we don't have
+    placed pins?
+*/
+
 // Top Level Function
 // The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:

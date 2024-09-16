@@ -324,16 +324,18 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const float dist_to_bottom = std::abs(y1 - die.yMin());
     const float dist_to_top = std::abs(y1 - die.yMax());
 
+    /*
+      TO DO: consider net weight
+    */
     wirelength_
         += std::min({dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
-  } else {
+  } else if (constraint_boundary == Boundary::L
+             || constraint_boundary == Boundary::R) {
     const float x2 = io.getPinX();
+    wirelength_ += net_weight * std::abs(x2 - x1);
+  } else {  // Top or Bottom
     const float y2 = io.getPinY();
-
-    /*
-      TO DO: This is just wrong. We need to see X dist for L || R , Y dist for T || B
-    */
-    wirelength_ += net_weight * std::min(std::abs(y2 - y1), std::abs(x2 - x1));
+    wirelength_ += net_weight * std::abs(y2 - y1);
   }
 }
 
