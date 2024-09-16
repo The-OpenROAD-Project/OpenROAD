@@ -30,9 +30,10 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 92385
-[INFO GPL-0031] FillerInit:NumGCells:       130
-[INFO GPL-0032] FillerInit:NumGNets:          2
-[INFO GPL-0033] FillerInit:NumGPins:          4
+[INFO GPL-0031] NesterovInit #GCells:       130
+[INFO GPL-0032] NesterovInit #Filler:       129
+[INFO GPL-0033] NesterovInit #GNets:          2
+[INFO GPL-0034] NesterovInit #GPins:          4
 [INFO GPL-0023] TargetDensity:            0.750
 [INFO GPL-0024] AvrgPlaceInstArea:        3.754 um^2
 [INFO GPL-0025] IdealBinArea:             5.005 um^2

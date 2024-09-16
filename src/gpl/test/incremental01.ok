@@ -20,9 +20,10 @@
 [INFO GPL-0019] Util:                    59.732 %
 [INFO GPL-0020] StdInstsArea:           569.772 um^2
 [INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[INFO GPL-0031] FillerInit:NumGCells:       348
-[INFO GPL-0032] FillerInit:NumGNets:        364
-[INFO GPL-0033] FillerInit:NumGPins:       1122
+[INFO GPL-0031] NesterovInit #GCells:       348
+[INFO GPL-0032] NesterovInit #Filler:        54
+[INFO GPL-0033] NesterovInit #GNets:        364
+[INFO GPL-0034] NesterovInit #GPins:       1122
 [INFO GPL-0023] TargetDensity:            0.700
 [INFO GPL-0024] AvrgPlaceInstArea:        1.938 um^2
 [INFO GPL-0025] IdealBinArea:             2.769 um^2
@@ -31,15 +32,15 @@
 [INFO GPL-0028] BinCnt:        16     16
 [INFO GPL-0029] BinSize: (  1.936  1.925 )
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.187 HPWL: 4999278
-[NesterovSolve] Iter:   10 overflow: 0.321 HPWL: 4758762
-[NesterovSolve] Iter:   20 overflow: 0.290 HPWL: 4745103
-[NesterovSolve] Iter:   30 overflow: 0.261 HPWL: 4780681
-[NesterovSolve] Iter:   40 overflow: 0.225 HPWL: 4817944
-[NesterovSolve] Iter:   50 overflow: 0.195 HPWL: 4857050
-[NesterovSolve] Iter:   60 overflow: 0.167 HPWL: 4887372
-[NesterovSolve] Iter:   70 overflow: 0.141 HPWL: 4919492
-[NesterovSolve] Iter:   80 overflow: 0.120 HPWL: 4948958
-[NesterovSolve] Iter:   90 overflow: 0.104 HPWL: 4973494
-[NesterovSolve] Finished with Overflow: 0.099112
+[NesterovSolve] Iter:    1 overflow: 0.199 HPWL: 5021487
+[NesterovSolve] Iter:   10 overflow: 0.332 HPWL: 4879350
+[NesterovSolve] Iter:   20 overflow: 0.292 HPWL: 4730889
+[NesterovSolve] Iter:   30 overflow: 0.259 HPWL: 4779810
+[NesterovSolve] Iter:   40 overflow: 0.226 HPWL: 4815951
+[NesterovSolve] Iter:   50 overflow: 0.198 HPWL: 4852356
+[NesterovSolve] Iter:   60 overflow: 0.169 HPWL: 4885674
+[NesterovSolve] Iter:   70 overflow: 0.142 HPWL: 4915914
+[NesterovSolve] Iter:   80 overflow: 0.121 HPWL: 4944864
+[NesterovSolve] Iter:   90 overflow: 0.107 HPWL: 4974645
+[NesterovSolve] Finished with Overflow: 0.099704
 No differences found.

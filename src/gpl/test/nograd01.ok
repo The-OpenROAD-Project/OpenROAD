@@ -21,9 +21,10 @@
 [INFO GPL-0019] Util:                     0.004 %
 [INFO GPL-0020] StdInstsArea:             0.437 um^2
 [INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[INFO GPL-0031] FillerInit:NumGCells:     95622
-[INFO GPL-0032] FillerInit:NumGNets:         12
-[INFO GPL-0033] FillerInit:NumGPins:         12
+[INFO GPL-0031] NesterovInit #GCells:     95622
+[INFO GPL-0032] NesterovInit #Filler:     95616
+[INFO GPL-0033] NesterovInit #GNets:         12
+[INFO GPL-0034] NesterovInit #GPins:         12
 [INFO GPL-0023] TargetDensity:            0.700
 [INFO GPL-0024] AvrgPlaceInstArea:        0.073 um^2
 [INFO GPL-0025] IdealBinArea:             0.104 um^2

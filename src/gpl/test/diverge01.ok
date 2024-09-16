@@ -20,9 +20,10 @@
 [INFO GPL-0019] Util:                    59.732 %
 [INFO GPL-0020] StdInstsArea:           569.772 um^2
 [INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[INFO GPL-0031] FillerInit:NumGCells:       348
-[INFO GPL-0032] FillerInit:NumGNets:        364
-[INFO GPL-0033] FillerInit:NumGPins:       1122
+[INFO GPL-0031] NesterovInit #GCells:       348
+[INFO GPL-0032] NesterovInit #Filler:        54
+[INFO GPL-0033] NesterovInit #GNets:        364
+[INFO GPL-0034] NesterovInit #GPins:       1122
 [INFO GPL-0023] TargetDensity:            0.700
 [INFO GPL-0024] AvrgPlaceInstArea:        1.938 um^2
 [INFO GPL-0025] IdealBinArea:             2.769 um^2
@@ -31,11 +32,11 @@
 [INFO GPL-0028] BinCnt:        16     16
 [INFO GPL-0029] BinSize: (  1.936  1.925 )
 [INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.943 HPWL: 3779352
-[NesterovSolve] Iter:   10 overflow: 0.249 HPWL: 9105949
-[NesterovSolve] Iter:   20 overflow: 0.175 HPWL: 6547448
-[NesterovSolve] Iter:   30 overflow: 0.143 HPWL: 6019893
-[NesterovSolve] Iter:   40 overflow: 0.136 HPWL: 5823323
-[NesterovSolve] Iter:   50 overflow: 0.106 HPWL: 5780172
-[NesterovSolve] Finished with Overflow: 0.099589
+[NesterovSolve] Iter:    1 overflow: 0.853 HPWL: 3817118
+[NesterovSolve] Iter:   10 overflow: 0.209 HPWL: 7198521
+[NesterovSolve] Iter:   20 overflow: 0.191 HPWL: 6152815
+[NesterovSolve] Iter:   30 overflow: 0.167 HPWL: 5867306
+[NesterovSolve] Iter:   40 overflow: 0.133 HPWL: 5728468
+[NesterovSolve] Iter:   50 overflow: 0.110 HPWL: 5675359
+[NesterovSolve] Finished with Overflow: 0.099428
 
