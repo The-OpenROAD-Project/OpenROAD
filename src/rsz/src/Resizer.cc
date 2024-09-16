@@ -244,6 +244,11 @@ void Resizer::init()
   initDesignArea();
 }
 
+void Resizer::setExcludeClockBuffers(bool exclude_clock_buffers)
+{
+  exclude_clock_buffers_ = exclude_clock_buffers;
+}
+
 // remove all buffers if no buffers are specified
 void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
 {
@@ -498,23 +503,30 @@ void Resizer::balanceRowUsage()
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::findDataBuffers()
+void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    sta::PatternMatch clkbuf_pattern(".*CLKBUF.*",
-                                     /* is_regexp */ true,
-                                     /* nocase */ true,
-                                     /* Tcl_interp* */ nullptr);
+    std::unique_ptr<sta::PatternMatch> clkbuf_pattern;
+
+    if (exclude_clock_buffers_) {
+      clkbuf_pattern
+          = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
+                                                /* is_regexp */ true,
+                                                /* nocase */ true,
+                                                /* Tcl_interp* */ nullptr);
+    }
 
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
 
       for (LibertyCell* buffer : *lib->buffers()) {
-        // is_clock_cell is a custom lib attribute that may not exist,
-        // so we also use the name pattern to help
-        if (buffer->isClockCell() || clkbuf_pattern.match(buffer->name())) {
-          continue;
+        if (exclude_clock_buffers_) {
+          // is_clock_cell is a custom lib attribute that may not exist,
+          // so we also use the name pattern to help
+          if (buffer->isClockCell() || clkbuf_pattern->match(buffer->name())) {
+            continue;
+          }
         }
 
         if (!dontUse(buffer) && isLinkCell(buffer)) {
@@ -549,7 +561,7 @@ bool Resizer::isLinkCell(LibertyCell* cell)
 void Resizer::bufferInputs()
 {
   init();
-  findDataBuffers();
+  findBuffers();
   sta_->ensureClkNetwork();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
@@ -674,7 +686,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
 void Resizer::bufferOutputs()
 {
   init();
-  findDataBuffers();
+  findBuffers();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
@@ -989,7 +1001,7 @@ void Resizer::resizePreamble()
   sta_->ensureClkNetwork();
   makeEquivCells();
   checkLibertyForAllCorners();
-  findDataBuffers();
+  findBuffers();
   findTargetLoads();
 }
 
@@ -2367,7 +2379,7 @@ double Resizer::findMaxWireLength()
 {
   init();
   checkLibertyForAllCorners();
-  findDataBuffers();
+  findBuffers();
   findTargetLoads();
   return findMaxWireLength1();
 }
@@ -2826,6 +2838,13 @@ void Resizer::repairHold(
     int max_passes,
     bool verbose)
 {
+  // Some technologies such as nangate45 don't have delay cells. Hence,
+  // until we have a better approach, it's better to consider clock buffers
+  // for hold violation repairing as these buffers' delay may be slighty
+  // higher and we'll need fewer insertions.
+  buffer_cells_.clear();
+  setExcludeClockBuffers(false);
+
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
@@ -2836,6 +2855,9 @@ void Resizer::repairHold(
                            max_buffer_percent,
                            max_passes,
                            verbose);
+
+  // Needed so the subsequent RSZ operation can exclude clock buffers.
+  buffer_cells_.clear();
 }
 
 void Resizer::repairHold(const Pin* end_pin,
@@ -2845,6 +2867,10 @@ void Resizer::repairHold(const Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
+  // See comment on previous method.
+  buffer_cells_.clear();
+  setExcludeClockBuffers(false);
+
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,
@@ -2852,6 +2878,9 @@ void Resizer::repairHold(const Pin* end_pin,
                            allow_setup_violations,
                            max_buffer_percent,
                            max_passes);
+
+  // Ditto.
+  buffer_cells_.clear();
 }
 
 int Resizer::holdBufferCount() const

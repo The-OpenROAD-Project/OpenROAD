@@ -262,6 +262,7 @@ class Resizer : public dbStaState
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
+  void setExcludeClockBuffers(bool exclude_clock_buffers);
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
@@ -415,7 +416,7 @@ class Resizer : public dbStaState
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
-  void findDataBuffers();
+  void findBuffers();
   bool isLinkCell(LibertyCell* cell);
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin);
@@ -712,6 +713,7 @@ class Resizer : public dbStaState
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int removed_buffer_count_ = 0;
+  bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
