@@ -90,6 +90,13 @@ struct ViolationInfo
   double pin_area_near_to_end_ = 0;
 };
 
+enum class RoutingSource
+{
+  DetailedRouting,
+  GlobalRouting,
+  None
+};
+
 class RepairAntennas
 {
  public:
@@ -173,7 +180,9 @@ class RepairAntennas
                    r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
-  void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
+  void setDiodesAndGatesPlacementStatus(
+      odb::dbPlacementStatus placement_status);
+  void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
                    int site_width,
@@ -237,6 +246,7 @@ class RepairAntennas
   int unique_diode_index_;
   int illegal_diode_placement_count_;
   std::unordered_map<int, std::set<std::pair<int, int>>> vias_pos_;
+  RoutingSource routing_source_;
 };
 
 }  // namespace grt
