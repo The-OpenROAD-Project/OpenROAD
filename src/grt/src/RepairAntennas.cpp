@@ -501,8 +501,8 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
         repair_failures = true;
     }
     if (inserted_diodes) {
-      //if (db_net->hasJumpers()) {
-        //db_net->setJumpers(false);
+      // if (db_net->hasJumpers()) {
+      // db_net->setJumpers(false);
       //}
       grouter_->addDirtyNet(db_net);
     }
@@ -863,11 +863,71 @@ void addSegments(GRoute& route,
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2));
 }
 
-int getSegmentPos(std::vector<GSegment*>& segments,
-                  int& req_size,
-                  const int& bridge_size,
-                  bool isHorizontal,
-                  bool inStart)
+bool validatePos(bool reverse,
+                 const int& pos_x,
+                 const int& pos_y,
+                 const int& final_x,
+                 const int& final_y)
+{
+  if (reverse) {
+    return pos_x >= final_x && pos_y >= final_y;
+  }
+  return pos_x <= final_x && pos_y <= final_y;
+}
+
+int searchViaAware(bool reverse,
+                   bool is_horizontal,
+                   GSegment* seg,
+                   const std::set<std::pair<int, int>>& vias_pos,
+                   const int& bridge_size,
+                   const int& tile_size)
+{
+  int space = -1;
+  int init_x = seg->init_x;
+  int init_y = seg->init_y;
+  int final_x = seg->final_x;
+  int final_y = seg->final_y;
+  int step = tile_size;
+  if (reverse) {
+    std::swap(init_x, final_x);
+    std::swap(init_y, final_y);
+    step *= -1;
+  }
+  int pos_x = init_x;
+  int pos_y = init_y;
+  int last_x = pos_x;
+  int last_y = pos_y;
+  while (validatePos(reverse, pos_x, pos_y, final_x, final_y)) {
+    if (vias_pos.find(std::make_pair(pos_x, pos_y)) != vias_pos.end()) {
+      const int len = std::abs(pos_x - last_x) + std::abs(pos_y - last_y);
+      if (len > 0 && len >= bridge_size + 2 * tile_size) {
+        space
+            = std::abs(last_x - init_x) + std::abs(last_y - init_y) + tile_size;
+        last_x = pos_x;
+        last_y = pos_y;
+      }
+    }
+    if (is_horizontal) {
+      pos_x += step;
+    } else {
+      pos_y += step;
+    }
+  }
+  if (last_x != final_x || last_y != final_y) {
+    const int len = std::abs(final_x - last_x) + std::abs(final_y - last_y);
+    if (len > 0 && len >= bridge_size + 2 * tile_size) {
+      space = std::abs(last_x - init_x) + std::abs(last_y - init_y) + tile_size;
+    }
+  }
+  return space;
+}
+
+int RepairAntennas::getSegmentPos(std::vector<GSegment*>& segments,
+                                  int& req_size,
+                                  const int& bridge_size,
+                                  const int& tile_size,
+                                  bool isHorizontal,
+                                  bool inStart)
 {
   if (isHorizontal) {
     sort(segments.begin(),
@@ -882,25 +942,49 @@ int getSegmentPos(std::vector<GSegment*>& segments,
            return seg1->init_y < seg2->init_y;
          });
   }
+  const int layer_level = segments[0]->init_layer;
+  const auto& vias_pos = vias_pos_[layer_level];
   int size_acum = 0;
   int cand = -1;
+  int req_size_cand = -1;
   if (inStart) {
     for (int pos = 0; pos < segments.size(); pos++) {
+      // if seg could have jumper, get via position
+      if (segments[pos]->length() >= bridge_size + 2 * tile_size) {
+        int len_found = searchViaAware(false,
+                                       isHorizontal,
+                                       segments[pos],
+                                       vias_pos,
+                                       bridge_size,
+                                       tile_size);
+        if (len_found != -1 && len_found + size_acum <= req_size) {
+          req_size_cand = len_found;
+          cand = pos;
+        }
+      }
       size_acum += segments[pos]->length();
       if (size_acum > req_size && size_acum >= req_size + bridge_size) {
-        req_size -= (size_acum - segments[pos]->length());
-        req_size = std::max(req_size, 0);
-        cand = pos;
+        req_size = req_size_cand;
         break;
       }
     }
   } else {
     for (int pos = segments.size() - 1; pos >= 0; pos--) {
+      if (segments[pos]->length() >= bridge_size + 2 * tile_size) {
+        int len_found = searchViaAware(true,
+                                       isHorizontal,
+                                       segments[pos],
+                                       vias_pos,
+                                       bridge_size,
+                                       tile_size);
+        if (len_found != -1 && len_found + size_acum <= req_size) {
+          req_size_cand = len_found;
+          cand = pos;
+        }
+      }
       size_acum += segments[pos]->length();
       if (size_acum > req_size && size_acum >= req_size + bridge_size) {
-        req_size -= (size_acum - segments[pos]->length());
-        req_size = std::max(req_size, 0);
-        cand = pos;
+        req_size = req_size_cand;
         break;
       }
     }
@@ -967,8 +1051,8 @@ int RepairAntennas::divideSegment(std::vector<GSegment*>& segments,
   // place bridge in segment begin
   if (info.pin_num_near_to_end_ == 0
       || (info.pin_num_near_to_start_ != 0 && info.pin_num_near_to_end_ != 0)) {
-    int pos
-        = getSegmentPos(segments, req_size, bridge_size, is_horizontal, true);
+    int pos = getSegmentPos(
+        segments, req_size, bridge_size, tile_size, is_horizontal, true);
     if (pos != -1) {
       auto& seg = segments[pos];
       jumper_count++;
@@ -1006,8 +1090,8 @@ int RepairAntennas::divideSegment(std::vector<GSegment*>& segments,
   // if need place other in segment end
   if (info.pin_num_near_to_start_ == 0
       || (info.pin_num_near_to_start_ != 0 && info.pin_num_near_to_end_ != 0)) {
-    int pos
-        = getSegmentPos(segments, req_size, bridge_size, is_horizontal, false);
+    int pos = getSegmentPos(
+        segments, req_size, bridge_size, tile_size, is_horizontal, false);
     if (pos != -1) {
       auto& seg = segments[pos];
       jumper_count++;
@@ -1075,7 +1159,8 @@ void RepairAntennas::getPinNumberNearEndPoint(
 {
   int seg_init_x, seg_init_y, seg_final_x, seg_final_y;
   seg_init_x = seg_init_y = std::numeric_limits<int>::max();
-  ;
+
+  // Get x_min y_min x_max y_max of all segments
   seg_final_x = seg_final_y = 0;
   for (const auto& seg : segments) {
     seg_init_x = std::min(seg_init_x, seg->init_x);
@@ -1083,6 +1168,7 @@ void RepairAntennas::getPinNumberNearEndPoint(
     seg_final_x = std::max(seg_final_x, seg->final_x);
     seg_final_y = std::max(seg_final_y, seg->final_y);
   }
+  // iterate all gates to count pins near of min/max position
   for (const auto& iterm : gates) {
     odb::dbInst* sink_inst = iterm->getInst();
     odb::Rect sink_bbox = getInstRect(sink_inst, iterm);
@@ -1149,9 +1235,10 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(
   // get segments information
   std::unordered_map<odb::dbTechLayer*, std::vector<SegInfo>> segment_by_layer;
   int seg_count = 0;
+  vias_pos_.clear();
   for (GSegment& seg : route) {
     // add only segments in lower layer of violation layer
-    if (std::max(seg.final_layer, seg.init_layer) <= max_layer) {
+    if (std::min(seg.final_layer, seg.init_layer) <= max_layer) {
       // get min layer of segment
       odb::dbTechLayer* tech_layer
           = tech->findRoutingLayer(std::min(seg.init_layer, seg.final_layer));
@@ -1163,6 +1250,10 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(
             SegInfo(seg_count++, nullptr, grouter_->globalRoutingToBox(seg)));
         segment_by_layer[tech->findRoutingLayer(seg.final_layer)].push_back(
             SegInfo(seg_count++, nullptr, grouter_->globalRoutingToBox(seg)));
+        vias_pos_[seg.init_layer].insert(
+            std::make_pair(seg.init_x, seg.init_y));
+        vias_pos_[seg.final_layer].insert(
+            std::make_pair(seg.final_x, seg.final_y));
       } else {
         segment_by_layer[tech_layer].push_back(
             SegInfo(seg_count, &seg, grouter_->globalRoutingToBox(seg)));
@@ -1223,7 +1314,7 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(
   auto violations = antenna_violations_[db_net];
   SegmentByViolation segment_with_violations(violations.size());
 
-  // Run DSU
+  // Init DSU
   std::vector<int> dsu_parent(seg_count);
   std::vector<int> dsu_size(seg_count);
   for (int i = 0; i < seg_count; i++) {
@@ -1233,6 +1324,7 @@ SegmentByViolation RepairAntennas::getSegmentsWithViolation(
 
   boost::disjoint_sets<int*, int*> dsu(&dsu_size[0], &dsu_parent[0]);
 
+  // Run DSU
   odb::dbTechLayer* layer_iter = tech->findRoutingLayer(min_layer);
   for (; layer_iter; layer_iter = layer_iter->getUpperLayer()) {
     // iterate each node of this layer to union set
@@ -1341,7 +1433,7 @@ void RepairAntennas::jumperInsertion(NetRouteMap& routing,
     if (jumpers_by_net) {
       net_with_jumpers++;
       total_jumpers += jumpers_by_net;
-      //db_net->setJumpers(true);
+      // db_net->setJumpers(true);
     }
   }
   logger_->info(GRT,

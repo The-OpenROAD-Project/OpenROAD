@@ -122,6 +122,12 @@ class RepairAntennas
                                const int& final_x,
                                const int& final_y,
                                const int& layer_level);
+  int getSegmentPos(std::vector<GSegment*>& segments,
+                    int& req_size,
+                    const int& bridge_size,
+                    const int& tile_size,
+                    bool isHorizontal,
+                    bool inStart);
   SegmentByViolation getSegmentsWithViolation(
       odb::dbNet* db_net,
       GRoute& route,
@@ -230,6 +236,7 @@ class RepairAntennas
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
   int illegal_diode_placement_count_;
+  std::unordered_map<int, std::set<std::pair<int, int>>> vias_pos_;
 };
 
 }  // namespace grt
