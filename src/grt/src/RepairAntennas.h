@@ -81,6 +81,13 @@ struct RoutePtPins
 
 using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
 
+enum class RoutingSource
+{
+  DetailedRouting,
+  GlobalRouting,
+  None
+};
+
 class RepairAntennas
 {
  public:
@@ -100,10 +107,6 @@ class RepairAntennas
                           odb::dbMTerm* diode_mterm,
                           float ratio_margin);
   void repairAntennas(odb::dbMTerm* diode_mterm);
-  int illegalDiodePlacementCount() const
-  {
-    return illegal_diode_placement_count_;
-  }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
   void setAntennaViolations(AntennaViolations antenna_violations)
@@ -134,7 +137,9 @@ class RepairAntennas
                    r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
   void getFixedInstances(r_tree& fixed_insts);
-  void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
+  void setDiodesAndGatesPlacementStatus(
+      odb::dbPlacementStatus placement_status);
+  void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
   bool setDiodeLoc(odb::dbInst* diode_inst,
                    odb::dbITerm* gate,
                    int site_width,
@@ -197,6 +202,7 @@ class RepairAntennas
   AntennaViolations antenna_violations_;
   int unique_diode_index_;
   int illegal_diode_placement_count_;
+  RoutingSource routing_source_;
 };
 
 }  // namespace grt

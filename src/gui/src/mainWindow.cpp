@@ -66,6 +66,8 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "sta/Liberty.hh"
+#include "staDescriptors.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -517,6 +519,15 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+
+  gui->registerDescriptor<sta::LibertyLibrary*>(
+      new LibertyLibraryDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyCell*>(
+      new LibertyCellDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPort*>(
+      new LibertyPortDescriptor(db_, sta));
+  gui->registerDescriptor<sta::LibertyPgPort*>(
+      new LibertyPgPortDescriptor(db_, sta));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,

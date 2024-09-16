@@ -179,6 +179,18 @@ class dbNetwork : public ConcreteNetwork
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
+  // hierarchical wiring support.
+  dbModNet* getDbModNetFromDbNet(dbNet* db_net);
+  dbModule* getNetDriverParentModule(dbNet* net);
+  void hierarchicalConnect(dbITerm* source_pin,
+                           dbITerm* dest_pin,
+                           const char* connection_name);
+
+  void getParentHierarchy(dbModule* start_module,
+                          std::vector<dbModule*>& parent_hierarchy);
+  dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
+                                    std::vector<dbModule*>& itree2);
+
   ////////////////////////////////////////////////////////////////
   //
   // Implement network API
@@ -291,6 +303,7 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
   void setHierarchy() { hierarchy_ = true; }
+  void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
 
   int fromIndex(const Port* port) const override;

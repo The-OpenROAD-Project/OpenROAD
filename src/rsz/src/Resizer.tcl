@@ -313,21 +313,26 @@ proc set_wire_rc { args } {
   }
 }
 
-sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing }
+sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
+                                            [-spef_file filename]}
 
 proc estimate_parasitics { args } {
   sta::parse_key_args "estimate_parasitics" args \
-    keys {} flags {-placement -global_routing}
+    keys {-spef_file} flags {-placement -global_routing}
 
-  sta::check_argc_eq0 "estimate_parasitics" $args
+  set filename ""
+  if { [info exists keys(-spef_file)] } {
+    set filename $keys(-spef_file)
+  }
+
   if { [info exists flags(-placement)] } {
     if { [rsz::check_corner_wire_cap] } {
-      rsz::estimate_parasitics_cmd "placement"
+      rsz::estimate_parasitics_cmd "placement" $filename
     }
   } elseif { [info exists flags(-global_routing)] } {
     if { [grt::have_routes] } {
       # should check for layer rc
-      rsz::estimate_parasitics_cmd "global_routing"
+      rsz::estimate_parasitics_cmd "global_routing" $filename
     } else {
       utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
     }
@@ -433,23 +438,29 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
+                                      [-buffer_gain gain] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-max_wire_length -max_utilization -slew_margin -cap_margin} \
+    keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
     flags {-verbose}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
   set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
+  set buffer_gain 0.0
+  if { [info exists keys(-buffer_gain)] } {
+    set buffer_gain $keys(-buffer_gain)
+    sta::check_positive_float "-buffer_gain" $buffer_gain
+  }
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   set verbose [info exists flags(-verbose)]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $verbose
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $buffer_gain $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

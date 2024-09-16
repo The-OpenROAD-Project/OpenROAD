@@ -64,7 +64,8 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       db_(db),
       logger_(logger),
       unique_diode_index_(1),
-      illegal_diode_placement_count_(0)
+      illegal_diode_placement_count_(0),
+      routing_source_(RoutingSource::None)
 {
   block_ = db_->getChip()->getBlock();
   while (block_->findInst(
@@ -81,11 +82,15 @@ bool RepairAntennas::checkAntennaViolations(
     float ratio_margin,
     const int num_threads)
 {
+  antenna_violations_.clear();
   for (odb::dbNet* db_net : nets_to_repair) {
     antenna_violations_[db_net];
   }
 
-  bool destroy_wires = !grouter_->haveDetailedRoutes(nets_to_repair);
+  routing_source_ = grouter_->haveDetailedRoutes(nets_to_repair)
+                        ? RoutingSource::DetailedRouting
+                        : RoutingSource::GlobalRouting;
+  bool destroy_wires = routing_source_ == RoutingSource::GlobalRouting;
 
   makeNetWires(routing, nets_to_repair, max_routing_layer);
   arc_->initAntennaRules();
@@ -464,7 +469,13 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     }
   }
 
-  setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
+  std::vector<odb::dbInst*> insts_to_restore;
+  if (routing_source_ == RoutingSource::DetailedRouting) {
+    // set all other instances as fixed to prevent repair_antennas changing
+    // other nets, prevent DRT rerouting nets unnecessarily
+    setInstsPlacementStatus(insts_to_restore);
+  }
+  setDiodesAndGatesPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixed_insts);
 
   bool repair_failures = false;
@@ -501,15 +512,31 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
     if (inserted_diodes)
       grouter_->addDirtyNet(db_net);
   }
-  if (repair_failures)
+  if (repair_failures) {
     logger_->warn(GRT, 243, "Unable to repair antennas on net with diodes.");
+  }
+
+  if (illegal_diode_placement_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "repair_antennas",
+               2,
+               "using detailed placer to place {} diodes.",
+               illegal_diode_placement_count_);
+  }
+
+  legalizePlacedCells();
+  if (routing_source_ == RoutingSource::DetailedRouting) {
+    // restore placement status of changed insts
+    setInstsPlacementStatus(insts_to_restore);
+  }
 }
 
 void RepairAntennas::legalizePlacedCells()
 {
   opendp_->detailedPlacement(0, 0, "");
   // After legalize placement, diodes and violated insts don't need to be FIRM
-  setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
+  setDiodesAndGatesPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 void RepairAntennas::insertDiode(odb::dbNet* net,
@@ -579,7 +606,7 @@ void RepairAntennas::getFixedInstances(r_tree& fixed_insts)
   }
 }
 
-void RepairAntennas::setInstsPlacementStatus(
+void RepairAntennas::setDiodesAndGatesPlacementStatus(
     odb::dbPlacementStatus placement_status)
 {
   for (auto const& violation : antenna_violations_) {
@@ -594,6 +621,23 @@ void RepairAntennas::setInstsPlacementStatus(
 
   for (odb::dbInst* diode_inst : diode_insts_) {
     diode_inst->setPlacementStatus(placement_status);
+  }
+}
+
+void RepairAntennas::setInstsPlacementStatus(
+    std::vector<odb::dbInst*>& insts_to_restore)
+{
+  if (insts_to_restore.empty()) {
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (inst->getPlacementStatus() == odb::dbPlacementStatus::PLACED) {
+        inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+        insts_to_restore.push_back(inst);
+      }
+    }
+  } else {
+    for (odb::dbInst* inst : insts_to_restore) {
+      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
   }
 }
 

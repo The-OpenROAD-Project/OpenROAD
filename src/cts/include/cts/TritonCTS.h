@@ -98,9 +98,6 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& buffers);
-  std::vector<std::string> findMatchingSubset(
-      const std::string& pattern,
-      const std::vector<std::string>& buffers);
   bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
@@ -141,7 +138,7 @@ class TritonCTS
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clockNet);
+  void createClockBuffers(Clock& clockNet, odb::dbModule* parent);
   HTreeBuilder* initClockTreeForMacrosAndRegs(
       odb::dbNet*& firstNet,
       odb::dbNet* clkInputNet,

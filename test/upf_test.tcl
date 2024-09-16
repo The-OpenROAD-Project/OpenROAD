@@ -18,6 +18,11 @@ initialize_floorplan -utilization 1 \
                        -core_space 2 \
                        -site unithd
 
+make_tracks
+place_pins \
+    -hor_layers met3 \
+    -ver_layers met2
+
 global_placement -skip_initial_place
 detailed_placement
 improve_placement

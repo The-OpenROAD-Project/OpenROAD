@@ -19,6 +19,10 @@ initialize_floorplan -utilization 20 \
                        -site unithd
 
 
+make_tracks
+place_pins \
+    -hor_layers met3 \
+    -ver_layers met2
 global_placement -skip_initial_place -density 0.82
 detailed_placement
 improve_placement
