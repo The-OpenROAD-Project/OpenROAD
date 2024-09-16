@@ -99,7 +99,7 @@ static void populateODBProperties(Descriptor::Properties& props,
   }
 }
 
-static std::string convertUnits(double value, bool area = false)
+std::string Descriptor::convertUnits(const double value, const bool area)
 {
   double log_value = value;
   if (area) {
@@ -834,6 +834,12 @@ Descriptor::Properties DbMasterDescriptor::getProperties(std::any object) const
   props.push_back({"Origin", master->getOrigin()});
 
   populateODBProperties(props, master);
+
+  auto liberty
+      = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
+  if (liberty) {
+    props.push_back({"Liberty", gui->makeSelected(liberty)});
+  }
 
   return props;
 }
