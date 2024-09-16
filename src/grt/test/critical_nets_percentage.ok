@@ -28,7 +28,7 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      32472          4171          87.16%
+met1       Horizontal      32472          4210          87.03%
 met2       Vertical        25584          3360          86.87%
 met3       Horizontal      15416          1720          88.84%
 met4       Vertical        10332          1680          83.74%
@@ -36,24 +36,24 @@ met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2217
-[INFO GRT-0198] Via related Steiner nodes: 98
+[INFO GRT-0197] Via related to pin nodes: 2230
+[INFO GRT-0198] Via related Steiner nodes: 87
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3151
-[INFO GRT-0112] Final usage 3D: 11762
+[INFO GRT-0111] Final number of vias: 3184
+[INFO GRT-0112] Final usage 3D: 11871
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              4171           659           15.80%             0 /  0 /  0
-met2              3360           821           24.43%             0 /  0 /  0
-met3              1720           393           22.85%             0 /  0 /  0
-met4              1680           250           14.88%             0 /  0 /  0
-met5              1640           186           11.34%             0 /  0 /  0
+met1              4210           685           16.27%             0 /  0 /  0
+met2              3360           807           24.02%             0 /  0 /  0
+met3              1720           366           21.28%             0 /  0 /  0
+met4              1680           279           16.61%             0 /  0 /  0
+met5              1640           182           11.10%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            12571          2309           18.37%             0 /  0 /  0
+Total            12610          2319           18.39%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 24177 um
+[INFO GRT-0018] Total wirelength: 24343 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.
