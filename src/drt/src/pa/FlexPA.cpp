@@ -75,11 +75,8 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
-  // logger_->report("[BNMFW] Pin Acess Init");
   for (auto& master : design_->getMasters()) {
     for (auto& term : master->getTerms()) {
-      // logger_->report("[BNMFW] Master={} Term={}", master->getName(),
-      // term->getName());
       for (auto& pin : term->getPins()) {
         pin->clearPinAccess();
       }

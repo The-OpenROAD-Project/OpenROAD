@@ -41,7 +41,6 @@ UniqueInsts::UniqueInsts(frDesign* design,
 std::vector<frTrackPattern*> UniqueInsts::getPrefTrackPatterns()
 {
   std::vector<frTrackPattern*> pref_track_patterns;
-  // logger_->report("[BNMFW] Getting prefered track patterns");
   for (const auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const bool is_vertical_track = track_pattern->isHorizontal();
     const frLayerNum layer_num = track_pattern->getLayerNum();

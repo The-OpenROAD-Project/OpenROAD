@@ -78,7 +78,6 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
   for (auto& shape : pin->getFigs()) {
     if (shape->typeId() == frcRect) {
-      // logger_->report("[BNMFW] Rect Shape");
       auto obj = static_cast<frRect*>(shape.get());
       auto layer_num = obj->getLayerNum();
       if (tech->getLayer(layer_num)->getType() != dbTechLayerType::ROUTING) {
@@ -99,8 +98,6 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += rect;
     } else if (shape->typeId() == frcPolygon) {
-      // BNMFW-TODO: See if this is necessary
-      // logger_->report("[BNMFW] Poly Shape");
       auto obj = static_cast<frPolygon*>(shape.get());
       auto layer_num = obj->getLayerNum();
       std::vector<gtl::point_data<frCoord>> points;
