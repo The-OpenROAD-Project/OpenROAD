@@ -46,6 +46,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -73,7 +74,8 @@ template <typename T>
 static void add_limit(Descriptor::Properties& props,
                       sta::LibertyPort* port,
                       const char* label,
-                      LimitFunc<T> func)
+                      LimitFunc<T> func,
+                      const char* suffix)
 {
   for (const auto* elem : T::range()) {
     bool exists;
@@ -82,7 +84,8 @@ static void add_limit(Descriptor::Properties& props,
     if (exists) {
       std::string elem_str = elem->asString();
       capitalize(elem_str);
-      props.push_back({fmt::format("{} {}", elem_str, label), limit});
+      props.push_back({fmt::format("{} {}", elem_str, label),
+                       Descriptor::convertUnits(limit) + suffix});
     }
   }
 };
@@ -197,8 +200,10 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   auto gui = Gui::get();
   Properties props;
 
+  sta::LibertyLibrary* library = cell->libertyLibrary();
+
   if (auto area = cell->area()) {
-    props.push_back({"Area", area});
+    props.push_back({"Area", fmt::format("{} μm²", area)});
   }
   add_if_true(props, "Dont Use", cell->dontUse());
   props.push_back({"Filename", cell->filename()});
@@ -212,7 +217,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   add_if_true(props, "Is Macro", cell->isMacro());
   add_if_true(props, "Is Memory", cell->isMemory());
   add_if_true(props, "Is Pad", cell->isPad());
-  props.push_back({"Library", gui->makeSelected(cell->libertyLibrary())});
+  props.push_back({"Library", gui->makeSelected(library)});
 
   std::array<SelectionSet, 8> ports;
   sta::LibertyCellPortIterator port_iter(cell);
@@ -331,21 +336,24 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
 
   auto capacitance = port->capacitance();
   if (capacitance != 0) {
-    props.push_back({"Capacitance", capacitance});
+    props.push_back({"Capacitance", convertUnits(capacitance) + "F"});
   }
   auto drive_resistance = port->driveResistance();
   if (drive_resistance != 0) {
-    props.push_back({"Drive Resistance", drive_resistance});
+    props.push_back({"Drive Resistance", convertUnits(drive_resistance) + "Ω"});
   }
 
   add_limit<sta::MinMax>(
-      props, port, "Slew Limit", &sta::LibertyPort::slewLimit);
+      props, port, "Slew Limit", &sta::LibertyPort::slewLimit, "S");
+  add_limit<sta::MinMax>(props,
+                         port,
+                         "Capacitance Limit",
+                         &sta::LibertyPort::capacitanceLimit,
+                         "F");
   add_limit<sta::MinMax>(
-      props, port, "Capacitance Limit", &sta::LibertyPort::capacitanceLimit);
-  add_limit<sta::MinMax>(
-      props, port, "Fanout Limit", &sta::LibertyPort::fanoutLimit);
+      props, port, "Fanout Limit", &sta::LibertyPort::fanoutLimit, "");
   add_limit<sta::RiseFall>(
-      props, port, "Min Pulse Width", &sta::LibertyPort::minPulseWidth);
+      props, port, "Min Pulse Width", &sta::LibertyPort::minPulseWidth, "s");
 
   return props;
 }

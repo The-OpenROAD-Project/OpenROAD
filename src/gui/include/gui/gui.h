@@ -343,6 +343,8 @@ class Descriptor
   // and brush before calling.
   virtual void highlight(std::any object, Painter& painter) const = 0;
   virtual bool isSlowHighlight(std::any /* object */) const { return false; }
+
+  static std::string convertUnits(double value, bool area = false);
 };
 
 // An object selected in the gui.  The object is stored as a
