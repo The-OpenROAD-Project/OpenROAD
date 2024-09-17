@@ -2216,8 +2216,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     return;
   }
 
-  if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
+  if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
     return;
+  }
   pwires_.push_back(std::move(patch));
 }
 
@@ -3669,8 +3670,9 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
-    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
-      return;
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }
@@ -3793,8 +3795,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
-    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
-      return;
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox())) {
+      continue;
+    }
     pwires_.push_back(std::move(patch));
   }
 }
