@@ -994,8 +994,6 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
   }
 
   for (auto& gNet : gNets_) {
-    // old-style loop for old OpenMP
-
     gNet->clearWaVars();
     gNet->updateBox();
 
@@ -1811,6 +1809,7 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
   if (isConverged_) {
     return;
   }
+
   wireLengthGradSum_ = 0;
   densityGradSum_ = 0;
   float gradSum = 0;
@@ -1820,21 +1819,23 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
 
   for (auto& gCell : gCells_) {
     GCellState& state = gCell->state;
-    state.*wireLengthGradsPtr
+
+    FloatPoint& wireLengthGrads = state.*wireLengthGradsPtr;
+    FloatPoint& densityGrads = state.*densityGradsPtr;
+    FloatPoint& sumGrads = state.*sumGradsPtr;
+
+    wireLengthGrads
         = nbc_->getWireLengthGradientWA(gCell.get(), wlCoeffX, wlCoeffY);
-    state.*densityGradsPtr = getDensityGradient(gCell.get());
+    densityGrads = getDensityGradient(gCell.get());
 
-    wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).x);
-    wireLengthGradSum_ += std::fabs((state.*wireLengthGradsPtr).y);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads.x);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads.y);
 
-    densityGradSum_ += std::fabs((state.*densityGradsPtr).x);
-    densityGradSum_ += std::fabs((state.*densityGradsPtr).y);
+    densityGradSum_ += std::fabs(densityGrads.x);
+    densityGradSum_ += std::fabs(densityGrads.y);
 
-    state.*sumGradsPtr
-        = FloatPoint((state.*wireLengthGradsPtr).x
-                         + densityPenalty_ * (state.*densityGradsPtr).x,
-                     (state.*wireLengthGradsPtr).y
-                         + densityPenalty_ * (state.*densityGradsPtr).y);
+    sumGrads = FloatPoint(wireLengthGrads.x + densityPenalty_ * densityGrads.x,
+                          wireLengthGrads.y + densityPenalty_ * densityGrads.y);
 
     FloatPoint wireLengthPreCondi
         = nbc_->getWireLengthPreconditioner(gCell.get());
@@ -1844,17 +1845,14 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
         wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
         wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
 
-    (state.*sumGradsPtr).x
-        = (sumPrecondi.x <= npVars_->minPreconditioner)
-              ? (state.*sumGradsPtr).x / npVars_->minPreconditioner
-              : (state.*sumGradsPtr).x / sumPrecondi.x;
-    (state.*sumGradsPtr).y
-        = (sumPrecondi.y <= npVars_->minPreconditioner)
-              ? (state.*sumGradsPtr).y / npVars_->minPreconditioner
-              : (state.*sumGradsPtr).y / sumPrecondi.y;
+    sumGrads.x = (sumPrecondi.x <= npVars_->minPreconditioner)
+                     ? sumGrads.x / npVars_->minPreconditioner
+                     : sumGrads.x / sumPrecondi.x;
+    sumGrads.y = (sumPrecondi.y <= npVars_->minPreconditioner)
+                     ? sumGrads.y / npVars_->minPreconditioner
+                     : sumGrads.y / sumPrecondi.y;
 
-    gradSum += std::fabs((state.*sumGradsPtr).x)
-               + std::fabs((state.*sumGradsPtr).y);
+    gradSum += std::fabs(sumGrads.x) + std::fabs(sumGrads.y);
 
     if (gCell->instance()) {
       debugPrint(log_,
@@ -1870,10 +1868,10 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
                  "updateGrad",
                  2,
                  "WireLengthGrads: ({}, {}), DensityGrads: ({}, {})",
-                 (state.*wireLengthGradsPtr).x,
-                 (state.*wireLengthGradsPtr).y,
-                 (state.*densityGradsPtr).x,
-                 (state.*densityGradsPtr).y);
+                 wireLengthGrads.x,
+                 wireLengthGrads.y,
+                 densityGrads.x,
+                 densityGrads.y);
       debugPrint(log_,
                  GPL,
                  "updateGrad",
@@ -1890,11 +1888,12 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
                  "SumPrecondi: ({}, {}), SumGrads: ({}, {})",
                  sumPrecondi.x,
                  sumPrecondi.y,
-                 (state.*sumGradsPtr).x,
-                 (state.*sumGradsPtr).y);
+                 sumGrads.x,
+                 sumGrads.y);
       debugPrint(log_, GPL, "updateGrad", 2, "Current GradSum: {}", gradSum);
     }
   }
+
   debugPrint(log_,
              GPL,
              "updateGrad",
@@ -2367,8 +2366,11 @@ static float getDistance(
     const FloatPoint& a = state.*aCoord;
     const FloatPoint& b = state.*bCoord;
 
-    sumDistance += (a.x - b.x) * (a.x - b.x);
-    sumDistance += (a.y - b.y) * (a.y - b.y);
+    float delta_x = (a.x - b.x);
+    float delta_y = (a.y - b.y);
+    sumDistance += delta_x * delta_x;
+    sumDistance += delta_y * delta_y;
+
     count++;
   }
 
