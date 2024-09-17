@@ -735,9 +735,16 @@ Usage: $0
                                 # Installs dependencies required to run CI
        $0 -nocert
                                 # Disable certificate checks
+                                #    WARNING: Do not use without a good reason,
+                                #    like working around a firewall. This opens
+                                #    vulnerability to man-in-the-middle (MITM)
+                                #    attacks.
        $0 -save-deps-prefixes=FILE
                                 # Dumps OpenROAD build arguments and variables
                                 # to FILE
+       $0 -constant-build-dir
+                                # Use constant build directory, instead of
+                                #    random one.
 
 EOF
     exit "${1:-1}"
@@ -794,6 +801,14 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="${HOME}/.local"
             export isLocal="true"
             ;;
+        -constant-build-dir)
+            if [[ -d "$baseDir" ]]; then
+                echo "INFO: removing old building directory $baseDir"
+                rm -r "$baseDir"
+            fi
+            baseDir="/tmp/DependencyInstaller-OpenROAD"
+            mkdir -p "$baseDir"
+            ;;
         -prefix=*)
             if [[ ! -z ${PREFIX} ]]; then
                 echo "WARNING: previous argument -local will be overwritten with -prefix"
@@ -802,6 +817,9 @@ while [ "$#" -gt 0 ]; do
             export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
             ;;
         -nocert)
+            echo "WARNING: security certificates for downloaded packages will not be checked. Do not use" >&2
+            echo "         -nocert without a good reason, like working around a firewall. This opens" >&2
+            echo "         vulnerability to man-in-the-middle (MITM) attacks." >&2
             shopt -s expand_aliases
             alias wget="wget --no-check-certificate"
             export GIT_SSL_NO_VERIFY=true

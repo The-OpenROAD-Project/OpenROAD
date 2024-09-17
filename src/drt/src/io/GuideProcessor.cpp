@@ -617,6 +617,34 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
         Interval::closed(bridge.begin_idx, bridge.end_idx));
   }
 }
+/**
+ * Returns the preferred access point for required pin.
+ *
+ * The function returns the preferred acces point of the iterm from the required
+ * pin index. If there is no preferred access point set for that pin, then the
+ * first access point for that pin is returned.
+ *
+ * @param iterm The ITerm we are considering.
+ * @param pin_idx The pin index of the pin we are considering.
+ * @returns The preferred access point if found, and nullptr otherwise.
+ */
+frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
+{
+  const int pin_access_idx = iterm->getInst()->getPinAccessIdx();
+  const auto pin = iterm->getTerm()->getPins().at(pin_idx).get();
+  if (!pin->hasPinAccess()) {
+    return nullptr;
+  }
+  frAccessPoint* pref_ap = (iterm->getAccessPoints())[pin_idx];
+
+  if (!pref_ap) {
+    auto pa = pin->getPinAccess(pin_access_idx);
+    if (pa->getNumAccessPoints() != 0) {
+      pref_ap = pin->getPinAccess(pin_access_idx)->getAccessPoint(0);
+    }
+  }
+  return pref_ap;
+}
 
 }  // namespace
 
@@ -926,8 +954,7 @@ void GuideProcessor::patchGuides(frNet* net,
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
 }
 
-void GuideProcessor::genGuides_pinEnclosure(frNet* net,
-                                            std::vector<frRect>& guides)
+void GuideProcessor::coverPins(frNet* net, std::vector<frRect>& guides)
 {
   for (auto pin : net->getInstTerms()) {
     patchGuides(net, pin, guides);
@@ -944,147 +971,235 @@ void GuideProcessor::genGuides_prep(const std::vector<frRect>& rects,
   addTouchingGuidesBridges(intvs, logger_);
 }
 
+namespace split {
+/**
+ * Split the range[begin_idx, end_idx] by the locations of pins in that range.
+ *
+ * The function searches for indices on layer_num in the range [begin_idx,
+ * end_idx] where there exists pins. It adds tose indices to the split_indices
+ * set. It also fills the pin_gcell_map to map pin objects to their
+ * corresponding gcells.
+ *
+ * @param pin_helper a 3-d map where the first key is the layer_num, second key
+ * is the track index orthogonal to the routing direction, and third key is the
+ * track index along the routing direction. The value is the set of pins that
+ * exists at the mapped location.
+ * @param is_horizontal True if the layer of layer_num is horizontal
+ * @param pin_gcell_map Map from pin object to set of gcell indices where the
+ * pin touches.
+ * @param split_indices The returned set of indices where there exists pins.
+ */
+void splitByPins(
+    const std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>&
+        pin_helper,
+    const frLayerNum layer_num,
+    const bool is_horizontal,
+    const frCoord track_idx,
+    const frCoord begin_idx,
+    const frCoord end_idx,
+    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    std::set<frCoord>& split_indices)
+{
+  const auto& layer_pins = pin_helper.at(layer_num);
+  const auto& track_it = layer_pins.find(track_idx);
+  if (track_it != layer_pins.end()) {
+    const auto& pins_locations_map
+        = (*track_it).second;  // track indices along the routing dir
+    auto it = pins_locations_map.lower_bound(begin_idx);
+    while (it != pins_locations_map.end()) {
+      const auto along_routing_dir_idx = it->first;
+      const auto pins = it->second;
+      if (along_routing_dir_idx > end_idx) {
+        break;
+      }
+      split_indices.insert(along_routing_dir_idx);
+      for (const auto pin : pins) {
+        if (is_horizontal) {
+          pin_gcell_map[pin].insert(
+              Point3D(along_routing_dir_idx, track_idx, layer_num));
+        } else {
+          pin_gcell_map[pin].insert(
+              Point3D(track_idx, along_routing_dir_idx, layer_num));
+        }
+      }
+      ++it;
+    }
+  }
+}
+/**
+ * Finds split indices where tracks on a given layer intersect with a specified
+ * track.
+ *
+ * This function checks for track intervals on the specified `layer_num` that
+ * intersect with the provided track (which can be either horizontal or
+ * vertical) on the current layer. The function searches for intervals on tracks
+ * within the range [begin_idx, end_idx] for the track's coordinates. If
+ * intersections are found, the indices of those intersecting tracks are added
+ * to the `split_indices` set.
+ *
+ * @param layer_num The neighbor layer of the current track's layer.
+ * @param intvs Map of track intervals for each layer.
+ * @param track_idx The index of the track on the current layer to check for
+ * intersections.
+ * @param begin_idx The beginning coordinate of the track's range.
+ * @param end_idx The ending coordinate of the track's range.
+ * @param split_indices A set to store the indices where intersections are
+ * found.
+ */
+void splitByLayerIntersection(const frLayerNum layer_num,
+                              const TrackIntervalsByLayer& intvs,
+                              const frCoord track_idx,
+                              const frCoord begin_idx,
+                              const frCoord end_idx,
+                              std::set<frCoord>& split_indices)
+{
+  if (layer_num < 0 || layer_num >= intvs.size()) {
+    return;
+  }
+  auto it = intvs[layer_num].lower_bound(begin_idx);
+  while (it != intvs[layer_num].end()) {
+    const auto curr_track_idx = it->first;
+    const auto& indices = it->second;
+    if (curr_track_idx > end_idx) {
+      break;
+    }
+    if (boost::icl::contains(indices, track_idx)) {
+      split_indices.insert(curr_track_idx);
+    }
+    it++;
+  }
+}
+
+/**
+ * @brief Adds a rectangle to the list of rects.
+ *
+ * This function creates a guide rectangle with the specified gcell indices and
+ * add it to the list of rects.
+ *
+ * @param track_idx The index of the track where the rectangle will be
+ * created.(y index if the current layer is vertical and x if otherwise)
+ * @param begin_idx The beginning coordinate for the rectangle.
+ * @param end_idx The ending coordinate for the rectangle.
+ * @param layer_num The layer number the rectangle belongs to.
+ * @param is_horizontal True if the current layer is horizontal.
+ * @param rects vector of guides(defined gcell indices).
+ *
+ * @return void
+ */
+void addSplitRect(const frCoord track_idx,
+                  const frCoord begin_idx,
+                  const frCoord end_idx,
+                  const frLayerNum layer_num,
+                  const bool is_horizontal,
+                  std::vector<frRect>& rects)
+{
+  frRect rect;
+  if (is_horizontal) {
+    rect.setBBox(Rect(begin_idx, track_idx, end_idx, track_idx));
+  } else {
+    rect.setBBox(Rect(track_idx, begin_idx, track_idx, end_idx));
+  }
+  rect.setLayerNum(layer_num);
+  rects.emplace_back(rect);
+}
+}  // namespace split
+
 void GuideProcessor::genGuides_split(
     std::vector<frRect>& rects,
-    TrackIntervalsByLayer& intvs,
-    std::map<std::pair<Point, frLayerNum>,
-             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2GCellMap,
-    bool retry)
+    const TrackIntervalsByLayer& intvs,
+    const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    bool first_iter) const
 {
   rects.clear();
-  // layerNum->trackIdx->beginIdx->set of obj
-  std::vector<
-      std::map<frCoord,
-               std::map<frCoord, std::set<frBlockObject*, frBlockObjectComp>>>>
+  // layer_num->track_idx->routing_dir_track_idx->set of pins
+  std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>
       pin_helper(getTech()->getLayers().size());
-  for (auto& [pr, objS] : gCell2PinMap) {
-    auto& point = pr.first;
-    auto& lNum = pr.second;
-    if (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-      pin_helper[lNum][point.y()][point.x()] = objS;
+  for (const auto& [point, pins] : gcell_pin_map) {
+    if (getTech()->getLayer(point.z())->getDir()
+        == dbTechLayerDir::HORIZONTAL) {
+      pin_helper[point.z()][point.y()][point.x()] = pins;
     } else {
-      pin_helper[lNum][point.x()][point.y()] = objS;
+      pin_helper[point.z()][point.x()][point.y()] = pins;
     }
   }
 
-  for (int layerNum = 0; layerNum < (int) intvs.size(); layerNum++) {
-    auto dir = getTech()->getLayer(layerNum)->getDir();
-    for (auto& [trackIdx, curr_intvs] : intvs[layerNum]) {
+  for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
+    auto dir = getTech()->getLayer(layer_num)->getDir();
+    const bool is_horizontal = dir == dbTechLayerDir::HORIZONTAL;
+    for (auto& [track_idx, curr_intvs] : intvs[layer_num]) {
       // split by lower/upper seg
       for (const auto& intv : curr_intvs) {
-        std::set<frCoord> lineIdx;
-        auto beginIdx = intv.lower();
-        auto endIdx = intv.upper();
+        auto begin_idx = intv.lower();
+        auto end_idx = intv.upper();
+        std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (!retry && layerNum <= VIA_ACCESS_LAYERNUM) {
+        if (first_iter && layer_num <= VIA_ACCESS_LAYERNUM) {
           // split by pin
-          if (pin_helper[layerNum].find(trackIdx)
-              != pin_helper[layerNum].end()) {
-            auto& pin_helper_map = pin_helper[layerNum][trackIdx];
-            for (auto it2 = pin_helper_map.lower_bound(beginIdx);
-                 it2 != pin_helper_map.end() && it2->first <= endIdx;
-                 it2++) {
-              // add pin2GCellmap
-              for (auto obj : it2->second) {
-                if (dir == dbTechLayerDir::HORIZONTAL) {
-                  pin2GCellMap[obj].insert(
-                      std::make_pair(Point(it2->first, trackIdx), layerNum));
-                } else {
-                  pin2GCellMap[obj].insert(
-                      std::make_pair(Point(trackIdx, it2->first), layerNum));
-                }
-              }
-              // std::cout <<"pin split" <<std::endl;
-            }
-          }
-          for (int x = beginIdx; x <= endIdx; x++) {
-            frRect tmpRect;
-            if (dir == dbTechLayerDir::HORIZONTAL) {
-              tmpRect.setBBox(Rect(x, trackIdx, x, trackIdx));
-            } else {
-              tmpRect.setBBox(Rect(trackIdx, x, trackIdx, x));
-            }
-            tmpRect.setLayerNum(layerNum);
-            rects.push_back(tmpRect);
+          split::splitByPins(pin_helper,
+                             layer_num,
+                             is_horizontal,
+                             track_idx,
+                             begin_idx,
+                             end_idx,
+                             pin_gcell_map,
+                             split_indices);
+          // for first iteration, consider guides below or
+          // on VIA_ACCESS_LAYER_NUM as via guides only.
+          for (int curr_idx = begin_idx; curr_idx <= end_idx; curr_idx++) {
+            split::addSplitRect(
+                track_idx, curr_idx, curr_idx, layer_num, is_horizontal, rects);
           }
         } else {
           // lower layer intersection
-          if (layerNum - 2 >= 0) {
-            auto nbrLayerNum = layerNum - 2;
-            for (auto it2 = intvs[nbrLayerNum].lower_bound(beginIdx);
-                 it2 != intvs[nbrLayerNum].end() && it2->first <= endIdx;
-                 it2++) {
-              if (boost::icl::contains(it2->second, trackIdx)) {
-                lineIdx.insert(
-                    it2->first);  // it2->first is intersection frCoord
-                // std::cout <<"found split point" <<std::endl;
-              }
-            }
-          }
-          if (layerNum + 2 < (int) intvs.size()) {
-            auto nbrLayerNum = layerNum + 2;
-            for (auto it2 = intvs[nbrLayerNum].lower_bound(beginIdx);
-                 it2 != intvs[nbrLayerNum].end() && it2->first <= endIdx;
-                 it2++) {
-              if (boost::icl::contains(it2->second, trackIdx)) {
-                lineIdx.insert(it2->first);
-                // std::cout <<"found split point" <<std::endl;
-              }
-            }
-          }
+          split::splitByLayerIntersection(layer_num - 2,
+                                          intvs,
+                                          track_idx,
+                                          begin_idx,
+                                          end_idx,
+                                          split_indices);
+          // upper layer intersection
+          split::splitByLayerIntersection(layer_num + 2,
+                                          intvs,
+                                          track_idx,
+                                          begin_idx,
+                                          end_idx,
+                                          split_indices);
           // split by pin
-          if (pin_helper[layerNum].find(trackIdx)
-              != pin_helper[layerNum].end()) {
-            auto& pin_helper_map = pin_helper[layerNum][trackIdx];
-            for (auto it2 = pin_helper_map.lower_bound(beginIdx);
-                 it2 != pin_helper_map.end() && it2->first <= endIdx;
-                 it2++) {
-              lineIdx.insert(it2->first);
-              // add pin2GCellMap
-              for (auto obj : it2->second) {
-                if (dir == dbTechLayerDir::HORIZONTAL) {
-                  pin2GCellMap[obj].insert(
-                      std::make_pair(Point(it2->first, trackIdx), layerNum));
-                } else {
-                  pin2GCellMap[obj].insert(
-                      std::make_pair(Point(trackIdx, it2->first), layerNum));
-                }
-              }
-              // std::cout <<"pin split" <<std::endl;
-            }
-          }
+          split::splitByPins(pin_helper,
+                             layer_num,
+                             is_horizontal,
+                             track_idx,
+                             begin_idx,
+                             end_idx,
+                             pin_gcell_map,
+                             split_indices);
           // add rect
-          if (lineIdx.empty()) {
+          if (split_indices.empty()) {
             logger_->error(DRT,
                            229,
-                           "genGuides_split lineIdx is empty on {}.",
-                           getTech()->getLayer(layerNum)->getName());
-          } else if (lineIdx.size() == 1) {
-            auto x = *(lineIdx.begin());
-            frRect tmpRect;
-            if (dir == dbTechLayerDir::HORIZONTAL) {
-              tmpRect.setBBox(Rect(x, trackIdx, x, trackIdx));
-            } else {
-              tmpRect.setBBox(Rect(trackIdx, x, trackIdx, x));
-            }
-            tmpRect.setLayerNum(layerNum);
-            rects.push_back(tmpRect);
+                           "genGuides_split split_indices is empty on {}.",
+                           getTech()->getLayer(layer_num)->getName());
+          }
+          if (split_indices.size() == 1) {
+            auto split_idx = *(split_indices.begin());
+            split::addSplitRect(track_idx,
+                                split_idx,
+                                split_idx,
+                                layer_num,
+                                is_horizontal,
+                                rects);
           } else {
-            auto prevIt = lineIdx.begin();
-            for (auto currIt = (++(lineIdx.begin())); currIt != lineIdx.end();
-                 currIt++) {
-              frRect tmpRect;
-              if (dir == dbTechLayerDir::HORIZONTAL) {
-                tmpRect.setBBox(Rect(*prevIt, trackIdx, *currIt, trackIdx));
-              } else {
-                tmpRect.setBBox(Rect(trackIdx, *prevIt, trackIdx, *currIt));
-              }
-              tmpRect.setLayerNum(layerNum);
-              prevIt = currIt;
-              rects.push_back(tmpRect);
+            auto curr_idx_it = split_indices.begin();
+            auto prev_idx_it = curr_idx_it++;
+            while (curr_idx_it != split_indices.end()) {
+              split::addSplitRect(track_idx,
+                                  *prev_idx_it,
+                                  *curr_idx_it,
+                                  layer_num,
+                                  is_horizontal,
+                                  rects);
+              prev_idx_it = curr_idx_it++;
             }
           }
         }
@@ -1094,224 +1209,102 @@ void GuideProcessor::genGuides_split(
   rects.shrink_to_fit();
 }
 
-template <typename T>
-void GuideProcessor::genGuides_gCell2TermMap(
-    std::map<std::pair<Point, frLayerNum>,
-             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-    T* term,
-    frBlockObject* origTerm,
-    const dbTransform& xform)
+void GuideProcessor::mapPinShapesToGCells(
+    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    frBlockObject* term) const
 {
-  for (auto& uPin : term->getPins()) {
-    for (auto& uFig : uPin->getFigs()) {
-      auto fig = uFig.get();
-      if (fig->typeId() != frcRect) {
-        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupported pinfig.");
-      }
-      auto shape = static_cast<frRect*>(fig);
-      auto lNum = shape->getLayerNum();
-      auto layer = getTech()->getLayer(lNum);
-      Rect box = shape->getBBox();
-      xform.apply(box);
-      Point pt(box.xMin() + 1, box.yMin() + 1);
-      Point idx = getDesign()->getTopBlock()->getGCellIdx(pt);
-      frCoord x1 = idx.x();
-      frCoord y1 = idx.y();
-      pt = {box.ur().x() - 1, box.ur().y() - 1};
-      idx = getDesign()->getTopBlock()->getGCellIdx(pt);
-      frCoord x2 = idx.x();
-      frCoord y2 = idx.y();
-      // ispd18_test4 and ispd18_test5 have zero overlap guide
-      // excludes double-zero overlap area on the upper-right corner due to
-      // initDR requirements
-      bool condition2 = false;  // upper right corner has zero-length
-                                // overlapped with gcell
-      Point tmpIdx = getDesign()->getTopBlock()->getGCellIdx(box.ll());
-      Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(tmpIdx);
-      if (box.ll() == gcellBox.ll()) {
-        condition2 = true;
-      }
-
-      bool condition3 = false;  // GR implies wrongway connection but
-                                // technology does not allow
-      if ((layer->getDir() == dbTechLayerDir::VERTICAL
-           && (!USENONPREFTRACKS || layer->isUnidirectional())
-           && box.xMin() == gcellBox.xMin())
-          || (layer->getDir() == dbTechLayerDir::HORIZONTAL
-              && (!USENONPREFTRACKS || layer->isUnidirectional())
-              && box.yMin() == gcellBox.yMin())) {
-        condition3 = true;
-      }
-      for (int x = x1; x <= x2; x++) {
-        for (int y = y1; y <= y2; y++) {
-          if (condition2 && x == tmpIdx.x() - 1 && y == tmpIdx.y() - 1) {
-            if (VERBOSE > 0) {
-              frString name = (origTerm->typeId() == frcInstTerm)
-                                  ? ((frInstTerm*) origTerm)->getName()
-                                  : term->getName();
-              logger_->warn(DRT,
-                            230,
-                            "genGuides_gCell2TermMap avoid condition2, may "
-                            "result in guide open: {}.",
-                            name);
-            }
-          } else if (condition3
-                     && ((x == tmpIdx.x() - 1
-                          && layer->getDir() == dbTechLayerDir::VERTICAL)
-                         || (y == tmpIdx.y() - 1
-                             && layer->getDir()
-                                    == dbTechLayerDir::HORIZONTAL))) {
-            if (VERBOSE > 0) {
-              frString name = (origTerm->typeId() == frcInstTerm)
-                                  ? ((frInstTerm*) origTerm)->getName()
-                                  : term->getName();
-              logger_->warn(DRT,
-                            231,
-                            "genGuides_gCell2TermMap avoid condition3, may "
-                            "result in guide open: {}.",
-                            name);
-            }
-          } else {
-            gCell2PinMap[std::make_pair(Point(x, y), lNum)].insert(origTerm);
-          }
-        }
+  const auto pin_shapes = getPinShapes(term);
+  for (const auto& shape : pin_shapes) {
+    const auto layer_num = shape.getLayerNum();
+    const Rect box = shape.getBBox();
+    const Point min_idx = getDesign()->getTopBlock()->getGCellIdx(
+        {box.xMin() + 1, box.yMin() + 1});
+    const Point max_idx = getDesign()->getTopBlock()->getGCellIdx(
+        {box.xMax() - 1, box.yMax() - 1});
+    for (int x = min_idx.x(); x <= max_idx.x(); x++) {
+      for (int y = min_idx.y(); y <= max_idx.y(); y++) {
+        gcell_pin_map[Point3D(x, y, layer_num)].insert(term);
       }
     }
   }
 }
 
-void GuideProcessor::genGuides_gCell2PinMap(
-    frNet* net,
-    std::map<std::pair<Point, frLayerNum>,
-             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap)
+void GuideProcessor::initGCellPinMap(
+    const frNet* net,
+    std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const
 {
-  for (auto& instTerm : net->getInstTerms()) {
-    dbTransform xform = instTerm->getInst()->getUpdatedXform();
-    auto term = instTerm->getTerm();
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-      if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, xform);
-      }
-    } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, xform);
+  for (auto instTerm : net->getInstTerms()) {
+    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
+        && mapITermAccessPointsToGCells(gcell_pin_map, instTerm)) {
+      continue;
     }
+    mapPinShapesToGCells(gcell_pin_map, instTerm);
   }
-  for (auto& term : net->getBTerms()) {
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-      if (!genGuides_gCell2APTermMap(gCell2PinMap, term)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, term, {});
-      }
-    } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, term, {});
+  for (auto term : net->getBTerms()) {
+    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB"
+        && mapBTermAccessPointsToGCells(gcell_pin_map, term)) {
+      continue;
     }
+    mapPinShapesToGCells(gcell_pin_map, term);
   }
 }
 
-bool GuideProcessor::genGuides_gCell2APInstTermMap(
-    std::map<std::pair<Point, frLayerNum>,
-             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-    frInstTerm* instTerm)
+bool GuideProcessor::mapITermAccessPointsToGCells(
+    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    frInstTerm* inst_term) const
 {
-  bool isSuccess = false;
+  const size_t num_pins = inst_term->getTerm()->getPins().size();
+  const frInst* inst = inst_term->getInst();
+  dbTransform transform = inst->getTransform();
+  transform.setOrient(dbOrientType(dbOrientType::R0));
 
-  if (!instTerm) {
-    return isSuccess;
-  }
-
-  // ap
-  frMTerm* trueTerm = instTerm->getTerm();
-  std::string name;
-  frInst* inst = instTerm->getInst();
-  dbTransform shiftXform;
-
-  int pinIdx = 0;
-  int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
-  if (inst != nullptr) {
-    shiftXform = inst->getTransform();
-    shiftXform.setOrient(dbOrientType(dbOrientType::R0));
-  }
-  int succesPinCnt = 0;
-  for (auto& pin : trueTerm->getPins()) {
-    frAccessPoint* prefAp = nullptr;
-    if (inst) {
-      prefAp = (instTerm->getAccessPoints())[pinIdx];
+  int pins_covered = 0;
+  for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
+    const frAccessPoint* pref_ap = getPrefAp(inst_term, pin_idx);
+    if (pref_ap) {
+      Point bp = pref_ap->getPoint();
+      transform.apply(bp);
+      const frLayerNum layer_num = pref_ap->getLayerNum();
+      const Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
+      gcell_pin_map[Point3D(idx, layer_num)].insert(inst_term);
+      pins_covered++;
     }
+  }
+  return (pins_covered == num_pins);
+}
+
+bool GuideProcessor::mapBTermAccessPointsToGCells(
+    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    frBTerm* term) const
+{
+  int pins_covered = 0;
+  for (const auto& pin : term->getPins()) {
     if (!pin->hasPinAccess()) {
       continue;
     }
-    if (pinAccessIdx == -1) {
-      continue;
-    }
-
-    if (!prefAp) {
-      for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
-        prefAp = ap.get();
-        break;
-      }
-    }
-
-    if (prefAp) {
-      Point bp = prefAp->getPoint();
-      auto bNum = prefAp->getLayerNum();
-      shiftXform.apply(bp);
-
-      Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
-      gCell2PinMap[std::make_pair(idx, bNum)].insert(
-          static_cast<frBlockObject*>(instTerm));
-      succesPinCnt++;
-      if (succesPinCnt == int(trueTerm->getPins().size())) {
-        isSuccess = true;
-      }
-    }
-    pinIdx++;
-  }
-  return isSuccess;
-}
-
-bool GuideProcessor::genGuides_gCell2APTermMap(
-    std::map<std::pair<Point, frLayerNum>,
-             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
-    frBTerm* term)
-{
-  bool isSuccess = false;
-
-  if (!term) {
-    return isSuccess;
-  }
-
-  size_t succesPinCnt = 0;
-  for (auto& pin : term->getPins()) {
-    if (!pin->hasPinAccess()) {
-      continue;
-    }
-
-    auto& access_points = pin->getPinAccess(0)->getAccessPoints();
+    const auto& access_points = pin->getPinAccess(0)->getAccessPoints();
     if (access_points.empty()) {
       continue;
     }
-    frAccessPoint* prefAp = access_points[0].get();
-
-    const Point& bp = prefAp->getPoint();
-    const auto bNum = prefAp->getLayerNum();
-
-    Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
-    gCell2PinMap[{idx, bNum}].insert(term);
-    succesPinCnt++;
+    const frAccessPoint* pref_ap = access_points[0].get();
+    const Point& bp = pref_ap->getPoint();
+    const frLayerNum layer_num = pref_ap->getLayerNum();
+    const Point idx = getDesign()->getTopBlock()->getGCellIdx(bp);
+    gcell_pin_map[Point3D(idx, layer_num)].insert(term);
+    pins_covered++;
   }
-  return succesPinCnt == term->getPins().size();
+  return pins_covered == term->getPins().size();
 }
 
-void GuideProcessor::genGuides_initPin2GCellMap(
+void GuideProcessor::initPinGCellMap(
     frNet* net,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2GCellMap)
+    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
 {
   for (auto& instTerm : net->getInstTerms()) {
-    pin2GCellMap[instTerm];
+    pin_gcell_map[instTerm];
   }
   for (auto& term : net->getBTerms()) {
-    pin2GCellMap[term];
+    pin_gcell_map[term];
   }
 }
 
@@ -1323,26 +1316,15 @@ void GuideProcessor::genGuides_addCoverGuide(frNet* net,
   }
 }
 
-void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* term,
+void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* iterm,
                                                     std::vector<frRect>& rects)
 {
-  const frInst* inst = term->getInst();
+  const frInst* inst = iterm->getInst();
+  const size_t num_pins = iterm->getTerm()->getPins().size();
   dbTransform transform = inst->getTransform();
   transform.setOrient(dbOrientType(dbOrientType::R0));
-  int pin_idx = 0;
-  const int pin_access_idx = inst->getPinAccessIdx();
-  for (const auto& pin : term->getTerm()->getPins()) {
-    if (!pin->hasPinAccess()) {
-      continue;
-    }
-    frAccessPoint* pref_ap = term->getAccessPoint(pin_idx);
-    if (!pref_ap) {
-      const auto pa = pin->getPinAccess(pin_access_idx);
-      if (pa->getNumAccessPoints() != 0) {
-        pref_ap = pa->getAccessPoint(0);
-      }
-    }
-
+  for (int pin_idx = 0; pin_idx < num_pins; pin_idx++) {
+    const frAccessPoint* pref_ap = getPrefAp(iterm, pin_idx);
     if (pref_ap) {
       Point pt = pref_ap->getPoint();
       transform.apply(pt);
@@ -1365,7 +1347,6 @@ void GuideProcessor::genGuides_addCoverGuide_helper(frInstTerm* term,
         rects.push_back(cover_guide);
       }
     }
-    pin_idx++;
   }
 }
 
@@ -1373,7 +1354,7 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
 {
   net->clearGuides();
 
-  genGuides_pinEnclosure(net, rects);
+  coverPins(net, rects);
 
   int size = (int) getTech()->getLayers().size();
   if (TOP_ROUTING_LAYER < std::numeric_limits<int>::max()
@@ -1386,208 +1367,221 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
   }
   genGuides_prep(rects, intvs);
 
-  std::map<std::pair<Point, frLayerNum>,
-           std::set<frBlockObject*, frBlockObjectComp>>
-      gCell2PinMap;
-  std::map<frBlockObject*,
-           std::set<std::pair<Point, frLayerNum>>,
-           frBlockObjectComp>
-      pin2GCellMap;
-  genGuides_gCell2PinMap(net, gCell2PinMap);
-  genGuides_initPin2GCellMap(net, pin2GCellMap);
+  std::map<Point3D, frBlockObjectSet> gcell_pin_map;
+  frBlockObjectMap<std::set<Point3D>> pin_gcell_map;
+  initGCellPinMap(net, gcell_pin_map);
+  initPinGCellMap(net, pin_gcell_map);
 
-  bool retry = false;
-  while (true) {
-    genGuides_split(rects,
-                    intvs,
-                    gCell2PinMap,
-                    pin2GCellMap,
-                    retry);  // split on LU intersecting guides and pins
-
-    // filter pin2GCellMap with aps
-
-    if (pin2GCellMap.empty()) {
-      logger_->warn(DRT, 214, "genGuides empty pin2GCellMap.");
-      debugPrint(
-          logger_, DRT, "io", 1, "gcell2pin.size() = {}", gCell2PinMap.size());
-    }
-    for (auto& [obj, locS] : pin2GCellMap) {
-      if (locS.empty()) {
-        switch (obj->typeId()) {
-          case frcInstTerm: {
-            auto ptr = static_cast<frInstTerm*>(obj);
-            logger_->warn(DRT,
-                          215,
-                          "Pin {}/{} not covered by guide.",
-                          ptr->getInst()->getName(),
-                          ptr->getTerm()->getName());
-            break;
-          }
-          case frcBTerm: {
-            auto ptr = static_cast<frBTerm*>(obj);
-            logger_->warn(
-                DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
-            break;
-          }
-          default: {
-            logger_->warn(DRT, 217, "genGuides unknown type.");
-            break;
+  bool path_found = false;
+  // Run for 3 iterations max
+  for (int i = 0; i < 3; i++) {
+    const bool is_first_iter = (i == 0);
+    const bool is_last_iter = (i == 2);
+    if (!is_last_iter) {
+      genGuides_split(
+          rects,
+          intvs,
+          gcell_pin_map,
+          pin_gcell_map,
+          is_first_iter);  // split on LU intersecting guides and pins
+      if (pin_gcell_map.empty()) {
+        logger_->warn(DRT, 214, "genGuides empty gcell_pin_map.");
+        debugPrint(logger_,
+                   DRT,
+                   "io",
+                   1,
+                   "gcell2pin.size() = {}",
+                   gcell_pin_map.size());
+      }
+      for (auto& [obj, indices] : pin_gcell_map) {
+        if (indices.empty()) {
+          switch (obj->typeId()) {
+            case frcInstTerm: {
+              auto ptr = static_cast<frInstTerm*>(obj);
+              logger_->warn(DRT,
+                            215,
+                            "Pin {}/{} not covered by guide.",
+                            ptr->getInst()->getName(),
+                            ptr->getTerm()->getName());
+              break;
+            }
+            case frcBTerm: {
+              auto ptr = static_cast<frBTerm*>(obj);
+              logger_->warn(
+                  DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
+              break;
+            }
+            default: {
+              logger_->warn(DRT, 217, "genGuides unknown type.");
+              break;
+            }
           }
         }
       }
     }
-
-    // steiner (i.e., gcell end and pin gcell idx) to guide idx (pin idx)
-    std::map<std::pair<Point, frLayerNum>, std::set<int>> nodeMap;
-    int gCnt = 0;
-    int nCnt = 0;
-    genGuides_buildNodeMap(nodeMap, gCnt, nCnt, rects, pin2GCellMap);
-    // std::cout <<"build node map done" <<std::endl <<std::flush;
-
-    std::vector<bool> adjVisited;
-    std::vector<int> adjPrevIdx;
-    if (genGuides_astar(
-            net, adjVisited, adjPrevIdx, nodeMap, gCnt, nCnt, false, retry)) {
-      // std::cout <<"astar done" <<std::endl <<std::flush;
-      genGuides_final(
-          net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
+    GuidePathFinder path_finder(
+        design_, logger_, net, is_last_iter, rects, pin_gcell_map);
+    path_finder.setAllowWarnings(!is_first_iter);
+    if (path_finder.traverseGraph()) {
+      path_found = true;
+      path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
       break;
     }
-    if (retry) {
-      if (!ALLOW_PIN_AS_FEEDTHROUGH) {
-        if (genGuides_astar(net,
-                            adjVisited,
-                            adjPrevIdx,
-                            nodeMap,
-                            gCnt,
-                            nCnt,
-                            true,
-                            retry)) {
-          genGuides_final(
-              net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
-          break;
-        }
-        logger_->error(DRT, 218, "Guide is not connected to design.");
-      } else {
-        logger_->error(DRT, 219, "Guide is not connected to design.");
-      }
+  }
+  if (!path_found) {
+    logger_->error(DRT, 218, "Guide is not connected to design.");
+  }
+}
+
+GuidePathFinder::GuidePathFinder(
+    frDesign* design,
+    Logger* logger,
+    frNet* net,
+    const bool force_feed_through,
+    const std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    : design_(design),
+      logger_(logger),
+      net_(net),
+      force_feed_through_(force_feed_through)
+{
+  buildNodeMap(rects, pin_gcell_map);
+  constructAdjList();
+  is_on_path_.resize(getNodeCount(), false);
+  visited_.resize(getNodeCount(), false);
+  prev_idx_.resize(getNodeCount(), -1);
+}
+
+void GuidePathFinder::buildNodeMap(
+    const std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+{
+  node_map_.clear();
+  for (int i = 0; i < (int) rects.size(); i++) {
+    const auto& rect = rects.at(i);
+    Rect box = rect.getBBox();
+    node_map_[{box.ll(), rect.getLayerNum()}].insert(i);
+    node_map_[{box.ur(), rect.getLayerNum()}].insert(i);
+  }
+  guide_count_ = rects.size();  // total guide cnt
+  int node_idx = rects.size();
+  for (const auto& [obj, gcells] : pin_gcell_map) {
+    for (const auto& gcell : gcells) {
+      node_map_[gcell].insert(node_idx);
+    }
+    ++node_idx;
+  }
+  node_count_ = node_idx;  // total node cnt
+}
+
+std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
+    const std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    const std::vector<frBlockObject*>& pins) const
+{
+  std::vector<std::vector<Point3D>> pin_to_gcell(getPinCount());
+  for (int i = 0; i < getNodeCount(); i++) {
+    if (!visited_[i]) {
+      continue;
+    }
+    int pin_idx, guide_idx;
+    if (isPinIdx(i) && isGuideIdx(prev_idx_[i])) {
+      pin_idx = i;
+      guide_idx = prev_idx_[i];
+    } else if (isGuideIdx(i) && isPinIdx(prev_idx_[i])) {
+      guide_idx = i;
+      pin_idx = prev_idx_[i];
     } else {
-      retry = true;
+      continue;
+    }
+    const int true_pin_idx = getTruePinIdx(pin_idx);
+    const auto& rect = rects[guide_idx];
+    const Rect box = rect.getBBox();
+    const auto layer_num = rect.getLayerNum();
+    auto pin = pins[true_pin_idx];
+    if (pin_gcell_map.at(pin).find(Point3D(box.ll(), layer_num))
+        != pin_gcell_map.at(pin).end()) {
+      pin_to_gcell[true_pin_idx].emplace_back(box.ll(), layer_num);
+    } else if (pin_gcell_map.at(pin).find(Point3D(box.ur(), layer_num))
+               != pin_gcell_map.at(pin).end()) {
+      pin_to_gcell[true_pin_idx].emplace_back(box.ur(), layer_num);
+    } else {
+      logger_->warn(
+          DRT, 220, "genGuides_final net {} error 1.", net_->getName());
+    }
+  }
+  return pin_to_gcell;
+}
+
+void GuidePathFinder::updateGRPins(
+    const std::vector<frBlockObject*>& pins,
+    const std::vector<std::vector<Point3D>>& pin_to_gcell,
+    std::vector<std::pair<frBlockObject*, Point>>& gr_pins) const
+{
+  for (int i = 0; i < getPinCount(); i++) {
+    auto pin = pins[i];
+    for (auto& pt : pin_to_gcell[i]) {
+      Point abs_pt = getDesign()->getTopBlock()->getGCellCenter(pt);
+      gr_pins.emplace_back(pin, abs_pt);
     }
   }
 }
 
-void GuideProcessor::genGuides_final(
-    frNet* net,
-    std::vector<frRect>& rects,
-    std::vector<bool>& adjVisited,
-    std::vector<int>& adjPrevIdx,
-    int gCnt,
-    int nCnt,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2GCellMap)
+void GuidePathFinder::updateNodeMap(
+    const std::vector<frRect>& rects,
+    const std::vector<std::vector<Point3D>>& pin_to_gcell)
 {
-  std::vector<frBlockObject*> pin2ptr;
-  pin2ptr.reserve(pin2GCellMap.size());
-  for (auto& [obj, idxS] : pin2GCellMap) {
-    pin2ptr.push_back(obj);
+  node_map_.clear();
+  // pin_to_gcell tells pin residency in gcell
+  for (int i = 0; i < getPinCount(); i++) {
+    for (auto& pt : pin_to_gcell[i]) {
+      node_map_[pt].insert(i + getGuideCount());
+    }
+  }
+  for (int i = 0; i < getGuideCount(); i++) {
+    if (!visited_[i]) {
+      continue;
+    }
+    const auto& rect = rects[i];
+    Rect box = rect.getBBox();
+    node_map_[Point3D(box.ll(), rect.getLayerNum())].insert(i);
+    node_map_[Point3D(box.ur(), rect.getLayerNum())].insert(i);
+  }
+}
+
+void GuidePathFinder::commitPathToGuides(
+    std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    std::vector<std::pair<frBlockObject*, Point>>& gr_pins)
+{
+  std::vector<frBlockObject*> pins;
+  pins.reserve(getPinCount());
+  for (const auto& [pin, _] : pin_gcell_map) {
+    pins.emplace_back(pin);
   }
   // find pin in which guide
-  std::vector<std::vector<std::pair<Point, frLayerNum>>> pinIdx2GCellUpdated(
-      nCnt - gCnt);
-  std::vector<std::vector<int>> guideIdx2Pins(gCnt);
-  for (int i = 0; i < (int) adjPrevIdx.size(); i++) {
-    if (!adjVisited[i]) {
-      continue;
-    }
-    if (i < gCnt && adjPrevIdx[i] >= gCnt) {
-      auto pinIdx = adjPrevIdx[i] - gCnt;
-      auto guideIdx = i;
-      auto& rect = rects[guideIdx];
-      Rect box = rect.getBBox();
-      auto lNum = rect.getLayerNum();
-      auto obj = pin2ptr[pinIdx];
-      // std::cout <<" pin1 id " <<adjPrevIdx[i] <<" prev " <<i <<std::endl;
-      if (pin2GCellMap[obj].find(std::make_pair(box.ll(), lNum))
-          != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ll(), lNum));
-      } else if (pin2GCellMap[obj].find(std::make_pair(box.ur(), lNum))
-                 != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ur(), lNum));
-      } else {
-        logger_->warn(
-            DRT, 220, "genGuides_final net {} error 1.", net->getName());
-      }
-      guideIdx2Pins[guideIdx].push_back(pinIdx);
-    } else if (i >= gCnt && adjPrevIdx[i] >= 0 && adjPrevIdx[i] < gCnt) {
-      auto pinIdx = i - gCnt;
-      auto guideIdx = adjPrevIdx[i];
-      auto& rect = rects[guideIdx];
-      Rect box = rect.getBBox();
-      auto lNum = rect.getLayerNum();
-      auto obj = pin2ptr[pinIdx];
-      // std::cout <<" pin2 id " <<i <<" prev " <<adjPrevIdx[i] <<std::endl;
-      if (pin2GCellMap[obj].find(std::make_pair(box.ll(), lNum))
-          != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ll(), lNum));
-      } else if (pin2GCellMap[obj].find(std::make_pair(box.ur(), lNum))
-                 != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ur(), lNum));
-      } else {
-        logger_->warn(
-            DRT, 221, "genGuides_final net {} error 2.", net->getName());
-      }
-      guideIdx2Pins[guideIdx].push_back(pinIdx);
-    }
-  }
-  for (auto& guides : pinIdx2GCellUpdated) {
+  std::vector<std::vector<Point3D>> pin_to_gcell
+      = getPinToGCellList(rects, pin_gcell_map, pins);
+  int pin_idx = 0;
+  for (auto& guides : pin_to_gcell) {
     if (guides.empty()) {
-      logger_->warn(DRT,
-                    222,
-                    "genGuides_final net {} pin not in any guide.",
-                    net->getName());
+      logger_->error(DRT,
+                     222,
+                     "Pin {} is not visited by any guide",
+                     getPinName(pins[pin_idx]));
     }
+    ++pin_idx;
   }
 
-  std::map<std::pair<Point, frLayerNum>, std::set<int>> updatedNodeMap;
-  // pinIdx2GCellUpdated tells pin residency in gcell
-  for (int i = 0; i < nCnt - gCnt; i++) {
-    auto obj = pin2ptr[i];
-    for (auto& [pt, lNum] : pinIdx2GCellUpdated[i]) {
-      Point absPt = getDesign()->getTopBlock()->getGCellCenter(pt);
-      tmpGRPins_.emplace_back(obj, absPt);
-      updatedNodeMap[std::make_pair(pt, lNum)].insert(i + gCnt);
-    }
-  }
-  for (int i = 0; i < gCnt; i++) {
-    if (!adjVisited[i]) {
-      continue;
-    }
-    auto& rect = rects[i];
-    Rect box = rect.getBBox();
-    updatedNodeMap[std::make_pair(Point(box.xMin(), box.yMin()),
-                                  rect.getLayerNum())]
-        .insert(i);
-    updatedNodeMap[std::make_pair(Point(box.xMax(), box.yMax()),
-                                  rect.getLayerNum())]
-        .insert(i);
-    // std::cout <<"add guide " <<i <<" to " <<Point(box.xMin(),  box.yMin())
-    // <<" " <<rect.getLayerNum() <<std::endl; std::cout <<"add guide " <<i <<"
-    // to "
-    // <<Point(box.xMax(), box.yMax())    <<" " <<rect.getLayerNum()
-    // <<std::endl;
-  }
-  for (auto& [pr, idxS] : updatedNodeMap) {
-    auto& [pt, lNum] = pr;
-    if ((int) idxS.size() == 1) {
-      auto idx = *(idxS.begin());
-      if (idx < gCnt) {
+  updateNodeMap(rects, pin_to_gcell);
+  updateGRPins(pins, pin_to_gcell, gr_pins);
+  for (auto& [pt, indices] : node_map_) {
+    if ((int) indices.size() == 1) {
+      auto idx = *(indices.begin());
+      if (isGuideIdx(idx)) {
         // no upper/lower guide
-        if (updatedNodeMap.find(std::make_pair(pt, lNum + 2))
-                == updatedNodeMap.end()
-            && updatedNodeMap.find(std::make_pair(pt, lNum - 2))
-                   == updatedNodeMap.end()) {
+        if (node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
+            && node_map_.find(Point3D(pt, pt.z() - 2)) == node_map_.end()) {
           auto& rect = rects[idx];
           Rect box = rect.getBBox();
           if (box.ll() == pt) {
@@ -1603,14 +1597,12 @@ void GuideProcessor::genGuides_final(
                        idx,
                        pt.x(),
                        pt.y(),
-                       lNum);
+                       pt.z());
       }
     }
   }
-  // guideIdx2Pins enables finding from guide to pin
-  // adjVisited tells guide to write back
-  for (int i = 0; i < gCnt; i++) {
-    if (!adjVisited[i]) {
+  for (int i = 0; i < getGuideCount(); i++) {
+    if (!visited_[i]) {
       continue;
     }
     auto& rect = rects[i];
@@ -1621,208 +1613,159 @@ void GuideProcessor::genGuides_final(
     guide->setPoints(begin, end);
     guide->setBeginLayerNum(rect.getLayerNum());
     guide->setEndLayerNum(rect.getLayerNum());
-    guide->addToNet(net);
-    net->addGuide(std::move(guide));
-    // std::cout <<"add guide " <<begin <<" " <<end <<" " <<rect.getLayerNum()
-    // <<std::endl;
+    guide->addToNet(net_);
+    net_->addGuide(std::move(guide));
   }
 }
 
-void GuideProcessor::genGuides_buildNodeMap(
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
-    int& gCnt,
-    int& nCnt,
-    std::vector<frRect>& rects,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2GCellMap)
+void GuidePathFinder::constructAdjList()
 {
-  for (int i = 0; i < (int) rects.size(); i++) {
-    auto& rect = rects[i];
-    Rect box = rect.getBBox();
-    nodeMap[std::make_pair(box.ll(), rect.getLayerNum())].insert(i);
-    nodeMap[std::make_pair(box.ur(), rect.getLayerNum())].insert(i);
-  }
-  gCnt = rects.size();  // total guide cnt
-  int nodeIdx = rects.size();
-  for (auto& [obj, locS] : pin2GCellMap) {
-    for (auto& loc : locS) {
-      nodeMap[loc].insert(nodeIdx);
-    }
-    nodeIdx++;
-  }
-  nCnt = nodeIdx;  // total node cnt
-}
-
-bool GuideProcessor::genGuides_astar(
-    frNet* net,
-    std::vector<bool>& adjVisited,
-    std::vector<int>& adjPrevIdx,
-    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
-    int& gCnt,
-    int& nCnt,
-    bool forceFeedThrough,
-    bool retry)
-{
-  // a star search
-
-  // node index, node visited
-  std::vector<std::vector<int>> adjVec(nCnt, std::vector<int>());
-  std::vector<bool> onPathIdx(nCnt, false);
-  adjVisited.clear();
-  adjPrevIdx.clear();
-  adjVisited.resize(nCnt, false);
-  adjPrevIdx.resize(nCnt, -1);
-  for (auto& [pr, idxS] : nodeMap) {
-    auto& [pt, lNum] = pr;
-    for (auto it1 = idxS.begin(); it1 != idxS.end(); it1++) {
+  adj_list_.resize(getNodeCount());
+  for (const auto& [pt, indices] : node_map_) {
+    const frLayerNum layer_num = pt.z();
+    for (auto it1 = indices.begin(); it1 != indices.end(); it1++) {
       auto it2 = it1;
       it2++;
       auto idx1 = *it1;
-      for (; it2 != idxS.end(); it2++) {
+      for (; it2 != indices.end(); it2++) {
         auto idx2 = *it2;
         // two pins, no edge
-        if (idx1 >= gCnt && idx2 >= gCnt) {
+        if (isPinIdx(idx1) && isPinIdx(idx2)) {
           continue;
-          // two gcells, has edge
         }
-        if (idx1 < gCnt && idx2 < gCnt) {
+        // two gcells, has edge
+        if (!isPinIdx(idx1) && !isPinIdx(idx2)) {
           // no M1 cross-gcell routing allowed
           // BX200307: in general VIA_ACCESS_LAYER should not be used (instead
           // of 0)
-          if (lNum != VIA_ACCESS_LAYERNUM) {
-            adjVec[idx1].push_back(idx2);
-            adjVec[idx2].push_back(idx1);
+          if (layer_num != VIA_ACCESS_LAYERNUM) {
+            adj_list_[idx1].push_back(idx2);
+            adj_list_[idx2].push_back(idx1);
           }
-          // one pin, one gcell
         } else {
-          auto gIdx = std::min(idx1, idx2);
-          auto pIdx = std::max(idx1, idx2);
-          // only out edge
-          if (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) {
-            adjVec[pIdx].push_back(gIdx);
-            adjVec[gIdx].push_back(pIdx);
+          // one pin, one gcell
+          auto guide_idx = std::min(idx1, idx2);
+          auto pin_idx = std::max(idx1, idx2);
+          if (ALLOW_PIN_AS_FEEDTHROUGH || isForceFeedThrough()) {
+            adj_list_[pin_idx].push_back(guide_idx);
+            adj_list_[guide_idx].push_back(pin_idx);
           } else {
-            if (pIdx == gCnt) {
-              adjVec[pIdx].push_back(gIdx);
-              // std::cout <<"add edge2 " <<pIdx <<" " <<gIdx <<std::endl;
-              // only in edge
+            if (pin_idx == getGuideCount()) {
+              // only out edge
+              adj_list_[pin_idx].push_back(guide_idx);
             } else {
-              adjVec[gIdx].push_back(pIdx);
-              // std::cout <<"add edge3 " <<gIdx <<" " <<pIdx <<std::endl;
+              // only in edge
+              adj_list_[guide_idx].push_back(pin_idx);
             }
           }
         }
       }
       // add intersecting guide2guide edge excludes pin
-      if (idx1 < gCnt
-          && nodeMap.find(std::make_pair(pt, lNum + 2)) != nodeMap.end()) {
-        for (auto nbrIdx : nodeMap[std::make_pair(pt, lNum + 2)]) {
-          if (nbrIdx < gCnt) {
-            adjVec[idx1].push_back(nbrIdx);
-            adjVec[nbrIdx].push_back(idx1);
-            // std::cout <<"add edge4 " <<idx1 <<" " <<nbrIdx <<std::endl;
-            // std::cout <<"add edge5 " <<nbrIdx <<" " <<idx1 <<std::endl;
+      if (!isPinIdx(idx1)
+          && node_map_.find({pt, layer_num + 2}) != node_map_.end()) {
+        for (auto neighbor_idx : node_map_.at({pt, layer_num + 2})) {
+          if (!isPinIdx(neighbor_idx)) {
+            adj_list_[idx1].push_back(neighbor_idx);
+            adj_list_[neighbor_idx].push_back(idx1);
           }
         }
       }
     }
   }
+}
 
-  struct wf
-  {
-    int nodeIdx;
-    int prevIdx;
-    int cost;
-    bool operator<(const wf& b) const
-    {
-      if (cost == b.cost) {
-        return nodeIdx > b.nodeIdx;
-      }
-      return cost > b.cost;
-    }
-  };
-  for (int findNode = gCnt; findNode < nCnt - 1; findNode++) {
-    // std::cout <<"finished " <<findNode <<" nodes" <<std::endl;
-    std::priority_queue<wf> pq;
-    if (findNode == gCnt) {
-      // push only first pin into pq
-      pq.push({gCnt, -1, 0});
-    } else {
-      // push every visited node into pq
-      for (int i = 0; i < nCnt; i++) {
-        if (onPathIdx[i]) {
+std::priority_queue<GuidePathFinder::Wavefront>
+GuidePathFinder::getInitSearchQueue()
+{
+  std::priority_queue<Wavefront> queue;
+  if (!visited_[getGuideCount()]) {
+    // push only first pin into pq
+    queue.push({getGuideCount(), -1, 0});
+  } else {
+    // push every visited node into pq
+    for (int i = 0; i < getNodeCount(); i++) {
+      if (is_on_path_[i]) {
+        if (ALLOW_PIN_AS_FEEDTHROUGH && isPinIdx(i)) {
           // penalize feedthrough in normal mode
-          if (ALLOW_PIN_AS_FEEDTHROUGH && i >= gCnt) {
-            pq.push({i, adjPrevIdx[i], 2});
-            // penalize feedthrough in fallback mode
-          } else if (forceFeedThrough && i >= gCnt) {
-            pq.push({i, adjPrevIdx[i], 10});
-          } else {
-            pq.push({i, adjPrevIdx[i], 0});
-          }
+          queue.push({i, prev_idx_[i], 2});
+        } else if (isForceFeedThrough() && isPinIdx(i)) {
+          // penalize feedthrough in fallback mode
+          queue.push({i, prev_idx_[i], 10});
+        } else {
+          queue.push({i, prev_idx_[i], 0});
         }
       }
     }
-    int lastNodeIdx = -1;
-    while (!pq.empty()) {
-      auto wfront = pq.top();
-      pq.pop();
-      if (!onPathIdx[wfront.nodeIdx] && adjVisited[wfront.nodeIdx]) {
+  }
+  return queue;
+}
+
+bool GuidePathFinder::traverseGraph()
+{
+  for (int traversal_count = 0; traversal_count < getPinCount() - 1;
+       traversal_count++) {
+    std::priority_queue<Wavefront> queue = getInitSearchQueue();
+    int visited_pin = -1;
+    while (!queue.empty()) {
+      auto curr_wavefront = queue.top();
+      queue.pop();
+      if (!is_on_path_[curr_wavefront.node_idx]
+          && visited_[curr_wavefront.node_idx]) {
         continue;
       }
-      if (wfront.nodeIdx > gCnt && wfront.nodeIdx < nCnt
-          && adjVisited[wfront.nodeIdx] == false) {
-        adjVisited[wfront.nodeIdx] = true;
-        adjPrevIdx[wfront.nodeIdx] = wfront.prevIdx;
-        lastNodeIdx = wfront.nodeIdx;
+      if (curr_wavefront.node_idx > getGuideCount()
+          && visited_[curr_wavefront.node_idx] == false) {
+        visited_[curr_wavefront.node_idx] = true;
+        prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
+        visited_pin = curr_wavefront.node_idx;
         break;
       }
-      adjVisited[wfront.nodeIdx] = true;
-      adjPrevIdx[wfront.nodeIdx] = wfront.prevIdx;
+      visited_[curr_wavefront.node_idx] = true;
+      prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
       // visit other nodes
-      for (auto nbrIdx : adjVec[wfront.nodeIdx]) {
-        if (!adjVisited[nbrIdx]) {
-          pq.push({nbrIdx, wfront.nodeIdx, wfront.cost + 1});
+      for (auto neighbor_idx : adj_list_[curr_wavefront.node_idx]) {
+        if (!visited_[neighbor_idx]) {
+          queue.push(
+              {neighbor_idx, curr_wavefront.node_idx, curr_wavefront.cost + 1});
         }
       }
     }
     // trace back path
-    while ((lastNodeIdx != -1) && (!onPathIdx[lastNodeIdx])) {
-      onPathIdx[lastNodeIdx] = true;
-      lastNodeIdx = adjPrevIdx[lastNodeIdx];
+    int last_visited_idx = visited_pin;
+    while ((last_visited_idx != -1) && (!is_on_path_[last_visited_idx])) {
+      is_on_path_[last_visited_idx] = true;
+      last_visited_idx = prev_idx_[last_visited_idx];
     }
-    adjVisited = onPathIdx;
+    visited_ = is_on_path_;
   }
   // skip one-pin net
-  if (nCnt == gCnt + 1) {
+  if (getPinCount() == 1) {
     return true;
   }
-  int pinVisited = count(adjVisited.begin() + gCnt, adjVisited.end(), true);
+  int visited_pin_count
+      = count(visited_.begin() + guide_count_, visited_.end(), true);
+  const bool success = (visited_pin_count == getPinCount());
   // true error when allowing feedthrough
-  if (pinVisited != nCnt - gCnt
-      && (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) && retry) {
-    logger_->warn(DRT,
-                  224,
-                  "{} {} pin not visited, number of guides = {}.",
-                  net->getName(),
-                  nCnt - gCnt - pinVisited,
-                  gCnt);
+  if (!success && allowWarnings()) {
+    if (ALLOW_PIN_AS_FEEDTHROUGH || isForceFeedThrough()) {
+      logger_->warn(DRT,
+                    224,
+                    "{} {} pin not visited, number of guides = {}.",
+                    net_->getName(),
+                    getPinCount() - visited_pin_count,
+                    getGuideCount());
+    } else {
+      // fallback to feedthrough in next iter
+      logger_->warn(DRT,
+                    225,
+                    "{} {} pin not visited, fall back to feedthrough mode.",
+                    net_->getName(),
+                    getPinCount() - visited_pin_count);
+    }
   }
-  // fallback to feedthrough in next iter
-  if (pinVisited != nCnt - gCnt && !ALLOW_PIN_AS_FEEDTHROUGH
-      && !forceFeedThrough && retry) {
-    logger_->warn(DRT,
-                  225,
-                  "{} {} pin not visited, fall back to feedthrough mode.",
-                  net->getName(),
-                  nCnt - gCnt - pinVisited);
-  }
-  if (pinVisited == nCnt - gCnt) {
-    return true;
-  }
-  return false;
+  return success;
 }
+
 void GuideProcessor::saveGuidesUpdates()
 {
   auto block = db_->getChip()->getBlock();

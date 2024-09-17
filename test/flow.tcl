@@ -247,11 +247,6 @@ set repair_antennas_iters 0
 utl::set_metrics_stage "drt__repair_antennas__pre_repair__{}"
 while {[check_antennas] && $repair_antennas_iters < 5} {
   utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
-  # ensure that detail place will not touch nets that were not
-  # modified by repair_antennas
-  foreach inst [[ord::get_db_block] getInsts] {
-    $inst setPlacementStatus "FIRM"
-  }
 
   repair_antennas
 
