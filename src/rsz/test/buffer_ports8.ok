@@ -26,9 +26,10 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 596715
 [InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 579151
 [InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 568782
-[INFO GPL-0031] FillerInit:NumGCells:       968
-[INFO GPL-0032] FillerInit:NumGNets:          3
-[INFO GPL-0033] FillerInit:NumGPins:          7
+[INFO GPL-0031] NesterovInit #GCells:       968
+[INFO GPL-0032] NesterovInit #Filler:       967
+[INFO GPL-0033] NesterovInit #GNets:          3
+[INFO GPL-0034] NesterovInit #GPins:          7
 [INFO GPL-0023] TargetDensity:            0.700
 [INFO GPL-0024] AvrgPlaceInstArea:        4.522 um^2
 [INFO GPL-0025] IdealBinArea:             6.460 um^2
