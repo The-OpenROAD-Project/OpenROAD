@@ -399,8 +399,7 @@ void ClusteringEngine::createIOCluster(
   int width = die.dx(), height = die.dy();
 
   if (constraint_boundary != NONE) {
-    setIoConstraintsClustersDimensions(
-        die, constraint_boundary, x, y, width, height);
+    setIOClusterDimensions(die, constraint_boundary, x, y, width, height);
   }
 
   cluster->setAsIOCluster(
@@ -411,13 +410,12 @@ void ClusteringEngine::createIOCluster(
   tree_->root->addChild(std::move(cluster));
 }
 
-void ClusteringEngine::setIoConstraintsClustersDimensions(
-    const odb::Rect& die,
-    const Boundary boundary,
-    int& x,
-    int& y,
-    int& width,
-    int& height)
+void ClusteringEngine::setIOClusterDimensions(const odb::Rect& die,
+                                              const Boundary boundary,
+                                              int& x,
+                                              int& y,
+                                              int& width,
+                                              int& height)
 {
   if (boundary == L) {
     x = die.xMin();
