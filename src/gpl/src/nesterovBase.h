@@ -910,12 +910,7 @@ class NesterovBaseCommon
 
   void createGCell(odb::dbInst* db_inst);
 
-  //  uint getValidGCellID() { return valid_gcell_id; }
-  uint addValidGCellID()
-  {
-    ++valid_gcell_id;
-    return valid_gcell_id;
-  }
+  uint addValidGCellID();
 
  private:
   NesterovBaseVars nbVars_;

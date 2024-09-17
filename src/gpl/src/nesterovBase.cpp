@@ -1219,6 +1219,12 @@ int64_t NesterovBaseCommon::getHpwl()
   return hpwl;
 }
 
+uint NesterovBaseCommon::addValidGCellID()
+{
+  ++valid_gcell_id;
+  return valid_gcell_id;
+}
+
 ////////////////////////////////////////////////
 // NesterovBase
 
@@ -1290,12 +1296,6 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
-}
-
-uint NesterovBase::addValidGCellID()
-{
-  ++valid_gcell_id;
-  return valid_gcell_id;
 }
 
 // virtual filler GCells
