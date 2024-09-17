@@ -164,12 +164,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
-  int getMinRoutingLayer() const { return block_->getMinRoutingLayer(); }
-  int getMaxRoutingLayer() const { return block_->getMaxRoutingLayer(); }
+  int getMinRoutingLayer();
+  int getMaxRoutingLayer();
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
-  int getMinLayerForClock() const { return block_->getMinLayerForClock(); }
-  int getMaxLayerForClock() const { return block_->getMaxLayerForClock(); }
+  int getMinLayerForClock();
+  int getMaxLayerForClock();
   void setCriticalNetsPercentage(float critical_nets_percentage);
   void addLayerAdjustment(int layer, float reduction_percentage);
   void addRegionAdjustment(int min_x,

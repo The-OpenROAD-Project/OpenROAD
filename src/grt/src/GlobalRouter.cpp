@@ -1653,23 +1653,67 @@ void GlobalRouter::setAdjustment(const float adjustment)
   adjustment_ = adjustment;
 }
 
+int GlobalRouter::getMinRoutingLayer() 
+{ 
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  return block_->getMinRoutingLayer(); 
+}
+
+int GlobalRouter::getMaxRoutingLayer() 
+{
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  return block_->getMaxRoutingLayer(); 
+}
+
+int GlobalRouter::getMinLayerForClock()  
+{ 
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  return block_->getMinLayerForClock(); 
+}
+
+int GlobalRouter::getMaxLayerForClock()
+{
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
+  return block_->getMaxLayerForClock();
+}
+
 void GlobalRouter::setMinRoutingLayer(const int min_layer)
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   block_->setMinRoutingLayer(min_layer);
 }
 
 void GlobalRouter::setMaxRoutingLayer(const int max_layer)
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   block_->setMaxRoutingLayer(max_layer);
 }
 
 void GlobalRouter::setMinLayerForClock(const int min_layer)
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   block_->setMinLayerForClock(min_layer);
 }
 
 void GlobalRouter::setMaxLayerForClock(const int max_layer)
 {
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+  }
   block_->setMaxLayerForClock(max_layer);
 }
 
