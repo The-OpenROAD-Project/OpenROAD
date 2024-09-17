@@ -492,7 +492,7 @@ int Gui::select(const std::string& type,
           }
         }
 
-        main_window->addSelected(selected_set);
+        main_window->addSelected(selected_set, true);
         if (highlight_group != -1) {
           main_window->addHighlighted(selected_set, highlight_group);
         }
