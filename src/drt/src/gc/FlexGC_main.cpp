@@ -2131,6 +2131,14 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
   return false;
 }
 
+namespace gc_patch {
+bool isPatchValid(drPatchWire* pwire, const Rect& boundary_box)
+{
+  return pwire->getBBox().intersects(boundary_box)
+         || boundary_box.intersects(pwire->getOrigin());
+}
+}  // namespace gc_patch
+
 void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 {
   auto poly = pin->getPolygon();
@@ -2208,6 +2216,8 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     return;
   }
 
+  if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
+    return;
   pwires_.push_back(std::move(patch));
 }
 
@@ -3659,6 +3669,8 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
+      return;
     pwires_.push_back(std::move(patch));
   }
 }
@@ -3781,6 +3793,8 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     patch->setOrigin(origin);
     patch->setOffsetBox(markerBBox);
     patch->addToNet(net);
+    if (!gc_patch::isPatchValid(patch.get(), getDRWorker()->getRouteBox()))
+      return;
     pwires_.push_back(std::move(patch));
   }
 }
