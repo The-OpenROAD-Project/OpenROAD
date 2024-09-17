@@ -281,8 +281,12 @@ void SimulatedAnnealingCore<T>::calWirelength()
     */
     if (source.isIOCluster()) {
       addBoundaryDistToWirelength(target, source, net.weight);
-    } else if (target.isIOCluster()) {
+      continue;
+    }
+
+    if (target.isIOCluster()) {
       addBoundaryDistToWirelength(source, target, net.weight);
+      continue;
     }
 
     const float x1 = macros_[net.terminals.first].getPinX();
@@ -314,16 +318,23 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     TO DO: check if the macro is inside the outline, if not,
     use HPWL of the die are as penalty to guide SA.
   */
-
   Cluster* io_cluster = io.getCluster();
+  const Rect die = io_cluster->getBBox();
+
+  if (isOutsideTheOutline(macro)) {
+    // Add a fixed penalty based on the die dimensions so that we
+    // can assume the macro is inside the outline when computing
+    // the distance to the edges.
+    wirelength_ = net_weight * die.getWidth() * die.getHeight();
+    return;
+  }
+
   const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
   const float x1 = macro.getPinX();
   const float y1 = macro.getPinY();
 
   if (constraint_boundary == NONE) {
-    const Rect die = io_cluster->getBBox();
-
     /*
       TO DO: Use information of which boundary is forbidden based on
       the global exclude constraints for the edges
@@ -347,6 +358,15 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const float y2 = io.getPinY();
     wirelength_ += net_weight * std::abs(y2 - y1);
   }
+}
+
+// We consider the macro outside the outline based on the location of
+// the pin to avoid too many checks.
+template <class T>
+bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
+{
+  return macro.getPinX() > outline_.getWidth()
+         || macro.getPinY() > outline_.getHeight();
 }
 
 template <class T>

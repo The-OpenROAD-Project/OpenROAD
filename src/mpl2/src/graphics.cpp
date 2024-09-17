@@ -508,6 +508,10 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
                                               const T& macro,
                                               const T& io)
 {
+  if (isOutsideTheOutline(macro)) {
+    return;
+  }
+
   Cluster* io_cluster = io.getCluster();
 
   const int x1 = block_->micronsToDbu(macro.getPinX());
@@ -540,6 +544,13 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
                      to.getY(),
                      gui::Painter::CENTER,
                      toString(constraint_boundary));
+}
+
+template <typename T>
+bool Graphics::isOutsideTheOutline(const T& macro) const
+{
+  return block_->micronsToDbu(macro.getPinX()) > outline_.dx()
+         || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
 }
 
 template <typename T>

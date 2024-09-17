@@ -101,6 +101,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
                                       const T& macro,
                                       const T& io);
   template <typename T>
+  bool isOutsideTheOutline(const T& macro) const;
+  template <typename T>
   odb::Point getClosestBoundaryPoint(const T& macro, Cluster* io_cluster);
   template <typename T>
   Boundary getClosestBoundary(const T& macro, const Rect& die);
