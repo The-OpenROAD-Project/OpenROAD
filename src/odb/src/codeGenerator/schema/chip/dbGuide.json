@@ -23,6 +23,13 @@
         ]
       },
       {
+        "name": "via_layer_",
+        "type": "dbId<_dbTechLayer>",
+        "flags": [
+          "private"
+        ]
+      },
+      {
         "name":"guide_next_",
         "type":"dbId<_dbGuide>",
         "flags":["no-get","no-set"],
