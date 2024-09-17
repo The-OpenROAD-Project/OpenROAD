@@ -2640,63 +2640,17 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
   }
 }
 
-void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box,
-                            const std::set<odb::Point>& via_positions)
-{
-  std::vector<odb::Rect> final_box;
-  if (guide_box.empty()) {
-    logger_->error(GRT, 78, "Guides vector is empty.");
-  }
-  final_box.push_back(guide_box[0]);
-  for (size_t i = 1; i < guide_box.size(); i++) {
-    odb::Rect box = guide_box[i];
-    odb::Rect& lastBox = final_box.back();
-
-    GRoute segs;
-    boxToGlobalRouting(box, 0, segs);
-    odb::Point seg_init(segs[0].init_x, segs[0].init_y);
-    odb::Point seg_final(segs.back().init_x, segs.back().init_y);
-
-    if (lastBox.overlaps(box)
-        && (via_positions.find(seg_init) == via_positions.end()
-            || via_positions.find(seg_final) == via_positions.end())) {
-      int lowerX = std::min(lastBox.xMin(), box.xMin());
-      int lowerY = std::min(lastBox.yMin(), box.yMin());
-      int upperX = std::max(lastBox.xMax(), box.xMax());
-      int upperY = std::max(lastBox.yMax(), box.yMax());
-      lastBox = odb::Rect(lowerX, lowerY, upperX, upperY);
-    } else
-      final_box.push_back(box);
-  }
-  guide_box.clear();
-  guide_box = std::move(final_box);
-}
-
 odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
   odb::Rect die_bounds = grid_->getGridArea();
-  int init_x, init_y;
-  int final_x, final_y;
 
-  if (route.init_x < route.final_x) {
-    init_x = route.init_x;
-    final_x = route.final_x;
-  } else {
-    init_x = route.final_x;
-    final_x = route.init_x;
-  }
-
-  if (route.init_y < route.final_y) {
-    init_y = route.init_y;
-    final_y = route.final_y;
-  } else {
-    init_y = route.final_y;
-    final_y = route.init_y;
-  }
+  const int init_x = std::min(route.init_x, route.final_x);
+  const int final_x = std::max(route.init_x, route.final_x);
+  const int init_y = std::min(route.init_y, route.final_y);
+  const int final_y = std::max(route.init_y, route.final_y);
 
   int llX = init_x - (grid_->getTileSize() / 2);
   int llY = init_y - (grid_->getTileSize() / 2);
-
   int urX = final_x + (grid_->getTileSize() / 2);
   int urY = final_y + (grid_->getTileSize() / 2);
 
@@ -2725,8 +2679,9 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
-  if (x0 == x1 && y0 == y1)
+  if (x0 == x1 && y0 == y1) {
     route.push_back(GSegment(x0, y0, layer, x1, y1, layer));
+  }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
     route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0, layer));
