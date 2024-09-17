@@ -110,7 +110,7 @@ class GuideProcessor
    *
    * The function checks all the pin shapes against the guides to see if any of
    * them overlap with the guides. If not, it extends the existing guides to
-   * overlap with patchGuides_helpera pin shape.
+   * overlap with a pin shape.
    * @param net the current net whose guides we are processing
    * @param pin a pin in the net which we are attempting to connect to the
    * guides
@@ -208,18 +208,18 @@ class GuideProcessor
    *
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
-   * @returns True if all pins preffered access points are considier.
+   * @returns True if all pins' preferred access points are considered.
    */
   bool mapITermAccessPointsToGCells(
       std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-      frInstTerm* instTerm) const;
+      frInstTerm* inst_term) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed BTerm
    * based on preferred access points.
    *
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
-   * @returns True if all pins preffered access points are considier.
+   * @returns True if all pins' preferred access points are considered.
    */
   bool mapBTermAccessPointsToGCells(
       std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
@@ -248,26 +248,23 @@ class GuideProcessor
 class GuidePathFinder
 {
  public:
-  GuidePathFinder(frDesign* design, Logger* logger, frNet* net)
-      : design_(design), logger_(logger), net_(net)
-  {
-  }
+  /**
+   * @brief Constructs the object and initializes member variables
+   *
+   * @param rects A vector of guide rectangles (by GCell indices).
+   * @param pin_gcell_map A map of pins and their corresponding GCell indices.
+   */
+  GuidePathFinder(frDesign* design,
+                  Logger* logger,
+                  frNet* net,
+                  bool force_feed_through,
+                  const std::vector<frRect>& rects,
+                  const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   int getNodeCount() const { return node_count_; }
   int getGuideCount() const { return guide_count_; }
   int getPinCount() const { return node_count_ - guide_count_; }
   bool isForceFeedThrough() const { return force_feed_through_; }
   bool allowWarnings() const { return allow_warnings_; }
-  /**
-   * @brief Initializes the node map and other member variables.
-   *
-   * The function constructs the node map from the given list of guides and
-   * pins.
-   *
-   * @param rects A vector of guide rectangles(by GCell indices).
-   * @param pin_gcell_map A map of pins and their corresponding GCell indices.
-   */
-  void init(const std::vector<frRect>& rects,
-            const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   void setForceFeedThrough(const bool value) { force_feed_through_ = value; }
   void setAllowWarnings(const bool value) { allow_warnings_ = value; }
   /**
@@ -315,19 +312,16 @@ class GuidePathFinder
     }
   };
   /**
-   * @brief Clears all internal data structures for graphTraversal.
+   * @brief Builds the node map and other member variables.
+   *
+   * The function constructs the node map from the given list of guides and
+   * pins.
+   *
+   * @param rects A vector of guide rectangles(by GCell indices).
+   * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    */
-  void clearAll()
-  {
-    adj_list_.clear();
-    adj_list_.shrink_to_fit();
-    visited_.clear();
-    visited_.shrink_to_fit();
-    is_on_path_.clear();
-    is_on_path_.shrink_to_fit();
-    prev_idx_.clear();
-    prev_idx_.shrink_to_fit();
-  }
+  void buildNodeMap(const std::vector<frRect>& rects,
+                    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   /**
    * @brief Constructs the adjacency list for the graph of guides and pins.
    *
@@ -365,12 +359,10 @@ class GuidePathFinder
    * This function creates the initial priority queue for the graph traversal,
    * either starting from the first pin or all previously visited nodes.
    *
-   * @param first_traversal True if this is the first traversal, false if
-   * continuing from previous traversals.
    * @return A priority queue of Wavefront objects, representing nodes to
    * explore during traversal.
    */
-  std::priority_queue<Wavefront> getInitSearchQueue(bool first_traversal);
+  std::priority_queue<Wavefront> getInitSearchQueue();
   /**
    * @brief Creates a mapping of pins to GCell locations.
    *
@@ -382,7 +374,7 @@ class GuidePathFinder
    * @param pin_gcell_map A map of pins and their corresponding GCell
    * locations.
    * @param pins A vector of pins involved in the routing.
-   * @return A vector of GCell locations for each pin(vector index is the pin
+   * @return A vector of GCell locations for each pin (vector index is the pin
    * index in the adj_list_).
    */
   std::vector<std::vector<Point3D>> getPinToGCellList(
@@ -420,10 +412,10 @@ class GuidePathFinder
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
   frNet* net_{nullptr};
+  bool force_feed_through_{false};
   std::map<Point3D, std::set<int>> node_map_;
   int guide_count_{0};
   int node_count_{0};
-  bool force_feed_through_{false};
   bool allow_warnings_{false};
   std::vector<std::vector<int>> adj_list_;
   std::vector<bool> visited_;
