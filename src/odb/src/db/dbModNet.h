@@ -65,6 +65,7 @@ class _dbModNet : public _dbObject
   char* _name;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> _next_entry;
+  dbId<_dbModNet> _prev_entry;
   dbId<_dbModITerm> _moditerms;
   dbId<_dbModBTerm> _modbterms;
   dbId<_dbITerm> _iterms;

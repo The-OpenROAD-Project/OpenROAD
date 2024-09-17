@@ -1289,6 +1289,7 @@ void Resizer::findResizeSlacks()
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
+                               0.0,
                                false,
                                repaired_net_count,
                                slew_violations,
@@ -2640,6 +2641,7 @@ bool Resizer::isFuncOneZero(const Pin* drvr_pin)
 void Resizer::repairDesign(double max_wire_length,
                            double slew_margin,
                            double cap_margin,
+                           double buffer_gain,
                            bool verbose)
 {
   resizePreamble();
@@ -2647,7 +2649,7 @@ void Resizer::repairDesign(double max_wire_length,
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, verbose);
+      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
 }
 
 int Resizer::repairDesignBufferCount() const

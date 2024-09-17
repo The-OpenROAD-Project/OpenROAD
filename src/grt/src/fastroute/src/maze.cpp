@@ -1528,10 +1528,17 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_y3_[curY][tmpX] = curY;
             hv_[curY][tmpX] = false;
             double* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  607,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // right
@@ -1589,10 +1596,17 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_y3_[curY][tmpX] = curY;
             hv_[curY][tmpX] = false;
             double* dtmp = &d1[curY][tmpX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  608,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // bottom
@@ -1649,10 +1663,17 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_y1_[tmpY][curX] = curY;
             hv_[tmpY][curX] = true;
             double* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  609,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
         // top
@@ -1710,10 +1731,17 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             parent_y1_[tmpY][curX] = curY;
             hv_[tmpY][curX] = true;
             double* dtmp = &d1[tmpY][curX];
-            int ind = 0;
-            while (src_heap[ind] != dtmp)
-              ind++;
-            updateHeap(src_heap, ind);
+            const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+            if (it != src_heap.end()) {
+              const int pos = it - src_heap.begin();
+              updateHeap(src_heap, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  610,
+                  "Unable to update: position not found in 2D heap for net {}.",
+                  nets_[netID]->getName());
+            }
           }
         }
 

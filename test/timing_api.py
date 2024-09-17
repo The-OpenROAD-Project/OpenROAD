@@ -12,9 +12,11 @@ timing = Timing(design)
 for corner in timing.getCorners():
     for net in design.getBlock().getNets():
         print(
-            net.getName(),
-            timing.getNetCap(net, corner, Timing.Max),
-            timing.getNetCap(net, corner, Timing.Min),
+            "{} {:.3g} {:.3g}".format(
+                net.getName(),
+                timing.getNetCap(net, corner, Timing.Max),
+                timing.getNetCap(net, corner, Timing.Min),
+            )
         )
 
 for inst in design.getBlock().getInsts():

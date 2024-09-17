@@ -694,12 +694,12 @@ void Optdp::createArchitecture()
 
   odb::Rect dieRect = block->getDieArea();
 
-  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  auto min_row_height = std::numeric_limits<int>::max();
   for (dbRow* row : block->getRows()) {
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
 
-  std::map<odb::uint, std::unordered_set<std::string>> skip_list;
+  std::map<int, std::unordered_set<std::string>> skip_list;
 
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
