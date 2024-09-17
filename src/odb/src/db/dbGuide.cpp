@@ -58,6 +58,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (layer_ != rhs.layer_) {
     return false;
   }
+  if (via_layer_ != rhs.via_layer_) {
+    return false;
+  }
   if (guide_next_ != rhs.guide_next_) {
     return false;
   }
@@ -78,6 +81,7 @@ void _dbGuide::differences(dbDiff& diff,
   DIFF_FIELD(net_);
   DIFF_FIELD(box_);
   DIFF_FIELD(layer_);
+  DIFF_FIELD(via_layer_);
   DIFF_FIELD(guide_next_);
   DIFF_END
 }
@@ -88,6 +92,7 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(net_);
   DIFF_OUT_FIELD(box_);
   DIFF_OUT_FIELD(layer_);
+  DIFF_OUT_FIELD(via_layer_);
   DIFF_OUT_FIELD(guide_next_);
 
   DIFF_END
@@ -102,6 +107,7 @@ _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
   net_ = r.net_;
   box_ = r.box_;
   layer_ = r.layer_;
+  via_layer_ = r.via_layer_;
   guide_next_ = r.guide_next_;
 }
 
@@ -110,6 +116,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
+  stream >> obj.via_layer_;
   stream >> obj.guide_next_;
   return stream;
 }
@@ -119,6 +126,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
+  stream << obj.via_layer_;
   stream << obj.guide_next_;
   return stream;
 }
@@ -144,6 +152,13 @@ dbTechLayer* dbGuide::getLayer() const
   return odb::dbTechLayer::getTechLayer(tech, obj->layer_);
 }
 
+dbTechLayer* dbGuide::getViaLayer() const
+{
+  _dbGuide* obj = (_dbGuide*) this;
+  auto tech = getDb()->getTech();
+  return odb::dbTechLayer::getTechLayer(tech, obj->via_layer_);
+}
+
 dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
@@ -151,7 +166,7 @@ dbNet* dbGuide::getNet() const
   return (dbNet*) block->_net_tbl->getPtr(obj->net_);
 }
 
-dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
+dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, dbTechLayer* via_layer, Rect box)
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();
@@ -172,6 +187,7 @@ dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, Rect box)
   }
 
   guide->layer_ = layer->getImpl()->getOID();
+  guide->via_layer_ = via_layer->getImpl()->getOID();
   guide->box_ = box;
   guide->net_ = owner->getId();
   guide->guide_next_ = owner->guides_;
