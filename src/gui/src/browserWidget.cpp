@@ -563,15 +563,14 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
   double scale_to_um
       = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
-  QString units = "\u03BC";  // mu
+  QString units = "μ";
   double disp_area = stats.area / scale_to_um;
   if (disp_area > 1e6) {
     disp_area /= (1e3 * 1e3);
     units = "m";
   }
 
-  QString text
-      = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+  QString text = QString::number(disp_area, 'f', 3) + " " + units + "m²";
 
   auto makeDataItem
       = [item](const QString& text,

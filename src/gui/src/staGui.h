@@ -210,9 +210,9 @@ class TimingPathDetailModel : public QAbstractTableModel
   TimingNodeList* nodes_;
 
   // Unicode symbols
-  static constexpr char up_down_arrows_[] = "\u21C5";
-  static constexpr char up_arrow_[] = "\u2191";
-  static constexpr char down_arrow_[] = "\u2193";
+  static constexpr char up_down_arrows_[] = "⇅";
+  static constexpr char up_arrow_[] = "↑";
+  static constexpr char down_arrow_[] = "↓";
   static constexpr int clock_summary_row_ = 1;
 };
 
