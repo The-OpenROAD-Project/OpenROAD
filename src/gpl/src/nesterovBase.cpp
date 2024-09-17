@@ -897,24 +897,23 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   pbc_ = std::move(pbc);
   log_ = log;
 
-  uint gcell_id = 0;
-  uint gpin_id = 0;
-  uint gnet_id = 0;
   for (auto& gpl_inst : pbc_->placeInsts()) {
     std::shared_ptr<GCell> gCell
-        = std::make_shared<GCell>(gpl_inst, gcell_id++);
+        = std::make_shared<GCell>(gpl_inst, valid_gcell_id++);
     gCellMap_[gCell->instance()] = gCell;
     gCells_.insert(std::move(gCell));
   }
 
   for (auto& gpl_pin : pbc_->pins()) {
-    std::unique_ptr<GPin> gPin = std::make_unique<GPin>(gpl_pin, gpin_id++);
+    std::unique_ptr<GPin> gPin
+        = std::make_unique<GPin>(gpl_pin, valid_gpin_id++);
     gPinMap_[gPin->pin()] = gPin.get();
     gPins_.insert(std::move(gPin));
   }
 
   for (auto& gpl_net : pbc_->nets()) {
-    std::unique_ptr<GNet> gNet = std::make_unique<GNet>(gpl_net, gnet_id++);
+    std::unique_ptr<GNet> gNet
+        = std::make_unique<GNet>(gpl_net, valid_gnet_id++);
     gNetMap_[gNet->net()] = gNet.get();
     gNets_.insert(std::move(gNet));
   }
@@ -1241,7 +1240,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
   // update gFillerCells
-  initFillerGCells(pb_->placeInsts().size());
+  initFillerGCells();
 
   // add place instances
   for (auto& inst : pb_->placeInsts()) {
@@ -1253,7 +1252,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     std::shared_ptr<GCell> gCell = nbc_->pbToNb(inst);
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.insert(gCell);
+    gCells_.insert(std::move(gCell));
   }
 
   for (auto& gCell : gCells_) {
@@ -1293,8 +1292,14 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   updateDensitySize();
 }
 
+uint NesterovBase::addValidGCellID()
+{
+  ++valid_gcell_id;
+  return valid_gcell_id;
+}
+
 // virtual filler GCells
-void NesterovBase::initFillerGCells(uint initial_gcell_id)
+void NesterovBase::initFillerGCells()
 {
   // extract average dx/dy in range (10%, 90%)
   std::vector<int> dxStor;
@@ -1402,7 +1407,6 @@ void NesterovBase::initFillerGCells(uint initial_gcell_id)
   // rand()'s RAND_MAX is only 32767.
   //
   std::mt19937 randVal(0);
-  uint id_counter = initial_gcell_id;
   for (int i = 0; i < fillerCnt; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();
@@ -1415,8 +1419,8 @@ void NesterovBase::initFillerGCells(uint initial_gcell_id)
         randY % pb_->die().coreDy() + pb_->die().coreLy(),
         fillerDx_,
         fillerDy_,
-        id_counter++);
-    gCells_.insert(gCell);
+        nbc_->addValidGCellID());
+    gCells_.insert(std::move(gCell));
   }
 }
 

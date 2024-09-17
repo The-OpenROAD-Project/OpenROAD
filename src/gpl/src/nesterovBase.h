@@ -910,6 +910,13 @@ class NesterovBaseCommon
 
   void createGCell(odb::dbInst* db_inst);
 
+  //  uint getValidGCellID() { return valid_gcell_id; }
+  uint addValidGCellID()
+  {
+    ++valid_gcell_id;
+    return valid_gcell_id;
+  }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -924,6 +931,9 @@ class NesterovBaseCommon
   std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
+  uint valid_gcell_id = 0;
+  uint valid_gpin_id = 0;
+  uint valid_gnet_id = 0;
 };
 
 // Stores instances belonging to a specific power domain
@@ -1133,7 +1143,7 @@ class NesterovBase
   float snapshotDensityPenalty_ = 0;
   float snapshotStepLength_ = 0;
 
-  void initFillerGCells(uint);
+  void initFillerGCells();
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
