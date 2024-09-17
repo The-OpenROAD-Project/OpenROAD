@@ -166,7 +166,10 @@ dbNet* dbGuide::getNet() const
   return (dbNet*) block->_net_tbl->getPtr(obj->net_);
 }
 
-dbGuide* dbGuide::create(dbNet* net, dbTechLayer* layer, dbTechLayer* via_layer, Rect box)
+dbGuide* dbGuide::create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box)
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();

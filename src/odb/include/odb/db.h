@@ -7502,7 +7502,10 @@ class dbGuide : public dbObject
 
   dbTechLayer* getViaLayer() const;
 
-  static dbGuide* create(dbNet* net, dbTechLayer* layer, dbTechLayer* via_layer, Rect box);
+  static dbGuide* create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 
