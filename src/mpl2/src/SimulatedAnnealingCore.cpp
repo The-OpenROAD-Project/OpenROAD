@@ -314,10 +314,6 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& io,
     const float net_weight)
 {
-  /*
-    TO DO: check if the macro is inside the outline, if not,
-    use HPWL of the die are as penalty to guide SA.
-  */
   Cluster* io_cluster = io.getCluster();
   const Rect die = io_cluster->getBBox();
 
