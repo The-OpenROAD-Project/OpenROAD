@@ -1529,7 +1529,8 @@ void dbJournal::undo_deleteObject()
       _log.pop(via_layer_id);
       auto net = dbNet::getNet(_block, net_id);
       auto layer = dbTechLayer::getTechLayer(_block->getTech(), layer_id);
-      auto via_layer = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
+      auto via_layer
+          = dbTechLayer::getTechLayer(_block->getTech(), via_layer_id);
       dbGuide::create(net, layer, via_layer, {x_min, y_min, x_max, y_max});
       break;
     }
