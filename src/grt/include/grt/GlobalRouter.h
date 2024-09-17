@@ -277,7 +277,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
   odb::Rect globalRoutingToBox(const GSegment& route);
-  void boxToGlobalRouting(const odb::Rect& route_bds, int layer, GRoute& route);
+  void boxToGlobalRouting(const odb::Rect& route_bds,
+                          int layer,
+                          int via_layer,
+                          GRoute& route);
   void updateVias();
 
   // Report wire length
