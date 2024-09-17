@@ -251,7 +251,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   painter.setPen(gui::Painter::white);
   drawCells(nbc_->gCells(), painter);
   for (const auto& nb : nbVec_) {
-    drawCells(nb->newGCells(), painter);
+    drawCells(nb->gCells(), painter);
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));

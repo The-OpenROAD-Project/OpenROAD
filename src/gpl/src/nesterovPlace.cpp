@@ -224,16 +224,6 @@ void NesterovPlace::init()
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-  //  log_->report("NesterovPlace::init()-> average_overflow_: {}",
-  //  average_overflow_); log_->report("NesterovPlace::init()->
-  //  baseWireLengthCoef_: {}", baseWireLengthCoef_);
-  //  log_->report("NesterovPlace::init()-> total_sum_overflow_: {}",
-  //  total_sum_overflow_); log_->report("NesterovPlace::init()-> nbVec_.size():
-  //  {}", nbVec_.size()); log_->report("NesterovPlace::init()->
-  //  wireLengthCoefX_: {}", wireLengthCoefX_);
-  //  log_->report("NesterovPlace::init()-> wireLengthCoefY_: {}",
-  //  wireLengthCoefY_); log_->report("NesterovPlace::init()->
-  //  totalBaseWireLengthCoeff: {}", totalBaseWireLengthCoeff);
   for (auto& nb : nbVec_) {
     // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
     updateCurGradient(nb);

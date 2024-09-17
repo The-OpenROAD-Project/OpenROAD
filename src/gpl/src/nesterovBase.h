@@ -98,7 +98,7 @@ class GNet;
 class GPin
 {
  public:
-  GPin(Pin* pin, uint);
+  GPin(Pin* pin, uint id);
   GPin(const std::vector<Pin*>& pins);
 
   Pin* pin() const;
@@ -135,7 +135,7 @@ class GPin
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
 
-  uint getId() { return id; }
+  uint getId() const { return id; }
 
  private:
   uint id = 0;
@@ -174,8 +174,13 @@ class GPin
 
 struct GPinComparator
 {
-  bool operator()(const std::shared_ptr<GPin>& lhs,
-                  const std::shared_ptr<GPin>& rhs) const
+  bool operator()(const std::unique_ptr<GPin>& lhs,
+                  const std::unique_ptr<GPin>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+
+  bool operator()(const GPin* lhs, const GPin* rhs) const
   {
     return lhs->getId() < rhs->getId();
   }
@@ -241,7 +246,7 @@ class GCell
   bool isMacroInstance() const;
   bool isStdInstance() const;
 
-  uint getId() { return id; }
+  uint getId() const { return id; }
   GCellState state;
 
  private:
@@ -345,15 +350,12 @@ inline int GCell::dDy() const
 class GNet
 {
  public:
-  GNet(Net* net, uint);
+  GNet(Net* net, uint id);
   GNet(const std::vector<Net*>& nets);
 
   Net* net() const;
   const std::vector<Net*>& nets() const { return nets_; }
-  const std::set<std::shared_ptr<GPin>, GPinComparator>& gPins() const
-  {
-    return gPins_;
-  }
+  const std::set<GPin*, GPinComparator>& gPins() const { return gPins_; }
 
   int lx() const;
   int ly() const;
@@ -367,7 +369,7 @@ class GNet
   float timingWeight() const { return timingWeight_; }
   float customWeight() const { return customWeight_; }
 
-  void addGPin(const std::shared_ptr<GPin>& gPin);
+  void addGPin(GPin* gPin);
   void updateBox();
   int64_t hpwl() const;
 
@@ -401,11 +403,11 @@ class GNet
   float waExpMaxSumY() const;
   float waYExpMaxSumY() const;
 
-  uint getId() { return id; }
+  uint getId() const { return id; }
 
  private:
   uint id = 0;
-  std::set<std::shared_ptr<GPin>, GPinComparator> gPins_;
+  std::set<GPin*, GPinComparator> gPins_;
   std::vector<Net*> nets_;
   int lx_ = 0;
   int ly_ = 0;
@@ -567,8 +569,8 @@ struct GCellComparator
 
 struct GNetComparator
 {
-  bool operator()(const std::shared_ptr<GNet>& lhs,
-                  const std::shared_ptr<GNet>& rhs) const
+  bool operator()(const std::unique_ptr<GNet>& lhs,
+                  const std::unique_ptr<GNet>& rhs) const
   {
     return lhs->getId() < rhs->getId();
   }
@@ -852,13 +854,13 @@ class NesterovBaseCommon
                      int num_threads);
   std::set<std::shared_ptr<GCell>, GCellComparator>& gCells()
   {
-    return newGCells_;
+    return gCells_;
   }
-  const std::set<std::shared_ptr<GNet>, GNetComparator>& gNets() const
+  const std::set<std::unique_ptr<GNet>, GNetComparator>& gNets() const
   {
     return gNets_;
   }
-  const std::set<std::shared_ptr<GPin>, GPinComparator>& gPins() const
+  const std::set<std::unique_ptr<GPin>, GPinComparator>& gPins() const
   {
     return gPins_;
   }
@@ -867,8 +869,8 @@ class NesterovBaseCommon
   // placerBase To NesterovBase functions
   //
   std::shared_ptr<GCell> pbToNb(Instance* inst) const;
-  std::shared_ptr<GPin> pbToNb(Pin* pin) const;
-  std::shared_ptr<GNet> pbToNb(Net* net) const;
+  GPin* pbToNb(Pin* pin) const;
+  GNet* pbToNb(Net* net) const;
 
   //
   // OpenDB To NesterovBase functions
@@ -913,13 +915,13 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
-  std::set<std::shared_ptr<GPin>, GPinComparator> gPins_;
-  std::set<std::shared_ptr<GNet>, GNetComparator> gNets_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> gCells_;
+  std::set<std::unique_ptr<GPin>, GPinComparator> gPins_;
+  std::set<std::unique_ptr<GNet>, GNetComparator> gNets_;
 
   std::unordered_map<Instance*, std::shared_ptr<GCell>> gCellMap_;
-  std::unordered_map<Pin*, std::shared_ptr<GPin>> gPinMap_;
-  std::unordered_map<Net*, std::shared_ptr<GNet>> gNetMap_;
+  std::unordered_map<Pin*, GPin*> gPinMap_;
+  std::unordered_map<Net*, GNet*> gNetMap_;
 
   int num_threads_;
 };
@@ -937,9 +939,9 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::set<std::shared_ptr<GCell>, GCellComparator>& newGCells() const
+  const std::set<std::shared_ptr<GCell>, GCellComparator>& gCells() const
   {
-    return newGCells_;
+    return gCells_;
   }
 
   float getSumOverflow() const { return sumOverflow_; }
@@ -1002,9 +1004,6 @@ class NesterovBase
   float targetDensity() const;
 
   void setTargetDensity(float targetDensity);
-
-  // RD can shrink the number of fillerCells.
-  //  void cutFillerCells(int64_t targetFillerArea);
 
   void updateDensityCoordiLayoutInside(GCell* gcell);
 
@@ -1090,7 +1089,7 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::set<std::shared_ptr<GCell>, GCellComparator> newGCells_;
+  std::set<std::shared_ptr<GCell>, GCellComparator> gCells_;
   int fillersCount = 0;
 
   float sumPhi_ = 0;
