@@ -38,6 +38,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
@@ -76,7 +77,8 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
 
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
                                            std::vector<Pin>& pins,
-                                           GRoute& route)
+                                           GRoute& route,
+                                           rsz::SpefWriter* spef_writer)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -105,6 +107,11 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     makeRouteParasitics(
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
+
+    if (spef_writer) {
+      spef_writer->writeNet(corner, sta_net, parasitic);
+    }
+
     arc_delay_calc_->reduceParasitic(
         parasitic, sta_net, corner, sta::MinMaxAll::all());
   }

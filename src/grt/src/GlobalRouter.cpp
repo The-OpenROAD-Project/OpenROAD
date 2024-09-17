@@ -65,6 +65,8 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
+#include "rsz/Resizer.hh"
+#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -357,6 +359,7 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
   if (diode_mterm == nullptr) {
     diode_mterm = repair_antennas_->findDiodeMTerm();
     if (diode_mterm == nullptr) {
+      logger_->metric("antenna_diodes_count", total_diodes_count_);
       logger_->warn(
           GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
       return;
@@ -393,15 +396,6 @@ void GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       total_diodes_count_ += repair_antennas_->getDiodesCount();
       logger_->info(
           GRT, 15, "Inserted {} diodes.", repair_antennas_->getDiodesCount());
-      int illegal_diode_placement_count
-          = repair_antennas_->illegalDiodePlacementCount();
-      if (illegal_diode_placement_count > 0) {
-        logger_->info(GRT,
-                      54,
-                      "Using detailed placer to place {} diodes.",
-                      illegal_diode_placement_count);
-      }
-      repair_antennas_->legalizePlacedCells();
       nets_to_repair.clear();
       for (const Net* net : incr_groute.updateRoutes()) {
         nets_to_repair.push_back(net->getDbNet());
@@ -461,7 +455,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC()
+void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -471,12 +465,11 @@ void GlobalRouter::estimateRC()
 
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
-  for (auto& net_route : routes_) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
+
+  for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route);
+      builder.estimateParasitcs(db_net, net->getPins(), route, spef_writer);
     }
   }
 }
