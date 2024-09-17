@@ -576,28 +576,28 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     std::string net_name = resizer_->makeUniqueNetName();
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
-  //
-  // hook hierarchical moddrvrnet to the output of the buffer to be created
-  // so disconnect from its original pin and add to the buffer output
-  // pin
-  //
-  if (mod_drvr_net) {
-    odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    odb::dbITerm* iterm;
-    odb::dbBTerm* bterm;
-    db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
-    if (iterm) {
-      // disconnect the iterm from the modnet
-      // we add it later to the new output
-      iterm->disconnect(false /*leave dbNet*/, true /*disconnect modnet*/);
-    }
-    if (moditerm) {
-      moditerm->disconnect();
-    }
-    if (modbterm) {
-      modbterm->disconnect();
-    }
+
+  // Disconnect the original drvr pin from everything (hierarchical nets
+  // and flat nets).
+  odb::dbITerm* drvr_pin_iterm;
+  odb::dbBTerm* drvr_pin_bterm;
+  odb::dbModITerm* drvr_pin_moditerm;
+  odb::dbModBTerm* drvr_pin_modbterm;
+  db_network_->staToDb(drvr_pin,
+                       drvr_pin_iterm,
+                       drvr_pin_bterm,
+                       drvr_pin_moditerm,
+                       drvr_pin_modbterm);
+  if (drvr_pin_iterm) {
+    // disconnect the iterm from both the modnet and the dbnet
+    // note we will rewire the drvr_pin to connect to the new buffer later.
+    drvr_pin_iterm->disconnect();
+  }
+  if (drvr_pin_moditerm) {
+    drvr_pin_moditerm->disconnect();
+  }
+  if (drvr_pin_modbterm) {
+    drvr_pin_modbterm->disconnect();
   }
 
   resizer_->parasiticsInvalid(in_net);
@@ -622,7 +622,16 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   sta_->connectPin(buffer, input, buf_in_net);
   sta_->connectPin(buffer, output, out_net);
 
-  // patch in the output of the new buffer to the hierarchical net, if any
+  // Fix up the original driver pin (which we totally disconnected before)
+  // patch in the buf_in_net driver to be driven by the original drvr_pin_iterm
+
+  // First the dbnet.
+  if (drvr_pin_iterm) {
+    drvr_pin_iterm->connect(db_network_->staToDb(buf_in_net));
+  }
+
+  // Now patch in the output of the new buffer to the original hierarchical
+  // net,if any, from the original driver
   if (mod_drvr_net != nullptr) {
     Pin* ip_pin = nullptr;
     Pin* op_pin = nullptr;
@@ -638,6 +647,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       db_network_->staToDb(op_pin, iterm, bterm, moditerm, modbterm);
       // we only need to look at the iterm, the buffer is a dbInst
       if (iterm) {
+        // hook up the hierarchical net
         iterm->connect(mod_drvr_net);
       }
     }
@@ -650,10 +660,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
                         : network_->net(load_pin);
-
-    odb::dbModNet* original_load_mod_net = nullptr;
-    odb::dbNet* original_load_flat_net = nullptr;
-    db_network_->net(load_pin, original_load_flat_net, original_load_mod_net);
 
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
