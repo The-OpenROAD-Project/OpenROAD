@@ -1721,7 +1721,7 @@ void ViaGenerator::determineRowsAndColumns(
     const Enclosure& bottom_min_enclosure,
     const Enclosure& top_min_enclosure)
 {
-  const double dbu_to_microns = getTech()->getLefUnits();
+  const double dbu_to_microns = getTech()->getDbUnitsPerMicron();
 
   const odb::Rect& cut = getCut();
   const int cut_width = cut.dx();
