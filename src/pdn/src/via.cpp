@@ -359,6 +359,9 @@ DbVia::ViaLayerShape DbTechVia::generate(
     const std::string via_name = getViaName(ongrid);
     auto* bvia = block->findVia(via_name.c_str());
 
+    new_via_center
+        = odb::Point(col_snap->snapToGrid(x), row_snap->snapToGrid(y));
+
     if (bvia == nullptr) {
       const int cut_width = single_via_rect_.dx();
       const int cut_height = single_via_rect_.dy();
@@ -409,12 +412,26 @@ DbVia::ViaLayerShape DbTechVia::generate(
       bvia->setViaParams(params);
     }
 
-    new_via_center
-        = odb::Point(col_snap->snapToGrid(x), row_snap->snapToGrid(y));
+    for (auto* box : via_->getBoxes()) {
+      auto* layer = box->getTechLayer();
+      if (layer == nullptr) {
+        continue;
+      }
 
-    incrementCount(rows_ * cols_);
-    via = odb::dbSBox::create(
-        wire, bvia, new_via_center.x(), new_via_center.y(), type);
+      if (layer->getType() != odb::dbTechLayerType::CUT) {
+        continue;
+      }
+
+      const odb::Rect rect = box->getBox();
+
+      const odb::Point via_center(odb::Point(
+          col_snap->snapToGrid(new_via_center.x() - rect.center().x()),
+          row_snap->snapToGrid(new_via_center.y() - rect.center().y())));
+
+      incrementCount(rows_ * cols_);
+      via = odb::dbSBox::create(
+          wire, bvia, via_center.x(), via_center.y(), type);
+    }
   } else {
     incrementCount();
     new_via_center = odb::Point(col_snap->snapToGrid(x - via_center_.getX()),
