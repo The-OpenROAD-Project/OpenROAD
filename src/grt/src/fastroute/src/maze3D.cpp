@@ -864,8 +864,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // while loop to find shortest path
       int ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
 
-      for (int i = 0; i < dest_heap_3D_.size(); i++)
-        pop_heap2_3D_[dest_heap_3D_[i] - &d2_3D_[0][0][0]] = true;
+      for (auto& i : dest_heap_3D_) {
+        pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
+      }
 
       while (pop_heap2_3D_[ind1]
              == false)  // stop until the grid position been popped out from
@@ -897,7 +898,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                // put into src_heap_3D
               {
                 d1_3D_[curL][curY][tmpX] = tmp;
-                pr_3D_[curL][curY][tmpX].l = curL;
+                pr_3D_[curL][curY][tmpX].layer = curL;
                 pr_3D_[curL][curY][tmpX].x = curX;
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::West;
@@ -908,15 +909,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                  // but needs update
               {
                 d1_3D_[curL][curY][tmpX] = tmp;
-                pr_3D_[curL][curY][tmpX].l = curL;
+                pr_3D_[curL][curY][tmpX].layer = curL;
                 pr_3D_[curL][curY][tmpX].x = curX;
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::West;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp)
-                  ind++;
-                updateHeap3D(src_heap_3D_, ind);
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT,
+                                 601,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
+                }
               }
             }
           }
@@ -934,7 +943,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                // src_heap_3D
               {
                 d1_3D_[curL][curY][tmpX] = tmp;
-                pr_3D_[curL][curY][tmpX].l = curL;
+                pr_3D_[curL][curY][tmpX].layer = curL;
                 pr_3D_[curL][curY][tmpX].x = curX;
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::East;
@@ -945,15 +954,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                  // but needs update
               {
                 d1_3D_[curL][curY][tmpX] = tmp;
-                pr_3D_[curL][curY][tmpX].l = curL;
+                pr_3D_[curL][curY][tmpX].layer = curL;
                 pr_3D_[curL][curY][tmpX].x = curX;
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::East;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp)
-                  ind++;
-                updateHeap3D(src_heap_3D_, ind);
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT,
+                                 602,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
+                }
               }
             }
           }
@@ -971,7 +988,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                // src_heap_3D
               {
                 d1_3D_[curL][tmpY][curX] = tmp;
-                pr_3D_[curL][tmpY][curX].l = curL;
+                pr_3D_[curL][tmpY][curX].layer = curL;
                 pr_3D_[curL][tmpY][curX].x = curX;
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::North;
@@ -982,15 +999,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                  // src_heap_3D but needs update
               {
                 d1_3D_[curL][tmpY][curX] = tmp;
-                pr_3D_[curL][tmpY][curX].l = curL;
+                pr_3D_[curL][tmpY][curX].layer = curL;
                 pr_3D_[curL][tmpY][curX].x = curX;
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::North;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp)
-                  ind++;
-                updateHeap3D(src_heap_3D_, ind);
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT,
+                                 603,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
+                }
               }
             }
           }
@@ -1006,7 +1031,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
               {
                 d1_3D_[curL][tmpY][curX] = tmp;
-                pr_3D_[curL][tmpY][curX].l = curL;
+                pr_3D_[curL][tmpY][curX].layer = curL;
                 pr_3D_[curL][tmpY][curX].x = curX;
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::South;
@@ -1017,15 +1042,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                  // but needs update
               {
                 d1_3D_[curL][tmpY][curX] = tmp;
-                pr_3D_[curL][tmpY][curX].l = curL;
+                pr_3D_[curL][tmpY][curX].layer = curL;
                 pr_3D_[curL][tmpY][curX].x = curX;
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::South;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                int ind = 0;
-                while (src_heap_3D_[ind] != dtmp)
-                  ind++;
-                updateHeap3D(src_heap_3D_, ind);
+                const auto it
+                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                if (it != src_heap_3D_.end()) {
+                  const int pos = it - src_heap_3D_.begin();
+                  updateHeap3D(src_heap_3D_, pos);
+                } else {
+                  logger_->error(GRT,
+                                 604,
+                                 "Unable to update: position not found in 3D "
+                                 "heap for net {}.",
+                                 net->getName());
+                }
               }
             }
           }
@@ -1040,7 +1073,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
           {
             d1_3D_[tmpL][curY][curX] = tmp;
-            pr_3D_[tmpL][curY][curX].l = curL;
+            pr_3D_[tmpL][curY][curX].layer = curL;
             pr_3D_[tmpL][curY][curX].x = curX;
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Down;
@@ -1051,15 +1084,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              // but needs update
           {
             d1_3D_[tmpL][curY][curX] = tmp;
-            pr_3D_[tmpL][curY][curX].l = curL;
+            pr_3D_[tmpL][curY][curX].layer = curL;
             pr_3D_[tmpL][curY][curX].x = curX;
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Down;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            int ind = 0;
-            while (src_heap_3D_[ind] != dtmp)
-              ind++;
-            updateHeap3D(src_heap_3D_, ind);
+            const auto it
+                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            if (it != src_heap_3D_.end()) {
+              const int pos = it - src_heap_3D_.begin();
+              updateHeap3D(src_heap_3D_, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  605,
+                  "Unable to update: position not found in 3D heap for net {}.",
+                  net->getName());
+            }
           }
         }
 
@@ -1072,7 +1113,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
           {
             d1_3D_[tmpL][curY][curX] = tmp;
-            pr_3D_[tmpL][curY][curX].l = curL;
+            pr_3D_[tmpL][curY][curX].layer = curL;
             pr_3D_[tmpL][curY][curX].x = curX;
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Up;
@@ -1083,15 +1124,23 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              // but needs update
           {
             d1_3D_[tmpL][curY][curX] = tmp;
-            pr_3D_[tmpL][curY][curX].l = curL;
+            pr_3D_[tmpL][curY][curX].layer = curL;
             pr_3D_[tmpL][curY][curX].x = curX;
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Up;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            int ind = 0;
-            while (src_heap_3D_[ind] != dtmp)
-              ind++;
-            updateHeap3D(src_heap_3D_, ind);
+            const auto it
+                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            if (it != src_heap_3D_.end()) {
+              const int pos = it - src_heap_3D_.begin();
+              updateHeap3D(src_heap_3D_, pos);
+            } else {
+              logger_->error(
+                  GRT,
+                  606,
+                  "Unable to update: position not found in 3D heap for net {}.",
+                  net->getName());
+            }
           }
         }
 
@@ -1105,9 +1154,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
       }  // while loop
 
-      for (int i = 0; i < dest_heap_3D_.size(); i++)
-        pop_heap2_3D_[dest_heap_3D_[i] - &d2_3D_[0][0][0]] = false;
-
+      for (auto& i : dest_heap_3D_) {
+        pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
+      }
       // get the new route for the edge and store it in gridsX[] and
       // gridsY[] temporarily
 
@@ -1129,7 +1178,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       while (d1_3D_[curL][curY][curX] != 0)  // loop until reach subtree1
       {
-        const int tmpL = pr_3D_[curL][curY][curX].l;
+        const int tmpL = pr_3D_[curL][curY][curX].layer;
         const int tmpX = pr_3D_[curL][curY][curX].x;
         const int tmpY = pr_3D_[curL][curY][curX].y;
         curX = tmpX;
