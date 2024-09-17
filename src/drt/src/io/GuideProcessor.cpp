@@ -1000,10 +1000,11 @@ void splitByPins(
     frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
     std::set<frCoord>& split_indices)
 {
-  if (pin_helper.at(layer_num).find(track_idx)
-      != pin_helper.at(layer_num).end()) {
-    const auto& pins_locations_map = pin_helper.at(layer_num).at(
-        track_idx);  // track indices along the routing dir
+  const auto& layer_pins = pin_helper.at(layer_num);
+  const auto& track_it = layer_pins.find(track_idx);
+  if (track_it != layer_pins.end()) {
+    const auto& pins_locations_map
+        = (*track_it).second;  // track indices along the routing dir
     auto it = pins_locations_map.lower_bound(begin_idx);
     while (it != pins_locations_map.end()) {
       const auto along_routing_dir_idx = it->first;
@@ -1371,71 +1372,106 @@ void GuideProcessor::genGuides(frNet* net, std::vector<frRect>& rects)
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);
 
-  GuidePathFinder path_finder(design_, logger_, net);
-  bool first_iter = true;
-  while (true) {
-    genGuides_split(rects,
-                    intvs,
-                    gcell_pin_map,
-                    pin_gcell_map,
-                    first_iter);  // split on LU intersecting guides and pins
-
-    // filter pin_gcell_map with aps
-
-    if (pin_gcell_map.empty()) {
-      logger_->warn(DRT, 214, "genGuides empty gcell_pin_map.");
-      debugPrint(
-          logger_, DRT, "io", 1, "gcell2pin.size() = {}", gcell_pin_map.size());
-    }
-    for (auto& [obj, indices] : pin_gcell_map) {
-      if (indices.empty()) {
-        switch (obj->typeId()) {
-          case frcInstTerm: {
-            auto ptr = static_cast<frInstTerm*>(obj);
-            logger_->warn(DRT,
-                          215,
-                          "Pin {}/{} not covered by guide.",
-                          ptr->getInst()->getName(),
-                          ptr->getTerm()->getName());
-            break;
-          }
-          case frcBTerm: {
-            auto ptr = static_cast<frBTerm*>(obj);
-            logger_->warn(
-                DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
-            break;
-          }
-          default: {
-            logger_->warn(DRT, 217, "genGuides unknown type.");
-            break;
+  bool path_found = false;
+  // Run for 3 iterations max
+  for (int i = 0; i < 3; i++) {
+    const bool is_first_iter = (i == 0);
+    const bool is_last_iter = (i == 2);
+    if (!is_last_iter) {
+      genGuides_split(
+          rects,
+          intvs,
+          gcell_pin_map,
+          pin_gcell_map,
+          is_first_iter);  // split on LU intersecting guides and pins
+      if (pin_gcell_map.empty()) {
+        logger_->warn(DRT, 214, "genGuides empty gcell_pin_map.");
+        debugPrint(logger_,
+                   DRT,
+                   "io",
+                   1,
+                   "gcell2pin.size() = {}",
+                   gcell_pin_map.size());
+      }
+      for (auto& [obj, indices] : pin_gcell_map) {
+        if (indices.empty()) {
+          switch (obj->typeId()) {
+            case frcInstTerm: {
+              auto ptr = static_cast<frInstTerm*>(obj);
+              logger_->warn(DRT,
+                            215,
+                            "Pin {}/{} not covered by guide.",
+                            ptr->getInst()->getName(),
+                            ptr->getTerm()->getName());
+              break;
+            }
+            case frcBTerm: {
+              auto ptr = static_cast<frBTerm*>(obj);
+              logger_->warn(
+                  DRT, 216, "Pin PIN/{} not covered by guide.", ptr->getName());
+              break;
+            }
+            default: {
+              logger_->warn(DRT, 217, "genGuides unknown type.");
+              break;
+            }
           }
         }
       }
     }
-
-    path_finder.setAllowWarnings(!first_iter);
-    path_finder.init(rects, pin_gcell_map);
-
-    std::vector<bool> adjVisited;
-    std::vector<int> adjPrevIdx;
-    path_finder.setForceFeedThrough(false);
+    GuidePathFinder path_finder(
+        design_, logger_, net, is_last_iter, rects, pin_gcell_map);
+    path_finder.setAllowWarnings(!is_first_iter);
     if (path_finder.traverseGraph()) {
+      path_found = true;
       path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
       break;
     }
-    if (!first_iter) {
-      if (!ALLOW_PIN_AS_FEEDTHROUGH) {
-        path_finder.setForceFeedThrough(true);
-        if (path_finder.traverseGraph()) {
-          path_finder.commitPathToGuides(rects, pin_gcell_map, tmpGRPins_);
-          break;
-        }
-      }
-      logger_->error(DRT, 218, "Guide is not connected to design.");
-    } else {
-      first_iter = false;
-    }
   }
+  if (!path_found) {
+    logger_->error(DRT, 218, "Guide is not connected to design.");
+  }
+}
+
+GuidePathFinder::GuidePathFinder(
+    frDesign* design,
+    Logger* logger,
+    frNet* net,
+    const bool force_feed_through,
+    const std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    : design_(design),
+      logger_(logger),
+      net_(net),
+      force_feed_through_(force_feed_through)
+{
+  buildNodeMap(rects, pin_gcell_map);
+  constructAdjList();
+  is_on_path_.resize(getNodeCount(), false);
+  visited_.resize(getNodeCount(), false);
+  prev_idx_.resize(getNodeCount(), -1);
+}
+
+void GuidePathFinder::buildNodeMap(
+    const std::vector<frRect>& rects,
+    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+{
+  node_map_.clear();
+  for (int i = 0; i < (int) rects.size(); i++) {
+    const auto& rect = rects.at(i);
+    Rect box = rect.getBBox();
+    node_map_[{box.ll(), rect.getLayerNum()}].insert(i);
+    node_map_[{box.ur(), rect.getLayerNum()}].insert(i);
+  }
+  guide_count_ = rects.size();  // total guide cnt
+  int node_idx = rects.size();
+  for (const auto& [obj, gcells] : pin_gcell_map) {
+    for (const auto& gcell : gcells) {
+      node_map_[gcell].insert(node_idx);
+    }
+    ++node_idx;
+  }
+  node_count_ = node_idx;  // total node cnt
 }
 
 std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
@@ -1582,28 +1618,6 @@ void GuidePathFinder::commitPathToGuides(
   }
 }
 
-void GuidePathFinder::init(
-    const std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
-{
-  node_map_.clear();
-  for (int i = 0; i < (int) rects.size(); i++) {
-    const auto& rect = rects.at(i);
-    Rect box = rect.getBBox();
-    node_map_[{box.ll(), rect.getLayerNum()}].insert(i);
-    node_map_[{box.ur(), rect.getLayerNum()}].insert(i);
-  }
-  guide_count_ = rects.size();  // total guide cnt
-  int node_idx = rects.size();
-  for (const auto& [obj, gcells] : pin_gcell_map) {
-    for (const auto& gcell : gcells) {
-      node_map_[gcell].insert(node_idx);
-    }
-    node_idx++;
-  }
-  node_count_ = node_idx;  // total node cnt
-}
-
 void GuidePathFinder::constructAdjList()
 {
   adj_list_.resize(getNodeCount());
@@ -1661,10 +1675,10 @@ void GuidePathFinder::constructAdjList()
 }
 
 std::priority_queue<GuidePathFinder::Wavefront>
-GuidePathFinder::getInitSearchQueue(bool first_traversal)
+GuidePathFinder::getInitSearchQueue()
 {
   std::priority_queue<Wavefront> queue;
-  if (first_traversal) {
+  if (!visited_[getGuideCount()]) {
     // push only first pin into pq
     queue.push({getGuideCount(), -1, 0});
   } else {
@@ -1688,16 +1702,9 @@ GuidePathFinder::getInitSearchQueue(bool first_traversal)
 
 bool GuidePathFinder::traverseGraph()
 {
-  clearAll();
-  constructAdjList();
-  is_on_path_.resize(getNodeCount(), false);
-  visited_.resize(getNodeCount(), false);
-  prev_idx_.resize(getNodeCount(), -1);
-
   for (int traversal_count = 0; traversal_count < getPinCount() - 1;
        traversal_count++) {
-    std::priority_queue<Wavefront> queue
-        = getInitSearchQueue(traversal_count == 0);
+    std::priority_queue<Wavefront> queue = getInitSearchQueue();
     int visited_pin = -1;
     while (!queue.empty()) {
       auto curr_wavefront = queue.top();
