@@ -64,14 +64,12 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-static float getDistance(
-    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-    FloatPoint GCellState::*aCoord,
-    FloatPoint GCellState::*bCoord);
+static float getDistance(const std::set<GCell*, GCellComparator>& cells,
+                         FloatPoint GCellState::*aCoord,
+                         FloatPoint GCellState::*bCoord);
 
-static float getSecondNorm(
-    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-    FloatPoint GCellState::*coordPtr);
+static float getSecondNorm(const std::set<GCell*, GCellComparator>& cells,
+                           FloatPoint GCellState::*coordPtr);
 
 // Note that
 // int64_t is ideal in the following function, but
@@ -742,7 +740,7 @@ void BinGrid::updateBinsNonPlaceArea()
 }
 
 void BinGrid::updateBinsGCellDensityArea(
-    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells)
+    const std::set<GCell*, GCellComparator>& cells)
 {
   for (Bin& bin : bins_) {
     bin.setInstPlacedAreaUnscaled(0);
@@ -750,8 +748,8 @@ void BinGrid::updateBinsGCellDensityArea(
   }
 
   for (const auto& cell : cells) {
-    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell.get());
-    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell.get());
+    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
 
     // The following function is critical runtime hotspot
     // for global placer.
@@ -764,7 +762,7 @@ void BinGrid::updateBinsGCellDensityArea(
           for (int x = pairX.first; x < pairX.second; x++) {
             Bin& bin = bins_[y * binCntX_ + x];
 
-            const float scaledAvea = getOverlapDensityArea(bin, cell.get())
+            const float scaledAvea = getOverlapDensityArea(bin, cell)
                                      * cell->densityScale()
                                      * bin.targetDensity();
             bin.addInstPlacedAreaUnscaled(scaledAvea);
@@ -777,7 +775,7 @@ void BinGrid::updateBinsGCellDensityArea(
           for (int x = pairX.first; x < pairX.second; x++) {
             Bin& bin = bins_[y * binCntX_ + x];
             const float scaledArea
-                = getOverlapDensityArea(bin, cell.get()) * cell->densityScale();
+                = getOverlapDensityArea(bin, cell) * cell->densityScale();
             bin.addInstPlacedAreaUnscaled(scaledArea);
           }
         }
@@ -786,7 +784,7 @@ void BinGrid::updateBinsGCellDensityArea(
       for (int y = pairY.first; y < pairY.second; y++) {
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = bins_[y * binCntX_ + x];
-          bin.addFillerArea(getOverlapDensityArea(bin, cell.get())
+          bin.addFillerArea(getOverlapDensityArea(bin, cell)
                             * cell->densityScale());
         }
       }
@@ -898,9 +896,9 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   log_ = log;
 
   for (auto& gpl_inst : pbc_->placeInsts()) {
-    std::shared_ptr<GCell> gCell
-        = std::make_shared<GCell>(gpl_inst, valid_gcell_id++);
-    gCellMap_[gCell->instance()] = gCell;
+    std::unique_ptr<GCell> gCell
+        = std::make_unique<GCell>(gpl_inst, valid_gcell_id++);
+    gCellMap_[gCell->instance()] = gCell.get();
     gCells_.insert(std::move(gCell));
   }
 
@@ -928,7 +926,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   for (auto& gPin : gPins_) {
-    gPin->setGCell(pbToNb(gPin->pin()->instance()).get());
+    gPin->setGCell(pbToNb(gPin->pin()->instance()));
     gPin->setGNet(pbToNb(gPin->pin()->net()));
   }
 
@@ -939,7 +937,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 }
 
-std::shared_ptr<GCell> NesterovBaseCommon::pbToNb(Instance* inst) const
+GCell* NesterovBaseCommon::pbToNb(Instance* inst) const
 {
   auto gcPtr = gCellMap_.find(inst);
   return (gcPtr == gCellMap_.end()) ? nullptr : gcPtr->second;
@@ -960,7 +958,7 @@ GNet* NesterovBaseCommon::pbToNb(Net* net) const
 GCell* NesterovBaseCommon::dbToNb(odb::dbInst* inst) const
 {
   Instance* pbInst = pbc_->dbToPb(inst);
-  return pbToNb(pbInst).get();
+  return pbToNb(pbInst);
 }
 
 GPin* NesterovBaseCommon::dbToNb(odb::dbITerm* pin) const
@@ -1255,10 +1253,10 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
 
     // searches based on pbInst in nbc map
-    std::shared_ptr<GCell> gCell = nbc_->pbToNb(inst);
+    GCell* gCell = nbc_->pbToNb(inst);
     gCell->clearInstances();
     gCell->setInstance(inst);
-    gCells_.insert(std::move(gCell));
+    gCells_.insert(gCell);
   }
 
   for (auto& gCell : gCells_) {
@@ -1414,13 +1412,14 @@ void NesterovBase::initFillerGCells()
 
     // place filler cells on random coordi and
     // set size as avgDx and avgDy
-    std::shared_ptr<GCell> gCell = std::make_shared<GCell>(
+    std::unique_ptr<GCell> gCell = std::make_unique<GCell>(
         randX % pb_->die().coreDx() + pb_->die().coreLx(),
         randY % pb_->die().coreDy() + pb_->die().coreLy(),
         fillerDx_,
         fillerDy_,
         nbc_->addValidGCellID());
-    gCells_.insert(std::move(gCell));
+    gCells_.insert(gCell.get());
+    fillerGCells_.insert(std::move(gCell));
   }
 }
 
@@ -1730,7 +1729,7 @@ void NesterovBase::initDensity1()
 {
   for (auto& gCell : gCells_) {
     GCellState& state = gCell->state;
-    updateDensityCoordiLayoutInside(gCell.get());
+    updateDensityCoordiLayoutInside(gCell);
 
     state.curSLPCoordi = state.prevSLPCoordi = state.curCoordi
         = state.initCoordi = FloatPoint(gCell->dCx(), gCell->dCy());
@@ -1828,9 +1827,8 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
     FloatPoint& densityGrads = state.*densityGradsPtr;
     FloatPoint& sumGrads = state.*sumGradsPtr;
 
-    wireLengthGrads
-        = nbc_->getWireLengthGradientWA(gCell.get(), wlCoeffX, wlCoeffY);
-    densityGrads = getDensityGradient(gCell.get());
+    wireLengthGrads = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
+    densityGrads = getDensityGradient(gCell);
 
     wireLengthGradSum_ += std::fabs(wireLengthGrads.x);
     wireLengthGradSum_ += std::fabs(wireLengthGrads.y);
@@ -1841,9 +1839,8 @@ void NesterovBase::updateGradients(FloatPoint GCellState::*sumGradsPtr,
     sumGrads = FloatPoint(wireLengthGrads.x + densityPenalty_ * densityGrads.x,
                           wireLengthGrads.y + densityPenalty_ * densityGrads.y);
 
-    FloatPoint wireLengthPreCondi
-        = nbc_->getWireLengthPreconditioner(gCell.get());
-    FloatPoint densityPrecondi = getDensityPreconditioner(gCell.get());
+    FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
+    FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
     FloatPoint sumPrecondi(
         wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
@@ -1947,9 +1944,8 @@ void NesterovBase::updateInitialPrevSLPCoordi()
         = state.curSLPCoordi.y
           - npVars_->initialPrevCoordiUpdateCoef * state.curSLPSumGrads.y;
 
-    FloatPoint newCoordi(
-        getDensityCoordiLayoutInsideX(curGCell.get(), prevCoordiX),
-        getDensityCoordiLayoutInsideY(curGCell.get(), prevCoordiY));
+    FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
+                         getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
 
     state.prevSLPCoordi = newCoordi;
   }
@@ -2119,13 +2115,13 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
         nextCoordi.x + coeff * (nextCoordi.x - state.curCoordi.x),
         nextCoordi.y + coeff * (nextCoordi.y - state.curCoordi.y));
 
-    state.nextCoordi = FloatPoint(
-        getDensityCoordiLayoutInsideX(curGCell.get(), nextCoordi.x),
-        getDensityCoordiLayoutInsideY(curGCell.get(), nextCoordi.y));
+    state.nextCoordi
+        = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextCoordi.x),
+                     getDensityCoordiLayoutInsideY(curGCell, nextCoordi.y));
 
-    state.nextSLPCoordi = FloatPoint(
-        getDensityCoordiLayoutInsideX(curGCell.get(), nextSLPCoordi.x),
-        getDensityCoordiLayoutInsideY(curGCell.get(), nextSLPCoordi.y));
+    state.nextSLPCoordi
+        = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextSLPCoordi.x),
+                     getDensityCoordiLayoutInsideY(curGCell, nextSLPCoordi.y));
   }
 
   updateGCellDensityCenterLocation(&GCellState::nextSLPCoordi);
@@ -2357,10 +2353,9 @@ static float fastExp(float exp)
   return exp;
 }
 
-static float getDistance(
-    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-    FloatPoint GCellState::*aCoord,
-    FloatPoint GCellState::*bCoord)
+static float getDistance(const std::set<GCell*, GCellComparator>& cells,
+                         FloatPoint GCellState::*aCoord,
+                         FloatPoint GCellState::*bCoord)
 {
   float sumDistance = 0.0f;
   size_t count = 0;
@@ -2385,9 +2380,8 @@ static float getDistance(
   return std::sqrt(sumDistance / (2.0 * count));
 }
 
-static float getSecondNorm(
-    const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
-    FloatPoint GCellState::*coordPtr)
+static float getSecondNorm(const std::set<GCell*, GCellComparator>& cells,
+                           FloatPoint GCellState::*coordPtr)
 {
   float norm = 0.0;
   size_t count = 0;

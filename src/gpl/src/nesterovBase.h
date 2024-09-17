@@ -560,8 +560,13 @@ inline float GNet::waYExpMaxSumY() const
 
 struct GCellComparator
 {
-  bool operator()(const std::shared_ptr<GCell>& lhs,
-                  const std::shared_ptr<GCell>& rhs) const
+  bool operator()(const std::unique_ptr<GCell>& lhs,
+                  const std::unique_ptr<GCell>& rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+
+  bool operator()(const GCell* lhs, const GCell* rhs) const
   {
     return lhs->getId() < rhs->getId();
   }
@@ -741,7 +746,7 @@ class BinGrid
   void setBinCnt(int binCntX, int binCntY);
   void setTargetDensity(float density);
   void updateBinsGCellDensityArea(
-      const std::set<std::shared_ptr<GCell>, GCellComparator>& cells);
+      const std::set<GCell*, GCellComparator>& cells);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -852,7 +857,7 @@ class NesterovBaseCommon
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
                      int num_threads);
-  std::set<std::shared_ptr<GCell>, GCellComparator>& gCells()
+  std::set<std::unique_ptr<GCell>, GCellComparator>& gCells()
   {
     return gCells_;
   }
@@ -868,7 +873,7 @@ class NesterovBaseCommon
   //
   // placerBase To NesterovBase functions
   //
-  std::shared_ptr<GCell> pbToNb(Instance* inst) const;
+  GCell* pbToNb(Instance* inst) const;
   GPin* pbToNb(Pin* pin) const;
   GNet* pbToNb(Net* net) const;
 
@@ -917,11 +922,11 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
-  std::set<std::shared_ptr<GCell>, GCellComparator> gCells_;
+  std::set<std::unique_ptr<GCell>, GCellComparator> gCells_;
   std::set<std::unique_ptr<GPin>, GPinComparator> gPins_;
   std::set<std::unique_ptr<GNet>, GNetComparator> gNets_;
 
-  std::unordered_map<Instance*, std::shared_ptr<GCell>> gCellMap_;
+  std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
@@ -944,10 +949,7 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  const std::set<std::shared_ptr<GCell>, GCellComparator>& gCells() const
-  {
-    return gCells_;
-  }
+  const std::set<GCell*, GCellComparator>& gCells() const { return gCells_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -1094,7 +1096,8 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
-  std::set<std::shared_ptr<GCell>, GCellComparator> gCells_;
+  std::set<GCell*, GCellComparator> gCells_;
+  std::set<std::unique_ptr<GCell>> fillerGCells_;
   int fillersCount = 0;
 
   float sumPhi_ = 0;

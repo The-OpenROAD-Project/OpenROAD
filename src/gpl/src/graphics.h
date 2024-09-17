@@ -123,7 +123,9 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   };
 
   void drawForce(gui::Painter& painter);
-  void drawCells(const std::set<std::shared_ptr<GCell>, GCellComparator>& cells,
+  void drawCells(const std::set<std::unique_ptr<GCell>, GCellComparator>& cells,
+                 gui::Painter& painter);
+  void drawCells(const std::set<GCell*, GCellComparator>& cells,
                  gui::Painter& painter);
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
