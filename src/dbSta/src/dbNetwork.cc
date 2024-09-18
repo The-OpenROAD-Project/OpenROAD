@@ -2610,10 +2610,12 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
     } else if (mod_inst) {
       module = mod_inst->getParent();
     }
-    Instance* parent = (module == (block_->getTopModule()))
-                           ? topInstance()
-                           : dbToSta(module->getModInst());
-    return parent;
+    if (module) {
+      Instance* parent = (module == (block_->getTopModule()))
+                             ? topInstance()
+                             : dbToSta(module->getModInst());
+      return parent;
+    }
   }
   return topInstance();
 }
