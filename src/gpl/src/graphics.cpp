@@ -191,33 +191,38 @@ void Graphics::drawForce(gui::Painter& painter)
   }
 }
 
+void Graphics::drawCell(GCell* gCell, gui::Painter& painter)
+{
+  const int gcx = gCell->dCx();
+  const int gcy = gCell->dCy();
+
+  int xl = gcx - gCell->dx() / 2;
+  int yl = gcy - gCell->dy() / 2;
+  int xh = gcx + gCell->dx() / 2;
+  int yh = gcy + gCell->dy() / 2;
+
+  gui::Painter::Color color;
+  if (gCell->isInstance()) {
+    color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
+                                          : gui::Painter::dark_green;
+  } else if (gCell->isFiller()) {
+    color = gui::Painter::dark_magenta;
+  }
+
+  if (gCell == selected_) {
+    color = gui::Painter::yellow;
+  }
+
+  color.a = 180;
+  painter.setBrush(color);
+  painter.drawRect({xl, yl, xh, yh});
+}
+
 void Graphics::drawCells(const std::set<GCell*, GCellComparator>& cells,
                          gui::Painter& painter)
 {
   for (const auto& gCell : cells) {
-    const int gcx = gCell->dCx();
-    const int gcy = gCell->dCy();
-
-    int xl = gcx - gCell->dx() / 2;
-    int yl = gcy - gCell->dy() / 2;
-    int xh = gcx + gCell->dx() / 2;
-    int yh = gcy + gCell->dy() / 2;
-
-    gui::Painter::Color color;
-    if (gCell->isInstance()) {
-      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
-                                            : gui::Painter::dark_green;
-    } else if (gCell->isFiller()) {
-      color = gui::Painter::dark_magenta;
-    }
-
-    if (gCell == selected_) {
-      color = gui::Painter::yellow;
-    }
-
-    color.a = 180;
-    painter.setBrush(color);
-    painter.drawRect({xl, yl, xh, yh});
+    drawCell(gCell, painter);
   }
 }
 
@@ -226,30 +231,7 @@ void Graphics::drawCells(
     gui::Painter& painter)
 {
   for (const auto& shared_gCell : cells) {
-    GCell* gCell = shared_gCell.get();
-    const int gcx = gCell->dCx();
-    const int gcy = gCell->dCy();
-
-    int xl = gcx - gCell->dx() / 2;
-    int yl = gcy - gCell->dy() / 2;
-    int xh = gcx + gCell->dx() / 2;
-    int yh = gcy + gCell->dy() / 2;
-
-    gui::Painter::Color color;
-    if (gCell->isInstance()) {
-      color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
-                                            : gui::Painter::dark_green;
-    } else if (gCell->isFiller()) {
-      color = gui::Painter::dark_magenta;
-    }
-
-    if (gCell == selected_) {
-      color = gui::Painter::yellow;
-    }
-
-    color.a = 180;
-    painter.setBrush(color);
-    painter.drawRect({xl, yl, xh, yh});
+    drawCell(shared_gCell.get(), painter);
   }
 }
 

@@ -123,6 +123,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   };
 
   void drawForce(gui::Painter& painter);
+  void drawCell(GCell* gCell, gui::Painter& painter);
   void drawCells(const std::set<std::unique_ptr<GCell>, GCellComparator>& cells,
                  gui::Painter& painter);
   void drawCells(const std::set<GCell*, GCellComparator>& cells,
