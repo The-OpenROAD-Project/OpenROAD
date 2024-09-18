@@ -139,8 +139,7 @@ class DbVia
                                  int x,
                                  int y,
                                  const std::set<odb::dbTechLayer*>& ongrid,
-                                 utl::Logger* logger)
-      = 0;
+                                 utl::Logger* logger) = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -479,8 +478,7 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const
-      = 0;
+                                 int col_pitch) const = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }
