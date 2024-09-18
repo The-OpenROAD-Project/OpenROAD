@@ -1846,6 +1846,7 @@ void GuideProcessor::saveGuidesUpdates()
           odb::dbGuide::create(
               dbNet,
               dbLayer,
+              dbLayer,
               {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
         }
       } else {
@@ -1853,6 +1854,7 @@ void GuideProcessor::saveGuidesUpdates()
         auto dbLayer = dbTech->findLayer(layerName.c_str());
         odb::dbGuide::create(
             dbNet,
+            dbLayer,
             dbLayer,
             {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
       }
