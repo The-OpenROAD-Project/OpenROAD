@@ -94,11 +94,11 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
 
 void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  frLayerNum layerNum;
+  frLayerNum layer_num;
   if (!shapes_.empty()) {
-    layerNum = layer_map_.at(layer->getNumber()).first;
+    layer_num = layer_map_.at(layer->getNumber()).first;
     for (auto& b : shapes_) {
-      if (b.second != layerNum) {
+      if (b.second != layer_num) {
         continue;
       }
       painter.drawRect(
@@ -110,35 +110,41 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  layerNum = layer_map_.at(layer->getNumber()).first;
-  if (layerNum < 0) {
+  layer_num = layer_map_.at(layer->getNumber()).first;
+  if (layer_num < 0) {
     return;
   }
 
   for (auto via : pa_vias_) {
     auto* via_def = via->getViaDef();
-    Rect bbox;
+    Rect boundary_box;
     bool skip = false;
-    if (via_def->getLayer1Num() == layerNum) {
-      bbox = via->getLayer1BBox();
-    } else if (via_def->getLayer2Num() == layerNum) {
-      bbox = via->getLayer2BBox();
+    if (via_def->getLayer1Num() == layer_num) {
+      boundary_box = via->getLayer1BBox();
+    } else if (via_def->getLayer2Num() == layer_num) {
+      boundary_box = via->getLayer2BBox();
     } else {
       skip = true;
     }
     if (!skip) {
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
+      painter.drawRect({boundary_box.xMin(),
+                        boundary_box.yMin(),
+                        boundary_box.xMax(),
+                        boundary_box.yMax()});
     }
   }
 
   for (auto seg : pa_segs_) {
-    if (seg->getLayerNum() == layerNum) {
-      Rect bbox = seg->getBBox();
+    if (seg->getLayerNum() == layer_num) {
+      Rect boundary_box = seg->getBBox();
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
+      painter.drawRect({boundary_box.xMin(),
+                        boundary_box.yMin(),
+                        boundary_box.xMax(),
+                        boundary_box.yMax()});
     }
   }
 
@@ -146,14 +152,14 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
     for (auto& marker : *pa_markers_) {
-      if (marker->getLayerNum() == layerNum) {
+      if (marker->getLayerNum() == layer_num) {
         painter.drawRect(marker->getBBox());
       }
     }
   }
 
   for (const auto& ap : aps_) {
-    if (ap.getLayerNum() != layerNum) {
+    if (ap.getLayerNum() != layer_num) {
       continue;
     }
     auto color = ap.hasAccess() ? gui::Painter::green : gui::Painter::red;
@@ -166,7 +172,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* inst_class)
 {
   pin_ = nullptr;
 
@@ -175,7 +181,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
     if (term_name_ != "*" && term->getName() != term_name_) {
       return;
     }
-    if (instClass->find(inst_) == instClass->end()) {
+    if (inst_class->find(inst_) == inst_class->end()) {
       return;
     }
   }
@@ -195,7 +201,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* instClass)
+                              std::set<frInst*, frBlockObjectComp>* inst_class)
 {
   pin_ = nullptr;
 
@@ -271,7 +277,7 @@ void FlexPAGraphics::setViaAP(
   pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    Rect boundary_box = marker->getBBox();
     std::string layer_name;
     for (auto& layer : layer_map_) {
       if (layer.first == marker->getLayerNum()) {
@@ -282,10 +288,10 @@ void FlexPAGraphics::setViaAP(
     logger_->info(DRT,
                   119,
                   "Marker ({}, {}) ({}, {}) on {}:",
-                  bbox.xMin(),
-                  bbox.yMin(),
-                  bbox.xMax(),
-                  bbox.yMax(),
+                  boundary_box.xMin(),
+                  boundary_box.yMin(),
+                  boundary_box.xMax(),
+                  boundary_box.yMax(),
                   layer_name);
     marker->getConstraint()->report(logger_);
   }
@@ -313,15 +319,15 @@ void FlexPAGraphics::setPlanarAP(
   pa_segs_ = {seg};
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    Rect boundary_box = marker->getBBox();
     logger_->info(DRT,
                   292,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.xMin(),
-                  bbox.yMin(),
-                  bbox.xMax(),
-                  bbox.yMax());
+                  boundary_box.xMin(),
+                  boundary_box.yMin(),
+                  boundary_box.xMax(),
+                  boundary_box.yMax());
   }
 
   gui_->redraw();
@@ -357,15 +363,15 @@ void FlexPAGraphics::setObjsAndMakers(
   }
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect bbox = marker->getBBox();
+    Rect boundary_box = marker->getBBox();
     logger_->info(DRT,
                   281,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  bbox.xMin(),
-                  bbox.yMin(),
-                  bbox.xMax(),
-                  bbox.yMax());
+                  boundary_box.xMin(),
+                  boundary_box.yMin(),
+                  boundary_box.xMax(),
+                  boundary_box.yMax());
   }
 
   gui_->redraw();
