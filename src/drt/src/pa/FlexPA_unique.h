@@ -50,7 +50,9 @@ class UniqueInsts
   UniqueInsts(frDesign* design,
               const frCollection<odb::dbInst*>& target_insts,
               Logger* logger);
-
+  /**
+   * @brief Initializes Unique Instances and Pin Acess data.
+   */
   void init();
 
   // Get's the index corresponding to the inst's unique instance
@@ -74,19 +76,73 @@ class UniqueInsts
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
+
+  /**
+   * @brief Checks if any terminal has a NonDefaultRule.
+   *
+   * @param inst A cell instance.
+   *
+   * @return If instance contains a NonDefaultRule net connected to any
+   * terminal.
+   */
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
+  /**
+   * @brief Creates a vector of preferred track patterns.
+   *
+   * Not every track pattern is a preferred one,
+   * this function acts as filter of design_->getTopBlock()->getTrackPatterns()
+   * to only take the preferred ones.
+   *
+   * @return A vector of track patterns objects.
+   */
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& pref_track_patterns);
   void applyPatternsFile(const char* file_path);
 
+  /**
+   * @brief Computes all unique instances data structures
+   *
+   * Proxies computeUnique, only starting the input data strcutures before.
+   *
+   * @todo This function can probably be eliminated
+   */
   void initUniqueInstance();
-  void prepPoint_pin();
 
+  /**
+   * @brief Initializes pin access structures
+   * Fills unique_to_pa_idx_adds pin access unique points to pins
+   */
+  void initPinAccess();
+
+  /**
+   * @brief Creates a map from Master instance to LayerRanges.
+   *
+   * LayerRange represents the lower and upper layer of a Master instance.
+   *
+   * @return A map from Master instance to LayerRange.
+   */
   void initMaster2PinLayerRange(MasterLayerRange& master_to_pin_layer_range);
 
+  /**
+   * @brief Computes all unique instances data structures.
+   *
+   * @param master_to_pin_layer_range Map from a master instance to layerRange.
+   * @param pref_track_patterns Vector of preffered track patterns.
+   * Fills: master_OT_to_insts_, inst_to_unique_, inst_to_class_ and
+   * unique_to_idx_.
+   */
   void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
                      const std::vector<frTrackPattern*>& pref_track_patterns);
+
+  /**
+   * @brief Error Raiser for pin shape
+   *
+   * @throws DRT 320/321 if the term has offgrid pin shape
+   * @throws DRT 322 if the pin figure is unsuported (not Rect of Polygon)
+   *
+   * @param pin Pin to be checked.
+   */
   void checkFigsOnGrid(const frMPin* pin);
 
   frDesign* design_;

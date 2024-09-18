@@ -50,7 +50,7 @@ namespace drt {
 using utl::ThreadException;
 
 template <typename T>
-void FlexPA::prepPoint_pin_mergePinShapes(
+void FlexPA::mergePinShapes(
     std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     T* pin,
     frInstTerm* inst_term,
@@ -113,14 +113,13 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += poly;
     } else {
-      logger_->error(
-          DRT, 67, "FlexPA prepPoint_pin_mergePinShapes unsupported shape.");
+      logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
       exit(1);
     }
   }
 }
 
-void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
+void FlexPA::genAPOnTrack(
     std::map<frCoord, frAccessPointEnum>& coords,
     const std::map<frCoord, frAccessPointEnum>& track_coords,
     const frCoord low,
@@ -142,11 +141,10 @@ void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
 }
 
 // will not generate center for wider edge
-void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
-    std::map<frCoord, frAccessPointEnum>& coords,
-    const frLayerNum layer_num,
-    const frCoord low,
-    const frCoord high)
+void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
+                           const frLayerNum layer_num,
+                           const frCoord low,
+                           const frCoord high)
 {
   // if touching two tracks, then no center??
   int candidates_on_grid = 0;
@@ -174,17 +172,16 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
 }
 
 // Responsible for checking if an AP is valid and configuring it
-void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    std::set<std::pair<Point, frLayerNum>>& apset,
-    const gtl::rectangle_data<frCoord>& maxrect,
-    const frCoord x,
-    const frCoord y,
-    const frLayerNum layer_num,
-    const bool allow_planar,
-    const bool allow_via,
-    const frAccessPointEnum low_cost,
-    const frAccessPointEnum high_cost)
+void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                               std::set<std::pair<Point, frLayerNum>>& apset,
+                               const gtl::rectangle_data<frCoord>& maxrect,
+                               const frCoord x,
+                               const frCoord y,
+                               const frLayerNum layer_num,
+                               const bool allow_planar,
+                               const bool allow_via,
+                               const frAccessPointEnum low_cost,
+                               const frAccessPointEnum high_cost)
 {
   gtl::point_data<frCoord> pt(x, y);
   if (!gtl::contains(maxrect, pt) && low_cost != frAccessPointEnum::NearbyGrid
@@ -294,7 +291,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   apset.insert(std::make_pair(fpt, layer_num));
 }
 
-void FlexPA::prepPoint_pin_genPoints_rect_ap(
+void FlexPA::initializeAccessPoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
@@ -314,26 +311,25 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap(
       auto& low_cost = is_layer1_horz ? cost_y : cost_x;
       auto& high_cost = (!is_layer1_horz) ? cost_y : cost_x;
       if (low_cost == lower_type && high_cost == upper_type) {
-        prepPoint_pin_genPoints_rect_ap_helper(aps,
-                                               apset,
-                                               rect,
-                                               xCoord,
-                                               yCoord,
-                                               layer_num,
-                                               allow_planar,
-                                               allow_via,
-                                               low_cost,
-                                               high_cost);
+        createAccessPoint(aps,
+                          apset,
+                          rect,
+                          xCoord,
+                          yCoord,
+                          layer_num,
+                          allow_planar,
+                          allow_via,
+                          low_cost,
+                          high_cost);
       }
     }
   }
 }
 
-void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
-    std::map<frCoord, frAccessPointEnum>& coords,
-    const gtl::rectangle_data<frCoord>& rect,
-    const frLayerNum layer_num,
-    const bool is_curr_layer_horz)
+void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
+                                   const gtl::rectangle_data<frCoord>& rect,
+                                   const frLayerNum layer_num,
+                                   const bool is_curr_layer_horz)
 {
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
   const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
@@ -434,16 +430,15 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
   }
   return true;
 }
-void FlexPA::prepPoint_pin_genPoints_rect(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    std::set<std::pair<Point, frLayerNum>>& apset,
-    const gtl::rectangle_data<frCoord>& rect,
-    const frLayerNum layer_num,
-    const bool allow_planar,
-    const bool allow_via,
-    frAccessPointEnum lower_type,
-    const frAccessPointEnum upper_type,
-    const bool is_macro_cell_pin)
+void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                            std::set<std::pair<Point, frLayerNum>>& apset,
+                            const gtl::rectangle_data<frCoord>& rect,
+                            const frLayerNum layer_num,
+                            const bool allow_planar,
+                            const bool allow_via,
+                            frAccessPointEnum lower_type,
+                            const frAccessPointEnum upper_type,
+                            const bool is_macro_cell_pin)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   const auto min_width_layer1 = layer->getMinWidth();
@@ -458,8 +453,7 @@ void FlexPA::prepPoint_pin_genPoints_rect(
   } else if (layer_num - 2 >= getDesign()->getTech()->getBottomLayerNum()) {
     second_layer_num = layer_num - 2;
   } else {
-    logger_->error(
-        DRT, 68, "prepPoint_pin_genPoints_rect cannot find second_layer_num.");
+    logger_->error(DRT, 68, "genAPsFromRect cannot find second_layer_num.");
   }
   const auto min_width_layer2
       = getDesign()->getTech()->getLayer(second_layer_num)->getMinWidth();
@@ -488,182 +482,162 @@ void FlexPA::prepPoint_pin_genPoints_rect(
   // gen all full/half grid coords
   if (!is_macro_cell_pin || !use_center_line) {
     if (is_layer1_horz) {
-      prepPoint_pin_genPoints_rect_genGrid(
-          y_coords, layer1_track_coords, gtl::yl(rect), gtl::yh(rect));
-      prepPoint_pin_genPoints_rect_genGrid(
-          x_coords,
-          layer2_track_coords,
-          gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
-          gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
+      genAPOnTrack(y_coords, layer1_track_coords, gtl::yl(rect), gtl::yh(rect));
+      genAPOnTrack(x_coords,
+                   layer2_track_coords,
+                   gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
+                   gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
       if (lower_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
+        genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
       }
       if (lower_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            y_coords, rect, layer_num, is_layer1_horz);
+        genAPEnclosedBoundary(y_coords, rect, layer_num, is_layer1_horz);
       }
       if (upper_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            x_coords,
-            layer_num,
-            gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
-            gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
+        genAPCentered(x_coords,
+                      layer_num,
+                      gtl::xl(rect) + (is_macro_cell_pin ? hwidth : 0),
+                      gtl::xh(rect) - (is_macro_cell_pin ? hwidth : 0));
       }
       if (upper_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            x_coords, rect, layer_num, !is_layer1_horz);
+        genAPEnclosedBoundary(x_coords, rect, layer_num, !is_layer1_horz);
       }
       if (lower_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer1_track_coords,
-                                             gtl::yh(rect),
-                                             gtl::yh(rect) + min_width_layer1,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer1_track_coords,
-                                             gtl::yl(rect) - min_width_layer1,
-                                             gtl::yl(rect),
-                                             true);
+        genAPOnTrack(y_coords,
+                     layer1_track_coords,
+                     gtl::yh(rect),
+                     gtl::yh(rect) + min_width_layer1,
+                     true);
+        genAPOnTrack(y_coords,
+                     layer1_track_coords,
+                     gtl::yl(rect) - min_width_layer1,
+                     gtl::yl(rect),
+                     true);
       }
       if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer2_track_coords,
-                                             gtl::xh(rect),
-                                             gtl::xh(rect) + min_width_layer2,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer2_track_coords,
-                                             gtl::xl(rect) - min_width_layer2,
-                                             gtl::xl(rect),
-                                             true);
+        genAPOnTrack(x_coords,
+                     layer2_track_coords,
+                     gtl::xh(rect),
+                     gtl::xh(rect) + min_width_layer2,
+                     true);
+        genAPOnTrack(x_coords,
+                     layer2_track_coords,
+                     gtl::xl(rect) - min_width_layer2,
+                     gtl::xl(rect),
+                     true);
       }
     } else {
-      prepPoint_pin_genPoints_rect_genGrid(
-          x_coords, layer1_track_coords, gtl::xl(rect), gtl::xh(rect));
-      prepPoint_pin_genPoints_rect_genGrid(
-          y_coords,
-          layer2_track_coords,
-          gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
-          gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
+      genAPOnTrack(x_coords, layer1_track_coords, gtl::xl(rect), gtl::xh(rect));
+      genAPOnTrack(y_coords,
+                   layer2_track_coords,
+                   gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
+                   gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
       if (lower_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
+        genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
       }
       if (lower_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            x_coords, rect, layer_num, is_layer1_horz);
+        genAPEnclosedBoundary(x_coords, rect, layer_num, is_layer1_horz);
       }
       if (upper_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            y_coords,
-            layer_num,
-            gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
-            gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
+        genAPCentered(y_coords,
+                      layer_num,
+                      gtl::yl(rect) + (is_macro_cell_pin ? hwidth : 0),
+                      gtl::yh(rect) - (is_macro_cell_pin ? hwidth : 0));
       }
       if (upper_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            y_coords, rect, layer_num, !is_layer1_horz);
+        genAPEnclosedBoundary(y_coords, rect, layer_num, !is_layer1_horz);
       }
       if (lower_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer1_track_coords,
-                                             gtl::xh(rect),
-                                             gtl::xh(rect) + min_width_layer1,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer1_track_coords,
-                                             gtl::xl(rect) - min_width_layer1,
-                                             gtl::xl(rect),
-                                             true);
+        genAPOnTrack(x_coords,
+                     layer1_track_coords,
+                     gtl::xh(rect),
+                     gtl::xh(rect) + min_width_layer1,
+                     true);
+        genAPOnTrack(x_coords,
+                     layer1_track_coords,
+                     gtl::xl(rect) - min_width_layer1,
+                     gtl::xl(rect),
+                     true);
       }
       if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer2_track_coords,
-                                             gtl::yh(rect),
-                                             gtl::yh(rect) + min_width_layer2,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer2_track_coords,
-                                             gtl::yl(rect) - min_width_layer2,
-                                             gtl::yl(rect),
-                                             true);
+        genAPOnTrack(y_coords,
+                     layer2_track_coords,
+                     gtl::yh(rect),
+                     gtl::yh(rect) + min_width_layer2,
+                     true);
+        genAPOnTrack(y_coords,
+                     layer2_track_coords,
+                     gtl::yl(rect) - min_width_layer2,
+                     gtl::yl(rect),
+                     true);
       }
     }
   } else {
     if (is_layer1_horz) {
       lower_type = frAccessPointEnum::OnGrid;
-      prepPoint_pin_genPoints_rect_genGrid(
-          x_coords, layer2_track_coords, gtl::xl(rect), gtl::xh(rect));
+      genAPOnTrack(x_coords, layer2_track_coords, gtl::xl(rect), gtl::xh(rect));
       if (upper_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
+        genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
       }
       if (upper_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            x_coords, rect, layer_num, !is_layer1_horz);
+        genAPEnclosedBoundary(x_coords, rect, layer_num, !is_layer1_horz);
       }
       if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer2_track_coords,
-                                             gtl::xh(rect),
-                                             gtl::xh(rect) + min_width_layer2,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(x_coords,
-                                             layer2_track_coords,
-                                             gtl::xl(rect) - min_width_layer2,
-                                             gtl::xl(rect),
-                                             true);
+        genAPOnTrack(x_coords,
+                     layer2_track_coords,
+                     gtl::xh(rect),
+                     gtl::xh(rect) + min_width_layer2,
+                     true);
+        genAPOnTrack(x_coords,
+                     layer2_track_coords,
+                     gtl::xl(rect) - min_width_layer2,
+                     gtl::xl(rect),
+                     true);
       }
-      prepPoint_pin_genPoints_rect_genCenter(
-          y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
+      genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
       for (auto& [yCoord, cost] : y_coords) {
         y_coords[yCoord] = frAccessPointEnum::OnGrid;
       }
     } else {
-      prepPoint_pin_genPoints_rect_genGrid(
-          y_coords, layer2_track_coords, gtl::yl(rect), gtl::yh(rect));
+      genAPOnTrack(y_coords, layer2_track_coords, gtl::yl(rect), gtl::yh(rect));
       if (upper_type >= frAccessPointEnum::Center) {
-        prepPoint_pin_genPoints_rect_genCenter(
-            y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
+        genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
       }
       if (upper_type >= frAccessPointEnum::EncOpt) {
-        prepPoint_pin_genPoints_rect_genEnc(
-            y_coords, rect, layer_num, !is_layer1_horz);
+        genAPEnclosedBoundary(y_coords, rect, layer_num, !is_layer1_horz);
       }
       if (upper_type >= frAccessPointEnum::NearbyGrid) {
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer2_track_coords,
-                                             gtl::yh(rect),
-                                             gtl::yh(rect) + min_width_layer2,
-                                             true);
-        prepPoint_pin_genPoints_rect_genGrid(y_coords,
-                                             layer2_track_coords,
-                                             gtl::yl(rect) - min_width_layer2,
-                                             gtl::yl(rect),
-                                             true);
+        genAPOnTrack(y_coords,
+                     layer2_track_coords,
+                     gtl::yh(rect),
+                     gtl::yh(rect) + min_width_layer2,
+                     true);
+        genAPOnTrack(y_coords,
+                     layer2_track_coords,
+                     gtl::yl(rect) - min_width_layer2,
+                     gtl::yl(rect),
+                     true);
       }
-      prepPoint_pin_genPoints_rect_genCenter(
-          x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
+      genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
       for (auto& [xCoord, cost] : x_coords) {
         x_coords[xCoord] = frAccessPointEnum::OnGrid;
       }
     }
   }
-  prepPoint_pin_genPoints_rect_ap(aps,
-                                  apset,
-                                  rect,
-                                  layer_num,
-                                  allow_planar,
-                                  allow_via,
-                                  is_layer1_horz,
-                                  x_coords,
-                                  y_coords,
-                                  lower_type,
-                                  upper_type);
+  initializeAccessPoints(aps,
+                         apset,
+                         rect,
+                         layer_num,
+                         allow_planar,
+                         allow_via,
+                         is_layer1_horz,
+                         x_coords,
+                         y_coords,
+                         lower_type,
+                         upper_type);
 }
 
-void FlexPA::prepPoint_pin_genPoints_layerShapes(
+void FlexPA::genAPsFromLayerShapes(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     frInstTerm* inst_term,
@@ -715,15 +689,15 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
   for (auto& bbox_rect : maxrects) {
-    prepPoint_pin_genPoints_rect(aps,
-                                 apset,
-                                 bbox_rect,
-                                 layer_num,
-                                 allow_planar,
-                                 allow_via,
-                                 lower_type,
-                                 upper_type,
-                                 is_macro_cell_pin);
+    genAPsFromRect(aps,
+                   apset,
+                   bbox_rect,
+                   layer_num,
+                   allow_planar,
+                   allow_via,
+                   lower_type,
+                   upper_type,
+                   is_macro_cell_pin);
   }
 }
 
@@ -733,7 +707,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
 // lower center  2, upper on-grid 0 = 2
 // lower center  2, upper center  2 = 4
 template <typename T>
-void FlexPA::prepPoint_pin_genPoints(
+void FlexPA::getAPsFromPinShapes(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     T* pin,
@@ -749,20 +723,20 @@ void FlexPA::prepPoint_pin_genPoints(
     if (!it->empty()
         && getDesign()->getTech()->getLayer(layer_num)->getType()
                == dbTechLayerType::ROUTING) {
-      prepPoint_pin_genPoints_layerShapes(aps,
-                                          apset,
-                                          inst_term,
-                                          *it,
-                                          layer_num,
-                                          allow_via,
-                                          lower_type,
-                                          upper_type);
+      genAPsFromLayerShapes(aps,
+                            apset,
+                            inst_term,
+                            *it,
+                            layer_num,
+                            allow_via,
+                            lower_type,
+                            upper_type);
     }
     layer_num--;
   }
 }
 
-bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
+bool FlexPA::endPointIsOutside(
     Point& end_point,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const Point& begin_point,
@@ -829,7 +803,7 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
 }
 
 template <typename T>
-void FlexPA::prepPoint_pin_checkPoint_planar(
+void FlexPA::addPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -845,7 +819,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
   Point end_point;
-  const bool is_outside = prepPoint_pin_checkPoint_planar_ep(
+  const bool is_outside = endPointIsOutside(
       end_point, layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
   // skip if two width within shape for standard cell
   if (!is_outside) {
@@ -991,7 +965,7 @@ void FlexPA::getViasFromMetalWidthMap(
 }
 
 template <typename T>
-void FlexPA::prepPoint_pin_checkPoint_via(
+void FlexPA::addViaAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
@@ -1091,8 +1065,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     if (via_in_pin && max_ext) {
       continue;
     }
-    if (prepPoint_pin_checkPoint_via_helper(
-            ap, via.get(), pin, inst_term, layer_polys)) {
+    if (checkViaAccess(ap, via.get(), pin, inst_term, layer_polys)) {
       valid_via_defs.insert({max_ext, idx, via_def});
       if (valid_via_defs.size() >= max_num_via_trial) {
         break;
@@ -1110,25 +1083,25 @@ void FlexPA::prepPoint_pin_checkPoint_via(
 }
 
 template <typename T>
-bool FlexPA::prepPoint_pin_checkPoint_via_helper(
+bool FlexPA::checkViaAccess(
     frAccessPoint* ap,
     frVia* via,
     T* pin,
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys)
 {
-  return prepPoint_pin_checkPoint_viaDir_helper(
+  return checkDirectionalViaAccess(
              ap, via, pin, inst_term, layer_polys, frDirEnum::E)
-         || prepPoint_pin_checkPoint_viaDir_helper(
+         || checkDirectionalViaAccess(
              ap, via, pin, inst_term, layer_polys, frDirEnum::W)
-         || prepPoint_pin_checkPoint_viaDir_helper(
+         || checkDirectionalViaAccess(
              ap, via, pin, inst_term, layer_polys, frDirEnum::S)
-         || prepPoint_pin_checkPoint_viaDir_helper(
+         || checkDirectionalViaAccess(
              ap, via, pin, inst_term, layer_polys, frDirEnum::N);
 }
 
 template <typename T>
-bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
+bool FlexPA::checkDirectionalViaAccess(
     frAccessPoint* ap,
     frVia* via,
     T* pin,
@@ -1152,12 +1125,12 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
   Point end_point;
-  prepPoint_pin_checkPoint_planar_ep(end_point,
-                                     layer_polys,
-                                     begin_point,
-                                     via->getViaDef()->getLayer2Num(),
-                                     dir,
-                                     is_block);
+  endPointIsOutside(end_point,
+                    layer_polys,
+                    begin_point,
+                    via->getViaDef()->getLayer2Num(),
+                    dir,
+                    is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1250,26 +1223,24 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
 }
 
 template <typename T>
-void FlexPA::prepPoint_pin_checkPoint(
-    frAccessPoint* ap,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-    T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
+void FlexPA::addAccess(frAccessPoint* ap,
+                       const gtl::polygon_90_set_data<frCoord>& polyset,
+                       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+                       T* pin,
+                       frInstTerm* inst_term,
+                       bool deep_search)
 {
   if (!deep_search) {
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, inst_term);
-    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, inst_term);
+    addPlanarAccess(ap, polys, frDirEnum::W, pin, inst_term);
+    addPlanarAccess(ap, polys, frDirEnum::E, pin, inst_term);
+    addPlanarAccess(ap, polys, frDirEnum::S, pin, inst_term);
+    addPlanarAccess(ap, polys, frDirEnum::N, pin, inst_term);
   }
-  prepPoint_pin_checkPoint_via(
-      ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
+  addViaAccess(ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
 }
 
 template <typename T>
-void FlexPA::prepPoint_pin_checkPoints(
+void FlexPA::setAPsAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     T* pin,
@@ -1284,11 +1255,11 @@ void FlexPA::prepPoint_pin_checkPoints(
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
-    prepPoint_pin_checkPoint(ap.get(),
-                             pin_shapes[layer_num],
-                             layer_polys[layer_num],
-                             pin,
-                             inst_term);
+    addAccess(ap.get(),
+              pin_shapes[layer_num],
+              layer_polys[layer_num],
+              pin,
+              inst_term);
     if (is_std_cell_pin) {
       has_access
           |= ((layer_num == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
@@ -1300,18 +1271,18 @@ void FlexPA::prepPoint_pin_checkPoints(
   if (!has_access) {
     for (auto& ap : aps) {
       const auto layer_num = ap->getLayerNum();
-      prepPoint_pin_checkPoint(ap.get(),
-                               pin_shapes[layer_num],
-                               layer_polys[layer_num],
-                               pin,
-                               inst_term,
-                               true);
+      addAccess(ap.get(),
+                pin_shapes[layer_num],
+                layer_polys[layer_num],
+                pin,
+                inst_term,
+                true);
     }
   }
 }
 
 template <typename T>
-void FlexPA::prepPoint_pin_updateStat(
+void FlexPA::updatePinStats(
     const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
     T* pin,
     frInstTerm* inst_term)
@@ -1357,7 +1328,7 @@ void FlexPA::prepPoint_pin_updateStat(
 }
 
 template <typename T>
-bool FlexPA::prepPoint_pin_helper(
+bool FlexPA::initPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -1383,10 +1354,9 @@ bool FlexPA::prepPoint_pin_helper(
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
-  prepPoint_pin_genPoints(
+  getAPsFromPinShapes(
       tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
-  prepPoint_pin_checkPoints(
-      tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+  setAPsAccesses(tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += tmp_aps.size();
@@ -1428,7 +1398,7 @@ bool FlexPA::prepPoint_pin_helper(
   }
   if (is_std_cell_pin
       && n_sparse_access_points >= MINNUMACCESSPOINT_STDCELLPIN) {
-    prepPoint_pin_updateStat(aps, pin, inst_term);
+    updatePinStats(aps, pin, inst_term);
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
     for (auto& ap : aps) {
@@ -1438,7 +1408,7 @@ bool FlexPA::prepPoint_pin_helper(
   }
   if (is_macro_cell_pin
       && n_sparse_access_points >= MINNUMACCESSPOINT_MACROCELLPIN) {
-    prepPoint_pin_updateStat(aps, pin, inst_term);
+    updatePinStats(aps, pin, inst_term);
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
     for (auto& ap : aps) {
@@ -1458,7 +1428,7 @@ bool FlexPA::prepPoint_pin_helper(
 
 // first create all access points with costs
 template <typename T>
-int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
+int FlexPA::initPinAccess(T* pin, frInstTerm* inst_term)
 {
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
@@ -1489,7 +1459,7 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
   }
 
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes;
-  prepPoint_pin_mergePinShapes(pin_shapes, pin, inst_term);
+  mergePinShapes(pin_shapes, pin, inst_term);
 
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
@@ -1505,7 +1475,7 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (prepPoint_pin_helper(
+      if (initPinAccessCostBounded(
               aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
         return aps.size();
       }
@@ -1513,9 +1483,9 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
   }
 
   // inst_term aps are written back here if not early stopped
-  // IO term aps are are written back in prepPoint_pin_helper and always
+  // IO term aps are are written back in initPinAccessCostBounded and always
   // early stopped
-  prepPoint_pin_updateStat(aps, pin, inst_term);
+  updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
     if (is_std_cell_pin) {
@@ -1554,7 +1524,7 @@ static inline void serializeInstRows(
   paUpdate::serialize(update, file_name);
 }
 
-void FlexPA::prepPoint()
+void FlexPA::initAllAccessPoints()
 {
   ProfileTask profile("PA:point");
   int cnt = 0;
@@ -1584,7 +1554,7 @@ void FlexPA::prepPoint()
         }
         int n_aps = 0;
         for (auto& pin : inst_term->getTerm()->getPins()) {
-          n_aps += prepPoint_pin(pin.get(), inst_term.get());
+          n_aps += initPinAccess(pin.get(), inst_term.get());
         }
         if (!n_aps) {
           logger_->error(DRT,
@@ -1633,7 +1603,7 @@ void FlexPA::prepPoint()
         }
         int n_aps = 0;
         for (auto& pin : term->getPins()) {
-          n_aps += prepPoint_pin(pin.get(), nullptr);
+          n_aps += initPinAccess(pin.get(), nullptr);
         }
         if (!n_aps) {
           logger_->error(

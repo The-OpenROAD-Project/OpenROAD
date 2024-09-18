@@ -250,7 +250,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::prepPoint_pin()
+void UniqueInsts::initPinAccess()
 {
   for (auto& inst : unique_) {
     for (auto& inst_term : inst->getInstTerms()) {
@@ -258,7 +258,7 @@ void UniqueInsts::prepPoint_pin()
         if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
           unique_to_pa_idx_[inst] = pin->getNumPinAccess();
         } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "prepPoint_pin error.");
+          logger_->error(DRT, 69, "initPinAccess error.");
         }
         checkFigsOnGrid(pin.get());
         auto pa = std::make_unique<frPinAccess>();
@@ -285,7 +285,7 @@ void UniqueInsts::prepPoint_pin()
 void UniqueInsts::init()
 {
   initUniqueInstance();
-  prepPoint_pin();
+  initPinAccess();
 }
 
 void UniqueInsts::report() const
