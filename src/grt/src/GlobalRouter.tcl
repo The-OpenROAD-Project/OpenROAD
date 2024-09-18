@@ -374,6 +374,7 @@ proc read_guides { args } {
     keys {} \
     flags {}
   set file_name $args
+  utl::warn GRT 8 "The read_guides command does not allow parasitics estimation from the guides file."
   grt::read_guides $file_name
 }
 

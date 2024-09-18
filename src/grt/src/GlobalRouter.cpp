@@ -2651,10 +2651,8 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
   odb::Rect die_bounds = grid_->getGridArea();
 
-  const int init_x = std::min(route.init_x, route.final_x);
-  const int final_x = std::max(route.init_x, route.final_x);
-  const int init_y = std::min(route.init_y, route.final_y);
-  const int final_y = std::max(route.init_y, route.final_y);
+  const auto [init_x, final_x] = std::minmax(route.init_x, route.final_x);
+  const auto [init_y, final_y] = std::minmax(route.init_y, route.final_y);
 
   int llX = init_x - (grid_->getTileSize() / 2);
   int llY = init_y - (grid_->getTileSize() / 2);
