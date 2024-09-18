@@ -107,7 +107,7 @@ class UniqueInsts
   std::map<frMaster*,
            std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
            frBlockObjectComp>
-      master_OT_to_insts_;
+      master_orient_trackoffset_to_insts_;
 };
 
 }  // namespace drt
