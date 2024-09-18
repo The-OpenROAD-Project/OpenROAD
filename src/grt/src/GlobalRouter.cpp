@@ -1893,6 +1893,10 @@ void GlobalRouter::checkOverflow()
 
 void GlobalRouter::readGuides(const char* file_name)
 {
+  logger_->warn(GRT,
+                8,
+                "The read_guides command does not allow parasitics estimation "
+                "from the guides file.");
   if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr
       || db_->getTech() == nullptr) {
     logger_->error(GRT, 249, "Load design before reading guides");
@@ -4468,10 +4472,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
   std::ofstream out(file_name);
-  out << "tool "
-      << "net "
-      << "total_wl "
-      << "#pins ";
+  out << "tool " << "net " << "total_wl " << "#pins ";
 
   if (verbose) {
     out << "#vias ";
