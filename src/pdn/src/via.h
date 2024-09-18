@@ -175,7 +175,8 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom = true,
-                               bool include_top = true) const = 0;
+                               bool include_top = true) const
+      = 0;
 
   int getCount() const { return count_; }
 
@@ -234,8 +235,10 @@ class DbTechVia : public DbBaseVia
   odb::Rect required_top_rect_;
 
   odb::Point via_center_;
+  std::set<odb::Point> via_centers_;
 
   std::string getViaName(const std::set<odb::dbTechLayer*>& ongrid) const;
+  bool isArray() const { return rows_ > 1 || cols_ > 1; }
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as
@@ -476,7 +479,8 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const = 0;
+                                 int col_pitch) const
+      = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }
