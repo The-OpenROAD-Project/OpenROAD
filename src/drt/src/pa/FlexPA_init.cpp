@@ -61,13 +61,11 @@ void FlexPA::getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority)
   gtl::polygon_90_set_data<frCoord> via_layer_PS1;
 
   for (auto& fig : via_def->getLayer1Figs()) {
-    const Rect boundary_box = fig->getBBox();
-    gtl::rectangle_data<frCoord> boundary_box_rect(boundary_box.xMin(),
-                                                   boundary_box.yMin(),
-                                                   boundary_box.xMax(),
-                                                   boundary_box.yMax());
+    const Rect bbox = fig->getBBox();
+    gtl::rectangle_data<frCoord> bbox_rect(
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    via_layer_PS1 += boundary_box_rect;
+    via_layer_PS1 += bbox_rect;
   }
   gtl::rectangle_data<frCoord> layer1_rect;
   gtl::extents(layer1_rect, via_layer_PS1);
@@ -86,13 +84,11 @@ void FlexPA::getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority)
 
   gtl::polygon_90_set_data<frCoord> via_layer_PS2;
   for (auto& fig : via_def->getLayer2Figs()) {
-    const Rect boundary_box = fig->getBBox();
-    const gtl::rectangle_data<frCoord> boundary_box_rect(boundary_box.xMin(),
-                                                         boundary_box.yMin(),
-                                                         boundary_box.xMax(),
-                                                         boundary_box.yMax());
+    const Rect bbox = fig->getBBox();
+    const gtl::rectangle_data<frCoord> bbox_rect(
+        bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    via_layer_PS2 += boundary_box_rect;
+    via_layer_PS2 += bbox_rect;
   }
   gtl::rectangle_data<frCoord> layer2_rect;
   gtl::extents(layer2_rect, via_layer_PS2);

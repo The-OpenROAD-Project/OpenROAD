@@ -151,7 +151,7 @@ void UniqueInsts::computeUnique(
       continue;
     }
     const Point origin = inst->getOrigin();
-    const Rect boundary_boundary_box = inst->getBoundaryBBox();
+    const Rect boundary_bbox = inst->getBoundaryBBox();
     const dbOrientType orient = inst->getOrient();
     auto it = master_to_pin_layer_range.find(inst->getMaster());
     if (it == master_to_pin_layer_range.end()) {
@@ -165,7 +165,7 @@ void UniqueInsts::computeUnique(
     for (auto& tp : pref_track_patterns) {
       if (tp->getLayerNum() >= min_layer_num
           && tp->getLayerNum() <= max_layer_num) {
-        if (hasTrackPattern(tp, boundary_boundary_box)) {
+        if (hasTrackPattern(tp, boundary_bbox)) {
           // vertical track
           if (tp->isHorizontal()) {
             offset.push_back(origin.x() % tp->getTrackSpacing());
@@ -249,7 +249,7 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::initPinAccess()
+void UniqueInsts::prepPoint_pin()
 {
   for (auto& inst : unique_) {
     for (auto& inst_term : inst->getInstTerms()) {
@@ -257,7 +257,7 @@ void UniqueInsts::initPinAccess()
         if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
           unique_to_pa_idx_[inst] = pin->getNumPinAccess();
         } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "initPinAccess error.");
+          logger_->error(DRT, 69, "prepPoint_pin error.");
         }
         checkFigsOnGrid(pin.get());
         auto pa = std::make_unique<frPinAccess>();
@@ -284,7 +284,7 @@ void UniqueInsts::initPinAccess()
 void UniqueInsts::init()
 {
   initUniqueInstance();
-  initPinAccess();
+  prepPoint_pin();
 }
 
 void UniqueInsts::report() const

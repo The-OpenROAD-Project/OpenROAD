@@ -81,7 +81,7 @@ class UniqueInsts
   void applyPatternsFile(const char* file_path);
 
   void initUniqueInstance();
-  void initPinAccess();
+  void prepPoint_pin();
 
   void initMaster2PinLayerRange(MasterLayerRange& master_to_pin_layer_range);
 
