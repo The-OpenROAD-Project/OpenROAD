@@ -144,13 +144,14 @@ int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
 
 int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,
                                        int pos,
-                                       bool round_up)
+                                       bool round_up,
+                                       int grid_multiplier)
 {
   if (!tech->hasManufacturingGrid()) {
     return pos;
   }
 
-  const int grid = tech->getManufacturingGrid();
+  const int grid = grid_multiplier * tech->getManufacturingGrid();
 
   if (pos % grid != 0) {
     int round_pos = pos / grid;
@@ -184,21 +185,25 @@ bool TechLayer::checkIfManufacturingGrid(int value,
 {
   auto* tech = layer_->getTech();
   if (!checkIfManufacturingGrid(tech, value)) {
-    logger->error(utl::PDN,
-                  191,
-                  "{} of {:.4f} does not fit the manufacturing grid of {:.4f}.",
-                  type,
-                  dbuToMicron(value),
-                  dbuToMicron(tech->getManufacturingGrid()));
+    logger->error(
+        utl::PDN,
+        191,
+        "{} of {:.4f} um does not fit the manufacturing grid of {:.4f} um.",
+        type,
+        dbuToMicron(value),
+        dbuToMicron(tech->getManufacturingGrid()));
     return false;
   }
 
   return true;
 }
 
-int TechLayer::snapToManufacturingGrid(int pos, bool round_up) const
+int TechLayer::snapToManufacturingGrid(int pos,
+                                       bool round_up,
+                                       int grid_multiplier) const
 {
-  return snapToManufacturingGrid(layer_->getTech(), pos, round_up);
+  return snapToManufacturingGrid(
+      layer_->getTech(), pos, round_up, grid_multiplier);
 }
 
 std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const

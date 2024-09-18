@@ -1051,7 +1051,9 @@ Net* dbNetwork::net(const Pin* pin) const
   }
   // only pins which act as bterms are top levels and have no net
   if (bterm) {
-    return nullptr;
+    //    dbNet* dnet = bterm -> getNet();
+    //    return dbToSta(dnet);
+    ;
   }
   if (moditerm) {
     dbModNet* mnet = moditerm->getModNet();
@@ -1062,6 +1064,38 @@ Net* dbNetwork::net(const Pin* pin) const
     return dbToSta(mnet);
   }
   return nullptr;
+}
+
+/*
+Get the dbnet or the moddbnet for a pin
+Sometimes a pin can be hooked to both and we want to expose them
+both, so we add this api
+ */
+void dbNetwork::net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const
+{
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  db_net = nullptr;
+  db_modnet = nullptr;
+
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+  if (iterm) {
+    // in this case we may have both a hierarchical net
+    // and a physical net
+    db_net = iterm->getNet();
+    db_modnet = iterm->getModNet();
+  }
+  // pins which act as bterms are top levels and have no net
+  // so we skip that case (defaults to null)
+
+  if (moditerm) {
+    db_modnet = moditerm->getModNet();
+  }
+  if (modbterm) {
+    db_modnet = modbterm->getModNet();
+  }
 }
 
 Term* dbNetwork::term(const Pin* pin) const
@@ -1959,11 +1993,8 @@ Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
 
 Net* dbNetwork::makeNet(const char* name, Instance* parent)
 {
-  if (parent == top_instance_) {
-    dbNet* dnet = dbNet::create(block_, name, false);
-    return dbToSta(dnet);
-  }
-  return nullptr;
+  dbNet* dnet = dbNet::create(block_, name, false);
+  return dbToSta(dnet);
 }
 
 void dbNetwork::deleteNet(Net* net)
@@ -2564,20 +2595,52 @@ dbNetworkObserver::~dbNetworkObserver()
 }
 
 /*
-  Hierarchical network api connections
+  Hierarchical support api
  */
-
-dbModule* dbNetwork::getNetDriverParentModule(dbNet* net)
+Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
 {
   if (hasHierarchy()) {
-    // get sink driver instance and return its parent
-    int drivingITerm = net->getDrivingITerm();
-    if (drivingITerm != 0 && drivingITerm != -1) {
-      dbITerm* iterm = dbITerm::getITerm(block_, drivingITerm);
-      dbModNet* modnet = iterm->getModNet();
-      if (modnet != nullptr) {
-        return modnet->getParent();
+    Instance* inst = instance(drvr_pin);
+    dbInst* db_inst = nullptr;
+    odb::dbModInst* mod_inst = nullptr;
+    staToDb(inst, db_inst, mod_inst);
+    odb::dbModule* module = nullptr;
+    if (db_inst) {
+      module = db_inst->getModule();
+    } else if (mod_inst) {
+      module = mod_inst->getParent();
+    }
+    if (module) {
+      Instance* parent = (module == (block_->getTopModule()))
+                             ? topInstance()
+                             : dbToSta(module->getModInst());
+      return parent;
+    }
+  }
+  return topInstance();
+}
+
+dbModule* dbNetwork::getNetDriverParentModule(Net* net)
+{
+  if (hasHierarchy()) {
+    dbNet* dnet;
+    dbModNet* modnet;
+    staToDb(net, dnet, modnet);
+    if (dnet) {
+      //
+      // get sink driver instance and return its parent
+      // TODO: clean this up as we cannot trust getDrivingITerm.
+      //
+      int drivingITerm = dnet->getDrivingITerm();
+      if (drivingITerm != 0 && drivingITerm != -1) {
+        dbITerm* iterm = dbITerm::getITerm(block_, drivingITerm);
+        dbModNet* modnet = iterm->getModNet();
+        if (modnet != nullptr) {
+          return modnet->getParent();
+        }
       }
+    } else {
+      return modnet->getParent();
     }
     // default to top module
     return block_->getTopModule();
