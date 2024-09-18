@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "Mpl2Observer.h"
+#include "clusterEngine.h"
 
 namespace utl {
 class Logger;
@@ -68,6 +69,7 @@ class SimulatedAnnealingCore
 {
  public:
   SimulatedAnnealingCore(
+      PhysicalHierarchy* tree,
       const Rect& outline,           // boundary constraints
       const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
       // weight for different penalty

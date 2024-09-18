@@ -50,7 +50,7 @@ class Graphics;
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
-  SACoreSoftMacro(Cluster* root,
+  SACoreSoftMacro(PhysicalHierarchy* tree,
                   const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   // weight for different penalty

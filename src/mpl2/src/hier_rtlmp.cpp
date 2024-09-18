@@ -521,7 +521,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_->root.get(),
+          = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               new_outline,
                                               macros,
                                               1.0,     // area weight
@@ -585,7 +585,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_->root.get(),
+          = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               new_outline,
                                               macros,
                                               1.0,     // area weight
@@ -756,7 +756,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(new_outline,
+          = std::make_unique<SACoreHardMacro>(tree_.get(),
+                                              new_outline,
                                               macros,
                                               1.0,     // area_weight
                                               1000.0,  // outline weight
@@ -814,7 +815,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
         graphics_->setOutline(micronsToDbu(new_outline));
       }
       std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(new_outline,
+          = std::make_unique<SACoreHardMacro>(tree_.get(),
+                                              new_outline,
                                               macros,
                                               1.0,     // area_weight
                                               1000.0,  // outline weight
@@ -1667,7 +1669,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_->root.get(),
+          = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -1925,7 +1927,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
         std::unique_ptr<SACoreSoftMacro> sa = std::make_unique<SACoreSoftMacro>(
-            tree_->root.get(),
+            tree_.get(),
             outline,
             shaped_macros,
             area_weight_,
@@ -2497,7 +2499,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_->root.get(),
+          = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -2979,7 +2981,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_->root.get(),
+          = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
                                               shaped_macros,
                                               area_weight_,
@@ -3467,6 +3469,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       }
 
       std::unique_ptr<SACoreHardMacro> sa = std::make_unique<SACoreHardMacro>(
+          tree_.get(),
           outline,
           sa_macros,
           area_weight_,

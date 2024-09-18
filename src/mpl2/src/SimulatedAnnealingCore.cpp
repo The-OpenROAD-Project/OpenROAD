@@ -48,6 +48,7 @@ using std::string;
 // Class SimulatedAnnealingCore
 template <class T>
 SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
+    PhysicalHierarchy* tree,
     const Rect& outline,           // boundary constraints
     const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
     // weight for different penalty
