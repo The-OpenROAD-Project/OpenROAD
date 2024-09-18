@@ -229,6 +229,7 @@ void dbGuide::destroy(dbGuide* guide)
     block->_journal->pushParam(_guide->box_.xMax());
     block->_journal->pushParam(_guide->box_.yMax());
     block->_journal->pushParam(_guide->layer_);
+    block->_journal->pushParam(_guide->via_layer_);
     block->_journal->endAction();
   }
 

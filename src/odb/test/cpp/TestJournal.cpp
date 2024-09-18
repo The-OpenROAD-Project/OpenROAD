@@ -98,6 +98,7 @@ BOOST_FIXTURE_TEST_CASE(test_undo_net_destroy_guides, F_DEFAULT)
   const auto guide = *net->getGuides().begin();
   BOOST_TEST(guide->getLayer() == l1);
   BOOST_TEST(guide->getBox() == box);
+  BOOST_TEST(guide->getViaLayer() == l1);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_undo_guide_create, F_DEFAULT)
