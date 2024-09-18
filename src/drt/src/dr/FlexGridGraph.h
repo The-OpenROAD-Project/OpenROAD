@@ -1004,6 +1004,14 @@ class FlexGridGraph
               << "\n";
   }
 
+  void addAccessPointLocation(frLayerNum layer_num,
+                              frCoord x_coord,
+                              frCoord y_coord);
+
+  bool isAccessPointLocation(frLayerNum layer_num,
+                             frCoord x_coord,
+                             frCoord y_coord) const;
+
  private:
   frTechObject* tech_ = nullptr;
   Logger* logger_ = nullptr;
@@ -1087,6 +1095,11 @@ class FlexGridGraph
   frNonDefaultRule* ndr_ = nullptr;
   const frBox3D* dstTaperBox
       = nullptr;  // taper box for the current dest pin in the search
+
+  // locations of access points. The vector is indixed by layer number. The map
+  // key is the track location on that layer. the map value is the set of
+  // locations where accesspoints exist
+  frVector<std::map<frCoord, std::set<frCoord>>> ap_locs_;
 
   FlexGridGraph() = default;
 
