@@ -35,7 +35,41 @@
 #include "dr/FlexDR.h"
 
 namespace drt {
+void FlexGridGraph::addAccessPointLocation(frLayerNum layer_num,
+                                           frCoord x_coord,
+                                           frCoord y_coord)
+{
+  ap_locs_.resize(layer_num + 1);
+  if (getTech()->getLayer(layer_num)->getDir() == odb::horizontal) {
+    // horizontal layer, horizontal tracks indexed by y coordinate
+    ap_locs_[layer_num][y_coord].insert(x_coord);
+  } else {
+    ap_locs_[layer_num][x_coord].insert(y_coord);
+  }
+}
 
+bool FlexGridGraph::isAccessPointLocation(frLayerNum layer_num,
+                                          frCoord x_coord,
+                                          frCoord y_coord) const
+{
+  if (ap_locs_.size() <= layer_num) {
+    return false;
+  }
+  const auto& layer_maze_locs = ap_locs_[layer_num];
+  if (getTech()->getLayer(layer_num)->getDir() == odb::horizontal) {
+    auto it = layer_maze_locs.find(y_coord);
+    if (it == layer_maze_locs.end()) {
+      return false;
+    }
+    return it->second.find(x_coord) != it->second.end();
+  } else {
+    auto it = layer_maze_locs.find(x_coord);
+    if (it == layer_maze_locs.end()) {
+      return false;
+    }
+    return it->second.find(y_coord) != it->second.end();
+  }
+}
 void FlexGridGraph::initGrids(
     const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
     const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
@@ -237,8 +271,13 @@ void FlexGridGraph::initEdges(
             }
           }
           // via to upper layer
-          if (xFound2) {
-            if (!isOutOfDieVia) {
+          if (xFound2 && !isOutOfDieVia) {
+            const bool is_on_grid
+                = yIt->second != nullptr && xIt2->second != nullptr;
+            const bool allow_off_grid
+                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                  || isAccessPointLocation(layerNum, xCoord, yCoord);
+            if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt->second == nullptr || xIt2->second == nullptr);
@@ -260,8 +299,14 @@ void FlexGridGraph::initEdges(
             }
           }
           // via to upper layer
-          if (yFound2) {
-            if (!isOutOfDieVia) {
+          if (yFound2 && !isOutOfDieVia) {
+            const bool is_on_grid
+                = xIt->second != nullptr && yIt2->second != nullptr;
+            const bool allow_off_grid
+                = layer->getLef58RightWayOnGridOnlyConstraint() == nullptr
+                  || isAccessPointLocation(layerNum, xCoord, yCoord);
+
+            if (is_on_grid || allow_off_grid) {
               addEdge(xIdx, yIdx, zIdx, frDirEnum::U, bbox, initDR);
               bool condition
                   = (yIt2->second == nullptr || xIt->second == nullptr);
