@@ -313,10 +313,11 @@ static bool segOnBorder(const Rect& routeBox,
   return begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax();
 }
 
-void FlexDRWorker::initNets_segmentTerms(const Point& bp,
-                                         const frLayerNum lNum,
-                                         const frNet* net,
-                                         frBlockObjectSet& terms)
+void FlexDRWorker::initNets_segmentTerms(
+    const Point& bp,
+    const frLayerNum lNum,
+    const frNet* net,
+    std::set<frBlockObject*, frBlockObjectComp>& terms)
 {
   auto regionQuery = design_->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
@@ -658,7 +659,10 @@ void FlexDRWorker::initNets_initDR(
     std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
     std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides)
 {
-  std::map<frNet*, frBlockObjectSet, frBlockObjectComp> netTerms;
+  std::map<frNet*,
+           std::set<frBlockObject*, frBlockObjectComp>,
+           frBlockObjectComp>
+      netTerms;
   std::vector<frBlockObject*> result;
   design->getRegionQuery()->queryGRPin(getRouteBox(), result);
   for (auto obj : result) {
