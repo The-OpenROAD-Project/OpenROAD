@@ -179,10 +179,11 @@ void UniqueInsts::computeUnique(
         offset.push_back(tp->getTrackSpacing());
       }
     }
-    master_OT_to_insts_[inst->getMaster()][orient][offset].insert(inst.get());
+    master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset]
+        .insert(inst.get());
   }
 
-  for (auto& [master, orientMap] : master_OT_to_insts_) {
+  for (auto& [master, orientMap] : master_orient_trackoffset_to_insts_) {
     for (auto& [orient, offsetMap] : orientMap) {
       for (auto& [vec, insts] : offsetMap) {
         auto unique_inst = *(insts.begin());
