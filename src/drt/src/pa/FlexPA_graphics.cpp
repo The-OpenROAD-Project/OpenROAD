@@ -117,34 +117,28 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   for (auto via : pa_vias_) {
     auto* via_def = via->getViaDef();
-    Rect boundary_box;
+    Rect bbox;
     bool skip = false;
     if (via_def->getLayer1Num() == layer_num) {
-      boundary_box = via->getLayer1BBox();
+      bbox = via->getLayer1BBox();
     } else if (via_def->getLayer2Num() == layer_num) {
-      boundary_box = via->getLayer2BBox();
+      bbox = via->getLayer2BBox();
     } else {
       skip = true;
     }
     if (!skip) {
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({boundary_box.xMin(),
-                        boundary_box.yMin(),
-                        boundary_box.xMax(),
-                        boundary_box.yMax()});
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
     }
   }
 
   for (auto seg : pa_segs_) {
     if (seg->getLayerNum() == layer_num) {
-      Rect boundary_box = seg->getBBox();
+      Rect bbox = seg->getBBox();
       painter.setPen(layer, /* cosmetic */ true);
       painter.setBrush(layer);
-      painter.drawRect({boundary_box.xMin(),
-                        boundary_box.yMin(),
-                        boundary_box.xMax(),
-                        boundary_box.yMax()});
+      painter.drawRect({bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax()});
     }
   }
 
@@ -277,7 +271,7 @@ void FlexPAGraphics::setViaAP(
   pa_segs_.clear();
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect boundary_box = marker->getBBox();
+    Rect bbox = marker->getBBox();
     std::string layer_name;
     for (auto& layer : layer_map_) {
       if (layer.first == marker->getLayerNum()) {
@@ -288,10 +282,10 @@ void FlexPAGraphics::setViaAP(
     logger_->info(DRT,
                   119,
                   "Marker ({}, {}) ({}, {}) on {}:",
-                  boundary_box.xMin(),
-                  boundary_box.yMin(),
-                  boundary_box.xMax(),
-                  boundary_box.yMax(),
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax(),
                   layer_name);
     marker->getConstraint()->report(logger_);
   }
@@ -319,15 +313,15 @@ void FlexPAGraphics::setPlanarAP(
   pa_segs_ = {seg};
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect boundary_box = marker->getBBox();
+    Rect bbox = marker->getBBox();
     logger_->info(DRT,
                   292,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  boundary_box.xMin(),
-                  boundary_box.yMin(),
-                  boundary_box.xMax(),
-                  boundary_box.yMax());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();
@@ -363,15 +357,15 @@ void FlexPAGraphics::setObjsAndMakers(
   }
   pa_markers_ = &markers;
   for (auto& marker : markers) {
-    Rect boundary_box = marker->getBBox();
+    Rect bbox = marker->getBBox();
     logger_->info(DRT,
                   281,
                   "Marker {} at ({}, {}) ({}, {}).",
                   marker->getConstraint()->typeId(),
-                  boundary_box.xMin(),
-                  boundary_box.yMin(),
-                  boundary_box.xMax(),
-                  boundary_box.yMax());
+                  bbox.xMin(),
+                  bbox.yMin(),
+                  bbox.xMax(),
+                  bbox.yMax());
   }
 
   gui_->redraw();

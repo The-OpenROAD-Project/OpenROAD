@@ -134,23 +134,23 @@ class FlexPA
   void initSkipInstTerm();
   // prep
   void prep();
-  void initAllAccessPoints();
+  void prepPoint();
   void getViasFromMetalWidthMap(
       const Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       std::vector<std::pair<int, frViaDef*>>& via_defs);
   template <typename T>
-  int initPinAccess(T* pin, frInstTerm* inst_term = nullptr);
+  int prepPoint_pin(T* pin, frInstTerm* inst_term = nullptr);
   template <typename T>
-  void mergePinShapes(
+  void prepPoint_pin_mergePinShapes(
       std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
       frInstTerm* inst_term,
       bool is_shrink = false);
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   template <typename T>
-  void getAPsFromPinShapes(
+  void prepPoint_pin_genPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       T* pin,
@@ -158,7 +158,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
-  void genAPsFromLayerShapes(
+  void prepPoint_pin_genPoints_layerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       frInstTerm* inst_term,
@@ -169,29 +169,33 @@ class FlexPA
       frAccessPointEnum upper_type);
   bool enclosesOnTrackPlanarAccess(const gtl::rectangle_data<frCoord>& rect,
                                    frLayerNum layer_num);
-  void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                      std::set<std::pair<Point, frLayerNum>>& apset,
-                      const gtl::rectangle_data<frCoord>& rect,
-                      frLayerNum layer_num,
-                      bool allow_planar,
-                      bool allow_via,
-                      frAccessPointEnum lower_type,
-                      frAccessPointEnum upper_type,
-                      bool is_macro_cell_pin);
-  void genAPOnTrack(std::map<frCoord, frAccessPointEnum>& coords,
-                    const std::map<frCoord, frAccessPointEnum>& track_coords,
-                    frCoord low,
-                    frCoord high,
-                    bool use_nearby_grid = false);
-  void genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
-                     frLayerNum layer_num,
-                     frCoord low,
-                     frCoord high);
-  void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
-                             const gtl::rectangle_data<frCoord>& rect,
-                             frLayerNum layer_num,
-                             bool is_curr_layer_horz);
-  void initializeAccessPoints(
+  void prepPoint_pin_genPoints_rect(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      const gtl::rectangle_data<frCoord>& rect,
+      frLayerNum layer_num,
+      bool allow_planar,
+      bool allow_via,
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type,
+      bool is_macro_cell_pin);
+  void prepPoint_pin_genPoints_rect_genGrid(
+      std::map<frCoord, frAccessPointEnum>& coords,
+      const std::map<frCoord, frAccessPointEnum>& track_coords,
+      frCoord low,
+      frCoord high,
+      bool use_nearby_grid = false);
+  void prepPoint_pin_genPoints_rect_genCenter(
+      std::map<frCoord, frAccessPointEnum>& coords,
+      frLayerNum layer_num,
+      frCoord low,
+      frCoord high);
+  void prepPoint_pin_genPoints_rect_genEnc(
+      std::map<frCoord, frAccessPointEnum>& coords,
+      const gtl::rectangle_data<frCoord>& rect,
+      frLayerNum layer_num,
+      bool is_curr_layer_horz);
+  void prepPoint_pin_genPoints_rect_ap(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
@@ -203,38 +207,40 @@ class FlexPA
       const std::map<frCoord, frAccessPointEnum>& y_coords,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
-  void createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                         std::set<std::pair<Point, frLayerNum>>& apset,
-                         const gtl::rectangle_data<frCoord>& maxrect,
-                         frCoord x,
-                         frCoord y,
-                         frLayerNum layer_num,
-                         bool allow_planar,
-                         bool allow_via,
-                         frAccessPointEnum low_cost,
-                         frAccessPointEnum high_cost);
+  void prepPoint_pin_genPoints_rect_ap_helper(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      const gtl::rectangle_data<frCoord>& maxrect,
+      frCoord x,
+      frCoord y,
+      frLayerNum layer_num,
+      bool allow_planar,
+      bool allow_via,
+      frAccessPointEnum low_cost,
+      frAccessPointEnum high_cost);
   template <typename T>
-  void setAPsAccesses(
+  void prepPoint_pin_checkPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
       frInstTerm* inst_term,
       const bool& is_std_cell_pin);
   template <typename T>
-  void addAccess(frAccessPoint* ap,
-                 const gtl::polygon_90_set_data<frCoord>& polyset,
-                 const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-                 T* pin,
-                 frInstTerm* inst_term,
-                 bool deep_search = false);
+  void prepPoint_pin_checkPoint(
+      frAccessPoint* ap,
+      const gtl::polygon_90_set_data<frCoord>& polyset,
+      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+      T* pin,
+      frInstTerm* inst_term,
+      bool deep_search = false);
   template <typename T>
-  void addPlanarAccess(
+  void prepPoint_pin_checkPoint_planar(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
       T* pin,
       frInstTerm* inst_term);
-  bool endPointIsOutside(
+  bool prepPoint_pin_checkPoint_planar_ep(
       Point& end_point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const Point& begin_point,
@@ -242,7 +248,7 @@ class FlexPA
       frDirEnum dir,
       bool is_block);
   template <typename T>
-  void addViaAccess(
+  void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
@@ -251,14 +257,14 @@ class FlexPA
       frInstTerm* inst_term,
       bool deep_search = false);
   template <typename T>
-  bool checkViaAccess(
+  bool prepPoint_pin_checkPoint_via_helper(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
   template <typename T>
-  bool checkDirectionalViaAccess(
+  bool prepPoint_pin_checkPoint_viaDir_helper(
       frAccessPoint* ap,
       frVia* via,
       T* pin,
@@ -266,12 +272,12 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir);
   template <typename T>
-  void updatePinStats(
+  void prepPoint_pin_updateStat(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
       T* pin,
       frInstTerm* inst_term);
   template <typename T>
-  bool initPinAccessCostBounded(
+  bool prepPoint_pin_helper(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -291,11 +297,11 @@ class FlexPA
                        std::set<std::pair<int, int>>& used_access_points,
                        std::set<std::pair<int, int>>& viol_access_points,
                        int max_access_point_size);
-  void genPatternsReset(
+  void genPatterns_reset(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
-  void genPatternsPerform(
+  void genPatterns_perform(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
@@ -312,7 +318,7 @@ class FlexPA
                   const std::set<std::pair<int, int>>& viol_access_points,
                   int curr_unique_inst_idx,
                   int max_access_point_size);
-  bool genPatternsCommit(
+  bool genPatterns_commit(
       const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
@@ -325,7 +331,7 @@ class FlexPA
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
-  void genPatternsPrint(
+  void genPatterns_print(
       std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       int max_access_point_size);
@@ -336,7 +342,7 @@ class FlexPA
                      int curr_idx_2,
                      int idx_2_dim);
 
-  bool genPatternsGC(
+  bool genPatterns_gc(
       const std::set<frBlockObject*>& target_objs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       PatternType pattern_type,
@@ -348,10 +354,10 @@ class FlexPA
                              const std::vector<frInst*>& insts);
   void genInstRowPatternPerform(std::vector<FlexDPNode>& nodes,
                                 const std::vector<frInst*>& insts);
-  void genInstRowPatternCommit(std::vector<FlexDPNode>& nodes,
+  void genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
+                                const std::vector<frInst*>& insts);
+  void genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
                                const std::vector<frInst*>& insts);
-  void genInstRowPatternPrint(std::vector<FlexDPNode>& nodes,
-                              const std::vector<frInst*>& insts);
   int getEdgeCost(int prev_node_idx,
                   int curr_node_idx,
                   const std::vector<FlexDPNode>& nodes,
