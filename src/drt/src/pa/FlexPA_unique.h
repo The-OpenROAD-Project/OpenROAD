@@ -69,7 +69,7 @@ class UniqueInsts
   void setDesign(frDesign* design) { design_ = design; }
 
  private:
-  using LayerRange = std::tuple<frLayerNum, frLayerNum>;
+  using LayerRange = std::pair<frLayerNum, frLayerNum>;
   using MasterLayerRange = std::map<frMaster*, LayerRange, frBlockObjectComp>;
 
   frDesign* getDesign() const { return design_; }
@@ -77,13 +77,13 @@ class UniqueInsts
   bool isNDRInst(frInst& inst);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box) const;
 
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& pref_track_patterns);
+  std::vector<frTrackPattern*> getPrefTrackPatterns();
   void applyPatternsFile(const char* file_path);
 
   void initUniqueInstance();
   void prepPoint_pin();
 
-  void initMaster2PinLayerRange(MasterLayerRange& master_to_pin_layer_range);
+  MasterLayerRange initMasterToPinLayerRange();
 
   void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
                      const std::vector<frTrackPattern*>& pref_track_patterns);

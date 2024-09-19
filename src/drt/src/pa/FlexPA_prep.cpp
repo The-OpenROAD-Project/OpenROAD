@@ -50,12 +50,10 @@ namespace drt {
 using utl::ThreadException;
 
 template <typename T>
-void FlexPA::prepPoint_pin_mergePinShapes(
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-    T* pin,
-    frInstTerm* inst_term,
-    const bool is_shrink)
+std::vector<gtl::polygon_90_set_data<frCoord>>
+FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 {
+  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes;
   frInst* inst = nullptr;
   if (inst_term) {
     inst = inst_term->getInst();
@@ -113,11 +111,11 @@ void FlexPA::prepPoint_pin_mergePinShapes(
       using boost::polygon::operators::operator+=;
       pin_shapes[layer_num] += poly;
     } else {
-      logger_->error(
-          DRT, 67, "FlexPA prepPoint_pin_mergePinShapes unsupported shape.");
+      logger_->error(DRT, 67, "FlexPA mergePinShapes unsupported shape.");
       exit(1);
     }
   }
+  return pin_shapes;
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
@@ -1474,8 +1472,8 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* inst_term)
     graphics_->startPin(pin, inst_term, inst_class);
   }
 
-  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes;
-  prepPoint_pin_mergePinShapes(pin_shapes, pin, inst_term);
+  std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
+      = mergePinShapes(pin, inst_term);
 
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
