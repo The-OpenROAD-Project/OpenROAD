@@ -407,6 +407,7 @@ void FlexGridGraph::init(
   initGrids(xMap, yMap, zMap, followGuide);  // buildGridGraph
   initEdges(
       design, xMap, yMap, zMap, routeBBox, initDR);  // add edges and edgeCost
+  ap_locs_.clear();
 }
 
 // initialization helpers

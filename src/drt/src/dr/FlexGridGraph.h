@@ -1097,7 +1097,7 @@ class FlexGridGraph
   const frBox3D* dstTaperBox
       = nullptr;  // taper box for the current dest pin in the search
 
-  // locations of access points. The vector is indixed by layer number.
+  // locations of access points. The vector is indexed by layer number.
   frVector<std::set<Point>> ap_locs_;
 
   FlexGridGraph() = default;
