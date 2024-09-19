@@ -119,6 +119,19 @@ void FlexPA::mergePinShapes(
   }
 }
 
+/**
+ *
+ * @details This follows the Tao of PAO paper cost structure.
+ * On track and half track are the preffered access points,
+ * this function is responsible for generating them
+ *
+ * TODO:
+ * This function doesn't seem to be getting the best access point.
+ * it iterates through every track contained between low and high
+ * and takes the first one (closest to low) not the best one (lowest cost).
+ * note that std::map.insert() will not override and entry.
+ * it should prioritize OnGrid access points
+ */
 void FlexPA::genAPOnTrack(
     std::map<frCoord, frAccessPointEnum>& coords,
     const std::map<frCoord, frAccessPointEnum>& track_coords,
@@ -141,6 +154,11 @@ void FlexPA::genAPOnTrack(
 }
 
 // will not generate center for wider edge
+/**
+ * @details This follows the Tao of PAO paper cost structure.
+ * Centered Access points are on the center of their pin shape (low, high)
+ */
+
 void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
                            const frLayerNum layer_num,
                            const frCoord low,
@@ -161,6 +179,7 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
     return;
   }
 
+  // If there are less than 3 coords OnGrid will create a Centered Access Point
   frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
   frCoord coord = (low + high) / 2 / manu_grid * manu_grid;
   auto it = coords.find(coord);
@@ -305,8 +324,8 @@ void FlexPA::initializeAccessPoints(
     const frAccessPointEnum upper_type)
 {
   // build points;
-  for (auto& [xCoord, cost_x] : x_coords) {
-    for (auto& [yCoord, cost_y] : y_coords) {
+  for (auto& [x_coord, cost_x] : x_coords) {
+    for (auto& [y_coord, cost_y] : y_coords) {
       // lower full/half/center
       auto& low_cost = is_layer1_horz ? cost_y : cost_x;
       auto& high_cost = (!is_layer1_horz) ? cost_y : cost_x;
@@ -314,8 +333,8 @@ void FlexPA::initializeAccessPoints(
         createAccessPoint(aps,
                           apset,
                           rect,
-                          xCoord,
-                          yCoord,
+                          x_coord,
+                          y_coord,
                           layer_num,
                           allow_planar,
                           allow_via,
@@ -325,6 +344,12 @@ void FlexPA::initializeAccessPoints(
     }
   }
 }
+
+/**
+ * @details This follows the Tao of PAO paper cost structure.
+ * Enclosed Boundary APs satisfy via-in-pin requirement.
+ * This is the worst access point adressed in the paper
+ */
 
 void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const gtl::rectangle_data<frCoord>& rect,
@@ -595,8 +620,8 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                      true);
       }
       genAPCentered(y_coords, layer_num, gtl::yl(rect), gtl::yh(rect));
-      for (auto& [yCoord, cost] : y_coords) {
-        y_coords[yCoord] = frAccessPointEnum::OnGrid;
+      for (auto& [y_coord, cost] : y_coords) {
+        y_coords[y_coord] = frAccessPointEnum::OnGrid;
       }
     } else {
       genAPOnTrack(y_coords, layer2_track_coords, gtl::yl(rect), gtl::yh(rect));
@@ -619,8 +644,8 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                      true);
       }
       genAPCentered(x_coords, layer_num, gtl::xl(rect), gtl::xh(rect));
-      for (auto& [xCoord, cost] : x_coords) {
-        x_coords[xCoord] = frAccessPointEnum::OnGrid;
+      for (auto& [x_coord, cost] : x_coords) {
+        x_coords[x_coord] = frAccessPointEnum::OnGrid;
       }
     }
   }
@@ -707,7 +732,7 @@ void FlexPA::genAPsFromLayerShapes(
 // lower center  2, upper on-grid 0 = 2
 // lower center  2, upper center  2 = 4
 template <typename T>
-void FlexPA::getAPsFromPinShapes(
+void FlexPA::genAPsFromPinShapes(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     T* pin,
@@ -854,7 +879,7 @@ void FlexPA::addPlanarAccess(
     ps->addToPin(pin);
   }
 
-  // new design_rule_checker
+  // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreCornerSpacing();
@@ -1109,13 +1134,13 @@ bool FlexPA::checkDirectionalViaAccess(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir)
 {
-  auto upperlayer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
-  if (!USENONPREFTRACKS || upperlayer->isUnidirectional()) {
-    if (upperlayer->isHorizontal()
+  auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  if (!USENONPREFTRACKS || upper_layer->isUnidirectional()) {
+    if (upper_layer->isHorizontal()
         && (dir == frDirEnum::S || dir == frDirEnum::N)) {
       return false;
     }
-    if (!upperlayer->isHorizontal()
+    if (!upper_layer->isHorizontal()
         && (dir == frDirEnum::W || dir == frDirEnum::E)) {
       return false;
     }
@@ -1139,7 +1164,7 @@ bool FlexPA::checkDirectionalViaAccess(
   }
   // PS
   auto ps = std::make_unique<frPathSeg>();
-  auto style = upperlayer->getDefaultSegStyle();
+  auto style = upper_layer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -1147,23 +1172,24 @@ bool FlexPA::checkDirectionalViaAccess(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-  if (upperlayer->getDir() == dbTechLayerDir::VERTICAL) {
+  if (upper_layer->getDir() == dbTechLayerDir::VERTICAL) {
     if (dir == frDirEnum::W || dir == frDirEnum::E) {
-      style.setWidth(upperlayer->getWrongDirWidth());
+      style.setWidth(upper_layer->getWrongDirWidth());
     }
   } else {
     if (dir == frDirEnum::S || dir == frDirEnum::N) {
-      style.setWidth(upperlayer->getWrongDirWidth());
+      style.setWidth(upper_layer->getWrongDirWidth());
     }
   }
-  ps->setLayerNum(upperlayer->getLayerNum());
+  ps->setLayerNum(upper_layer->getLayerNum());
   ps->setStyle(style);
   if (inst_term && inst_term->hasNet()) {
     ps->addToNet(inst_term->getNet());
   } else {
     ps->addToPin(pin);
   }
-  // new design_rule_checker
+
+  // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_);
   design_rule_checker.setIgnoreMinArea();
   design_rule_checker.setIgnoreLongSideEOL();
@@ -1354,7 +1380,7 @@ bool FlexPA::initPinAccessCostBounded(
   }
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
-  getAPsFromPinShapes(
+  genAPsFromPinShapes(
       tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
   setAPsAccesses(tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
@@ -2376,22 +2402,22 @@ int FlexPA::genPatterns(
 
   // try reverse order if no valid pattern
   if (num_valid_pattern == 0) {
-    auto reversedPins = pins;
-    reverse(reversedPins.begin(), reversedPins.end());
+    auto reversed_pins = pins;
+    reverse(reversed_pins.begin(), reversed_pins.end());
 
     std::vector<FlexDPNode> nodes(numNode);
     std::vector<int> vioEdge(numEdge, -1);
 
     genPatternsInit(nodes,
-                    reversedPins,
+                    reversed_pins,
                     inst_access_patterns,
                     used_access_points,
                     viol_access_points,
                     max_access_point_size);
     for (int i = 0; i < ACCESS_PATTERN_END_ITERATION_NUM; i++) {
-      genPatterns_reset(nodes, reversedPins, max_access_point_size);
+      genPatterns_reset(nodes, reversed_pins, max_access_point_size);
       genPatterns_perform(nodes,
-                          reversedPins,
+                          reversed_pins,
                           vioEdge,
                           used_access_points,
                           viol_access_points,
@@ -2399,7 +2425,7 @@ int FlexPA::genPatterns(
                           max_access_point_size);
       bool is_valid = false;
       if (genPatterns_commit(nodes,
-                             reversedPins,
+                             reversed_pins,
                              is_valid,
                              inst_access_patterns,
                              used_access_points,

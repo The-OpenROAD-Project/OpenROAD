@@ -181,11 +181,11 @@ class FlexPA
    * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    */
   template <typename T>
-  void getAPsFromPinShapes(
+  void genAPsFromPinShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       T* pin,
@@ -203,8 +203,8 @@ class FlexPA
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
    * @param allow_via if via access is allowed
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    */
   void genAPsFromLayerShapes(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -227,8 +227,8 @@ class FlexPA
    * @param layer_num layer in which the rectangle exists
    * @param allow_planar if planar access is allowed
    * @param allow_via if via access is allowed
-   * @param lower_type TODO: not sure
-   * @param upper_type TODO: not sure
+   * @param lower_type lowest access cost considered
+   * @param upper_type highest access cost considered
    * @param is_macro_cell_pin TODO: not sure
    */
   void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -308,8 +308,8 @@ class FlexPA
    * @param layer_num access point layer
    * @param allow_planar if the access point allows planar access
    * @param allow_via if the access point allows via access
-   * @param low_cost TODO: not sure
-   * @param high_cost TODO: not sure
+   * @param low_cost lowest access cost considered
+   * @param high_cost highest access cost considered
    */
   void createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                          std::set<std::pair<Point, frLayerNum>>& apset,
