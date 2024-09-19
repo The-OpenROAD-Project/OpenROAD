@@ -139,7 +139,8 @@ class DbVia
                                  int x,
                                  int y,
                                  const std::set<odb::dbTechLayer*>& ongrid,
-                                 utl::Logger* logger) = 0;
+                                 utl::Logger* logger)
+      = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -174,8 +175,7 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom = true,
-                               bool include_top = true) const
-      = 0;
+                               bool include_top = true) const = 0;
 
   int getCount() const { return count_; }
 
