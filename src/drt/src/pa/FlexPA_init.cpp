@@ -48,14 +48,13 @@ void FlexPA::initViaRawPriority()
     for (auto& via_def :
          design_->getTech()->getLayer(layer_num)->getViaDefs()) {
       const int cutNum = int(via_def->getCutFigs().size());
-      ViaRawPriorityTuple priority;
-      getViaRawPriority(via_def, priority);
+      ViaRawPriorityTuple priority = getViaRawPriority(via_def);
       layer_num_to_via_defs_[layer_num][cutNum][priority] = via_def;
     }
   }
 }
 
-void FlexPA::getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority)
+ViaRawPriorityTuple FlexPA::getViaRawPriority(frViaDef* via_def)
 {
   const bool is_not_default_via = !(via_def->getDefault());
   gtl::polygon_90_set_data<frCoord> via_layer_PS1;
@@ -108,13 +107,13 @@ void FlexPA::getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority)
   const frCoord layer1_area = gtl::area(via_layer_PS1);
   const frCoord layer2_area = gtl::area(via_layer_PS2);
 
-  priority = std::make_tuple(is_not_default_via,
-                             layer1_width,
-                             layer2_width,
-                             is_not_upper_align,
-                             layer2_area,
-                             layer1_area,
-                             is_not_lower_align);
+  return std::make_tuple(is_not_default_via,
+                         layer1_width,
+                         layer2_width,
+                         is_not_upper_align,
+                         layer2_area,
+                         layer1_area,
+                         is_not_lower_align);
 }
 
 void FlexPA::initTrackCoords()
