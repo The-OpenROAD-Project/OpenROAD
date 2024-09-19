@@ -191,16 +191,17 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
 }
 
 // Responsible for checking if an AP is valid and configuring it
-void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                               std::set<std::pair<Point, frLayerNum>>& apset,
-                               const gtl::rectangle_data<frCoord>& maxrect,
-                               const frCoord x,
-                               const frCoord y,
-                               const frLayerNum layer_num,
-                               const bool allow_planar,
-                               const bool allow_via,
-                               const frAccessPointEnum low_cost,
-                               const frAccessPointEnum high_cost)
+void FlexPA::gen_createAccessPoint(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
+    const gtl::rectangle_data<frCoord>& maxrect,
+    const frCoord x,
+    const frCoord y,
+    const frLayerNum layer_num,
+    const bool allow_planar,
+    const bool allow_via,
+    const frAccessPointEnum low_cost,
+    const frAccessPointEnum high_cost)
 {
   gtl::point_data<frCoord> pt(x, y);
   if (!gtl::contains(maxrect, pt) && low_cost != frAccessPointEnum::NearbyGrid
@@ -310,7 +311,7 @@ void FlexPA::createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   apset.insert(std::make_pair(fpt, layer_num));
 }
 
-void FlexPA::initializeAccessPoints(
+void FlexPA::gen_initializeAccessPoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
@@ -330,16 +331,16 @@ void FlexPA::initializeAccessPoints(
       auto& low_cost = is_layer1_horz ? cost_y : cost_x;
       auto& high_cost = (!is_layer1_horz) ? cost_y : cost_x;
       if (low_cost == lower_type && high_cost == upper_type) {
-        createAccessPoint(aps,
-                          apset,
-                          rect,
-                          x_coord,
-                          y_coord,
-                          layer_num,
-                          allow_planar,
-                          allow_via,
-                          low_cost,
-                          high_cost);
+        gen_createAccessPoint(aps,
+                              apset,
+                              rect,
+                              x_coord,
+                              y_coord,
+                              layer_num,
+                              allow_planar,
+                              allow_via,
+                              low_cost,
+                              high_cost);
       }
     }
   }
@@ -649,17 +650,17 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
       }
     }
   }
-  initializeAccessPoints(aps,
-                         apset,
-                         rect,
-                         layer_num,
-                         allow_planar,
-                         allow_via,
-                         is_layer1_horz,
-                         x_coords,
-                         y_coords,
-                         lower_type,
-                         upper_type);
+  gen_initializeAccessPoints(aps,
+                             apset,
+                             rect,
+                             layer_num,
+                             allow_planar,
+                             allow_via,
+                             is_layer1_horz,
+                             x_coords,
+                             y_coords,
+                             lower_type,
+                             upper_type);
 }
 
 void FlexPA::genAPsFromLayerShapes(
@@ -761,7 +762,7 @@ void FlexPA::genAPsFromPinShapes(
   }
 }
 
-bool FlexPA::endPointIsOutside(
+bool FlexPA::check_endPointIsOutside(
     Point& end_point,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const Point& begin_point,
@@ -828,7 +829,7 @@ bool FlexPA::endPointIsOutside(
 }
 
 template <typename T>
-void FlexPA::addPlanarAccess(
+void FlexPA::check_addPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -844,7 +845,7 @@ void FlexPA::addPlanarAccess(
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
   Point end_point;
-  const bool is_outside = endPointIsOutside(
+  const bool is_outside = check_endPointIsOutside(
       end_point, layer_polys, begin_point, ap->getLayerNum(), dir, is_block);
   // skip if two width within shape for standard cell
   if (!is_outside) {
@@ -990,7 +991,7 @@ void FlexPA::getViasFromMetalWidthMap(
 }
 
 template <typename T>
-void FlexPA::addViaAccess(
+void FlexPA::check_addViaAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
@@ -1150,12 +1151,12 @@ bool FlexPA::checkDirectionalViaAccess(
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
   Point end_point;
-  endPointIsOutside(end_point,
-                    layer_polys,
-                    begin_point,
-                    via->getViaDef()->getLayer2Num(),
-                    dir,
-                    is_block);
+  check_endPointIsOutside(end_point,
+                          layer_polys,
+                          begin_point,
+                          via->getViaDef()->getLayer2Num(),
+                          dir,
+                          is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1249,24 +1250,26 @@ bool FlexPA::checkDirectionalViaAccess(
 }
 
 template <typename T>
-void FlexPA::addAccess(frAccessPoint* ap,
-                       const gtl::polygon_90_set_data<frCoord>& polyset,
-                       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-                       T* pin,
-                       frInstTerm* inst_term,
-                       bool deep_search)
+void FlexPA::check_addAccess(
+    frAccessPoint* ap,
+    const gtl::polygon_90_set_data<frCoord>& polyset,
+    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+    T* pin,
+    frInstTerm* inst_term,
+    bool deep_search)
 {
   if (!deep_search) {
-    addPlanarAccess(ap, polys, frDirEnum::W, pin, inst_term);
-    addPlanarAccess(ap, polys, frDirEnum::E, pin, inst_term);
-    addPlanarAccess(ap, polys, frDirEnum::S, pin, inst_term);
-    addPlanarAccess(ap, polys, frDirEnum::N, pin, inst_term);
+    check_addPlanarAccess(ap, polys, frDirEnum::W, pin, inst_term);
+    check_addPlanarAccess(ap, polys, frDirEnum::E, pin, inst_term);
+    check_addPlanarAccess(ap, polys, frDirEnum::S, pin, inst_term);
+    check_addPlanarAccess(ap, polys, frDirEnum::N, pin, inst_term);
   }
-  addViaAccess(ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
+  check_addViaAccess(
+      ap, polys, polyset, frDirEnum::U, pin, inst_term, deep_search);
 }
 
 template <typename T>
-void FlexPA::setAPsAccesses(
+void FlexPA::check_setAPsAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     T* pin,
@@ -1281,11 +1284,11 @@ void FlexPA::setAPsAccesses(
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
-    addAccess(ap.get(),
-              pin_shapes[layer_num],
-              layer_polys[layer_num],
-              pin,
-              inst_term);
+    check_addAccess(ap.get(),
+                    pin_shapes[layer_num],
+                    layer_polys[layer_num],
+                    pin,
+                    inst_term);
     if (is_std_cell_pin) {
       has_access
           |= ((layer_num == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
@@ -1297,12 +1300,12 @@ void FlexPA::setAPsAccesses(
   if (!has_access) {
     for (auto& ap : aps) {
       const auto layer_num = ap->getLayerNum();
-      addAccess(ap.get(),
-                pin_shapes[layer_num],
-                layer_polys[layer_num],
-                pin,
-                inst_term,
-                true);
+      check_addAccess(ap.get(),
+                      pin_shapes[layer_num],
+                      layer_polys[layer_num],
+                      pin,
+                      inst_term,
+                      true);
     }
   }
 }
@@ -1382,7 +1385,7 @@ bool FlexPA::initPinAccessCostBounded(
   std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
   genAPsFromPinShapes(
       tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
-  setAPsAccesses(tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+  check_setAPsAccesses(tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += tmp_aps.size();

@@ -283,7 +283,7 @@ class FlexPA
                              frLayerNum layer_num,
                              bool is_curr_layer_horz);
 
-  void initializeAccessPoints(
+  void gen_initializeAccessPoints(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
@@ -311,16 +311,16 @@ class FlexPA
    * @param low_cost lowest access cost considered
    * @param high_cost highest access cost considered
    */
-  void createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                         std::set<std::pair<Point, frLayerNum>>& apset,
-                         const gtl::rectangle_data<frCoord>& maxrect,
-                         frCoord x,
-                         frCoord y,
-                         frLayerNum layer_num,
-                         bool allow_planar,
-                         bool allow_via,
-                         frAccessPointEnum low_cost,
-                         frAccessPointEnum high_cost);
+  void gen_createAccessPoint(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                             std::set<std::pair<Point, frLayerNum>>& apset,
+                             const gtl::rectangle_data<frCoord>& maxrect,
+                             frCoord x,
+                             frCoord y,
+                             frLayerNum layer_num,
+                             bool allow_planar,
+                             bool allow_via,
+                             frAccessPointEnum low_cost,
+                             frAccessPointEnum high_cost);
 
   /**
    * @brief Sets the allowed accesses of the access points of a given pin.
@@ -332,7 +332,7 @@ class FlexPA
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void setAPsAccesses(
+  void check_setAPsAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
@@ -350,12 +350,12 @@ class FlexPA
    * @param deep_search TODO: not sure
    */
   template <typename T>
-  void addAccess(frAccessPoint* ap,
-                 const gtl::polygon_90_set_data<frCoord>& polyset,
-                 const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-                 T* pin,
-                 frInstTerm* inst_term,
-                 bool deep_search = false);
+  void check_addAccess(frAccessPoint* ap,
+                       const gtl::polygon_90_set_data<frCoord>& polyset,
+                       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
+                       T* pin,
+                       frInstTerm* inst_term,
+                       bool deep_search = false);
 
   /**
    * @brief Tries to add a planar access to in the direction.
@@ -367,7 +367,7 @@ class FlexPA
    * @param inst_term terminal
    */
   template <typename T>
-  void addPlanarAccess(
+  void check_addPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -386,7 +386,7 @@ class FlexPA
    *
    * @return if any polygon on the layer contains the End Point
    */
-  bool endPointIsOutside(
+  bool check_endPointIsOutside(
       Point& end_point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const Point& begin_point,
@@ -395,7 +395,7 @@ class FlexPA
       bool is_block);
   template <typename T>
 
-  void addViaAccess(
+  void check_addViaAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
