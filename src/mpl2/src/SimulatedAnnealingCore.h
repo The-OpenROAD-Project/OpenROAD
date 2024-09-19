@@ -141,7 +141,10 @@ class SimulatedAnnealingCore
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
                                    const T& io,
-                                   float net_weight);
+                                   const float net_weight,
+                                   Cluster* io_cluster,
+                                   const Rect& die,
+                                   Boundary constraint_boundary);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
@@ -166,6 +169,9 @@ class SimulatedAnnealingCore
   /////////////////////////////////////////////
   // boundary constraints
   Rect outline_;
+
+  // Boundaries blocked for IO pins
+  std::set<Boundary> blocked_boundaries_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;

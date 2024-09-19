@@ -69,7 +69,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
-    : outline_(outline), graphics_(graphics)
+    : outline_(outline),
+      blocked_boundaries_(tree->blocked_boundaries),
+      graphics_(graphics)
 {
   area_weight_ = area_weight;
   outline_weight_ = outline_weight;
@@ -276,17 +278,29 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& source = macros_[net.terminals.first];
     T& target = macros_[net.terminals.second];
 
-    /*
-      TO DO: See if this can't be a single cal
-             (ios may be always in first or second)
-    */
-    if (source.isIOCluster()) {
-      addBoundaryDistToWirelength(target, source, net.weight);
-      continue;
-    }
-
     if (target.isIOCluster()) {
-      addBoundaryDistToWirelength(source, target, net.weight);
+      Cluster* io_cluster = target.getCluster();
+      const Rect die = io_cluster->getBBox();
+      const float die_hpwl = die.getWidth() + die.getHeight();
+
+      if (isOutsideTheOutline(source)) {
+        wirelength_ += net.weight * die_hpwl;
+        continue;
+      }
+
+      const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+      const bool constraint_boundary_is_blocked
+          = blocked_boundaries_.find(constraint_boundary)
+            != blocked_boundaries_.end();
+
+      if (constraint_boundary_is_blocked
+          && constraint_boundary != Boundary::NONE) {
+        wirelength_ += net.weight * die_hpwl;
+        continue;
+      }
+
+      addBoundaryDistToWirelength(
+          source, target, net.weight, io_cluster, die, constraint_boundary);
       continue;
     }
 
@@ -313,25 +327,16 @@ template <class T>
 void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& macro,
     const T& io,
-    const float net_weight)
+    const float net_weight,
+    Cluster* io_cluster,
+    const Rect& die,
+    Boundary constraint_boundary)
 {
-  Cluster* io_cluster = io.getCluster();
-  const Rect die = io_cluster->getBBox();
-
-  if (isOutsideTheOutline(macro)) {
-    // Add a fixed penalty based on the die dimensions so that we
-    // can assume the macro is inside the outline when computing
-    // the distance to the edges.
-    wirelength_ = net_weight * die.getWidth() * die.getHeight();
-    return;
-  }
-
-  const Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-
   const float x1 = macro.getPinX();
   const float y1 = macro.getPinY();
 
   if (constraint_boundary == NONE) {
+
     /*
       TO DO: Use information of which boundary is forbidden based on
       the global exclude constraints for the edges
