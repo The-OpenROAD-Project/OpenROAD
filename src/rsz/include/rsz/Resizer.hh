@@ -358,6 +358,10 @@ class Resizer : public dbStaState
   // Use max_wire_length zero for none (meters)
   void repairClkNets(
       double max_wire_length);  // max_wire_length zero for none (meters)
+  void setClockBuffersList(const LibertyCellSeq& clk_buffers)
+  {
+    clk_buffers_ = clk_buffers;
+  }
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -706,6 +710,9 @@ class Resizer : public dbStaState
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  // Buffer list created by CTS kept here so that we use the
+  // exact same buffers when reparing clock nets.
+  LibertyCellSeq clk_buffers_;
 
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;

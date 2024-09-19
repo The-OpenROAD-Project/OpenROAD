@@ -2663,7 +2663,14 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  // Use the buffers that were selected by CTS.
+  buffer_cells_ = clk_buffers_;
+
   repair_design_->repairClkNets(max_wire_length);
+
+  // Reset so that the next preamble select data buffers again.
+  buffer_cells_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
