@@ -173,9 +173,13 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   }
   std::ostream& stream = *it->second;
 
+  auto units = network_->units();
+  float cap_scale = units->capacitanceUnit()->scale();
+  float res_scale = units->resistanceUnit()->scale();
+
   stream << "*D_NET " << escapeDollarSign(network_->staToDb(net)->getName())
          << " ";
-  stream << parasitics_->capacitance(parasitic) << '\n';
+  stream << parasitics_->capacitance(parasitic) / cap_scale << '\n';
 
   stream << "*CONN" << '\n';
   for (auto node : parasitics_->nodes(parasitic)) {
@@ -216,7 +220,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
       stream << count++ << " ";
       stream << escapeDollarSign(parasitics_->name(node)) << " "
-             << parasitics_->nodeGndCap(node);
+             << parasitics_->nodeGndCap(node) / cap_scale;
       stream << '\n';
     }
   }
@@ -231,7 +235,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << escapeDollarSign(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(cap);
     stream << escapeDollarSign(parasitics_->name(n2)) << " ";
-    stream << parasitics_->value(cap) << '\n';
+    stream << parasitics_->value(cap) / cap_scale << '\n';
   }
 
   count = 1;
@@ -247,7 +251,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << escapeDollarSign(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(res);
     stream << escapeDollarSign(parasitics_->name(n2)) << " ";
-    stream << parasitics_->value(res) << '\n';
+    stream << parasitics_->value(res) / res_scale << '\n';
   }
 
   stream << "*END" << '\n' << '\n';
