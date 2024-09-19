@@ -77,7 +77,7 @@ const Painter::Color TimingPathRenderer::capture_clock_color_
 static QString convertDelay(float time, sta::Unit* convert)
 {
   if (sta::delayInf(time)) {
-    const QString infinity = "\u221E";
+    const QString infinity = "∞";
 
     if (time < 0) {
       return "-" + infinity;

@@ -1,5 +1,6 @@
 record_tests {
   resize1_hier
+  repair_hold1_hier  
   buffer_ports1
   buffer_ports3
   buffer_ports4

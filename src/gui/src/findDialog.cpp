@@ -81,4 +81,10 @@ void FindObjectDialog::reject()
   QDialog::reject();
 }
 
+int FindObjectDialog::exec()
+{
+  findObjEdit->setFocus();
+  return QDialog::exec();
+}
+
 }  // namespace gui

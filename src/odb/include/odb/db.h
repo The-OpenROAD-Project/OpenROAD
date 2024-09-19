@@ -3561,6 +3561,7 @@ class dbITerm : public dbObject
 
   ///
   /// Disconnect this iterm from the net it is connected to.
+  /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
 
@@ -7500,7 +7501,12 @@ class dbGuide : public dbObject
 
   dbTechLayer* getLayer() const;
 
-  static dbGuide* create(dbNet* net, dbTechLayer* layer, Rect box);
+  dbTechLayer* getViaLayer() const;
+
+  static dbGuide* create(dbNet* net,
+                         dbTechLayer* layer,
+                         dbTechLayer* via_layer,
+                         Rect box);
 
   static dbGuide* getGuide(dbBlock* block, uint dbid);
 

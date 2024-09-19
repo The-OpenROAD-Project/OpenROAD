@@ -607,6 +607,8 @@ class Resizer : public dbStaState
                          const char* name,
                          Instance* parent,
                          const Point& loc);
+  void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
+
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,
