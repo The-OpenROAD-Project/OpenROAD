@@ -48,7 +48,7 @@ void FlexPA::initViaRawPriority()
     for (auto& via_def :
          design_->getTech()->getLayer(layer_num)->getViaDefs()) {
       const int cutNum = int(via_def->getCutFigs().size());
-      ViaRawPriorityTuple priority = getViaRawPriority(via_def);
+      const ViaRawPriorityTuple priority = getViaRawPriority(via_def);
       layer_num_to_via_defs_[layer_num][cutNum][priority] = via_def;
     }
   }
