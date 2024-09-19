@@ -1598,7 +1598,7 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
   auto str = utl::to_numeric_string(micron_value, precision);
 
   if (add_units) {
-    str += " \u03BCm";  // micro meter
+    str += " μm";
   }
 
   return str;
@@ -1612,8 +1612,8 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
     new_value = new_value.left(new_value.indexOf(" "));
   } else if (new_value.contains("u")) {
     new_value = new_value.left(new_value.indexOf("u"));
-  } else if (new_value.contains("\u03BC")) {
-    new_value = new_value.left(new_value.indexOf("\u03BC"));
+  } else if (new_value.contains("μ")) {
+    new_value = new_value.left(new_value.indexOf("μ"));
   }
 
   if (show_dbu_->isChecked()) {
