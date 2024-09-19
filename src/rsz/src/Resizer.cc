@@ -105,7 +105,7 @@ using sta::Term;
 using sta::TimingArcSet;
 using sta::TimingArcSetSeq;
 using sta::TimingRole;
-;
+
 using sta::ArcDcalcResult;
 using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
@@ -125,6 +125,9 @@ using sta::SearchPredNonReg2;
 using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
+
+using sta::CellFunction;
+using sta::CLOCK;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -502,24 +505,15 @@ void Resizer::findBuffers()
 {
   if (buffer_cells_.empty()) {
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    std::unique_ptr<sta::PatternMatch> clkbuf_pattern;
-
-    if (exclude_clock_buffers_) {
-      clkbuf_pattern
-          = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
-                                                /* is_regexp */ true,
-                                                /* nocase */ true,
-                                                /* Tcl_interp* */ nullptr);
-    }
 
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
 
       for (LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
-          // is_clock_cell is a custom lib attribute that may not exist,
-          // so we also use the name pattern to help
-          if (buffer->isClockCell() || clkbuf_pattern->match(buffer->name())) {
+          CellFunction cell_function = sta_->getCellFunction(buffer);
+
+          if (cell_function == CLOCK) {
             continue;
           }
         }

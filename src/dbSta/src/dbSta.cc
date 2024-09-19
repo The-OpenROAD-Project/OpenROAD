@@ -60,6 +60,7 @@
 #include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -539,6 +540,11 @@ void dbSta::report_cell_usage(const bool verbose)
   }
 }
 
+CellFunction dbSta::getCellFunction(sta::LibertyCell* lib_cell)
+{
+  return cell_function_analyser_.getCellFunction(lib_cell);
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Network edit functions.
@@ -867,6 +873,28 @@ void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 void dbSta::highlight(PathRef* path)
 {
   path_renderer_->highlight(path);
+}
+
+////////////////////////////////////////////////////////////////
+
+CellFunctionAnalyser::CellFunctionAnalyser()
+{
+  clkbuf_pattern_
+      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
+                                            /* is_regexp */ true,
+                                            /* nocase */ true,
+                                            /* Tcl_interp* */ nullptr);
+}
+
+CellFunction CellFunctionAnalyser::getCellFunction(sta::LibertyCell* lib_cell)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name pattern to help
+  if (lib_cell->isClockCell() || clkbuf_pattern_->match(lib_cell->name())) {
+    return CLOCK;
+  }
+
+  return DATA;
 }
 
 }  // namespace sta
