@@ -1565,10 +1565,10 @@ void GuidePathFinder::commitPathToGuides(
   int pin_idx = 0;
   for (auto& guides : pin_to_gcell) {
     if (guides.empty()) {
-      logger_->error(DRT,
-                     222,
-                     "Pin {} is not visited by any guide",
-                     getPinName(pins[pin_idx]));
+      logger_->warn(DRT,
+                    222,
+                    "Pin {} is not visited by any guide",
+                    getPinName(pins[pin_idx]));
     }
     ++pin_idx;
   }
