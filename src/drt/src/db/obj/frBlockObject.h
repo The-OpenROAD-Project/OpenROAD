@@ -28,6 +28,9 @@
 
 #pragma once
 
+#include <map>
+#include <set>
+
 #include "frBaseTypes.h"
 
 namespace drt {
@@ -62,4 +65,8 @@ struct frBlockObjectComp
     return *lhs < *rhs;
   }
 };
+
+using frBlockObjectSet = std::set<frBlockObject*, frBlockObjectComp>;
+template <typename T>
+using frBlockObjectMap = std::map<frBlockObject*, T, frBlockObjectComp>;
 }  // namespace drt
