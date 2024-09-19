@@ -234,8 +234,10 @@ class DbTechVia : public DbBaseVia
   odb::Rect required_top_rect_;
 
   odb::Point via_center_;
+  std::set<odb::Point> via_centers_;
 
   std::string getViaName(const std::set<odb::dbTechLayer*>& ongrid) const;
+  bool isArray() const { return rows_ > 1 || cols_ > 1; }
 };
 
 // Wrapper to handle building dbTechViaGenerate vias (GENERATE vias) as

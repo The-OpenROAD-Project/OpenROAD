@@ -38,123 +38,128 @@ namespace drt {
 
 void FlexPA::initViaRawPriority()
 {
-  for (auto layerNum = design_->getTech()->getBottomLayerNum();
-       layerNum <= design_->getTech()->getTopLayerNum();
-       ++layerNum) {
-    if (design_->getTech()->getLayer(layerNum)->getType()
+  for (auto layer_num = design_->getTech()->getBottomLayerNum();
+       layer_num <= design_->getTech()->getTopLayerNum();
+       ++layer_num) {
+    if (design_->getTech()->getLayer(layer_num)->getType()
         != dbTechLayerType::CUT) {
       continue;
     }
-    for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {
-      const int cutNum = int(viaDef->getCutFigs().size());
+    for (auto& via_def :
+         design_->getTech()->getLayer(layer_num)->getViaDefs()) {
+      const int cutNum = int(via_def->getCutFigs().size());
       ViaRawPriorityTuple priority;
-      getViaRawPriority(viaDef, priority);
-      layerNum2ViaDefs_[layerNum][cutNum][priority] = viaDef;
+      getViaRawPriority(via_def, priority);
+      layer_num_to_via_defs_[layer_num][cutNum][priority] = via_def;
     }
   }
 }
 
-void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
+void FlexPA::getViaRawPriority(frViaDef* via_def, ViaRawPriorityTuple& priority)
 {
-  const bool isNotDefaultVia = !(viaDef->getDefault());
-  gtl::polygon_90_set_data<frCoord> viaLayerPS1;
+  const bool is_not_default_via = !(via_def->getDefault());
+  gtl::polygon_90_set_data<frCoord> via_layer_PS1;
 
-  for (auto& fig : viaDef->getLayer1Figs()) {
+  for (auto& fig : via_def->getLayer1Figs()) {
     const Rect bbox = fig->getBBox();
-    gtl::rectangle_data<frCoord> bboxRect(
+    gtl::rectangle_data<frCoord> bbox_rect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    viaLayerPS1 += bboxRect;
+    via_layer_PS1 += bbox_rect;
   }
-  gtl::rectangle_data<frCoord> layer1Rect;
-  gtl::extents(layer1Rect, viaLayerPS1);
-  const bool isLayer1Horz = (gtl::xh(layer1Rect) - gtl::xl(layer1Rect))
-                            > (gtl::yh(layer1Rect) - gtl::yl(layer1Rect));
-  const frCoord layer1Width
-      = std::min((gtl::xh(layer1Rect) - gtl::xl(layer1Rect)),
-                 (gtl::yh(layer1Rect) - gtl::yl(layer1Rect)));
+  gtl::rectangle_data<frCoord> layer1_rect;
+  gtl::extents(layer1_rect, via_layer_PS1);
+  const bool is_layer1_horz = (gtl::xh(layer1_rect) - gtl::xl(layer1_rect))
+                              > (gtl::yh(layer1_rect) - gtl::yl(layer1_rect));
+  const frCoord layer1_width
+      = std::min((gtl::xh(layer1_rect) - gtl::xl(layer1_rect)),
+                 (gtl::yh(layer1_rect) - gtl::yl(layer1_rect)));
 
-  const auto layer1Num = viaDef->getLayer1Num();
-  const auto dir1 = getDesign()->getTech()->getLayer(layer1Num)->getDir();
+  const auto layer1_num = via_def->getLayer1Num();
+  const auto dir1 = getDesign()->getTech()->getLayer(layer1_num)->getDir();
 
-  const bool isNotLowerAlign
-      = (isLayer1Horz && (dir1 == dbTechLayerDir::VERTICAL))
-        || (!isLayer1Horz && (dir1 == dbTechLayerDir::HORIZONTAL));
+  const bool is_not_lower_align
+      = (is_layer1_horz && (dir1 == dbTechLayerDir::VERTICAL))
+        || (!is_layer1_horz && (dir1 == dbTechLayerDir::HORIZONTAL));
 
-  gtl::polygon_90_set_data<frCoord> viaLayerPS2;
-  for (auto& fig : viaDef->getLayer2Figs()) {
+  gtl::polygon_90_set_data<frCoord> via_layer_PS2;
+  for (auto& fig : via_def->getLayer2Figs()) {
     const Rect bbox = fig->getBBox();
-    const gtl::rectangle_data<frCoord> bboxRect(
+    const gtl::rectangle_data<frCoord> bbox_rect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using boost::polygon::operators::operator+=;
-    viaLayerPS2 += bboxRect;
+    via_layer_PS2 += bbox_rect;
   }
-  gtl::rectangle_data<frCoord> layer2Rect;
-  gtl::extents(layer2Rect, viaLayerPS2);
-  const bool isLayer2Horz = (gtl::xh(layer2Rect) - gtl::xl(layer2Rect))
-                            > (gtl::yh(layer2Rect) - gtl::yl(layer2Rect));
-  const frCoord layer2Width
-      = std::min((gtl::xh(layer2Rect) - gtl::xl(layer2Rect)),
-                 (gtl::yh(layer2Rect) - gtl::yl(layer2Rect)));
+  gtl::rectangle_data<frCoord> layer2_rect;
+  gtl::extents(layer2_rect, via_layer_PS2);
+  const bool is_layer2_horz = (gtl::xh(layer2_rect) - gtl::xl(layer2_rect))
+                              > (gtl::yh(layer2_rect) - gtl::yl(layer2_rect));
+  const frCoord layer2_width
+      = std::min((gtl::xh(layer2_rect) - gtl::xl(layer2_rect)),
+                 (gtl::yh(layer2_rect) - gtl::yl(layer2_rect)));
 
-  const auto layer2Num = viaDef->getLayer2Num();
-  const auto dir2 = getDesign()->getTech()->getLayer(layer2Num)->getDir();
+  const auto layer2_num = via_def->getLayer2Num();
+  const auto dir2 = getDesign()->getTech()->getLayer(layer2_num)->getDir();
 
-  const bool isNotUpperAlign
-      = (isLayer2Horz && (dir2 == dbTechLayerDir::VERTICAL))
-        || (!isLayer2Horz && (dir2 == dbTechLayerDir::HORIZONTAL));
+  const bool is_not_upper_align
+      = (is_layer2_horz && (dir2 == dbTechLayerDir::VERTICAL))
+        || (!is_layer2_horz && (dir2 == dbTechLayerDir::HORIZONTAL));
 
-  const frCoord layer1Area = gtl::area(viaLayerPS1);
-  const frCoord layer2Area = gtl::area(viaLayerPS2);
+  const frCoord layer1_area = gtl::area(via_layer_PS1);
+  const frCoord layer2_area = gtl::area(via_layer_PS2);
 
-  priority = std::make_tuple(isNotDefaultVia,
-                             layer1Width,
-                             layer2Width,
-                             isNotUpperAlign,
-                             layer2Area,
-                             layer1Area,
-                             isNotLowerAlign);
+  priority = std::make_tuple(is_not_default_via,
+                             layer1_width,
+                             layer2_width,
+                             is_not_upper_align,
+                             layer2_area,
+                             layer1_area,
+                             is_not_lower_align);
 }
 
 void FlexPA::initTrackCoords()
 {
-  const int numLayers = getDesign()->getTech()->getLayers().size();
-  const frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
+  const int num_layers = getDesign()->getTech()->getLayers().size();
+  const frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
 
   // full coords
-  trackCoords_.clear();
-  trackCoords_.resize(numLayers);
-  for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
-    const auto layerNum = trackPattern->getLayerNum();
-    const auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
-                           == dbTechLayerDir::VERTICAL);
-    const auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
-    if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
-      frCoord currCoord = trackPattern->getStartCoord();
-      for (int i = 0; i < (int) trackPattern->getNumTracks(); i++) {
-        trackCoords_[layerNum][currCoord] = frAccessPointEnum::OnGrid;
-        currCoord += trackPattern->getTrackSpacing();
+  track_coords_.clear();
+  track_coords_.resize(num_layers);
+  for (auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
+    const auto layer_num = track_pattern->getLayerNum();
+    const auto is_vert_layer
+        = (design_->getTech()->getLayer(layer_num)->getDir()
+           == dbTechLayerDir::VERTICAL);
+    const auto is_vert_track
+        = track_pattern->isHorizontal();  // yes = vertical track
+    if ((!is_vert_layer && !is_vert_track)
+        || (is_vert_layer && is_vert_track)) {
+      frCoord curr_coord = track_pattern->getStartCoord();
+      for (int i = 0; i < (int) track_pattern->getNumTracks(); i++) {
+        track_coords_[layer_num][curr_coord] = frAccessPointEnum::OnGrid;
+        curr_coord += track_pattern->getTrackSpacing();
       }
     }
   }
 
   // half coords
-  std::vector<std::vector<frCoord>> halfTrackCoords(numLayers);
-  for (int i = 0; i < numLayers; i++) {
-    frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
+  std::vector<std::vector<frCoord>> half_track_coords(num_layers);
+  for (int i = 0; i < num_layers; i++) {
+    frCoord prev_full_coord = std::numeric_limits<frCoord>::max();
 
-    for (auto& [currFullCoord, cost] : trackCoords_[i]) {
-      if (currFullCoord > prevFullCoord) {
-        const frCoord currHalfGrid
-            = (currFullCoord + prevFullCoord) / 2 / manuGrid * manuGrid;
-        if (currHalfGrid != currFullCoord && currHalfGrid != prevFullCoord) {
-          halfTrackCoords[i].push_back(currHalfGrid);
+    for (auto& [curr_full_coord, cost] : track_coords_[i]) {
+      if (curr_full_coord > prev_full_coord) {
+        const frCoord curr_half_grid
+            = (curr_full_coord + prev_full_coord) / 2 / manu_grid * manu_grid;
+        if (curr_half_grid != curr_full_coord
+            && curr_half_grid != prev_full_coord) {
+          half_track_coords[i].push_back(curr_half_grid);
         }
       }
-      prevFullCoord = currFullCoord;
+      prev_full_coord = curr_full_coord;
     }
-    for (auto halfCoord : halfTrackCoords[i]) {
-      trackCoords_[i][halfCoord] = frAccessPointEnum::HalfGrid;
+    for (auto halfCoord : half_track_coords[i]) {
+      track_coords_[i][halfCoord] = frAccessPointEnum::HalfGrid;
     }
   }
 }
@@ -165,34 +170,35 @@ void FlexPA::initSkipInstTerm()
 
   // Populate the map single-threaded so no further resizing is needed.
   for (frInst* inst : unique) {
-    for (auto& instTerm : inst->getInstTerms()) {
-      auto term = instTerm->getTerm();
-      auto instClass = unique_insts_.getClass(inst);
-      skip_unique_inst_term_[{instClass, term}] = false;
+    for (auto& inst_term : inst->getInstTerms()) {
+      auto term = inst_term->getTerm();
+      auto inst_class = unique_insts_.getClass(inst);
+      skip_unique_inst_term_[{inst_class, term}] = false;
     }
   }
 
   const int unique_size = unique.size();
 #pragma omp parallel for schedule(dynamic)
-  for (int uniqueInstIdx = 0; uniqueInstIdx < unique_size; uniqueInstIdx++) {
-    frInst* inst = unique[uniqueInstIdx];
-    for (auto& instTerm : inst->getInstTerms()) {
-      frMTerm* term = instTerm->getTerm();
-      const UniqueInsts::InstSet* instClass = unique_insts_.getClass(inst);
+  for (int unique_inst_idx = 0; unique_inst_idx < unique_size;
+       unique_inst_idx++) {
+    frInst* inst = unique[unique_inst_idx];
+    for (auto& inst_term : inst->getInstTerms()) {
+      frMTerm* term = inst_term->getTerm();
+      const UniqueInsts::InstSet* inst_class = unique_insts_.getClass(inst);
 
       // We have to be careful that the skip conditions are true not only of
       // the unique instance but also all the equivalent instances.
-      bool skip = isSkipInstTermLocal(instTerm.get());
+      bool skip = isSkipInstTermLocal(inst_term.get());
       if (skip) {
-        for (frInst* inst : *instClass) {
-          frInstTerm* it = inst->getInstTerm(instTerm->getIndexInOwner());
+        for (frInst* inst : *inst_class) {
+          frInstTerm* it = inst->getInstTerm(inst_term->getIndexInOwner());
           skip = isSkipInstTermLocal(it);
           if (!skip) {
             break;
           }
         }
       }
-      skip_unique_inst_term_.at({instClass, term}) = skip;
+      skip_unique_inst_term_.at({inst_class, term}) = skip;
     }
   }
 }

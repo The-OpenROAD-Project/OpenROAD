@@ -1135,7 +1135,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
 
   const int max_width = inst_width / (2 * (straps.size() + 1));
   TechLayer layer(getLayer());
-  const int target_width = layer.snapToManufacturingGrid(max_width, false);
+  const int target_width = layer.snapToManufacturingGrid(max_width, false, 2);
   if (target_width < layer.getMinWidth()) {
     // dont build anything
     debugPrint(
@@ -2375,7 +2375,7 @@ int RepairChannelStraps::getNextWidth() const
 {
   const TechLayer layer(getLayer());
 
-  int new_width = layer.snapToManufacturingGrid(getWidth() / 2);
+  int new_width = layer.snapToManufacturingGrid(getWidth() / 2, false, 2);
 
   // if new is smaller than min width use min width
   const int min_width = layer.getMinWidth();
