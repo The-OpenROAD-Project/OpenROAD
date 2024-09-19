@@ -368,7 +368,8 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
 
     if (from_liberty_cell == nullptr) {
       // cell doesn't exist in lib, no timing info
-      if (no_lib_warned.find(master) == no_lib_warned.end()) {
+      if (master->getType() == odb::dbMasterType::CORE
+          && no_lib_warned.find(master) == no_lib_warned.end()) {
         logger_->warn(
             utl::DFT,
             12,
