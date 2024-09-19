@@ -78,9 +78,10 @@ void SpefWriter::writeHeader()
     stream << "*BUS_DELIMITER []" << '\n';
 
     auto units = network_->units();
-    std::string time_unit = std::string(units->timeUnit()->suffix());
-    std::string cap_unit = std::string(units->capacitanceUnit()->suffix());
-    std::string res_unit = std::string(units->resistanceUnit()->suffix());
+    std::string time_unit = std::string(units->timeUnit()->scaledSuffix());
+    std::string cap_unit
+        = std::string(units->capacitanceUnit()->scaledSuffix());
+    std::string res_unit = std::string(units->resistanceUnit()->scaledSuffix());
     std::transform(
         time_unit.begin(), time_unit.end(), time_unit.begin(), ::toupper);
     std::transform(
@@ -91,6 +92,7 @@ void SpefWriter::writeHeader()
     stream << "*T_UNIT 1 " << time_unit << '\n';
     stream << "*C_UNIT 1 " << cap_unit << '\n';
     stream << "*R_UNIT 1 " << res_unit << '\n';
+    stream << "*L_UNIT 1 HENRY" << '\n';
     stream << '\n';
   }
 }
