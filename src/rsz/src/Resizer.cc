@@ -58,7 +58,6 @@
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -126,7 +125,7 @@ using sta::stringPrint;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
-using sta::CellFunction;
+using sta::BufferUse;
 using sta::CLOCK;
 
 Resizer::Resizer()
@@ -511,9 +510,9 @@ void Resizer::findBuffers()
 
       for (LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
-          CellFunction cell_function = sta_->getCellFunction(buffer);
+          BufferUse buffer_use = sta_->getBufferUse(buffer);
 
-          if (cell_function == CLOCK) {
+          if (buffer_use == CLOCK) {
             continue;
           }
         }

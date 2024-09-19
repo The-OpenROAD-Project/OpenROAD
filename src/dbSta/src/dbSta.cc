@@ -540,9 +540,9 @@ void dbSta::report_cell_usage(const bool verbose)
   }
 }
 
-CellFunction dbSta::getCellFunction(sta::LibertyCell* lib_cell)
+BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
 {
-  return cell_function_analyser_.getCellFunction(lib_cell);
+  return buffer_use_analyser_.getBufferUse(buffer);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -877,7 +877,7 @@ void dbSta::highlight(PathRef* path)
 
 ////////////////////////////////////////////////////////////////
 
-CellFunctionAnalyser::CellFunctionAnalyser()
+BufferUseAnalyser::BufferUseAnalyser()
 {
   clkbuf_pattern_
       = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
@@ -886,11 +886,11 @@ CellFunctionAnalyser::CellFunctionAnalyser()
                                             /* Tcl_interp* */ nullptr);
 }
 
-CellFunction CellFunctionAnalyser::getCellFunction(sta::LibertyCell* lib_cell)
+BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
 {
   // is_clock_cell is a custom lib attribute that may not exist,
   // so we also use the name pattern to help
-  if (lib_cell->isClockCell() || clkbuf_pattern_->match(lib_cell->name())) {
+  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
     return CLOCK;
   }
 
