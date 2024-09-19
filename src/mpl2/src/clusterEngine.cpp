@@ -64,6 +64,8 @@ void ClusteringEngine::run()
   setBaseThresholds();
 
   createIOClusters();
+  setBlockedBoundariesForIOs();
+
   createDataFlow();
 
   if (design_metrics_->getNumStdCell() == 0) {
@@ -408,6 +410,47 @@ void ClusteringEngine::createIOCluster(
       block_->dbuToMicrons(height),
       constraint_boundary);
   tree_->root->addChild(std::move(cluster));
+}
+
+void ClusteringEngine::setBlockedBoundariesForIOs()
+{
+  const float blocked_boundary_threshold = 0.7;
+  std::map<Boundary, float> blockage_extension_map = getBlockageExtensionMap();
+
+  for (const auto [boundary, blockage_extension] : blockage_extension_map) {
+    if (blockage_extension >= blocked_boundary_threshold) {
+      tree_->blocked_boundaries.insert(boundary);
+    }
+  }
+}
+
+// Computes how much blocked each boundary is for IOs base on PPL exclude
+// contraints.
+std::map<Boundary, float> ClusteringEngine::getBlockageExtensionMap()
+{
+  std::map<Boundary, float> blockage_extension_map;
+
+  blockage_extension_map[L] = 0.0;
+  blockage_extension_map[R] = 0.0;
+  blockage_extension_map[B] = 0.0;
+  blockage_extension_map[T] = 0.0;
+
+  const odb::Rect die = block_->getDieArea();
+  for (const odb::Rect& blocked_region : block_->getBlockedRegionsForPins()) {
+    Boundary blocked_region_boundary
+        = getConstraintBoundary(die, blocked_region);
+    float blockage_extension = 0.0;
+
+    if (blocked_region_boundary == L || blocked_region_boundary == R) {
+      blockage_extension = blocked_region.dy() / static_cast<float>(die.dy());
+    } else if (blocked_region_boundary == B || blocked_region_boundary == T) {
+      blockage_extension = blocked_region.dx() / static_cast<float>(die.dx());
+    }
+
+    blockage_extension_map[blocked_region_boundary] += blockage_extension;
+  }
+
+  return blockage_extension_map;
 }
 
 void ClusteringEngine::setIOClusterDimensions(const odb::Rect& die,
