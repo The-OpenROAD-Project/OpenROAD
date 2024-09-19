@@ -408,13 +408,13 @@ class Resizer : public dbStaState
   void makeEquivCells();
 
   ////////////////////////////////////////////////////////////////
+  void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
 
  protected:
   void init();
-  void initBlock();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);

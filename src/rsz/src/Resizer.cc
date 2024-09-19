@@ -2860,6 +2860,7 @@ void Resizer::recoverPower(float recover_power_percent)
 void Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
+  db_->beginEco(block_);
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -2872,6 +2873,7 @@ void Resizer::journalBegin()
 void Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
+  db_->endEco(block_);
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -3225,6 +3227,12 @@ void Resizer::journalRestore(int& resize_count,
                              int& cloned_gate_count,
                              int& removed_buffer_count)
 {
+  int old_resize_count = resize_count;
+  int old_inserted_buffer_count = inserted_buffer_count;
+  int old_cloned_gate_count = cloned_gate_count;
+  int old_removed_buffer_count = removed_buffer_count;
+
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
   for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
       debugPrint(logger_,
@@ -3290,6 +3298,16 @@ void Resizer::journalRestore(int& resize_count,
 
   journalUndoGateCloning(cloned_gate_count);
   journalRestoreBuffers(removed_buffer_count);
+
+  if (resize_count != old_resize_count
+      || inserted_buffer_count != old_inserted_buffer_count
+      || cloned_gate_count != old_cloned_gate_count
+      || removed_buffer_count != old_removed_buffer_count) {
+    db_->undoEco(block_);
+  } else {
+    db_->endEco(block_);
+  }
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
 
 ////////////////////////////////////////////////////////////////

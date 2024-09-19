@@ -223,6 +223,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           prev_termination = true;
         }
+        resizer_->journalEnd();
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -245,6 +246,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at {}/{} "
@@ -282,6 +285,8 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} no changes"
@@ -315,6 +320,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
         // Progress, Save checkpoint so we can back up to here.
+        resizer_->journalEnd();
         resizer_->journalBegin();
       } else {
         // Allow slack to increase to get out of local minima.
@@ -355,6 +361,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} resizer"
                    " over max area", end->name(network_));
         // clang-format on
+        resizer_->journalEnd();
         break;
       }
       if (end_index == 1) {
@@ -370,6 +377,7 @@ void RepairSetup::repairSetup(const float setup_slack_margin,
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of setup fixing"
                  "due to no TNS progress for two opto cycles");
       // clang-format on
+      resizer_->journalEnd();
       break;
     }
   }  // for each violating endpoint
@@ -1796,6 +1804,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         } else {
           prev_termination = true;
         }
+        resizer_->journalEnd();
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -1806,6 +1815,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       if (end_slack > params.setup_slack_margin) {
         --num_viols;
+        resizer_->journalEnd();
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -1825,6 +1835,8 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
                                    removed_buffer_count_);
           resizer_->updateParasitics();
           sta_->findRequireds();
+        } else {
+          resizer_->journalEnd();
         }
         break;
       }
@@ -1848,6 +1860,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         if (end_slack > params.setup_slack_margin) {
           --num_viols;
         }
+        resizer_->journalEnd();
         resizer_->journalBegin();
       } else {
         resizer_->journalRestore(resize_count_,
@@ -1860,6 +1873,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
 
       if (resizer_->overMaxArea()) {
+        resizer_->journalEnd();
         break;
       }
       if (end_index == 1) {
@@ -1875,6 +1889,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out of last gasp fixing"
                  "due to no TNS progress for two opto cycles");
       // clang-format on
+      resizer_->journalEnd();
       break;
     }
   }  // for each violating endpoint
