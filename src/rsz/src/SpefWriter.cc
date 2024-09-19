@@ -62,12 +62,32 @@ SpefWriter::SpefWriter(Logger* logger,
   writePorts();
 }
 
+std::string escapeDollarSign(const std::string& name)
+{
+  std::string result = name;
+  size_t pos = 0;
+  while ((pos = result.find('$', pos)) != std::string::npos) {
+    result.replace(pos, 1, "\\$");
+    pos += 2;
+  }
+  return result;
+}
+
+std::string escapeDollarSign(const char* name)
+{
+  if (!name) {
+    return "";
+  }
+  return escapeDollarSign(std::string(name));
+}
+
 void SpefWriter::writeHeader()
 {
   for (auto [_, it] : spef_streams_) {
     std::ostream& stream = *it;
     stream << "*SPEF \"ieee 1481-1999\"" << '\n';
-    stream << "*DESIGN \"" << network_->block()->getName() << "\"" << '\n';
+    stream << "*DESIGN \"" << escapeDollarSign(network_->block()->getName())
+           << "\"" << '\n';
     stream << "*DATE \"11:11:11 Fri 11 11, 1111\"" << '\n';
     stream << "*VENDOR \"The OpenROAD Project\"" << '\n';
     stream << "*PROGRAM \"OpenROAD\"" << '\n';
@@ -126,11 +146,11 @@ void SpefWriter::writePorts()
       network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
       if (iterm != nullptr) {
-        stream << iterm->getName() << " ";
+        stream << escapeDollarSign(iterm->getName()) << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << bterm->getName() << " ";
+        stream << escapeDollarSign(bterm->getName()) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -153,7 +173,8 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   }
   std::ostream& stream = *it->second;
 
-  stream << "*D_NET " << network_->staToDb(net)->getName() << " ";
+  stream << "*D_NET " << escapeDollarSign(network_->staToDb(net)->getName())
+         << " ";
   stream << parasitics_->capacitance(parasitic) << '\n';
 
   stream << "*CONN" << '\n';
@@ -167,12 +188,12 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
       if (iterm != nullptr) {
-        stream << "*I " << parasitics_->name(node) << " ";
+        stream << "*I " << escapeDollarSign(parasitics_->name(node)) << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << "*P " << parasitics_->name(node) << " ";
+        stream << "*P " << escapeDollarSign(parasitics_->name(node)) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -194,7 +215,8 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
       }
 
       stream << count++ << " ";
-      stream << parasitics_->name(node) << " " << parasitics_->nodeGndCap(node);
+      stream << escapeDollarSign(parasitics_->name(node)) << " "
+             << parasitics_->nodeGndCap(node);
       stream << '\n';
     }
   }
@@ -206,9 +228,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << count++ << " ";
 
     auto n1 = parasitics_->node1(cap);
-    stream << parasitics_->name(n1) << " ";
+    stream << escapeDollarSign(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(cap);
-    stream << parasitics_->name(n2) << " ";
+    stream << escapeDollarSign(parasitics_->name(n2)) << " ";
     stream << parasitics_->value(cap) << '\n';
   }
 
@@ -222,9 +244,9 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     stream << count++ << " ";
 
     auto n1 = parasitics_->node1(res);
-    stream << parasitics_->name(n1) << " ";
+    stream << escapeDollarSign(parasitics_->name(n1)) << " ";
     auto n2 = parasitics_->node2(res);
-    stream << parasitics_->name(n2) << " ";
+    stream << escapeDollarSign(parasitics_->name(n2)) << " ";
     stream << parasitics_->value(res) << '\n';
   }
 
